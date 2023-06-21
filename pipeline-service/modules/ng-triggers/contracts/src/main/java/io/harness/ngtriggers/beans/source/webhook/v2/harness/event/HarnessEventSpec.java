@@ -19,8 +19,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.source.webhook.v2.git.GitAware;
 import io.harness.ngtriggers.beans.source.webhook.v2.git.PayloadAware;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.swagger.annotations.ApiModelProperty;
 
 @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
 @JsonSubTypes({
@@ -31,7 +33,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @OwnedBy(PIPELINE)
 public interface HarnessEventSpec extends PayloadAware, GitAware {
   @Override
+  @JsonIgnore
+  @ApiModelProperty(hidden = true)
   default String fetchConnectorRef() {
     return null;
-  };
+  }
 }

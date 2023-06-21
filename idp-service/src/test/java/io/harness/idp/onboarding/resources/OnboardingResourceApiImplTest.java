@@ -30,7 +30,6 @@ import io.harness.spec.server.idp.v1.model.ImportEntitiesResponse;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import javax.ws.rs.core.Response;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
@@ -129,7 +128,7 @@ public class OnboardingResourceApiImplTest extends CategoryTest {
   @Test
   @Owner(developers = SATHISH)
   @Category(UnitTests.class)
-  public void testImportHarnessEntities() throws ExecutionException {
+  public void testImportHarnessEntities() {
     ImportEntitiesResponse importEntitiesResponse = new ImportEntitiesResponse();
     importEntitiesResponse.setStatus("SUCCESS");
     when(onboardingService.importHarnessEntities(ACCOUNT_IDENTIFIER, new ImportEntitiesBase()))

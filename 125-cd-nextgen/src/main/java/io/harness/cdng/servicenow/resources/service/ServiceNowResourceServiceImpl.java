@@ -30,6 +30,7 @@ import io.harness.eraro.ErrorCode;
 import io.harness.exception.DelegateNotAvailableException;
 import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.HintException;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ServiceNowException;
 import io.harness.exception.WingsException;
@@ -46,10 +47,12 @@ import io.harness.servicenow.ServiceNowFieldTypeNG;
 import io.harness.servicenow.ServiceNowStagingTable;
 import io.harness.servicenow.ServiceNowTemplate;
 import io.harness.servicenow.ServiceNowTicketTypeDTO;
+import io.harness.servicenow.ServiceNowTicketTypeNG;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -136,8 +139,21 @@ public class ServiceNowResourceServiceImpl implements ServiceNowResourceService 
   public List<ServiceNowTicketTypeDTO> getTicketTypesV2(IdentifierRef connectorRef, String orgId, String projectId) {
     ServiceNowTaskNGParametersBuilder parametersBuilder =
         ServiceNowTaskNGParameters.builder().action(ServiceNowActionNG.GET_TICKET_TYPES);
-    return obtainServiceNowTaskNGResponse(connectorRef, orgId, projectId, parametersBuilder)
-        .getServiceNowTicketTypeList();
+    List<ServiceNowTicketTypeDTO> serviceNowStandardTicketTypeList =
+        Arrays.stream(ServiceNowTicketTypeNG.values())
+            .map(ticketType -> new ServiceNowTicketTypeDTO(ticketType.name(), ticketType.getDisplayName()))
+            .collect(Collectors.toList());
+    try {
+      return obtainServiceNowTaskNGResponse(connectorRef, orgId, projectId, parametersBuilder)
+          .getServiceNowTicketTypeList();
+    } catch (Exception ex) {
+      // InvalidArgumentsException may occur when delegate task expired or not picked.
+      log.warn("Exception while executing GET_TICKET_TYPES servicenow task", ex);
+      if (isResultingFromDelegateNotHavingActionEnum(ex)) {
+        return serviceNowStandardTicketTypeList;
+      }
+      throw ex;
+    }
   }
 
   private ServiceNowTaskNGResponse obtainServiceNowTaskNGResponse(IdentifierRef serviceNowConnectorRef, String orgId,
@@ -227,5 +243,11 @@ public class ServiceNowResourceServiceImpl implements ServiceNowResourceService 
     return new HintException(
         String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
         new DelegateNotAvailableException(delegateDownErrorMessage, WingsException.USER));
+  }
+
+  private static boolean isResultingFromDelegateNotHavingActionEnum(Exception ex) {
+    return (HintException.class.equals(ex.getClass()) && !isNull(ex.getCause())
+               && DelegateNotAvailableException.class.equals(ex.getCause().getClass()))
+        || InvalidArgumentsException.class.equals(ex.getClass());
   }
 }

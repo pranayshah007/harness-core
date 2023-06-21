@@ -124,6 +124,8 @@ scheduler-jobs-config:
   awsAccountTagsCollectionJobCron : "0 0 9 * * ?"
   governanceRecommendationJobCronAws : "0 0 0 * * *"
   governanceRecommendationJobCronAzure : "0 0 8 * * *"
+  dailyBudgetAlertsJobCron: "0 30 14 * * ?"
+  dailyBudgetCostUpdateJobCron: "0 0 14 * * ?"
 
 cePythonService:
   pythonServiceUrl: "http://0.0.0.0:8081"

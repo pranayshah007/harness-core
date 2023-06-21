@@ -158,24 +158,24 @@ public class StringReplacer {
       return false;
     }
 
-    // Check on left if any first + operator found or not
+    // Check on left if any first string mathematical operator found or not
     expressionStartPos--;
     while (expressionStartPos >= 0) {
       char c = buf.charAt(expressionStartPos);
-      if (c == '+') {
+      if (checkIfStringMathematicalOperator(c)) {
         return false;
-      } else if (c != ' ') {
+      } else if (!skipNonCriticalCharacters(c)) {
         return true;
       }
       expressionStartPos--;
     }
 
-    // Check on right if any first + operator found or not
+    // Check on right if any first string mathematical operator found or not
     while (expressionEndPos <= buf.length() - 1) {
       char c = buf.charAt(expressionEndPos);
-      if (c == '+') {
+      if (checkIfStringMathematicalOperator(c)) {
         return false;
-      } else if (c != ' ') {
+      } else if (!skipNonCriticalCharacters(c)) {
         return true;
       }
       expressionEndPos++;
@@ -190,6 +190,14 @@ public class StringReplacer {
     Pattern pattern = Pattern.compile("\\.\\w+\\(");
     Matcher matcher = pattern.matcher(charSequence);
     return matcher.find();
+  }
+
+  private boolean checkIfStringMathematicalOperator(char c) {
+    return c == '+' || c == '=' || c == '?' || c == ':' || c == '&';
+  }
+
+  private boolean skipNonCriticalCharacters(char c) {
+    return c == ' ' || c == '(' || c == ')' || c == ';';
   }
 
   private static boolean isMatch(char ch, StringBuffer buf, int bufStart, int bufEnd) {

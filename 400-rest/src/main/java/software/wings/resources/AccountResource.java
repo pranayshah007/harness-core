@@ -28,6 +28,8 @@ import io.harness.authenticationservice.beans.AuthenticationInfo;
 import io.harness.authenticationservice.beans.AuthenticationInfoV2;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
+import io.harness.credit.beans.credits.CreditDTO;
+import io.harness.credit.remote.admin.AdminCreditHttpClient;
 import io.harness.cvng.beans.ServiceGuardLimitDTO;
 import io.harness.datahandler.models.AccountDetails;
 import io.harness.eraro.ResponseMessage;
@@ -136,7 +138,7 @@ public class AccountResource {
   private final AuthService authService;
   private final HarnessUserGroupService harnessUserGroupService;
   private final AdminLicenseHttpClient adminLicenseHttpClient;
-
+  private final AdminCreditHttpClient adminCreditHttpClient;
   private final DelegateAuthService delegateAuthService;
 
   @Inject
@@ -146,7 +148,7 @@ public class AccountResource {
       GcpMarketPlaceApiHandler gcpMarketPlaceApiHandler,
       Provider<SampleDataProviderService> sampleDataProviderServiceProvider, AuthService authService,
       HarnessUserGroupService harnessUserGroupService, AdminLicenseHttpClient adminLicenseHttpClient,
-      DelegateAuthService delegateAuthService) {
+      AdminCreditHttpClient adminCreditHttpClient, DelegateAuthService delegateAuthService) {
     this.accountService = accountService;
     this.userService = userService;
     this.licenseServiceProvider = licenseServiceProvider;
@@ -158,6 +160,7 @@ public class AccountResource {
     this.authService = authService;
     this.harnessUserGroupService = harnessUserGroupService;
     this.adminLicenseHttpClient = adminLicenseHttpClient;
+    this.adminCreditHttpClient = adminCreditHttpClient;
     this.delegateAuthService = delegateAuthService;
   }
 
@@ -700,6 +703,44 @@ public class AccountResource {
       return RestResponse.Builder.aRestResponse()
           .withResponseMessages(
               Lists.newArrayList(ResponseMessage.builder().message("User not allowed to query licenses").build()))
+          .build();
+    }
+  }
+
+  @POST
+  @Path("{accountId}/ng/credit")
+  public RestResponse<CreditDTO> createNgCredit(@PathParam("accountId") String accountId,
+      @QueryParam("clientAccountId") @NotNull String clientAccountId, @Body CreditDTO creditDTO) {
+    User existingUser = UserThreadLocal.get();
+    if (existingUser == null) {
+      throw new InvalidRequestException("Invalid User");
+    }
+
+    if (harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
+      return new RestResponse<>(getResponse(adminCreditHttpClient.createAccountCredit(clientAccountId, creditDTO)));
+    } else {
+      return RestResponse.Builder.aRestResponse()
+          .withResponseMessages(
+              Lists.newArrayList(ResponseMessage.builder().message("User not allowed to create credit").build()))
+          .build();
+    }
+  }
+
+  @GET
+  @Path("{accountId}/ng/credit")
+  public RestResponse<List<CreditDTO>> getNgAccountCredit(
+      @PathParam("accountId") String accountId, @QueryParam("clientAccountId") @NotNull String clientAccountId) {
+    User existingUser = UserThreadLocal.get();
+    if (existingUser == null) {
+      throw new InvalidRequestException("Invalid User");
+    }
+
+    if (harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
+      return new RestResponse<>(getResponse(adminCreditHttpClient.getAccountCredit(clientAccountId)));
+    } else {
+      return RestResponse.Builder.aRestResponse()
+          .withResponseMessages(
+              Lists.newArrayList(ResponseMessage.builder().message("User not allowed to query credits").build()))
           .build();
     }
   }

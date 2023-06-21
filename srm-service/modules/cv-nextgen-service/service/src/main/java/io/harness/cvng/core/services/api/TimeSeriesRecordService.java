@@ -51,4 +51,6 @@ public interface TimeSeriesRecordService {
 
   void createDemoAnalysisData(String accountId, String verificationTaskId, String dataCollectionWorkerId,
       Instant startTime, Instant endTime, DemoMetricParams metricFilter) throws IOException;
+
+  List<TimeSeriesRecordDTO> getTimeSeriesRecordsForVerificationTaskId(String verificationTaskId);
 }

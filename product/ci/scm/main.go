@@ -31,6 +31,7 @@ type args struct {
 	Verbose    bool   `arg:"--verbose" help:"enable verbose logging mode"`
 	Port       uint   `arg:"--port" help:"port for running GRPC server"`
 	UnixSocket string `arg:"--unix" help:"the unix socket to run on"`
+	TaskId     string `arg:"--taskId" help:"task id for the current task"`
 
 	Deployment            string `arg:"env:DEPLOYMENT" help:"name of the deployment"`
 	DeploymentEnvironment string `arg:"env:DEPLOYMENT_ENVIRONMENT" help:"environment of the deployment"`
@@ -46,6 +47,7 @@ func parseArgs(a *args) {
 	a.Port = port
 	a.Verbose = false
 	a.UnixSocket = ""
+	a.TaskId = ""
 
 	arg.MustParse(a)
 }
@@ -57,7 +59,8 @@ func main() {
 	// build initial log
 	logBuilder := logs.NewBuilder().Verbose(args.Verbose).WithDeployment(args.Deployment).
 		WithFields("deployable", deployable,
-			"application_name", applicationName)
+			"application_name", applicationName,
+			"taskId", args.TaskId)
 	logger := logBuilder.MustBuild().Sugar()
 
 	logger.Infow("Starting CI GRPC scm server", "version", Version, "buildCommitID", BuildCommitID, "port", args.Port, "unixSocket", args.UnixSocket)

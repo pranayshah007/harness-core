@@ -10,13 +10,11 @@ package software.wings.beans;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
 import lombok.Value;
 
 @Value
 @Builder
-@JsonTypeName("decryptedRecord")
 @OwnedBy(HarnessTeam.CDP)
 public class DecryptedRecord {
   char[] decryptedValue;

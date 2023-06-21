@@ -36,18 +36,23 @@ public class AccountMapper {
         .isTwoFactorAdminEnforced(account.isTwoFactorAdminEnforced())
         .ringName(account.getRingName())
         .createdAt(account.getCreatedAt())
+        .sessionTimeoutInMinutes(account.getSessionTimeOutInMinutes())
         .build();
   }
 
   public static Account fromAccountDTO(AccountDTO dto) {
-    return Account.Builder.anAccount()
-        .withUuid(dto.getIdentifier())
-        .withAccountName(dto.getName())
-        .withCompanyName(dto.getCompanyName())
-        .withDefaultExperience(dto.getDefaultExperience())
-        .withNextGenEnabled(dto.isNextGenEnabled())
-        .withServiceAccountConfig(dto.getServiceAccountConfig())
-        .build();
+    Account account = Account.Builder.anAccount()
+                          .withUuid(dto.getIdentifier())
+                          .withAccountName(dto.getName())
+                          .withCompanyName(dto.getCompanyName())
+                          .withDefaultExperience(dto.getDefaultExperience())
+                          .withNextGenEnabled(dto.isNextGenEnabled())
+                          .withServiceAccountConfig(dto.getServiceAccountConfig())
+                          .build();
+    if (dto.getSessionTimeoutInMinutes() != null) {
+      account.setSessionTimeOutInMinutes(dto.getSessionTimeoutInMinutes());
+    }
+    return account;
   }
 
   public static GatewayAccountRequestDTO toGatewayAccountRequest(Account account) {

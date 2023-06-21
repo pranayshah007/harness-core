@@ -137,7 +137,7 @@ def main(event, context):
         ingest_into_preaggregated(jsonData)
         ingest_into_unified(jsonData)
         update_connector_data_sync_status(jsonData, PROJECTID, client)
-        ingest_data_to_costagg(jsonData)
+        # ingest_data_to_costagg(jsonData)
         send_event(publisher.topic_path(PROJECTID, COSTCATEGORIESUPDATETOPIC), {
             "eventType": "COST_CATEGORY_UPDATE",
             "message": {
@@ -941,7 +941,7 @@ def syncDataset(jsonData):
     ingest_into_preaggregated(jsonData)
     ingest_into_unified(jsonData)
     update_connector_data_sync_status(jsonData, PROJECTID, client)
-    ingest_data_to_costagg(jsonData)
+    # ingest_data_to_costagg(jsonData)
 
 
 def doBQTransfer(jsonData):

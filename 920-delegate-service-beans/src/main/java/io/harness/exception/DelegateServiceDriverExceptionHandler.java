@@ -12,6 +12,7 @@ import static io.grpc.Status.Code.DEADLINE_EXCEEDED;
 import static io.grpc.Status.Code.INTERNAL;
 import static io.grpc.Status.Code.UNAVAILABLE;
 
+import io.harness.delegate.beans.NoDelegatesException;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 
 import com.google.common.collect.ImmutableSet;
@@ -42,6 +43,9 @@ public class DelegateServiceDriverExceptionHandler implements ExceptionHandler {
           : DEFAULT_MESSAGE;
       return NestedExceptionUtils.hintWithExplanationException(HINT_MESSAGE + " " + statusRuntimeException.getMessage(),
           message, new InvalidRequestException(statusRuntimeException.getMessage(), exception));
+    }
+    if (exception instanceof NoDelegatesException) {
+      return new InvalidRequestException(exception.getMessage());
     }
     return new InvalidRequestException(exception.getMessage(), exception);
   }

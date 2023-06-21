@@ -23,6 +23,7 @@ import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
+import io.harness.connector.entities.Connector;
 import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.connector.entities.embedded.vaultconnector.VaultConnector.VaultConnectorKeys;
 import io.harness.connector.services.ConnectorService;
@@ -64,6 +65,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import javax.validation.Valid;
@@ -86,6 +88,8 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
   private final EnforcementClientService enforcementClientService;
   private final TemplateResourceClient templateResourceClient;
   private static final String ENVIRONMENT_VARIABLES = "environmentVariables";
+  private static final String ACCOUNT = "account";
+  private static final String EMPTY_STRING = "";
 
   @Inject
   public SecretManagerConnectorServiceImpl(@Named(DEFAULT_CONNECTOR_SERVICE) ConnectorService defaultConnectorService,
@@ -184,15 +188,18 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
       String orgIdentifier, String projectIdentifier, String connectorIdentifier) throws IOException {
     if (connectorConfigDTO instanceof CustomSecretManagerConnectorDTO) {
       String templateRef = ((CustomSecretManagerConnectorDTO) connectorConfigDTO).getTemplate().getTemplateRef();
-      List<NameValuePairWithDefault> envVariables = ((CustomSecretManagerConnectorDTO) connectorConfigDTO)
-                                                        .getTemplate()
-                                                        .getTemplateInputs()
-                                                        .get(ENVIRONMENT_VARIABLES);
+      Map<String, List<NameValuePairWithDefault>> connectorTemplateInputs =
+          ((CustomSecretManagerConnectorDTO) connectorConfigDTO).getTemplate().getTemplateInputs();
+      List<NameValuePairWithDefault> envVariables =
+          (null != connectorTemplateInputs) ? connectorTemplateInputs.get(ENVIRONMENT_VARIABLES) : null;
       Set<String> inputs =
           checkForDuplicateInputsAndReturnInputsLIst(envVariables, accountIdentifier, connectorIdentifier);
-      String template = NGRestUtils.getResponse(templateResourceClient.getTemplateInputsYaml(
-          templateIdFromRef(templateRef), accountIdentifier, orgIdentifier, projectIdentifier,
-          ((CustomSecretManagerConnectorDTO) connectorConfigDTO).getTemplate().getVersionLabel(), false));
+      String templateScope = templateScopeFromRef(templateRef);
+      String template =
+          NGRestUtils.getResponse(templateResourceClient.getTemplateInputsYaml(templateIdFromRef(templateRef),
+              accountIdentifier, Objects.equals(templateScope, ACCOUNT) ? null : orgIdentifier,
+              Objects.equals(templateScope, EMPTY_STRING) ? projectIdentifier : null,
+              ((CustomSecretManagerConnectorDTO) connectorConfigDTO).getTemplate().getVersionLabel(), false));
       if (template == null || StringUtils.isBlank(template)) {
         return;
       }
@@ -206,13 +213,15 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
   private Set<String> checkForDuplicateInputsAndReturnInputsLIst(
       List<NameValuePairWithDefault> templateInputs, String accountIdentifier, String connectorIdentifier) {
     Set<String> inputs = new HashSet<>();
-    for (NameValuePairWithDefault node : templateInputs) {
-      if (inputs.contains(node.getName())) {
-        log.error("Same input is given more than once for custom SM {} in account {}. Duplicated input is {}",
-            connectorIdentifier, accountIdentifier, node.getName());
-        throw new InvalidRequestException("Multiple values for the same input Parameter is passed. Please check.");
+    if (null != templateInputs) {
+      for (NameValuePairWithDefault node : templateInputs) {
+        if (inputs.contains(node.getName())) {
+          log.error("Same input is given more than once for custom SM {} in account {}. Duplicated input is {}",
+              connectorIdentifier, accountIdentifier, node.getName());
+          throw new InvalidRequestException("Multiple values for the same input Parameter is passed. Please check.");
+        }
+        inputs.add(node.getName());
       }
-      inputs.add(node.getName());
     }
     return inputs;
   }
@@ -236,6 +245,15 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
   private String templateIdFromRef(String templateRef) {
     String[] arrOfStr = templateRef.split("\\.");
     return (arrOfStr.length == 1) ? arrOfStr[0] : arrOfStr[1];
+  }
+
+  private String templateScopeFromRef(String templateRef) {
+    String[] arrOfStr = templateRef.split("\\.");
+    if (arrOfStr.length == 1) {
+      return "";
+    } else {
+      return arrOfStr[0];
+    }
   }
 
   private boolean isDefaultSecretManager(ConnectorInfoDTO connector) {
@@ -399,8 +417,9 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
 
   @Override
   public ConnectorStatistics getConnectorStatistics(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    return defaultConnectorService.getConnectorStatistics(accountIdentifier, orgIdentifier, projectIdentifier);
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> connectorIds) {
+    return defaultConnectorService.getConnectorStatistics(
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorIds);
   }
 
   @Override
@@ -431,11 +450,11 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
   @Override
   public Page<ConnectorResponseDTO> list(String accountIdentifier, ConnectorFilterPropertiesDTO filterProperties,
       String orgIdentifier, String projectIdentifier, String filterIdentifier, String searchTerm,
-      Boolean includeAllConnectorsAccessibleAtScope, Boolean getDistinctFromBranches, Pageable pageable,
-      String version) {
+      Boolean includeAllConnectorsAccessibleAtScope, Boolean getDistinctFromBranches, Pageable pageable, String version,
+      Boolean onlyFavorites) {
     return defaultConnectorService.list(accountIdentifier, filterProperties, orgIdentifier, projectIdentifier,
-        filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable,
-        version);
+        filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable, version,
+        onlyFavorites);
   }
 
   @Override
@@ -446,8 +465,31 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
   @Override
   public Page<ConnectorResponseDTO> list(int page, int size, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String searchTerm, ConnectorType type, ConnectorCategory category,
-      ConnectorCategory sourceCategory, String version) {
+      ConnectorCategory sourceCategory, String version, List<String> connectorIds) {
     throw new UnsupportedOperationException("Cannot call list api on secret manager");
+  }
+
+  @Override
+  public Page<Connector> listAll(String accountIdentifier, ConnectorFilterPropertiesDTO filterProperties,
+      String orgIdentifier, String projectIdentifier, String filterIdentifier, String searchTerm,
+      Boolean includeAllConnectorsAccessibleAtScope, Boolean getDistinctFromBranches, Pageable pageable,
+      String version) {
+    return defaultConnectorService.listAll(accountIdentifier, filterProperties, orgIdentifier, projectIdentifier,
+        filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable,
+        version);
+  }
+
+  @Override
+  public Page<Connector> listAll(int page, int size, String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String searchTerm, ConnectorType type, ConnectorCategory category,
+      ConnectorCategory sourceCategory, String version) {
+    return defaultConnectorService.listAll(page, size, accountIdentifier, orgIdentifier, projectIdentifier, searchTerm,
+        type, category, sourceCategory, version);
+  }
+
+  @Override
+  public Page<Connector> listAll(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    return defaultConnectorService.listAll(accountIdentifier, orgIdentifier, projectIdentifier);
   }
 
   @Override

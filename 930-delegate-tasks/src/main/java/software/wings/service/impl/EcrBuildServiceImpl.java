@@ -13,6 +13,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.validation.Validator.equalCheck;
 
 import static software.wings.beans.artifact.ArtifactStreamType.ECR;
+import static software.wings.helpers.ext.ecr.EcrService.MAX_NO_OF_IMAGES;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
@@ -60,7 +61,7 @@ public class EcrBuildServiceImpl implements EcrBuildService {
             .getBuilds(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), null,
                 ecrServiceDelegate.getEcrImageUrl(awsConfig, encryptionDetails, artifactStreamAttributes.getRegion(),
                     artifactStreamAttributes.getImageName()),
-                artifactStreamAttributes.getRegion(), artifactStreamAttributes.getImageName(), 50)
+                artifactStreamAttributes.getRegion(), artifactStreamAttributes.getImageName(), MAX_NO_OF_IMAGES)
             .stream()
             .map(ArtifactConfigMapper::toBuildDetails)
             .collect(Collectors.toList()),

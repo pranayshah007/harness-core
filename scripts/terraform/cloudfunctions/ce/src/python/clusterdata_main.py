@@ -115,7 +115,7 @@ def main(jsonData, context):
         return
     ingest_data_in_unified(jsonData)
     ingest_aggregated_data(jsonData)
-    ingest_data_to_costagg(jsonData)
+    # ingest_data_to_costagg(jsonData)
     print_("Completed")
 
 

@@ -140,7 +140,7 @@ public class GcbServiceImpl implements GcbService {
       GcpConfig gcpConfig, List<EncryptedDataDetail> encryptionDetails, String bucketName, String fileName) {
     Response<ResponseBody> response;
     int count = 0;
-    int maxTries = 5;
+    int maxTries = 10;
     try {
       final String bucket = bucketName.replace("gs://", "");
       log.info("GCB_TASK - fetching logs");
@@ -157,7 +157,7 @@ public class GcbServiceImpl implements GcbService {
           break;
         } catch (GcbClientException e) {
           log.warn("GCB fetching logs response is unsuccessful due to error {}", e.getMessage());
-          TimeUnit.SECONDS.sleep(2);
+          TimeUnit.SECONDS.sleep(10);
           if (++count == maxTries) {
             throw e;
           }

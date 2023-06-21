@@ -42,8 +42,8 @@ public class CustomChangeEventPublisherServiceImplTest extends CvNextGenTestBase
     ProjectParams projectParams = builderFactory.getProjectParams();
     CustomChangeWebhookPayload customChangeWebhookPayload =
         builderFactory.getCustomChangeWebhookPayloadBuilder().build();
-    Message message = customChangeEventPublisherServiceImpl.getCustomChangeEventMessage(projectParams,
-        "monitoredServiceId", "changeSourceId", builderFactory.getCustomChangeWebhookPayloadBuilder().build());
+    Message message = customChangeEventPublisherServiceImpl.getCustomChangeEventMessage(
+        projectParams, "monitoredServiceId", "changeSourceId", customChangeWebhookPayload);
     CustomChangeEventDTO.Builder customChangeEventDTOBuilder =
         CustomChangeEventDTO.newBuilder()
             .setAccountId(projectParams.getAccountIdentifier())
@@ -56,6 +56,7 @@ public class CustomChangeEventPublisherServiceImplTest extends CvNextGenTestBase
                                  .setExternalLinkToEntity("externalLink")
                                  .setDescription("desc")
                                  .setName("name")
+                                 .setWebhookUrl("webhookUrl")
                                  .build())
             .setStartTime(customChangeWebhookPayload.getStartTime())
             .setEndTime(customChangeWebhookPayload.getEndTime())

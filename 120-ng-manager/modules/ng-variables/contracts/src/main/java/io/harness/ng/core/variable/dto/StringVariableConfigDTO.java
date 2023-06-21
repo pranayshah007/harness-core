@@ -16,6 +16,7 @@ import io.harness.exception.UnknownEnumTypeException;
 import io.harness.exception.UnsupportedOperationException;
 import io.harness.ng.core.variable.VariableValueType;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Set;
@@ -43,7 +44,12 @@ public class StringVariableConfigDTO extends VariableConfigDTO {
   @RegEx String regex;
 
   @Override
-  public Object getValue() {
+  public String getValue() {
+    return getRawValue();
+  }
+
+  @JsonIgnore
+  public String getRawValue() {
     switch (getValueType()) {
       case FIXED:
         return fixedValue;

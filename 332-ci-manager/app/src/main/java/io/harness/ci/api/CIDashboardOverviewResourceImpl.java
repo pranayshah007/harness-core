@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.beans.entities.BuildActiveInfo;
 import io.harness.app.beans.entities.BuildFailureInfo;
+import io.harness.app.beans.entities.CICreditsResult;
 import io.harness.app.beans.entities.CIUsageResult;
 import io.harness.app.beans.entities.DashboardBuildExecutionInfo;
 import io.harness.app.beans.entities.DashboardBuildRepositoryInfo;
@@ -76,5 +77,11 @@ public class CIDashboardOverviewResourceImpl implements CIDashboardOverviewResou
     log.info("Getting usage data");
 
     return ResponseDTO.newResponse(ciOverviewDashboardService.getCIUsageResult(accountIdentifier, timestamp));
+  }
+
+  public ResponseDTO<CICreditsResult> getCredits(String accountIdentifier, long startInterval, long endInterval) {
+    log.info("Getting credits data");
+    long credits = ciOverviewDashboardService.getHostedCreditUsage(accountIdentifier, startInterval, endInterval);
+    return ResponseDTO.newResponse(CICreditsResult.builder().credits(credits).build());
   }
 }

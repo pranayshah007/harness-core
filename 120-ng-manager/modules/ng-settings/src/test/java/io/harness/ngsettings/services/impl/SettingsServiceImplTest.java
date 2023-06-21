@@ -41,6 +41,7 @@ import io.harness.ngsettings.dto.SettingUpdateResponseDTO;
 import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.ngsettings.entities.Setting;
 import io.harness.ngsettings.entities.SettingConfiguration;
+import io.harness.ngsettings.entities.SettingConfiguration.SettingConfigurationKeys;
 import io.harness.ngsettings.events.SettingRestoreEvent;
 import io.harness.ngsettings.events.SettingUpdateEvent;
 import io.harness.ngsettings.mapper.SettingsMapper;
@@ -53,16 +54,19 @@ import io.harness.repositories.ngsettings.spring.SettingRepository;
 import io.harness.rule.Owner;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -114,7 +118,8 @@ public class SettingsServiceImplTest extends CategoryTest {
         .thenReturn(SettingDTO.builder().value(defaultValue).build());
     when(settingsMapper.toSetting(any(), any())).thenReturn(Setting.builder().build());
     when(licenseService.calculateAccountEdition(accountIdentifier)).thenReturn(Edition.ENTERPRISE);
-    List<SettingResponseDTO> dtoList = settingsService.list(accountIdentifier, null, null, SettingCategory.CORE, null);
+    List<SettingResponseDTO> dtoList =
+        settingsService.list(accountIdentifier, null, null, SettingCategory.CORE, null, false);
     verify(settingRepository, times(1)).findAll(any(Criteria.class));
     verify(settingConfigurationRepository, times(1)).findAll(any(Criteria.class));
     verify(settingsMapper, times(settingConfigurations.size()))
@@ -144,7 +149,8 @@ public class SettingsServiceImplTest extends CategoryTest {
     when(settingsMapper.writeSettingResponseDTO(setting, settingConfiguration, true, defaultValue))
         .thenReturn(SettingResponseDTO.builder().setting(SettingDTO.builder().identifier(identifier).build()).build());
     when(settingsMapper.toSetting(any(), any())).thenReturn(setting);
-    List<SettingResponseDTO> dtoList = settingsService.list(accountIdentifier, null, null, SettingCategory.CORE, null);
+    List<SettingResponseDTO> dtoList =
+        settingsService.list(accountIdentifier, null, null, SettingCategory.CORE, null, false);
     verify(settingRepository, times(1)).findAll(any(Criteria.class));
     verify(settingConfigurationRepository, times(1)).findAll(any(Criteria.class));
     verify(settingsMapper, times(settings.size())).writeSettingResponseDTO(any(), any(), any(), any());
@@ -389,6 +395,82 @@ public class SettingsServiceImplTest extends CategoryTest {
     List<SettingConfiguration> settingConfigurationList = settingsService.listDefaultSettings();
     verify(settingConfigurationRepository, times(1)).findAll();
     assertThat(settingConfigurationList).containsExactly(settingConfiguration);
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testListSettingsIncludingParentScopes() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+
+    Map<String, SettingConfiguration> settingConfigurations = new HashMap<>();
+
+    String identifier1 = randomAlphabetic(10);
+    SettingConfiguration settingConfiguration1 =
+        SettingConfiguration.builder().identifier(identifier1).allowedScopes(Set.of(ScopeLevel.ACCOUNT)).build();
+    settingConfigurations.put(identifier1, settingConfiguration1);
+
+    String identifier2 = randomAlphabetic(10);
+    SettingConfiguration settingConfiguration2 = SettingConfiguration.builder()
+                                                     .identifier(identifier2)
+                                                     .allowedScopes(Set.of(ScopeLevel.ACCOUNT, ScopeLevel.ORGANIZATION))
+                                                     .build();
+    settingConfigurations.put(identifier2, settingConfiguration2);
+
+    String identifier3 = randomAlphabetic(10);
+    SettingConfiguration settingConfiguration3 =
+        SettingConfiguration.builder()
+            .identifier(identifier3)
+            .allowedScopes(Set.of(ScopeLevel.ACCOUNT, ScopeLevel.ORGANIZATION, ScopeLevel.PROJECT))
+            .build();
+    settingConfigurations.put(identifier3, settingConfiguration3);
+
+    mockStatic(SettingUtils.class);
+    when(SettingUtils.getDefaultValue(any(), any())).thenReturn(defaultValue);
+
+    when(settingRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndCategory(
+             anyString(), any(), any(), any()))
+        .thenReturn(new ArrayList<>());
+
+    when(settingConfigurationRepository.findAll(any(Criteria.class)))
+        .thenReturn(List.of(settingConfiguration1, settingConfiguration2, settingConfiguration3));
+
+    when(settingsMapper.writeSettingDTO(settingConfiguration1, true, defaultValue))
+        .thenReturn(SettingDTO.builder().value(defaultValue).build());
+    when(settingsMapper.writeSettingDTO(settingConfiguration2, true, defaultValue))
+        .thenReturn(SettingDTO.builder().value(defaultValue).build());
+    when(settingsMapper.writeSettingDTO(settingConfiguration3, true, defaultValue))
+        .thenReturn(SettingDTO.builder().value(defaultValue).build());
+
+    when(settingsMapper.toSetting(any(), any())).thenReturn(Setting.builder().build());
+    when(licenseService.calculateAccountEdition(accountIdentifier)).thenReturn(Edition.ENTERPRISE);
+
+    ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+
+    List<SettingResponseDTO> dtoList =
+        settingsService.list(accountIdentifier, orgIdentifier, projectIdentifier, SettingCategory.CORE, null, true);
+
+    verify(settingRepository, times(1)).findAll(any(Criteria.class));
+
+    //
+    List<ScopeLevel> scopes = new ArrayList<>();
+    scopes.addAll(Arrays.asList(ScopeLevel.PROJECT, ScopeLevel.ACCOUNT, ScopeLevel.ORGANIZATION));
+
+    Criteria expectedCriteria =
+        Criteria.where(SettingConfigurationKeys.category)
+            .is(SettingCategory.CORE)
+            .and(SettingConfigurationKeys.allowedScopes)
+            .in(scopes)
+            .orOperator(Criteria.where(SettingConfigurationKeys.allowedPlans).is(null),
+                Criteria.where(SettingConfigurationKeys.allowedPlans + "." + Edition.ENTERPRISE.toString())
+                    .exists(true));
+
+    //
+    verify(settingConfigurationRepository, times(1)).findAll(criteriaArgumentCaptor.capture());
+    assertThat(expectedCriteria).isEqualTo(criteriaArgumentCaptor.getValue());
+    assertThat(dtoList.size()).isEqualTo(settingConfigurations.size());
   }
 
   @Test

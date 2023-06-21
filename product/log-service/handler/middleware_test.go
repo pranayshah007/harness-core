@@ -121,7 +121,7 @@ func TestAuthMiddleware_Success(t *testing.T) {
 	header.Add(authHeader, cookie)
 	httpReq := &http.Request{Form: v, Header: header}
 	ngClient := client.NewHTTPClient(config.Platform.BaseURL, false, "")
-	fn := AuthMiddleware(config, ngClient)
+	fn := AuthMiddleware(config, ngClient, false)
 	mockHandler := &MockHandler{}
 	handlerFunc := fn(mockHandler)
 	writer := httptest.NewRecorder()
@@ -142,7 +142,7 @@ func TestAuthMiddleware_TokenInURL_Success(t *testing.T) {
 	v.Add(authHeader, cookie)
 	httpReq := &http.Request{Form: v, Header: header}
 	ngClient := client.NewHTTPClient(config.Platform.BaseURL, false, "")
-	fn := AuthMiddleware(config, ngClient)
+	fn := AuthMiddleware(config, ngClient, false)
 	mockHandler := &MockHandler{}
 	handlerFunc := fn(mockHandler)
 	writer := httptest.NewRecorder()
@@ -165,7 +165,7 @@ func TestAuthMiddleware_IncorrectSecret(t *testing.T) {
 	header.Add(authHeader, cookie)
 	httpReq := &http.Request{Form: v, Header: header}
 	ngClient := client.NewHTTPClient(config.Platform.BaseURL, false, "")
-	fn := AuthMiddleware(config, ngClient)
+	fn := AuthMiddleware(config, ngClient, false)
 	mockHandler := &MockHandler{}
 	handlerFunc := fn(mockHandler)
 	writer := httptest.NewRecorder()
@@ -188,7 +188,7 @@ func TestAuthMiddleware_IncorrectAccount(t *testing.T) {
 	header.Add(authHeader, cookie)
 	httpReq := &http.Request{Form: v, Header: header}
 	ngClient := client.NewHTTPClient(config.Platform.BaseURL, false, "")
-	fn := AuthMiddleware(config, ngClient)
+	fn := AuthMiddleware(config, ngClient, false)
 	mockHandler := &MockHandler{}
 	handlerFunc := fn(mockHandler)
 	writer := httptest.NewRecorder()
@@ -210,7 +210,7 @@ func TestAuthMiddleware_NoKeyPresent(t *testing.T) {
 	header.Add(authHeader, cookie)
 	httpReq := &http.Request{Form: v, Header: header}
 	ngClient := client.NewHTTPClient(config.Platform.BaseURL, false, "")
-	fn := AuthMiddleware(config, ngClient)
+	fn := AuthMiddleware(config, ngClient, false)
 	mockHandler := &MockHandler{}
 	handlerFunc := fn(mockHandler)
 	writer := httptest.NewRecorder()

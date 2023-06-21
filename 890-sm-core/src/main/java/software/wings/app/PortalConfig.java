@@ -29,6 +29,7 @@ public class PortalConfig {
   private List<String> allowedOrigins = Lists.newArrayList();
   @JsonProperty(defaultValue = "") private String companyName = "";
   @JsonProperty private String zendeskBaseUrl;
+  @JsonProperty private String cannyBaseUrl;
   @JsonProperty private String gatewayPathPrefix;
   @JsonProperty(defaultValue = "/register/verify") private String verificationUrl = "/register/verify";
   @JsonProperty(defaultValue = "/app/%s/overview") private String applicationOverviewUrlPattern = "/app/%s/overview";
@@ -37,6 +38,7 @@ public class PortalConfig {
   @ConfigSecret private String jwtPasswordSecret;
   @ConfigSecret private String jwtExternalServiceSecret;
   @ConfigSecret private String jwtZendeskSecret;
+  @ConfigSecret private String jwtCannySecret;
   @ConfigSecret private String jwtMultiAuthSecret;
   @ConfigSecret private String jwtSsoRedirectSecret;
   @ConfigSecret private String jwtAuthSecret;

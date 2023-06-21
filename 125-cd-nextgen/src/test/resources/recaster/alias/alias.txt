@@ -18,6 +18,7 @@ io.harness.cdng.service.beans.ServiceOutcome$StageOverridesOutcome
 io.harness.cdng.provision.terragrunt.TerragruntApplyStepNode
 io.harness.cdng.service.steps.ServiceStepParameters
 io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters
+io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideAuditEventDTO
 io.harness.steps.group.GroupStepParametersV1
 io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig
 io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig
@@ -1000,3 +1001,4 @@ io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2S
 io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaRollbackV2StepInfo
 io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaRollbackV2StepNode
 io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaRollbackV2StepParameters
+io.harness.cdng.provision.terraform.TerraformEncryptOutput

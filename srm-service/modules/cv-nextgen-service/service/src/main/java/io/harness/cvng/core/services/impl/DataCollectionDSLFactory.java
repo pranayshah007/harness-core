@@ -24,6 +24,8 @@ public class DataCollectionDSLFactory {
   private static final String SUMOLOGIC_LOG_DATACOLLECTION_FILE = "sumologic-log.datacollection";
   private static final String ELK_LOG_DATACOLLECTION_FILE = "elk-log-fetch-data.datacollection";
   private static final String GRAFANA_LOKI_LOG_DATACOLLECTION_FILE = "grafana-loki-log-fetch-data.datacollection";
+
+  private static final String PROMETHEUS_METRIC_DATACOLLECTION_FILE = "prometheus-v2-dsl-metric.datacollection";
   private static final Map<DataSourceType, String> dataSourceTypeToDslScriptMap = new HashMap<>();
   private static final Map<DataSourceType, String> dataSourceTypeToDslScriptPathMap = new HashMap<>();
 
@@ -31,6 +33,7 @@ public class DataCollectionDSLFactory {
     dataSourceTypeToDslScriptPathMap.put(DataSourceType.SUMOLOGIC_LOG, SUMOLOGIC_LOG_DATACOLLECTION_FILE);
     dataSourceTypeToDslScriptPathMap.put(DataSourceType.ELASTICSEARCH, ELK_LOG_DATACOLLECTION_FILE);
     dataSourceTypeToDslScriptPathMap.put(DataSourceType.GRAFANA_LOKI_LOGS, GRAFANA_LOKI_LOG_DATACOLLECTION_FILE);
+    dataSourceTypeToDslScriptPathMap.put(DataSourceType.PROMETHEUS, PROMETHEUS_METRIC_DATACOLLECTION_FILE);
   }
 
   public static String readLogDSL(DataSourceType dataSourceType) {
@@ -43,6 +46,11 @@ public class DataCollectionDSLFactory {
     } else {
       throw new NotImplementedForHealthSourceException("Not Implemented for DataSourceType " + dataSourceType.name());
     }
+  }
+
+  public static String readMetricDSL(DataSourceType dataSourceType) {
+    // TODO check if we need a log and metric specific functions.
+    return readLogDSL(dataSourceType);
   }
   private static String readFile(String fileName) {
     try {

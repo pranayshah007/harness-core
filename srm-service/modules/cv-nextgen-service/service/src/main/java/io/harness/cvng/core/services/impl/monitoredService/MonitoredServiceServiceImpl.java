@@ -19,6 +19,9 @@ import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.get
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.CHANGE_EVENT_TYPE;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.COOL_OFF_DURATION;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.CURRENT_HEALTH_SCORE;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_IDENTIFIER;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_NAME;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_IDENTIFIER;
 import static io.harness.data.structure.CollectionUtils.distinctByKey;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -821,6 +824,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                        .serviceRef(monitoredService.getServiceIdentifier())
                        .serviceName(serviceIdNameMap.get(monitoredService.getServiceIdentifier()))
                        .environmentRefs(monitoredService.getEnvironmentIdentifierList())
+                       .tags(TagMapper.convertToMap(monitoredService.getTags()))
                        .type(monitoredService.getType())
                        .configuredChangeSources(isNotEmpty(monitoredService.getChangeSourceIdentifiers())
                                ? monitoredService.getChangeSourceIdentifiers().size()
@@ -1403,7 +1407,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                                               .filter(MonitoredServiceKeys.projectIdentifier, projectIdentifier)
                                               .asList()
                                               .stream()
-                                              .map(monitoredService -> monitoredService.getEnvironmentIdentifier())
+                                              .map(MonitoredService::getEnvironmentIdentifier)
                                               .collect(Collectors.toList());
 
     return nextGenService.listEnvironment(accountId, orgIdentifier, projectIdentifier, environmentIdentifiers)
@@ -1521,7 +1525,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
 
   private void checkLicenseForMonitoredServiceToggle(
       ProjectParams projectParams, MonitoredService monitoredService, boolean enable) {
-    if (enable == true
+    if (enable
         && featureFlagService.isFeatureFlagEnabled(
             projectParams.getAccountIdentifier(), FeatureFlagNames.CVNG_LICENSE_ENFORCEMENT)) {
       AccountLicenseDTO accountLicenseDTO = null;
@@ -1654,7 +1658,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         .peek(healthSource
             -> healthSource.setIdentifier(HealthSourceService.getNameSpacedIdentifier(
                 monitoredServiceEntity.getIdentifier(), healthSource.getIdentifier())))
-        .map(healthSource -> HealthSourceDTO.toHealthSourceDTO(healthSource))
+        .map(HealthSourceDTO::toHealthSourceDTO)
         .collect(Collectors.toList());
   }
 
@@ -1898,7 +1902,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     List<String> notificationRuleRefs = monitoredService.getNotificationRuleRefs()
                                             .stream()
                                             .filter(ref -> ref.isEligible(clock.instant(), COOL_OFF_DURATION))
-                                            .filter(ref -> ref.isEnabled())
+                                            .filter(NotificationRuleRef::isEnabled)
                                             .map(NotificationRuleRef::getNotificationRuleRef)
                                             .collect(Collectors.toList());
     return notificationRuleService.getEntities(projectParams, notificationRuleRefs);
@@ -1941,12 +1945,13 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
             break;
         }
         if (notificationData.shouldSendNotification()) {
+          Map<String, Object> entityDetails = Map.of(ENTITY_NAME, monitoredService.getName(), ENTITY_IDENTIFIER,
+              monitoredService.getIdentifier(), SERVICE_IDENTIFIER, monitoredService.getServiceIdentifier());
           CVNGNotificationChannel notificationChannel = notificationRule.getNotificationMethod();
           final NotificationRuleTemplateDataGenerator notificationRuleTemplateDataGenerator =
               notificationRuleConditionTypeTemplateDataGeneratorMap.get(condition.getType());
-          Map<String, String> templateData = notificationRuleTemplateDataGenerator.getTemplateData(projectParams,
-              monitoredService.getName(), monitoredService.getIdentifier(), monitoredService.getServiceIdentifier(),
-              monitoredService.getIdentifier(), condition, notificationData.getTemplateDataMap());
+          Map<String, String> templateData = notificationRuleTemplateDataGenerator.getTemplateData(
+              projectParams, entityDetails, condition, notificationData.getTemplateDataMap());
           String templateId = notificationRuleTemplateDataGenerator.getTemplateId(
               notificationRule.getType(), notificationChannel.getType());
           try {

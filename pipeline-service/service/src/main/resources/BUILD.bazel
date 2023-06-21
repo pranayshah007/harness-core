@@ -13,3 +13,8 @@ filegroup(
     name = "resource",
     srcs = glob(["**/*"]),
 )
+
+filegroup(
+    name = "static_resource",
+    srcs = glob(["static-schema/*"]),
+)

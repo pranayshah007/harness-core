@@ -68,7 +68,7 @@ public class CustomDeploymentTemplateService implements NgTemplateService {
     if (isNotEmpty(template.getVariables())) {
       template.getVariables().forEach(variable -> {
         variables.add(ImmutableMap.of("name", valueOrDefaultEmpty(variable.getName()), "type", "String", "value",
-            valueOrDefaultRuntime(variable.getValue()), "description", variable.getDescription()));
+            valueOrDefaultRuntime(variable.getValue()), "description", valueOrDefaultEmpty(variable.getDescription())));
       });
     }
 

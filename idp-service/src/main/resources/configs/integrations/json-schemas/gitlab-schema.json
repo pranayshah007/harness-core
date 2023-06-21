@@ -28,12 +28,20 @@
             "type": "object",
             "required": [
               "host",
+              "apiBaseUrl",
               "token"
             ],
             "properties": {
               "host": {
                 "$id": "#root/integrations/gitlab/items/host",
                 "title": "Host",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              },
+              "apiBaseUrl": {
+                "$id": "#root/integrations/gitlab/items/apiBaseUrl",
+                "title": "ApiBaseUrl",
                 "type": "string",
                 "default": "",
                 "pattern": "^.*$"

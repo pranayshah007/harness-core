@@ -8,6 +8,8 @@
 package io.harness.accesscontrol.commons.events;
 
 import static io.harness.authorization.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACTION;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY_TYPE;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -21,6 +23,7 @@ import io.harness.security.dto.ServicePrincipal;
 import com.google.inject.Inject;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -100,11 +103,22 @@ public abstract class EventListener extends RedisTraceConsumer {
             .collect(Collectors.toSet());
     return filteredConsumers.stream().allMatch(eventConsumer -> {
       try {
+        logConsumingMessage(message);
         return eventConsumer.getEventHandler().handle(message);
       } catch (Exception e) {
         log.error("Event Handler failed to process the message {} due to exception", message, e);
         return false;
       }
     });
+  }
+
+  private void logConsumingMessage(Message message) {
+    Map<String, String> metadataMap = message.getMessage().getMetadataMap();
+    if (metadataMap == null || !metadataMap.containsKey(ACTION) || !metadataMap.containsKey(ENTITY_TYPE)) {
+      return;
+    }
+    String entityType = metadataMap.get(ENTITY_TYPE);
+    String action = metadataMap.get(ACTION);
+    log.debug(String.format("Processing event id: %s entity %s %s", message.getId(), entityType, action));
   }
 }

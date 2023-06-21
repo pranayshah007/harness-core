@@ -7,6 +7,7 @@
 
 package io.harness.batch.processing.budgets.service.impl;
 
+import static io.harness.ccm.budget.BudgetPeriod.DAILY;
 import static io.harness.ccm.budget.BudgetType.SPECIFIED_AMOUNT;
 import static io.harness.rule.OwnerRule.SHUBHANSHU;
 
@@ -49,6 +50,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
@@ -123,8 +125,10 @@ public class BudgetAlertsServiceImplTest extends CategoryTest {
     when(mainConfiguration.getBaseUrl()).thenReturn(BASE_URL);
     when(mainConfiguration.getBillingDataPipelineConfig())
         .thenReturn(BillingDataPipelineConfig.builder().gcpProjectId("projectId").build());
-    when(budgetDao.list(ACCOUNT_ID)).thenReturn(Collections.singletonList(budget));
-    when(budgetGroupDao.list(ACCOUNT_ID, Integer.MAX_VALUE, 0)).thenReturn(Lists.newArrayList(new BudgetGroup[0]));
+    when(budgetDao.list(ACCOUNT_ID, Arrays.asList(DAILY), Integer.MAX_VALUE - 1, 0))
+        .thenReturn(Collections.singletonList(budget));
+    when(budgetGroupDao.list(ACCOUNT_ID, Arrays.asList(DAILY), Integer.MAX_VALUE, 0))
+        .thenReturn(Lists.newArrayList(new BudgetGroup[0]));
     when(cloudToHarnessMappingService.getUserGroup(ACCOUNT_ID, USER_GROUP_IDS[0], true)).thenReturn(userGroup);
     when(cloudToHarnessMappingService.getUser(MEMBER_ID)).thenReturn(user);
     when(ceSlackWebhookService.getByAccountId(budget.getAccountId())).thenReturn(ceSlackWebhook);
@@ -137,7 +141,7 @@ public class BudgetAlertsServiceImplTest extends CategoryTest {
   @Owner(developers = SHUBHANSHU)
   @Category(UnitTests.class)
   public void shouldSendBudgetAlerts() {
-    budgetAlertsService.sendBudgetAndBudgetGroupAlerts();
+    budgetAlertsService.sendBudgetAndBudgetGroupAlerts(Arrays.asList(DAILY));
     verify(notificationResourceClient, times(1)).sendNotification(any(), any());
   }
 }

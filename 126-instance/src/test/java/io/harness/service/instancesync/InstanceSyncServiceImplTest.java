@@ -319,7 +319,7 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
   @Owner(developers = NAMAN_TALAYCHA)
   @Category(UnitTests.class)
   public void processInstanceSyncForNewDeploymentInstanceSyncV2() throws IOException {
-    when(abstractInstanceSyncHandler.isInstanceSyncV2Enabled()).thenReturn(true);
+    when(abstractInstanceSyncHandler.isInstanceSyncV2EnabledAndSupported(ACCOUNT_IDENTIFIER)).thenReturn(true);
     InfrastructureMappingDTO infrastructureMappingDTO = InfrastructureMappingDTO.builder()
                                                             .accountIdentifier(ACCOUNT_IDENTIFIER)
                                                             .id(INFRASTRUCTURE_MAPPING_ID)
@@ -338,6 +338,7 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
     DeploymentSummaryDTO deploymentSummaryDTO =
         DeploymentSummaryDTO.builder()
             .instanceSyncKey("K8sDeploymentInfoDTO_namespace_key")
+            .accountIdentifier(ACCOUNT_IDENTIFIER)
             .orgIdentifier(ORG_IDENTIFIER)
             .projectIdentifier(PROJECT_IDENTIFIER)
             .infrastructureMapping(infrastructureMappingDTO)
@@ -451,7 +452,7 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
   @Owner(developers = NAMAN_TALAYCHA)
   @Category(UnitTests.class)
   public void processInstanceSyncForNewDeploymentInstanceSyncV2WhenInfoIsPresent() throws IOException {
-    when(abstractInstanceSyncHandler.isInstanceSyncV2Enabled()).thenReturn(true);
+    when(abstractInstanceSyncHandler.isInstanceSyncV2EnabledAndSupported(ACCOUNT_IDENTIFIER)).thenReturn(true);
     InfrastructureMappingDTO infrastructureMappingDTO = InfrastructureMappingDTO.builder()
                                                             .accountIdentifier(ACCOUNT_IDENTIFIER)
                                                             .id(INFRASTRUCTURE_MAPPING_ID)
@@ -475,6 +476,7 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
             .infrastructureMapping(infrastructureMappingDTO)
             .deploymentInfoDTO(deploymentInfoDTO)
             .infrastructureMappingId(INFRASTRUCTURE_MAPPING_ID)
+            .accountIdentifier(ACCOUNT_IDENTIFIER)
             .serverInstanceInfoList(List.of(
                 K8sServerInstanceInfo.builder().namespace("namespace").name("pod1").releaseName("releaseName").build()))
             .build();

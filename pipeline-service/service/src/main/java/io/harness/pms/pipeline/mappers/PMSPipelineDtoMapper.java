@@ -43,7 +43,7 @@ import io.harness.pms.pipeline.RecentExecutionInfoDTO;
 import io.harness.pms.pipeline.api.PipelineRequestInfoDTO;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.yaml.BasicPipeline;
-import io.harness.pms.pipeline.yaml.PipelineYaml;
+import io.harness.pms.pipeline.yaml.SimplifiedPipelineYaml;
 import io.harness.pms.utils.IdentifierGeneratorUtils;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlUtils;
@@ -132,10 +132,10 @@ public class PMSPipelineDtoMapper {
   public PipelineEntity toSimplifiedPipelineEntity(
       String accountId, String orgId, String projectId, String pipelineId, String pipelineName, String yaml) {
     try {
-      PipelineYaml pipelineYaml = YamlUtils.read(yaml, PipelineYaml.class);
+      SimplifiedPipelineYaml simplifiedPipelineYaml = YamlUtils.read(yaml, SimplifiedPipelineYaml.class);
       // give priority to yaml name
-      if (EmptyPredicate.isNotEmpty(pipelineYaml.getName())) {
-        pipelineName = pipelineYaml.getName();
+      if (EmptyPredicate.isNotEmpty(simplifiedPipelineYaml.getName())) {
+        pipelineName = simplifiedPipelineYaml.getName();
       }
       if (isEmpty(pipelineName)) {
         throw new InvalidRequestException("Pipeline name cannot be empty");

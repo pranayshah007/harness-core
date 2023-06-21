@@ -231,6 +231,9 @@ public class TriggerExecutionHelper {
           pipelineEntityToExecute =
               pmsPipelineService.getPipeline(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
                   ngTriggerEntity.getProjectIdentifier(), targetIdentifier, false, false);
+          if (EmptyPredicate.isEmpty(branch)) {
+            branch = GitAwareContextHelper.getBranchInRequestOrFromSCMGitMetadata();
+          }
         }
 
         if (pipelineEntityToExecute.isEmpty()) {
@@ -501,6 +504,7 @@ public class TriggerExecutionHelper {
           branch = triggerDetails.getNgTriggerConfigV2().getPipelineBranchName();
         }
       }
+
       GitAwareContextHelper.updateGitEntityContext(GitEntityInfo.builder().branch(branch).build());
       pipelineEntityToExecute = pmsPipelineService.getPipeline(ngTriggerEntity.getAccountId(),
           ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(), targetIdentifier, false, false);
@@ -510,6 +514,10 @@ public class TriggerExecutionHelper {
                 + ", with ProjectId: " + ngTriggerEntity.getProjectIdentifier() + ", For Trigger: "
                 + ngTriggerEntity.getIdentifier() + " does not exist in branch: " + branch + " configured in trigger.",
             USER);
+      }
+
+      if (EmptyPredicate.isEmpty(branch)) {
+        branch = GitAwareContextHelper.getBranchInRequestOrFromSCMGitMetadata();
       }
       GitAwareContextHelper.updateGitEntityContext(
           getGitSyncContextWithRepoAndFilePath(pipelineEntityToExecute.get(), branch).getGitBranchInfo());

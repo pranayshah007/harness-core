@@ -22,6 +22,7 @@ java_library(
         "//960-api-services/src/main/java/io/harness/exception/sanitizer:module",
         "//960-api-services/src/main/java/io/harness/retry:module",
         "//960-api-services/src/main/java/io/harness/security/encryption:module",
+        "//960-api-services/src/main/java/io/harness/servicenow/auth/refreshtoken:module",
         "//960-api-services/src/main/java/software/wings/helpers/ext/servicenow:module",
         "//970-api-services-beans/src/main/java/io/harness/adfs:module",
         "//970-api-services-beans/src/main/java/io/harness/logging:module",

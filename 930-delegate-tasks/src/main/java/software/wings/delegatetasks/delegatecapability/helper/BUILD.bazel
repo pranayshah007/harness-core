@@ -15,6 +15,7 @@ java_library(
         "//930-delegate-tasks/src/main/java/software/wings/beans/artifact:module",
         "//930-delegate-tasks/src/main/java/software/wings/beans/host:module",
         "//950-delegate-tasks-beans:module",
+        "//951-delegate-task-commons/src/main/java/io/harness/delegate/beans:module",
         "//957-cg-beans:module",
         "//970-api-services-beans/src/main/java/io/harness/security/encryption:module",
         "//970-api-services-beans/src/main/java/io/harness/security/encryption/setting:module",

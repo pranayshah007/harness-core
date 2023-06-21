@@ -30,6 +30,7 @@ public class K8sReleaseConstants {
   public static final String RELEASE_PRUNING_ENABLED_KEY = "harness.io/pruning-enabled";
   public static final String RELEASE_SECRET_RELEASE_COLOR_KEY = "color";
   public static final String RELEASE_SECRET_RELEASE_BG_ENVIRONMENT_KEY = "harness.io/bg-environment";
+  public static final String RELEASE_SECRET_RELEASE_MANIFEST_HASH_KEY = "harness.io/manifest-hash";
   public static final Map<String, String> RELEASE_SECRET_TYPE_MAP =
       Map.of(RELEASE_SECRET_TYPE_KEY, RELEASE_SECRET_TYPE_VALUE);
   public static final Map<String, String> RELEASE_SECRET_LABELS_MAP =

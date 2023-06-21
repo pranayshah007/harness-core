@@ -18,8 +18,8 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.idp.configmanager.ConfigType;
 import io.harness.idp.configmanager.beans.entity.AppConfigEntity;
+import io.harness.idp.configmanager.utils.ConfigType;
 import io.harness.rule.Owner;
 
 import java.util.Arrays;

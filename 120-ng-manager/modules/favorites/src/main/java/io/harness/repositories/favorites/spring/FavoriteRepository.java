@@ -16,6 +16,7 @@ import io.harness.favorites.entities.Favorite;
 import io.harness.repositories.favorites.custom.FavoriteRepositoryCustom;
 
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 @OwnedBy(PL)
@@ -28,8 +29,17 @@ public interface FavoriteRepository extends PagingAndSortingRepository<Favorite,
   List<Favorite> findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndUserIdentifier(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String userIdentifier);
 
+  Optional<Favorite>
+  findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndUserIdentifierAndResourceTypeAndResourceIdentifier(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String userIdentifier,
+      ResourceType resourceType, String resourceId);
+
   void
   deleteByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndUserIdentifierAndResourceTypeAndResourceIdentifier(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String userIdentifier,
       ResourceType resourceType, String resourceIdentifier);
+
+  void deleteByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndResourceTypeAndResourceIdentifier(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, ResourceType resourceType,
+      String resourceIdentifier);
 }

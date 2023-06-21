@@ -14,7 +14,6 @@ import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.engine.execution.ExecutionInputService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.exception.InvalidRequestException;
@@ -26,17 +25,14 @@ import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.pipeline.PipelineResourceConstants;
-import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.execution.beans.dto.ExecutionInputDTO;
 import io.harness.pms.plan.execution.beans.dto.ExecutionInputStatus;
 import io.harness.pms.plan.execution.beans.dto.ExecutionInputStatusDTO;
 import io.harness.pms.plan.execution.beans.dto.ExecutionInputVariablesResponseDTO;
 import io.harness.pms.plan.execution.mapper.ExecutionInputDTOMapper;
-import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.variables.VariableCreatorMergeService;
 import io.harness.pms.variables.VariableMergeServiceResponse;
-import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -90,11 +86,8 @@ import lombok.extern.slf4j.Slf4j;
 @PipelineServiceAuth
 @Slf4j
 public class ExecutionInputResource {
-  @Inject private final PMSExecutionService pmsExecutionService;
-  @Inject private final PMSPipelineService pmsPipelineService;
   @Inject private final VariableCreatorMergeService variableCreatorMergeService;
   @Inject private final ExecutionInputService executionInputService;
-  @Inject private final PmsFeatureFlagService pmsFeatureFlagService;
   @Inject PlanExecutionMetadataService planExecutionMetadataService;
 
   @GET
@@ -120,10 +113,6 @@ public class ExecutionInputResource {
           description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) @ProjectIdentifier String projectIdentifier,
       @NotNull @PathParam("nodeExecutionId") @Parameter(
           description = PlanExecutionResourceConstants.NODE_EXECUTION_ID_PARAM_MESSAGE) String nodeExecutionId) {
-    if (!pmsFeatureFlagService.isEnabled(accountId, FeatureName.NG_EXECUTION_INPUT)) {
-      throw new InvalidRequestException(
-          "Feature flag [NG_EXECUTION_INPUT] not enabled to support execution inputs in a Pipeline.");
-    }
     ExecutionInputInstance executionInputInstance = executionInputService.getExecutionInputInstance(nodeExecutionId);
     if (executionInputInstance == null) {
       throw new InvalidRequestException(
@@ -157,11 +146,6 @@ public class ExecutionInputResource {
           description = PlanExecutionResourceConstants.NODE_EXECUTION_ID_PARAM_MESSAGE) String nodeExecutionId,
       @RequestBody(required = true,
           description = "Execution Input for the provided nodeExecutionId") @NotNull String executionInputYaml) {
-    if (!pmsFeatureFlagService.isEnabled(accountId, FeatureName.NG_EXECUTION_INPUT)) {
-      throw new InvalidRequestException(
-          "Feature flag [NG_EXECUTION_INPUT] not enabled to support execution inputs in a Pipeline.");
-    }
-
     boolean isInputProcessed = executionInputService.continueExecution(nodeExecutionId, executionInputYaml);
     return ResponseDTO.newResponse(
         ExecutionInputStatusDTO.builder()

@@ -35,6 +35,7 @@ shared_dependencies = [
     "//950-telemetry:module",
     "//952-scm-java-client:module",
     "//959-common-entities:module",
+    "//960-continuous-features:module",
     "//960-yaml-sdk:module",
     "//965-api-key-filter:module",
     "//product/ci/scm/proto:ciscm_java_proto",

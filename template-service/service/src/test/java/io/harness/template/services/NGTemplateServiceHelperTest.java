@@ -10,15 +10,21 @@ package io.harness.template.services;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.encryption.Scope;
+import io.harness.eraro.ErrorCode;
+import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ScmException;
+import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
@@ -26,17 +32,22 @@ import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
+import io.harness.ng.core.template.ListingScope;
 import io.harness.ng.core.template.TemplateListType;
+import io.harness.persistence.gitaware.GitAware;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.rule.Owner;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.gitsync.TemplateGitSyncBranchContextGuard;
 import io.harness.template.resources.beans.TemplateFilterPropertiesDTO;
+import io.harness.template.resources.beans.UpdateGitDetailsParams;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import org.bson.Document;
 import org.junit.Before;
@@ -204,6 +215,11 @@ public class NGTemplateServiceHelperTest extends CategoryTest {
     TemplateFilterPropertiesDTO propertiesDTO = TemplateFilterPropertiesDTO.builder()
                                                     .templateNames(Collections.singletonList(TEMPLATE_IDENTIFIER))
                                                     .description("random")
+                                                    .listingScope(ListingScope.builder()
+                                                                      .accountIdentifier(ACCOUNT_ID)
+                                                                      .orgIdentifier(ORG_IDENTIFIER)
+                                                                      .projectIdentifier(PROJ_IDENTIFIER)
+                                                                      .build())
                                                     .build();
     Criteria criteria = templateServiceHelper.formCriteria(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "", propertiesDTO, false, TEMPLATE_IDENTIFIER, false);
@@ -239,6 +255,42 @@ public class NGTemplateServiceHelperTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testFormCriteriaUsingFilterDtoWithSearchTerm() {
+    Criteria criteria = templateServiceHelper.formCriteria(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "", false, null, "search", true);
+    Document criteriaObject = criteria.getCriteriaObject();
+    assertThat(criteriaObject.get(TemplateEntityKeys.accountId)).isEqualTo(ACCOUNT_ID);
+    assertThat(((Document) ((List<?>) ((Document) ((List<?>) criteriaObject.get("$and")).get(1)).get("$or")).get(4))
+                   .get("tags.key"))
+        .isNotNull();
+    assertThat(((Document) ((List<?>) ((Document) ((List<?>) criteriaObject.get("$and")).get(1)).get("$or")).get(5))
+                   .get("tags.value"))
+        .isNotNull();
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testFormCriteriaUsingFilterDtoAndFilterIdentifier() {
+    TemplateFilterPropertiesDTO propertiesDTO = TemplateFilterPropertiesDTO.builder()
+                                                    .templateNames(Collections.singletonList(TEMPLATE_IDENTIFIER))
+                                                    .description("random")
+                                                    .listingScope(ListingScope.builder()
+                                                                      .accountIdentifier(ACCOUNT_ID)
+                                                                      .orgIdentifier(ORG_IDENTIFIER)
+                                                                      .projectIdentifier(PROJ_IDENTIFIER)
+                                                                      .build())
+                                                    .build();
+    assertThatThrownBy(()
+                           -> templateServiceHelper.formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               "filterIdentifier", propertiesDTO, false, TEMPLATE_IDENTIFIER, false))
+        .hasMessage("Can not apply both filter properties and saved filter together")
+        .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
   public void testFormCriteriaForRepoListing() {
@@ -263,5 +315,77 @@ public class NGTemplateServiceHelperTest extends CategoryTest {
     assertThat(criteriaObject.get(TemplateEntityKeys.accountId)).isEqualTo(ACCOUNT_ID);
     assertThat(((Document) (criteriaObject.get("orgIdentifier"))).get("$exists").equals(false));
     assertThat(((Document) (criteriaObject.get("projectIdentifier"))).get("$exists").equals(false));
+
+    criteria = templateServiceHelper.formCriteriaForRepoListing(ACCOUNT_ID, "", "", true);
+    criteriaObject = criteria.getCriteriaObject();
+    assertThat(criteriaObject.get(TemplateEntityKeys.accountId)).isEqualTo(ACCOUNT_ID);
+
+    criteria = templateServiceHelper.formCriteriaForRepoListing(ACCOUNT_ID, ORG_IDENTIFIER, "", true);
+    criteriaObject = criteria.getCriteriaObject();
+    assertThat(criteriaObject.get(TemplateEntityKeys.accountId)).isEqualTo(ACCOUNT_ID);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testGetOrThrowExceptionIfInvalid() {
+    Optional<TemplateEntity> template1 =
+        Optional.of(TemplateEntity.builder().accountId(ACCOUNT_ID).isEntityInvalid(true).build());
+    doReturn(template1)
+        .when(templateRepository)
+        .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(ACCOUNT_ID,
+            ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, true, false, false, false);
+    assertThatThrownBy(()
+                           -> templateServiceHelper.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_IDENTIFIER,
+                               PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, false, false))
+        .isInstanceOf(NGTemplateException.class)
+        .hasMessage("Invalid Template yaml cannot be used. Please correct the template version yaml.");
+
+    when(
+        templateRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "temp2", TEMPLATE_VERSION_LABEL, true, false, false, false))
+        .thenThrow(new NullPointerException());
+    assertThatThrownBy(()
+                           -> templateServiceHelper.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_IDENTIFIER,
+                               PROJ_IDENTIFIER, "temp2", TEMPLATE_VERSION_LABEL, false, false, false))
+        .isInstanceOf(InvalidRequestException.class);
+
+    when(
+        templateRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "temp3", TEMPLATE_VERSION_LABEL, true, false, false, false))
+        .thenThrow(new ScmException(ErrorCode.DEFAULT_ERROR_CODE));
+    assertThatThrownBy(()
+                           -> templateServiceHelper.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_IDENTIFIER,
+                               PROJ_IDENTIFIER, "temp3", TEMPLATE_VERSION_LABEL, false, false, false))
+        .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testBatchTemplates() {
+    String uniqueKey1 = "uniqueKey1";
+    Map<String, GitAware> batchFilesResponse = new HashMap<>();
+    batchFilesResponse.put(uniqueKey1, TemplateEntity.builder().build());
+    doReturn(batchFilesResponse).when(gitAwareEntityHelper).fetchEntitiesFromRemote(ACCOUNT_ID, new HashMap<>());
+    templateServiceHelper.getBatchRemoteTemplates(ACCOUNT_ID, new HashMap<>());
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testGetGitDetailsUpdate() {
+    templateServiceHelper.getGitDetailsUpdate(
+        UpdateGitDetailsParams.builder().repoName("repo").connectorRef("connector").filePath("filepath").build());
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testGetComment() {
+    assertThat(templateServiceHelper.getComment("created", TEMPLATE_IDENTIFIER, "commitMessage"))
+        .isEqualTo("commitMessage");
+    assertThat(templateServiceHelper.getComment("created", TEMPLATE_IDENTIFIER, ""))
+        .isEqualTo("[HARNESS]: Template with template identifier [template1] has been [created]");
   }
 }

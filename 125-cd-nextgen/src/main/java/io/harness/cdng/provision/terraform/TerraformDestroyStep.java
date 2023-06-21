@@ -13,7 +13,6 @@ import static io.harness.cdng.provision.terraform.TerraformPlanCommand.DESTROY;
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -141,10 +140,6 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
     log.info("Running Obtain Inline Task for the Destroy Step");
     boolean isTerraformCloudCli = parameters.getConfiguration().getSpec().getIsTerraformCloudCli().getValue();
 
-    if (isTerraformCloudCli) {
-      helper.checkIfTerraformCloudCliIsEnabled(FeatureName.CD_TERRAFORM_CLOUD_CLI_NG, true, ambiance);
-    }
-
     helper.validateDestroyStepConfigFilesInline(parameters);
     TerraformExecutionDataParameters spec = parameters.getConfiguration().getSpec();
     TerraformTaskNGParametersBuilder builder = TerraformTaskNGParameters.builder();
@@ -248,6 +243,8 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
             .environmentVariables(inheritOutput.getEnvironmentVariables() == null
                     ? new HashMap<>()
                     : inheritOutput.getEnvironmentVariables())
+            .encryptDecryptPlanForHarnessSMOnManager(
+                helper.tfPlanEncryptionOnManager(accountId, inheritOutput.getEncryptionConfig()))
             .timeoutInMillis(
                 StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .useOptimizedTfPlan(true)

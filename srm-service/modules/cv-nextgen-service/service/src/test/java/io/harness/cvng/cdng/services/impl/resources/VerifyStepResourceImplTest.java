@@ -23,6 +23,7 @@ import io.harness.cvng.activity.beans.DeploymentActivitySummaryDTO;
 import io.harness.cvng.analysis.beans.CanaryAdditionalInfo;
 import io.harness.cvng.analysis.beans.CanaryBlueGreenAdditionalInfo.HostSummaryInfo;
 import io.harness.cvng.analysis.beans.Risk;
+import io.harness.cvng.analysis.beans.TimeSeriesRecordDTO;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
 import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService;
 import io.harness.cvng.beans.DataSourceType;
@@ -42,14 +43,21 @@ import io.harness.cvng.cdng.beans.v2.HealthSource;
 import io.harness.cvng.cdng.beans.v2.MetricsAnalysis;
 import io.harness.cvng.cdng.beans.v2.MetricsAnalysisOverview;
 import io.harness.cvng.cdng.beans.v2.ProviderType;
+import io.harness.cvng.cdng.beans.v2.VerificationMetricsTimeSeries;
 import io.harness.cvng.cdng.beans.v2.VerificationOverview;
 import io.harness.cvng.cdng.beans.v2.VerificationResult;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.cdng.resources.VerifyStepResourceImpl;
 import io.harness.cvng.cdng.services.api.CVNGStepTaskService;
 import io.harness.cvng.core.beans.LoadTestAdditionalInfo;
+import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceDTO;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
+import io.harness.cvng.core.entities.CVConfig;
+import io.harness.cvng.core.entities.CloudWatchMetricCVConfig;
+import io.harness.cvng.core.entities.VerificationTask;
+import io.harness.cvng.core.services.api.TimeSeriesRecordService;
+import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.impl.FeatureFlagServiceImpl;
 import io.harness.cvng.resources.VerifyStepResource;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
@@ -67,10 +75,15 @@ import com.google.common.io.Resources;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -90,6 +103,8 @@ public class VerifyStepResourceImplTest extends CvNextGenTestBase {
   @Mock private DeploymentLogAnalysisService deploymentLogAnalysisService;
   @Mock private DeploymentTimeSeriesAnalysisService deploymentTimeSeriesAnalysisService;
   @Mock TelemetryReporter telemetryReporter;
+  @Mock private VerificationTaskService verificationTaskService;
+  @Mock private TimeSeriesRecordService timeSeriesRecordService;
 
   private static VerifyStepResource verifyStepResource = new VerifyStepResourceImpl();
   private BuilderFactory builderFactory;
@@ -119,6 +134,8 @@ public class VerifyStepResourceImplTest extends CvNextGenTestBase {
     FieldUtils.writeField(
         verifyStepResource, "deploymentTimeSeriesAnalysisService", deploymentTimeSeriesAnalysisService, true);
     FieldUtils.writeField(verifyStepResource, "stepTaskService", stepTaskService, true);
+    FieldUtils.writeField(verifyStepResource, "verificationTaskService", verificationTaskService, true);
+    FieldUtils.writeField(verifyStepResource, "timeSeriesRecordService", timeSeriesRecordService, true);
 
     loadVerificationRelatedDocuments(verifyStepExecutionId);
     deploymentActivitySummaryDTO = getDeploymentActivitySummaryDTO();
@@ -149,6 +166,10 @@ public class VerifyStepResourceImplTest extends CvNextGenTestBase {
                         .build());
     when(deploymentTimeSeriesAnalysisService.getFilteredMetricAnalysesForVerifyStepExecutionId(any(), any(), any()))
         .thenReturn(metricsAnalyses);
+    when(deploymentTimeSeriesAnalysisService.getControlDataTimeRange(any(), any(), any()))
+        .thenReturn(Optional.of(TimeRange.builder().startTime(Instant.ofEpochSecond(1)).build()));
+    when(deploymentTimeSeriesAnalysisService.getTestDataTimeRange(any(), any()))
+        .thenReturn(TimeRange.builder().startTime(Instant.ofEpochSecond(1)).build());
   }
 
   @Test
@@ -164,6 +185,126 @@ public class VerifyStepResourceImplTest extends CvNextGenTestBase {
     List<String> transactionGroups = response.readEntity(List.class);
     assertThat(transactionGroups).hasSize(1);
     assertThat(transactionGroups.get(0)).isEqualTo("abc");
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetDebugMetricTimeSeriesForVerifyStepExecutionId() {
+    Map<String, CVConfig> cvConfigMap = new HashMap<>();
+    cvConfigMap.put("c1", CloudWatchMetricCVConfig.builder().uuid("c1").identifier("s/h1").build());
+    cvConfigMap.put("c2", CloudWatchMetricCVConfig.builder().uuid("c2").identifier("s/h2").build());
+    VerificationJobInstance verificationJobInstance1 = builderFactory.verificationJobInstanceBuilder().build();
+    verificationJobInstance1.setCvConfigMap(cvConfigMap);
+    Set<String> verificationTaskIds = new HashSet<>();
+    verificationTaskIds.add("v1");
+    verificationTaskIds.add("v2");
+    VerificationTask verificationTask1 =
+        VerificationTask.builder()
+            .uuid("v1")
+            .taskInfo(
+                VerificationTask.DeploymentInfo.builder().cvConfigId("c1").verificationJobInstanceId("uuid1").build())
+            .build();
+    VerificationTask verificationTask2 =
+        VerificationTask.builder()
+            .uuid("v2")
+            .taskInfo(
+                VerificationTask.DeploymentInfo.builder().cvConfigId("c2").verificationJobInstanceId("uuid1").build())
+            .build();
+
+    when(verificationTaskService.getVerificationTaskIds(any(), any())).thenReturn(verificationTaskIds);
+    when(verificationTaskService.getVerificationTasksForGivenIds(any()))
+        .thenReturn(List.of(verificationTask1, verificationTask2));
+    when(verificationJobInstanceService.getVerificationJobInstance(any())).thenReturn(verificationJobInstance1);
+    when(timeSeriesRecordService.getTimeSeriesRecordsForVerificationTaskId(any()))
+        .thenReturn(List.of(TimeSeriesRecordDTO.builder()
+                                .host("a1")
+                                .epochMinute(1)
+                                .metricName("m1")
+                                .groupName("g1")
+                                .metricIdentifier("M1")
+                                .metricValue(1)
+                                .build()));
+
+    Response response = RESOURCES.client()
+                            .target(baseUrl + "/debug/metrics/time-series")
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .get();
+
+    assertThat(response.getStatus()).isEqualTo(200);
+    VerificationMetricsTimeSeries verificationMetricsTimeSeries =
+        response.readEntity(VerificationMetricsTimeSeries.class);
+    assertThat(verificationMetricsTimeSeries).isNotNull();
+    assertThat(verificationMetricsTimeSeries.getVerificationId()).isEqualTo(verifyStepExecutionId);
+    assertThat(verificationMetricsTimeSeries.getHealthSources()).hasSize(2);
+    assertThat(verificationMetricsTimeSeries.getHealthSources().get(0).getHealthSourceIdentifier()).isEqualTo("h1");
+    assertThat(verificationMetricsTimeSeries.getHealthSources().get(0).getTransactionGroups()).hasSize(1);
+    assertThat(
+        verificationMetricsTimeSeries.getHealthSources().get(0).getTransactionGroups().get(0).getTransactionGroupName())
+        .isEqualTo("g1");
+    assertThat(verificationMetricsTimeSeries.getHealthSources().get(0).getTransactionGroups().get(0).getMetrics())
+        .hasSize(1);
+
+    assertThat(verificationMetricsTimeSeries.getHealthSources()
+                   .get(0)
+                   .getTransactionGroups()
+                   .get(0)
+                   .getMetrics()
+                   .get(0)
+                   .getMetricName())
+        .isEqualTo("m1");
+    assertThat(verificationMetricsTimeSeries.getHealthSources()
+                   .get(0)
+                   .getTransactionGroups()
+                   .get(0)
+                   .getMetrics()
+                   .get(0)
+                   .getNodes())
+        .hasSize(1);
+    assertThat(verificationMetricsTimeSeries.getHealthSources()
+                   .get(0)
+                   .getTransactionGroups()
+                   .get(0)
+                   .getMetrics()
+                   .get(0)
+                   .getNodes()
+                   .get(0)
+                   .getNodeIdentifier())
+        .isEqualTo("a1");
+    assertThat(verificationMetricsTimeSeries.getHealthSources()
+                   .get(0)
+                   .getTransactionGroups()
+                   .get(0)
+                   .getMetrics()
+                   .get(0)
+                   .getNodes()
+                   .get(0)
+                   .getTimeSeries())
+        .hasSize(1);
+    assertThat(verificationMetricsTimeSeries.getHealthSources()
+                   .get(0)
+                   .getTransactionGroups()
+                   .get(0)
+                   .getMetrics()
+                   .get(0)
+                   .getNodes()
+                   .get(0)
+                   .getTimeSeries()
+                   .get(0)
+                   .getMetricValue())
+        .isEqualTo(1.0);
+    assertThat(verificationMetricsTimeSeries.getHealthSources()
+                   .get(0)
+                   .getTransactionGroups()
+                   .get(0)
+                   .getMetrics()
+                   .get(0)
+                   .getNodes()
+                   .get(0)
+                   .getTimeSeries()
+                   .get(0)
+                   .getEpochSecond())
+        .isEqualTo(60);
   }
 
   @Test
@@ -246,6 +387,9 @@ public class VerifyStepResourceImplTest extends CvNextGenTestBase {
     assertThat(verificationOverview.getVerificationStatus()).isEqualTo(ActivityVerificationStatus.VERIFICATION_PASSED);
     assertThat(verificationOverview.getVerificationProgressPercentage()).isEqualTo(1);
     assertThat(verificationOverview.getVerificationStartTimestamp()).isEqualTo(1);
+    assertThat(verificationOverview.getControlDataStartTimestamp()).isEqualTo(1000);
+    assertThat(verificationOverview.getTestDataStartTimestamp()).isEqualTo(1000);
+
     assertThat(verificationOverview.getAppliedDeploymentAnalysisType()).isEqualTo(AppliedDeploymentAnalysisType.CANARY);
 
     assertThat(verificationOverview.getControlNodes().getNodeType()).isEqualTo(AnalysedNodeType.PRIMARY);

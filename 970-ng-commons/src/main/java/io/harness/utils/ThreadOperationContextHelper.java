@@ -9,6 +9,7 @@ package io.harness.utils;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.context.GlobalContext;
 import io.harness.gitx.ThreadOperationContext;
 import io.harness.gitx.USER_FLOW;
 import io.harness.manage.GlobalContextManager;
@@ -34,5 +35,13 @@ public class ThreadOperationContextHelper {
       return ThreadOperationContext.builder().build();
     }
     return threadOperationContext;
+  }
+
+  public void setUserFlow(USER_FLOW userFlow) {
+    if (!GlobalContextManager.isAvailable()) {
+      GlobalContextManager.set(new GlobalContext());
+    }
+    GlobalContextManager.upsertGlobalContextRecord(
+        ThreadOperationContextHelper.getOrInitThreadOperationContext().withUserFlow(userFlow));
   }
 }
