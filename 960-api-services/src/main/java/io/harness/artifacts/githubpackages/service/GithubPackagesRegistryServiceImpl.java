@@ -57,7 +57,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
-import okhttp3.Credentials;
 import okhttp3.Headers;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -247,8 +246,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
       Request.Builder requestBuilder = new Request.Builder().url(artifactUrl);
 
       if (githubPackagesInternalConfig.hasCredentials()) {
-        requestBuilder.header("Authorization",
-            Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getToken()));
+        requestBuilder.header("Authorization", "token " + githubPackagesInternalConfig.getToken());
       }
 
       okhttp3.Response response =

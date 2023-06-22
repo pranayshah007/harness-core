@@ -13,7 +13,6 @@ import static io.harness.delegate.task.winrm.DownloadWinRmScript.DOWNLOAD_ARTIFA
 import static io.harness.delegate.task.winrm.DownloadWinRmScript.DOWNLOAD_ARTIFACT_USING_CREDENTIALS_BY_PROXY_PS;
 import static io.harness.delegate.task.winrm.DownloadWinRmScript.OUT_FILE;
 import static io.harness.delegate.task.winrm.DownloadWinRmScript.URI;
-import static io.harness.delegate.utils.GithubPackageUtils.getBasicAuthHeader;
 import static io.harness.delegate.utils.GithubPackageUtils.getGithubPackagesArtifactDelegateConfig;
 import static io.harness.exception.WingsException.USER;
 
@@ -70,9 +69,8 @@ public class GithubPackageArtifactDownloadHandler implements ArtifactDownloadHan
       final String artifactUrl, final String artifactName, final String destinationPath) {
     StringBuilder command = new StringBuilder(128);
     if (githubPackagesInternalConfig.hasCredentials()) {
-      String basicAuthHeader = getBasicAuthHeader(githubPackagesInternalConfig);
       command.append("curl --fail -H \"Authorization: ")
-          .append(basicAuthHeader)
+          .append("token " + githubPackagesInternalConfig.getToken())
           .append("\" -X GET \"")
           .append(artifactUrl)
           .append("\" -o \"")
@@ -97,7 +95,7 @@ public class GithubPackageArtifactDownloadHandler implements ArtifactDownloadHan
       final String artifactUrl, final String artifactName, final String destinationPath) {
     if (githubPackagesInternalConfig.hasCredentials()) {
       return DOWNLOAD_ARTIFACT_USING_CREDENTIALS_BY_PROXY_PS
-          .replace(AUTHORIZATION, getBasicAuthHeader(githubPackagesInternalConfig))
+          .replace(AUTHORIZATION, "token " + githubPackagesInternalConfig.getToken())
           .replace(URI, artifactUrl)
           .replace(OUT_FILE, destinationPath.trim() + "\\" + artifactName);
     } else {

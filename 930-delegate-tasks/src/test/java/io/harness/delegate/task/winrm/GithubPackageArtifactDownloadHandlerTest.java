@@ -78,7 +78,7 @@ public class GithubPackageArtifactDownloadHandlerTest extends CategoryTest {
     String result = handler.getCommandString(githubPackagesArtifactDelegateConfig, "destinationPath", ScriptType.BASH);
     assertThat(result.trim())
         .isEqualTo(
-            "curl --fail -H \"Authorization: Basic dXNlcm5hbWU6ZGVjcnlwdGVkVmFsdWU=\" -X GET \"https://github.com/testuser/repo/myartifact-1.8.war\" -o \"destinationPath/myartifact-1.8.war\"");
+            "curl --fail -H \"Authorization: token decryptedValue\" -X GET \"https://github.com/testuser/repo/myartifact-1.8.war\" -o \"destinationPath/myartifact-1.8.war\"");
   }
 
   @Test
@@ -91,7 +91,7 @@ public class GithubPackageArtifactDownloadHandlerTest extends CategoryTest {
         handler.getCommandString(githubPackagesArtifactDelegateConfig, "destinationPath", ScriptType.POWERSHELL);
     assertThat(result.trim())
         .isEqualTo("$Headers = @{\n"
-            + "    Authorization = \"Basic dXNlcm5hbWU6ZGVjcnlwdGVkVmFsdWU=\"\n"
+            + "    Authorization = \"token decryptedValue\"\n"
             + "}\n"
             + "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12\n"
             + "$ProgressPreference = 'SilentlyContinue'\n"
