@@ -69,8 +69,8 @@ public class GithubPackageArtifactDownloadHandler implements ArtifactDownloadHan
       final String artifactUrl, final String artifactName, final String destinationPath) {
     StringBuilder command = new StringBuilder(128);
     if (githubPackagesInternalConfig.hasCredentials()) {
-      command.append("curl --fail -H \"Authorization: ")
-          .append("token " + githubPackagesInternalConfig.getToken())
+      command.append("curl --fail -H \"Authorization: token ")
+          .append(githubPackagesInternalConfig.getToken())
           .append("\" -X GET \"")
           .append(artifactUrl)
           .append("\" -o \"")
