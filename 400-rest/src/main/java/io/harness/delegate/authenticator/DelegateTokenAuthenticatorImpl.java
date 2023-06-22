@@ -28,6 +28,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.context.GlobalContext;
+import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateToken;
 import io.harness.delegate.beans.DelegateToken.DelegateTokenKeys;
 import io.harness.delegate.beans.DelegateTokenStatus;
@@ -44,6 +45,7 @@ import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.security.DelegateTokenAuthenticator;
+import io.harness.service.intfc.DelegateCache;
 
 import software.wings.beans.Account;
 
@@ -82,6 +84,7 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
   @Inject private HPersistence persistence;
   @Inject private DelegateTokenCacheHelper delegateTokenCacheHelper;
   @Inject private DelegateJWTCache delegateJWTCache;
+  @Inject private DelegateCache delegateCache;
   @Inject private DelegateMetricsService delegateMetricsService;
   @Inject private AgentMtlsVerifier agentMtlsVerifier;
   @Inject private DelegateSecretManager delegateSecretManager;
@@ -154,7 +157,10 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
       } catch (ParseException e) {
         log.warn("Couldn't parse token", e);
       }
-      delegateJWTCache.setDelegateJWTCache(tokenHash, delegateTokenName, new DelegateJWTCacheValue(false, 0L, null));
+
+      Delegate delegateFromCache = delegateCache.get(accountId, delegateId, false);
+      delegateJWTCache.setDelegateJWTCache(
+          tokenHash, delegateTokenName, new DelegateJWTCacheValue(false, 0L, null, delegateFromCache.isNg()));
       log.error("Delegate {} is using REVOKED delegate token. DelegateId: {}", delegateHostName, delegateId);
       throw new RevokedTokenException("Invalid delegate token. Delegate is using revoked token", USER_ADMIN);
     }
@@ -166,16 +172,20 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
     try {
       JWTClaimsSet jwtClaimsSet = encryptedJWT.getJWTClaimsSet();
       final long expiryInMillis = jwtClaimsSet.getExpirationTime().getTime();
+      Delegate delegateFromCache = delegateCache.get(accountId, delegateId, false);
       if (System.currentTimeMillis() > expiryInMillis) {
         log.error("Delegate {} is using EXPIRED delegate token. DelegateId: {}", jwtClaimsSet.getIssuer(), delegateId);
-        delegateJWTCache.setDelegateJWTCache(tokenHash, delegateTokenName, new DelegateJWTCacheValue(false, 0L, null));
+        delegateJWTCache.setDelegateJWTCache(
+            tokenHash, delegateTokenName, new DelegateJWTCacheValue(false, 0L, null, delegateFromCache.isNg()));
         throw new InvalidRequestException("Unauthorized", EXPIRED_TOKEN, null);
       } else {
         delegateJWTCache.setDelegateJWTCache(tokenHash, delegateTokenName,
-            new DelegateJWTCacheValue(true, expiryInMillis, getDelegateTokenNameFromGlobalContext().orElse(null)));
+            new DelegateJWTCacheValue(
+                true, expiryInMillis, getDelegateTokenNameFromGlobalContext().orElse(null), delegateFromCache.isNg()));
       }
     } catch (Exception ex) {
-      delegateJWTCache.setDelegateJWTCache(tokenHash, delegateTokenName, new DelegateJWTCacheValue(false, 0L, null));
+      delegateJWTCache.setDelegateJWTCache(
+          tokenHash, delegateTokenName, new DelegateJWTCacheValue(false, 0L, null, delegateTokenFromCache.isNg()));
       throw new InvalidRequestException("Unauthorized", ex, EXPIRED_TOKEN, null);
     }
   }

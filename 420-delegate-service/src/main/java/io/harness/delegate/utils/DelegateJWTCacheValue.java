@@ -18,4 +18,5 @@ public class DelegateJWTCacheValue {
   private final boolean isValid;
   private final long expiryInMillis;
   private final String delegateTokenName;
+  private final boolean isNg;
 }

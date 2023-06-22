@@ -23,6 +23,7 @@ import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_JWT_CA
 import io.harness.agent.utils.AgentMtlsVerifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.context.GlobalContext;
+import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateToken;
 import io.harness.delegate.beans.DelegateToken.DelegateTokenKeys;
 import io.harness.delegate.beans.DelegateTokenStatus;
@@ -39,6 +40,7 @@ import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.security.DelegateTokenAuthenticator;
+import io.harness.service.intfc.DelegateCache;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
@@ -74,6 +76,7 @@ public class DelegateServiceTokenAuthenticatorImpl implements DelegateTokenAuthe
   @Inject private DelegateMetricsService delegateMetricsService;
   @Inject private AgentMtlsVerifier agentMtlsVerifier;
   @Inject private DelegateSecretManager delegateSecretManager;
+  @Inject private DelegateCache delegateCache;
 
   public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
 
@@ -136,24 +139,30 @@ public class DelegateServiceTokenAuthenticatorImpl implements DelegateTokenAuthe
       } catch (ParseException e) {
         log.warn("Couldn't parse token", e);
       }
-      delegateJWTCache.setDelegateJWTCache(tokenHash, delegateTokenName, new DelegateJWTCacheValue(false, 0L, null));
+      Delegate delegateFromCache = delegateCache.get(accountId, delegateId, false);
+      delegateJWTCache.setDelegateJWTCache(
+          tokenHash, delegateTokenName, new DelegateJWTCacheValue(false, 0L, null, delegateFromCache.isNg()));
       log.error("Delegate {} is using REVOKED delegate token. DelegateId: {}", delegateHostName, delegateId);
       throw new RevokedTokenException("Invalid delegate token. Delegate is using revoked token", USER_ADMIN);
     }
-
+    Delegate delegateFromCache = delegateCache.get(accountId, delegateId, false);
     try {
       JWTClaimsSet jwtClaimsSet = encryptedJWT.getJWTClaimsSet();
       final long expiryInMillis = jwtClaimsSet.getExpirationTime().getTime();
+
       if (System.currentTimeMillis() > expiryInMillis) {
         log.error("Delegate {} is using EXPIRED delegate token. DelegateId: {}", jwtClaimsSet.getIssuer(), delegateId);
-        delegateJWTCache.setDelegateJWTCache(tokenHash, delegateTokenName, new DelegateJWTCacheValue(false, 0L, null));
+        delegateJWTCache.setDelegateJWTCache(
+            tokenHash, delegateTokenName, new DelegateJWTCacheValue(false, 0L, null, delegateFromCache.isNg()));
         throw new InvalidRequestException("Unauthorized", EXPIRED_TOKEN, null);
       } else {
         delegateJWTCache.setDelegateJWTCache(tokenHash, delegateTokenName,
-            new DelegateJWTCacheValue(true, expiryInMillis, getDelegateTokenNameFromGlobalContext().orElse(null)));
+            new DelegateJWTCacheValue(
+                true, expiryInMillis, getDelegateTokenNameFromGlobalContext().orElse(null), delegateFromCache.isNg()));
       }
     } catch (Exception ex) {
-      delegateJWTCache.setDelegateJWTCache(tokenHash, delegateTokenName, new DelegateJWTCacheValue(false, 0L, null));
+      delegateJWTCache.setDelegateJWTCache(
+          tokenHash, delegateTokenName, new DelegateJWTCacheValue(false, 0L, null, delegateFromCache.isNg()));
       throw new InvalidRequestException("Unauthorized", ex, EXPIRED_TOKEN, null);
     }
   }
