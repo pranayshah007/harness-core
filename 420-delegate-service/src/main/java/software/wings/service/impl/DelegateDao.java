@@ -51,9 +51,6 @@ public class DelegateDao {
     UpdateOperations<Delegate> updateOperations =
         persistence.createUpdateOperations(Delegate.class).set(DelegateKeys.disconnected, Boolean.TRUE);
     persistence.update(query, updateOperations);
-    if (enableRedisForDelegateService) {
-      // clear cache
-    }
   }
 
   public boolean checkDelegateConnected(String accountId, String delegateId, String version) {
@@ -65,7 +62,7 @@ public class DelegateDao {
       query.filter(DelegateKeys.version, version);
     }
     if (enableRedisForDelegateService) {
-      return isDelegateHeartBeatExpired(delegateId, accountId, EXPIRY_TIME.toMillis());
+      return isDelegateHeartBeatExpired(delegateCache.get(accountId, delegateId), EXPIRY_TIME.toMillis());
     }
     return query.field(DelegateKeys.lastHeartBeat)
                .greaterThan(currentTimeMillis() - EXPIRY_TIME.toMillis())
@@ -87,8 +84,8 @@ public class DelegateDao {
   }
 
   public boolean checkDelegateLiveness(String accountId, String delegateId) {
-    if (enableRedisForDelegateService){
-      return isDelegateHeartBeatExpired(delegateId, accountId,EXPIRY_TIME.toMillis());
+    if (enableRedisForDelegateService) {
+      return isDelegateHeartBeatExpired(delegateCache.get(accountId, delegateId), EXPIRY_TIME.toMillis());
     }
 
     Query<Delegate> query = persistence.createQuery(Delegate.class)
@@ -147,6 +144,9 @@ public class DelegateDao {
   }
 
   public long getDelegateLastHeartBeat(Delegate delegate) {
+    if (!enableRedisForDelegateService) {
+      return delegate.getLastHeartBeat();
+    }
     Delegate delegateFromCache = delegateCache.get(delegate.getAccountId(), delegate.getUuid(), false);
     if (delegateFromCache != null) {
       return delegateFromCache.getLastHeartBeat();
@@ -162,6 +162,17 @@ public class DelegateDao {
     return delegateFromCache.getLastHeartBeat() >= (currentTimeMillis() - maxExpiry);
   }
 
+  public boolean isDelegateHeartBeatExpired(Delegate delegate, long maxExpiry) {
+    long delegateHeartBeat = delegate.getLastHeartBeat();
+    if (enableRedisForDelegateService) {
+      Delegate delegateFromCache = delegateCache.get(delegate.getAccountId(), delegate.getUuid());
+      if (delegateFromCache == null) {
+        return true;
+      }
+      delegateHeartBeat = delegateFromCache.getLastHeartBeat();
+    }
+    return delegateHeartBeat >= (currentTimeMillis() - maxExpiry);
+  }
 
   private Query<Delegate> createQueryForAllActiveDelegates(String version) {
     return persistence.createQuery(Delegate.class, excludeAuthority)

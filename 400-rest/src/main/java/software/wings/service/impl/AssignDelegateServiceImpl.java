@@ -1183,11 +1183,10 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   @Override
   public List<Delegate> fetchActiveDelegates(DelegateTask delegateTask) {
     List<Delegate> accountDelegates = getAccountDelegates(delegateTask.getAccountId());
-    List<Delegate> nonConnectedDelegates = accountDelegates.stream()
-                                               .filter(delegate
-                                                   -> delegateDao.isDelegateHeartBeatExpired(delegate.getUuid(),
-                                                       delegate.getAccountId(), MAX_DELEGATE_LONG_LAST_HEARTBEAT))
-                                               .collect(Collectors.toList());
+    List<Delegate> nonConnectedDelegates =
+        accountDelegates.stream()
+            .filter(delegate -> delegateDao.isDelegateHeartBeatExpired(delegate, MAX_DELEGATE_LONG_LAST_HEARTBEAT))
+            .collect(Collectors.toList());
     List<String> nonConnectedDelegatesIds =
         nonConnectedDelegates.stream().map(Delegate::getHostName).collect(Collectors.toList());
     if (isNotEmpty(nonConnectedDelegatesIds)) {
@@ -1197,8 +1196,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     return accountDelegates.stream()
         .filter(delegate
             -> delegate.getStatus() == DelegateInstanceStatus.ENABLED
-                && delegateDao.isDelegateHeartBeatExpired(
-                    delegate.getUuid(), delegate.getAccountId(), MAX_DELEGATE_LONG_LAST_HEARTBEAT))
+                && delegateDao.isDelegateHeartBeatExpired(delegate, MAX_DELEGATE_LONG_LAST_HEARTBEAT))
         .collect(toList());
   }
 
@@ -1318,8 +1316,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     Map<DelegateActivity, List<Delegate>> delegatesMap =
         accountDelegates.stream().collect(Collectors.groupingBy(delegate -> {
           if (DelegateInstanceStatus.ENABLED == delegate.getStatus()) {
-            if (delegateDao.isDelegateHeartBeatExpired(
-                    delegate.getUuid(), delegate.getAccountId(), MAX_DELEGATE_LONG_LAST_HEARTBEAT)) {
+            if (delegateDao.isDelegateHeartBeatExpired(delegate, MAX_DELEGATE_LONG_LAST_HEARTBEAT)) {
               return DelegateActivity.ACTIVE;
             } else {
               return DelegateActivity.DISCONNECTED;
