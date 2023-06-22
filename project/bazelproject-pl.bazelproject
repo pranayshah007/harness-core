@@ -55,7 +55,6 @@ directories:
   -942-enforcement-sdk
   -943-enforcement-beans
   -945-license-usage-sdk
-  -947-scim-core
   -950-command-library-common
   -950-delegate-tasks-beans
   -950-log-client
