@@ -7359,23 +7359,7 @@
           }
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "allOf": [
-        {
-          "oneOf": [
-            {
-              "required": [
-                "infrastructureDefinitions"
-              ]
-            },
-            {
-              "required": [
-                "infrastructureDefinition"
-              ]
-            }
-          ]
-        }
-      ]
+      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "EnvironmentsMetadata": {
       "type": "object",
