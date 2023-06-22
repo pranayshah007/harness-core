@@ -9,11 +9,11 @@ package io.harness.plancreator.steps.pluginstep;
 
 import static io.harness.pms.yaml.YAMLFieldNameConstants.PARALLEL;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
-import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.advisers.rollback.RollbackStrategy;
+import io.harness.plancreator.steps.GenericPlanCreatorUtils;
 import io.harness.plancreator.steps.InitContainerStepPlanCreater;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
@@ -183,7 +183,7 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
   }
 
   private void addNextStepAdviser(YamlField currentField, List<AdviserObtainment> adviserObtainments) {
-    if (currentField.checkIfParentIsParallel(STEPS)) {
+    if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)) {
       return;
     }
     YamlField siblingField = currentField.getNode().nextSiblingFromParentArray(
