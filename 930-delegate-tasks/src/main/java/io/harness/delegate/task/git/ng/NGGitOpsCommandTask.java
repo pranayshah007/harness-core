@@ -56,6 +56,8 @@ import io.harness.git.model.CommitAndPushResult;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
 import io.harness.git.model.GitFileChange;
+import io.harness.git.model.RevertAndPushRequest;
+import io.harness.git.model.RevertAndPushResult;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -403,7 +405,11 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
                                                 .commitMessage(commitMessage)
                                                 .build();
 
-    return ngGitService.commitAndPush(gitConfig, gitCommitRequest, getAccountId(), sshSessionConfig, true);
+    CommitAndPushResult commitAndPushResult = ngGitService.commitAndPush(gitConfig, gitCommitRequest, getAccountId(), sshSessionConfig, true);
+    RevertAndPushRequest revertAndPushRequest = RevertAndPushRequest.builder().commitId(commitAndPushResult.getGitCommitResult().getCommitId()).authorName("test").build();
+    RevertAndPushResult revertAndPushResult = ngGitService.revertCommitAndPush(gitConfig, revertAndPushRequest, getAccountId(), sshSessionConfig, true);
+
+    return commitAndPushResult;
   }
 
   private LogCallback markDoneAndStartNew(

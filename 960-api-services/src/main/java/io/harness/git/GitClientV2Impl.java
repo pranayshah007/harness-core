@@ -629,8 +629,8 @@ public class GitClientV2Impl implements GitClientV2 {
   public RevertAndPushResult revertAndPush(RevertAndPushRequest request) {
     CommitResult commitResult = revert(request);
     RevertAndPushResult revertAndPushResult =
-        RevertAndPushResult.builder().gitCommitResult(commitResult).gitPushResult(push()).build();
-    return RevertAndPushResult.builder().build();
+        RevertAndPushResult.builder().gitCommitResult(commitResult).gitPushResult(push(request)).build();
+    return revertAndPushResult;
   }
 
   CommitResult revert(RevertAndPushRequest request) {
@@ -918,6 +918,56 @@ public class GitClientV2Impl implements GitClientV2 {
           unhandled(changeType);
       }
     });
+  }
+
+  @VisibleForTesting
+  synchronized PushResultGit push(RevertAndPushRequest revertAndPushRequest) {
+    boolean forcePush = revertAndPushRequest.isForcePush();
+
+    log.info(gitClientHelper.getGitLogMessagePrefix(revertAndPushRequest.getRepoType())
+             + "Performing git PUSH, forcePush is: " + forcePush);
+
+    try (Git git = openGit(new File(gitClientHelper.getRepoDirectory(revertAndPushRequest)),
+        revertAndPushRequest.getDisableUserGitConfig())) {
+      Iterable<PushResult> pushResults = ((PushCommand) (getAuthConfiguredCommand(git.push(), revertAndPushRequest)))
+          .setRemote("origin")
+          .setForce(forcePush)
+          .setRefSpecs(new RefSpec(revertAndPushRequest.getBranch()))
+          .call();
+
+      RemoteRefUpdate remoteRefUpdate = pushResults.iterator().next().getRemoteUpdates().iterator().next();
+      PushResultGit.RefUpdate refUpdate =
+          PushResultGit.RefUpdate.builder()
+              .status(remoteRefUpdate.getStatus().name())
+              .expectedOldObjectId(remoteRefUpdate.getExpectedOldObjectId() != null
+                                   ? remoteRefUpdate.getExpectedOldObjectId().name()
+                                   : null)
+              .newObjectId(remoteRefUpdate.getNewObjectId() != null ? remoteRefUpdate.getNewObjectId().name() : null)
+              .forceUpdate(remoteRefUpdate.isForceUpdate())
+              .message(remoteRefUpdate.getMessage())
+              .build();
+      if (remoteRefUpdate.getStatus() == OK || remoteRefUpdate.getStatus() == UP_TO_DATE) {
+        return pushResultBuilder().refUpdate(refUpdate).build();
+      } else {
+        String errorMsg = format("Unable to push changes to git repository [%s] and branch [%s]. "
+                                 + "Status reported by Remote is: %s and message is: %s. \n \n",
+            revertAndPushRequest.getRepoUrl(), revertAndPushRequest.getBranch(), remoteRefUpdate.getStatus(),
+            remoteRefUpdate.getMessage());
+        log.error(gitClientHelper.getGitLogMessagePrefix(revertAndPushRequest.getRepoType()) + errorMsg);
+        throw new YamlException(errorMsg, ADMIN_SRE);
+      }
+    } catch (IOException | GitAPIException ex) {
+      log.error(gitClientHelper.getGitLogMessagePrefix(revertAndPushRequest.getRepoType()) + EXCEPTION_STRING
+                + ExceptionSanitizer.sanitizeForLogging(ex));
+      String errorMsg = getMessage(ex);
+      if (ex instanceof InvalidRemoteException || ex.getCause() instanceof NoRemoteRepositoryException) {
+        errorMsg = "Invalid git repo or user doesn't have write access to repository. repo:"
+                   + revertAndPushRequest.getRepoUrl();
+      }
+
+      gitClientHelper.checkIfGitConnectivityIssue(ex);
+      throw new YamlException(errorMsg, ex, USER);
+    }
   }
 
   @VisibleForTesting
