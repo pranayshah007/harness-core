@@ -1284,6 +1284,17 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AsgDeploymentMetaData": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/DeploymentMetaData"
+        },
+        {
+          "type": "object"
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AsgInfrastructure": {
       "allOf": [
         {
@@ -1618,6 +1629,17 @@
               ]
             }
           }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AwsLambdaDeploymentMetaData": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/DeploymentMetaData"
+        },
+        {
+          "type": "object"
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -1992,6 +2014,17 @@
               ]
             }
           }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AwsSamDeploymentMetaData": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/DeploymentMetaData"
+        },
+        {
+          "type": "object"
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -2599,6 +2632,17 @@
               "type": "string"
             }
           }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureWebAppDeploymentMetaData": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/DeploymentMetaData"
+        },
+        {
+          "type": "object"
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -4920,6 +4964,17 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "CustomDeploymentMetaData": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/DeploymentMetaData"
+        },
+        {
+          "type": "object"
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "CustomDeploymentNGVariable": {
       "type": "object",
       "discriminator": "type",
@@ -5125,30 +5180,6 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "DelegateInfra": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepGroupInfra"
-        },
-        {
-          "type": "object",
-          "required": [
-            "type"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "KubernetesDirect",
-                "Delegate",
-                "Noop"
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "DeleteManifestPathSpec": {
       "allOf": [
         {
@@ -5304,6 +5335,11 @@
         }
       ]
     },
+    "DeploymentMetaData": {
+      "type": "object",
+      "discriminator": "deploymentType",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "DeploymentStageConfig": {
       "type": "object",
       "required": [
@@ -5312,9 +5348,6 @@
       "properties": {
         "customDeploymentRef": {
           "$ref": "#/definitions/StepTemplateRef"
-        },
-        "deploymentMetadata": {
-          "$ref": "#/definitions/GoogleCloudFunctionDeploymentMetaData"
         },
         "deploymentType": {
           "type": "string",
@@ -5365,6 +5398,230 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "deploymentType": {
+                "const": "AWS_SAM"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "deploymentMetadata": {
+                "$ref": "#/definitions/AwsSamDeploymentMetaData"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "deploymentType": {
+                "const": "Asg"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "deploymentMetadata": {
+                "$ref": "#/definitions/AsgDeploymentMetaData"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "deploymentType": {
+                "const": "AwsLambda"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "deploymentMetadata": {
+                "$ref": "#/definitions/AwsLambdaDeploymentMetaData"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "deploymentType": {
+                "const": "AzureWebApp"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "deploymentMetadata": {
+                "$ref": "#/definitions/AzureWebAppDeploymentMetaData"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "deploymentType": {
+                "const": "CustomDeployment"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "deploymentMetadata": {
+                "$ref": "#/definitions/CustomDeploymentMetaData"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "deploymentType": {
+                "const": "ECS"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "deploymentMetadata": {
+                "$ref": "#/definitions/EcsDeploymentMetaData"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "deploymentType": {
+                "const": "Elastigroup"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "deploymentMetadata": {
+                "$ref": "#/definitions/ElastiGroupDeploymentMetaData"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "deploymentType": {
+                "const": "GoogleCloudFunctions"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "deploymentMetadata": {
+                "$ref": "#/definitions/GoogleCloudFunctionDeploymentMetaData"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "deploymentType": {
+                "const": "Kubernetes"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "deploymentMetadata": {
+                "$ref": "#/definitions/KubernetesDeploymentMetaData"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "deploymentType": {
+                "const": "NativeHelm"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "deploymentMetadata": {
+                "$ref": "#/definitions/NativeHelmDeploymentMetaData"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "deploymentType": {
+                "const": "ServerlessAwsLambda"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "deploymentMetadata": {
+                "$ref": "#/definitions/ServerlessAwsLambdaDeploymentMetaData"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "deploymentType": {
+                "const": "Ssh"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "deploymentMetadata": {
+                "$ref": "#/definitions/SshDeploymentMetaData"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "deploymentType": {
+                "const": "TAS"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "deploymentMetadata": {
+                "$ref": "#/definitions/TasDeploymentMetaData"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "deploymentType": {
+                "const": "WinRm"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "deploymentMetadata": {
+                "$ref": "#/definitions/WinrmDeploymentMetaData"
+              }
+            }
+          }
+        },
         {
           "oneOf": [
             {
@@ -6149,6 +6406,17 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "EcsDeploymentMetaData": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/DeploymentMetaData"
+        },
+        {
+          "type": "object"
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "EcsInfrastructure": {
       "allOf": [
         {
@@ -6405,6 +6673,17 @@
               "$ref": "#/definitions/StoreConfigWrapper"
             }
           }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ElastiGroupDeploymentMetaData": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/DeploymentMetaData"
+        },
+        {
+          "type": "object"
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -8072,15 +8351,22 @@
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "GoogleCloudFunctionDeploymentMetaData": {
-      "type": "object",
-      "properties": {
-        "environmentType": {
-          "type": "string"
+      "allOf": [
+        {
+          "$ref": "#/definitions/DeploymentMetaData"
         },
-        "metadata": {
-          "type": "string"
+        {
+          "type": "object",
+          "properties": {
+            "environmentType": {
+              "type": "string"
+            },
+            "metadata": {
+              "type": "string"
+            }
+          }
         }
-      },
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "GoogleCloudFunctionGenOneDefinitionManifest": {
@@ -10740,6 +11026,17 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "KubernetesDeploymentMetaData": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/DeploymentMetaData"
+        },
+        {
+          "type": "object"
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "KubernetesServiceSpec": {
       "allOf": [
         {
@@ -11681,6 +11978,17 @@
           }
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "NativeHelmDeploymentMetaData": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/DeploymentMetaData"
+        },
+        {
+          "type": "object"
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "NativeHelmServiceSpec": {
@@ -15114,6 +15422,17 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ServerlessAwsLambdaDeploymentMetaData": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/DeploymentMetaData"
+        },
+        {
+          "type": "object"
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ServerlessAwsLambdaInfrastructure": {
       "allOf": [
         {
@@ -16643,6 +16962,17 @@
           ]
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SshDeploymentMetaData": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/DeploymentMetaData"
+        },
+        {
+          "type": "object"
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "SshServiceSpec": {
@@ -18866,9 +19196,6 @@
         "stepGroupInfra": {
           "oneOf": [
             {
-              "$ref": "#/definitions/DelegateInfra"
-            },
-            {
               "$ref": "#/definitions/K8sDirectInfra"
             }
           ]
@@ -20085,6 +20412,17 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "TasDeploymentMetaData": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/DeploymentMetaData"
+        },
+        {
+          "type": "object"
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "TasInstanceSelectionBase": {
       "type": "object",
       "discriminator": "type",
@@ -20758,6 +21096,9 @@
           "items": {
             "$ref": "#/definitions/TerraformCliOptionFlag"
           }
+        },
+        "encryptOutput": {
+          "$ref": "#/definitions/TerraformEncryptOutput"
         },
         "spec": {
           "$ref": "#/definitions/TerraformCloudCliExecutionData"
@@ -21433,6 +21774,18 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "TerraformEncryptOutput": {
+      "type": "object",
+      "required": [
+        "outputSecretManagerRef"
+      ],
+      "properties": {
+        "outputSecretManagerRef": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "TerraformExecutionData": {
       "type": "object",
       "required": [
@@ -21702,6 +22055,9 @@
           "items": {
             "$ref": "#/definitions/TerraformCliOptionFlag"
           }
+        },
+        "encryptOutput": {
+          "$ref": "#/definitions/TerraformEncryptOutput"
         },
         "skipRefreshCommand": {
           "oneOf": [
@@ -22749,6 +23105,17 @@
               }
             }
           }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "WinrmDeploymentMetaData": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/DeploymentMetaData"
+        },
+        {
+          "type": "object"
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"

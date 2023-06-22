@@ -11,5 +11,5 @@ public interface IACMStepSpecTypeConstants {
   String IACM_STAGE = "IACM";
   String IACM_STAGE_V1 = "iacm";
   String IACM_TERRAFORM_PLUGIN = "IACMTerraformPlugin";
-  String IACM_TEMPLATE = "IACMTemplate";
+  String IACM_APPROVAL = "IACMApproval";
 }

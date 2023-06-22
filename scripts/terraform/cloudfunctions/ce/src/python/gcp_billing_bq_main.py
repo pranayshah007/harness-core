@@ -1143,8 +1143,8 @@ def ingest_into_unified(jsonData):
     )
     try:
         run_bq_query_with_retries(client, query, max_retry_count=3, job_config=job_config)
-        # flatten_label_keys_in_table(client, jsonData.get("accountId"), PROJECTID, jsonData["datasetName"], UNIFIED,
-        #                             "labels", fetch_ingestion_filters(jsonData))
+        flatten_label_keys_in_table(client, jsonData.get("accountId"), PROJECTID, jsonData["datasetName"], UNIFIED,
+                                    "labels", fetch_ingestion_filters(jsonData))
     except Exception as e:
         print_(query)
         raise e

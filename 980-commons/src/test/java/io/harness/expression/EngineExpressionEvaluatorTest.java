@@ -423,6 +423,8 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
         .isEqualTo("harnessabcdefabcdefharness");
 
     // Functors having concat expressions should work
+    assertThat(evaluator.resolve("<+secrets.getValue(\"abc\")>", true))
+        .isEqualTo("${ngSecretManager.obtain(\"abc\", 123)}");
     assertThat(evaluator.resolve("<+secrets.getValue(\"<+f>\")>", true))
         .isEqualTo("${ngSecretManager.obtain(\"abc\", 123)}");
     assertThat(evaluator.resolve("<+secrets.getValue(\"harness_<+f>_india\")>", true))
@@ -431,6 +433,16 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
         .isEqualTo("${ngSecretManager.obtain(\"harness_abc_india_def\", 123)}");
     assertThat(evaluator.resolve("<+secrets.getValue(\"harness_\" + <+f> + \"_india_\" + <+g>)>", true))
         .isEqualTo("${ngSecretManager.obtain(\"harness_abc_india_def\", 123)}");
+
+    // Ternary operators
+    assertThat(evaluator.resolve("<+ <+a>==5?<+f>:<+g> >", true)).isEqualTo("abc");
+    assertThat(evaluator.resolve("<+ <+a>==5?<+<+f>harness>:<+<+g>def> >", true)).isEqualTo("abcharness");
+    assertThat(evaluator.resolve("<+ <+a>==5?\"<+f>harness\":\"<+g>def\" >", true)).isEqualTo("abcharness");
+    assertThat(evaluator.resolve("<+ <+a>==<+a>?<+<+f>harness>:<+<+g>def> >", true)).isEqualTo("abcharness");
+    assertThat(evaluator.resolve("<+ <+a>==<+b>?<+<+f>harness>:<+<+g>def> >", true)).isEqualTo("defdef");
+    assertThat(evaluator.resolve("<+ <+a>==5?<+<+f>+'harness'>:<+<+g>+'def'> >", true)).isEqualTo("abcharness");
+    assertThat(evaluator.resolve("<+ <+a>==<+a>?<+<+f>+'harness'>:<+<+g>+'def'> >", true)).isEqualTo("abcharness");
+    assertThat(evaluator.resolve("<+ <+a>==<+b>?<+<+f>+'harness'>:<+<+g>+'def'> >", true)).isEqualTo("defdef");
 
     // Method invocations
     assertThat(evaluator.resolve("<+<+variables.v5>.replace('-','')>", true)).isEqualTo("architharness");
@@ -553,6 +565,15 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
         .isEqualTo("${ngSecretManager.obtain(\"harness_abc_india_def\", 123)}");
     assertThat(evaluator.resolve("<+secrets.getValue(\"harness_\" + <+f> + \"_india_\" + <+g>)>", true))
         .isEqualTo("${ngSecretManager.obtain(\"harness_abc_india_def\", 123)}");
+
+    // Ternary operators
+    assertThat(evaluator.resolve("<+ <+a>==5?<+f>:<+g> >", true)).isEqualTo("abc");
+    assertThat(evaluator.resolve("<+ <+a>==5?<+<+f>harness>:<+<+g>def> >", true)).isEqualTo("abcharness");
+    assertThat(evaluator.resolve("<+ <+a>==<+a>?<+<+f>harness>:<+<+g>def> >", true)).isEqualTo("abcharness");
+    assertThat(evaluator.resolve("<+ <+a>==<+b>?<+<+f>harness>:<+<+g>def> >", true)).isEqualTo("defdef");
+    assertThat(evaluator.resolve("<+ <+a>==5?<+<+f>+'harness'>:<+<+g>+'def'> >", true)).isEqualTo("abcharness");
+    assertThat(evaluator.resolve("<+ <+a>==<+a>?<+<+f>+'harness'>:<+<+g>+'def'> >", true)).isEqualTo("abcharness");
+    assertThat(evaluator.resolve("<+ <+a>==<+b>?<+<+f>+'harness'>:<+<+g>+'def'> >", true)).isEqualTo("defdef");
 
     // Complex double nesting with concatenate expressions with prefix combinations
     assertThat(evaluator.resolve("<+c1.<+var3>>", true)).isEqualTo("harness");

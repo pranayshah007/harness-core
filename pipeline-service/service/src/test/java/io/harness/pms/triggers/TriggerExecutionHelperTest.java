@@ -9,8 +9,11 @@ package io.harness.pms.triggers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.execution.PlanExecution.EXEC_TAG_SET_BY_TRIGGER;
+import static io.harness.ngtriggers.Constants.COMMIT_SHA_STRING_LENGTH;
 import static io.harness.ngtriggers.Constants.EVENT_CORRELATION_ID;
 import static io.harness.ngtriggers.Constants.GIT_USER;
+import static io.harness.ngtriggers.Constants.SOURCE_EVENT_ID;
+import static io.harness.ngtriggers.Constants.SOURCE_EVENT_LINK;
 import static io.harness.ngtriggers.Constants.TRIGGER_REF;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.HARSH;
@@ -73,9 +76,12 @@ import io.harness.pms.pipeline.service.PipelineEnforcementService;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.plan.execution.ExecutionHelper;
 import io.harness.pms.yaml.PipelineVersion;
+import io.harness.product.ci.scm.proto.Commit;
 import io.harness.product.ci.scm.proto.PullRequest;
 import io.harness.product.ci.scm.proto.PullRequestHook;
 import io.harness.product.ci.scm.proto.PushHook;
+import io.harness.product.ci.scm.proto.Release;
+import io.harness.product.ci.scm.proto.ReleaseHook;
 import io.harness.product.ci.scm.proto.Repository;
 import io.harness.product.ci.scm.proto.User;
 import io.harness.rule.Owner;
@@ -90,6 +96,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -336,7 +343,14 @@ public class TriggerExecutionHelperTest extends CategoryTest {
 
     TriggeredBy triggeredBy = triggerExecutionHelper.generateTriggerdBy("tag", ngTriggerEntity,
         TriggerPayload.newBuilder()
-            .setParsedPayload(ParsedPayload.newBuilder().setPush(PushHook.newBuilder().setSender(user).build()).build())
+            .setParsedPayload(
+                ParsedPayload.newBuilder()
+                    .setPush(
+                        PushHook.newBuilder()
+                            .setSender(user)
+                            .setCommit(Commit.newBuilder().setSha("sourceEventId").setLink("sourceEventLink").build())
+                            .build())
+                    .build())
             .build(),
         "eventId");
 
@@ -345,7 +359,27 @@ public class TriggerExecutionHelperTest extends CategoryTest {
     triggeredBy = triggerExecutionHelper.generateTriggerdBy("tag", ngTriggerEntity,
         TriggerPayload.newBuilder()
             .setParsedPayload(
-                ParsedPayload.newBuilder().setPr(PullRequestHook.newBuilder().setSender(user).build()).build())
+                ParsedPayload.newBuilder()
+                    .setPr(PullRequestHook.newBuilder()
+                               .setSender(user)
+                               .setPr(PullRequest.newBuilder().setNumber(123).setLink("sourceEventLink").build())
+                               .build())
+                    .build())
+            .build(),
+        "eventId");
+
+    assertTriggerBy(triggeredBy);
+
+    triggeredBy = triggerExecutionHelper.generateTriggerdBy("tag", ngTriggerEntity,
+        TriggerPayload.newBuilder()
+            .setParsedPayload(
+                ParsedPayload.newBuilder()
+                    .setRelease(
+                        ReleaseHook.newBuilder()
+                            .setSender(user)
+                            .setRelease(Release.newBuilder().setTag("sourceEventId").setLink("sourceEventLink").build())
+                            .build())
+                    .build())
             .build(),
         "eventId");
 
@@ -444,5 +478,9 @@ public class TriggerExecutionHelperTest extends CategoryTest {
     assertThat(extraInfoMap.get(TRIGGER_REF)).isEqualTo("acc/org/proj/trigger");
     assertThat(extraInfoMap.get(GIT_USER)).isEqualTo("login");
     assertThat(extraInfoMap.get(EVENT_CORRELATION_ID)).isEqualTo("eventId");
+    assertThat(extraInfoMap.get(SOURCE_EVENT_ID))
+        .isIn(
+            Arrays.asList("123", "sourceEventId", StringUtils.substring("sourceEventId", 0, COMMIT_SHA_STRING_LENGTH)));
+    assertThat(extraInfoMap.get(SOURCE_EVENT_LINK)).isEqualTo("sourceEventLink");
   }
 }

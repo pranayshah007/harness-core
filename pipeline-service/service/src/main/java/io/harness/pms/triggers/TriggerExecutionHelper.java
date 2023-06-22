@@ -13,10 +13,13 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
+import static io.harness.ngtriggers.Constants.COMMIT_SHA_STRING_LENGTH;
 import static io.harness.ngtriggers.Constants.EVENT_CORRELATION_ID;
 import static io.harness.ngtriggers.Constants.GIT_USER;
 import static io.harness.ngtriggers.Constants.PR;
 import static io.harness.ngtriggers.Constants.PUSH;
+import static io.harness.ngtriggers.Constants.SOURCE_EVENT_ID;
+import static io.harness.ngtriggers.Constants.SOURCE_EVENT_LINK;
 import static io.harness.ngtriggers.Constants.TRIGGER_EXECUTION_TAG_TAG_VALUE_DELIMITER;
 import static io.harness.ngtriggers.Constants.TRIGGER_PAYLOAD_BRANCH;
 import static io.harness.ngtriggers.Constants.TRIGGER_REF;
@@ -116,6 +119,7 @@ import java.util.List;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
@@ -231,6 +235,9 @@ public class TriggerExecutionHelper {
           pipelineEntityToExecute =
               pmsPipelineService.getPipeline(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
                   ngTriggerEntity.getProjectIdentifier(), targetIdentifier, false, false);
+          if (EmptyPredicate.isEmpty(branch)) {
+            branch = GitAwareContextHelper.getBranchInRequestOrFromSCMGitMetadata();
+          }
         }
 
         if (pipelineEntityToExecute.isEmpty()) {
@@ -501,6 +508,7 @@ public class TriggerExecutionHelper {
           branch = triggerDetails.getNgTriggerConfigV2().getPipelineBranchName();
         }
       }
+
       GitAwareContextHelper.updateGitEntityContext(GitEntityInfo.builder().branch(branch).build());
       pipelineEntityToExecute = pmsPipelineService.getPipeline(ngTriggerEntity.getAccountId(),
           ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(), targetIdentifier, false, false);
@@ -510,6 +518,10 @@ public class TriggerExecutionHelper {
                 + ", with ProjectId: " + ngTriggerEntity.getProjectIdentifier() + ", For Trigger: "
                 + ngTriggerEntity.getIdentifier() + " does not exist in branch: " + branch + " configured in trigger.",
             USER);
+      }
+
+      if (EmptyPredicate.isEmpty(branch)) {
+        branch = GitAwareContextHelper.getBranchInRequestOrFromSCMGitMetadata();
       }
       GitAwareContextHelper.updateGitEntityContext(
           getGitSyncContextWithRepoAndFilePath(pipelineEntityToExecute.get(), branch).getGitBranchInfo());
@@ -540,12 +552,28 @@ public class TriggerExecutionHelper {
       if (triggerPayload.hasParsedPayload()) {
         ParsedPayload parsedPayload = triggerPayload.getParsedPayload();
         User sender = null;
+        String sourceEventId = null;
+        String sourceEventLink = null;
         if (parsedPayload.hasPush()) {
           sender = parsedPayload.getPush().getSender();
+          if (parsedPayload.getPush().hasCommit()) {
+            sourceEventId =
+                StringUtils.substring(parsedPayload.getPush().getCommit().getSha(), 0, COMMIT_SHA_STRING_LENGTH);
+            sourceEventLink = parsedPayload.getPush().getCommit().getLink();
+          }
         } else if (parsedPayload.hasPr()) {
           sender = parsedPayload.getPr().getSender();
+          if (parsedPayload.getPr().hasPr()) {
+            sourceEventId = ((Long) parsedPayload.getPr().getPr().getNumber()).toString();
+            sourceEventLink = parsedPayload.getPr().getPr().getLink();
+          }
+        } else if (parsedPayload.hasRelease()) {
+          sender = parsedPayload.getRelease().getSender();
+          if (parsedPayload.getRelease().hasRelease()) {
+            sourceEventId = parsedPayload.getRelease().getRelease().getTag();
+            sourceEventLink = parsedPayload.getRelease().getRelease().getLink();
+          }
         }
-
         if (sender != null) {
           builder.putExtraInfo(GIT_USER, sender.getLogin());
           if (isNotEmpty(sender.getEmail())) {
@@ -557,6 +585,12 @@ public class TriggerExecutionHelper {
           if (isNotEmpty(sender.getName())) {
             builder.setUuid(sender.getName());
           }
+        }
+        if (isNotEmpty(sourceEventId)) {
+          builder.putExtraInfo(SOURCE_EVENT_ID, sourceEventId);
+        }
+        if (isNotEmpty(sourceEventLink)) {
+          builder.putExtraInfo(SOURCE_EVENT_LINK, sourceEventLink);
         }
       }
     }

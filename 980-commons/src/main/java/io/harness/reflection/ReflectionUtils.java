@@ -25,8 +25,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +46,20 @@ public class ReflectionUtils {
       }
     }
     return null;
+  }
+
+  public static Set<String> getFieldValuesByType(Class<?> clazz, Class<?> type) {
+    return Arrays.stream(clazz.getDeclaredFields())
+        .filter(f -> f.canAccess(null) && f.getType() == type)
+        .map(f -> {
+          try {
+            return (String) f.get(null);
+          } catch (Exception e) {
+            return null;
+          }
+        })
+        .filter(Objects::nonNull)
+        .collect(Collectors.toSet());
   }
 
   public static List<Field> getAllDeclaredAndInheritedFields(Class<?> clazz) {

@@ -1001,3 +1001,4 @@ io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2S
 io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaRollbackV2StepInfo
 io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaRollbackV2StepNode
 io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaRollbackV2StepParameters
+io.harness.cdng.provision.terraform.TerraformEncryptOutput

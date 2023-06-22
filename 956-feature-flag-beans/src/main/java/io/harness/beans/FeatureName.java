@@ -25,6 +25,9 @@ import lombok.Getter;
 @OwnedBy(HarnessTeam.PL)
 public enum FeatureName {
   SPG_UI_ALLOW_ENCODING_FOR_JENKINS_ARTIFACT("Enables correct encoding for jenkins artifact", HarnessTeam.SPG),
+  SPG_CG_REJECT_PRIORITY_WHEN_FORK_STATE(
+      "Set the reject status to have higher priority over other failed statuses when handling responses inside a fork state",
+      HarnessTeam.SPG),
   SPG_CG_SEGMENT_EVENT_FIRST_DEPLOYMENT(
       "Disable evaluation of first deployment condition to avoid unoptimized query execution on each completed deployment",
       HarnessTeam.SPG),
@@ -290,7 +293,6 @@ public enum FeatureName {
   CCM_ENABLE_CLOUD_ASSET_GOVERNANCE_UI("Enable Cloud Asset governance UI", HarnessTeam.CE),
   CCM_LABELS_FLATTENING("Use flattened label's columns in BigQuery", HarnessTeam.CE),
   DONT_RESTRICT_PARALLEL_STAGE_COUNT,
-  NG_EXECUTION_INPUT,
   SKIP_ADDING_TRACK_LABEL_SELECTOR_IN_ROLLING,
   EXTERNAL_USERID_BASED_LOGIN,
   LDAP_SYNC_WITH_USERID,
@@ -349,7 +351,6 @@ public enum FeatureName {
   CVNG_LICENSE_ENFORCEMENT,
   SRM_SLO_TOGGLE,
   SERVICE_DASHBOARD_V2,
-  CDC_ENVIRONMENT_DASHBOARD_NG("New environment details dashboard is behind this", HarnessTeam.CDC),
   CDC_SERVICE_DASHBOARD_REVAMP_NG("Service Dashboard Revamp is behind this FF", HarnessTeam.CDC),
   DEBEZIUM_ENABLED,
   USE_CDC_FOR_PIPELINE_HANDLER,
@@ -603,9 +604,6 @@ public enum FeatureName {
       "Enable Basic Role assignment  Default User Group in Orgs and Projects", HarnessTeam.PL),
   CDP_AWS_SAM("FF for enabling AWS SAM deployments", HarnessTeam.CDP),
   CI_REMOTE_DEBUG("Enable the option for remote debug for CI users.", HarnessTeam.CI),
-  CDS_GOOGLE_CLOUD_FUNCTION("This flag is to enable the Google Functions Deployment Swimlane for users. "
-          + "This flag only works with Service and Environments v2",
-      HarnessTeam.CDP),
   CDS_NOT_USE_HEADERS_FOR_HTTP_CAPABILITY(
       "FF for disabling headers while doing capability check for HTTP", HarnessTeam.CDC),
   DEL_SELECTION_LOGS_READ_FROM_GOOGLE_DATA_STORE(
@@ -807,7 +805,6 @@ public enum FeatureName {
   PIE_PROCESS_ON_JSON_NODE(
       "When FF is enabled, all processing like merging inputs, expression resolution, etc. will be done on jsonNode instead of yaml",
       PIPELINE),
-
   SRM_ENABLE_SLI_BUCKET("This is used to enable sli bucket reads", HarnessTeam.CV),
   PL_FAVORITES("To enable favorites marking support on entities", HarnessTeam.PL),
   CI_OUTPUT_VARIABLES_AS_ENV("For enabling output variables as env variables in CI stages", HarnessTeam.CI),
@@ -815,7 +812,11 @@ public enum FeatureName {
       "This is used make prometheus Health source run with promQL by clause", HarnessTeam.CV),
   CCM_COMM_SETUP("It is used for enabling the setup flow of commitment orchestrator in CCM.", HarnessTeam.CE),
   CDS_RESOLVE_OBJECTS_VIA_JSON_SELECT(
-      "Support resolution of Objects via JSON Select Command in HTTP Step", HarnessTeam.CDC);
+      "Support resolution of Objects via JSON Select Command in HTTP Step", HarnessTeam.CDC),
+  CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT(
+      "FF for providing the terraform apply json output as a secret", HarnessTeam.CDP),
+  CDS_K8S_HELM_INSTANCE_SYNC_V2_NG(
+      "FF for enabling Instance Sync V2 for K8s and Native Helm swimlanes in NG", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

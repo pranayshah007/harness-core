@@ -608,8 +608,8 @@ public class PipelineMigrationService extends NgMigrationService {
       if (migratedEntities.containsKey(serviceEntityId)) {
         NgEntityDetail serviceDetails = migratedEntities.get(serviceEntityId).getNgEntityDetail();
         stageServiceRef = MigratorUtility.getIdentifierWithScope(serviceDetails);
-        serviceInputs = migrationTemplateUtils.getServiceInput(
-            serviceDetails, migrationContext.getInputDTO().getDestinationAccountIdentifier());
+        serviceInputs = migrationTemplateUtils.getServiceInput(migrationContext.getInputDTO(), serviceDetails,
+            migrationContext.getInputDTO().getDestinationAccountIdentifier());
         if (serviceInputs != null) {
           serviceInputs = serviceInputs.get(SERVICE_INPUTS);
         }
@@ -633,7 +633,7 @@ public class PipelineMigrationService extends NgMigrationService {
       if (migratedEntities.containsKey(infraEntityId)) {
         NgEntityDetail infraDetails = migratedEntities.get(infraEntityId).getNgEntityDetail();
         stageInfraRef = MigratorUtility.getIdentifierWithScope(migratedEntities.get(infraEntityId).getNgEntityDetail());
-        infraInputs = migrationTemplateUtils.getInfraInput(
+        infraInputs = migrationTemplateUtils.getInfraInput(migrationContext.getInputDTO(),
             migrationContext.getInputDTO().getDestinationAccountIdentifier(), stageEnvRef, infraDetails);
         if (infraInputs != null) {
           infraInputs = infraInputs.get(INFRASTRUCTURE_DEFINITIONS);
@@ -647,7 +647,7 @@ public class PipelineMigrationService extends NgMigrationService {
       return null;
     }
 
-    JsonNode templateInputs = migrationTemplateUtils.getTemplateInputs(
+    JsonNode templateInputs = migrationTemplateUtils.getTemplateInputs(migrationContext.getInputDTO(),
         migratedWorkflow.getNgEntityDetail(), migrationContext.getInputDTO().getDestinationAccountIdentifier());
 
     Map<String, String> workflowVariables = stageElement.getWorkflowVariables();

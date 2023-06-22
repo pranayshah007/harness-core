@@ -15,7 +15,6 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class K8SResourceHelper {
   private static final Pattern RESOURCE_NAME_NORMALIZER = Pattern.compile("_");
-  private static final String DEFAULT_RUNNER_NAMESPACE = "bijou-testing";
   public static final String HARNESS_NAME_LABEL = "harness.io/name";
 
   @NonNull
@@ -43,10 +42,5 @@ public class K8SResourceHelper {
   @NonNull
   public static String normalizeResourceName(final String resourceName) {
     return RESOURCE_NAME_NORMALIZER.matcher(resourceName.trim().toLowerCase(Locale.ROOT)).replaceAll("-");
-  }
-
-  @NonNull
-  public static String getRunnerNamespace() {
-    return DEFAULT_RUNNER_NAMESPACE;
   }
 }

@@ -8,7 +8,9 @@
 package io.harness.pms.pipeline.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.steps.plugin.ContainerStepConstants.PLUGIN;
 
+import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.enforcement.constants.FeatureRestrictionName;
@@ -110,12 +112,24 @@ public class PMSPipelineServiceStepHelper {
       String module, String category, List<StepInfo> stepInfoList, String accountId) {
     List<StepInfo> filteredStepTypes = new ArrayList<>();
     if (!stepInfoList.isEmpty()) {
-      filteredStepTypes =
-          stepInfoList.stream()
-              .filter(stepInfo
-                  -> EmptyPredicate.isEmpty(category) || stepInfo.getStepMetaData().getCategoryList().contains(category)
-                      || EmptyPredicate.isEmpty(stepInfo.getStepMetaData().getCategoryList()))
-              .collect(Collectors.toList());
+      // Todo: This is a hack added for showing only few steps in Container Step V2 from CI. This is to support Aws Sam
+      // functionality Come up with a proper fix for this
+      if (EmptyPredicate.isNotEmpty(module) && EmptyPredicate.isNotEmpty(category)
+          && module.equalsIgnoreCase(ModuleType.CI.getDisplayName()) && category.equalsIgnoreCase(PLUGIN)) {
+        filteredStepTypes = stepInfoList.stream()
+                                .filter(stepInfo
+                                    -> EmptyPredicate.isNotEmpty(category)
+                                        && stepInfo.getStepMetaData().getCategoryList().contains(category)
+                                        && EmptyPredicate.isNotEmpty(stepInfo.getStepMetaData().getCategoryList()))
+                                .collect(Collectors.toList());
+      } else {
+        filteredStepTypes = stepInfoList.stream()
+                                .filter(stepInfo
+                                    -> EmptyPredicate.isEmpty(category)
+                                        || stepInfo.getStepMetaData().getCategoryList().contains(category)
+                                        || EmptyPredicate.isEmpty(stepInfo.getStepMetaData().getCategoryList()))
+                                .collect(Collectors.toList());
+      }
     }
     return calculateStepsForCategory(module, filteredStepTypes, accountId);
   }

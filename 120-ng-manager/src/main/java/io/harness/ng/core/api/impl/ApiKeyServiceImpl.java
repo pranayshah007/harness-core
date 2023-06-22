@@ -63,7 +63,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.ws.rs.NotAuthorizedException;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import org.springframework.dao.DuplicateKeyException;
@@ -315,7 +314,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         }
         if (!userId.get().equals(parentIdentifier)) {
           throw new InvalidArgumentsException(String.format(
-              "User [%s] not authenticated to create api key for user [%s]", userId.get(), parentIdentifier));
+              "User [%s] not authenticated to create or list api key for user [%s]", userId.get(), parentIdentifier));
         }
         Optional<UserInfo> userInfo = ngUserService.getUserById(userId.get());
         if (userInfo.isEmpty()) {
@@ -329,7 +328,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
                    .filter(account -> account.getUuid().equals(accountIdentifier))
                    .findFirst()
                    .isEmpty()) {
-          throw new NotAuthorizedException(String.format(
+          throw new InvalidArgumentsException(String.format(
               "User [%s] is not authorized to create ApiKey for account: [%s]", userId.get(), accountIdentifier));
         }
 

@@ -12,7 +12,6 @@ import static io.harness.pms.async.plan.PlanNotifyEventConsumer.PMS_PLAN_CREATIO
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.pms.commons.events.PmsEventSender;
 import io.harness.exception.InvalidRequestException;
@@ -172,14 +171,14 @@ public class PlanCreatorMergeService {
     String pipelineVersion = metadata != null && EmptyPredicate.isNotEmpty(metadata.getHarnessVersion())
         ? metadata.getHarnessVersion()
         : PipelineVersion.V0;
-    boolean isExecutionInputEnabled = pipelineVersion.equals(PipelineVersion.V0)
-        && pmsFeatureFlagService.isEnabled(accountId, FeatureName.NG_EXECUTION_INPUT);
+    // TODO(BRIJESH): Remove the isExecutionInputEnabled field from PlanCreationContextValue. Once the change to remove
+    // its usages is deployed in all services.
     Map<String, PlanCreationContextValue> planCreationContextMap = new HashMap<>();
     PlanCreationContextValue.Builder builder = PlanCreationContextValue.newBuilder()
                                                    .setAccountIdentifier(accountId)
                                                    .setOrgIdentifier(orgIdentifier)
                                                    .setProjectIdentifier(projectIdentifier)
-                                                   .setIsExecutionInputEnabled(isExecutionInputEnabled);
+                                                   .setIsExecutionInputEnabled(true);
     if (metadata != null) {
       builder.setMetadata(metadata);
     }

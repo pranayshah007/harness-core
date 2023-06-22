@@ -146,7 +146,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
 
   @Override
   public List<DelegateTokenDetails> getDelegateTokens(
-      String accountId, DelegateEntityOwner owner, DelegateTokenStatus status) {
+      String accountId, DelegateEntityOwner owner, DelegateTokenStatus status, boolean includeValue) {
     Query<DelegateToken> query = persistence.createQuery(DelegateToken.class)
                                      .filter(DelegateTokenKeys.accountId, accountId)
                                      .filter(DelegateTokenKeys.isNg, true)
@@ -154,7 +154,10 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
     if (status != null) {
       query = query.filter(DelegateTokenKeys.status, status);
     }
-    return query.asList().stream().map(token -> getDelegateTokenDetails(token, false)).collect(Collectors.toList());
+    return query.asList()
+        .stream()
+        .map(token -> getDelegateTokenDetails(token, includeValue))
+        .collect(Collectors.toList());
   }
 
   @Override

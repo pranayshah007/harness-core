@@ -49,7 +49,9 @@ public class GitEntityUpdateInfoDTO {
   @Parameter(description = GitSyncApiConstants.COMMIT_MESSAGE_PARAM_MESSAGE)
   @QueryParam(GitSyncApiConstants.COMMIT_MSG_KEY)
   String commitMsg;
-  @Parameter(description = "Last Object Id")
+  @Parameter(
+      description =
+          "Its required field during update call request. It can be fetched from the response of GET API call for the entity")
   @QueryParam(GitSyncApiConstants.LAST_OBJECT_ID_KEY)
   String lastObjectId; // required in case of update file
   @Parameter(

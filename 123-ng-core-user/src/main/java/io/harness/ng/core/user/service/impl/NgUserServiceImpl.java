@@ -851,6 +851,7 @@ public class NgUserServiceImpl implements NgUserService {
       log.error("Couldn't update user Account level data for user {} in account {}", userId, accountIdentifier, e);
     }
   }
+
   @Override
   public Optional<UserInfo> getUserById(String userId) {
     return CGRestUtils.getResponse(userClient.getUserById(userId));
@@ -1114,5 +1115,33 @@ public class NgUserServiceImpl implements NgUserService {
     }
 
     return userMetadataRepository.updateFirst(user.getUuid(), update);
+  }
+
+  @Override
+  public void cleanUsersFromAccountForNg(List<String> userIds, String accountIdentifier) {
+    Scope scope =
+        Scope.builder().accountIdentifier(accountIdentifier).orgIdentifier(null).projectIdentifier(null).build();
+    Criteria userMembershipCriteria = getCriteriaForFetchingChildScopesForUserIds(userIds, scope);
+    List<UserMembership> userMemberships = userMembershipRepository.findAllWithCriteria(userMembershipCriteria);
+    Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      userMembershipRepository.deleteAll(userMemberships);
+      log.info("Deleted non admin users for account" + accountIdentifier);
+      for (UserMembership userMembership : userMemberships) {
+        Optional<UserMetadata> userMetadata = userMetadataRepository.findDistinctByUserId(userMembership.getUserId());
+        String publicIdentifier = userMetadata.map(UserMetadata::getEmail).orElse(userMembership.getUserId());
+        String userName = userMetadata.map(UserMetadata::getName).orElse(null);
+        outboxService.save(new RemoveCollaboratorEvent(scope.getAccountIdentifier(), userMembership.getScope(),
+            publicIdentifier, userMembership.getUserId(), userName, UserMembershipUpdateSource.SYSTEM));
+        log.info("Publish event for: {} {}", userMembership, userName);
+      }
+      return userMemberships;
+    }));
+  }
+
+  private Criteria getCriteriaForFetchingChildScopesForUserIds(List<String> userIds, Scope scope) {
+    return Criteria.where(UserMembershipKeys.userId)
+        .in(userIds)
+        .and(UserMembershipKeys.scope + "." + ScopeKeys.accountIdentifier)
+        .is(scope.getAccountIdentifier());
   }
 }

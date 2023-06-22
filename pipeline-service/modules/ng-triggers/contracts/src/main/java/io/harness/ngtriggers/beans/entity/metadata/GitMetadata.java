@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import io.swagger.annotations.ApiModelProperty;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -23,4 +24,5 @@ import lombok.experimental.FieldDefaults;
 public class GitMetadata {
   String connectorIdentifier;
   String repoName;
+  @ApiModelProperty(hidden = true) Boolean isHarnessScm;
 }
