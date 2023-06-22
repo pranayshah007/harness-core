@@ -77,6 +77,7 @@ import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.merger.helpers.InputSetMergeHelper;
+import io.harness.pms.merger.helpers.InputSetTemplateHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.InputSetSanitizer;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
@@ -412,7 +413,7 @@ public class TriggerExecutionHelper {
     }
   }
 
-  private PlanExecution createPlanExecutionV2(TriggerDetails triggerDetails, TriggerPayload triggerPayload,
+  public PlanExecution createPlanExecutionV2(TriggerDetails triggerDetails, TriggerPayload triggerPayload,
       String payload, String executionTagForGitEvent, ExecutionTriggerInfo triggerInfo,
       TriggerWebhookEvent triggerWebhookEvent, String runtimeInputYaml) {
     // First we reset git-sync global context to avoid any issues with global context leaking between executions.
@@ -436,6 +437,7 @@ public class TriggerExecutionHelper {
         stagesToExecute = triggerDetails.getNgTriggerConfigV2().getStagesToExecute();
       }
 
+      runtimeInputYaml = getCleanRuntimeInputYaml(pipelineEntity.getYaml(), runtimeInputYaml);
       ExecArgs execArgs = executionHelper.buildExecutionArgs(pipelineEntity, null, runtimeInputYaml, stagesToExecute,
           Collections.emptyMap(), triggerInfo, null, retryExecutionParameters, false, false);
       execArgs.getPlanExecutionMetadata().setTriggerPayload(triggerPayload);
@@ -780,5 +782,16 @@ public class TriggerExecutionHelper {
                            .connectorRef(pipelineEntityToExecute.getConnectorRef())
                            .build())
         .build();
+  }
+
+  @VisibleForTesting
+  String getCleanRuntimeInputYaml(String pipelineYaml, String runtimeInputYaml) {
+    // Triggers for pipelines with no inputs have "pipeline: {}\n" as their `inputYaml`.
+    // To avoid issues with pipeline re-runs, we need to set the inputYaml to "" in this case.
+    String templateYaml = InputSetTemplateHelper.createTemplateFromPipeline(pipelineYaml);
+    if (templateYaml == null) {
+      return "";
+    }
+    return runtimeInputYaml;
   }
 }
