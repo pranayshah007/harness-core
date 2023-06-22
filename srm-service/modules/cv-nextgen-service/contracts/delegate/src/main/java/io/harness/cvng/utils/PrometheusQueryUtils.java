@@ -8,6 +8,7 @@
 package io.harness.cvng.utils;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 import java.util.regex.Matcher;
@@ -15,16 +16,18 @@ import java.util.regex.Pattern;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 @UtilityClass
 @Slf4j
 public class PrometheusQueryUtils {
   private static final String REGEX_PARENTHESIS_OPEN = "\\(";
-  private static final String REGEX_OR = "|";
-  /*  private static final String NOT_PARENTHESIS_OPEN_RANGE = "[^(]+";
-    private static final String CLOSING_PARENTHESIS = "\\)";
-    private static final String NOT_CLOSE_PARENTHESIS_RANGE = "[^)]+";*/
+  private static final String REGEX_CLOSING_PARENTHESIS = "\\)";
 
+  private static final List<String> aggregationOperatorList = List.of(
+      "sum", "min", "max", "avg", "group", "stddev", "stdvar", "count", "count_values", "bottomk", "topk", "quantile");
+  private static final String REGEX_OR = "|";
+  public static final String PROMQL_CLAUSE_BY = "by";
   public static String formGroupByQuery(String rawQuery, String SII) {
     if (StringUtils.isEmpty(rawQuery)) {
       return rawQuery;
@@ -32,8 +35,8 @@ public class PrometheusQueryUtils {
     if (!areBracketsBalanced(rawQuery)) {
       throw new RuntimeException("Bad Query");
     }
-    // TODO throw exception for unknown by / agg operator
-    StringBuilder query = new StringBuilder(rawQuery.trim().replaceAll(" ", ""));
+    rawQuery = cleanUpWhitespacesOnAggregationOperators(rawQuery);
+    StringBuilder query = new StringBuilder(rawQuery);
     log.info("Original PromQL Query: " + query);
     Map<Integer, Integer> bracketPairs = mapBracketPairIndexes(query.toString());
     // Find any brackets preceded by a operator without encountering another
@@ -50,7 +53,7 @@ public class PrometheusQueryUtils {
         int startBracketIdx = matchAggOperator.end() - 1;
         int endBracketIdx = bracketPairs.get(startBracketIdx);
         if (startBracketIdx - 2 >= 0
-            && "by".equals(query.substring(startBracketIdx - 2, startBracketIdx))) { // Operate at LHS
+            && PROMQL_CLAUSE_BY.equals(query.substring(startBracketIdx - 2, startBracketIdx))) { // Operate at LHS
           appendInsideAByClause(SII, query, startBracketIdx);
           bracketPairs = mapBracketPairIndexes(query.toString());
           int nextBrk = bracketPairs.get(startBracketIdx) + 1;
@@ -72,82 +75,34 @@ public class PrometheusQueryUtils {
         bracketPairs = mapBracketPairIndexes(query.toString());
         scannedTillPoint = matchAggOperator.end() - 1 + additionalMove;
         matchAggOperator = aggregationOperatorPattern.matcher(query.toString());
-        log.debug(restoreQuery(query.toString()));
+        log.debug(query.toString());
       }
     }
-    String finalQuery = restoreQuery(query.toString());
-    log.info("New PromQL Query: " + finalQuery);
-    return finalQuery;
+    log.info("New PromQL Query: " + query);
+    return query.toString();
   }
 
-  private static String restoreQuery(String query) {
-    return query.replaceAll("sumby", " sum by ")
-        .replaceAll("minby", " min by ")
-        .replaceAll("maxby", " max by ")
-        .replaceAll("avgby", " avg by ")
-        .replaceAll("groupby", " group by ")
-        .replaceAll("stddevby", " stddev by ")
-        .replaceAll("stdvarby", " stdvar by")
-        .replaceAll("countby", " count by ")
-        .replaceAll("count_valuesby", " count_values by ")
-        .replaceAll("bottomkby", " bottomk by ")
-        .replaceAll("topkby", " topk by ")
-        .replaceAll("quantileby", " quantile by ")
-        .replaceAll("group_left", " group_left ")
-        .replaceAll("group_right", " group_right "); ////and,or,unless,on,ignoring
-
-    /*    List<String> binaryOperators = new ArrayList<>();
-        String mydata = "some string with 'the data i want' inside";
-        Pattern pattern = Pattern.compile("'(.*?)'");
-        Matcher matcher = pattern.matcher(mydata);
-        if (matcher.find())
-        {
-          System.out.println(matcher.group(1));
-        }
-            .replaceAll(
-                CLOSING_PARENTHESIS + NOT_PARENTHESIS_OPEN_RANGE + "or" + NOT_CLOSE_PARENTHESIS_RANGE +
-       PARENTHESIS_OPEN, " or ") ////and,or,unless,on,ignoring .replaceAll(CLOSING_PARENTHESIS +
-       NOT_PARENTHESIS_OPEN_RANGE + "unless" + NOT_CLOSE_PARENTHESIS_RANGE
-                    + PARENTHESIS_OPEN,
-                " unless ")
-            .replaceAll(
-                CLOSING_PARENTHESIS + NOT_PARENTHESIS_OPEN_RANGE + "on" + NOT_CLOSE_PARENTHESIS_RANGE +
-       PARENTHESIS_OPEN, " on ") ////and,or,unless,on,ignoring .replaceAll(CLOSING_PARENTHESIS +
-       NOT_PARENTHESIS_OPEN_RANGE + "ignoring" + NOT_CLOSE_PARENTHESIS_RANGE
-                    + PARENTHESIS_OPEN,
-                " ignoring ")
-            .replaceAll(
-                CLOSING_PARENTHESIS + NOT_PARENTHESIS_OPEN_RANGE + "and" + NOT_CLOSE_PARENTHESIS_RANGE +
-       PARENTHESIS_OPEN, " and ");*/
+  @NotNull
+  private static String cleanUpWhitespacesOnAggregationOperators(String rawQuery) {
+    rawQuery = rawQuery.trim().replaceAll("\\s+", " ");
+    rawQuery = rawQuery.replaceAll(REGEX_CLOSING_PARENTHESIS + "\\s+" + REGEX_PARENTHESIS_OPEN, ")(");
+    rawQuery = rawQuery.replaceAll(PROMQL_CLAUSE_BY + "\\s+" + REGEX_PARENTHESIS_OPEN, "by(");
+    rawQuery = rawQuery.replaceAll(REGEX_CLOSING_PARENTHESIS + "\\s+" + PROMQL_CLAUSE_BY, ")by");
+    for (String operator : aggregationOperatorList) {
+      rawQuery = rawQuery.replaceAll(operator + "\\s+" + REGEX_PARENTHESIS_OPEN, operator + "(");
+      rawQuery = rawQuery.replaceAll(operator + "\\s+" + PROMQL_CLAUSE_BY, operator + " by");
+    }
+    return rawQuery;
   }
 
   private static StringBuilder createAggregationOperatorPattern() {
     StringBuilder pattern = new StringBuilder();
     pattern.append("\\b(?:");
-    pattern.append("sum" + REGEX_PARENTHESIS_OPEN + REGEX_OR);
-    pattern.append("min" + REGEX_PARENTHESIS_OPEN);
-    pattern.append("max" + REGEX_PARENTHESIS_OPEN + REGEX_OR);
-    pattern.append("avg" + REGEX_PARENTHESIS_OPEN + REGEX_OR);
-    pattern.append("group" + REGEX_PARENTHESIS_OPEN + REGEX_OR);
-    pattern.append("stddev" + REGEX_PARENTHESIS_OPEN + REGEX_OR);
-    pattern.append("stdvar" + REGEX_PARENTHESIS_OPEN + REGEX_OR);
-    pattern.append("count" + REGEX_PARENTHESIS_OPEN + REGEX_OR);
-    pattern.append("count_values" + REGEX_PARENTHESIS_OPEN + REGEX_OR);
-    pattern.append("bottomk" + REGEX_PARENTHESIS_OPEN + REGEX_OR);
-    pattern.append("topk" + REGEX_PARENTHESIS_OPEN + REGEX_OR);
-    pattern.append("quantile" + REGEX_PARENTHESIS_OPEN + REGEX_OR);
-    pattern.append("sumby" + REGEX_PARENTHESIS_OPEN + REGEX_OR);
-    pattern.append("minby" + REGEX_PARENTHESIS_OPEN + REGEX_OR);
-    pattern.append("maxby" + REGEX_PARENTHESIS_OPEN + REGEX_OR);
-    pattern.append("avgby" + REGEX_PARENTHESIS_OPEN + REGEX_OR);
-    pattern.append("groupby" + REGEX_PARENTHESIS_OPEN + REGEX_OR);
-    pattern.append("stddevby" + REGEX_PARENTHESIS_OPEN + REGEX_OR);
-    pattern.append("stdvarby" + REGEX_PARENTHESIS_OPEN + REGEX_OR);
-    pattern.append("countby" + REGEX_PARENTHESIS_OPEN + REGEX_OR);
-    pattern.append("count_valuesby" + REGEX_PARENTHESIS_OPEN + REGEX_OR);
-    pattern.append("bottomkby" + REGEX_PARENTHESIS_OPEN + REGEX_OR);
-    pattern.append("topkby" + REGEX_PARENTHESIS_OPEN + REGEX_OR);
-    pattern.append("quantileby" + REGEX_PARENTHESIS_OPEN);
+    for (String operator : aggregationOperatorList) {
+      pattern.append(operator + REGEX_PARENTHESIS_OPEN + REGEX_OR);
+      pattern.append(operator + " " + PROMQL_CLAUSE_BY + REGEX_PARENTHESIS_OPEN + REGEX_OR);
+    }
+    pattern.deleteCharAt(pattern.length() - 1);
     pattern.append(")\\b");
     return pattern;
   }
@@ -157,7 +112,8 @@ public class PrometheusQueryUtils {
     String byClause = " by (" + SII + ")";
     String suffix = ")" + byClause; // edge case we have reached end
     query.insert(Math.min(endBracketIdx + 1, query.length()), suffix);
-    String prefix = operator.replaceAll("by", "") + '('; // we always use one style sum() by() and not sum by()()
+    String prefix =
+        operator.replaceAll(PROMQL_CLAUSE_BY, "") + '('; // we always use one style sum() by() and not sum by()()
     query.insert(startBracketIdx + 1, prefix);
     return prefix.length();
   }
