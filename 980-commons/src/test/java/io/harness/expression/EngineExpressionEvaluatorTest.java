@@ -433,6 +433,10 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
         .isEqualTo("${ngSecretManager.obtain(\"harness_abc_india_def\", 123)}");
     assertThat(evaluator.resolve("<+secrets.getValue(\"harness_\" + <+f> + \"_india_\" + <+g>)>", true))
         .isEqualTo("${ngSecretManager.obtain(\"harness_abc_india_def\", 123)}");
+    assertThat(evaluator.resolve("<+secrets.getValue(<+f> + \"_india_\" + <+g>)>", true))
+        .isEqualTo("${ngSecretManager.obtain(\"abc_india_def\", 123)}");
+    assertThat(evaluator.resolve("<+secrets.getValue(\"<+f>_india_<+g>\")>", true))
+        .isEqualTo("${ngSecretManager.obtain(\"abc_india_def\", 123)}");
 
     // Ternary operators
     assertThat(evaluator.resolve("<+ <+a>==5?<+f>:<+g> >", true)).isEqualTo("abc");
@@ -565,6 +569,10 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
         .isEqualTo("${ngSecretManager.obtain(\"harness_abc_india_def\", 123)}");
     assertThat(evaluator.resolve("<+secrets.getValue(\"harness_\" + <+f> + \"_india_\" + <+g>)>", true))
         .isEqualTo("${ngSecretManager.obtain(\"harness_abc_india_def\", 123)}");
+    assertThat(evaluator.resolve("<+secrets.getValue(<+f> + \"_india_\" + <+g>)>", true))
+        .isEqualTo("${ngSecretManager.obtain(\"abc_india_def\", 123)}");
+    assertThat(evaluator.resolve("<+secrets.getValue(\"<+f>_india_<+g>\")>", true))
+        .isEqualTo("${ngSecretManager.obtain(\"abc_india_def\", 123)}");
 
     // Ternary operators
     assertThat(evaluator.resolve("<+ <+a>==5?<+f>:<+g> >", true)).isEqualTo("abc");

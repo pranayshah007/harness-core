@@ -162,7 +162,10 @@ public class StringReplacer {
     expressionStartPos--;
     while (expressionStartPos >= 0) {
       char c = buf.charAt(expressionStartPos);
-      if (checkIfStringMathematicalOperator(c)) {
+      if (c == '(') {
+        // expression is inside a method invocation, thus don't take decision of concatenate from left substring
+        break;
+      } else if (checkIfStringMathematicalOperator(c)) {
         return false;
       } else if (!skipNonCriticalCharacters(c)) {
         return true;
@@ -173,7 +176,10 @@ public class StringReplacer {
     // Check on right if any first string mathematical operator found or not
     while (expressionEndPos <= buf.length() - 1) {
       char c = buf.charAt(expressionEndPos);
-      if (checkIfStringMathematicalOperator(c)) {
+      if (c == ')') {
+        // expression is inside a method invocation, thus don't take decision of concatenate from right substring
+        break;
+      } else if (checkIfStringMathematicalOperator(c)) {
         return false;
       } else if (!skipNonCriticalCharacters(c)) {
         return true;
@@ -181,7 +187,7 @@ public class StringReplacer {
       expressionEndPos++;
     }
 
-    return true;
+    return false;
   }
 
   private boolean checkIfValueHasMethodInvocation(StringBuffer buf, int expressionEndPos) {
@@ -197,7 +203,7 @@ public class StringReplacer {
   }
 
   private boolean skipNonCriticalCharacters(char c) {
-    return c == ' ' || c == '(' || c == ')' || c == ';';
+    return c == ' ' || c == ';';
   }
 
   private static boolean isMatch(char ch, StringBuffer buf, int bufStart, int bufEnd) {
