@@ -34,6 +34,7 @@ import static software.wings.service.impl.security.AbstractSecretServiceImpl.enc
 import static dev.morphia.aggregation.Group.grouping;
 import static dev.morphia.aggregation.Projection.projection;
 import static java.util.Objects.isNull;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.trim;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -811,8 +812,8 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
 
   @Override
   public String fetchSecretValue(String accountId, String secretRecordId) {
-    EncryptedData encryptedData = getSecretById(accountId, secretRecordId);
-    return String.valueOf(secretService.fetchSecretValue(encryptedData));
+    Optional<EncryptedData> encryptedDataOptional = secretsDao.getSecretById(accountId, secretRecordId);
+    return encryptedDataOptional.map(data -> String.valueOf(secretService.fetchSecretValue(data))).orElse(EMPTY);
   }
 
   @Override
