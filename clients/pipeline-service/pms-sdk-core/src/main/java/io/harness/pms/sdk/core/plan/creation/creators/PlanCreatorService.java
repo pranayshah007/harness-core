@@ -46,6 +46,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.variables.VariableCreatorService;
 import io.harness.pms.utils.CompletableFutures;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 
@@ -259,7 +260,10 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
         PartialPlanCreator planCreator = planCreatorOptional.get();
         Class<?> cls = planCreator.getFieldClass();
         String executionInputTemplate = "";
-        executionInputTemplate = planCreator.getExecutionInputTemplateAndModifyYamlField(field);
+        // ExecutionInput is supported for V0 YAML only. Not supported with YAML simplification.
+        if (PipelineVersion.V0.equals(ctx.getYamlVersion())) {
+          executionInputTemplate = planCreator.getExecutionInputTemplateAndModifyYamlField(field);
+        }
         Object obj = YamlField.class.isAssignableFrom(cls) ? field : YamlUtils.read(field.getNode().toString(), cls);
 
         try {
