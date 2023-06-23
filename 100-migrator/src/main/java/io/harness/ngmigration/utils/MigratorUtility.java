@@ -403,7 +403,7 @@ public class MigratorUtility {
       return StringNGVariable.builder()
           .type(NGVariableType.STRING)
           .name(name)
-          .value(ParameterField.createValueField(value))
+          .value(ParameterField.createValueField(StringUtils.defaultIfBlank(value, "")))
           .build();
     }
   }

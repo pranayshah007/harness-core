@@ -31,6 +31,7 @@ import io.harness.steps.shellscript.ShellType;
 import io.harness.template.resources.beans.yaml.NGTemplateConfig;
 import io.harness.template.yaml.TemplateLinkConfig;
 import io.harness.yaml.core.timeout.Timeout;
+import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.StringNGVariable;
 
 import software.wings.beans.Variable;
@@ -104,6 +105,7 @@ public class CustomArtifactStreamMapper implements ArtifactStreamMapper {
                                                  .map(attribute
                                                      -> StringNGVariable.builder()
                                                             .name(attribute.getMappedAttribute())
+                                                            .type(NGVariableType.STRING)
                                                             .value(ParameterField.createValueField(
                                                                 attribute.getRelativePath()))
                                                             .build())
