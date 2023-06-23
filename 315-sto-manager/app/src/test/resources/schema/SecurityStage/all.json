@@ -12055,6 +12055,22 @@
         "template": {
           "$ref": "#/definitions/TemplateLinkConfig"
         },
+        "variables": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/NumberNGVariable"
+              },
+              {
+                "$ref": "#/definitions/SecretNGVariable"
+              },
+              {
+                "$ref": "#/definitions/StringNGVariable"
+              }
+            ]
+          }
+        },
         "when": {
           "oneOf": [
             {

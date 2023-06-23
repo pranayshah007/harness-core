@@ -102,7 +102,8 @@ public class StepGroupVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.stage1.spec.execution.steps.sg1.stepGroupInfra",
             "pipeline.stages.stage1.spec.execution.steps.sg1.identifier",
             "pipeline.stages.stage1.spec.execution.steps.sg1.startTs",
-            "pipeline.stages.stage1.spec.execution.steps.sg1.endTs");
+            "pipeline.stages.stage1.spec.execution.steps.sg1.endTs",
+            "pipeline.stages.stage1.spec.execution.steps.sg1.variables");
 
     // check for childrenVariableCreator
     LinkedHashMap<String, VariableCreationResponse> variablesForChildrenNodesV2 =
