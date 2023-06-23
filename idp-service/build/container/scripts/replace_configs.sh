@@ -30,6 +30,8 @@ write_mongo_hosts_and_ports() {
 yq -i 'del(.server.applicationConnectors.[] | select(.type == "https"))' $CONFIG_FILE
 yq -i '.server.adminConnectors=[]' $CONFIG_FILE
 
+yq -i 'del(.pmsSdkGrpcServerConfig.connectors.[] | select(.secure == true))' $CONFIG_FILE
+
 if [[ "" != "$LOGGING_LEVEL" ]]; then
     export LOGGING_LEVEL; yq -i '.logging.level=env(LOGGING_LEVEL)' $CONFIG_FILE
 fi
@@ -104,6 +106,22 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
     export REDIS_SENTINEL_URL; export INDEX; yq -i '.eventsFramework.redis.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
+fi
+
+if [[ "" != "$GRPC_SERVER_PORT" ]]; then
+  export GRPC_SERVER_PORT; yq -i '.pmsSdkGrpcServerConfig.connectors[0].port=env(GRPC_SERVER_PORT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$PMS_TARGET" ]]; then
+  export PMS_TARGET; yq -i '.pmsGrpcClientConfig.target=env(PMS_TARGET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$PMS_AUTHORITY" ]]; then
+  export PMS_AUTHORITY; yq -i '.pmsGrpcClientConfig.authority=env(PMS_AUTHORITY)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SHOULD_CONFIGURE_WITH_PMS" ]]; then
+  export SHOULD_CONFIGURE_WITH_PMS; yq -i '.shouldConfigureWithPMS=env(SHOULD_CONFIGURE_WITH_PMS)' $CONFIG_FILE
 fi
 
 if [[ "" != "$LOCK_CONFIG_REDIS_SENTINELS" ]]; then
@@ -190,6 +208,9 @@ if [[ "" != "$MANAGER_AUTHORITY" ]]; then
   export MANAGER_AUTHORITY; yq -i '.managerAuthority=env(MANAGER_AUTHORITY)' $CONFIG_FILE
 fi
 
+replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE
+replace_key_value cacheConfig.cacheBackend $CACHE_BACKEND
+replace_key_value cacheConfig.enterpriseCacheEnabled $ENTERPRISE_CACHE_ENABLED
 replace_key_value eventsFramework.redis.sentinel $EVENTS_FRAMEWORK_USE_SENTINEL
 replace_key_value eventsFramework.redis.envNamespace $EVENTS_FRAMEWORK_ENV_NAMESPACE
 replace_key_value eventsFramework.redis.redisUrl $EVENTS_FRAMEWORK_REDIS_URL

@@ -58,6 +58,26 @@ redisLockConfig:
   userName: ""
   password: ""
 
+pmsSdkGrpcServerConfig:
+  connectors:
+    - port: 12501
+      secure: true
+      keyFilePath: key.pem
+      certFilePath: cert.pem
+    - port: 12502
+
+pmsGrpcClientConfig:
+  target: localhost:12011
+  authority: localhost
+
+shouldConfigureWithPMS: true
+
+cacheConfig:
+  cacheBackend: REDIS
+  cacheNamespace: ""
+  disabledCaches: [ ]
+  enterpriseCacheEnabled: true
+
 logging:
   level: INFO
   loggers:
