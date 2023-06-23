@@ -30,7 +30,6 @@ import io.harness.pms.contracts.plan.PluginDetails;
 import io.harness.pms.contracts.plan.PortDetails;
 import io.harness.pms.contracts.plan.SecretVariable;
 import io.harness.pms.contracts.plan.StepInfoProto;
-import io.harness.pms.expression.ExpressionResolverUtils;
 import io.harness.pms.sdk.core.plugin.ContainerPluginParseException;
 import io.harness.pms.sdk.core.plugin.ImageDetailsUtils;
 import io.harness.pms.sdk.core.plugin.PluginInfoProvider;
