@@ -8,8 +8,6 @@
 package io.harness.cvng.statemachine.services.impl;
 
 import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_LIMIT;
-import static io.harness.cvng.metrics.CVNGMetricsUtils.ORCHESTRATION_TIME;
-import static io.harness.cvng.metrics.CVNGMetricsUtils.STATE_MACHINE_EXECUTION_TIME;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.eventsframework.EventsFrameworkConstants.SRM_STATEMACHINE_LOCK;
@@ -137,7 +135,7 @@ public class OrchestrationServiceImpl implements OrchestrationService {
         long endTime = System.currentTimeMillis();
         if (context != null) {
           Duration duration = Duration.ofMillis(endTime - context.getStartTime());
-          metricService.recordDuration(ORCHESTRATION_TIME, duration);
+          //          metricService.recordDuration(ORCHESTRATION_TIME, duration);
         }
       }
 
@@ -227,7 +225,7 @@ public class OrchestrationServiceImpl implements OrchestrationService {
             long endTime = System.currentTimeMillis();
             if (context != null) {
               Duration duration = Duration.ofMillis(endTime - context.getStartTime());
-              metricService.recordDuration(STATE_MACHINE_EXECUTION_TIME, duration);
+              //              metricService.recordDuration(STATE_MACHINE_EXECUTION_TIME, duration);
             }
           }
           break;
