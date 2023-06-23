@@ -821,7 +821,10 @@ public enum FeatureName {
       "FF for enabling Instance Sync V2 for K8s and Native Helm swimlanes in NG", HarnessTeam.CDP),
   CDS_SERVICENOW_USE_METADATA_V2(
       "Using METADATA_V2 in /metadata (create update) and /createMetadata (approval) API in Servicenow Steps NG; and changing /metadata parsing to manager",
-      HarnessTeam.CDC);
+      HarnessTeam.CDC),
+  CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG(
+      "Enables multiple manifest support. We will be able to define multiple manifest and set only one as a primary. Epic: https://harness.atlassian.net/browse/CDS-58036",
+      HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {
