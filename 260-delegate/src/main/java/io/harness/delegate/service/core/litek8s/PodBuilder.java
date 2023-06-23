@@ -7,7 +7,9 @@
 
 package io.harness.delegate.service.core.litek8s;
 
-import static io.harness.delegate.service.core.util.K8SResourceHelper.HARNESS_NAME_LABEL;
+import static io.harness.delegate.service.core.util.LabelHelper.HARNESS_NAME_LABEL;
+import static io.harness.delegate.service.core.util.LabelHelper.HARNESS_TASK_GROUP_LABEL;
+import static io.harness.delegate.service.core.util.LabelHelper.normalizeLabel;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -59,7 +61,7 @@ public class PodBuilder extends V1PodBuilder {
         //        .withLabels(Map.of()) // TODO: Add labels to infra section in the API
         //        .withAnnotations(Map.of()) // TODO: Add annotations to infra section in the API
         .withNamespace(config.getNamespace())
-        .withLabels(Map.of(HARNESS_NAME_LABEL, K8SResourceHelper.getPodName(taskGroupId)))
+        .withLabels(getLabels(taskGroupId))
         .endMetadata()
         .withNewSpec()
         .withRestartPolicy("Never")
@@ -91,6 +93,12 @@ public class PodBuilder extends V1PodBuilder {
   public V1Pod buildPod(final ResourceRequirements resource, final List<V1Volume> volumes, final V1Secret loggingSecret,
       final PortMap portMap) {
     return this.withAddon().withLiteEngine(resource, loggingSecret, portMap).withVolumes(volumes).build();
+  }
+
+  @NonNull
+  private static Map<String, String> getLabels(final String taskGroupId) {
+    return Map.of(HARNESS_NAME_LABEL, K8SResourceHelper.getPodName(taskGroupId), HARNESS_TASK_GROUP_LABEL,
+        normalizeLabel(taskGroupId));
   }
 
   private PodBuilder withLiteEngine(

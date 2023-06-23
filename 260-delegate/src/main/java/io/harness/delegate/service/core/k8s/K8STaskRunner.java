@@ -133,7 +133,7 @@ public class K8STaskRunner {
   }
 
   private V1Secret createTaskSecrets(final String taskId, final List<Secret> secrets) throws ApiException {
-    final var k8sSecret = K8SSecret.secret(getSecretName(taskId), HARNESS_DELEGATE_NG);
+    final var k8sSecret = K8SSecret.secret(getSecretName(taskId), HARNESS_DELEGATE_NG, taskId);
 
     for (final var secret : secrets) {
       final var secretFilename = UUID.randomUUID().toString();

@@ -8,6 +8,7 @@
 package io.harness.delegate.service.core.runner;
 
 import io.harness.delegate.core.beans.InputData;
+import io.kubernetes.client.openapi.ApiException;
 
 public interface TaskRunner {
   void init(String taskGroupId, InputData infra);
