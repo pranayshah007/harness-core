@@ -59,6 +59,7 @@ public class BatchMainConfig {
   @JsonProperty("ngManagerServiceSecret") private String ngManagerServiceSecret;
   @JsonProperty("ceNgServiceHttpClientConfig") private ServiceHttpClientConfig ceNgServiceHttpClientConfig;
   @JsonProperty("ceNgServiceSecret") private String ceNgServiceSecret;
+  @JsonProperty("managerServiceHttpClientConfig") private ServiceHttpClientConfig managerServiceHttpClientConfig;
   @JsonProperty("banzaiRecommenderConfig") private ServiceHttpClientConfig banzaiRecommenderConfig;
   @JsonProperty("connectorHealthUpdateJobConfig") private ConnectorHealthUpdateJobConfig connectorHealthUpdateJobConfig;
   @JsonProperty("awsAccountTagsCollectionJobConfig")

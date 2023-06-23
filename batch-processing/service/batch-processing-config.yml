@@ -224,3 +224,8 @@ azureVmPricingConfig:
   baseUrl: https://prices.azure.com/api/retail/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
+
+managerServiceHttpClientConfig:
+  baseUrl: http://localhost:3457/api/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
