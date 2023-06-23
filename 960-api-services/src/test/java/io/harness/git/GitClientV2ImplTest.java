@@ -747,7 +747,7 @@ public class GitClientV2ImplTest extends CategoryTest {
   @Test
   @Owner(developers = LUCAS_SALES)
   @Category(UnitTests.class)
-  public void testRevert_shouldFail() throws IOException, GitAPIException {
+  public void testRevert_shouldFailWithNoParentsCommit() throws IOException, GitAPIException {
     File newFile = new File(repoPath, "file1.txt");
     FileUtils.writeStringToFile(newFile, "Line 1\r\n", "UTF-8", true);
     git.add().addFilepattern("file1.txt").call();
@@ -755,6 +755,30 @@ public class GitClientV2ImplTest extends CategoryTest {
 
     final RevertAndPushRequest revertAndPushRequest =
         RevertAndPushRequest.builder().commitId(rev1.getId().getName()).build();
+
+    doNothing().when(gitClient).ensureRepoLocallyClonedAndUpdated(revertAndPushRequest);
+    doReturn(repoPath).when(gitClientHelper).getRepoDirectory(revertAndPushRequest);
+
+    git.rm();
+    assertThatThrownBy(() -> gitClient.revert(revertAndPushRequest)).isInstanceOf(YamlException.class);
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testRevert_shouldFailWithInvalidCommit() throws IOException, GitAPIException {
+    File newFile = new File(repoPath, "file1.txt");
+    FileUtils.writeStringToFile(newFile, "Line 1\r\n", "UTF-8", true);
+    git.add().addFilepattern("file1.txt").call();
+    git.commit().setAuthor("test", "test@test.com").setMessage("Commit Log 1").call();
+
+    // commit some changes
+    FileUtils.writeStringToFile(newFile, "Line 2\r\n", "UTF-8", true);
+    git.add().addFilepattern("file1.txt").call();
+    git.commit().setAll(true).setAuthor("test", "test@test.com").setMessage("Commit Log 2").call();
+
+    final RevertAndPushRequest revertAndPushRequest =
+        RevertAndPushRequest.builder().commitId("invalid-commit-id").build();
 
     doNothing().when(gitClient).ensureRepoLocallyClonedAndUpdated(revertAndPushRequest);
     doReturn(repoPath).when(gitClientHelper).getRepoDirectory(revertAndPushRequest);
@@ -778,7 +802,7 @@ public class GitClientV2ImplTest extends CategoryTest {
     RevCommit rev2 = git.commit().setAll(true).setAuthor("test", "test@test.com").setMessage("Commit Log 2").call();
 
     doNothing().when(gitClient).updateRemoteOriginInConfig(any(), any(), any());
-    RevertAndPushRequest request = RevertAndPushRequest.builder().commitId(rev2.getId().getName()).build();
+    RevertAndPushRequest request = RevertAndPushRequest.builder().commitId("osapdkpoasdkopsad").build();
 
     PushResultGit toBeReturned = pushResultBuilder().refUpdate(PushResultGit.RefUpdate.builder().build()).build();
     addRemote(repoPath);
