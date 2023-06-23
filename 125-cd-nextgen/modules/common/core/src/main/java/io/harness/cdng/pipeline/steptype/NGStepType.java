@@ -323,10 +323,6 @@ public enum NGStepType {
   SERVERLESS_AWS_LAMBDA_DEPLOY_V2("Serverless Aws Lambda Deploy V2",
       Collections.singletonList(ServiceDefinitionType.SERVERLESS_AWS_LAMBDA), "Serverless Aws Lambda",
       StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2),
-  @JsonProperty(StepSpecTypeConstants.DOWNLOAD_SERVERLESS_MANIFESTS)
-  DOWNLOAD_SERVERLESS_MANIFESTS("Download Serverless Manifests",
-      Arrays.asList(ServiceDefinitionType.SERVERLESS_AWS_LAMBDA), "Serverless Aws Lambda",
-      StepSpecTypeConstants.DOWNLOAD_SERVERLESS_MANIFESTS),
   @JsonProperty(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PACKAGE_V2)
   SERVERLESS_AWS_LAMBDA_PACKAGE_V2("Serverless Aws Lambda Package V2",
       Collections.singletonList(ServiceDefinitionType.SERVERLESS_AWS_LAMBDA), "Serverless Aws Lambda",
