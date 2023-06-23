@@ -419,7 +419,7 @@ pmsGrpcClientConfig:
 
 apiUrl: https://localhost:8181/#/
 
-shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-true}
+shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-false}
 
 enableDashboardTimescale: false
 

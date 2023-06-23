@@ -86,7 +86,6 @@ import io.harness.cdng.provision.terragrunt.TerragruntPlanStepInfo;
 import io.harness.cdng.provision.terragrunt.TerragruntRollbackStepInfo;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepInfo;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepInfo;
-import io.harness.cdng.serverless.container.steps.DownloadServerlessManifestsV2StepInfo;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2StepInfo;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPackageV2StepInfo;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepInfo;
