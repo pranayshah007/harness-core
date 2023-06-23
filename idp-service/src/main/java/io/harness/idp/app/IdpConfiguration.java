@@ -109,6 +109,11 @@ public class IdpConfiguration extends Configuration {
   @JsonProperty("scoreComputerThreadsPerCore") private String scoreComputerThreadsPerCore;
   @JsonProperty("auditClientConfig") private ServiceHttpClientConfig auditClientConfig;
   @JsonProperty("enableAudit") private boolean enableAudit;
+  @JsonProperty("pmsSdkGrpcServerConfig") private GrpcServerConfig pmsSdkGrpcServerConfig;
+  @JsonProperty("pmsGrpcClientConfig") private GrpcClientConfig pmsGrpcClientConfig;
+  @JsonProperty("shouldConfigureWithPMS") private Boolean shouldConfigureWithPMS;
+  @JsonProperty("cacheConfig") private CacheConfig cacheConfig;
+
   private String managerTarget;
   private String managerAuthority;
   @JsonProperty("streamPerServiceConfiguration") private boolean streamPerServiceConfiguration;

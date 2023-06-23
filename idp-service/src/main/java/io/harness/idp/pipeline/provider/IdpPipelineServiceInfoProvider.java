@@ -8,6 +8,13 @@
 package io.harness.idp.pipeline.provider;
 
 import io.harness.pms.contracts.steps.StepInfo;
+import static io.harness.steps.plugin.ContainerStepConstants.PLUGIN;
+
+import io.harness.ci.plancreator.GitCloneStepPlanCreator;
+import io.harness.idp.pipeline.jsoncreator.IdpStepFilterJsonCreator;
+import io.harness.idp.pipeline.step.StepSpecTypeConstants;
+import io.harness.pms.contracts.steps.StepInfo;
+import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoProvider;
@@ -48,7 +55,15 @@ public class IdpPipelineServiceInfoProvider implements PipelineServiceInfoProvid
   @Override
   public List<StepInfo> getStepInfo() {
     // Needs to be modified based on steps
+    StepInfo gitCloneStepInfo =
+        StepInfo.newBuilder()
+            .setName("Git Clone")
+            .setType(StepSpecTypeConstants.GIT_CLONE)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(PLUGIN).addFolderPaths("Build").build())
+            .build();
+
     ArrayList<StepInfo> stepInfos = new ArrayList<>();
+    stepInfos.add(gitCloneStepInfo);
     return stepInfos;
   }
 }

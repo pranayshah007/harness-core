@@ -6,7 +6,6 @@
 
 CONFIG_FILE=/opt/harness/config.yml
 REDISSON_CACHE_FILE=/opt/harness/redisson-jcache.yaml
-ENTERPRISE_REDISSON_CACHE_FILE=/opt/harness/enterprise-redisson-jcache.yaml
 
 replace_key_value () {
   CONFIG_KEY="$1";
@@ -31,8 +30,12 @@ write_mongo_hosts_and_ports() {
 
 yq -i 'del(.server.applicationConnectors.[] | select(.type == "https"))' $CONFIG_FILE
 yq -i '.server.adminConnectors=[]' $CONFIG_FILE
+yq -i 'del(.codec)' $REDISSON_CACHE_FILE
 
-yq -i 'del(.pmsSdkGrpcServerConfig.connectors.[] | select(.secure == true))' $CONFIG_FILE
+if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
+  yq -i '.redisLockConfig.useScriptCache=false' $CONFIG_FILE
+  yq -i '.useScriptCache=false' $REDISSON_CACHE_FILE
+fi
 
 if [[ "" != "$LOGGING_LEVEL" ]]; then
     export LOGGING_LEVEL; yq -i '.logging.level=env(LOGGING_LEVEL)' $CONFIG_FILE
@@ -110,22 +113,6 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   done
 fi
 
-if [[ "" != "$GRPC_SERVER_PORT" ]]; then
-  export GRPC_SERVER_PORT; yq -i '.pmsSdkGrpcServerConfig.connectors[0].port=env(GRPC_SERVER_PORT)' $CONFIG_FILE
-fi
-
-if [[ "" != "$PMS_TARGET" ]]; then
-  export PMS_TARGET; yq -i '.pmsGrpcClientConfig.target=env(PMS_TARGET)' $CONFIG_FILE
-fi
-
-if [[ "" != "$PMS_AUTHORITY" ]]; then
-  export PMS_AUTHORITY; yq -i '.pmsGrpcClientConfig.authority=env(PMS_AUTHORITY)' $CONFIG_FILE
-fi
-
-if [[ "" != "$SHOULD_CONFIGURE_WITH_PMS" ]]; then
-  export SHOULD_CONFIGURE_WITH_PMS; yq -i '.shouldConfigureWithPMS=env(SHOULD_CONFIGURE_WITH_PMS)' $CONFIG_FILE
-fi
-
 if [[ "" != "$LOCK_CONFIG_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$LOCK_CONFIG_REDIS_SENTINELS"
   INDEX=0
@@ -194,14 +181,6 @@ if [[ "" != "$IDP_SERVICE_SECRET" ]]; then
   export IDP_SERVICE_SECRET; yq -i '.idpServiceSecret=env(IDP_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
-if [[ "" != "$IDP_ENCRYPTION_SECRET" ]]; then
-  export IDP_ENCRYPTION_SECRET; yq -i '.idpEncryptionSecret=env(IDP_ENCRYPTION_SECRET)' $CONFIG_FILE
-fi
-
-if [[ "" != "$JWT_EXTERNAL_SERVICE_SECRET" ]]; then
-  export JWT_EXTERNAL_SERVICE_SECRET; yq -i '.jwtExternalServiceSecret=env(JWT_EXTERNAL_SERVICE_SECRET)' $CONFIG_FILE
-fi
-
 if [[ "" != "$NG_MANAGER_GITSYNC_TARGET" ]]; then
   export NG_MANAGER_GITSYNC_TARGET; yq -i '.gitManagerGrpcClientConfig.target=env(NG_MANAGER_GITSYNC_TARGET)' $CONFIG_FILE
 fi
@@ -218,29 +197,10 @@ if [[ "" != "$MANAGER_AUTHORITY" ]]; then
   export MANAGER_AUTHORITY; yq -i '.managerAuthority=env(MANAGER_AUTHORITY)' $CONFIG_FILE
 fi
 
-if [[ "" != "$PROXY_ALLOW_LIST_CONFIG_SERVICES" ]]; then
-  export PROXY_ALLOW_LIST_CONFIG_SERVICES; yq -i '.proxyAllowList.services=env(PROXY_ALLOW_LIST_CONFIG_SERVICES)' $CONFIG_FILE
-  sed -i '' 's/  services: |-/  services:/g' $CONFIG_FILE
+if [[ "" != "$SHOULD_CONFIGURE_WITH_PMS" ]]; then
+  export SHOULD_CONFIGURE_WITH_PMS; yq -i '.shouldConfigureWithPMS=env(SHOULD_CONFIGURE_WITH_PMS)' $CONFIG_FILE
 fi
 
-if [[ "" != "$CPU" ]]; then
-  export CPU; yq -i '.cpu=env(CPU)' $CONFIG_FILE
-fi
-
-if [[ "" != "$SCORE_COMPUTER_THREADS_PER_CORE" ]]; then
-  export SCORE_COMPUTER_THREADS_PER_CORE; yq -i '.scoreComputerThreadsPerCore=env(SCORE_COMPUTER_THREADS_PER_CORE)' $CONFIG_FILE
-fi
-
-yq -i 'del(.codec)' $REDISSON_CACHE_FILE
-
-if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
-  yq -i '.redisLockConfig.useScriptCache=false' $CONFIG_FILE
-  yq -i '.useScriptCache=false' $REDISSON_CACHE_FILE
-fi
-
-replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE
-replace_key_value cacheConfig.cacheBackend $CACHE_BACKEND
-replace_key_value cacheConfig.enterpriseCacheEnabled $ENTERPRISE_CACHE_ENABLED
 replace_key_value eventsFramework.redis.sentinel $EVENTS_FRAMEWORK_USE_SENTINEL
 replace_key_value eventsFramework.redis.envNamespace $EVENTS_FRAMEWORK_ENV_NAMESPACE
 replace_key_value eventsFramework.redis.redisUrl $EVENTS_FRAMEWORK_REDIS_URL
@@ -263,8 +223,6 @@ replace_key_value backstageSaCaCrt "$BACKSTAGE_SA_CA_CRT"
 replace_key_value backstageMasterUrl "$BACKSTAGE_MASTER_URL"
 replace_key_value backstagePodLabel "$BACKSTAGE_POD_LABEL"
 replace_key_value idpServiceSecret "$IDP_SERVICE_SECRET"
-replace_key_value idpEncryptionSecret "$IDP_ENCRYPTION_SECRET"
-replace_key_value jwtExternalServiceSecret "$JWT_EXTERNAL_SERVICE_SECRET"
 replace_key_value jwtAuthSecret "$JWT_AUTH_SECRET"
 replace_key_value jwtIdentityServiceSecret "$JWT_IDENTITY_SERVICE_SECRET"
 replace_key_value provisionModuleConfig.triggerPipelineUrl "$TRIGGER_PIPELINE_URL"
@@ -274,15 +232,11 @@ replace_key_value accessControlClient.accessControlServiceSecret "$ACCESS_CONTRO
 replace_key_value backstageHttpClientConfig.baseUrl "$BACKSTAGE_BASE_URL"
 replace_key_value backstageServiceSecret "$BACKSTAGE_SERVICE_SECRET"
 replace_key_value onboardingModuleConfig.harnessCiCdAnnotations.projectUrl "$ONBOARDING_MODULE_CONFIG_HARNESS_CI_CD_ANNOTATIONS_PROJECT_URL"
-replace_key_value onboardingModuleConfig.harnessCiCdAnnotations.serviceUrl "$ONBOARDING_MODULE_CONFIG_HARNESS_CI_CD_ANNOTATIONS_SERVICE_URL"
 replace_key_value env "$ENV"
 replace_key_value prEnvDefaultBackstageNamespace "$DEFAULT_BACKSTAGE_NAMESPACE"
 replace_key_value backstageAppBaseUrl "$BACKSTAGE_APP_BASE_URL"
 replace_key_value backstagePostgresHost "$BACKSTAGE_POSTGRES_HOST"
 replace_key_value onboardingModuleConfig.useGitServiceGrpcForSingleEntityPush $ONBOARDING_MODULE_CONFIG_USE_GIT_SERVICE_GRPC_FOR_SINGLE_ENTITY_PUSH
-replace_key_value delegateSelectorsCacheMode "$DELEGATE_SELECTORS_CACHE_MODE"
-replace_key_value shouldConfigureWithNotification "$SHOULD_CONFIGURE_WITH_NOTIFICATION"
-replace_key_value notificationClient.secrets.notificationClientSecret "$NOTIFICATION_CLIENT_SECRET"
 
 if [[ "" != "$LOCK_CONFIG_REDIS_URL" ]]; then
   export LOCK_CONFIG_REDIS_URL; yq -i '.singleServerConfig.address=env(LOCK_CONFIG_REDIS_URL)' $REDISSON_CACHE_FILE
@@ -290,20 +244,6 @@ fi
 
 if [[ "$LOCK_CONFIG_USE_SENTINEL" == "true" ]]; then
   yq -i 'del(.singleServerConfig)' $REDISSON_CACHE_FILE
-fi
-
-if [[ "" != "$LOCK_CONFIG_SENTINEL_MASTER_NAME" ]]; then
-  export LOCK_CONFIG_SENTINEL_MASTER_NAME; yq -i '.sentinelServersConfig.masterName=env(LOCK_CONFIG_SENTINEL_MASTER_NAME)' $REDISSON_CACHE_FILE
-fi
-
-if [[ "" != "$LOCK_CONFIG_REDIS_SENTINELS" ]]; then
-  IFS=',' read -ra SENTINEL_URLS <<< "$LOCK_CONFIG_REDIS_SENTINELS"
-  INDEX=0
-  for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    export REDIS_SENTINEL_URL; export INDEX; yq -i '.redisLockConfig.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
-    export REDIS_SENTINEL_URL; export INDEX; yq -i '.sentinelServersConfig.sentinelAddresses.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $REDISSON_CACHE_FILE
-    INDEX=$(expr $INDEX + 1)
-  done
 fi
 
 if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
@@ -324,109 +264,4 @@ fi
 
 if [[ "" != "$REDIS_TIMEOUT" ]]; then
   export REDIS_TIMEOUT; yq -i '.singleServerConfig.timeout=env(REDIS_TIMEOUT)' $REDISSON_CACHE_FILE
-fi
-
-yq -i 'del(.codec)' $ENTERPRISE_REDISSON_CACHE_FILE
-
-if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
-  yq -i '.useScriptCache=false' $ENTERPRISE_REDISSON_CACHE_FILE
-fi
-
-if [[ "" != "$EVENTS_FRAMEWORK_NETTY_THREADS" ]]; then
-  export EVENTS_FRAMEWORK_NETTY_THREADS; yq -i '.nettyThreads=env(EVENTS_FRAMEWORK_NETTY_THREADS)' $ENTERPRISE_REDISSON_CACHE_FILE
-fi
-
-if [[ "" != "$EVENTS_FRAMEWORK_REDIS_URL" ]]; then
-  export EVENTS_FRAMEWORK_REDIS_URL; yq -i '.singleServerConfig.address=env(EVENTS_FRAMEWORK_REDIS_URL)' $ENTERPRISE_REDISSON_CACHE_FILE
-fi
-
-if [[ "" != "$EVENTS_FRAMEWORK_REDIS_USERNAME" ]]; then
-  export EVENTS_FRAMEWORK_REDIS_USERNAME; yq -i '.singleServerConfig.username=env(EVENTS_FRAMEWORK_REDIS_USERNAME)' $ENTERPRISE_REDISSON_CACHE_FILE
-fi
-
-if [[ "" != "$EVENTS_FRAMEWORK_REDIS_PASSWORD" ]]; then
-  export EVENTS_FRAMEWORK_REDIS_PASSWORD; yq -i '.singleServerConfig.password=env(EVENTS_FRAMEWORK_REDIS_PASSWORD)' $ENTERPRISE_REDISSON_CACHE_FILE
-fi
-
-if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH" ]]; then
-  export FILE_VAR="file:$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH"; yq -i '.singleServerConfig.sslTruststore=env(FILE_VAR)' $ENTERPRISE_REDISSON_CACHE_FILE
-fi
-
-if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD" ]]; then
-  export EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD; yq -i '.singleServerConfig.sslTruststorePassword=env(EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD)' $ENTERPRISE_REDISSON_CACHE_FILE
-fi
-
-if [[ "$EVENTS_FRAMEWORK_USE_SENTINEL" == "true" ]]; then
-  yq -i 'del(.singleServerConfig)' $ENTERPRISE_REDISSON_CACHE_FILE
-
-  if [[ "" != "$EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME" ]]; then
-    export EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME; yq -i '.sentinelServersConfig.masterName=env(EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME)' $ENTERPRISE_REDISSON_CACHE_FILE
-  fi
-
-  if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
-    IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"
-    INDEX=0
-    for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-      export REDIS_SENTINEL_URL; export INDEX; yq -i '.sentinelServersConfig.sentinelAddresses.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $ENTERPRISE_REDISSON_CACHE_FILE
-      INDEX=$(expr $INDEX + 1)
-    done
-  fi
-fi
-
-if [[ "" != "$NOTIFICATION_BASE_URL" ]]; then
-  export NOTIFICATION_BASE_URL; yq -i '.notificationClient.httpClient.baseUrl=env(NOTIFICATION_BASE_URL)' $CONFIG_FILE
-fi
-
-if [[ "" != "$NOTIFICATION_MONGO_URI" ]]; then
-  export NOTIFICATION_MONGO_URI=${NOTIFICATION_MONGO_URI//\\&/&}; yq -i '.notificationClient.messageBroker.uri=env(NOTIFICATION_MONGO_URI)' $CONFIG_FILE
-fi
-
-if [[ "" != "$NOTIFICATION_CONFIGS_PLUGIN_REQUESTS_NOTIFICATION_SLACK" ]]; then
-  export NOTIFICATION_CONFIGS_PLUGIN_REQUESTS_NOTIFICATION_SLACK; yq -i '.notificationConfigs.pluginRequestsNotificationSlack=env(NOTIFICATION_CONFIGS_PLUGIN_REQUESTS_NOTIFICATION_SLACK)' $CONFIG_FILE
-fi
-
-if [[ "" != "$PIPELINE_SERVICE_CLIENT_BASEURL" ]]; then
-  export PIPELINE_SERVICE_CLIENT_BASEURL; yq -i '.pipelineServiceClientConfig.baseUrl=env(PIPELINE_SERVICE_CLIENT_BASEURL)' $CONFIG_FILE
-fi
-
-if [[ "" != "$PIPELINE_SERVICE_SECRET" ]]; then
-  export PIPELINE_SERVICE_SECRET; yq -i '.pipelineServiceSecret=env(PIPELINE_SERVICE_SECRET)' $CONFIG_FILE
-fi
-
-if [[ "" != "$TI_SERVICE_ENDPOINT" ]]; then
-  export TI_SERVICE_ENDPOINT; yq -i '.tiServiceConfig.baseUrl=env(TI_SERVICE_ENDPOINT)' $CONFIG_FILE
-fi
-
-if [[ "" != "$TI_SERVICE_INTERNAL_URL" ]]; then
-  export TI_SERVICE_INTERNAL_URL; yq -i '.tiServiceConfig.internalUrl=env(TI_SERVICE_INTERNAL_URL)' $CONFIG_FILE
-fi
-
-if [[ "" != "$TI_SERVICE_GLOBAL_TOKEN" ]]; then
-  export TI_SERVICE_GLOBAL_TOKEN; yq -i '.tiServiceConfig.globalToken=env(TI_SERVICE_GLOBAL_TOKEN)' $CONFIG_FILE
-fi
-
-if [[ "" != "$SCORECARD_ITERATOR_THREAD_POOL_COUNT" ]]; then
-  export SCORECARD_ITERATOR_THREAD_POOL_COUNT; yq -i '.scorecardScoreComputationIteratorConfig.threadPoolCount=env(SCORECARD_ITERATOR_THREAD_POOL_COUNT)' $CONFIG_FILE
-fi
-
-if [[ "" != "$SCORECARD_ITERATOR_ENABLED" ]]; then
-  export SCORECARD_ITERATOR_ENABLED; yq -i '.scorecardScoreComputationIteratorConfig.enabled=env(SCORECARD_ITERATOR_ENABLED)' $CONFIG_FILE
-fi
-
-if [[ "" != "$SCORECARD_ITERATOR_TARGET_INTERVAL_IN_SECONDS" ]]; then
-  export SCORECARD_ITERATOR_TARGET_INTERVAL_IN_SECONDS; yq -i '.scorecardScoreComputationIteratorConfig.targetIntervalInSeconds=env(SCORECARD_ITERATOR_TARGET_INTERVAL_IN_SECONDS)' $CONFIG_FILE
-fi
-
-
-if [[ "" != "$AUDIT_CLIENT_BASEURL" ]]; then
-  export AUDIT_CLIENT_BASEURL; yq -i '.auditClientConfig.baseUrl=env(AUDIT_CLIENT_BASEURL)' $CONFIG_FILE
-fi
-
-if [[ "" != "$AUDIT_ENABLED" ]]; then
-  export AUDIT_ENABLED; yq -i '.enableAudit=env(AUDIT_ENABLED)' $CONFIG_FILE
-fi
-
-if [[ "" != "$INTERNAL_ACCOUNTS" ]]; then
-  yq -i 'del(.internalAccounts)' $CONFIG_FILE
-  export INTERNAL_ACCOUNTS; yq -i '.internalAccounts=(env(INTERNAL_ACCOUNTS) | split(",") | map(trim))' $CONFIG_FILE
 fi

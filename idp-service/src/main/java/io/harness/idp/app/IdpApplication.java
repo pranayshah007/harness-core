@@ -20,6 +20,7 @@ import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.CacheModule;
+import io.harness.exception.GeneralException;
 import io.harness.health.HealthMonitor;
 import io.harness.health.HealthService;
 import io.harness.idp.annotations.IdpServiceAuth;
@@ -190,6 +191,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
     registerPMSSDK(configuration, injector);
     registerResources(environment, injector);
     registerHealthChecksManager(environment, injector);
+    registerPmsSdkEvents(injector);
     registerQueueListeners(injector);
     registerAuthFilters(configuration, environment, injector);
     registerManagedJobs(environment, injector);
@@ -356,6 +358,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
         PmsSdkInitHelper.initializeSDKInstance(injector, idpSDKConfig);
       } catch (Exception e) {
         log.error("PMS SDK registration failed", e);
+        throw new GeneralException("Fail to start IDP Service because pms sdk registration failed", e);
       }
     }
   }
