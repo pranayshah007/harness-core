@@ -37,6 +37,7 @@ import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -316,6 +317,31 @@ public class VerificationTaskServiceImplTest extends CvNextGenTestBase {
     assertThatThrownBy(() -> verificationTaskService.get(verificationTaskId))
         .isInstanceOf(IllegalStateException.class)
         .hasMessage("Invalid verificationTaskId. Verification mapping does not exist.");
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetVerificationTasksForGivenIds() {
+    hPersistence.save(
+        VerificationTask.builder()
+            .uuid("v1")
+            .taskInfo(
+                VerificationTask.DeploymentInfo.builder().cvConfigId("c1").verificationJobInstanceId("uuid1").build())
+            .build());
+    hPersistence.save(
+        VerificationTask.builder()
+            .uuid("v2")
+            .taskInfo(
+                VerificationTask.DeploymentInfo.builder().cvConfigId("c1").verificationJobInstanceId("uuid1").build())
+            .build());
+    Set<String> verificationTaskIds = new HashSet<>();
+    verificationTaskIds.add("v1");
+    verificationTaskIds.add("v3");
+    List<VerificationTask> verificationTasks =
+        verificationTaskService.getVerificationTasksForGivenIds(verificationTaskIds);
+    assertThat(verificationTasks).hasSize(1);
+    assertThat(verificationTasks.get(0).getUuid()).isEqualTo("v1");
   }
 
   private boolean doesClassContainField(Class<?> clazz, String fieldName) {

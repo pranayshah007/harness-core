@@ -16,6 +16,7 @@ import static io.harness.rule.OwnerRule.TMACARI;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -25,6 +26,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.HttpCertificateNG;
 import io.harness.category.element.UnitTests;
 import io.harness.common.NGTimeConversionHelper;
@@ -105,6 +107,8 @@ public class HttpStepTest extends CategoryTest {
     LogStreamingStepClientImpl logClient = mock(LogStreamingStepClientImpl.class);
     Mockito.when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(logClient);
     Reflect.on(httpStep).set("engineExpressionService", engineExpressionService);
+    ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", "accountId").build();
+    Mockito.when(pmsFeatureFlagHelper.isEnabled(anyString(), any(FeatureName.class))).thenReturn(false);
   }
 
   @After
@@ -137,7 +141,7 @@ public class HttpStepTest extends CategoryTest {
         .when(engineExpressionService)
         .evaluateExpression(any(), eq("<+json.object(httpResponseBody).metaData>"), any(), any());
 
-    Map<String, String> evaluatedVariables = httpStep.evaluateOutputVariables(variables, response1, null);
+    Map<String, String> evaluatedVariables = httpStep.evaluateOutputVariables(variables, response1, ambiance);
     assertThat(evaluatedVariables).isNotEmpty();
     assertThat(evaluatedVariables.get("name1")).isEqualTo("metadataValue");
     assertThat(evaluatedVariables.get("name4")).isEqualTo("directValue");
@@ -146,7 +150,7 @@ public class HttpStepTest extends CategoryTest {
     variables.put("name3", var3);
 
     HttpStepResponse response2 = HttpStepResponse.builder().httpResponseBody(body).build();
-    evaluatedVariables = httpStep.evaluateOutputVariables(variables, response2, null);
+    evaluatedVariables = httpStep.evaluateOutputVariables(variables, response2, ambiance);
     assertThat(evaluatedVariables).isNotEmpty();
     assertThat(evaluatedVariables.get("name2")).isNull();
     assertThat(evaluatedVariables.get("name3")).isNull();

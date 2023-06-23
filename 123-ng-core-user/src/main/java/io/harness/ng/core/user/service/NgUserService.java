@@ -42,7 +42,7 @@ public interface NgUserService {
   void addUserToCG(String userId, Scope scope);
   void updateNGUserToCGWithSource(String userId, Scope scope, UserSource userSource);
 
-  Optional<UserInfo> getUserById(String userId, boolean includeSupportAccounts);
+  Optional<UserInfo> getUserById(String userId);
 
   Optional<UserMetadataDTO> getUserByEmail(String emailId, boolean fetchFromCurrentGen);
 
@@ -125,4 +125,6 @@ public interface NgUserService {
   UsersCountDTO getUsersCount(Scope scope, long startInterval, long endInterval);
 
   UserMetadata updateUserMetadataInternal(UserMetadataDTO user);
+
+  void cleanUsersFromAccountForNg(List<String> userIds, String accountIdentifier);
 }

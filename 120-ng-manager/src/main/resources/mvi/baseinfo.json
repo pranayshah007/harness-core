@@ -40,9 +40,9 @@
      ]
    },
    {
-     "moduleName": "FF",
+     "moduleName": "CF",
      "displayName": "Feature Flags",
-     "version": "Coming Soon",
+     "version": "",
      "lastModifiedAt": "",
      "versionUrl": "",
      "releaseNotesLink": "https://developer.harness.io/release-notes/feature-flags",

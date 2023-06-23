@@ -179,8 +179,8 @@ ciExecutionServiceConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.16.17
-  liteEngineImage: harness/ci-lite-engine:1.16.17
+  addonImage: harness/ci-addon:1.16.19
+  liteEngineImage: harness/ci-lite-engine:1.16.19
   isLocal: false
   remoteDebugTimeout: 3600
   cacheIntelligenceConfig:
@@ -238,6 +238,12 @@ ciExecutionServiceConfig:
           - "--run-strategy"
           - single-container
       - product: codeql_.*
+        image: harness/sto-plugin
+        entrypoint:
+          - /bin/sto_plugin
+          - "--run-strategy"
+          - single-container
+      - product: coverity_.*
         image: harness/sto-plugin
         entrypoint:
           - /bin/sto_plugin
@@ -480,3 +486,18 @@ opaClientConfig:
   baseUrl: http://localhost:3000
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
+
+cfClientConfig:
+  apiKey: ""
+  configUrl: "https://config.feature-flags.uat.harness.io/api/1.0"
+  eventUrl: "https://event.feature-flags.uat.harness.io/api/1.0"
+  analyticsEnabled: true
+  connectionTimeout: 10000
+  readTimeout: 45000
+  bufferSize: 10240
+  retries: 6
+  sleepInterval: 5000
+
+featureFlagConfig:
+  featureFlagSystem: LOCAL
+  syncFeaturesToCF: false

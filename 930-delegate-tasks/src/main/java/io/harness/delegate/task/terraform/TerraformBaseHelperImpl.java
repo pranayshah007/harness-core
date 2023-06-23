@@ -76,6 +76,7 @@ import io.harness.delegate.clienttools.TerraformConfigInspectVersion;
 import io.harness.delegate.task.artifactory.ArtifactoryRequestMapper;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.terraform.handlers.HarnessSMEncryptionDecryptionHandler;
+import io.harness.delegate.task.terraform.handlers.HarnessSMEncryptionDecryptionHandlerNG;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.TerraformCommandExecutionException;
@@ -180,6 +181,7 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
   @Inject AwsApiHelperService awsApiHelperService;
   @Inject AwsNgConfigMapper awsNgConfigMapper;
   @Inject HarnessSMEncryptionDecryptionHandler harnessSMEncryptionDecryptionHandler;
+  @Inject HarnessSMEncryptionDecryptionHandlerNG harnessSMEncryptionDecryptionHandlerNg;
 
   @Override
   public void downloadTfStateFile(String workspace, String accountId, String currentStateFileId, String scriptDirectory)
@@ -630,8 +632,13 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
     byte[] decryptedTerraformPlan;
 
     if (encryptDecryptPlanForHarnessSMOnManager) {
-      decryptedTerraformPlan =
-          harnessSMEncryptionDecryptionHandler.getDecryptedContent(encryptionConfig, encryptedTfPlan, accountId, isNG);
+      if (isNG) {
+        decryptedTerraformPlan =
+            harnessSMEncryptionDecryptionHandlerNg.getDecryptedContent(encryptionConfig, encryptedTfPlan, accountId);
+      } else {
+        decryptedTerraformPlan =
+            harnessSMEncryptionDecryptionHandler.getDecryptedContent(encryptionConfig, encryptedTfPlan, accountId);
+      }
     } else {
       decryptedTerraformPlan = encryptDecryptHelper.getDecryptedContent(encryptionConfig, encryptedTfPlan, accountId);
     }
@@ -654,14 +661,27 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
               .withBucket(FileBucket.TERRAFORM_PLAN)
               .withFileName(format(TERRAFORM_PLAN_FILE_OUTPUT_NAME, taskNGParameters.getPlanName()))
               .build();
+
+      if (taskNGParameters.isEncryptDecryptPlanForHarnessSMOnManager()) {
+        return (EncryptedRecordData) harnessSMEncryptionDecryptionHandlerNg.encryptFile(
+            content, taskNGParameters.getEncryptionConfig(), planDelegateFile);
+      }
       return (EncryptedRecordData) encryptDecryptHelper.encryptFile(
           content, taskNGParameters.getPlanName(), taskNGParameters.getEncryptionConfig(), planDelegateFile);
+    }
+    if (taskNGParameters.isEncryptDecryptPlanForHarnessSMOnManager()) {
+      return encryptPlanForHarnessSM(content, taskNGParameters.getEncryptionConfig(), true);
     }
     return encryptPlan(content, taskNGParameters.getPlanName(), taskNGParameters.getEncryptionConfig());
   }
 
-  private EncryptedRecordData encryptPlanForHarnessSM(byte[] content, EncryptionConfig encryptionConfig, boolean isNG) {
-    return (EncryptedRecordData) harnessSMEncryptionDecryptionHandler.encryptContent(content, encryptionConfig, isNG);
+  private EncryptedRecordData encryptPlanForHarnessSM(byte[] content, EncryptionConfig encryptionConfig, boolean isNG)
+      throws IOException {
+    if (isNG) {
+      return (EncryptedRecordData) harnessSMEncryptionDecryptionHandlerNg.encryptContent(content, encryptionConfig);
+    } else {
+      return (EncryptedRecordData) harnessSMEncryptionDecryptionHandler.encryptContent(content, encryptionConfig);
+    }
   }
 
   @NotNull

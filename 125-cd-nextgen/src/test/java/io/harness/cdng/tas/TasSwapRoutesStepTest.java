@@ -113,7 +113,7 @@ public class TasSwapRoutesStepTest extends CategoryTest {
   @Owner(developers = SOURABH)
   @Category(UnitTests.class)
   public void testValidateResourcesFFEnabled() {
-    doReturn(true).when(cdFeatureFlagHelper).isEnabled(anyString(), eq(FeatureName.CDS_TAS_NG));
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(anyString(), eq(FeatureName.NG_SVC_ENV_REDESIGN));
     tasSwapRoutesStep.validateResources(ambiance, stepElementParameters);
   }
 
@@ -121,7 +121,7 @@ public class TasSwapRoutesStepTest extends CategoryTest {
   @Owner(developers = SOURABH)
   @Category(UnitTests.class)
   public void testValidateResourcesFFDisabled() {
-    doReturn(false).when(cdFeatureFlagHelper).isEnabled(anyString(), eq(FeatureName.CDS_TAS_NG));
+    doReturn(false).when(cdFeatureFlagHelper).isEnabled(anyString(), eq(FeatureName.NG_SVC_ENV_REDESIGN));
     assertThatThrownBy(() -> tasSwapRoutesStep.validateResources(ambiance, stepElementParameters))
         .hasMessage("CDS_TAS_NG FF is not enabled for this account. Please contact harness customer care.");
   }

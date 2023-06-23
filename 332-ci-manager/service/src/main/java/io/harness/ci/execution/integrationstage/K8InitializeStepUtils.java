@@ -489,9 +489,8 @@ public class K8InitializeStepUtils {
     stepEnvVars.putAll(getVariablesMap(stageNode.getPipelineVariables(), stageNode.getIdentifier()));
     stepEnvVars.putAll(getVariablesMap(stageNode.getVariables(), stageNode.getIdentifier()));
     stepEnvVars.putAll(BuildEnvironmentUtils.getBuildEnvironmentVariables(ciExecutionArgs));
-    boolean fVal = featureFlagService.isEnabled(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, accountId);
     Map<String, String> envvars =
-        resolveMapParameterV2("envVariables", "Run", identifier, runStepInfo.getEnvVariables(), false, fVal);
+        resolveMapParameterV2("envVariables", "Run", identifier, runStepInfo.getEnvVariables(), false);
     if (!isEmpty(envvars)) {
       stepEnvVars.putAll(envvars);
     }
@@ -556,10 +555,9 @@ public class K8InitializeStepUtils {
       stepEnvVars.putAll(getVariablesMap(stageNode.getVariables(), stageNode.getIdentifier()));
     }
     stepEnvVars.putAll(BuildEnvironmentUtils.getBuildEnvironmentVariables(ciExecutionArgs));
-    boolean fVal = featureFlagService.isEnabled(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, accountId);
 
-    Map<String, String> envVars = resolveMapParameterV2(
-        "envVariables", "Background", identifier, backgroundStepInfo.getEnvVariables(), false, fVal);
+    Map<String, String> envVars =
+        resolveMapParameterV2("envVariables", "Background", identifier, backgroundStepInfo.getEnvVariables(), false);
     if (!isEmpty(envVars)) {
       stepEnvVars.putAll(envVars);
     }
@@ -612,10 +610,9 @@ public class K8InitializeStepUtils {
     stepEnvVars.putAll(getVariablesMap(stageNode.getPipelineVariables(), stageNode.getIdentifier()));
     stepEnvVars.putAll(getVariablesMap(stageNode.getVariables(), stageNode.getIdentifier()));
     stepEnvVars.putAll(BuildEnvironmentUtils.getBuildEnvironmentVariables(ciExecutionArgs));
-    boolean fVal = featureFlagService.isEnabled(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, accountId);
 
     Map<String, String> envvars =
-        resolveMapParameterV2("envVariables", "RunTests", identifier, runTestsStepInfo.getEnvVariables(), false, fVal);
+        resolveMapParameterV2("envVariables", "RunTests", identifier, runTestsStepInfo.getEnvVariables(), false);
     if (!isEmpty(envvars)) {
       stepEnvVars.putAll(envvars);
     }
@@ -660,9 +657,7 @@ public class K8InitializeStepUtils {
     envVarMap.putAll(getVariablesMap(stageNode.getVariables(), stageNode.getIdentifier()));
     envVarMap.putAll(BuildEnvironmentUtils.getBuildEnvironmentVariables(ciExecutionArgs));
 
-    boolean fVal = featureFlagService.isEnabled(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, accountId);
-    envVarMap.putAll(
-        resolveMapParameterV2("envs", "pluginStep", identifier, pluginStepInfo.getEnvVariables(), false, fVal));
+    envVarMap.putAll(resolveMapParameterV2("envs", "pluginStep", identifier, pluginStepInfo.getEnvVariables(), false));
 
     setEnvVariablesForHostedCachingSteps(stageNode, identifier, envVarMap);
     Integer runAsUser = resolveIntegerParameter(pluginStepInfo.getRunAsUser(), null);

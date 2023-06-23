@@ -18,4 +18,9 @@ exports:
         name: EntityGithubActionsContent
         title: CI/CD
         contents:
-          - component: EntityGithubActionsContent
+          - component: EntitySwitch
+            specs:
+              cases:
+                - if: isGithubActionsAvailable
+                  content:
+                    component: EntityGithubActionsContent

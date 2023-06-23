@@ -37,4 +37,5 @@ public class AccountDetails {
   private int activeServiceCount;
   private CgActiveServicesUsageInfo activeServicesUsageInfo;
   private CgLicenseModel licenseModel;
+  private Integer sessionTimeOutInMinutes;
 }

@@ -80,4 +80,23 @@ public class RancherConnectionHelperServiceImplTest extends CategoryTest {
     assertThat(rancherConnectionHelperService.listClusters("url", "token", Collections.emptyMap()))
         .contains("c1", "c2");
   }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testKubeconfigGeneration() {
+    RancherGenerateKubeconfigResponse response =
+        RancherGenerateKubeconfigResponse.builder().config("KUBECONFIG").build();
+    doReturn(response).when(rancherClusterClient).generateKubeconfig(any(), any(), any());
+    assertThat(rancherConnectionHelperService.generateKubeconfig("url", "token", "cluster")).isEqualTo("KUBECONFIG");
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testKubeconfigGenerationFailure() {
+    doThrow(RancherClientRuntimeException.class).when(rancherClusterClient).generateKubeconfig(any(), any(), any());
+    assertThatThrownBy(() -> rancherConnectionHelperService.generateKubeconfig("url", "token", "cluster"))
+        .isInstanceOf(RancherClientRuntimeException.class);
+  }
 }

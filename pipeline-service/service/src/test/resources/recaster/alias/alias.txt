@@ -293,3 +293,4 @@ io.harness.steps.approval.step.harness.beans.AutoApprovalParams
 io.harness.steps.approval.step.harness.outcomes.HarnessApprovalStepOutcome
 io.harness.steps.approval.step.harness.beans.AutoApprovalAction
 io.harness.beans.sweepingoutputs.UniqueStepIdentifiersSweepingOutput
+io.harness.beans.common.VariablesSweepingOutput

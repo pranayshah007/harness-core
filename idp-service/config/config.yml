@@ -139,3 +139,5 @@ prEnvDefaultBackstageNamespace: ""
 
 backstageAppBaseUrl: https://localhost:3000
 backstagePostgresHost: ""
+
+delegateSelectorsCacheMode: redis # in-memory or redis

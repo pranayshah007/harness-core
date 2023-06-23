@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.customdeployment.CustomDeploymentNGVariable;
+import io.harness.cdng.customdeployment.CustomDeploymentNGVariableType;
 import io.harness.cdng.customdeployment.CustomDeploymentStringNGVariable;
 import io.harness.cdng.elastigroup.ElastigroupConfiguration;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
@@ -39,6 +40,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
 public class CustomDeploymentInfraDefMapper implements InfraDefMapper {
@@ -71,7 +73,8 @@ public class CustomDeploymentInfraDefMapper implements InfraDefMapper {
       variablesFromInfra.forEach(vp -> {
         variables.add(CustomDeploymentStringNGVariable.builder()
                           .name(vp.getName())
-                          .value(ParameterField.createValueField(vp.getValue()))
+                          .type(CustomDeploymentNGVariableType.STRING)
+                          .value(ParameterField.createValueField(StringUtils.defaultIfBlank(vp.getValue(), "")))
                           .build());
         keysAdded.add(vp.getName());
       });
@@ -81,20 +84,18 @@ public class CustomDeploymentInfraDefMapper implements InfraDefMapper {
       variablesFromTemplate.stream()
           .filter(v -> !keysAdded.contains(v.getName()))
           .forEach(vp
-              -> variables.add(CustomDeploymentStringNGVariable.builder()
-                                   .name(vp.getName())
-                                   .value(ParameterField.createValueField(vp.getValue()))
-                                   .build()));
+              -> variables.add(
+                  CustomDeploymentStringNGVariable.builder()
+                      .name(vp.getName())
+                      .type(CustomDeploymentNGVariableType.STRING)
+                      .value(ParameterField.createValueField(StringUtils.defaultIfBlank(vp.getValue(), "")))
+                      .build()));
     }
-
-    String versionLabel = isNotEmpty(infrastructure.getDeploymentTypeTemplateVersion())
-        ? infrastructure.getDeploymentTypeTemplateVersion()
-        : String.valueOf(template.getVersion());
 
     return CustomDeploymentInfrastructure.builder()
         .customDeploymentRef(StepTemplateRef.builder()
                                  .templateRef(MigratorUtility.getIdentifierWithScope(ngEntityDetail))
-                                 .versionLabel("v" + versionLabel)
+                                 .versionLabel("__STABLE__")
                                  .build())
         .variables(variables)
         .build();

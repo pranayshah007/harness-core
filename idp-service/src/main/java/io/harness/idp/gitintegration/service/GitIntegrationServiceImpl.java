@@ -17,9 +17,7 @@ import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCache;
 import io.harness.idp.common.delegateselectors.utils.DelegateSelectorsUtils;
-import io.harness.idp.configmanager.ConfigType;
 import io.harness.idp.configmanager.service.ConfigManagerService;
-import io.harness.idp.configmanager.utils.ConfigManagerUtils;
 import io.harness.idp.envvariable.service.BackstageEnvVariableService;
 import io.harness.idp.gitintegration.beans.CatalogInfraConnectorType;
 import io.harness.idp.gitintegration.entities.CatalogConnectorEntity;
@@ -27,10 +25,8 @@ import io.harness.idp.gitintegration.mappers.ConnectorDetailsMapper;
 import io.harness.idp.gitintegration.processor.base.ConnectorProcessor;
 import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory;
 import io.harness.idp.gitintegration.repositories.CatalogConnectorRepository;
-import io.harness.idp.gitintegration.utils.GitIntegrationConstants;
 import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
 import io.harness.idp.proxy.envvariable.ProxyEnvVariableUtils;
-import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 import io.harness.spec.server.idp.v1.model.ConnectorDetails;
 
@@ -54,16 +50,6 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
   ConfigManagerService configManagerService;
   DelegateSelectorsCache delegateSelectorsCache;
   ProxyEnvVariableUtils proxyEnvVariableUtils;
-
-  private static final String TARGET_TO_REPLACE_IN_CONFIG = "HOST_VALUE";
-
-  private static final String SUFFIX_FOR_GITHUB_APP_CONNECTOR = "_App";
-  private static final String SUFFIX_FOR_BITBUCKET_SERVER_PAT = "_Server_Pat";
-  private static final String SUFFIX_FOR_BITBUCKET_SERVER_AUTH = "_Server_Auth";
-  private static final String SUFFIX_FOR_BITBUCKET_CLOUD = "_Cloud";
-
-  private static final String INVALID_SCHEMA_FOR_INTEGRATIONS =
-      "Invalid json schema for integrations config for account - %s";
 
   @Override
   public void createConnectorSecretsEnvVariable(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO) {
@@ -105,7 +91,6 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
     Map<String, Boolean> hostProxyMap = new HashMap<>();
     hostProxyMap.put(host, catalogConnectorEntityType == CatalogInfraConnectorType.PROXY);
     proxyEnvVariableUtils.createOrUpdateHostProxyEnvVariable(accountIdentifier, hostProxyMap);
-    createOrUpdateAppConfigForGitIntegrations(accountIdentifier, connectorInfoDTO);
   }
 
   @Override
@@ -142,50 +127,6 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
       String accountIdentifier, String connectorIdentifier) {
     return catalogConnectorRepository.findByAccountIdentifierAndConnectorIdentifier(
         accountIdentifier, connectorIdentifier);
-  }
-
-  public void createOrUpdateAppConfigForGitIntegrations(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO)
-      throws Exception {
-    ConnectorType connectorType = connectorInfoDTO.getConnectorType();
-    String host = GitIntegrationUtils.getHostForConnector(connectorInfoDTO);
-    String connectorTypeAsString = connectorType.toString();
-    if (connectorType == ConnectorType.GITHUB && GitIntegrationUtils.checkIfGithubAppConnector(connectorInfoDTO)) {
-      connectorTypeAsString = connectorTypeAsString + SUFFIX_FOR_GITHUB_APP_CONNECTOR;
-    }
-
-    if (connectorType == ConnectorType.BITBUCKET
-        && GitIntegrationUtils.checkIfApiAccessEnabledForBitbucketConnector(connectorInfoDTO)
-        && !host.equals(GitIntegrationConstants.HOST_FOR_BITBUCKET_CLOUD)) {
-      connectorTypeAsString = connectorTypeAsString + SUFFIX_FOR_BITBUCKET_SERVER_PAT;
-    }
-    if (connectorType == ConnectorType.BITBUCKET
-        && !GitIntegrationUtils.checkIfApiAccessEnabledForBitbucketConnector(connectorInfoDTO)
-        && !host.equals(GitIntegrationConstants.HOST_FOR_BITBUCKET_CLOUD)) {
-      connectorTypeAsString = connectorTypeAsString + SUFFIX_FOR_BITBUCKET_SERVER_AUTH;
-    }
-    if (connectorType == ConnectorType.BITBUCKET && host.equals(GitIntegrationConstants.HOST_FOR_BITBUCKET_CLOUD)) {
-      connectorTypeAsString = connectorTypeAsString + SUFFIX_FOR_BITBUCKET_CLOUD;
-    }
-
-    String integrationConfigs = ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(connectorTypeAsString);
-    log.info("Connector chosen in git integration is  - {} ", connectorTypeAsString);
-    integrationConfigs = integrationConfigs.replace(TARGET_TO_REPLACE_IN_CONFIG, host);
-
-    String schemaForIntegrations =
-        ConfigManagerUtils.getJsonSchemaBasedOnConnectorTypeForIntegrations(connectorTypeAsString);
-    if (!ConfigManagerUtils.isValidSchema(integrationConfigs, schemaForIntegrations)) {
-      log.error(String.format(INVALID_SCHEMA_FOR_INTEGRATIONS, accountIdentifier));
-    }
-
-    AppConfig appConfig = new AppConfig();
-    appConfig.setConfigId(connectorType.toString());
-    appConfig.setConfigs(integrationConfigs);
-    appConfig.setEnabled(true);
-
-    configManagerService.saveOrUpdateConfigForAccount(appConfig, accountIdentifier, ConfigType.INTEGRATION);
-    configManagerService.mergeAndSaveAppConfig(accountIdentifier);
-
-    log.info("Merging for git integration completed for connector - {}", connectorTypeAsString);
   }
 
   private CatalogConnectorEntity saveOrUpdateConnector(

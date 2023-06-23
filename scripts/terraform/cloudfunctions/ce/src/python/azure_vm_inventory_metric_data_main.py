@@ -17,6 +17,7 @@ from azure.identity import ClientSecretCredential
 from azure_util import get_secret_key
 from datetime import timedelta
 from azure.monitor.query import MetricsQueryClient, MetricAggregationType
+from azure.mgmt.compute import ComputeManagementClient
 
 """
 {
@@ -59,10 +60,10 @@ def main(event, context):
             # No need to fetch CPU data at this point
             return
 
-    vm_data_map, added_at = get_vm_cpu_data(jsonData)
-    print_("Total VMs for which CPU data was fetched: %s" % len(vm_data_map))
+    vm_data_map, added_at = get_vm_cpu_and_memory_data(jsonData)
+    print_("Total VMs for which CPU and Memory data was fetched: %s" % (len(vm_data_map)/2))
     if len(vm_data_map) == 0:
-        print_("No VMs found to update CPU for")
+        print_("No VMs found to update CPU and Memory for")
         return
     job_config = bigquery.LoadJobConfig(
         write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
@@ -112,8 +113,21 @@ def custom_response(pipeline_response, deserialized, *kwargs):
         pass
     return resource
 
+def get_vm_size(vm_id_split, compute_client):
+    resource_group_name = vm_id_split[4]
+    vm_name = vm_id_split[-1]
+    vm = compute_client.virtual_machines.get(resource_group_name, vm_name)
+    vm_size = vm.hardware_profile.vm_size
+    return vm_size
 
-def get_vm_cpu_data(jsonData):
+def get_vm_size_in_bytes(vm_size, vm_size_bytes_map, compute_client, region):
+    if vm_size not in vm_size_bytes_map:
+        vm_sizes = compute_client.virtual_machine_sizes.list(region)
+        memory_in_bytes = next((size.memory_in_mb for size in vm_sizes if size.name == vm_size), 1) * 1049000
+        vm_size_bytes_map[vm_size] = memory_in_bytes
+    return vm_size_bytes_map[vm_size]
+
+def get_vm_cpu_and_memory_data(jsonData):
     """
     We need to compute CPU for currently running VMs.
     This function iterates through all running VMs and calls metric API to fetch CPU utilization data.
@@ -121,7 +135,8 @@ def get_vm_cpu_data(jsonData):
     vm_data_map = {}
     azure_tenantId_vms_map = get_azure_tenant_ids(jsonData)
     added_at = datetime.utcnow().__str__()
-    print_("Getting CPU data")
+    vm_size_bytes_map = {}
+    print_("Getting CPU & Memory data")
 
     for tenant_id in azure_tenantId_vms_map:
         print(f"Querying metrics for all running VMs for tenantId = {tenant_id}")
@@ -134,7 +149,7 @@ def get_vm_cpu_data(jsonData):
         for vm_id in azure_tenantId_vms_map[tenant_id]:
             try:
                 print(f"Querying CPU metrics data for VM: {vm_id}..")
-                response = client.query_resource(
+                cpu_response = client.query_resource(
                     vm_id,
                     metric_names=["Percentage CPU"],
                     timespan=timedelta(hours=24),
@@ -143,20 +158,58 @@ def get_vm_cpu_data(jsonData):
                     cls=custom_response
                 )
 
-                metric = response.metrics[0]
-                time_series_element = metric.timeseries[0]
-                metric_value = time_series_element.data[0]
-                vm_data_map[vm_id] = {
-                    "metricName": metric.name,
-                    "average": metric_value.average,
-                    "minimum": metric_value.minimum,
-                    "maximum": metric_value.maximum,
+                cpu_metric = cpu_response.metrics[0]
+                cpu_time_series_element = cpu_metric.timeseries[0]
+                cpu_metric_value = cpu_time_series_element.data[0]
+                vm_data_map[vm_id + "CPU"] = {
+                    "metricName": cpu_metric.name,
+                    "average": cpu_metric_value.average,
+                    "minimum": cpu_metric_value.minimum,
+                    "maximum": cpu_metric_value.maximum,
                     "vmId": vm_id,
                     "addedAt": added_at,
                     "metricStartTime": metric_start_time.__str__(),
                     "metricEndTime": metric_end_time.__str__()
                 }
-                print(f"vmId({vm_id}): minCPU={metric_value.minimum}%, maxCPU={metric_value.maximum}%, avgCPU={metric_value.average}%")
+                print(f"vmId({vm_id}): minCPU={cpu_metric_value.minimum}%, maxCPU={cpu_metric_value.maximum}%, avgCPU={cpu_metric_value.average}%")
+
+                region = cpu_response.resource_region
+
+                vm_id_split = vm_id.split('/')
+                subscription_id = vm_id_split[2]
+                compute_client = ComputeManagementClient(credential, subscription_id)
+                vm_size = get_vm_size(vm_id_split, compute_client)
+
+                vm_size_in_bytes = get_vm_size_in_bytes(vm_size, vm_size_bytes_map, compute_client, region)
+
+                print(f"Querying memory metrics data for VM: {vm_id}..")
+                memory_response = client.query_resource(
+                    vm_id,
+                    metric_names=["Available Memory Bytes"],
+                    timespan=timedelta(hours=24),
+                    granularity=timedelta(hours=24),
+                    aggregations=[MetricAggregationType.AVERAGE, MetricAggregationType.MINIMUM, MetricAggregationType.MAXIMUM],
+                    cls=custom_response
+                )
+
+                memory_metric = memory_response.metrics[0]
+                memory_time_series_element = memory_metric.timeseries[0]
+                memory_metric_value = memory_time_series_element.data[0]
+                memory_metric_value_average = ((vm_size_in_bytes - memory_metric_value.average) / vm_size_in_bytes) * 100
+                memory_metric_value_minimum = ((vm_size_in_bytes - memory_metric_value.maximum) / vm_size_in_bytes) * 100
+                memory_metric_value_maximum = ((vm_size_in_bytes - memory_metric_value.minimum) / vm_size_in_bytes) * 100
+                vm_data_map[vm_id + "Memory"] = {
+                    "metricName": "Percentage Memory",
+                    "average": memory_metric_value_average,
+                    "minimum": memory_metric_value_minimum,
+                    "maximum": memory_metric_value_maximum,
+                    "vmId": vm_id,
+                    "addedAt": added_at,
+                    "metricStartTime": metric_start_time.__str__(),
+                    "metricEndTime": metric_end_time.__str__()
+                }
+                print(f"vmId({vm_id}): minMemory={memory_metric_value_minimum}%, maxMemory={memory_metric_value_maximum}%, avgMemory={memory_metric_value_average}%")
+
             except Exception as e:
                 print_(e, "ERROR")
 

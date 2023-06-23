@@ -84,7 +84,7 @@ public class UserMetadataMigrationService implements NGMigration {
 
   private boolean getLockedStatus(UserMetadata userMetadata) {
     String userId = userMetadata.getUserId();
-    Optional<UserInfo> userInfoOptional = CGRestUtils.getResponse(userClient.getUserById(userId, false));
+    Optional<UserInfo> userInfoOptional = CGRestUtils.getResponse(userClient.getUserById(userId));
     if (userInfoOptional.isPresent()) {
       UserInfo userInfo = userInfoOptional.get();
       return userInfo.isLocked();

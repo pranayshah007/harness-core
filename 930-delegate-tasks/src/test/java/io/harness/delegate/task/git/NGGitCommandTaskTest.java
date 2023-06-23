@@ -9,6 +9,7 @@ package io.harness.delegate.task.git;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ABHINAV2;
+import static io.harness.rule.OwnerRule.SATHISH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -36,6 +37,7 @@ import io.harness.delegate.beans.git.GitCommandParams;
 import io.harness.delegate.beans.git.GitCommandType;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.git.model.CommitAndPushResult;
+import io.harness.git.model.ListRemoteResult;
 import io.harness.rule.Owner;
 
 import org.apache.commons.lang3.NotImplementedException;
@@ -93,6 +95,24 @@ public class NGGitCommandTaskTest extends CategoryTest {
 
     GitCommandExecutionResponse response = (GitCommandExecutionResponse) ngGitCommandTask.run(params);
     assertThat(response.getGitCommandStatus()).isEqualTo(GitCommandStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = SATHISH)
+  @Category(UnitTests.class)
+  public void testGitListRemote() {
+    ListRemoteResult gitListRemoteResult = ListRemoteResult.builder().build();
+    doReturn(gitListRemoteResult)
+        .when(gitService)
+        .listRemote(any(GitConfigDTO.class), any(), anyString(), any(), anyBoolean());
+    TaskParameters params = GitCommandParams.builder()
+                                .gitConfig(GitConfigDTO.builder().build())
+                                .gitCommandType(GitCommandType.LIST_REMOTE)
+                                .build();
+
+    GitCommandExecutionResponse response = (GitCommandExecutionResponse) ngGitCommandTask.run(params);
+    assertThat(response.getGitCommandStatus()).isEqualTo(GitCommandStatus.SUCCESS);
+    assertThat(response.getGitCommandResult()).isEqualTo(gitListRemoteResult);
   }
 
   @Test

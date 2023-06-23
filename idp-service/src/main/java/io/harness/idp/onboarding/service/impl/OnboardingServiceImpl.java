@@ -96,6 +96,7 @@ import io.harness.spec.server.idp.v1.model.ImportEntitiesResponse;
 import io.harness.spec.server.idp.v1.model.IndividualEntitiesImport;
 import io.harness.spec.server.idp.v1.model.ManualImportEntityRequest;
 import io.harness.spec.server.idp.v1.model.StatusInfo;
+import io.harness.springdata.TransactionHelper;
 import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
@@ -130,6 +131,7 @@ public class OnboardingServiceImpl implements OnboardingService {
   @Inject HarnessProjectToBackstageSystem harnessProjectToBackstageSystem;
   @Inject HarnessServiceToBackstageComponent harnessServiceToBackstageComponent;
   @Inject ConnectorProcessorFactory connectorProcessorFactory;
+  @Inject TransactionHelper transactionHelper;
   @Inject CatalogConnectorRepository catalogConnectorRepository;
   @Inject BackstageResourceClient backstageResourceClient;
   @Inject GitIntegrationService gitIntegrationService;
@@ -199,7 +201,7 @@ public class OnboardingServiceImpl implements OnboardingService {
 
   @Override
   public ImportEntitiesResponse importHarnessEntities(
-      String accountIdentifier, ImportEntitiesBase importHarnessEntitiesRequest) throws ExecutionException {
+      String accountIdentifier, ImportEntitiesBase importHarnessEntitiesRequest) {
     processUserRequest(importHarnessEntitiesRequest);
 
     CatalogConnectorInfo catalogConnectorInfo = importHarnessEntitiesRequest.getCatalogConnectorInfo();
@@ -252,28 +254,38 @@ public class OnboardingServiceImpl implements OnboardingService {
     connectorProcessor.performPushOperation(accountIdentifier, catalogConnectorInfo, tmpPathForCatalogInfoYamlStore,
         initialFileToPush, onboardingModuleConfig.isUseGitServiceGrpcForSingleEntityPush());
 
-    saveCatalogConnector(accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType, connectorInfoDTO);
-    saveStatusInfo(accountIdentifier, StatusType.ONBOARDING.name(), StatusInfo.CurrentStatusEnum.COMPLETED,
-        STATUS_UPDATE_REASON_FOR_ONBOARDING_COMPLETED);
+    registerLocationInBackstage(accountIdentifier, BACKSTAGE_LOCATION_URL_TYPE,
+        Collections.singletonList(backstageCatalogEntityInitial.getSecond().getSecond()
+            + backstageCatalogEntityInitial.getFirst().getMetadata().getName() + YAML_FILE_EXTENSION));
+
+    createCatalogInfraConnectorInBackstageK8S(accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType,
+        connectorProcessor.getConnectorInfo(accountIdentifier, catalogConnectorInfo.getConnector().getIdentifier()));
+
+    transactionHelper.performTransaction(() -> {
+      saveCatalogConnector(accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType, connectorInfoDTO);
+      saveStatusInfo(accountIdentifier, StatusType.ONBOARDING.name(), StatusInfo.CurrentStatusEnum.COMPLETED,
+          STATUS_UPDATE_REASON_FOR_ONBOARDING_COMPLETED);
+      asyncCatalogImportRepository.save(
+          AsyncCatalogImportEntity.builder()
+              .accountIdentifier(accountIdentifier)
+              .catalogDomains(new AsyncCatalogImportDetails(
+                  catalogDomains, orgYamlPath, entitiesFolderPath + SLASH_DELIMITER + ORGANIZATION + SLASH_DELIMITER))
+              .catalogSystems(new AsyncCatalogImportDetails(
+                  catalogSystems, projectYamlPath, entitiesFolderPath + SLASH_DELIMITER + PROJECT + SLASH_DELIMITER))
+              .catalogComponents(new AsyncCatalogImportDetails(
+                  catalogComponents, serviceYamlPath, entitiesFolderPath + SLASH_DELIMITER + SERVICE + SLASH_DELIMITER))
+              .catalogInfraConnectorType(catalogInfraConnectorType)
+              .catalogConnectorInfo(catalogConnectorInfo)
+              .userPrincipal((UserPrincipal) SourcePrincipalContextBuilder.getSourcePrincipal())
+              .build());
+      return null;
+    });
 
     log.info("Finished operation of yaml generation, pushing to source for one initial entity, saving status info");
 
     log.info("Cleaning up directories created during IDP onboarding");
     cleanUpDirectories(tmpPathForCatalogInfoYamlStore);
 
-    asyncCatalogImportRepository.save(
-        AsyncCatalogImportEntity.builder()
-            .accountIdentifier(accountIdentifier)
-            .catalogDomains(new AsyncCatalogImportDetails(
-                catalogDomains, orgYamlPath, entitiesFolderPath + SLASH_DELIMITER + ORGANIZATION + SLASH_DELIMITER))
-            .catalogSystems(new AsyncCatalogImportDetails(
-                catalogSystems, projectYamlPath, entitiesFolderPath + SLASH_DELIMITER + PROJECT + SLASH_DELIMITER))
-            .catalogComponents(new AsyncCatalogImportDetails(
-                catalogComponents, serviceYamlPath, entitiesFolderPath + SLASH_DELIMITER + SERVICE + SLASH_DELIMITER))
-            .catalogInfraConnectorType(catalogInfraConnectorType)
-            .catalogConnectorInfo(catalogConnectorInfo)
-            .userPrincipal((UserPrincipal) SourcePrincipalContextBuilder.getSourcePrincipal())
-            .build());
     boolean producerResult =
         idpEntityCrudStreamProducer.publishAsyncCatalogImportChangeEventToRedis(accountIdentifier, CREATE_ACTION);
     if (!producerResult) {
@@ -374,10 +386,6 @@ public class OnboardingServiceImpl implements OnboardingService {
           false);
 
       registerLocationInBackstage(accountIdentifier, BACKSTAGE_LOCATION_URL_TYPE, locationTargets);
-
-      createCatalogInfraConnectorInBackstageK8S(accountIdentifier, catalogConnectorInfo,
-          asyncCatalogImportEntity.getCatalogInfraConnectorType(),
-          connectorProcessor.getConnectorInfo(accountIdentifier, catalogConnectorInfo.getConnector().getIdentifier()));
 
       log.info("Cleaning up directories created during IDP async onboarding");
       cleanUpDirectories(orgYamlPath, serviceYamlPath, serviceYamlPath);
@@ -502,8 +510,8 @@ public class OnboardingServiceImpl implements OnboardingService {
     }
   }
 
-  private ImportEntitiesResponse importSampleEntity(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo)
-      throws ExecutionException {
+  private ImportEntitiesResponse importSampleEntity(
+      String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo) {
     catalogConnectorInfo.getConnector().setIdentifier(
         GitIntegrationUtils.replaceAccountScopeFromConnectorId(catalogConnectorInfo.getConnector().getIdentifier()));
 
@@ -739,7 +747,7 @@ public class OnboardingServiceImpl implements OnboardingService {
   }
 
   private void saveCatalogConnector(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,
-      String catalogInfraConnectorType, ConnectorInfoDTO connectorInfoDTO) throws ExecutionException {
+      String catalogInfraConnectorType, ConnectorInfoDTO connectorInfoDTO) {
     Set<String> delegateSelectors = DelegateSelectorsUtils.extractDelegateSelectors(connectorInfoDTO);
     String host = GitIntegrationUtils.getHostForConnector(connectorInfoDTO);
     CatalogConnectorEntity catalogConnectorEntity = new CatalogConnectorEntity();

@@ -14,11 +14,11 @@ import io.harness.delegate.beans.connector.scm.ScmConnector;
 
 import lombok.AccessLevel;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import lombok.experimental.FieldDefaults;
 
 @OwnedBy(HarnessTeam.PL)
-@Getter
+@Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 public class ScmGetFileByBranchRequestDTO {

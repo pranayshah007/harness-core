@@ -12,9 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.InvalidYamlException;
 import io.harness.exception.YamlException;
-import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.walktree.beans.VisitableChildren;
@@ -65,6 +63,7 @@ public class YamlNode implements Visitable {
       ((ObjectNode) parentNode.getCurrJsonNode()).set(fieldName, jsonNode);
     }
   }
+
   public YamlNode(JsonNode currJsonNode) {
     this(null, currJsonNode, null);
   }
@@ -478,37 +477,44 @@ public class YamlNode implements Visitable {
   }
 
   // get the field/node yaml from the complete pipeline yaml.
-  public static JsonNode getNodeYaml(String yaml, Ambiance ambiance) {
-    YamlNode currentNode = null;
-    try {
-      currentNode = YamlNode.fromYamlPath(yaml, "");
-    } catch (IOException e) {
-      throw new InvalidYamlException("Yaml could not be converted to YamlNode. Please check if the yaml is correct.");
-    }
-    for (Level level : ambiance.getLevelsList()) {
-      if (level.getStepType().getStepCategory() == StepCategory.STRATEGY) {
+  public static JsonNode getNodeYaml(YamlNode yamlNode, List<Level> levelsList) {
+    YamlNode currentNode = yamlNode.gotoPath("");
+    List<Level> remainingLevels = new ArrayList<>(levelsList);
+    for (Level level : levelsList) {
+      if (level.getStepType().getStepCategory() == StepCategory.STRATEGY
+          || level.getStepType().getStepCategory() == StepCategory.FORK) {
         continue;
       }
+
       String nodeId = level.getOriginalIdentifier().replaceAll(STRATEGY_IDENTIFIER_POSTFIX_ESCAPED, "");
       if (currentNode.isArray()) {
-        for (YamlNode yamlNode : currentNode.asArray()) {
+        for (YamlNode node : currentNode.asArray()) {
+          if (node.gotoPath(YAMLFieldNameConstants.PARALLEL) != null) {
+            JsonNode jsonNode = getNodeYaml(node.gotoPath(YAMLFieldNameConstants.PARALLEL), remainingLevels);
+            // If the node returned above does not start with parallel then it means, the match with identifier
+            // was found in this case, and we can directly return this node, else, we can move on to the next node.
+            if (jsonNode.get(YAMLFieldNameConstants.PARALLEL) == null) {
+              return jsonNode;
+            }
+            continue;
+          }
           // Checking the immediate element if it matches the nodeId. If matches then replace the currentYamlNode with
           // the element.
-          if (getCurrentArrayElementIfMatches(yamlNode, nodeId)) {
-            currentNode = yamlNode;
+          if (getCurrentArrayElementIfMatches(node, nodeId)) {
+            currentNode = node;
             break;
           } else {
             Set<String> fieldNames = new LinkedHashSet<>();
-            yamlNode.getCurrJsonNode().fieldNames().forEachRemaining(fieldNames::add);
-
+            node.getCurrJsonNode().fieldNames().forEachRemaining(fieldNames::add);
+            YamlNode node1 = node;
             // Checking all children of array element if any of them matches nodeId, then replace the currentYamlNode
             // with that child.
             Optional<String> matchingField =
                 fieldNames.stream()
-                    .filter(fieldName -> getCurrentArrayElementIfMatches(yamlNode.gotoPath(fieldName), nodeId))
+                    .filter(fieldName -> getCurrentArrayElementIfMatches(node1.gotoPath(fieldName), nodeId))
                     .findFirst();
             if (matchingField.isPresent()) {
-              currentNode = yamlNode.gotoPath(matchingField.get());
+              currentNode = node.gotoPath(matchingField.get());
               break;
             }
           }
@@ -516,12 +522,12 @@ public class YamlNode implements Visitable {
       } else {
         currentNode = currentNode.gotoPath(nodeId);
       }
+      remainingLevels.remove(level);
     }
     return currentNode.getParentNode().getCurrJsonNode();
   }
 
   /**
-   *
    * This method just returns the textual representation of the poperty
    * All the cases must be handled by the callers themselves.
    * This method do not try to interpret any information from the json node

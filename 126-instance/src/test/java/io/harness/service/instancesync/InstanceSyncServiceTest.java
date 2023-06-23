@@ -29,6 +29,7 @@ import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -62,6 +63,7 @@ import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
+import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.service.deploymentsummary.DeploymentSummaryService;
 import io.harness.service.infrastructuremapping.InfrastructureMappingService;
 import io.harness.service.instance.InstanceService;
@@ -147,6 +149,8 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
   @Mock private ConnectorService connectorService;
   @Mock private KryoSerializer kryoSerializer;
   @Mock private AbstractInstanceSyncHandler abstractInstanceSyncHandler;
+  @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Before
   public void setUp() throws Exception {
@@ -159,6 +163,7 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
         instanceSyncHandlerFactoryService, infrastructureMappingService, instanceService, deploymentSummaryService,
         instanceSyncHelper, connectorService, instanceSyncServiceUtils, instanceSyncMonitoringService, accountClient,
         kryoSerializer);
+    when(abstractInstanceSyncHandler.isInstanceSyncV2EnabledAndSupported(anyString())).thenReturn(true);
 
     ServiceEntity serviceEntity = ServiceEntity.builder()
                                       .name(TEST_SERVICE_NAME)
@@ -241,7 +246,7 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
         .thenReturn(PERPETUAL_TASK_ID);
     when(instanceSyncHandlerFactoryServiceMock.getInstanceSyncHandler(any(), any()))
         .thenReturn(abstractInstanceSyncHandler);
-    when(abstractInstanceSyncHandler.isInstanceSyncV2Enabled()).thenReturn(true);
+    when(abstractInstanceSyncHandler.isInstanceSyncV2EnabledAndSupported(TEST_ACCOUNT_ID)).thenReturn(true);
     when(instanceSyncPerpetualTaskService.createPerpetualTaskV2(any(), any(), any())).thenReturn("perpetualTaskId");
     when(connectorService.getByRef(any(), any(), any(), anyString()))
         .thenReturn(Optional.ofNullable(
@@ -731,6 +736,7 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
     DeploymentInfoDTO deploymentInfoDTO = getMockDeploymentInfo(TEST_RELEASE_NAME1);
     ServerInstanceInfo serverInstanceInfo = getMockServerInstanceInfo(podName, TEST_RELEASE_NAME1);
     return DeploymentSummaryDTO.builder()
+        .accountIdentifier(TEST_ACCOUNT_ID)
         .infrastructureMappingId(TEST_INFRA_MAPPING_ID)
         .infrastructureMapping(infraMappingDTO)
         .deploymentInfoDTO(deploymentInfoDTO)

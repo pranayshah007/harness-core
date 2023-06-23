@@ -39,6 +39,7 @@ import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
+import io.harness.yaml.core.NGLabel;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.reinert.jjschema.SchemaIgnore;
@@ -119,6 +120,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
   Boolean executionInputConfigured;
 
   @Singular @Size(max = 128) List<NGTag> tags;
+  @Singular @Size(max = 128) List<NGLabel> labels;
 
   @Builder.Default Map<String, org.bson.Document> moduleInfo = new HashMap<>();
   @Setter @NonFinal @Builder.Default Map<String, GraphLayoutNodeDTO> layoutNodeMap = new HashMap<>();
@@ -142,6 +144,8 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
 
   Long startTs;
   Long endTs;
+
+  String pipelineVersion;
 
   Boolean notifyOnlyMe;
 

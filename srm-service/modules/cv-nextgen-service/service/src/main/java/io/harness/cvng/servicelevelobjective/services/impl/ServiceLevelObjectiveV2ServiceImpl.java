@@ -10,10 +10,14 @@ package io.harness.cvng.servicelevelobjective.services.impl;
 import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getNotificationTemplateId;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.BURN_RATE;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.COOL_OFF_DURATION;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_IDENTIFIER;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_NAME;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.MONITORED_SERVICE_IDENTIFIER;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.ORG_NAME;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.PROJECT_NAME;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.REMAINING_MINUTES;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.REMAINING_PERCENTAGE;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_IDENTIFIER;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_NAME;
 import static io.harness.cvng.utils.ScopedInformation.getScopedInformation;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -853,12 +857,16 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                     .build());
             serviceIdentifier = monitoredService.getServiceIdentifier();
           }
+          Map<String, Object> entityDetails = new HashMap<>();
+          entityDetails.put(ENTITY_NAME, serviceLevelObjective.getName());
+          entityDetails.put(ENTITY_IDENTIFIER, serviceLevelObjective.getIdentifier());
+          if (monitoredService != null) {
+            entityDetails.put(SERVICE_IDENTIFIER, serviceIdentifier);
+            entityDetails.put(MONITORED_SERVICE_IDENTIFIER, monitoredServiceIdentifierOptional.orElse(null));
+          }
           Map<String, String> templateData =
               notificationRuleConditionTypeTemplateDataGeneratorMap.get(condition.getType())
-                  .getTemplateData(projectParams, serviceLevelObjective.getName(),
-                      serviceLevelObjective.getIdentifier(), serviceIdentifier,
-                      monitoredServiceIdentifierOptional.orElse(null), condition,
-                      notificationData.getTemplateDataMap());
+                  .getTemplateData(projectParams, entityDetails, condition, notificationData.getTemplateDataMap());
           List<String> fieldsCantBeNull = new ArrayList<>();
           if (serviceLevelObjective.getType() == ServiceLevelObjectiveType.COMPOSITE) {
             fieldsCantBeNull.add(SERVICE_NAME);
@@ -1193,19 +1201,14 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                                      -> ((SLONotificationRule) notificationRule)
                                             .getConditions()
                                             .stream()
-                                            .filter(sloNotificationRuleCondition
+                                            .anyMatch(sloNotificationRuleCondition
                                                 -> sloNotificationRuleCondition.getType()
-                                                    == NotificationRuleConditionType.ERROR_BUDGET_REMAINING_MINUTES)
-                                            .findAny()
-                                            .isPresent())
+                                                    == NotificationRuleConditionType.ERROR_BUDGET_REMAINING_MINUTES))
                                  .collect(Collectors.toList());
       if (!notificationRuleList.isEmpty()) {
         throw new InvalidArgumentsException(String.format(
             "Invalid notification with identifier: %s. Request based composite SLOs can't have notifications for condition [Error Budget Remaining].",
-            String.join(",",
-                notificationRuleList.stream()
-                    .map(notificationRule -> notificationRule.getIdentifier())
-                    .collect(Collectors.toList()))));
+            notificationRuleList.stream().map(NotificationRule::getIdentifier).collect(Collectors.joining(","))));
       }
     }
   }

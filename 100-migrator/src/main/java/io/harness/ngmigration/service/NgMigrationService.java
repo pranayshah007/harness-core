@@ -52,10 +52,10 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
+import org.apache.commons.lang3.StringUtils;
 import retrofit2.Response;
 
 @Slf4j
@@ -105,8 +105,10 @@ public abstract class NgMigrationService {
     return canMigrateAll;
   }
 
-  public NGYamlFile getExistingYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, NGYamlFile> migratedEntities, CgEntityId entityId) {
+  public NGYamlFile getExistingYaml(MigrationContext context, CgEntityId entityId) {
+    MigrationInputDTO inputDTO = context.getInputDTO();
+    Map<CgEntityId, CgEntityNode> entities = context.getEntities();
+    Map<CgEntityId, NGYamlFile> migratedEntities = context.getMigratedEntities();
     CgEntityNode cgEntityNode = entities.get(entityId);
     CgBasicInfo cgBasicInfo = cgEntityNode.getEntity().getCgBasicInfo();
     NgEntityDetail ngEntityDetail = getNGEntityDetail(inputDTO, entities, entityId);
@@ -135,22 +137,14 @@ public abstract class NgMigrationService {
     return null;
   }
 
-  public YamlGenerationDetails getYamls(MigrationInputDTO inputDTO, CgEntityId root,
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId,
-      Map<CgEntityId, NGYamlFile> migratedEntities) {
-    if (!isNGEntityExists() || !canMigrate(entityId, root, inputDTO.isMigrateReferencedEntities())) {
+  public YamlGenerationDetails getYamls(MigrationContext migrationContext, CgEntityId root, CgEntityId entityId) {
+    if (!isNGEntityExists()
+        || !canMigrate(entityId, root, migrationContext.getInputDTO().isMigrateReferencedEntities())) {
       return null;
     }
-    if (migratedEntities.containsKey(entityId)) {
+    if (migrationContext.getMigratedEntities().containsKey(entityId)) {
       return null;
     }
-    MigrationContext migrationContext = MigrationContext.builder()
-                                            .accountId(inputDTO.getAccountIdentifier())
-                                            .migratedEntities(migratedEntities)
-                                            .entities(entities)
-                                            .graph(graph)
-                                            .inputDTO(inputDTO)
-                                            .build();
     return generateYaml(migrationContext, entityId);
   }
 
@@ -194,7 +188,10 @@ public abstract class NgMigrationService {
     RequestBody type = RequestBody.create(TEXT_PLAIN, "FILE");
     RequestBody parentIdentifier = RequestBody.create(TEXT_PLAIN, fileYamlDTO.getRootIdentifier());
     RequestBody mimeType = RequestBody.create(TEXT_PLAIN, "txt");
-    RequestBody content = RequestBody.create(MediaType.parse("application/octet-stream"), fileYamlDTO.getContent());
+    RequestBody content = null;
+    if (StringUtils.isNotBlank(fileYamlDTO.getContent())) {
+      content = RequestBody.create(MediaType.parse("application/octet-stream"), fileYamlDTO.getContent());
+    }
 
     Response<ResponseDTO<FileDTO>> resp;
     try {

@@ -743,6 +743,7 @@ public class CIExecutionConfigService {
       case GIT_CLONE:
         return vmImageConfig.getGitClone();
       case IACM_TERRAFORM_PLUGIN:
+      case IACM_APPROVAL:
         return vmImageConfig.getIacmTerraform();
       case SSCA_ORCHESTRATION:
         return vmImageConfig.getSscaOrchestration();

@@ -13,13 +13,11 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 import io.harness.delegate.core.beans.K8SInfra;
-import io.harness.delegate.core.beans.K8SStep;
 import io.harness.delegate.core.beans.ResourceRequirements;
 import io.harness.delegate.service.core.k8s.K8SEnvVar;
 import io.harness.delegate.service.core.util.K8SResourceHelper;
 import io.harness.delegate.service.core.util.K8SVolumeUtils;
 
-import com.google.inject.Inject;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1LocalObjectReferenceBuilder;
@@ -35,7 +33,7 @@ import java.util.Map;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor(onConstructor_ = @Inject)
+@RequiredArgsConstructor
 public class PodBuilder extends V1PodBuilder {
   private static final long POD_MAX_TTL_SECS = 86400L; // 1 day
   private static final String GVISOR_RUNTIME_CLASS = "gvisor";
@@ -51,21 +49,21 @@ public class PodBuilder extends V1PodBuilder {
       K8SVolumeUtils.volumeMount(WORKDIR_VOLUME_NAME, WORKDIR_MOUNT_PATH);
   private static final String SERVICE_PORT_SUFFIX = "_SERVICE_PORT";
 
-  //  private final ContainerBuilder containerBuilder;
-  //  private final CoreV1Api coreApi;
+  private final ContainerFactory containerFactory;
 
-  public static PodBuilder createSpec(final String taskGroupId) {
-    return (PodBuilder) new PodBuilder()
+  public static PodBuilder createSpec(
+      final ContainerFactory containerFactory, final K8SRunnerConfig config, final String taskGroupId) {
+    return (PodBuilder) new PodBuilder(containerFactory)
         .withNewMetadata()
         .withName(K8SResourceHelper.getPodName(taskGroupId))
         //        .withLabels(Map.of()) // TODO: Add labels to infra section in the API
         //        .withAnnotations(Map.of()) // TODO: Add annotations to infra section in the API
-        .withNamespace(K8SResourceHelper.getRunnerNamespace())
+        .withNamespace(config.getNamespace())
         .withLabels(Map.of(HARNESS_NAME_LABEL, K8SResourceHelper.getPodName(taskGroupId)))
         .endMetadata()
         .withNewSpec()
         .withRestartPolicy("Never")
-        .withActiveDeadlineSeconds(getTimeout(null)) // TODO: Calculate based on task timeouts?
+        .withActiveDeadlineSeconds(getTimeout())
         .withServiceAccountName(getServiceAccount())
         .withAutomountServiceAccountToken(true)
         //        .withTolerations(getTolerations(taskDescriptors))
@@ -90,20 +88,17 @@ public class PodBuilder extends V1PodBuilder {
     return this;
   }
 
-  public V1Pod buildPod(final ContainerBuilder containerBuilder, final ResourceRequirements resource,
-      final List<V1Volume> volumes, final V1Secret loggingSecret, final PortMap portMap) {
-    return this.withAddon(containerBuilder)
-        .withLiteEngine(containerBuilder, resource, loggingSecret, portMap)
-        .withVolumes(volumes)
-        .build();
+  public V1Pod buildPod(final ResourceRequirements resource, final List<V1Volume> volumes, final V1Secret loggingSecret,
+      final PortMap portMap) {
+    return this.withAddon().withLiteEngine(resource, loggingSecret, portMap).withVolumes(volumes).build();
   }
 
-  private PodBuilder withLiteEngine(final ContainerBuilder containerBuilder, final ResourceRequirements resource,
-      final V1Secret loggingSecret, final PortMap portMap) {
+  private PodBuilder withLiteEngine(
+      final ResourceRequirements resource, final V1Secret loggingSecret, final PortMap portMap) {
     final var portEnvMap =
         portMap.getPortMap().entrySet().stream().collect(toMap(e -> e.getKey() + SERVICE_PORT_SUFFIX, String::valueOf));
 
-    final var leContainer = containerBuilder.createLEContainer(resource)
+    final var leContainer = containerFactory.createLEContainer(resource)
                                 .addToEnvFrom(K8SEnvVar.fromSecret(loggingSecret))
                                 .addAllToEnv(K8SEnvVar.fromMap(portEnvMap))
                                 .build();
@@ -112,8 +107,8 @@ public class PodBuilder extends V1PodBuilder {
   }
 
   // We want to download ci-addon in the init container
-  private PodBuilder withAddon(final ContainerBuilder containerBuilder) {
-    final var addonContainer = containerBuilder.createAddonInitContainer().withVolumeMounts(ADDON_VOLUME_MNT).build();
+  private PodBuilder withAddon() {
+    final var addonContainer = containerFactory.createAddonInitContainer().withVolumeMounts(ADDON_VOLUME_MNT).build();
     this.editOrNewSpec().addToInitContainers(addonContainer).addToVolumes(ADDON_VOLUME).endSpec();
     return this;
   }
@@ -131,7 +126,9 @@ public class PodBuilder extends V1PodBuilder {
         .collect(toList());
   }
 
-  private static Long getTimeout(final List<K8SStep> taskDescriptor) {
+  // CI Currently always uses 1 day as the max TTL for pods, except for hosted delegates with free accounts which use
+  // 30min
+  private static Long getTimeout() {
     return POD_MAX_TTL_SECS;
   }
 

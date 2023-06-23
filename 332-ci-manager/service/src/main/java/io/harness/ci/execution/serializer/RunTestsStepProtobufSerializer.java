@@ -104,10 +104,8 @@ public class RunTestsStepProtobufSerializer implements ProtobufStepSerializer<Ru
       runTestsStepBuilder.addAllEnvVarOutputs(outputVarNames);
     }
 
-    boolean fVal = featureFlagService.isEnabled(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, accountId);
-
     Map<String, String> envvars =
-        resolveMapParameterV2("envVariables", "RunTests", identifier, runTestsStepInfo.getEnvVariables(), false, fVal);
+        resolveMapParameterV2("envVariables", "RunTests", identifier, runTestsStepInfo.getEnvVariables(), false);
     envvars = CIStepInfoUtils.injectAndResolveLoopingVariables(ambiance, accountId, featureFlagService, envvars);
     if (!isEmpty(envvars)) {
       runTestsStepBuilder.putAllEnvironment(envvars);

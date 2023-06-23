@@ -14,8 +14,10 @@ import io.harness.artifacts.githubpackages.beans.GithubPackagesInternalConfig;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(CDC)
 public interface GithubPackagesRegistryService {
@@ -43,4 +45,7 @@ public interface GithubPackagesRegistryService {
   String fetchDownloadUrl(GithubPackagesInternalConfig githubPackagesInternalConfig, String packageType, String org,
       String artifactId, String user, String extension, String repository, String packageName, String version,
       String groupId);
+
+  Pair<String, InputStream> downloadArtifactByUrl(
+      GithubPackagesInternalConfig githubPackagesInternalConfig, String artifactName, String artifactUrl);
 }

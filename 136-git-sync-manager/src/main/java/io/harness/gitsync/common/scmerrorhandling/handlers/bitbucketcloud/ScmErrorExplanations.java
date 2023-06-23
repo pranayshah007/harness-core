@@ -26,4 +26,6 @@ public class ScmErrorExplanations {
   public static final String WRONG_REPO_OR_BRANCH = "The provided branch<BRANCH> or the repo<REPO> are invalid.";
 
   public static final String RATE_LIMIT = "Rate limit reached on BitBucket provider.";
+  public static final String OAUTH_ACCESS_DENIED =
+      "If you are using OAUTH, access to Bitbucket may have been revoked or token is invalid or expired.";
 }

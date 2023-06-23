@@ -31,6 +31,8 @@ import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.git.model.CommitAndPushRequest;
 import io.harness.git.model.CommitAndPushResult;
 import io.harness.git.model.GitBaseRequest;
+import io.harness.git.model.ListRemoteRequest;
+import io.harness.git.model.ListRemoteResult;
 import io.harness.shell.SshSessionConfig;
 
 import com.google.inject.Inject;
@@ -75,6 +77,8 @@ public class NGGitCommandTask extends AbstractDelegateRunnableTask {
                 gitConfig, scmConnector, getAccountId(), sshSessionConfig);
         delegateResponseData.setDelegateMetaInfo(DelegateMetaInfo.builder().id(getDelegateId()).build());
         return delegateResponseData;
+      case LIST_REMOTE:
+        return handleListRemote(gitCommandParams, gitConfig, sshSessionConfig);
       case COMMIT_AND_PUSH:
         return handleCommitAndPush(gitCommandParams, gitConfig, sshSessionConfig);
       default:
@@ -84,6 +88,20 @@ public class NGGitCommandTask extends AbstractDelegateRunnableTask {
             .errorMessage(GIT_YAML_LOG_PREFIX + "Git Operation not supported")
             .build();
     }
+  }
+
+  private DelegateResponseData handleListRemote(
+      GitCommandParams gitCommandParams, GitConfigDTO gitConfig, SshSessionConfig sshSessionConfig) {
+    ListRemoteRequest listRemoteRequest = (ListRemoteRequest) gitCommandParams.getGitCommandRequest();
+    log.info(GIT_YAML_LOG_PREFIX + "LIST_REMOTE: [{}]", listRemoteRequest);
+    ListRemoteResult gitListRemoteResult =
+        gitService.listRemote(gitConfig, listRemoteRequest, getAccountId(), sshSessionConfig, false);
+
+    return GitCommandExecutionResponse.builder()
+        .gitCommandRequest(listRemoteRequest)
+        .gitCommandResult(gitListRemoteResult)
+        .gitCommandStatus(GitCommandStatus.SUCCESS)
+        .build();
   }
 
   private DelegateResponseData handleCommitAndPush(

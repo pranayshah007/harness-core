@@ -50,6 +50,8 @@ import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
 import io.harness.git.model.GitFileChange;
 import io.harness.git.model.GitRepositoryType;
+import io.harness.git.model.ListRemoteRequest;
+import io.harness.git.model.ListRemoteResult;
 import io.harness.git.model.PushResultGit;
 import io.harness.gitpolling.github.GitPollingWebhookData;
 import io.harness.globalcontex.AuditGlobalContextData;
@@ -132,6 +134,7 @@ import io.harness.servicenow.ServiceNowStagingTable;
 import io.harness.servicenow.ServiceNowTemplate;
 import io.harness.servicenow.ServiceNowTicketNG;
 import io.harness.servicenow.ServiceNowTicketTypeDTO;
+import io.harness.servicenow.auth.refreshtoken.AccessTokenResponse;
 import io.harness.shell.AccessType;
 import io.harness.shell.AuthenticationScheme;
 import io.harness.shell.CommandExecutionData;
@@ -334,6 +337,8 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(IstioDestinationWeight.class, 7183);
 
     kryo.register(ChangeType.class, 5212);
+    kryo.register(ListRemoteRequest.class, 1400);
+    kryo.register(ListRemoteResult.class, 1410);
     kryo.register(GitFileChange.class, 1418);
     kryo.register(CommitAndPushRequest.class, 1419);
     kryo.register(UsernamePasswordAuthRequest.class, 1420);
@@ -490,5 +495,6 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(AMITagsResponse.class, 81001);
     kryo.register(NexusRepositories.class, 9000312);
     kryo.register(TfConfigInspectVersion.class, 9000313);
+    kryo.register(AccessTokenResponse.class, 10000123);
   }
 }

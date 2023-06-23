@@ -145,23 +145,24 @@ public class ChangeEventServiceImpl implements ChangeEventService {
   }
 
   @Override
-  public Boolean registerWithHealthReport(ChangeEventDTO changeEventDTO, String channelUrl) {
+  public Boolean registerWithHealthReport(ChangeEventDTO changeEventDTO, String webhookUrl) {
     register(changeEventDTO);
 
+    ProjectParams projectParams = ProjectParams.builder()
+                                      .accountIdentifier(changeEventDTO.getAccountId())
+                                      .orgIdentifier(changeEventDTO.getOrgIdentifier())
+                                      .projectIdentifier(changeEventDTO.getProjectIdentifier())
+                                      .build();
     MSHealthReport msHealthReport =
-        msHealthReportService.getMSHealthReport(ProjectParams.builder()
-                                                    .accountIdentifier(changeEventDTO.getAccountId())
-                                                    .orgIdentifier(changeEventDTO.getOrgIdentifier())
-                                                    .projectIdentifier(changeEventDTO.getProjectIdentifier())
-                                                    .build(),
-            changeEventDTO.getMonitoredServiceIdentifier());
+        msHealthReportService.getMSHealthReport(projectParams, changeEventDTO.getMonitoredServiceIdentifier());
     CustomChangeEvent customChangeEvent =
         ((CustomChangeEventMetadata) changeEventDTO.getMetadata()).getCustomChangeEvent();
-    customChangeEvent.setChannelUrl(channelUrl);
     customChangeEvent.setMsHealthReport(msHealthReport);
     ((CustomChangeEventMetadata) changeEventDTO.getMetadata()).setCustomChangeEvent(customChangeEvent);
 
     activityService.upsert(transformer.getEntity(changeEventDTO));
+    msHealthReportService.handleNotification(
+        projectParams, msHealthReport, webhookUrl, changeEventDTO.getMonitoredServiceIdentifier());
     return true;
   }
 

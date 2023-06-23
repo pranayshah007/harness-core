@@ -10,11 +10,13 @@ package io.harness.steps.shellscript;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 
+import static java.lang.Boolean.parseBoolean;
 import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
+import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
@@ -23,18 +25,24 @@ import io.harness.delegate.task.shell.ShellScriptTaskParametersNG.ShellScriptTas
 import io.harness.delegate.task.shell.WinRmShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.WinRmShellScriptTaskParametersNG.WinRmShellScriptTaskParametersNGBuilder;
 import io.harness.exception.InvalidRequestException;
+import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.k8s.K8sConstants;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.ng.core.dto.secrets.SecretSpecDTO;
 import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
+import io.harness.ngsettings.SettingIdentifiers;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.services.SshKeySpecDTOHelper;
 import io.harness.secretmanagerclient.services.WinRmCredentialsSpecDTOHelper;
@@ -69,20 +77,30 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
   @Inject private WinRmCredentialsSpecDTOHelper winRmCredentialsSpecDTOHelper;
   @Inject private ShellScriptHelperService shellScriptHelperService;
   @Inject private PmsFeatureFlagService pmsFeatureFlagService;
+  @Inject private NGSettingsClient settingsClient;
+
+  @Inject private EngineExpressionService engineExpressionService;
 
   @Override
-  public Map<String, String> getEnvironmentVariables(Map<String, Object> inputVariables) {
-    if (EmptyPredicate.isEmpty(inputVariables)) {
-      return new HashMap<>();
-    }
+  public Map<String, String> getEnvironmentVariables(Map<String, Object> inputVariables, Ambiance ambiance) {
     Map<String, String> res = new LinkedHashMap<>();
-    inputVariables.forEach((key, value) -> {
+    Map<String, Object> copiedInputVariables = new HashMap<>();
+
+    if (isExportServiceVarsAsEnvVarsEnabled(AmbianceUtils.getAccountId(ambiance),
+            AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance))) {
+      copiedInputVariables.putAll(getEnvironmentVariablesFromServiceVars(ambiance));
+    }
+    if (EmptyPredicate.isNotEmpty(inputVariables)) {
+      copiedInputVariables.putAll(inputVariables);
+    }
+
+    copiedInputVariables.forEach((key, value) -> {
       if (value instanceof ParameterField) {
         ParameterField<?> parameterFieldValue = (ParameterField<?>) value;
-        if (parameterFieldValue.getValue() == null) {
+        if (parameterFieldValue.fetchFinalValue() == null) {
           throw new InvalidRequestException(String.format("Env. variable [%s] value found to be null", key));
         }
-        res.put(key, parameterFieldValue.getValue().toString());
+        res.put(key, parameterFieldValue.fetchFinalValue().toString());
       } else if (value instanceof String) {
         res.put(key, (String) value);
       } else {
@@ -90,7 +108,42 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
             "Value other than String or ParameterField found for env. variable [%s]. value: [%s]", key, value));
       }
     });
+
+    engineExpressionService.resolve(
+        ambiance, res, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED, new HashMap<>());
+
+    // check for unresolved harness expressions
+    StringBuilder unresolvedInputVariables = new StringBuilder();
+    res.forEach((key, value) -> {
+      if (EngineExpressionEvaluator.hasExpressions(value)) {
+        unresolvedInputVariables.append(key).append(", ");
+      }
+    });
+
+    // Remove the trailing comma and whitespace, if any
+    if (unresolvedInputVariables.length() > 0) {
+      unresolvedInputVariables.setLength(unresolvedInputVariables.length() - 2);
+      throw new InvalidRequestException(
+          String.format("Env. variables: [%s] found to be unresolved", unresolvedInputVariables));
+    }
+
     return res;
+  }
+
+  private Map<String, Object> getEnvironmentVariablesFromServiceVars(Ambiance ambiance) {
+    Map<String, Object> variables = new LinkedHashMap<>();
+
+    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(YAMLFieldNameConstants.SERVICE_VARIABLES));
+
+    if (optionalSweepingOutput.isFound()) {
+      VariablesSweepingOutput variablesSweepingOutput = (VariablesSweepingOutput) optionalSweepingOutput.getOutput();
+
+      if (EmptyPredicate.isNotEmpty(variablesSweepingOutput)) {
+        variables.putAll(variablesSweepingOutput);
+      }
+    }
+    return variables;
   }
 
   @Override
@@ -188,6 +241,14 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
     return commandPath;
   }
 
+  private boolean isExportServiceVarsAsEnvVarsEnabled(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    return parseBoolean(NGRestUtils
+                            .getResponse(settingsClient.getSetting(SettingIdentifiers.EXPORT_SERVICE_VARS_AS_ENV_VARS,
+                                accountIdentifier, orgIdentifier, projectIdentifier))
+                            .getValue());
+  }
+
   @Override
   public TaskParameters buildShellScriptTaskParametersNG(
       @Nonnull Ambiance ambiance, @Nonnull ShellScriptStepParameters shellScriptStepParameters) {
@@ -235,8 +296,8 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
 
     return taskParametersNGBuilder.accountId(AmbianceUtils.getAccountId(ambiance))
         .executeOnDelegate(shellScriptStepParameters.onDelegate.getValue())
-        .environmentVariables(
-            shellScriptHelperService.getEnvironmentVariables(shellScriptStepParameters.getEnvironmentVariables()))
+        .environmentVariables(shellScriptHelperService.getEnvironmentVariables(
+            shellScriptStepParameters.getEnvironmentVariables(), ambiance))
         .executionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance))
         .outputVars(shellScriptHelperService.getOutputVars(
             shellScriptStepParameters.getOutputVariables(), shellScriptStepParameters.getSecretOutputVariables()))
@@ -260,8 +321,8 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
         ambiance, shellScriptStepParameters, taskParametersNGBuilder);
     return taskParametersNGBuilder.accountId(AmbianceUtils.getAccountId(ambiance))
         .executeOnDelegate(shellScriptStepParameters.onDelegate.getValue())
-        .environmentVariables(
-            shellScriptHelperService.getEnvironmentVariables(shellScriptStepParameters.getEnvironmentVariables()))
+        .environmentVariables(shellScriptHelperService.getEnvironmentVariables(
+            shellScriptStepParameters.getEnvironmentVariables(), ambiance))
         .executionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance))
         .outputVars(shellScriptHelperService.getOutputVars(
             shellScriptStepParameters.getOutputVariables(), shellScriptStepParameters.getSecretOutputVariables()))

@@ -196,8 +196,16 @@ if [[ "" != "$BUDGET_ALERTS_JOB_CRON" ]]; then
   export BUDGET_ALERTS_JOB_CRON; yq -i '.scheduler-jobs-config.budgetAlertsJobCron=env(BUDGET_ALERTS_JOB_CRON)' $CONFIG_FILE
 fi
 
+if [[ "" != "$DAILY_BUDGET_ALERTS_JOB_CRON" ]]; then
+  export DAILY_BUDGET_ALERTS_JOB_CRON; yq -i '.scheduler-jobs-config.dailyBudgetAlertsJobCron=env(DAILY_BUDGET_ALERTS_JOB_CRON)' $CONFIG_FILE
+fi
+
 if [[ "" != "$BUDGET_COST_UPDATE_JOB_CRON" ]]; then
   export BUDGET_COST_UPDATE_JOB_CRON; yq -i '.scheduler-jobs-config.budgetCostUpdateJobCron=env(BUDGET_COST_UPDATE_JOB_CRON)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DAILY_BUDGET_COST_UPDATE_JOB_CRON" ]]; then
+  export DAILY_BUDGET_COST_UPDATE_JOB_CRON; yq -i '.scheduler-jobs-config.dailyBudgetCostUpdateJobCron=env(DAILY_BUDGET_COST_UPDATE_JOB_CRON)' $CONFIG_FILE
 fi
 
 if [[ "" != "$WEEKLY_REPORT_JOB_CRON" ]]; then
@@ -274,6 +282,14 @@ fi
 
 if [[ "" != "$NG_MANAGER_SERVICE_HTTP_CLIENT_CONFIG_BASE_URL" ]]; then
   export NG_MANAGER_SERVICE_HTTP_CLIENT_CONFIG_BASE_URL; yq -i '.ngManagerServiceHttpClientConfig.baseUrl=env(NG_MANAGER_SERVICE_HTTP_CLIENT_CONFIG_BASE_URL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$NG_MANAGER_SERVICE_HTTP_CLIENT_CONFIG_CONNECT_TIMEOUT" ]]; then
+  export NG_MANAGER_SERVICE_HTTP_CLIENT_CONFIG_CONNECT_TIMEOUT; yq -i '.ngManagerServiceHttpClientConfig.connectTimeOutSeconds=env(NG_MANAGER_SERVICE_HTTP_CLIENT_CONFIG_CONNECT_TIMEOUT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$NG_MANAGER_SERVICE_HTTP_CLIENT_CONFIG_READ_TIMEOUT" ]]; then
+  export NG_MANAGER_SERVICE_HTTP_CLIENT_CONFIG_READ_TIMEOUT; yq -i '.ngManagerServiceHttpClientConfig.readTimeOutSeconds=env(NG_MANAGER_SERVICE_HTTP_CLIENT_CONFIG_READ_TIMEOUT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then

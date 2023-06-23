@@ -102,7 +102,7 @@ public class EcrServiceTest extends WingsBaseTest {
             buildImageDetails(Arrays.asList("stable"), "2022-11-22T04:18:35-08:00"),
             buildImageDetails(Arrays.asList("v1", "v2", "v3"), "2023-02-02T16:45:50-08:00")));
     when(awsApiHelperService.describeEcrImages(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), region,
-             new DescribeImagesRequest().withRepositoryName(IMAGE_NAME).withRegistryId(REGISTRY_ID)))
+             new DescribeImagesRequest().withRepositoryName(IMAGE_NAME).withRegistryId(REGISTRY_ID).withMaxResults(10)))
         .thenReturn(imagesResult);
     assertThat(ecrService
                    .getBuilds(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), REGISTRY_ID, null, region,

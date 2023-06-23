@@ -1357,7 +1357,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     }
   }
 
-  private TemplateEntity saveTemplate(TemplateEntity templateEntity, String comments) throws InvalidRequestException {
+  TemplateEntity saveTemplate(TemplateEntity templateEntity, String comments) throws InvalidRequestException {
     if (templateServiceHelper.isOldGitSync(templateEntity)) {
       return templateRepository.saveForOldGitSync(templateEntity, comments);
     } else {

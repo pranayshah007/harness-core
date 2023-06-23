@@ -7,6 +7,8 @@
   USERS:
     COMMUNITY:
       maxUsersAllowed: 100
+    TRIAL:
+      maxUsersAllowed: 100
     FREE:
       maxUsersAllowed: 100
     PAID:

@@ -7,15 +7,19 @@
 
 package io.harness.encryptors.clients;
 
+import static io.harness.rule.OwnerRule.GAURAV_NANDA;
 import static io.harness.rule.OwnerRule.PIYUSH;
 import static io.harness.rule.OwnerRule.UTKARSH;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -45,9 +49,11 @@ import com.amazonaws.services.secretsmanager.model.Tag;
 import com.amazonaws.services.secretsmanager.model.UpdateSecretRequest;
 import com.amazonaws.services.secretsmanager.model.UpdateSecretResult;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 
 public class AwsSecretsManagerEncryptorTest extends CategoryTest {
   private AwsSecretsManagerEncryptor awsSecretsManagerEncryptor;
@@ -70,6 +76,67 @@ public class AwsSecretsManagerEncryptorTest extends CategoryTest {
                                   .build();
     awsSecretsManager = mock(AWSSecretsManager.class);
     when(awsSecretsManagerEncryptor.getAwsSecretsManagerClient(awsSecretsManagerConfig)).thenReturn(awsSecretsManager);
+  }
+
+  @Test
+  @Owner(developers = GAURAV_NANDA)
+  @Category(UnitTests.class)
+  public void validateSecretManagerConfiguration_AWSSecretsManagerExceptionOnFirstTry_tryAgainWithoutPrefix() {
+    // Arrange
+    String accountId = "testAccountId";
+    awsSecretsManagerConfig.setSecretNamePrefix("/prefix");
+    when(awsSecretsManager.getSecretValue(any()))
+        .thenThrow(new AWSSecretsManagerException("test exception"))
+        .thenReturn(new GetSecretValueResult().withSecretString("test"));
+    ArgumentCaptor<GetSecretValueRequest> requestCaptor1 = ArgumentCaptor.forClass(GetSecretValueRequest.class);
+
+    // Act & Assert.
+    assertThat(awsSecretsManagerEncryptor.validateSecretManagerConfiguration(accountId, awsSecretsManagerConfig))
+        .isTrue();
+
+    verify(awsSecretsManager, times(2)).getSecretValue(requestCaptor1.capture());
+
+    List<GetSecretValueRequest> capturedArguments = requestCaptor1.getAllValues();
+    assertThat(capturedArguments.get(0).getSecretId()).startsWith("prefix/aws_secrets_manager_validation");
+    assertThat(capturedArguments.get(1).getSecretId()).startsWith("/prefix/aws_secrets_manager_validation");
+  }
+
+  @Test
+  @Owner(developers = GAURAV_NANDA)
+  @Category(UnitTests.class)
+  public void validateSecretManagerConfiguration_ResourceNotFoundExceptionOnSecondTry_returnsTrue() {
+    // Arrange
+    String accountId = "testAccountId";
+    awsSecretsManagerConfig.setSecretNamePrefix("/prefix");
+    when(awsSecretsManager.getSecretValue(any()))
+        .thenThrow(new AWSSecretsManagerException("test exception"))
+        .thenThrow(new ResourceNotFoundException("resource not found exception"));
+    ArgumentCaptor<GetSecretValueRequest> requestCaptor1 = ArgumentCaptor.forClass(GetSecretValueRequest.class);
+    ArgumentCaptor<GetSecretValueRequest> requestCaptor2 = ArgumentCaptor.forClass(GetSecretValueRequest.class);
+
+    // Act & Assert.
+    assertThat(awsSecretsManagerEncryptor.validateSecretManagerConfiguration(accountId, awsSecretsManagerConfig))
+        .isTrue();
+    verify(awsSecretsManager, times(2)).getSecretValue(any());
+  }
+
+  @Test
+  @Owner(developers = GAURAV_NANDA)
+  @Category(UnitTests.class)
+  public void validateSecretManagerConfiguration_AWSSecretsManagerExceptionOnBothTries_throwsException() {
+    // Arrange
+    String accountId = "testAccountId";
+    awsSecretsManagerConfig.setSecretNamePrefix("/prefix");
+    when(awsSecretsManager.getSecretValue(any()))
+        .thenThrow(new AWSSecretsManagerException("first exception"))
+        .thenThrow(new AWSSecretsManagerException("second exception"));
+
+    // Act & Assert.
+    assertThatThrownBy(
+        () -> awsSecretsManagerEncryptor.validateSecretManagerConfiguration(accountId, awsSecretsManagerConfig))
+        .isInstanceOf(AWSSecretsManagerException.class)
+        .hasMessageContaining("second exception");
+    verify(awsSecretsManager, times(2)).getSecretValue(any());
   }
 
   @Test
@@ -354,6 +421,52 @@ public class AwsSecretsManagerEncryptorTest extends CategoryTest {
           .isEqualTo(String.format("Secret with name [%s] update failed after 3 retries. Random runtime exception",
               awsSecretsManagerConfig.getName()));
     }
+  }
+
+  @Test
+  @Owner(developers = GAURAV_NANDA)
+  @Category(UnitTests.class)
+  public void updateSecret_firstSecretFetchThrowsAwsException_passesInSecondAttempt() {
+    // Arrange
+    String plainTextValue = UUIDGenerator.generateUuid();
+    String secretName = UUIDGenerator.generateUuid();
+    awsSecretsManagerConfig.setSecretNamePrefix("/prefix");
+
+    String secretNameWithoutPrefixSlash = "prefix/" + secretName;
+    String secretNameWithPrefixSlash = "/prefix/" + secretName;
+
+    UpdateSecretRequest updateSecretRequest =
+        new UpdateSecretRequest().withSecretId(secretNameWithPrefixSlash).withSecretString(plainTextValue);
+    UpdateSecretResult updateSecretResult =
+        new UpdateSecretResult().withName(secretNameWithPrefixSlash).withARN(UUIDGenerator.generateUuid());
+    when(awsSecretsManager.updateSecret(updateSecretRequest)).thenReturn(updateSecretResult);
+
+    ArgumentCaptor<GetSecretValueRequest> requestCaptor1 = ArgumentCaptor.forClass(GetSecretValueRequest.class);
+    GetSecretValueRequest getSecretRequestWithoutPrefix =
+        new GetSecretValueRequest().withSecretId(secretNameWithoutPrefixSlash);
+    when(awsSecretsManager.getSecretValue(getSecretRequestWithoutPrefix))
+        .thenThrow(new AWSSecretsManagerException("Mock AWS exception"));
+
+    GetSecretValueRequest getSecretRequestWithPrefix =
+        new GetSecretValueRequest().withSecretId(secretNameWithPrefixSlash);
+    when(awsSecretsManager.getSecretValue(getSecretRequestWithPrefix))
+        .thenReturn(new GetSecretValueResult().withSecretString(UUIDGenerator.generateUuid()));
+
+    // Act
+    EncryptedRecord oldRecord = EncryptedRecordData.builder()
+                                    .name(UUIDGenerator.generateUuid())
+                                    .encryptionKey(UUIDGenerator.generateUuid())
+                                    .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
+                                    .build();
+    EncryptedRecord encryptedRecord = awsSecretsManagerEncryptor.updateSecret(
+        awsSecretsManagerConfig.getAccountId(), secretName, plainTextValue, oldRecord, awsSecretsManagerConfig);
+
+    // Assert
+    verify(awsSecretsManager, times(2)).getSecretValue(requestCaptor1.capture());
+
+    List<GetSecretValueRequest> capturedArguments = requestCaptor1.getAllValues();
+    assertThat(capturedArguments.get(0).getSecretId()).startsWith(secretNameWithoutPrefixSlash);
+    assertThat(capturedArguments.get(1).getSecretId()).startsWith(secretNameWithPrefixSlash);
   }
 
   @Test

@@ -11,7 +11,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true, defaultImpl = CloudRuntimeV1.class)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true,
+    include = JsonTypeInfo.As.EXISTING_PROPERTY, defaultImpl = CloudRuntimeV1.class)
 @JsonSubTypes({
   @JsonSubTypes.Type(value = CloudRuntimeV1.class, name = "cloud")
   , @JsonSubTypes.Type(value = MachineRuntimeV1.class, name = "machine"),

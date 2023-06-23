@@ -717,6 +717,7 @@ public class CIDashboardsApisTest extends CategoryTest {
     });
     when(resultSet.getLong(1)).then((Answer<Long>) invocation -> expectedResult);
 
-    assertThat(expectedResult).isEqualTo(ciOverviewDashboardServiceImpl.getHostedCreditUsage("accountId"));
+    assertThat(expectedResult)
+        .isEqualTo(ciOverviewDashboardServiceImpl.getHostedCreditUsage("accountId", 1684627200, 1687219200));
   }
 }

@@ -607,6 +607,10 @@ public class NGTriggerElementMapper {
               .planExecutionId(triggerEventHistory.get().getPlanExecutionId())
               .lastExecutionTime(triggerEventHistory.get().getCreatedAt())
               .build();
+      if (triggerEventHistory.get().getTargetExecutionSummary() != null) {
+        lastTriggerExecutionDetails.setPlanExecutionId(
+            triggerEventHistory.get().getTargetExecutionSummary().getPlanExecutionId());
+      }
       ngTriggerDetailsResponseDTO.lastTriggerExecutionDetails(lastTriggerExecutionDetails);
     }
 
@@ -788,7 +792,7 @@ public class NGTriggerElementMapper {
       YamlNode triggerNode = yamlField.getNode().getField("trigger").getNode();
       ((ObjectNode) triggerNode.getCurrJsonNode()).put("enabled", ngTriggerEntity.getEnabled());
       String updateYml = YamlUtils.writeYamlString(yamlField);
-      ngTriggerEntity.setYaml(updateYml.replace("---\n", ""));
+      ngTriggerEntity.setYaml(updateYml);
     } catch (Exception e) {
       log.error(new StringBuilder("Failed to update enable attribute to ")
                     .append(ngTriggerEntity.getEnabled())

@@ -12,6 +12,7 @@ import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverridev2.beans.NGServiceOverrideConfigV2;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,7 +29,7 @@ public interface ServiceOverridesServiceV2 {
 
   NGServiceOverridesEntity create(@NonNull @Valid NGServiceOverridesEntity requestedEntity);
 
-  NGServiceOverridesEntity update(@NonNull @Valid NGServiceOverridesEntity requestedEntity);
+  NGServiceOverridesEntity update(@NonNull @Valid NGServiceOverridesEntity requestedEntity) throws IOException;
 
   boolean delete(@NonNull String accountId, String orgIdentifier, String projectIdentifier, @NonNull String identifier,
       NGServiceOverridesEntity existingEntity);
@@ -36,7 +37,9 @@ public interface ServiceOverridesServiceV2 {
   Page<NGServiceOverridesEntity> list(Criteria criteria, Pageable pageRequest);
 
   List<NGServiceOverridesEntity> findAll(Criteria criteria);
-  Pair<NGServiceOverridesEntity, Boolean> upsert(@NonNull NGServiceOverridesEntity requestedServiceOverride);
+
+  Pair<NGServiceOverridesEntity, Boolean> upsert(@NonNull NGServiceOverridesEntity requestedServiceOverride)
+      throws IOException;
 
   Map<Scope, NGServiceOverridesEntity> getEnvOverride(
       @NonNull String accountId, String orgId, String projectId, @NonNull String envRef, NGLogCallback logCallback);

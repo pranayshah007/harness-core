@@ -294,6 +294,8 @@ public class NotificationHelper {
     String imageStatus = PipelineNotificationUtils.getStatusForImage(planExecution.getStatus());
     String themeColor = PipelineNotificationUtils.getThemeColor(planExecution.getStatus());
     String nodeStatus = PipelineNotificationUtils.getNodeStatus(planExecution.getStatus());
+    String executionUrl = generateUrl(ambiance);
+    String pipelineUrl = generatePipelineUrl(ambiance);
     if (!pipelineEventType.getLevel().equals("Pipeline")) {
       imageStatus = PipelineNotificationUtils.getStatusForImage(nodeExecution.getStatus());
       themeColor = PipelineNotificationUtils.getThemeColor(nodeExecution.getStatus());
@@ -338,8 +340,8 @@ public class NotificationHelper {
     templateData.put("END_DATE", endDate);
     templateData.put("DURATION_READABLE", ApprovalNotificationHandlerImpl.formatDuration((endTs - startTs) * 1000));
     templateData.put("DURATION", String.valueOf(endTs - startTs));
-    templateData.put("URL", generateUrl(ambiance));
-    templateData.put("PIPELINE_URL", generatePipelineUrl(ambiance));
+    templateData.put("URL", executionUrl);
+    templateData.put("PIPELINE_URL", pipelineUrl);
     templateData.put("OUTER_DIV", PipelineNotificationConstants.OUTER_DIV);
     templateData.put("IMAGE_STATUS", imageStatus);
     templateData.put("COLOR", themeColor);
@@ -347,6 +349,9 @@ public class NotificationHelper {
     webhookNotificationEvent.startTime(startDate);
     webhookNotificationEvent.startTs(startTs);
 
+    webhookNotificationEvent.nodeStatus(nodeStatus);
+    webhookNotificationEvent.pipelineUrl(pipelineUrl);
+    webhookNotificationEvent.executionUrl(executionUrl);
     if (!EmptyPredicate.isEmpty(endDate) && !PipelineEventType.startEvents.contains(pipelineEventType)) {
       webhookNotificationEvent.endTime(endDate);
       webhookNotificationEvent.endTs(endTs);

@@ -180,13 +180,34 @@ public class WorkflowExecutionZombieHandlerTest {
   @Test
   @Owner(developers = FERNANDOD)
   @Category(UnitTests.class)
-  public void shouldHandleWorkflowExecutionWhenStateExecutionIsRunning() {
+  public void shouldHandleWorkflowExecutionWhenStateExecutionIsRunningAndNotZombieState() {
     WorkflowExecution wfExecution = createValidWorkflowExecution();
     StateExecutionInstance seInstance = aStateExecutionInstance()
                                             .appId(APP_ID)
                                             .executionUuid(EXECUTION_UUID)
                                             .stateType(StateType.ENV_STATE.name())
                                             .status(ExecutionStatus.RUNNING)
+                                            .createdAt(createThreshold(50))
+                                            .build();
+
+    prepareWingsPersistence(seInstance);
+
+    monitorHandler.handle(wfExecution);
+
+    verify(workflowExecutionService, never()).triggerExecutionInterrupt(any());
+    assertSortAndLimit();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldHandleWorkflowExecutionWhenStateExecutionIsPausedAndZombieState() {
+    WorkflowExecution wfExecution = createValidWorkflowExecution();
+    StateExecutionInstance seInstance = aStateExecutionInstance()
+                                            .appId(APP_ID)
+                                            .executionUuid(EXECUTION_UUID)
+                                            .stateType(StateType.PHASE_STEP.name())
+                                            .status(ExecutionStatus.PAUSED)
                                             .createdAt(createThreshold(50))
                                             .build();
 

@@ -154,7 +154,7 @@ public class ServiceAllInOnePlanCreatorUtils {
           .envRefs(environmentGroupYaml.getEnvironments()
                        .getValue()
                        .stream()
-                       .map(e -> e.getEnvironmentRef())
+                       .map(EnvironmentYamlV2::getEnvironmentRef)
                        .collect(Collectors.toList()))
           .envToEnvInputs(getMergedEnvironmentRuntimeInputs(environmentGroupYaml.getEnvironments().getValue()))
           .envToSvcOverrideInputs(getMergedServiceOverrideInputs(environmentGroupYaml.getEnvironments().getValue()));
@@ -191,7 +191,7 @@ public class ServiceAllInOnePlanCreatorUtils {
           .envRefs(environmentsYaml.getValues()
                        .getValue()
                        .stream()
-                       .map(e -> e.getEnvironmentRef())
+                       .map(EnvironmentYamlV2::getEnvironmentRef)
                        .collect(Collectors.toList()))
           .envToEnvInputs(getMergedEnvironmentRuntimeInputs(environmentsYaml.getValues().getValue()))
           .envToSvcOverrideInputs(getMergedServiceOverrideInputs(environmentsYaml.getValues().getValue()));
@@ -228,7 +228,7 @@ public class ServiceAllInOnePlanCreatorUtils {
     return planCreationResponseMap;
   }
 
-  private boolean useFromStage(ServiceYamlV2 serviceYamlV2) {
+  public static boolean useFromStage(ServiceYamlV2 serviceYamlV2) {
     return serviceYamlV2.getUseFromStage() != null && serviceYamlV2.getUseFromStage().getStage() != null;
   }
 
@@ -378,8 +378,8 @@ public class ServiceAllInOnePlanCreatorUtils {
     return mergedServiceOverrideInputs;
   }
 
-  @NonNull
-  private ServiceYamlV2 useServiceYamlFromStage(@NotNull ServiceUseFromStageV2 useFromStage, YamlField specField) {
+  public static ServiceYamlV2 useServiceYamlFromStage(
+      @NotNull ServiceUseFromStageV2 useFromStage, YamlField specField) {
     final YamlField serviceField = specField.getNode().getField(YamlTypes.SERVICE_ENTITY);
     String stage = useFromStage.getStage();
     if (stage.isBlank()) {

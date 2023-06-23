@@ -25,6 +25,8 @@ public interface UserMembershipRepositoryCustom {
 
   Page<UserMembership> findAll(Criteria criteria, Pageable pageable);
 
+  List<UserMembership> findAllWithCriteria(Criteria criteria);
+
   Page<String> findAllUserIds(Criteria criteria, Pageable pageable);
 
   UserMembership update(String userId, Update update);

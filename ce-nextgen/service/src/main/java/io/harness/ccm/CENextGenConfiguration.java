@@ -26,6 +26,7 @@ import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.ff.FeatureFlagConfig;
 import io.harness.grpc.client.GrpcClientConfig;
+import io.harness.lock.DistributedLockImplementation;
 import io.harness.mongo.MongoConfig;
 import io.harness.notification.NotificationClientConfiguration;
 import io.harness.outbox.OutboxPollConfiguration;
@@ -91,6 +92,7 @@ public class CENextGenConfiguration extends Configuration {
   @JsonProperty("allowedOrigins") private List<String> allowedOrigins = Lists.newArrayList();
   @JsonProperty("managerClientConfig") private ServiceHttpClientConfig managerClientConfig;
   @JsonProperty("ngManagerClientConfig") private ServiceHttpClientConfig ngManagerClientConfig;
+  @JsonProperty("distributedLockImplementation") private DistributedLockImplementation distributedLockImplementation;
   @JsonProperty("grpcClient") private GrpcClientConfig grpcClientConfig;
   @JsonProperty(value = "enableAuth", defaultValue = "false") private boolean enableAuth;
   @JsonProperty("ngManagerServiceSecret") @ConfigSecret private String ngManagerServiceSecret;
