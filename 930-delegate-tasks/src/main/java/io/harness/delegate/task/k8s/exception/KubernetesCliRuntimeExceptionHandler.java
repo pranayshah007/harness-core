@@ -135,6 +135,11 @@ public class KubernetesCliRuntimeExceptionHandler implements ExceptionHandler {
           KubernetesExceptionExplanation.FORBIDDEN_MESSAGE,
           getExecutedCommandWithOutputWithExitCode(kubernetesTaskException), consolidatedError);
     }
+    if (cliErrorMessage.contains(TIMEOUT_MESSAGE)) {
+      return getExplanationException(KubernetesExceptionHints.APPLY_MANIFEST_FAILED,
+          getExecutedCommandWithOutputWithExitCode(kubernetesTaskException), consolidatedError,
+          FailureType.CONNECTIVITY);
+    }
     return getExplanationException(KubernetesExceptionHints.APPLY_MANIFEST_FAILED,
         getExecutedCommandWithOutputWithExitCode(kubernetesTaskException), consolidatedError);
   }
@@ -149,6 +154,11 @@ public class KubernetesCliRuntimeExceptionHandler implements ExceptionHandler {
       return getExplanationExceptionWithCommand(KubernetesExceptionHints.SCALE_CLI_FAILED,
           format(KubernetesExceptionExplanation.SCALE_CLI_FAILED, resourceName),
           getExecutedCommandWithOutputWithExitCode(kubernetesTaskException), consolidatedError);
+    }
+    if (cliErrorMessage.contains(TIMEOUT_MESSAGE)) {
+      return getExplanationException(KubernetesExceptionHints.SCALE_CLI_FAILED_GENERIC,
+          getExecutedCommandWithOutputWithExitCode(kubernetesTaskException), consolidatedError,
+          FailureType.CONNECTIVITY);
     }
     return getExplanationException(KubernetesExceptionHints.SCALE_CLI_FAILED_GENERIC,
         getExecutedCommandWithOutputWithExitCode(kubernetesTaskException), consolidatedError);
@@ -219,6 +229,12 @@ public class KubernetesCliRuntimeExceptionHandler implements ExceptionHandler {
           hint, KubernetesExceptionExplanation.WAIT_FOR_STEADY_STATE_FAILED, commandSummary, consolidatedError);
     }
 
+    if (cliErrorMessage.contains(TIMEOUT_MESSAGE)) {
+      return getExplanationException(KubernetesExceptionHints.WAIT_FOR_STEADY_STATE_FAILED,
+          getExecutedCommandWithOutputWithExitCode(kubernetesTaskException), consolidatedError,
+          FailureType.CONNECTIVITY);
+    }
+
     if (EmptyPredicate.isEmpty(commandSummary)) {
       commandSummary = KubernetesExceptionExplanation.WAIT_FOR_STEADY_STATE_FAILED;
     }
@@ -229,6 +245,12 @@ public class KubernetesCliRuntimeExceptionHandler implements ExceptionHandler {
   private WingsException handleHashCalculationException(KubernetesCliTaskRuntimeException kubernetesTaskException) {
     String cliErrorMessage = kubernetesTaskException.getProcessResponse().getErrorMessage();
     String consolidatedError = format(KUBECTL_HASH_CONSOLE_ERROR, cliErrorMessage);
+
+    if (cliErrorMessage.contains(TIMEOUT_MESSAGE)) {
+      return getExplanationException(KubernetesExceptionHints.HASH_CALCULATION_FAILED_ERROR,
+          getExecutedCommandWithOutputWithExitCode(kubernetesTaskException), consolidatedError,
+          FailureType.CONNECTIVITY);
+    }
 
     return getExplanationException(KubernetesExceptionHints.HASH_CALCULATION_FAILED_ERROR,
         getExecutedCommandWithOutputWithExitCode(kubernetesTaskException), consolidatedError);
