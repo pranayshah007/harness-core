@@ -89,7 +89,7 @@ public class DelegateAuthServerInterceptor implements ServerInterceptor {
     Context ctx;
     try {
       tokenAuthenticator.validateDelegateToken(
-          accountId, token, delegateId, delegateTokenName, agentMtlsAuthority, false);
+          accountId, token, delegateId, delegateTokenName, agentMtlsAuthority, false, false);
       ctx = GrpcAuthUtils.newAuthenticatedContext().withValue(ACCOUNT_ID_CTX_KEY, accountId);
     } catch (Exception e) {
       log.warn("Token verification failed. Unauthenticated", e);
