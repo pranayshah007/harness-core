@@ -92,6 +92,11 @@ public class IdpConfiguration extends Configuration {
   @JsonProperty("delegateSelectorsCacheMode") private String delegateSelectorsCacheMode;
   @JsonProperty("idpEncryptionSecret") private String idpEncryptionSecret;
   @JsonProperty("proxyAllowList") private ProxyAllowListConfig proxyAllowList;
+  @JsonProperty("pmsSdkGrpcServerConfig") private GrpcServerConfig pmsSdkGrpcServerConfig;
+  @JsonProperty("pmsGrpcClientConfig") private GrpcClientConfig pmsGrpcClientConfig;
+  @JsonProperty("shouldConfigureWithPMS") private Boolean shouldConfigureWithPMS;
+  @JsonProperty("cacheConfig") private CacheConfig cacheConfig;
+
   private String managerTarget;
   private String managerAuthority;
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
