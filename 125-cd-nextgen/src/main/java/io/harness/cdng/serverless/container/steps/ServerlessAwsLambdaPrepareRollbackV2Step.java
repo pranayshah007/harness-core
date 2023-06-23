@@ -14,6 +14,7 @@ import io.harness.callback.DelegateCallbackToken;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.serverless.ServerlessStepCommonHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.serverless.StackDetails;
 import io.harness.delegate.task.stepstatus.StepExecutionStatus;
 import io.harness.delegate.task.stepstatus.StepMapOutput;
@@ -78,6 +79,9 @@ public class ServerlessAwsLambdaPrepareRollbackV2Step extends AbstractContainerS
         serverlessAwsLambdaPrepareRollbackV2StepParameters.getImage());
 
     Map<String, String> envVarMap = new HashMap<>();
+
+    serverlessStepCommonHelper.putK8sServiceAccountEnvVars(ambiance, envVarMap);
+
     serverlessStepCommonHelper.putValuesYamlEnvVars(
         ambiance, serverlessAwsLambdaPrepareRollbackV2StepParameters, envVarMap);
 
@@ -118,24 +122,33 @@ public class ServerlessAwsLambdaPrepareRollbackV2Step extends AbstractContainerS
       if (stepOutput instanceof StepMapOutput) {
         StepMapOutput stepMapOutput = (StepMapOutput) stepOutput;
         String stackDetailsByte64 = stepMapOutput.getMap().get("stackDetails");
-        stackDetailsString = serverlessStepCommonHelper.convertByte64ToString(stackDetailsByte64);
+        if (EmptyPredicate.isNotEmpty(stackDetailsByte64)) {
+          stackDetailsString = serverlessStepCommonHelper.convertByte64ToString(stackDetailsByte64);
+        }
       }
+
+      ServerlessAwsLambdaPrepareRollbackDataOutcome
+          .ServerlessAwsLambdaPrepareRollbackDataOutcomeBuilder serverlessAwsLambdaPrepareRollbackDataOutcomeBuilder =
+          ServerlessAwsLambdaPrepareRollbackDataOutcome.builder();
 
       StackDetails stackDetails = null;
       try {
-        stackDetails = serverlessStepCommonHelper.getStackDetails(stackDetailsString);
+        if (EmptyPredicate.isNotEmpty(stackDetailsString)) {
+          stackDetails = serverlessStepCommonHelper.getStackDetails(stackDetailsString);
+        }
       } catch (Exception e) {
         log.error("Error while parsing Stack Details", e);
       }
 
-      ServerlessAwsLambdaPrepareRollbackDataOutcome serverlessAwsLambdaPrepareRollbackDataOutcome = null;
       if (stackDetails != null) {
-        serverlessAwsLambdaPrepareRollbackDataOutcome =
-            ServerlessAwsLambdaPrepareRollbackDataOutcome.builder().stackDetails(stackDetails).build();
-        executionSweepingOutputService.consume(ambiance,
-            OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_DATA_OUTCOME_V2,
-            serverlessAwsLambdaPrepareRollbackDataOutcome, StepOutcomeGroup.STEP.name());
+        serverlessAwsLambdaPrepareRollbackDataOutcomeBuilder.stackDetails(stackDetails).firstDeployment(false);
+      } else {
+        serverlessAwsLambdaPrepareRollbackDataOutcomeBuilder.firstDeployment(true);
       }
+
+      executionSweepingOutputService.consume(ambiance,
+          OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_DATA_OUTCOME_V2,
+          serverlessAwsLambdaPrepareRollbackDataOutcomeBuilder.build(), StepOutcomeGroup.STEP.name());
     }
 
     return stepOutcome;

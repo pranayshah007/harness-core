@@ -79,6 +79,8 @@ public class ServerlessAwsLambdaDeployV2Step extends AbstractContainerStepV2<Ste
 
     Map<String, String> envVarMap = new HashMap<>();
 
+    serverlessStepCommonHelper.putK8sServiceAccountEnvVars(ambiance, envVarMap);
+
     return getUnitStep(
         ambiance, stepElementParameters, accountId, logKey, parkedTaskId, serverlessAwsLambdaDeployV2StepParameters);
   }

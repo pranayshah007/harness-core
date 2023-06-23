@@ -36,6 +36,7 @@ import io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.pipeline.executions.CDPluginInfoProvider;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
+import io.harness.cdng.serverless.ArtifactType;
 import io.harness.cdng.serverless.ServerlessEntityHelper;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPackageV2StepInfo;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaV2BaseStepInfo;
@@ -101,6 +102,7 @@ public class ServerlessAwsLambdaPackageV2PluginInfoProvider implements CDPluginI
   @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private OutcomeService outcomeService;
   @Inject private ServerlessEntityHelper serverlessEntityHelper;
+  @Inject private ServerlessV2PluginInfoProviderHelper serverlessV2PluginInfoProviderHelper;
 
   @Inject PluginExecutionConfig pluginExecutionConfig;
 
@@ -200,7 +202,8 @@ public class ServerlessAwsLambdaPackageV2PluginInfoProvider implements CDPluginI
     ParameterField<Map<String, String>> envVariables = serverlessAwsLambdaPackageV2StepInfo.getEnvVariables();
 
     ManifestsOutcome manifestsOutcome = resolveServerlessManifestsOutcome(ambiance);
-    ManifestOutcome serverlessManifestOutcome = getServerlessManifestOutcome(manifestsOutcome.values());
+    ServerlessAwsLambdaManifestOutcome serverlessManifestOutcome =
+        (ServerlessAwsLambdaManifestOutcome) getServerlessManifestOutcome(manifestsOutcome.values());
     StoreConfig storeConfig = serverlessManifestOutcome.getStore();
     if (!ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
       throw new InvalidRequestException("Invalid kind of storeConfig for Serverless step", USER);
@@ -212,6 +215,10 @@ public class ServerlessAwsLambdaPackageV2PluginInfoProvider implements CDPluginI
     if (isEmpty(gitPaths)) {
       throw new InvalidRequestException("Atleast one git path need to be specified", USER);
     }
+
+    String serverlessDirectory =
+        serverlessV2PluginInfoProviderHelper.getServerlessAwsLambdaDirectoryPathFromManifestOutcome(
+            serverlessManifestOutcome);
 
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
@@ -268,11 +275,13 @@ public class ServerlessAwsLambdaPackageV2PluginInfoProvider implements CDPluginI
     ParameterField<List<String>> packageCommandOptions =
         serverlessAwsLambdaPackageV2StepInfo.getPackageCommandOptions();
 
-    serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_SERVERLESS_DIR", gitPaths.get(0));
+    serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_SERVERLESS_DIR", serverlessDirectory);
     serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_SERVERLESS_YAML_CUSTOM_PATH", configOverridePath);
     serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_SERVERLESS_STAGE", stageName);
-    serverlessPrepareRollbackEnvironmentVariablesMap.put(
-        "PLUGIN_PACKAGE_COMMAND_OPTIONS", String.join(" ", packageCommandOptions.getValue()));
+    if (packageCommandOptions != null) {
+      serverlessPrepareRollbackEnvironmentVariablesMap.put(
+          "PLUGIN_PACKAGE_COMMAND_OPTIONS", String.join(" ", packageCommandOptions.getValue()));
+    }
 
     if (awsAccessKey != null) {
       serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_AWS_ACCESS_KEY", awsAccessKey);
@@ -381,10 +390,14 @@ public class ServerlessAwsLambdaPackageV2PluginInfoProvider implements CDPluginI
 
       serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_ARTIFACTORY_USERNAME", artifactoryUserName);
       serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_ARTIFACTORY_PASSWORD", artifactoryPassword);
+      serverlessPrepareRollbackEnvironmentVariablesMap.put(
+          "PLUGIN_PRIMARY_ARTIFACT_TYPE", ArtifactType.ARTIFACTORY.getArtifactType());
 
     } else if (artifactOutcome instanceof EcrArtifactOutcome) {
       EcrArtifactOutcome ecrArtifactOutcome = (EcrArtifactOutcome) artifactOutcome;
       serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_IMAGE_PATH", ecrArtifactOutcome.getImage());
+      serverlessPrepareRollbackEnvironmentVariablesMap.put(
+          "PLUGIN_PRIMARY_ARTIFACT_TYPE", ArtifactType.ECR.getArtifactType());
 
     } else if (artifactOutcome instanceof S3ArtifactOutcome) {
       String s3AwsAccessKey = null;
@@ -416,6 +429,8 @@ public class ServerlessAwsLambdaPackageV2PluginInfoProvider implements CDPluginI
 
       serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_S3_AWS_ACCESS_KEY", s3AwsAccessKey);
       serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_S3_AWS_SECRET_KEY", s3AwsSecretKey);
+      serverlessPrepareRollbackEnvironmentVariablesMap.put(
+          "PLUGIN_PRIMARY_ARTIFACT_TYPE", ArtifactType.S3.getArtifactType());
 
     } else {
       throw new UnsupportedOperationException(

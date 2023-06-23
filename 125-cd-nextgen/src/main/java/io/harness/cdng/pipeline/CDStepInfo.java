@@ -144,8 +144,7 @@ import io.swagger.annotations.ApiModel;
         AwsLambdaRollbackStepInfo.class, BambooBuildStepInfo.class, TasRouteMappingStepInfo.class,
         GoogleFunctionsGenOneDeployStep.class, GoogleFunctionsGenOneRollbackStep.class, K8sBGStageScaleDownStep.class,
         ServerlessAwsLambdaPrepareRollbackV2StepInfo.class, ServerlessAwsLambdaRollbackV2StepInfo.class,
-        ServerlessAwsLambdaDeployV2StepInfo.class, DownloadServerlessManifestsV2StepInfo.class,
-        ServerlessAwsLambdaPackageV2StepInfo.class})
+        ServerlessAwsLambdaDeployV2StepInfo.class, ServerlessAwsLambdaPackageV2StepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)
 // keeping this class because of the swagger annotation and UI dependency on it

@@ -7,6 +7,7 @@
 
 package io.harness.cdng.serverless;
 
+import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -17,6 +18,10 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
+import io.harness.beans.sweepingoutputs.StageInfraDetails;
+import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
@@ -72,6 +77,7 @@ import io.harness.delegate.task.serverless.response.ServerlessS3FetchResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.logging.CommandExecutionStatus;
@@ -727,6 +733,30 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
       if (StringUtils.isNotBlank(valuesYamlContent) && StringUtils.isNotBlank(valuesYamlPath)) {
         envVarMap.put("PLUGIN_VALUES_YAML_CONTENT", valuesYamlContent);
         envVarMap.put("PLUGIN_VALUES_YAML_FILE_PATH", valuesYamlPath);
+      }
+    }
+  }
+
+  public void putK8sServiceAccountEnvVars(Ambiance ambiance, Map<String, String> samDeployEnvironmentVariablesMap) {
+    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS));
+
+    if (!optionalSweepingOutput.isFound()) {
+      throw new CIStageExecutionException("Stage infra details sweeping output cannot be empty");
+    }
+
+    StageInfraDetails stageInfraDetails = (StageInfraDetails) optionalSweepingOutput.getOutput();
+
+    if (stageInfraDetails.getType() == StageInfraDetails.Type.K8) {
+      K8StageInfraDetails k8StageInfraDetails = (K8StageInfraDetails) stageInfraDetails;
+      Infrastructure infrastructure = k8StageInfraDetails.getInfrastructure();
+      if (infrastructure instanceof K8sDirectInfraYaml) {
+        K8sDirectInfraYaml k8sDirectInfraYaml = (K8sDirectInfraYaml) infrastructure;
+        if (!org.jooq.tools.StringUtils.isEmpty(k8sDirectInfraYaml.getSpec().getServiceAccountName().getValue())) {
+          samDeployEnvironmentVariablesMap.put("PLUGIN_USE_IRSA", "true");
+        } else {
+          samDeployEnvironmentVariablesMap.put("PLUGIN_USE_IRSA", "false");
+        }
       }
     }
   }

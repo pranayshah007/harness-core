@@ -92,6 +92,7 @@ public class ServerlessAwsLambdaDeployV2PluginInfoProvider implements CDPluginIn
   @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private OutcomeService outcomeService;
   @Inject private ServerlessEntityHelper serverlessEntityHelper;
+  @Inject private ServerlessV2PluginInfoProviderHelper serverlessV2PluginInfoProviderHelper;
 
   @Inject PluginExecutionConfig pluginExecutionConfig;
 
@@ -204,6 +205,10 @@ public class ServerlessAwsLambdaDeployV2PluginInfoProvider implements CDPluginIn
       throw new InvalidRequestException("Atleast one git path need to be specified", USER);
     }
 
+    String serverlessDirectory =
+        serverlessV2PluginInfoProviderHelper.getServerlessAwsLambdaDirectoryPathFromManifestOutcome(
+            (ServerlessAwsLambdaManifestOutcome) serverlessManifestOutcome);
+
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
     ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig =
@@ -249,11 +254,13 @@ public class ServerlessAwsLambdaDeployV2PluginInfoProvider implements CDPluginIn
     ParameterField<List<String>> deployCommandOptions = serverlessAwsLambdaDeployV2StepInfo.getDeployCommandOptions();
 
     HashMap<String, String> serverlessPrepareRollbackEnvironmentVariablesMap = new HashMap<>();
-    serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_SERVERLESS_DIR", gitPaths.get(0));
+    serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_SERVERLESS_DIR", serverlessDirectory);
     serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_SERVERLESS_YAML_CUSTOM_PATH", configOverridePath);
     serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_SERVERLESS_STAGE", stageName);
-    serverlessPrepareRollbackEnvironmentVariablesMap.put(
-        "PLUGIN_DEPLOY_COMMAND_OPTIONS", String.join(" ", deployCommandOptions.getValue()));
+    if (deployCommandOptions != null) {
+      serverlessPrepareRollbackEnvironmentVariablesMap.put(
+          "PLUGIN_DEPLOY_COMMAND_OPTIONS", String.join(" ", deployCommandOptions.getValue()));
+    }
 
     if (awsAccessKey != null) {
       serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_AWS_ACCESS_KEY", awsAccessKey);

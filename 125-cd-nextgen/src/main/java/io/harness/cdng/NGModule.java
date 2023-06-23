@@ -74,6 +74,7 @@ import io.harness.cdng.plugininfoproviders.DownloadManifestsPluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.DownloadServerlessManifestsV2PluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.GitClonePluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.ServerlessAwsLambdaDeployV2PluginInfoProvider;
+import io.harness.cdng.plugininfoproviders.ServerlessAwsLambdaPackageV2PluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.ServerlessPrepareRollbackPluginInfoProvider;
 import io.harness.cdng.provision.terraform.executions.TerraformApplyExecutionDetailsService;
 import io.harness.cdng.provision.terraform.executions.TerraformApplyExecutionDetailsServiceImpl;
@@ -219,6 +220,7 @@ public class NGModule extends AbstractModule {
     pluginInfoProviderMultibinder.addBinding().to(DownloadManifestsPluginInfoProvider.class);
     pluginInfoProviderMultibinder.addBinding().to(GitClonePluginInfoProvider.class);
     pluginInfoProviderMultibinder.addBinding().to(ServerlessPrepareRollbackPluginInfoProvider.class);
+    pluginInfoProviderMultibinder.addBinding().to(ServerlessAwsLambdaPackageV2PluginInfoProvider.class);
     pluginInfoProviderMultibinder.addBinding().to(ServerlessAwsLambdaDeployV2PluginInfoProvider.class);
     pluginInfoProviderMultibinder.addBinding().to(DownloadServerlessManifestsV2PluginInfoProvider.class);
   }
