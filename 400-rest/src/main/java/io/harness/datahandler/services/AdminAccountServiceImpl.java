@@ -194,6 +194,12 @@ public class AdminAccountServiceImpl implements AdminAccountService {
   }
 
   @Override
+  public boolean syncNextgenWithCG(String accountId) {
+    accountService.syncNextgenWithCG(accountId);
+    return true;
+  }
+
+  @Override
   public boolean cleanUpNextGen(String accountId) {
     return accountService.cleanUpNextGen(accountId);
   }

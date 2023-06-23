@@ -368,6 +368,8 @@ io.harness.beans.yaml.extended.TIPythonVersion
 io.harness.ci.config.CICacheIntelligenceS3Config
 io.harness.ci.config.CIDockerLayerCachingGCSConfig
 io.harness.yaml.sto.variables.STOYamlBurpConfig
+io.harness.beans.steps.stepinfo.IACMApprovalInfo
+io.harness.beans.steps.nodes.iacm.IACMApprovalStepNode
 io.harness.yaml.core.failurestrategy.retry.RetrySGFailureActionConfig
 io.harness.beans.sweepingoutputs.UniqueStepIdentifiersSweepingOutput
 io.harness.iacm.execution.IACMIntegrationStageStepParametersPMS

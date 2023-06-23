@@ -500,7 +500,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
       boolean forceDelete) {
     try (AutoLogContext ignore1 =
              new NgAutoLogContext(projectIdentifier, orgIdentifier, accountIdentifier, OVERRIDE_ERROR)) {
-      if (forceDelete && !isForceDeleteEnabled(accountIdentifier)) {
+      if (forceDelete && !isForceDeleteFFEnabledViaSettings(accountIdentifier)) {
         throw new InvalidRequestException(
             format(
                 "Parameter forcedDelete cannot be true. Force deletion of secret is not enabled for this account [%s]",
@@ -893,16 +893,6 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     }
   }
 
-  private boolean isForceDeleteEnabled(String accountIdentifier) {
-    boolean isForceDeleteFFEnabled = isForceDeleteFFEnabled(accountIdentifier);
-    boolean isForceDeleteEnabledViaSettings = isForceDeleteFFEnabledViaSettings(accountIdentifier);
-    return isForceDeleteFFEnabled && isForceDeleteEnabledViaSettings;
-  }
-
-  @VisibleForTesting
-  protected boolean isForceDeleteFFEnabled(String accountIdentifier) {
-    return featureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_FORCE_DELETE_CONNECTOR_SECRET);
-  }
   @VisibleForTesting
   protected boolean isForceDeleteFFEnabledViaSettings(String accountIdentifier) {
     return parseBoolean(NGRestUtils

@@ -482,15 +482,18 @@ public class ProjectServiceImpl implements ProjectService {
   @Override
   public List<Favorite> getProjectFavorites(
       String accountIdentifier, ProjectFilterDTO projectFilterDTO, String userId) {
+    List<Favorite> favorites = new ArrayList<>();
+    Set<String> orgIdentifiers;
     if (projectFilterDTO != null && projectFilterDTO.getOrgIdentifiers().size() > 0) {
-      List<Favorite> favorites = new ArrayList<>();
-      for (String orgIdentifier : projectFilterDTO.getOrgIdentifiers()) {
-        favorites.addAll(favoritesService.getFavorites(
-            accountIdentifier, orgIdentifier, null, userId, ResourceType.PROJECT.toString()));
-      }
-      return favorites;
+      orgIdentifiers = projectFilterDTO.getOrgIdentifiers();
+    } else {
+      orgIdentifiers = organizationService.getPermittedOrganizations(accountIdentifier, null);
     }
-    return favoritesService.getFavorites(accountIdentifier, null, null, userId, ResourceType.PROJECT.toString());
+    for (String orgIdentifier : orgIdentifiers) {
+      favorites.addAll(favoritesService.getFavorites(
+          accountIdentifier, orgIdentifier, null, userId, ResourceType.PROJECT.toString()));
+    }
+    return favorites;
   }
 
   private void updateFilterPropertiesFromFavorites(
@@ -633,7 +636,8 @@ public class ProjectServiceImpl implements ProjectService {
         outboxService.save(
             new ProjectDeleteEvent(deletedProject.getAccountIdentifier(), ProjectMapper.writeDTO(deletedProject)));
         instrumentationHelper.sendProjectDeleteEvent(deletedProject, accountIdentifier);
-
+        favoritesService.deleteFavorites(
+            accountIdentifier, orgIdentifier, null, ResourceType.PROJECT.toString(), projectIdentifier);
         return true;
       }));
     }
@@ -683,8 +687,8 @@ public class ProjectServiceImpl implements ProjectService {
 
   @Override
   public boolean isFavorite(Project project, String userId) {
-    return favoritesService.isFavorite(
-        project.getAccountIdentifier(), null, null, userId, ResourceType.PROJECT.toString(), project.getIdentifier());
+    return favoritesService.isFavorite(project.getAccountIdentifier(), project.getOrgIdentifier(), null, userId,
+        ResourceType.PROJECT.toString(), project.getIdentifier());
   }
 
   private void validateCreateProjectRequest(String accountIdentifier, String orgIdentifier, ProjectDTO project) {

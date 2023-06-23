@@ -1,0 +1,34 @@
+trigger:
+  name: triggerWithInputs
+  identifier: triggerWithInputs
+  enabled: true
+  description: ""
+  tags: {}
+  orgIdentifier: default
+  projectIdentifier: test
+  pipelineIdentifier: Pipeline2Stages
+  source:
+    type: Webhook
+    spec:
+      type: Custom
+      spec:
+        payloadConditions: []
+        headerConditions: []
+  inputYaml: |
+    pipeline:
+      identifier: Pipeline2Stages
+      stages:
+        - stage:
+            identifier: stage1
+            type: Custom
+            variables:
+              - name: var1
+                type: String
+                value: asd
+        - stage:
+            identifier: stage2
+            type: Custom
+            variables:
+              - name: var2
+                type: String
+                value: asd

@@ -230,7 +230,7 @@ public class ConnectorResourceTest extends CategoryTest {
     githubConnector.setId("connector1");
     Page<Connector> allConnectors = PageTestUtils.getPage(Arrays.asList(List.of(githubConnector)), 1);
 
-    when(connectorService.listAll(pageIndex, pageSize, accountIdentifier, orgIdentifier, projectIdentifier, searchTerm,
+    when(connectorService.listAll(pageIndex, 50000, accountIdentifier, orgIdentifier, projectIdentifier, searchTerm,
              null, null, null, version))
         .thenReturn(allConnectors);
     when(connectorRbacHelper.getPermitted(allConnectors.getContent())).thenReturn(List.of(githubConnector));
@@ -276,8 +276,7 @@ public class ConnectorResourceTest extends CategoryTest {
     List<Sort.Order> orders = List.of(new Sort.Order(Sort.Direction.DESC, "lastModifiedAt"));
 
     when(connectorService.listAll(accountIdentifier, connectorFilterPropertiesDTO, orgIdentifier, projectIdentifier,
-             filterIdentifier, searchTerm, Boolean.FALSE, Boolean.FALSE,
-             org.springframework.data.domain.PageRequest.of(pageIndex, pageSize, Sort.by(orders)), version))
+             filterIdentifier, searchTerm, Boolean.FALSE, Boolean.FALSE, Pageable.ofSize(50000), version))
         .thenReturn(allConnectors);
     when(connectorRbacHelper.getPermitted(allConnectors.getContent())).thenReturn(List.of(githubConnector));
 

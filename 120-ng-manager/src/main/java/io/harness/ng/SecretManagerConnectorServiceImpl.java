@@ -65,6 +65,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import javax.validation.Valid;
@@ -87,6 +88,8 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
   private final EnforcementClientService enforcementClientService;
   private final TemplateResourceClient templateResourceClient;
   private static final String ENVIRONMENT_VARIABLES = "environmentVariables";
+  private static final String ACCOUNT = "account";
+  private static final String EMPTY_STRING = "";
 
   @Inject
   public SecretManagerConnectorServiceImpl(@Named(DEFAULT_CONNECTOR_SERVICE) ConnectorService defaultConnectorService,
@@ -185,15 +188,18 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
       String orgIdentifier, String projectIdentifier, String connectorIdentifier) throws IOException {
     if (connectorConfigDTO instanceof CustomSecretManagerConnectorDTO) {
       String templateRef = ((CustomSecretManagerConnectorDTO) connectorConfigDTO).getTemplate().getTemplateRef();
-      List<NameValuePairWithDefault> envVariables = ((CustomSecretManagerConnectorDTO) connectorConfigDTO)
-                                                        .getTemplate()
-                                                        .getTemplateInputs()
-                                                        .get(ENVIRONMENT_VARIABLES);
+      Map<String, List<NameValuePairWithDefault>> connectorTemplateInputs =
+          ((CustomSecretManagerConnectorDTO) connectorConfigDTO).getTemplate().getTemplateInputs();
+      List<NameValuePairWithDefault> envVariables =
+          (null != connectorTemplateInputs) ? connectorTemplateInputs.get(ENVIRONMENT_VARIABLES) : null;
       Set<String> inputs =
           checkForDuplicateInputsAndReturnInputsLIst(envVariables, accountIdentifier, connectorIdentifier);
-      String template = NGRestUtils.getResponse(templateResourceClient.getTemplateInputsYaml(
-          templateIdFromRef(templateRef), accountIdentifier, orgIdentifier, projectIdentifier,
-          ((CustomSecretManagerConnectorDTO) connectorConfigDTO).getTemplate().getVersionLabel(), false));
+      String templateScope = templateScopeFromRef(templateRef);
+      String template =
+          NGRestUtils.getResponse(templateResourceClient.getTemplateInputsYaml(templateIdFromRef(templateRef),
+              accountIdentifier, Objects.equals(templateScope, ACCOUNT) ? null : orgIdentifier,
+              Objects.equals(templateScope, EMPTY_STRING) ? projectIdentifier : null,
+              ((CustomSecretManagerConnectorDTO) connectorConfigDTO).getTemplate().getVersionLabel(), false));
       if (template == null || StringUtils.isBlank(template)) {
         return;
       }
@@ -207,13 +213,15 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
   private Set<String> checkForDuplicateInputsAndReturnInputsLIst(
       List<NameValuePairWithDefault> templateInputs, String accountIdentifier, String connectorIdentifier) {
     Set<String> inputs = new HashSet<>();
-    for (NameValuePairWithDefault node : templateInputs) {
-      if (inputs.contains(node.getName())) {
-        log.error("Same input is given more than once for custom SM {} in account {}. Duplicated input is {}",
-            connectorIdentifier, accountIdentifier, node.getName());
-        throw new InvalidRequestException("Multiple values for the same input Parameter is passed. Please check.");
+    if (null != templateInputs) {
+      for (NameValuePairWithDefault node : templateInputs) {
+        if (inputs.contains(node.getName())) {
+          log.error("Same input is given more than once for custom SM {} in account {}. Duplicated input is {}",
+              connectorIdentifier, accountIdentifier, node.getName());
+          throw new InvalidRequestException("Multiple values for the same input Parameter is passed. Please check.");
+        }
+        inputs.add(node.getName());
       }
-      inputs.add(node.getName());
     }
     return inputs;
   }
@@ -237,6 +245,15 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
   private String templateIdFromRef(String templateRef) {
     String[] arrOfStr = templateRef.split("\\.");
     return (arrOfStr.length == 1) ? arrOfStr[0] : arrOfStr[1];
+  }
+
+  private String templateScopeFromRef(String templateRef) {
+    String[] arrOfStr = templateRef.split("\\.");
+    if (arrOfStr.length == 1) {
+      return "";
+    } else {
+      return arrOfStr[0];
+    }
   }
 
   private boolean isDefaultSecretManager(ConnectorInfoDTO connector) {

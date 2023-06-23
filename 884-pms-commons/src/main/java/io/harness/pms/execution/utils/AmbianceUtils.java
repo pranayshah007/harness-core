@@ -30,6 +30,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.utils.NGPipelineSettingsConstant;
 import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.strategy.StrategyValidationUtils;
 
@@ -456,6 +457,17 @@ public class AmbianceUtils {
   public boolean isRollbackModeExecution(Ambiance ambiance) {
     ExecutionMode executionMode = ambiance.getMetadata().getExecutionMode();
     return executionMode == ExecutionMode.POST_EXECUTION_ROLLBACK || executionMode == ExecutionMode.PIPELINE_ROLLBACK;
+  }
+
+  public boolean isUnderRollbackSteps(Ambiance ambiance) {
+    List<Level> levels = ambiance.getLevelsList();
+    for (Level level : levels) {
+      String identifier = level.getIdentifier();
+      if (identifier.equals(YAMLFieldNameConstants.ROLLBACK_STEPS)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   public String getStageExecutionIdForExecutionMode(Ambiance ambiance) {

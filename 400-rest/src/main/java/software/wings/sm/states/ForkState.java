@@ -8,6 +8,9 @@
 package software.wings.sm.states;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.ExecutionStatus.ABORTED;
+import static io.harness.beans.ExecutionStatus.EXPIRED;
+import static io.harness.beans.ExecutionStatus.REJECTED;
 import static io.harness.beans.FeatureName.SPG_CG_REJECT_PRIORITY_WHEN_FORK_STATE;
 
 import static java.lang.String.join;
@@ -36,8 +39,10 @@ import software.wings.sm.StateType;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -49,6 +54,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 public class ForkState extends State {
+  private static final Set<ExecutionStatus> PRIORITY_NEGATIVE_STATUSES =
+      EnumSet.<ExecutionStatus>of(ABORTED, REJECTED, EXPIRED);
+
   @Inject transient KryoSerializer kryoSerializer;
   @Inject private transient FeatureFlagService featureFlagService;
   @SchemaIgnore private List<String> forkStateNames = new ArrayList<>();
@@ -141,8 +149,8 @@ public class ForkState extends State {
   }
 
   private boolean isRejectStatusPriority(ExecutionContext context, ExecutionStatus executionStatus) {
-    return executionStatus == ExecutionStatus.REJECTED
-        && featureFlagService.isEnabled(SPG_CG_REJECT_PRIORITY_WHEN_FORK_STATE, context.getAccountId());
+    return featureFlagService.isEnabled(SPG_CG_REJECT_PRIORITY_WHEN_FORK_STATE, context.getAccountId())
+        && PRIORITY_NEGATIVE_STATUSES.contains(executionStatus);
   }
 
   @Override

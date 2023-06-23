@@ -98,6 +98,8 @@ public class ManifestCollectionResponseHandler {
     String accountId = appManifest.getAccountId();
     applicationManifestService.updateFailedAttempts(accountId, appManifestId, failedAttempts);
 
+    log.warn("Failed to collect manifest versions, total failed attempts: {} [serviceId={}]", failedAttempts,
+        appManifest.getServiceId());
     if (failedAttempts == MAX_FAILED_ATTEMPTS) {
       ManifestCollectionFailedAlert failedAlert = ManifestCollectionFailedAlert.builder()
                                                       .appId(appManifest.getAppId())

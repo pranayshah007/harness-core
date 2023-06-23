@@ -197,7 +197,6 @@ public class NGTriggerServiceImplTest extends CategoryTest {
   @Mock NGTriggerYamlSchemaService ngTriggerYamlSchemaService;
   @Mock PollingResourceClient pollingResourceClient;
   @Mock NGTriggerWebhookRegistrationService ngTriggerWebhookRegistrationService;
-  @Mock NGTriggerYamlSchemaService ngTriggerYamlSchemaService;
   @Mock TriggerValidationHandler triggerValidationHandler;
   @Mock TriggerEventHistoryRepository triggerEventHistoryRepository;
   @Mock TriggerCatalogHelper triggerCatalogHelper;

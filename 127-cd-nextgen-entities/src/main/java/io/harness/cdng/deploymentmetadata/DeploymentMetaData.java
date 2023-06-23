@@ -7,4 +7,30 @@
 
 package io.harness.cdng.deploymentmetadata;
 
+import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
+import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
+
+import io.harness.ng.core.k8s.ServiceSpecType;
+
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
+@JsonTypeInfo(use = NAME, property = "deploymentType", include = EXTERNAL_PROPERTY, visible = true)
+@JsonSubTypes({
+  @Type(value = KubernetesDeploymentMetaData.class, name = ServiceSpecType.KUBERNETES)
+  , @Type(value = SshDeploymentMetaData.class, name = ServiceSpecType.SSH),
+      @Type(value = EcsDeploymentMetaData.class, name = ServiceSpecType.ECS),
+      @Type(value = NativeHelmDeploymentMetaData.class, name = ServiceSpecType.NATIVE_HELM),
+      @Type(value = TasDeploymentMetaData.class, name = ServiceSpecType.TAS),
+      @Type(value = ServerlessAwsLambdaDeploymentMetaData.class, name = ServiceSpecType.SERVERLESS_AWS_LAMBDA),
+      @Type(value = WinrmDeploymentMetaData.class, name = ServiceSpecType.WINRM),
+      @Type(value = AzureWebAppDeploymentMetaData.class, name = ServiceSpecType.AZURE_WEBAPP),
+      @Type(value = CustomDeploymentMetaData.class, name = ServiceSpecType.CUSTOM_DEPLOYMENT),
+      @Type(value = ElastiGroupDeploymentMetaData.class, name = ServiceSpecType.ELASTIGROUP),
+      @Type(value = AsgDeploymentMetaData.class, name = ServiceSpecType.ASG),
+      @Type(value = GoogleCloudFunctionDeploymentMetaData.class, name = ServiceSpecType.GOOGLE_CLOUD_FUNCTIONS),
+      @Type(value = AwsLambdaDeploymentMetaData.class, name = ServiceSpecType.AWS_LAMBDA),
+      @Type(value = AwsSamDeploymentMetaData.class, name = ServiceSpecType.AWS_SAM)
+})
 public interface DeploymentMetaData {}

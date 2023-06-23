@@ -14,6 +14,7 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY_TYPE;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.NG_USER_CLEANUP_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.RESTORE_ACTION;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SYNC_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.UPDATE_ACTION;
 
 import io.harness.account.AccountClient;
@@ -76,6 +77,8 @@ public class AccountSetupListener implements MessageListener {
     switch (action) {
       case DELETE_ACTION:
         return processAccountDeleteEvent(accountEntityChangeDTO);
+      case SYNC_ACTION:
+        return processSyncNGWithCG(accountEntityChangeDTO);
       case RESTORE_ACTION:
         return processAccountRestoreEvent(accountEntityChangeDTO);
       case UPDATE_ACTION:
@@ -95,6 +98,10 @@ public class AccountSetupListener implements MessageListener {
       log.info("Starting to setup account- {} for NG", accountEntityChangeDTO.getAccountId());
       ngAccountSetupService.setupAccountForNG(accountEntityChangeDTO.getAccountId());
     }
+    return true;
+  }
+  private boolean processSyncNGWithCG(AccountEntityChangeDTO accountEntityChangeDTO) {
+    ngAccountSetupService.setupAccountForNG(accountEntityChangeDTO.getAccountId());
     return true;
   }
 
