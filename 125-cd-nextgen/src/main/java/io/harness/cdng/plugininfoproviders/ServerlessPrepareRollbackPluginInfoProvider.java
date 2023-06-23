@@ -92,6 +92,8 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
   @Inject private OutcomeService outcomeService;
   @Inject private ServerlessEntityHelper serverlessEntityHelper;
 
+  @Inject private ServerlessV2PluginInfoProviderHelper serverlessV2PluginInfoProviderHelper;
+
   @Inject PluginExecutionConfig pluginExecutionConfig;
 
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
@@ -194,7 +196,8 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
     ParameterField<Map<String, String>> envVariables = serverlessAwsLambdaPrepareRollbackV2StepInfo.getEnvVariables();
 
     ManifestsOutcome manifestsOutcome = resolveServerlessManifestsOutcome(ambiance);
-    ManifestOutcome serverlessManifestOutcome = getServerlessManifestOutcome(manifestsOutcome.values());
+    ServerlessAwsLambdaManifestOutcome serverlessManifestOutcome =
+        (ServerlessAwsLambdaManifestOutcome) getServerlessManifestOutcome(manifestsOutcome.values());
     StoreConfig storeConfig = serverlessManifestOutcome.getStore();
     if (!ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
       throw new InvalidRequestException("Invalid kind of storeConfig for Serverless step", USER);
@@ -206,6 +209,10 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
     if (isEmpty(gitPaths)) {
       throw new InvalidRequestException("Atleast one git path need to be specified", USER);
     }
+
+    String serverlessDirectory =
+        serverlessV2PluginInfoProviderHelper.getServerlessAwsLambdaDirectoryPathFromManifestOutcome(
+            serverlessManifestOutcome);
 
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
@@ -250,7 +257,7 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
     }
 
     HashMap<String, String> serverlessPrepareRollbackEnvironmentVariablesMap = new HashMap<>();
-    serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_SERVERLESS_DIR", gitPaths.get(0));
+    serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_SERVERLESS_DIR", serverlessDirectory);
     serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_SERVERLESS_YAML_CUSTOM_PATH", configOverridePath);
     serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_SERVERLESS_STAGE", stageName);
 

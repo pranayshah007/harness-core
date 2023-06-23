@@ -312,11 +312,11 @@ orchestrationStepConfig:
     defaultCPULimit: 400
     defaultInternalImageConnector: 'account.harnessImage'
     pvcDefaultStorageSize: 25600
-    delegateServiceEndpointVariableValue: "delegate-service:8080"
+    delegateServiceEndpointVariableValue: "0.tcp.in.ngrok.io:19424"
     addonImage: harness/ci-addon:1.16.8
     liteEngineImage: harness/ci-lite-engine:1.16.8
-    isLocal: false
-    logStreamingContainerStepBaseUrl: ${LOG_STREAMING_CONTAINER_STEP_BASE_URL:-http://localhost:8079}
+    isLocal: true
+    logStreamingContainerStepBaseUrl: ${LOG_STREAMING_CONTAINER_STEP_BASE_URL:-https://qa.harness.io/log-service/}
     pluginConfig:
       sscaOrchestrationConfig:
         image: harness/ssca-plugin:latest
@@ -328,7 +328,7 @@ orchestrationStepConfig:
           - /bin/ssca-plugin
     #Todo: Move to config Management Service
     moduleToSupportedSteps:
-      cd: [ "DownloadManifests", "AwsSamBuild", "AwsSamDeploy" ]
+      cd: [ "DownloadManifests", "AwsSamBuild", "AwsSamDeploy", "ServerlessAwsLambdaPrepareRollbackV2", "DownloadServerlessManifests", "ServerlessAwsLambdaPackageV2"]
       ci: [ "Background", "background", "GitClone" ]
 
 
