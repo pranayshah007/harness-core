@@ -8,12 +8,16 @@
 package io.harness.template.services;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.ng.core.template.TemplateListType.STABLE_TEMPLATE_TYPE;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
@@ -33,6 +37,7 @@ import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.ng.core.template.ListingScope;
+import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateListType;
 import io.harness.persistence.gitaware.GitAware;
 import io.harness.repositories.NGTemplateRepository;
@@ -40,6 +45,7 @@ import io.harness.rule.Owner;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.gitsync.TemplateGitSyncBranchContextGuard;
+import io.harness.template.resources.beans.TemplateFilterProperties;
 import io.harness.template.resources.beans.TemplateFilterPropertiesDTO;
 import io.harness.template.resources.beans.UpdateGitDetailsParams;
 
@@ -55,6 +61,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(CDC)
@@ -178,7 +187,7 @@ public class NGTemplateServiceHelperTest extends CategoryTest {
 
     criteria = templateServiceHelper.formCriteria(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "", null, false, TEMPLATE_IDENTIFIER, false);
-    templateServiceHelper.formCriteria(criteria, TemplateListType.STABLE_TEMPLATE_TYPE);
+    templateServiceHelper.formCriteria(criteria, STABLE_TEMPLATE_TYPE);
     criteriaObject = criteria.getCriteriaObject();
     assertThat(criteriaObject.get(TemplateEntityKeys.projectIdentifier)).isEqualTo(PROJ_IDENTIFIER);
     assertThat(criteriaObject.get(TemplateEntityKeys.isStableTemplate)).isEqualTo(true);
@@ -288,6 +297,14 @@ public class NGTemplateServiceHelperTest extends CategoryTest {
                                "filterIdentifier", propertiesDTO, false, TEMPLATE_IDENTIFIER, false))
         .hasMessage("Can not apply both filter properties and saved filter together")
         .isInstanceOf(InvalidRequestException.class);
+
+    TemplateFilterProperties templateFilterProperties =
+        TemplateFilterProperties.builder().templateNames(Collections.singletonList(TEMPLATE_IDENTIFIER)).build();
+    assertThatThrownBy(()
+                           -> templateServiceHelper.formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               "filterIdentifier", false, templateFilterProperties, TEMPLATE_IDENTIFIER, false))
+        .hasMessage("Can not apply both filter properties and saved filter together")
+        .isInstanceOf(InvalidRequestException.class);
   }
 
   @Test
@@ -369,6 +386,56 @@ public class NGTemplateServiceHelperTest extends CategoryTest {
     batchFilesResponse.put(uniqueKey1, TemplateEntity.builder().build());
     doReturn(batchFilesResponse).when(gitAwareEntityHelper).fetchEntitiesFromRemote(ACCOUNT_ID, new HashMap<>());
     templateServiceHelper.getBatchRemoteTemplates(ACCOUNT_ID, new HashMap<>());
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testOldGitSyncTemplateCases() {
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .identifier(TEMPLATE_IDENTIFIER)
+                                        .versionLabel(TEMPLATE_VERSION_LABEL)
+                                        .templateEntityType(TemplateEntityType.STEP_TEMPLATE)
+                                        .build();
+    doReturn(true).when(gitSyncSdkService).isGitSyncEnabled(anyString(), anyString(), anyString());
+    when(templateRepository
+             .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNotForOldGitSync(
+                 anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+        .thenReturn(Optional.of(templateEntity));
+    TemplateEntity entity = templateServiceHelper
+                                .getTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, null,
+                                    false, false, false, false)
+                                .get();
+    assertThat(entity.getIdentifier()).isEqualTo("template1");
+
+    when(templateRepository
+             .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNotForOldGitSync(
+                 anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+        .thenReturn(Optional.of(templateEntity));
+    entity = templateServiceHelper
+                 .getTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL,
+                     false, false, false, false)
+                 .get();
+    assertThat(entity.getIdentifier()).isEqualTo("template1");
+
+    when(
+        templateRepository
+            .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsLastUpdatedAndDeletedNotForOldGitSync(
+                anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+        .thenReturn(Optional.of(templateEntity));
+    entity = templateServiceHelper
+                 .getLastUpdatedTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, false)
+                 .get();
+    assertThat(entity.getIdentifier()).isEqualTo("template1");
+
+    final Page<TemplateEntity> templateList =
+        new PageImpl<>(Collections.singletonList(templateEntity), Pageable.unpaged(), 1);
+    when(templateRepository.findAll(any(), any(), anyString(), anyString(), anyString(), anyBoolean()))
+        .thenReturn(templateList);
+    Criteria criteria = templateServiceHelper.formCriteria(new Criteria(), STABLE_TEMPLATE_TYPE);
+    Page<TemplateEntity> templates = templateServiceHelper.listTemplate(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, criteria, Pageable.unpaged(), true);
+    assertThat(templates.getContent().size()).isEqualTo(1);
   }
 
   @Test

@@ -8,6 +8,7 @@
 package io.harness.template.services;
 
 import static io.harness.accesscontrol.principals.PrincipalType.USER;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 import static io.harness.rule.OwnerRule.vivekveman;
 import static io.harness.template.resources.NGTemplateResource.TEMPLATE;
 import static io.harness.template.resources.beans.PermissionTypes.TEMPLATE_VIEW_PERMISSION;
@@ -69,6 +70,26 @@ public class TemplateRbacHelperTest extends CategoryTest {
                  .build());
     return list;
   }
+
+  private List<TemplateEntity> getAccLevelEntities() {
+    List<TemplateEntity> list = new ArrayList<>();
+    list.add(TemplateEntity.builder()
+                 .accountId(ACC_ID)
+                 .identifier("newTemplate1")
+                 .name("newTemplate1")
+                 .createdAt(1L)
+                 .yaml("yaml")
+                 .build());
+    list.add(TemplateEntity.builder()
+                 .accountId(ACC_ID)
+                 .identifier("newTemplate2")
+                 .name("newTemplate2")
+                 .createdAt(1L)
+                 .yaml("yaml")
+                 .build());
+    return list;
+  }
+
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
@@ -98,5 +119,42 @@ public class TemplateRbacHelperTest extends CategoryTest {
 
     Assertions.assertThat(list.size()).isEqualTo(1);
     Assertions.assertThat(list.get(0).getIdentifier()).isEqualTo("newTemplate1");
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testRbacFilteredAccLevelTemplates() {
+    List<AccessControlDTO> accessControlDTOS = new ArrayList<>();
+
+    AccessControlDTOBuilder accessControlDTOBuilder =
+        AccessControlDTO.builder()
+            .resourceType(TEMPLATE)
+            .permission(TEMPLATE_VIEW_PERMISSION)
+            .resourceScope(ResourceScope.builder().accountIdentifier(ACC_ID).build());
+
+    accessControlDTOS.add(accessControlDTOBuilder.permitted(true).resourceIdentifier("newTemplate1").build());
+    accessControlDTOS.add(accessControlDTOBuilder.permitted(false).resourceIdentifier("newTemplate2").build());
+
+    AccessCheckResponseDTO accessCheckResponseDTO =
+        AccessCheckResponseDTO.builder()
+            .principal(Principal.builder().principalIdentifier("id").principalType(USER).build())
+            .accessControlList(accessControlDTOS)
+            .build();
+
+    doReturn(accessCheckResponseDTO).when(accessControlClient).checkForAccessOrThrow(anyList());
+    List<TemplateEntity> list = templateRbacHelper.getPermittedTemplateList(getAccLevelEntities());
+
+    Assertions.assertThat(list.size()).isEqualTo(1);
+    Assertions.assertThat(list.get(0).getIdentifier()).isEqualTo("newTemplate1");
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testRbacFilteredTemplatesForEmptyList() {
+    List<TemplateEntity> entities = new ArrayList<>();
+    List<TemplateEntity> list = templateRbacHelper.getPermittedTemplateList(entities);
+    Assertions.assertThat(list.size()).isEqualTo(0);
   }
 }

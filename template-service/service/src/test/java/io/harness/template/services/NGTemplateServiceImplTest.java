@@ -8,6 +8,7 @@
 package io.harness.template.services;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.eraro.ErrorCode.REVOKED_TOKEN;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.INDER;
@@ -27,6 +28,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -49,9 +51,11 @@ import io.harness.encryption.Scope;
 import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.engine.GovernanceService;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
+import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
+import io.harness.exception.ScmException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.exception.ngexception.TemplateAlreadyExistsException;
@@ -105,6 +109,7 @@ import io.harness.template.resources.beans.FilterParamsDTO;
 import io.harness.template.resources.beans.PageParamsDTO;
 import io.harness.template.resources.beans.PermissionTypes;
 import io.harness.template.resources.beans.TemplateFilterPropertiesDTO;
+import io.harness.template.resources.beans.TemplateImportRequestDTO;
 import io.harness.template.resources.beans.TemplateMoveConfigResponse;
 import io.harness.template.resources.beans.UpdateGitDetailsParams;
 import io.harness.template.resources.beans.yaml.NGTemplateConfig;
@@ -135,6 +140,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -1290,6 +1296,13 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     // Testing comments if git sync is not enabled.
     String comments = templateService.getActualComments(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "COMMENTS");
     assertThat(comments).isEqualTo("COMMENTS");
+
+    // Testing comments if git sync is enabled
+    when(gitSyncSdkService.isGitSyncEnabled(any(), any(), any())).thenReturn(true);
+    GitEntityInfo branchInfo = GitEntityInfo.builder().storeType(StoreType.REMOTE).commitMsg("test").build();
+    setupGitContext(branchInfo);
+    String comment = templateService.getActualComments(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "COMMENTS");
+    assertThat(comment).isEqualTo("test");
   }
 
   @Test
@@ -1833,5 +1846,129 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
         .hasMessage(String.format(
             "Template not found for template identifier [template-movetogit] and version label [version1] in account %s, org orgId, project projId",
             ACCOUNT_ID));
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testExceptionCasesOnCRUDScenerios() {
+    NGTemplateServiceImpl ngTemplateService = spy(templateService);
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(ACCOUNT_ID)
+                                        .orgIdentifier(ORG_IDENTIFIER)
+                                        .projectIdentifier(PROJ_IDENTIFIER)
+                                        .identifier("template-movetogit1")
+                                        .name("templatemovetogit")
+                                        .versionLabel(TEMPLATE_VERSION_LABEL)
+                                        .templateScope(Scope.PROJECT)
+                                        .templateEntityType(TemplateEntityType.SECRET_MANAGER_TEMPLATE)
+                                        .yaml(yaml)
+                                        .build();
+    doThrow(new DuplicateKeyException("msg")).when(ngTemplateService).saveTemplate(any(), any());
+
+    assertThatThrownBy(() -> ngTemplateService.create(templateEntity, true, "", false))
+        .isInstanceOf(DuplicateFieldException.class)
+        .hasMessage(
+            "Template [template-movetogit1] of versionLabel [version1] under Project[projId], Organization [orgId] already exists");
+
+    doThrow(new ScmException(REVOKED_TOKEN)).when(ngTemplateService).saveTemplate(any(), any());
+
+    assertThatThrownBy(() -> ngTemplateService.create(templateEntity, true, "", false))
+        .isInstanceOf(ScmException.class);
+
+    doThrow(new ScmException(REVOKED_TOKEN)).when(ngTemplateService).getActualComments(any(), any(), any(), any());
+
+    assertThatThrownBy(() -> ngTemplateService.updateTemplateEntity(templateEntity, ChangeType.MODIFY, false, ""))
+        .isInstanceOf(ScmException.class);
+
+    doThrow(new DuplicateKeyException("msg")).when(ngTemplateService).getActualComments(any(), any(), any(), any());
+
+    assertThatThrownBy(() -> ngTemplateService.updateTemplateEntity(templateEntity, ChangeType.MODIFY, false, ""))
+        .isInstanceOf(DuplicateFieldException.class)
+        .hasMessage(
+            "Template [template-movetogit1] of versionLabel [version1] under Project[projId], Organization [orgId] already exists");
+
+    doThrow(new ScmException("Message", REVOKED_TOKEN))
+        .when(templateServiceHelper)
+        .getTemplate(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyBoolean(),
+            anyBoolean(), anyBoolean());
+
+    assertThatThrownBy(()
+                           -> ngTemplateService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "template-movetogit1",
+                               "version1", false, false, false))
+        .isInstanceOf(ScmException.class);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testUpdateGitFilePath() {
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(ACCOUNT_ID)
+                                        .orgIdentifier(ORG_IDENTIFIER)
+                                        .projectIdentifier(PROJ_IDENTIFIER)
+                                        .identifier("template-movetogit1")
+                                        .name("templatemovetogit")
+                                        .versionLabel(TEMPLATE_VERSION_LABEL)
+                                        .templateScope(Scope.PROJECT)
+                                        .templateEntityType(TemplateEntityType.SECRET_MANAGER_TEMPLATE)
+                                        .yaml(yaml)
+                                        .filePath("fsd")
+                                        .build();
+    templateService.updateGitFilePath(templateEntity, ".harness/inputset/test");
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testDeleteAllTemplatesInAProjectlForOldGitSync() {
+    when(gitSyncSdkService.isGitSyncEnabled(any(), any(), any())).thenReturn(true);
+    templateService.create(entity, true, "", false);
+    templateService.deleteAllTemplatesInAProject(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testImportTemplateFromRemote() {
+    when(templateGitXService.isNewGitXEnabled(any(), any(), any())).thenReturn(true);
+    when(templateGitXService.checkForFileUniquenessAndGetRepoURL(any(), any(), any(), any(), anyBoolean()))
+        .thenReturn("repoUrl");
+    when(templateGitXService.importTemplateFromRemote(any(), any(), any())).thenReturn(yaml);
+    doNothing().when(templateGitXService).performImportFlowYamlValidations(any(), any(), any(), any(), any());
+    TemplateImportRequestDTO templateImportRequestDTO = TemplateImportRequestDTO.builder()
+                                                            .templateName(TEMPLATE_IDENTIFIER)
+                                                            .templateDescription("des")
+                                                            .templateVersion(TEMPLATE_VERSION_LABEL)
+                                                            .build();
+    templateService.importTemplateFromRemote(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, templateImportRequestDTO, false);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testGetListOfRepos() {
+    templateService.getListOfRepos(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, true);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testPopulateSetupUsageAsync() {
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(ACCOUNT_ID)
+                                        .orgIdentifier(ORG_IDENTIFIER)
+                                        .projectIdentifier(PROJ_IDENTIFIER)
+                                        .identifier("template-movetogit1")
+                                        .name("templatemovetogit")
+                                        .versionLabel(TEMPLATE_VERSION_LABEL)
+                                        .templateScope(Scope.PROJECT)
+                                        .templateEntityType(TemplateEntityType.SECRET_MANAGER_TEMPLATE)
+                                        .yaml(yaml)
+                                        .storeType(StoreType.REMOTE)
+                                        .build();
+    doNothing().when(templateAsyncSetupUsageService).populateAsyncSetupUsage(any());
+    templateService.populateSetupUsageAsync(templateEntity);
   }
 }
