@@ -13,6 +13,7 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.security.dto.Principal;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
 
@@ -28,6 +29,9 @@ public class DelegateTokenDetails {
   private Principal createdByNgUser;
   private long createdAt;
   private DelegateTokenStatus status;
+  @Schema(
+      description =
+          "Value of delegate token. This is only populated when fetching delegate token by name or the user has edit delegate permission.")
   private String value;
   private String ownerIdentifier;
   private long revokeAfter;

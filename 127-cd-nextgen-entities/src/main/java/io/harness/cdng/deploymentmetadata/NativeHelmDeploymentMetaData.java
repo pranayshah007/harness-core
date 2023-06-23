@@ -5,18 +5,18 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.plancreator.steps;
+package io.harness.cdng.deploymentmetadata;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.core.k8s.ServiceSpecType;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import javax.validation.constraints.NotNull;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Value;
 
-@JsonTypeName("Delegate")
-@OwnedBy(HarnessTeam.PIPELINE)
-public class DelegateInfra implements StepGroupInfra {
-  @Builder.Default @NotNull @Getter private StepGroupInfra.Type type = Type.DELEGATE;
-}
+@OwnedBy(HarnessTeam.CDP)
+@Value
+@Builder
+@JsonTypeName(ServiceSpecType.NATIVE_HELM)
+public class NativeHelmDeploymentMetaData implements DeploymentMetaData {}

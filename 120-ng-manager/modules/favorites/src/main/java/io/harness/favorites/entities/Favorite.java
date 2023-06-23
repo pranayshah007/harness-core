@@ -63,6 +63,14 @@ public class Favorite {
                  .field(FavoriteKeys.resourceIdentifier)
                  .unique(true)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountIdentifier_orgIdentifier_projectIdentifier_resourceType_resourceId_idx")
+                 .field(FavoriteKeys.accountIdentifier)
+                 .field(FavoriteKeys.orgIdentifier)
+                 .field(FavoriteKeys.projectIdentifier)
+                 .field(FavoriteKeys.resourceType)
+                 .field(FavoriteKeys.resourceIdentifier)
+                 .build())
         .build();
   }
 }

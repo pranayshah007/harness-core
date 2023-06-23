@@ -427,11 +427,13 @@ public class InputSetValidationHelperTest extends CategoryTest {
   @Category({UnitTests.class})
   public void testGetInputSetEntity1() {
     GitAwareContextHelper.updateGitEntityContextWithBranch("branch");
+    GitAwareContextHelper.updateScmGitMetaData(ScmGitMetaData.builder().branchName("branch").repoName("repo1").build());
     InputSetEntity inputSetMetadata = InputSetEntity.builder().repo("repo1").connectorRef("connectorRef").build();
     PipelineEntity pipelineMetadata = PipelineEntity.builder().repo("repo1").build();
-    assertThatThrownBy(()
-                           -> InputSetValidationHelper.getInputSetEntity(accountId, orgId, projectId, pipelineId,
-                               "branch", pipelineMetadata, inputSetMetadata, "inputSetId", inputSetService, false))
+    assertThatThrownBy(
+        ()
+            -> InputSetValidationHelper.getInputSetEntity(accountId, orgId, projectId, pipelineId, "branch",
+                pipelineMetadata, inputSetMetadata, "inputSetId", inputSetService, false, false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("InputSet with the given ID: inputSetId does not exist or has been deleted");
   }
@@ -443,9 +445,10 @@ public class InputSetValidationHelperTest extends CategoryTest {
     GitAwareContextHelper.updateGitEntityContextWithBranch("branch");
     InputSetEntity inputSetMetadata = InputSetEntity.builder().repo("repo1").connectorRef("connectorRef").build();
     PipelineEntity pipelineMetadata = PipelineEntity.builder().repo("repo1").build();
-    assertThatThrownBy(()
-                           -> InputSetValidationHelper.getInputSetEntity(accountId, orgId, projectId, pipelineId,
-                               "branch1", pipelineMetadata, inputSetMetadata, "inputSetId", inputSetService, false))
+    assertThatThrownBy(
+        ()
+            -> InputSetValidationHelper.getInputSetEntity(accountId, orgId, projectId, pipelineId, "branch1",
+                pipelineMetadata, inputSetMetadata, "inputSetId", inputSetService, false, false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
             "Reconciliation is not allowed for the given input set. Pipeline and InputSet must be present on the same branch when they are in the same repository");
@@ -457,9 +460,10 @@ public class InputSetValidationHelperTest extends CategoryTest {
   public void testGetInputSetEntity4() {
     InputSetEntity inputSetMetadata = InputSetEntity.builder().repo("repo1").connectorRef("connectorRef").build();
     PipelineEntity pipelineMetadata = PipelineEntity.builder().repo("repo2").build();
-    assertThatThrownBy(()
-                           -> InputSetValidationHelper.getInputSetEntity(accountId, orgId, projectId, pipelineId,
-                               "branch", pipelineMetadata, inputSetMetadata, "inputSetId", inputSetService, false))
+    assertThatThrownBy(
+        ()
+            -> InputSetValidationHelper.getInputSetEntity(accountId, orgId, projectId, pipelineId, "branch",
+                pipelineMetadata, inputSetMetadata, "inputSetId", inputSetService, false, false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
             "Reconciliation is not allowed for the given input set. Pipeline and input set must be in same repository. Please enable account level default setting : 'Allow different repo for Pipeline and InputSets' if its intended to keep pipeline and input set in different repository.");
@@ -471,9 +475,10 @@ public class InputSetValidationHelperTest extends CategoryTest {
   public void testGetInputSetEntity5() {
     InputSetEntity inputSetMetadata = InputSetEntity.builder().repo("repo1").connectorRef("connectorRef").build();
     PipelineEntity pipelineMetadata = PipelineEntity.builder().repo("repo2").build();
-    assertThatThrownBy(()
-                           -> InputSetValidationHelper.getInputSetEntity(accountId, orgId, projectId, pipelineId,
-                               "branch", pipelineMetadata, inputSetMetadata, "inputSetId", inputSetService, true))
+    assertThatThrownBy(
+        ()
+            -> InputSetValidationHelper.getInputSetEntity(accountId, orgId, projectId, pipelineId, "branch",
+                pipelineMetadata, inputSetMetadata, "inputSetId", inputSetService, true, false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("InputSet with the given ID: inputSetId does not exist or has been deleted");
   }

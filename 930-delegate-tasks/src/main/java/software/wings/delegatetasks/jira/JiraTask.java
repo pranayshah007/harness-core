@@ -62,6 +62,7 @@ import java.util.Map.Entry;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import javax.net.ssl.SSLHandshakeException;
 import lombok.extern.slf4j.Slf4j;
 import net.rcarz.jiraclient.BasicCredentials;
 import net.rcarz.jiraclient.Field;
@@ -891,7 +892,11 @@ public class JiraTask extends AbstractDelegateRunnableTask {
           return JiraExecutionData.builder().executionStatus(ExecutionStatus.FAILED).errorMessage(errorMessage).build();
         }
       }
-      log.error(errorMessage, e);
+      if (isWarningException(e)) {
+        log.warn(errorMessage);
+      } else {
+        log.error(errorMessage, e);
+      }
       return JiraExecutionData.builder().executionStatus(ExecutionStatus.PAUSED).errorMessage(errorMessage).build();
     }
 
@@ -934,6 +939,12 @@ public class JiraTask extends AbstractDelegateRunnableTask {
         .currentStatus(approvalFieldValue)
         .executionStatus(ExecutionStatus.PAUSED)
         .build();
+  }
+
+  // IDENTIFY WHICH EXCEPTION SHOULD BE LOGGED AS WARNING INSTEAD OF ERROR
+  @VisibleForTesting
+  boolean isWarningException(JiraException e) {
+    return e.getCause() instanceof SSLHandshakeException;
   }
 
   public String getIssueUrl(JiraConfig jiraConfig, String issueKey) {

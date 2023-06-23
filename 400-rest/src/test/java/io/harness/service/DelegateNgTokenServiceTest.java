@@ -10,6 +10,7 @@ package io.harness.service;
 import static io.harness.data.encoding.EncodingUtils.decodeBase64ToString;
 import static io.harness.delegate.message.ManagerMessageConstants.SELF_DESTRUCT;
 import static io.harness.rule.OwnerRule.JENNY;
+import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.VLAD;
 
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
@@ -41,6 +42,7 @@ import io.harness.service.impl.DelegateNgTokenServiceImpl;
 import software.wings.WingsBaseTest;
 
 import com.google.inject.Inject;
+import java.util.List;
 import org.atmosphere.cpr.Broadcaster;
 import org.atmosphere.cpr.BroadcasterFactory;
 import org.junit.Before;
@@ -84,10 +86,12 @@ public class DelegateNgTokenServiceTest extends WingsBaseTest {
   public void shouldRevokeToken() {
     String tokenName = "token1";
     delegateNgTokenService.createToken(TEST_ACCOUNT_ID, null, tokenName, null);
-    assertThat(delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, null, DelegateTokenStatus.ACTIVE)).hasSize(1);
+    assertThat(delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, null, DelegateTokenStatus.ACTIVE, false))
+        .hasSize(1);
     DelegateTokenDetails revokedToken = delegateNgTokenService.revokeDelegateToken(TEST_ACCOUNT_ID, tokenName);
     assertThat(revokedToken.getStatus()).isEqualTo(DelegateTokenStatus.REVOKED);
-    assertThat(delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, null, DelegateTokenStatus.ACTIVE)).isEmpty();
+    assertThat(delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, null, DelegateTokenStatus.ACTIVE, false))
+        .isEmpty();
   }
 
   @Test(expected = InvalidRequestException.class)
@@ -96,9 +100,11 @@ public class DelegateNgTokenServiceTest extends WingsBaseTest {
   public void shouldNotRevokeAlreadyRevokedToken() {
     String tokenName = "token1";
     delegateNgTokenService.createToken(TEST_ACCOUNT_ID, null, tokenName, null);
-    assertThat(delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, null, DelegateTokenStatus.ACTIVE)).hasSize(1);
+    assertThat(delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, null, DelegateTokenStatus.ACTIVE, false))
+        .hasSize(1);
     delegateNgTokenService.revokeDelegateToken(TEST_ACCOUNT_ID, tokenName);
-    assertThat(delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, null, DelegateTokenStatus.ACTIVE)).isEmpty();
+    assertThat(delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, null, DelegateTokenStatus.ACTIVE, false))
+        .isEmpty();
     delegateNgTokenService.revokeDelegateToken(TEST_ACCOUNT_ID, tokenName);
   }
 
@@ -110,13 +116,18 @@ public class DelegateNgTokenServiceTest extends WingsBaseTest {
     String tokenName2 = "token12";
     delegateNgTokenService.createToken(TEST_ACCOUNT_ID, null, tokenName1, null);
     delegateNgTokenService.createToken(TEST_ACCOUNT_ID, null, tokenName2, null);
-    assertThat(delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, null, DelegateTokenStatus.ACTIVE)).hasSize(2);
+    assertThat(delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, null, DelegateTokenStatus.ACTIVE, false))
+        .hasSize(2);
     delegateNgTokenService.revokeDelegateToken(TEST_ACCOUNT_ID, tokenName1);
-    assertThat(delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, null, DelegateTokenStatus.ACTIVE)).hasSize(1);
-    assertThat(delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, null, DelegateTokenStatus.REVOKED)).hasSize(1);
+    assertThat(delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, null, DelegateTokenStatus.ACTIVE, false))
+        .hasSize(1);
+    assertThat(delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, null, DelegateTokenStatus.REVOKED, false))
+        .hasSize(1);
     delegateNgTokenService.revokeDelegateToken(TEST_ACCOUNT_ID, tokenName2);
-    assertThat(delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, null, DelegateTokenStatus.ACTIVE)).hasSize(0);
-    assertThat(delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, null, DelegateTokenStatus.REVOKED)).hasSize(2);
+    assertThat(delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, null, DelegateTokenStatus.ACTIVE, false))
+        .hasSize(0);
+    assertThat(delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, null, DelegateTokenStatus.REVOKED, false))
+        .hasSize(2);
   }
 
   @Test
@@ -127,7 +138,8 @@ public class DelegateNgTokenServiceTest extends WingsBaseTest {
     String tokenName2 = "token12";
     delegateNgTokenService.createToken(TEST_ACCOUNT_ID, null, tokenName1, null);
     delegateNgTokenService.createToken(TEST_ACCOUNT_ID, null, tokenName2, null);
-    assertThat(delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, null, DelegateTokenStatus.ACTIVE)).hasSize(2);
+    assertThat(delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, null, DelegateTokenStatus.ACTIVE, false))
+        .hasSize(2);
     DelegateTokenDetails result = delegateNgTokenService.getDelegateToken(TEST_ACCOUNT_ID, tokenName1);
     assertThat(result.getName()).isEqualTo(tokenName1);
   }
@@ -204,11 +216,45 @@ public class DelegateNgTokenServiceTest extends WingsBaseTest {
                             .lastHeartBeat(System.currentTimeMillis())
                             .build();
     persistence.save(delegate);
-    assertThat(delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, null, DelegateTokenStatus.ACTIVE)).hasSize(1);
+    assertThat(delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, null, DelegateTokenStatus.ACTIVE, false))
+        .hasSize(1);
     DelegateTokenDetails revokedToken = delegateNgTokenService.revokeDelegateToken(TEST_ACCOUNT_ID, tokenName);
     assertThat(revokedToken.getStatus()).isEqualTo(DelegateTokenStatus.REVOKED);
-    assertThat(delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, null, DelegateTokenStatus.ACTIVE)).isEmpty();
+    assertThat(delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, null, DelegateTokenStatus.ACTIVE, false))
+        .isEmpty();
     verify(broadcasterFactory).lookup("/stream/delegate/testAccountId", true);
     verify(broadcaster, times(1)).broadcast(SELF_DESTRUCT + delegate.getUuid());
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testGetDelegateTokensShouldReturnDelegateTokenValue() {
+    String tokenName1 = "token1";
+    String tokenName2 = "token2";
+    String ownerIdentifier = "default_project_default/p4";
+    DelegateEntityOwner owner = DelegateEntityOwner.builder().identifier(ownerIdentifier).build();
+    delegateNgTokenService.createToken(TEST_ACCOUNT_ID, owner, tokenName1, null);
+    delegateNgTokenService.createToken(TEST_ACCOUNT_ID, owner, tokenName2, null);
+    List<DelegateTokenDetails> result =
+        delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, owner, DelegateTokenStatus.ACTIVE, true);
+    assertThat(result).hasSize(2);
+    result.forEach(tokenDetail -> assertThat(tokenDetail.getValue()).isNotEmpty());
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testGetDelegateTokensShouldNotReturnDelegateTokenValue() {
+    String tokenName1 = "token1";
+    String tokenName2 = "token2";
+    String ownerIdentifier = "default_project_default/p4";
+    DelegateEntityOwner owner = DelegateEntityOwner.builder().identifier(ownerIdentifier).build();
+    delegateNgTokenService.createToken(TEST_ACCOUNT_ID, owner, tokenName1, null);
+    delegateNgTokenService.createToken(TEST_ACCOUNT_ID, owner, tokenName2, null);
+    List<DelegateTokenDetails> result =
+        delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, owner, DelegateTokenStatus.ACTIVE, false);
+    assertThat(result).hasSize(2);
+    result.forEach(tokenDetail -> assertThat(tokenDetail.getValue()).isNull());
   }
 }

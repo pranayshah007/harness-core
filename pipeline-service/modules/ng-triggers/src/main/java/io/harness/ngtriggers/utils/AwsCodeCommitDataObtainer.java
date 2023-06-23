@@ -148,7 +148,7 @@ public class AwsCodeCommitDataObtainer implements GitProviderBaseDataObtainer {
     throw new TriggerException("Failed to fetch aws code commit details", WingsException.SRE);
   }
 
-  private ParseWebhookResponse parsePrHook(ParseWebhookResponse parseWebhookResponse,
+  public ParseWebhookResponse parsePrHook(ParseWebhookResponse parseWebhookResponse,
       AwsCodeCommitDataObtainmentTaskResult awsCodeCommitDataObtainmentTaskResult) {
     List<Commit> commits = awsCodeCommitDataObtainmentTaskResult.getCommitDetailsList()
                                .stream()

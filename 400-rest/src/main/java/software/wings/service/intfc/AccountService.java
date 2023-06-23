@@ -72,6 +72,8 @@ public interface AccountService {
 
   Boolean updateNextGenEnabled(String accountId, boolean enabled);
 
+  Boolean syncNextgenWithCG(String accountId);
+
   Boolean cleanUpNextGen(String accountId);
 
   Boolean updateIsProductLed(String accountId, boolean isProductLed);

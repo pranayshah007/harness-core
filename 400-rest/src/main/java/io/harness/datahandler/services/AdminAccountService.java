@@ -68,6 +68,8 @@ public interface AdminAccountService {
 
   boolean enableOrDisableNextGen(String accountId, boolean enabled);
 
+  boolean syncNextgenWithCG(String accountId);
+
   boolean cleanUpNextGen(String accountId);
 
   boolean updateIsProductLed(String accountId, boolean enabled);

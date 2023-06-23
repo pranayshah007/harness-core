@@ -82,6 +82,8 @@ public enum CIStepInfoType {
   PLUGIN_V1(CI_LITE_ENGINE, "plugin"),
   IACM(CI_LITE_ENGINE, "IACM"),
   IACM_TERRAFORM_PLUGIN(CI_LITE_ENGINE, "IACMTerraformPlugin"),
+  IACM_APPROVAL(CI_LITE_ENGINE, "IACMApproval"),
+
   BACKGROUND_V1(CI_LITE_ENGINE, "background"),
   BITRISE_V1(CI_LITE_ENGINE, "bitrise"),
   ACTION_V1(CI_LITE_ENGINE, "action"),

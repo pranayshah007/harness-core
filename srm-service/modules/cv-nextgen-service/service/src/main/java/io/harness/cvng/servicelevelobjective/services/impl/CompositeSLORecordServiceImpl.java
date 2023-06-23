@@ -227,8 +227,12 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
       String verificationTaskId, Instant startTime, Instant endTime, SLIEvaluationType sliEvaluationType) {
     List<CompositeSLORecord> toBeUpdatedSLORecords =
         getSLORecords(verificationTaskId, startTime, endTime.plus(1, ChronoUnit.MINUTES));
-    Map<Instant, CompositeSLORecord> sloRecordMap =
-        toBeUpdatedSLORecords.stream().collect(Collectors.toMap(CompositeSLORecord::getTimestamp, Function.identity()));
+    Map<Instant, CompositeSLORecord> sloRecordMap = toBeUpdatedSLORecords.stream().collect(
+        Collectors.toMap(CompositeSLORecord::getTimestamp, Function.identity(), (sloRecord1, sloRecord2) -> {
+          log.info("Duplicate SLO Key detected sloId: {}, timeStamp: {}", serviceLevelObjective.getUuid(),
+              sloRecord1.getTimestamp());
+          return sloRecord1.getLastUpdatedAt() > sloRecord2.getLastUpdatedAt() ? sloRecord1 : sloRecord2;
+        }));
     List<CompositeSLORecord> updateOrCreateSLORecords;
     if (sliEvaluationType == SLIEvaluationType.WINDOW) {
       updateOrCreateSLORecords = updateWindowCompositeSLORecords(serviceLevelObjectivesDetailCompositeSLORecordMap,

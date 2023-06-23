@@ -25,6 +25,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.cistatus.service.GithubService;
 import io.harness.cistatus.service.GithubServiceImpl;
+import io.harness.gitsync.caching.service.GitDefaultBranchCacheService;
+import io.harness.gitsync.caching.service.GitDefaultBranchCacheServiceImpl;
 import io.harness.gitsync.caching.service.GitFileCacheService;
 import io.harness.gitsync.caching.service.GitFileCacheServiceImpl;
 import io.harness.gitsync.client.GitSyncSdkGrpcClientModule;
@@ -192,6 +194,7 @@ public class GitSyncModule extends AbstractModule {
     bind(FullSyncTriggerService.class).to(FullSyncTriggerServiceImpl.class);
     bind(GitFullSyncConfigService.class).to(GitFullSyncConfigServiceImpl.class);
     bind(GitFileCacheService.class).to(GitFileCacheServiceImpl.class);
+    bind(GitDefaultBranchCacheService.class).to(GitDefaultBranchCacheServiceImpl.class);
     bind(MessageListener.class).annotatedWith(Names.named(GIT_COMMIT + ENTITY_CRUD)).to(GitCommitEventListener.class);
     bind(MessageListener.class)
         .annotatedWith(Names.named(YAML_CHANGE_SET + ENTITY_CRUD))

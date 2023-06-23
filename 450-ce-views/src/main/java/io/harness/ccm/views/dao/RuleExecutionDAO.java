@@ -45,6 +45,10 @@ public class RuleExecutionDAO {
     return hPersistence.save(ruleExecution);
   }
 
+  public List<String> save(List<RuleExecution> ruleExecutions) {
+    return hPersistence.save(ruleExecutions);
+  }
+
   public List<RuleExecution> list(String accountId) {
     return hPersistence.createQuery(RuleExecution.class).field(RuleExecutionKeys.accountId).equal(accountId).asList();
   }

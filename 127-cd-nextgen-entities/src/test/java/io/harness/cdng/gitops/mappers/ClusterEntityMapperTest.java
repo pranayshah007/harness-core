@@ -170,4 +170,60 @@ public class ClusterEntityMapperTest extends CategoryTest {
     assertThat(entity.getClusterRef()).isEqualTo("id_From_GitOps");
     assertThat(entity.getLinkedAt()).isEqualTo(epochSecond);
   }
+
+  @Test
+  @Owner(developers = OwnerRule.MEENA)
+  @Category(UnitTests.class)
+  public void testGetScopedClusterRef_AccountRef() {
+    String scopedClusterRef = ClusterEntityMapper.getScopedClusterRef(ScopeLevel.ACCOUNT, "some_id");
+    assertThat(scopedClusterRef).isEqualTo("account.some_id");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MEENA)
+  @Category(UnitTests.class)
+  public void testGetScopedClusterRef_OrgRef() {
+    String scopedClusterRef = ClusterEntityMapper.getScopedClusterRef(ScopeLevel.ORGANIZATION, "some_id");
+    assertThat(scopedClusterRef).isEqualTo("org.some_id");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MEENA)
+  @Category(UnitTests.class)
+  public void testGetScopedClusterRef_ProjectRef() {
+    String scopedClusterRef = ClusterEntityMapper.getScopedClusterRef(ScopeLevel.PROJECT, "some_id");
+    assertThat(scopedClusterRef).isEqualTo("some_id");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MEENA)
+  @Category(UnitTests.class)
+  public void testGetScopedClusterRef_NullScope() {
+    String scopedClusterRef = ClusterEntityMapper.getScopedClusterRef(null, "some_id");
+    assertThat(scopedClusterRef).isEqualTo("some_id");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MEENA)
+  @Category(UnitTests.class)
+  public void testGetScopeFromClusterRef_AccountRef() {
+    ScopeAndRef scopeAndRef = ClusterEntityMapper.getScopeFromClusterRef("account.some_id");
+    assertThat(scopeAndRef.getScope()).isEqualTo(ScopeLevel.ACCOUNT);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MEENA)
+  @Category(UnitTests.class)
+  public void testGetScopeFromClusterRef_OrgRef() {
+    ScopeAndRef scopeAndRef = ClusterEntityMapper.getScopeFromClusterRef("org.some_id");
+    assertThat(scopeAndRef.getScope()).isEqualTo(ScopeLevel.ORGANIZATION);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MEENA)
+  @Category(UnitTests.class)
+  public void testGetScopeFromClusterRef_ProjectRef() {
+    ScopeAndRef scopeAndRef = ClusterEntityMapper.getScopeFromClusterRef("some_id");
+    assertThat(scopeAndRef.getScope()).isEqualTo(ScopeLevel.PROJECT);
+  }
 }

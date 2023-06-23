@@ -222,6 +222,37 @@ public class NGAccountSetupServiceTest extends CategoryTest {
     assertThat(users.size()).isEqualTo(3);
     ngAccountSetupService.cleanUsersFromAccountForNg(ACCOUNT_ID);
     verify(ngUserService, times(1)).listUserIds(any());
-    verify(ngUserService, times(2)).listUsersHavingRole(any(), any());
+    verify(ngUserService, times(1)).listUsersHavingRole(any(), any());
+  }
+
+  @Test
+  @Owner(developers = SAHIBA)
+  @Category(UnitTests.class)
+  public void testSyncWithCG() {
+    when(featureFlagService.isNotEnabled(FeatureName.PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG, ACCOUNT_ID))
+        .thenReturn(true);
+    ngAccountSetupService.setupAccountForNG(ACCOUNT_ID);
+    ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+    verify(ngUserService, times(3)).addUserToScope(captor.capture(), any(), any(), any(), any());
+    List<String> users = captor.getAllValues();
+    assertThat(users.size()).isEqualTo(3);
+    assertThat(users.contains(FIRST_ADMIN_USER)).isTrue();
+    assertThat(users.contains(SECOND_ADMIN_USER)).isTrue();
+    assertThat(users.contains(NON_ADMIN_USER)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = SAHIBA)
+  @Category(UnitTests.class)
+  public void testSyncWithCGAdminOnly() {
+    when(featureFlagService.isNotEnabled(FeatureName.PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG, ACCOUNT_ID))
+        .thenReturn(false);
+    ngAccountSetupService.setupAccountForNG(ACCOUNT_ID);
+    ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+    verify(ngUserService, times(2)).addUserToScope(captor.capture(), any(), any(), any(), any());
+    List<String> users = captor.getAllValues();
+    assertThat(users.size()).isEqualTo(2);
+    assertThat(users.contains(FIRST_ADMIN_USER)).isTrue();
+    assertThat(users.contains(SECOND_ADMIN_USER)).isTrue();
   }
 }

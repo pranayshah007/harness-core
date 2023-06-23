@@ -55,11 +55,13 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.delegate.task.TaskFailureReason;
 import io.harness.delegate.utils.DelegateEntityOwnerHelper;
+import io.harness.delegate.utils.DelegateLogContextHelper;
 import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
+import io.harness.logging.AutoLogContext;
 import io.harness.persistence.HPersistence;
 import io.harness.service.dto.RetryDelegate;
 import io.harness.service.intfc.DelegateCache;
@@ -678,7 +680,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
 
   @Override
   public boolean shouldValidate(DelegateTask task, String delegateId) {
-    try {
+    try (AutoLogContext ignore = DelegateLogContextHelper.getLogContext(task)) {
       for (String criteria : fetchCriteria(task)) {
         if (isNotBlank(criteria)) {
           Optional<DelegateConnectionResult> result =
@@ -689,7 +691,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
             return true;
           }
         } else {
-          log.error("We should not have bank criteria");
+          log.error("We should not have blank criteria");
           return true;
         }
       }

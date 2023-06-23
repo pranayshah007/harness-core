@@ -9,6 +9,9 @@ package io.harness.secretmanagers;
 
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_SECRET_MANAGERS;
 
+import io.harness.beans.FeatureName;
+import io.harness.ff.FeatureFlagService;
+
 import software.wings.beans.Base;
 import software.wings.security.PermissionAttribute;
 import software.wings.security.ScopedEntity;
@@ -23,12 +26,15 @@ import com.google.inject.Inject;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class SecretsManagerRBACServiceImpl implements SecretsManagerRBACService {
   private final UsageRestrictionsService usageRestrictionsService;
   private final UserService userService;
   private final AppService appService;
   private final EnvironmentService envService;
+  @Inject private FeatureFlagService featureFlagService;
 
   @Inject
   public SecretsManagerRBACServiceImpl(UsageRestrictionsService usageRestrictionsService, UserService userService,
@@ -84,6 +90,9 @@ public class SecretsManagerRBACServiceImpl implements SecretsManagerRBACService 
 
     Set<String> appsByAccountId = appService.getAppIdsAsSetByAccountId(accountId);
     Map<String, List<Base>> appIdEnvMapForAccount = envService.getAppIdEnvMap(appsByAccountId, accountId);
+    if (featureFlagService.isGlobalEnabled(FeatureName.SPG_ENVIRONMENT_QUERY_LOGS)) {
+      log.info("[GetAppIdEnvMap] SecretsManagerRBACServiceImpl:hasAccessToReadSMInternal - debug log");
+    }
 
     return usageRestrictionsService.hasAccess(accountId, isAccountAdmin, appId, envId, false,
         scopedEntity.getUsageRestrictions(), restrictionsFromUserPermissions, appEnvMapFromPermissions,

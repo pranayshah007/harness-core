@@ -131,6 +131,12 @@ public class AdminAccountResource {
   }
 
   @PUT
+  @Path("{accountId}/sync-with-cg")
+  public RestResponse<Boolean> syncNextgen(@PathParam("accountId") String accountId) {
+    return new RestResponse<>(adminAccountService.syncNextgenWithCG(accountId));
+  }
+
+  @PUT
   @Path("{accountId}/nextgen-cleanup")
   public RestResponse<Boolean> cleanupNextgenUser(@PathParam("accountId") String accountId) {
     return new RestResponse<>(adminAccountService.cleanUpNextGen(accountId));

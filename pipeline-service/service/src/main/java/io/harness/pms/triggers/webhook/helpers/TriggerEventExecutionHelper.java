@@ -252,7 +252,10 @@ public class TriggerEventExecutionHelper {
     }
 
     if (parseWebhookResponse != null) {
-      if (parseWebhookResponse.hasPr()) {
+      if (parseWebhookResponse.hasRelease()) {
+        builder.setParsedPayload(ParsedPayload.newBuilder().setRelease(parseWebhookResponse.getRelease()).build())
+            .build();
+      } else if (parseWebhookResponse.hasPr()) {
         builder.setParsedPayload(ParsedPayload.newBuilder().setPr(parseWebhookResponse.getPr()).build()).build();
       } else {
         builder.setParsedPayload(ParsedPayload.newBuilder().setPush(parseWebhookResponse.getPush()).build()).build();
