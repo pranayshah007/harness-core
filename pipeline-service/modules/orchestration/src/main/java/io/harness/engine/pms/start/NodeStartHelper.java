@@ -55,6 +55,7 @@ import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.LinkedList;
 import java.util.List;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -160,8 +161,12 @@ public class NodeStartHelper {
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     if (planNode.getStepInputs() != null) {
       log.info("Starting to Resolve step Inputs");
-      Object resolvedInputs =
-          pmsEngineExpressionService.resolve(ambiance, planNode.getStepInputs(), planNode.getExpressionMode());
+      List<String> enabledFeatureFlags = new LinkedList<>();
+      if (AmbianceUtils.shouldUseExpressionEngineV2(ambiance)) {
+        enabledFeatureFlags.add(EngineExpressionEvaluator.PIE_EXECUTION_JSON_SUPPORT);
+      }
+      Object resolvedInputs = pmsEngineExpressionService.resolve(
+          ambiance, planNode.getStepInputs(), planNode.getExpressionMode(), enabledFeatureFlags);
       PmsStepParameters parameterInputs =
           PmsStepParameters.parse(OrchestrationMapBackwardCompatibilityUtils.extractToOrchestrationMap(resolvedInputs));
       pmsGraphStepDetailsService.saveNodeExecutionInfo(nodeExecutionId, ambiance.getPlanExecutionId(), parameterInputs);
