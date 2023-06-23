@@ -37,6 +37,9 @@ public class ServerlessV2PluginInfoProviderHelper {
       ServerlessAwsLambdaManifestOutcome serverlessAwsLambdaManifestOutcome) {
     GitStoreConfig gitStoreConfig = (GitStoreConfig) serverlessAwsLambdaManifestOutcome.getStore();
 
-    return serverlessAwsLambdaManifestOutcome.getIdentifier();
+    String path =
+        serverlessAwsLambdaManifestOutcome.getIdentifier() + "/" + gitStoreConfig.getPaths().getValue().get(0);
+    path = path.replaceAll("/$", "");
+    return path;
   }
 }
