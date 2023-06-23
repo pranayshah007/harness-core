@@ -93,7 +93,6 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.util.Collections;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -288,7 +287,6 @@ public class WorkflowExecutionServiceRollbackTest extends WingsBaseTest {
 
   @Test
   @Owner(developers = POOJA)
-  @Ignore
   @Category(UnitTests.class)
   public void testOnDemandRollbackConfirmationSuccess() {
     WorkflowExecution previousWE = createNewWorkflowExecution(false);
@@ -310,7 +308,6 @@ public class WorkflowExecutionServiceRollbackTest extends WingsBaseTest {
 
   @Test
   @Owner(developers = POOJA)
-  @Ignore
   @Category(UnitTests.class)
   public void testOnDemandRollbackConfirmationSuccessForEmptyArtifacts() {
     WorkflowExecution previousWE = createNewWorkflowExecution(false);
@@ -381,7 +378,6 @@ public class WorkflowExecutionServiceRollbackTest extends WingsBaseTest {
 
   @Test
   @Owner(developers = POOJA)
-  @Ignore
   @Category(UnitTests.class)
   public void testTriggerRollbackExecutionWorkflow() {
     WorkflowExecution previousWE = createNewWorkflowExecution(false);
