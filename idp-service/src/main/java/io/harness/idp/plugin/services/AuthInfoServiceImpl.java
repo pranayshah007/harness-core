@@ -59,6 +59,7 @@ public class AuthInfoServiceImpl implements AuthInfoService {
   @Override
   public List<BackstageEnvVariable> saveAuthEnvVariables(
       String authId, List<BackstageEnvVariable> envVariables, String harnessAccount) throws Exception {
+    backstageEnvVariableService.deleteMultiUsingEnvNames(getEnvNamesForAuthId(authId), harnessAccount);
     List<BackstageEnvVariable> backstageEnvVariables =
         backstageEnvVariableService.createOrUpdate(envVariables, harnessAccount);
     createOrUpdateAppConfigForAuth(authId, harnessAccount, backstageEnvVariables);

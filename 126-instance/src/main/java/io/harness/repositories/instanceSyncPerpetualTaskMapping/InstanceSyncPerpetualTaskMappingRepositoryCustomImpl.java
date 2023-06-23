@@ -30,9 +30,10 @@ public class InstanceSyncPerpetualTaskMappingRepositoryCustomImpl
   private MongoTemplate mongoTemplate;
 
   @Override
-  public Optional<InstanceSyncPerpetualTaskMapping> findByConnectorRef(
-      String accountId, String orgId, String projectId, String connectorRef) {
+  public Optional<InstanceSyncPerpetualTaskMapping> findByConnectorRefAndDeploymentType(
+      String accountId, String orgId, String projectId, String connectorRef, String deploymentType) {
     Criteria criteria = Criteria.where(InstanceSyncPerpetualTaskMappingKey.connectorIdentifier).is(connectorRef);
+    criteria.and(InstanceSyncPerpetualTaskMappingKey.deploymentType).is(deploymentType);
     criteria.and(InstanceSyncPerpetualTaskMappingKey.accountId).is(accountId);
 
     if (isNotBlank(orgId)) {

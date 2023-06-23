@@ -14,7 +14,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import io.swagger.annotations.ApiModelProperty;
 import org.springframework.data.annotation.TypeAlias;
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true, defaultImpl = UseFromStageInfraYaml.class)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true,
+    include = JsonTypeInfo.As.EXISTING_PROPERTY, defaultImpl = UseFromStageInfraYaml.class)
 @JsonSubTypes({
   @JsonSubTypes.Type(value = K8sDirectInfraYaml.class, name = "KubernetesDirect")
   , @JsonSubTypes.Type(value = UseFromStageInfraYaml.class, name = "UseFromStage"),

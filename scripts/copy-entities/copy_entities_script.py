@@ -33,7 +33,7 @@ headers = {
   'x-api-key': apikey,
   'content-type': 'application/json'
   }
-Entities = ["Connector","Secret","Service","Environment","Template","Pipeline"]
+Entities = ["Secret","Connector","Service","Environment","Template","Pipeline"]
 success_failure_count = [[0 for i in range(3)] for j in range(len(Entities))]
 global success_count
 global failure_count
@@ -100,6 +100,29 @@ class ImportExport(ABC):
     pass
 
 
+class Secret(ImportExport):
+  def list_entity(self):
+    url_secret_list = secret_endpoint + source_query_param+"&pageIndex=0&pageSize=10"
+    return get_response_data("GET", url_secret_list, "")
+
+  def list_entity_paginated(self, j):
+    url_secret_list_paginated = secret_endpoint + source_query_param+"&pageIndex="+str(j)+"&pageSize=10"
+    return get_response_data("GET", url_secret_list_paginated, "")
+
+  def get_entity_identifier(self, response_list_entity, i):
+    return response_list_entity["data"]["content"][i]["secret"]["identifier"]
+
+  def get_entity(self, response_list_entity, i):
+    url_get_secret = secret_endpoint + "/"+response_list_entity["data"]["content"][i]["secret"]["identifier"]+source_query_param
+    return get_response_data("GET", url_get_secret, "")
+
+  def get_payload(self, response_get_entity):
+    return modify_payload(response_get_entity["data"], "secret")
+
+  def create_entity(self, payload):
+    url_create_secret = secret_endpoint + "?routingId="+accountIdentifier+"&accountIdentifier="+accountIdentifier+"&projectIdentifier="+to_projectIdentifier+"&orgIdentifier=" + to_orgIdentifier
+    return create_and_print_entity(url_create_secret, payload)
+
 class Connector(ImportExport):
   def list_entity(self):
      url_connector_list = connector_endpoint+"/listV2"+source_query_param+"&pageIndex=0&pageSize=10"
@@ -124,31 +147,6 @@ class Connector(ImportExport):
       return {'status': 'SUCCESS'}
     url_create_connector = connector_endpoint+routing_and_accountId_param
     return create_and_print_entity(url_create_connector, payload)
-
-
-class Secret(ImportExport):
-  def list_entity(self):
-    url_secret_list = secret_endpoint + source_query_param+"&pageIndex=0&pageSize=10"
-    return get_response_data("GET", url_secret_list, "")
-
-  def list_entity_paginated(self, j):
-    url_secret_list_paginated = secret_endpoint + source_query_param+"&pageIndex="+str(j)+"&pageSize=10"
-    return get_response_data("GET", url_secret_list_paginated, "")
-
-  def get_entity_identifier(self, response_list_entity, i):
-    return response_list_entity["data"]["content"][i]["secret"]["identifier"]
-
-  def get_entity(self, response_list_entity, i):
-    url_get_secret = secret_endpoint + "/"+response_list_entity["data"]["content"][i]["secret"]["identifier"]+source_query_param
-    return get_response_data("GET", url_get_secret, "")
-
-  def get_payload(self, response_get_entity):
-    return modify_payload(response_get_entity["data"], "secret")
-
-  def create_entity(self, payload):
-    url_create_secret = secret_endpoint + "?routingId="+accountIdentifier+"&accountIdentifier="+accountIdentifier+"&projectIdentifier="+to_projectIdentifier+"&orgIdentifier=" + to_orgIdentifier
-    return create_and_print_entity(url_create_secret, payload)
-
 
 class Environment(ImportExport):
   def list_entity(self):

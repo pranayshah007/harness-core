@@ -146,7 +146,8 @@ public class TerragruntDestroyTaskNG extends AbstractDelegateRunnableTask {
               color("\nDecrypting terraform plan before applying\n", LogColor.White, LogWeight.Bold));
           taskService.saveTerraformPlanContentToFile(destroyTaskParameters.getPlanSecretManager(),
               destroyTaskParameters.getEncryptedTfPlan(), terragruntContext.getScriptDirectory(),
-              destroyTaskParameters.getAccountId(), TERRAFORM_DESTROY_PLAN_FILE_OUTPUT_NAME);
+              destroyTaskParameters.getAccountId(), TERRAFORM_DESTROY_PLAN_FILE_OUTPUT_NAME,
+              destroyTaskParameters.isEncryptDecryptPlanForHarnessSMOnManager(), true);
           destroyLogCallback.saveExecutionLog(
               color("Using approved terraform plan \n", LogColor.White, LogWeight.Bold));
 

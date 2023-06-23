@@ -29,6 +29,7 @@ import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.GithubPackagesArtifactOutcome;
 import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
@@ -41,6 +42,16 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
+import io.harness.delegate.beans.connector.scm.GitAuthType;
+import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
+import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubUsernamePasswordDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
 import io.harness.delegate.task.ssh.artifact.AcrArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryDockerArtifactDelegateConfig;
@@ -50,6 +61,7 @@ import io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.DockerArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.EcrArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.GcrArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.GithubPackagesArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.NexusArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.NexusDockerArtifactDelegateConfig;
@@ -66,6 +78,7 @@ import io.harness.utils.IdentifierRefHelper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -225,6 +238,20 @@ public class SshWinRmArtifactHelper {
           .imagePath(dockerArtifactOutcome.getImagePath())
           .tag(dockerArtifactOutcome.getTag())
           .build();
+    } else if (artifactOutcome instanceof GithubPackagesArtifactOutcome) {
+      GithubPackagesArtifactOutcome githubPackagesArtifactOutcome = (GithubPackagesArtifactOutcome) artifactOutcome;
+      connectorDTO = getConnectorInfoDTO(githubPackagesArtifactOutcome.getConnectorRef(), ngAccess);
+      return GithubPackagesArtifactDelegateConfig.builder()
+          .identifier(githubPackagesArtifactOutcome.getIdentifier())
+          .connectorDTO(connectorDTO)
+          .encryptedDataDetails(getArtifactEncryptionDataDetails(connectorDTO, ngAccess))
+          .artifactUrl(githubPackagesArtifactOutcome.getMetadata().get("url"))
+          .metadata(githubPackagesArtifactOutcome.getMetadata())
+          .packageType(githubPackagesArtifactOutcome.getPackageType())
+          .packageName(githubPackagesArtifactOutcome.getPackageName())
+          .version(githubPackagesArtifactOutcome.getVersion())
+          .image(githubPackagesArtifactOutcome.getImage())
+          .build();
     } else {
       throw new UnsupportedOperationException(
           format("Unsupported Artifact type: [%s]", artifactOutcome.getArtifactType()));
@@ -279,6 +306,9 @@ public class SshWinRmArtifactHelper {
         } else {
           return emptyList();
         }
+      case GITHUB:
+        GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDTO.getConnectorConfig();
+        return getGithubEncryptionDetails(githubConnectorDTO, ngAccess);
       default:
         throw new UnsupportedOperationException(
             format("Unsupported connector type : [%s]", connectorDTO.getConnectorType()));
@@ -308,5 +338,51 @@ public class SshWinRmArtifactHelper {
         throw new InvalidRequestException("Nexus artifact outcome metadata url cannot be null or empty");
       }
     }
+  }
+
+  private List<EncryptedDataDetail> getGithubEncryptionDetails(
+      GithubConnectorDTO githubConnectorDTO, NGAccess ngAccess) {
+    List<EncryptedDataDetail> encryptedDataDetails;
+
+    GithubApiAccessDTO githubApiAccessDTO = githubConnectorDTO.getApiAccess();
+
+    GithubApiAccessType type = githubApiAccessDTO.getType();
+
+    if (type == GithubApiAccessType.TOKEN) {
+      GithubTokenSpecDTO githubTokenSpecDTO = (GithubTokenSpecDTO) githubApiAccessDTO.getSpec();
+
+      encryptedDataDetails = secretManagerClientService.getEncryptionDetails(ngAccess, githubTokenSpecDTO);
+
+    } else {
+      throw new InvalidRequestException("Please select the authentication type for API Access as Token");
+    }
+
+    // fetch encryptedDataDetails for decrypting username if provided as a secret
+
+    GithubAuthenticationDTO githubAuthenticationDTO = githubConnectorDTO.getAuthentication();
+    if (githubAuthenticationDTO != null && GitAuthType.HTTP.equals(githubAuthenticationDTO.getAuthType())) {
+      List<EncryptedDataDetail> encryptedDataDetailsForUsername = new ArrayList<>();
+      GithubHttpCredentialsDTO githubHttpCredentialsDTO =
+          (GithubHttpCredentialsDTO) githubAuthenticationDTO.getCredentials();
+      if (githubHttpCredentialsDTO.getType() == GithubHttpAuthenticationType.USERNAME_AND_PASSWORD) {
+        GithubUsernamePasswordDTO githubUsernamePasswordDTO =
+            (GithubUsernamePasswordDTO) githubHttpCredentialsDTO.getHttpCredentialsSpec();
+        encryptedDataDetailsForUsername =
+            secretManagerClientService.getEncryptionDetails(ngAccess, githubUsernamePasswordDTO);
+      } else if (githubHttpCredentialsDTO.getType() == GithubHttpAuthenticationType.USERNAME_AND_TOKEN) {
+        GithubUsernameTokenDTO githubUsernameTokenDTO =
+            (GithubUsernameTokenDTO) githubHttpCredentialsDTO.getHttpCredentialsSpec();
+        encryptedDataDetailsForUsername =
+            secretManagerClientService.getEncryptionDetails(ngAccess, githubUsernameTokenDTO);
+      }
+
+      for (EncryptedDataDetail encryptedDataDetail : encryptedDataDetailsForUsername) {
+        if ("usernameRef".equals(encryptedDataDetail.getFieldName())) {
+          encryptedDataDetails.add(encryptedDataDetail);
+        }
+      }
+    }
+
+    return encryptedDataDetails;
   }
 }

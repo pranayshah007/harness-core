@@ -32,6 +32,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EncryptedData;
+import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageRequest.PageRequestBuilder;
 import io.harness.beans.PageResponse;
@@ -39,6 +40,7 @@ import io.harness.beans.SecretText;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.hash.HashUtils;
 import io.harness.persistence.HQuery;
 import io.harness.secrets.SecretService;
@@ -103,6 +105,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
   @Inject private AuditServiceHelper auditServiceHelper;
   @Inject private SecretManager secretManager;
   @Inject SecretService secretService;
+  @Inject private FeatureFlagService featureFlagService;
 
   private static String DELIMITER = "::";
 
@@ -430,6 +433,9 @@ public class ApiKeyServiceImpl implements ApiKeyService {
           apiKeyPermissionInfo = authHandler.evaluateUserPermissionInfo(accountId, apiKeyEntry.getUserGroups(), null);
           logApiKeyPermissions(apiKeyPermissionInfo);
           apiKeyPermissionInfoCache.put(getKeyForAPIKeyCache(accountId, apiKey), apiKeyPermissionInfo);
+          if (featureFlagService.isGlobalEnabled(FeatureName.SPG_ENVIRONMENT_QUERY_LOGS)) {
+            log.info("[getApiKeyPermissions] Cache rebuilt - debug log");
+          }
         }
       } catch (Exception ex) {
         // If there was any exception, remove that entry from cache

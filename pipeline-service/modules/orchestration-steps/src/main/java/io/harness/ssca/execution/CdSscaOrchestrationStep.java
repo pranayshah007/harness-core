@@ -56,6 +56,7 @@ public class CdSscaOrchestrationStep extends AbstractContainerStep {
                               .id(response.getArtifact().getId())
                               .url(response.getArtifact().getUrl())
                               .imageName(response.getArtifact().getName())
+                              .tag(response.getArtifact().getTag())
                               .isSbomAttested(response.getAttestation().isAttested())
                               .sbomName(response.getSbom().getName())
                               .sbomUrl(response.getSbom().getUrl())

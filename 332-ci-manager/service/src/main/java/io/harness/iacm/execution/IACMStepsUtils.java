@@ -127,9 +127,7 @@ public class IACMStepsUtils {
         ngAccess.getAccountIdentifier(), workspaceId, command, workspaceInfo);
   }
 
-  public Map<String, String> getIACMEnvVariables(Ambiance ambiance, IACMTerraformPluginInfo stepInfo) {
-    String workspaceId = stepInfo.getWorkspace();
-    String command = stepInfo.getCommand().getValue();
+  public Map<String, String> getIACMEnvVariables(Ambiance ambiance, String workspaceId, String command) {
     return buildIACMEnvVariables(ambiance, workspaceId, command);
   }
 

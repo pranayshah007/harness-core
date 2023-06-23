@@ -8,6 +8,7 @@
 package software.wings.delegatetasks.jira;
 
 import static io.harness.rule.OwnerRule.AGORODETKI;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.RAFAEL;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
@@ -66,12 +67,14 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.net.ssl.SSLHandshakeException;
 import net.rcarz.jiraclient.Field;
 import net.rcarz.jiraclient.Issue;
 import net.rcarz.jiraclient.Issue.FluentCreate;
@@ -596,6 +599,39 @@ public class JiraTaskTest extends CategoryTest {
     spyJiraTask.checkJiraApproval(parameters);
     JiraExecutionData jiraExecutionData = (JiraExecutionData) jiraTask.run(parameters);
     assertThat(jiraExecutionData.getExecutionStatus()).isEqualTo(ExecutionStatus.PAUSED);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldWarningExceptionDetectSSLHandshakeException() {
+    JiraException e =
+        new JiraException("Failed to retrieve issue 141081", new SSLHandshakeException("PKIX path building failed"));
+    assertThat(jiraTask.isWarningException(e)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldWarningExceptionIgnoreMissingCause() {
+    JiraException e = new JiraException("Failed to retrieve issue 141081");
+    assertThat(jiraTask.isWarningException(e)).isFalse();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldWarningExceptionIgnoreNullCause() {
+    JiraException e = new JiraException("Failed to retrieve issue 141081", null);
+    assertThat(jiraTask.isWarningException(e)).isFalse();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldWarningExceptionIgnoreOtherCause() {
+    JiraException e = new JiraException("Failed to retrieve issue 141081", new UnknownHostException());
+    assertThat(jiraTask.isWarningException(e)).isFalse();
   }
 
   @Test

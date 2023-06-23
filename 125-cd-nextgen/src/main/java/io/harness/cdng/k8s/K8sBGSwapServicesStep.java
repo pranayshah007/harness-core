@@ -57,7 +57,8 @@ public class K8sBGSwapServicesStep extends CdTaskExecutable<K8sDeployResponse> {
       "Services were not swapped in the forward phase. Skipping swapping in rollback.";
   public static final String BG_STEP_MISSING_ERROR =
       "Stage Deployment (Blue Green Deploy) is not configured. \nHint: Add Stage Deployment in the execution step.";
-
+  public static final String SKIP_BG_SWAP_WHEN_STAGE_DEPLOYMENT_SKIPPED =
+      "Stage Deployment (Blue Green Deploy) was skipped because given manifest matches existing deployed manifest.";
   @Inject private K8sStepHelper k8sStepHelper;
   @Inject private CDStepHelper cdStepHelper;
   @Inject private OutcomeService outcomeService;
@@ -98,7 +99,15 @@ public class K8sBGSwapServicesStep extends CdTaskExecutable<K8sDeployResponse> {
       throw new InvalidRequestException(BG_STEP_MISSING_ERROR, USER);
     }
     K8sBlueGreenOutcome k8sBlueGreenOutcome = (K8sBlueGreenOutcome) optionalSweepingOutput.getOutput();
-
+    Boolean stageDeploymentSkipped = k8sBlueGreenOutcome.getStageDeploymentSkipped() != null
+        ? k8sBlueGreenOutcome.getStageDeploymentSkipped()
+        : Boolean.FALSE;
+    if (stageDeploymentSkipped) {
+      return TaskRequest.newBuilder()
+          .setSkipTaskRequest(
+              SkipTaskRequest.newBuilder().setMessage(SKIP_BG_SWAP_WHEN_STAGE_DEPLOYMENT_SKIPPED).build())
+          .build();
+    }
     InfrastructureOutcome infrastructure = cdStepHelper.getInfrastructureOutcome(ambiance);
     String releaseName = cdStepHelper.getReleaseName(ambiance, infrastructure);
     K8sSwapServiceSelectorsRequest swapServiceSelectorsRequest =

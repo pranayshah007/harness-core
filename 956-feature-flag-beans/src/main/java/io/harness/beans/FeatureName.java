@@ -25,6 +25,9 @@ import lombok.Getter;
 @OwnedBy(HarnessTeam.PL)
 public enum FeatureName {
   SPG_UI_ALLOW_ENCODING_FOR_JENKINS_ARTIFACT("Enables correct encoding for jenkins artifact", HarnessTeam.SPG),
+  SPG_CG_REJECT_PRIORITY_WHEN_FORK_STATE(
+      "Set the reject status to have higher priority over other failed statuses when handling responses inside a fork state",
+      HarnessTeam.SPG),
   SPG_CG_SEGMENT_EVENT_FIRST_DEPLOYMENT(
       "Disable evaluation of first deployment condition to avoid unoptimized query execution on each completed deployment",
       HarnessTeam.SPG),
@@ -349,7 +352,6 @@ public enum FeatureName {
   CVNG_LICENSE_ENFORCEMENT,
   SRM_SLO_TOGGLE,
   SERVICE_DASHBOARD_V2,
-  CDC_ENVIRONMENT_DASHBOARD_NG("New environment details dashboard is behind this", HarnessTeam.CDC),
   CDC_SERVICE_DASHBOARD_REVAMP_NG("Service Dashboard Revamp is behind this FF", HarnessTeam.CDC),
   DEBEZIUM_ENABLED,
   USE_CDC_FOR_PIPELINE_HANDLER,
@@ -477,9 +479,6 @@ public enum FeatureName {
   CD_TRIGGER_CATALOG("Enables UI for Trigger catalog for Nexus ", HarnessTeam.CDC),
   CDS_SHOW_CREATE_PR("Start showing CreatePR step on the plan creator if enabled", HarnessTeam.GITOPS),
   SPG_PIPELINE_ROLLBACK("Enables pipeline rollback on failure option", HarnessTeam.SPG),
-  PL_FORCE_DELETE_CONNECTOR_SECRET(
-      "Enables force delete of connectors and secrets irrespective of existing references.", HarnessTeam.PL),
-
   PL_IP_ALLOWLIST_NG("Enables IP Allowlist feature in NG.", HarnessTeam.PL),
   PL_CONNECTOR_ENCRYPTION_PRIVILEGED_CALL("make the encryption/decryption call as pirvileged call", HarnessTeam.PL),
   SPG_DASHBOARD_STATS_OPTIMIZE_DEPLOYMENTS(
@@ -548,6 +547,7 @@ public enum FeatureName {
       HarnessTeam.PIPELINE),
   PIE_GET_FILE_CONTENT_ONLY(
       "FF to optimise the execution flow to fetch only file content for remote entities", HarnessTeam.PIPELINE),
+  PIE_GIT_DEFAULT_BRANCH_CACHE("FF to fetch the default branch from the git default branch cache", PIPELINE),
   INSTANT_DELEGATE_DOWN_ALERT("FF to instantly alert when delegates are down", HarnessTeam.SPG),
   QUEUE_CI_EXECUTIONS("FF to enable queueing in CI builds", HarnessTeam.CI),
   QUEUE_CI_EXECUTIONS_CONCURRENCY("FF to enable queueing in CI builds", HarnessTeam.CI),
@@ -603,9 +603,6 @@ public enum FeatureName {
       "Enable Basic Role assignment  Default User Group in Orgs and Projects", HarnessTeam.PL),
   CDP_AWS_SAM("FF for enabling AWS SAM deployments", HarnessTeam.CDP),
   CI_REMOTE_DEBUG("Enable the option for remote debug for CI users.", HarnessTeam.CI),
-  CDS_GOOGLE_CLOUD_FUNCTION("This flag is to enable the Google Functions Deployment Swimlane for users. "
-          + "This flag only works with Service and Environments v2",
-      HarnessTeam.CDP),
   CDS_NOT_USE_HEADERS_FOR_HTTP_CAPABILITY(
       "FF for disabling headers while doing capability check for HTTP", HarnessTeam.CDC),
   DEL_SELECTION_LOGS_READ_FROM_GOOGLE_DATA_STORE(
@@ -622,6 +619,7 @@ public enum FeatureName {
   PL_ADD_ACL_CHECKS_NG_SCIM_API("Enable access control checks on token for NG SCIM API calls", HarnessTeam.PL),
   CDS_QUERY_OPTIMIZATION("Feature flag to optimize CG Queries", HarnessTeam.CDC),
   CI_ENABLE_BARE_METAL("To enable bare metal cloud for infra", HarnessTeam.CI),
+  CI_ENABLE_BARE_METAL_FREE_ACCOUNT("To enable bare metal cloud for infra for free account", HarnessTeam.CI),
   CDS_V1_EOL_BANNER("Display EOL banner for v1 CD entities", HarnessTeam.CDC),
   CDS_ENTITY_REFRESH_DO_NOT_QUOTE_STRINGS(
       "Do not add quotes to strings when a user reconciles a template, pipeline", HarnessTeam.CDC, Scope.GLOBAL),
@@ -774,6 +772,8 @@ public enum FeatureName {
   CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_NG(
       "To encrypt and decrypt terraform and terragrunt plan on manager side instead of delegate side for NG",
       HarnessTeam.CDP),
+  SPG_ENVIRONMENT_QUERY_LOGS(
+      "This is a debug FF, no behaviour will be changed. We are adding logs to help find a root cause", SPG),
   GITOPS_ORG_LEVEL("Support GitOps at Org level", HarnessTeam.GITOPS),
   PL_FIX_INCONSISTENT_USER_DATA(
       "This FF process all users of this account and fixes their inconsistent data between CG Manager, NG manager and Access Control ",
@@ -807,7 +807,6 @@ public enum FeatureName {
   PIE_PROCESS_ON_JSON_NODE(
       "When FF is enabled, all processing like merging inputs, expression resolution, etc. will be done on jsonNode instead of yaml",
       PIPELINE),
-
   SRM_ENABLE_SLI_BUCKET("This is used to enable sli bucket reads", HarnessTeam.CV),
   PL_FAVORITES("To enable favorites marking support on entities", HarnessTeam.PL),
   CI_OUTPUT_VARIABLES_AS_ENV("For enabling output variables as env variables in CI stages", HarnessTeam.CI),
@@ -815,7 +814,14 @@ public enum FeatureName {
       "This is used make prometheus Health source run with promQL by clause", HarnessTeam.CV),
   CCM_COMM_SETUP("It is used for enabling the setup flow of commitment orchestrator in CCM.", HarnessTeam.CE),
   CDS_RESOLVE_OBJECTS_VIA_JSON_SELECT(
-      "Support resolution of Objects via JSON Select Command in HTTP Step", HarnessTeam.CDC);
+      "Support resolution of Objects via JSON Select Command in HTTP Step", HarnessTeam.CDC),
+  CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT(
+      "FF for providing the terraform apply json output as a secret", HarnessTeam.CDP),
+  CDS_K8S_HELM_INSTANCE_SYNC_V2_NG(
+      "FF for enabling Instance Sync V2 for K8s and Native Helm swimlanes in NG", HarnessTeam.CDP),
+  CDS_SERVICENOW_USE_METADATA_V2(
+      "Using METADATA_V2 in /metadata (create update) and /createMetadata (approval) API in Servicenow Steps NG; and changing /metadata parsing to manager",
+      HarnessTeam.CDC);
 
   @Deprecated
   FeatureName() {

@@ -50,7 +50,11 @@ public class YamlField {
   }
 
   /**
-   *  Check if parent of the above node is parallel or not
+   *  Check if parent of the above node is parallel or not.
+   *
+   *  Do not use this method directly for checking if step's parent is parallel or not. It will return true even if
+   * there is a stepGroup node between parallel and step. Use GenericPlanCreatorUtils::checkIfStepIsInParallelSection
+   * for steps.
    *
    * @param expectedParent - The expected field name of the  parallel field's parent
    * @return

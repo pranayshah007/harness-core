@@ -16,6 +16,7 @@ import static com.google.common.base.Predicates.alwaysTrue;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -191,12 +192,12 @@ public class ConnectorResourceTest extends CategoryTest {
              Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION))
         .thenReturn(true);
 
-    when(connectorService.list(
-             anyString(), any(), anyString(), anyString(), anyString(), anyString(), any(), any(), any(), any()))
+    when(connectorService.list(anyString(), any(), anyString(), anyString(), anyString(), anyString(), any(), any(),
+             any(), any(), anyBoolean()))
         .thenReturn(page);
     ResponseDTO<PageResponse<ConnectorResponseDTO>> connectorSummaryListResponse = connectorResource.list(
         accountIdentifier, searchTerm, orgIdentifier, projectIdentifier, filterIdentifier, false, null, null, false,
-        null,
+        null, false,
         PageRequest.builder()
             .pageSize(100)
             .pageIndex(0)
@@ -205,7 +206,7 @@ public class ConnectorResourceTest extends CategoryTest {
             .build());
     Mockito.verify(connectorService, times(1))
         .list(eq(accountIdentifier), eq(null), eq(orgIdentifier), eq(projectIdentifier), eq(filterIdentifier),
-            eq(searchTerm), eq(false), eq(false), any(), any());
+            eq(searchTerm), eq(false), eq(false), any(), any(), any());
     assertThat(connectorSummaryListResponse.getData()).isNotNull();
   }
 
@@ -229,7 +230,7 @@ public class ConnectorResourceTest extends CategoryTest {
     githubConnector.setId("connector1");
     Page<Connector> allConnectors = PageTestUtils.getPage(Arrays.asList(List.of(githubConnector)), 1);
 
-    when(connectorService.listAll(pageIndex, pageSize, accountIdentifier, orgIdentifier, projectIdentifier, searchTerm,
+    when(connectorService.listAll(pageIndex, 50000, accountIdentifier, orgIdentifier, projectIdentifier, searchTerm,
              null, null, null, version))
         .thenReturn(allConnectors);
     when(connectorRbacHelper.getPermitted(allConnectors.getContent())).thenReturn(List.of(githubConnector));
@@ -275,24 +276,25 @@ public class ConnectorResourceTest extends CategoryTest {
     List<Sort.Order> orders = List.of(new Sort.Order(Sort.Direction.DESC, "lastModifiedAt"));
 
     when(connectorService.listAll(accountIdentifier, connectorFilterPropertiesDTO, orgIdentifier, projectIdentifier,
-             filterIdentifier, searchTerm, Boolean.FALSE, Boolean.FALSE,
-             org.springframework.data.domain.PageRequest.of(pageIndex, pageSize, Sort.by(orders)), version))
+             filterIdentifier, searchTerm, Boolean.FALSE, Boolean.FALSE, Pageable.ofSize(50000), version))
         .thenReturn(allConnectors);
     when(connectorRbacHelper.getPermitted(allConnectors.getContent())).thenReturn(List.of(githubConnector));
 
     when(connectorService.list(accountIdentifier, connectorFilterPropertiesDTOWithConnectorIds, orgIdentifier,
              projectIdentifier, filterIdentifier, searchTerm, Boolean.FALSE, Boolean.FALSE,
-             org.springframework.data.domain.PageRequest.of(pageIndex, pageSize, Sort.by(orders)), version))
+             org.springframework.data.domain.PageRequest.of(pageIndex, pageSize, Sort.by(orders)), version,
+             Boolean.FALSE))
         .thenReturn(page);
 
     ResponseDTO<PageResponse<ConnectorResponseDTO>> connectorListResponse = connectorResource.list(accountIdentifier,
         searchTerm, orgIdentifier, projectIdentifier, filterIdentifier, Boolean.FALSE, connectorFilterPropertiesDTO,
-        null, Boolean.FALSE, version, PageRequest.builder().pageSize(1).build());
+        null, Boolean.FALSE, version, Boolean.FALSE, PageRequest.builder().pageSize(1).build());
 
     verify(connectorService, times(1))
         .list(accountIdentifier, connectorFilterPropertiesDTOWithConnectorIds, orgIdentifier, projectIdentifier,
             filterIdentifier, searchTerm, Boolean.FALSE, Boolean.FALSE,
-            org.springframework.data.domain.PageRequest.of(pageIndex, pageSize, Sort.by(orders)), version);
+            org.springframework.data.domain.PageRequest.of(pageIndex, pageSize, Sort.by(orders)), version,
+            Boolean.FALSE);
     assertThat(connectorListResponse.getData()).isNotNull();
   }
 
@@ -321,17 +323,19 @@ public class ConnectorResourceTest extends CategoryTest {
 
     when(connectorService.list(accountIdentifier, connectorFilterPropertiesDTO, orgIdentifier, projectIdentifier,
              filterIdentifier, searchTerm, Boolean.FALSE, Boolean.FALSE,
-             org.springframework.data.domain.PageRequest.of(pageIndex, pageSize, Sort.by(orders)), version))
+             org.springframework.data.domain.PageRequest.of(pageIndex, pageSize, Sort.by(orders)), version,
+             Boolean.FALSE))
         .thenReturn(page);
 
     ResponseDTO<PageResponse<ConnectorResponseDTO>> connectorListResponse = connectorResource.list(accountIdentifier,
         searchTerm, orgIdentifier, projectIdentifier, filterIdentifier, Boolean.FALSE, connectorFilterPropertiesDTO,
-        null, Boolean.FALSE, version, PageRequest.builder().pageSize(1).build());
+        null, Boolean.FALSE, version, Boolean.FALSE, PageRequest.builder().pageSize(1).build());
 
     verify(connectorService, times(1))
         .list(accountIdentifier, connectorFilterPropertiesDTO, orgIdentifier, projectIdentifier, filterIdentifier,
             searchTerm, Boolean.FALSE, Boolean.FALSE,
-            org.springframework.data.domain.PageRequest.of(pageIndex, pageSize, Sort.by(orders)), version);
+            org.springframework.data.domain.PageRequest.of(pageIndex, pageSize, Sort.by(orders)), version,
+            Boolean.FALSE);
     assertThat(connectorListResponse.getData()).isNotNull();
   }
 

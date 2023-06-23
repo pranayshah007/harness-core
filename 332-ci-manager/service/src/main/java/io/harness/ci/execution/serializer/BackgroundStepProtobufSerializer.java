@@ -14,7 +14,6 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
 import io.harness.beans.yaml.extended.CIShellType;
@@ -62,9 +61,9 @@ public class BackgroundStepProtobufSerializer implements ProtobufStepSerializer<
                                   .orElse(""));
 
     runStepBuilder.setContainerPort(port);
-    boolean fVal = featureFlagService.isEnabled(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, accountId);
-    Map<String, String> envVars = resolveMapParameterV2(
-        "envVariables", "Background", identifier, backgroundStepInfo.getEnvVariables(), false, fVal);
+
+    Map<String, String> envVars =
+        resolveMapParameterV2("envVariables", "Background", identifier, backgroundStepInfo.getEnvVariables(), false);
     envVars = CIStepInfoUtils.injectAndResolveLoopingVariables(ambiance, accountId, featureFlagService, envVars);
     if (!isEmpty(envVars)) {
       runStepBuilder.putAllEnvironment(envVars);

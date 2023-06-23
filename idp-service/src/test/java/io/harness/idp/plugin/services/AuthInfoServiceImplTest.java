@@ -83,6 +83,7 @@ public class AuthInfoServiceImplTest {
     String jsonString =
         "{\"auth\":{\"environment\":\"development\",\"providers\":{\"github\":{\"development\":{\"clientId\":\"${AUTH_GOOGLE_CLIENT_ID}\",\"clientSecret\":\"${AUTH_GOOGLE_CLIENT_SECRET}\"}}}}}";
     JsonNode rootNode = objectMapper.readTree(jsonString);
+    doNothing().when(backstageEnvVariableService).deleteMultiUsingEnvNames(any(), any());
     when(backstageEnvVariableService.createOrUpdate(buildGoogleAuthEnvVariables(), ACCOUNT_ID))
         .thenReturn(buildGoogleAuthEnvVariables());
     MockedStatic<ConfigManagerUtils> mockStatic = Mockito.mockStatic(ConfigManagerUtils.class);
@@ -108,6 +109,7 @@ public class AuthInfoServiceImplTest {
         "{\"development\":{\"clientId\":\"${AUTH_GITHUB_CLIENT_ID}\",\"clientSecret\":\"${AUTH_GITHUB_CLIENT_SECRET}\"}}";
     JsonNode rootNode = objectMapper.readTree(jsonString);
     JsonNode developmentNode = objectMapper.readTree(development);
+    doNothing().when(backstageEnvVariableService).deleteMultiUsingEnvNames(any(), any());
     when(backstageEnvVariableService.createOrUpdate(buildGithubAuthEnvVariables(), ACCOUNT_ID))
         .thenReturn(buildGithubAuthEnvVariables());
     MockedStatic<ConfigManagerUtils> mockStatic = Mockito.mockStatic(ConfigManagerUtils.class);

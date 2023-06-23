@@ -13,6 +13,9 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//120-ng-manager/modules/favorites/contracts/src/main/java/io/harness/favorites:module",
+        "//120-ng-manager/modules/favorites/src/main/java/io/harness/favorites/entities:module",
+        "//120-ng-manager/modules/favorites/src/main/java/io/harness/favorites/services:module",
         "//440-connector-nextgen/contracts/openapi/v1:connector-server-spec-module",
         "//878-ng-common-utilities:module",
         "//890-sm-core:module",
@@ -66,6 +69,7 @@ java_library(
     deps = [
         "module",
         "//:lombok",
+        "//120-ng-manager/modules/favorites/src/main/java/io/harness/favorites/services/impl:module",
         "//440-connector-nextgen/contracts/openapi/v1:connector-server-spec-module",
         "//878-ng-common-utilities:module",
         "//890-sm-core:module",

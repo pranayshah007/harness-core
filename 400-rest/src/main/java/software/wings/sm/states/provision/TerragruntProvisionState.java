@@ -412,7 +412,7 @@ public abstract class TerragruntProvisionState extends State {
             .runAll(runAll)
             .encryptDecryptPlanForHarnessSMOnManager(
                 featureFlagService.isEnabled(
-                    CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_CG, executionContext.getApp().getAccountId())
+                    CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_CG, context.getAccountId())
                 && terragruntStateHelper.isHarnessSecretManager(secretManagerConfig))
             .useAutoApproveFlag(featureFlagService.isEnabled(TG_USE_AUTO_APPROVE_FLAG, context.getAccountId()))
             .build();

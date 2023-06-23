@@ -21,4 +21,6 @@ public class ScmErrorHints {
   public static final String REPO_NOT_FOUND = "Please check if the requested Gitlab repository<REPO> exists.";
   public static final String FILE_NOT_FOUND =
       "Please check the requested file path<FILEPATH> / branch<BRANCH> / Gitlab repo name<REPO> if they exist or not.";
+  public static final String OAUTH_ACCESS_FAILURE =
+      "In-case you are using OAUTH, please check your OAUTH configurations and access permissions from Gitlab, or try reconfiguring OAUTH setup.";
 }

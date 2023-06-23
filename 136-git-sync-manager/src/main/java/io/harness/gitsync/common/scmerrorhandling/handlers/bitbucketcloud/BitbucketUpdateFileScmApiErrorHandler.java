@@ -9,7 +9,9 @@ package io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.ScmErrorExplanations.INVALID_CONNECTOR_CREDS;
+import static io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.ScmErrorExplanations.OAUTH_ACCESS_DENIED;
 import static io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.ScmErrorHints.INVALID_CREDENTIALS;
+import static io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.ScmErrorHints.OAUTH_ACCESS_FAILURE;
 import static io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.ScmErrorHints.REPO_NOT_FOUND;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -42,6 +44,9 @@ public class BitbucketUpdateFileScmApiErrorHandler implements ScmApiErrorHandler
       "The requested branch<BRANCH> does not have push permission.";
   public static final String UPDATE_FILE_BAD_REQUEST_HINT =
       "Please use a pull request to update file<FILEPATH> in this branch<BRANCH>.";
+  public static final String UPDATE_FAILURE_HINT = INVALID_CREDENTIALS + "\n- " + OAUTH_ACCESS_FAILURE;
+  public static final String UPDATE_FAILURE_EXPLANATION =
+      UPDATE_FILE_REQUEST_FAILURE + "\n- " + INVALID_CONNECTOR_CREDS + "\n- " + OAUTH_ACCESS_DENIED;
 
   @Override
   public void handleError(int statusCode, String errorMessage, ErrorMetadata errorMetadata) throws WingsException {
@@ -49,8 +54,8 @@ public class BitbucketUpdateFileScmApiErrorHandler implements ScmApiErrorHandler
       case 401:
       case 403:
         throw NestedExceptionUtils.hintWithExplanationException(
-            ErrorMessageFormatter.formatMessage(INVALID_CREDENTIALS, errorMetadata),
-            ErrorMessageFormatter.formatMessage(UPDATE_FILE_REQUEST_FAILURE + INVALID_CONNECTOR_CREDS, errorMetadata),
+            ErrorMessageFormatter.formatMessage(UPDATE_FAILURE_HINT, errorMetadata),
+            ErrorMessageFormatter.formatMessage(UPDATE_FAILURE_EXPLANATION, errorMetadata),
             new ScmUnauthorizedException(errorMessage));
       case 400:
         throw NestedExceptionUtils.hintWithExplanationException(

@@ -22,14 +22,13 @@ import lombok.experimental.FieldDefaults;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.Mock;
+import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(CDP)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class K8sManifestHashGeneratorTest extends CategoryTest {
-  @Mock K8sManifestHashGenerator k8sManifestHashGenerator;
-
+  @InjectMocks K8sManifestHashGenerator k8sManifestHashGenerator;
   public static String DEPLOYMENT_DIRECT_APPLY_YAML = "apiVersion: apps/v1\n"
       + "kind: Deployment\n"
       + "metadata:\n"

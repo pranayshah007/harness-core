@@ -20,7 +20,11 @@ function download_saas_apm_binaries(){
 	echo "INFO: Download Status: ${OT_AGENT##*/}: $STATUS3"
 	chmod 711 ${OT_AGENT##*/}
 
-	if [ "${STATUS1}" -eq 0 ] && [ "${STATUS2}" -eq 0 ] && [ "${STATUS3}" -eq 0 ] ; then
+	curl ${JACOCO_AGENT} --output ${JACOCO_AGENT##*/}; STATUS4=$?
+  echo "INFO: Download Status: ${JACOCO_AGENT##*/}: $STATUS4"
+  chmod 711 ${JACOCO_AGENT##*/}
+
+	if [ "${STATUS1}" -eq 0 ] && [ "${STATUS2}" -eq 0 ] && [ "${STATUS3}" -eq 0 ] && [ "${STATUS4}" -eq 0 ] ; then
 		echo "Download Finished..."
 	else
 		echo "Failed to Download Saas APM Binaries. Exiting..."
@@ -31,6 +35,7 @@ function download_saas_apm_binaries(){
 export APPD_AGENT='https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/appd/AppServerAgent-1.8-23.2.0.34668.zip'
 export ET_AGENT='https://get.et.harness.io/releases/latest/nix/harness-et-agent.tar.gz'
 export OT_AGENT='https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/opentelemetry/opentelemetry-javaagent.jar'
+export JACOCO_AGENT='https://repo1.maven.org/maven2/org/jacoco/jacoco/0.8.7/jacoco-0.8.7.zip'
 
 echo "STEP 1: INFO: Downloading APM Binaries Locally..."
 download_saas_apm_binaries

@@ -112,13 +112,15 @@ public class DelegateNgTokenInternalResource {
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Parameter(description = "Status of Delegate Token (ACTIVE or REVOKED). "
               + "If left empty both active and revoked tokens will be retrieved") @QueryParam("status")
-      DelegateTokenStatus status) {
+      DelegateTokenStatus status,
+      @Parameter(description = "Whether or not to include token value.") @QueryParam(
+          "includeValue") boolean includeValue) {
     DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgIdentifier, projectIdentifier);
     if (StringUtils.isBlank(delegateTokenName)) {
-      return new RestResponse<>(delegateTokenService.getDelegateTokens(accountIdentifier, owner, status));
+      return new RestResponse<>(delegateTokenService.getDelegateTokens(accountIdentifier, owner, status, includeValue));
     } else {
       final DelegateTokenDetails tokenDetails =
-          delegateTokenService.getDelegateToken(accountIdentifier, delegateTokenName, true);
+          delegateTokenService.getDelegateToken(accountIdentifier, delegateTokenName, includeValue);
       return new RestResponse<>(Objects.isNull(tokenDetails) ? List.of() : List.of(tokenDetails));
     }
   }

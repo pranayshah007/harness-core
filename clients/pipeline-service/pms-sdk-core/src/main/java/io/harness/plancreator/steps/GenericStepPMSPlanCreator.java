@@ -227,7 +227,7 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
       String nextNodeUuid = null;
       YamlField siblingField = obtainNextSiblingField(currentField);
       // Check if step is in parallel section then dont have nextNodeUUid set.
-      if (siblingField != null && !checkIfStepIsInParallelSection(currentField)) {
+      if (siblingField != null && !GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)) {
         nextNodeUuid = siblingField.getNode().getUuid();
       }
 
@@ -370,7 +370,7 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
 
   private AdviserObtainment getOnSuccessAdviserObtainment(YamlField currentField) {
     if (currentField != null && currentField.getNode() != null) {
-      if (checkIfStepIsInParallelSection(currentField)) {
+      if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)) {
         return null;
       }
       YamlField siblingField = obtainNextSiblingField(currentField);
@@ -387,7 +387,7 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
 
   private AdviserObtainment getNextStepAdviserObtainment(YamlField currentField) {
     if (currentField != null && currentField.getNode() != null) {
-      if (checkIfStepIsInParallelSection(currentField)) {
+      if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)) {
         return null;
       }
       YamlField siblingField = obtainNextSiblingField(currentField);
@@ -506,19 +506,6 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
     } else {
       return null;
     }
-  }
-
-  // This is required as step can be inside stepGroup which can have Parallel and stepGroup itself can
-  // be inside Parallel section.
-  private boolean checkIfStepIsInParallelSection(YamlField currentField) {
-    if (currentField != null && currentField.getNode() != null) {
-      if (currentField.checkIfParentIsParallel(STEPS) || currentField.checkIfParentIsParallel(ROLLBACK_STEPS)) {
-        // Check if step is inside StepGroup and StepGroup is inside Parallel but not the step.
-        return YamlUtils.findParentNode(currentField.getNode(), STEP_GROUP) == null
-            || currentField.checkIfParentIsParallel(STEP_GROUP);
-      }
-    }
-    return false;
   }
 
   protected String getExecutionStepFqn(YamlField currentField, String stepNodeType) {

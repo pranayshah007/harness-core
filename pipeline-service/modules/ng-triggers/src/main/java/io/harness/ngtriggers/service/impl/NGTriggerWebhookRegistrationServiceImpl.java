@@ -61,6 +61,9 @@ public class NGTriggerWebhookRegistrationServiceImpl implements NGTriggerWebhook
                                 .projectIdentifier(ngTriggerEntity.getProjectIdentifier())
                                 .build();
     ConnectorDetails connectorDetails;
+    if (Boolean.TRUE.equals(ngTriggerEntity.getMetadata().getWebhook().getGit().getIsHarnessScm())) {
+      return handleHarnessScmWebhook(ngTriggerEntity);
+    }
     try {
       connectorDetails = connectorUtils.getConnectorDetails(
           ngAccess, ngTriggerEntity.getMetadata().getWebhook().getGit().getConnectorIdentifier());
@@ -99,6 +102,19 @@ public class NGTriggerWebhookRegistrationServiceImpl implements NGTriggerWebhook
         ngTriggerEntity.getMetadata().getWebhook().getGit().getConnectorIdentifier(), secretIdentifierRef);
   }
 
+  private WebhookRegistrationStatusData handleHarnessScmWebhook(NGTriggerEntity ngTriggerEntity) {
+    UpsertWebhookRequestDTO upsertWebhookRequestDTO =
+        UpsertWebhookRequestDTO.builder()
+            .projectIdentifier(ngTriggerEntity.getProjectIdentifier())
+            .orgIdentifier(ngTriggerEntity.getOrgIdentifier())
+            .accountIdentifier(ngTriggerEntity.getAccountId())
+            .repoURL(ngTriggerEntity.getMetadata().getWebhook().getGit().getRepoName())
+            .isHarnessCode(true)
+            .hookEventType(HookEventType.TRIGGER_EVENTS)
+            .build();
+    return getWebhookRegistrationStatusData(upsertWebhookRequestDTO);
+  }
+
   private WebhookRegistrationStatusData registerWebhookInternal(String projectIdentifier, String orgIdentifier,
       String accountIdentifier, String repoUrl, String connectorIdentifierRef, String secretIdentifierRef) {
     UpsertWebhookRequestDTO upsertWebhookRequestDTO = UpsertWebhookRequestDTO.builder()
@@ -110,6 +126,11 @@ public class NGTriggerWebhookRegistrationServiceImpl implements NGTriggerWebhook
                                                           .hookEventType(HookEventType.TRIGGER_EVENTS)
                                                           .webhookSecretIdentifierRef(secretIdentifierRef)
                                                           .build();
+    return getWebhookRegistrationStatusData(upsertWebhookRequestDTO);
+  }
+
+  private WebhookRegistrationStatusData getWebhookRegistrationStatusData(
+      UpsertWebhookRequestDTO upsertWebhookRequestDTO) {
     UpsertWebhookResponseDTO upsertWebhookResponseDTO = null;
 
     WebhookRegistrationStatusDataBuilder metadataBuilder = WebhookRegistrationStatusData.builder();

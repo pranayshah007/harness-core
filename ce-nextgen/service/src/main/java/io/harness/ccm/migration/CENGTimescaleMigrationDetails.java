@@ -9,6 +9,7 @@ package io.harness.ccm.migration;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.migration.timescale.CeRecommendationTableAddGovernanceColumn;
 import io.harness.ccm.migration.timescale.CeRecommendationTableAddJiraColumn;
 import io.harness.migration.MigrationDetails;
 import io.harness.migration.NGMigration;
@@ -35,6 +36,7 @@ public class CENGTimescaleMigrationDetails implements MigrationDetails {
     return new ImmutableList.Builder<Pair<Integer, Class<? extends NGMigration>>>()
         .add(Pair.of(1, NoopCENGTimescaleMigration.class))
         .add(Pair.of(2, CeRecommendationTableAddJiraColumn.class))
+        .add(Pair.of(3, CeRecommendationTableAddGovernanceColumn.class))
         .build();
   }
 }

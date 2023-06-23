@@ -11,6 +11,7 @@ import static io.harness.authorization.AuthorizationServiceHeader.BATCH_PROCESSI
 import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
 
 import io.harness.account.AccountClient;
+import io.harness.account.AccountClientModule;
 import io.harness.annotations.retry.MethodExecutionHelper;
 import io.harness.annotations.retry.RetryOnException;
 import io.harness.annotations.retry.RetryOnExceptionInterceptor;
@@ -259,6 +260,8 @@ public class BatchProcessingModule extends AbstractModule {
     install(new MetricsModule());
     install(new CENGGraphQLModule(batchMainConfig.getCurrencyPreferencesConfig()));
     bind(MetricsPublisher.class).to(BatchProcessingMetricsPublisher.class).in(Scopes.SINGLETON);
+    install(new AccountClientModule(batchMainConfig.getManagerServiceHttpClientConfig(),
+        batchMainConfig.getNgManagerServiceSecret(), BATCH_PROCESSING.getServiceId()));
 
     if (batchMainConfig.isClickHouseEnabled()) {
       bind(ViewsBillingService.class).to(ClickHouseViewsBillingServiceImpl.class);

@@ -24,4 +24,5 @@ public class K8sBGDeployResponse implements K8sNGTaskResponse {
   String stageColor;
   String primaryColor;
   List<KubernetesResourceId> prunedResourceIds;
+  Boolean stageDeploymentSkipped;
 }

@@ -1,0 +1,58 @@
+trigger:
+  name: first trigger
+  identifier: first_trigger
+  enabled: true
+  orgIdentifier: org
+  projectIdentifier: proj
+  pipelineIdentifier: pipeline
+  source:
+    type: Webhook
+    spec:
+      type: Harness
+      spec:
+        type: Push
+        spec:
+          repoName: myrepo
+          actions:
+            - Create
+            - Update
+            - Merge
+          payloadConditions:
+            - key: k1
+              operator: Equals
+              value: v1
+            - key: k2
+              operator: NotEquals
+              value: v2
+            - key: k3
+              operator: In
+              value: v3,c
+            - key: k4
+              operator: NotIn
+              value: v4
+            - key: k5
+              operator: StartsWith
+              value: v5
+            - key: k6
+              operator: EndsWith
+              value: v6
+            - key: k7
+              operator: Contains
+              value: v7
+          headerConditions:
+            - key: h1
+              operator: Equals
+              value: v1
+          jexlCondition: true
+          autoAbortPreviousExecutions: true
+  inputYaml: |
+    pipeline:
+      identifier: secrethttp1
+      stages:
+        - stage:
+            identifier: qaStage
+            spec:
+              infrastructure:
+                infrastructureDefinition:
+                  spec:
+                    releaseName: releaseName1

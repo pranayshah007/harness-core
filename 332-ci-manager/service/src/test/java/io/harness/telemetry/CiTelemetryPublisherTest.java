@@ -65,7 +65,7 @@ public class CiTelemetryPublisherTest extends CategoryTest {
     long activeCommitters = 20L;
     long creditUsage = 500L;
     doReturn(activeCommitters).when(ciOverviewDashboardService).getActiveCommitterCount(any());
-    doReturn(creditUsage).when(ciOverviewDashboardService).getHostedCreditUsage(any());
+    doReturn(creditUsage).when(ciOverviewDashboardService).getHostedCreditUsage(any(), anyLong(), anyLong());
     doReturn(true).when(ciTelemetryStatusRepository).updateTimestampIfOlderThan(anyString(), anyLong(), anyLong());
     ModuleLicense moduleLicense = null;
     List<ModuleLicense> moduleLicenses = Collections.singletonList(moduleLicense);
@@ -104,7 +104,7 @@ public class CiTelemetryPublisherTest extends CategoryTest {
     long activeCommitters = 0L;
     long creditUsage = 500L;
     doReturn(activeCommitters).when(ciOverviewDashboardService).getActiveCommitterCount(any());
-    doReturn(creditUsage).when(ciOverviewDashboardService).getHostedCreditUsage(any());
+    doReturn(creditUsage).when(ciOverviewDashboardService).getHostedCreditUsage(any(), anyLong(), anyLong());
     doReturn(true).when(ciTelemetryStatusRepository).updateTimestampIfOlderThan(anyString(), anyLong(), anyLong());
     List<ModuleLicense> moduleLicenses = Collections.emptyList();
     doReturn(moduleLicenses).when(moduleLicenseRepository).findByAccountIdentifierAndModuleType(any(), any());
@@ -142,7 +142,7 @@ public class CiTelemetryPublisherTest extends CategoryTest {
     long activeCommitters = 20L;
     long creditUsage = 500L;
     doReturn(activeCommitters).when(ciOverviewDashboardService).getActiveCommitterCount(any());
-    doReturn(creditUsage).when(ciOverviewDashboardService).getHostedCreditUsage(any());
+    doReturn(creditUsage).when(ciOverviewDashboardService).getHostedCreditUsage(any(), anyLong(), anyLong());
     doReturn(true).when(ciTelemetryStatusRepository).updateTimestampIfOlderThan(anyString(), anyLong(), anyLong());
     List<ModuleLicense> moduleLicenses = Collections.emptyList();
     doReturn(moduleLicenses).when(moduleLicenseRepository).findByAccountIdentifierAndModuleType(any(), any());
@@ -180,7 +180,7 @@ public class CiTelemetryPublisherTest extends CategoryTest {
     long activeCommitters = 20L;
     long creditUsage = 500L;
     doReturn(activeCommitters).when(ciOverviewDashboardService).getActiveCommitterCount(any());
-    doReturn(creditUsage).when(ciOverviewDashboardService).getHostedCreditUsage(any());
+    doReturn(creditUsage).when(ciOverviewDashboardService).getHostedCreditUsage(any(), anyLong(), anyLong());
     doReturn(false).when(ciTelemetryStatusRepository).updateTimestampIfOlderThan(anyString(), anyLong(), anyLong());
     ModuleLicense moduleLicense = null;
     List<ModuleLicense> moduleLicenses = Collections.singletonList(moduleLicense);

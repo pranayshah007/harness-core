@@ -91,6 +91,7 @@ import io.harness.connector.task.azure.AzureValidationHandler;
 import io.harness.connector.task.docker.DockerValidationHandler;
 import io.harness.connector.task.gcp.GcpValidationTaskHandler;
 import io.harness.connector.task.git.GitValidationHandler;
+import io.harness.connector.task.rancher.RancherValidationHandler;
 import io.harness.connector.task.terraformcloud.TerraformCloudValidationHandler;
 import io.harness.cvng.CVNGDataCollectionDelegateServiceImpl;
 import io.harness.cvng.K8InfoDataServiceImpl;
@@ -343,6 +344,7 @@ import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionCommandTypeNG;
 import io.harness.delegate.task.helm.HelmCommandTaskNG;
 import io.harness.delegate.task.helm.HelmDeployServiceImplNG;
 import io.harness.delegate.task.helm.HelmDeployServiceNG;
+import io.harness.delegate.task.helm.HelmFetchChartManifestTask;
 import io.harness.delegate.task.helm.HelmFetchChartVersionTaskNG;
 import io.harness.delegate.task.helm.HelmValuesFetchTaskNG;
 import io.harness.delegate.task.helm.HttpHelmConnectivityDelegateTask;
@@ -389,6 +391,7 @@ import io.harness.delegate.task.scm.ScmGitRefTask;
 import io.harness.delegate.task.scm.ScmGitWebhookTask;
 import io.harness.delegate.task.scm.ScmPathFilterEvaluationTask;
 import io.harness.delegate.task.scm.ScmPushTask;
+import io.harness.delegate.task.serverless.ServerlessAwsLambdaRollbackV2CommandTask;
 import io.harness.delegate.task.serverless.ServerlessCommandTask;
 import io.harness.delegate.task.serverless.ServerlessCommandType;
 import io.harness.delegate.task.serverless.ServerlessGitFetchTask;
@@ -405,6 +408,7 @@ import io.harness.delegate.task.shell.ssh.ArtifactoryCommandUnitHandler;
 import io.harness.delegate.task.shell.ssh.AwsS3ArtifactCommandUnitHandler;
 import io.harness.delegate.task.shell.ssh.AzureArtifactCommandUnitHandler;
 import io.harness.delegate.task.shell.ssh.CommandHandler;
+import io.harness.delegate.task.shell.ssh.GithubPackageArtifactCommandUnitHandler;
 import io.harness.delegate.task.shell.ssh.JenkinsArtifactCommandUnitHandler;
 import io.harness.delegate.task.shell.ssh.NexusArtifactCommandUnitHandler;
 import io.harness.delegate.task.shell.ssh.SshCleanupCommandHandler;
@@ -454,6 +458,7 @@ import io.harness.delegate.task.winrm.ArtifactDownloadHandler;
 import io.harness.delegate.task.winrm.ArtifactoryArtifactDownloadHandler;
 import io.harness.delegate.task.winrm.AwsS3ArtifactDownloadHandler;
 import io.harness.delegate.task.winrm.AzureArtifactDownloadHandler;
+import io.harness.delegate.task.winrm.GithubPackageArtifactDownloadHandler;
 import io.harness.delegate.task.winrm.JenkinsArtifactDownloadHandler;
 import io.harness.delegate.task.winrm.NexusArtifactDownloadHandler;
 import io.harness.delegate.utils.DecryptionHelperDelegate;
@@ -1670,6 +1675,7 @@ public class DelegateModule extends AbstractModule {
     artifactHandlers.addBinding(SshWinRmArtifactType.AWS_S3).to(AwsS3ArtifactDownloadHandler.class);
     artifactHandlers.addBinding(SshWinRmArtifactType.NEXUS_PACKAGE).to(NexusArtifactDownloadHandler.class);
     artifactHandlers.addBinding(SshWinRmArtifactType.AZURE).to(AzureArtifactDownloadHandler.class);
+    artifactHandlers.addBinding(SshWinRmArtifactType.GITHUB_PACKAGE).to(GithubPackageArtifactDownloadHandler.class);
 
     MapBinder<String, ArtifactCommandUnitHandler> artifactCommandHandlers =
         MapBinder.newMapBinder(binder(), String.class, ArtifactCommandUnitHandler.class);
@@ -1679,6 +1685,8 @@ public class DelegateModule extends AbstractModule {
     artifactCommandHandlers.addBinding(SshWinRmArtifactType.NEXUS_PACKAGE.name())
         .to(NexusArtifactCommandUnitHandler.class);
     artifactCommandHandlers.addBinding(SshWinRmArtifactType.AZURE.name()).to(AzureArtifactCommandUnitHandler.class);
+    artifactCommandHandlers.addBinding(SshWinRmArtifactType.GITHUB_PACKAGE.name())
+        .to(GithubPackageArtifactCommandUnitHandler.class);
 
     registerSecretManagementBindings();
     registerConnectorValidatorsBindings();
@@ -2086,6 +2094,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.COMMAND_TASK_NG).toInstance(CommandTaskNG.class);
     mapBinder.addBinding(TaskType.COMMAND_TASK_NG_WITH_AZURE_ARTIFACT).toInstance(CommandTaskNG.class);
     mapBinder.addBinding(TaskType.COMMAND_TASK_NG_WITH_GIT_CONFIGS).toInstance(CommandTaskNG.class);
+    mapBinder.addBinding(TaskType.COMMAND_TASK_NG_WITH_GITHUB_PACKAGE_ARTIFACT).toInstance(CommandTaskNG.class);
     mapBinder.addBinding(TaskType.TRIGGER_AUTHENTICATION_TASK).toInstance(TriggerAuthenticationTask.class);
     mapBinder.addBinding(TaskType.HELM_FETCH_CHART_VERSIONS_TASK_NG).toInstance(HelmFetchChartVersionTaskNG.class);
     mapBinder.addBinding(TaskType.TERRAFORM_CLOUD_TASK_NG).toInstance(TerraformCloudTaskNG.class);
@@ -2094,6 +2103,7 @@ public class DelegateModule extends AbstractModule {
         .toInstance(OciHelmDockerApiListTagsDelegateTask.class);
     mapBinder.addBinding(TaskType.K8S_BLUE_GREEN_STAGE_SCALE_DOWN_TASK).toInstance(K8sTaskNG.class);
     mapBinder.addBinding(TaskType.COMMAND_TASK_NG_WITH_OUTPUT_VARIABLE_SECRETS).toInstance(CommandTaskNG.class);
+    mapBinder.addBinding(TaskType.HELM_FETCH_CHART_MANIFEST_TASK).toInstance(HelmFetchChartManifestTask.class);
 
     // ECS NG
     MapBinder<String, EcsCommandTaskNGHandler> ecsTaskTypeToTaskHandlerMap =
@@ -2253,6 +2263,9 @@ public class DelegateModule extends AbstractModule {
     // RANCHER NG
     mapBinder.addBinding(TaskType.RANCHER_TEST_CONNECTION_TASK_NG).toInstance(RancherTestConnectionDelegateTask.class);
     mapBinder.addBinding(TaskType.RANCHER_LIST_CLUSTERS_TASK_NG).toInstance(RancherListClustersDelegateTask.class);
+
+    mapBinder.addBinding(TaskType.SERVERLESS_ROLLBACK_V2_TASK)
+        .toInstance(ServerlessAwsLambdaRollbackV2CommandTask.class);
   }
 
   private void registerSecretManagementBindings() {
@@ -2395,6 +2408,8 @@ public class DelegateModule extends AbstractModule {
         .to(NotSupportedValidationHandler.class);
     connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.TERRAFORM_CLOUD.getDisplayName())
         .to(TerraformCloudValidationHandler.class);
+    connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.RANCHER.getDisplayName())
+        .to(RancherValidationHandler.class);
   }
 
   private void bindExceptionHandlers() {

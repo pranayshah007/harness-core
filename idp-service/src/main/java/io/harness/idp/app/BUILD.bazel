@@ -39,6 +39,7 @@ java_binary(
         "//idp-service/src/main/java/io/harness/idp/allowlist:module",
         "//idp-service/src/main/java/io/harness/idp/common/delegateselectors/cache:module",
         "//idp-service/src/main/java/io/harness/idp/common/delegateselectors/cache/memory:module",
+        "//idp-service/src/main/java/io/harness/idp/common/delegateselectors/cache/redis:module",
         "//idp-service/src/main/java/io/harness/idp/configmanager/beans/entity:module",
         "//idp-service/src/main/java/io/harness/idp/configmanager/jobs:module",
         "//idp-service/src/main/java/io/harness/idp/configmanager/resource:module",

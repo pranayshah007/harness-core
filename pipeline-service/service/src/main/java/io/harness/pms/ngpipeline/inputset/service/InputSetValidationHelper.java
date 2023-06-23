@@ -22,6 +22,7 @@ import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.merger.helpers.InputSetYamlHelper;
+import io.harness.pms.ngpipeline.inputset.api.InputSetsApiUtils;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetYamlDiffDTO;
@@ -33,6 +34,7 @@ import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
 import io.harness.pms.yaml.PipelineVersion;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.experimental.UtilityClass;
@@ -148,18 +150,24 @@ public class InputSetValidationHelper {
   public InputSetYamlDiffDTO getYAMLDiff(GitSyncSdkService gitSyncSdkService, PMSInputSetService inputSetService,
       PMSPipelineService pipelineService, ValidateAndMergeHelper validateAndMergeHelper, String accountId,
       String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String inputSetIdentifier,
-      String pipelineBranch, String pipelineRepoID) {
+      String pipelineBranch, String pipelineRepoID, InputSetsApiUtils inputSetsApiUtils) {
     //    get input set and pipeline metadata for checking the if same repos or different repos to set the branch for
     //    input set
     InputSetEntity inputSetMetadata = inputSetService.getMetadata(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false, false, true);
+
+    if (EmptyPredicate.isEmpty(pipelineBranch) && StoreType.REMOTE.equals(inputSetMetadata.getStoreType())) {
+      throw new InvalidRequestException(ERROR_PIPELINE_BRANCH_NOT_PROVIDED);
+    }
 
     PipelineEntity pipelineMetadata = pipelineService.getPipelineMetadata(inputSetMetadata.getAccountIdentifier(),
         inputSetMetadata.getOrgIdentifier(), inputSetMetadata.getProjectIdentifier(),
         inputSetMetadata.getPipelineIdentifier(), false, true);
     // fetch complete input set yaml
     InputSetEntity inputSetEntity = getInputSetEntity(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-        pipelineBranch, pipelineMetadata, inputSetMetadata, inputSetIdentifier, inputSetService);
+        pipelineBranch, pipelineMetadata, inputSetMetadata, inputSetIdentifier, inputSetService,
+        inputSetsApiUtils.isDifferentRepoForPipelineAndInputSetsAccountSettingEnabled(accountId),
+        gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier));
 
     EntityGitDetails entityGitDetails = PMSInputSetElementMapper.getEntityGitDetails(inputSetEntity);
     // fetch complete pipeline yaml
@@ -178,25 +186,37 @@ public class InputSetValidationHelper {
     return yamlDiffDTO;
   }
 
-  private InputSetEntity getInputSetEntity(String accountId, String orgIdentifier, String projectIdentifier,
+  @VisibleForTesting
+  InputSetEntity getInputSetEntity(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String pipelineBranch, PipelineEntity pipelineMetadata,
-      InputSetEntity inputSetMetadata, String inputSetIdentifier, PMSInputSetService inputSetService) {
+      InputSetEntity inputSetMetadata, String inputSetIdentifier, PMSInputSetService inputSetService,
+      boolean isDifferentRepoForPipelineAndInputSetsAccountSettingEnabled, boolean isOldGitSyncEnabled) {
     Optional<InputSetEntity> optionalInputSetEntity;
     if (EmptyPredicate.isNotEmpty(pipelineMetadata.getRepo()) && EmptyPredicate.isNotEmpty(inputSetMetadata.getRepo())
         && pipelineMetadata.getRepo().equals(inputSetMetadata.getRepo())) {
-      if (EmptyPredicate.isNotEmpty(pipelineBranch)) {
-        GitSyncBranchContext branchContext =
-            buildGitSyncBranchContext(inputSetMetadata.getRepo(), pipelineBranch, inputSetMetadata.getConnectorRef());
-        //      Fetch input set when pipeline and input set are in same repos
-        try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(branchContext, true)) {
-          optionalInputSetEntity = inputSetService.getWithoutValidations(
-              accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false, false, false);
-        }
-      } else {
-        throw new InvalidRequestException(ERROR_PIPELINE_BRANCH_NOT_PROVIDED);
+      String inputSetBranch = GitAwareContextHelper.getBranchFromGitContext();
+      if (!GitAwareContextHelper.DEFAULT.equals(inputSetBranch)) {
+        throwExceptionIfInputSetBranchNotEqualToPipelineBranch(pipelineBranch, inputSetBranch);
       }
+      GitSyncBranchContext branchContext =
+          buildGitSyncBranchContext(inputSetMetadata.getRepo(), inputSetBranch, inputSetMetadata.getConnectorRef());
+      //      Fetch input set when pipeline and input set are in same repos
+      try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(branchContext, true)) {
+        optionalInputSetEntity = inputSetService.getWithoutValidations(
+            accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false, false, false);
+        inputSetBranch = GitAwareContextHelper.getBranchInSCMGitMetadata();
+      }
+      throwExceptionIfInputSetBranchNotEqualToPipelineBranch(pipelineBranch, inputSetBranch);
+    } else if (EmptyPredicate.isNotEmpty(pipelineMetadata.getRepo())
+        && EmptyPredicate.isNotEmpty(inputSetMetadata.getRepo())
+        && !isDifferentRepoForPipelineAndInputSetsAccountSettingEnabled) {
+      throw new InvalidRequestException(
+          "Reconciliation is not allowed for the given input set. Pipeline and input set must be in same repository. Please enable account level default setting : 'Allow different repo for Pipeline and InputSets' if its intended to keep pipeline and input set in different repository.");
     } else {
       //      Fetch input set when pipeline and input set are in different repos
+      if (!isOldGitSyncEnabled) {
+        GitAwareContextHelper.updateGitEntityContextWithBranch("");
+      }
       optionalInputSetEntity = inputSetService.getWithoutValidations(
           accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false, false, false);
     }
@@ -205,6 +225,13 @@ public class InputSetValidationHelper {
           String.format("InputSet with the given ID: %s does not exist or has been deleted", inputSetIdentifier));
     }
     return optionalInputSetEntity.get();
+  }
+
+  private void throwExceptionIfInputSetBranchNotEqualToPipelineBranch(String pipelineBranch, String inputSetBranch) {
+    if (!inputSetBranch.equals(pipelineBranch)) {
+      throw new InvalidRequestException(
+          "Reconciliation is not allowed for the given input set. Pipeline and InputSet must be present on the same branch when they are in the same repository");
+    }
   }
 
   private String getPipelineYaml(String accountId, String orgIdentifier, String projectIdentifier,
