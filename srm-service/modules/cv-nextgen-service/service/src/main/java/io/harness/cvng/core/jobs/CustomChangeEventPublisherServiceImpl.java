@@ -49,6 +49,9 @@ public class CustomChangeEventPublisherServiceImpl implements CustomChangeEventP
     if (customChangeWebhookPayload.getEventDetail().getChannelUrl() != null) {
       customChangeEventDetailsBuilder.setChannelUrl(customChangeWebhookPayload.getEventDetail().getChannelUrl());
     }
+    if (customChangeWebhookPayload.getEventDetail().getWebhookUrl() != null) {
+      customChangeEventDetailsBuilder.setWebhookUrl(customChangeWebhookPayload.getEventDetail().getWebhookUrl());
+    }
 
     CustomChangeEventDTO.Builder customChangeEventDTOBuilder =
         CustomChangeEventDTO.newBuilder()

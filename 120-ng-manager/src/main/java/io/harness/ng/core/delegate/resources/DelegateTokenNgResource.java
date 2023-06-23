@@ -47,7 +47,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 
 @Api("delegate-token-ng")
 @Path("/delegate-token-ng")
@@ -154,17 +153,14 @@ public class DelegateTokenNgResource {
       @Parameter(description = "Status of Delegate Token (ACTIVE or REVOKED). "
               + "If left empty both active and revoked tokens will be retrieved") @QueryParam("status")
       DelegateTokenStatus status) {
-    if (StringUtils.isBlank(delegateTokenName)) {
-      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-          Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_VIEW_PERMISSION);
-    } else {
-      // When delegate token name is requested, token value will be included in response. Only roles with creating
-      // a delegate can access.
-      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-          Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_EDIT_PERMISSION);
-    }
-    return new RestResponse<>(CGRestUtils.getResponse(
-        delegateTokenClient.getTokens(delegateTokenName, accountIdentifier, orgIdentifier, projectIdentifier, status)));
+    boolean hasEditAccess;
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_VIEW_PERMISSION);
+    // Return token value only if the user has delegate edit permission
+    hasEditAccess = accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_EDIT_PERMISSION);
+    return new RestResponse<>(CGRestUtils.getResponse(delegateTokenClient.getTokens(
+        delegateTokenName, accountIdentifier, orgIdentifier, projectIdentifier, status, hasEditAccess)));
   }
 
   @GET

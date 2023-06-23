@@ -60,6 +60,7 @@ public class SscaEnforcementStep extends AbstractStepExecutable {
                       .stepExecutionId(stepExecutionId)
                       .allowListViolationCount(enforcementSummary.getAllowListViolationCount())
                       .denyListViolationCount(enforcementSummary.getDenyListViolationCount())
+                      .imageTag(enforcementSummary.getArtifact().getTag())
                       .build())
             .build());
   }
@@ -78,6 +79,7 @@ public class SscaEnforcementStep extends AbstractStepExecutable {
                                    .allowListViolationCount(enforcementSummary.getAllowListViolationCount())
                                    .denyListViolationCount(enforcementSummary.getDenyListViolationCount())
                                    .stepExecutionId(stepExecutionId)
+                                   .tag(enforcementSummary.getArtifact().getTag())
                                    .build())
         .build();
   }
@@ -100,6 +102,7 @@ public class SscaEnforcementStep extends AbstractStepExecutable {
                 .stepExecutionId(sscaArtifactMetadata.getStepExecutionId())
                 .allowListViolationCount(sscaArtifactMetadata.getAllowListViolationCount())
                 .denyListViolationCount(sscaArtifactMetadata.getDenyListViolationCount())
+                .tag(sscaArtifactMetadata.getImageTag())
                 .build());
       }
     }

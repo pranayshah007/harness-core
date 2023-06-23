@@ -36,4 +36,5 @@ public class UpsertWebhookRequestDTO {
   @NotNull HookEventType hookEventType;
   String repoURL;
   String webhookSecretIdentifierRef;
+  Boolean isHarnessCode;
 }

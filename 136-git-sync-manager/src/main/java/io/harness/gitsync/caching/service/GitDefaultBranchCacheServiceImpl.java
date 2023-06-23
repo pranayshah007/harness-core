@@ -8,6 +8,7 @@
 package io.harness.gitsync.caching.service;
 
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -42,7 +43,7 @@ public class GitDefaultBranchCacheServiceImpl implements GitDefaultBranchCacheSe
             gitDefaultBranchCacheKey.getAccountIdentifier(), gitDefaultBranchCacheKey.getRepoUrl(),
             gitDefaultBranchCacheKey.getRepo());
 
-    if (gitDefaultBranchCacheList == null) {
+    if (isEmpty(gitDefaultBranchCacheList)) {
       return null;
     }
     List<GitDefaultBranchCacheResponse> gitDefaultBranchCacheResponseList =
@@ -106,14 +107,15 @@ public class GitDefaultBranchCacheServiceImpl implements GitDefaultBranchCacheSe
   }
 
   private Update getUpsertOperationUpdates(GitDefaultBranchCacheKey gitDefaultBranchCacheKey, String branch) {
-    long currentTime = System.currentTimeMillis();
+    long currentTimeInMilliseconds = System.currentTimeMillis();
     Update update = new Update();
     update.setOnInsert(GitDefaultBranchCacheKeys.accountIdentifier, gitDefaultBranchCacheKey.getAccountIdentifier());
     update.setOnInsert(GitDefaultBranchCacheKeys.repoUrl, gitDefaultBranchCacheKey.getRepoUrl());
     update.setOnInsert(GitDefaultBranchCacheKeys.repo, gitDefaultBranchCacheKey.getRepo());
     update.setOnInsert(GitDefaultBranchCacheKeys.branch, branch);
-    update.setOnInsert(GitDefaultBranchCacheKeys.createdAt, currentTime);
-    update.set(GitDefaultBranchCacheKeys.validUntil, gitDefaultBranchCacheHelper.getValidUntilTime(currentTime));
+    update.setOnInsert(GitDefaultBranchCacheKeys.createdAt, currentTimeInMilliseconds);
+    update.set(
+        GitDefaultBranchCacheKeys.validUntil, gitDefaultBranchCacheHelper.getValidUntilTime(currentTimeInMilliseconds));
     return update;
   }
 

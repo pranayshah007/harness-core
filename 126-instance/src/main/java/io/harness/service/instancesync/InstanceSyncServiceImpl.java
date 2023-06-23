@@ -171,7 +171,8 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
 
           InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO;
 
-          if (abstractInstanceSyncHandler.isInstanceSyncV2Enabled()) {
+          if (abstractInstanceSyncHandler.isInstanceSyncV2EnabledAndSupported(
+                  deploymentSummaryDTO.getAccountIdentifier())) {
             instanceSyncPerpetualTaskInfoDTO = handlingInstanceSyncPerpetualTaskV2(
                 abstractInstanceSyncHandler, infrastructureMappingDTO, deploymentSummaryDTO);
           } else {
@@ -188,7 +189,8 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
           // Sync only for deployment infos / instance sync handler keys from instances from server
           performInstanceSync(instanceSyncPerpetualTaskInfoDTO, infrastructureMappingDTO,
               deploymentSummaryDTO.getServerInstanceInfoList(), abstractInstanceSyncHandler, true,
-              abstractInstanceSyncHandler.isInstanceSyncV2Enabled());
+              abstractInstanceSyncHandler.isInstanceSyncV2EnabledAndSupported(
+                  deploymentSummaryDTO.getAccountIdentifier()));
 
           instanceSyncMonitoringService.recordMetrics(
               infrastructureMappingDTO.getAccountIdentifier(), true, true, System.currentTimeMillis() - startTime);
@@ -483,7 +485,7 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
                     .getType(),
                 infrastructureMappingDTO.get().getInfrastructureKind());
 
-        if (!abstractInstanceSyncHandler.isInstanceSyncV2Enabled()) {
+        if (!abstractInstanceSyncHandler.isInstanceSyncV2EnabledAndSupported(accountIdentifier)) {
           migrateToInstanceSyncV1(
               instanceSyncPerpetualTaskInfoDTO, infrastructureMappingDTO.get(), abstractInstanceSyncHandler);
           continue;

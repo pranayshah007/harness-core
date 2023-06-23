@@ -3537,7 +3537,7 @@ components:
         maximum: 1000
       description: Number of items to return per page.
     onlyFavorites:
-      name: only_favorite
+      name: only_favorites
       in: query
       required: false
       schema:

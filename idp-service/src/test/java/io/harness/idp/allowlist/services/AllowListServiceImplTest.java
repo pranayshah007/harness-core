@@ -38,6 +38,7 @@ public class AllowListServiceImplTest {
   @InjectMocks private AllowListServiceImpl allowListServiceImpl;
   @Mock private ConfigManagerService configManagerService;
   private static final String ACCOUNT_ID = "123";
+  @Captor private ArgumentCaptor<AppConfig> appConfigCaptor;
   private static final String schema =
       "{\"definitions\": {}, \"$schema\": \"http://json-schema.org/draft-07/schema#\", "
       + "\"$id\": \"https://example.com/object1686050391.json\", \"title\": \"Root\", \"type\": \"object\", \"required\": [\"backend\"], "
@@ -90,9 +91,12 @@ public class AllowListServiceImplTest {
 
     when(configManagerService.saveOrUpdateConfigForAccount(any(), any(), any())).thenReturn(new AppConfig());
     when(configManagerService.mergeAndSaveAppConfig(any())).thenReturn(MergedAppConfigEntity.builder().build());
-    List<HostInfo> result = allowListServiceImpl.saveAllowList(hostInfoList, ACCOUNT_ID);
-    assertEquals(hostInfoList, result);
-    verify(configManagerService, times(1)).saveOrUpdateConfigForAccount(any(), any(), any());
+    allowListServiceImpl.saveAllowList(hostInfoList, ACCOUNT_ID);
+
+    String expectedConfig =
+        "---\nbackend:\n  reading:\n    allow:\n    - host: stress.harness.io\n    - host: qa.harness.io\n      paths:\n      - /v1/secrets\n";
+    verify(configManagerService).saveOrUpdateConfigForAccount(appConfigCaptor.capture(), any(), any());
+    assertEquals(expectedConfig, appConfigCaptor.getValue().getConfigs());
     yamlUtilsMockedStatic.close();
     commonUtilsMockedStatic.close();
   }

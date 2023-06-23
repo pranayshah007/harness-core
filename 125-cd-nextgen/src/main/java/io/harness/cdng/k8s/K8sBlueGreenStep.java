@@ -57,6 +57,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
@@ -142,7 +143,8 @@ public class K8sBlueGreenStep extends TaskChainExecutableWithRollbackAndRbac imp
             .useK8sApiForSteadyStateCheck(cdStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
             .useDeclarativeRollback(k8sStepHelper.isDeclarativeRollbackEnabled(k8sManifestOutcome))
             .enabledSupportHPAAndPDB(cdStepHelper.isEnabledSupportHPAAndPDB(accountId))
-            .skipUnchangedManifest(cdStepHelper.isSkipUnchangedManifest(accountId, skipUnchangedManifest));
+            .skipUnchangedManifest(cdStepHelper.isSkipUnchangedManifest(accountId, skipUnchangedManifest))
+            .storeReleaseHash(cdStepHelper.isStoreReleaseHash(accountId));
 
     if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_K8S_SERVICE_HOOKS_NG)) {
       bgRequestBuilder.serviceHooks(k8sStepHelper.getServiceHooks(ambiance));
@@ -195,12 +197,19 @@ public class K8sBlueGreenStep extends TaskChainExecutableWithRollbackAndRbac imp
 
     InfrastructureOutcome infrastructure = executionPassThroughData.getInfrastructure();
     K8sBGDeployResponse k8sBGDeployResponse = (K8sBGDeployResponse) k8sTaskExecutionResponse.getK8sNGTaskResponse();
-
     K8sBlueGreenStepParameters k8sBlueGreenStepParameters =
         (K8sBlueGreenStepParameters) stepElementParameters.getSpec();
     boolean pruningEnabled = CDStepHelper.getParameterFieldBooleanValue(k8sBlueGreenStepParameters.getPruningEnabled(),
         K8sBlueGreenBaseStepInfoKeys.pruningEnabled, stepElementParameters);
-
+    if (BooleanUtils.isTrue(k8sBGDeployResponse.getStageDeploymentSkipped())) {
+      K8sBlueGreenOutcome k8sBlueGreenOutcome = K8sBlueGreenOutcome.builder().stageDeploymentSkipped(true).build();
+      executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.K8S_BLUE_GREEN_OUTCOME,
+          k8sBlueGreenOutcome, StepOutcomeGroup.STEP.name());
+      return responseBuilder.status(Status.SUCCEEDED)
+          .stepOutcome(
+              StepOutcome.builder().name(OutcomeExpressionConstants.OUTPUT).outcome(k8sBlueGreenOutcome).build())
+          .build();
+    }
     K8sBlueGreenOutcome k8sBlueGreenOutcome = K8sBlueGreenOutcome.builder()
                                                   .releaseName(cdStepHelper.getReleaseName(ambiance, infrastructure))
                                                   .releaseNumber(k8sBGDeployResponse.getReleaseNumber())

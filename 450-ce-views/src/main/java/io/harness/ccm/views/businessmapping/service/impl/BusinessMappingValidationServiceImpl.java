@@ -119,7 +119,8 @@ public class BusinessMappingValidationServiceImpl implements BusinessMappingVali
   private void validateSameBusinessMappingInViewCondition(
       final String businessMappingUuid, final String bucketName, final ViewIdCondition viewCondition) {
     final ViewField viewField = viewCondition.getViewField();
-    if (viewField.getIdentifier() == BUSINESS_MAPPING && businessMappingUuid.equals(viewField.getFieldId())) {
+    if (Objects.nonNull(viewField) && viewField.getIdentifier() == BUSINESS_MAPPING
+        && viewField.getFieldId().equals(businessMappingUuid)) {
       throw new InvalidRequestException(String.format("Can't add same cost category in cost bucket %s", bucketName));
     }
   }

@@ -36,4 +36,5 @@ public class K8sBlueGreenOutcome implements Outcome, ExecutionSweepingOutput {
   String primaryColor;
   List<KubernetesResourceId> prunedResourceIds;
   K8sGitFetchInfo manifest;
+  Boolean stageDeploymentSkipped;
 }

@@ -26,8 +26,9 @@ public class GitDefaultBranchCacheHelper {
     this.gitServiceConfiguration = gitServiceConfiguration;
   }
 
-  public Date getValidUntilTime(long currentTime) {
-    return GitCacheUtils.getValidUntilTime(currentTime, getMaxCacheDuration());
+  public Date getValidUntilTime(long currentTimeInMilliseconds) {
+    //    converting the time from mins to milliseconds
+    return GitCacheUtils.getValidUntilTime(currentTimeInMilliseconds, getMaxCacheDuration() * 60000);
   }
 
   private long getMaxCacheDuration() {

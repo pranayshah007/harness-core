@@ -7,6 +7,7 @@
 package io.harness.cvng.notification.services.impl;
 
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.MONITORED_SERVICE_NAME;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.MONITORED_SERVICE_URL;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.NO_METRIC_ASSIGNED_TO_MONITORED_SERVICE;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.URL;
 
@@ -36,7 +37,6 @@ public class ErrorTrackingTemplateDataGenerator
   public static final String EMAIL_NOTIFICATION_NAME_HYPERLINK = "EMAIL_NOTIFICATION_NAME_HYPERLINK";
 
   // Slack template variables
-  public static final String MONITORED_SERVICE_URL = "MONITORED_SERVICE_URL";
   public static final String SLACK_FORMATTED_VERSION_LIST = "SLACK_FORMATTED_VERSION_LIST";
   public static final String NOTIFICATION_URL = "NOTIFICATION_URL";
   public static final String NOTIFICATION_NAME = "NOTIFICATION_NAME";
@@ -48,11 +48,10 @@ public class ErrorTrackingTemplateDataGenerator
       "<div style=\"display: inline; border-right: 1px solid #b0b1c3; height: 20px; margin: 0px 16px 0px 16px\"></div>";
 
   @Override
-  public Map<String, String> getTemplateData(ProjectParams projectParams, String name, String identifier,
-      String serviceIdentifier, String monitoredServiceIdentifier, MonitoredServiceCodeErrorCondition condition,
-      Map<String, String> notificationDataMap) {
-    final Map<String, String> templateData = super.getTemplateData(
-        projectParams, name, identifier, serviceIdentifier, monitoredServiceIdentifier, condition, notificationDataMap);
+  public Map<String, String> getTemplateData(ProjectParams projectParams, Map<String, Object> entityDetails,
+      MonitoredServiceCodeErrorCondition condition, Map<String, String> notificationDataMap) {
+    final Map<String, String> templateData =
+        super.getTemplateData(projectParams, entityDetails, condition, notificationDataMap);
 
     templateData.putAll(getConditionTemplateVariables(condition));
 

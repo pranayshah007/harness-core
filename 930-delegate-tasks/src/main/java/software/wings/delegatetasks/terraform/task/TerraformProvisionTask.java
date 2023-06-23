@@ -703,7 +703,7 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
                   .build();
           if (parameters.isEncryptDecryptPlanForHarnessSMOnManager()) {
             encryptedTfPlan = (EncryptedRecordData) harnessSMEncryptionDecryptionHandler.encryptFile(
-                terraformPlanFile, parameters.getSecretManagerConfig(), planDelegateFile, false);
+                terraformPlanFile, parameters.getSecretManagerConfig(), planDelegateFile);
 
           } else {
             encryptedTfPlan = (EncryptedRecordData) planEncryptDecryptHelper.encryptFile(
@@ -712,7 +712,7 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
         } else {
           if (parameters.isEncryptDecryptPlanForHarnessSMOnManager()) {
             encryptedTfPlan = (EncryptedRecordData) harnessSMEncryptionDecryptionHandler.encryptContent(
-                terraformPlanFile, parameters.getSecretManagerConfig(), false);
+                terraformPlanFile, parameters.getSecretManagerConfig());
 
           } else {
             encryptedTfPlan = (EncryptedRecordData) planEncryptDecryptHelper.encryptContent(
@@ -1278,7 +1278,7 @@ and provisioner
 
     if (parameters.isEncryptDecryptPlanForHarnessSMOnManager()) {
       decryptedTerraformPlan = harnessSMEncryptionDecryptionHandler.getDecryptedContent(
-          parameters.getSecretManagerConfig(), encryptedRecordData, parameters.getAccountId(), false);
+          parameters.getSecretManagerConfig(), encryptedRecordData, parameters.getAccountId());
 
     } else {
       decryptedTerraformPlan = planEncryptDecryptHelper.getDecryptedContent(

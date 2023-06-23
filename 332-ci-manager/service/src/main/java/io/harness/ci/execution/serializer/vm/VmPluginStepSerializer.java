@@ -120,11 +120,7 @@ public class VmPluginStepSerializer {
       }
     }
 
-    boolean fVal = featureFlagService.isEnabled(
-        FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, AmbianceUtils.getAccountId(ambiance));
-
-    envVars.putAll(
-        resolveMapParameterV2("envVars", "pluginStep", identifier, pluginStepInfo.getEnvVariables(), false, fVal));
+    envVars.putAll(resolveMapParameterV2("envVars", "pluginStep", identifier, pluginStepInfo.getEnvVariables(), false));
     if (StringUtils.isNotEmpty(delegateId)) {
       if (isEmpty(envVars)) {
         envVars = new HashMap<>();

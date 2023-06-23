@@ -14,6 +14,7 @@ import io.harness.product.ci.scm.proto.BitbucketCloudWebhookEvent;
 import io.harness.product.ci.scm.proto.BitbucketServerWebhookEvent;
 import io.harness.product.ci.scm.proto.GithubWebhookEvent;
 import io.harness.product.ci.scm.proto.GitlabWebhookEvent;
+import io.harness.product.ci.scm.proto.HarnessWebhookEvent;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Arrays;
@@ -37,21 +38,26 @@ public enum HookEventType {
           BitbucketServerWebhookEvent.BITBUCKET_SERVER_PR_COMMENT),
       Arrays.asList(AzureWebhookEvent.AZURE_PUSH, AzureWebhookEvent.AZURE_PULLREQUEST_CREATED,
           AzureWebhookEvent.AZURE_PULLREQUEST_MERGED, AzureWebhookEvent.AZURE_PULLREQUEST_UPDATED,
-          AzureWebhookEvent.AZURE_PULL_REQUEST_ISSUE_COMMENT));
+          AzureWebhookEvent.AZURE_PULL_REQUEST_ISSUE_COMMENT),
+      // todo(abhinav): add more events.
+      Arrays.asList(HarnessWebhookEvent.HARNESS_BRANCH_UPDATED, HarnessWebhookEvent.HARNESS_TAG_UPDATED));
 
   public List<GithubWebhookEvent> githubWebhookEvents;
   public List<GitlabWebhookEvent> gitlabWebhookEvents;
   public List<BitbucketCloudWebhookEvent> bitbucketCloudWebhookEvents;
   public List<BitbucketServerWebhookEvent> bitbucketServerWebhookEvents;
   public List<AzureWebhookEvent> azureWebhookEvents;
+  public List<HarnessWebhookEvent> harnessScmWebhookEvents;
 
   HookEventType(List<GithubWebhookEvent> githubWebhookEvents, List<GitlabWebhookEvent> gitlabWebhookEvents,
       List<BitbucketCloudWebhookEvent> bitbucketCloudWebhookEvents,
-      List<BitbucketServerWebhookEvent> bitbucketServerWebhookEvents, List<AzureWebhookEvent> azureWebhookEvents) {
+      List<BitbucketServerWebhookEvent> bitbucketServerWebhookEvents, List<AzureWebhookEvent> azureWebhookEvents,
+      List<HarnessWebhookEvent> harnessScmWebhookEvents) {
     this.githubWebhookEvents = githubWebhookEvents;
     this.gitlabWebhookEvents = gitlabWebhookEvents;
     this.bitbucketCloudWebhookEvents = bitbucketCloudWebhookEvents;
     this.bitbucketServerWebhookEvents = bitbucketServerWebhookEvents;
     this.azureWebhookEvents = azureWebhookEvents;
+    this.harnessScmWebhookEvents = harnessScmWebhookEvents;
   }
 }

@@ -24,7 +24,8 @@ import java.util.List;
   , @JsonSubTypes.Type(value = GitlabTriggerSpec.class, name = "GITLAB"),
       @JsonSubTypes.Type(value = BitbucketTriggerSpec.class, name = "BITBUCKET"),
       @JsonSubTypes.Type(value = AwsCodeCommitTriggerSpec.class, name = "AWS_CODECOMMIT"),
-      @JsonSubTypes.Type(value = CustomWebhookTriggerSpec.class, name = "CUSTOM")
+      @JsonSubTypes.Type(value = CustomWebhookTriggerSpec.class, name = "CUSTOM"),
+      @JsonSubTypes.Type(value = HarnessScmTriggerSpec.class, name = "HARNESS")
 })
 @OwnedBy(PIPELINE)
 public interface WebhookTriggerSpec {

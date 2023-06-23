@@ -81,6 +81,11 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
   }
 
   @Override
+  public List<String> save(List<RuleExecution> rulesExecutions) {
+    return rulesExecutionDAO.save(rulesExecutions);
+  }
+
+  @Override
   public RuleExecution get(String accountId, String uuid) {
     return rulesExecutionDAO.get(accountId, uuid);
   }

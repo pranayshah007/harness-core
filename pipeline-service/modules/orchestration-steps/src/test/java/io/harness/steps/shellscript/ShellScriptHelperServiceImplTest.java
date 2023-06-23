@@ -21,16 +21,22 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG.ShellScriptTaskParametersNGBuilder;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
+import io.harness.ngsettings.SettingValueType;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -44,6 +50,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.ScriptType;
 import io.harness.steps.OutputExpressionConstants;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -55,6 +62,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -66,6 +74,9 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.junit.MockitoRule;
+import org.powermock.api.mockito.PowerMockito;
+import retrofit2.Call;
+import retrofit2.Response;
 
 @Slf4j
 @OwnedBy(CDC)
@@ -77,15 +88,28 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
   @Mock private SecretNGManagerClient secretManagerClient;
   @Mock private SshKeySpecDTOHelper sshKeySpecDTOHelper;
   @Mock private ShellScriptHelperService shellScriptHelperService;
-
+  @Mock private NGSettingsClient settingsClient;
+  @Mock private Call<ResponseDTO<SettingValueResponseDTO>> response;
+  @Mock private EngineExpressionService engineExpressionService;
   @InjectMocks private ShellScriptHelperServiceImpl shellScriptHelperServiceImpl;
+
+  @Before
+  public void beforeRun() {
+    PowerMockito.when(settingsClient.getSetting(any(), any(), any(), any())).thenReturn(response);
+  }
 
   @Test
   @Owner(developers = VAIBHAV_SI)
   @Category(UnitTests.class)
-  public void testGetEnvironmentVariables() {
-    assertThat(shellScriptHelperServiceImpl.getEnvironmentVariables(null)).isEmpty();
-    assertThat(shellScriptHelperServiceImpl.getEnvironmentVariables(new HashMap<>())).isEmpty();
+  public void testGetEnvironmentVariables() throws IOException {
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("false").valueType(SettingValueType.BOOLEAN).build();
+    PowerMockito.when(response.execute())
+        .thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
+
+    assertThat(shellScriptHelperServiceImpl.getEnvironmentVariables(null, Ambiance.newBuilder().build())).isEmpty();
+    assertThat(shellScriptHelperServiceImpl.getEnvironmentVariables(new HashMap<>(), Ambiance.newBuilder().build()))
+        .isEmpty();
 
     Map<String, Object> envVariables = new HashMap<>();
     envVariables.put("var1", Arrays.asList(1));
@@ -93,13 +117,49 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
     envVariables.put("var3", ParameterField.createValueField("val3"));
     envVariables.put("var4", ParameterField.createExpressionField(true, "<+unresolved>", null, true));
 
-    assertThatThrownBy(() -> shellScriptHelperServiceImpl.getEnvironmentVariables(envVariables))
+    assertThatThrownBy(
+        () -> shellScriptHelperServiceImpl.getEnvironmentVariables(envVariables, Ambiance.newBuilder().build()))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Env. variable [var4] value found to be null");
+        .hasMessageContaining("Env. variables: [var4] found to be unresolved");
 
     envVariables.remove("var4");
-    Map<String, String> environmentVariables = shellScriptHelperServiceImpl.getEnvironmentVariables(envVariables);
+    Map<String, String> environmentVariables =
+        shellScriptHelperServiceImpl.getEnvironmentVariables(envVariables, Ambiance.newBuilder().build());
     assertThat(environmentVariables).hasSize(2);
+    assertThat(environmentVariables.get("var2")).isEqualTo("val2");
+    assertThat(environmentVariables.get("var3")).isEqualTo("val3");
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testGetEnvironmentVariablesWithServiceVariables() throws IOException {
+    // export service variable setting enabled
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
+    PowerMockito.when(response.execute())
+        .thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
+
+    VariablesSweepingOutput serviceVariableOutput = new VariablesSweepingOutput();
+    serviceVariableOutput.put("svar1", ParameterField.createValueField("sval1"));
+
+    when(executionSweepingOutputService.resolveOptional(any(), any()))
+        .thenReturn(OptionalSweepingOutput.builder().found(true).output(serviceVariableOutput).build());
+
+    // without any input variables. only service vars should be present
+    assertThat(shellScriptHelperServiceImpl.getEnvironmentVariables(null, Ambiance.newBuilder().build())).hasSize(1);
+    assertThat(shellScriptHelperServiceImpl.getEnvironmentVariables(new HashMap<>(), Ambiance.newBuilder().build()))
+        .hasSize(1);
+
+    Map<String, Object> envVariables = new HashMap<>();
+    envVariables.put("var1", Arrays.asList(1));
+    envVariables.put("var2", "val2");
+    envVariables.put("var3", ParameterField.createValueField("val3"));
+
+    Map<String, String> environmentVariables =
+        shellScriptHelperServiceImpl.getEnvironmentVariables(envVariables, Ambiance.newBuilder().build());
+    assertThat(environmentVariables).hasSize(3);
+    assertThat(environmentVariables.get("svar1")).isEqualTo("sval1");
     assertThat(environmentVariables.get("var2")).isEqualTo("val2");
     assertThat(environmentVariables.get("var3")).isEqualTo("val3");
   }
@@ -345,7 +405,9 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
         .when(shellScriptHelperService)
         .prepareTaskParametersForExecutionTarget(eq(ambiance), eq(stepParameters), any());
     doReturn(k8sInfraDelegateConfig).when(shellScriptHelperService).getK8sInfraDelegateConfig(ambiance, script);
-    doReturn(taskEnvVariables).when(shellScriptHelperService).getEnvironmentVariables(inputVars);
+    doReturn(taskEnvVariables)
+        .when(shellScriptHelperService)
+        .getEnvironmentVariables(inputVars, Ambiance.newBuilder().build());
     doReturn(taskOutputVars).when(shellScriptHelperService).getOutputVars(outputVars, new HashSet<>());
     doReturn("/tmp")
         .when(shellScriptHelperService)

@@ -20,7 +20,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -33,30 +32,17 @@ import io.harness.beans.response.GitFileBatchResponse;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.services.ConnectorService;
-import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
-import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitConnectorDTO;
-import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
-import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoAuthenticationDTO;
-import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
-import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
-import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
-import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketAuthenticationDTO;
-import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
-import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessDTO;
-import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ScmBadRequestException;
 import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
-import io.harness.git.GitClientHelper;
 import io.harness.gitsync.GitSyncTestBase;
-import io.harness.gitsync.beans.GitRepositoryDTO;
 import io.harness.gitsync.caching.service.GitFileCacheService;
 import io.harness.gitsync.common.dtos.GitBranchDetailsDTO;
 import io.harness.gitsync.common.dtos.GitBranchesResponseDTO;
@@ -77,7 +63,9 @@ import io.harness.gitsync.common.dtos.UserDetailsRequestDTO;
 import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
 import io.harness.gitsync.common.dtos.gitAccess.GithubAccessTokenDTO;
 import io.harness.gitsync.common.helper.GitClientEnabledHelper;
+import io.harness.gitsync.common.helper.GitDefaultBranchCacheHelper;
 import io.harness.gitsync.common.helper.GitFilePathHelper;
+import io.harness.gitsync.common.helper.GitRepoUrlHelper;
 import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
 import io.harness.gitsync.common.service.ScmOrchestratorService;
 import io.harness.gitsync.core.runnable.GitBackgroundCacheRefreshHelper;
@@ -116,7 +104,6 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   @Mock GitClientEnabledHelper gitClientEnabledHelper;
   @Mock ConnectorService connectorService;
   ScmFacilitatorServiceImpl scmFacilitatorService;
-  FileContent fileContent = FileContent.newBuilder().build();
   String accountIdentifier = "accountIdentifier";
   String projectIdentifier = "projectIdentifier";
   String orgIdentifier = "orgIdentifier";
@@ -142,14 +129,18 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   @Mock GitFilePathHelper gitFilePathHelperMock;
   @Mock GitBackgroundCacheRefreshHelper gitBackgroundCacheRefreshHelper;
 
+  @Mock GitDefaultBranchCacheHelper gitDefaultBranchCacheHelper;
+  @Mock GitRepoUrlHelper gitRepoUrlHelper;
+
   String fileUrl = "https://github.com/harness/repoName/blob/branch/filePath";
 
   @Before
   public void setup() throws Exception {
     MockitoAnnotations.initMocks(this);
-    scmFacilitatorService = new ScmFacilitatorServiceImpl(gitSyncConnectorHelper, connectorService,
-        scmOrchestratorService, ngFeatureFlagHelperService, gitClientEnabledHelper, gitFileCacheService,
-        gitFilePathHelper, delegateServiceGrpcClient, gitBackgroundCacheRefreshHelper);
+    scmFacilitatorService =
+        new ScmFacilitatorServiceImpl(gitSyncConnectorHelper, connectorService, scmOrchestratorService,
+            ngFeatureFlagHelperService, gitClientEnabledHelper, gitFileCacheService, gitFilePathHelper,
+            delegateServiceGrpcClient, gitBackgroundCacheRefreshHelper, gitDefaultBranchCacheHelper, gitRepoUrlHelper);
     pageRequest = PageRequest.builder().build();
     GithubConnectorDTO githubConnector = GithubConnectorDTO.builder()
                                              .connectionType(GitConnectionType.ACCOUNT)
@@ -436,152 +427,6 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
             -> scmFacilitatorService.getFileByCommitId(
                 ScmGetFileByCommitIdRequestDTO.builder().scope(getDefaultScope()).commitId(commitId).build()))
         .isInstanceOf(WingsException.class);
-  }
-
-  @Test
-  @Owner(developers = MOHIT_GARG)
-  @Category(UnitTests.class)
-  public void testGetRepoUrlForGithub() {
-    mockStatic(GitClientHelper.class);
-    GithubConnectorDTO githubConnector = GithubConnectorDTO.builder()
-                                             .connectionType(GitConnectionType.ACCOUNT)
-                                             .apiAccess(GithubApiAccessDTO.builder().build())
-                                             .url(repoURL)
-                                             .build();
-    connectorInfo = ConnectorInfoDTO.builder().connectorConfig(githubConnector).build();
-    when(gitSyncConnectorHelper.getScmConnectorForGivenRepo(any(), any(), any(), any(), any()))
-        .thenReturn((ScmConnector) connectorInfo.getConnectorConfig());
-
-    when(GitClientHelper.getCompleteHTTPUrlForGithub(any())).thenReturn(repoURL);
-    String responseUrl = scmFacilitatorService.getRepoUrl(scope, connectorRef, repoName);
-
-    assertThat(responseUrl.equals(repoURL)).isTrue();
-  }
-
-  @Test
-  @Owner(developers = MOHIT_GARG)
-  @Category(UnitTests.class)
-  public void testGetRepoUrlForBitbucketSAAS() {
-    mockStatic(GitClientHelper.class);
-    BitbucketConnectorDTO connectorDTO = BitbucketConnectorDTO.builder()
-                                             .connectionType(GitConnectionType.ACCOUNT)
-                                             .apiAccess(BitbucketApiAccessDTO.builder().build())
-                                             .url(repoURL)
-                                             .build();
-    connectorInfo = ConnectorInfoDTO.builder().connectorConfig(connectorDTO).build();
-    when(gitSyncConnectorHelper.getScmConnectorForGivenRepo(any(), any(), any(), any(), any()))
-        .thenReturn((ScmConnector) connectorInfo.getConnectorConfig());
-
-    when(GitClientHelper.getCompleteHTTPUrlForBitbucketSaas(any())).thenReturn(repoURL);
-    when(GitClientHelper.isBitBucketSAAS(any())).thenReturn(true);
-    String responseUrl = scmFacilitatorService.getRepoUrl(scope, connectorRef, repoName);
-
-    assertThat(responseUrl.equals(repoURL)).isTrue();
-  }
-
-  @Test
-  @Owner(developers = MOHIT_GARG)
-  @Category(UnitTests.class)
-  public void testGetRepoUrlForBitbucketOnPremHTTP() {
-    mockStatic(GitClientHelper.class);
-    BitbucketConnectorDTO connectorDTO =
-        BitbucketConnectorDTO.builder()
-            .connectionType(GitConnectionType.ACCOUNT)
-            .apiAccess(BitbucketApiAccessDTO.builder().build())
-            .authentication(BitbucketAuthenticationDTO.builder().authType(GitAuthType.HTTP).build())
-            .url(repoURL)
-            .build();
-    connectorInfo = ConnectorInfoDTO.builder().connectorConfig(connectorDTO).build();
-    ScmConnector scmConnector = (ScmConnector) connectorInfo.getConnectorConfig();
-    when(gitSyncConnectorHelper.getScmConnectorForGivenRepo(any(), any(), any(), any(), any()))
-        .thenReturn(scmConnector);
-    when(GitClientHelper.isBitBucketSAAS(any())).thenReturn(false);
-    String responseUrl = scmFacilitatorService.getRepoUrl(scope, connectorRef, repoName);
-
-    assertThat(responseUrl.equals(scmConnector.getGitConnectionUrl(GitRepositoryDTO.builder().name(repoName).build())))
-        .isTrue();
-  }
-
-  @Test
-  @Owner(developers = MOHIT_GARG)
-  @Category(UnitTests.class)
-  public void testGetRepoUrlForBitbucketOnPremSSH() {
-    mockStatic(GitClientHelper.class);
-    BitbucketConnectorDTO connectorDTO =
-        BitbucketConnectorDTO.builder()
-            .connectionType(GitConnectionType.ACCOUNT)
-            .apiAccess(BitbucketApiAccessDTO.builder().build())
-            .authentication(BitbucketAuthenticationDTO.builder().authType(GitAuthType.SSH).build())
-            .url(repoURL)
-            .build();
-    connectorInfo = ConnectorInfoDTO.builder().connectorConfig(connectorDTO).build();
-    ScmConnector scmConnector = (ScmConnector) connectorInfo.getConnectorConfig();
-    when(gitSyncConnectorHelper.getScmConnectorForGivenRepo(any(), any(), any(), any(), any()))
-        .thenReturn(scmConnector);
-
-    when(GitClientHelper.getCompleteHTTPUrlFromSSHUrlForBitbucketServer(any())).thenReturn(repoURL);
-    when(GitClientHelper.isBitBucketSAAS(any())).thenReturn(false);
-    String responseUrl = scmFacilitatorService.getRepoUrl(scope, connectorRef, repoName);
-
-    assertThat(responseUrl.equals(repoURL)).isTrue();
-  }
-
-  @Test
-  @Owner(developers = MOHIT_GARG)
-  @Category(UnitTests.class)
-  public void testGetRepoUrlForAzure() {
-    mockStatic(GitClientHelper.class);
-    repoURL = "git@ssh.dev.azure.com:v3/repoOrg/repoProject";
-    AzureRepoConnectorDTO connectorDTO =
-        AzureRepoConnectorDTO.builder()
-            .connectionType(AzureRepoConnectionTypeDTO.PROJECT)
-            .apiAccess(AzureRepoApiAccessDTO.builder().build())
-            .authentication(AzureRepoAuthenticationDTO.builder().authType(GitAuthType.SSH).build())
-            .url(repoURL)
-            .build();
-    connectorInfo = ConnectorInfoDTO.builder().connectorConfig(connectorDTO).build();
-    ScmConnector scmConnector = (ScmConnector) connectorInfo.getConnectorConfig();
-    when(gitSyncConnectorHelper.getScmConnectorForGivenRepo(any(), any(), any(), any(), any()))
-        .thenReturn(scmConnector);
-
-    when(GitClientHelper.getCompleteHTTPRepoUrlForAzureRepoSaas(any())).thenReturn(repoURL);
-    String responseUrl = scmFacilitatorService.getRepoUrl(scope, connectorRef, repoName);
-
-    assertThat(responseUrl.equals(repoURL)).isTrue();
-  }
-
-  @Test
-  @Owner(developers = ADITHYA)
-  @Category(UnitTests.class)
-  public void testGetRepoUrlForGitlab() {
-    mockStatic(GitClientHelper.class);
-    GitlabConnectorDTO gitlabConnectorDTO = GitlabConnectorDTO.builder()
-                                                .connectionType(GitConnectionType.ACCOUNT)
-                                                .apiAccess(GitlabApiAccessDTO.builder().build())
-                                                .url(repoURL)
-                                                .build();
-    connectorInfo = ConnectorInfoDTO.builder().connectorConfig(gitlabConnectorDTO).build();
-    when(gitSyncConnectorHelper.getScmConnectorForGivenRepo(any(), any(), any(), any(), any()))
-        .thenReturn((ScmConnector) connectorInfo.getConnectorConfig());
-
-    when(GitClientHelper.getCompleteHTTPUrlForGitLab(any())).thenReturn(repoURL);
-    String responseUrl = scmFacilitatorService.getRepoUrl(scope, connectorRef, repoName);
-
-    assertThat(responseUrl.equals(repoURL)).isTrue();
-  }
-
-  @Test
-  @Owner(developers = MOHIT_GARG)
-  @Category(UnitTests.class)
-  public void testGetRepoUrlWhenInvalidConnectorType() {
-    AwsCodeCommitConnectorDTO connectorDTO = AwsCodeCommitConnectorDTO.builder().build();
-    connectorInfo = ConnectorInfoDTO.builder().connectorConfig(connectorDTO).build();
-    ScmConnector scmConnector = (ScmConnector) connectorInfo.getConnectorConfig();
-    when(gitSyncConnectorHelper.getScmConnectorForGivenRepo(any(), any(), any(), any(), any()))
-        .thenReturn(scmConnector);
-
-    assertThatThrownBy(() -> scmFacilitatorService.getRepoUrl(scope, connectorRef, repoName))
-        .isInstanceOf(InvalidRequestException.class);
   }
 
   @Test

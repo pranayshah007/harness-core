@@ -90,14 +90,10 @@ public class CustomDeploymentInfraDefMapper implements InfraDefMapper {
                                    .build()));
     }
 
-    String versionLabel = isNotEmpty(infrastructure.getDeploymentTypeTemplateVersion())
-        ? infrastructure.getDeploymentTypeTemplateVersion()
-        : String.valueOf(template.getVersion());
-
     return CustomDeploymentInfrastructure.builder()
         .customDeploymentRef(StepTemplateRef.builder()
                                  .templateRef(MigratorUtility.getIdentifierWithScope(ngEntityDetail))
-                                 .versionLabel("v" + versionLabel)
+                                 .versionLabel("__STABLE__")
                                  .build())
         .variables(variables)
         .build();

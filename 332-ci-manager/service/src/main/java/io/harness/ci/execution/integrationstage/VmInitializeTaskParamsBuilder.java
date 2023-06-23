@@ -595,6 +595,18 @@ public class VmInitializeTaskParamsBuilder {
     if (os != OSType.Linux || arch != ArchType.Amd64) {
       return false;
     }
+
+    LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountID);
+    if (licensesWithSummaryDTO == null) {
+      throw new CIStageExecutionException("Please enable CI free plan or reach out to support.");
+    }
+
+    if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE) {
+      if (featureFlagService.isEnabled(FeatureName.CI_ENABLE_BARE_METAL_FREE_ACCOUNT, accountID)) {
+        return true;
+      }
+    }
+
     // If the bare metal feature flag is enabled
     if (featureFlagService.isEnabled(FeatureName.CI_ENABLE_BARE_METAL, accountID)) {
       return true;

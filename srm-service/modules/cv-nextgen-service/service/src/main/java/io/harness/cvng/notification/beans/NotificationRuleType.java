@@ -12,7 +12,8 @@ import lombok.Getter;
 
 public enum NotificationRuleType {
   @JsonProperty("MonitoredService") MONITORED_SERVICE("monitoredservice"),
-  @JsonProperty("ServiceLevelObjective") SLO("slo");
+  @JsonProperty("ServiceLevelObjective") SLO("slo"),
+  @JsonProperty("FireHydrant") FIRE_HYDRANT("firehydrant");
 
   @Getter private final String templateSuffixIdentifier;
 

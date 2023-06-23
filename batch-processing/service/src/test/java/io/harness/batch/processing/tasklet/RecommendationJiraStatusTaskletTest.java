@@ -278,7 +278,7 @@ public class RecommendationJiraStatusTaskletTest extends BaseTaskletTest {
         new CeRecommendations(RECOMMENDATION_ID, "name", "namespace", 0.0, 0.0, "clustername", resourceType.name(),
             ACCOUNT_ID, false, OffsetDateTime.of(LocalDateTime.of(2020, 1, 1, 0, 0, 0, 0), ZoneOffset.UTC),
             OffsetDateTime.of(LocalDateTime.of(2020, 1, 1, 0, 0, 0, 0), ZoneOffset.UTC), CONNECTOR_REF, JIRA_KEY_ISSUE,
-            "todo", "OPEN"));
+            "todo", "OPEN", null, null));
   }
 
   private JiraIssueNG getJiraIssueNG() {

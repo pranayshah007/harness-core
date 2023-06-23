@@ -16,11 +16,13 @@ import io.harness.AccessControlClientConfiguration;
 import io.harness.ScmConnectionConfig;
 import io.harness.beans.entities.IACMServiceConfig;
 import io.harness.cache.CacheConfig;
+import io.harness.cf.CfClientConfig;
 import io.harness.ci.beans.entities.LogServiceConfig;
 import io.harness.ci.beans.entities.TIServiceConfig;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
+import io.harness.ff.FeatureFlagConfig;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.grpc.server.GrpcServerConfig;
 import io.harness.lock.DistributedLockImplementation;
@@ -105,6 +107,9 @@ public class CIManagerConfiguration extends Configuration implements AssetsBundl
   @JsonProperty("redisLockConfig") private RedisConfig redisLockConfig;
   @JsonProperty("distributedLockImplementation") private DistributedLockImplementation distributedLockImplementation;
   @JsonProperty("pmsSdkExecutionPoolConfig") private ThreadPoolConfig pmsSdkExecutionPoolConfig;
+  @JsonProperty("cfClientConfig") @ConfigSecret private CfClientConfig cfClientConfig;
+  @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
+
   private String ngManagerServiceSecret;
   private LogServiceConfig logServiceConfig;
   private TIServiceConfig tiServiceConfig;

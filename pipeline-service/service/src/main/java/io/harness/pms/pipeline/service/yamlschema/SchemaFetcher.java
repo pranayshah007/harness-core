@@ -105,6 +105,7 @@ public class SchemaFetcher {
     log.info("[PMS] Invalidating yaml schema cache");
     schemaCache.clear();
     schemaDetailsCache.clear();
+    staticSchemaCache.clear();
     log.info("[PMS] Yaml schema cache was successfully invalidated");
   }
 

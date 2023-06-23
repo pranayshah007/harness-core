@@ -17,7 +17,7 @@ import lombok.Value;
 @Data
 @Builder
 public class MSHealthReport {
-  ServiceHealthDetails serviceHealthDetails;
+  int currentHealthScore;
   ChangeSummaryDTO changeSummary;
   List<AssociatedSLOsDetails> associatedSLOsDetails;
   String internalLinkToEntity;
@@ -27,16 +27,10 @@ public class MSHealthReport {
   public static class AssociatedSLOsDetails {
     String identifier;
     String name;
+    Double sloTarget;
     String scopedMonitoredServiceIdentifier;
-    Double sloPerformance;
+    Double pastSLOPerformance;
+    Double currentSLOPerformance;
     Double errorBudgetBurnRate;
-  }
-
-  @Value
-  @Builder
-  public static class ServiceHealthDetails {
-    long currentHealthScore;
-    long pastHealthScore;
-    Double percentageChange;
   }
 }

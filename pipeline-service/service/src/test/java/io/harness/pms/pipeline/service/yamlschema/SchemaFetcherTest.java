@@ -55,6 +55,8 @@ public class SchemaFetcherTest {
   @Mock Cache<SchemaCacheKey, PartialSchemaDTOWrapperValue> schemaCache;
   @Mock SchemaGetterFactory schemaGetterFactory;
   @Mock LocalSchemaGetter localSchemaGetter;
+
+  @Mock Cache<SchemaCacheKey, String> staticSchemaCache;
   @InjectMocks SchemaFetcher schemaFetcher;
 
   @Before
