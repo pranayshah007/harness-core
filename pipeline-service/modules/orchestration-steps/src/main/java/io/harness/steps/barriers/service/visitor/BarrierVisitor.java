@@ -43,7 +43,6 @@ public class BarrierVisitor extends SimpleVisitor<DummyVisitableElement> {
   private static final String BARRIERS_FIELD = "barriers";
   private static final String SPEC_FIELD = "spec";
   private static final String BARRIER_REF_FIELD = "barrierRef";
-  private static final String INPUTS = "inputs";
 
   private final Map<String, BarrierSetupInfo> barrierIdentifierMap;
   @Getter private final Map<String, List<BarrierPositionInfo.BarrierPosition>> barrierPositionInfoMap;
@@ -66,7 +65,7 @@ public class BarrierVisitor extends SimpleVisitor<DummyVisitableElement> {
   public VisitElementResult visitElement(Object currentElement) {
     YamlNode element = (YamlNode) currentElement;
 
-    // if (element.getFieldName().equals(INPUTS)) {
+    // Skip barrier initialization for pipeline stage
     if (StepSpecTypeConstants.PIPELINE_STAGE.equals(element.getType())) {
       return VisitElementResult.SKIP_SUBTREE;
     }
