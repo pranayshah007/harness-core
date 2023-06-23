@@ -14,6 +14,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.barriers.beans.BarrierPositionInfo;
 import io.harness.steps.barriers.beans.BarrierSetupInfo;
 import io.harness.steps.barriers.beans.StageDetail;
@@ -65,7 +66,8 @@ public class BarrierVisitor extends SimpleVisitor<DummyVisitableElement> {
   public VisitElementResult visitElement(Object currentElement) {
     YamlNode element = (YamlNode) currentElement;
 
-    if (element.getFieldName().equals(INPUTS)) {
+    // if (element.getFieldName().equals(INPUTS)) {
+    if (StepSpecTypeConstants.PIPELINE_STAGE.equals(element.getType())) {
       return VisitElementResult.SKIP_SUBTREE;
     }
 
