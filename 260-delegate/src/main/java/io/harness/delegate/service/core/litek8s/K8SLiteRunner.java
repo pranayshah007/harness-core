@@ -9,8 +9,8 @@ package io.harness.delegate.service.core.litek8s;
 
 import static io.harness.delegate.service.core.litek8s.ContainerFactory.RESERVED_LE_PORT;
 import static io.harness.delegate.service.core.util.K8SConstants.DELEGATE_FIELD_MANAGER;
-
 import static io.harness.delegate.service.core.util.LabelHelper.getTaskGroupSelector;
+
 import static java.util.stream.Collectors.flatMapping;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
@@ -99,7 +99,7 @@ public class K8SLiteRunner implements TaskRunner {
       // Step 3 - create service endpoint for LE communication
       final var namespace = config.getNamespace();
       K8SService.clusterIp(taskGroupId, namespace, K8SResourceHelper.getPodName(taskGroupId), RESERVED_LE_PORT)
-              .create(coreApi);
+          .create(coreApi);
 
       // Step 4 - create pod - we don't need to busy wait - maybe LE should send task response as first thing when
       // created?
@@ -163,12 +163,12 @@ public class K8SLiteRunner implements TaskRunner {
 
   private void deletePod(final String taskGroupId) throws ApiException {
     final var pods = coreApi.listNamespacedPod(
-            config.getNamespace(), null, null, null, null, getTaskGroupSelector(taskGroupId), null, null, null, null, null);
+        config.getNamespace(), null, null, null, null, getTaskGroupSelector(taskGroupId), null, null, null, null, null);
     log.info("Deleting {} pods for task group {}", pods.getItems().size(), taskGroupId);
     pods.getItems().forEach(pod -> {
       try {
         coreApi.deleteNamespacedPod(
-                pod.getMetadata().getName(), config.getNamespace(), null, null, 0, null, null, null);
+            pod.getMetadata().getName(), config.getNamespace(), null, null, 0, null, null, null);
       } catch (ApiException e) {
         log.error("Failed to delete pod {}. {}", pod.getMetadata().getName(), ApiExceptionLogger.format(e), e);
       }
@@ -177,12 +177,12 @@ public class K8SLiteRunner implements TaskRunner {
 
   private void deleteServiceEndpoint(final String taskGroupId) throws ApiException {
     final var services = coreApi.listNamespacedService(
-            config.getNamespace(), null, null, null, null, getTaskGroupSelector(taskGroupId), null, null, null, null, null);
+        config.getNamespace(), null, null, null, null, getTaskGroupSelector(taskGroupId), null, null, null, null, null);
     log.info("Deleting {} services for task group {}", services.getItems().size(), taskGroupId);
     services.getItems().forEach(service -> {
       try {
         coreApi.deleteNamespacedService(
-                service.getMetadata().getName(), config.getNamespace(), null, null, 0, null, null, null);
+            service.getMetadata().getName(), config.getNamespace(), null, null, 0, null, null, null);
       } catch (ApiException e) {
         log.error("Failed to delete service {}. {}", service.getMetadata().getName(), ApiExceptionLogger.format(e), e);
       }
@@ -202,7 +202,8 @@ public class K8SLiteRunner implements TaskRunner {
 
   @NonNull
   private Stream<V1Secret> createTaskSecrets(final String taskGroupId, final K8SStep task) {
-    return task.getInputSecretsList().stream().map(secret -> secretsBuilder.createSecret(taskGroupId, task.getId(), secret));
+    return task.getInputSecretsList().stream().map(
+        secret -> secretsBuilder.createSecret(taskGroupId, task.getId(), secret));
   }
 
   private List<V1Container> createContainers(final List<K8SStep> taskDescriptors,
