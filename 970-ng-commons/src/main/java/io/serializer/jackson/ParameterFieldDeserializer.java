@@ -13,6 +13,7 @@ import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.validation.InputSetValidator;
+import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
@@ -119,12 +120,17 @@ public class ParameterFieldDeserializer extends StdDeserializer<ParameterField<?
     if (EngineExpressionEvaluator.hasExpressions(text)) {
       return ParameterField.createExpressionField(true, text, null, isTypeString);
     }
-
-    Object refd = (valueTypeDeserializer == null)
-        ? valueDeserializer.deserialize(p, ctxt)
-        : valueDeserializer.deserializeWithType(p, ctxt, valueTypeDeserializer);
-
-    return ParameterField.createValueField(refd);
+    try {
+      Object refd = (valueTypeDeserializer == null)
+          ? valueDeserializer.deserialize(p, ctxt)
+          : valueDeserializer.deserializeWithType(p, ctxt, valueTypeDeserializer);
+      return ParameterField.createValueField(refd);
+    } catch (Exception ex) {
+      if (referenceType.getRawClass() == List.class) {
+        return ParameterField.createValueField(JsonUtils.read(text, ArrayList.class));
+      }
+      throw ex;
+    }
   }
 
   @Override
