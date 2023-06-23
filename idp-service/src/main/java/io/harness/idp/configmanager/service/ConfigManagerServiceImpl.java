@@ -12,9 +12,10 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.connector.ConnectorInfoDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.common.Constants;
-import io.harness.idp.configmanager.ConfigType;
 import io.harness.idp.configmanager.beans.entity.AppConfigEntity;
 import io.harness.idp.configmanager.beans.entity.MergedAppConfigEntity;
 import io.harness.idp.configmanager.mappers.AppConfigMapper;
@@ -22,7 +23,9 @@ import io.harness.idp.configmanager.mappers.MergedAppConfigMapper;
 import io.harness.idp.configmanager.repositories.AppConfigRepository;
 import io.harness.idp.configmanager.repositories.MergedAppConfigRepository;
 import io.harness.idp.configmanager.utils.ConfigManagerUtils;
+import io.harness.idp.configmanager.utils.ConfigType;
 import io.harness.idp.envvariable.service.BackstageEnvVariableService;
+import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
 import io.harness.idp.k8s.client.K8sClient;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.jackson.JsonNodeUtils;
@@ -73,6 +76,11 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
 
   private static final long baseTimeStamp = System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000;
   private static final String HARNESS_CI_CD_PLUGIN_IDENTIFIER = "harness-ci-cd";
+
+  private static final String INVALID_SCHEMA_FOR_INTEGRATIONS =
+      "Invalid json schema for integrations config for account - %s";
+
+  private static final String TARGET_TO_REPLACE_IN_GIT_INTEGRATION_CONFIG = "HOST_VALUE";
 
   @Override
   public Map<String, Boolean> getAllPluginIdsMap(String accountIdentifier) {
@@ -304,6 +312,41 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     if (!ConfigManagerUtils.isValidSchema(config, pluginSchema)) {
       throw new InvalidRequestException(String.format(INVALID_PLUGIN_CONFIG_PROVIDED, configId));
     }
+  }
+
+  @Override
+  public void createOrUpdateAppConfigForGitIntegrations(
+      String accountIdentifier, ConnectorInfoDTO connectorInfoDTO, String integrationConfigs, String connectorType) {
+    try {
+      saveAndMergeAppConfigForGitIntegrations(accountIdentifier, connectorInfoDTO, integrationConfigs, connectorType);
+    } catch (Exception e) {
+      log.error("Error in saving and merging app config for git integration in account - {} for connector type - {} ",
+          accountIdentifier, connectorInfoDTO.getConnectorType().toString(), e);
+    }
+  }
+
+  public void saveAndMergeAppConfigForGitIntegrations(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO,
+      String integrationConfigs, String connectorTypeAsString) throws Exception {
+    ConnectorType connectorType = connectorInfoDTO.getConnectorType();
+    String host = GitIntegrationUtils.getHostForConnector(connectorInfoDTO);
+    log.info("Connector chosen in git integration is  - {} ", connectorTypeAsString);
+    integrationConfigs = integrationConfigs.replace(TARGET_TO_REPLACE_IN_GIT_INTEGRATION_CONFIG, host);
+
+    String schemaForIntegrations =
+        ConfigManagerUtils.getJsonSchemaBasedOnConnectorTypeForIntegrations(connectorTypeAsString);
+    if (!ConfigManagerUtils.isValidSchema(integrationConfigs, schemaForIntegrations)) {
+      log.error(String.format(INVALID_SCHEMA_FOR_INTEGRATIONS, accountIdentifier));
+    }
+
+    AppConfig appConfig = new AppConfig();
+    appConfig.setConfigId(connectorType.toString());
+    appConfig.setConfigs(integrationConfigs);
+    appConfig.setEnabled(true);
+
+    saveOrUpdateConfigForAccount(appConfig, accountIdentifier, ConfigType.INTEGRATION);
+    mergeAndSaveAppConfig(accountIdentifier);
+
+    log.info("Merging for git integration completed for connector - {}", connectorTypeAsString);
   }
 
   private List<AppConfigEntity> getAllEnabledPlugins(String accountIdentifier) {

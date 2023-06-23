@@ -14,7 +14,6 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.GovernanceService;
 import io.harness.engine.utils.OpaPolicyEvaluationHelper;
 import io.harness.exception.InvalidRequestException;
-import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.governance.GovernanceMetadata;
@@ -58,19 +57,19 @@ public class PipelineGovernanceServiceImpl implements PipelineGovernanceService 
   @Inject OpaPolicyEvaluationHelper opaPolicyEvaluationHelper;
 
   @Override
-  public GovernanceMetadata validateGovernanceRules(
-      String accountId, String orgIdentifier, String projectIdentifier, String yamlWithResolvedTemplates) {
-    String expandedPipelineJSON = fetchExpandedPipelineJSONFromYaml(accountId, orgIdentifier, projectIdentifier,
-        yamlWithResolvedTemplates, OpaConstants.OPA_EVALUATION_ACTION_SAVE);
+  public GovernanceMetadata validateGovernanceRules(String accountId, String orgIdentifier, String projectIdentifier,
+      String branch, PipelineEntity pipelineEntity, String yamlWithResolvedTemplates) {
+    String expandedPipelineJSON = fetchExpandedPipelineJSONFromYaml(
+        pipelineEntity, yamlWithResolvedTemplates, branch, OpaConstants.OPA_EVALUATION_ACTION_SAVE);
     return governanceService.evaluateGovernancePolicies(expandedPipelineJSON, accountId, orgIdentifier,
         projectIdentifier, OpaConstants.OPA_EVALUATION_ACTION_SAVE, "", PipelineVersion.V0);
   }
 
   @Override
-  public GovernanceMetadata validateGovernanceRulesAndThrowExceptionIfDenied(
-      String accountId, String orgIdentifier, String projectIdentifier, String yamlWithResolvedTemplates) {
-    GovernanceMetadata governanceMetadata =
-        validateGovernanceRules(accountId, orgIdentifier, projectIdentifier, yamlWithResolvedTemplates);
+  public GovernanceMetadata validateGovernanceRulesAndThrowExceptionIfDenied(String accountId, String orgIdentifier,
+      String projectIdentifier, String branch, PipelineEntity pipelineEntity, String yamlWithResolvedTemplates) {
+    GovernanceMetadata governanceMetadata = validateGovernanceRules(
+        accountId, orgIdentifier, projectIdentifier, branch, pipelineEntity, yamlWithResolvedTemplates);
     if (governanceMetadata.getDeny()) {
       List<String> denyingPolicySetIds = governanceMetadata.getDetailsList()
                                              .stream()
@@ -130,10 +129,7 @@ public class PipelineGovernanceServiceImpl implements PipelineGovernanceService 
 
     if (null != pipelineEntity) {
       addGitDetailsToExpandedYaml(expansionResponseBatches, pipelineEntity, branch);
-    } else {
-      addGitDetailsToExpandedYaml(expansionResponseBatches);
     }
-
     String mergeExpansions = ExpansionsMerger.mergeExpansions(pipelineYaml, expansionResponseBatches);
     log.info("[PMS_GOVERNANCE] Pipeline Json Expansion took {}ms for projectId {}, orgId {}, accountId {}",
         System.currentTimeMillis() - start, projectIdentifier, orgIdentifier, accountIdentifier);
@@ -153,14 +149,6 @@ public class PipelineGovernanceServiceImpl implements PipelineGovernanceService 
       expansionRequestMetadataBuilder.setGitSyncBranchContext(gitSyncBranchContextBytes);
     }
     return expansionRequestMetadataBuilder.build();
-  }
-
-  void addGitDetailsToExpandedYaml(Set<ExpansionResponseBatch> expansionResponseBatches) {
-    ScmGitMetaData scmGitMetaData = GitAwareContextHelper.getScmGitMetaData();
-    if (checkIfRemotePipeline(scmGitMetaData)) {
-      // Adding GitConfig to expanded Yaml
-      expansionResponseBatches.add(getGitDetailsAsExecutionResponse(scmGitMetaData));
-    }
   }
 
   void addGitDetailsToExpandedYaml(

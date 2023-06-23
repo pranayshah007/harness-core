@@ -1,0 +1,967 @@
+[ {
+  "hostname" : "/",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 431.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 431.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 431.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/-/healthy",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 59631.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/-/healthy",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 59637.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/-/healthy",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 59643.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/alerts",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 28.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/alerts",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 28.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/alerts",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 28.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/api/v1/*path",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 11.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/api/v1/*path",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 11.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/api/v1/*path",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 11.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/api/v1/alertmanagers",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 31.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/api/v1/alertmanagers",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 31.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/api/v1/alertmanagers",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 31.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/api/v1/alerts",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 10695.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/api/v1/alerts",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 10696.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/api/v1/alerts",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 10697.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/api/v1/label/:name/values",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 3000.5,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/api/v1/label/:name/values",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 3000.5,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/api/v1/label/:name/values",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 3000.5,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/api/v1/labels",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 2224.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/api/v1/labels",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 2224.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/api/v1/labels",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 2224.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/api/v1/metadata",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 2131.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/api/v1/metadata",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 2131.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/api/v1/metadata",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 2131.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/api/v1/query",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 10248.25,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/api/v1/query",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 10249.75,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/api/v1/query",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 10251.5,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/api/v1/query_exemplars",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 323.5,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/api/v1/query_exemplars",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 323.5,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/api/v1/query_exemplars",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 323.5,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/api/v1/query_range",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 179655.5,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/api/v1/query_range",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 179672.25,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/api/v1/query_range",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 179695.5,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/api/v1/rules",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 101372.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/api/v1/rules",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 101378.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/api/v1/rules",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 101380.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/api/v1/series",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 2861.5,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/api/v1/series",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 2861.5,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/api/v1/series",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 2862.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/api/v1/status/buildinfo",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 12826.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/api/v1/status/buildinfo",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 12834.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/api/v1/status/buildinfo",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 12834.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/api/v1/status/config",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 51.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/api/v1/status/config",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 51.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/api/v1/status/config",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 51.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/api/v1/status/flags",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 24.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/api/v1/status/flags",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 24.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/api/v1/status/flags",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 24.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/api/v1/status/runtimeinfo",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 828.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/api/v1/status/runtimeinfo",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 828.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/api/v1/status/runtimeinfo",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 828.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/api/v1/status/tsdb",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 38.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/api/v1/status/tsdb",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 38.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/api/v1/status/tsdb",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 38.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/api/v1/targets",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 116.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/api/v1/targets",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 116.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/api/v1/targets",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 116.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/api/v1/targets/metadata",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 6.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/api/v1/targets/metadata",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 6.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/api/v1/targets/metadata",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 6.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/classic/",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 2.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/classic/",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 2.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/classic/",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 2.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/classic/alerts",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 2.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/classic/alerts",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 2.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/classic/alerts",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 2.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/classic/config",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 1.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/classic/config",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 1.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/classic/config",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 1.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/classic/flags",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 1.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/classic/flags",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 1.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/classic/flags",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 1.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/classic/graph",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 75.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/classic/graph",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 75.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/classic/graph",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 75.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/classic/service-discovery",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 1.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/classic/service-discovery",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 1.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/classic/service-discovery",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 1.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/classic/static/*filepath",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 1203.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/classic/static/*filepath",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 1203.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/classic/static/*filepath",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 1203.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/classic/targets",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 2.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/classic/targets",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 2.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/classic/targets",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 2.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/config",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 9.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/config",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 9.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/config",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 9.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/consoles/*filepath",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 10.666666666666668,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/consoles/*filepath",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 10.666666666666668,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/consoles/*filepath",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 10.666666666666668,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/debug/*subpath",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 6.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/debug/*subpath",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 6.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/debug/*subpath",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 6.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/favicon.ico",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 455.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/favicon.ico",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 455.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/favicon.ico",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 455.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/federate",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 19.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/federate",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 19.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/federate",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 19.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/flags",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 4.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/flags",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 4.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/flags",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 4.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/graph",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 765.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/graph",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 765.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/graph",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 765.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/manifest.json",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 158.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/manifest.json",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 158.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/manifest.json",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 158.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/metrics",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 186397.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/metrics",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 186413.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/metrics",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 186430.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/new/*path",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 2.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/new/*path",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 2.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/new/*path",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 2.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/rules",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 392.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/rules",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 392.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/rules",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 392.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/service-discovery",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 22.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/service-discovery",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 22.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/service-discovery",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 22.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/static/*filepath",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 599.3333333333334,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/static/*filepath",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 599.3333333333334,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/static/*filepath",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 599.3333333333334,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/status",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 8.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/status",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 8.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/status",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 8.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/targets",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 24.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/targets",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 24.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/targets",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 24.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/tsdb-status",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 23.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/tsdb-status",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 23.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/tsdb-status",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 23.0,
+  "timestamp" : 1686824460000
+}, {
+  "hostname" : "/version",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 2.0,
+  "timestamp" : 1686824340000
+}, {
+  "hostname" : "/version",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 2.0,
+  "timestamp" : 1686824400000
+}, {
+  "hostname" : "/version",
+  "txnName" : "my_txn",
+  "metricIdentifier" : "createpayment",
+  "metricName" : "createpayment",
+  "metricValue" : 2.0,
+  "timestamp" : 1686824460000
+} ]

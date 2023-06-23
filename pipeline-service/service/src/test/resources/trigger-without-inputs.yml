@@ -1,0 +1,19 @@
+trigger:
+  name: aTrigger
+  identifier: aTrigger
+  enabled: true
+  description: ""
+  tags: {}
+  stagesToExecute: []
+  orgIdentifier: default
+  projectIdentifier: test
+  pipelineIdentifier: myPipeline
+  source:
+    type: Webhook
+    spec:
+      type: Custom
+      spec:
+        payloadConditions: []
+        headerConditions: []
+  inputYaml: |
+    pipeline: {}

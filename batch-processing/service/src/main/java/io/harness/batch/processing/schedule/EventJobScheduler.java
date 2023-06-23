@@ -7,6 +7,11 @@
 
 package io.harness.batch.processing.schedule;
 
+import static io.harness.ccm.budget.BudgetPeriod.DAILY;
+import static io.harness.ccm.budget.BudgetPeriod.MONTHLY;
+import static io.harness.ccm.budget.BudgetPeriod.QUARTERLY;
+import static io.harness.ccm.budget.BudgetPeriod.WEEKLY;
+import static io.harness.ccm.budget.BudgetPeriod.YEARLY;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static java.lang.String.format;
@@ -55,6 +60,7 @@ import io.harness.logging.AutoLogContext;
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
 import com.google.common.collect.ImmutableSet;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -329,20 +335,40 @@ public class EventJobScheduler {
   @Scheduled(cron = "${scheduler-jobs-config.budgetAlertsJobCron}")
   public void runBudgetAlertsJob() {
     try {
-      budgetAlertsService.sendBudgetAndBudgetGroupAlerts();
+      budgetAlertsService.sendBudgetAndBudgetGroupAlerts(Arrays.asList(WEEKLY, MONTHLY, QUARTERLY, YEARLY));
       log.info("Budget & Budget Groups alerts sent");
     } catch (Exception ex) {
       log.error("Exception while running budgetAlertsJob", ex);
     }
   }
 
+  @Scheduled(cron = "${scheduler-jobs-config.dailyBudgetAlertsJobCron}")
+  public void runDailyBudgetAlertsJob() {
+    try {
+      budgetAlertsService.sendBudgetAndBudgetGroupAlerts(Arrays.asList(DAILY));
+      log.info("Daily Budget & Budget Groups alerts sent");
+    } catch (Exception ex) {
+      log.error("Exception while running dailyBudgetAlertsJob", ex);
+    }
+  }
+
   @Scheduled(cron = "${scheduler-jobs-config.budgetCostUpdateJobCron}")
   public void runBudgetCostUpdateJob() {
     try {
-      budgetCostUpdateService.updateCosts();
+      budgetCostUpdateService.updateCosts(Arrays.asList(WEEKLY, MONTHLY, QUARTERLY, YEARLY));
       log.info("Costs updated for budgets & budget groups");
     } catch (Exception ex) {
       log.error("Exception while running runBudgetCostUpdateJob", ex);
+    }
+  }
+
+  @Scheduled(cron = "${scheduler-jobs-config.dailyBudgetCostUpdateJobCron}")
+  public void runDailyBudgetCostUpdateJob() {
+    try {
+      budgetCostUpdateService.updateCosts(Arrays.asList(DAILY));
+      log.info("Costs updated for daily budgets & budget groups");
+    } catch (Exception ex) {
+      log.error("Exception while running dailyBudgetCostUpdateJob", ex);
     }
   }
 

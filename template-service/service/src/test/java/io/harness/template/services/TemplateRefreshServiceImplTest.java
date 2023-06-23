@@ -9,6 +9,7 @@ package io.harness.template.services;
 
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 import static io.harness.template.resources.NGTemplateResource.TEMPLATE;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -527,6 +528,26 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
 
     assertThat(refreshResponse.isShouldRefreshYaml()).isFalse();
     assertThat(refreshResponse.getRefreshedYaml()).isNull();
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testRecursivelyRefreshTemplatesForYaml_NullErrorNodeSummary() {
+    String pipelineYaml = "pipeline yaml";
+    String refreshedPipelineYaml = "Refreshed yaml";
+
+    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false))
+        .thenReturn(refreshedPipelineYaml);
+    when(templateInputsValidator.validateNestedTemplateInputsForGivenYaml(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false))
+        .thenReturn(ValidateTemplateInputsResponseDTO.builder().validYaml(false).errorNodeSummary(null).build());
+
+    YamlFullRefreshResponseDTO refreshResponse =
+        templateRefreshService.recursivelyRefreshTemplatesForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false);
+
+    assertThat(refreshResponse.isShouldRefreshYaml()).isTrue();
+    assertThat(refreshResponse.getRefreshedYaml()).isEqualTo(refreshedPipelineYaml);
   }
 
   @Test

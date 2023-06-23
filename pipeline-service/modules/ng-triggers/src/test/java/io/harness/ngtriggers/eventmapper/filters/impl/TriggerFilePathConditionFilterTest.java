@@ -60,6 +60,7 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernamePasswordDTO;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.scm.ScmPathFilterEvaluationTaskParams;
 import io.harness.delegate.task.scm.ScmPathFilterEvaluationTaskResponse;
+import io.harness.delegate.utils.TaskSetupAbstractionHelper;
 import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.ng.core.NGAccess;
@@ -120,6 +121,7 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
   @Mock private KryoSerializer referenceFalseKryoSerializer;
   @Mock private ConnectorUtils connectorUtils;
   @Mock private SecretDecryptor secretDecryptor;
+  @Mock private TaskSetupAbstractionHelper taskSetupAbstractionHelper;
   @Inject @InjectMocks private FilepathTriggerFilter filter;
   @Mock private SCMFilePathEvaluatorOnDelegate scmFilePathEvaluatorOnDelegate;
   @Mock private SCMFilePathEvaluatorOnManager scmFilePathEvaluatorOnManager;
@@ -193,6 +195,7 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
     on(scmFilePathEvaluatorOnDelegate).set("taskExecutionUtils", taskExecutionUtils);
     on(scmFilePathEvaluatorOnDelegate).set("kryoSerializer", kryoSerializer);
     on(scmFilePathEvaluatorOnDelegate).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
+    on(scmFilePathEvaluatorOnDelegate).set("taskSetupAbstractionHelper", taskSetupAbstractionHelper);
   }
 
   @After
@@ -272,6 +275,7 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
     doReturn(ScmPathFilterEvaluationTaskResponse.builder().matched(true).build())
         .when(kryoSerializer)
         .asInflatedObject(data);
+    doReturn(null).when(taskSetupAbstractionHelper).getOwner(any(), any(), any());
 
     ArgumentCaptor<DelegateTaskRequest> argumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
     assertThat(filter.initiateSCMTaskAndEvaluate(filterRequestData, triggerDetails, pathCondition)).isTrue();
@@ -355,6 +359,7 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
     doReturn(ScmPathFilterEvaluationTaskResponse.builder().matched(true).build())
         .when(referenceFalseKryoSerializer)
         .asInflatedObject(data);
+    doReturn(null).when(taskSetupAbstractionHelper).getOwner(any(), any(), any());
 
     ArgumentCaptor<DelegateTaskRequest> argumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
     assertThat(filter.initiateSCMTaskAndEvaluate(filterRequestData, triggerDetails, pathCondition)).isTrue();
@@ -519,6 +524,7 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
     doReturn(ScmPathFilterEvaluationTaskResponse.builder().matched(true).build())
         .when(kryoSerializer)
         .asInflatedObject(data);
+    doReturn(null).when(taskSetupAbstractionHelper).getOwner(any(), any(), any());
 
     ArgumentCaptor<DelegateTaskRequest> argumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
     assertThat(filter.initiateSCMTaskAndEvaluate(filterRequestData, triggerDetails, pathCondition)).isTrue();
@@ -610,6 +616,7 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
     doReturn(ScmPathFilterEvaluationTaskResponse.builder().matched(true).build())
         .when(referenceFalseKryoSerializer)
         .asInflatedObject(data);
+    doReturn(null).when(taskSetupAbstractionHelper).getOwner(any(), any(), any());
 
     ArgumentCaptor<DelegateTaskRequest> argumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
     assertThat(filter.initiateSCMTaskAndEvaluate(filterRequestData, triggerDetails, pathCondition)).isTrue();

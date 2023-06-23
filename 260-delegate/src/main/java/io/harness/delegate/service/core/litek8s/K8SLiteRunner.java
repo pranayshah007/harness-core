@@ -7,7 +7,7 @@
 
 package io.harness.delegate.service.core.litek8s;
 
-import static io.harness.delegate.service.core.litek8s.ContainerBuilder.RESERVED_LE_PORT;
+import static io.harness.delegate.service.core.litek8s.ContainerFactory.RESERVED_LE_PORT;
 import static io.harness.delegate.service.core.util.K8SConstants.DELEGATE_FIELD_MANAGER;
 
 import static java.util.stream.Collectors.flatMapping;
@@ -51,12 +51,11 @@ public class K8SLiteRunner implements TaskRunner {
   private static final String LOG_SERVICE_TOKEN_VARIABLE = "HARNESS_LOG_SERVICE_TOKEN";
   private static final String LOG_SERVICE_ENDPOINT_VARIABLE = "HARNESS_LOG_SERVICE_ENDPOINT";
   private static final String HARNESS_LOG_PREFIX_VARIABLE = "HARNESS_LOG_PREFIX";
-  private static final String LOGGING_SERVICE_URL =
-      "http://localhost:8079"; // FixMe: This needs to come from delegate or runner config
 
   private final CoreV1Api coreApi;
-  private final ContainerBuilder containerBuilder;
+  private final ContainerFactory containerFactory;
   private final SecretsBuilder secretsBuilder;
+  private final K8SRunnerConfig config;
   //  private final K8EventHandler k8EventHandler;
 
   @Override
@@ -86,7 +85,7 @@ public class K8SLiteRunner implements TaskRunner {
       final var loggingToken =
           k8sInfra.getStepsList().stream().findAny().get().getLoggingToken(); // FixMe: obviously no no
       final V1Secret loggingSecret =
-          createLoggingSecret(taskGroupId, LOGGING_SERVICE_URL, loggingToken, k8sInfra.getLogPrefix());
+          createLoggingSecret(taskGroupId, config.getLogServiceUrl(), loggingToken, k8sInfra.getLogPrefix());
 
       // Step 1c - TODO: Support certs (i.e. secret files that get mounted as secret volume).
       // Right now these are copied from delegate using special syntax and env vars (complicated)
@@ -99,12 +98,12 @@ public class K8SLiteRunner implements TaskRunner {
       // Step 3 - create pod - we don't need to busy wait - maybe LE should send task response as first thing when
       // created?
       final var portMap = new PortMap(CONTAINER_START_PORT);
-      final V1Pod pod = PodBuilder.createSpec(taskGroupId)
+      final V1Pod pod = PodBuilder.createSpec(containerFactory, config, taskGroupId)
                             .withImagePullSecrets(imageSecrets)
                             .withTasks(createContainers(k8sInfra.getStepsList(), taskSecrets, volumeMounts, portMap))
-                            .buildPod(containerBuilder, k8sInfra.getResource(), volumes, loggingSecret, portMap);
+                            .buildPod(k8sInfra.getResource(), volumes, loggingSecret, portMap);
 
-      final var namespace = K8SResourceHelper.getRunnerNamespace();
+      final var namespace = config.getNamespace();
       K8SService.clusterIp(taskGroupId, namespace, K8SResourceHelper.getPodName(taskGroupId), RESERVED_LE_PORT)
           .create(coreApi);
 
@@ -131,7 +130,7 @@ public class K8SLiteRunner implements TaskRunner {
   private V1Secret createLoggingSecret(final String taskGroupId, final String logServiceUri, final String loggingToken,
       final String loggingPrefix) throws ApiException {
     final var secretName = K8SResourceHelper.getSecretName(taskGroupId + "-logging");
-    final var namespace = K8SResourceHelper.getRunnerNamespace();
+    final var namespace = config.getNamespace();
     return K8SSecret.secret(secretName, namespace)
         .putStringDataItem(LOG_SERVICE_ENDPOINT_VARIABLE, logServiceUri)
         .putStringDataItem(LOG_SERVICE_TOKEN_VARIABLE, loggingToken)
@@ -165,14 +164,14 @@ public class K8SLiteRunner implements TaskRunner {
 
   private V1Container createContainer(final String taskId, final StepRuntime runtime, final List<V1Secret> secrets,
       final List<V1VolumeMount> volumeMounts, final int port) {
-    return containerBuilder.createContainer(taskId, runtime, port)
+    return containerFactory.createContainer(taskId, runtime, port)
         .addAllToVolumeMounts(volumeMounts)
-        .addAllToEnvFrom(createSecretRef(secrets))
+        .addAllToEnvFrom(createSecretRefs(secrets))
         .build();
   }
 
   @NonNull
-  private List<V1EnvFromSource> createSecretRef(final List<V1Secret> secrets) {
+  private static List<V1EnvFromSource> createSecretRefs(final List<V1Secret> secrets) {
     return secrets.stream().map(K8SEnvVar::fromSecret).collect(toList());
   }
 }

@@ -8,7 +8,6 @@ package io.harness.credit.resource;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.GTM;
-import static io.harness.licensing.accesscontrol.LicenseAccessControlPermissions.EDIT_LICENSE_PERMISSION;
 import static io.harness.licensing.accesscontrol.LicenseAccessControlPermissions.VIEW_LICENSE_PERMISSION;
 
 import io.harness.NGCommonEntityConstants;
@@ -34,15 +33,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
-import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -64,25 +60,6 @@ import lombok.AllArgsConstructor;
 @OwnedBy(GTM)
 public class CreditResource {
   private final CreditService creditService;
-
-  @POST
-  @Path("/create")
-  @ApiOperation(value = "Purchase credit for an account", nickname = "createCredit")
-  @Operation(operationId = "createCredit", summary = "Purchase the credits of an account",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns the Purchased credits of the account")
-      })
-  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = EDIT_LICENSE_PERMISSION)
-  @InternalApi
-  public ResponseDTO<CreditDTO>
-  createCredits(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-                    NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @NotNull @Valid CreditDTO creditDTO) {
-    CreditDTO created = creditService.purchaseCredit(accountIdentifier, creditDTO);
-    return ResponseDTO.newResponse(created);
-  }
 
   @GET
   @Path("{accountIdentifier}")

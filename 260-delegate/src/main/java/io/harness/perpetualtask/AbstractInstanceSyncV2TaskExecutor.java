@@ -31,12 +31,16 @@ import io.harness.perpetualtask.instancesync.InstanceSyncResponseV2;
 import io.harness.perpetualtask.instancesync.InstanceSyncStatus;
 import io.harness.perpetualtask.instancesync.InstanceSyncTaskDetails;
 import io.harness.perpetualtask.instancesync.InstanceSyncV2Request;
+import io.harness.retry.RetryHelper;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
+import io.github.resilience4j.retry.Retry;
+import io.vavr.CheckedRunnable;
+import io.vavr.control.Try;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
@@ -57,6 +61,8 @@ abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecut
   @Inject private KryoSerializer kryoSerializer;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
   @Inject private SecretDecryptionService secretDecryptionService;
+
+  private final Retry retry = buildRetryAndRegisterListeners();
 
   @Override
   public PerpetualTaskResponse runOnce(
@@ -202,12 +208,21 @@ abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecut
       InstanceSyncV2Request instanceSyncV2Request, DeploymentReleaseDetails details) throws Exception;
 
   private void publishInstanceSyncResult(PerpetualTaskId taskId, String accountId, InstanceSyncResponseV2 response) {
+    CheckedRunnable runnable = Retry.decorateCheckedRunnable(retry,
+        () -> execute(delegateAgentManagerClient.processInstanceSyncNGResultV2(taskId.getId(), accountId, response)));
     try {
-      execute(delegateAgentManagerClient.processInstanceSyncNGResultV2(taskId.getId(), accountId, response));
+      Try.run(runnable);
     } catch (Exception e) {
       String errorMsg = format(
           "Failed to publish Instance Sync v2 result PerpetualTaskId [%s], accountId [%s]", taskId.getId(), accountId);
       log.warn(errorMsg + ", InstanceSyncResponseV2: {}", response, e);
     }
+  }
+
+  private Retry buildRetryAndRegisterListeners() {
+    final Retry exponentialRetry =
+        RetryHelper.getExponentialRetry(this.getClass().getSimpleName(), new Class[] {Exception.class});
+    RetryHelper.registerEventListeners(exponentialRetry);
+    return exponentialRetry;
   }
 }

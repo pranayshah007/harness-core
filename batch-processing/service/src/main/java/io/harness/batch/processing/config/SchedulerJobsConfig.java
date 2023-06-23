@@ -22,4 +22,6 @@ public class SchedulerJobsConfig {
   private String awsAccountTagsCollectionJobCron;
   private String governanceRecommendationJobCronAws;
   private String governanceRecommendationJobCronAzure;
+  private String dailyBudgetAlertsJobCron;
+  private String dailyBudgetCostUpdateJobCron;
 }

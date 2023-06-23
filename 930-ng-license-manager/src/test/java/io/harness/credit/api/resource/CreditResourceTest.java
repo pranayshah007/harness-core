@@ -58,14 +58,4 @@ public class CreditResourceTest extends CategoryTest {
     Mockito.verify(creditService, times(1)).getCredits(ACCOUNT_IDENTIFIER);
     assertThat(creditsResponseDTO.getData()).isNotNull();
   }
-
-  @Test
-  @Owner(developers = OwnerRule.XIN)
-  @Category(UnitTests.class)
-  public void testPurchaseCredit() {
-    doReturn(defaultCreditDTO).when(creditService).purchaseCredit(ACCOUNT_IDENTIFIER, requestCreditDTO);
-    ResponseDTO<CreditDTO> creditDTOResponseDTO = creditResource.createCredits(ACCOUNT_IDENTIFIER, requestCreditDTO);
-    Mockito.verify(creditService, times(1)).purchaseCredit(ACCOUNT_IDENTIFIER, requestCreditDTO);
-    assertThat(creditDTOResponseDTO.equals(defaultCreditDTO));
-  }
 }

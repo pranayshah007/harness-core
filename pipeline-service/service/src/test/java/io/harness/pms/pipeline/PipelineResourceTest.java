@@ -15,6 +15,7 @@ import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SAMARTH;
 import static io.harness.rule.OwnerRule.SATYAM;
 import static io.harness.rule.OwnerRule.SHIVAM;
+import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static junit.framework.TestCase.assertEquals;
@@ -44,9 +45,11 @@ import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.execution.NodeExecution;
 import io.harness.git.model.ChangeType;
+import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitImportInfoDTO;
 import io.harness.gitaware.helper.PipelineMoveConfigRequestDTO;
 import io.harness.gitsync.GitMetadataUpdateRequestInfoDTO;
+import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -122,11 +125,14 @@ public class PipelineResourceTest extends CategoryTest {
   private final String PIPELINE_IDENTIFIER = "basichttpFail";
   private final String PIPELINE_NAME = "basichttpFail";
   private final String STAGE = "qaStage";
+  private final String CONNECTOR_REF = "connectorRef";
+  private final String REPO = "repo";
   private String yaml;
   private String simplifiedYaml;
   private String simplifiedYamlWithoutName;
 
   PipelineEntity entity;
+  PipelineEntity remoteEntity;
   PipelineEntity simplifiedEntity;
   PipelineEntity entityWithVersion;
   PipelineEntity simplifiedEntityWithVersion;
@@ -153,6 +159,18 @@ public class PipelineResourceTest extends CategoryTest {
                  .isDraft(false)
                  .allowStageExecutions(false)
                  .build();
+    remoteEntity = PipelineEntity.builder()
+                       .accountId(ACCOUNT_ID)
+                       .orgIdentifier(ORG_IDENTIFIER)
+                       .projectIdentifier(PROJ_IDENTIFIER)
+                       .identifier(PIPELINE_IDENTIFIER)
+                       .name(PIPELINE_IDENTIFIER)
+                       .yaml(yaml)
+                       .connectorRef(CONNECTOR_REF)
+                       .repo(REPO)
+                       .isDraft(false)
+                       .allowStageExecutions(false)
+                       .build();
 
     filename = "simplified-pipeline.yaml";
     simplifiedYaml =
@@ -751,6 +769,31 @@ public class PipelineResourceTest extends CategoryTest {
             ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, "true");
     assertThat(templateResolvedPipelineYaml.getData().getYamlPipeline()).isEqualTo(yaml);
     assertThat(templateResolvedPipelineYaml.getData().getResolvedTemplatesPipelineYaml()).isEqualTo(extraYaml);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetTemplateResolvedPipelineYamlWithGitSyncedPipeline() {
+    doReturn(Optional.of(remoteEntity))
+        .when(pmsPipelineService)
+        .getPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false, false, false, true);
+
+    String extraYaml = yaml + "extra";
+    TemplateMergeResponseDTO templateMergeResponseDTO =
+        TemplateMergeResponseDTO.builder().mergedPipelineYaml(extraYaml).build();
+    doReturn(templateMergeResponseDTO).when(pipelineTemplateHelper).resolveTemplateRefsInPipeline(remoteEntity, "true");
+    ResponseDTO<TemplatesResolvedPipelineResponseDTO> templateResolvedPipelineYaml =
+        pipelineResource.getTemplateResolvedPipelineYaml(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, "true");
+    assertThat(templateResolvedPipelineYaml.getData().getYamlPipeline()).isEqualTo(yaml);
+    assertThat(templateResolvedPipelineYaml.getData().getResolvedTemplatesPipelineYaml()).isEqualTo(extraYaml);
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    assertThat(gitEntityInfo.getParentEntityAccountIdentifier()).isEqualTo(ACCOUNT_ID);
+    assertThat(gitEntityInfo.getParentEntityOrgIdentifier()).isEqualTo(ORG_IDENTIFIER);
+    assertThat(gitEntityInfo.getParentEntityProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
+    assertThat(gitEntityInfo.getParentEntityConnectorRef()).isEqualTo(CONNECTOR_REF);
+    assertThat(gitEntityInfo.getParentEntityRepoName()).isEqualTo(REPO);
   }
 
   @Test

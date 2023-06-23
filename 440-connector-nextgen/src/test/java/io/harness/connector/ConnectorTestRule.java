@@ -17,6 +17,7 @@ import io.harness.AccessControlClientConfiguration;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.callback.DelegateCallbackToken;
+import io.harness.client.NgConnectorManagerClient;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.connector.helper.DecryptionHelper;
 import io.harness.connector.helper.DecryptionHelperViaManager;
@@ -27,6 +28,7 @@ import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.impl.noop.NoOpProducer;
 import io.harness.factory.ClosingFactory;
+import io.harness.favorites.services.FavoritesService;
 import io.harness.ff.FeatureFlagService;
 import io.harness.gitsync.clients.YamlGitConfigClient;
 import io.harness.gitsync.persistance.GitAwarePersistence;
@@ -151,6 +153,8 @@ public class ConnectorTestRule implements InjectorRuleMixin, MethodRule, MongoRu
         bind(AccountClient.class).annotatedWith(Names.named("PRIVILEGED")).toInstance(mock(AccountClient.class));
         bind(NGSettingsClient.class).toInstance(mock(NGSettingsClient.class));
         bind(EntitySetupUsageService.class).toInstance(mock(EntitySetupUsageService.class));
+        bind(FavoritesService.class).toInstance(mock(FavoritesService.class));
+        bind(NgConnectorManagerClient.class).toInstance(mock(NgConnectorManagerClient.class));
       }
     });
     modules.add(mongoTypeModule(annotations));

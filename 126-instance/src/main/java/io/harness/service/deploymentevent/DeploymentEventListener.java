@@ -163,7 +163,8 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
         abstractInstanceSyncHandler.getDeploymentInfo(infrastructureOutcome, serverInstanceInfoList);
     Level stageLevel = AmbianceUtils.getStageLevelFromAmbiance(ambiance).get();
     RollbackStatus rollbackStatus = RollbackStatus.NOT_STARTED;
-    if (ExecutionModeUtils.isRollbackMode(ambiance.getMetadata().getExecutionMode())) {
+    if (ExecutionModeUtils.isRollbackMode(ambiance.getMetadata().getExecutionMode())
+        || AmbianceUtils.isUnderRollbackSteps(ambiance)) {
       // TODO: Please check for which all step statuses, we shall consider that the rollback was completed successfully.
       rollbackStatus = status == Status.SUCCEEDED ? RollbackStatus.SUCCESS : RollbackStatus.FAILURE;
     }

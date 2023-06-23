@@ -16,7 +16,10 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 import io.harness.delegate.DelegateAgentCommonVariables;
 import io.harness.delegate.beans.DelegateTaskAbortEvent;
 import io.harness.delegate.core.beans.AcquireTasksResponse;
+import io.harness.delegate.core.beans.ExecutionStatus;
+import io.harness.delegate.core.beans.ExecutionStatusResponse;
 import io.harness.delegate.core.beans.InputData;
+import io.harness.delegate.core.beans.StatusCode;
 import io.harness.delegate.service.common.SimpleDelegateAgent;
 import io.harness.delegate.service.core.runner.TaskRunner;
 
@@ -31,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RequiredArgsConstructor(onConstructor_ = @Inject)
-public class CoreDelegateService extends SimpleDelegateAgent<AcquireTasksResponse> {
+public class CoreDelegateService extends SimpleDelegateAgent<AcquireTasksResponse, ExecutionStatusResponse> {
   private final TaskRunner taskRunner;
 
   @Override
@@ -52,7 +55,7 @@ public class CoreDelegateService extends SimpleDelegateAgent<AcquireTasksRespons
   }
 
   @Override
-  protected void executeTask(final AcquireTasksResponse acquireResponse) {
+  protected ExecutionStatusResponse executeTask(final AcquireTasksResponse acquireResponse) {
     final var groupId = acquireResponse.getExecutionInfraId();
     final var task = acquireResponse.getTask(0);
     // FixMe: Hack so we don't need to make changes to CI & NG manager for now. Normally it would just invoke a single
@@ -68,6 +71,9 @@ public class CoreDelegateService extends SimpleDelegateAgent<AcquireTasksRespons
       taskRunner.execute(groupId, task.getTaskData());
       taskRunner.cleanup(groupId);
     }
+    return ExecutionStatusResponse.newBuilder()
+        .setStatus(ExecutionStatus.newBuilder().setCode(StatusCode.CODE_SUCCESS).build())
+        .build();
   }
 
   private boolean hasTaskType(final InputData tasks, final TaskType taskType) {

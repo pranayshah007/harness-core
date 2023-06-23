@@ -65,6 +65,20 @@ public class FavoritesServiceImpl implements FavoritesService {
   }
 
   @Override
+  public boolean isFavorite(String accountIdentifier, String orgIdentifier, String projectIdentifier, String userId,
+      String resourceType, String resourceId) {
+    ResourceType resourceTypeResolved =
+        resourceType != null ? EnumUtils.getEnum(ResourceType.class, resourceType) : null;
+    if (resourceType == null) {
+      throw new InvalidRequestException(INVALID_RESOURCE_TYPE_ERROR_MESSAGE);
+    }
+    return favoriteRepository
+        .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndUserIdentifierAndResourceTypeAndResourceIdentifier(
+            accountIdentifier, orgIdentifier, projectIdentifier, userId, resourceTypeResolved, resourceId)
+        .isPresent();
+  }
+
+  @Override
   public List<Favorite> getFavorites(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String userId) {
     return favoriteRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndUserIdentifier(
@@ -82,5 +96,18 @@ public class FavoritesServiceImpl implements FavoritesService {
     favoriteRepository
         .deleteByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndUserIdentifierAndResourceTypeAndResourceIdentifier(
             accountIdentifier, orgIdentifier, projectIdentifier, userId, resourceTypeResolved, resourceId);
+  }
+
+  @Override
+  public void deleteFavorites(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String resourceType, String resourceId) {
+    ResourceType resourceTypeResolved =
+        resourceType != null ? EnumUtils.getEnum(ResourceType.class, resourceType) : null;
+    if (resourceTypeResolved == null) {
+      throw new InvalidRequestException(INVALID_RESOURCE_TYPE_ERROR_MESSAGE);
+    }
+    favoriteRepository
+        .deleteByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndResourceTypeAndResourceIdentifier(
+            accountIdentifier, orgIdentifier, projectIdentifier, resourceTypeResolved, resourceId);
   }
 }

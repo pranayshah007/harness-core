@@ -15,6 +15,8 @@ java_library(
         "//910-delegate-service-driver:module",
         "//954-connector-beans:module",
         "//idp-service/src/main/java/io/harness/idp/common:module",
+        "//idp-service/src/main/java/io/harness/idp/configmanager/service:module",
+        "//idp-service/src/main/java/io/harness/idp/configmanager/utils:module",
         "//idp-service/src/main/java/io/harness/idp/gitintegration/beans:module",
         "//idp-service/src/main/java/io/harness/idp/gitintegration/utils:module",
     ],

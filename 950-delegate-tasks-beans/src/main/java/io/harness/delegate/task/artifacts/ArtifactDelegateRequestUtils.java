@@ -464,8 +464,8 @@ public class ArtifactDelegateRequestUtils {
   }
 
   public static GoogleCloudStorageArtifactDelegateRequest getGoogleCloudStorageArtifactDelegateRequest(String bucket,
-      String project, String artifactPath, GcpConnectorDTO gcpConnectorDTO, String connectorRef,
-      List<EncryptedDataDetail> encryptedDataDetails, ArtifactSourceType sourceType) {
+      String project, String artifactPath, String artifactPathRegex, GcpConnectorDTO gcpConnectorDTO,
+      String connectorRef, List<EncryptedDataDetail> encryptedDataDetails, ArtifactSourceType sourceType) {
     return GoogleCloudStorageArtifactDelegateRequest.builder()
         .bucket(bucket)
         .project(project)
@@ -474,6 +474,7 @@ public class ArtifactDelegateRequestUtils {
         .connectorRef(connectorRef)
         .encryptedDataDetails(encryptedDataDetails)
         .sourceType(sourceType)
+        .artifactPathRegex(artifactPathRegex)
         .build();
   }
 }

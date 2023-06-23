@@ -214,7 +214,7 @@ ciExecutionServiceConfig:
       artifactoryUpload: plugins/artifactory:1.2.0
       cacheGCS: plugins/cache:1.4.6
       cacheS3: plugins/cache:1.4.6
-      iacmTerraform: plugins/harness_terraform
+      iacmTerraform: plugins/harness_terraform:dev
 
 scmConnectionConfig:
   url: localhost:8091

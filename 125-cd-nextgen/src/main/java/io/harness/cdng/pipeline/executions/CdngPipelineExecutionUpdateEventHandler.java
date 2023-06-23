@@ -14,6 +14,7 @@ import static io.harness.executions.steps.StepSpecTypeConstants.TERRAFORM_PLAN;
 import static io.harness.executions.steps.StepSpecTypeConstants.TERRAFORM_ROLLBACK;
 import static io.harness.pms.contracts.execution.Status.ABORTED;
 import static io.harness.pms.contracts.execution.Status.EXPIRED;
+import static io.harness.reflection.ReflectionUtils.getFieldValuesByType;
 
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
@@ -44,7 +45,6 @@ import io.harness.steps.StepUtils;
 import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.StageStatus;
 
-import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.HashMap;
@@ -59,20 +59,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CDP)
 public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEventHandler {
   private static final Set<String> STEPS_TO_UPDATE_LOG_STREAMS =
-      Sets.newHashSet(StepSpecTypeConstants.GITOPS_CREATE_PR, StepSpecTypeConstants.GITOPS_MERGE_PR,
-          StepSpecTypeConstants.GITOPS_SYNC, StepSpecTypeConstants.K8S_ROLLING_DEPLOY,
-          StepSpecTypeConstants.K8S_ROLLING_ROLLBACK, StepSpecTypeConstants.K8S_BLUE_GREEN_DEPLOY,
-          StepSpecTypeConstants.K8S_APPLY, StepSpecTypeConstants.K8S_SCALE, StepSpecTypeConstants.K8S_BG_SWAP_SERVICES,
-          StepSpecTypeConstants.K8S_CANARY_DELETE, StepSpecTypeConstants.K8S_CANARY_DEPLOY,
-          StepSpecTypeConstants.K8S_DELETE, StepSpecTypeConstants.HELM_DEPLOY, StepSpecTypeConstants.HELM_ROLLBACK,
-          StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO, StepSpecTypeConstants.K8S_DRY_RUN_MANIFEST,
-          StepSpecTypeConstants.COMMAND, StepSpecTypeConstants.ASG_ROLLING_DEPLOY,
-          StepSpecTypeConstants.ASG_ROLLING_ROLLBACK, StepSpecTypeConstants.ASG_CANARY_DEPLOY,
-          StepSpecTypeConstants.ASG_CANARY_DELETE, StepSpecTypeConstants.ASG_BLUE_GREEN_DEPLOY,
-          StepSpecTypeConstants.ASG_BLUE_GREEN_ROLLBACK, StepSpecTypeConstants.ASG_BLUE_GREEN_SWAP_SERVICE,
-          StepSpecTypeConstants.ELASTIGROUP_SETUP, StepSpecTypeConstants.ELASTIGROUP_DEPLOY,
-          StepSpecTypeConstants.ELASTIGROUP_ROLLBACK, StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP,
-          StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE, StepSpecTypeConstants.K8S_BLUE_GREEN_STAGE_SCALE_DOWN);
+      getFieldValuesByType(StepSpecTypeConstants.class, String.class);
 
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private StepHelper stepHelper;

@@ -16,6 +16,7 @@ import static io.serializer.HObjectMapper.configureObjectMapperForNG;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.InvalidYamlException;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.fqn.FQNNode;
@@ -131,6 +132,15 @@ public class YamlUtils {
 
   public YamlField readTree(String content) throws IOException {
     return readTreeInternal(content, mapper);
+  }
+
+  public YamlField readYamlTree(String content) {
+    try {
+      return readTreeInternal(content, mapper);
+    } catch (IOException ex) {
+      throw new InvalidYamlException(
+          "Yaml could not be converted to jsonNode. Please check if the yaml is correct.", ex);
+    }
   }
 
   public YamlField readTreeWithDefaultObjectMapper(String content) throws IOException {

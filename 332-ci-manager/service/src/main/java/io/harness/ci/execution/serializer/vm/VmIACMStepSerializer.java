@@ -38,8 +38,9 @@ public class VmIACMStepSerializer {
     long timeout = TimeoutUtils.getTimeoutInSeconds(parameterFieldTimeout, stepInfo.getDefaultTimeout());
 
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-
-    Map<String, String> envVars = iacmStepsUtils.getIACMEnvVariables(ambiance, stepInfo);
+    String workspaceId = stepInfo.getWorkspace();
+    String command = stepInfo.getCommand().getValue();
+    Map<String, String> envVars = iacmStepsUtils.getIACMEnvVariables(ambiance, workspaceId, command);
 
     String image;
     if (stepInfo.getImage().getValue() != null) {

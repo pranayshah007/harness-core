@@ -152,6 +152,7 @@ public class GcsHelperService {
         .withArtifactPath(blob.getName())
         .withArtifactFileSize(String.valueOf(blob.getSize()))
         .withMetadata(artifactMetaDataMap)
+        .withUpdateTime(blob.getUpdateTime())
         .withBuildUrl(blob.getSelfLink())
         .build();
   }

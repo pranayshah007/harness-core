@@ -10,10 +10,10 @@ package io.harness.idp.configmanager.service;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
-import io.harness.idp.configmanager.ReservedEnvVariables;
 import io.harness.idp.configmanager.beans.entity.PluginConfigEnvVariablesEntity;
 import io.harness.idp.configmanager.mappers.ConfigEnvVariablesMapper;
 import io.harness.idp.configmanager.repositories.ConfigEnvVariablesRepository;
+import io.harness.idp.configmanager.utils.ReservedEnvVariables;
 import io.harness.idp.envvariable.service.BackstageEnvVariableService;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
@@ -47,10 +47,6 @@ public class ConfigEnvVariablesServiceImpl implements ConfigEnvVariablesService 
       throws Exception {
     List<PluginConfigEnvVariablesEntity> configVariables =
         ConfigEnvVariablesMapper.getEntitiesForEnvVariables(appConfig, accountIdentifier);
-    if (configVariables.isEmpty()) {
-      log.info(NO_ENV_VARIABLE_ASSOCIATED, appConfig.getConfigId(), accountIdentifier);
-      return new ArrayList<>();
-    }
     List<String> errorMessagesForEnvVariables = getErrorMessagesForEnvVariables(appConfig, accountIdentifier);
     if (!errorMessagesForEnvVariables.isEmpty()) {
       throw new InvalidRequestException(new Gson().toJson(errorMessagesForEnvVariables));
@@ -104,9 +100,11 @@ public class ConfigEnvVariablesServiceImpl implements ConfigEnvVariablesService 
   public void deleteConfigEnvVariables(String accountIdentifier, String configId) {
     List<PluginConfigEnvVariablesEntity> pluginsEnvVariablesEntity =
         configEnvVariablesRepository.findAllByAccountIdentifierAndPluginId(accountIdentifier, configId);
-    configEnvVariablesRepository.deleteAllByAccountIdentifierAndPluginId(accountIdentifier, configId);
-    backstageEnvVariableService.deleteMultiUsingEnvNames(
-        getEnvVariablesFromEntities(pluginsEnvVariablesEntity), accountIdentifier);
+    if (!pluginsEnvVariablesEntity.isEmpty()) {
+      configEnvVariablesRepository.deleteAllByAccountIdentifierAndPluginId(accountIdentifier, configId);
+      backstageEnvVariableService.deleteMultiUsingEnvNames(
+          getEnvVariablesFromEntities(pluginsEnvVariablesEntity), accountIdentifier);
+    }
   }
 
   @Override

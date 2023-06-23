@@ -8,7 +8,9 @@
 package io.harness.cdng.creator.plan.steps;
 
 import static io.harness.cdng.ssh.SshWinRmConstants.FILE_STORE_SCRIPT_ERROR_MSG;
+import static io.harness.common.ParameterFieldHelper.getBooleanParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.yaml.ParameterField.isNotNull;
 
 import static java.lang.String.format;
@@ -59,14 +61,24 @@ public class CDPMSCommandStepFilterJsonCreator extends CDPMSStepFilterJsonCreato
   @Override
   public FilterCreationResponse handleNode(FilterCreationContext filterCreationContext, AbstractStepNode yamlField) {
     FilterCreationResponse response = super.handleNode(filterCreationContext, yamlField);
-    validateStrategy(yamlField.getStrategy());
+    validateStrategy(yamlField);
     validateCommandUnitsExist(yamlField);
     validateCommandUnits(filterCreationContext, yamlField);
     validateCommandStepOutputVariables(yamlField);
     return response;
   }
 
-  private void validateStrategy(ParameterField<StrategyConfig> strategy) {
+  private void validateStrategy(AbstractStepNode stepNode) {
+    ParameterField<StrategyConfig> strategy = stepNode.getStrategy();
+    if (isNotNull(strategy) && strategy.getValue() != null
+        && CommandStepNode.class.isAssignableFrom(stepNode.getClass())
+        && ((CommandStepNode) stepNode).getCommandStepInfo() != null
+        && getBooleanParameterFieldValue(((CommandStepNode) stepNode).getCommandStepInfo().getOnDelegate())) {
+      throw new InvalidYamlException(format(
+          "Command Step %s contains a combination of looping strategy and run on delegate options enabled, please select only one.",
+          stepNode.getName()));
+    }
+
     if (isNotNull(strategy) && strategy.getValue() != null
         && ((isNotNull(strategy.getValue().getMatrixConfig())
                 && strategy.getValue().getMatrixConfig().getValue() != null)
@@ -185,12 +197,14 @@ public class CDPMSCommandStepFilterJsonCreator extends CDPMSStepFilterJsonCreato
         && ((CommandStepNode) stepNode).getCommandStepInfo() != null) {
       CommandStepInfo commandStepInfo = ((CommandStepNode) stepNode).getCommandStepInfo();
       List<NGVariable> outputVariables = commandStepInfo.getOutputVariables();
-      outputVariables.forEach(ngVariable -> {
-        if (ngVariable != null && NGVariableType.NUMBER == ngVariable.getType()) {
-          throw new InvalidYamlException(
-              "Number output variables are not supported as Bash/PowerShell variable names. Please use String or Secret output variables instead.");
-        }
-      });
+      if (isNotEmpty(outputVariables)) {
+        outputVariables.forEach(ngVariable -> {
+          if (ngVariable != null && NGVariableType.NUMBER == ngVariable.getType()) {
+            throw new InvalidYamlException(
+                "Number output variables are not supported as Bash/PowerShell variable names. Please use String or Secret output variables instead.");
+          }
+        });
+      }
     }
   }
 }

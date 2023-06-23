@@ -14,7 +14,6 @@ import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.AFTER;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.BEFORE;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.commons.constants.ViewFieldConstants;
 import io.harness.ccm.views.dao.CEReportScheduleDao;
@@ -60,7 +59,6 @@ import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.ccm.views.service.ViewsBillingService;
 import io.harness.ccm.views.utils.CEViewPreferenceUtils;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ff.FeatureFlagService;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
@@ -119,7 +117,6 @@ public class CEViewServiceImpl implements CEViewService {
   @Inject private ViewTimeRangeHelper viewTimeRangeHelper;
   @Inject private ViewFilterBuilderHelper viewFilterBuilderHelper;
   @Inject private ViewsQueryHelper viewsQueryHelper;
-  @Inject private FeatureFlagService featureFlagService;
 
   @Override
   public CEView save(CEView ceView, boolean clone) {
@@ -240,10 +237,6 @@ public class CEViewServiceImpl implements CEViewService {
       ceView.setViewTimeRange(ViewTimeRange.builder().viewTimeRangeType(ViewTimeRangeType.LAST_7).build());
     }
 
-    // TODO: Remove this condition
-    boolean shouldUseCloudProviderDataSources =
-        featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, ceView.getAccountId());
-
     Set<ViewFieldIdentifier> viewFieldIdentifierSet = new HashSet<>();
     if (ceView.getViewRules() != null) {
       for (ViewRule rule : ceView.getViewRules()) {
@@ -276,8 +269,7 @@ public class CEViewServiceImpl implements CEViewService {
           if (viewIdCondition.getViewField().getIdentifier() == ViewFieldIdentifier.BUSINESS_MAPPING) {
             viewFieldIdentifierSet.add(ViewFieldIdentifier.BUSINESS_MAPPING);
           }
-          if (viewIdCondition.getViewField().getIdentifier() == ViewFieldIdentifier.COMMON
-              && shouldUseCloudProviderDataSources) {
+          if (viewIdCondition.getViewField().getIdentifier() == ViewFieldIdentifier.COMMON) {
             viewFieldIdentifierSet.addAll(getDataSourcesFromCloudProviderField(viewIdCondition));
           }
         }

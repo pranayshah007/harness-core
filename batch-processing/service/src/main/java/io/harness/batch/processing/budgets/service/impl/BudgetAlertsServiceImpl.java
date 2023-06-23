@@ -108,10 +108,10 @@ public class BudgetAlertsServiceImpl {
   private static final String QUARTER = "quarter";
   private static final String YEAR = "year";
 
-  public void sendBudgetAndBudgetGroupAlerts() {
+  public void sendBudgetAndBudgetGroupAlerts(List<BudgetPeriod> budgetPeriods) {
     List<String> accountIds = accountShardService.getCeEnabledAccountIds();
     accountIds.forEach(accountId -> {
-      List<Budget> budgets = budgetDao.list(accountId);
+      List<Budget> budgets = budgetDao.list(accountId, budgetPeriods, Integer.MAX_VALUE - 1, 0);
       // [TODO]: Cache currency symbol for each account
       Currency currency = currencyPreferenceHelper.getDestinationCurrency(accountId);
       budgets.forEach(budget -> {
@@ -123,7 +123,7 @@ public class BudgetAlertsServiceImpl {
               budget.getAccountId(), e);
         }
       });
-      List<BudgetGroup> budgetGroups = budgetGroupDao.list(accountId, Integer.MAX_VALUE, 0);
+      List<BudgetGroup> budgetGroups = budgetGroupDao.list(accountId, budgetPeriods, Integer.MAX_VALUE - 1, 0);
       budgetGroups.forEach(budgetGroup -> {
         try {
           checkAndSendAlerts(buildBudgetCommon(null, budgetGroup), currency);

@@ -74,6 +74,7 @@ public enum PredefinedTemplate {
       "cvng_notification_templates/cvng_slo_composite_account_pagerduty.txt", "cvng_slo_composite_account_pagerduty"),
   CVNG_SLO_COMPOSITE_ACCOUNT_MSTEAMS(
       "cvng_notification_templates/cvng_slo_composite_account_msteams.txt", "cvng_slo_composite_account_msteams"),
+  CVNG_FIREHYDRANT_SLACK("cvng_notification_templates/cvng_firehydrant_slack.txt", "cvng_firehydrant_slack"),
   CVNG_MONITOREDSERVICE_SLACK(
       "cvng_notification_templates/cvng_monitoredservice_slack.txt", "cvng_monitoredservice_slack"),
   CVNG_MONITOREDSERVICE_ET_SLACK(

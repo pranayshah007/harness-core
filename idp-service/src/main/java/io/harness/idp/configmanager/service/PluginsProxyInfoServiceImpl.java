@@ -16,6 +16,7 @@ import io.harness.idp.proxy.envvariable.ProxyEnvVariableUtils;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.ProxyHostDetail;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.Gson;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -47,10 +48,6 @@ public class PluginsProxyInfoServiceImpl implements PluginsProxyInfoService {
   public List<ProxyHostDetail> insertProxyHostDetailsForPlugin(AppConfig appConfig, String accountIdentifier)
       throws ExecutionException {
     List<PluginsProxyInfoEntity> pluginsProxyInfoEntities = getPluginProxyInfoEntities(appConfig, accountIdentifier);
-    if (pluginsProxyInfoEntities.isEmpty()) {
-      log.info(NO_PROXY_HOST_ASSOCIATED_VARIABLE_ASSOCIATED, appConfig.getConfigId(), accountIdentifier);
-      return new ArrayList<>();
-    }
     List<String> errorMessageForProxyDetails = getErrorMessageIfHostIsAlreadyInUse(accountIdentifier, appConfig);
     if (!errorMessageForProxyDetails.isEmpty()) {
       throw new InvalidRequestException(new Gson().toJson(errorMessageForProxyDetails));
@@ -88,11 +85,13 @@ public class PluginsProxyInfoServiceImpl implements PluginsProxyInfoService {
   public void deleteProxyHostDetailsForPlugin(String accountIdentifier, String pluginId) throws ExecutionException {
     List<PluginsProxyInfoEntity> existingPluginProxies =
         pluginsProxyInfoRepository.findAllByAccountIdentifierAndPluginId(accountIdentifier, pluginId);
-    Set<String> hostsToBeRemoved =
-        existingPluginProxies.stream().map(PluginsProxyInfoEntity::getHost).collect(Collectors.toSet());
-    delegateSelectorsCache.remove(accountIdentifier, hostsToBeRemoved);
-    proxyEnvVariableUtils.removeFromHostProxyEnvVariable(accountIdentifier, hostsToBeRemoved);
-    pluginsProxyInfoRepository.deleteAllByAccountIdentifierAndPluginId(accountIdentifier, pluginId);
+    if (!existingPluginProxies.isEmpty()) {
+      Set<String> hostsToBeRemoved =
+          existingPluginProxies.stream().map(PluginsProxyInfoEntity::getHost).collect(Collectors.toSet());
+      delegateSelectorsCache.remove(accountIdentifier, hostsToBeRemoved);
+      proxyEnvVariableUtils.removeFromHostProxyEnvVariable(accountIdentifier, hostsToBeRemoved);
+      pluginsProxyInfoRepository.deleteAllByAccountIdentifierAndPluginId(accountIdentifier, pluginId);
+    }
   }
 
   @Override
@@ -124,7 +123,8 @@ public class PluginsProxyInfoServiceImpl implements PluginsProxyInfoService {
     return getPluginProxyHostDetailsFromEntities(pluginsProxyInfoEntities);
   }
 
-  private List<String> getErrorMessageIfHostIsAlreadyInUse(String accountIdentifier, AppConfig appConfig) {
+  @VisibleForTesting
+  List<String> getErrorMessageIfHostIsAlreadyInUse(String accountIdentifier, AppConfig appConfig) {
     List<ProxyHostDetail> proxyDetails = appConfig.getProxy();
     List<String> errorMessage = new ArrayList<>();
     for (ProxyHostDetail proxyHostDetail : proxyDetails) {
@@ -138,7 +138,8 @@ public class PluginsProxyInfoServiceImpl implements PluginsProxyInfoService {
     return errorMessage;
   }
 
-  private List<PluginsProxyInfoEntity> getPluginProxyInfoEntities(AppConfig appConfig, String accountIdentifier) {
+  @VisibleForTesting
+  List<PluginsProxyInfoEntity> getPluginProxyInfoEntities(AppConfig appConfig, String accountIdentifier) {
     List<PluginsProxyInfoEntity> pluginsProxyInfoEntities = new ArrayList<>();
     if (appConfig.getProxy() == null) {
       return pluginsProxyInfoEntities;
@@ -170,7 +171,8 @@ public class PluginsProxyInfoServiceImpl implements PluginsProxyInfoService {
     return returnList;
   }
 
-  private void updateDelegateSelectorsCache(String accountIdentifier, List<PluginsProxyInfoEntity> proxies)
+  @VisibleForTesting
+  void updateDelegateSelectorsCache(String accountIdentifier, List<PluginsProxyInfoEntity> proxies)
       throws ExecutionException {
     for (PluginsProxyInfoEntity proxy : proxies) {
       if (proxy.getProxy()) {
@@ -178,7 +180,8 @@ public class PluginsProxyInfoServiceImpl implements PluginsProxyInfoService {
       }
     }
   }
-  private void updateHostProxyEnvVariable(String accountIdentifier, List<PluginsProxyInfoEntity> proxies) {
+  @VisibleForTesting
+  void updateHostProxyEnvVariable(String accountIdentifier, List<PluginsProxyInfoEntity> proxies) {
     Map<String, Boolean> hostProxyMap = new HashMap<>();
     for (PluginsProxyInfoEntity proxy : proxies) {
       if (proxy.getProxy()) {

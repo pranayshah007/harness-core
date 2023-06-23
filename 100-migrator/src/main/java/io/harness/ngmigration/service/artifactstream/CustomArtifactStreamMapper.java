@@ -96,16 +96,18 @@ public class CustomArtifactStreamMapper implements ArtifactStreamMapper {
                                              primaryScript.getCustomRepositoryMapping().getArtifactRoot()))
                                          .versionPath(ParameterField.createValueField(
                                              primaryScript.getCustomRepositoryMapping().getBuildNoPath()))
-                                         .attributes(primaryScript.getCustomRepositoryMapping()
-                                                         .getArtifactAttributes()
-                                                         .stream()
-                                                         .map(attribute
-                                                             -> StringNGVariable.builder()
-                                                                    .name(attribute.getMappedAttribute())
-                                                                    .value(ParameterField.createValueField(
-                                                                        attribute.getRelativePath()))
-                                                                    .build())
-                                                         .collect(Collectors.toList()))
+                                         .attributes(
+                                             ListUtils
+                                                 .emptyIfNull(
+                                                     primaryScript.getCustomRepositoryMapping().getArtifactAttributes())
+                                                 .stream()
+                                                 .map(attribute
+                                                     -> StringNGVariable.builder()
+                                                            .name(attribute.getMappedAttribute())
+                                                            .value(ParameterField.createValueField(
+                                                                attribute.getRelativePath()))
+                                                            .build())
+                                                 .collect(Collectors.toList()))
                                          .shellScriptBaseStepInfo(
                                              CustomArtifactScriptInfo.builder()
                                                  .shell(ShellType.Bash)

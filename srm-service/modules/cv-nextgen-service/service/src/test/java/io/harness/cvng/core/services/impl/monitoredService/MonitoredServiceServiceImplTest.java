@@ -1398,6 +1398,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(monitoredServicePlatformResponse.getEnvironmentRefs()).isEqualTo(List.of(environmentIdentifier));
     assertThat(monitoredServicePlatformResponse.getServiceName()).isEqualTo("Mocked service name");
     assertThat(monitoredServicePlatformResponse.getType()).isEqualTo(MonitoredServiceType.APPLICATION);
+    assertThat(monitoredServicePlatformResponse.getTags()).isEqualTo(tags);
 
     monitoredServiceListItemPageResponse = monitoredServiceService.getMSPlatformList(
         projectParams, null, 0, 10, null, MonitoredServiceType.INFRASTRUCTURE, false);
@@ -1408,6 +1409,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(monitoredServicePlatformResponse.getServiceRef()).isEqualTo("service_3");
     assertThat(monitoredServicePlatformResponse.getEnvironmentRefs()).isEqualTo(Arrays.asList("local", "testing"));
     assertThat(monitoredServicePlatformResponse.getType()).isEqualTo(MonitoredServiceType.INFRASTRUCTURE);
+    assertThat(monitoredServicePlatformResponse.getTags()).isEqualTo(tags);
   }
 
   @Test
@@ -1447,6 +1449,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(monitoredServicePlatformResponse.getServiceRef()).isEqualTo("service_4");
     assertThat(monitoredServicePlatformResponse.getEnvironmentRefs()).isEqualTo(List.of("env"));
     assertThat(monitoredServicePlatformResponse.getType()).isEqualTo(MonitoredServiceType.APPLICATION);
+    assertThat(monitoredServicePlatformResponse.getTags()).isEqualTo(tags);
     assertThat(monitoredServicePlatformResponse.getConfiguredChangeSources()).isEqualTo(1);
     assertThat(monitoredServicePlatformResponse.getConfiguredHealthSources()).isEqualTo(1);
 
@@ -1455,6 +1458,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(monitoredServicePlatformResponse.getServiceRef()).isEqualTo("service_3");
     assertThat(monitoredServicePlatformResponse.getEnvironmentRefs()).isEqualTo(Arrays.asList("local", "testing"));
     assertThat(monitoredServicePlatformResponse.getType()).isEqualTo(MonitoredServiceType.INFRASTRUCTURE);
+    assertThat(monitoredServicePlatformResponse.getTags()).isEqualTo(tags);
     assertThat(monitoredServicePlatformResponse.getConfiguredChangeSources()).isEqualTo(1);
     assertThat(monitoredServicePlatformResponse.getConfiguredHealthSources()).isEqualTo(1);
 
@@ -1462,6 +1466,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(monitoredServicePlatformResponse.getIdentifier()).isEqualTo("service_1_local");
     assertThat(monitoredServicePlatformResponse.getServiceRef()).isEqualTo("service_1");
     assertThat(monitoredServicePlatformResponse.getType()).isEqualTo(MonitoredServiceType.APPLICATION);
+    assertThat(monitoredServicePlatformResponse.getTags()).isEqualTo(tags);
     assertThat(monitoredServicePlatformResponse.getConfiguredChangeSources()).isEqualTo(0);
     assertThat(monitoredServicePlatformResponse.getConfiguredHealthSources()).isEqualTo(1);
   }

@@ -20,7 +20,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
     description = "This contains details of credentials for Service Now Authentication")
 @JsonSubTypes({
   @JsonSubTypes.Type(value = ServiceNowUserNamePasswordDTO.class, name = ServiceNowConstants.USERNAME_PASSWORD)
-  , @JsonSubTypes.Type(value = ServiceNowADFSDTO.class, name = ServiceNowConstants.ADFS)
+  , @JsonSubTypes.Type(value = ServiceNowADFSDTO.class, name = ServiceNowConstants.ADFS),
+      @JsonSubTypes.Type(value = ServiceNowRefreshTokenDTO.class, name = ServiceNowConstants.REFRESH_TOKEN)
 })
 public interface ServiceNowAuthCredentialsDTO extends DecryptableEntity {
   void validate();

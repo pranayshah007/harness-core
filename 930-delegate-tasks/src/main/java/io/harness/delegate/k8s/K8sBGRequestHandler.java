@@ -118,7 +118,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
   @Inject private K8sBGBaseHandler k8sBGBaseHandler;
   @Inject private KubernetesContainerService kubernetesContainerService;
-
+  @Inject private K8sManifestHashGenerator k8sManifestHashGenerator;
   private KubernetesConfig kubernetesConfig;
   private Kubectl client;
   private IK8sReleaseHistory releaseHistory;
@@ -132,10 +132,15 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
   private String releaseName;
   private String manifestFilesDirectory;
   private PrePruningInfo prePruningInfo;
+  private boolean deploymentSkipped;
 
   private boolean shouldSaveReleaseHistory;
   private boolean useDeclarativeRollback;
+  private boolean skipUnchangedManifest;
+  private boolean storeReleaseHash;
   private int currentReleaseNumber;
+  private long timeoutInMillis;
+  private String currentManifestHash;
   private K8sReleaseHandler releaseHandler;
   private K8sRequestHandlerContext k8sRequestHandlerContext = new K8sRequestHandlerContext();
 
@@ -148,14 +153,15 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
     }
 
     K8sBGDeployRequest k8sBGDeployRequest = (K8sBGDeployRequest) k8sDeployRequest;
-
+    deploymentSkipped = false;
     k8sRequestHandlerContext.setEnabledSupportHPAAndPDB(k8sBGDeployRequest.isEnabledSupportHPAAndPDB());
     releaseName = k8sBGDeployRequest.getReleaseName();
     useDeclarativeRollback = k8sBGDeployRequest.isUseDeclarativeRollback();
     releaseHandler = k8sTaskHelperBase.getReleaseHandler(useDeclarativeRollback);
     manifestFilesDirectory = Paths.get(k8sDelegateTaskParams.getWorkingDirectory(), MANIFEST_FILES_DIR).toString();
-    final long timeoutInMillis = getTimeoutMillisFromMinutes(k8sBGDeployRequest.getTimeoutIntervalInMin());
-
+    timeoutInMillis = getTimeoutMillisFromMinutes(k8sBGDeployRequest.getTimeoutIntervalInMin());
+    skipUnchangedManifest = k8sBGDeployRequest.isSkipUnchangedManifest();
+    storeReleaseHash = k8sBGDeployRequest.isStoreReleaseHash();
     LogCallback executionLogCallback = k8sTaskHelperBase.getLogCallback(
         logStreamingTaskClient, FetchFiles, k8sBGDeployRequest.isShouldOpenFetchFilesLogStream(), commandUnitsProgress);
     ServiceHookDTO serviceHookTaskParams = new ServiceHookDTO(k8sDelegateTaskParams);
@@ -177,6 +183,11 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
     prepareForBlueGreen(k8sDelegateTaskParams,
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Prepare, true, commandUnitsProgress),
         k8sBGDeployRequest.isSkipResourceVersioning(), k8sBGDeployRequest.isPruningEnabled());
+
+    if (deploymentSkipped) {
+      K8sBGDeployResponse k8sBGDeployResponse = K8sBGDeployResponse.builder().stageDeploymentSkipped(true).build();
+      return K8sDeployResponse.builder().commandExecutionStatus(SUCCESS).k8sNGTaskResponse(k8sBGDeployResponse).build();
+    }
 
     if (!useDeclarativeRollback) {
       ((K8sLegacyRelease) release).setManagedWorkload(managedWorkload.getResourceId().cloneInternal());
@@ -331,6 +342,11 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
     serviceHookHandler.execute(ServiceHookType.POST_HOOK, ServiceHookAction.TEMPLATE_MANIFEST,
         k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
 
+    if (storeReleaseHash) {
+      currentManifestHash = k8sManifestHashGenerator.manifestHash(
+          resources, k8sDelegateTaskParams, executionLogCallback, timeoutInMillis, client);
+    }
+
     if (request.isSkipDryRun()) {
       executionLogCallback.saveExecutionLog(color("\nSkipping Dry Run", Yellow, Bold), INFO);
       executionLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
@@ -412,6 +428,22 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
     }
 
     primaryColor = k8sBGBaseHandler.getPrimaryColor(primaryService, kubernetesConfig, executionLogCallback);
+
+    if (skipUnchangedManifest) {
+      IK8sRelease primaryRelease = releaseHistory.getLatestSuccessfulReleaseMatchingColor(primaryColor);
+      if (primaryRelease != null) {
+        String primaryReleaseHash = primaryRelease.getManifestHash();
+        if (currentManifestHash.equals(primaryReleaseHash)) {
+          executionLogCallback.saveExecutionLog(
+              color("\nSkipping stage deployment because given manifest matches existing deployed manifest", Yellow,
+                  Bold),
+              INFO);
+          executionLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
+          deploymentSkipped = true;
+          return;
+        }
+      }
+    }
     V1Service stageServiceInCluster =
         kubernetesContainerService.getService(kubernetesConfig, stageService.getResourceId().getName());
     if (stageServiceInCluster == null) {
@@ -436,6 +468,9 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
 
     release = releaseHandler.createRelease(releaseName, currentReleaseNumber);
 
+    if (storeReleaseHash) {
+      release.setManifestHash(currentManifestHash);
+    }
     prePruningInfo = k8sBGBaseHandler.cleanupForBlueGreen(k8sDelegateTaskParams, releaseHistory, executionLogCallback,
         primaryColor, stageColor, currentReleaseNumber, client, kubernetesConfig, releaseName, useDeclarativeRollback);
 

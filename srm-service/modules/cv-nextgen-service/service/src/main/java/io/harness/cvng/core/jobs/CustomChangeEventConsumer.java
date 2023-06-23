@@ -90,6 +90,8 @@ public class CustomChangeEventConsumer extends AbstractStreamConsumer {
                     .changeEventDetailsLink(customChangeEventDTO.getEventDetails().getChangeEventDetailsLink())
                     .externalLinkToEntity(customChangeEventDTO.getEventDetails().getExternalLinkToEntity())
                     .description(customChangeEventDTO.getEventDetails().getDescription())
+                    .channelUrl(customChangeEventDTO.getEventDetails().getChannelUrl())
+                    .webhookUrl(customChangeEventDTO.getEventDetails().getWebhookUrl())
                     .build())
             .type(changeSource.getType());
 
@@ -107,9 +109,9 @@ public class CustomChangeEventConsumer extends AbstractStreamConsumer {
             .metadata(customChangeEventMetadataBuilder.build())
             .build();
 
-    if (isNotEmpty(customChangeEventDTO.getEventDetails().getChannelUrl())) {
+    if (isNotEmpty(customChangeEventDTO.getEventDetails().getWebhookUrl())) {
       changeEventService.registerWithHealthReport(
-          changeEventDTO, customChangeEventDTO.getEventDetails().getChannelUrl());
+          changeEventDTO, customChangeEventDTO.getEventDetails().getWebhookUrl());
     } else {
       changeEventService.register(changeEventDTO);
     }

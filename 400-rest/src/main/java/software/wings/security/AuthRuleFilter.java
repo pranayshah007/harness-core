@@ -107,6 +107,7 @@ public class AuthRuleFilter implements ContainerRequestFilter {
       "users/user",
       "users/account",
       "users/sso/zendesk",
+      "users/sso/canny",
       "users/two-factor-auth",
       "users/disable-two-factor-auth",
       "users/enable-two-factor-auth",

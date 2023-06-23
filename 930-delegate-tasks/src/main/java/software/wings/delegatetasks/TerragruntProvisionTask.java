@@ -414,7 +414,7 @@ public class TerragruntProvisionTask extends AbstractDelegateRunnableTask {
 
           if (parameters.isEncryptDecryptPlanForHarnessSMOnManager()) {
             encryptedTfPlan = (EncryptedRecordData) harnessSMEncryptionDecryptionHandler.encryptContent(
-                terraformPlanFile, parameters.getSecretManagerConfig(), false);
+                terraformPlanFile, parameters.getSecretManagerConfig());
 
           } else {
             encryptedTfPlan = (EncryptedRecordData) encryptDecryptHelper.encryptContent(

@@ -23,8 +23,8 @@ import static java.util.Objects.nonNull;
 
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
-import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.ff.FeatureFlagService;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
@@ -122,7 +122,7 @@ public class ContainerInstanceSyncPerpetualTaskClient implements PerpetualTaskSe
     Map<String, String> clientParams = clientContext.getClientParams();
     final ContainerInstanceSyncPerpetualTaskData taskData = getPerpetualTaskData(clientContext);
 
-    return isK8sContainerType(clientParams) ? buildK8sDelegateTask(clientParams, taskData)
+    return isK8sContainerType(clientParams) ? buildPTValidationTask(clientParams, taskData)
                                             : buildNonK8sDelegateTask(clientParams, taskData);
   }
 
@@ -158,7 +158,7 @@ public class ContainerInstanceSyncPerpetualTaskClient implements PerpetualTaskSe
         .build();
   }
 
-  private DelegateTask buildK8sDelegateTask(
+  private DelegateTask buildPTValidationTask(
       Map<String, String> clientParams, ContainerInstanceSyncPerpetualTaskData taskData) {
     String infraMappingId = clientParams.get(INFRASTRUCTURE_MAPPING_ID);
 
@@ -170,15 +170,17 @@ public class ContainerInstanceSyncPerpetualTaskClient implements PerpetualTaskSe
                                                            .releaseName(taskData.getReleaseName())
                                                            .build();
 
+    List<ExecutionCapability> executionCapabilities = delegateTaskParams.fetchRequiredExecutionCapabilities(null);
+
     return DelegateTask.builder()
         .accountId(taskData.getAccountId())
         .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, taskData.getAppId())
-        .waitId(UUIDGenerator.generateUuid())
         .tags(awsCommandHelper.getAwsConfigTagsFromK8sConfig(delegateTaskParams))
+        .executionCapabilities(executionCapabilities)
         .data(TaskData.builder()
                   .async(false)
-                  .taskType(TaskType.K8S_COMMAND_TASK.name())
-                  .parameters(new Object[] {delegateTaskParams})
+                  .taskType(TaskType.CAPABILITY_VALIDATION.name())
+                  .parameters(executionCapabilities.toArray())
                   .timeout(TimeUnit.MINUTES.toMillis(VALIDATION_TIMEOUT_MINUTES))
                   .build())
         .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, taskData.getEnvId())

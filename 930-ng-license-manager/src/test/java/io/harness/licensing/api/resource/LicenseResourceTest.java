@@ -32,6 +32,7 @@ import com.google.common.collect.Lists;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -105,6 +106,7 @@ public class LicenseResourceTest extends CategoryTest {
   @Test
   @Owner(developers = {OwnerRule.ZHUO, OwnerRule.KAPIL})
   @Category(UnitTests.class)
+  @Ignore("Ignoring as the trial endpoints are blocked for now")
   public void testStartTrial() {
     doReturn(defaultModueLicenseDTO)
         .when(licenseService)
@@ -123,7 +125,7 @@ public class LicenseResourceTest extends CategoryTest {
     try {
       licenseResource.startTrialLicense(ACCOUNT_IDENTIFIER, startTrialRequestDTO, null);
     } catch (InvalidRequestException ex) {
-      assertThat(ex.getMessage()).isEqualTo("Trial license for CI module is not supported!");
+      assertThat(ex.getMessage()).isEqualTo("Trial license is not supported!");
     }
   }
 }

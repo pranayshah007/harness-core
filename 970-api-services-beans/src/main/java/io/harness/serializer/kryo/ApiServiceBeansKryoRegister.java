@@ -134,6 +134,7 @@ import io.harness.servicenow.ServiceNowStagingTable;
 import io.harness.servicenow.ServiceNowTemplate;
 import io.harness.servicenow.ServiceNowTicketNG;
 import io.harness.servicenow.ServiceNowTicketTypeDTO;
+import io.harness.servicenow.auth.refreshtoken.AccessTokenResponse;
 import io.harness.shell.AccessType;
 import io.harness.shell.AuthenticationScheme;
 import io.harness.shell.CommandExecutionData;
@@ -494,5 +495,6 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(AMITagsResponse.class, 81001);
     kryo.register(NexusRepositories.class, 9000312);
     kryo.register(TfConfigInspectVersion.class, 9000313);
+    kryo.register(AccessTokenResponse.class, 10000123);
   }
 }

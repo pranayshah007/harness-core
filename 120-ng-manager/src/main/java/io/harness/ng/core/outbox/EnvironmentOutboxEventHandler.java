@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
@@ -143,15 +144,7 @@ public class EnvironmentOutboxEventHandler implements OutboxEventHandler {
 
     switch (environmentUpdateEvent.getResourceType()) {
       case SERVICE_OVERRIDE:
-        yamls.put(OLD_YAML,
-            environmentUpdateEvent.getOldServiceOverridesEntity() == null
-                ? EMPTY_YAML
-                : environmentUpdateEvent.getOldServiceOverridesEntity().getYaml());
-        yamls.put(NEW_YAML,
-            environmentUpdateEvent.getNewServiceOverridesEntity() == null
-                ? EMPTY_YAML
-                : environmentUpdateEvent.getNewServiceOverridesEntity().getYaml());
-        return yamls;
+        return getAuditYamlDiffForServiceOverride(environmentUpdateEvent);
       case INFRASTRUCTURE:
         yamls.put(OLD_YAML,
             environmentUpdateEvent.getOldInfrastructureEntity() == null
@@ -173,6 +166,31 @@ public class EnvironmentOutboxEventHandler implements OutboxEventHandler {
                 : getYamlString(EnvironmentMapper.toNGEnvironmentConfig(environmentUpdateEvent.getNewEnvironment())));
         return yamls;
     }
+  }
+
+  @NotNull
+  private Map<String, String> getAuditYamlDiffForServiceOverride(EnvironmentUpdatedEvent environmentUpdateEvent) {
+    Map<String, String> yamls = new HashMap<>();
+    if (environmentUpdateEvent.isOverrideAuditV2()) {
+      yamls.put(OLD_YAML,
+          environmentUpdateEvent.getOldOverrideAuditEventDTO() == null
+              ? EMPTY_YAML
+              : environmentUpdateEvent.getOldOverrideAuditEventDTO().getYaml());
+      yamls.put(NEW_YAML,
+          environmentUpdateEvent.getNewOverrideAuditEventDTO() == null
+              ? EMPTY_YAML
+              : environmentUpdateEvent.getNewOverrideAuditEventDTO().getYaml());
+    } else {
+      yamls.put(OLD_YAML,
+          environmentUpdateEvent.getOldServiceOverridesEntity() == null
+              ? EMPTY_YAML
+              : environmentUpdateEvent.getOldServiceOverridesEntity().getYaml());
+      yamls.put(NEW_YAML,
+          environmentUpdateEvent.getNewServiceOverridesEntity() == null
+              ? EMPTY_YAML
+              : environmentUpdateEvent.getNewServiceOverridesEntity().getYaml());
+    }
+    return yamls;
   }
 
   private boolean handlerEnvironmentDeleted(OutboxEvent outboxEvent) throws IOException {
