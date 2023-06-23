@@ -173,7 +173,8 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
   public DelegateTokenDetails upsertDefaultToken(String accountId, DelegateEntityOwner owner, boolean skipIfExists) {
     Query<DelegateToken> query = persistence.createQuery(DelegateToken.class)
                                      .filter(DelegateTokenKeys.accountId, accountId)
-                                     .filter(DelegateTokenKeys.name, getDefaultTokenName(owner));
+                                     .filter(DelegateTokenKeys.name, getDefaultTokenName(owner))
+                                     .filter(DelegateTokenKeys.isNg, true);
 
     if (owner != null) {
       query = query.filter(DelegateTokenKeys.owner, owner);
@@ -268,7 +269,9 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
         .field(DelegateTokenKeys.accountId)
         .equal(accountId)
         .field(DelegateTokenKeys.name)
-        .equal(tokenName);
+        .equal(tokenName)
+        .field(DelegateTokenKeys.isNg)
+        .equal(true);
   }
 
   private DelegateTokenDetails getDelegateTokenDetails(DelegateToken delegateToken, boolean includeTokenValue) {
@@ -342,6 +345,8 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
                                              .filter(DelegateTokenKeys.accountId, accountId)
                                              .field(DelegateTokenKeys.name)
                                              .in(tokensNameList)
+                                             .field(DelegateTokenKeys.name)
+                                             .equal(true)
                                              .project(DelegateTokenKeys.name, true)
                                              .project(DelegateTokenKeys.status, true)
                                              .asList();

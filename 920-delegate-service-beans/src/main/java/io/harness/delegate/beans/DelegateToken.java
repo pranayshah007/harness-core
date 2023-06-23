@@ -67,6 +67,13 @@ public class DelegateToken implements PersistentEntity, UuidAware, CreatedAtAwar
                  .field(DelegateTokenKeys.status)
                  .name("byAccountAndNgAndOwnerAndStatus")
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .field(DelegateTokenKeys.accountId)
+                 .field(DelegateTokenKeys.name)
+                 .field(DelegateTokenKeys.isNg)
+                 .unique(true)
+                 .name("byAccountAndNameAndIsNg")
+                 .build())
         .build();
   }
 

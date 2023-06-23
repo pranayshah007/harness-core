@@ -78,7 +78,8 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
   public DelegateTokenDetails upsertDefaultToken(String accountId, String tokenValue) {
     Query<DelegateToken> query = persistence.createQuery(DelegateToken.class)
                                      .filter(DelegateTokenKeys.accountId, accountId)
-                                     .filter(DelegateTokenKeys.name, DEFAULT_TOKEN_NAME);
+                                     .filter(DelegateTokenKeys.name, DEFAULT_TOKEN_NAME)
+                                     .filter(DelegateTokenKeys.isNg, false);
 
     UpdateOperations<DelegateToken> updateOperations =
         persistence.createUpdateOperations(DelegateToken.class)
@@ -101,7 +102,9 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
                                            .field(DelegateTokenKeys.accountId)
                                            .equal(accountId)
                                            .field(DelegateTokenKeys.name)
-                                           .equal(tokenName);
+                                           .equal(tokenName)
+                                           .field(DelegateTokenKeys.isNg)
+                                           .equal(false);
 
     DelegateToken originalDelegateToken = filterQuery.get();
     UpdateOperations<DelegateToken> updateOperations =
@@ -125,7 +128,9 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
                                            .field(DelegateTokenKeys.accountId)
                                            .equal(accountId)
                                            .field(DelegateTokenKeys.name)
-                                           .equal(tokenName);
+                                           .equal(tokenName)
+                                           .field(DelegateTokenKeys.isNg)
+                                           .equal(false);
 
     DelegateToken delegateToken = deleteQuery.get();
 
@@ -142,6 +147,8 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
                                       .equal(accountId)
                                       .field(DelegateTokenKeys.name)
                                       .equal(tokenName)
+                                      .field(DelegateTokenKeys.isNg)
+                                      .equal(false)
                                       .get();
 
     return delegateToken != null ? delegateSecretManager.getDelegateTokenValue(delegateToken) : null;

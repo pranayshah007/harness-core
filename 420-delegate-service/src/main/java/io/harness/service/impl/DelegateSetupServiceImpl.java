@@ -1043,6 +1043,8 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
                                              .filter(DelegateTokenKeys.accountId, accountId)
                                              .field(DelegateTokenKeys.name)
                                              .in(tokensNameList)
+                                             .field(DelegateTokenKeys.isNg)
+                                             .equal(false)
                                              .project(DelegateTokenKeys.name, true)
                                              .project(DelegateTokenKeys.status, true)
                                              .asList();
