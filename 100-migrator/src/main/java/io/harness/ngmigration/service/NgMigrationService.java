@@ -55,6 +55,7 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
+import org.apache.commons.lang3.StringUtils;
 import retrofit2.Response;
 
 @Slf4j
@@ -187,7 +188,10 @@ public abstract class NgMigrationService {
     RequestBody type = RequestBody.create(TEXT_PLAIN, "FILE");
     RequestBody parentIdentifier = RequestBody.create(TEXT_PLAIN, fileYamlDTO.getRootIdentifier());
     RequestBody mimeType = RequestBody.create(TEXT_PLAIN, "txt");
-    RequestBody content = RequestBody.create(MediaType.parse("application/octet-stream"), fileYamlDTO.getContent());
+    RequestBody content = null;
+    if (StringUtils.isNotBlank(fileYamlDTO.getContent())) {
+      content = RequestBody.create(MediaType.parse("application/octet-stream"), fileYamlDTO.getContent());
+    }
 
     Response<ResponseDTO<FileDTO>> resp;
     try {
