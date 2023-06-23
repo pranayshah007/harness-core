@@ -380,9 +380,10 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
                                             .connectorType(KUBERNETES_CLUSTER)
                                             .connectorConfig(KubernetesClusterConfigDTO.builder().build())
                                             .build();
-    when(instanceSyncPerpetualTaskMappingService.findByConnectorRef(infrastructureMappingDTO.getAccountIdentifier(),
-             connectorInfoDTO.getOrgIdentifier(), connectorInfoDTO.getProjectIdentifier(),
-             infrastructureMappingDTO.getConnectorRef()))
+    when(instanceSyncPerpetualTaskMappingService.findByConnectorRefAndDeploymentType(
+             infrastructureMappingDTO.getAccountIdentifier(), connectorInfoDTO.getOrgIdentifier(),
+             connectorInfoDTO.getProjectIdentifier(), infrastructureMappingDTO.getConnectorRef(),
+             deploymentInfoDTO.getType()))
         .thenReturn(Optional.empty());
     when(connectorService.getByRef(anyString(), anyString(), anyString(), anyString()))
         .thenReturn(Optional.of(ConnectorResponseDTO.builder().connector(connectorInfoDTO).build()));
@@ -513,9 +514,10 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
                                             .build();
     InstanceSyncPerpetualTaskMappingDTO instanceSyncPerpetualTaskMappingDTO =
         InstanceSyncPerpetualTaskMappingDTO.builder().perpetualTaskId(PERPETUAL_TASK).build();
-    when(instanceSyncPerpetualTaskMappingService.findByConnectorRef(infrastructureMappingDTO.getAccountIdentifier(),
-             connectorInfoDTO.getOrgIdentifier(), connectorInfoDTO.getProjectIdentifier(),
-             infrastructureMappingDTO.getConnectorRef()))
+    when(instanceSyncPerpetualTaskMappingService.findByConnectorRefAndDeploymentType(
+             infrastructureMappingDTO.getAccountIdentifier(), connectorInfoDTO.getOrgIdentifier(),
+             connectorInfoDTO.getProjectIdentifier(), infrastructureMappingDTO.getConnectorRef(),
+             deploymentInfoDTO.getType()))
         .thenReturn(Optional.of(instanceSyncPerpetualTaskMappingDTO));
     when(connectorService.getByRef(anyString(), anyString(), anyString(), anyString()))
         .thenReturn(Optional.of(ConnectorResponseDTO.builder().connector(connectorInfoDTO).build()));

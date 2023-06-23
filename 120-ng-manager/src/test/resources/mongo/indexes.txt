@@ -101,7 +101,7 @@ instanceNG {"name": "accountId_organizationId_projectId_serviceId_instanceInfo.A
 instanceNG {"name": "accountId_organizationId_projectId_serviceId_isDeleted_createdAt_deletedAt_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "serviceIdentifier": 1, "isDeleted": 1, "createdAt": 1, "deletedAt": 1}
 instanceNG {"name": "accountIdentifier_1_deletedAt_1_createdAt_1", "background": true} {"accountIdentifier": 1, "deletedAt": 1, "createdAt": 1}
 instanceNG {"name": "unique_instanceKey_infrastructureMappingId_idx", "unique": true} {"instanceKey": 1, "infrastructureMappingId": 1}
-instanceSyncPerpetualTaskMapping {"name": "connectorIdentifier_accountId_orgId_projectId_idx", "background": true} {"accountId": 1, "orgId": 1, "projectId": 1, "connectorIdentifier": 1}
+instanceSyncPerpetualTaskMapping {"name": "connectorIdentifier_deploymentType_accountId_orgId_projectId_idx", "background": true} {"accountId": 1, "orgId": 1, "projectId": 1, "deploymentType": 1, "connectorIdentifier": 1}
 instanceSyncPerpetualTaskMapping {"name": "unique_connectorIdentifier_accountId_orgId_projectId_perpetualTaskId_idx", "unique": true} {"accountId": 1, "orgId": 1, "projectId": 1, "connectorIdentifier": 1, "perpetualTaskId": 1}
 instanceSyncPerpetualTasksInfoNG {"name": "accountIdentifier_perpetualTaskIdV2_idx", "background": true} {"accountIdentifier": 1, "perpetualTaskIdV2": 1}
 instanceSyncPerpetualTasksInfoNG {"name": "infrastructureMappingId_1", "unique": true} {"infrastructureMappingId": 1}
