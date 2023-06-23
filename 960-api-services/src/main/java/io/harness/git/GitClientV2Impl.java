@@ -633,7 +633,7 @@ public class GitClientV2Impl implements GitClientV2 {
     return revertAndPushResult;
   }
 
-  CommitResult revert(RevertAndPushRequest request) {
+  public CommitResult revert(RevertAndPushRequest request) {
     boolean pushOnlyIfHeadSeen = request.isPushOnlyIfHeadSeen();
 
     ensureRepoLocallyClonedAndUpdated(request);
@@ -650,8 +650,9 @@ public class GitClientV2Impl implements GitClientV2 {
           .commitTime(revertCommit.getCommitTime())
           .commitMessage("Harness revert of commit: " + commitToRevert.getId())
           .build();
-    } catch (IOException | GitAPIException e) {
-      throw new WingsException(e);
+    } catch (IOException | GitAPIException ex) {
+      log.error(gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + EXCEPTION_STRING, ex);
+      throw new YamlException("Error in writing commit", ex, ADMIN_SRE);
     }
   }
 
@@ -921,7 +922,7 @@ public class GitClientV2Impl implements GitClientV2 {
   }
 
   @VisibleForTesting
-  synchronized PushResultGit push(RevertAndPushRequest revertAndPushRequest) {
+  protected PushResultGit push(RevertAndPushRequest revertAndPushRequest) {
     boolean forcePush = revertAndPushRequest.isForcePush();
 
     log.info(gitClientHelper.getGitLogMessagePrefix(revertAndPushRequest.getRepoType())
