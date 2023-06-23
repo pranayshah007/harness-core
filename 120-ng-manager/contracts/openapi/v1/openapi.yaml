@@ -1512,7 +1512,7 @@ components:
         user_id:
           type: string
           description: Identifier of the user.
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          pattern: '^[0-9a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
           maxLength: 128
         module:
