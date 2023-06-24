@@ -1695,7 +1695,7 @@ public class DelegateServiceImpl implements DelegateService {
     if (isNotBlank(inquiry.getDelegateTokenName())) {
       if (isNg) {
         var tokenDetails =
-            delegateNgTokenService.getDelegateToken(inquiry.getAccountId(), inquiry.getDelegateTokenName(), false);
+            delegateNgTokenService.getDelegateToken(inquiry.getAccountId(), inquiry.getDelegateTokenName(), true);
         if (Objects.isNull(tokenDetails) || tokenDetails.getStatus().equals(REVOKED)) {
           return null;
         }
