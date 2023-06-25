@@ -241,7 +241,8 @@ func sendStatusHTTP(ctx context.Context, stepID, delegateID, accountKey, account
 		}
 	}
 
-	httpClient := delegate.New(managerSvcEndpoint, accountID, accountKey, false)
+	fmt.Println("Using skipverify true")
+	httpClient := delegate.New(managerSvcEndpoint, accountID, accountKey, true)
 
 	stepStatusTaskResponseData := getStepStatusPayload(ctx, stepID, accountID, delegateID, delegateSvcEndpoint, taskID, status, numRetries, timeTaken, errMsg, stepOutput, artifact)
 
