@@ -238,7 +238,7 @@ public class Http {
 
   public static boolean checkResponseCode(int responseCode, boolean ignoreResponseCode) {
     if (ignoreResponseCode) {
-      return responseCode < 500;
+      return responseCode != -1;
     }
     return responseCode != 400;
   }
