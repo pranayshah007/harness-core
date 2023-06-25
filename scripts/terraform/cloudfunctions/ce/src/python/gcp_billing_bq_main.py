@@ -13,7 +13,7 @@ import requests
 from util import create_dataset, print_, if_tbl_exists, createTable, run_batch_query, COSTAGGREGATED, UNIFIED, \
     CEINTERNALDATASET, update_connector_data_sync_status, GCPCONNECTORINFOTABLE, CURRENCYCONVERSIONFACTORUSERINPUT, \
     add_currency_preferences_columns_to_schema, CURRENCY_LIST, BACKUP_CURRENCY_FX_RATES, send_event, \
-    flatten_label_keys_in_table, LABELKEYSTOCOLUMNMAPPING, run_bq_query_with_retries
+    flatten_label_keys_in_table, LABELKEYSTOCOLUMNMAPPING, run_bq_query_with_retries, CONNECTORDATASYNCSTATUSTABLE
 from calendar import monthrange
 from google.cloud import bigquery
 from google.cloud import secretmanager
@@ -119,9 +119,10 @@ def main(event, context):
         if jsonData.get("isFreshSync"):
             jsonData["interval"] = '180'
         elif jsonData["ccmPreferredCurrency"]:
-            jsonData["interval"] = str(datetime.datetime.utcnow().date().day - 1)
+            jsonData["interval"] = str(max(datetime.datetime.utcnow().date().day - 1,
+                                           jsonData['daysSinceLastSuccessfulSync'] + 3))
         else:
-            jsonData["interval"] = '3'
+            jsonData["interval"] = str(jsonData['daysSinceLastSuccessfulSync'] + 3)
         get_unique_billingaccount_id(jsonData)
 
         # currency specific methods
@@ -233,6 +234,20 @@ def main(event, context):
     })
     print_("Completed")
     return
+
+
+def get_days_since_last_successful_sync(jsonData):
+    jsonData['daysSinceLastSuccessfulSync'] = 180
+
+    query = """
+        SELECT DATE_DIFF(CURRENT_DATE(), DATE(MAX(lastSuccessfullExecutionAt)) , DAY) as daysSinceLastSuccessfulSync
+        FROM `%s.%s.%s`
+        WHERE cloudProviderId='GCP' AND accountId='%s' and connectorId='%s' and jobType='cloudfunction';
+    """ % (PROJECTID, CEINTERNALDATASET, CONNECTORDATASYNCSTATUSTABLE, jsonData["accountId"], jsonData["connectorId"])
+    results = run_bq_query_with_retries(client, query)
+    for row in results:
+        jsonData['daysSinceLastSuccessfulSync'] = min(jsonData['daysSinceLastSuccessfulSync'],
+                                                      row.daysSinceLastSuccessfulSync)
 
 
 def trigger_historical_cost_update_in_preferred_currency(jsonData):
@@ -797,6 +812,8 @@ def get_secret_key():
 
 def isFreshSync(jsonData):
     print_("Determining if we need to do fresh sync")
+    get_days_since_last_successful_sync(jsonData)
+    print_(f"Days since last successful sync: {jsonData['daysSinceLastSuccessfulSync']}")
     if jsonData.get("dataSourceId"):
         # Check in preaggregated table for non US regions
         query = """  SELECT count(*) as count from %s.%s.preAggregated
@@ -817,7 +834,10 @@ def isFreshSync(jsonData):
             if row["count"] > 0:
                 return False
             else:
-                return True
+                if jsonData['daysSinceLastSuccessfulSync'] >= 180:
+                    return True
+                else:
+                    return False
     except Exception as e:
         # Table does not exist
         print_(e)
@@ -832,10 +852,19 @@ def syncDataset(jsonData):
     print_("Loading into %s" % jsonData["tableName"])
     # for US region
     destination = "%s.%s.%s" % (PROJECTID, jsonData["datasetName"], jsonData["tableName"])
+    if jsonData.get("isFreshSync"):
+        jsonData["interval"] = '180'
+    elif jsonData["ccmPreferredCurrency"]:
+        jsonData["interval"] = str(max(datetime.datetime.utcnow().date().day - 1,
+                                       jsonData['daysSinceLastSuccessfulSync'] + 3))
+    else:
+        jsonData["interval"] = str(jsonData['daysSinceLastSuccessfulSync'] + 3)
+
     if jsonData["isFreshSync"]:
         # Fresh sync. Sync only for 45 days.
-        query = """  SELECT * FROM `%s.%s.%s` WHERE DATE(_PARTITIONTIME) >= DATE_SUB(@run_date, INTERVAL 187 DAY) AND DATE(usage_start_time) >= DATE_SUB(@run_date , INTERVAL 187 DAY);
-        """ % (jsonData["sourceGcpProjectId"], jsonData["sourceDataSetId"], jsonData["sourceGcpTableName"])
+        query = """  SELECT * FROM `%s.%s.%s` WHERE DATE(_PARTITIONTIME) >= DATE_SUB(@run_date, INTERVAL %s DAY) AND DATE(usage_start_time) >= DATE_SUB(@run_date , INTERVAL %s DAY);
+        """ % (jsonData["sourceGcpProjectId"], jsonData["sourceDataSetId"], jsonData["sourceGcpTableName"],
+               str(int(jsonData["interval"]) + 7), str(int(jsonData["interval"]) + 7))
         # Configure the query job.
         print_(" Destination :%s" % destination)
         if jsonData["gcpBillingExportTablePartitionColumnName"] == "usage_start_time":
@@ -873,15 +902,18 @@ def syncDataset(jsonData):
         # check whether the raw billing table is standard_export or detailed_export
         isBillingExportDetailed = check_if_billing_export_is_detailed(jsonData)
         query = """  DELETE FROM `%s` 
-                WHERE DATE(%s) >= DATE_SUB(@run_date, INTERVAL 10 DAY) and DATE(usage_start_time) >= DATE_SUB(@run_date , INTERVAL 3 DAY); 
+                WHERE DATE(%s) >= DATE_SUB(@run_date, INTERVAL %s DAY) and DATE(usage_start_time) >= DATE_SUB(@run_date , INTERVAL %s DAY); 
             INSERT INTO `%s` (billing_account_id, %s service,sku,usage_start_time,usage_end_time,project,labels,system_labels,location,export_time,cost,currency,currency_conversion_rate,usage,credits,invoice,cost_type,adjustment_info)
                 SELECT billing_account_id, %s service,sku,usage_start_time,usage_end_time,project,labels,system_labels,location,export_time,cost,currency,currency_conversion_rate,usage,credits,invoice,cost_type,adjustment_info 
                 FROM `%s.%s.%s`
-                WHERE DATE(_PARTITIONTIME) >= DATE_SUB(@run_date, INTERVAL 10 DAY) AND DATE(usage_start_time) >= DATE_SUB(@run_date , INTERVAL 3 DAY);
-        """ % (destination, jsonData["gcpBillingExportTablePartitionColumnName"], destination,
+                WHERE DATE(_PARTITIONTIME) >= DATE_SUB(@run_date, INTERVAL %s DAY) AND DATE(usage_start_time) >= DATE_SUB(@run_date , INTERVAL %s DAY);
+        """ % (destination, jsonData["gcpBillingExportTablePartitionColumnName"],
+               str(int(jsonData["interval"]) + 7), jsonData["interval"],
+               destination,
                "resource," if isBillingExportDetailed else "",
                "resource," if isBillingExportDetailed else "",
-               jsonData["sourceGcpProjectId"], jsonData["sourceDataSetId"], jsonData["sourceGcpTableName"])
+               jsonData["sourceGcpProjectId"], jsonData["sourceDataSetId"], jsonData["sourceGcpTableName"],
+               str(int(jsonData["interval"]) + 7), jsonData["interval"])
 
         # Configure the query job.
         job_config = bigquery.QueryJobConfig(
@@ -920,12 +952,6 @@ def syncDataset(jsonData):
         raise e
     print_("  Loaded in %s" % jsonData["tableName"])
 
-    if jsonData.get("isFreshSync"):
-        jsonData["interval"] = '180'
-    elif jsonData["ccmPreferredCurrency"]:
-        jsonData["interval"] = str(datetime.datetime.utcnow().date().day - 1)
-    else:
-        jsonData["interval"] = '3'
     get_unique_billingaccount_id(jsonData)
 
     # currency preferences specific methods
