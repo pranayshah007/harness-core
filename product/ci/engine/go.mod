@@ -22,7 +22,7 @@ require (
 	github.com/minio/minio-go/v6 v6.0.57
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.7.5
-	github.com/wings-software/dlite v0.0.0-20220915141325-eb8c295a2189 // indirect
+	github.com/wings-software/dlite v1.0.0-rc.5 // indirect
 	go.uber.org/zap v1.15.0
 	golang.org/x/net v0.0.0-20220114011407-0dd24b26b47d
 	google.golang.org/grpc v1.43.0

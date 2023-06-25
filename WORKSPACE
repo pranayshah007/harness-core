@@ -751,8 +751,8 @@ go_repository(
 go_repository(
     name = "com_github_wings_software_dlite",
     importpath = "github.com/wings-software/dlite",
-    sum = "h1:143lMB7T+9OqU9VYSpm71B4DzIONQOUvWWGsmreTpHI=",
-    version = "v0.0.0-20220915141325-eb8c295a2189",
+    sum = "h1:POHuMFn5nQpZjN2Ql1maNabDO6r/8ZOargRA6uzAOuo=",
+    version = "v1.0.0-rc.5",
 )
 
 go_repository(
