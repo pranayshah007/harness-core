@@ -88,7 +88,7 @@ public class K8sNodeInfoTasklet implements Tasklet {
         instanceInfoTimescaleDAO.insertIntoNodeInfo(instanceInfoList);
       }
     } while (publishedMessageList.size() == batchSize);
-    return null;
+    return RepeatStatus.FINISHED;
   }
 
   public InstanceInfo processNodeInfoMessage(PublishedMessage publishedMessage) {

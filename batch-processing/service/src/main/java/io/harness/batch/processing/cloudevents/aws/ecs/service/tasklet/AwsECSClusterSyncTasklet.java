@@ -76,7 +76,7 @@ public class AwsECSClusterSyncTasklet implements Tasklet {
     });
     syncLinkedAccountsForNgConnectors(accountId);
     syncNGClusters(accountId);
-    return null;
+    return RepeatStatus.FINISHED;
   }
 
   public void syncNGClusters(String accountId) {

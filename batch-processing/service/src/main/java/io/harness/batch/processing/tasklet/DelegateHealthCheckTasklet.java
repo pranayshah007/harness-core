@@ -91,7 +91,7 @@ public class DelegateHealthCheckTasklet implements Tasklet {
         }
       }
     }
-    return null;
+    return RepeatStatus.FINISHED;
   }
 
   private boolean isDelegateHealthy(Delegate delegate, Instant endTime) {

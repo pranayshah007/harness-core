@@ -205,7 +205,7 @@ public class AwsECSServiceRecommendationTasklet implements Tasklet {
       }
     }
 
-    return null;
+    return RepeatStatus.FINISHED;
   }
 
   ECSPartialRecommendationHistogram getPartialRecommendation(String accountId, String clusterId, String clusterName,

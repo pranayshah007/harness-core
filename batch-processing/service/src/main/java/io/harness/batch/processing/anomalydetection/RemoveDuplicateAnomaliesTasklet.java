@@ -47,7 +47,7 @@ public class RemoveDuplicateAnomaliesTasklet implements Tasklet {
     if (!duplicateIds.isEmpty()) {
       removeDuplicates(duplicateIds, startTime);
     }
-    return null;
+    return RepeatStatus.FINISHED;
   }
 
   private void removeDuplicates(List<String> ids, Instant startTime) {

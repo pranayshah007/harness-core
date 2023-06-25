@@ -61,7 +61,7 @@ public class CeProductMetricsTasklet implements Tasklet {
       log.info("Sending NG CCM Telemetry Stat for Account:{}", accountId);
       nextGenInstrumentation(accountId);
     }
-    return null;
+    return RepeatStatus.FINISHED;
   }
 
   @VisibleForTesting

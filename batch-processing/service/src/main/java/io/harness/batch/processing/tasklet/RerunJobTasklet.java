@@ -80,7 +80,7 @@ public class RerunJobTasklet implements Tasklet {
         }
       }
     }
-    return null;
+    return RepeatStatus.FINISHED;
   }
 
   private boolean isCloudDataPresent(CEMetadataRecord ceMetadataRecord) {

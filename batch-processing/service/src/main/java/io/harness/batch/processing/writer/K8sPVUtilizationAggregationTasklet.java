@@ -116,7 +116,7 @@ public class K8sPVUtilizationAggregationTasklet implements Tasklet {
 
     utilizationDataService.create(instanceUtilizationDataList);
 
-    return null;
+    return RepeatStatus.FINISHED;
   }
 
   private boolean isClusterIdFilterQueryEnabled(String accountId) {

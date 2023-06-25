@@ -53,6 +53,6 @@ public class InstanceBillingAggregationDataTasklet implements Tasklet {
       throw new Exception(format("BatchJobType:%s failed for accountId:%s startTime:%s endTime:%s", batchJobType.name(),
           accountId, startTime, endTime));
     }
-    return null;
+    return RepeatStatus.FINISHED;
   }
 }

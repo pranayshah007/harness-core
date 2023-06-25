@@ -68,6 +68,6 @@ public class AzureBillingDataPipelineTasklet implements Tasklet {
         billingDataPipelineRecordDao.create(dataPipelineRecord);
       }
     });
-    return null;
+    return RepeatStatus.FINISHED;
   }
 }

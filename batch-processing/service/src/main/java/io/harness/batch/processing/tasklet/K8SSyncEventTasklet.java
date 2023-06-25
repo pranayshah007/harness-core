@@ -72,7 +72,7 @@ public class K8SSyncEventTasklet extends EventWriter implements Tasklet {
       }
 
     } while (publishedMessageList.size() == batchSize);
-    return null;
+    return RepeatStatus.FINISHED;
   }
 
   private void updateInactiveInstancesInTimescale(JobConstants jobConstants, List<PublishedMessage> publishedMessages) {

@@ -218,7 +218,7 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
       }
     }
 
-    return null;
+    return RepeatStatus.FINISHED;
   }
 
   public void updateConnectorDataSyncStatus(String accountId, String connectorId) throws Exception {

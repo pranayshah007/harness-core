@@ -120,7 +120,7 @@ public class RecommendationJiraStatusTasklet implements Tasklet {
         }
       }
     }
-    return null;
+    return RepeatStatus.FINISHED;
   }
 
   private static Condition getValidRecommendationFilter() {

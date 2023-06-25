@@ -176,7 +176,7 @@ public class GcpSyncTasklet implements Tasklet {
         }
       }
     }
-    return null;
+    return RepeatStatus.FINISHED;
   }
 
   private void processGCPConnector(BillingDataPipelineConfig billingDataPipelineConfig, String serviceAccountEmail,

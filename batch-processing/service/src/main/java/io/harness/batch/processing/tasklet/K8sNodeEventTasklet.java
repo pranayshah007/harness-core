@@ -68,7 +68,7 @@ public class K8sNodeEventTasklet implements Tasklet {
             instanceEventList.stream().filter(e -> EventType.STOP.equals(e.getType())).collect(Collectors.toList()));
       }
     } while (publishedMessageList.size() == batchSize);
-    return null;
+    return RepeatStatus.FINISHED;
   }
 
   public InstanceEvent processNodeEventMessage(PublishedMessage publishedMessage) {

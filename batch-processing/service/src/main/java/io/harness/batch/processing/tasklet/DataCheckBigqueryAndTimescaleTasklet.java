@@ -74,6 +74,6 @@ public class DataCheckBigqueryAndTimescaleTasklet implements Tasklet {
       log.info("Timescale Billing data entries count {} , Timescale Sum of billing amount: {}",
           timeScaleClusterData.getEntriesCount(), timeScaleClusterData.getBillingAmountSum());
     }
-    return null;
+    return RepeatStatus.FINISHED;
   }
 }

@@ -64,7 +64,7 @@ public class AzureRecommendationTasklet implements Tasklet {
         }
       }
     }
-    return null;
+    return RepeatStatus.FINISHED;
   }
 
   private String getResourceGroupId(String recommendationId) {

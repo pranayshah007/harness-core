@@ -67,7 +67,7 @@ public class K8sPodEventTasklet implements Tasklet {
             instanceEventList.stream().filter(x -> x.getType() == EventType.STOP).collect(Collectors.toList()));
       }
     } while (publishedMessageList.size() == batchSize);
-    return null;
+    return RepeatStatus.FINISHED;
   }
 
   public InstanceEvent processPodEventMessage(PublishedMessage publishedMessage) {

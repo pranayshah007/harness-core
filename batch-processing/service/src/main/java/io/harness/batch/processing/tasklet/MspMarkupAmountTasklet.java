@@ -80,7 +80,7 @@ public class MspMarkupAmountTasklet implements Tasklet {
         marginDetailsService.updateMarkupAmount(mspAccountId, managedAccountId, markupAmountDetails, totalSpendDetails);
       }
     }
-    return null;
+    return RepeatStatus.FINISHED;
   }
 
   private enum Interval { CURRENT_MONTH, CURRENT_QUARTER, LAST_MONTH, LAST_QUARTER }

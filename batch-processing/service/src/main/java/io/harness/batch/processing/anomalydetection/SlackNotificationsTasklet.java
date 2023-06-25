@@ -33,6 +33,6 @@ public class SlackNotificationsTasklet implements Tasklet {
 
     Instant startTime = Instant.ofEpochMilli(jobConstants.getJobStartTime());
     alertsService.sendNgAnomalyAlerts(jobConstants.getAccountId(), startTime);
-    return null;
+    return RepeatStatus.FINISHED;
   }
 }

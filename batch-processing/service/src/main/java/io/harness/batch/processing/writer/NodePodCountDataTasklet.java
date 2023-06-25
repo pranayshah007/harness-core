@@ -42,6 +42,6 @@ public class NodePodCountDataTasklet implements Tasklet {
           accountId, startTime.toEpochMilli(), endTime.toEpochMilli(), pods);
     });
 
-    return null;
+    return RepeatStatus.FINISHED;
   }
 }

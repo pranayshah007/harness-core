@@ -143,7 +143,7 @@ public class InstanceBillingDataTasklet implements Tasklet {
       billAllInstances(
           accountId, startTime, endTime, batchJobType, claimRefToPVInstanceBillingData, pvcClaimCount, null);
     }
-    return null;
+    return RepeatStatus.FINISHED;
   }
 
   private void billAllInstances(String accountId, Instant startTime, Instant endTime, BatchJobType batchJobType,

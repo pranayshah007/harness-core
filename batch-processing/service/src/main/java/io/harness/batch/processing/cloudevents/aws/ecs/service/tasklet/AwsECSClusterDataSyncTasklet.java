@@ -166,7 +166,7 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
         throw new Exception("failed to sync ecs clusters", e);
       }
     }
-    return null;
+    return RepeatStatus.FINISHED;
   }
 
   private void syncECSClusterData(

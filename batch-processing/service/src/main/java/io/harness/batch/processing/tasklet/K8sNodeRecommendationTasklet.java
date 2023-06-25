@@ -101,7 +101,7 @@ public class K8sNodeRecommendationTasklet implements Tasklet {
       }
     }
 
-    return null;
+    return RepeatStatus.FINISHED;
   }
 
   private void createTotalResourceUsageAndInsert(@NonNull JobConstants jobConstants, @NonNull NodePoolId nodePoolId) {

@@ -149,7 +149,7 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
       }
     }
 
-    return null;
+    return RepeatStatus.FINISHED;
   }
 
   private void saveUtilDataToTimescaleDB(String accountId, List<Ec2UtilzationData> utilizationMetricsList) {

@@ -154,7 +154,7 @@ public class BillingDataGeneratedMailTasklet implements Tasklet {
     } catch (Exception e) {
       log.error("Failed to execute step BillingDataGeneratedMailTasklet, Exception: ", e);
     }
-    return null;
+    return RepeatStatus.FINISHED;
   }
 
   private void createDefaultPerspective(String accountId) {

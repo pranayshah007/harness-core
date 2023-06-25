@@ -124,7 +124,7 @@ public class K8sPodInfoTasklet implements Tasklet {
       }
 
     } while (publishedMessageList.size() == batchSize);
-    return null;
+    return RepeatStatus.FINISHED;
   }
 
   public InstanceInfo processPodInfoMessage(PublishedMessage publishedMessage) {

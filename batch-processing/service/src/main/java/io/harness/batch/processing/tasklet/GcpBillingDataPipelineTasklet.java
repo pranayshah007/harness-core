@@ -177,6 +177,6 @@ public class GcpBillingDataPipelineTasklet implements Tasklet {
             }
           });
     }
-    return null;
+    return RepeatStatus.FINISHED;
   }
 }

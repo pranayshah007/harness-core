@@ -59,7 +59,7 @@ public class K8sPVEventTasklet implements Tasklet {
       instanceDataBulkWriteService.updateInstanceEvent(instanceEventList);
 
     } while (publishedMessageList.size() == batchSize);
-    return null;
+    return RepeatStatus.FINISHED;
   }
 
   public InstanceEvent processPVEventMessage(PublishedMessage publishedMessage) {

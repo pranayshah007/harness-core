@@ -156,7 +156,7 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
     } else {
       handleDataForBigQuery(batchJobType, jobConstants, batchSize, billingDataReader, billingDataFileName);
     }
-    return null;
+    return RepeatStatus.FINISHED;
   }
 
   private void handleDataForBigQuery(BatchJobType batchJobType, JobConstants jobConstants, int batchSize,

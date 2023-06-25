@@ -96,6 +96,6 @@ public class AwsBillingDataPipelineTasklet implements Tasklet {
         }
       }
     });
-    return null;
+    return RepeatStatus.FINISHED;
   }
 }
