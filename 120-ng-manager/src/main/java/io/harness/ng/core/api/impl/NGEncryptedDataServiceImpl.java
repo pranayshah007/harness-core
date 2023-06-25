@@ -283,12 +283,14 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
   private NGEncryptedData buildNGEncryptedData(
       String accountIdentifier, SecretDTOV2 dto, SecretManagerConfigDTO secretManager) {
     NGEncryptedDataBuilder builder = NGEncryptedData.builder();
+    SecretTextSpecDTO secretTextSpecDTO = (SecretTextSpecDTO) dto.getSpec();
     builder.accountIdentifier(accountIdentifier)
         .orgIdentifier(dto.getOrgIdentifier())
         .projectIdentifier(dto.getProjectIdentifier())
         .identifier(dto.getIdentifier())
         .name(dto.getName());
-    builder.secretManagerIdentifier(secretManager.getIdentifier()).encryptionType(secretManager.getEncryptionType());
+    builder.secretManagerIdentifier(secretTextSpecDTO.getSecretManagerIdentifier())
+        .encryptionType(secretManager.getEncryptionType());
     if (SecretText.equals(dto.getType())) {
       SecretTextSpecDTO secret = (SecretTextSpecDTO) dto.getSpec();
       if (Reference.equals(secret.getValueType()) || CustomSecretManagerValues.equals(secret.getValueType())) {
@@ -314,7 +316,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
       if (KMS.equals(secretManagerType)) {
         encryptedRecord = kmsEncryptorsRegistry.getKmsEncryptor(secretManagerConfig)
                               .encryptSecret(encryptedData.getAccountIdentifier(), value, secretManagerConfig);
-        //validateEncryptedRecord(encryptedRecord);
+        // validateEncryptedRecord(encryptedRecord);
       } else if (VAULT.equals(secretManagerType)) {
         if (EncryptionType.VAULT.equals(secretManagerConfig.getEncryptionType())
             && APP_ROLE.equals(((BaseVaultConfig) secretManagerConfig).getAccessType())
@@ -337,10 +339,10 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     } catch (DelegateServiceDriverException ex) {
       throw buildDelegateNotAvailableHintException(ex.getMessage(), secretManagerConfig.getName());
     }
-    //encryptedData.setPath(null);
-    //encryptedData.setEncryptionKey(encryptedRecord.getEncryptionKey());
-    //encryptedData.setEncryptedValue(encryptedRecord.getEncryptedValue());
-    //encryptedData.setBase64Encoded(encryptedRecord.isBase64Encoded());
+    // encryptedData.setPath(null);
+    // encryptedData.setEncryptionKey(encryptedRecord.getEncryptionKey());
+    // encryptedData.setEncryptedValue(encryptedRecord.getEncryptedValue());
+    // encryptedData.setBase64Encoded(encryptedRecord.isBase64Encoded());
   }
 
   private void encrypt(NGEncryptedData encryptedData, String value, NGEncryptedData existingEncryptedData,
