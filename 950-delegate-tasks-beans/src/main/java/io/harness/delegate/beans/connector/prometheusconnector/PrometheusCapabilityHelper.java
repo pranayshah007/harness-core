@@ -14,7 +14,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
-import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator.HttpCapabilityDetailsLevel;
 import io.harness.expression.ExpressionEvaluator;
 
 import java.util.ArrayList;
@@ -29,8 +28,11 @@ public class PrometheusCapabilityHelper {
       ExpressionEvaluator maskingEvaluator, ConnectorConfigDTO prometheusConnectorDTO) {
     List<ExecutionCapability> capabilityList = new ArrayList<>();
     PrometheusConnectorDTO connectorDTO = (PrometheusConnectorDTO) prometheusConnectorDTO;
-    capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-        connectorDTO.getUrl() + PROMETHEUS_BASIC_QUERY, HttpCapabilityDetailsLevel.QUERY, maskingEvaluator));
+    // Every status code is ignored and capability is used to check HTTP connectivity.
+    capabilityList.add(
+        HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapabilityWithIgnoreResponseCode(
+            connectorDTO.getUrl() + PROMETHEUS_BASIC_QUERY, maskingEvaluator, true,
+            HttpConnectionExecutionCapabilityGenerator.HttpCapabilityDetailsLevel.QUERY));
     populateDelegateSelectorCapability(capabilityList, connectorDTO.getDelegateSelectors());
     return capabilityList;
   }
