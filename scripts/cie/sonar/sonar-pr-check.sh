@@ -6,7 +6,7 @@
 
 #set -ex
 
-#trap 'clean_up_files' EXIT
+trap 'clean_up_files' EXIT
 
 trap 'report_error' ERR
 
@@ -21,6 +21,7 @@ function clean_temp_files() {
 function report_error(){
     echo 'please re-trigger this stage after resolving the issue.'
     echo 'to trigger this specific stage comment "trigger ss" in your github PR'
+    clean_temp_files "${JARS_FILE} ${MODULES_FILE} ${MODULES_TESTS_FILE} ${PR_SRCS_FILE}"
     exit 1
 }
 
@@ -43,6 +44,10 @@ function create_empty_files() {
    done
 }
 
+function clean_up_files() {
+    clean_temp_files "${JARS_FILE} ${MODULES_FILE} ${MODULES_TESTS_FILE} ${PR_SRCS_FILE}"
+}
+
 function get_info_from_file(){
   local_filename=$1
   cat $local_filename | sort -u | tr '\r\n' ',' | rev | cut -c2- | rev
@@ -59,7 +64,7 @@ JARS_FILE="modules_jars.txt"
 MODULES_FILE="modules.txt"
 MODULES_TESTS_FILE="modules_tests.txt"
 PR_SRCS_FILE="pr_srcs.txt"
-SONAR_CONFIG_FILE='TEMP-sonar-project.properties'
+SONAR_CONFIG_FILE='sonar-project.properties'
 STARTUP_ARGS="--output_base=/tmp"
 
 # This script is required to generate the test util bzl file in root directory.
@@ -97,10 +102,10 @@ for FILE in $GIT_DIFF;
   done
 
 # Check if the file is empty, meaning there is no java file changed in the PR.
-if ! [ -f "$MODULES_FILE" ]; then
+if ! [[ -f "$MODULES_FILE" ]]; then
   echo "INFO: No Java File change detected. Skipping the Scan....."
   exit 0
-elif [ grep -inr '400-rest' "$MODULES_FILE" ]; then
+elif ! [[ -z $(grep -inr '400-rest' "$MODULES_FILE") ]]; then
   echo "INFO: 400-rest changes detected in the PR. Skipping the Scan....."
   exit 0
 fi
