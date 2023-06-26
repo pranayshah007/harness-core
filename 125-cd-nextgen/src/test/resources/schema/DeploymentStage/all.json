@@ -1776,9 +1776,6 @@
         },
         {
           "type": "object",
-          "required": [
-            "settings"
-          ],
           "properties": {
             "buildCommandOptions": {
               "oneOf": [
@@ -1873,16 +1870,6 @@
                   "minLength": 1
                 }
               ]
-            },
-            "settings": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
-                },
-                {
-                  "type": "string"
-                }
-              ]
             }
           }
         }
@@ -1897,7 +1884,7 @@
         {
           "type": "object",
           "required": [
-            "settings"
+            "stackName"
           ],
           "properties": {
             "connectorRef": {
@@ -1988,16 +1975,6 @@
                   "type": "string",
                   "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
-                }
-              ]
-            },
-            "settings": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
-                },
-                {
-                  "type": "string"
                 }
               ]
             },
