@@ -14,6 +14,7 @@ import static java.util.stream.Collectors.toMap;
 import io.harness.accesscontrol.permissions.Permission;
 import io.harness.accesscontrol.permissions.persistence.PermissionDBO;
 import io.harness.accesscontrol.permissions.persistence.PermissionDBOMapper;
+import io.harness.accesscontrol.resources.resourcetypes.persistence.ResourceTypeDBO;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -42,9 +43,16 @@ public class InMemoryPermissionRepository {
     if (isEmpty(permissionDBOS)) {
       return new HashMap<>();
     }
+    List<ResourceTypeDBO> resourceTypeDBOs = mongoTemplate.findAll(ResourceTypeDBO.class);
+    if (isEmpty(resourceTypeDBOs)) {
+      return new HashMap<>();
+    }
+    Map<String, String> resourceTypeMapping =
+        resourceTypeDBOs.stream().collect(toMap(ResourceTypeDBO::getPermissionKey, ResourceTypeDBO::getIdentifier));
     return permissionDBOS.stream()
         .map(PermissionDBOMapper::fromDBO)
-        .collect(toMap(Permission::getIdentifier, permission -> permission.getPermissionMetadata(1)));
+        .collect(toMap(
+            Permission::getIdentifier, permission -> resourceTypeMapping.get(permission.getPermissionMetadata(1))));
   }
 
   public String getResourceTypeBy(String permission) {

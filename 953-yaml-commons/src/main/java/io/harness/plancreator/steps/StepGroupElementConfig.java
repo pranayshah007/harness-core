@@ -27,6 +27,7 @@ import io.harness.when.beans.StepWhenCondition;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
+import io.harness.yaml.core.variables.NGVariable;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -79,6 +80,8 @@ public class StepGroupElementConfig {
   @VariableExpression
   @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
   ParameterField<StepWhenCondition> when;
+
+  @VariableExpression List<NGVariable> variables;
 
   @VariableExpression(skipVariableExpression = true) TemplateLinkConfig template;
 

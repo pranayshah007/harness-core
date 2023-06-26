@@ -10,6 +10,8 @@ package io.harness.cdng.infra.beans;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.helper.K8sCloudConfigMetadata;
+import io.harness.helper.K8sRancherCloudConfigMetadata;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.yaml.core.VariableExpression;
@@ -36,5 +38,10 @@ public class K8sRancherInfrastructureOutcome extends InfrastructureOutcomeAbstra
   @Override
   public String getKind() {
     return InfrastructureKind.KUBERNETES_RANCHER;
+  }
+
+  @Override
+  public K8sCloudConfigMetadata getInfraOutcomeMetadata() {
+    return K8sRancherCloudConfigMetadata.builder().clusterName(clusterName).build();
   }
 }

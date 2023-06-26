@@ -72,8 +72,8 @@ import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.utils.PageUtils;
-import io.harness.utils.PipelineGitXHelper;
 import io.harness.utils.PmsFeatureFlagService;
+import io.harness.utils.ThreadOperationContextHelper;
 
 import com.google.inject.Inject;
 import java.util.Collections;
@@ -273,7 +273,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
     }
     if (mergeInputSetRequestDTO.isGetOnlyFileContent()
         && pmsFeatureFlagService.isEnabled(accountId, FeatureName.PIE_GET_FILE_CONTENT_ONLY)) {
-      PipelineGitXHelper.setUserFlowContext(USER_FLOW.EXECUTION);
+      ThreadOperationContextHelper.setUserFlow(USER_FLOW.EXECUTION);
     }
     List<String> inputSetReferences = mergeInputSetRequestDTO.getInputSetReferences();
     String mergedYaml;

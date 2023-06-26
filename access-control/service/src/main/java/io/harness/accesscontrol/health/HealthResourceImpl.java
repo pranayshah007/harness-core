@@ -17,9 +17,11 @@ import io.harness.exception.NoResultFoundException;
 import io.harness.health.HealthException;
 import io.harness.health.HealthService;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.rest.RestResponse;
 import io.harness.security.annotations.PublicApi;
 
 import com.codahale.metrics.health.HealthCheck;
+import com.codahale.metrics.health.jvm.ThreadDeadlockHealthCheck;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import javax.validation.executable.ValidateOnExecution;
@@ -32,10 +34,12 @@ import lombok.extern.slf4j.Slf4j;
 @PublicApi
 public class HealthResourceImpl implements HealthResource {
   private final HealthService healthService;
+  private final ThreadDeadlockHealthCheck threadDeadlockHealthCheck;
 
   @Inject
   public HealthResourceImpl(HealthService healthService) {
     this.healthService = healthService;
+    this.threadDeadlockHealthCheck = new ThreadDeadlockHealthCheck();
   }
 
   @Override
@@ -53,6 +57,16 @@ public class HealthResourceImpl implements HealthResource {
     if (check.isHealthy()) {
       return ResponseDTO.newResponse("healthy");
     }
+    throw new HealthException(check.getMessage(), check.getError());
+  }
+
+  @Override
+  public RestResponse<String> doLivenessCheck() {
+    HealthCheck.Result check = threadDeadlockHealthCheck.execute();
+    if (check.isHealthy()) {
+      return new RestResponse<>("live");
+    }
+    log.info(check.getMessage());
     throw new HealthException(check.getMessage(), check.getError());
   }
 }

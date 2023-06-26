@@ -282,7 +282,7 @@ public final class VerificationJobInstance
       return Lists.newArrayList(QUEUED, RUNNING);
     }
     public static List<ExecutionStatus> noAnalysisStatuses() {
-      return Lists.newArrayList(QUEUED, TIMEOUT);
+      return Lists.newArrayList(QUEUED, TIMEOUT, ABORTED);
     }
     public static List<ExecutionStatus> finalStatuses() {
       return Lists.newArrayList(SUCCESS, FAILED, TIMEOUT);

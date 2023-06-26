@@ -130,10 +130,6 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   public JsonNode getPipelineYamlSchema(
       String accountIdentifier, String projectIdentifier, String orgIdentifier, Scope scope) {
     try {
-      if (pmsFeatureFlagService.isEnabled(accountIdentifier, PIE_STATIC_YAML_SCHEMA)) {
-        String staticYamlRepoUrl = calculateFileURL(EntityType.PIPELINES, "v0");
-        return schemaFetcher.fetchStaticYamlSchema(accountIdentifier, staticYamlRepoUrl);
-      }
       return getPipelineYamlSchemaInternal(accountIdentifier, projectIdentifier, orgIdentifier, scope);
     } catch (Exception e) {
       log.error("[PMS] Failed to get pipeline yaml schema");
@@ -203,7 +199,15 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   boolean validateYamlSchemaInternal(String accountIdentifier, String orgId, String projectId, String yaml) {
     long start = System.currentTimeMillis();
     try {
-      JsonNode schema = getPipelineYamlSchema(accountIdentifier, projectId, orgId, Scope.PROJECT);
+      JsonNode schema = null;
+
+      // If static schema ff is on, fetch schema from fetcher
+      if (pmsFeatureFlagService.isEnabled(accountIdentifier, PIE_STATIC_YAML_SCHEMA)) {
+        schema = schemaFetcher.fetchStaticYamlSchema(accountIdentifier);
+      } else {
+        schema = getPipelineYamlSchema(accountIdentifier, projectId, orgId, Scope.PROJECT);
+      }
+
       String schemaString = JsonPipelineUtils.writeJsonString(schema);
       yamlSchemaValidator.validate(yaml, schemaString,
           pmsYamlSchemaHelper.isFeatureFlagEnabled(FeatureName.DONT_RESTRICT_PARALLEL_STAGE_COUNT, accountIdentifier),

@@ -199,7 +199,8 @@ public interface EntityTypeConstants {
   String TERRAGRUNT_ROLLBACK = "TerragruntRollback";
   String CONTAINER_STEP = "Container";
   String IACM_TERRAFORM_PLUGIN = "IACMTerraformPlugin";
-  String IACM_TEMPLATE = "IACMTemplate";
+  String IACM_APPROVAL = "IACMApproval";
+
   String ELASTIGROUP_BG_STAGE_SETUP = "ElastigroupBGStageSetup";
   String ELASTIGROUP_SWAP_ROUTE = "ElastigroupSwapRoute";
   String ASG_CANARY_DEPLOY = "AsgCanaryDeploy";

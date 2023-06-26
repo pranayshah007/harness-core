@@ -314,6 +314,7 @@ public class ArtifactResponseToOutcomeMapper {
         .identifier(amazonS3ArtifactConfig.getIdentifier())
         .primaryArtifact(amazonS3ArtifactConfig.isPrimaryArtifact())
         .filePathRegex(amazonS3ArtifactConfig.getFilePathRegex().getValue())
+        .metadata(useDelegateResponse ? getMetadata(s3ArtifactDelegateResponse) : null)
         .build();
   }
 

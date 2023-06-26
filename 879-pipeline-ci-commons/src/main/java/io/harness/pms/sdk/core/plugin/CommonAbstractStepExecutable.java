@@ -465,8 +465,12 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
       OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
           ambiance, RefObjectUtils.getSweepingOutputRefObject(artifactOutputVariableKey));
       if (!optionalSweepingOutput.isFound()) {
-        executionSweepingOutputResolver.consume(ambiance, artifactOutputVariableKey,
-            StepArtifactSweepingOutput.builder().stepArtifacts(stepArtifacts).build(), StepOutcomeGroup.STAGE.name());
+        try {
+          executionSweepingOutputResolver.consume(ambiance, artifactOutputVariableKey,
+              StepArtifactSweepingOutput.builder().stepArtifacts(stepArtifacts).build(), StepOutcomeGroup.STAGE.name());
+        } catch (Exception e) {
+          log.error("Error while consuming artifact sweeping output", e);
+        }
       }
 
       // we found a bug CI-7115 due to which we had to change the outcome identifier from artifact_+stepId to
@@ -475,8 +479,12 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
       optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
           ambiance, RefObjectUtils.getSweepingOutputRefObject("artifact_" + stepIdentifier));
       if (!optionalSweepingOutput.isFound()) {
-        executionSweepingOutputResolver.consume(ambiance, "artifact_" + stepIdentifier,
-            StepArtifactSweepingOutput.builder().stepArtifacts(stepArtifacts).build(), StepOutcomeGroup.STAGE.name());
+        try {
+          executionSweepingOutputResolver.consume(ambiance, "artifact_" + stepIdentifier,
+              StepArtifactSweepingOutput.builder().stepArtifacts(stepArtifacts).build(), StepOutcomeGroup.STAGE.name());
+        } catch (Exception e) {
+          log.error("Error while consuming artifact sweeping output", e);
+        }
       }
 
       String uniqueStepIdentifier = getUniqueStepIdentifier(ambiance, stepIdentifier);

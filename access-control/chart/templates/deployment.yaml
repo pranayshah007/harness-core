@@ -131,7 +131,9 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.mongoSecrets.password.name }}
                   key: {{ .Values.mongoSecrets.password.key }}
-            {{- else }}
+            - name: MONGODB_CONNECTION_PROTOCOL
+              value: "mongodb://"
+              {{- else }}
             - name: MONGODB_USER
               valueFrom:
                 secretKeyRef:
@@ -142,13 +144,17 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.global.database.mongo.secretName }}
                   key: {{ .Values.global.database.mongo.passwordKey }}
-            {{- end }}
+            - name: MONGODB_CONNECTION_PROTOCOL
+              value: '{{ .Values.global.database.mongo.protocol}}://'
+              {{- end }}
             - name: MONGODB_HOSTS
               value: {{ include "access-control.mongohosts" . }}
             - name: MONGO_URI
               value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "accesscontrol" "context" $) }}
             - name: OFFSET_STORAGE_FILE_FILENAME
               value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "accesscontrol" "context" $) }}
+            - name: MONGODB_CONNECTION_URL
+              value: {{ include "access-control.mongoConnectionUrl" (dict "database" "accesscontrol" "context" $) }}
             {{- if .Values.extraEnvVars }}
             {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

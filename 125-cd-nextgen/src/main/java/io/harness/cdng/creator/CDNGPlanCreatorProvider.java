@@ -51,6 +51,7 @@ import static io.harness.ng.core.k8s.ServiceSpecType.ECS;
 import static io.harness.ng.core.k8s.ServiceSpecType.GOOGLE_CLOUD_FUNCTIONS;
 import static io.harness.ng.core.k8s.ServiceSpecType.KUBERNETES;
 import static io.harness.ng.core.k8s.ServiceSpecType.SERVERLESS_AWS_LAMBDA;
+import static io.harness.steps.plugin.ContainerStepConstants.PLUGIN;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -913,7 +914,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY)
             .setStepMetaData(
                 StepMetaData.newBuilder().addCategory("GoogleCloudFunctions").setFolderPath("Google Functions").build())
-            .setFeatureFlag(FeatureName.CDS_GOOGLE_CLOUD_FUNCTION.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo googleFunctionDeployWithoutTraffic =
@@ -922,7 +923,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC)
             .setStepMetaData(
                 StepMetaData.newBuilder().addCategory("GoogleCloudFunctions").setFolderPath("Google Functions").build())
-            .setFeatureFlag(FeatureName.CDS_GOOGLE_CLOUD_FUNCTION.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo googleFunctionTrafficShift =
@@ -931,7 +932,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT)
             .setStepMetaData(
                 StepMetaData.newBuilder().addCategory("GoogleCloudFunctions").setFolderPath("Google Functions").build())
-            .setFeatureFlag(FeatureName.CDS_GOOGLE_CLOUD_FUNCTION.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo googleFunctionRollback =
@@ -940,7 +941,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK)
             .setStepMetaData(
                 StepMetaData.newBuilder().addCategory("GoogleCloudFunctions").setFolderPath("Google Functions").build())
-            .setFeatureFlag(FeatureName.CDS_GOOGLE_CLOUD_FUNCTION.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo googleFunctionGenOneDeploy = StepInfo.newBuilder()
@@ -950,7 +951,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                                    .addCategory("GoogleCloudFunctionsGenOne")
                                                                    .setFolderPath("Google Functions")
                                                                    .build())
-                                              .setFeatureFlag(FeatureName.CDS_GOOGLE_CLOUD_FUNCTION.name())
+                                              .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
                                               .build();
 
     StepInfo googleFunctionGenOneRollback = StepInfo.newBuilder()
@@ -960,7 +961,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                                      .addCategory("GoogleCloudFunctionsGenOne")
                                                                      .setFolderPath("Google Functions")
                                                                      .build())
-                                                .setFeatureFlag(FeatureName.CDS_GOOGLE_CLOUD_FUNCTION.name())
+                                                .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
                                                 .build();
 
     StepInfo awsLambdaDeploy = StepInfo.newBuilder()
@@ -1341,7 +1342,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("SAM Deploy")
             .setType(StepSpecTypeConstants.AWS_SAM_DEPLOY)
-            .setStepMetaData(StepMetaData.newBuilder().addCategory(AWS_SAM).setFolderPath("AWS SAM").build())
+            .setStepMetaData(
+                StepMetaData.newBuilder().addCategory(AWS_SAM).addCategory(PLUGIN).setFolderPath("AWS SAM").build())
             .setFeatureFlag(FeatureName.CDP_AWS_SAM.name())
             .build();
 
@@ -1350,7 +1352,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Download Manifests")
             .setType(StepSpecTypeConstants.DOWNLOAD_MANIFESTS)
             .setStepMetaData(
-                StepMetaData.newBuilder().addCategory("DownloadManifests").setFolderPath("AWS SAM").build())
+                StepMetaData.newBuilder().addCategory(AWS_SAM).addCategory(PLUGIN).setFolderPath("AWS SAM").build())
             .setFeatureFlag(FeatureName.CDP_AWS_SAM.name())
             .build();
 
@@ -1358,7 +1360,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("SAM Build")
             .setType(StepSpecTypeConstants.AWS_SAM_BUILD)
-            .setStepMetaData(StepMetaData.newBuilder().addCategory(AWS_SAM).setFolderPath("AWS SAM").build())
+            .setStepMetaData(
+                StepMetaData.newBuilder().addCategory(AWS_SAM).addCategory(PLUGIN).setFolderPath("AWS SAM").build())
             .setFeatureFlag(FeatureName.CDP_AWS_SAM.name())
             .build();
 

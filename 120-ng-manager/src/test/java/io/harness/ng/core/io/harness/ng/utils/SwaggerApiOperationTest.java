@@ -18,6 +18,7 @@ import io.harness.rule.Owner;
 
 import com.google.common.collect.Sets;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Set;
@@ -50,16 +51,27 @@ public class SwaggerApiOperationTest extends CategoryTest {
 
     for (Class<?> klass : ref.getTypesAnnotatedWith(Path.class)) {
       for (final Method method : klass.getDeclaredMethods()) {
-        supportedAnnotation.stream()
-            .filter(annotation -> method.isAnnotationPresent(annotation))
-            .forEach(annotation -> {
-              assertThat(method.isAnnotationPresent(apiOperationClass)).isTrue();
-              ApiOperation apiOperationAnnotation = (ApiOperation) method.getAnnotation(apiOperationClass);
-              assertThat(apiOperationAnnotation.nickname()).isNotBlank();
-              assertThat(uniqueOperationName.contains(apiOperationAnnotation.nickname())).isFalse();
-              uniqueOperationName.add(apiOperationAnnotation.nickname());
-            });
+        if (!isHidden(method)) {
+          supportedAnnotation.stream()
+              .filter(annotation -> method.isAnnotationPresent(annotation))
+              .forEach(annotation -> {
+                assertThat(method.isAnnotationPresent(apiOperationClass)).isTrue();
+                ApiOperation apiOperationAnnotation = (ApiOperation) method.getAnnotation(apiOperationClass);
+                assertThat(apiOperationAnnotation.nickname()).isNotBlank();
+                assertThat(uniqueOperationName.contains(apiOperationAnnotation.nickname())).isFalse();
+                uniqueOperationName.add(apiOperationAnnotation.nickname());
+              });
+        }
       }
     }
+  }
+
+  private boolean isHidden(Method method) {
+    final Class<? extends Annotation> operationClass = Operation.class;
+    Operation operationAnnotation = (Operation) method.getAnnotation(operationClass);
+    if (operationAnnotation != null) {
+      return operationAnnotation.hidden();
+    }
+    return false;
   }
 }

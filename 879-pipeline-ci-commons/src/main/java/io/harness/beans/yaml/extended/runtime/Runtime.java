@@ -13,7 +13,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonValue;
 import org.springframework.data.annotation.TypeAlias;
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true, defaultImpl = CloudRuntime.class)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXISTING_PROPERTY,
+    visible = true, defaultImpl = CloudRuntime.class)
 @JsonSubTypes({
   @JsonSubTypes.Type(value = CloudRuntime.class, name = "Cloud")
   , @JsonSubTypes.Type(value = DockerRuntime.class, name = "Docker"),

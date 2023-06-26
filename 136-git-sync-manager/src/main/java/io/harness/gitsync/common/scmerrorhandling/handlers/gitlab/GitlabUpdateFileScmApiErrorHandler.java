@@ -43,6 +43,10 @@ public class GitlabUpdateFileScmApiErrorHandler implements ScmApiErrorHandler {
 
   public static final String UPDATE_CONFLICT_ERROR_MESSAGE =
       "You are attempting to update a file that has changed since you started editing it.";
+  public static final String UPDATE_FAILURE_HINT =
+      ScmErrorHints.INVALID_CREDENTIALS + "\n- " + ScmErrorHints.OAUTH_ACCESS_FAILURE;
+  public static final String UPDATE_FAILURE_EXPLANATION = UPDATE_FILE_FAILED + "\n- "
+      + ScmErrorExplanations.INVALID_CONNECTOR_CREDS + "\n- " + ScmErrorExplanations.OAUTH_ACCESS_DENIED;
 
   @Override
   public void handleError(int statusCode, String errorMessage, ErrorMetadata errorMetadata) throws WingsException {
@@ -63,9 +67,8 @@ public class GitlabUpdateFileScmApiErrorHandler implements ScmApiErrorHandler {
         }
       case 401:
         throw NestedExceptionUtils.hintWithExplanationException(
-            ErrorMessageFormatter.formatMessage(ScmErrorHints.INVALID_CREDENTIALS, errorMetadata),
-            ErrorMessageFormatter.formatMessage(
-                UPDATE_FILE_FAILED + ScmErrorExplanations.INVALID_CONNECTOR_CREDS, errorMetadata),
+            ErrorMessageFormatter.formatMessage(UPDATE_FAILURE_HINT, errorMetadata),
+            ErrorMessageFormatter.formatMessage(UPDATE_FAILURE_EXPLANATION, errorMetadata),
             new ScmUnauthorizedException(errorMessage));
       case 404:
         throw NestedExceptionUtils.hintWithExplanationException(

@@ -68,7 +68,7 @@ public class AppConfigApiImplTest extends CategoryTest {
     AppConfigRequest appConfigRequest = new AppConfigRequest();
     AppConfig appConfig = new AppConfig();
     appConfigRequest.setAppConfig(appConfig);
-    when(configManagerService.saveOrUpdateConfigForAccount(appConfig, TEST_ACCOUNT_IDENTIFIER, TEST_PLUGIN_TYPE))
+    when(configManagerService.saveUpdateAndMergeConfigForAccount(appConfig, TEST_ACCOUNT_IDENTIFIER, TEST_PLUGIN_TYPE))
         .thenReturn(appConfig);
     Response response = appConfigApiImpl.saveOrUpdatePluginAppConfig(appConfigRequest, TEST_ACCOUNT_IDENTIFIER);
     assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
@@ -82,7 +82,7 @@ public class AppConfigApiImplTest extends CategoryTest {
     AppConfigRequest appConfigRequest = new AppConfigRequest();
     AppConfig appConfig = new AppConfig();
     appConfigRequest.setAppConfig(appConfig);
-    when(configManagerService.saveOrUpdateConfigForAccount(appConfig, TEST_ACCOUNT_IDENTIFIER, TEST_PLUGIN_TYPE))
+    when(configManagerService.saveUpdateAndMergeConfigForAccount(appConfig, TEST_ACCOUNT_IDENTIFIER, TEST_PLUGIN_TYPE))
         .thenThrow(new InvalidRequestException(ERROR_MESSAGE_SAVE_OR_UPDATE));
     Response response = appConfigApiImpl.saveOrUpdatePluginAppConfig(appConfigRequest, TEST_ACCOUNT_IDENTIFIER);
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());

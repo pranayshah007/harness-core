@@ -64,8 +64,16 @@ public class GitConnectorImpl implements BaseConnector {
         .gitAuthType(getAuthType(gitConfig))
         .gitAuth(getGitAuth(gitConfig, migratedEntities))
         .gitConnectionType(getGitConnectionType(gitConfig.getUrlType()))
-        .url(gitConfig.getRepoUrl())
+        .url(getRepoUrl(gitConfig))
         .build();
+  }
+
+  private static String getRepoUrl(GitConfig gitConfig) {
+    // If it is a Http Git Connector and does not start with http, then we prefix with https://
+    if (StringUtils.isBlank(gitConfig.getSshSettingId()) && !gitConfig.getRepoUrl().startsWith("http")) {
+      return "https://" + gitConfig.getRepoUrl();
+    }
+    return gitConfig.getRepoUrl();
   }
 
   private static GitAuthenticationDTO getGitAuth(GitConfig gitConfig, Map<CgEntityId, NGYamlFile> migratedEntities) {

@@ -33,7 +33,6 @@ import static org.mockito.Mockito.when;
 import io.harness.EntityType;
 import io.harness.ModuleType;
 import io.harness.PipelineServiceConfiguration;
-import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -65,7 +64,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.io.Resources;
 import java.io.IOException;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
@@ -215,63 +213,6 @@ public class PMSYamlSchemaServiceImplTest {
     String staticJson =
         Resources.toString(Objects.requireNonNull(classLoader.getResource(filePath)), StandardCharsets.UTF_8);
     return JsonUtils.asObject(staticJson, JsonNode.class);
-  }
-  @Test
-  @Owner(developers = PRASHANTSHARMA)
-  @Category(UnitTests.class)
-  @HarnessAlwaysRun
-  public void testComparePipelineSchema() throws IOException {
-    String filename = "static-schema/pipeline.json";
-    JsonNode jsonNode = fetchFile(filename);
-
-    // fetching repo schema
-    pipelineServiceConfiguration = mock(PipelineServiceConfiguration.class);
-    pmsYamlSchemaService.pipelineServiceConfiguration = pipelineServiceConfiguration;
-
-    doReturn("https://raw.githubusercontent.com/harness/harness-schema/main/%s/%s")
-        .when(pipelineServiceConfiguration)
-        .getStaticSchemaFileURL();
-    String fileUrL = pmsYamlSchemaService.calculateFileURL(EntityType.PIPELINES, "v0");
-
-    JsonNode repoJson = JsonPipelineUtils.getMapper().readTree(new URL(fileUrL));
-    // If json comparison fails, copy the json to static-schema/pipeline.json from
-    // https://github.com/harness/harness-schema/blob/main/v0/pipeline.json
-    assertEquals(jsonNode, repoJson);
-
-    String errorMessageForPipeline =
-        "Copy Pipeline.json and paste it under static-schema/pipeline.json from https://github.com/harness/harness-schema/blob/main/v0/pipeline.json";
-    compareJson(jsonNode, repoJson, errorMessageForPipeline);
-  }
-
-  @Test
-  @Owner(developers = PRASHANTSHARMA)
-  @Category(UnitTests.class)
-  @HarnessAlwaysRun
-  public void testCompareTemplateSchema() throws IOException {
-    String filename = "static-schema/template.json";
-    JsonNode jsonNode = fetchFile(filename);
-
-    // fetching repo schema
-    pipelineServiceConfiguration = mock(PipelineServiceConfiguration.class);
-    pmsYamlSchemaService.pipelineServiceConfiguration = pipelineServiceConfiguration;
-
-    doReturn("https://raw.githubusercontent.com/harness/harness-schema/main/%s/%s")
-        .when(pipelineServiceConfiguration)
-        .getStaticSchemaFileURL();
-    String fileUrL = pmsYamlSchemaService.calculateFileURL(EntityType.TEMPLATE, "v0");
-
-    JsonNode repoJson = JsonPipelineUtils.getMapper().readTree(new URL(fileUrL));
-    // If json comparison fails, copy the json to static-schema/pipeline.json from
-    // https://github.com/harness/harness-schema/blob/main/v0/pipeline.json
-    assertEquals(jsonNode, repoJson);
-
-    String errorMessageForTemplate =
-        "Copy template.json and paste it under static-schema/template.json from https://github.com/harness/harness-schema/blob/main/v0/template.json";
-    compareJson(jsonNode, repoJson, errorMessageForTemplate);
-  }
-
-  private void compareJson(JsonNode jsonNode, JsonNode repoJson, String errorMessageForPipeline) {
-    assertEquals(errorMessageForPipeline, jsonNode, repoJson);
   }
 
   @Test

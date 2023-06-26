@@ -58,6 +58,8 @@ import io.harness.encryption.SecretRefData;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
+import io.harness.favorites.ResourceType;
+import io.harness.favorites.services.FavoritesService;
 import io.harness.gitsync.clients.YamlGitConfigClient;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -112,6 +114,8 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   @Mock YamlGitConfigClient yamlGitConfigClient;
   @Mock NGSettingsClient settingsClient;
   @Mock Call<ResponseDTO<SettingValueResponseDTO>> request;
+  @Mock FavoritesService favoritesService;
+
   @Mock AccountClient accountClient;
 
   @Mock Call<RestResponse<Boolean>> featureFlagCall1;
@@ -435,14 +439,15 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     when(entitySetupUsageService.isEntityReferenced(any(), any(), any())).thenReturn(false);
     boolean deleted = connectorService.delete(accountIdentifier, null, null, identifier, false);
     verify(entitySetupUsageService, times(1)).isEntityReferenced(anyString(), anyString(), any(EntityType.class));
+    verify(favoritesService, times(1))
+        .deleteFavorites(accountIdentifier, null, null, ResourceType.CONNECTOR.toString(), identifier);
     assertThat(deleted).isTrue();
   }
 
   @Test
   @Owner(developers = OwnerRule.MEENAKSHI)
   @Category(UnitTests.class)
-  public void testDelete_forceDeleteTrue_forceDeleteFFON_settingsFFOFF() {
-    doReturn(true).when(connectorService).isForceDeleteFFEnabled(accountIdentifier);
+  public void testDelete_forceDeleteTrue_settingsFFOFF() {
     doReturn(true).when(connectorService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
 
     createConnector(identifier, name);
@@ -458,56 +463,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   @Test
   @Owner(developers = OwnerRule.MEENAKSHI)
   @Category(UnitTests.class)
-  public void testDelete_forceDeleteTrue_forceDeleteFFON_settingsFFON_settingsDisabled() {
-    doReturn(true).when(connectorService).isForceDeleteFFEnabled(accountIdentifier);
-    doReturn(false).when(connectorService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
-    createConnector(identifier, name);
-    try {
-      connectorService.delete(accountIdentifier, null, null, identifier, true);
-    } catch (InvalidRequestException e) {
-      assertThat(e.getMessage())
-          .isEqualTo(
-              "Parameter forcedDelete cannot be true. Force Delete is not enabled for account [accountIdentifier]");
-    }
-  }
-
-  @Test
-  @Owner(developers = OwnerRule.MEENAKSHI)
-  @Category(UnitTests.class)
-  public void testDelete_forceDeleteTrue_forceDeleteFFOFF_settingsFFON_settingsDisabled() {
-    doReturn(false).when(connectorService).isForceDeleteFFEnabled(accountIdentifier);
-    doReturn(false).when(connectorService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
-    createConnector(identifier, name);
-    try {
-      connectorService.delete(accountIdentifier, null, null, identifier, true);
-    } catch (InvalidRequestException e) {
-      assertThat(e.getMessage())
-          .isEqualTo(
-              "Parameter forcedDelete cannot be true. Force Delete is not enabled for account [accountIdentifier]");
-    }
-  }
-
-  @Test
-  @Owner(developers = OwnerRule.MEENAKSHI)
-  @Category(UnitTests.class)
-  public void testDelete_forceDeleteTrue_forceDeleteFFOFF_settingsFFON_settingsEnabled() {
-    doReturn(false).when(connectorService).isForceDeleteFFEnabled(accountIdentifier);
-    doReturn(true).when(connectorService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
-    createConnector(identifier, name);
-    try {
-      connectorService.delete(accountIdentifier, null, null, identifier, true);
-    } catch (InvalidRequestException e) {
-      assertThat(e.getMessage())
-          .isEqualTo(
-              "Parameter forcedDelete cannot be true. Force Delete is not enabled for account [accountIdentifier]");
-    }
-  }
-
-  @Test
-  @Owner(developers = OwnerRule.MEENAKSHI)
-  @Category(UnitTests.class)
-  public void testDelete_withForceDeleteAsTrue() {
-    doReturn(true).when(connectorService).isForceDeleteFFEnabled(accountIdentifier);
+  public void testDelete_withForceDeleteAsTrue_settingsEnabled() {
     doReturn(true).when(connectorService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
     createConnector(identifier, name);
     doNothing()
@@ -522,7 +478,6 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   @Owner(developers = OwnerRule.MEENAKSHI)
   @Category(UnitTests.class)
   public void testDelete_withForceDeleteAsTrue_throwsException() {
-    doReturn(true).when(connectorService).isForceDeleteFFEnabled(accountIdentifier);
     doReturn(true).when(connectorService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
     createConnector(identifier, name);
     doThrow(RuntimeException.class)

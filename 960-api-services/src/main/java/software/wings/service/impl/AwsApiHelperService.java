@@ -112,6 +112,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -393,6 +394,7 @@ public class AwsApiHelperService {
       }
     }
     String outputVersionKey = null;
+    Map<String, String> metadata = new HashMap<>();
     if (fetchObjectMetadata) {
       ObjectMetadata objectMetadata = getObjectMetadataFromS3(awsInternalConfig, region, bucketName, key, versionId);
 
@@ -401,6 +403,13 @@ public class AwsApiHelperService {
       }
       if (versioningEnabledForBucket) {
         outputVersionKey = key + ":" + objectMetadata.getVersionId();
+      }
+      Map<String, Object> rawMetadata = objectMetadata.getRawMetadata();
+      if (EmptyPredicate.isNotEmpty(rawMetadata) && EmptyPredicate.isNotEmpty(rawMetadata.entrySet())) {
+        metadata = rawMetadata.entrySet()
+                       .stream()
+                       .filter(e -> e.getValue() != null)
+                       .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString()));
       }
     }
     if (outputVersionKey == null) {
@@ -424,6 +433,7 @@ public class AwsApiHelperService {
         .withArtifactFileSize(String.valueOf(artifactFileSize))
         .withBuildParameters(map)
         .withUiDisplayName("Build# " + outputVersionKey)
+        .withMetadata(metadata)
         .build();
   }
 

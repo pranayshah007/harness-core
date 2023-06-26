@@ -7,7 +7,6 @@
 
 package io.harness.plancreator.stages;
 
-import io.harness.beans.FeatureName;
 import io.harness.plancreator.pipelinerollback.PipelineRollbackStageHelper;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
@@ -69,9 +68,7 @@ public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
     }
     PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
     ExecutionMode executionMode = planCreationContextValue.getMetadata().getExecutionMode();
-    String accountIdentifier = planCreationContextValue.getAccountIdentifier();
-    if (!ExecutionModeUtils.isRollbackMode(executionMode)
-        && featureFlagService.isEnabled(accountIdentifier, FeatureName.PIPELINE_ROLLBACK)) {
+    if (!ExecutionModeUtils.isRollbackMode(executionMode)) {
       PipelineRollbackStageHelper.addPipelineRollbackStageDependency(responseMap, ctx.getCurrentField());
     }
     return responseMap;

@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -84,6 +85,9 @@ public class DelegateSelectorsInMemoryCacheTest extends CategoryTest {
     delegateSelectorsInMemoryCache.remove(ACCOUNT_IDENTIFIER, Collections.singleton(CLUSTER_HOST));
     delegateSelectors = delegateSelectorsInMemoryCache.get(ACCOUNT_IDENTIFIER, CLUSTER_HOST);
     assertEquals(0, delegateSelectors.size());
+
+    delegateSelectorsInMemoryCache.remove(ACCOUNT_IDENTIFIER, Collections.singleton(GITHUB_HOST));
+    assertEquals(0, delegateSelectorsInMemoryCache.cache.size());
   }
 
   @Test

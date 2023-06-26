@@ -26,6 +26,7 @@ public class AzureKeyVaultDTOToEntity
         .tenantId(connectorDTO.getTenantId())
         .vaultName(connectorDTO.getVaultName())
         .secretKeyRef(SecretRefHelper.getSecretConfigString(connectorDTO.getSecretKey()))
+        .vaultConfiguredManually(connectorDTO.isVaultConfiguredManually())
         .subscription(connectorDTO.getSubscription())
         .azureEnvironmentType(connectorDTO.getAzureEnvironmentType())
         .useManagedIdentity(connectorDTO.getUseManagedIdentity())

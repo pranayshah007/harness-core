@@ -111,8 +111,7 @@ public class CommandStepRollbackHelper extends CDStepHelper {
     // if pipeline rollback happens then need to update the executionDetails with one from prepared for rollback
     ExecutionMode executionMode = ambiance.getMetadata().getExecutionMode();
     boolean isPipelineRollbackModeExecution = ExecutionModeUtils.isRollbackMode(executionMode);
-    if (isPipelineRollbackModeExecution
-        && cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.PIPELINE_ROLLBACK)) {
+    if (isPipelineRollbackModeExecution) {
       stageExecutionHelper.saveStageExecutionDetails(
           ambiance, sshWinRmPrepareRollbackDataOutcome.getExecutionInfoKey(), sshWinRmExecutionDetails);
     }

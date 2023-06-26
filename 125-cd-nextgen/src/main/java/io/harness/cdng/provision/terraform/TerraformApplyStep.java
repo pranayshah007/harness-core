@@ -120,7 +120,8 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
     }
 
     if (stepParametersSpec.getConfiguration().getEncryptOutputSecretManager() != null
-        && stepParametersSpec.getConfiguration().getEncryptOutputSecretManager().getOutputSecretManagerRef() != null
+        && !ParameterField.isBlank(
+            stepParametersSpec.getConfiguration().getEncryptOutputSecretManager().getOutputSecretManagerRef())
         && cdFeatureFlagHelper.isEnabled(accountId, CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT)) {
       String secretManagerRef = ParameterFieldHelper.getParameterFieldValue(
           stepParametersSpec.getConfiguration().getEncryptOutputSecretManager().getOutputSecretManagerRef());
@@ -388,7 +389,8 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
 
     TerraformApplyOutcome terraformApplyOutcome;
     if (stepParameters.getConfiguration().getEncryptOutputSecretManager() != null
-        && stepParameters.getConfiguration().getEncryptOutputSecretManager().getOutputSecretManagerRef() != null
+        && !ParameterField.isBlank(
+            stepParameters.getConfiguration().getEncryptOutputSecretManager().getOutputSecretManagerRef())
         && cdFeatureFlagHelper.isEnabled(accountId, CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT)) {
       String secretManagerRef = ParameterFieldHelper.getParameterFieldValue(
           stepParameters.getConfiguration().getEncryptOutputSecretManager().getOutputSecretManagerRef());

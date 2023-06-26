@@ -16,9 +16,7 @@ import io.harness.beans.SwaggerConstants;
 import io.harness.beans.dependencies.DependencyElement;
 import io.harness.beans.yaml.extended.cache.Caching;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
-import io.harness.beans.yaml.extended.infrastrucutre.UseFromStageInfraYaml;
 import io.harness.beans.yaml.extended.platform.Platform;
-import io.harness.beans.yaml.extended.runtime.CloudRuntime;
 import io.harness.beans.yaml.extended.runtime.Runtime;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.pms.yaml.ParameterField;
@@ -60,11 +58,8 @@ public class IntegrationStageConfigImpl implements IntegrationStageConfig {
   ParameterField<List<String>> sharedPaths;
 
   ExecutionElementConfig execution;
-  @JsonTypeInfo(
-      use = JsonTypeInfo.Id.NAME, property = "type", visible = true, defaultImpl = UseFromStageInfraYaml.class)
   Infrastructure infrastructure;
 
-  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true, defaultImpl = CloudRuntime.class)
   Runtime runtime;
 
   @YamlSchemaTypes(value = {SupportedPossibleFieldTypes.runtime})

@@ -21,13 +21,11 @@ import io.harness.idp.events.eventlisteners.eventhandler.utils.ResourceLocker;
 import io.harness.idp.events.eventlisteners.factory.EventMessageHandlerFactory;
 import io.harness.idp.events.eventlisteners.messagehandler.EventMessageHandler;
 import io.harness.lock.AcquiredLock;
-import io.harness.lock.redis.RedisPersistentLocker;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.event.MessageListener;
 
 import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
-import java.time.Duration;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class EntityCrudStreamListener implements MessageListener {
+  private static final String LOCK_NAME_FORMAT = "EVENT_%s_%s_%s";
   EventMessageHandlerFactory eventMessageHandlerFactory;
   ResourceLocker resourceLocker;
 
@@ -76,14 +75,15 @@ public class EntityCrudStreamListener implements MessageListener {
           String accountIdentifier = entityChangeDTO.getAccountIdentifier().getValue();
           String resourceIdentifier = entityChangeDTO.getIdentifier().getValue();
 
-          AcquiredLock lock = resourceLocker.acquireLock(entityType, messageId, accountIdentifier, resourceIdentifier);
+          String lockName = String.format(LOCK_NAME_FORMAT, accountIdentifier, entityType, resourceIdentifier);
+          AcquiredLock lock = resourceLocker.acquireLock(lockName);
           try {
             eventMessageHandler.handleMessage(message, entityChangeDTO, action);
             log.info("Completed processing the crud event with the id {}", messageId);
           } catch (Exception e) {
             log.error("Error in handling the crud event with the id {} for entity type {}", messageId, entityType, e);
           } finally {
-            resourceLocker.releaseLock(lock, entityType, messageId, accountIdentifier, resourceIdentifier);
+            resourceLocker.releaseLock(lock);
           }
           return true;
         }

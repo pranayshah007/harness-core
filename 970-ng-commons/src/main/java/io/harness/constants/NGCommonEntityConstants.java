@@ -208,4 +208,5 @@ public class NGCommonEntityConstants {
   public static final String PLAN_NAME = "planName";
   public static final String TARGET_IDENTIFIER_KEY = "targetIdentifier";
   public static final String NOTES_FOR_PIPELINE_EXECUTION = "notesForPipelineExecution";
+  public static final String APPLY_GITX_REPO_ALLOW_LIST_FILTER = "applyGitXRepoAllowListFilter";
 }

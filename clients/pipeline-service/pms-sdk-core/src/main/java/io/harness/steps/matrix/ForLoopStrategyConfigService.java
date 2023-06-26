@@ -18,7 +18,6 @@ import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.ForMetadata;
 import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.serializer.JsonUtils;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -235,8 +234,8 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
         }
       }
       for (int i = 0; i < harnessForConfig.getTimes().getValue(); i++) {
-        JsonNode clonedNode = JsonPipelineUtils.asTree(JsonUtils.asMap(StrategyUtils.replaceExpressions(
-            jsonNode.deepCopy().toString(), new HashMap<>(), i, harnessForConfig.getTimes().getValue(), null)));
+        JsonNode clonedNode = StrategyUtils.replaceExpressions(
+            JsonPipelineUtils.asTree(jsonNode), new HashMap<>(), i, harnessForConfig.getTimes().getValue(), null);
         StrategyUtils.modifyJsonNode(clonedNode, Lists.newArrayList(String.valueOf(i)));
         jsonNodes.add(clonedNode);
       }
@@ -244,8 +243,8 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
       int currentIteration = 0;
       List<String> params = splitParamsIfNeeded(harnessForConfig);
       for (String value : params) {
-        JsonNode clonedNode = JsonPipelineUtils.asTree(JsonUtils.asMap(StrategyUtils.replaceExpressions(
-            jsonNode.deepCopy().toString(), new HashMap<>(), currentIteration, params.size(), value)));
+        JsonNode clonedNode = StrategyUtils.replaceExpressions(
+            JsonPipelineUtils.asTree(jsonNode), new HashMap<>(), currentIteration, params.size(), value);
         StrategyUtils.modifyJsonNode(clonedNode, Lists.newArrayList(String.valueOf(currentIteration)));
         jsonNodes.add(clonedNode);
         currentIteration++;

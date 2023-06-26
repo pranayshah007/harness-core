@@ -285,7 +285,7 @@ helper shell scripts:
    NOTE: Download IntelliJ as per your macOS architecture i.e. x86_64 (intel) or arm64 (Apple silicon). You can check your architecture by command “uname -m“.
   
    It's recommended to install the latest version of IntelliJ that's supported by the Bazel Plugin. To find the latest supported version, please refer to the [bazel github project](https://github.com/bazelbuild/intellij/blob/master/intellij_platform_sdk/build_defs.bzl#L11).
-   As of June, 2022 recommended version of IntelliJ is 2021.3.3
+   As of June, 2023 recommended version of IntelliJ is 2022.1.4
    After identifying the desired version of IntelliJ, you can download it from [jetbrains.com](https://www.jetbrains.com/idea/download/other.html).
 
 2. Install bazel project plugin from the IntelliJ marketplace

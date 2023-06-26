@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.InvalidRequestException;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -252,6 +253,14 @@ public class JsonUtils {
       return objectMapper.readValue(jsonString, classToConvert);
     } catch (Exception exception) {
       throw new RuntimeException(exception);
+    }
+  }
+
+  public static <T> T read(String jsonString, Class<T> classToConvert) {
+    try {
+      return mapper.readValue(jsonString, classToConvert);
+    } catch (Exception exception) {
+      throw new InvalidRequestException("Couldn't convert jsonString to object", exception);
     }
   }
 

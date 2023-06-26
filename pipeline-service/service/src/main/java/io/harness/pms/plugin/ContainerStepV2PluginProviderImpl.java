@@ -206,7 +206,8 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
           if (step.isPresent()) {
             return moduleSdkStepMap.getKey();
           }
-          return null;
+          // If not present in the config, assume it to be ci service
+          return "ci";
         })
         .filter(Objects::nonNull)
         .findFirst();

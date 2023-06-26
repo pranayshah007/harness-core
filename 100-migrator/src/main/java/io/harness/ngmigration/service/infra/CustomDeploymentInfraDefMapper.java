@@ -40,6 +40,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
 public class CustomDeploymentInfraDefMapper implements InfraDefMapper {
@@ -73,7 +74,7 @@ public class CustomDeploymentInfraDefMapper implements InfraDefMapper {
         variables.add(CustomDeploymentStringNGVariable.builder()
                           .name(vp.getName())
                           .type(CustomDeploymentNGVariableType.STRING)
-                          .value(ParameterField.createValueField(vp.getValue()))
+                          .value(ParameterField.createValueField(StringUtils.defaultIfBlank(vp.getValue(), "")))
                           .build());
         keysAdded.add(vp.getName());
       });
@@ -83,11 +84,12 @@ public class CustomDeploymentInfraDefMapper implements InfraDefMapper {
       variablesFromTemplate.stream()
           .filter(v -> !keysAdded.contains(v.getName()))
           .forEach(vp
-              -> variables.add(CustomDeploymentStringNGVariable.builder()
-                                   .name(vp.getName())
-                                   .type(CustomDeploymentNGVariableType.STRING)
-                                   .value(ParameterField.createValueField(vp.getValue()))
-                                   .build()));
+              -> variables.add(
+                  CustomDeploymentStringNGVariable.builder()
+                      .name(vp.getName())
+                      .type(CustomDeploymentNGVariableType.STRING)
+                      .value(ParameterField.createValueField(StringUtils.defaultIfBlank(vp.getValue(), "")))
+                      .build()));
     }
 
     return CustomDeploymentInfrastructure.builder()

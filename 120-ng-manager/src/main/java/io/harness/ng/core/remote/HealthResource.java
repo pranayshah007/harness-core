@@ -27,7 +27,7 @@ import com.codahale.metrics.health.HealthCheck;
 import com.codahale.metrics.health.jvm.ThreadDeadlockHealthCheck;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -56,7 +56,7 @@ public class HealthResource {
   @GET
   @Timed
   @ExceptionMetered
-  @ApiOperation(value = "get health for NGManager service", nickname = "getNGManagerHealthStatus")
+  @Operation(hidden = true)
   public ResponseDTO<String> doReadinessCheck() throws Exception {
     if (getMaintenanceFlag()) {
       log.info("In maintenance mode. Throwing exception to prevent traffic.");
@@ -78,7 +78,7 @@ public class HealthResource {
   @Path("liveness")
   @Timed
   @ExceptionMetered
-  @ApiOperation(value = "get liveness status for NGManager service", nickname = "getNGManagerLivenessStatus")
+  @Operation(hidden = true)
   public RestResponse<String> doLivenessCheck() {
     HealthCheck.Result check = threadDeadlockHealthCheck.execute();
     if (check.isHealthy()) {

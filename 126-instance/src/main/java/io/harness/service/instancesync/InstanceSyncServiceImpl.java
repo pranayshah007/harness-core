@@ -255,14 +255,17 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
     InstanceSyncPerpetualTaskMappingDTO instanceSyncPerpetualTaskMappingDTO;
     if (connectorDTO.isPresent()) {
       ConnectorInfoDTO connectorInfoDTO = connectorDTO.get().getConnector();
-      instanceSyncPerpetualTaskMappingDTOOptional = instanceSyncPerpetualTaskMappingService.findByConnectorRef(
-          infrastructureMappingDTO.getAccountIdentifier(), connectorInfoDTO.getOrgIdentifier(),
-          connectorInfoDTO.getProjectIdentifier(), infrastructureMappingDTO.getConnectorRef());
+      instanceSyncPerpetualTaskMappingDTOOptional =
+          instanceSyncPerpetualTaskMappingService.findByConnectorRefAndDeploymentType(
+              infrastructureMappingDTO.getAccountIdentifier(), connectorInfoDTO.getOrgIdentifier(),
+              connectorInfoDTO.getProjectIdentifier(), infrastructureMappingDTO.getConnectorRef(),
+              deploymentSummaryDTO.getDeploymentInfoDTO().getType());
       if (instanceSyncPerpetualTaskMappingDTOOptional.isEmpty()) {
         instanceSyncPerpetualTaskMappingDTO = instanceSyncPerpetualTaskMappingService.save(
             InstanceSyncPerpetualTaskMappingDTO.builder()
                 .accountId(infrastructureMappingDTO.getAccountIdentifier())
                 .orgId(connectorInfoDTO.getOrgIdentifier())
+                .deploymentType(deploymentSummaryDTO.getDeploymentInfoDTO().getType())
                 .projectId(connectorInfoDTO.getProjectIdentifier())
                 .perpetualTaskId(instanceSyncPerpetualTaskService.createPerpetualTaskV2(
                     abstractInstanceSyncHandler, infrastructureMappingDTO, connectorInfoDTO))
@@ -309,9 +312,11 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
       IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRefOrThrowException(
           infrastructureMappingDTO.getConnectorRef(), infrastructureMappingDTO.getAccountIdentifier(),
           deploymentSummaryDTO.getOrgIdentifier(), deploymentSummaryDTO.getProjectIdentifier(), CONNECTOR);
-      instanceSyncPerpetualTaskMappingDTOOptional = instanceSyncPerpetualTaskMappingService.findByConnectorRef(
-          identifierRef.getAccountIdentifier(), identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier(),
-          infrastructureMappingDTO.getConnectorRef());
+      instanceSyncPerpetualTaskMappingDTOOptional =
+          instanceSyncPerpetualTaskMappingService.findByConnectorRefAndDeploymentType(
+              identifierRef.getAccountIdentifier(), identifierRef.getOrgIdentifier(),
+              identifierRef.getProjectIdentifier(), infrastructureMappingDTO.getConnectorRef(),
+              deploymentSummaryDTO.getDeploymentInfoDTO().getType());
       instanceSyncPerpetualTaskMappingDTOOptional.ifPresent(syncPerpetualTaskMappingDTO
           -> instanceSyncPerpetualTaskService.deletePerpetualTask(
               infrastructureMappingDTO.getAccountIdentifier(), syncPerpetualTaskMappingDTO.getPerpetualTaskId()));

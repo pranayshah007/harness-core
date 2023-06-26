@@ -35,6 +35,7 @@ import io.harness.idp.allowlist.services.AllowListService;
 import io.harness.idp.allowlist.services.AllowListServiceImpl;
 import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCache;
 import io.harness.idp.common.delegateselectors.cache.memory.DelegateSelectorsInMemoryCache;
+import io.harness.idp.common.delegateselectors.cache.redis.DelegateSelectorsRedisCache;
 import io.harness.idp.configmanager.resource.AppConfigApiImpl;
 import io.harness.idp.configmanager.resource.MergedPluginsConfigApiImpl;
 import io.harness.idp.configmanager.service.*;
@@ -159,6 +160,8 @@ import org.springframework.core.convert.converter.Converter;
 @Slf4j
 @OwnedBy(HarnessTeam.IDP)
 public class IdpModule extends AbstractModule {
+  public static final String REDIS = "redis";
+  public static final String IN_MEMORY = "in-memory";
   private final IdpConfiguration appConfig;
   public IdpModule(IdpConfiguration appConfig) {
     this.appConfig = appConfig;
@@ -331,7 +334,12 @@ public class IdpModule extends AbstractModule {
         .annotatedWith(Names.named("DefaultPREnvAccountIdToNamespaceMappingCreator"))
         .toInstance(new ManagedExecutorService(Executors.newSingleThreadExecutor()));
     bind(HealthResource.class).to(HealthResourceImpl.class);
-    bind(DelegateSelectorsCache.class).to(DelegateSelectorsInMemoryCache.class);
+
+    if (appConfig.getDelegateSelectorsCacheMode().equals(IN_MEMORY)) {
+      bind(DelegateSelectorsCache.class).to(DelegateSelectorsInMemoryCache.class);
+    } else if (appConfig.getDelegateSelectorsCacheMode().equals(REDIS)) {
+      bind(DelegateSelectorsCache.class).to(DelegateSelectorsRedisCache.class);
+    }
 
     MapBinder<BackstageEnvVariableType, BackstageEnvVariableMapper> backstageEnvVariableMapBinder =
         MapBinder.newMapBinder(binder(), BackstageEnvVariableType.class, BackstageEnvVariableMapper.class);

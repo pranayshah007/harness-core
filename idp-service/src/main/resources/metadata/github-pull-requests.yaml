@@ -1,0 +1,29 @@
+identifier: github-pull-requests
+name: GitHub Pull Requests
+description: View GitHub pull requests for your service in Backstage.
+createdBy: roadie.io
+category: Source Control Mgmt
+source: https://roadie.io/backstage/plugins/github-pull-requests/?utm_source=backstage.io&utm_medium=marketplace&utm_campaign=github-pull-requests
+iconUrl: https://roadie.io/images/logos/github.png
+imageUrl: ''
+exports:
+  defaultEntityTypes:
+    - service
+  exportDetails:
+    - type: CARD
+      name: EntityGithubPullRequestsOverviewCard
+      addByDefault: true
+      layoutSchemaSpecs:
+        component: EntityGithubPullRequestsOverviewCard
+        specs:
+          gridProps:
+            md: 6
+    - type: TAB_CONTENT
+      name: EntityGithubPullRequestsContent
+      addByDefault: true
+      defaultRoute: /pull-requests
+      layoutSchemaSpecs:
+        name: EntityGithubPullRequestsContent
+        title: Pull Requests
+        contents:
+          - component: EntityGithubPullRequestsContent

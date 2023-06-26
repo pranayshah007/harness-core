@@ -111,7 +111,7 @@ datadogConfig:
   enabled: false #datadogConfigEnable
   apiKey: "datadog_api_key"
 
-distributedLockImplementation: MONGO
+distributedLockImplementation: REDIS
 
 redisLockConfig:
   sentinel: false

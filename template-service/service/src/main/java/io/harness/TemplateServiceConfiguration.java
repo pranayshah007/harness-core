@@ -20,6 +20,7 @@ import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.ff.FeatureFlagConfig;
 import io.harness.gitsync.GitSdkConfiguration;
 import io.harness.grpc.client.GrpcClientConfig;
+import io.harness.lock.DistributedLockImplementation;
 import io.harness.mongo.MongoConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;
@@ -99,6 +100,7 @@ public class TemplateServiceConfiguration extends Configuration {
   @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
   @JsonProperty("templateAsyncSetupUsagePoolConfig") private ThreadPoolConfig templateAsyncSetupUsagePoolConfig;
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
+  @JsonProperty("distributedLockImplementation") private DistributedLockImplementation distributedLockImplementation;
   private ServiceHttpClientConfig opaClientConfig;
   private String policyManagerSecret;
 

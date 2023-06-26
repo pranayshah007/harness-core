@@ -49,4 +49,6 @@ public interface ConfigManagerService {
 
   void createOrUpdateAppConfigForGitIntegrations(
       String accountIdentifier, ConnectorInfoDTO connectorInfoDTO, String integrationConfigs, String connectorType);
+
+  AppConfig saveUpdateAndMergeConfigForAccount(AppConfig appConfig, String accountIdentifier, ConfigType configType);
 }

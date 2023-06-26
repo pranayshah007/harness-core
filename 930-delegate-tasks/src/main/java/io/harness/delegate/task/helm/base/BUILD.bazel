@@ -13,6 +13,7 @@ java_library(
     deps = [
         "//:lombok",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/chartmuseum:module",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/git:module",
         "//930-delegate-tasks/src/main/java/software/wings/beans/settings/helm:module",
         "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/helm/constants:module",
         "//930-delegate-tasks/src/main/java/software/wings/helpers/ext/helm/request/config:module",

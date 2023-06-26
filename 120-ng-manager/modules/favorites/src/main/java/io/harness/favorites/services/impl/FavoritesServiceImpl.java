@@ -97,4 +97,17 @@ public class FavoritesServiceImpl implements FavoritesService {
         .deleteByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndUserIdentifierAndResourceTypeAndResourceIdentifier(
             accountIdentifier, orgIdentifier, projectIdentifier, userId, resourceTypeResolved, resourceId);
   }
+
+  @Override
+  public void deleteFavorites(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String resourceType, String resourceId) {
+    ResourceType resourceTypeResolved =
+        resourceType != null ? EnumUtils.getEnum(ResourceType.class, resourceType) : null;
+    if (resourceTypeResolved == null) {
+      throw new InvalidRequestException(INVALID_RESOURCE_TYPE_ERROR_MESSAGE);
+    }
+    favoriteRepository
+        .deleteByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndResourceTypeAndResourceIdentifier(
+            accountIdentifier, orgIdentifier, projectIdentifier, resourceTypeResolved, resourceId);
+  }
 }

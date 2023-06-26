@@ -41,11 +41,10 @@ public class AppConfigApiImpl implements AppConfigApi {
     try {
       AppConfig appConfig = body.getAppConfig();
       configManagerService.validateSchemaForPlugin(appConfig.getConfigs(), appConfig.getConfigId());
-      AppConfig updatedAppConfig =
-          configManagerService.saveOrUpdateConfigForAccount(appConfig, harnessAccount, ConfigType.PLUGIN);
-      configManagerService.mergeAndSaveAppConfig(harnessAccount);
+      AppConfig savedOrUpdatedAppConfig =
+          configManagerService.saveUpdateAndMergeConfigForAccount(appConfig, harnessAccount, ConfigType.PLUGIN);
       AppConfigResponse appConfigResponse = new AppConfigResponse();
-      appConfigResponse.appConfig(updatedAppConfig);
+      appConfigResponse.appConfig(savedOrUpdatedAppConfig);
       return Response.status(Response.Status.OK).entity(appConfigResponse).build();
     } catch (Exception e) {
       log.error("Error in saving or updating configs for Plugin id - {} in account - {}",

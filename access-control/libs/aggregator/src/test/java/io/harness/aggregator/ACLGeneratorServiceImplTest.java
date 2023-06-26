@@ -30,6 +30,7 @@ import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.principals.usergroups.UserGroupService;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceGroupService;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceSelector;
+import io.harness.accesscontrol.resources.resourcetypes.persistence.ResourceTypeDBO;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
 import io.harness.accesscontrol.roles.RoleService;
 import io.harness.accesscontrol.scopes.core.ScopeService;
@@ -60,7 +61,13 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 @OwnedBy(HarnessTeam.PL)
 public class ACLGeneratorServiceImplTest extends AggregatorTestBase {
   public static final String CORE_USERGROUP_MANAGE_PERMISSION = "core_usergroup_manage";
+  public static final String USERGROUP_RESOURCE_NAME = "usergroup";
+  public static final String USERGROUP_RESOURCE_IDENTIFIER = "USERGROUP";
+
   public static final String CORE_RESOURCEGROUP_MANAGE_PERMISSION = "core_resourcegroup_manage";
+  public static final String RESOURCEGROUP_RESOURCE_NAME = "resourcegroup";
+  public static final String RESOURCEGROUP_RESOURCE_IDENTIFIER = "RESOURCEGROUP";
+
   private ACLRepository aclRepository;
   ACLGeneratorService aclGeneratorService;
   private ScopeService scopeService;
@@ -80,6 +87,14 @@ public class ACLGeneratorServiceImplTest extends AggregatorTestBase {
     aclRepository = mock(ACLRepository.class);
     mongoTemplate.save(PermissionDBO.builder().identifier(CORE_USERGROUP_MANAGE_PERMISSION).build());
     mongoTemplate.save(PermissionDBO.builder().identifier(CORE_RESOURCEGROUP_MANAGE_PERMISSION).build());
+    mongoTemplate.save(ResourceTypeDBO.builder()
+                           .identifier(USERGROUP_RESOURCE_IDENTIFIER)
+                           .permissionKey(USERGROUP_RESOURCE_NAME)
+                           .build());
+    mongoTemplate.save(ResourceTypeDBO.builder()
+                           .identifier(RESOURCEGROUP_RESOURCE_IDENTIFIER)
+                           .permissionKey(RESOURCEGROUP_RESOURCE_NAME)
+                           .build());
     inMemoryPermissionRepository = new InMemoryPermissionRepository(mongoTemplate);
     aclGeneratorService = new ACLGeneratorServiceImpl(roleService, userGroupService, resourceGroupService, scopeService,
         new HashMap<>(), aclRepository, false, inMemoryPermissionRepository);

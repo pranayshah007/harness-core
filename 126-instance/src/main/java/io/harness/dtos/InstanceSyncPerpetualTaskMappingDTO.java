@@ -26,4 +26,5 @@ public class InstanceSyncPerpetualTaskMappingDTO {
   String orgId;
   String perpetualTaskId;
   String connectorIdentifier;
+  String deploymentType;
 }

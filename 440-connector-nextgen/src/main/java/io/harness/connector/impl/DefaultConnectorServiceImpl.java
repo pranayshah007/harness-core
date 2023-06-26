@@ -10,7 +10,6 @@ package io.harness.connector.impl;
 import static io.harness.NGConstants.CONNECTOR_HEARTBEAT_LOG_PREFIX;
 import static io.harness.NGConstants.CONNECTOR_STRING;
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
-import static io.harness.beans.FeatureName.PL_FORCE_DELETE_CONNECTOR_SECRET;
 import static io.harness.connector.ConnectivityStatus.FAILURE;
 import static io.harness.connector.ConnectivityStatus.UNKNOWN;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -119,7 +118,6 @@ import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
 import io.harness.perpetualtask.PerpetualTaskId;
-import io.harness.remote.client.CGRestUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.ConnectorRepository;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
@@ -831,7 +829,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     }
     Connector existingConnector = existingConnectorOptional.get();
     ConnectorResponseDTO connectorDTO = connectorMapper.writeDTO(existingConnector);
-    if (forceDelete && !isForceDeleteEnabled(accountIdentifier)) {
+    if (forceDelete && !isForceDeleteFFEnabledViaSettings(accountIdentifier)) {
       throw new InvalidRequestException(
           format(
               "Parameter forcedDelete cannot be true. Force Delete is not enabled for account [%s]", accountIdentifier),
@@ -868,7 +866,8 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     }
 
     connectorRepository.delete(existingConnector, null, changeType, supplier);
-
+    favoritesService.deleteFavorites(
+        accountIdentifier, orgIdentifier, projectIdentifier, ResourceType.CONNECTOR.toString(), connectorIdentifier);
     return true;
   }
 
@@ -1214,6 +1213,8 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
             ConnectorResponseDTO connectorDTO = connectorMapper.writeDTO(existingConnector);
             connectorEntityReferenceHelper.deleteConnectorEntityReferenceWhenConnectorGetsDeleted(
                 connectorDTO.getConnector(), accountIdentifier);
+            favoritesService.deleteFavorites(accountIdentifier, orgIdentifier, projectIdentifier,
+                ResourceType.CONNECTOR.toString(), item.getIdentifier());
             return true;
           })
           .orElseThrow(()
@@ -1301,23 +1302,11 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
             .getValue());
   }
 
-  private boolean isForceDeleteEnabled(String accountIdentifier) {
-    boolean isForceDeleteFFEnabled = isForceDeleteFFEnabled(accountIdentifier);
-    boolean isForceDeleteEnabledBySettings = isForceDeleteFFEnabledViaSettings(accountIdentifier);
-    return isForceDeleteFFEnabled && isForceDeleteEnabledBySettings;
-  }
-
   @VisibleForTesting
   protected boolean isForceDeleteFFEnabledViaSettings(String accountIdentifier) {
     return parseBoolean(NGRestUtils
                             .getResponse(settingsClient.getSetting(
                                 SettingIdentifiers.ENABLE_FORCE_DELETE, accountIdentifier, null, null))
                             .getValue());
-  }
-
-  @VisibleForTesting
-  protected boolean isForceDeleteFFEnabled(String accountIdentifier) {
-    return CGRestUtils.getResponse(
-        accountClient.isFeatureFlagEnabled(PL_FORCE_DELETE_CONNECTOR_SECRET.name(), accountIdentifier));
   }
 }

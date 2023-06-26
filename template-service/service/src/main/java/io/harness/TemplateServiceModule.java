@@ -12,7 +12,6 @@ import static io.harness.authorization.AuthorizationServiceHeader.TEMPLATE_SERVI
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ORGANIZATION_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
-import static io.harness.lock.DistributedLockImplementation.MONGO;
 import static io.harness.ng.core.template.TemplateEntityConstants.ARTIFACT_SOURCE;
 import static io.harness.ng.core.template.TemplateEntityConstants.CUSTOM_DEPLOYMENT;
 import static io.harness.ng.core.template.TemplateEntityConstants.MONITORED_SERVICE;
@@ -312,7 +311,7 @@ public class TemplateServiceModule extends AbstractModule {
   @Provides
   @Singleton
   DistributedLockImplementation distributedLockImplementation() {
-    return MONGO;
+    return templateServiceConfiguration.getDistributedLockImplementation();
   }
 
   @Provides

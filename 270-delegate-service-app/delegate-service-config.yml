@@ -80,7 +80,7 @@ segmentConfiguration:
   apiKey: "segment_api_key"
   certValidationRequired: false
 
-distributedLockImplementation: MONGO
+distributedLockImplementation: REDIS
 
 redisLockConfig:
   sentinel: false

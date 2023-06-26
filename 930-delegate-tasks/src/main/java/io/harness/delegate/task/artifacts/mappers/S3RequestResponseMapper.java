@@ -24,6 +24,7 @@ public class S3RequestResponseMapper {
         .filePath(buildDetails.getArtifactPath())
         .filePathRegex(request.getFilePathRegex())
         .sourceType(ArtifactSourceType.AMAZONS3)
+        .metadata(buildDetails.getMetadata())
         .build();
   }
 }

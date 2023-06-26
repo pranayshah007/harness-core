@@ -90,7 +90,7 @@ public interface VerifyStepResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get metrics time-series for given verifyStepExecutionId",
-      nickname = "getMetricsTimeSeriesForVerifyStepExecutionId")
+      nickname = "getMetricsTimeSeriesForVerifyStepExecutionId", hidden = true)
   VerificationMetricsTimeSeries
   getMetricsTimeSeriesForVerifyStepExecutionId(@BeanParam @Valid VerifyStepPathParams verifyStepPathParams);
 }

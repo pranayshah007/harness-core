@@ -34,3 +34,6 @@ exports:
         title: Kubernetes
         contents:
           - component: EntityKubernetesContent
+            specs:
+              props:
+                refreshIntervalMs: 60000

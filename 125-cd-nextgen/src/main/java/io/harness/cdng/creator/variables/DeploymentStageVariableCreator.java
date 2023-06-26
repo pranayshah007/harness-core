@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactSource;
@@ -38,6 +39,7 @@ import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.encryption.Scope;
 import io.harness.evaluators.ProvisionerExpressionEvaluator;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ng.core.environment.beans.Environment;
@@ -54,6 +56,8 @@ import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.mapper.NGServiceOverrideEntityConfigMapper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
+import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.persistence.HIterator;
 import io.harness.pms.contracts.plan.YamlExtraProperties;
 import io.harness.pms.contracts.plan.YamlProperties;
@@ -66,10 +70,13 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.yaml.core.variables.NGVariable;
+import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -89,11 +96,15 @@ import lombok.extern.slf4j.Slf4j;
 public class DeploymentStageVariableCreator extends AbstractStageVariableCreator<DeploymentStageNode> {
   private static final String SIDECARS_PREFIX = "artifacts.sidecars";
   private static final String PRIMARY = "primary";
+  private static final String OVERRIDE_PROJECT_SETTING_IDENTIFIER = "service_override_v2";
   @Inject private ServiceEntityService serviceEntityService;
   @Inject private EnvironmentService environmentService;
   @Inject private ServiceOverrideService serviceOverrideService;
   @Inject private InfrastructureEntityService infrastructureEntityService;
   @Inject private InfrastructureMapper infrastructureMapper;
+  @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  @Inject private NGSettingsClient ngSettingsClient;
+  @Inject private ServiceOverridesServiceV2 serviceOverridesServiceV2;
   @Override
   public LinkedHashMap<String, VariableCreationResponse> createVariablesForChildrenNodes(
       VariableCreationContext ctx, YamlField config) {
@@ -202,6 +213,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
       final EnvironmentsYaml environmentsYaml = config.getDeploymentStageConfig().getEnvironments();
       final EnvironmentYamlV2 environment = config.getDeploymentStageConfig().getEnvironment();
       final ParameterField<String> environmentRef = getEnvironmentRef(config);
+      final String infraIdentifier = getInfraIdentifier(config);
       // for collecting service variables from service/env/service overrides
       Set<String> serviceVariables = new HashSet<>();
 
@@ -212,10 +224,10 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
         createVariablesForEnvironment(ctx, responseMap, serviceVariables, environment);
       }
       if (serviceRef != null) {
-        createVariablesForService(ctx, environmentRef, serviceRef, serviceVariables, responseMap);
+        createVariablesForService(ctx, environmentRef, serviceRef, serviceVariables, responseMap, infraIdentifier);
       }
       if (services != null) {
-        createVariablesForServices(ctx, responseMap, services, environmentRef, serviceVariables);
+        createVariablesForServices(ctx, responseMap, services, environmentRef, serviceVariables, infraIdentifier);
       }
     } catch (Exception ex) {
       log.error("Exception during Deployment Stage Node variable creation", ex);
@@ -225,10 +237,11 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
 
   private void createVariablesForServices(VariableCreationContext ctx,
       LinkedHashMap<String, VariableCreationResponse> responseMap, ServicesYaml services,
-      ParameterField<String> environmentRef, Set<String> serviceVariables) {
+      ParameterField<String> environmentRef, Set<String> serviceVariables, String infraIdentifier) {
     if (!services.getValues().isExpression()) {
       for (ServiceYamlV2 serviceRefValue : services.getValues().getValue()) {
-        createVariablesForService(ctx, environmentRef, serviceRefValue.getServiceRef(), serviceVariables, responseMap);
+        createVariablesForService(
+            ctx, environmentRef, serviceRefValue.getServiceRef(), serviceVariables, responseMap, infraIdentifier);
       }
     }
   }
@@ -248,7 +261,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
 
   private void createVariablesForService(VariableCreationContext ctx, ParameterField<String> environmentRef,
       ParameterField<String> serviceRef, Set<String> serviceVariables,
-      LinkedHashMap<String, VariableCreationResponse> responseMap) {
+      LinkedHashMap<String, VariableCreationResponse> responseMap, String infraIdentifier) {
     final String accountIdentifier = ctx.get(NGCommonEntityConstants.ACCOUNT_KEY);
     final String orgIdentifier = ctx.get(NGCommonEntityConstants.ORG_KEY);
     final String projectIdentifier = ctx.get(NGCommonEntityConstants.PROJECT_KEY);
@@ -277,9 +290,8 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
       }
       outputProperties.addAll(handleManifestProperties(specField, ngServiceConfig));
       outputProperties.addAll(handleArtifactProperties(specField, ngServiceConfig));
-      if (environmentRef != null && !environmentRef.isExpression() && optionalService.isPresent()) {
-        serviceVariables.addAll(getServiceOverridesVariables(ctx, environmentRef, optionalService.get()));
-      }
+      handleServiceOverridesV2(ctx, environmentRef, serviceRef, serviceVariables, infraIdentifier, accountIdentifier,
+          orgIdentifier, projectIdentifier, optionalService);
       outputProperties.addAll(handleServiceVariables(specField, serviceVariables, ngServiceConfig));
     } else {
       outputProperties.addAll(handleServiceStepOutcome(serviceField));
@@ -290,6 +302,45 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
         YamlExtraProperties.newBuilder().addAllOutputProperties(outputProperties).build());
     responseMap.put(serviceField.getNode().getUuid(),
         VariableCreationResponse.builder().yamlExtraProperties(yamlPropertiesMap).build());
+  }
+
+  private void handleServiceOverridesV2(VariableCreationContext ctx, ParameterField<String> environmentRef,
+      ParameterField<String> serviceRef, Set<String> serviceVariables, String infraIdentifier, String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, Optional<ServiceEntity> optionalService) {
+    if (environmentRef != null && !environmentRef.isExpression() && optionalService.isPresent()) {
+      if (isOverridesV2Enabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
+        Map<Scope, NGServiceOverridesEntity> envServiceOverride =
+            serviceOverridesServiceV2.getEnvServiceOverride(accountIdentifier, orgIdentifier, projectIdentifier,
+                environmentRef.getValue(), serviceRef.getValue(), null);
+        addOverrideVariablesToSet(serviceVariables, envServiceOverride);
+        if (isNotEmpty(infraIdentifier)) {
+          Map<Scope, NGServiceOverridesEntity> infraServiceOverride =
+              serviceOverridesServiceV2.getInfraServiceOverride(accountIdentifier, orgIdentifier, projectIdentifier,
+                  environmentRef.getValue(), serviceRef.getValue(), infraIdentifier, null);
+          addOverrideVariablesToSet(serviceVariables, infraServiceOverride);
+        }
+      } else {
+        serviceVariables.addAll(getServiceOverridesVariables(ctx, environmentRef, optionalService.get()));
+      }
+    }
+  }
+
+  private void addOverrideVariablesToSet(
+      Set<String> serviceVariables, Map<Scope, NGServiceOverridesEntity> serviceOverride) {
+    if (isNotEmpty(serviceOverride)) {
+      List<NGServiceOverridesEntity> serviceOverridesEntities = new ArrayList<>(serviceOverride.values());
+      serviceOverridesEntities.forEach(
+          entity -> serviceVariables.addAll(NGVariablesUtils.getSetOfVars(entity.getSpec().getVariables())));
+    }
+  }
+
+  private List<NGVariable> getVariablesList(Map<Scope, NGServiceOverridesEntity> serviceOverride) {
+    List<NGVariable> ngVariableList = new ArrayList<>();
+    if (isNotEmpty(serviceOverride)) {
+      List<NGServiceOverridesEntity> serviceOverridesEntities = new ArrayList<>(serviceOverride.values());
+      serviceOverridesEntities.forEach(entity -> ngVariableList.addAll(entity.getSpec().getVariables()));
+    }
+    return ngVariableList;
   }
 
   private void createVariablesForInfraDefinitions(VariableCreationContext ctx, YamlField specField,
@@ -408,22 +459,61 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     final ParameterField<String> environmentRef = environmentYamlV2.getEnvironmentRef();
 
     final YamlField specField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC);
+    List<NGVariable> envVariables = new ArrayList<>();
     if (isNotEmpty(environmentRef.getValue()) && !environmentRef.isExpression()) {
       // scoped environment ref provided here
       Optional<Environment> optionalEnvironment =
           environmentService.get(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef.getValue(), false);
       if (optionalEnvironment.isPresent()) {
-        final NGEnvironmentConfig ngEnvironmentConfig =
-            EnvironmentMapper.toNGEnvironmentConfig(optionalEnvironment.get());
-        outputProperties.addAll(handleEnvironmentOutcome(specField, ngEnvironmentConfig));
-        // all env.variables also accessed by serviceVariables
-        List<NGVariable> envVariables = ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables();
+        if (isOverridesV2Enabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
+          // add all env global overrides
+          Map<Scope, NGServiceOverridesEntity> envOverride = serviceOverridesServiceV2.getEnvOverride(
+              accountIdentifier, orgIdentifier, projectIdentifier, environmentRef.getValue(), null);
+          envVariables.addAll(getVariablesList(envOverride));
+
+          // add all infra global overrides
+          if (ParameterField.isNotNull(environmentYamlV2.getInfrastructureDefinitions())) {
+            final List<InfraStructureDefinitionYaml> infrastructures =
+                CollectionUtils.emptyIfNull(environmentYamlV2.getInfrastructureDefinitions().getValue())
+                    .stream()
+                    .filter(infra -> !infra.getIdentifier().isExpression())
+                    .collect(Collectors.toList());
+            final Set<String> infraIdentifiers = infrastructures.stream()
+                                                     .map(InfraStructureDefinitionYaml::getIdentifier)
+                                                     .map(ParameterField::getValue)
+                                                     .collect(Collectors.toSet());
+            infraIdentifiers.forEach(infraId
+                -> envVariables.addAll(
+                    getInfraVarsList(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, infraId)));
+          }
+
+          if (ParameterField.isNotNull(environmentYamlV2.getInfrastructureDefinition())) {
+            final InfraStructureDefinitionYaml infraStructureDefinitionYaml =
+                environmentYamlV2.getInfrastructureDefinition().getValue();
+            if (ParameterField.isNotNull(infraStructureDefinitionYaml.getIdentifier())
+                && !infraStructureDefinitionYaml.getIdentifier().isExpression()) {
+              String infraId = infraStructureDefinitionYaml.getIdentifier().getValue();
+              if (isNotEmpty(infraId)) {
+                envVariables.addAll(
+                    getInfraVarsList(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, infraId));
+              }
+            }
+          }
+        } else {
+          final NGEnvironmentConfig ngEnvironmentConfig =
+              EnvironmentMapper.toNGEnvironmentConfig(optionalEnvironment.get());
+          // all env.variables also accessed by serviceVariables
+          if (ngEnvironmentConfig != null) {
+            envVariables.addAll(ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables());
+          }
+        }
+        outputProperties.addAll(handleEnvironmentOutcome(specField, envVariables));
         if (isNotEmpty(envVariables)) {
           serviceVariables.addAll(envVariables.stream().map(NGVariable::getName).collect(Collectors.toSet()));
         }
       }
     } else {
-      outputProperties.addAll(handleEnvironmentOutcome(specField, null));
+      outputProperties.addAll(handleEnvironmentOutcome(specField, envVariables));
     }
     yamlPropertiesMap.put(
         environmentYamlV2.getUuid(), YamlExtraProperties.newBuilder().addAllOutputProperties(outputProperties).build());
@@ -437,6 +527,13 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     } else if (ParameterField.isNotNull(environmentYamlV2.getInfrastructureDefinition())) {
       createVariablesForInfraDefinition(ctx, specField, environmentRef, responseMap, environmentYamlV2);
     }
+  }
+
+  private List<NGVariable> getInfraVarsList(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      ParameterField<String> environmentRef, String infraId) {
+    Map<Scope, NGServiceOverridesEntity> infraOverride = serviceOverridesServiceV2.getInfraOverride(
+        accountIdentifier, orgIdentifier, projectIdentifier, environmentRef.getValue(), infraId, null);
+    return getVariablesList(infraOverride);
   }
 
   private void addProvisionerDependencyForSingleEnvironment(
@@ -457,13 +554,9 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     }
   }
 
-  private List<YamlProperties> handleEnvironmentOutcome(YamlField specField, NGEnvironmentConfig ngEnvironmentConfig) {
+  private List<YamlProperties> handleEnvironmentOutcome(YamlField specField, List<NGVariable> envVariables) {
     final String stageFqn = YamlUtils.getFullyQualifiedName(specField.getNode());
     List<YamlProperties> outputProperties = new ArrayList<>();
-
-    List<NGVariable> envVariables = ngEnvironmentConfig == null
-        ? new ArrayList<>()
-        : ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables();
     EnvironmentOutcome environmentOutcome =
         EnvironmentOutcome.builder()
             .variables(isNotEmpty(envVariables)
@@ -493,6 +586,32 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     EnvironmentYamlV2 environmentYamlV2 = stageNode.getDeploymentStageConfig().getEnvironment();
     if (environmentYamlV2 != null) {
       return environmentYamlV2.getEnvironmentRef();
+    }
+    return null;
+  }
+
+  private String getInfraIdentifier(DeploymentStageNode stageNode) {
+    EnvironmentYamlV2 environmentYamlV2 = stageNode.getDeploymentStageConfig().getEnvironment();
+    if (environmentYamlV2 != null) {
+      ParameterField<InfraStructureDefinitionYaml> infraStructureDefinitionYaml =
+          environmentYamlV2.getInfrastructureDefinition();
+      if (infraStructureDefinitionYaml != null && infraStructureDefinitionYaml.getValue() != null) {
+        ParameterField<String> infraId = infraStructureDefinitionYaml.getValue().getIdentifier();
+        if (infraId != null && infraId.getValue() != null) {
+          return infraId.getValue();
+        }
+      }
+
+      ParameterField<List<InfraStructureDefinitionYaml>> infraStructureDefinitionYamlList =
+          environmentYamlV2.getInfrastructureDefinitions();
+      if (infraStructureDefinitionYamlList != null && infraStructureDefinitionYamlList.getValue() != null) {
+        List<InfraStructureDefinitionYaml> infraStructureDefinitionYamls = infraStructureDefinitionYamlList.getValue();
+        InfraStructureDefinitionYaml yaml = infraStructureDefinitionYamls.get(0);
+        ParameterField<String> infraId = yaml.getIdentifier();
+        if (infraId != null && infraId.getValue() != null) {
+          return infraId.getValue();
+        }
+      }
     }
     return null;
   }
@@ -652,5 +771,17 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
   @Override
   public Class<DeploymentStageNode> getFieldClass() {
     return DeploymentStageNode.class;
+  }
+
+  private boolean isOverridesV2Enabled(String accountId, String orgId, String projectId) {
+    return ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.CDS_SERVICE_OVERRIDES_2_0)
+        && isOverridesV2SettingEnabled(accountId, orgId, projectId);
+  }
+
+  private boolean isOverridesV2SettingEnabled(String accountId, String orgId, String projectId) {
+    return NGRestUtils
+        .getResponse(ngSettingsClient.getSetting(OVERRIDE_PROJECT_SETTING_IDENTIFIER, accountId, orgId, projectId))
+        .getValue()
+        .equals("true");
   }
 }

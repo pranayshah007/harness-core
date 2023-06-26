@@ -131,6 +131,17 @@ public class NGVariablesUtils {
     return secretVars;
   }
 
+  public Set<String> getSetOfVars(List<NGVariable> variables) {
+    Set<String> vars = new HashSet<>();
+    if (EmptyPredicate.isEmpty(variables)) {
+      return vars;
+    }
+    for (NGVariable variable : variables) {
+      vars.add(variable.getName());
+    }
+    return vars;
+  }
+
   public String fetchSecretExpression(String secretValue) {
     /*
     if secretValue is a string, then add it with quotes else add it as a variable

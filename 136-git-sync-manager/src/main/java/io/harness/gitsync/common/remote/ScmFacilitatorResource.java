@@ -350,10 +350,13 @@ public class ScmFacilitatorResource {
               + "Default Value: 50") @QueryParam(NGCommonEntityConstants.SIZE) @DefaultValue("50") @Max(100)
       int pageSize,
       @Parameter(description = GitSyncApiConstants.SEARCH_TERM_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.SEARCH_TERM) @DefaultValue("") String searchTerm) {
-    return ResponseDTO.newResponse(
-        scmFacilitatorService.listReposByRefConnector(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef,
-            PageRequest.builder().pageIndex(pageNum).pageSize(pageSize).build(), searchTerm));
+          NGCommonEntityConstants.SEARCH_TERM) @DefaultValue("") String searchTerm,
+      @Parameter(description = GitSyncApiConstants.APPLY_GITX_REPO_ALLOW_LIST_FILTER_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.APPLY_GITX_REPO_ALLOW_LIST_FILTER) @DefaultValue("false")
+      boolean applyGitXRepoAllowListFilter) {
+    return ResponseDTO.newResponse(scmFacilitatorService.listReposByRefConnector(accountIdentifier, orgIdentifier,
+        projectIdentifier, connectorRef, PageRequest.builder().pageIndex(pageNum).pageSize(pageSize).build(),
+        searchTerm, applyGitXRepoAllowListFilter));
   }
 
   @GET

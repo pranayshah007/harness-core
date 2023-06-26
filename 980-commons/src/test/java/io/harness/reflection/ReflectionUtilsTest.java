@@ -35,9 +35,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -126,6 +128,16 @@ public class ReflectionUtilsTest extends CategoryTest {
     public Boolean isABoolean() {
       return aBoolean;
     }
+  }
+
+  interface AccessibleInterface {
+    String VALUE_1 = "Value 1";
+    String VALUE_2 = "Value 2";
+    int VALUE_3 = 3;
+    long VALUE_4 = 4;
+    void testMethod1();
+    String testMethod2();
+    Long testMethod3();
   }
 
   @Retention(RetentionPolicy.RUNTIME)
@@ -306,5 +318,27 @@ public class ReflectionUtilsTest extends CategoryTest {
     Object object = ReflectionUtils.getFieldValue(dummy, dummyField);
     assertThat(object).isNotNull();
     assertThat((String) object).isEqualTo("val1");
+  }
+
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void testGetInterfaceFieldValues() {
+    // Test case 1: Class with matching interface fields
+    Set<String> values1 = ReflectionUtils.getFieldValuesByType(AccessibleInterface.class, String.class);
+    Assert.assertNotNull(values1);
+    Assert.assertTrue(values1.contains("Value 1"));
+    Assert.assertTrue(values1.contains("Value 2"));
+    Assert.assertEquals(2, values1.size());
+
+    // Test case 2: Class with no matching interface fields
+    Set<String> values2 = ReflectionUtils.getFieldValuesByType(AccessibleInterface.class, Integer.class);
+    Assert.assertNotNull(values2);
+    Assert.assertTrue(values2.isEmpty());
+
+    // Test case 2: Class with no matching interface fields
+    Set<String> values3 = ReflectionUtils.getFieldValuesByType(AccessibleInterface.class, Long.class);
+    Assert.assertNotNull(values3);
+    Assert.assertTrue(values3.isEmpty());
   }
 }
