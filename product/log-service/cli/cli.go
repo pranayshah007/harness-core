@@ -7,6 +7,7 @@ package cli
 
 import (
 	"context"
+	"github.com/harness/harness-core/product/log-service/cli/worker"
 	"os"
 
 	"github.com/harness/harness-core/product/log-service/cli/server"
@@ -30,6 +31,7 @@ func Command() {
 	server.Register(app)
 	store.Register(app)
 	stream.Register(app)
+	worker.Register(app)
 
 	kingpin.Version(version)
 	kingpin.MustParse(app.Parse(os.Args[1:]))

@@ -54,6 +54,7 @@ type Config struct {
 		SSLEnabled           bool   `envconfig:"LOG_SERVICE_REDIS_SSL_ENABLED"`
 		CertPath             string `envconfig:"LOG_SERVICE_REDIS_SSL_CA_CERT_PATH"`
 		DisableExpiryWatcher bool   `envconfig:"LOG_SERVICE_REDIS_DISABLE_EXPIRY_WATCHER"`
+		LogZipConsumerGroup  string `envconfig:"LOG_SERVICE_REDIS_LOG_ZIP_CONSUMER_GROUP" default:"consumerLogZip"`
 	}
 
 	// Whether to use secret env variables as they are, or talk to GCP secret

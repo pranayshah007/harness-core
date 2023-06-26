@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"sync"
 	"time"
 
 	"github.com/harness/harness-core/product/log-service/stream"
@@ -52,6 +53,9 @@ type Redis struct {
 	Client redis.Cmdable
 }
 
+var initOnce sync.Once
+var singleRedis *Redis
+
 func newTlSConfig(certPathForTLS string) (*tls.Config, error) {
 	// Create TLS config using cert PEM
 	rootPem, err := ioutil.ReadFile(certPathForTLS)
@@ -82,18 +86,21 @@ func New(endpoint, password string, useTLS, disableExpiryWatcher bool, certPathF
 		}
 		opt.TLSConfig = newTlSConfig
 	}
-	rdb := redis.NewClient(opt)
-	rc := &Redis{
-		Client: rdb,
-	}
+
+	initOnce.Do(func() {
+		rdb := redis.NewClient(opt)
+		singleRedis = &Redis{
+			Client: rdb,
+		}
+	})
 
 	if !disableExpiryWatcher {
 		logrus.Infof("starting expiry watcher thread on Redis instance")
 		s := gocron.NewScheduler(time.UTC)
-		s.Every(defaultKeyExpiryTimeSeconds).Seconds().Do(rc.expiryWatcher, defaultKeyExpiryTimeSeconds*time.Second)
+		s.Every(defaultKeyExpiryTimeSeconds).Seconds().Do(singleRedis.expiryWatcher, defaultKeyExpiryTimeSeconds*time.Second)
 		s.StartAsync()
 	}
-	return rc
+	return singleRedis
 }
 
 // Create creates a redis stream and sets an expiry on it.

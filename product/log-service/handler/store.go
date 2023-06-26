@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/harness/harness-core/product/log-service/cache"
+	"github.com/harness/harness-core/product/log-service/queue"
 	"io"
 	"net/http"
 	"sync"
@@ -181,7 +182,7 @@ func HandleDelete(store store.Store) http.HandlerFunc {
 
 // HandleDownload returns an http.HandlerFunc that downloads
 // a blob from the datastore and copies to the http.Response.
-func HandleListBlobWithPrefix(s store.Store, cache cache.Cache) http.HandlerFunc {
+func HandleListBlobWithPrefix(q queue.Queue, s store.Store, cache cache.Cache) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		st := time.Now()
 		h := w.Header()
@@ -198,6 +199,8 @@ func HandleListBlobWithPrefix(s store.Store, cache cache.Cache) http.HandlerFunc
 
 		uid := uuid.NewString()
 		zipPrefix := uid + "_logs.zip"
+
+		q.Publish("")
 
 		go func(s store.Store, r http.Request) {
 			var wg sync.WaitGroup
@@ -288,7 +291,7 @@ func HandleListBlobWithPrefix(s store.Store, cache cache.Cache) http.HandlerFunc
 			req, _ := cache.Get(ctx, r.URL.String())
 			if req == "" {
 				fmt.Println("caching the req")
-				err := cache.Create(ctx, r.URL.String(), link)
+				err := cache.Create(ctx, r.URL.String(), link, "in progress")
 				fmt.Println(err)
 			}
 

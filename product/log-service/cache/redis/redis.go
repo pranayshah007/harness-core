@@ -2,6 +2,7 @@ package redis
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/go-redis/redis/v7"
 	"time"
 )
@@ -34,9 +35,26 @@ func (r *Redis) Get(ctx context.Context, key string) (string, error) {
 	return value, err
 }
 
-func (r *Redis) Create(ctx context.Context, key, value string) error {
+type Info struct {
+	Value  string
+	Status string
+}
+
+func (i Info) MarshalBinary() ([]byte, error) {
+	return json.Marshal(i)
+}
+
+func (i Info) UnmarshalBinary(b []byte) error {
+	inf := Info{}
+	return json.Unmarshal(b, &inf)
+}
+
+func (r *Redis) Create(ctx context.Context, key, value, status string) error {
 	r.Client.Del(key)
-	err := r.Client.Set(key, value, time.Hour)
+	err := r.Client.Set(key, Info{
+		value,
+		status,
+	}, time.Hour)
 	if err != nil {
 		return err.Err()
 	}
