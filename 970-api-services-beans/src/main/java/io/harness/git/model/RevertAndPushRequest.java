@@ -7,7 +7,6 @@
 
 package io.harness.git.model;
 
-import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;

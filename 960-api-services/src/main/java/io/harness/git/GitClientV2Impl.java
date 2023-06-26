@@ -121,14 +121,10 @@ import org.eclipse.jgit.api.PushCommand;
 import org.eclipse.jgit.api.ResetCommand;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.TransportCommand;
-import org.eclipse.jgit.api.errors.ConcurrentRefUpdateException;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.InvalidRemoteException;
-import org.eclipse.jgit.api.errors.NoMessageException;
 import org.eclipse.jgit.api.errors.RefAlreadyExistsException;
 import org.eclipse.jgit.api.errors.TransportException;
-import org.eclipse.jgit.api.errors.UnmergedPathsException;
-import org.eclipse.jgit.api.errors.WrongRepositoryStateException;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.errors.NoRemoteRepositoryException;
 import org.eclipse.jgit.lib.ObjectId;
@@ -626,8 +622,10 @@ public class GitClientV2Impl implements GitClientV2 {
   }
 
   /**
-   * @param request
-   * @return
+   * Used to revert a commit and push to a target branch
+   *
+   * @param request RevertAndPushRequest
+   * @return result RevertAndPushResult
    */
   @Override
   public RevertAndPushResult revertAndPush(RevertAndPushRequest request) {
