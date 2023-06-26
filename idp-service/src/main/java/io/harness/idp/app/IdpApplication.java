@@ -20,7 +20,6 @@ import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.CacheModule;
-import io.harness.exception.GeneralException;
 import io.harness.health.HealthMonitor;
 import io.harness.health.HealthService;
 import io.harness.idp.annotations.IdpServiceAuth;
@@ -310,7 +309,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
       try {
         PmsSdkInitHelper.initializeSDKInstance(injector, idpSDKConfig);
       } catch (Exception e) {
-        throw new GeneralException("Fail to start IDP Service because pms sdk registration failed", e);
+        log.error("Fail to start IDP Service because pms sdk registration failed", e);
       }
     }
   }
@@ -322,10 +321,10 @@ public class IdpApplication extends Application<IdpConfiguration> {
     pipelineEventConsumerController.register(injector.getInstance(InterruptEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(OrchestrationEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(FacilitatorEventRedisConsumer.class), 1);
-    pipelineEventConsumerController.register(injector.getInstance(NodeStartEventRedisConsumer.class), 2);
+    pipelineEventConsumerController.register(injector.getInstance(NodeStartEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(ProgressEventRedisConsumer.class), 1);
-    pipelineEventConsumerController.register(injector.getInstance(NodeAdviseEventRedisConsumer.class), 2);
-    pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventRedisConsumer.class), 2);
+    pipelineEventConsumerController.register(injector.getInstance(NodeAdviseEventRedisConsumer.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventRedisConsumer.class), 1);
   }
 
   private void registerHealthCheck(Environment environment, Injector injector) {
