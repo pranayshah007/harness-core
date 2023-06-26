@@ -78,7 +78,7 @@ HARNESS_CORE_MODULES=$(bazel query "//...:*" | grep -w "module" | awk -F/ '{prin
 check_cmd_status "$?" "Failed to list harness core modules."
 #echo "HARNESS_CORE_MODULES: $HARNESS_CORE_MODULES"
 
-GIT_DIFF="git diff --name-only $COMMIT_SHA..$BASE_SHA"
+GIT_DIFF=$(git diff --name-only $COMMIT_SHA..$BASE_SHA)
 
 echo "------------------------------------------------"
 echo -e "GIT DIFF:\n$GIT_DIFF"
