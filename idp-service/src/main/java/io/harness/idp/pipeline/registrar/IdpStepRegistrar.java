@@ -7,7 +7,6 @@
 
 package io.harness.idp.pipeline.registrar;
 
-
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.Step;
 
