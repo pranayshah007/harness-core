@@ -11,8 +11,9 @@ import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDa
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.EMAIL_LINK_BEGIN;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.EMAIL_LINK_END;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.EMAIL_LINK_MIDDLE;
+import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.ET_MONITORED_SERVICE_URL_FORMAT;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.SLACK_FORMATTED_VERSION_LIST;
-import static io.harness.cvng.notification.utils.NotificationRuleConstants.MODULE_NAME;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.CET_MODULE_NAME;
 
 import io.harness.cvng.beans.errortracking.ErrorTrackingNotificationData;
 import io.harness.cvng.beans.errortracking.Scorecard;
@@ -95,14 +96,13 @@ public class ErrorTrackingNotificationRuleUtils {
   public static String buildEventListUrlWithParameters(String baseLinkUrl, String account, String org, String project,
       String env, String service, String deployment, String from, String to) {
     return String.format(
-        "%s/account/%s/%s/orgs/%s/projects/%s/et/eventsummary/events?env=%s&service=%s&dep=%s&fromTimestamp=%s&toTimestamp=%s",
-        baseLinkUrl, account, MODULE_NAME, org, project, env, service, deployment, from, to);
+        "%s/account/%s/%s/orgs/%s/projects/%s/eventsummary/events?env=%s&service=%s&dep=%s&fromTimestamp=%s&toTimestamp=%s",
+        baseLinkUrl, account, CET_MODULE_NAME, org, project, env, service, deployment, from, to);
   }
 
   public static String buildMonitoredServiceConfigurationTabUrl(String baseUrl, MonitoredServiceParams params) {
-    return String.format("%s/account/%s/%s/orgs/%s/projects/%s/monitoringservices/edit/%s?tab=Configurations", baseUrl,
-        params.getAccountIdentifier(), MODULE_NAME, params.getOrgIdentifier(), params.getProjectIdentifier(),
-        params.getMonitoredServiceIdentifier());
+    return String.format(ET_MONITORED_SERVICE_URL_FORMAT, baseUrl, params.getAccountIdentifier(), CET_MODULE_NAME,
+        params.getOrgIdentifier(), params.getProjectIdentifier(), params.getMonitoredServiceIdentifier());
   }
 
   @Builder
