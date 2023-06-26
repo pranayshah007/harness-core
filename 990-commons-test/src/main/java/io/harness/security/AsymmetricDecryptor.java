@@ -32,6 +32,10 @@ public class AsymmetricDecryptor {
     PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(testPrivateKeys);
     KeyFactory kf = KeyFactory.getInstance("RSA");
     privateKey = kf.generatePrivate(spec);
+    String test = "test";
+    if (test.equals("test")){
+      System.out.println(test);
+    }
   }
 
   public String decryptText(byte[] msg) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException,
