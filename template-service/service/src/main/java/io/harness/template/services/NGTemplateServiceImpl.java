@@ -69,6 +69,7 @@ import io.harness.gitx.GitXSettingsHelper;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.grpc.utils.StringValueUtils;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
@@ -176,6 +177,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   private static final String REPO_LIST_SIZE_EXCEPTION = "The size of unique repository list is greater than [%d]";
 
   public static final String CREATING_TEMPLATE = "creating new template";
+
+  public static final String TEMPLATE_REF_PIPELINE = "templated ref by pipeline";
   @Override
   public TemplateEntity create(
       TemplateEntity templateEntity, boolean setStableTemplate, String comments, boolean isNewTemplate) {
@@ -1266,6 +1269,21 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       referredEntities = NGRestUtils.getResponse(entitySetupUsageClient.listAllEntityUsage(
           page, size, accountIdentifier, referredEntityFQN, EntityType.TEMPLATE, searchTerm));
     }
+
+    Optional<TemplateEntity> templateEntity;
+    IdentifierRef templateIdentifierRef =
+        TemplateUtils.getIdentifierRef(accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier);
+    templateEntity =
+        templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(templateIdentifierRef.getAccountIdentifier(),
+            templateIdentifierRef.getOrgIdentifier(), templateIdentifierRef.getProjectIdentifier(),
+            templateIdentifierRef.getIdentifier(), versionLabel, false, false);
+    referredEntities.getContent().forEach(referredEntity -> {
+      EntityDetail entity = referredEntity.getReferredByEntity();
+      if (entity.getType().name().equals("PIPELINES")) {
+        templateServiceHelper.sendTemplatesUsedInPipelinesTelemetryEvent(templateEntity.get(), TEMPLATE_REF_PIPELINE);
+      }
+    });
+
     return referredEntities;
   }
 

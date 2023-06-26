@@ -95,6 +95,8 @@ public class NGTemplateServiceHelper {
   @Inject private ExecutorService executorService;
 
   public static String TEMPLATE_SAVE = "template_save";
+
+  public static String TEMPLATE_REF_PIPELINE = "template_ref_by_pipeline";
   public static String TEMPLATE_SAVE_ACTION_TYPE = "action";
   public static String TEMPLATE_NAME = "templateName";
   public static String ORG_ID = "orgId";
@@ -116,6 +118,28 @@ public class NGTemplateServiceHelper {
         log.error(
             format(
                 "Exception while sending telemetry event for template save. accountId: %s, orgId: %s, projectId: %s, templateId: %s",
+                entity.getAccountIdentifier(), entity.getOrgIdentifier(), entity.getProjectIdentifier(),
+                entity.getIdentifier()),
+            ex);
+      }
+    });
+  }
+
+  public void sendTemplatesUsedInPipelinesTelemetryEvent(TemplateEntity entity, String actionType) {
+    executorService.submit(() -> {
+      try {
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(TEMPLATE_NAME, entity.getName());
+        properties.put(ORG_ID, entity.getOrgIdentifier());
+        properties.put(PROJECT_ID, entity.getProjectIdentifier());
+        properties.put(TEMPLATE_SAVE_ACTION_TYPE, actionType);
+        properties.put(MODULE_NAME, "cd");
+        telemetryReporter.sendTrackEvent(TEMPLATE_REF_PIPELINE, null, entity.getAccountId(), properties,
+            Collections.singletonMap(AMPLITUDE, true), io.harness.telemetry.Category.GLOBAL);
+      } catch (Exception ex) {
+        log.error(
+            format(
+                "Exception while sending telemetry event for template ref by pipeline. accountId: %s, orgId: %s, projectId: %s, templateId: %s",
                 entity.getAccountIdentifier(), entity.getOrgIdentifier(), entity.getProjectIdentifier(),
                 entity.getIdentifier()),
             ex);
