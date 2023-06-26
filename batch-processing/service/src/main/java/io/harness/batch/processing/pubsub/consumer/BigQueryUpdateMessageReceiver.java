@@ -23,6 +23,7 @@ import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessmapping.entities.BusinessMappingHistory;
 import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingHistoryService;
+import io.harness.ccm.views.entities.ViewLabelsFlattened;
 import io.harness.ccm.views.graphql.ViewsQueryBuilder;
 import io.harness.ccm.views.service.LabelFlattenedService;
 import io.harness.ff.FeatureFlagService;
@@ -38,7 +39,6 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.YearMonth;
 import java.time.ZoneId;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -100,13 +100,11 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
 
   public boolean processPubSubMessage(BigQueryUpdateMessage message) throws IOException {
     if (message != null && message.getEventType() != null && message.getMessage() != null) {
-      switch (message.getEventType()) {
-        case COST_CATEGORY_UPDATE:
-          return processCostCategoryUpdateMessage(message.getMessage());
-        default:
-          log.error("Unknown event type: {}, message: {}", message.getEventType(), message.getMessage());
-          return true;
+      if (message.getEventType() == BigQueryUpdateMessage.EventType.COST_CATEGORY_UPDATE) {
+        return processCostCategoryUpdateMessage(message.getMessage());
       }
+      log.error("Unknown event type: {}, message: {}", message.getEventType(), message.getMessage());
+      return true;
     }
     log.warn("Invalid BigQueryUpdateMessage, skipping processing the pub/sub message");
     return true;
@@ -165,13 +163,15 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
 
   private void insertCostCategoriesToBigQuery(BigQueryUpdateMessage.Message message, String tableName,
       Instant queryStartTime, Instant queryEndTime, List<BusinessMappingHistory> businessMappingHistories) {
-    List<String> sqlCaseStatements = businessMappingHistories.stream()
-                                         .map(businessMappingHistory
-                                             -> String.format(COST_CATEGORY_FORMAT, businessMappingHistory.getName(),
-                                                 viewsQueryBuilder.getSQLCaseStatementBusinessMapping(null,
-                                                     BusinessMapping.fromHistory(businessMappingHistory), UNIFIED_TABLE,
-                                                     false, Collections.emptyMap())))
-                                         .collect(Collectors.toList());
+    ViewLabelsFlattened viewLabelsFlattened =
+        ViewLabelsFlattened.builder().shouldUseFlattenedLabelsColumn(false).build();
+    List<String> sqlCaseStatements =
+        businessMappingHistories.stream()
+            .map(businessMappingHistory
+                -> String.format(COST_CATEGORY_FORMAT, businessMappingHistory.getName(),
+                    viewsQueryBuilder.getSQLCaseStatementBusinessMapping(
+                        null, BusinessMapping.fromHistory(businessMappingHistory), UNIFIED_TABLE, viewLabelsFlattened)))
+            .collect(Collectors.toList());
     String costCategoriesStatement = "[" + String.join(", ", sqlCaseStatements) + "]";
 
     bigQueryHelperService.insertCostCategories(tableName, costCategoriesStatement,
@@ -184,6 +184,8 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
       List<BusinessMappingHistory> businessMappingHistories) {
     Map<String, String> labelsKeyAndColumnMapping =
         labelFlattenedService.getLabelsKeyAndColumnMapping(message.getAccountId());
+    ViewLabelsFlattened viewLabelsFlattened =
+        viewsQueryBuilder.getViewLabelsFlattened(labelsKeyAndColumnMapping, message.getAccountId(), UNIFIED_TABLE);
     // Accounts for which a single update query for all cost categories is too much to handle
     bigQueryHelperService.removeAllCostCategories(tableName, formattedTime(Date.from(queryStartTime)),
         formattedTime(Date.from(queryEndTime)), message.getCloudProvider(), message.getCloudProviderAccountIds());
@@ -191,9 +193,8 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
       try {
         String costCategoriesStatement = "["
             + String.format(COST_CATEGORY_FORMAT, businessMappingHistory.getName(),
-                viewsQueryBuilder.getSQLCaseStatementBusinessMapping(null,
-                    BusinessMapping.fromHistory(businessMappingHistory), UNIFIED_TABLE, true,
-                    labelsKeyAndColumnMapping))
+                viewsQueryBuilder.getSQLCaseStatementBusinessMapping(
+                    null, BusinessMapping.fromHistory(businessMappingHistory), UNIFIED_TABLE, viewLabelsFlattened))
             + "]";
         bigQueryHelperService.addCostCategory(tableName, costCategoriesStatement,
             formattedTime(Date.from(queryStartTime)), formattedTime(Date.from(queryEndTime)),

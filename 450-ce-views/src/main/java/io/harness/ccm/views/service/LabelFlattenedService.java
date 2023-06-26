@@ -12,8 +12,10 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 import io.harness.annotations.dev.OwnedBy;
 
 import java.util.Map;
+import java.util.Set;
 
 @OwnedBy(CE)
 public interface LabelFlattenedService {
   Map<String, String> getLabelsKeyAndColumnMapping(String accountId);
+  Set<String> getFlattenedLabelsTableColumns(String accountId, String tableName);
 }

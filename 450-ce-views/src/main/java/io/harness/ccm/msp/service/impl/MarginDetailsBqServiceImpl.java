@@ -7,24 +7,30 @@
 
 package io.harness.ccm.msp.service.impl;
 
+import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.ccm.views.utils.ViewFieldUtils.UNIFIED_TABLE;
 
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.msp.entities.MarginDetails;
 import io.harness.ccm.msp.service.intf.MarginDetailsBqService;
 import io.harness.ccm.views.graphql.ViewsQueryBuilder;
+import io.harness.ccm.views.service.LabelFlattenedService;
 
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.inject.Inject;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
+@OwnedBy(CE)
 @Slf4j
 public class MarginDetailsBqServiceImpl implements MarginDetailsBqService {
   @Inject private BigQueryService bigQueryService;
   @Inject private BigQueryHelper bigQueryHelper;
   @Inject private ViewsQueryBuilder viewsQueryBuilder;
+  @Inject private LabelFlattenedService labelFlattenedService;
 
   private static final String MARGIN_DETAILS_BQ_INSERT_QUERY =
       "INSERT INTO `%s.CE_INTERNAL.mspMarkup`(accountId,mspAccountId,condition) VALUES(\"%s\", \"%s\", \"%s\")";
@@ -34,7 +40,10 @@ public class MarginDetailsBqServiceImpl implements MarginDetailsBqService {
   @Override
   public void insertMarginDetailsInBQ(MarginDetails marginDetails) {
     BigQuery bigQuery = bigQueryService.get();
-    String condition = viewsQueryBuilder.getSQLCaseStatementForMarginDetails(marginDetails, UNIFIED_TABLE);
+    Map<String, String> labelsKeyAndColumnMapping =
+        labelFlattenedService.getLabelsKeyAndColumnMapping(marginDetails.getAccountId());
+    String condition =
+        viewsQueryBuilder.getSQLCaseStatementForMarginDetails(marginDetails, UNIFIED_TABLE, labelsKeyAndColumnMapping);
     String insertQuery = String.format(MARGIN_DETAILS_BQ_INSERT_QUERY, bigQueryHelper.getGcpProjectId(),
         marginDetails.getAccountId(), marginDetails.getMspAccountId(), condition);
 
@@ -50,7 +59,10 @@ public class MarginDetailsBqServiceImpl implements MarginDetailsBqService {
   @Override
   public void updateMarginDetailsInBQ(MarginDetails marginDetails) {
     BigQuery bigQuery = bigQueryService.get();
-    String condition = viewsQueryBuilder.getSQLCaseStatementForMarginDetails(marginDetails, UNIFIED_TABLE);
+    Map<String, String> labelsKeyAndColumnMapping =
+        labelFlattenedService.getLabelsKeyAndColumnMapping(marginDetails.getAccountId());
+    String condition =
+        viewsQueryBuilder.getSQLCaseStatementForMarginDetails(marginDetails, UNIFIED_TABLE, labelsKeyAndColumnMapping);
     String updateQuery = String.format(MARGIN_DETAILS_BQ_UPDATE_QUERY, bigQueryHelper.getGcpProjectId(), condition,
         marginDetails.getAccountId(), marginDetails.getMspAccountId());
 
