@@ -54,6 +54,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.EnvironmentType;
+import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.PageResponse.PageResponseBuilder;
@@ -61,6 +62,7 @@ import io.harness.beans.SecretManagerConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
 import software.wings.beans.Application;
@@ -140,6 +142,7 @@ public class UsageRestrictionsServiceImplTest extends CategoryTest {
   @Mock private SettingServiceHelper settingServiceHelper;
   @Mock private SecretManager secretManager;
   @Mock private Query<SettingAttribute> query;
+  @Mock private FeatureFlagService featureFlagService;
 
   private static Set<Action> readAction = newHashSet(Action.READ);
   private static Set<Action> updateAndReadAction = newHashSet(Action.UPDATE, Action.READ);
@@ -179,6 +182,7 @@ public class UsageRestrictionsServiceImplTest extends CategoryTest {
     when(application.getAccountId()).thenReturn("ACCOUNT_ID");
     when(appService.get(TARGET_APP_ID)).thenReturn(Application.Builder.anApplication().accountId(ACCOUNT_ID).build());
     when(appService.get(APP_ID)).thenReturn(Application.Builder.anApplication().accountId(ACCOUNT_ID).build());
+    doReturn(false).when(featureFlagService).isEnabled(eq(FeatureName.SPG_ENVIRONMENT_QUERY_LOGS), anyString());
   }
 
   private List<UserGroup> setUserGroupMocks(AppPermission appPermission, List<String> appIds) {
