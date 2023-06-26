@@ -60,6 +60,7 @@ MODULES_FILE="modules.txt"
 MODULES_TESTS_FILE="modules_tests.txt"
 PR_SRCS_FILE="pr_srcs.txt"
 SONAR_CONFIG_FILE='TEMP-sonar-project.properties'
+STARTUP_ARGS="--output_base=/tmp"
 
 # This script is required to generate the test util bzl file in root directory.
 scripts/bazel/generate_credentials.sh
@@ -125,8 +126,8 @@ for module in $PR_MODULES
   done
 
 # Running Bazel Coverage
-echo "INFO: BAZEL COMMAND: bazel coverage ${BAZEL_ARGS} ${COVERAGE_ARGS} -- ${BAZEL_COMPILE_MODULES[@]}"
-bazel coverage ${BAZEL_ARGS} ${COVERAGE_ARGS} -- "${BAZEL_COMPILE_MODULES[@]}" || true
+echo "INFO: BAZEL COMMAND: bazel ${STARTUP_ARGS} coverage ${BAZEL_ARGS} ${COVERAGE_ARGS} -- ${BAZEL_COMPILE_MODULES[@]}"
+bazel ${STARTUP_ARGS} coverage ${BAZEL_ARGS} ${COVERAGE_ARGS} -- "${BAZEL_COMPILE_MODULES[@]}" || true
 check_cmd_status "$?" "Failed to run coverage."
 
 for file in $(echo $GIT_DIFF | tr '\r\n' ' ')
