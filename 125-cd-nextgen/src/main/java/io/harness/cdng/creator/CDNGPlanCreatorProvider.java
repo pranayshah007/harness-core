@@ -1342,8 +1342,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("SAM Deploy")
             .setType(StepSpecTypeConstants.AWS_SAM_DEPLOY)
-            .setStepMetaData(
-                StepMetaData.newBuilder().addCategory(AWS_SAM).addCategory(PLUGIN).setFolderPath("AWS SAM").build())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(PLUGIN).setFolderPath("AWS SAM").build())
             .setFeatureFlag(FeatureName.CDP_AWS_SAM.name())
             .build();
 
@@ -1351,8 +1350,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("Download Manifests")
             .setType(StepSpecTypeConstants.DOWNLOAD_MANIFESTS)
-            .setStepMetaData(
-                StepMetaData.newBuilder().addCategory(AWS_SAM).addCategory(PLUGIN).setFolderPath("AWS SAM").build())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(PLUGIN).setFolderPath("AWS SAM").build())
             .setFeatureFlag(FeatureName.CDP_AWS_SAM.name())
             .build();
 
@@ -1360,8 +1358,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("SAM Build")
             .setType(StepSpecTypeConstants.AWS_SAM_BUILD)
-            .setStepMetaData(
-                StepMetaData.newBuilder().addCategory(AWS_SAM).addCategory(PLUGIN).setFolderPath("AWS SAM").build())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(PLUGIN).setFolderPath("AWS SAM").build())
             .setFeatureFlag(FeatureName.CDP_AWS_SAM.name())
             .build();
 

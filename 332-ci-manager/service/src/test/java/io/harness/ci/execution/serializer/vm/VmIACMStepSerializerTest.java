@@ -91,7 +91,7 @@ public class VmIACMStepSerializerTest extends CategoryTest {
         put("TF_keytest4", "keyValue4");
       }
     });
-    when(iacmStepsUtils.retrieveIACMConnectorDetails(ambiance, stepInfo))
+    when(iacmStepsUtils.retrieveIACMConnectorDetails(ambiance, "workspaceId"))
         .thenReturn(ConnectorDetails.builder().build());
     Mockito.mockStatic(IntegrationStageUtils.class);
     when(IntegrationStageUtils.getFullyQualifiedImageName(any(), any())).thenReturn("imageName");

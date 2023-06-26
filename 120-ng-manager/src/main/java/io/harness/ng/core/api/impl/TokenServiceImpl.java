@@ -8,7 +8,10 @@
 package io.harness.ng.core.api.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
+import static io.harness.ng.accesscontrol.PlatformPermissions.MANAGEAPIKEY_SERVICEACCOUNT_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformPermissions.MANAGE_USER_PERMISSION;
 import static io.harness.ng.core.account.ServiceAccountConfig.DEFAULT_TOKEN_LIMIT;
 import static io.harness.ng.core.entities.ApiKey.DEFAULT_TTL_FOR_TOKEN;
 import static io.harness.ng.core.utils.NGUtils.validate;
@@ -18,12 +21,19 @@ import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder.BCryptVersion.$2A;
 
+import io.harness.accesscontrol.NGAccessDeniedException;
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.UnauthorizedException;
+import io.harness.exception.WingsException;
+import io.harness.ng.accesscontrol.PlatformResourceTypes;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.AccountOrgProjectValidator;
 import io.harness.ng.core.account.ServiceAccountConfig;
@@ -32,6 +42,7 @@ import io.harness.ng.core.api.TokenService;
 import io.harness.ng.core.api.utils.JWTTokenFlowAuthFilterUtils;
 import io.harness.ng.core.common.beans.ApiKeyType;
 import io.harness.ng.core.dto.ApiKeyDTO;
+import io.harness.ng.core.dto.GatewayAccountRequestDTO;
 import io.harness.ng.core.dto.TokenAggregateDTO;
 import io.harness.ng.core.dto.TokenDTO;
 import io.harness.ng.core.dto.TokenFilterDTO;
@@ -48,6 +59,8 @@ import io.harness.ng.core.user.service.NgUserService;
 import io.harness.ng.serviceaccounts.service.api.ServiceAccountService;
 import io.harness.outbox.api.OutboxService;
 import io.harness.repositories.ng.core.spring.TokenRepository;
+import io.harness.security.SourcePrincipalContextBuilder;
+import io.harness.security.dto.PrincipalType;
 import io.harness.serviceaccount.ServiceAccountDTO;
 import io.harness.token.TokenValidationHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
@@ -89,6 +102,7 @@ public class TokenServiceImpl implements TokenService {
   @Inject private TokenValidationHelper tokenValidationHelper;
   @Inject private JWTTokenFlowAuthFilterUtils jwtTokenAuthFilterHelper;
   @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  @Inject private AccessControlClient accessControlClient;
   private static final String deliminator = ".";
 
   @Override
@@ -334,9 +348,20 @@ public class TokenServiceImpl implements TokenService {
     if (Objects.nonNull(filterDTO.getProjectIdentifier()) && !filterDTO.getProjectIdentifier().isEmpty()) {
       criteria.and(TokenKeys.projectIdentifier).is(filterDTO.getProjectIdentifier());
     }
+
+    if (isNotEmpty(filterDTO.getParentIdentifier())) {
+      criteria.and(TokenKeys.parentIdentifier).is(filterDTO.getParentIdentifier());
+    }
+
+    if (isNotEmpty(filterDTO.getApiKeyIdentifier())) {
+      criteria.and(TokenKeys.apiKeyIdentifier).is(filterDTO.getApiKeyIdentifier());
+    }
     criteria.and(TokenKeys.apiKeyType).is(filterDTO.getApiKeyType());
-    criteria.and(TokenKeys.parentIdentifier).is(filterDTO.getParentIdentifier());
-    criteria.and(TokenKeys.apiKeyIdentifier).is(filterDTO.getApiKeyIdentifier());
+
+    if (filterDTO.isIncludeOnlyActiveTokens()) {
+      criteria.and(TokenKeys.validFrom).lte(Instant.now());
+      criteria.and(TokenKeys.validUntil).gte(new Date(System.currentTimeMillis()));
+    }
 
     if (Objects.nonNull(filterDTO.getIdentifiers()) && !filterDTO.getIdentifiers().isEmpty()) {
       criteria.and(TokenKeys.identifier).in(filterDTO.getIdentifiers());
@@ -371,6 +396,73 @@ public class TokenServiceImpl implements TokenService {
       tokenValidationHelper.validateToken(tokenDTO, accountIdentifier, tokenId, apiKey);
       tokenDTO.setEncodedPassword(null);
       return tokenDTO;
+    }
+  }
+
+  @Override
+  public void validateTokenListPermissions(TokenFilterDTO filterDTO) {
+    switch (filterDTO.getApiKeyType()) {
+      case USER:
+        try {
+          checkIfUserHasUserManagementPermission(filterDTO);
+        } catch (WingsException ex) {
+          // if userId is present, check if its loggedIn user
+          if (isNotEmpty(filterDTO.getParentIdentifier())) {
+            checkIfItsLoggedInUser(filterDTO.getAccountIdentifier(), filterDTO.getParentIdentifier());
+          } else if (ex instanceof NGAccessDeniedException) {
+            String message = "Error while listing all users' personal access tokens: " + ex.getMessage();
+            throw new NGAccessDeniedException(
+                message, ex.getReportTargets(), ((NGAccessDeniedException) ex).getFailedPermissionChecks());
+          } else {
+            throw ex;
+          }
+        }
+        break;
+      case SERVICE_ACCOUNT:
+        checkIfUserHasServiceAccountManagementPermission(filterDTO);
+        break;
+      default:
+        throw new InvalidArgumentsException(String.format("Invalid api key type: %s", filterDTO.getApiKeyType()));
+    }
+  }
+
+  private void checkIfUserHasUserManagementPermission(TokenFilterDTO filterDTO) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(filterDTO.getAccountIdentifier(),
+                                                  filterDTO.getOrgIdentifier(), filterDTO.getProjectIdentifier()),
+        Resource.of(PlatformResourceTypes.USER, null), MANAGE_USER_PERMISSION);
+  }
+
+  private void checkIfUserHasServiceAccountManagementPermission(TokenFilterDTO filterDTO) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(filterDTO.getAccountIdentifier(),
+                                                  filterDTO.getOrgIdentifier(), filterDTO.getProjectIdentifier()),
+        Resource.of(PlatformResourceTypes.SERVICEACCOUNT, filterDTO.getParentIdentifier()),
+        MANAGEAPIKEY_SERVICEACCOUNT_PERMISSION);
+  }
+
+  private void checkIfItsLoggedInUser(String accountIdentifier, String parentIdentifier) {
+    Optional<String> userId = Optional.empty();
+    if (SourcePrincipalContextBuilder.getSourcePrincipal() != null
+        && SourcePrincipalContextBuilder.getSourcePrincipal().getType() == PrincipalType.USER) {
+      userId = Optional.of(SourcePrincipalContextBuilder.getSourcePrincipal().getName());
+    }
+    if (userId.isEmpty()) {
+      throw new InvalidArgumentsException("No user identifier present in context");
+    }
+    if (!userId.get().equals(parentIdentifier)) {
+      throw new InvalidArgumentsException(
+          String.format("User [%s] not authenticated to list tokens for user [%s]", userId.get(), parentIdentifier));
+    }
+    Optional<UserInfo> userInfo = ngUserService.getUserById(userId.get());
+    if (userInfo.isEmpty()) {
+      throw new InvalidArgumentsException(String.format("No user found with id: [%s]", userId.get()));
+    }
+
+    List<GatewayAccountRequestDTO> userAccounts = userInfo.get().getAccounts();
+    if (userAccounts == null
+        || userAccounts.stream().filter(account -> account.getUuid().equals(accountIdentifier)).findFirst().isEmpty()) {
+      throw new UnauthorizedException(String.format("User [%s] is not authorized to list tokens for account: [%s]",
+                                          userId.get(), accountIdentifier),
+          WingsException.USER);
     }
   }
 

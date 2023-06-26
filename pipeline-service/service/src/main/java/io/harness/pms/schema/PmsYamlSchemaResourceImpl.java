@@ -8,11 +8,9 @@
 package io.harness.pms.schema;
 
 import static io.harness.EntityType.PIPELINES;
-import static io.harness.EntityType.TEMPLATE;
 import static io.harness.EntityType.TRIGGERS;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
@@ -23,17 +21,15 @@ import io.harness.ngtriggers.service.NGTriggerYamlSchemaService;
 import io.harness.plancreator.pipeline.PipelineConfig;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.pipeline.service.PMSYamlSchemaService;
+import io.harness.pms.pipeline.service.PMSYamlSchemaServiceImpl;
+import io.harness.pms.pipeline.service.yamlschema.SchemaFetcher;
 import io.harness.pms.yaml.SchemaErrorResponse;
 import io.harness.pms.yaml.YamlSchemaResponse;
-import io.harness.serializer.JsonUtils;
 import io.harness.yaml.schema.YamlSchemaResource;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.io.Resources;
 import com.google.inject.Inject;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Objects;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.NotSupportedException;
 import lombok.AllArgsConstructor;
@@ -45,11 +41,16 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PIPELINE)
 public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSchemaResource {
   private final PMSYamlSchemaService pmsYamlSchemaService;
+  private final SchemaFetcher schemaFetcher;
+
+  private final PMSYamlSchemaServiceImpl pmsYamlSchemaServiceImpl;
   private final NGTriggerYamlSchemaService ngTriggerYamlSchemaService;
 
   private final String deployMode = System.getenv().get("DEPLOY_MODE");
   private final String PIPELINE_JSON_PATH = "static-schema/pipeline.json";
   private final String TEMPLATE_JSON_PATH = "static-schema/template.json";
+
+  private final String PRE_QA = "stress";
 
   public ResponseDTO<JsonNode> getYamlSchema(@NotNull EntityType entityType, String projectIdentifier,
       String orgIdentifier, Scope scope, String identifier, @NotNull String accountIdentifier) {
@@ -69,21 +70,17 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
   public ResponseDTO<JsonNode> getStaticYamlSchema(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String identifier, EntityType entityType, Scope scope, String version) {
     String env = System.getenv("ENV");
-    /*
-    Currently static schema is not supported for community and onPrem env.
-     */
-    if (!validateIfStaticSchemaRequired(entityType, env)) {
-      return getStaticYamlSchemaFromResource(
-          accountIdentifier, projectIdentifier, orgIdentifier, identifier, entityType, scope);
+    try {
+      // TODO: remove second condition once template static api is ready
+      if (PRE_QA.equals(env) && entityType.equals(PIPELINES)) {
+        JsonNode jsonNode = schemaFetcher.fetchSchemaFromRepo(entityType, version);
+        return ResponseDTO.newResponse(jsonNode);
+      }
+    } catch (Exception e) {
+      log.error("Could not able to fetch schema for stress env");
     }
-
-    JsonNode staticJson = pmsYamlSchemaService.getStaticSchema(
-        accountIdentifier, projectIdentifier, orgIdentifier, identifier, entityType, scope, version);
-
-    // return static json if not empty or return the Pojo Schema
-    return staticJson != null
-        ? ResponseDTO.newResponse(staticJson)
-        : getYamlSchema(entityType, projectIdentifier, orgIdentifier, scope, identifier, accountIdentifier);
+    return getStaticYamlSchemaFromResource(
+        accountIdentifier, projectIdentifier, orgIdentifier, identifier, entityType, scope);
   }
 
   private ResponseDTO<JsonNode> getStaticYamlSchemaFromResource(String accountIdentifier, String projectIdentifier,
@@ -101,26 +98,11 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
     }
 
     try {
-      return ResponseDTO.newResponse(fetchFile(filePath));
+      return ResponseDTO.newResponse(schemaFetcher.fetchFile(filePath));
     } catch (IOException ex) {
       log.error("Not able to read json from {} path", filePath);
     }
     return getYamlSchema(entityType, projectIdentifier, orgIdentifier, scope, identifier, accountIdentifier);
-  }
-  public JsonNode fetchFile(String filePath) throws IOException {
-    ClassLoader classLoader = this.getClass().getClassLoader();
-    String staticJson =
-        Resources.toString(Objects.requireNonNull(classLoader.getResource(filePath)), StandardCharsets.UTF_8);
-    return JsonUtils.asObject(staticJson, JsonNode.class);
-  }
-
-  private boolean validateIfStaticSchemaRequired(EntityType entityType, String env) {
-    // static schema is not supported for empty env or on-prem env. In entity type currently its supported only for
-    // Pipelines or Template
-    if (isEmpty(env) || validateOnPremOrCommunityEdition() || (entityType != PIPELINES && entityType != TEMPLATE)) {
-      return false;
-    }
-    return true;
   }
 
   private boolean validateOnPremOrCommunityEdition() {

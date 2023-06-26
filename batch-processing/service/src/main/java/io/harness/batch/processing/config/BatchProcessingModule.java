@@ -256,6 +256,7 @@ public class BatchProcessingModule extends AbstractModule {
     bind(CCMJiraHelper.class).to(CCMJiraHelperImpl.class);
     bind(ClickHouseService.class).to(ClickHouseServiceImpl.class);
     bind(BudgetGroupService.class).to(BudgetGroupServiceImpl.class);
+    bind(LabelFlattenedService.class).to(LabelFlattenedServiceImpl.class);
 
     install(new MetricsModule());
     install(new CENGGraphQLModule(batchMainConfig.getCurrencyPreferencesConfig()));
@@ -269,7 +270,6 @@ public class BatchProcessingModule extends AbstractModule {
     } else {
       bind(ViewsBillingService.class).to(ViewsBillingServiceImpl.class);
       bind(DataResponseService.class).to(BigQueryDataResponseServiceImpl.class);
-      bind(LabelFlattenedService.class).to(LabelFlattenedServiceImpl.class);
     }
 
     bindPricingServices();

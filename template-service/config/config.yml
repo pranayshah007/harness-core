@@ -166,3 +166,5 @@ cfClientConfig:
 featureFlagConfig:
   featureFlagSystem: LOCAL
   syncFeaturesToCF: false
+
+distributedLockImplementation: MONGO

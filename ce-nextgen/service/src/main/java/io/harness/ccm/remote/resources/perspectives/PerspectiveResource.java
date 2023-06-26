@@ -53,6 +53,7 @@ import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.enforcement.constants.FeatureRestrictionName;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -79,6 +80,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
@@ -390,9 +392,17 @@ public class PerspectiveResource {
       @QueryParam("perspectiveId") @Parameter(required = true,
           description = "Unique identifier for the Perspective") @NotBlank @Valid String perspectiveId) {
     CEView ceView = ceViewService.get(perspectiveId);
+    checkPerspectiveExists(perspectiveId, ceView);
     rbacHelper.checkPerspectiveViewPermission(accountId, null, null, ceView.getFolderId());
     awsAccountFieldHelper.mergeAwsAccountNameInAccountRules(ceView.getViewRules(), accountId);
     return ResponseDTO.newResponse(ceView);
+  }
+
+  private void checkPerspectiveExists(String perspectiveId, CEView ceView) {
+    if (Objects.isNull(ceView)) {
+      String errorMessage = String.format("Perspective %s doesn't exist", perspectiveId);
+      throw new InvalidRequestException(errorMessage);
+    }
   }
 
   @GET
@@ -448,6 +458,7 @@ public class PerspectiveResource {
       @Valid @RequestBody(required = true, description = "Perspective's CEView object") CEView ceView) {
     rbacHelper.checkPerspectiveEditPermission(accountId, null, null, ceView.getFolderId());
     CEView oldPerspective = ceViewService.get(ceView.getUuid());
+    checkPerspectiveExists(ceView.getUuid(), oldPerspective);
     ceView.setAccountId(accountId);
     log.info(ceView.toString());
     CEView newPerspective = updateTotalCost(ceViewService.update(ceView));
@@ -481,6 +492,7 @@ public class PerspectiveResource {
       @QueryParam("perspectiveId") @Parameter(required = true,
           description = "Unique identifier for the Perspective") @NotNull @Valid String perspectiveId) {
     CEView perspective = ceViewService.get(perspectiveId);
+    checkPerspectiveExists(perspectiveId, perspective);
     rbacHelper.checkPerspectiveDeletePermission(accountId, null, null, perspective.getFolderId());
     ceViewService.delete(perspectiveId, accountId);
 
@@ -520,6 +532,7 @@ public class PerspectiveResource {
       @Valid @NotNull @Parameter(required = true, description = "Name for the Perspective clone") @QueryParam(
           "cloneName") String cloneName) {
     CEView perspective = ceViewService.get(perspectiveId);
+    checkPerspectiveExists(perspectiveId, perspective);
     rbacHelper.checkPerspectiveEditPermission(accountId, null, null, perspective.getFolderId());
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);

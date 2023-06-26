@@ -31,6 +31,7 @@ import io.harness.idp.k8s.client.K8sClient;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.*;
+import io.harness.springdata.TransactionHelper;
 
 import java.util.*;
 import org.junit.Before;
@@ -54,14 +55,16 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
   @Mock private BackstageEnvVariableService backstageEnvVariableService;
   @Mock private NamespaceService namespaceService;
   @Mock private PluginsProxyInfoService pluginsProxyInfoService;
+  @Mock private TransactionHelper transactionHelper;
   String env = "prod";
   @InjectMocks ConfigManagerServiceImpl configManagerServiceImpl;
 
   @Before
   public void setUp() {
     openMocks = MockitoAnnotations.openMocks(this);
-    configManagerServiceImpl = new ConfigManagerServiceImpl(env, appConfigRepository, mergedAppConfigRepository,
-        k8sClient, namespaceService, configEnvVariablesService, backstageEnvVariableService, pluginsProxyInfoService);
+    configManagerServiceImpl =
+        new ConfigManagerServiceImpl(env, appConfigRepository, mergedAppConfigRepository, k8sClient, namespaceService,
+            configEnvVariablesService, backstageEnvVariableService, pluginsProxyInfoService, transactionHelper);
   }
 
   static final String TEST_ID = "test_id";

@@ -74,7 +74,7 @@ logging:
       target: STDOUT
       stackdriverLogEnabled: false
 
-distributedLockImplementation: MONGO
+distributedLockImplementation: REDIS
 
 logStreamingServiceConfig:
   baseUrl: http://localhost:8079

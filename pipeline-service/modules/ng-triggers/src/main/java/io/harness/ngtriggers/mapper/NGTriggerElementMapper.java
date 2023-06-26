@@ -617,7 +617,8 @@ public class NGTriggerElementMapper {
     return ngTriggerDetailsResponseDTO.build();
   }
 
-  private NGTriggerEntity getTriggerEntityWithArtifactoryRepositoryUrl(NGTriggerEntity ngTriggerEntity) {
+  @VisibleForTesting
+  NGTriggerEntity getTriggerEntityWithArtifactoryRepositoryUrl(NGTriggerEntity ngTriggerEntity) {
     if (ngTriggerEntity == null) {
       return null;
     }
@@ -729,7 +730,8 @@ public class NGTriggerElementMapper {
     return arrayList;
   }
 
-  private YamlNode validateAndGetYamlNode(String yaml) {
+  @VisibleForTesting
+  YamlNode validateAndGetYamlNode(String yaml) {
     if (isEmpty(yaml)) {
       throw new InvalidRequestException("Service YAML is empty.");
     }

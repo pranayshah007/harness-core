@@ -43,8 +43,7 @@ public class ConfigEnvVariablesServiceImpl implements ConfigEnvVariablesService 
       "%s - is already used in plugin - %s , please use some other env variable name";
 
   @Override
-  public List<BackstageEnvSecretVariable> insertConfigEnvVariables(AppConfig appConfig, String accountIdentifier)
-      throws Exception {
+  public List<BackstageEnvSecretVariable> insertConfigEnvVariables(AppConfig appConfig, String accountIdentifier) {
     List<PluginConfigEnvVariablesEntity> configVariables =
         ConfigEnvVariablesMapper.getEntitiesForEnvVariables(appConfig, accountIdentifier);
     List<String> errorMessagesForEnvVariables = getErrorMessagesForEnvVariables(appConfig, accountIdentifier);
@@ -69,8 +68,7 @@ public class ConfigEnvVariablesServiceImpl implements ConfigEnvVariablesService 
   }
 
   @Override
-  public List<BackstageEnvSecretVariable> updateConfigEnvVariables(AppConfig appConfig, String accountIdentifier)
-      throws Exception {
+  public List<BackstageEnvSecretVariable> updateConfigEnvVariables(AppConfig appConfig, String accountIdentifier) {
     List<PluginConfigEnvVariablesEntity> configVariables =
         ConfigEnvVariablesMapper.getEntitiesForEnvVariables(appConfig, accountIdentifier);
     if (configVariables.isEmpty()) {

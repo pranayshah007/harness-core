@@ -13,7 +13,6 @@ import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.serializer.JsonUtils;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -56,8 +55,8 @@ public class ParallelismStrategyConfigService implements StrategyConfigService {
     }
     List<JsonNode> jsonNodes = new ArrayList<>();
     for (int i = 0; i < parallelism; i++) {
-      JsonNode clonedJsonNode = JsonPipelineUtils.asTree(JsonUtils.asMap(
-          StrategyUtils.replaceExpressions(jsonNode.deepCopy().toString(), new HashMap<>(), i, parallelism, null)));
+      JsonNode clonedJsonNode =
+          StrategyUtils.replaceExpressions(JsonPipelineUtils.asTree(jsonNode), new HashMap<>(), i, parallelism, null);
       StrategyUtils.modifyJsonNode(clonedJsonNode, Lists.newArrayList(String.valueOf(i)));
       jsonNodes.add(clonedJsonNode);
     }

@@ -1924,7 +1924,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     builder.put("maxValidatingTasksCount", Integer.toString(maxValidatingTasksCount.getAndSet(0)));
     builder.put("maxExecutingTasksCount", Integer.toString(maxExecutingTasksCount.getAndSet(0)));
     builder.put("maxExecutingFuturesCount", Integer.toString(maxExecutingFuturesCount.getAndSet(0)));
-    builder.put("currentlyAcquiringTasksCount", Integer.toString(currentlyAcquiringTasksCount.getAndSet(0)));
 
     OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
     builder.put("cpu-process",
@@ -2012,6 +2011,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void dispatchDelegateTask(DelegateTaskEvent delegateTaskEvent) {
+    boolean incrementedCurrentlyAcquiredTaskCounter = false;
     try (TaskLogContext ignore = new TaskLogContext(delegateTaskEvent.getDelegateTaskId(), OVERRIDE_ERROR)) {
       String delegateTaskId = delegateTaskEvent.getDelegateTaskId();
 
@@ -2042,6 +2042,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           // Check if current acquiring tasks is below capacity.
           int taskCapacity = delegateTaskCapacity.get();
           final int processingTaskCount = currentlyAcquiringTasksCount.getAndIncrement();
+          incrementedCurrentlyAcquiredTaskCounter = true;
           if (processingTaskCount >= taskCapacity) {
             log.info("Not acquiring task - currently processing {} tasks count exceeds task capacity {}",
                 processingTaskCount, taskCapacity);
@@ -2090,7 +2091,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       } catch (Exception e) {
         log.error("Unable to get task for validation", e);
       } finally {
-        removeFromCurrentlyAcquiringTasks(delegateTaskId);
+        currentlyAcquiringTasks.remove(delegateTaskId);
+        if (incrementedCurrentlyAcquiredTaskCounter) {
+          currentlyAcquiringTasksCount.getAndDecrement();
+        }
         currentlyExecutingFutures.remove(delegateTaskId);
       }
     }
@@ -2868,10 +2872,5 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     } catch (Exception e) {
       log.error("SSL Cert Verification failed with exception ", e);
     }
-  }
-
-  private void removeFromCurrentlyAcquiringTasks(String delegateTaskId) {
-    currentlyAcquiringTasks.remove(delegateTaskId);
-    currentlyAcquiringTasksCount.getAndDecrement();
   }
 }

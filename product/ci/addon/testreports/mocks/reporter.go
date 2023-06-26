@@ -12,7 +12,7 @@ package testreports
 import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
-	types "github.com/harness/harness-core/product/ci/ti-service/types"
+	types "github.com/harness/ti-client/types"
 	reflect "reflect"
 )
 

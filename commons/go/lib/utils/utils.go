@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/harness/harness-core/commons/go/lib/filesystem"
-	"github.com/harness/harness-core/product/ci/ti-service/types"
+	"github.com/harness/ti-client/types"
 	zglob "github.com/mattn/go-zglob"
 	"go.uber.org/zap"
 )

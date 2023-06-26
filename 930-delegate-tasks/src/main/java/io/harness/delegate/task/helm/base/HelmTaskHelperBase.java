@@ -1090,7 +1090,7 @@ public class HelmTaskHelperBase {
     }
   }
 
-  private void downloadHelmChart(HelmChartManifestDelegateConfig helmChartManifestDelegateConfig, long timeoutInMillis,
+  public void downloadHelmChart(HelmChartManifestDelegateConfig helmChartManifestDelegateConfig, long timeoutInMillis,
       LogCallback logCallback, String workingDirectory) throws Exception {
     try {
       downloadHelmChartFiles(helmChartManifestDelegateConfig, workingDirectory, timeoutInMillis);

@@ -166,7 +166,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
     GetUserReposResponse getUserReposResponse = GetUserReposResponse.newBuilder().addAllRepos(repositories).build();
     when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any())).thenReturn(getUserReposResponse);
     List<GitRepositoryResponseDTO> repositoryResponseDTOList = scmFacilitatorService.listReposByRefConnector(
-        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, pageRequest, "");
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, pageRequest, "", false);
     assertThat(repositoryResponseDTOList.size()).isEqualTo(2);
     assertThat(repositoryResponseDTOList.get(0).getName()).isEqualTo("repo1");
     assertThat(repositoryResponseDTOList.get(1).getName()).isEqualTo("repo2");
@@ -192,7 +192,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
     GetUserReposResponse getUserReposResponse = GetUserReposResponse.newBuilder().addAllRepos(repositories).build();
     when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any())).thenReturn(getUserReposResponse);
     List<GitRepositoryResponseDTO> repositoryResponseDTOList = scmFacilitatorService.listReposByRefConnector(
-        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, pageRequest, "");
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, pageRequest, "", false);
     assertThat(repositoryResponseDTOList.size()).isEqualTo(3);
     assertThat(repositoryResponseDTOList.get(0).getName()).isEqualTo("harness/repo1");
     assertThat(repositoryResponseDTOList.get(1).getName()).isEqualTo("harness/repo2");
