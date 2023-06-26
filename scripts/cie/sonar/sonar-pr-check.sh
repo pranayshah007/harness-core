@@ -98,11 +98,6 @@ for FILE in $GIT_DIFF;
     fi
   done
 
-if [ "$(cat $MODULES_FILE | sort -u | wc -l)" -gt 1 ]; then
-    echo "WARNING: PR is touching multiple modules, Coverage is not possible."
-    export COVERAGE_REPORT_PATH=""
-fi
-
 PR_FILES=$(echo ${FILES[@]} | sort -u | tr ' ' ',')
 check_cmd_status "$?" "Failed to get diff between commits."
 echo -e "PR_FILES:\n${PR_FILES}"
@@ -110,6 +105,23 @@ echo -e "PR_FILES:\n${PR_FILES}"
 PR_MODULES=$(cat $MODULES_FILE | sort -u | tr '\n' ' ')
 check_cmd_status "$?" "Failed to get modules from commits."
 echo -e "PR_MODULES:\n$PR_MODULES"
+
+if [ "$(cat $MODULES_FILE | sort -u | wc -l)" -gt 1 ]; then
+    echo "ERROR: PR is touching multiple modules, Generating Coverage and Code Smells is not possible. Exiting....."
+#    exit 1
+fi
+
+for module in $PR_MODULES
+  do
+     [ -d ${module} ] && [[ "${HARNESS_CORE_MODULES}" =~ "${module}" ]] \
+     && BAZEL_COMPILE_MODULES+=("//${module}/...") \
+     || echo "$module is not present in the bazel modules list"
+  done
+
+# Running Bazel Coverage
+echo "INFO: BAZEL COMMAND: bazel coverage ${BAZEL_ARGS} -- ${BAZEL_COMPILE_MODULES[@]}"
+bazel coverage ${BAZEL_ARGS} -- "${BAZEL_COMPILE_MODULES[@]}" || true
+check_cmd_status "$?" "Failed to run coverage."
 
 for file in $(echo $GIT_DIFF | tr '\r\n' ' ')
   do
@@ -131,17 +143,15 @@ MODULES_TESTS=$(get_info_from_file $MODULES_TESTS_FILE)
 
 for MODULE in $(cat $PR_SRCS_FILE | sort -u)
   do
-    echo "MODULE: $MODULE"
-    PATH=$(echo ${BAZEL_OUTPUT_PATH}/${MODULE} | rev | cut -d '/' -f 2- | rev)
-    echo "echo ${BAZEL_OUTPUT_PATH}/${MODULE} | rev | cut -d '/' -f 2- | rev"
-    echo "PATH: $PATH"
     for JAR in ${JARS_ARRAY[@]}
       do
-        echo "find ${PATH} -maxdepth 1 -type f -name $JAR"
-        echo "$(find ${PATH} -maxdepth 1 -type f -name "$JAR")" >> $JARS_FILE
+        if [ -f "${BAZEL_OUTPUT_PATH}/${MODULE}/../$JAR" ]; then
+          echo "${BAZEL_OUTPUT_PATH}/${MODULE}/../$JAR" >> $JARS_FILE
+        fi
       done
   done < $PR_SRCS_FILE
-echo -e "JARS:\n $(cat ${JARS_FILE})"
+echo -e "JARS:\n$(cat ${JARS_FILE})"
+JARS_BINS=$(get_info_from_file $JARS_FILE)
 
 [ ! -f "${SONAR_CONFIG_FILE}" ] \
 && echo "sonar.projectKey=harness-core-sonar-pr" > ${SONAR_CONFIG_FILE} \
@@ -154,10 +164,10 @@ echo "sonar.inclusions=$PR_FILES" >> ${SONAR_CONFIG_FILE}
 echo "sonar.test.inclusions=$MODULES_TESTS" >> ${SONAR_CONFIG_FILE}
 
 #echo "sonar.exclusions=$SONAR_REGISTRAR_EXCLUSIONS" >> ${SONAR_CONFIG_FILE}
-#
-#echo "sonar.java.binaries=$SONAR_JAVAC_FILES" >> ${SONAR_CONFIG_FILE}
-#echo "sonar.java.libraries=$SONAR_LIBS_FILES" >> ${SONAR_CONFIG_FILE}
-#
+
+echo "sonar.java.binaries=$JARS_BINS" >> ${SONAR_CONFIG_FILE}
+echo "sonar.java.libraries=$JARS_BINS" >> ${SONAR_CONFIG_FILE}
+
 echo "sonar.coverageReportPaths=$COVERAGE_REPORT_PATH" >> ${SONAR_CONFIG_FILE}
 echo "sonar.pullrequest.key=$PR_NUMBER" >> ${SONAR_CONFIG_FILE}
 echo "sonar.pullrequest.branch=$PR_BRANCH" >> ${SONAR_CONFIG_FILE}
@@ -167,16 +177,8 @@ echo "sonar.pullrequest.github.repository=$REPO_NAME" >> ${SONAR_CONFIG_FILE}
 echo "INFO: Sonar Properties"
 #cat ${SONAR_CONFIG_FILE}
 
+echo "INFO: Running Sonar Scan."
+[ -f "${SONAR_CONFIG_FILE}" ] \
+&& sonar-scanner -Dsonar.login=${SONAR_KEY} -Dsonar.host.url=https://sonar.harness.io \
+|| echo "ERROR: Sonar Properties File not found."
 
-#if [ ! -s $PR_FILES ]; then
-#  echo "INFO: No need to run Sonar Scan."; exit 0
-#else
-#  echo "INFO: Running Sonar Scan."
-#  sonar-scanner -Dsonar.login=${SONAR_KEY} -Dsonar.host.url=https://sonar.harness.io
-#fi
-#
-#echo "SUMMARY"
-#echo "---------------------------------------------------------------------"
-#echo "PR_FILES: ${PR_FILES}"
-#echo "PR_TEST_FILES: ${PR_TEST_LIST[@]}"
-#echo "---------------------------------------------------------------------"
