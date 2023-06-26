@@ -96,8 +96,8 @@ for FILE in $GIT_DIFF;
   done
 
 # Check if the file is empty, meaning there is no java file changed in the PR.
-[ -s "$MODULES_FILE" ] \
-&& echo "INFO: No Java File change detected. Skipping the Scan....." \
+[ grep -q -v '[^[:space:]]' "$MODULES_FILE" ] \
+|| echo "INFO: No Java File change detected. Skipping the Scan....." \
 && exit 0
 
 PR_FILES=$(echo ${FILES[@]} | sort -u | tr ' ' ',')
