@@ -802,7 +802,7 @@ public class GitClientV2ImplTest extends CategoryTest {
     RevCommit rev2 = git.commit().setAll(true).setAuthor("test", "test@test.com").setMessage("Commit Log 2").call();
 
     doNothing().when(gitClient).updateRemoteOriginInConfig(any(), any(), any());
-    RevertAndPushRequest request = RevertAndPushRequest.builder().commitId("osapdkpoasdkopsad").build();
+    RevertAndPushRequest request = RevertAndPushRequest.builder().commitId(rev2.getId().getName()).build();
 
     PushResultGit toBeReturned = pushResultBuilder().refUpdate(PushResultGit.RefUpdate.builder().build()).build();
     addRemote(repoPath);
