@@ -95,6 +95,11 @@ for FILE in $GIT_DIFF;
     fi
   done
 
+# Check if the file is empty, meaning there is no java file changed in the PR.
+[ -s "$MODULES_FILE" ] \
+&& echo "INFO: No Java File change detected. Skipping the Scan....." \
+&& exit 0
+
 PR_FILES=$(echo ${FILES[@]} | sort -u | tr ' ' ',')
 check_cmd_status "$?" "Failed to get diff between commits."
 echo -e "PR_FILES:\n${PR_FILES}"
