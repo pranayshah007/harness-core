@@ -78,8 +78,7 @@ HARNESS_CORE_MODULES=$(bazel query "//...:*" | grep -w "module" | awk -F/ '{prin
 check_cmd_status "$?" "Failed to list harness core modules."
 #echo "HARNESS_CORE_MODULES: $HARNESS_CORE_MODULES"
 
-#GIT_DIFF=$(git diff --name-only $COMMIT_SHA..$BASE_SHA)
-GIT_DIFF="scripts/cie/sonar/sonar-pr-check.sh"
+GIT_DIFF=$(git diff --name-only $COMMIT_SHA..$BASE_SHA)
 
 echo "------------------------------------------------"
 echo -e "GIT DIFF:\n$GIT_DIFF"
@@ -102,77 +101,77 @@ if ! [ -f "$MODULES_FILE" ]; then
   exit 0
 fi
 
-#PR_FILES=$(echo ${FILES[@]} | sort -u | tr ' ' ',')
-#check_cmd_status "$?" "Failed to get diff between commits."
-#echo -e "PR_FILES:\n${PR_FILES}"
-#
-#PR_MODULES=$(cat $MODULES_FILE | sort -u | tr '\n' ' ')
-#check_cmd_status "$?" "Failed to get modules from commits."
-#echo -e "PR_MODULES:\n$PR_MODULES"
-#
-#if [ "$(cat $MODULES_FILE | sort -u | wc -l)" -gt 1 ]; then
-#    echo "ERROR: PR is touching multiple modules, Generating Coverage and Code Smells is not possible. Exiting....."
-#    exit 1
-#fi
-#
-#for module in $PR_MODULES
-#  do
-#     [ -d ${module} ] && [[ "${HARNESS_CORE_MODULES}" =~ "${module}" ]] \
-#     && BAZEL_COMPILE_MODULES+=("//${module}/...") \
-#     || echo "$module is not present in the bazel modules list."
-#  done
-#
-## Running Bazel Coverage
-#echo "INFO: BAZEL COMMAND: bazel coverage ${BAZEL_ARGS} ${COVERAGE_ARGS} -- ${BAZEL_COMPILE_MODULES[@]}"
-#bazel coverage ${BAZEL_ARGS} ${COVERAGE_ARGS} -- "${BAZEL_COMPILE_MODULES[@]}" || true
-#check_cmd_status "$?" "Failed to run coverage."
-#
-#for file in $(echo $GIT_DIFF | tr '\r\n' ' ')
-#  do
-#     TEMP_RES=$(grep -w 'src' <<< $file | sed 's|src|:|' | awk -F: '{print $1}' | sed 's|$|src|')
-#     echo "$TEMP_RES" >> $PR_SRCS_FILE
-#  done
-#PR_SRCS_DIR=$(cat $PR_SRCS_FILE | sort -u)
-#echo -e "PR_SRCS_DIR:\n${PR_SRCS_DIR}"
-#
-#for DIR in ${PR_SRCS_DIR}
-#  do
-#    find ${DIR} -type f -name "*Test.java" | tr '\r\n' ',' >> $MODULES_TESTS_FILE
-#  done
-#MODULES_TESTS=$(get_info_from_file $MODULES_TESTS_FILE)
-#
-#for MODULE in $(cat $PR_SRCS_FILE | sort -u)
-#  do
-#    for JAR in ${JARS_ARRAY[@]}
-#      do
-#        if [ -f "${BAZEL_OUTPUT_PATH}/${MODULE}/../$JAR" ]; then
-#          echo "${BAZEL_OUTPUT_PATH}/${MODULE}/../$JAR" >> $JARS_FILE
-#        fi
-#      done
-#  done < $PR_SRCS_FILE
-#echo -e "JARS:\n$(cat ${JARS_FILE})"
-#JARS_BINS=$(get_info_from_file $JARS_FILE)
-#
-#[ ! -f "${SONAR_CONFIG_FILE}" ] \
-#&& echo "sonar.projectKey=harness-core-sonar-pr" > ${SONAR_CONFIG_FILE} \
-#&& echo "sonar.log.level=DEBUG" >> ${SONAR_CONFIG_FILE}
-#
-#echo "sonar.sources=$PR_FILES" >> ${SONAR_CONFIG_FILE}
-#echo "sonar.tests=$MODULES_TESTS" >> ${SONAR_CONFIG_FILE}
-#echo "sonar.inclusions=$PR_FILES" >> ${SONAR_CONFIG_FILE}
-#echo "sonar.test.inclusions=$MODULES_TESTS" >> ${SONAR_CONFIG_FILE}
-#echo "sonar.java.binaries=$JARS_BINS" >> ${SONAR_CONFIG_FILE}
-#echo "sonar.java.libraries=$JARS_BINS" >> ${SONAR_CONFIG_FILE}
-#echo "sonar.coverageReportPaths=$COVERAGE_REPORT_PATH" >> ${SONAR_CONFIG_FILE}
-#echo "sonar.pullrequest.key=$PR_NUMBER" >> ${SONAR_CONFIG_FILE}
-#echo "sonar.pullrequest.branch=$PR_BRANCH" >> ${SONAR_CONFIG_FILE}
-#echo "sonar.pullrequest.base=$BASE_BRANCH" >> ${SONAR_CONFIG_FILE}
-#echo "sonar.pullrequest.github.repository=$REPO_NAME" >> ${SONAR_CONFIG_FILE}
-#
-#echo "INFO: Sonar Properties"
-#cat ${SONAR_CONFIG_FILE}
-#
-#echo "INFO: Running Sonar Scan."
-#[ -f "${SONAR_CONFIG_FILE}" ] \
-#&& sonar-scanner -Dsonar.login=${SONAR_KEY} -Dsonar.host.url=https://sonar.harness.io \
-#|| echo "ERROR: Sonar Properties File not found."
+PR_FILES=$(echo ${FILES[@]} | sort -u | tr ' ' ',')
+check_cmd_status "$?" "Failed to get diff between commits."
+echo -e "PR_FILES:\n${PR_FILES}"
+
+PR_MODULES=$(cat $MODULES_FILE | sort -u | tr '\n' ' ')
+check_cmd_status "$?" "Failed to get modules from commits."
+echo -e "PR_MODULES:\n$PR_MODULES"
+
+if [ "$(cat $MODULES_FILE | sort -u | wc -l)" -gt 1 ]; then
+    echo "ERROR: PR is touching multiple modules, Generating Coverage and Code Smells is not possible. Exiting....."
+    exit 1
+fi
+
+for module in $PR_MODULES
+  do
+     [ -d ${module} ] && [[ "${HARNESS_CORE_MODULES}" =~ "${module}" ]] \
+     && BAZEL_COMPILE_MODULES+=("//${module}/...") \
+     || echo "$module is not present in the bazel modules list."
+  done
+
+# Running Bazel Coverage
+echo "INFO: BAZEL COMMAND: bazel coverage ${BAZEL_ARGS} ${COVERAGE_ARGS} -- ${BAZEL_COMPILE_MODULES[@]}"
+bazel coverage ${BAZEL_ARGS} ${COVERAGE_ARGS} -- "${BAZEL_COMPILE_MODULES[@]}" || true
+check_cmd_status "$?" "Failed to run coverage."
+
+for file in $(echo $GIT_DIFF | tr '\r\n' ' ')
+  do
+     TEMP_RES=$(grep -w 'src' <<< $file | sed 's|src|:|' | awk -F: '{print $1}' | sed 's|$|src|')
+     echo "$TEMP_RES" >> $PR_SRCS_FILE
+  done
+PR_SRCS_DIR=$(cat $PR_SRCS_FILE | sort -u)
+echo -e "PR_SRCS_DIR:\n${PR_SRCS_DIR}"
+
+for DIR in ${PR_SRCS_DIR}
+  do
+    find ${DIR} -type f -name "*Test.java" | tr '\r\n' ',' >> $MODULES_TESTS_FILE
+  done
+MODULES_TESTS=$(get_info_from_file $MODULES_TESTS_FILE)
+
+for MODULE in $(cat $PR_SRCS_FILE | sort -u)
+  do
+    for JAR in ${JARS_ARRAY[@]}
+      do
+        if [ -f "${BAZEL_OUTPUT_PATH}/${MODULE}/../$JAR" ]; then
+          echo "${BAZEL_OUTPUT_PATH}/${MODULE}/../$JAR" >> $JARS_FILE
+        fi
+      done
+  done < $PR_SRCS_FILE
+echo -e "JARS:\n$(cat ${JARS_FILE})"
+JARS_BINS=$(get_info_from_file $JARS_FILE)
+
+[ ! -f "${SONAR_CONFIG_FILE}" ] \
+&& echo "sonar.projectKey=harness-core-sonar-pr" > ${SONAR_CONFIG_FILE} \
+&& echo "sonar.log.level=DEBUG" >> ${SONAR_CONFIG_FILE}
+
+echo "sonar.sources=$PR_FILES" >> ${SONAR_CONFIG_FILE}
+echo "sonar.tests=$MODULES_TESTS" >> ${SONAR_CONFIG_FILE}
+echo "sonar.inclusions=$PR_FILES" >> ${SONAR_CONFIG_FILE}
+echo "sonar.test.inclusions=$MODULES_TESTS" >> ${SONAR_CONFIG_FILE}
+echo "sonar.java.binaries=$JARS_BINS" >> ${SONAR_CONFIG_FILE}
+echo "sonar.java.libraries=$JARS_BINS" >> ${SONAR_CONFIG_FILE}
+echo "sonar.coverageReportPaths=$COVERAGE_REPORT_PATH" >> ${SONAR_CONFIG_FILE}
+echo "sonar.pullrequest.key=$PR_NUMBER" >> ${SONAR_CONFIG_FILE}
+echo "sonar.pullrequest.branch=$PR_BRANCH" >> ${SONAR_CONFIG_FILE}
+echo "sonar.pullrequest.base=$BASE_BRANCH" >> ${SONAR_CONFIG_FILE}
+echo "sonar.pullrequest.github.repository=$REPO_NAME" >> ${SONAR_CONFIG_FILE}
+
+echo "INFO: Sonar Properties"
+cat ${SONAR_CONFIG_FILE}
+
+echo "INFO: Running Sonar Scan."
+[ -f "${SONAR_CONFIG_FILE}" ] \
+&& sonar-scanner -Dsonar.login=${SONAR_KEY} -Dsonar.host.url=https://sonar.harness.io \
+|| echo "ERROR: Sonar Properties File not found."
