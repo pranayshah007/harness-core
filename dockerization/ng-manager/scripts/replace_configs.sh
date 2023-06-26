@@ -412,7 +412,6 @@ if [[ "$LOCK_CONFIG_USE_SENTINEL" == "true" ]]; then
   if [[ "" != "$LOCK_CONFIG_SENTINEL_MASTER_NAME" ]]; then
     export LOCK_CONFIG_SENTINEL_MASTER_NAME; yq -i '.sentinelServersConfig.masterName=env(LOCK_CONFIG_SENTINEL_MASTER_NAME)' $REDISSON_CACHE_FILE
   fi
-
   if [[ "" != "$LOCK_CONFIG_REDIS_SENTINELS" ]]; then
     IFS=',' read -ra SENTINEL_URLS <<< "$LOCK_CONFIG_REDIS_SENTINELS"
     INDEX=0
@@ -424,7 +423,13 @@ if [[ "$LOCK_CONFIG_USE_SENTINEL" == "true" ]]; then
   fi
 fi
 
+if [[ "" != "$LOCK_CONFIG_REDIS_USERNAME" ]]; then
+  export LOCK_CONFIG_REDIS_USERNAME; yq -i '.singleServerConfig.username=env(LOCK_CONFIG_REDIS_USERNAME)' $REDISSON_CACHE_FILE
+fi
 
+if [[ "" != "$LOCK_CONFIG_REDIS_PASSWORD" ]]; then
+  export LOCK_CONFIG_REDIS_PASSWORD; yq -i '.singleServerConfig.password=env(LOCK_CONFIG_REDIS_PASSWORD)' $REDISSON_CACHE_FILE
+fi
 
 if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
   export REDIS_NETTY_THREADS; yq -i '.nettyThreads=env(REDIS_NETTY_THREADS)' $REDISSON_CACHE_FILE
