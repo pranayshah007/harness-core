@@ -119,9 +119,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.message.BasicNameValuePair;
@@ -966,8 +968,8 @@ public class InviteServiceImpl implements InviteService {
           accountIdentifier, searchTerm, org.springframework.data.domain.PageRequest.of(0, DEFAULT_PAGE_SIZE));
       List<String> emailIds = userInfos.stream().map(UserInfo::getEmail).collect(toList());
       Criteria searchTermCriteria = new Criteria();
-      searchTermCriteria.orOperator(
-          Criteria.where(InviteKeys.email).regex(searchTerm), Criteria.where(InviteKeys.email).in(emailIds));
+      searchTermCriteria.orOperator(Criteria.where(InviteKeys.email).regex(Pattern.quote(searchTerm)),
+          Criteria.where(InviteKeys.email).in(emailIds));
       criteria = new Criteria().andOperator(criteria, searchTermCriteria);
     }
     return getInvites(criteria, pageRequest);

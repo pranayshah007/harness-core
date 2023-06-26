@@ -139,6 +139,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
@@ -237,8 +238,9 @@ public class NgUserServiceImpl implements NgUserService {
     Criteria userMetadataCriteria = new Criteria();
     if (userFilter != null) {
       if (isNotBlank(userFilter.getSearchTerm())) {
-        userMetadataCriteria.orOperator(Criteria.where(UserMetadataKeys.name).regex(userFilter.getSearchTerm(), "i"),
-            Criteria.where(UserMetadataKeys.email).regex(userFilter.getSearchTerm(), "i"));
+        String escapedSearchTerm = Pattern.quote(userFilter.getSearchTerm()); // Escape special characters
+        userMetadataCriteria.orOperator(Criteria.where(UserMetadataKeys.name).regex(escapedSearchTerm, "i"),
+            Criteria.where(UserMetadataKeys.email).regex(escapedSearchTerm, "i"));
       }
       if (userFilter.getIdentifiers() != null || userFilter.getEmails() != null) {
         List<String> userIds = new ArrayList<>();
