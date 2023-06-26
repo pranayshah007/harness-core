@@ -4814,7 +4814,7 @@ plain_artifacts = [
     "com.google.code.findbugs:jsr305:3.0.2",
     "com.google.code.gson:gson:2.8.9",
     "com.google.errorprone:error_prone_annotations:2.3.4",
-    "com.google.guava:guava:31.1-jre",
+    "com.google.guava:guava:32.0.1-jre",
     "com.google.http-client:google-http-client-apache-v2:1.38.0",
     "com.google.http-client:google-http-client-appengine:1.34.1",
     "com.google.http-client:google-http-client-jackson2:1.34.1",
