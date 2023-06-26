@@ -7,7 +7,6 @@
 
 package io.harness.idp.pipeline.registrar;
 
-// import io.harness.beans.steps.step.GitCloneStep;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.Step;
 
@@ -17,7 +16,6 @@ import java.util.Map;
 public class IdpStepRegistrar {
   public static Map<StepType, Class<? extends Step>> getEngineSteps() {
     Map<StepType, Class<? extends Step>> engineSteps = new HashMap<>();
-    //        engineSteps.put(GitCloneStep.STEP_TYPE, GitCloneStep.class);
     return engineSteps;
   }
 }

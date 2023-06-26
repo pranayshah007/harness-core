@@ -9,9 +9,6 @@ package io.harness.idp.pipeline.provider;
 
 import static io.harness.steps.plugin.ContainerStepConstants.PLUGIN;
 
-// import io.harness.ci.creator.variables.GitCloneStepVariableCreator;
-import io.harness.ci.plancreator.GitCloneStepPlanCreator;
-import io.harness.idp.pipeline.jsoncreator.IdpStepFilterJsonCreator;
 import io.harness.idp.pipeline.step.StepSpecTypeConstants;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
@@ -32,7 +29,6 @@ public class IdpPipelineServiceInfoProvider implements PipelineServiceInfoProvid
   @Override
   public List<PartialPlanCreator<?>> getPlanCreators() {
     List<PartialPlanCreator<?>> planCreators = new LinkedList<>();
-    //        planCreators.add(new GitCloneStepPlanCreator());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -40,7 +36,6 @@ public class IdpPipelineServiceInfoProvider implements PipelineServiceInfoProvid
   @Override
   public List<FilterJsonCreator> getFilterJsonCreators() {
     List<FilterJsonCreator> filterJsonCreators = new ArrayList<>();
-    //        filterJsonCreators.add(new IdpStepFilterJsonCreator());
     injectorUtils.injectMembers(filterJsonCreators);
     return filterJsonCreators;
   }
@@ -48,7 +43,6 @@ public class IdpPipelineServiceInfoProvider implements PipelineServiceInfoProvid
   @Override
   public List<VariableCreator> getVariableCreators() {
     List<VariableCreator> variableCreators = new ArrayList<>();
-    //        variableCreators.add(new GitCloneStepVariableCreator());
     return variableCreators;
   }
 

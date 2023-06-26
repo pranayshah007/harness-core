@@ -169,10 +169,10 @@ public class IdpApplication extends Application<IdpConfiguration> {
     registerPMSSDK(configuration, injector);
     registerResources(environment, injector);
     registerHealthChecksManager(environment, injector);
-    registerPmsSdkEvents(injector);
     registerQueueListeners(injector);
     registerAuthFilters(configuration, environment, injector);
     registerManagedJobs(environment, injector);
+    registerPmsSdkEvents(injector);
     registerExceptionMappers(environment.jersey());
     registerMigrations(injector);
     registerHealthCheck(environment, injector);
@@ -189,6 +189,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
     environment.lifecycle().manage(injector.getInstance(UserSyncJob.class));
     environment.lifecycle().manage(injector.getInstance(ConfigPurgeJob.class));
     environment.lifecycle().manage(injector.getInstance(DefaultAccountIdToNamespaceMappingForPrEnv.class));
+    environment.lifecycle().manage(injector.getInstance(PipelineEventConsumerController.class));
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
         .scheduleWithFixedDelay(injector.getInstance(DelegateSyncServiceImpl.class), 0L, 2L, TimeUnit.SECONDS);
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))

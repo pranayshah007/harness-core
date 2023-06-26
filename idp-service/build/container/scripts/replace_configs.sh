@@ -5,6 +5,8 @@
 # https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
 
 CONFIG_FILE=/opt/harness/config.yml
+REDISSON_CACHE_FILE=/opt/harness/redisson-jcache.yaml
+ENTERPRISE_REDISSON_CACHE_FILE=/opt/harness/enterprise-redisson-jcache.yaml
 
 replace_key_value () {
   CONFIG_KEY="$1";
@@ -124,15 +126,6 @@ if [[ "" != "$SHOULD_CONFIGURE_WITH_PMS" ]]; then
   export SHOULD_CONFIGURE_WITH_PMS; yq -i '.shouldConfigureWithPMS=env(SHOULD_CONFIGURE_WITH_PMS)' $CONFIG_FILE
 fi
 
-if [[ "" != "$LOCK_CONFIG_REDIS_SENTINELS" ]]; then
-  IFS=',' read -ra SENTINEL_URLS <<< "$LOCK_CONFIG_REDIS_SENTINELS"
-  INDEX=0
-  for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    export REDIS_SENTINEL_URL; export INDEX; yq -i '.redisLockConfig.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
-    INDEX=$(expr $INDEX + 1)
-  done
-fi
-
 if [[ "" != "$DISTRIBUTED_LOCK_IMPLEMENTATION" ]]; then
   export DISTRIBUTED_LOCK_IMPLEMENTATION; yq -i '.distributedLockImplementation=env(DISTRIBUTED_LOCK_IMPLEMENTATION)' $CONFIG_FILE
 fi
@@ -208,6 +201,17 @@ if [[ "" != "$MANAGER_AUTHORITY" ]]; then
   export MANAGER_AUTHORITY; yq -i '.managerAuthority=env(MANAGER_AUTHORITY)' $CONFIG_FILE
 fi
 
+yq -i 'del(.codec)' $REDISSON_CACHE_FILE
+
+if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
+  yq -i '.redisLockConfig.useScriptCache=false' $CONFIG_FILE
+  yq -i '.useScriptCache=false' $REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$SHOULD_CONFIGURE_WITH_PMS" ]]; then
+  export SHOULD_CONFIGURE_WITH_PMS; yq -i '.shouldConfigureWithPMS=env(SHOULD_CONFIGURE_WITH_PMS)' $CONFIG_FILE
+fi
+
 replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE
 replace_key_value cacheConfig.cacheBackend $CACHE_BACKEND
 replace_key_value cacheConfig.enterpriseCacheEnabled $ENTERPRISE_CACHE_ENABLED
@@ -247,4 +251,96 @@ replace_key_value prEnvDefaultBackstageNamespace "$DEFAULT_BACKSTAGE_NAMESPACE"
 replace_key_value backstageAppBaseUrl "$BACKSTAGE_APP_BASE_URL"
 replace_key_value backstagePostgresHost "$BACKSTAGE_POSTGRES_HOST"
 replace_key_value onboardingModuleConfig.useGitServiceGrpcForSingleEntityPush $ONBOARDING_MODULE_CONFIG_USE_GIT_SERVICE_GRPC_FOR_SINGLE_ENTITY_PUSH
+<<<<<<< HEAD
 replace_key_value delegateSelectorsCacheMode "$DELEGATE_SELECTORS_CACHE_MODE"
+=======
+
+if [[ "" != "$LOCK_CONFIG_REDIS_URL" ]]; then
+  export LOCK_CONFIG_REDIS_URL; yq -i '.singleServerConfig.address=env(LOCK_CONFIG_REDIS_URL)' $REDISSON_CACHE_FILE
+fi
+
+if [[ "$LOCK_CONFIG_USE_SENTINEL" == "true" ]]; then
+  yq -i 'del(.singleServerConfig)' $REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$LOCK_CONFIG_SENTINEL_MASTER_NAME" ]]; then
+  export LOCK_CONFIG_SENTINEL_MASTER_NAME; yq -i '.sentinelServersConfig.masterName=env(LOCK_CONFIG_SENTINEL_MASTER_NAME)' $REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$LOCK_CONFIG_REDIS_SENTINELS" ]]; then
+  IFS=',' read -ra SENTINEL_URLS <<< "$LOCK_CONFIG_REDIS_SENTINELS"
+  INDEX=0
+  for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
+    export REDIS_SENTINEL_URL; export INDEX; yq -i '.redisLockConfig.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
+    export REDIS_SENTINEL_URL; export INDEX; yq -i '.sentinelServersConfig.sentinelAddresses.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $REDISSON_CACHE_FILE
+    INDEX=$(expr $INDEX + 1)
+  done
+fi
+
+if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
+  export REDIS_NETTY_THREADS; yq -i '.nettyThreads=env(REDIS_NETTY_THREADS)' $REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$REDIS_CONNECTION_POOL_SIZE" ]]; then
+  export REDIS_CONNECTION_POOL_SIZE; yq -i '.singleServerConfig.connectionPoolSize=env(REDIS_CONNECTION_POOL_SIZE)' $REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$REDIS_RETRY_INTERVAL" ]]; then
+  export REDIS_RETRY_INTERVAL; yq -i '.singleServerConfig.retryInterval=env(REDIS_RETRY_INTERVAL)' $REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$REDIS_RETRY_ATTEMPTS" ]]; then
+  export REDIS_RETRY_ATTEMPTS; yq -i '.singleServerConfig.retryAttempts=env(REDIS_RETRY_ATTEMPTS)' $REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$REDIS_TIMEOUT" ]]; then
+  export REDIS_TIMEOUT; yq -i '.singleServerConfig.timeout=env(REDIS_TIMEOUT)' $REDISSON_CACHE_FILE
+fi
+
+yq -i 'del(.codec)' $ENTERPRISE_REDISSON_CACHE_FILE
+
+if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
+  yq -i '.useScriptCache=false' $ENTERPRISE_REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$EVENTS_FRAMEWORK_NETTY_THREADS" ]]; then
+  export EVENTS_FRAMEWORK_NETTY_THREADS; yq -i '.nettyThreads=env(EVENTS_FRAMEWORK_NETTY_THREADS)' $ENTERPRISE_REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$EVENTS_FRAMEWORK_REDIS_URL" ]]; then
+  export EVENTS_FRAMEWORK_REDIS_URL; yq -i '.singleServerConfig.address=env(EVENTS_FRAMEWORK_REDIS_URL)' $ENTERPRISE_REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$EVENTS_FRAMEWORK_REDIS_USERNAME" ]]; then
+  export EVENTS_FRAMEWORK_REDIS_USERNAME; yq -i '.singleServerConfig.username=env(EVENTS_FRAMEWORK_REDIS_USERNAME)' $ENTERPRISE_REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$EVENTS_FRAMEWORK_REDIS_PASSWORD" ]]; then
+  export EVENTS_FRAMEWORK_REDIS_PASSWORD; yq -i '.singleServerConfig.password=env(EVENTS_FRAMEWORK_REDIS_PASSWORD)' $ENTERPRISE_REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH" ]]; then
+  export FILE_VAR="file:$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH"; yq -i '.singleServerConfig.sslTruststore=env(FILE_VAR)' $ENTERPRISE_REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD" ]]; then
+  export EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD; yq -i '.singleServerConfig.sslTruststorePassword=env(EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD)' $ENTERPRISE_REDISSON_CACHE_FILE
+fi
+
+if [[ "$EVENTS_FRAMEWORK_USE_SENTINEL" == "true" ]]; then
+  yq -i 'del(.singleServerConfig)' $ENTERPRISE_REDISSON_CACHE_FILE
+
+  if [[ "" != "$EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME" ]]; then
+    export EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME; yq -i '.sentinelServersConfig.masterName=env(EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME)' $ENTERPRISE_REDISSON_CACHE_FILE
+  fi
+
+  if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
+    IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"
+    INDEX=0
+    for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
+      export REDIS_SENTINEL_URL; export INDEX; yq -i '.sentinelServersConfig.sentinelAddresses.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $ENTERPRISE_REDISSON_CACHE_FILE
+      INDEX=$(expr $INDEX + 1)
+    done
+  fi
+fi
+>>>>>>> fdcd780bab7 (feat: [IDP-721]: config changes)
