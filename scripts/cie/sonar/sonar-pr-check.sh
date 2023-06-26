@@ -67,6 +67,9 @@ PR_SRCS_FILE="pr_srcs.txt"
 SONAR_CONFIG_FILE='sonar-project.properties'
 STARTUP_ARGS="--output_base=/tmp"
 
+#Creating a sandbox directory for bazel tests/coverage
+mkdir -p /tmp/bazel_sandbox
+
 # This script is required to generate the test util bzl file in root directory.
 scripts/bazel/generate_credentials.sh
 
