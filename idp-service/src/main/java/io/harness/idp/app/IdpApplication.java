@@ -191,7 +191,6 @@ public class IdpApplication extends Application<IdpConfiguration> {
     registerPMSSDK(configuration, injector);
     registerResources(environment, injector);
     registerHealthChecksManager(environment, injector);
-    registerPmsSdkEvents(injector);
     registerQueueListeners(injector);
     registerAuthFilters(configuration, environment, injector);
     registerManagedJobs(environment, injector);
