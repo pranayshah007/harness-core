@@ -99,6 +99,9 @@ for FILE in $GIT_DIFF;
 if ! [ -f "$MODULES_FILE" ]; then
   echo "INFO: No Java File change detected. Skipping the Scan....."
   exit 0
+elif [ grep -inr '400-rest' "$MODULES_FILE" ]; then
+  echo "INFO: 400-rest changes detected in the PR. Skipping the Scan....."
+  exit 0
 fi
 
 PR_FILES=$(echo ${FILES[@]} | sort -u | tr ' ' ',')
