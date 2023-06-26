@@ -56,6 +56,8 @@ import io.harness.git.model.CommitAndPushResult;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
 import io.harness.git.model.GitFileChange;
+import io.harness.git.model.RevertAndPushRequest;
+import io.harness.git.model.RevertAndPushResult;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -124,6 +126,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
   public static final String CreatePR = "Create PR";
   public static final String MergePR = "Merge PR";
   public static final String PullRequestMessage = "Pull Request successfully merged";
+  public static final String RevertCommitAndPush = "Revert Commit and Push";
 
   private LogCallback logCallback;
 
@@ -147,11 +150,60 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       case CREATE_PR:
       case UPDATE_RELEASE_REPO:
         return handleCreatePR(gitOpsTaskParams);
+      case REVERT_COMMIT_AND_CREATE_PR:
+        return handleRevertCommitAndCreatePR(gitOpsTaskParams);
       default:
         return NGGitOpsResponse.builder()
             .taskStatus(TaskStatus.FAILURE)
             .errorMessage("Failed GitOps task: " + gitOpsTaskParams.getGitOpsTaskType())
             .build();
+    }
+  }
+
+  public DelegateResponseData handleRevertCommitAndCreatePR(NGGitOpsTaskParams gitOpsTaskParams) {
+    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+    try {
+      log.info("Running Revert PR Task for activityId {}", gitOpsTaskParams.getActivityId());
+
+      logCallback =
+          new NGDelegateLogCallback(getLogStreamingTaskClient(), RevertCommitAndPush, true, commandUnitsProgress);
+
+      String baseBranch = gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getBranch();
+      String newBranch = baseBranch + "_" + RandomStringUtils.randomAlphabetic(12);
+      ScmConnector scmConnector =
+          gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getGitConfigDTO();
+
+      createNewBranch(scmConnector, newBranch, baseBranch);
+      RevertAndPushResult gitRevertAndPushResult = revertAndPush(gitOpsTaskParams, COMMIT_MSG, newBranch);
+
+      logCallback = markDoneAndStartNew(logCallback, CreatePR, commandUnitsProgress);
+
+      String prTitle = resolvePRTitle(gitOpsTaskParams);
+
+      CreatePRResponse createPRResponse =
+          createPullRequest(scmConnector, newBranch, baseBranch, prTitle, gitOpsTaskParams.getAccountId());
+
+      String prLink = getPRLink(createPRResponse.getNumber(), scmConnector, scmConnector.getConnectorType());
+
+      logCallback.saveExecutionLog("Created PR " + prLink, INFO);
+      logCallback.saveExecutionLog("Done.", INFO, CommandExecutionStatus.SUCCESS);
+
+      return NGGitOpsResponse.builder()
+          .commitId(gitRevertAndPushResult.getGitCommitResult().getCommitId())
+          .prNumber(createPRResponse.getNumber())
+          .prLink(prLink)
+          .ref(newBranch)
+          .taskStatus(TaskStatus.SUCCESS)
+          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+          .build();
+    } catch (Exception e) {
+      log.error("Failed to execute NGGitOpsCommandTask", e);
+      logCallback.saveExecutionLog(Objects.toString(e.getMessage(), ""), ERROR, CommandExecutionStatus.FAILURE);
+      return NGGitOpsResponse.builder()
+          .taskStatus(TaskStatus.FAILURE)
+          .errorMessage(e.getMessage())
+          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+          .build();
     }
   }
 
@@ -365,6 +417,35 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       default:
         return "";
     }
+  }
+
+  private RevertAndPushResult revertAndPush(
+      NGGitOpsTaskParams gitOpsTaskParams, String commitMessage, String newBranch) {
+    GitStoreDelegateConfig gitStoreDelegateConfig =
+        gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig();
+    ScmConnector scmConnector = gitStoreDelegateConfig.getGitConfigDTO();
+    SSHKeySpecDTO sshKeySpecDTO = gitStoreDelegateConfig.getSshKeySpecDTO();
+    GitConfigDTO gitConfig = ScmConnectorMapper.toGitConfigDTO(scmConnector);
+
+    gitConfig.setBranchName(newBranch);
+    List<EncryptedDataDetail> encryptionDetails = gitStoreDelegateConfig.getEncryptedDataDetails();
+    String commitId = gitStoreDelegateConfig.getCommitId();
+
+    gitDecryptionHelper.decryptGitConfig(gitConfig, encryptionDetails);
+    SshSessionConfig sshSessionConfig = gitDecryptionHelper.getSSHSessionConfig(sshKeySpecDTO, encryptionDetails);
+
+    RevertAndPushRequest gitRevertRequest = RevertAndPushRequest.builder()
+                                                .branch(newBranch)
+                                                .commitId(commitId)
+                                                .repoUrl(gitConfig.getUrl())
+                                                .accountId(gitOpsTaskParams.getAccountId())
+                                                .connectorId(gitOpsTaskParams.getConnectorInfoDTO().getName())
+                                                .pushOnlyIfHeadSeen(false)
+                                                .forcePush(true)
+                                                .commitMessage(commitMessage)
+                                                .build();
+
+    return ngGitService.revertCommitAndPush(gitConfig, gitRevertRequest, getAccountId(), sshSessionConfig, true);
   }
 
   public CommitAndPushResult commit(
