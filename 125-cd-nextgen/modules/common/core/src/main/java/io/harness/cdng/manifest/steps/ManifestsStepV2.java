@@ -18,17 +18,22 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.mappers.ManifestOutcomeMapper;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.steps.output.NgManifestsMetadataSweepingOutput;
 import io.harness.cdng.manifest.steps.output.UnresolvedManifestsOutput;
+import io.harness.cdng.manifest.steps.task.ManifestTaskService;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
@@ -46,6 +51,7 @@ import io.harness.connector.services.ConnectorService;
 import io.harness.connector.utils.ConnectorUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.validator.EntityIdentifierValidator;
+import io.harness.delegate.beans.TaskData;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -60,6 +66,8 @@ import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.tasks.TaskCategory;
+import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -74,7 +82,10 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.NGRestUtils;
+import io.harness.serializer.KryoSerializer;
+import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.EntityReferenceExtractorUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
@@ -85,6 +96,7 @@ import software.wings.beans.LogWeight;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -117,6 +129,14 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
 
   @Inject NGFeatureFlagHelperService featureFlagHelperService;
 
+  @Inject private ManifestTaskService manifestTaskService;
+
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+
+  @Inject private CDStepHelper cdStepHelper;
+
+  @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+
   private static final String OVERRIDE_PROJECT_SETTING_IDENTIFIER = "service_override_v2";
 
   @Override
@@ -129,7 +149,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     Optional<ManifestsOutcome> manifestsOutcome = resolveManifestsOutcome(ambiance);
 
-    manifestsOutcome.ifPresent(outcome -> saveManifestsOutcome(ambiance, outcome, new HashMap<>()));
+    manifestsOutcome.ifPresent(manifests -> handleManifests(ambiance, manifests));
 
     return AsyncExecutableResponse.newBuilder().build();
   }
@@ -158,8 +178,12 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
     UnresolvedManifestsOutput unresolvedManifestsOutput =
         (UnresolvedManifestsOutput) unresolvedManifestsOutcomeOutput.getOutput();
 
-    sweepingOutputService.consume(ambiance, OutcomeExpressionConstants.MANIFESTS,
-        unresolvedManifestsOutput.getManifestsOutcome(), StepCategory.STAGE.name());
+    ManifestsOutcome manifestsOutcome = unresolvedManifestsOutput.getManifestsOutcome();
+    Map<String, String> taskIdMapping = unresolvedManifestsOutput.getTaskIdMapping();
+    manifestTaskService.handleTaskResponses(responseDataMap, manifestsOutcome, taskIdMapping);
+
+    sweepingOutputService.consume(
+        ambiance, OutcomeExpressionConstants.MANIFESTS, manifestsOutcome, StepCategory.STAGE.name());
 
     return StepResponse.builder().status(Status.SUCCEEDED).build();
   }
@@ -179,6 +203,33 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
 
     return manifestsOutcome.map(ignored -> StepResponse.builder().status(Status.SUCCEEDED).build())
         .orElseGet(() -> StepResponse.builder().status(Status.SKIPPED).build());
+  }
+
+  private void handleManifests(Ambiance ambiance, ManifestsOutcome manifests) {
+    Map<String, String> taskIdMapping = new HashMap<>();
+
+    manifests.forEach((identifier, manifest) -> {
+      if (manifestTaskService.isSupported(ambiance, manifest)) {
+        Optional<TaskData> taskData = manifestTaskService.createTaskData(ambiance, manifest);
+        taskData.ifPresent(task -> {
+          String taskId = queueTask(ambiance, task);
+          taskIdMapping.put(taskId, identifier);
+        });
+      }
+    });
+
+    saveManifestsOutcome(ambiance, manifests, taskIdMapping);
+  }
+
+  private String queueTask(Ambiance ambiance, TaskData taskData) {
+    TaskRequest taskRequest =
+        TaskRequestsUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData, referenceFalseKryoSerializer,
+            TaskCategory.DELEGATE_TASK_V2, emptyList(), false, taskData.getTaskType(), emptyList());
+
+    DelegateTaskRequest delegateTaskRequest =
+        cdStepHelper.mapTaskRequestToDelegateTaskRequest(taskRequest, taskData, emptySet(), "", true);
+
+    return delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
   }
 
   private void saveManifestsOutcome(

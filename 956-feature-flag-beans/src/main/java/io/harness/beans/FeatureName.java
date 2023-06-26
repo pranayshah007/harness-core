@@ -807,8 +807,11 @@ public enum FeatureName {
   WORKFLOW_EXECUTION_ZOMBIE_MONITOR,
   WORKFLOW_PIPELINE_PERMISSION_BY_ENTITY,
   YAML_APIS_GRANULAR_PERMISSION,
-  YAML_GIT_CONNECTOR_NAME;
+  YAML_GIT_CONNECTOR_NAME,
   // keep-sorted end
+  CDS_HELM_FETCH_CHART_METADATA_NG(
+      "Enables option to fetch helm chart details from the Chart.yaml and expose this as expressions. Epic: https://harness.atlassian.net/browse/CDS-58036",
+      HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {
