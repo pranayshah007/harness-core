@@ -82,6 +82,7 @@ public class AwsSecretsManagerEncryptor implements VaultEncryptor {
   private static final String FAILED_AFTER_RETRIES = "failed after {} retries.";
   private static final int WAITING_TIME = 15;
   private static final int SLEEP_DURATION = 1000;
+  private static final String PATH_SEPARATOR = "/";
   private static class ParsedSecretRef {
     String secretPath;
     String keyName;
@@ -203,9 +204,10 @@ public class AwsSecretsManagerEncryptor implements VaultEncryptor {
   @Override
   public boolean validateSecretManagerConfiguration(String accountId, EncryptionConfig encryptionConfig) {
     AwsSecretsManagerConfig secretsManagerConfig = (AwsSecretsManagerConfig) encryptionConfig;
+    AWSSecretsManager client = null;
     try {
       log.info("Validating AWS SecretManager configuration Start: {}", secretsManagerConfig);
-      AWSSecretsManager client = getAwsSecretsManagerClient(secretsManagerConfig);
+      client = getAwsSecretsManagerClient(secretsManagerConfig);
       GetSecretValueRequest request = new GetSecretValueRequest().withSecretId(getFullPath(
           secretsManagerConfig.getSecretNamePrefix(), AWS_SECRETS_MANAGER_VALIDATION_URL + System.currentTimeMillis()));
       client.getSecretValue(request);
@@ -215,7 +217,21 @@ public class AwsSecretsManagerEncryptor implements VaultEncryptor {
       // which means the connectivity to AWS Secrets Manger is ok.
     } catch (AWSSecretsManagerException e) {
       log.error(AWS_EXCEPTION_ERROR, e.getErrorMessage(), encryptionConfig.getName(), encryptionConfig.getUuid());
-      throw e;
+
+      // TODO(gauravnanda): This is a temporary hack until we clean up existing data to remove unnecessary prefixes.
+      try {
+        GetSecretValueRequest request = new GetSecretValueRequest().withSecretId(
+            getFullPathWithoutPrefixStrip(secretsManagerConfig.getSecretNamePrefix(),
+                AWS_SECRETS_MANAGER_VALIDATION_URL + System.currentTimeMillis()));
+        client.getSecretValue(request);
+      } catch (ResourceNotFoundException e1) {
+        log.info("Resource Not Found Exception" + e1);
+        // this exception is expected. It means the credentials are correct, but can't find the resource
+        // which means the connectivity to AWS Secrets Manger is ok.
+      } catch (AWSSecretsManagerException e1) {
+        log.error(AWS_EXCEPTION_ERROR, e1.getErrorMessage(), encryptionConfig.getName(), encryptionConfig.getUuid());
+        throw e1;
+      }
     } catch (UncheckedTimeoutException e) {
       throw timeoutException(e);
     }
@@ -235,7 +251,7 @@ public class AwsSecretsManagerEncryptor implements VaultEncryptor {
 
   private EncryptedRecord upsertSecretInternal(
       String name, String value, EncryptedRecord existingSecret, AwsSecretsManagerConfig secretsManagerConfig) {
-    final String fullSecretName = getFullPath(secretsManagerConfig.getSecretNamePrefix(), name);
+    String fullSecretName = getFullPath(secretsManagerConfig.getSecretNamePrefix(), name);
     long startTime = System.currentTimeMillis();
     log.info("Saving secret '{}' into AWS Secrets Manager: {}", fullSecretName, secretsManagerConfig.getName());
     AWSSecretsManager client = getAwsSecretsManagerClient(secretsManagerConfig);
@@ -247,7 +263,18 @@ public class AwsSecretsManagerEncryptor implements VaultEncryptor {
     } catch (ResourceNotFoundException e) {
       log.info("Resource Not Found Exception: Resource Doesn't exist" + e);
       // If reaching here, it means the resource doesn't exist.
+    } catch (AWSSecretsManagerException e) {
+      // TODO(gauravnanda): This is a temporary hack until we clean up existing data to remove unnecessary prefixes.
+      fullSecretName = getFullPathWithoutPrefixStrip(secretsManagerConfig.getSecretNamePrefix(), name);
+      try {
+        secretExists = isNotEmpty(
+            fetchSecretValueInternal(EncryptedRecordData.builder().path(fullSecretName).build(), secretsManagerConfig));
+      } catch (ResourceNotFoundException e1) {
+        log.info("Resource Not Found Exception: Resource Doesn't exist" + e1);
+        // If reaching here, it means the resource doesn't exist.
+      }
     }
+
     EncryptedRecordDataBuilder encryptedRecordDataBuilder = EncryptedRecordData.builder();
     if (!secretExists) {
       // Create the secret with proper tags.
@@ -378,5 +405,9 @@ public class AwsSecretsManagerEncryptor implements VaultEncryptor {
     String message =
         "After " + NUM_OF_RETRIES + " tries, delegate(s) is not able to establish connection to AWS services.";
     return new SecretManagementDelegateException(VAULT_OPERATION_ERROR, message, e, USER);
+  }
+
+  private static String getFullPathWithoutPrefixStrip(String basePath, String secretPath) {
+    return StringUtils.stripEnd(basePath, PATH_SEPARATOR) + PATH_SEPARATOR + secretPath;
   }
 }
