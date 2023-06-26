@@ -7,8 +7,12 @@
 
 package io.harness.ccm.msp.service.intf;
 
+import static io.harness.annotations.dev.HarnessTeam.CE;
+
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.msp.entities.MarginDetails;
 
+@OwnedBy(CE)
 public interface MarginDetailsBqService {
   void insertMarginDetailsInBQ(MarginDetails marginDetails);
   void updateMarginDetailsInBQ(MarginDetails marginDetails);
