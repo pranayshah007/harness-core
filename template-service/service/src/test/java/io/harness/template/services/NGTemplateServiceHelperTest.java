@@ -42,6 +42,7 @@ import io.harness.ng.core.template.TemplateListType;
 import io.harness.persistence.gitaware.GitAware;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.rule.Owner;
+import io.harness.telemetry.TelemetryReporter;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.gitsync.TemplateGitSyncBranchContextGuard;
@@ -77,6 +78,8 @@ public class NGTemplateServiceHelperTest extends CategoryTest {
 
   @Mock GitAwareEntityHelper gitAwareEntityHelper;
 
+  @Mock TelemetryReporter telemetryReporter;
+
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
   private final String PROJ_IDENTIFIER = "projId";
@@ -88,8 +91,8 @@ public class NGTemplateServiceHelperTest extends CategoryTest {
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    templateServiceHelper = new NGTemplateServiceHelper(
-        filterService, templateRepository, gitSyncSdkService, templateGitXService, gitAwareEntityHelper);
+    templateServiceHelper = new NGTemplateServiceHelper(filterService, templateRepository, gitSyncSdkService,
+        templateGitXService, gitAwareEntityHelper, telemetryReporter);
   }
 
   @Test

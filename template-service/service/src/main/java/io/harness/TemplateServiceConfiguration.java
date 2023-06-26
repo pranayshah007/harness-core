@@ -25,6 +25,7 @@ import io.harness.mongo.MongoConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;
+import io.harness.telemetry.segment.SegmentConfiguration;
 import io.harness.threading.ThreadPoolConfig;
 
 import ch.qos.logback.access.spi.IAccessEvent;
@@ -101,6 +102,7 @@ public class TemplateServiceConfiguration extends Configuration {
   @JsonProperty("templateAsyncSetupUsagePoolConfig") private ThreadPoolConfig templateAsyncSetupUsagePoolConfig;
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
   @JsonProperty("distributedLockImplementation") private DistributedLockImplementation distributedLockImplementation;
+  @JsonProperty("segmentConfiguration") private SegmentConfiguration segmentConfiguration;
   private ServiceHttpClientConfig opaClientConfig;
   private String policyManagerSecret;
 
