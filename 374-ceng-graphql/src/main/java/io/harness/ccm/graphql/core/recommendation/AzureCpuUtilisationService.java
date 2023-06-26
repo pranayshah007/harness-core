@@ -38,14 +38,14 @@ public class AzureCpuUtilisationService {
       + " TIMESTAMP_TRUNC(metricStartTime, DAY) AS startTime,"
       + " TIMESTAMP_TRUNC(metricEndTime, DAY) AS endTime"
       + " FROM %s WHERE (TIMESTAMP_TRUNC(metricStartTime, DAY) >= '%s')"
-      + " AND vmId = '%s' AND metricName = 'Percentage CPU'"
+      + " AND LOWER(vmId) = LOWER('%s') AND metricName = 'Percentage CPU'"
       + " GROUP BY startTime, endTime ORDER BY startTime";
   private static final String AVERAGE_QUERY_TEMPLATE_BIGQUERY = "SELECT avg(average) as average"
       + " FROM %s WHERE (TIMESTAMP_TRUNC(metricStartTime, DAY) >= '%s')"
-      + " AND vmId = '%s' AND metricName = 'Percentage CPU'";
+      + " AND LOWER(vmId) = LOWER('%s') AND metricName = 'Percentage CPU'";
   private static final String MAXIMUM_QUERY_TEMPLATE_BIGQUERY = "SELECT max(maximum) as maximum"
       + " FROM %s WHERE (TIMESTAMP_TRUNC(metricStartTime, DAY) >= '%s')"
-      + " AND vmId = '%s' AND metricName = 'Percentage CPU'";
+      + " AND LOWER(vmId) = LOWER('%s') AND metricName = 'Percentage CPU'";
 
   private static final String START_TIME = "startTime";
   private static final String END_TIME = "endTime";
