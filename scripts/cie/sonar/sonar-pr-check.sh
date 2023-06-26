@@ -49,7 +49,7 @@ function get_info_from_file(){
   check_cmd_status "$?" "Unable to find file to extract info for sonar file."
 }
 
-BAZEL_ARGS="--announce_rc --keep_going --show_timestamps --verbose_failures --remote_max_connections=1000 --remote_retries=1"
+BAZEL_ARGS="--announce_rc --keep_going --show_timestamps --verbose_failures --remote_max_connections=1000 --remote_retries=1 --experimental_sandbox_base=/tmp/bazel_sandbox"
 BAZEL_OUTPUT_PATH="/tmp/execroot/harness_monorepo/bazel-out/k8-fastbuild/bin"
 COVERAGE_ARGS="--collect_code_coverage --combined_report=lcov --coverage_report_generator=//tools/bazel/sonarqube:sonarqube_coverage_generator \
 --experimental_fetch_all_coverage_outputs --experimental_strict_java_deps=off --cache_test_results=yes --test_output=summary --build_runfile_links"
