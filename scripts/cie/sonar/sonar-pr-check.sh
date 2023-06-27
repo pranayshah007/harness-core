@@ -21,7 +21,7 @@ function clean_temp_files() {
 function report_error(){
     echo 'please re-trigger this stage after resolving the issue.'
     echo 'to trigger this specific stage comment "trigger ss" in your github PR'
-    clean_temp_files "${JARS_FILE} ${MODULES_FILE} ${MODULES_TESTS_FILE} ${PR_SRCS_FILE}"
+    clean_temp_files "${JARS_FILE} ${MODULES_FILE} ${MODULES_TESTS_FILE} ${PR_SRCS_FILE} ${LIBS_FILE}"
     exit 1
 }
 
@@ -45,12 +45,12 @@ function create_empty_files() {
 }
 
 function clean_up_files() {
-    clean_temp_files "${JARS_FILE} ${MODULES_FILE} ${MODULES_TESTS_FILE} ${PR_SRCS_FILE}"
+    clean_temp_files "${JARS_FILE} ${MODULES_FILE} ${MODULES_TESTS_FILE} ${PR_SRCS_FILE} ${LIBS_FILE}"
 }
 
 function get_info_from_file(){
   local_filename=$1
-  cat $local_filename | sort -u | tr '\r\n' ',' | rev | cut -c2- | rev
+  cat $local_filename | sort -u | tr '\r\n' ',' | rev | cut -c2- | rev | sed 's/^,//; s/,$//'
   check_cmd_status "$?" "Unable to find file to extract info for sonar file."
 }
 
@@ -60,6 +60,7 @@ COVERAGE_ARGS="--collect_code_coverage --combined_report=lcov --coverage_report_
 COVERAGE_REPORT_PATH='/tmp/execroot/harness_monorepo/bazel-out/_coverage/_coverage_report.dat'
 JARS_ARRAY=("libmodule-hjar.jar" "libmodule.jar" "module.jar")
 JARS_FILE="modules_jars.txt"
+LIBS_FILE="modules_libs.txt"
 MODULES_FILE="modules.txt"
 MODULES_TESTS_FILE="modules_tests.txt"
 PR_SRCS_FILE="pr_srcs.txt"
@@ -157,32 +158,39 @@ MODULES_TESTS=$(get_info_from_file $MODULES_TESTS_FILE)
 # Getting list of generated jars after bazel build/test/coverage
 for MODULE in $(cat $PR_SRCS_FILE | sort -u)
   do
+    find "${BAZEL_OUTPUT_PATH}/${MODULE}/.." -type f -name '*.jar' >> $LIBS_FILE
+    echo -e "\n" >> $LIBS_FILE
     for JAR in ${JARS_ARRAY[@]}
       do
+        echo "INFO: Looking for ${BAZEL_OUTPUT_PATH}/${MODULE}/../$JAR"
         if [ -f "${BAZEL_OUTPUT_PATH}/${MODULE}/../$JAR" ]; then
+          echo "INFO: Found: ${BAZEL_OUTPUT_PATH}/${MODULE}/../$JAR"
           echo "${BAZEL_OUTPUT_PATH}/${MODULE}/../$JAR" >> $JARS_FILE
         fi
       done
   done < $PR_SRCS_FILE
 echo -e "JARS:\n$(cat ${JARS_FILE})"
 JARS_BINS=$(get_info_from_file $JARS_FILE)
+LIBS_BINS=$(get_info_from_file $LIBS_FILE)
 
 # Preparing Sonar Properties file
 [ ! -f "${SONAR_CONFIG_FILE}" ] \
 && echo "sonar.projectKey=harness-core-sonar-pr" > ${SONAR_CONFIG_FILE} \
 && echo "sonar.log.level=DEBUG" >> ${SONAR_CONFIG_FILE}
 
+echo "sonar.sourceEncoding=UTF-8" >> ${SONAR_CONFIG_FILE}
 echo "sonar.sources=$PR_FILES" >> ${SONAR_CONFIG_FILE}
 echo "sonar.tests=$MODULES_TESTS" >> ${SONAR_CONFIG_FILE}
-echo "sonar.inclusions=$PR_FILES" >> ${SONAR_CONFIG_FILE}
-echo "sonar.test.inclusions=$MODULES_TESTS" >> ${SONAR_CONFIG_FILE}
 echo "sonar.java.binaries=$JARS_BINS" >> ${SONAR_CONFIG_FILE}
-echo "sonar.java.libraries=$JARS_BINS" >> ${SONAR_CONFIG_FILE}
+echo "sonar.java.libraries=$LIBS_BINS" >> ${SONAR_CONFIG_FILE}
 echo "sonar.coverageReportPaths=$COVERAGE_REPORT_PATH" >> ${SONAR_CONFIG_FILE}
 echo "sonar.pullrequest.key=$PR_NUMBER" >> ${SONAR_CONFIG_FILE}
 echo "sonar.pullrequest.branch=$PR_BRANCH" >> ${SONAR_CONFIG_FILE}
 echo "sonar.pullrequest.base=$BASE_BRANCH" >> ${SONAR_CONFIG_FILE}
 echo "sonar.pullrequest.github.repository=$REPO_NAME" >> ${SONAR_CONFIG_FILE}
+
+#echo "sonar.inclusions=$PR_FILES" >> ${SONAR_CONFIG_FILE}
+#echo "sonar.test.inclusions=$MODULES_TESTS" >> ${SONAR_CONFIG_FILE}
 
 echo "INFO: Sonar Properties"
 cat ${SONAR_CONFIG_FILE}
