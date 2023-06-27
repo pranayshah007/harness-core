@@ -374,7 +374,7 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
     if (isEmpty(projectId)) {
       throw new SecretManagementException(GCP_SECRET_OPERATION_ERROR,
           "Not able to extract Project Id from provided "
-              + "credentials or Compute Enginer or Env variable" + GCP_PROJECT,
+              + "credentials or Compute Engine or Env variable" + GCP_PROJECT,
           USER_SRE);
     }
     return projectId;
