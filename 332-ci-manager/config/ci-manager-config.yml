@@ -96,7 +96,7 @@ pmsMongo:
   indexManagerMode: AUTO
   aliasDBName: pms-harness
 
-enableAuth: false
+enableAuth: true
 
 scmConnectionConfig:
   url: localhost:8091

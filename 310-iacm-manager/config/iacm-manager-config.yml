@@ -59,7 +59,7 @@ iacmmanager-mongo:
   indexManagerMode: AUTO
   aliasDBName: iacm-harness
 
-enableAuth: false
+enableAuth: true
 
 logServiceConfig:
   baseUrl: https://qa.harness.io/log-service/
