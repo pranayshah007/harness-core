@@ -71,6 +71,8 @@ import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.TemplateServiceModuleRegistrars;
 import io.harness.service.DelegateServiceDriverModule;
 import io.harness.service.ServiceResourceClientModule;
+import io.harness.telemetry.AbstractTelemetryModule;
+import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.template.event.OrgEntityCrudStreamListener;
 import io.harness.template.event.ProjectEntityCrudStreamListener;
 import io.harness.template.events.TemplateOutboxEventHandler;
@@ -225,6 +227,12 @@ public class TemplateServiceModule extends AbstractModule {
         TEMPLATE_SERVICE.getServiceId()));
     install(new OpaClientModule(templateServiceConfiguration.getOpaClientConfig(),
         templateServiceConfiguration.getPolicyManagerSecret(), TEMPLATE_SERVICE.getServiceId()));
+    install(new AbstractTelemetryModule() {
+      @Override
+      public TelemetryConfiguration telemetryConfiguration() {
+        return templateServiceConfiguration.getSegmentConfiguration();
+      }
+    });
 
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("taskPollExecutor"))

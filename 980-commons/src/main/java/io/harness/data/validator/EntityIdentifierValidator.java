@@ -31,7 +31,7 @@ public class EntityIdentifierValidator implements ConstraintValidator<EntityIden
   public static final Set<String> NOT_ALLOWED_WORDS =
       Stream
           .of("or", "and", "eq", "ne", "lt", "gt", "le", "ge", "div", "mod", "not", "null", "true", "false", "new",
-              "var", "return")
+              "var", "return", "step", "parallel", "stepGroup", "org", "account", "class", "shellScriptProvisioner")
           .collect(Collectors.toCollection(HashSet::new));
   private boolean allowBlank;
   private boolean allowScoped;

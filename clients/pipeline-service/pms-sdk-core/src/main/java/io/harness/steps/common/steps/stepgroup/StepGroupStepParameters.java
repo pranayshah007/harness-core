@@ -13,10 +13,14 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.SkipAutoEvaluation;
+import io.harness.utils.CommonPlanCreatorUtils;
 import io.harness.when.beans.StepWhenCondition;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
+import io.harness.yaml.utils.NGVariablesUtils;
 
 import java.util.List;
+import java.util.Map;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -41,11 +45,14 @@ public class StepGroupStepParameters implements StepParameters {
   List<FailureStrategyConfig> failureStrategies;
 
   String childNodeID;
+  @SkipAutoEvaluation ParameterField<Map<String, Object>> variables;
 
   public static StepGroupStepParameters getStepParameters(StepGroupElementConfig config, String childNodeID) {
     if (config == null) {
       return StepGroupStepParameters.builder().childNodeID(childNodeID).build();
     }
+    CommonPlanCreatorUtils.validateVariables(
+        config.getVariables(), "Execution Input is not allowed for variables in step group");
     return StepGroupStepParameters.builder()
         .identifier(config.getIdentifier())
         .name(config.getName())
@@ -53,6 +60,7 @@ public class StepGroupStepParameters implements StepParameters {
         .when(config.getWhen() != null ? config.getWhen().getValue() : null)
         .failureStrategies(config.getFailureStrategies() != null ? config.getFailureStrategies().getValue() : null)
         .childNodeID(childNodeID)
+        .variables(ParameterField.createValueField(NGVariablesUtils.getMapOfVariables(config.getVariables())))
         .build();
   }
 }

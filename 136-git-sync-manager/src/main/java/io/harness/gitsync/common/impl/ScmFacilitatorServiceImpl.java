@@ -73,6 +73,7 @@ import io.harness.gitsync.common.dtos.UserRepoResponse;
 import io.harness.gitsync.common.helper.GitClientEnabledHelper;
 import io.harness.gitsync.common.helper.GitDefaultBranchCacheHelper;
 import io.harness.gitsync.common.helper.GitFilePathHelper;
+import io.harness.gitsync.common.helper.GitRepoAllowlistHelper;
 import io.harness.gitsync.common.helper.GitRepoUrlHelper;
 import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
 import io.harness.gitsync.common.helper.GitSyncUtils;
@@ -111,9 +112,11 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
@@ -135,6 +138,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   GitBackgroundCacheRefreshHelper gitBackgroundCacheRefreshHelper;
   GitDefaultBranchCacheHelper gitDefaultBranchCacheHelper;
   GitRepoUrlHelper gitRepoUrlHelper;
+  GitRepoAllowlistHelper gitRepoAllowlistHelper;
 
   @Inject
   public ScmFacilitatorServiceImpl(GitSyncConnectorHelper gitSyncConnectorHelper,
@@ -143,7 +147,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
       GitClientEnabledHelper gitClientEnabledHelper, GitFileCacheService gitFileCacheService,
       GitFilePathHelper gitFilePathHelper, DelegateServiceGrpcClient delegateServiceGrpcClient,
       GitBackgroundCacheRefreshHelper gitBackgroundCacheRefreshHelper,
-      GitDefaultBranchCacheHelper gitDefaultBranchCacheHelper, GitRepoUrlHelper gitRepoUrlHelper) {
+      GitDefaultBranchCacheHelper gitDefaultBranchCacheHelper, GitRepoUrlHelper gitRepoUrlHelper,
+      GitRepoAllowlistHelper gitRepoAllowlistHelper) {
     this.gitSyncConnectorHelper = gitSyncConnectorHelper;
     this.connectorService = connectorService;
     this.scmOrchestratorService = scmOrchestratorService;
@@ -155,6 +160,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     this.gitBackgroundCacheRefreshHelper = gitBackgroundCacheRefreshHelper;
     this.gitDefaultBranchCacheHelper = gitDefaultBranchCacheHelper;
     this.gitRepoUrlHelper = gitRepoUrlHelper;
+    this.gitRepoAllowlistHelper = gitRepoAllowlistHelper;
   }
 
   @Override
@@ -183,6 +189,9 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
       ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.LIST_REPOSITORIES, scmConnector.getConnectorType(),
           scmConnector.getUrl(), response.getStatus(), response.getError(),
           ErrorMetadata.builder().connectorRef(connectorRef).build());
+    }
+    if (applyGitXRepoAllowListFilter) {
+      response = filterResponseBasedOnGitXRepoAllowList(accountIdentifier, orgIdentifier, projectIdentifier, response);
     }
 
     return prepareListRepoResponse(scmConnector, response);
@@ -1184,5 +1193,29 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     if (isEmpty(requestBranch) && isEmpty(resolvedBranch)) {
       gitDefaultBranchCacheHelper.upsertDefaultBranch(accountIdentifier, repoName, responseBranch, scmConnector);
     }
+  }
+
+  private GetUserReposResponse filterResponseBasedOnGitXRepoAllowList(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, GetUserReposResponse response) {
+    Set<String> responseRepoNameList = new HashSet<>();
+    for (Repository repository : response.getReposList()) {
+      responseRepoNameList.add(repository.getName());
+    }
+    Set<String> allowedRepoNameList = gitRepoAllowlistHelper.filterRepoList(
+        accountIdentifier, orgIdentifier, projectIdentifier, responseRepoNameList);
+    List<Repository> filteredRepos = new ArrayList<>();
+
+    for (Repository repo : response.getReposList()) {
+      if (allowedRepoNameList.contains(repo.getName())) {
+        filteredRepos.add(repo);
+      }
+    }
+
+    return GetUserReposResponse.newBuilder()
+        .addAllRepos(filteredRepos)
+        .setPagination(response.getPagination())
+        .setStatus(response.getStatus())
+        .setError(response.getError())
+        .build();
   }
 }

@@ -113,7 +113,7 @@ public class IACMYamlSchemaResource implements YamlSchemaResource {
           description = "Step Schema with details") YamlSchemaDetailsWrapper yamlSchemaDetailsWrapper) {
     if (yamlGroup.equals(StepCategory.STAGE.toString())) {
       // Add more cases when ci module contains more stages.
-      if (entityType.getYamlName().equals(EntityTypeConstants.IACM_STAGE)) {
+      if (entityType.getYamlName().equals(EntityTypeConstants.IACM)) {
         return ResponseDTO.newResponse(
             iacmYamlSchemaService
                 .getMergedStageYamlSchema(accountIdentifier, projectIdentifier, orgIdentifier, scope,

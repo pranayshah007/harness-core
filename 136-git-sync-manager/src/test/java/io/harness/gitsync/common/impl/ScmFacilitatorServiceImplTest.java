@@ -65,6 +65,7 @@ import io.harness.gitsync.common.dtos.gitAccess.GithubAccessTokenDTO;
 import io.harness.gitsync.common.helper.GitClientEnabledHelper;
 import io.harness.gitsync.common.helper.GitDefaultBranchCacheHelper;
 import io.harness.gitsync.common.helper.GitFilePathHelper;
+import io.harness.gitsync.common.helper.GitRepoAllowlistHelper;
 import io.harness.gitsync.common.helper.GitRepoUrlHelper;
 import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
 import io.harness.gitsync.common.service.ScmOrchestratorService;
@@ -131,16 +132,17 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
 
   @Mock GitDefaultBranchCacheHelper gitDefaultBranchCacheHelper;
   @Mock GitRepoUrlHelper gitRepoUrlHelper;
+  @Mock GitRepoAllowlistHelper gitRepoAllowlistHelper;
 
   String fileUrl = "https://github.com/harness/repoName/blob/branch/filePath";
 
   @Before
   public void setup() throws Exception {
     MockitoAnnotations.initMocks(this);
-    scmFacilitatorService =
-        new ScmFacilitatorServiceImpl(gitSyncConnectorHelper, connectorService, scmOrchestratorService,
-            ngFeatureFlagHelperService, gitClientEnabledHelper, gitFileCacheService, gitFilePathHelper,
-            delegateServiceGrpcClient, gitBackgroundCacheRefreshHelper, gitDefaultBranchCacheHelper, gitRepoUrlHelper);
+    scmFacilitatorService = new ScmFacilitatorServiceImpl(gitSyncConnectorHelper, connectorService,
+        scmOrchestratorService, ngFeatureFlagHelperService, gitClientEnabledHelper, gitFileCacheService,
+        gitFilePathHelper, delegateServiceGrpcClient, gitBackgroundCacheRefreshHelper, gitDefaultBranchCacheHelper,
+        gitRepoUrlHelper, gitRepoAllowlistHelper);
     pageRequest = PageRequest.builder().build();
     GithubConnectorDTO githubConnector = GithubConnectorDTO.builder()
                                              .connectionType(GitConnectionType.ACCOUNT)

@@ -55,6 +55,7 @@ public class RecommendationService {
                    .jiraConnectorRef(ceRecommendations.getJiraconnectorref())
                    .jiraIssueKey(ceRecommendations.getJiraissuekey())
                    .jiraStatus(ceRecommendations.getJirastatus())
+                   .cloudProvider(ceRecommendations.getCloudprovider())
                    .build())
         .collect(Collectors.toList());
   }

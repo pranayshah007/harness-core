@@ -24,4 +24,5 @@ public class GitSyncConstants {
   public static final String ENFORCE_GIT_EXPERIENCE = "enforce_git_experience";
   public static final String DEFAULT_CONNECTOR_FOR_GIT_EXPERIENCE = "default_connector_for_git_experience";
   public static final String DEFAULT_STORE_TYPE_FOR_ENTITIES = "default_store_type_for_entities";
+  public static final String REPO_ALLOWLIST_FOR_GIT_EXPERIENCE = "git_experience_repo_allowlist";
 }

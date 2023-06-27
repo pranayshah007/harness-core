@@ -23,6 +23,7 @@ import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfPr
 import static io.harness.helm.HelmConstants.HELM_PATH_PLACEHOLDER;
 import static io.harness.helm.HelmConstants.HELM_RELEASE_LABEL;
 import static io.harness.k8s.K8sConstants.KUBERNETES_CHANGE_CAUSE_ANNOTATION;
+import static io.harness.k8s.K8sConstants.RELEASE_NAME_CONFLICTS_WITH_SECRETS_OR_CONFIG_MAPS;
 import static io.harness.k8s.K8sConstants.SKIP_FILE_FOR_DEPLOY_PLACEHOLDER_TEXT;
 import static io.harness.k8s.KubernetesConvention.ReleaseHistoryKeyName;
 import static io.harness.k8s.kubectl.AbstractExecutable.getPrintableCommand;
@@ -37,11 +38,14 @@ import static io.harness.k8s.manifest.ManifestHelper.yaml_file_extension;
 import static io.harness.k8s.manifest.ManifestHelper.yml_file_extension;
 import static io.harness.k8s.model.K8sExpressions.canaryDestinationExpression;
 import static io.harness.k8s.model.K8sExpressions.stableDestinationExpression;
+import static io.harness.k8s.model.Kind.ConfigMap;
 import static io.harness.k8s.model.Kind.Namespace;
+import static io.harness.k8s.model.Kind.Secret;
 import static io.harness.k8s.model.KubernetesResourceId.createKubernetesResourceIdFromNamespaceKindName;
 import static io.harness.k8s.model.KubernetesResourceId.findScalableKubernetesResourceId;
 import static io.harness.k8s.releasehistory.IK8sRelease.Status.Failed;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
+import static io.harness.logging.CommandExecutionStatus.RUNNING;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
@@ -886,6 +890,20 @@ public class K8sTaskHelperBase {
   public ProcessResponse runK8sExecutable(K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback,
       AbstractExecutable executable, LogLevel logLevel) throws Exception {
     return executeCommand(executable, k8sDelegateTaskParams, executionLogCallback, logLevel);
+  }
+  public void warnIfReleaseNameConflictsWithSecretOrConfigMap(
+      List<KubernetesResource> resources, String releaseName, LogCallback executionLogCallback) {
+    if (isEmpty(releaseName)) {
+      return;
+    }
+    boolean isConflicting =
+        resources.stream()
+            .map(KubernetesResource::getResourceId)
+            .filter(id -> Secret.name().equals(id.getKind()) || ConfigMap.name().equals(id.getKind()))
+            .anyMatch(id -> releaseName.equals(id.getName()));
+    if (isConflicting) {
+      executionLogCallback.saveExecutionLog(RELEASE_NAME_CONFLICTS_WITH_SECRETS_OR_CONFIG_MAPS, WARN, RUNNING);
+    }
   }
 
   public boolean applyManifests(Kubectl client, List<KubernetesResource> resources,

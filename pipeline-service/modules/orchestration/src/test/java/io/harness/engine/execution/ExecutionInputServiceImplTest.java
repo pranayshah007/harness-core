@@ -10,12 +10,14 @@ package io.harness.engine.execution;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
@@ -43,6 +45,7 @@ import io.harness.rule.Owner;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.google.common.collect.Sets;
@@ -138,7 +141,9 @@ public class ExecutionInputServiceImplTest extends OrchestrationTestBase {
         + "      spec:\n"
         + "        script: \"echo Hi\"\n"
         + "        temp: \"<+input>.executionInput()\"\n";
-    doReturn(Optional.of(ExecutionInputInstance.builder().inputInstanceId(inputInstanceId).template(template).build()))
+    doReturn(
+        Optional.of(
+            ExecutionInputInstance.builder().inputInstanceId(inputInstanceId).template(template).fieldYaml("").build()))
         .when(executionInputRepositoryMock)
         .findByNodeExecutionId(nodeExecutionId);
     Map<String, Object> fullExecutionInputYamlMap = getMapFromYaml(fullExecutionInputYaml);
@@ -254,6 +259,352 @@ public class ExecutionInputServiceImplTest extends OrchestrationTestBase {
 
     ExecutionInputInstance expectedInputInstance = inputService.getExecutionInputInstance(nodeExecutionId);
     assertThat(expectedInputInstance).isNull();
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testCheckValueForRequiredVariablesProvided() {
+    String executionInputYaml = "stage:\n"
+        + "  identifier: cs\n"
+        + "  type: Custom\n"
+        + "  variables:\n"
+        + "    - name: var1\n"
+        + "      type: String\n"
+        + "      value: \"1234\"\n"
+        + "    - name: var2\n"
+        + "      type: String\n"
+        + "      value: \"\"\n";
+
+    String fieldYaml = "stage:\n"
+        + "  identifier: cs\n"
+        + "  type: Custom\n"
+        + "  name: cs\n"
+        + "  description: \"\"\n"
+        + "  spec:\n"
+        + "    execution:\n"
+        + "      steps:\n"
+        + "        - step:\n"
+        + "            identifier: ShellScript_1\n"
+        + "            type: ShellScript\n"
+        + "            name: ShellScript_1\n"
+        + "            spec:\n"
+        + "              shell: Bash\n"
+        + "              onDelegate: true\n"
+        + "              source:\n"
+        + "                type: Inline\n"
+        + "                spec:\n"
+        + "                  script: <+input>.executionInput().default(exit 0)\n"
+        + "            timeout: 10m\n"
+        + "  tags: {}\n"
+        + "  variables:\n"
+        + "    - name: var1\n"
+        + "      type: String\n"
+        + "      default: xyz\n"
+        + "      description: \"\"\n"
+        + "      required: true\n"
+        + "      value: <+input>.executionInput().default(1234)\n"
+        + "    - name: var2\n"
+        + "      type: String\n"
+        + "      description: \"\"\n"
+        + "      required: false\n"
+        + "      value: <+input>.executionInput()\n"
+        + "    - name: var3\n"
+        + "      type: String\n"
+        + "      description: \"\"\n"
+        + "      required: true\n"
+        + "      value: value3\n";
+
+    JsonNode executionInputNode = YamlUtils.readAsJsonNode(executionInputYaml);
+    assertThatCode(() -> inputService.checkValueForRequiredVariablesProvided(fieldYaml, executionInputNode, false))
+        .doesNotThrowAnyException();
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testCheckValueForRequiredVariablesProvided2() {
+    String executionInputYaml = "stage:\n"
+        + "  identifier: cs\n"
+        + "  type: Custom\n"
+        + "  variables:\n"
+        + "    - name: var1\n"
+        + "      type: String\n"
+        + "      value: \"\"\n"
+        + "    - name: var2\n"
+        + "      type: String\n"
+        + "      value: \"value2\"\n";
+
+    String fieldYaml = "stage:\n"
+        + "  identifier: cs\n"
+        + "  type: Custom\n"
+        + "  name: cs\n"
+        + "  description: \"\"\n"
+        + "  spec:\n"
+        + "    execution:\n"
+        + "      steps:\n"
+        + "        - step:\n"
+        + "            identifier: ShellScript_1\n"
+        + "            type: ShellScript\n"
+        + "            name: ShellScript_1\n"
+        + "            spec:\n"
+        + "              shell: Bash\n"
+        + "              onDelegate: true\n"
+        + "              source:\n"
+        + "                type: Inline\n"
+        + "                spec:\n"
+        + "                  script: <+input>.executionInput().default(exit 0)\n"
+        + "            timeout: 10m\n"
+        + "  tags: {}\n"
+        + "  variables:\n"
+        + "    - name: var1\n"
+        + "      type: String\n"
+        + "      default: xyz\n"
+        + "      description: \"\"\n"
+        + "      required: true\n"
+        + "      value: <+input>.executionInput().default(1234)\n"
+        + "    - name: var2\n"
+        + "      type: String\n"
+        + "      description: \"\"\n"
+        + "      required: false\n"
+        + "      value: <+input>.executionInput()\n"
+        + "    - name: var3\n"
+        + "      type: String\n"
+        + "      description: \"\"\n"
+        + "      required: true\n"
+        + "      value: value3\n";
+
+    JsonNode executionInputNode = YamlUtils.readAsJsonNode(executionInputYaml);
+    assertThatThrownBy(() -> inputService.checkValueForRequiredVariablesProvided(fieldYaml, executionInputNode, false))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("var1 is a required variable .Value or expression not provided for the variable : var1");
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testCheckValueForRequiredVariablesProvided3() {
+    String executionInputYaml = "stage:\n"
+        + "  identifier: cs\n"
+        + "  type: Custom\n"
+        + "  variables:\n"
+        + "    - name: var1\n"
+        + "      type: String\n"
+        + "      value: \"<+input>.executionInput()\"\n"
+        + "    - name: var2\n"
+        + "      type: String\n"
+        + "      value: \"value2\"\n";
+
+    String fieldYaml = "stage:\n"
+        + "  identifier: cs\n"
+        + "  type: Custom\n"
+        + "  name: cs\n"
+        + "  description: \"\"\n"
+        + "  spec:\n"
+        + "    execution:\n"
+        + "      steps:\n"
+        + "        - step:\n"
+        + "            identifier: ShellScript_1\n"
+        + "            type: ShellScript\n"
+        + "            name: ShellScript_1\n"
+        + "            spec:\n"
+        + "              shell: Bash\n"
+        + "              onDelegate: true\n"
+        + "              source:\n"
+        + "                type: Inline\n"
+        + "                spec:\n"
+        + "                  script: <+input>.executionInput().default(exit 0)\n"
+        + "            timeout: 10m\n"
+        + "  tags: {}\n"
+        + "  variables:\n"
+        + "    - name: var1\n"
+        + "      type: String\n"
+        + "      default: xyz\n"
+        + "      description: \"\"\n"
+        + "      required: true\n"
+        + "      value: <+input>.executionInput()\n"
+        + "    - name: var2\n"
+        + "      type: String\n"
+        + "      description: \"\"\n"
+        + "      required: true\n"
+        + "      value: <+input>.executionInput()\n"
+        + "    - name: var3\n"
+        + "      type: String\n"
+        + "      description: \"\"\n"
+        + "      required: true\n"
+        + "      value: value3\n";
+
+    JsonNode executionInputNode = YamlUtils.readAsJsonNode(executionInputYaml);
+    assertThatThrownBy(() -> inputService.checkValueForRequiredVariablesProvided(fieldYaml, executionInputNode, false))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "var1 is a required variable .Default value is empty or not provided for the variable : var1 or the execution input yaml provided by user is empty");
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testCheckValueForRequiredVariablesProvided4() {
+    String executionInputYaml = "stage:\n"
+        + "  identifier: cs\n"
+        + "  type: Custom\n"
+        + "  variables:\n"
+        + "    - name: var1\n"
+        + "      type: String\n"
+        + "      value: \"<+input>.executionInput()\"\n";
+
+    String fieldYaml = "stage:\n"
+        + "  identifier: cs\n"
+        + "  type: Custom\n"
+        + "  name: cs\n"
+        + "  description: \"\"\n"
+        + "  spec:\n"
+        + "    execution:\n"
+        + "      steps:\n"
+        + "        - step:\n"
+        + "            identifier: ShellScript_1\n"
+        + "            type: ShellScript\n"
+        + "            name: ShellScript_1\n"
+        + "            spec:\n"
+        + "              shell: Bash\n"
+        + "              onDelegate: true\n"
+        + "              source:\n"
+        + "                type: Inline\n"
+        + "                spec:\n"
+        + "                  script: <+input>.executionInput().default(exit 0)\n"
+        + "            timeout: 10m\n"
+        + "  tags: {}\n"
+        + "  variables:\n"
+        + "    - name: var1\n"
+        + "      type: String\n"
+        + "      default: xyz\n"
+        + "      description: \"\"\n"
+        + "      required: false\n"
+        + "      value: <+input>.executionInput()\n"
+        + "    - name: var2\n"
+        + "      type: String\n"
+        + "      description: \"\"\n"
+        + "      required: true\n"
+        + "      value: <+input>.executionInput()\n"
+        + "    - name: var3\n"
+        + "      type: String\n"
+        + "      description: \"\"\n"
+        + "      required: true\n"
+        + "      value: value3\n";
+
+    JsonNode executionInputNode = YamlUtils.readAsJsonNode(executionInputYaml);
+    assertThatThrownBy(() -> inputService.checkValueForRequiredVariablesProvided(fieldYaml, executionInputNode, false))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("var2 is a required variable .Value or expression not provided for the variable : var2");
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testCheckValueForRequiredVariablesProvided5() {
+    String executionInputYaml = "stage:\n"
+        + "  identifier: cs\n"
+        + "  type: Custom\n"
+        + "  variables:\n"
+        + "    - name: var1\n"
+        + "      type: String\n"
+        + "      value: \"<+input>.executionInput()\"\n"
+        + "    - name: var2\n"
+        + "      type: String\n"
+        + "      value: \"<+input>.executionInput().default(1234)\"\n";
+
+    String fieldYaml = "stage:\n"
+        + "  identifier: cs\n"
+        + "  type: Custom\n"
+        + "  name: cs\n"
+        + "  description: \"\"\n"
+        + "  spec:\n"
+        + "    execution:\n"
+        + "      steps:\n"
+        + "        - step:\n"
+        + "            identifier: ShellScript_1\n"
+        + "            type: ShellScript\n"
+        + "            name: ShellScript_1\n"
+        + "            spec:\n"
+        + "              shell: Bash\n"
+        + "              onDelegate: true\n"
+        + "              source:\n"
+        + "                type: Inline\n"
+        + "                spec:\n"
+        + "                  script: <+input>.executionInput().default(exit 0)\n"
+        + "            timeout: 10m\n"
+        + "  tags: {}\n"
+        + "  variables:\n"
+        + "    - name: var1\n"
+        + "      type: String\n"
+        + "      default: xyz\n"
+        + "      description: \"\"\n"
+        + "      required: false\n"
+        + "      value: <+input>.executionInput()\n"
+        + "    - name: var2\n"
+        + "      type: String\n"
+        + "      description: \"\"\n"
+        + "      required: true\n"
+        + "      value: <+input>.executionInput().default(1234)\n";
+
+    JsonNode executionInputNode = YamlUtils.readAsJsonNode(executionInputYaml);
+    assertThatCode(() -> inputService.checkValueForRequiredVariablesProvided(fieldYaml, executionInputNode, true))
+        .doesNotThrowAnyException();
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testCheckValueForRequiredVariablesProvided6() {
+    String executionInputYaml = "stage:\n"
+        + "  identifier: cs\n"
+        + "  type: Custom\n"
+        + "  variables:\n"
+        + "    - name: var1\n"
+        + "      type: String\n"
+        + "      value: \"<+input>.executionInput()\"\n"
+        + "    - name: var2\n"
+        + "      type: String\n"
+        + "      value: \"<+input>.executionInput().default(1234)\"\n";
+
+    String fieldYaml = "stage:\n"
+        + "  identifier: cs\n"
+        + "  type: Custom\n"
+        + "  name: cs\n"
+        + "  description: \"\"\n"
+        + "  spec:\n"
+        + "    execution:\n"
+        + "      steps:\n"
+        + "        - step:\n"
+        + "            identifier: ShellScript_1\n"
+        + "            type: ShellScript\n"
+        + "            name: ShellScript_1\n"
+        + "            spec:\n"
+        + "              shell: Bash\n"
+        + "              onDelegate: true\n"
+        + "              source:\n"
+        + "                type: Inline\n"
+        + "                spec:\n"
+        + "                  script: <+input>.executionInput().default(exit 0)\n"
+        + "            timeout: 10m\n"
+        + "  tags: {}\n"
+        + "  variables:\n"
+        + "    - name: var1\n"
+        + "      type: String\n"
+        + "      description: \"\"\n"
+        + "      required: true\n"
+        + "      value: <+input>.executionInput()\n"
+        + "    - name: var2\n"
+        + "      type: String\n"
+        + "      description: \"\"\n"
+        + "      required: true\n"
+        + "      value: <+input>.executionInput().default(1234)\n";
+
+    JsonNode executionInputNode = YamlUtils.readAsJsonNode(executionInputYaml);
+    assertThatThrownBy(() -> inputService.checkValueForRequiredVariablesProvided(fieldYaml, executionInputNode, true))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "var1 is a required variable .Default value is empty or not provided for the variable : var1 or the execution input yaml provided by user is empty");
   }
 
   private Map<String, Object> getMapFromYaml(String yaml) throws JsonProcessingException {

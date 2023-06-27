@@ -33,6 +33,7 @@ import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -138,5 +139,23 @@ public class GitXSettingsHelperTest extends CategoryTest {
 
     GitEntityInfo gitEntityInfoProcessed = GitAwareContextHelper.getGitRequestParamsInfo();
     assertThat(gitEntityInfoProcessed.getStoreType()).isEqualTo(StoreType.INLINE);
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testGetGitRepoAllowlist() {
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("org1/repo1  ,  org2/repo2,org3/  repo3").build();
+    MockedStatic<NGRestUtils> ngRestUtilsMockedStatic = mockStatic(NGRestUtils.class);
+    ngRestUtilsMockedStatic.when(() -> NGRestUtils.getResponse(any()))
+        .thenAnswer(invocationOnMock -> settingValueResponseDTO);
+
+    List<String> listOfRepos =
+        gitXSettingsHelper.getGitRepoAllowlist(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+
+    assertThat(listOfRepos.get(0)).isEqualTo("org1/repo1");
+    assertThat(listOfRepos.get(1)).isEqualTo("org2/repo2");
+    assertThat(listOfRepos.get(2)).isEqualTo("org3/  repo3");
   }
 }

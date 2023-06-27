@@ -328,7 +328,7 @@ orchestrationStepConfig:
           - /bin/ssca-plugin
     #Todo: Move to config Management Service
     moduleToSupportedSteps:
-      cd: [ "DownloadManifests", "AwsSamBuild", "AwsSamDeploy" ]
+      cd: [ "DownloadManifests", "AwsSamBuild", "AwsSamDeploy", "ServerlessAwsLambdaPrepareRollbackV2", "ServerlessAwsLambdaDeployV2" ]
       ci: [ "Background", "background", "GitClone", "Run", "Plugin", "Action"]
 
 

@@ -10,5 +10,5 @@ go_library(
     srcs = ["reporter.go"],
     importpath = "github.com/harness/harness-core/product/ci/addon/testreports",
     visibility = ["//visibility:public"],
-    deps = ["//product/ci/ti-service/types"],
+    deps = ["@com_github_harness_ti_client//types"],
 )

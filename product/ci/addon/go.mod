@@ -30,6 +30,7 @@ require (
 	github.com/harness/harness-core v0.0.0-20220210161509-69d6cb167b7a
 	github.com/harness/harness-core/commons/go/lib v0.0.0-20220222141117-7659b7eca599
 	github.com/harness/harness-core/product/ci/engine v0.0.0-20220526003445-374c61227e45
+	github.com/harness/ti-client v0.0.0-20230625210213-de916cd21d22
 	github.com/hashicorp/go-retryablehttp v0.6.6 // indirect
 	github.com/jirfag/go-printf-func-name v0.0.0-20200119135958-7558a9eaa5af // indirect
 	github.com/joho/godotenv v1.4.0
@@ -45,7 +46,7 @@ require (
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.7.0 // indirect
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.7.1
 	github.com/tdakkota/asciicheck v0.0.0-20200416200610-e657995f937b // indirect
 	github.com/tetafro/godot v0.4.2 // indirect
 	github.com/timakin/bodyclose v0.0.0-20200424151742-cb6215831a94 // indirect

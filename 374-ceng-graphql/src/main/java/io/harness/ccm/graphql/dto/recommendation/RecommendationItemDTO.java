@@ -34,4 +34,5 @@ public class RecommendationItemDTO {
   RecommendationDetailsDTO recommendationDetails;
   String perspectiveId;
   String perspectiveName;
+  String cloudProvider;
 }

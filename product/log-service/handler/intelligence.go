@@ -28,8 +28,11 @@ import (
 const (
 	keysParam            = "keys"
 	maxLogLineSize       = 500
+	debugLogChars        = 200
 	genAIPlainTextPrompt = `
-Provide error message, root cause and remediation from the below logs preserving the markdown format. %s
+Provide error message, root cause and remediation from the below logs preserving the markdown format.
+Remediation is required in the response - error message and root cause can be truncated if needed. %s
+
 
 Logs:
 ` + "```" + `
@@ -38,7 +41,8 @@ Logs:
 ` + "```"
 
 	genAIAzurePlainTextPrompt = `
-Provide error message, root cause and remediation from the below logs preserving the markdown format. %s
+Provide error message, root cause and remediation from the below logs preserving the markdown format.
+Remediation is required in the response - error message and root cause can be truncated if needed. %s
 
 Logs:
 ` + "```" + `
@@ -59,7 +63,7 @@ Provide your output in the following format:
 ` + "```"
 
 	genAIJSONPrompt = `
-Provide error message, root cause and remediation from the below logs. Return list of json object with three keys using the following format {"error", "cause", "remediation"}. %s
+Provide error message, root cause and remediation from the below logs. Remediation is required in the response - error message and root cause can be truncated if needed. Return list of json object with three keys using the following format {"error", "cause", "remediation"}. %s
 
 Logs:
 ` + "```" + `
@@ -68,7 +72,7 @@ Logs:
 ` + "```"
 
 	genAIBisonJSONPrompt = `
-I have a set of logs. The logs contain error messages. I want you to find the error messages in the logs, and suggest root cause and remediation or fix suggestions. I want you to give me the response in JSON format, no text before or after the JSON. Example of response:
+I have a set of logs. The logs contain error messages. I want you to find the error messages in the logs, and suggest root cause and remediation or fix suggestions. Remediation is required in the response - error message and root cause can be truncated if needed. I want you to give me the response in JSON format, no text before or after the JSON. Example of response:
 [
 	{
 		"error": "error_1",
@@ -138,6 +142,10 @@ func HandleRCA(store store.Store, cfg config.Config) http.HandlerFunc {
 			return
 		}
 
+		logger.FromRequest(r).WithField("keys", keys).
+			WithField("time", time.Now().Format(time.RFC3339)).
+			Infoln("api: rca call received, fetching logs")
+
 		logs, err := fetchLogs(ctx, store, keys, cfg.GenAI.MaxInputPromptLen)
 		if err != nil {
 			WriteNotFound(w, err)
@@ -145,9 +153,17 @@ func HandleRCA(store store.Store, cfg config.Config) http.HandlerFunc {
 				WithError(err).
 				WithField("latency", time.Since(st)).
 				WithField("keys", keys).
-				Errorln("api: cannot find logs")
+				Errorln("api: could not fetch logs for rca call")
 			return
 		}
+
+		stepType := r.FormValue(stepTypeParam)
+		command := r.FormValue(commandParam)
+		errSummary := r.FormValue(errSummaryParam)
+
+		logger.FromRequest(r).WithField("keys", keys).
+			WithField("time", time.Now().Format(time.RFC3339)).
+			Infoln("api: fetched logs for rca call, initiating call to ml service")
 
 		genAISvcURL := cfg.GenAI.Endpoint
 		genAISvcSecret := cfg.GenAI.ServiceSecret
@@ -168,7 +184,13 @@ func HandleRCA(store store.Store, cfg config.Config) http.HandlerFunc {
 		logger.FromRequest(r).
 			WithField("keys", keys).
 			WithField("latency", time.Since(st)).
+			WithField("command", trim(command, debugLogChars)).
+			WithField("logs", trim(logs, debugLogChars)).
+			WithField("step_type", stepType).
+			WithField("error_summary", errSummary).
 			WithField("time", time.Now().Format(time.RFC3339)).
+			WithField("response.rca", report.Rca).
+			WithField("response.results", report.Results).
 			Infoln("api: successfully retrieved RCA")
 		WriteJSON(w, report, 200)
 	}
@@ -464,4 +486,14 @@ func getKeys(r *http.Request) ([]string, error) {
 		keys = append(keys, CreateAccountSeparatedKey(accountID, v))
 	}
 	return keys, nil
+}
+
+// given a string s, print the first n and the last n characters
+func trim(s string, n int) string {
+	length := len(s)
+	if length <= 2*n {
+		return s
+	} else {
+		return s[:n] + "..." + s[length-n:]
+	}
 }

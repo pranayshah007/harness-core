@@ -8,8 +8,10 @@
 package io.harness.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.steps.SkipType;
@@ -19,7 +21,12 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.steps.NGSpecStep;
 import io.harness.steps.common.NGSectionStepParameters;
+import io.harness.yaml.core.variables.NGVariable;
+import io.harness.yaml.core.variables.NumberNGVariable;
+import io.harness.yaml.core.variables.SecretNGVariable;
+import io.harness.yaml.core.variables.StringNGVariable;
 
+import java.util.List;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -40,5 +47,28 @@ public class CommonPlanCreatorUtils {
                 .build())
         .skipGraphType(SkipType.SKIP_NODE)
         .build();
+  }
+
+  public void validateVariables(List<NGVariable> variables, String msg) {
+    if (!isEmpty(variables)) {
+      for (NGVariable variable : variables) {
+        if (variable instanceof StringNGVariable) {
+          StringNGVariable stringVariable = (StringNGVariable) variable;
+          if (stringVariable.getValue().isExecutionInput()) {
+            throw new InvalidRequestException(msg);
+          }
+        } else if (variable instanceof SecretNGVariable) {
+          SecretNGVariable secretNGVariable = (SecretNGVariable) variable;
+          if (secretNGVariable.getValue().isExecutionInput()) {
+            throw new InvalidRequestException(msg);
+          }
+        } else if (variable instanceof NumberNGVariable) {
+          NumberNGVariable numberNGVariable = (NumberNGVariable) variable;
+          if (numberNGVariable.getValue().isExecutionInput()) {
+            throw new InvalidRequestException(msg);
+          }
+        }
+      }
+    }
   }
 }

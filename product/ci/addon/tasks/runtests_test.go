@@ -24,7 +24,7 @@ import (
 	"github.com/harness/harness-core/commons/go/lib/logs"
 	"github.com/harness/harness-core/product/ci/addon/testintelligence/mocks"
 	pb "github.com/harness/harness-core/product/ci/engine/proto"
-	"github.com/harness/harness-core/product/ci/ti-service/types"
+	"github.com/harness/ti-client/types"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )

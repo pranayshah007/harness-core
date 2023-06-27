@@ -7,10 +7,15 @@
 
 package io.harness.ccm.views.dao;
 import static io.harness.persistence.HQuery.excludeValidate;
+import static io.harness.timescaledb.Tables.CE_RECOMMENDATIONS;
 
+import io.harness.annotations.retry.RetryOnException;
 import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
+import io.harness.ccm.commons.beans.recommendation.RecommendationState;
+import io.harness.ccm.commons.beans.recommendation.ResourceType;
 import io.harness.ccm.commons.entities.CCMSortOrder;
 import io.harness.ccm.commons.entities.CCMTimeFilter;
+import io.harness.ccm.commons.entities.recommendations.RecommendationGovernanceRuleId;
 import io.harness.ccm.views.entities.RuleExecution;
 import io.harness.ccm.views.entities.RuleExecution.RuleExecutionKeys;
 import io.harness.ccm.views.entities.RuleExecutionSortType;
@@ -33,6 +38,8 @@ import java.util.Objects;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
+import org.jooq.Condition;
+import org.jooq.DSLContext;
 
 @Slf4j
 @Singleton
@@ -40,6 +47,10 @@ public class RuleExecutionDAO {
   @Inject private HPersistence hPersistence;
   @Inject private RuleDAO ruleDAO;
   @Inject private RuleEnforcementDAO ruleEnforcementDAO;
+  @Inject private DSLContext dslContext;
+
+  private static final int RETRY_COUNT = 3;
+  private static final int SLEEP_DURATION = 100;
 
   public String save(RuleExecution ruleExecution) {
     return hPersistence.save(ruleExecution);
@@ -150,5 +161,45 @@ public class RuleExecutionDAO {
                             .filter(RuleRecommendationId.uuid, new ObjectId(id)),
         hPersistence.createUpdateOperations(RuleRecommendation.class)
             .set(RuleRecommendationId.jiraDetails, jiraDetails));
+  }
+
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public void ignoreGovernanceRecommendations(
+      @NonNull String accountId, @NonNull List<RecommendationGovernanceRuleId> governanceRuleIds) {
+    if (governanceRuleIds.isEmpty()) {
+      return;
+    }
+    dslContext.update(CE_RECOMMENDATIONS)
+        .set(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE, RecommendationState.IGNORED.name())
+        .where(CE_RECOMMENDATIONS.ACCOUNTID.eq(accountId)
+                   .and(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE.eq(RecommendationState.OPEN.name()))
+                   .and(CE_RECOMMENDATIONS.RESOURCETYPE.eq(ResourceType.GOVERNANCE.name()))
+                   .and(getGovernanceCondition(governanceRuleIds)))
+        .execute();
+  }
+
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public void unIgnoreGovernanceRecommendations(
+      @NonNull String accountId, @NonNull List<RecommendationGovernanceRuleId> governanceRuleIds) {
+    if (governanceRuleIds.isEmpty()) {
+      return;
+    }
+    dslContext.update(CE_RECOMMENDATIONS)
+        .set(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE, RecommendationState.OPEN.name())
+        .where(CE_RECOMMENDATIONS.ACCOUNTID.eq(accountId)
+                   .and(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE.eq(RecommendationState.IGNORED.name()))
+                   .and(CE_RECOMMENDATIONS.RESOURCETYPE.eq(ResourceType.GOVERNANCE.name()))
+                   .and(getGovernanceCondition(governanceRuleIds)))
+        .execute();
+  }
+
+  private Condition getGovernanceCondition(List<RecommendationGovernanceRuleId> governanceRuleIds) {
+    RecommendationGovernanceRuleId governanceRuleId = governanceRuleIds.get(0);
+    Condition condition = CE_RECOMMENDATIONS.GOVERNANCERULEID.eq(governanceRuleId.getRuleId());
+    for (int i = 1; i < governanceRuleIds.size(); i++) {
+      governanceRuleId = governanceRuleIds.get(i);
+      condition.or(CE_RECOMMENDATIONS.GOVERNANCERULEID.eq(governanceRuleId.getRuleId()));
+    }
+    return condition;
   }
 }
