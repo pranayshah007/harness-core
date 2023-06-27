@@ -363,7 +363,6 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
     }
   }
 
-  @NotNull
   private static String getProjectIdFromComputeEngineOrEnvironment() {
     // try to get project id from Compute Engine metadata
     String projectId = getProjectIdFromComputeEngine();
