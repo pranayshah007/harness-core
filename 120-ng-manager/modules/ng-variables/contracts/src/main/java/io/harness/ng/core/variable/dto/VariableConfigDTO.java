@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.variable.dto;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.harness.ng.core.variable.VariableValueType;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -25,7 +26,13 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@JsonSubTypes({ @JsonSubTypes.Type(value = StringVariableConfigDTO.class, name = "String") })
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.EXISTING_PROPERTY,
+        property = "valueType",
+        visible = true
+)
+@JsonSubTypes({ @JsonSubTypes.Type(value = StringVariableConfigDTO.class, name = "FIXED") })
 public abstract class VariableConfigDTO {
   public static final String FIXED_SET_VALUE_FORMAT = "<+input>.allowedValues(%s)";
   public static final String REGEX_VALUE_FORMAT = "<+input>.regex(%s)";
