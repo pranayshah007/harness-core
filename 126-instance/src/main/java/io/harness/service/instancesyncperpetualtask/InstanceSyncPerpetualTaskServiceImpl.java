@@ -99,7 +99,7 @@ public class InstanceSyncPerpetualTaskServiceImpl implements InstanceSyncPerpetu
 
   private PerpetualTaskSchedule preparePerpetualTaskSchedule() {
     return PerpetualTaskSchedule.newBuilder()
-        .setInterval(Durations.fromMinutes(InstanceSyncConstants.INTERVAL_MINUTES))
+        .setInterval(Durations.fromMinutes(2))
         .setTimeout(Durations.fromSeconds(InstanceSyncConstants.TIMEOUT_SECONDS))
         .build();
   }

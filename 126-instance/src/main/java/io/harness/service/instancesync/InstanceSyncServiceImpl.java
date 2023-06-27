@@ -112,11 +112,11 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
   private static final long TWO_WEEKS_IN_MILLIS = (long) 14 * 24 * 60 * 60 * 1000;
 
   private static final int INSTANCE_COUNT_LIMIT =
-      Integer.parseInt(System.getenv().getOrDefault("INSTANCE_SYNC_RESPONSE_BATCH_INSTANCE_COUNT", "100"));
+      Integer.parseInt(System.getenv().getOrDefault("INSTANCE_SYNC_RESPONSE_BATCH_INSTANCE_COUNT", "2"));
   private static final int RELEASE_COUNT_LIMIT =
-      Integer.parseInt(System.getenv().getOrDefault("INSTANCE_SYNC_RESPONSE_BATCH_RELEASE_COUNT", "5"));
+      Integer.parseInt(System.getenv().getOrDefault("INSTANCE_SYNC_RESPONSE_BATCH_RELEASE_COUNT", "2"));
 
-  static final long RELEASE_PRESERVE_TIME = TimeUnit.DAYS.toMillis(7);
+  static final long RELEASE_PRESERVE_TIME = TimeUnit.MINUTES.toMillis(10);
 
   @Inject
   public InstanceSyncServiceImpl(PersistentLocker persistentLocker,

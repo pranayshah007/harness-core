@@ -80,9 +80,7 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
 
   // todo: add INSTANCE_SYNC_V2_NG_SUPPORT to TaskType INSTANCE_SYNC_V2_NG_SUPPORT
   public boolean isInstanceSyncV2EnabledAndSupported(String accountId) {
-    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_K8S_HELM_INSTANCE_SYNC_V2_NG)
-        && delegateGrpcClientWrapper.isTaskTypeSupported(AccountId.newBuilder().setId(accountId).build(),
-            TaskType.newBuilder().setType("INSTANCE_SYNC_V2_NG_SUPPORT").build());
+    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_K8S_HELM_INSTANCE_SYNC_V2_NG);
   }
 
   @Override

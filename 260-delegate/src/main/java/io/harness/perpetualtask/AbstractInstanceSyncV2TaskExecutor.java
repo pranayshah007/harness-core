@@ -54,7 +54,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDP)
 abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
   private static final String SUCCESS_RESPONSE_MSG = "success";
-  private static final int PAGE_SIZE = 100;
+  private static final int PAGE_SIZE = 2;
   private static final String FAILURE_RESPONSE_MSG =
       "Failed to fetch InstanceSyncTaskDetails for perpetual task Id: [%s], accountId [%s]";
 
