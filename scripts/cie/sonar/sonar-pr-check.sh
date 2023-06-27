@@ -65,7 +65,7 @@ MODULES_FILE="modules.txt"
 MODULES_TESTS_FILE="modules_tests.txt"
 PR_SRCS_FILE="pr_srcs.txt"
 SONAR_CONFIG_FILE='sonar-project.properties'
-TEST_ARGS="--test_verbose_timeout_warnings --build_tests_only --cache_test_results=yes --test_output=errors"
+TEST_ARGS="--test_verbose_timeout_warnings --cache_test_results=yes --test_output=errors"
 
 # This script is required to generate the test util bzl file in root directory.
 scripts/bazel/generate_credentials.sh
@@ -135,8 +135,8 @@ for module in $PR_MODULES
   done
 
 # Running Bazel Coverage
-echo "INFO: BAZEL COMMAND: bazel test ${BAZEL_ARGS} ${COVERAGE_ARGS} ${TEST_ARGS} -- ${BAZEL_COMPILE_MODULES[@]}"
-bazel test ${BAZEL_ARGS} ${COVERAGE_ARGS} ${TEST_ARGS} -- "${BAZEL_COMPILE_MODULES[@]}" || true
+echo "INFO: BAZEL COMMAND: bazel coverage ${BAZEL_ARGS} ${COVERAGE_ARGS} ${TEST_ARGS} -- ${BAZEL_COMPILE_MODULES[@]}"
+bazel coverage ${BAZEL_ARGS} ${COVERAGE_ARGS} ${TEST_ARGS} -- "${BAZEL_COMPILE_MODULES[@]}" || true
 check_cmd_status "$?" "Failed to run coverage."
 
 # Splitting path till 'src' folder inside module
