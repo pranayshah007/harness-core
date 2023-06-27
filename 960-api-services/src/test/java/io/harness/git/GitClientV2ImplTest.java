@@ -735,8 +735,8 @@ public class GitClientV2ImplTest extends CategoryTest {
     final RevertAndPushRequest revertAndPushRequest =
         RevertAndPushRequest.builder().commitId(rev2.getId().getName()).build();
 
-    doNothing().when(gitClient).ensureRepoLocallyClonedAndUpdated(revertAndPushRequest);
-    doReturn(repoPath).when(gitClientHelper).getRepoDirectory(revertAndPushRequest);
+    doNothing().when(gitClient).ensureRepoLocallyClonedAndUpdated(any());
+    doReturn(repoPath).when(gitClientHelper).getRepoDirectory(any());
 
     final CommitResult commit = gitClient.revert(RevertRequest.mapFromRevertAndPushRequest(revertAndPushRequest));
     git.rm();
@@ -758,8 +758,8 @@ public class GitClientV2ImplTest extends CategoryTest {
     final RevertAndPushRequest revertAndPushRequest =
         RevertAndPushRequest.builder().commitId(rev1.getId().getName()).build();
 
-    doNothing().when(gitClient).ensureRepoLocallyClonedAndUpdated(revertAndPushRequest);
-    doReturn(repoPath).when(gitClientHelper).getRepoDirectory(revertAndPushRequest);
+    doNothing().when(gitClient).ensureRepoLocallyClonedAndUpdated(any());
+    doReturn(repoPath).when(gitClientHelper).getRepoDirectory(any());
 
     git.rm();
     assertThatThrownBy(() -> gitClient.revert(RevertRequest.mapFromRevertAndPushRequest(revertAndPushRequest)))
@@ -783,8 +783,8 @@ public class GitClientV2ImplTest extends CategoryTest {
     final RevertAndPushRequest revertAndPushRequest =
         RevertAndPushRequest.builder().commitId("invalid-commit-id").build();
 
-    doNothing().when(gitClient).ensureRepoLocallyClonedAndUpdated(revertAndPushRequest);
-    doReturn(repoPath).when(gitClientHelper).getRepoDirectory(revertAndPushRequest);
+    doNothing().when(gitClient).ensureRepoLocallyClonedAndUpdated(any());
+    doReturn(repoPath).when(gitClientHelper).getRepoDirectory(any());
 
     git.rm();
     assertThatThrownBy(() -> gitClient.revert(RevertRequest.mapFromRevertAndPushRequest(revertAndPushRequest)))
@@ -810,8 +810,10 @@ public class GitClientV2ImplTest extends CategoryTest {
 
     PushResultGit toBeReturned = pushResultBuilder().refUpdate(PushResultGit.RefUpdate.builder().build()).build();
     addRemote(repoPath);
-    doNothing().when(gitClient).ensureRepoLocallyClonedAndUpdated(request);
-    doReturn(repoPath).when(gitClientHelper).getRepoDirectory(request);
+
+    doNothing().when(gitClient).ensureRepoLocallyClonedAndUpdated(any());
+    doReturn(repoPath).when(gitClientHelper).getRepoDirectory(any());
+
     doReturn(toBeReturned).when(gitClient).push(PushRequest.mapFromRevertAndPushRequest(request));
     git.rm();
     final RevertAndPushResult revertAndPushResult = gitClient.revertAndPush(request);
