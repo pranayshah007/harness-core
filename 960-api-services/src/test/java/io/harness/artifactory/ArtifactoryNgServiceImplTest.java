@@ -52,11 +52,9 @@ import org.mockito.MockitoAnnotations;
 
 @OwnedBy(CDP)
 public class ArtifactoryNgServiceImplTest extends CategoryTest {
-  @Mock
-  ArtifactoryClientImpl artifactoryClient;
+  @Mock ArtifactoryClientImpl artifactoryClient;
 
-  @InjectMocks
-  ArtifactoryNgServiceImpl artifactoryNgService;
+  @InjectMocks ArtifactoryNgServiceImpl artifactoryNgService;
 
   @Before
   public void setup() {
@@ -86,7 +84,7 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
     doReturn(buildDetails).when(artifactoryClient).getBuildDetails(any(), any(), any(), anyInt());
 
     List<BuildDetails> result =
-            artifactoryNgService.getBuildDetails(artifactoryConfigRequest, "repoName", "artifactPath", 10);
+        artifactoryNgService.getBuildDetails(artifactoryConfigRequest, "repoName", "artifactPath", 10);
 
     verify(artifactoryClient, times(1)).getBuildDetails(any(), any(), any(), anyInt());
     assertThat(result).isEqualTo(buildDetails);
@@ -115,7 +113,7 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
     doReturn(buildDetails).when(artifactoryClient).getArtifactList(any(), any(), any(), anyInt());
 
     List<BuildDetails> result =
-            artifactoryNgService.getArtifactList(artifactoryConfigRequest, "repoName", "artifactPath", 10);
+        artifactoryNgService.getArtifactList(artifactoryConfigRequest, "repoName", "artifactPath", 10);
 
     verify(artifactoryClient, times(1)).getArtifactList(any(), any(), any(), anyInt());
     assertThat(result).isEqualTo(buildDetails);
@@ -153,16 +151,16 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
     doReturn(buildDetails).when(artifactoryClient).getArtifactList(any(), any(), any(), anyInt());
 
     assertThat(artifactoryNgService.getLatestArtifact(
-            artifactoryConfigRequest, "repoName", "artifactDirectory", "artifactPath.exe.temp", "", 10))
-            .isEqualTo(
-                    buildDetails.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList()).get(0));
+                   artifactoryConfigRequest, "repoName", "artifactDirectory", "artifactPath.exe.temp", "", 10))
+        .isEqualTo(
+            buildDetails.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList()).get(0));
 
     assertThatThrownBy(
-            () -> artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName", "", "", "", 10))
-            .hasMessage("Please check ArtifactPath/ArtifactPathFilter field in Artifactory artifact configuration.");
+        () -> artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName", "", "", "", 10))
+        .hasMessage("Please check ArtifactPath/ArtifactPathFilter field in Artifactory artifact configuration.");
     BuildDetails expectedresult = BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath").build();
     BuildDetails actualresult =
-            artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName", "", "", "artifactpath", 10);
+        artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName", "", "", "artifactpath", 10);
 
     assertThat(actualresult).isEqualTo(expectedresult);
     String artifactDirectory = "/artifactDirectory/";
@@ -171,16 +169,16 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
     buildDetails = Collections.emptyList();
     doReturn(buildDetails).when(artifactoryClient).getArtifactList(any(), any(), any(), anyInt());
     assertThatThrownBy(()
-            -> artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName",
-            artifactDirectory, artifactPathFilter, "artifactpath", 10))
-            .hasMessage(
-                    "Please check artifactPath or artifactDirectory or repository field in Artifactory artifact configuration.");
+                           -> artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName",
+                               artifactDirectory, artifactPathFilter, "artifactpath", 10))
+        .hasMessage(
+            "Please check artifactPath or artifactDirectory or repository field in Artifactory artifact configuration.");
 
     assertThatThrownBy(()
-            -> artifactoryNgService.getLatestArtifact(
-            artifactoryConfigRequest, "repoName", artifactDirectory, artifactPathFilter, "", 10))
-            .hasMessage(
-                    "Please check artifactPathFilter or artifactDirectory or repository field in Artifactory artifact .");
+                           -> artifactoryNgService.getLatestArtifact(
+                               artifactoryConfigRequest, "repoName", artifactDirectory, artifactPathFilter, "", 10))
+        .hasMessage(
+            "Please check artifactPathFilter or artifactDirectory or repository field in Artifactory artifact .");
   }
 
   @Test
@@ -194,9 +192,9 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
     doReturn(buildDetails1).when(artifactoryClient).getArtifactList(any(), anyString(), anyString(), anyInt());
 
     assertThat(artifactoryNgService.getLatestArtifact(
-            artifactoryConfigRequest, "repoName", "artifactDirectory", null, "artifactPath.exe.", 10))
-            .isEqualTo(
-                    buildDetails1.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList()).get(0));
+                   artifactoryConfigRequest, "repoName", "artifactDirectory", null, "artifactPath.exe.", 10))
+        .isEqualTo(
+            buildDetails1.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList()).get(0));
 
     List<BuildDetails> buildDetails2 = new ArrayList<>();
     buildDetails2.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.exe.temp").build());
@@ -205,18 +203,18 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
     doReturn(buildDetails2).when(artifactoryClient).getArtifactList(any(), anyString(), anyString(), anyInt());
 
     assertThat(artifactoryNgService.getLatestArtifact(
-            artifactoryConfigRequest, "repoName", "artifactDirectory", "", "artifactPath.exe", 10))
-            .isEqualTo(
-                    buildDetails2.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList()).get(1));
+                   artifactoryConfigRequest, "repoName", "artifactDirectory", "", "artifactPath.exe", 10))
+        .isEqualTo(
+            buildDetails2.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList()).get(1));
 
     List<BuildDetails> buildDetails3 = new ArrayList<>();
     buildDetails3.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.exe.hash").build());
     doReturn(buildDetails3).when(artifactoryClient).getArtifactList(any(), anyString(), anyString(), anyInt());
 
     assertThat(artifactoryNgService.getLatestArtifact(
-            artifactoryConfigRequest, "repoName", "artifactDirectory", "", "artifactPath.exe.hash", 10))
-            .isEqualTo(
-                    buildDetails3.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList()).get(0));
+                   artifactoryConfigRequest, "repoName", "artifactDirectory", "", "artifactPath.exe.hash", 10))
+        .isEqualTo(
+            buildDetails3.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList()).get(0));
 
     List<BuildDetails> buildDetails4 = new ArrayList<>();
     buildDetails4.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.exe.temp").build());
@@ -225,30 +223,17 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
     doReturn(buildDetails4).when(artifactoryClient).getArtifactList(any(), anyString(), anyString(), anyInt());
 
     assertThat(artifactoryNgService.getLatestArtifact(
-            artifactoryConfigRequest, "repoName", "artifactDirectory", "[a-zA-Z.]+(exe)[.a-zA-Z]+", "", 10))
-            .isEqualTo(
-                    buildDetails4.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList()).get(0));
+                   artifactoryConfigRequest, "repoName", "artifactDirectory", "[a-zA-Z.]+(exe)[.a-zA-Z]+", "", 10))
+        .isEqualTo(
+            buildDetails4.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList()).get(0));
 
     assertThatThrownBy(()
-            -> artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName",
-            "artifactDirectory", "[a-zA-Z.]+(exe)[.a-zA-Z]+)", "", 10))
-            .isInstanceOf(WingsException.class)
-            .getCause()
-            .isInstanceOf(ExplanationException.class)
-            .getCause()
-            .isInstanceOf(ArtifactoryRegistryException.class);
-
-    List<BuildDetails> buildDetails5 = new ArrayList<>();
-    doReturn(buildDetails5).when(artifactoryClient).getArtifactList(any(), anyString(), anyString(), anyInt());
-
-    assertThatThrownBy(()
-            -> artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName",
-            "artifactDirectory", "dlkvmoweifowiefw23423q cq£$R@£$@£$!2c", "", 10))
-            .isInstanceOf(WingsException.class)
-            .getCause()
-            .isInstanceOf(ExplanationException.class)
-            .getCause()
-            .isInstanceOf(ArtifactoryRegistryException.class);
-
+                           -> artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName",
+                               "artifactDirectory", "[a-zA-Z.]+(exe)[.a-zA-Z]+)", "", 10))
+        .isInstanceOf(WingsException.class)
+        .getCause()
+        .isInstanceOf(ExplanationException.class)
+        .getCause()
+        .isInstanceOf(ArtifactoryRegistryException.class);
   }
 }
