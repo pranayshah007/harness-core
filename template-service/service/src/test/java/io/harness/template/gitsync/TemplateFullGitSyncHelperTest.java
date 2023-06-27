@@ -29,7 +29,6 @@ import io.harness.ng.core.entitydetail.EntityDetailRestToProtoMapper;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.rule.Owner;
-import io.harness.telemetry.TelemetryReporter;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.helpers.TemplateEntityDetailUtils;
@@ -78,10 +77,7 @@ public class TemplateFullGitSyncHelperTest extends CategoryTest {
 
   @Mock NGTemplateFeatureFlagHelperService ngTemplateFeatureFlagHelperService;
 
-  @Mock TelemetryReporter telemetryReporter;
-
   @Inject private ExecutorService executorService;
-
   private final String ACCOUNT_ID = "accountId";
   private final String ORG_IDENTIFIER = "orgId";
   private final String PROJ_IDENTIFIER = "projId";
@@ -100,8 +96,8 @@ public class TemplateFullGitSyncHelperTest extends CategoryTest {
     String filename = "template.yaml";
     yaml = Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
 
-    templateServiceHelper = new NGTemplateServiceHelper(filterService, templateRepository, gitSyncSdkService,
-        templateGitXService, gitAwareEntityHelper, telemetryReporter, executorService);
+    templateServiceHelper = new NGTemplateServiceHelper(
+        filterService, templateRepository, gitSyncSdkService, templateGitXService, gitAwareEntityHelper);
     Reflect.on(templateFullGitSyncHelper).set("templateServiceHelper", templateServiceHelper);
 
     entityDetailProtoDTO = EntityDetailProtoDTO.newBuilder().setType(EntityTypeProtoEnum.TEMPLATE).build();

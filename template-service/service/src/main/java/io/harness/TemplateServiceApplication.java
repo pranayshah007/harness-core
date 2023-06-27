@@ -62,11 +62,6 @@ import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.serializer.jackson.TemplateServiceJacksonModule;
 import io.harness.service.impl.DelegateAsyncServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
-import io.harness.telemetry.TelemetryReporter;
-import io.harness.telemetry.filter.APIAuthTelemetryFilter;
-import io.harness.telemetry.filter.APIAuthTelemetryResponseFilter;
-import io.harness.telemetry.filter.APIErrorsTelemetrySenderFilter;
-import io.harness.telemetry.filter.TerraformTelemetryFilter;
 import io.harness.template.GenerateOpenApiSpecCommand;
 import io.harness.template.InspectCommand;
 import io.harness.template.entity.TemplateEntity;
@@ -253,7 +248,6 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
     registerAuthFilters(templateServiceConfiguration, environment, injector);
     registerCorrelationFilter(environment, injector);
     registerApiResponseFilter(environment, injector);
-    registerAPIAuthTelemetryFilters(templateServiceConfiguration, environment, injector);
 
     if (isTrue(templateServiceConfiguration.getEnableOpentelemetry())) {
       registerTraceFilter(environment, injector);
@@ -410,35 +404,5 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
                                                     .requireValidatorInit(false)
                                                     .build();
     YamlSdkInitHelper.initialize(injector, yamlSdkConfiguration);
-  }
-
-  /**
-   * ------------------ API auth telemetry -----------------------------------------------
-   */
-  private void registerAPIAuthTelemetryFilters(
-      TemplateServiceConfiguration configuration, Environment environment, Injector injector) {
-    if (configuration.getSegmentConfiguration() != null && configuration.getSegmentConfiguration().isEnabled()) {
-      registerAPIAuthTelemetryFilter(environment, injector);
-      registerTerraformTelemetryFilter(environment, injector);
-      registerAPIAuthTelemetryResponseFilter(environment, injector);
-      registerAPIErrorsTelemetrySenderFilter(environment, injector);
-    }
-  }
-  private void registerAPIAuthTelemetryFilter(Environment environment, Injector injector) {
-    TelemetryReporter telemetryReporter = injector.getInstance(TelemetryReporter.class);
-    environment.jersey().register(new APIAuthTelemetryFilter(telemetryReporter));
-  }
-  private void registerTerraformTelemetryFilter(Environment environment, Injector injector) {
-    TelemetryReporter telemetryReporter = injector.getInstance(TelemetryReporter.class);
-    environment.jersey().register(new TerraformTelemetryFilter(telemetryReporter));
-  }
-  private void registerAPIAuthTelemetryResponseFilter(Environment environment, Injector injector) {
-    TelemetryReporter telemetryReporter = injector.getInstance(TelemetryReporter.class);
-    environment.jersey().register(new APIAuthTelemetryResponseFilter(telemetryReporter));
-  }
-  private void registerAPIErrorsTelemetrySenderFilter(Environment environment, Injector injector) {
-    TelemetryReporter telemetryReporter = injector.getInstance(TelemetryReporter.class);
-    environment.jersey().register(
-        new APIErrorsTelemetrySenderFilter(telemetryReporter, TEMPLATE_SERVICE.getServiceId()));
   }
 }
