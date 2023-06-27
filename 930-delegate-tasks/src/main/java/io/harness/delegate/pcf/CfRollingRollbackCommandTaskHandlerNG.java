@@ -130,15 +130,26 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
     File workingDirectory = null;
     TasApplicationInfo currentProdInfo = null;
     try {
+      CfRollingRollbackResponseNG cfRollingRollbackResponseNG;
+
+      if (cfRollingRollbackRequestNG.isFirstDeployment()) {
+        cfRollingRollbackResponseNG = CfRollingRollbackResponseNG.builder()
+                                          .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                          .newApplicationInfo(null)
+                                          .currentProdInfo(null)
+                                          .build();
+        logCallback.saveExecutionLog(
+            "\n ----------  This is first rolling deployment hence skipping rollback", INFO, SUCCESS);
+        logCallback.saveExecutionLog("\n ----------  PCF Rolling Rollback completed successfully", INFO, SUCCESS);
+        return cfRollingRollbackResponseNG;
+      }
+
       List<ApplicationSummary> previousReleases = cfDeploymentManager.getPreviousReleasesForRolling(
           cfRequestConfig, ((CfRollingRollbackRequestNG) cfCommandRequestNG).getApplicationName());
       workingDirectory = generateWorkingDirectoryOnDelegate(cfRollingRollbackRequestNG);
       cfRequestConfig.setCfHomeDirPath(workingDirectory.getAbsolutePath());
       currentProdInfo = getCurrentProdInfo(previousReleases, clonePcfRequestConfig(cfRequestConfig).build(),
           workingDirectory, ((CfRollingRollbackRequestNG) cfCommandRequestNG).getTimeoutIntervalInMin(), logCallback);
-      ApplicationDetail detailsBeforeDeployment = isEmpty(previousReleases)
-          ? null
-          : cfCommandTaskHelperNG.getApplicationDetails(cfRequestConfig, cfDeploymentManager);
 
       CfAppAutoscalarRequestData cfAppAutoscalarRequestData =
           CfAppAutoscalarRequestData.builder()
@@ -147,37 +158,11 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
               .timeoutInMins(cfRollingRollbackRequestNG.getTimeoutIntervalInMin())
               .build();
 
-      CfRollingRollbackResponseNG cfRollingRollbackResponseNG;
-
       if (currentProdInfo != null && currentProdInfo.isAutoScalarEnabled()) {
         cfAppAutoscalarRequestData.setApplicationName(currentProdInfo.getApplicationName());
         cfAppAutoscalarRequestData.setApplicationGuid(currentProdInfo.getApplicationGuid());
         cfAppAutoscalarRequestData.setExpectedEnabled(true);
         pcfCommandTaskBaseHelper.disableAutoscalarSafe(cfAppAutoscalarRequestData, logCallback);
-      }
-
-      if (currentProdInfo != null && cfRollingRollbackRequestNG.isFirstDeployment()) {
-        // Deleting
-        logCallback.saveExecutionLog(color("\n# Deleting the app which was created ", White, Bold));
-        cfDeploymentManager.deleteApplication(cfRequestConfig);
-        cfRollingRollbackResponseNG = CfRollingRollbackResponseNG.builder()
-                                          .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-                                          .newApplicationInfo(null)
-                                          .currentProdInfo(null)
-                                          .build();
-        logCallback.saveExecutionLog(color("\n# Deleted successfully", White, Bold));
-        logCallback.saveExecutionLog("\n ----------  PCF Rolling Rollback completed successfully", INFO, SUCCESS);
-        return cfRollingRollbackResponseNG;
-      } else if (currentProdInfo == null && cfRollingRollbackRequestNG.isFirstDeployment()) {
-        logCallback.saveExecutionLog(
-            color("\n# App was not created in the deploy step, so skipping rollback", White, Bold));
-        cfRollingRollbackResponseNG = CfRollingRollbackResponseNG.builder()
-                                          .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-                                          .newApplicationInfo(null)
-                                          .currentProdInfo(null)
-                                          .build();
-        logCallback.saveExecutionLog("\n ----------  PCF Rolling Rollback completed successfully", INFO, SUCCESS);
-        return cfRollingRollbackResponseNG;
       }
 
       artifactFile = downloadArtifactFile(cfRollingRollbackRequestNG, workingDirectory, logCallback);
