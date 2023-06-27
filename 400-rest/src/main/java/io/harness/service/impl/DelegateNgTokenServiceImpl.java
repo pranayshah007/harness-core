@@ -162,7 +162,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
 
   @Override
   public DelegateTokenDetails getDelegateToken(String accountId, String name) {
-    return getDelegateToken(accountId, name, false);
+    return getDelegateToken(accountId, name, true);
   }
 
   @Override
