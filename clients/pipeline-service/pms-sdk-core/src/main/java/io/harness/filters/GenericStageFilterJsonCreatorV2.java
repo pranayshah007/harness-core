@@ -89,6 +89,7 @@ public abstract class GenericStageFilterJsonCreatorV2<T extends AbstractStageNod
     PipelineFilter filter = getFilter(filterCreationContext, stageNode);
     if (filter != null) {
       creationResponse.pipelineFilter(filter);
+      creationResponse.warningResponse(filter.fetchWarningResponse());
     }
     return creationResponse.build();
   }

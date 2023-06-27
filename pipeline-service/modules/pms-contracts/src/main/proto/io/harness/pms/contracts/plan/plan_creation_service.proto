@@ -107,6 +107,25 @@ message FilterCreationBlobResponse {
   Dependencies deps = 9;
   YamlUpdates yamlUpdates = 10;
   Dependencies resolvedDeps = 11;
+  WarningResponse warningResponse = 12;
+}
+
+message WarningResponse {
+  repeated Warning warnings = 1;
+}
+
+message Warning {
+  string category = 1;  // INVALID_ENTITY_REF | INVALID_EXPRESSION
+  string type = 2;      // INVALID_SERVICE_REF |...| INVALID_CONTEXT_EXPRESSION | INVALID_FQN | INVALID_FQN_ORDERING |
+                        // FIRST_GEN_EXPRESSION | INVALID_STEP_OUTPUT
+  string message = 3;
+  WarningMetadata metadata = 4;
+}
+
+message WarningMetadata {
+  string value = 1;
+  string fqn = 2;
+  // can be extended to more fields in the future
 }
 
 message VariablesCreationBlobRequest {

@@ -7,6 +7,7 @@
 
 package io.harness.pms.cdng.sample.cd.creator.filters;
 
+import io.harness.pms.contracts.plan.WarningResponse;
 import io.harness.pms.pipeline.filter.PipelineFilter;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -26,6 +27,8 @@ public class CdFilter implements PipelineFilter {
   @Singular Set<String> serviceNames;
   @Singular Set<String> infrastructureTypes;
 
+  WarningResponse warningResponse;
+
   public void addDeploymentTypes(Set<String> deploymentTypes) {
     if (this.deploymentTypes == null) {
       this.deploymentTypes = new HashSet<>();
@@ -34,6 +37,11 @@ public class CdFilter implements PipelineFilter {
     }
 
     this.deploymentTypes.addAll(deploymentTypes);
+  }
+
+  @Override
+  public WarningResponse fetchWarningResponse() {
+    return warningResponse;
   }
 
   public void addInfrastructureTypes(Set<String> infrastructureTypes) {

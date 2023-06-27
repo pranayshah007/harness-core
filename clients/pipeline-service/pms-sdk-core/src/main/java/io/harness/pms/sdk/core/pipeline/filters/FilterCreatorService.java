@@ -7,6 +7,7 @@
 
 package io.harness.pms.sdk.core.pipeline.filters;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.plan.creation.PlanCreatorUtils.supportsField;
 
 import static java.lang.String.format;
@@ -18,6 +19,7 @@ import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.FilterCreationBlobRequest;
 import io.harness.pms.contracts.plan.FilterCreationBlobResponse;
 import io.harness.pms.contracts.plan.SetupMetadata;
+import io.harness.pms.contracts.plan.WarningResponse;
 import io.harness.pms.exception.runtime.InvalidYamlRuntimeException;
 import io.harness.pms.filter.creation.FilterCreationResponse;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
@@ -118,6 +120,12 @@ public class FilterCreatorService
     finalResponse.setStageCount(finalResponse.getStageCount() + response.getStageCount());
     finalResponse.addReferredEntities(response.getReferredEntities());
     finalResponse.addStageNames(response.getStageNames());
+    if (response.getWarningResponse() != null && isNotEmpty(response.getWarningResponse().getWarningsList())) {
+      WarningResponse warningResponse = finalResponse.getWarningResponse();
+      warningResponse =
+          warningResponse.toBuilder().addAllWarnings(response.getWarningResponse().getWarningsList()).build();
+      finalResponse.setWarningResponse(warningResponse);
+    }
     filterCreationResponseMerger.mergeFilterCreationResponse(finalResponse, response);
   }
 }

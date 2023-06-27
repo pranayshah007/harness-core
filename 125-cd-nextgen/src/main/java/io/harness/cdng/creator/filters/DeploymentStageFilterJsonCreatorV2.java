@@ -51,10 +51,15 @@ import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.pms.cdng.sample.cd.creator.filters.CdFilter;
 import io.harness.pms.cdng.sample.cd.creator.filters.CdFilter.CdFilterBuilder;
+import io.harness.pms.contracts.plan.Warning;
+import io.harness.pms.contracts.plan.WarningMetadata;
+import io.harness.pms.contracts.plan.WarningResponse;
 import io.harness.pms.exception.runtime.InvalidYamlRuntimeException;
 import io.harness.pms.pipeline.filter.PipelineFilter;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
+import io.harness.pms.warning.WarningCategory;
+import io.harness.pms.warning.WarningType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
@@ -106,6 +111,18 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     validate(filterCreationContext, deploymentStageConfig);
     addServiceFilters(filterCreationContext, filterBuilder, deploymentStageConfig);
     addInfraFilters(filterCreationContext, filterBuilder, deploymentStageConfig);
+
+    // To be replaced with an actual warning, this is a sample for reference. These are not saved in DB currently
+    filterBuilder.warningResponse(
+        WarningResponse.newBuilder()
+            .addWarnings(
+                Warning.newBuilder()
+                    .setCategory(WarningCategory.INVALID_ENTITY.name())
+                    .setType(WarningType.INVALID_SERVICE_REF.name())
+                    .setMessage("Dummy warning")
+                    .setMetadata(WarningMetadata.newBuilder().setValue("dummy value").setFqn("dummy fqn").build())
+                    .build())
+            .build());
 
     return filterBuilder.build();
   }

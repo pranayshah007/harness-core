@@ -8,6 +8,7 @@
 package io.harness.pms.pipeline.filter;
 
 import io.harness.exception.GeneralException;
+import io.harness.pms.contracts.plan.WarningResponse;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -18,5 +19,9 @@ public interface PipelineFilter {
     } catch (Exception ex) {
       throw new GeneralException("Unknown error while generating JSON", ex);
     }
+  }
+
+  default WarningResponse fetchWarningResponse() {
+    return WarningResponse.newBuilder().build();
   }
 }

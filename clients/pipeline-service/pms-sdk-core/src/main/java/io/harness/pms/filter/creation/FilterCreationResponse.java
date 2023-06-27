@@ -15,6 +15,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.FilterCreationBlobResponse;
+import io.harness.pms.contracts.plan.WarningResponse;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.pipeline.filter.PipelineFilter;
 import io.harness.pms.sdk.core.pipeline.creators.CreatorResponse;
@@ -41,6 +42,7 @@ public class FilterCreationResponse implements CreatorResponse {
 
   // Dependencies uuids to serviceAffinity map
   Map<String, String> serviceAffinityMap;
+  @Default WarningResponse warningResponse = WarningResponse.newBuilder().build();
 
   public Dependencies getDependencies() {
     return dependencies;
@@ -128,6 +130,10 @@ public class FilterCreationResponse implements CreatorResponse {
 
     if (isNotEmpty(stageNames)) {
       finalBlobResponseBuilder.addAllStageNames(stageNames);
+    }
+
+    if (warningResponse != null && isNotEmpty(warningResponse.getWarningsList())) {
+      finalBlobResponseBuilder.setWarningResponse(warningResponse);
     }
 
     finalBlobResponseBuilder.setStageCount(stageCount);
