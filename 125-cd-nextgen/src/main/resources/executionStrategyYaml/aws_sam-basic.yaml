@@ -35,8 +35,8 @@ spec:
                   connectorRef: account.harnessImage
                   image: harnessdev/sam-build:1.82.0-latest
                   imagePullPolicy: Always
-                  samBuildDockerRegistryConnectorRef: account.harnessImage
-                  settings: {}
+                  buildCommandOptions:
+                    - "--use-container"
                 when:
                   stageStatus: Success
                 failureStrategies: []
@@ -49,17 +49,18 @@ spec:
                   image: harnessdev/sam-deploy:1.82.0-latest
                   stackName: "stack-name"
                   imagePullPolicy: Always
-                  settings: {}
                 when:
                   stageStatus: Success
                 failureStrategies: []
           name: SAM Step Group
           identifier: sam_step_group
+          sharedPaths:
+            - /var/run
+            - /var/lib/docker
           stepGroupInfra:
             type: KubernetesDirect
             spec:
               connectorRef: ""
-              namespace: ""
-              harnessImageConnectorRef: ""
-              resources: {}
+              namespace: "default"
+              harnessImageConnectorRef: "account.harnessImage"
     rollbackSteps: []

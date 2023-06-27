@@ -10,6 +10,7 @@ package io.harness.cdng.artifact.utils;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PRAGYESH;
+import static io.harness.rule.OwnerRule.SARTHAK_KASAT;
 import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.vivekveman;
 
@@ -103,6 +104,18 @@ public class ArtifactUtilsTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = SARTHAK_KASAT)
+  @Category(UnitTests.class)
+  public void testGetArtifactKey_IsPrimaryArtifact() {
+    DockerHubArtifactConfig config = DockerHubArtifactConfig.builder().primaryArtifact(true).build();
+    boolean primaryArtifact = config.isPrimaryArtifact();
+    assertThat(primaryArtifact).isTrue();
+    String artifactKey = ArtifactUtils.getArtifactKey(config);
+    assertThat(config.getIdentifier()).isNotEqualTo("primary");
+    assertThat(artifactKey).isEqualTo("primary");
+  }
+
+  @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testDockerHub_IsPrimaryArtifact() {
@@ -186,7 +199,7 @@ public class ArtifactUtilsTest extends CategoryTest {
     DockerHubArtifactConfig artifactConfig =
         DockerHubArtifactConfig.builder().primaryArtifact(true).identifier("ARTIFACT1").build();
     String artifactKey = ArtifactUtils.getArtifactKey(artifactConfig);
-    assertThat(artifactKey).isEqualTo("ARTIFACT1");
+    assertThat(artifactKey).isEqualTo("primary");
     artifactConfig = DockerHubArtifactConfig.builder().primaryArtifact(false).identifier("ARTIFACT1").build();
     artifactKey = ArtifactUtils.getArtifactKey(artifactConfig);
     assertThat(artifactKey).isEqualTo("sidecars.ARTIFACT1");
@@ -199,7 +212,7 @@ public class ArtifactUtilsTest extends CategoryTest {
     JenkinsArtifactConfig artifactConfig =
         JenkinsArtifactConfig.builder().primaryArtifact(true).identifier("ARTIFACT1").build();
     String artifactKey = ArtifactUtils.getArtifactKey(artifactConfig);
-    assertThat(artifactKey).isEqualTo("ARTIFACT1");
+    assertThat(artifactKey).isEqualTo("primary");
     artifactConfig = JenkinsArtifactConfig.builder().primaryArtifact(false).identifier("ARTIFACT1").build();
     artifactKey = ArtifactUtils.getArtifactKey(artifactConfig);
     assertThat(artifactKey).isEqualTo("sidecars.ARTIFACT1");
@@ -212,7 +225,7 @@ public class ArtifactUtilsTest extends CategoryTest {
     NexusRegistryArtifactConfig artifactConfig =
         NexusRegistryArtifactConfig.builder().primaryArtifact(true).identifier("ARTIFACT1").build();
     String artifactKey = ArtifactUtils.getArtifactKey(artifactConfig);
-    assertThat(artifactKey).isEqualTo("ARTIFACT1");
+    assertThat(artifactKey).isEqualTo("primary");
     artifactConfig = NexusRegistryArtifactConfig.builder().primaryArtifact(false).identifier("ARTIFACT1").build();
     artifactKey = ArtifactUtils.getArtifactKey(artifactConfig);
     assertThat(artifactKey).isEqualTo("sidecars.ARTIFACT1");
@@ -225,7 +238,7 @@ public class ArtifactUtilsTest extends CategoryTest {
     ArtifactoryRegistryArtifactConfig artifactConfig =
         ArtifactoryRegistryArtifactConfig.builder().primaryArtifact(true).identifier("ARTIFACT1").build();
     String artifactKey = ArtifactUtils.getArtifactKey(artifactConfig);
-    assertThat(artifactKey).isEqualTo("ARTIFACT1");
+    assertThat(artifactKey).isEqualTo("primary");
     artifactConfig = ArtifactoryRegistryArtifactConfig.builder().primaryArtifact(false).identifier("ARTIFACT1").build();
     artifactKey = ArtifactUtils.getArtifactKey(artifactConfig);
     assertThat(artifactKey).isEqualTo("sidecars.ARTIFACT1");

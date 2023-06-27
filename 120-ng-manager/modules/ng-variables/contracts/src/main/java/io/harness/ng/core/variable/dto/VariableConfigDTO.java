@@ -9,7 +9,6 @@ package io.harness.ng.core.variable.dto;
 
 import io.harness.ng.core.variable.VariableValueType;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -30,11 +29,7 @@ public abstract class VariableConfigDTO {
   public static final String FIXED_SET_VALUE_FORMAT = "<+input>.allowedValues(%s)";
   public static final String REGEX_VALUE_FORMAT = "<+input>.regex(%s)";
   @Schema(description = VariableConstants.VARIABLE_VALUE_TYPE) @NotNull VariableValueType valueType;
-
-  public String getValue() {
-    return String.valueOf(getRawValue());
-  }
-  @JsonIgnore public abstract Object getRawValue();
+  public abstract Object getValue();
   public void validate() {
     // no op implementation
   }

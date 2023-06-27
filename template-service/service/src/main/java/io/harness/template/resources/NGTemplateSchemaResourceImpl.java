@@ -39,4 +39,17 @@ public class NGTemplateSchemaResourceImpl implements NGTemplateSchemaResource {
         accountIdentifier, projectIdentifier, orgIdentifier, scope, templateChildType, templateEntityType);
     return ResponseDTO.newResponse(schema);
   }
+
+  @Override
+  public ResponseDTO<JsonNode> getStaticYamlSchema(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String templateChildType, TemplateEntityType templateEntityType, Scope scope,
+      String version) {
+    JsonNode staticJson = ngTemplateSchemaService.getStaticYamlSchema(
+        accountIdentifier, projectIdentifier, orgIdentifier, templateChildType, templateEntityType, scope, version);
+
+    // return static json if not empty or return the Pojo Schema
+    return staticJson != null ? ResponseDTO.newResponse(staticJson)
+                              : getTemplateSchema(templateEntityType, projectIdentifier, orgIdentifier, scope,
+                                  templateChildType, accountIdentifier);
+  }
 }

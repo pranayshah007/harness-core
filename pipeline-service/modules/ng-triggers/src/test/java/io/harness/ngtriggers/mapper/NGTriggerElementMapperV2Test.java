@@ -6,7 +6,14 @@
  */
 
 package io.harness.ngtriggers.mapper;
-
+import static io.harness.constants.Constants.AMZ_SUBSCRIPTION_CONFIRMATION_TYPE;
+import static io.harness.constants.Constants.X_AMZ_SNS_MESSAGE_TYPE;
+import static io.harness.constants.Constants.X_BIT_BUCKET_EVENT;
+import static io.harness.constants.Constants.X_GIT_HUB_EVENT;
+import static io.harness.constants.Constants.X_GIT_LAB_EVENT;
+import static io.harness.constants.Constants.X_HARNESS_TRIGGER;
+import static io.harness.constants.Constants.X_HARNESS_TRIGGER_ID;
+import static io.harness.constants.Constants.X_VSS_HEADER;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.SCHEDULED;
@@ -24,6 +31,7 @@ import static io.harness.ngtriggers.conditionchecker.ConditionOperator.STARTS_WI
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.MATT;
+import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
@@ -41,31 +49,51 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.beans.HeaderConfig;
+import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
+import io.harness.connector.ConnectorDTO;
+import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.ConnectorResourceClient;
+import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
+import io.harness.exception.ArtifactoryRegistryException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.TriggerException;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.NGTriggerCatalogDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerDetailsResponseDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerResponseDTO;
+import io.harness.ngtriggers.beans.dto.PollingConfig;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.TriggerEventHistory;
+import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent;
+import io.harness.ngtriggers.beans.entity.metadata.BuildMetadata;
+import io.harness.ngtriggers.beans.entity.metadata.GitMetadata;
+import io.harness.ngtriggers.beans.entity.metadata.NGTriggerMetadata;
+import io.harness.ngtriggers.beans.entity.metadata.WebhookMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogItem;
 import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogType;
 import io.harness.ngtriggers.beans.source.ManifestType;
 import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
 import io.harness.ngtriggers.beans.source.NGTriggerSpecV2;
+import io.harness.ngtriggers.beans.source.NGTriggerType;
 import io.harness.ngtriggers.beans.source.WebhookTriggerType;
 import io.harness.ngtriggers.beans.source.artifact.AcrSpec;
 import io.harness.ngtriggers.beans.source.artifact.ArtifactTriggerConfig;
 import io.harness.ngtriggers.beans.source.artifact.ArtifactType;
 import io.harness.ngtriggers.beans.source.artifact.ArtifactTypeSpec;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactTypeSpecWrapper;
 import io.harness.ngtriggers.beans.source.artifact.ArtifactoryRegistrySpec;
 import io.harness.ngtriggers.beans.source.artifact.BuildAware;
 import io.harness.ngtriggers.beans.source.artifact.BuildStoreTypeSpec;
@@ -75,6 +103,7 @@ import io.harness.ngtriggers.beans.source.artifact.GcrSpec;
 import io.harness.ngtriggers.beans.source.artifact.HelmManifestSpec;
 import io.harness.ngtriggers.beans.source.artifact.ManifestTriggerConfig;
 import io.harness.ngtriggers.beans.source.artifact.ManifestTypeSpec;
+import io.harness.ngtriggers.beans.source.artifact.MultiRegionArtifactTriggerConfig;
 import io.harness.ngtriggers.beans.source.artifact.store.BuildStore;
 import io.harness.ngtriggers.beans.source.artifact.store.GcsBuildStoreTypeSpec;
 import io.harness.ngtriggers.beans.source.artifact.store.HttpBuildStoreTypeSpec;
@@ -85,6 +114,7 @@ import io.harness.ngtriggers.beans.source.scheduled.ScheduledTriggerSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.TriggerEventDataCondition;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
 import io.harness.ngtriggers.beans.source.webhook.v2.awscodecommit.AwsCodeCommitSpec;
+import io.harness.ngtriggers.beans.source.webhook.v2.awscodecommit.event.AwsCodeCommitPushSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.awscodecommit.event.AwsCodeCommitTriggerEvent;
 import io.harness.ngtriggers.beans.source.webhook.v2.azurerepo.AzureRepoSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.azurerepo.action.AzureRepoIssueCommentAction;
@@ -103,9 +133,14 @@ import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.GitlabSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.action.GitlabMRCommentAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.action.GitlabPRAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.event.GitlabTriggerEvent;
+import io.harness.ngtriggers.beans.target.TargetType;
 import io.harness.ngtriggers.exceptions.InvalidTriggerYamlException;
+import io.harness.ngtriggers.utils.WebhookEventPayloadParser;
+import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.spring.TriggerEventHistoryRepository;
 import io.harness.rule.Owner;
+import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.webhook.WebhookConfigProvider;
 
@@ -119,15 +154,19 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import retrofit2.Call;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class NGTriggerElementMapperV2Test extends CategoryTest {
@@ -180,7 +219,9 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
   private static final String CONN = "conn";
   @Mock private TriggerEventHistoryRepository triggerEventHistoryRepository;
   @Mock private WebhookConfigProvider webhookConfigProvider;
+  @Mock WebhookEventPayloadParser webhookEventPayloadParser;
   @Mock PmsFeatureFlagService pmsFeatureFlagService;
+  @Mock ConnectorResourceClient connectorResourceClient;
   @InjectMocks @Inject private NGTriggerElementMapper ngTriggerElementMapper;
 
   @Before
@@ -324,6 +365,380 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
     assertThat(githubSpec.fetchGitAware().fetchAutoAbortPreviousExecutions()).isTrue();
     assertThat(githubSpec.fetchGitAware().fetchEvent()).isEqualTo(GithubTriggerEvent.PUSH);
     assertThat(githubSpec.fetchGitAware().fetchActions()).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testGenerateNgTriggerConfigV2Yaml() throws IOException {
+    ClassLoader classLoader = getClass().getClassLoader();
+
+    NGTriggerEntity ngTriggerEntity = NGTriggerEntity.builder().ymlVersion(1L).yaml("yaml").build();
+    assertThatThrownBy(() -> ngTriggerElementMapper.generateNgTriggerConfigV2Yaml(ngTriggerEntity, true))
+        .isInstanceOf(TriggerException.class)
+        .hasMessageContaining("Failed while converting trigger yaml from version V0 to V2");
+
+    String fileName = "ng-trigger1-v0.yaml";
+
+    String ngCustomTriggerYaml1 =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource(fileName)), StandardCharsets.UTF_8);
+    String fileName2 = "ng-trigger-2-v2.yaml";
+
+    String ngCustomTriggerYaml2 =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource(fileName2)), StandardCharsets.UTF_8);
+    ngTriggerEntity.setYaml(ngCustomTriggerYaml1);
+    assertThat(ngTriggerElementMapper.generateNgTriggerConfigV2Yaml(ngTriggerEntity, true))
+        .isEqualTo(ngCustomTriggerYaml2);
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testToNGTriggerWebhookEventForCustom() {
+    List<HeaderConfig> headerConfigs = new ArrayList<>();
+    HeaderConfig headerConfig =
+        HeaderConfig.builder().key(X_HARNESS_TRIGGER_ID).values(Collections.singletonList("custom")).build();
+    headerConfigs.add(headerConfig);
+    TriggerWebhookEvent triggerWebhookEvent = ngTriggerElementMapper
+                                                  .toNGTriggerWebhookEventForCustom("account", "org", "project",
+                                                      "pipeline", "identifier", "payload", headerConfigs)
+                                                  .build();
+    assertThat(triggerWebhookEvent.getSourceRepoType()).isEqualTo("CUSTOM");
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testToNGTriggerWebhookEvent() {
+    List<HeaderConfig> headerConfigs = new ArrayList<>();
+    HeaderConfig headerConfig =
+        HeaderConfig.builder().key("X-GitHub-Event").values(Collections.singletonList("github")).build();
+    headerConfigs.add(headerConfig);
+    when(webhookEventPayloadParser.containsHeaderKey(any(), eq(X_GIT_HUB_EVENT))).thenReturn(true);
+    TriggerWebhookEvent actualTriggerWebhookEvent =
+        ngTriggerElementMapper.toNGTriggerWebhookEvent("account", "org", "project", "payload", headerConfigs).build();
+    assertThat(actualTriggerWebhookEvent.getSourceRepoType()).isEqualTo(String.valueOf(WebhookTriggerType.GITHUB));
+
+    when(webhookEventPayloadParser.containsHeaderKey(any(), eq(X_GIT_HUB_EVENT))).thenReturn(false);
+    when(webhookEventPayloadParser.containsHeaderKey(any(), eq(X_GIT_LAB_EVENT))).thenReturn(true);
+    headerConfigs.remove(0);
+    headerConfig = HeaderConfig.builder().key("X-Gitlab-Event").values(Collections.singletonList("gitlab")).build();
+    headerConfigs.add(headerConfig);
+    actualTriggerWebhookEvent =
+        ngTriggerElementMapper.toNGTriggerWebhookEvent("account", "org", "project", "payload", headerConfigs).build();
+    assertThat(actualTriggerWebhookEvent.getSourceRepoType()).isEqualTo(String.valueOf(WebhookTriggerType.GITLAB));
+
+    when(webhookEventPayloadParser.containsHeaderKey(any(), eq(X_BIT_BUCKET_EVENT))).thenReturn(true);
+    when(webhookEventPayloadParser.containsHeaderKey(any(), eq(X_GIT_LAB_EVENT))).thenReturn(false);
+    headerConfigs.remove(0);
+    headerConfig =
+        HeaderConfig.builder().key("X-Bit-Bucket-Event").values(Collections.singletonList("bitbucket")).build();
+    headerConfigs.add(headerConfig);
+    actualTriggerWebhookEvent =
+        ngTriggerElementMapper.toNGTriggerWebhookEvent("account", "org", "project", "payload", headerConfigs).build();
+    assertThat(actualTriggerWebhookEvent.getSourceRepoType()).isEqualTo(String.valueOf(WebhookTriggerType.BITBUCKET));
+
+    when(webhookEventPayloadParser.containsHeaderKey(any(), eq(X_AMZ_SNS_MESSAGE_TYPE))).thenReturn(true);
+    when(webhookEventPayloadParser.containsHeaderKey(any(), eq(X_BIT_BUCKET_EVENT))).thenReturn(false);
+    headerConfigs.remove(0);
+    headerConfig =
+        HeaderConfig.builder().key("X-Amz-Sns-Message-Type").values(Collections.singletonList("amazon")).build();
+    headerConfigs.add(headerConfig);
+    headerConfigs.add(HeaderConfig.builder()
+                          .key(AMZ_SUBSCRIPTION_CONFIRMATION_TYPE)
+                          .values(Collections.singletonList("amazon"))
+                          .build());
+    when(webhookEventPayloadParser.getHeaderValue(any(), eq(X_AMZ_SNS_MESSAGE_TYPE)))
+        .thenReturn(Collections.singletonList(AMZ_SUBSCRIPTION_CONFIRMATION_TYPE));
+    actualTriggerWebhookEvent =
+        ngTriggerElementMapper.toNGTriggerWebhookEvent("account", "org", "project", "payload", headerConfigs).build();
+    assertThat(actualTriggerWebhookEvent.getSourceRepoType())
+        .isEqualTo(String.valueOf(WebhookTriggerType.AWS_CODECOMMIT));
+    assertThat(actualTriggerWebhookEvent.isSubscriptionConfirmation()).isEqualTo(true);
+
+    when(webhookEventPayloadParser.containsHeaderKey(any(), eq(X_VSS_HEADER))).thenReturn(true);
+    when(webhookEventPayloadParser.containsHeaderKey(any(), eq(X_AMZ_SNS_MESSAGE_TYPE))).thenReturn(false);
+    headerConfigs.remove(0);
+    headerConfigs.remove(0);
+    headerConfig = HeaderConfig.builder().key(X_VSS_HEADER).values(Collections.singletonList("azure")).build();
+    headerConfigs.add(headerConfig);
+    actualTriggerWebhookEvent =
+        ngTriggerElementMapper.toNGTriggerWebhookEvent("account", "org", "project", "payload", headerConfigs).build();
+    assertThat(actualTriggerWebhookEvent.getSourceRepoType()).isEqualTo("AZURE_REPO");
+
+    when(webhookEventPayloadParser.containsHeaderKey(any(), eq(X_VSS_HEADER))).thenReturn(false);
+    when(webhookEventPayloadParser.containsHeaderKey(any(), eq(X_HARNESS_TRIGGER))).thenReturn(true);
+    headerConfigs.remove(0);
+    headerConfig = HeaderConfig.builder().key(X_HARNESS_TRIGGER).values(Collections.singletonList("harness")).build();
+    headerConfigs.add(headerConfig);
+    actualTriggerWebhookEvent =
+        ngTriggerElementMapper.toNGTriggerWebhookEvent("account", "org", "project", "payload", headerConfigs).build();
+    assertThat(actualTriggerWebhookEvent.getSourceRepoType()).isEqualTo("HARNESS");
+
+    when(webhookEventPayloadParser.containsHeaderKey(any(), eq(X_HARNESS_TRIGGER))).thenReturn(false);
+    headerConfigs.remove(0);
+    headerConfig = HeaderConfig.builder().key(X_HARNESS_TRIGGER_ID).values(Collections.singletonList("custom")).build();
+    headerConfigs.add(headerConfig);
+    actualTriggerWebhookEvent =
+        ngTriggerElementMapper.toNGTriggerWebhookEvent("account", "org", "project", "payload", headerConfigs).build();
+    assertThat(actualTriggerWebhookEvent.getSourceRepoType()).isEqualTo("CUSTOM");
+    assertThat(actualTriggerWebhookEvent.getTriggerIdentifier()).isEqualTo("custom");
+
+    assertThatThrownBy(
+        () -> ngTriggerElementMapper.toNGTriggerWebhookEvent("account", "org", "", "payload", headerConfigs))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "AccountIdentifier, OrgIdentifier, ProjectIdentifier can not be null for custom webhook executions");
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testValidateAndGetYamlNode() throws IOException {
+    assertThatThrownBy(() -> ngTriggerElementMapper.validateAndGetYamlNode(""))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Service YAML is empty.");
+    Mockito.mockStatic(YamlUtils.class);
+    when(YamlUtils.readTree(any())).thenThrow(new IOException("message"));
+    assertThat(ngTriggerElementMapper.validateAndGetYamlNode("yaml")).isNull();
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testToTriggerDetails() throws IOException {
+    ClassLoader classLoader = getClass().getClassLoader();
+    String fileName2 = "ng-trigger-2-v2.yaml";
+    String ngCustomTriggerYaml2 =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource(fileName2)), StandardCharsets.UTF_8);
+
+    NGTriggerEntity ngTriggerEntity =
+        NGTriggerEntity.builder()
+            .accountId("account")
+            .orgIdentifier("org")
+            .projectIdentifier("project")
+            .targetIdentifier("pipeline")
+            .name("first trigger")
+            .identifier("first_trigger")
+            .targetType(TargetType.PIPELINE)
+            .withServiceV2(true)
+            .pollInterval("")
+            .metadata(
+                NGTriggerMetadata.builder()
+                    .webhook(WebhookMetadata.builder()
+                                 .type("AWS_CODECOMMIT")
+                                 .git(GitMetadata.builder().connectorIdentifier("conn").repoName("myrepo").build())
+                                 .build())
+                    .build())
+            .yaml(ngCustomTriggerYaml2)
+            .enabled(true)
+            .type(WEBHOOK)
+            .build();
+    NGTriggerConfigV2 ngTriggerConfigV2 =
+        NGTriggerConfigV2.builder()
+            .pipelineIdentifier("pipeline")
+            .inputYaml(inputYaml + "\n")
+            .identifier("first_trigger")
+            .name("first trigger")
+            .enabled(true)
+            .source(NGTriggerSourceV2.builder()
+                        .type(WEBHOOK)
+                        .spec(WebhookTriggerConfigV2.builder()
+                                  .type(WebhookTriggerType.AWS_CODECOMMIT)
+                                  .spec(AwsCodeCommitSpec.builder()
+                                            .type(AwsCodeCommitTriggerEvent.PUSH)
+                                            .spec(AwsCodeCommitPushSpec.builder()
+                                                      .payloadConditions(new ArrayList<>())
+                                                      .repoName("myrepo")
+                                                      .connectorRef("conn")
+                                                      .build())
+                                            .build())
+                                  .build())
+                        .build())
+            .build();
+    TriggerDetails triggerDetails =
+        TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).ngTriggerConfigV2(ngTriggerConfigV2).build();
+    assertThat(ngTriggerElementMapper.toTriggerDetails("account", "org", "project", ngCustomTriggerYaml2, true))
+        .isEqualTo(triggerDetails);
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testGetTriggerEntityWithArtifactoryRepositoryUrl() throws IOException {
+    ClassLoader classLoader = getClass().getClassLoader();
+    String fileName2 = "ng-trigger-artifact-artifactory.yaml";
+    String ngArtifactTriggerYaml2 =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource(fileName2)), StandardCharsets.UTF_8);
+
+    NGTriggerEntity ngTriggerEntity = NGTriggerEntity.builder()
+                                          .accountId("account")
+                                          .orgIdentifier("org")
+                                          .projectIdentifier("project")
+                                          .targetIdentifier("pipeline")
+                                          .name("first trigger")
+                                          .identifier("first_trigger")
+                                          .targetType(TargetType.PIPELINE)
+                                          .withServiceV2(true)
+                                          .pollInterval("")
+                                          .yaml(ngArtifactTriggerYaml2)
+                                          .enabled(true)
+                                          .type(ARTIFACT)
+                                          .build();
+
+    assertThat(ngTriggerElementMapper.getTriggerEntityWithArtifactoryRepositoryUrl(ngTriggerEntity))
+        .isEqualTo(ngTriggerEntity);
+
+    assertThat(ngTriggerElementMapper.getTriggerEntityWithArtifactoryRepositoryUrl(null)).isNull();
+
+    mockStatic(IdentifierRefHelper.class);
+    when(IdentifierRefHelper.getIdentifierRef(any(), any(), any(), any()))
+        .thenReturn(IdentifierRef.builder()
+                        .identifier("identifier")
+                        .accountIdentifier("account")
+                        .projectIdentifier("project")
+                        .orgIdentifier("org")
+                        .build());
+    Optional<ConnectorDTO> connectorDTO = Optional.of(
+        ConnectorDTO.builder()
+            .connectorInfo(
+                ConnectorInfoDTO.builder()
+                    .connectorType(ConnectorType.ARTIFACTORY)
+                    .connectorConfig(ArtifactoryConnectorDTO.builder().artifactoryServerUrl("http://url.com").build())
+                    .build())
+            .build());
+    Call<ResponseDTO<Optional<ConnectorDTO>>> call = mock(Call.class);
+    when(connectorResourceClient.get(any(), any(), any(), any())).thenReturn(call);
+    Mockito.mockStatic(NGRestUtils.class);
+    when(NGRestUtils.getResponse(any())).thenReturn(connectorDTO);
+    fileName2 = "ng-trigger-artifact-artifactory-docker1.yaml";
+    ngArtifactTriggerYaml2 =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource(fileName2)), StandardCharsets.UTF_8);
+    String fileName3 = "ng-trigger-artifact-artifactory-docker2.yaml";
+    String ngArtifactTriggerYaml3 =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource(fileName3)), StandardCharsets.UTF_8);
+    ngTriggerEntity.setYaml(ngArtifactTriggerYaml2);
+    assertThat(ngTriggerElementMapper.getTriggerEntityWithArtifactoryRepositoryUrl(ngTriggerEntity).getYaml())
+        .isEqualTo(ngArtifactTriggerYaml3);
+
+    connectorDTO = Optional.of(ConnectorDTO.builder().connectorInfo(ConnectorInfoDTO.builder().build()).build());
+    when(NGRestUtils.getResponse(any())).thenReturn(connectorDTO);
+    ngTriggerEntity.setYaml(ngArtifactTriggerYaml2);
+    assertThatThrownBy(() -> ngTriggerElementMapper.getTriggerEntityWithArtifactoryRepositoryUrl(ngTriggerEntity))
+        .isInstanceOf(ArtifactoryRegistryException.class)
+        .hasMessage("Connector not found for identifier : [identifier] with scope: [null]");
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testToMetadataMultiRegionArtifact() {
+    ArtifactTypeSpecWrapper artifactTypeSpecWrapper = new ArtifactTypeSpecWrapper();
+    artifactTypeSpecWrapper.setSpec(DockerRegistrySpec.builder().build());
+    NGTriggerSourceV2 ngTriggerSourceV2 = NGTriggerSourceV2.builder()
+                                              .type(NGTriggerType.MULTI_REGION_ARTIFACT)
+                                              .spec(MultiRegionArtifactTriggerConfig.builder()
+                                                        .sources(Collections.singletonList(artifactTypeSpecWrapper))
+                                                        .build())
+                                              .build();
+    NGTriggerMetadata ngTriggerMetadata = ngTriggerElementMapper.toMetadata(ngTriggerSourceV2, "account");
+    assertThat(ngTriggerMetadata.getMultiBuildMetadata().get(0).getBuildSourceType())
+        .isEqualTo("io.harness.ngtriggers.beans.source.artifact.ArtifactTypeSpecWrapper");
+    assertThat(ngTriggerMetadata.getMultiBuildMetadata().get(0).getType()).isEqualTo(ARTIFACT);
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testCopyEntityFieldsOutsideOfYml() {
+    NGTriggerMetadata ngTriggerMetadata =
+        NGTriggerMetadata.builder()
+            .buildMetadata(
+                BuildMetadata.builder()
+                    .pollingConfig(PollingConfig.builder().pollingDocId("pollingDocId").signature("signature").build())
+                    .build())
+            .webhook(WebhookMetadata.builder().type(String.valueOf(WebhookTriggerType.GITHUB)).build())
+            .build();
+    NGTriggerEntity existingEntity =
+        NGTriggerEntity.builder().accountId("account").type(WEBHOOK).metadata(ngTriggerMetadata).build();
+    NGTriggerEntity newEntity =
+        NGTriggerEntity.builder()
+            .type(WEBHOOK)
+            .accountId("account")
+            .metadata(NGTriggerMetadata.builder()
+                          .buildMetadata(BuildMetadata.builder().pollingConfig(PollingConfig.builder().build()).build())
+                          .webhook(WebhookMetadata.builder().type(String.valueOf(WebhookTriggerType.GITHUB)).build())
+                          .build())
+            .pollInterval("1m")
+            .build();
+    when(pmsFeatureFlagService.isEnabled("account", FeatureName.CD_GIT_WEBHOOK_POLLING)).thenReturn(true);
+    ngTriggerElementMapper.copyEntityFieldsOutsideOfYml(existingEntity, newEntity);
+    assertThat(newEntity.getMetadata()).isEqualTo(ngTriggerMetadata);
+
+    newEntity.setPollInterval(null);
+    existingEntity.setPollInterval("1m");
+    NGTriggerEntity finalExistingEntity = existingEntity;
+    NGTriggerEntity finalNewEntity = newEntity;
+    assertThatThrownBy(() -> ngTriggerElementMapper.copyEntityFieldsOutsideOfYml(finalExistingEntity, finalNewEntity))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Polling is previously enabled with a value 1m. The value cannot be empty or null. "
+            + "Please enter 0 to unsubscribe or a value greater than 2m and less than 60m to subscribe");
+
+    existingEntity =
+        NGTriggerEntity.builder()
+            .accountId("account")
+            .type(WEBHOOK)
+            .metadata(NGTriggerMetadata.builder().webhook(WebhookMetadata.builder().type("GITLAB").build()).build())
+            .build();
+    newEntity =
+        NGTriggerEntity.builder()
+            .type(WEBHOOK)
+            .accountId("account")
+            .metadata(NGTriggerMetadata.builder()
+                          .buildMetadata(BuildMetadata.builder().pollingConfig(PollingConfig.builder().build()).build())
+                          .webhook(WebhookMetadata.builder().type(String.valueOf(WebhookTriggerType.GITLAB)).build())
+                          .build())
+            .pollInterval("1m")
+            .build();
+    ngTriggerElementMapper.copyEntityFieldsOutsideOfYml(existingEntity, newEntity);
+    assertThat(newEntity.getMetadata().getBuildMetadata().getPollingConfig().getPollingDocId()).isNull();
+    assertThat(newEntity.getMetadata().getBuildMetadata().getPollingConfig().getSignature()).isNull();
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testToTriggerConfigV2() throws IOException {
+    ClassLoader classLoader = getClass().getClassLoader();
+    String fileName2 = "ng-trigger-2-v2.yaml";
+    String ngCustomTriggerYaml2 =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource(fileName2)), StandardCharsets.UTF_8);
+
+    NGTriggerConfigV2 ngTriggerConfigV2 =
+        NGTriggerConfigV2.builder()
+            .pipelineIdentifier("pipeline")
+            .inputYaml(inputYaml + "\n")
+            .identifier("first_trigger")
+            .name("first trigger")
+            .enabled(true)
+            .source(NGTriggerSourceV2.builder()
+                        .type(WEBHOOK)
+                        .spec(WebhookTriggerConfigV2.builder()
+                                  .type(WebhookTriggerType.AWS_CODECOMMIT)
+                                  .spec(AwsCodeCommitSpec.builder()
+                                            .type(AwsCodeCommitTriggerEvent.PUSH)
+                                            .spec(AwsCodeCommitPushSpec.builder()
+                                                      .payloadConditions(new ArrayList<>())
+                                                      .repoName("myrepo")
+                                                      .connectorRef("conn")
+                                                      .build())
+                                            .build())
+                                  .build())
+                        .build())
+            .build();
+
+    assertThatThrownBy(() -> ngTriggerElementMapper.toTriggerConfigV2("yaml"))
+        .isInstanceOf(InvalidRequestException.class);
   }
 
   @Test

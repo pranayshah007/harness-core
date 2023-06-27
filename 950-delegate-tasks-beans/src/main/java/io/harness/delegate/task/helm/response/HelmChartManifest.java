@@ -9,6 +9,7 @@ package io.harness.delegate.task.helm.response;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.helm.HelmChartYaml;
 
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -28,4 +29,18 @@ public class HelmChartManifest {
   @Nullable private String appVersion;
   @Nullable private Map<String, String> annotations;
   private Map<String, String> metadata;
+
+  public static HelmChartManifest create(HelmChartYaml helmChartYaml, Map<String, String> metadata) {
+    return HelmChartManifest.builder()
+        .apiVersion(helmChartYaml.getApiVersion())
+        .name(helmChartYaml.getName())
+        .version(helmChartYaml.getVersion())
+        .annotations(helmChartYaml.getAnnotations())
+        .description(helmChartYaml.getDescription())
+        .kubeVersion(helmChartYaml.getKubeVersion())
+        .appVersion(helmChartYaml.getAppVersion())
+        .type(helmChartYaml.getType())
+        .metadata(metadata)
+        .build();
+  }
 }

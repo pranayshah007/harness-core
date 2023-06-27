@@ -32,4 +32,160 @@ spec:
         {{- end }}
       secretName: {{ .Values.global.ingress.tls.secretName }}
   {{- end }}
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: audit-service
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    {{- if .Values.global.ingress.objects.annotations }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.global.ingress.objects.annotations "context" $ ) | nindent 4 }}
+    {{- end }}
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: {{ .Values.global.ingress.className | quote }}
+  rules:
+    {{- range .Values.global.ingress.hosts }}
+    - host: {{ . | quote }}
+      http:
+        paths:
+          - backend:
+              service:
+                name: platform-service
+                port:
+                  number: 9005
+            path: /audit(/|$)(.*)
+            pathType: ImplementationSpecific
+    {{- end }}
+  {{- if .Values.global.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        {{- range .Values.global.ingress.hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .Values.global.ingress.tls.secretName }}
+  {{- end }}
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: resource-group
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    {{- if .Values.global.ingress.objects.annotations }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.global.ingress.objects.annotations "context" $ ) | nindent 4 }}
+    {{- end }}
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: {{ .Values.global.ingress.className | quote }}
+  rules:
+    {{- range .Values.global.ingress.hosts }}
+    - host: {{ . | quote }}
+      http:
+        paths:
+          - backend:
+              service:
+                name: platform-service
+                port:
+                  number: 9005
+            path: /resourcegroup(/|$)(.*)
+            pathType: ImplementationSpecific
+    {{- end }}
+  {{- if .Values.global.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        {{- range .Values.global.ingress.hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .Values.global.ingress.tls.secretName }}
+  {{- end }}
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: platform-service-v1-apis
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    {{- if .Values.global.ingress.objects.annotations }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.global.ingress.objects.annotations "context" $ ) | nindent 4 }}
+    {{- end }}
+    nginx.ingress.kubernetes.io/rewrite-target: /api/$1
+spec:
+  ingressClassName: {{ .Values.global.ingress.className | quote }}
+  rules:
+    {{- range .Values.global.ingress.hosts }}
+    - host: {{ . | quote }}
+      http:
+        paths:
+          - backend:
+              service:
+                name: platform-service
+                port:
+                  number: 9005
+            path: /(v1/resource-groups)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: platform-service
+                port:
+                  number: 9005
+            path: /(v1/resource-groups/.+)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: platform-service
+                port:
+                  number: 9005
+            path: /(v1/orgs/.+/resource-groups)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: platform-service
+                port:
+                  number: 9005
+            path: /(v1/orgs/.+/resource-groups/.+)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: platform-service
+                port:
+                  number: 9005
+            path: /(v1/orgs/.+/projects/.+/resource-groups)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: platform-service
+                port:
+                  number: 9005
+            path: /(v1/orgs/.+/projects/.+/resource-groups/.+)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: platform-service
+                port:
+                  number: 9005
+            path: /(v1/streaming-destinations)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: platform-service
+                port:
+                  number: 9005
+            path: /(v1/streaming-destinations/.+)
+            pathType: ImplementationSpecific
+    {{- end }}
+  {{- if .Values.global.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        {{- range .Values.global.ingress.hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .Values.global.ingress.tls.secretName }}
+  {{- end }}
+
+---
 {{- end }}

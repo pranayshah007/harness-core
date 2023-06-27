@@ -12,10 +12,16 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.security.encryption.EncryptedRecordData;
 
+import software.wings.DelegateFileEncryptedRecordDataPackage;
 import software.wings.beans.DecryptedRecord;
+import software.wings.beans.DelegateFileMetadata;
+
+import java.io.IOException;
 
 @OwnedBy(CDP)
 public interface DelegateManagerEncryptionDecryptionHarnessSMServiceNG {
   EncryptedRecordData encryptDataNG(String accountId, byte[] content);
   DecryptedRecord decryptDataNG(String accountId, EncryptedRecordData record);
+  DelegateFileEncryptedRecordDataPackage encryptDataNGWithFileUpload(
+      String accountId, byte[] content, DelegateFileMetadata delegateFile) throws IOException;
 }

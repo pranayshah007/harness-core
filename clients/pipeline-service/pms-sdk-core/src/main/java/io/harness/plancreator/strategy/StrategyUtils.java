@@ -284,11 +284,11 @@ public class StrategyUtils {
     evaluator.resolve(jsonString, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
   }
 
-  public String replaceExpressions(
-      String jsonString, Map<String, String> combinations, int currentIteration, int totalIteration, String itemValue) {
+  public JsonNode replaceExpressions(
+      JsonNode jsonNode, Map<String, String> combinations, int currentIteration, int totalIteration, String itemValue) {
     EngineExpressionEvaluator evaluator =
         new StrategyExpressionEvaluator(combinations, currentIteration, totalIteration, itemValue);
-    return (String) evaluator.resolve(jsonString, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+    return (JsonNode) evaluator.resolve(jsonNode, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
   }
 
   /**

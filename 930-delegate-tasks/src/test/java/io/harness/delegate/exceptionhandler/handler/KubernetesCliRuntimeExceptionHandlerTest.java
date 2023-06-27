@@ -15,6 +15,7 @@ import static io.harness.configuration.KubernetesCliCommandType.GENERATE_HASH;
 import static io.harness.configuration.KubernetesCliCommandType.SCALE;
 import static io.harness.configuration.KubernetesCliCommandType.STEADY_STATE_CHECK;
 import static io.harness.rule.OwnerRule.ABHINAV2;
+import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.TARUN_UBA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,6 +25,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.k8s.exception.KubernetesCliRuntimeExceptionHandler;
 import io.harness.exception.ExplanationException;
+import io.harness.exception.FailureType;
 import io.harness.exception.HintException;
 import io.harness.exception.KubernetesCliTaskRuntimeException;
 import io.harness.exception.KubernetesTaskException;
@@ -158,6 +160,23 @@ public class KubernetesCliRuntimeExceptionHandlerTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void handleKubectlTimeoutInDryRunException() {
+    KubernetesCliTaskRuntimeException exception = new KubernetesCliTaskRuntimeException(
+        createProcessResponse(CliErrorMessages.KUBECTL_COMMAND_TIMEOUT_MESSAGE), DRY_RUN);
+    exception.setKubectlVersion("");
+    exception.setResourcesNotApplied("");
+    WingsException handledException = exceptionHandler.handleException(exception);
+    assertThat(handledException).isInstanceOf(HintException.class);
+    assertThat(handledException.getMessage()).isEqualTo(KubernetesExceptionHints.DRY_RUN_MANIFEST_FAILED);
+    assertThat(handledException.getCause()).isInstanceOf(ExplanationException.class);
+    assertThat(handledException.getFailureTypes().contains(FailureType.CONNECTIVITY));
+    assertThat(handledException.getCause().getCause().getMessage()).contains("i/o timeout");
+    assertThat(handledException.getCause().getCause()).isInstanceOf(KubernetesTaskException.class);
+  }
+
+  @Test
   @Owner(developers = ABHINAV2)
   @Category(UnitTests.class)
   public void handleDryRunException() {
@@ -202,6 +221,23 @@ public class KubernetesCliRuntimeExceptionHandlerTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void handleKubectlTimeoutInSteadyStateException() {
+    KubernetesCliTaskRuntimeException exception = new KubernetesCliTaskRuntimeException(
+        createProcessResponse(CliErrorMessages.KUBECTL_COMMAND_TIMEOUT_MESSAGE), STEADY_STATE_CHECK);
+    exception.setKubectlVersion("");
+    exception.setResourcesNotApplied("");
+    WingsException handledException = exceptionHandler.handleException(exception);
+    assertThat(handledException).isInstanceOf(HintException.class);
+    assertThat(handledException.getMessage()).isEqualTo(KubernetesExceptionHints.WAIT_FOR_STEADY_STATE_FAILED);
+    assertThat(handledException.getCause()).isInstanceOf(ExplanationException.class);
+    assertThat(handledException.getFailureTypes().contains(FailureType.CONNECTIVITY));
+    assertThat(handledException.getCause().getCause().getMessage()).contains("i/o timeout");
+    assertThat(handledException.getCause().getCause()).isInstanceOf(KubernetesTaskException.class);
+  }
+
+  @Test
   @Owner(developers = ABHINAV2)
   @Category(UnitTests.class)
   public void handleSteadyStateException() {
@@ -227,6 +263,23 @@ public class KubernetesCliRuntimeExceptionHandlerTest extends CategoryTest {
     assertThat(handledException.getCause().getMessage()).contains("Failed to scale resource [abc]");
     assertThat(handledException.getCause().getCause()).isInstanceOf(ExplanationException.class);
     assertThat(handledException.getCause().getCause().getCause()).isInstanceOf(KubernetesTaskException.class);
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void handleKubectlTimeoutInScaleException() {
+    KubernetesCliTaskRuntimeException exception = new KubernetesCliTaskRuntimeException(
+        createProcessResponse(CliErrorMessages.KUBECTL_COMMAND_TIMEOUT_MESSAGE), SCALE);
+    exception.setKubectlVersion("");
+    exception.setResourcesNotApplied("");
+    WingsException handledException = exceptionHandler.handleException(exception);
+    assertThat(handledException).isInstanceOf(HintException.class);
+    assertThat(handledException.getMessage()).isEqualTo(KubernetesExceptionHints.SCALE_CLI_FAILED_GENERIC);
+    assertThat(handledException.getCause()).isInstanceOf(ExplanationException.class);
+    assertThat(handledException.getFailureTypes().contains(FailureType.CONNECTIVITY));
+    assertThat(handledException.getCause().getCause().getMessage()).contains("i/o timeout");
+    assertThat(handledException.getCause().getCause()).isInstanceOf(KubernetesTaskException.class);
   }
 
   @Test
@@ -289,6 +342,23 @@ public class KubernetesCliRuntimeExceptionHandlerTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void handleKubectlTimeoutInApplyException() {
+    KubernetesCliTaskRuntimeException exception = new KubernetesCliTaskRuntimeException(
+        createProcessResponse(CliErrorMessages.KUBECTL_COMMAND_TIMEOUT_MESSAGE), APPLY);
+    exception.setKubectlVersion("");
+    exception.setResourcesNotApplied("");
+    WingsException handledException = exceptionHandler.handleException(exception);
+    assertThat(handledException).isInstanceOf(HintException.class);
+    assertThat(handledException.getMessage()).isEqualTo(KubernetesExceptionHints.APPLY_MANIFEST_FAILED);
+    assertThat(handledException.getCause()).isInstanceOf(ExplanationException.class);
+    assertThat(handledException.getFailureTypes().contains(FailureType.CONNECTIVITY));
+    assertThat(handledException.getCause().getCause().getMessage()).contains("i/o timeout");
+    assertThat(handledException.getCause().getCause()).isInstanceOf(KubernetesTaskException.class);
+  }
+
+  @Test
   @Owner(developers = ABHINAV2)
   @Category(UnitTests.class)
   public void handleGenericException() {
@@ -346,6 +416,23 @@ public class KubernetesCliRuntimeExceptionHandlerTest extends CategoryTest {
     assertThat(handledException.getCause().getCause().getMessage()).contains(CliErrorMessages.DUMMY_MESSAGE);
   }
 
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void handleKubectlTimeoutInHashGenerationException() {
+    KubernetesCliTaskRuntimeException exception = new KubernetesCliTaskRuntimeException(
+        createProcessResponse(CliErrorMessages.KUBECTL_COMMAND_TIMEOUT_MESSAGE), GENERATE_HASH);
+    exception.setKubectlVersion("");
+    exception.setResourcesNotApplied("");
+    WingsException handledException = exceptionHandler.handleException(exception);
+    assertThat(handledException).isInstanceOf(HintException.class);
+    assertThat(handledException.getMessage()).isEqualTo(KubernetesExceptionHints.HASH_CALCULATION_FAILED_ERROR);
+    assertThat(handledException.getCause()).isInstanceOf(ExplanationException.class);
+    assertThat(handledException.getFailureTypes().contains(FailureType.CONNECTIVITY));
+    assertThat(handledException.getCause().getCause().getMessage()).contains("i/o timeout");
+    assertThat(handledException.getCause().getCause()).isInstanceOf(KubernetesTaskException.class);
+  }
+
   private ProcessResponse createProcessResponse(String cliErrorMessage) {
     return ProcessResponse.builder()
         .processResult(new ProcessResult(1, new ProcessOutput("process failed.".getBytes(StandardCharsets.UTF_8))))
@@ -389,5 +476,7 @@ public class KubernetesCliRuntimeExceptionHandlerTest extends CategoryTest {
         "The Deployment \"nginx-ingress-controller\" is invalid: spec.template.spec.containers[0].livenessProbe.httpGet.scheme: Unsupported value: \"http\": supported values: \"HTTP\", \"HTTPS\"";
     static final String FORBIDDEN_MESSAGE =
         "Error from server (Forbidden): error when retrieving current configuration of:Resource: \"/v1, Resource=services\", GroupVersionKind: \"/v1, Kind=Service\"Name: \"latest\", Namespace: \"dev\"Object: &{map[\"metadata\":map[\"labels\":map[\"app\":\"latest\"] \"name\":\"latest\" \"namespace\":\"dev\" \"annotations\":map[\"kubernetes.io/change-cause\":\"kubectl apply --kubeconfig=config --filename=manifests.yaml --record=true\" \"kubectl.kubernetes.io/last-applied-configuration\":\"\"]] \"spec\":map[\"ports\":[map[\"port\":'\\u1f90']] \"selector\":map[\"harness.io/name\":\"latest\"] \"type\":\"ClusterIP\"] \"apiVersion\":\"v1\" \"kind\":\"Service\"]}from server for: \"manifests.yaml\": services \"np-latest\" is forbidden: User \"system:serviceaccount:hrns\" cannot get resource \"services\" in API group \"\" in the namespace \"standard\"Error from server (Forbidden): error when retrieving current configuration of:Resource: \"apps/v1, Resource=statefulsets\", GroupVersionKind: \"apps/v1, Kind=StatefulSet\"Name: \"np-latest\", Namespace: \"standard\"Object: &{map[\"apiVersion\":\"apps/v1\" \"kind\":\"StatefulSet\" \"metadata\":map[\"labels\":map[\"harness.io/name\":\"np-latest\"] \"name\":\"np-latest\" \"namespace\":\"standard\" \"annotations\":map[\"kubernetes.io/change-cause\":\"kubectl apply --kubeconfig=config --filename=manifests.yaml --record=true\" \"kubectl.kubernetes.io/last-applied-configuration\":\"\"]] \"spec\":map[\"replicas\":'\\x01' \"selector\":map[\"matchLabels\":map[\"harness.io/name\":\"tkgi-tepmr22-k8s-np-latest\"]] \"serviceName\":\"\" \"template\":map[\"metadata\":map[\"labels\":map[\"harness.io/name\":\"np-latest\" \"harness.io/release-name\":\"81eeaa34dc\"]] \"spec\":map[\"containers\":[map[\"resources\":map[\"limits\":map[\"cpu\":\"500m\" \"memory\":\"2Gi\"] \"requests\":map[\"cpu\":\"500m\" \"memory\":\"2Gi\"]] \"volumeMounts\":[map[\"mountPath\":\"/var/certs\" \"name\":\"cert\" \"readOnly\":%!q(bool=false)]] \"image\":\"w/hrns:0.0.1\" \"lifecycle\":map[\"postStart\":map[\"exec\":map[\"command\":[\"/bin/bash\" \"-c\" \"cp /var/certs/cacerts jdk8u242-b08-jre/lib/security/cacerts\\n\"]]]] \"livenessProbe\":map[\"exec\":map[\"command\":[\"bash\" \"-c\" \"[[ -e /watcher-data && $(($(date +%s000) - $(grep heartbeat /opt/harness-delegate/msg/data/watcher-data | cut -d \\\":\\\" -f 2 | cut -d \\\",\\\" -f 1))) -lt 300000 ]]\"]] \"failureThreshold\":'\\x02' \"initialDelaySeconds\":'\\u00f0' \"periodSeconds\":'\\n' \"successThreshold\":'\\x01' \"timeoutSeconds\":'\\n'] \"ports\":[map[\"containerPort\":'\\u1f90']] \"imagePullPolicy\":\"Always\" \"name\":\"delegate\" \"readinessProbe\":map[\"exec\":map[\"command\":[\"test\" \"-s\" \"delegate.log\"]] \"initialDelaySeconds\":'\\x14' \"periodSeconds\":'\\n']]] \"imagePullSecrets\":[map[\"name\":\"hrns-cred\"]] \"serviceAccountName\":\"hrns-sa\" \"volumes\":[map[\"configMap\":map[\"name\":\"ca-bundle-1\"] \"name\":\"cert\"]]]] \"podManagementPolicy\":\"Parallel\"]]}from server for: \"manifests.yaml\": statefulsets.apps \"latest\" is forbidden: User \"system:serviceaccount:test\" cannot get resource \"statefulsets\" in API group \"apps\" in the namespace \"abc\"";
+    static final String KUBECTL_COMMAND_TIMEOUT_MESSAGE =
+        "Unable to connect to the server: dial tcp X.X.X.X:443: i/o timeout";
   }
 }

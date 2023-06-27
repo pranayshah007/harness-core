@@ -20,8 +20,10 @@ import io.harness.ng.DbAliases;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import dev.morphia.annotations.Entity;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.Persistent;
@@ -48,6 +50,9 @@ public class AzureKeyVaultConnector extends Connector {
   Boolean useManagedIdentity;
   AzureManagedIdentityType azureManagedIdentityType;
   String managedClientId;
-
+  @Getter(AccessLevel.NONE) Boolean vaultConfiguredManually;
   @Builder.Default AzureEnvironmentType azureEnvironmentType = AZURE;
+  public boolean isVaultConfiguredManually() {
+    return Boolean.TRUE.equals(vaultConfiguredManually);
+  }
 }

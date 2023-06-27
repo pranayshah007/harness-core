@@ -12,7 +12,7 @@ import (
 	"github.com/harness/harness-core/commons/go/lib/filesystem"
 	gojunit "github.com/harness/harness-core/product/ci/addon/gojunit"
 	"github.com/harness/harness-core/product/ci/addon/testreports"
-	"github.com/harness/harness-core/product/ci/ti-service/types"
+	"github.com/harness/ti-client/types"
 	"github.com/mattn/go-zglob"
 	"go.uber.org/zap"
 )

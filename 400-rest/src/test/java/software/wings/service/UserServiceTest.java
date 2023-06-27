@@ -222,6 +222,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.validator.routines.UrlValidator;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -1612,6 +1613,8 @@ public class UserServiceTest extends WingsBaseTest {
     assertThatThrownBy(() -> userService.validateName(null)).isInstanceOf(InvalidRequestException.class);
     assertThatThrownBy(() -> userService.validateName("<a href='http://authorization.site'>Click ME</a>"))
         .isInstanceOf(InvalidRequestException.class);
+    final String nameWithBraces = "firstName lastName (firstName.lastName)";
+    assertDoesNotThrow(() -> userService.validateName(nameWithBraces));
   }
   @Test
   @Owner(developers = RUSHABH)
@@ -2031,6 +2034,15 @@ public class UserServiceTest extends WingsBaseTest {
 
     String returnToUrlResult = redirectUrl.split("&")[2];
     assertThat(returnToUrlResult).isEqualTo("redirect=" + returnToUrl);
+  }
+
+  private void assertDoesNotThrow(Runnable runnable) {
+    try {
+      runnable.run();
+    } catch (Exception ex) {
+      log.error("ERROR: ", ex);
+      Assert.fail();
+    }
   }
 
   private List<Account> getAccounts() {

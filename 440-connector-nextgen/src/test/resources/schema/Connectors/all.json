@@ -1328,6 +1328,9 @@
             "useManagedIdentity": {
               "type": "boolean"
             },
+            "vaultConfiguredManually": {
+              "type": "boolean"
+            },
             "vaultName": {
               "type": "string"
             }

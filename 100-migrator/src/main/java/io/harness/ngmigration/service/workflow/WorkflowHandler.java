@@ -114,6 +114,20 @@ public abstract class WorkflowHandler {
 
   @Inject private StepMapperFactory stepMapperFactory;
 
+  public Set<String> getBarriers(Workflow workflow) {
+    List<GraphNode> steps = MigratorUtility.getSteps(workflow);
+    if (EmptyPredicate.isEmpty(steps)) {
+      return Collections.emptySet();
+    }
+
+    return steps.stream()
+        .filter(step -> "BARRIER".equals(step.getType()))
+        .filter(step -> EmptyPredicate.isNotEmpty(step.getProperties()))
+        .filter(step -> EmptyPredicate.isNotEmpty((String) step.getProperties().get("identifier")))
+        .map(step -> (String) step.getProperties().get("identifier"))
+        .collect(Collectors.toSet());
+  }
+
   public List<CgEntityId> getReferencedEntities(StepMapperFactory stepMapperFactory, Workflow workflow) {
     List<GraphNode> steps = MigratorUtility.getSteps(workflow);
     Map<String, String> stepIdToServiceIdMap = getStepIdToServiceIdMap(workflow);

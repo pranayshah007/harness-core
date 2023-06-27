@@ -61,6 +61,8 @@ iacmmanager-mongo:
 
 enableAuth: false
 
+distributedLockImplementation: MONGO
+
 logServiceConfig:
   baseUrl: https://qa.harness.io/log-service/
   globalToken: "c76e567a-b341-404d-a8dd-d9738714eb82"

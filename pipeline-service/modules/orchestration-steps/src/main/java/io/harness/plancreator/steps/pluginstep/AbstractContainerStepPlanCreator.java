@@ -90,10 +90,8 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
     }
     PlanNode initPlanNode = InitContainerStepPlanCreater.createPlanForField(
         initStepNodeId, stepParameters, advisorParametersInitStep, StepSpecTypeConstants.INIT_CONTAINER_STEP);
-    boolean isStepInsideRollback = false;
-    if (YamlUtils.findParentNode(ctx.getCurrentField().getNode(), ROLLBACK_STEPS) != null) {
-      isStepInsideRollback = true;
-    }
+    final boolean isStepInsideRollback =
+        YamlUtils.findParentNode(ctx.getCurrentField().getNode(), ROLLBACK_STEPS) != null;
     PlanNode stepPlanNode = createPlanForStep(stepNodeId, stepParameters,
         PmsStepPlanCreatorUtils.getAdviserObtainmentForFailureStrategy(
             kryoSerializer, ctx.getCurrentField(), isStepInsideRollback, false));
@@ -124,6 +122,9 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
             .childNodeID(childrenNodeIds.get(0))
             .build();
 
+    final boolean isStepInsideRollback =
+        YamlUtils.findParentNode(ctx.getCurrentField().getNode(), ROLLBACK_STEPS) != null;
+
     return PlanNode.builder()
         .name(config.getName())
         .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, config.getUuid()))
@@ -138,7 +139,8 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
                 .build())
         .adviserObtainments(getAdviserObtainmentFromMetaData(
             ctx.getCurrentField(), StrategyUtils.isWrappedUnderStrategy(ctx.getCurrentField())))
-        .whenCondition(RunInfoUtils.getRunConditionForStep(config.getWhen()))
+        .whenCondition(isStepInsideRollback ? RunInfoUtils.getRunConditionForRollback(config.getWhen())
+                                            : RunInfoUtils.getRunConditionForStep(config.getWhen()))
         .timeoutObtainment(
             SdkTimeoutObtainment.builder()
                 .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)

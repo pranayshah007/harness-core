@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyString;
@@ -371,5 +372,45 @@ public class NGTemplateSchemaServiceImplTest extends TemplateServiceTestBase {
       assertThatThrownBy(() -> ngTemplateSchemaService.validateYamlSchemaInternal(templateEntity))
           .isInstanceOf(InvalidYamlException.class);
     }
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testValidateWithStaticSchema() throws Exception {
+    when(yamlSchemaValidator.validate(anyString(), anyString(), anyBoolean(), anyInt(), anyString()))
+        .thenReturn(Collections.emptySet());
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(ACCOUNT_ID)
+                                        .orgIdentifier(ORG_IDENTIFIER)
+                                        .projectIdentifier(PROJ_IDENTIFIER)
+                                        .identifier(TEMPLATE_IDENTIFIER)
+                                        .name(TEMPLATE_IDENTIFIER)
+                                        .versionLabel(TEMPLATE_VERSION_LABEL)
+                                        .yaml(yaml)
+                                        .templateEntityType(TemplateEntityType.STEPGROUP_TEMPLATE)
+                                        .childType(TEMPLATE_CHILD_TYPE)
+                                        .fullyQualifiedIdentifier("account_id/orgId/projId/template1/version1/")
+                                        .templateScope(Scope.PROJECT)
+                                        .build();
+
+    when(TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(eq(FeatureName.PIE_STATIC_YAML_SCHEMA), anyString(), any()))
+        .thenReturn(true);
+    Call<ResponseDTO<YamlSchemaResponse>> requestCall = mock(Call.class);
+    doReturn(requestCall).when(pipelineYamlSchemaServiceClient).getYamlSchema(any(), any(), any(), any(), any(), any());
+    try (MockedStatic<NGRestUtils> mockStatic = Mockito.mockStatic(NGRestUtils.class)) {
+      YamlSchemaResponse yamlSchemaResponse =
+          YamlSchemaResponse.builder().schema(null).schemaErrorResponse(null).build();
+      mockStatic.when(() -> NGRestUtils.getResponse(requestCall)).thenReturn(yamlSchemaResponse);
+      ngTemplateSchemaService.validateYamlSchemaInternal(templateEntity);
+    }
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testGetStaticSchema() throws Exception {
+    ngTemplateSchemaService.getStaticYamlSchema(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "shellscript", TemplateEntityType.STEP_TEMPLATE, Scope.ORG, "v0");
   }
 }

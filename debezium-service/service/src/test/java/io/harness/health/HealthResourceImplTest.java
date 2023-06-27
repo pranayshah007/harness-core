@@ -56,6 +56,6 @@ public class HealthResourceImplTest extends CategoryTest {
 
     HealthCheck.Result unhealthy = HealthCheck.Result.builder().unhealthy().withMessage("any").build();
     doReturn(unhealthy).when(healthService).check();
-    assertThatThrownBy(() -> healthResourceImpl.get()).isInstanceOf(HealthException.class).hasMessage("HEALTH_ERROR");
+    assertThatThrownBy(() -> healthResourceImpl.get()).isInstanceOf(HealthException.class).hasMessage("any");
   }
 }

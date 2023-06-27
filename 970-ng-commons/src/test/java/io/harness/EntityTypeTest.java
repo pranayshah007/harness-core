@@ -250,6 +250,7 @@ public class EntityTypeTest extends CategoryTest {
     entityTypeOrdinalMapping.put(216, "SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2");
     entityTypeOrdinalMapping.put(217, "SERVERLESS_AWS_LAMBDA_ROLLBACK_V2");
     entityTypeOrdinalMapping.put(218, "COVERITY");
+    entityTypeOrdinalMapping.put(219, "SERVERLESS_AWS_LAMBDA_DEPLOY_V2");
 
     entityTypeConstantMapping =
         entityTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

@@ -259,7 +259,9 @@ public class VerificationServiceApplication extends Application<VerificationServ
       @Provides
       @Singleton
       DistributedLockImplementation distributedLockImplementation() {
-        return MONGO;
+        return configuration.getDistributedLockImplementation() == null
+            ? MONGO
+            : configuration.getDistributedLockImplementation();
       }
     });
     modules.add(MetricsInstrumentationModule.builder()

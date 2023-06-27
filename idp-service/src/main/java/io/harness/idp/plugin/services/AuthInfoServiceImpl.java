@@ -80,8 +80,7 @@ public class AuthInfoServiceImpl implements AuthInfoService {
     appConfig.setConfigs(authConfig);
     appConfig.setEnabled(true);
 
-    configManagerService.saveOrUpdateConfigForAccount(appConfig, accountIdentifier, ConfigType.AUTH);
-    configManagerService.mergeAndSaveAppConfig(accountIdentifier);
+    configManagerService.saveUpdateAndMergeConfigForAccount(appConfig, accountIdentifier, ConfigType.AUTH);
 
     log.info("Merging for auth config completed for authId - {}", authId);
   }

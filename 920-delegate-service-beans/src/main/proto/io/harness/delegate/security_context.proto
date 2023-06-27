@@ -1,0 +1,28 @@
+// Copyright 2022 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+syntax = "proto3";
+
+package io.harness.delegate;
+
+option java_multiple_files = true;
+option go_package = "920_delegate_service_beans";
+
+/*
+  Defines security context for running a task. Note these values would always be there (unless entire context is
+  omitted) with their defaults. E.g.
+    privileged = false; runAsUser = 0 (root); runAsNonRoot = false;
+ */
+message SecurityContext {
+  bool allowPrivilegeEscalation = 1;
+  bool privileged = 2;
+  string procMount = 3;
+  bool readOnlyRootFilesystem = 4;
+  bool runAsNonRoot = 5;
+  int64 runAsGroup = 6;
+  int64 runAsUser = 7;
+  repeated string add_capability = 8;
+  repeated string drop_capability = 9;
+}

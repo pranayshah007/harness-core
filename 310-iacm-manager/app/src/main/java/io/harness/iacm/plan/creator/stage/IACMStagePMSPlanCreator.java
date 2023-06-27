@@ -176,6 +176,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
       }
       switch (wrapperConfig.getStep().get("type").asText()) {
         case IACMStepSpecTypeConstants.IACM_TERRAFORM_PLUGIN:
+        case IACMStepSpecTypeConstants.IACM_APPROVAL:
           ((ObjectNode) wrapperConfig.getStep().get("spec")).put("workspace", workspace);
           break;
         default:
