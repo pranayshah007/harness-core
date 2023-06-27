@@ -137,6 +137,7 @@ public class FilterCreatorMergeService {
           .filters(filters)
           .stageCount(response.getStageCount())
           .stageNames(new ArrayList<>(response.getStageNamesList()))
+          .warningResponse(response.getWarningResponse())
           .build();
     }
   }
@@ -212,6 +213,7 @@ public class FilterCreatorMergeService {
       FilterCreationBlobResponseUtils.updateStageCount(finalResponseBuilder, currIterResponse);
       FilterCreationBlobResponseUtils.mergeReferredEntities(finalResponseBuilder, currIterResponse);
       FilterCreationBlobResponseUtils.mergeStageNames(finalResponseBuilder, currIterResponse);
+      FilterCreationBlobResponseUtils.mergeWarnings(finalResponseBuilder, currIterResponse.getWarningResponse());
     }
 
     return finalResponseBuilder.build();

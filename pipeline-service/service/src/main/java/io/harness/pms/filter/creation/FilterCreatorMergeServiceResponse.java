@@ -8,6 +8,7 @@
 package io.harness.pms.filter.creation;
 
 import io.harness.pms.contracts.plan.GraphLayoutNode;
+import io.harness.pms.contracts.plan.WarningResponse;
 
 import java.util.List;
 import java.util.Map;
@@ -21,4 +22,5 @@ public class FilterCreatorMergeServiceResponse {
   Map<String, GraphLayoutNode> layoutNodeMap;
   int stageCount;
   List<String> stageNames;
+  WarningResponse warningResponse;
 }

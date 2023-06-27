@@ -14,6 +14,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.FilterCreationBlobResponse;
+import io.harness.pms.contracts.plan.WarningResponse;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -41,6 +42,17 @@ public class FilterCreationBlobResponseUtils {
     mergeReferredEntities(builder, response.getResponse());
     mergeStageNames(builder, response.getResponse());
     addYamlUpdates(builder, response.getResponse());
+    mergeWarnings(builder, response.getResponse().getWarningResponse());
+  }
+
+  public static void mergeWarnings(
+      FilterCreationBlobResponse.Builder finalResponseBuilder, WarningResponse warningResponse) {
+    if (warningResponse != null && isNotEmpty(warningResponse.getWarningsList())) {
+      finalResponseBuilder.setWarningResponse(finalResponseBuilder.getWarningResponse()
+                                                  .toBuilder()
+                                                  .addAllWarnings(warningResponse.getWarningsList())
+                                                  .build());
+    }
   }
 
   public void updateStageCount(
