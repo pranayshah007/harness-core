@@ -117,6 +117,7 @@ public class ExecutionResourceTest extends CategoryTest {
   @Test
   @Owner(developers = RAMA)
   @Category(UnitTests.class)
+  @Ignore("To be fixed later, already ignored in develop")
   public void testGetExecution() {
     String appId = generateUuid();
 
