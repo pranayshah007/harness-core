@@ -56,6 +56,7 @@ public class VariableCreationBlobResponseUtils {
         }
       });
     }
+    // todo:test
     List<String> errorMessages = new ArrayList<>();
     response.getErrorResponseList().forEach(error -> {
       int messagesCount = error.getMessagesCount();
