@@ -40,7 +40,7 @@ ENV HOME=/opt/harness
 ENV JAVA_HOME=/opt/java/openjdk/
 ENV PATH="$JAVA_HOME/bin:${PATH}"
 
-COPY ./TaskApp_deploy.jar ./task.jar
+COPY ../../dockerization/TaskApp_deploy.jar ./task.jar
 
 USER 1001
 
