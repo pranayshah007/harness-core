@@ -97,22 +97,20 @@ public class GitopsClustersStepTest extends CategoryTest {
   }
 
   private void mockClusterService() {
-    doReturn(
-        asList(io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c1").envRef("env1Id").build(),
-            io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c2").envRef("env1Id").build(),
-            io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("account.x1").envRef("env1Id").build(),
-            io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("organization.x2").envRef("env1Id").build()))
+    doReturn(asList(io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c1").envRef("env1Id").build(),
+                 io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c2").envRef("env1Id").build(),
+                 io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("account.x1").envRef("env1Id").build(),
+                 io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("org.x2").envRef("env1Id").build()))
         .when(clusterService)
         .listAcrossEnv(0, EXPECTED_PAGE_SIZE, "accountId", "orgId", "projId", ImmutableSet.of("env1Id"));
 
-    doReturn(
-        asList(io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c1").envRef("env1Id").build(),
-            io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c2").envRef("env1Id").build(),
-            io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c3").envRef("env2Id").build(),
-            io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c4").envRef("env2Id").build(),
-            io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c5").envRef("env2Id").build(),
-            io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("account.x1").envRef("env1Id").build(),
-            io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("organization.x2").envRef("env1Id").build()))
+    doReturn(asList(io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c1").envRef("env1Id").build(),
+                 io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c2").envRef("env1Id").build(),
+                 io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c3").envRef("env2Id").build(),
+                 io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c4").envRef("env2Id").build(),
+                 io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c5").envRef("env2Id").build(),
+                 io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("account.x1").envRef("env1Id").build(),
+                 io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("org.x2").envRef("env1Id").build()))
         .when(clusterService)
         .listAcrossEnv(
             0, EXPECTED_PAGE_SIZE, "accountId", "orgId", "projId", ImmutableSet.of("env1Id", "env2Id", "env3"));
@@ -277,8 +275,8 @@ public class GitopsClustersStepTest extends CategoryTest {
         new GitopsClustersOutcome(new ArrayList<>())
             .appendCluster(new Metadata("env1Id", null), new Metadata("account.x1", "x1-name"),
                 EnvironmentType.Production.toString())
-            .appendCluster(new Metadata("env1Id", null), new Metadata("organization.x2", "x2-name"),
-                EnvironmentType.Production.toString())
+            .appendCluster(
+                new Metadata("env1Id", null), new Metadata("org.x2", "x2-name"), EnvironmentType.Production.toString())
             .appendCluster(
                 new Metadata("env1Id", null), new Metadata("c1", "c1-name"), EnvironmentType.Production.toString())
             .appendCluster(

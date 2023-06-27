@@ -161,7 +161,11 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
             requestServiceOverride.getProjectIdentifier(), requestServiceOverride.getOrgIdentifier(),
             requestServiceOverride.getEnvironmentRef(), requestServiceOverride.getServiceRef()));
       }
+
+      // need to set identifier in v1 to make it compatible for audit trail support for override v2
+      requestServiceOverride.setIdentifier(tempResult.getIdentifier());
       if (serviceOverrideOptional.isPresent()) {
+        serviceOverrideOptional.get().setIdentifier(tempResult.getIdentifier());
         try {
           outboxService.save(EnvironmentUpdatedEvent.builder()
                                  .accountIdentifier(requestServiceOverride.getAccountId())

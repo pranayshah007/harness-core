@@ -92,6 +92,9 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
     if (isBuiltInSMDisabled) {
       criteria.and(GcpKmsConnectorKeys.harnessManaged).ne(true);
     }
+    if (filterPropertiesDTO != null && !isEmpty(filterPropertiesDTO.getConnectorIds())) {
+      criteria.and("_id").in(filterPropertiesDTO.getConnectorIds());
+    }
     criteria.orOperator(where(ConnectorKeys.deleted).exists(false), where(ConnectorKeys.deleted).is(false));
 
     if (isEmpty(filterIdentifier) && filterProperties == null) {
@@ -301,7 +304,7 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
 
   public Criteria createCriteriaFromConnectorFilter(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String searchTerm, ConnectorType connectorType, ConnectorCategory category,
-      ConnectorCategory sourceCategory, boolean isBuiltInSMDisabled, String version) {
+      ConnectorCategory sourceCategory, boolean isBuiltInSMDisabled, String version, List<String> connectorIds) {
     Criteria criteria = new Criteria();
     criteria.and(ConnectorKeys.accountIdentifier).is(accountIdentifier);
     criteria.orOperator(where(ConnectorKeys.deleted).exists(false), where(ConnectorKeys.deleted).is(false));
@@ -310,7 +313,6 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
     if (connectorType != null) {
       criteria.and(ConnectorKeys.type).is(connectorType.name());
     }
-
     if (category != null) {
       criteria.and(ConnectorKeys.categories).in(category);
     }
@@ -319,6 +321,9 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
     }
     if (isBuiltInSMDisabled) {
       criteria.and(GcpKmsConnectorKeys.harnessManaged).ne(true);
+    }
+    if (!isEmpty(connectorIds)) {
+      criteria.and("_id").in(connectorIds);
     }
     if (isNotBlank(searchTerm)) {
       Criteria seachCriteria = new Criteria().orOperator(where(ConnectorKeys.name).regex(searchTerm, "i"),

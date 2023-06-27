@@ -127,7 +127,8 @@ public class YamlNodeTest extends CategoryTest {
                             .addLevels(Level.newBuilder().setOriginalIdentifier("qaStage").buildPartial())
                             .build();
 
-    String yaml = YamlUtils.writeYamlString(YamlNode.getNodeYaml(pipelineYaml, ambiance));
+    String yaml = YamlUtils.writeYamlString(
+        YamlNode.getNodeYaml(YamlUtils.readYamlTree(pipelineYaml).getNode(), ambiance.getLevelsList()));
     String stageYaml = readFile("stageyaml.yml");
     assertThat(yaml).isEqualTo(stageYaml);
 
@@ -141,7 +142,8 @@ public class YamlNodeTest extends CategoryTest {
                    .addLevels(Level.newBuilder().setOriginalIdentifier("httpStep1").buildPartial())
                    .build();
 
-    yaml = YamlUtils.writeYamlString(YamlNode.getNodeYaml(pipelineYaml, ambiance));
+    yaml = YamlUtils.writeYamlString(
+        YamlNode.getNodeYaml(YamlUtils.readYamlTree(pipelineYaml).getNode(), ambiance.getLevelsList()));
     assertThat(yaml).isEqualTo("step:\n"
         + "  name: http step 1\n"
         + "  identifier: httpStep1\n"
@@ -160,7 +162,8 @@ public class YamlNodeTest extends CategoryTest {
                    .addLevels(Level.newBuilder().setOriginalIdentifier("steps").buildPartial())
                    .addLevels(Level.newBuilder().setOriginalIdentifier("httpStep8").buildPartial())
                    .build();
-    yaml = YamlUtils.writeYamlString(YamlNode.getNodeYaml(pipelineYaml, ambiance));
+    yaml = YamlUtils.writeYamlString(
+        YamlNode.getNodeYaml(YamlUtils.readYamlTree(pipelineYaml).getNode(), ambiance.getLevelsList()));
     assertThat(yaml).isEqualTo("step:\n"
         + "  name: http step 8\n"
         + "  identifier: httpStep8\n"
@@ -193,11 +196,11 @@ public class YamlNodeTest extends CategoryTest {
                                   .setOriginalIdentifier("spec")
                                   .buildPartial())
                    .addLevels(Level.newBuilder()
-                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.FORK).build())
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
                                   .setOriginalIdentifier("execution")
                                   .buildPartial())
                    .addLevels(Level.newBuilder()
-                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.FORK).build())
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
                                   .setOriginalIdentifier("steps")
                                   .buildPartial())
                    .addLevels(Level.newBuilder()
@@ -205,7 +208,8 @@ public class YamlNodeTest extends CategoryTest {
                                   .setOriginalIdentifier("httpStep8")
                                   .buildPartial())
                    .build();
-    yaml = YamlUtils.writeYamlString(YamlNode.getNodeYaml(pipelineYaml, ambiance));
+    yaml = YamlUtils.writeYamlString(
+        YamlNode.getNodeYaml(YamlUtils.readYamlTree(pipelineYaml).getNode(), ambiance.getLevelsList()));
     assertThat(yaml).isEqualTo("step:\n"
         + "  name: http step 8\n"
         + "  identifier: httpStep8\n"
@@ -214,6 +218,31 @@ public class YamlNodeTest extends CategoryTest {
         + "    socketTimeoutMillis: 1000\n"
         + "    method: GET\n"
         + "    url: https://google.com\n");
+    // Adding parallel level. It should still only return the stage yaml of qaStage2
+    ambiance = Ambiance.newBuilder()
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.PIPELINE).build())
+                                  .setOriginalIdentifier("pipeline")
+                                  .buildPartial())
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGES).build())
+                                  .setOriginalIdentifier("stages")
+                                  .buildPartial())
+                   .addLevels(Level.newBuilder()
+                                  .setOriginalIdentifier("parallel234er")
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.FORK).build())
+                                  .buildPartial())
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).build())
+                                  .setOriginalIdentifier("qaStage2")
+                                  .buildPartial())
+                   .build();
+    // pipeline yaml ("pipeline-extensive.yml") has the stage qaStage2 inside parallel node, we need to return only the
+    // yaml of qaStage2 here and not the other stages in parallel with it.
+    yaml = YamlUtils.writeYamlString(
+        YamlNode.getNodeYaml(YamlUtils.readYamlTree(pipelineYaml).getNode(), ambiance.getLevelsList()));
+    stageYaml = readFile("stageYaml2.yaml");
+    assertThat(yaml).isEqualTo(stageYaml);
   }
 
   @Test

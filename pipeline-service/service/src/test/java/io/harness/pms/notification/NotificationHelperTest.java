@@ -321,6 +321,8 @@ public class NotificationHelperTest extends CategoryTest {
     when(planExecutionMetadataService.findByPlanExecutionId(anyString()))
         .thenReturn(Optional.of(PlanExecutionMetadata.builder().yaml(webhookNotificationYaml).build()));
     when(htmlInputSanitizer.sanitizeInput(any())).thenReturn("dummy");
+    when(pipelineExpressionHelper.generateUrl(any())).thenReturn(executionUrl);
+    when(pipelineExpressionHelper.generatePipelineUrl(any())).thenReturn("pipelineUrl");
     when(pmsExecutionService.getPipelineExecutionSummaryEntity(any(), any(), any(), any()))
         .thenReturn(PipelineExecutionSummaryEntity.builder()
                         .executionTriggerInfo(ExecutionTriggerInfo.newBuilder()
@@ -340,6 +342,9 @@ public class NotificationHelperTest extends CategoryTest {
     WebhookChannel webhookChannel = (WebhookChannel) notificationChannelArgumentCaptor.getValue();
     assertThat(webhookChannel.getWebhookUrls().size()).isEqualTo(1);
     assertThat(webhookChannel.getWebhookUrls().get(0)).isEqualTo("https://www.google.com");
+    assertThat(webhookChannel.getTemplateData().get("WEBHOOK_EVENT_DATA"))
+        .isEqualTo(
+            "{\"accountIdentifier\":\"dummyAccount\",\"orgIdentifier\":\"dummyOrg\",\"projectIdentifier\":\"dummyProject\",\"pipelineIdentifier\":\"dummyPipeline\",\"planExecutionId\":\"dummyPlanExecutionId\",\"executionUrl\":\"http:127.0.0.1:8080/account/dummyAccount/cd/orgs/dummyOrg/projects/dummyProject/pipelines/dummyPipeline/executions/dummyPlanExecutionId/pipeline\",\"pipelineUrl\":\"pipelineUrl\",\"eventType\":\"PipelineSuccess\",\"nodeStatus\":\"completed\",\"triggeredBy\":{\"triggerType\":\"MANUAL\",\"name\":\"user\",\"email\":\"user@harness.io\"},\"startTime\":\"Thu Jan 01 00:00:00 UTC 1970\",\"startTs\":0,\"endTime\":\"Thu Jan 01 00:00:00 UTC 1970\",\"endTs\":0}");
   }
 
   @Test

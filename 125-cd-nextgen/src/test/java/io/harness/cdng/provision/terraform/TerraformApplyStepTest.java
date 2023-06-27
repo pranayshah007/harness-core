@@ -7,6 +7,8 @@
 
 package io.harness.cdng.provision.terraform;
 
+import static io.harness.beans.FeatureName.CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT;
+import static io.harness.cdng.provision.terraform.TerraformStepHelper.TF_ENCRYPTED_JSON_OUTPUT_NAME;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.NGONZALEZ;
 import static io.harness.rule.OwnerRule.VLICA;
@@ -17,6 +19,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
 
 import io.harness.CategoryTest;
@@ -862,5 +865,225 @@ public class TerraformApplyStepTest extends CategoryTest {
     } catch (InvalidRequestException invalidRequestException) {
       assertThat(invalidRequestException.getMessage()).isEqualTo(message);
     }
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testHandleTaskResultWithSecurityContext_InlineWithOutputs() throws Exception {
+    Ambiance ambiance = getAmbiance();
+
+    TerraformStepDataGenerator.GitStoreConfig gitStoreConfigFiles =
+        TerraformStepDataGenerator.GitStoreConfig.builder()
+            .branch("master")
+            .fetchType(FetchType.BRANCH)
+            .folderPath(ParameterField.createValueField("Config/"))
+            .connectoref(ParameterField.createValueField("terraform"))
+            .build();
+    TerraformStepDataGenerator.GitStoreConfig gitStoreVarFiles =
+        TerraformStepDataGenerator.GitStoreConfig.builder()
+            .branch("master")
+            .fetchType(FetchType.BRANCH)
+            .folderPath(ParameterField.createValueField("VarFiles/"))
+            .connectoref(ParameterField.createValueField("terraform"))
+            .build();
+
+    TerraformApplyStepParameters applyStepParameters =
+        TerraformStepDataGenerator.generateApplyStepPlan(StoreConfigType.GITHUB, gitStoreConfigFiles, gitStoreVarFiles);
+
+    StepElementParameters stepElementParameters = StepElementParameters.builder().spec(applyStepParameters).build();
+    doReturn("test-account/test-org/test-project/Id").when(terraformStepHelper).generateFullIdentifier(any(), any());
+
+    String tfJsonOutput =
+        "{   \"test-output-name1\": {     \"sensitive\": false,     \"type\": \"string\",     \"value\": "
+        + "\"test-output-value1\"   },   \"test-output-name2\": {     \"sensitive\": false,     \"type\": \"string\",    "
+        + " \"value\": \"test-output-value2\"   } }";
+
+    when(terraformStepHelper.parseTerraformOutputs(eq(tfJsonOutput))).thenReturn(new HashMap<>() {
+      {
+        put("test-output-name1", "test-output-value1");
+        put("test-output-name2", "test-output-value2");
+      }
+    });
+    List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
+    UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
+    TerraformTaskNGResponse terraformTaskNGResponse = TerraformTaskNGResponse.builder()
+                                                          .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                                          .unitProgressData(unitProgressData)
+                                                          .outputs(tfJsonOutput)
+                                                          .build();
+    StepResponse stepResponse = terraformApplyStep.handleTaskResultWithSecurityContext(
+        ambiance, stepElementParameters, () -> terraformTaskNGResponse);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(stepResponse.getStepOutcomes()).isNotNull();
+
+    StepResponse.StepOutcome stepOutcome = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(0);
+    assertThat(stepOutcome.getOutcome()).isInstanceOf(TerraformApplyOutcome.class);
+    assertThat(stepOutcome.getName()).isEqualTo("output");
+    TerraformApplyOutcome terraformApplyOutcome = (TerraformApplyOutcome) stepOutcome.getOutcome();
+    assertThat(terraformApplyOutcome.size()).isEqualTo(2);
+    assertThat(terraformApplyOutcome.get("test-output-name1")).isEqualTo("test-output-value1");
+    assertThat(terraformApplyOutcome.get("test-output-name2")).isEqualTo("test-output-value2");
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testHandleTaskResultWithSecurityContext_InlineWithOutputsAsSecret() throws Exception {
+    Ambiance ambiance = getAmbiance();
+
+    TerraformStepDataGenerator.GitStoreConfig gitStoreConfigFiles =
+        TerraformStepDataGenerator.GitStoreConfig.builder()
+            .branch("master")
+            .fetchType(FetchType.BRANCH)
+            .folderPath(ParameterField.createValueField("Config/"))
+            .connectoref(ParameterField.createValueField("terraform"))
+            .build();
+    TerraformStepDataGenerator.GitStoreConfig gitStoreVarFiles =
+        TerraformStepDataGenerator.GitStoreConfig.builder()
+            .branch("master")
+            .fetchType(FetchType.BRANCH)
+            .folderPath(ParameterField.createValueField("VarFiles/"))
+            .connectoref(ParameterField.createValueField("terraform"))
+            .build();
+
+    TerraformApplyStepParameters applyStepParameters =
+        TerraformStepDataGenerator.generateApplyStepPlan(StoreConfigType.GITHUB, gitStoreConfigFiles, gitStoreVarFiles);
+    applyStepParameters.getConfiguration().setEncryptOutputSecretManager(
+        TerraformEncryptOutput.builder()
+            .outputSecretManagerRef(ParameterField.createValueField("test-secret-manager-ref"))
+            .build());
+
+    StepElementParameters stepElementParameters = StepElementParameters.builder().spec(applyStepParameters).build();
+    doReturn("test-account/test-org/test-project/Id").when(terraformStepHelper).generateFullIdentifier(any(), any());
+
+    String tfJsonOutput =
+        "{   \"test-output-name1\": {     \"sensitive\": false,     \"type\": \"string\",     \"value\": "
+        + "\"test-output-value1\"   },   \"test-output-name2\": {     \"sensitive\": false,     \"type\": \"string\",    "
+        + " \"value\": \"test-output-value2\"   } }";
+
+    when(terraformStepHelper.encryptTerraformJsonOutput(eq(tfJsonOutput), eq(ambiance), any(), any()))
+        .thenReturn(new HashMap<>() {
+          { put(TF_ENCRYPTED_JSON_OUTPUT_NAME, "<+secrets.getValue(\"account.test-json-1\")>"); }
+        });
+
+    when(cdFeatureFlagHelper.isEnabled(any(), eq(CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT))).thenReturn(true);
+    List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
+    UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
+    TerraformTaskNGResponse terraformTaskNGResponse = TerraformTaskNGResponse.builder()
+                                                          .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                                          .unitProgressData(unitProgressData)
+                                                          .outputs(tfJsonOutput)
+                                                          .build();
+    StepResponse stepResponse = terraformApplyStep.handleTaskResultWithSecurityContext(
+        ambiance, stepElementParameters, () -> terraformTaskNGResponse);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(stepResponse.getStepOutcomes()).isNotNull();
+
+    StepResponse.StepOutcome stepOutcome = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(0);
+    assertThat(stepOutcome.getOutcome()).isInstanceOf(TerraformApplyOutcome.class);
+    assertThat(stepOutcome.getName()).isEqualTo("output");
+    TerraformApplyOutcome terraformApplyOutcome = (TerraformApplyOutcome) stepOutcome.getOutcome();
+    assertThat(terraformApplyOutcome.size()).isEqualTo(1);
+    assertThat(terraformApplyOutcome.get(TF_ENCRYPTED_JSON_OUTPUT_NAME))
+        .isEqualTo("<+secrets.getValue(\"account.test-json-1\")>");
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testHandleTaskResultWithSecurityContext_InheritedWithOutput() throws Exception {
+    Ambiance ambiance = getAmbiance();
+    TerraformApplyStepParameters applyStepParameters =
+        TerraformApplyStepParameters.infoBuilder()
+            .provisionerIdentifier(ParameterField.createValueField("Id"))
+            .configuration(TerraformStepConfigurationParameters.builder()
+                               .type(TerraformStepConfigurationType.INHERIT_FROM_PLAN)
+                               .build())
+            .build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder().spec(applyStepParameters).build();
+    doReturn("test-account/test-org/test-project/Id").when(terraformStepHelper).generateFullIdentifier(any(), any());
+
+    String tfJsonOutput =
+        "{   \"test-output-name1\": {     \"sensitive\": false,     \"type\": \"string\",     \"value\": "
+        + "\"test-output-value1\"   },   \"test-output-name2\": {     \"sensitive\": false,     \"type\": \"string\",    "
+        + " \"value\": \"test-output-value2\"   } }";
+
+    when(terraformStepHelper.parseTerraformOutputs(eq(tfJsonOutput))).thenReturn(new HashMap<>() {
+      {
+        put("test-output-name1", "test-output-value1");
+        put("test-output-name2", "test-output-value2");
+      }
+    });
+
+    List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
+    UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
+    TerraformTaskNGResponse terraformTaskNGResponse = TerraformTaskNGResponse.builder()
+                                                          .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                                          .unitProgressData(unitProgressData)
+                                                          .outputs(tfJsonOutput)
+                                                          .build();
+    StepResponse stepResponse = terraformApplyStep.handleTaskResultWithSecurityContext(
+        ambiance, stepElementParameters, () -> terraformTaskNGResponse);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(stepResponse.getStepOutcomes()).isNotNull();
+    StepResponse.StepOutcome stepOutcome = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(0);
+    assertThat(stepOutcome.getOutcome()).isInstanceOf(TerraformApplyOutcome.class);
+    assertThat(stepOutcome.getName()).isEqualTo("output");
+    TerraformApplyOutcome terraformApplyOutcome = (TerraformApplyOutcome) stepOutcome.getOutcome();
+    assertThat(terraformApplyOutcome.size()).isEqualTo(2);
+    assertThat(terraformApplyOutcome.get("test-output-name1")).isEqualTo("test-output-value1");
+    assertThat(terraformApplyOutcome.get("test-output-name2")).isEqualTo("test-output-value2");
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testHandleTaskResultWithSecurityContext_InheritedWithOutputAsSecret() throws Exception {
+    Ambiance ambiance = getAmbiance();
+    TerraformApplyStepParameters applyStepParameters =
+        TerraformApplyStepParameters.infoBuilder()
+            .provisionerIdentifier(ParameterField.createValueField("Id"))
+            .configuration(TerraformStepConfigurationParameters.builder()
+                               .type(TerraformStepConfigurationType.INHERIT_FROM_PLAN)
+                               .encryptOutput(TerraformEncryptOutput.builder()
+                                                  .outputSecretManagerRef(
+                                                      ParameterField.createValueField("test-secret-manager-ref"))
+                                                  .build())
+                               .build())
+            .build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder().spec(applyStepParameters).build();
+    doReturn("test-account/test-org/test-project/Id").when(terraformStepHelper).generateFullIdentifier(any(), any());
+
+    String tfJsonOutput =
+        "{   \"test-output-name1\": {     \"sensitive\": false,     \"type\": \"string\",     \"value\": "
+        + "\"test-output-value1\"   },   \"test-output-name2\": {     \"sensitive\": false,     \"type\": \"string\",    "
+        + " \"value\": \"test-output-value2\"   } }";
+
+    when(terraformStepHelper.encryptTerraformJsonOutput(eq(tfJsonOutput), eq(ambiance), any(), any()))
+        .thenReturn(new HashMap<>() {
+          { put(TF_ENCRYPTED_JSON_OUTPUT_NAME, "<+secrets.getValue(\"account.test-json-1\")>"); }
+        });
+
+    when(cdFeatureFlagHelper.isEnabled(any(), eq(CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT))).thenReturn(true);
+    List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
+    UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
+    TerraformTaskNGResponse terraformTaskNGResponse = TerraformTaskNGResponse.builder()
+                                                          .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                                          .unitProgressData(unitProgressData)
+                                                          .outputs(tfJsonOutput)
+                                                          .build();
+    StepResponse stepResponse = terraformApplyStep.handleTaskResultWithSecurityContext(
+        ambiance, stepElementParameters, () -> terraformTaskNGResponse);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(stepResponse.getStepOutcomes()).isNotNull();
+
+    StepResponse.StepOutcome stepOutcome = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(0);
+    assertThat(stepOutcome.getOutcome()).isInstanceOf(TerraformApplyOutcome.class);
+    assertThat(stepOutcome.getName()).isEqualTo("output");
+    TerraformApplyOutcome terraformApplyOutcome = (TerraformApplyOutcome) stepOutcome.getOutcome();
+    assertThat(terraformApplyOutcome.size()).isEqualTo(1);
+    assertThat(terraformApplyOutcome.get(TF_ENCRYPTED_JSON_OUTPUT_NAME))
+        .isEqualTo("<+secrets.getValue(\"account.test-json-1\")>");
   }
 }

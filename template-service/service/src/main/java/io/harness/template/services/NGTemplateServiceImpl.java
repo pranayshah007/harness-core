@@ -175,6 +175,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
   private static final String REPO_LIST_SIZE_EXCEPTION = "The size of unique repository list is greater than [%d]";
 
+  public static final String CREATING_TEMPLATE = "creating new template";
   @Override
   public TemplateEntity create(
       TemplateEntity templateEntity, boolean setStableTemplate, String comments, boolean isNewTemplate) {
@@ -286,6 +287,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         templateReferenceHelper.publishTemplateReferences(
             SetupUsageParams.builder().templateEntity(templateEntity).build(), referredEntities);
       }
+
+      templateServiceHelper.sendTemplatesSaveTelemetryEvent(template, CREATING_TEMPLATE);
 
       return template;
 
@@ -1357,7 +1360,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     }
   }
 
-  private TemplateEntity saveTemplate(TemplateEntity templateEntity, String comments) throws InvalidRequestException {
+  TemplateEntity saveTemplate(TemplateEntity templateEntity, String comments) throws InvalidRequestException {
     if (templateServiceHelper.isOldGitSync(templateEntity)) {
       return templateRepository.saveForOldGitSync(templateEntity, comments);
     } else {

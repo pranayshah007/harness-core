@@ -1,5 +1,8 @@
 version: 1
 name: Java with Gradle Infra
+labels:
+  account: harness
+  org: cd
 inputs:
   image:
     type: string

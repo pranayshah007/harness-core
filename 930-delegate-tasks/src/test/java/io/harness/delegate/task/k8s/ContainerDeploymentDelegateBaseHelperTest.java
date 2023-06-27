@@ -61,7 +61,7 @@ import io.harness.delegate.beans.connector.rancher.RancherConnectorConfigDTO;
 import io.harness.delegate.beans.connector.rancher.RancherConnectorDTO;
 import io.harness.delegate.task.aws.eks.AwsEKSV2DelegateTaskHelper;
 import io.harness.delegate.task.gcp.helpers.GkeClusterHelper;
-import io.harness.delegate.task.k8s.rancher.RancherClusterActionHelper;
+import io.harness.delegate.task.k8s.rancher.RancherKubeConfigGenerator;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.KubernetesContainerService;
@@ -107,7 +107,7 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
   @Mock private AzureAsyncTaskHelper azureAsyncTaskHelper;
   @Mock LogCallback logCallback;
   @Mock private AwsEKSV2DelegateTaskHelper awsEKSDelegateTaskHelper;
-  @Mock private RancherClusterActionHelper rancherClusterActionHelper;
+  @Mock private RancherKubeConfigGenerator rancherKubeConfigGenerator;
 
   @Spy @InjectMocks ContainerDeploymentDelegateBaseHelper containerDeploymentDelegateBaseHelper;
   private static final String WORK_DIR = "./repository/k8s";
@@ -462,10 +462,27 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
   @Owner(developers = ABHINAV2)
   @Category(UnitTests.class)
   public void testCreateKubernetesConfigRancher() {
-    RancherK8sInfraDelegateConfig delegateConfig = RancherK8sInfraDelegateConfig.builder().build();
+    RancherK8sInfraDelegateConfig delegateConfig =
+        RancherK8sInfraDelegateConfig.builder()
+            .rancherConnectorDTO(
+                RancherConnectorDTO.builder()
+                    .config(RancherConnectorConfigDTO.builder()
+                                .config(RancherConnectorConfigAuthDTO.builder()
+                                            .credentials(
+                                                RancherConnectorConfigAuthCredentialsDTO.builder()
+                                                    .auth(RancherConnectorBearerTokenAuthenticationDTO.builder()
+                                                              .passwordRef(SecretRefData.builder()
+                                                                               .decryptedValue("secret".toCharArray())
+                                                                               .build())
+                                                              .build())
+                                                    .build())
+                                            .build())
+                                .build())
+                    .build())
+            .build();
     containerDeploymentDelegateBaseHelper.createKubernetesConfig(delegateConfig, "", logCallback);
 
-    verify(rancherClusterActionHelper, times(1)).createKubernetesConfig(any());
+    verify(rancherKubeConfigGenerator, times(1)).createKubernetesConfig(any());
   }
 
   @Test

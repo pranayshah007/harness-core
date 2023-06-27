@@ -131,6 +131,18 @@ public class AdminAccountResource {
   }
 
   @PUT
+  @Path("{accountId}/sync-with-cg")
+  public RestResponse<Boolean> syncNextgen(@PathParam("accountId") String accountId) {
+    return new RestResponse<>(adminAccountService.syncNextgenWithCG(accountId));
+  }
+
+  @PUT
+  @Path("{accountId}/nextgen-cleanup")
+  public RestResponse<Boolean> cleanupNextgenUser(@PathParam("accountId") String accountId) {
+    return new RestResponse<>(adminAccountService.cleanUpNextGen(accountId));
+  }
+
+  @PUT
   @Path("{accountId}/is-product-led")
   public RestResponse<Boolean> updateIsProductLed(@PathParam("accountId") String accountId,
       @QueryParam("isProductLed") @DefaultValue("false") boolean isProductLed) {

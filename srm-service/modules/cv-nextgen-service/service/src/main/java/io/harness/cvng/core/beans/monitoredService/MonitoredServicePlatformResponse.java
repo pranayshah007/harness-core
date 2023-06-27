@@ -10,6 +10,7 @@ package io.harness.cvng.core.beans.monitoredService;
 import io.harness.cvng.beans.MonitoredServiceType;
 
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 
@@ -22,6 +23,7 @@ public class MonitoredServicePlatformResponse {
   List<String> environmentRefs;
   String serviceName;
   MonitoredServiceType type;
+  Map<String, String> tags;
   int configuredChangeSources;
   int configuredHealthSources;
 }

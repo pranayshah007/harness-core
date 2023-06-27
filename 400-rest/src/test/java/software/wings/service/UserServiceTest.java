@@ -21,7 +21,6 @@ import static io.harness.rule.OwnerRule.ANUBHAW;
 import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.GEORGE;
-import static io.harness.rule.OwnerRule.JENNY;
 import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.MOHIT;
 import static io.harness.rule.OwnerRule.NANDAN;
@@ -223,6 +222,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.validator.routines.UrlValidator;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -1613,6 +1613,8 @@ public class UserServiceTest extends WingsBaseTest {
     assertThatThrownBy(() -> userService.validateName(null)).isInstanceOf(InvalidRequestException.class);
     assertThatThrownBy(() -> userService.validateName("<a href='http://authorization.site'>Click ME</a>"))
         .isInstanceOf(InvalidRequestException.class);
+    final String nameWithBraces = "firstName lastName (firstName.lastName)";
+    assertDoesNotThrow(() -> userService.validateName(nameWithBraces));
   }
   @Test
   @Owner(developers = RUSHABH)
@@ -2005,23 +2007,6 @@ public class UserServiceTest extends WingsBaseTest {
     verify(signupService, times(1)).sendEmail(any(), anyString(), any());
   }
 
-  /**
-   * Should fetch user.
-   */
-  @Test
-  @Owner(developers = JENNY)
-  @Category(UnitTests.class)
-  public void userWithSupportAccounts() {
-    Account account = Account.Builder.anAccount().withUuid(generateUuid()).build();
-    when(wingsPersistence.get(User.class, USER_ID)).thenReturn(userBuilder.uuid(USER_ID).build());
-    when(harnessUserGroupService.isHarnessSupportUser(USER_ID)).thenReturn(true);
-    List<Account> accountList = Arrays.asList(account);
-    when(harnessUserGroupService.listAllowedSupportAccounts(any(), any())).thenReturn(accountList);
-    User user = userService.get(USER_ID, true);
-    assertThat(user.getSupportAccounts().size()).isEqualTo(1);
-    assertThat(user.getSupportAccounts().get(0).getUuid()).isEqualTo(account.getUuid());
-  }
-
   @Test
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
@@ -2049,6 +2034,15 @@ public class UserServiceTest extends WingsBaseTest {
 
     String returnToUrlResult = redirectUrl.split("&")[2];
     assertThat(returnToUrlResult).isEqualTo("redirect=" + returnToUrl);
+  }
+
+  private void assertDoesNotThrow(Runnable runnable) {
+    try {
+      runnable.run();
+    } catch (Exception ex) {
+      log.error("ERROR: ", ex);
+      Assert.fail();
+    }
   }
 
   private List<Account> getAccounts() {

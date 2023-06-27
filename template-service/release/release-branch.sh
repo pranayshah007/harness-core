@@ -88,6 +88,17 @@ if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
     minor=`cat ${VERSION_FILE} | grep 'build.minorVersion=' | sed -e 's: *build.minorVersion=::g'`
     patchVersion=`cat ${VERSION_FILE} | grep 'build.patchVersion=' | sed -e 's: *build.patchVersion=::g'`
 
+    # fetching head commit of harness-schema main branch
+    echo "Fetching latest commitId for static schema"
+    commit_info=$(curl -s "https://api.github.com/repos/harness/harness-schema/commits/main")
+    head_static_commit=$(echo "$commit_info" | jq -r '.sha')
+
+    # Output the HEAD commit hash
+    echo "Latest HEAD commit of static harness schema: $head_static_commit"
+
+    staticVersion=`cat ${VERSION_FILE} | grep 'build.staticSchemaCommitId=' | sed -e 's: *build.staticSchemaCommitId=::g'`
+
+    echo "INFO: Current staticVersion: $staticVersion"
     echo "INFO: Current Tag: $TAG: major.minor.patchVersion: ${major}.${minor}.${patchVersion}"
 
     # check ENV paramater RELEASE_TYPE to see which number to increment
@@ -125,6 +136,22 @@ if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
     sed -i "s:build.majorVersion=${major}:build.majorVersion=${newMajor}:g" ${VERSION_FILE}
     sed -i "s:build.minorVersion=${minor}:build.minorVersion=${newMinor}:g" ${VERSION_FILE}
     sed -i "s:build.patchVersion=${patchVersion}:build.patchVersion=${newPatchVersion}:g" ${VERSION_FILE}
+    sed -i "s:build.staticSchemaCommitId=${staticVersion}:build.staticSchemaCommitId=${head_static_commit}:g" ${VERSION_FILE}
+
+    # Updating static-schema for template.json
+    TEMPLATE_JSON="../../template-service/service/src/main/resources/static-schema/template.json"
+    perform_curl_with_retry "https://raw.githubusercontent.com/harness/harness-schema/${head_static_commit}/v0/template.json" ${TEMPLATE_JSON}
+    template_curl_result=$?
+
+    if [ $template_curl_result -eq 0 ]; then
+        git add ${TEMPLATE_JSON}
+        echo "Template file was updated"
+    else
+        echo "Template file was not updated"
+    fi
+
+    # Continue with the rest of the script
+    echo "Curl commands completed"
 
     git add ${VERSION_FILE}
     newBranch="${major}_${minor}"
@@ -152,5 +179,27 @@ template-service/release/release-branch-create-template-versions.sh
 
 chmod +x template-service/release/release-branch-update-jiras.sh
 template-service/release/release-branch-update-jiras.sh
+
+perform_curl_with_retry() {
+    local url="$1"
+    local output_file="$2"
+    local max_attempts=3
+    local attempt=1
+
+    while [ $attempt -le $max_attempts ]; do
+        echo "Attempt $attempt: curling $url"
+        if curl -o "$output_file" -s -w "%{http_code}" "$url" | grep -q -E "^[23]..$"; then
+            echo "Curl succeeded, updating file: $output_file"
+            return 0
+        else
+            echo "Curl attempt $attempt failed"
+            attempt=$((attempt + 1))
+            sleep 1
+        fi
+    done
+
+    echo "All curl attempts failed. File not updated: $output_file"
+    return 1
+}
 
 

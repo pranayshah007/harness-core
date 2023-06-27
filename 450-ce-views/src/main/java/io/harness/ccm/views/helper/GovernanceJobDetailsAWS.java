@@ -32,4 +32,5 @@ public class GovernanceJobDetailsAWS {
   Boolean isDryRun;
   Boolean isOOTB;
   String accountId;
+  RuleExecutionType executionType;
 }

@@ -24,6 +24,9 @@ import io.harness.beans.entities.IACMServiceConfig;
 import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
+import io.harness.cf.AbstractCfModule;
+import io.harness.cf.CfClientConfig;
+import io.harness.cf.CfMigrationConfig;
 import io.harness.ci.beans.entities.LogServiceConfig;
 import io.harness.ci.beans.entities.TIServiceConfig;
 import io.harness.ci.config.CIExecutionServiceConfig;
@@ -34,6 +37,7 @@ import io.harness.ci.serializer.CiExecutionRegistrars;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
+import io.harness.ff.FeatureFlagConfig;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.hsqs.client.model.QueueServiceClientConfig;
@@ -223,6 +227,22 @@ public class CIManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
     modules.add(new SpringPersistenceTestModule());
     modules.add(new CIManagerServiceModule(configuration, new CIManagerConfigurationOverride()));
     modules.add(PmsSdkModule.getInstance(getPmsSdkConfiguration()));
+    modules.add(new AbstractCfModule() {
+      @Override
+      public CfClientConfig cfClientConfig() {
+        return CfClientConfig.builder().build();
+      }
+
+      @Override
+      public CfMigrationConfig cfMigrationConfig() {
+        return CfMigrationConfig.builder().build();
+      }
+
+      @Override
+      public FeatureFlagConfig featureFlagConfig() {
+        return FeatureFlagConfig.builder().build();
+      }
+    });
     return modules;
   }
 

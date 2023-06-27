@@ -69,4 +69,15 @@ public interface FavoritesService {
 
   void deleteFavorite(String accountIdentifier, String orgIdentifier, String projectIdentifier, String userId,
       String resourceType, String resourceId);
+
+  /**
+   *
+   * @param accountIdentifier
+   * @param orgIdentifier
+   * @param projectIdentifier
+   * @param resourceType
+   * @param resourceId
+   */
+  void deleteFavorites(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String resourceType, String resourceId);
 }

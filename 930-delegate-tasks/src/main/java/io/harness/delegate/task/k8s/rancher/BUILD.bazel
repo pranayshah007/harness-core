@@ -13,9 +13,12 @@ java_library(
     deps = [
         "//:lombok",
         "//954-connector-beans:module",
+        "//960-api-services/src/main/java/io/harness/k8s:module",
         "//960-api-services/src/main/java/io/harness/k8s/model:module",
+        "//960-api-services/src/main/java/io/harness/rancher:module",
         "//970-api-services-beans/src/main/java/io/harness/logging:module",
         "//980-commons/src/main/java/io/harness/exception:module",
+        "//980-commons/src/main/java/io/harness/exception/ngexception:module",
         "@maven//:com_google_inject_guice",
     ],
 )

@@ -73,6 +73,7 @@ public class DelegateTaskEventListener implements MessageListener {
                                               .build();
             ciTaskDetailsRepository.save(ciTaskDetails);
             log.info(String.format("Successfully saved dlite initialization task data with taskId %s", taskId));
+            return true;
           }
         } catch (Exception e) {
           log.error("Error while handling the message: " + e);
@@ -80,6 +81,6 @@ public class DelegateTaskEventListener implements MessageListener {
         }
       }
     }
-    return true;
+    return false;
   }
 }

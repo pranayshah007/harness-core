@@ -37,6 +37,7 @@ import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.PlanExecutionMetadata.Builder;
 import io.harness.execution.RetryStagesMetadata;
+import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.logging.AutoLogContext;
@@ -335,9 +336,10 @@ public class ExecutionHelper {
     } else {
       pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity);
     }
-    String expandedJson = pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(pipelineEntity.getAccountId(),
-        pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYamlWithTemplateRef,
-        OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
+
+    String branch = GitAwareContextHelper.getBranchInRequestOrFromSCMGitMetadata();
+    String expandedJson = pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(
+        pipelineEntity, pipelineYamlWithTemplateRef, branch, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
     planExecutionMetadataBuilder.expandedPipelineJson(expandedJson);
     if (retryExecutionParameters.isRetry()) {
       planExecutionMetadataBuilder.retryStagesMetadata(

@@ -11,6 +11,7 @@ import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AW
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AZURE;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DIRECT;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_GCP;
+import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_RANCHER;
 
 import static io.fabric8.kubernetes.api.KubernetesHelper.DEFAULT_NAMESPACE;
 import static java.lang.String.format;
@@ -22,6 +23,7 @@ import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
+import io.harness.cdng.infra.beans.K8sRancherInfrastructureOutcome;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.K8sDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.NativeHelmDeploymentInfoDTO;
@@ -130,6 +132,13 @@ public class K8sAndHelmInfrastructureUtility {
             .releaseName(k8sDeploymentInfoDTO.getReleaseName())
             .connectorRef(connectorRef)
             .cluster(k8sDeploymentInfoDTO.getCloudConfigMetadata().getClusterName())
+            .namespace(namespace)
+            .build();
+      case KUBERNETES_RANCHER:
+        return K8sRancherInfrastructureOutcome.builder()
+            .releaseName(k8sDeploymentInfoDTO.getReleaseName())
+            .connectorRef(connectorRef)
+            .clusterName(k8sDeploymentInfoDTO.getCloudConfigMetadata().getClusterName())
             .namespace(namespace)
             .build();
       default:

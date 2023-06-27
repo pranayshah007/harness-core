@@ -54,6 +54,7 @@ public class ScmApiErrorHandlingHelper {
       exception.setMetadata(GitErrorMetadata.builder()
                                 .branch(errorMetadata.getBranchName())
                                 .filepath(errorMetadata.getFilepath())
+                                .repo(errorMetadata.getRepoName())
                                 .build());
       throw exception;
     }

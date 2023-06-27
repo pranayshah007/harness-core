@@ -193,7 +193,7 @@ public class ProjectResourceTest extends CategoryTest {
     Project project = toProject(projectDTO);
     project.setVersion((long) 0);
     ArgumentCaptor<ProjectFilterDTO> argumentCaptor = ArgumentCaptor.forClass(ProjectFilterDTO.class);
-    when(favoritesService.getFavorites(accountIdentifier, null, null, null, ResourceType.PROJECT.toString()))
+    when(favoritesService.getFavorites(accountIdentifier, orgIdentifier, null, null, ResourceType.PROJECT.toString()))
         .thenReturn(Collections.singletonList(
             Favorite.builder().resourceIdentifier(project.getIdentifier()).resourceType(ResourceType.PROJECT).build()));
 

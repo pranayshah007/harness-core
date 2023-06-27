@@ -22,7 +22,8 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(HarnessTeam.IACM)
 public class IACMCreatorUtils {
-  Set<String> supportedSteps = Sets.newHashSet("Plugin", "Action", "Run", "IACMTerraformPlugin", "liteEngineTask");
+  Set<String> supportedSteps =
+      Sets.newHashSet("Plugin", "Action", "Run", "IACMTerraformPlugin", "IACMApproval", "liteEngineTask");
   Set<String> supportedV1Filters = Sets.newHashSet("plugin", "test", "background", "action", "script");
   public Set<String> getSupportedSteps() {
     return supportedSteps;

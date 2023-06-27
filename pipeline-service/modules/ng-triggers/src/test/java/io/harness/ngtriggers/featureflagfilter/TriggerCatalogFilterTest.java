@@ -60,7 +60,7 @@ public class TriggerCatalogFilterTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testFilterWithFFsDisabled() {
     when(pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CD_TRIGGER_V2)).thenReturn(false);
-    when(pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_GOOGLE_CLOUD_FUNCTION)).thenReturn(false);
+    when(pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_SVC_ENV_REDESIGN)).thenReturn(false);
     when(pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.BAMBOO_ARTIFACT_NG)).thenReturn(false);
     List<TriggerCatalogType> triggerTypes =
         Collections.arrayToList(new TriggerCatalogType[] {TriggerCatalogType.JENKINS,
@@ -68,7 +68,7 @@ public class TriggerCatalogFilterTest extends CategoryTest {
             TriggerCatalogType.AMI, TriggerCatalogType.GOOGLE_CLOUD_STORAGE, TriggerCatalogType.BAMBOO});
     assertThat(triggerTypes.stream()
                    .filter(triggerCatalogFilter.filter(accountId, FeatureName.CD_TRIGGER_V2))
-                   .filter(triggerCatalogFilter.filter(accountId, FeatureName.CDS_GOOGLE_CLOUD_FUNCTION))
+                   .filter(triggerCatalogFilter.filter(accountId, FeatureName.NG_SVC_ENV_REDESIGN))
                    .filter(triggerCatalogFilter.filter(accountId, FeatureName.BAMBOO_ARTIFACT_NG))
                    .collect(Collectors.toList()))
         .isEmpty();
@@ -79,7 +79,7 @@ public class TriggerCatalogFilterTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testFilterWithFFsEnabled() {
     when(pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CD_TRIGGER_V2)).thenReturn(true);
-    when(pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_GOOGLE_CLOUD_FUNCTION)).thenReturn(true);
+    when(pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_SVC_ENV_REDESIGN)).thenReturn(true);
     when(pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.BAMBOO_ARTIFACT_NG)).thenReturn(true);
     List<TriggerCatalogType> triggerTypes =
         Collections.arrayToList(new TriggerCatalogType[] {TriggerCatalogType.JENKINS,
@@ -87,7 +87,7 @@ public class TriggerCatalogFilterTest extends CategoryTest {
             TriggerCatalogType.AMI, TriggerCatalogType.GOOGLE_CLOUD_STORAGE, TriggerCatalogType.BAMBOO});
     assertThat(triggerTypes.stream()
                    .filter(triggerCatalogFilter.filter(accountId, FeatureName.CD_TRIGGER_V2))
-                   .filter(triggerCatalogFilter.filter(accountId, FeatureName.CDS_GOOGLE_CLOUD_FUNCTION))
+                   .filter(triggerCatalogFilter.filter(accountId, FeatureName.NG_SVC_ENV_REDESIGN))
                    .filter(triggerCatalogFilter.filter(accountId, FeatureName.BAMBOO_ARTIFACT_NG))
                    .collect(Collectors.toList()))
         .isEqualTo(triggerTypes);

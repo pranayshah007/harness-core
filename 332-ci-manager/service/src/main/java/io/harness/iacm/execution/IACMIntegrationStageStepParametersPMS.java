@@ -16,6 +16,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
+import io.harness.yaml.extended.ci.codebase.CodeBase;
 
 import java.util.List;
 import lombok.experimental.SuperBuilder;
@@ -50,5 +51,15 @@ public class IACMIntegrationStageStepParametersPMS extends IntegrationStageStepP
         .stepIdentifiers(stepIdentifiers)
         .caching(getCaching(stageNode))
         .build();
+  }
+
+  public static IACMIntegrationStageStepParametersPMS getStepParameters(
+      PlanCreationContext ctx, IntegrationStageNode stageNode, CodeBase codeBase, String childNodeID) {
+    IACMIntegrationStageStepParametersPMS integrationStageStepParametersPMS =
+        getStepParameters(stageNode, childNodeID, null, ctx);
+    integrationStageStepParametersPMS.setCodeBase(codeBase);
+    integrationStageStepParametersPMS.setTriggerPayload(ctx.getTriggerPayload());
+    integrationStageStepParametersPMS.setCloneManually(IntegrationStageUtils.shouldCloneManually(codeBase));
+    return integrationStageStepParametersPMS;
   }
 }

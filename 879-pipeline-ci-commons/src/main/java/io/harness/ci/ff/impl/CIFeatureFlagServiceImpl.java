@@ -11,55 +11,72 @@ import static io.harness.annotations.dev.HarnessTeam.CI;
 
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureFlag;
 import io.harness.beans.FeatureName;
 import io.harness.ci.ff.CIFeatureFlagService;
+import io.harness.ff.FeatureFlagService;
 import io.harness.remote.client.CGRestUtils;
+import io.harness.utils.system.SystemWrapper;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CI)
 @Slf4j
 @Singleton
 public class CIFeatureFlagServiceImpl implements CIFeatureFlagService {
+  // Keeping this @Nullable since featureFlagService can be initialised as null by some CI dependant modules.
+  // Eg: STO, IACM
+  @Inject @Nullable private FeatureFlagService featureFlagService;
   @Inject private AccountClient accountClient;
 
   private static final int CACHE_EVICTION_TIME_MINUTES = 10;
 
-  private final LoadingCache<String, Set<String>> featureFlagCache =
+  private final LoadingCache<FeatureNameAndAccountId, Boolean> featureFlagCache =
       CacheBuilder.newBuilder()
           .expireAfterWrite(CACHE_EVICTION_TIME_MINUTES, TimeUnit.MINUTES)
-          .build(new CacheLoader<String, Set<String>>() {
+          .build(new CacheLoader<>() {
+            @org.jetbrains.annotations.NotNull
             @Override
-            public Set<String> load(@org.jetbrains.annotations.NotNull final String accountId) {
-              return listAllEnabledFeatureFlagsForAccount(accountId);
+            public Boolean load(
+                @org.jetbrains.annotations.NotNull final FeatureNameAndAccountId featureNameAndAccountId) {
+              return isFlagEnabledForAccountId(featureNameAndAccountId);
             }
           });
 
   public boolean isEnabled(@NotNull FeatureName featureName, String accountId) {
     try {
-      return featureFlagCache.get(accountId).contains(featureName.name());
+      return featureFlagCache.get(
+          FeatureNameAndAccountId.builder().accountId(accountId).featureName(featureName).build());
     } catch (Exception e) {
       log.error("Error getting FF {} for account {} with error {}", featureName, accountId, e);
       return false;
     }
   }
 
-  private Set<String> listAllEnabledFeatureFlagsForAccount(String accountId) {
-    log.info("Getting all FFs for account: {}", accountId);
-    return CGRestUtils.getResponse(accountClient.listAllFeatureFlagsForAccount(accountId))
-        .stream()
-        .filter(FeatureFlag::isEnabled)
-        .map(FeatureFlag::getName)
-        .collect(Collectors.toSet());
+  private boolean isFlagEnabledForAccountId(FeatureNameAndAccountId featureNameAndAccountId) {
+    if (featureFlagService == null || SystemWrapper.checkIfEnvOnPremOrCommunity()) {
+      return CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(
+          featureNameAndAccountId.getFeatureName().name(), featureNameAndAccountId.getAccountId()));
+    }
+    return featureFlagService.isEnabled(
+        featureNameAndAccountId.getFeatureName(), featureNameAndAccountId.getAccountId());
+  }
+
+  @Getter
+  @Builder
+  @EqualsAndHashCode
+  static class FeatureNameAndAccountId {
+    String accountId;
+    FeatureName featureName;
   }
 }

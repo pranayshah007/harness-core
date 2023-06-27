@@ -9,9 +9,10 @@ package io.harness.delegate.service.common;
 
 import io.harness.delegate.beans.DelegateTaskEvent;
 
+import java.io.IOException;
 import java.util.concurrent.Future;
 
-public abstract class SimpleDelegateAgent<T> extends AbstractDelegateAgentService<T> {
+public abstract class SimpleDelegateAgent<T, R> extends AbstractDelegateAgentService<T, R> {
   @Override
   protected void onDelegateStart() {}
 
@@ -23,6 +24,9 @@ public abstract class SimpleDelegateAgent<T> extends AbstractDelegateAgentServic
 
   @Override
   protected void onPostExecute(final String delegateTaskId) {}
+
+  @Override
+  protected void onTaskResponse(final String taskId, R response) throws IOException {}
 
   @Override
   protected void onPostExecute(final String delegateTaskId, final Future<?> taskFuture) {}

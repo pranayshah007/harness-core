@@ -2107,6 +2107,7 @@ public class BuilderFactory {
                          .externalLinkToEntity("externalLink")
                          .description("desc")
                          .name("name")
+                         .webhookUrl("webhookUrl")
                          .build());
   }
 }

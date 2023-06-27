@@ -349,7 +349,7 @@ public class UserServiceImpl implements UserService {
   private static final String SETUP_ACCOUNT_FROM_MARKETPLACE = "Account Setup from Marketplace";
   private static final String NG_AUTH_UI_PATH_PREFIX = "auth/";
   private static final String USER_INVITE = "user_invite";
-  private static final Pattern NAME_PATTERN = Pattern.compile("^[^:<>()=\\/]*$");
+  private static final Pattern NAME_PATTERN = Pattern.compile("^[^:<>=\\/]*$");
   private static final String CD = "CD";
   private static final String CI = "CI";
   private static final String FF = "FF";
@@ -3251,7 +3251,7 @@ public class UserServiceImpl implements UserService {
 
     Matcher matcher = NAME_PATTERN.matcher(name);
     if (!matcher.matches()) {
-      throw new InvalidRequestException("Name is not valid. It should not contain :, <, >, (, ), =, /", USER);
+      throw new InvalidRequestException("Name is not valid. It should not contain :, <, >, =, /", USER);
     }
   }
 
@@ -3315,11 +3315,6 @@ public class UserServiceImpl implements UserService {
    */
   @Override
   public User get(String userId) {
-    return get(userId, false);
-  }
-
-  @Override
-  public User get(String userId, boolean includeSupportAccounts) {
     User user = wingsPersistence.get(User.class, userId);
     if (user == null) {
       throw new UnauthorizedException(EXC_MSG_USER_DOESNT_EXIST, USER);
@@ -3328,9 +3323,6 @@ public class UserServiceImpl implements UserService {
     List<Account> accounts = user.getAccounts();
     if (isNotEmpty(accounts)) {
       accounts.forEach(account -> software.wings.service.impl.LicenseUtils.decryptLicenseInfo(account, false));
-    }
-    if (includeSupportAccounts) {
-      loadSupportAccounts(user);
     }
 
     return user;
@@ -3623,6 +3615,12 @@ public class UserServiceImpl implements UserService {
   private String createCannyToken(User user) {
     String jwtCannySecret = configuration.getPortal().getJwtCannySecret();
 
+    if (StringUtils.isEmpty(jwtCannySecret)) {
+      String errorMessage = "Canny secret is either null or empty.";
+      log.error(errorMessage);
+      throw new InvalidRequestException(errorMessage);
+    }
+
     HashMap<String, Object> userData = new HashMap<>();
     userData.put(UserKeys.email, user.getEmail());
     userData.put("id", user.getUuid());
@@ -3633,8 +3631,9 @@ public class UserServiceImpl implements UserService {
     try {
       jwtCannySecretBytes = jwtCannySecret.getBytes("UTF-8");
     } catch (UnsupportedEncodingException ex) {
-      log.error("Error while encoding the canny secret to bytes", ex);
-      throw new InvalidRequestException("Error while encoding the canny secret to bytes", ex);
+      String errorMessage = "Error while encoding the canny secret to bytes";
+      log.error(errorMessage, ex);
+      throw new InvalidRequestException(errorMessage, ex);
     }
 
     return Jwts.builder()

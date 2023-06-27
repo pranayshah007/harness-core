@@ -20,7 +20,6 @@ import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPL
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.telemetry.Destination.AMPLITUDE;
 
-import io.harness.EntityType;
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
@@ -48,6 +47,7 @@ import io.harness.ccm.views.helper.GovernanceJobDetailsAWS;
 import io.harness.ccm.views.helper.GovernanceRuleFilter;
 import io.harness.ccm.views.helper.RuleCloudProviderType;
 import io.harness.ccm.views.helper.RuleExecutionStatusType;
+import io.harness.ccm.views.helper.RuleExecutionType;
 import io.harness.ccm.views.helper.RuleList;
 import io.harness.ccm.views.helper.RuleStoreType;
 import io.harness.ccm.views.service.GovernanceRuleService;
@@ -60,7 +60,6 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.delegate.beans.connector.CEFeatures;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
-import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.faktory.FaktoryProducer;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -78,7 +77,6 @@ import io.harness.yaml.validator.YamlSchemaValidator;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
@@ -189,6 +187,7 @@ public class GovernanceRuleResource {
   @POST
   @Path("enqueue")
   @Timed
+  @Hidden
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   @ApiOperation(value = "Enqueues job for execution", nickname = "enqueueGovernanceJob", hidden = true)
@@ -268,6 +267,7 @@ public class GovernanceRuleResource {
       // Step-4 Enqueue in faktory
       for (ConnectorInfoDTO connectorInfoDTO : nextGenConnectorResponses) {
         CEAwsConnectorDTO ceAwsConnectorDTO = (CEAwsConnectorDTO) connectorInfoDTO.getConnectorConfig();
+        List<RuleExecution> ruleExecutions = new ArrayList<>();
         for (String region : ruleEnforcement.getTargetRegions()) {
           for (Rule rule : rulesList) {
             try {
@@ -282,6 +282,7 @@ public class GovernanceRuleResource {
                       .region(region)
                       .ruleEnforcementId(ruleEnforcementUuid)
                       .policy(rule.getRulesYaml())
+                      .executionType(RuleExecutionType.EXTERNAL)
                       .build();
               Gson gson = new GsonBuilder().create();
               String json = gson.toJson(governanceJobDetailsAWS);
@@ -292,25 +293,25 @@ public class GovernanceRuleResource {
                   configuration.getGovernanceConfig().getAwsFaktoryQueueName(), json);
               log.info("For rule enforcement setting {}: Pushed job in Faktory: {}", ruleEnforcementUuid, jid);
               // Make a record in Mongo
-              // TO DO: We can bulk insert in mongo for all successfull faktory job pushes
-              RuleExecution ruleExecution = RuleExecution.builder()
-                                                .accountId(accountId)
-                                                .jobId(jid)
-                                                .cloudProvider(ruleCloudProviderType)
-                                                .executionLogPath("") // Updated by worker when execution finishes
-                                                .isDryRun(ruleEnforcement.getIsDryRun())
-                                                .ruleEnforcementIdentifier(ruleEnforcementUuid)
-                                                .ruleEnforcementName(ruleEnforcement.getName())
-                                                .executionCompletedAt(null) // Updated by worker when execution finishes
-                                                .ruleIdentifier(rule.getUuid())
-                                                .targetAccount(ceAwsConnectorDTO.getAwsAccountId())
-                                                .targetRegions(Arrays.asList(region))
-                                                .executionLogBucketType("")
-                                                .ruleName(rule.getName())
-                                                .OOTB(rule.getIsOOTB())
-                                                .executionStatus(RuleExecutionStatusType.ENQUEUED)
-                                                .build();
-              enqueuedRuleExecutionIds.add(ruleExecutionService.save(ruleExecution));
+              // TO DO: We can bulk insert in mongo for all successful faktory job pushes
+              ruleExecutions.add(RuleExecution.builder()
+                                     .accountId(accountId)
+                                     .jobId(jid)
+                                     .cloudProvider(ruleCloudProviderType)
+                                     .executionLogPath("") // Updated by worker when execution finishes
+                                     .isDryRun(ruleEnforcement.getIsDryRun())
+                                     .ruleEnforcementIdentifier(ruleEnforcementUuid)
+                                     .ruleEnforcementName(ruleEnforcement.getName())
+                                     .executionCompletedAt(null) // Updated by worker when execution finishes
+                                     .ruleIdentifier(rule.getUuid())
+                                     .targetAccount(ceAwsConnectorDTO.getAwsAccountId())
+                                     .targetRegions(Arrays.asList(region))
+                                     .executionLogBucketType("")
+                                     .ruleName(rule.getName())
+                                     .OOTB(rule.getIsOOTB())
+                                     .executionStatus(RuleExecutionStatusType.ENQUEUED)
+                                     .executionType(RuleExecutionType.EXTERNAL)
+                                     .build());
             } catch (Exception e) {
               log.warn(
                   "Exception enqueueing job for ruleEnforcementUuid: {} for targetAccount: {} for targetRegions: {}, {}",
@@ -318,6 +319,7 @@ public class GovernanceRuleResource {
             }
           }
         }
+        enqueuedRuleExecutionIds.addAll(ruleExecutionService.save(ruleExecutions));
       }
     }
     return ResponseDTO.newResponse(
@@ -685,6 +687,7 @@ public class GovernanceRuleResource {
                 .isDryRun(governanceAdhocEnqueueDTO.getIsDryRun())
                 .policy(governanceAdhocEnqueueDTO.getPolicy())
                 .ruleCloudProviderType(governanceAdhocEnqueueDTO.getRuleCloudProviderType())
+                .executionType(RuleExecutionType.EXTERNAL)
                 .build();
         log.info("enqueued: {}", governanceJobEnqueueDTO);
         ruleExecutionId.add(governanceRuleService.enqueueAdhoc(accountId, governanceJobEnqueueDTO));
@@ -692,28 +695,6 @@ public class GovernanceRuleResource {
     }
 
     return ResponseDTO.newResponse(GovernanceEnqueueResponseDTO.builder().ruleExecutionId(ruleExecutionId).build());
-  }
-
-  @NextGenManagerAuth
-  @GET
-  @Path("entitySchema")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
-  @ApiOperation(value = "Get Schema for entity", nickname = "getSchemaForEntity")
-  @Operation(operationId = "getSchemaForEntity", description = "Get Schema for entity",
-      summary = "Get Schema for entity",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(description = "Schema", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
-      })
-  public ResponseDTO<JsonNode>
-  getEntityYamlSchema(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @QueryParam(NGCommonEntityConstants.ENTITY_TYPE) EntityType entityType, Scope scope) {
-    return ResponseDTO.newResponse(
-        yamlSchemaProvider.getYamlSchema(entityType, orgIdentifier, projectIdentifier, scope));
   }
 
   @NextGenManagerAuth

@@ -274,6 +274,7 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
                                                             .ruleEnforcementId("") // This is adhoc run
                                                             .policy(governanceJobEnqueueDTO.getPolicy())
                                                             .isOOTB(governanceJobEnqueueDTO.getIsOOTB())
+                                                            .executionType(governanceJobEnqueueDTO.getExecutionType())
                                                             .build();
       Gson gson = new GsonBuilder().create();
       String json = gson.toJson(governanceJobDetailsAWS);

@@ -592,6 +592,10 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
             ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT, mergedOverrideV2Configs, scopedEnvironmentRef);
         serviceStepOverrideHelper.saveFinalConfigFilesToSweepingOutputV2(ngServiceV2InfoConfig, mergedOverrideV2Configs,
             scopedEnvironmentRef, ambiance, ServiceStepV3Constants.SERVICE_CONFIG_FILES_SWEEPING_OUTPUT);
+        serviceStepOverrideHelper.saveFinalAppSettingsToSweepingOutputV2(ngServiceV2InfoConfig, mergedOverrideV2Configs,
+            ambiance, ServiceStepV3Constants.SERVICE_APP_SETTINGS_SWEEPING_OUTPUT);
+        serviceStepOverrideHelper.saveFinalConnectionStringsToSweepingOutputV2(ngServiceV2InfoConfig,
+            mergedOverrideV2Configs, ambiance, ServiceStepV3Constants.SERVICE_CONNECTION_STRINGS_SWEEPING_OUTPUT);
       } else {
         serviceStepOverrideHelper.prepareAndSaveFinalManifestMetadataToSweepingOutput(
             servicePartResponse.getNgServiceConfig(), ngServiceOverrides, ngEnvironmentConfig, ambiance,
@@ -600,15 +604,15 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
         serviceStepOverrideHelper.prepareAndSaveFinalConfigFilesMetadataToSweepingOutput(
             servicePartResponse.getNgServiceConfig(), ngServiceOverrides, ngEnvironmentConfig, ambiance,
             ServiceStepV3Constants.SERVICE_CONFIG_FILES_SWEEPING_OUTPUT);
+
+        serviceStepOverrideHelper.prepareAndSaveFinalAppServiceMetadataToSweepingOutput(
+            servicePartResponse.getNgServiceConfig(), ngServiceOverrides, ngEnvironmentConfig, ambiance,
+            ServiceStepV3Constants.SERVICE_APP_SETTINGS_SWEEPING_OUTPUT);
+
+        serviceStepOverrideHelper.prepareAndSaveFinalConnectionStringsMetadataToSweepingOutput(
+            servicePartResponse.getNgServiceConfig(), ngServiceOverrides, ngEnvironmentConfig, ambiance,
+            ServiceStepV3Constants.SERVICE_CONNECTION_STRINGS_SWEEPING_OUTPUT);
       }
-
-      serviceStepOverrideHelper.prepareAndSaveFinalAppServiceMetadataToSweepingOutput(
-          servicePartResponse.getNgServiceConfig(), ngServiceOverrides, ngEnvironmentConfig, ambiance,
-          ServiceStepV3Constants.SERVICE_APP_SETTINGS_SWEEPING_OUTPUT);
-
-      serviceStepOverrideHelper.prepareAndSaveFinalConnectionStringsMetadataToSweepingOutput(
-          servicePartResponse.getNgServiceConfig(), ngServiceOverrides, ngEnvironmentConfig, ambiance,
-          ServiceStepV3Constants.SERVICE_CONNECTION_STRINGS_SWEEPING_OUTPUT);
 
       serviceStepOverrideHelper.prepareAndSaveFinalServiceHooksMetadataToSweepingOutput(
           servicePartResponse.getNgServiceConfig(), ambiance, ServiceStepV3Constants.SERVICE_HOOKS_SWEEPING_OUTPUT);

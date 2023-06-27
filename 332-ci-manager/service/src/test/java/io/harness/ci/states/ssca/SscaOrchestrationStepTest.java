@@ -105,6 +105,7 @@ public class SscaOrchestrationStepTest extends CIExecutionTestBase {
                                                       .isSbomAttested(true)
                                                       .sbomName("blah_sbom")
                                                       .sbomUrl("https://someurl.com")
+                                                      .tag("latest")
                                                       .build();
     StepResponse stepResponse =
         sscaOrchestrationStep.handleAsyncResponseInternal(ambiance, stepElementParameters, responseDataMap);
@@ -164,6 +165,7 @@ public class SscaOrchestrationStepTest extends CIExecutionTestBase {
                                                       .isSbomAttested(true)
                                                       .sbomName("blah_sbom")
                                                       .sbomUrl("https://someurl.com")
+                                                      .tag("latest")
                                                       .build();
     StepResponse stepResponse =
         sscaOrchestrationStep.handleAsyncResponseInternal(ambiance, stepElementParameters, responseDataMap);

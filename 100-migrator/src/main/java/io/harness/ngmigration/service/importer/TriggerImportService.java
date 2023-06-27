@@ -197,8 +197,8 @@ public class TriggerImportService implements ImportService {
             .enabled(false)
             .pipelineIdentifier(pipelineDetail.getIdentifier())
             .source(getSourceInfo(discoveryResult, trigger, yamlFileMap))
-            .inputYaml(
-                migrationTemplateUtils.getPipelineInput(pipelineDetail, inputDTO.getDestinationAccountIdentifier()))
+            .inputYaml(migrationTemplateUtils.getPipelineInput(
+                inputDTO, pipelineDetail, inputDTO.getDestinationAccountIdentifier()))
             .build();
 
     return NgTriggerConfigSchemaWrapper.builder().trigger(triggerConfig).build();

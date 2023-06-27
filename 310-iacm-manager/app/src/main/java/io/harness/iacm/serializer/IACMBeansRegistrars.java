@@ -115,6 +115,7 @@ public class IACMBeansRegistrars {
         .availableAtProjectLevel(true)
         .availableAtOrgLevel(false)
         .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                .namespace(SchemaNamespaceConstants.IACM)
                                 .modulesSupported(Collections.singletonList(ModuleType.IACM))
                                 .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                 .build())

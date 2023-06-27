@@ -433,6 +433,7 @@ public class ProjectServiceImpl implements ProjectService {
       project.setAccountIdentifier(accountIdentifier);
       project.setOrgIdentifier(orgIdentifier);
       project.setId(existingProject.getId());
+      project.setIdentifier(existingProject.getIdentifier());
       project.setCreatedAt(existingProject.getCreatedAt() == null ? existingProject.getLastModifiedAt()
                                                                   : existingProject.getCreatedAt());
       if (project.getVersion() == null) {
@@ -479,13 +480,27 @@ public class ProjectServiceImpl implements ProjectService {
     return projectRepository.findAll(criteria, pageable);
   }
 
+  @Override
+  public List<Favorite> getProjectFavorites(
+      String accountIdentifier, ProjectFilterDTO projectFilterDTO, String userId) {
+    List<Favorite> favorites = new ArrayList<>();
+    Set<String> orgIdentifiers;
+    if (projectFilterDTO != null && projectFilterDTO.getOrgIdentifiers().size() > 0) {
+      orgIdentifiers = projectFilterDTO.getOrgIdentifiers();
+    } else {
+      orgIdentifiers = organizationService.getPermittedOrganizations(accountIdentifier, null);
+    }
+    for (String orgIdentifier : orgIdentifiers) {
+      favorites.addAll(favoritesService.getFavorites(
+          accountIdentifier, orgIdentifier, null, userId, ResourceType.PROJECT.toString()));
+    }
+    return favorites;
+  }
+
   private void updateFilterPropertiesFromFavorites(
       String accountIdentifier, ProjectFilterDTO projectFilterDTO, String userId) {
-    List<String> favoriteIds =
-        favoritesService.getFavorites(accountIdentifier, null, null, userId, ResourceType.PROJECT.toString())
-            .stream()
-            .map(Favorite::getResourceIdentifier)
-            .collect(Collectors.toList());
+    List<Favorite> favorites = getProjectFavorites(accountIdentifier, projectFilterDTO, userId);
+    List<String> favoriteIds = favorites.stream().map(Favorite::getResourceIdentifier).collect(Collectors.toList());
     if (favoriteIds.isEmpty()) {
       favoriteIds.add("NO_MATCH");
     }
@@ -622,7 +637,8 @@ public class ProjectServiceImpl implements ProjectService {
         outboxService.save(
             new ProjectDeleteEvent(deletedProject.getAccountIdentifier(), ProjectMapper.writeDTO(deletedProject)));
         instrumentationHelper.sendProjectDeleteEvent(deletedProject, accountIdentifier);
-
+        favoritesService.deleteFavorites(
+            accountIdentifier, orgIdentifier, null, ResourceType.PROJECT.toString(), projectIdentifier);
         return true;
       }));
     }
@@ -672,8 +688,8 @@ public class ProjectServiceImpl implements ProjectService {
 
   @Override
   public boolean isFavorite(Project project, String userId) {
-    return favoritesService.isFavorite(
-        project.getAccountIdentifier(), null, null, userId, ResourceType.PROJECT.toString(), project.getIdentifier());
+    return favoritesService.isFavorite(project.getAccountIdentifier(), project.getOrgIdentifier(), null, userId,
+        ResourceType.PROJECT.toString(), project.getIdentifier());
   }
 
   private void validateCreateProjectRequest(String accountIdentifier, String orgIdentifier, ProjectDTO project) {

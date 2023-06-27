@@ -798,6 +798,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     for (StepPalleteModuleInfo request : stepPalleteFilterWrapper.getStepPalleteModuleInfos()) {
       String module = request.getModule();
       String category = request.getCategory();
+
       StepPalleteInfo stepPalleteInfo = serviceInstanceNameToSupportedSteps.get(module);
       if (stepPalleteInfo == null) {
         continue;
@@ -856,8 +857,10 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     if (!pmsFeatureFlagService.isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE)) {
       return null;
     }
-    return pipelineGovernanceService.getExpandedPipelineJSONFromYaml(
-        accountId, orgIdentifier, projectIdentifier, pipelineEntityOptional.get().getYaml(), null, null);
+
+    String branch = GitAwareContextHelper.getBranchInRequestOrFromSCMGitMetadata();
+    return pipelineGovernanceService.getExpandedPipelineJSONFromYaml(accountId, orgIdentifier, projectIdentifier,
+        pipelineEntityOptional.get().getYaml(), branch, pipelineEntityOptional.get());
   }
 
   @Override

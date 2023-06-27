@@ -70,7 +70,7 @@ public class EngineExpressionEvaluator {
 
   private final JexlEngine engine;
   @Getter private final VariableResolverTracker variableResolverTracker;
-  private final Map<String, Object> contextMap;
+  @Getter private final Map<String, Object> contextMap;
   @Getter private final Map<String, String> staticAliases;
   private boolean initialized;
 

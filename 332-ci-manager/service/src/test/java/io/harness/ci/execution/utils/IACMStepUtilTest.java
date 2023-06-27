@@ -108,7 +108,7 @@ public class IACMStepUtilTest extends CategoryTest {
     assertThat(envVariables).hasSize(4);
     assertThat(envVariables.get("PLUGIN_ROOT_DIR")).isEqualTo("root");
     assertThat(envVariables.get("PLUGIN_TF_VERSION")).isEqualTo("1.2.3");
-    ConnectorDetails connector = iacmStepsUtils.retrieveIACMConnectorDetails(ambiance, stepInfo);
+    ConnectorDetails connector = iacmStepsUtils.retrieveIACMConnectorDetails(ambiance, "stackID");
     assertThat(connector.getConnectorType()).isEqualTo(ConnectorType.AWS);
   }
 

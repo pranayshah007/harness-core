@@ -16,6 +16,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 import io.harness.beans.FeatureName;
+import io.harness.beans.execution.license.CILicenseService;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.StageDetails;
@@ -37,6 +38,9 @@ import io.harness.ci.utils.CIVmSecretEvaluator;
 import io.harness.ci.utils.HostedVmSecretResolver;
 import io.harness.delegate.beans.ci.vm.CIVmInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmInitializeTaskParams;
+import io.harness.licensing.Edition;
+import io.harness.licensing.LicenseType;
+import io.harness.licensing.beans.summary.CILicenseSummaryDTO;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
@@ -62,6 +66,7 @@ import org.mockito.MockitoAnnotations;
 public class VmInitializeTaskParamsBuilderTest extends CIExecutionTestBase {
   @Mock private ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Mock CILogServiceUtils logServiceUtils;
+  @Mock CILicenseService ciLicenseService;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock TIServiceUtils tiServiceUtils;
   @Mock STOServiceUtils stoServiceUtils;
@@ -99,6 +104,8 @@ public class VmInitializeTaskParamsBuilderTest extends CIExecutionTestBase {
     String stageRuntimeId = "test";
 
     doNothing().when(vmInitializeUtils).validateStageConfig(any(), any());
+    when(ciLicenseService.getLicenseSummary(any(String.class)))
+        .thenReturn(CILicenseSummaryDTO.builder().licenseType(LicenseType.PAID).edition(Edition.FREE).build());
     when(vmInitializeUtils.getVolumeToMountPath(any(), any())).thenReturn(volToMountPath);
     when(executionSweepingOutputService.resolveOptional(any(), any()))
         .thenReturn(OptionalSweepingOutput.builder().found(false).build());
@@ -142,7 +149,8 @@ public class VmInitializeTaskParamsBuilderTest extends CIExecutionTestBase {
     volToMountPath.put("harness", "/harness");
 
     String stageRuntimeId = "test";
-
+    when(ciLicenseService.getLicenseSummary(any(String.class)))
+        .thenReturn(CILicenseSummaryDTO.builder().licenseType(LicenseType.PAID).edition(Edition.FREE).build());
     doNothing().when(vmInitializeUtils).validateStageConfig(any(), any());
     when(vmInitializeUtils.getVolumeToMountPath(any(), any())).thenReturn(volToMountPath);
     when(executionSweepingOutputService.resolveOptional(any(), any()))
@@ -193,7 +201,8 @@ public class VmInitializeTaskParamsBuilderTest extends CIExecutionTestBase {
                             .build();
 
     when(featureFlagService.isEnabled(FeatureName.CI_ENABLE_BARE_METAL, accountID)).thenReturn(true);
-
+    when(ciLicenseService.getLicenseSummary(any(String.class)))
+        .thenReturn(CILicenseSummaryDTO.builder().licenseType(LicenseType.PAID).edition(Edition.FREE).build());
     boolean response = vmInitializeTaskParamsBuilder.isBareMetalEnabled(
         accountID, ParameterField.createValueField(platform), initializeStepInfo);
     assertThat(response).isEqualTo(true);
@@ -214,6 +223,8 @@ public class VmInitializeTaskParamsBuilderTest extends CIExecutionTestBase {
     when(featureFlagService.isEnabled(FeatureName.CI_ENABLE_BARE_METAL, accountID)).thenReturn(false);
     when(ciExecutionServiceConfig.getHostedVmConfig())
         .thenReturn(HostedVmConfig.builder().internalAccounts(internalAccounts).build());
+    when(ciLicenseService.getLicenseSummary(any(String.class)))
+        .thenReturn(CILicenseSummaryDTO.builder().licenseType(LicenseType.PAID).edition(Edition.FREE).build());
 
     boolean response = vmInitializeTaskParamsBuilder.isBareMetalEnabled(
         accountID, ParameterField.createValueField(platform), initializeStepInfo);
@@ -233,7 +244,8 @@ public class VmInitializeTaskParamsBuilderTest extends CIExecutionTestBase {
                             .os(ParameterField.createValueField(OSType.Windows))
                             .arch(ParameterField.createValueField(ArchType.Amd64))
                             .build();
-
+    when(ciLicenseService.getLicenseSummary(any(String.class)))
+        .thenReturn(CILicenseSummaryDTO.builder().licenseType(LicenseType.PAID).edition(Edition.FREE).build());
     when(featureFlagService.isEnabled(FeatureName.CI_ENABLE_BARE_METAL, accountID)).thenReturn(true);
     when(ciExecutionServiceConfig.getHostedVmConfig())
         .thenReturn(HostedVmConfig.builder().internalAccounts(internalAccounts).build());
@@ -255,7 +267,8 @@ public class VmInitializeTaskParamsBuilderTest extends CIExecutionTestBase {
     volToMountPath.put("harness", "/harness");
 
     String stageRuntimeId = "test";
-
+    when(ciLicenseService.getLicenseSummary(any(String.class)))
+        .thenReturn(CILicenseSummaryDTO.builder().licenseType(LicenseType.PAID).edition(Edition.FREE).build());
     doNothing().when(vmInitializeUtils).validateStageConfig(any(), any());
     when(vmInitializeUtils.getVolumeToMountPath(any(), any())).thenReturn(volToMountPath);
     when(executionSweepingOutputService.resolveOptional(any(), any()))

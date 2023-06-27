@@ -11,18 +11,10 @@ import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
 import io.harness.artifacts.githubpackages.service.GithubPackagesRegistryService;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.delegate.beans.connector.scm.GitAuthType;
-import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
-import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubUsernamePasswordDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
 import io.harness.delegate.task.artifacts.DelegateArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.mappers.GithubPackagesRequestResponseMapper;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
+import io.harness.delegate.utils.GithubPackageUtils;
 import io.harness.security.encryption.SecretDecryptionService;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
@@ -100,29 +92,8 @@ public class GithubPackagesArtifactTaskHandler
   }
 
   public void decryptRequestDTOs(GithubPackagesArtifactDelegateRequest attributes) {
-    GithubConnectorDTO githubConnectorDTO = attributes.getGithubConnectorDTO();
-
-    GithubApiAccessDTO githubApiAccessDTO = githubConnectorDTO.getApiAccess();
-
-    if (githubApiAccessDTO != null) {
-      GithubTokenSpecDTO githubTokenSpecDTO = (GithubTokenSpecDTO) githubApiAccessDTO.getSpec();
-
-      secretDecryptionService.decrypt(githubTokenSpecDTO, attributes.getEncryptedDataDetails());
-    }
-    GithubAuthenticationDTO githubAuthenticationDTO = githubConnectorDTO.getAuthentication();
-    if (githubAuthenticationDTO != null && GitAuthType.HTTP.equals(githubAuthenticationDTO.getAuthType())) {
-      GithubHttpCredentialsDTO githubHttpCredentialsDTO =
-          (GithubHttpCredentialsDTO) githubAuthenticationDTO.getCredentials();
-      if (githubHttpCredentialsDTO.getType() == GithubHttpAuthenticationType.USERNAME_AND_PASSWORD) {
-        GithubUsernamePasswordDTO githubUsernamePasswordDTO =
-            (GithubUsernamePasswordDTO) githubHttpCredentialsDTO.getHttpCredentialsSpec();
-        secretDecryptionService.decrypt(githubUsernamePasswordDTO, attributes.getEncryptedDataDetails());
-      } else if (githubHttpCredentialsDTO.getType() == GithubHttpAuthenticationType.USERNAME_AND_TOKEN) {
-        GithubUsernameTokenDTO githubUsernameTokenDTO =
-            (GithubUsernameTokenDTO) githubHttpCredentialsDTO.getHttpCredentialsSpec();
-        secretDecryptionService.decrypt(githubUsernameTokenDTO, attributes.getEncryptedDataDetails());
-      }
-    }
+    GithubPackageUtils.decryptRequestDTOs(
+        attributes.getGithubConnectorDTO(), attributes.getEncryptedDataDetails(), secretDecryptionService);
   }
 
   private ArtifactTaskExecutionResponse getSuccessTaskExecutionResponse(

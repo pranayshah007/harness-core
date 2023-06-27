@@ -9,6 +9,7 @@ package io.harness.ccm.budget.dao;
 
 import io.harness.ccm.budget.BudgetMonthlyBreakdown;
 import io.harness.ccm.budget.BudgetMonthlyBreakdown.BudgetMonthlyBreakdownKeys;
+import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.budget.ValueDataPoint;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.commons.entities.billing.Budget.BudgetKeys;
@@ -59,6 +60,15 @@ public class BudgetDao {
 
   public List<Budget> list(String accountId) {
     return list(accountId, Integer.MAX_VALUE - 1, 0);
+  }
+
+  public List<Budget> list(String accountId, List<BudgetPeriod> budgetPeriods, Integer count, Integer startIndex) {
+    Query<Budget> query = persistence.createQuery(Budget.class)
+                              .field(BudgetKeys.accountId)
+                              .equal(accountId)
+                              .field(BudgetKeys.period)
+                              .in(budgetPeriods);
+    return query.asList(new FindOptions().skip(startIndex).limit(count));
   }
 
   public List<Budget> list(String accountId, Integer count, Integer startIndex) {

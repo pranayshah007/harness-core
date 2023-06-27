@@ -64,7 +64,7 @@ public class VmIACMStepSerializerTest extends CategoryTest {
   @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
-  public void testIACMGetStackVariables() {
+  public void testIACMGetWorkspaceVariables() {
     Map<String, String> envVars = new HashMap<>();
     envVars.put("Key1", "Value1");
     envVars.put("Key2", "Value1");
@@ -77,12 +77,13 @@ public class VmIACMStepSerializerTest extends CategoryTest {
                                            .env(ParameterField.createValueField(env))
                                            .identifier("id")
                                            .name("name")
+                                           .operation(ParameterField.<String>builder().build())
                                            .image(ParameterField.<String>builder().build())
                                            .build();
 
     Mockito.mockStatic(CIStepInfoUtils.class);
     when(CIStepInfoUtils.getPluginCustomStepImage(any(), any(), any(), any())).thenReturn("imageName");
-    when(iacmStepsUtils.getIACMEnvVariables(ambiance, stepInfo)).thenReturn(new HashMap<String, String>() {
+    when(iacmStepsUtils.getIACMEnvVariables(any(), any(), any())).thenReturn(new HashMap<>() {
       {
         put("ENV_SECRETS_keytest1", "${ngSecretManager.obtain");
         put("PLUGIN_keytest2", "keyValue2");
@@ -90,7 +91,7 @@ public class VmIACMStepSerializerTest extends CategoryTest {
         put("TF_keytest4", "keyValue4");
       }
     });
-    when(iacmStepsUtils.retrieveIACMConnectorDetails(ambiance, stepInfo))
+    when(iacmStepsUtils.retrieveIACMConnectorDetails(ambiance, "workspaceId"))
         .thenReturn(ConnectorDetails.builder().build());
     Mockito.mockStatic(IntegrationStageUtils.class);
     when(IntegrationStageUtils.getFullyQualifiedImageName(any(), any())).thenReturn("imageName");

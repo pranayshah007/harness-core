@@ -674,6 +674,7 @@
 5583:net.sf.json.JSONArray
 5584:net.sf.json.JSONObject
 5585:io.harness.exception.SecretManagementDelegateException
+5586:java.nio.file.NoSuchFileException
 5589:io.harness.exception.FunctorException
 5590:io.harness.eraro.Level
 5592:software.wings.service.impl.stackdriver.StackDriverSetupTestNodeData
@@ -2696,6 +2697,7 @@
 9800012:io.harness.delegate.task.ssh.artifact.EcrArtifactDelegateConfig
 9800013:io.harness.delegate.task.ssh.artifact.AcrArtifactDelegateConfig
 9800014:io.harness.delegate.task.ssh.artifact.DockerArtifactDelegateConfig
+9800015:io.harness.delegate.task.ssh.artifact.GithubPackagesArtifactDelegateConfig
 10000001:io.harness.delegate.beans.connector.elkconnector.ELKConnectorDTO
 10000002:io.harness.delegate.beans.connector.elkconnector.ELKAuthType
 10000101:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO
@@ -2827,3 +2829,10 @@
 20000607:io.harness.delegate.beans.connector.rancher.RancherConnectorConfigAuthenticationSpecDTO
 20000608:io.harness.delegate.beans.connector.rancher.RancherConnectorConfigDTO
 20000609:io.harness.delegate.beans.connector.rancher.RancherConnectorDTO
+20000610:io.harness.delegate.task.serverless.request.ServerlessRollbackV2Request
+20000611:io.harness.delegate.task.serverless.ServerlessAwsLambdaRollbackV2Config
+20000612:io.harness.delegate.beans.serverless.StackDetails
+20000613:io.harness.delegate.beans.serverless.Parameter
+20000614:io.harness.delegate.beans.serverless.RollbackConfiguration
+20000615:io.harness.delegate.beans.serverless.RollbackTrigger
+20000616:io.harness.delegate.beans.serverless.Tag

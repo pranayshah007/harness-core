@@ -51,6 +51,7 @@ import io.harness.cvng.core.entities.VerificationTask.TaskType;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.DataCollectionInfoMapper;
 import io.harness.cvng.core.services.api.DataCollectionTaskService;
+import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
@@ -101,6 +102,8 @@ import org.springframework.web.server.ResponseStatusException;
 @Slf4j
 public class VerificationJobInstanceServiceImpl implements VerificationJobInstanceService {
   @Inject private HPersistence hPersistence;
+
+  @Inject private FeatureFlagService featureFlagService;
   @Inject private CVConfigService cvConfigService;
   @Inject private DataCollectionTaskService dataCollectionTaskService;
   @Inject private Map<DataSourceType, DataCollectionInfoMapper> dataSourceTypeDataCollectionInfoMapperMap;
@@ -724,6 +727,8 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
             dataCollectionInfoMapper.toDataCollectionInfo(cvConfig, TaskType.DEPLOYMENT);
         preDeploymentDataCollectionInfo.setDataCollectionDsl(cvConfig.getDataCollectionDsl());
         preDeploymentDataCollectionInfo.setCollectHostData(verificationJob.collectHostData());
+        dataCollectionInfoMapper.postProcessDataCollectionInfo(
+            preDeploymentDataCollectionInfo, cvConfig, TaskType.DEPLOYMENT);
         preDeploymentDataCollectionTimeRanges.forEach(timeRange -> {
           dataCollectionTasks.add(
               DeploymentDataCollectionTask.builder()
@@ -749,6 +754,7 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
         // Keeping this simple for now.
         dataCollectionInfo.setDataCollectionDsl(cvConfig.getDataCollectionDsl());
         dataCollectionInfo.setCollectHostData(verificationJob.collectHostData());
+        dataCollectionInfoMapper.postProcessDataCollectionInfo(dataCollectionInfo, cvConfig, TaskType.DEPLOYMENT);
         dataCollectionTasks.add(
             DeploymentDataCollectionTask.builder()
                 .type(Type.DEPLOYMENT)

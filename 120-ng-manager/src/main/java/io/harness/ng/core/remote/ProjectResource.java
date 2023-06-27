@@ -213,7 +213,7 @@ public class ProjectResource {
           description =
               "This would be used to filter Projects. Any Project having the specified string in its Name, ID and Tag would be filtered.")
       @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
-      @QueryParam("isFavorite") @DefaultValue("false") Boolean onlyFavorites, @BeanParam PageRequest pageRequest) {
+      @QueryParam("onlyFavorites") @DefaultValue("false") Boolean onlyFavorites, @BeanParam PageRequest pageRequest) {
     if (isEmpty(pageRequest.getSortOrders())) {
       SortOrder order =
           SortOrder.Builder.aSortOrder().withField(ProjectKeys.lastModifiedAt, SortOrder.OrderType.DESC).build();
@@ -230,7 +230,7 @@ public class ProjectResource {
     Page<Project> projects = projectService.listPermittedProjects(
         accountIdentifier, getPageRequest(pageRequest), projectFilterDTO, onlyFavorites);
     List<Favorite> favoriteProjects = favoritesService.getFavorites(
-        accountIdentifier, null, null, userHelperService.getUserId(), ResourceType.PROJECT.toString());
+        accountIdentifier, orgIdentifier, null, userHelperService.getUserId(), ResourceType.PROJECT.toString());
     return ResponseDTO.newResponse(getNGPageResponse(toResponseWithFavouritesInfo(projects, favoriteProjects)));
   }
 
@@ -260,7 +260,7 @@ public class ProjectResource {
           NGResourceFilterConstants.MODULE_TYPE_KEY) ModuleType moduleType,
       @Parameter(description = "Filter Projects by searching for this word in Name, Id, and Tag") @QueryParam(
           NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
-      @QueryParam("isFavorite") @DefaultValue("false") Boolean onlyFavorites, @BeanParam PageRequest pageRequest) {
+      @QueryParam("onlyFavorites") @DefaultValue("false") Boolean onlyFavorites, @BeanParam PageRequest pageRequest) {
     if (isEmpty(pageRequest.getSortOrders())) {
       SortOrder order =
           SortOrder.Builder.aSortOrder().withField(ProjectKeys.lastModifiedAt, SortOrder.OrderType.DESC).build();
@@ -275,8 +275,8 @@ public class ProjectResource {
                                             .build();
     Page<Project> projects = projectService.listPermittedProjects(
         accountIdentifier, getPageRequest(pageRequest), projectFilterDTO, onlyFavorites);
-    List<Favorite> favoriteProjects = favoritesService.getFavorites(
-        accountIdentifier, null, null, userHelperService.getUserId(), ResourceType.PROJECT.toString());
+    List<Favorite> favoriteProjects =
+        projectService.getProjectFavorites(accountIdentifier, projectFilterDTO, userHelperService.getUserId());
     return ResponseDTO.newResponse(getNGPageResponse(toResponseWithFavouritesInfo(projects, favoriteProjects)));
   }
 

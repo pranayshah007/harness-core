@@ -7,6 +7,8 @@
 
 package software.wings.delegatetasks.k8s.taskhandler;
 
+import static io.harness.delegate.task.k8s.K8sTaskHelperBase.getTimeoutMillisFromMinutes;
+
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.concurrent.HTimeLimiter;
@@ -37,9 +39,9 @@ public abstract class K8sTaskHandler {
     K8sTaskExecutionResponse result;
     try {
       if (k8STaskParameters.isTimeoutSupported()) {
-        result =
-            HTimeLimiter.callInterruptible(timeLimiter, Duration.ofMinutes(k8STaskParameters.getTimeoutIntervalInMin()),
-                () -> executeTaskInternal(k8STaskParameters, k8SDelegateTaskParams));
+        result = HTimeLimiter.callInterruptible(timeLimiter,
+            Duration.ofMillis(getTimeoutMillisFromMinutes(k8STaskParameters.getTimeoutIntervalInMin())),
+            () -> executeTaskInternal(k8STaskParameters, k8SDelegateTaskParams));
       } else {
         result = executeTaskInternal(k8STaskParameters, k8SDelegateTaskParams);
       }

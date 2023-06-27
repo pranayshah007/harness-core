@@ -7,21 +7,34 @@
 
 package io.harness.expression;
 
+import static io.harness.beans.constants.JsonConstants.RESOLVE_OBJECTS_VIA_JSON_SELECT;
+
 import io.harness.expression.functors.ExpressionFunctor;
 import io.harness.serializer.JsonUtils;
 
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class JsonFunctor implements ExpressionFunctor {
+  private final Map<String, Object> contextMap;
+  public JsonFunctor(Map<String, Object> contextMap) {
+    this.contextMap = contextMap;
+  }
+
+  public JsonFunctor() {
+    this.contextMap = null;
+  }
+
   public Object object(String json) {
     return JsonUtils.asObject(json, HashMap.class);
   }
 
   public Object select(String path, String json) {
     final Object object = JsonUtils.jsonPath(json, path);
+    log.info(String.format("Json functor evaluated for the Json: %s and path %s", json, path));
     if (object instanceof String) {
       return object;
     } else if (object instanceof LinkedList) {
@@ -30,8 +43,7 @@ public class JsonFunctor implements ExpressionFunctor {
         return list.get(0);
       }
     }
-    log.info(String.format("Json functor evaluation returned null for the Json: %s and path %s", json, path));
-    return null;
+    return contextMap != null && contextMap.containsKey(RESOLVE_OBJECTS_VIA_JSON_SELECT) ? object : null;
   }
 
   public Object list(String path, String json) {

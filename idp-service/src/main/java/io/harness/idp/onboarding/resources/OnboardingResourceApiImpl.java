@@ -16,7 +16,6 @@ import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.eraro.ResponseMessage;
 import io.harness.idp.onboarding.service.OnboardingService;
 import io.harness.ng.beans.PageResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -32,7 +31,6 @@ import io.harness.spec.server.idp.v1.model.ManualImportEntityRequest;
 import io.harness.utils.ApiUtils;
 
 import com.google.inject.Inject;
-import java.util.concurrent.ExecutionException;
 import javax.validation.Valid;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
@@ -87,15 +85,8 @@ public class OnboardingResourceApiImpl implements OnboardingResourceApi {
       @Valid ImportEntitiesBase importHarnessEntitiesRequest, @AccountIdentifier String harnessAccount) {
     log.info("Request received to import harness entities to IDP. Account = {}, Request = {}", harnessAccount,
         importHarnessEntitiesRequest);
-    ImportEntitiesResponse importHarnessEntities;
-    try {
-      importHarnessEntities = onboardingService.importHarnessEntities(harnessAccount, importHarnessEntitiesRequest);
-    } catch (ExecutionException e) {
-      log.error("Error in importHarnessEntities - account = {}, error = {}", harnessAccount, e.getMessage(), e);
-      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-          .entity(ResponseMessage.builder().message(e.getMessage()).build())
-          .build();
-    }
+    ImportEntitiesResponse importHarnessEntities =
+        onboardingService.importHarnessEntities(harnessAccount, importHarnessEntitiesRequest);
     return Response.status(Response.Status.OK).entity(importHarnessEntities).build();
   }
 

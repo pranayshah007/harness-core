@@ -29,4 +29,5 @@ message CustomChangeEventDetails {
   string externalLinkToEntity = 3;
   string name = 4;
   string channelUrl = 5;
+  string webhookUrl = 6;
 }

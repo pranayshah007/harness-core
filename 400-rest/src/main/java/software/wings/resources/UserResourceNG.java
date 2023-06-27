@@ -357,17 +357,15 @@ public class UserResourceNG {
 
   @GET
   @Path("/{userId}")
-  public RestResponse<Optional<UserInfo>> getUser(@PathParam("userId") String userId,
-      @QueryParam("includeSupportAccounts") @DefaultValue("false") boolean includeSupportAccounts) {
+  public RestResponse<Optional<UserInfo>> getUser(@PathParam("userId") String userId) {
     try {
-      User user = userService.get(userId, includeSupportAccounts);
+      User user = userService.get(userId);
       return new RestResponse<>(Optional.ofNullable(convertUserToNgUser(user)));
     } catch (UnauthorizedException ex) {
       log.warn("User is not found in database {}", userId);
       return new RestResponse<>(Optional.empty());
     }
   }
-
   @GET
   @Path("/{userId}/{accountId}")
   public RestResponse<Optional<UserInfo>> getUserByIdAndAccountId(
@@ -625,10 +623,6 @@ public class UserResourceNG {
                       .stream()
                       .map(account -> AccountMapper.toGatewayAccountRequest(account))
                       .collect(Collectors.toList()))
-        .supportAccounts(user.getSupportAccounts()
-                             .stream()
-                             .map(account -> AccountMapper.toGatewayAccountRequest(account))
-                             .collect(Collectors.toList()))
         .token(user.getToken())
         .admin(
             Optional.ofNullable(user.getUserGroups())

@@ -1,4 +1,5 @@
 integrations:
   github:
     - host: HOST_VALUE
+      apiBaseUrl: API_BASE_URL
       token: ${HARNESS_GITHUB_TOKEN}

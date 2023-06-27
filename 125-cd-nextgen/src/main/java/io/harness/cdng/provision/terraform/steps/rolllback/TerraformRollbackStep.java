@@ -14,7 +14,6 @@ import static java.lang.String.format;
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -163,9 +162,7 @@ public class TerraformRollbackStep extends CdTaskExecutable<TerraformTaskNGRespo
             terraformStepHelper.prepareTerraformConfigFileInfo(rollbackConfig.getFileStoreConfig(), ambiance));
       }
 
-      if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CD_TERRAFORM_CLOUD_CLI_NG)) {
-        builder.isTerraformCloudCli(rollbackConfig.isTerraformCloudCli());
-      }
+      builder.isTerraformCloudCli(rollbackConfig.isTerraformCloudCli());
 
       if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), CDS_TERRAFORM_CLI_OPTIONS_NG)) {
         builder.terraformCommandFlags(terraformStepHelper.getTerraformCliFlags(stepParametersSpec.getCommandFlags()));

@@ -7,6 +7,7 @@
 
 package io.harness.iacm.plan.creator.stage;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.EXECUTION;
 import static io.harness.yaml.extended.ci.codebase.Build.builder;
@@ -27,6 +28,7 @@ import io.harness.beans.steps.IACMStepSpecTypeConstants;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.integrationstage.CIIntegrationStageModifier;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.plan.creator.codebase.CodebasePlanCreator;
 import io.harness.ci.states.CISpecStep;
 import io.harness.ci.utils.CIStagePlanCreationUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
@@ -71,6 +73,7 @@ import io.harness.yaml.extended.ci.codebase.BuildType;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 import io.harness.yaml.extended.ci.codebase.PRCloneStrategy;
 import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
+import io.harness.yaml.extended.ci.codebase.impl.PRBuildSpec;
 import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
@@ -125,6 +128,14 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     stageNode.getIacmStageConfig().setCloneCodebase(ParameterField.<Boolean>builder().value(true).build());
 
     CodeBase codeBase = getIACMCodebase(ctx, workspace);
+
+    // Add the CODEBASE task. This task is required to be able to get the sweeping output for the clone step
+    String codeBaseNodeUUID =
+        fetchCodeBaseNodeUUID(codeBase, executionField.getNode().getUuid(), planCreationResponseMap);
+    if (isNotEmpty(codeBaseNodeUUID)) {
+      childNodeId = codeBaseNodeUUID; // Change the child of integration stage to codebase node
+    }
+
     ExecutionSource executionSource = buildExecutionSource(ctx, stageNode);
 
     // Because we are using a CI stage, the Stage is of type IntegrationStageConfig. From here we are only interested
@@ -145,9 +156,10 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
 
     BuildStatusUpdateParameter buildStatusUpdateParameter =
         obtainBuildStatusUpdateParameter(ctx, stageNode, executionSource, workspace);
+
     PlanNode specPlanNode = getSpecPlanNode(specField,
         IACMIntegrationStageStepParametersPMS.getStepParameters(
-            getIntegrationStageNode(stageNode), childNodeId, buildStatusUpdateParameter, ctx));
+            ctx, getIntegrationStageNode(stageNode), codeBase, childNodeId));
     planCreationResponseMap.put(
         specPlanNode.getUuid(), PlanCreationResponse.builder().node(specPlanNode.getUuid(), specPlanNode).build());
 
@@ -164,6 +176,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
       }
       switch (wrapperConfig.getStep().get("type").asText()) {
         case IACMStepSpecTypeConstants.IACM_TERRAFORM_PLUGIN:
+        case IACMStepSpecTypeConstants.IACM_APPROVAL:
           ((ObjectNode) wrapperConfig.getStep().get("spec")).put("workspace", workspace);
           break;
         default:
@@ -194,11 +207,15 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
    * function basically identifies the spec under the stage and returns it as IACMIntegrationStageStepParametersPMS
    * */
   public SpecParameters getSpecParameters(String childNodeId, PlanCreationContext ctx, IACMStageNode stageNode) {
-    ExecutionSource executionSource = buildExecutionSource(ctx, stageNode);
-    BuildStatusUpdateParameter buildStatusUpdateParameter = obtainBuildStatusUpdateParameter(
-        ctx, stageNode, executionSource, stageNode.getIacmStageConfig().getWorkspace().getValue());
+    YamlField specField =
+        Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
+    YamlField executionField = specField.getNode().getField(EXECUTION);
+    YamlNode parentNode = executionField.getNode().getParentNode();
+    String workspace = parentNode.getField("workspace").getNode().getCurrJsonNode().asText();
+    CodeBase codeBase = getIACMCodebase(ctx, workspace);
+
     return IACMIntegrationStageStepParametersPMS.getStepParameters(
-        getIntegrationStageNode(stageNode), childNodeId, buildStatusUpdateParameter, ctx);
+        ctx, getIntegrationStageNode(stageNode), codeBase, childNodeId);
   }
 
   @Override
@@ -387,7 +404,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
 
       // If the trigger type is WEBHOOK, we need to get the repository name from the webhook payload.
       // If the trigger is not a WEBHOOK, then we retrieve the repository from the Workspace
-      if (ctx.getMetadata().getMetadata().getTriggerInfo().getTriggerType().name().equals("WEBHOOK")) {
+      if (ctx.getTriggerInfo().getTriggerType().name().equals("WEBHOOK")) {
         // It looks like the connector type in the workspace has to match with the connector type in the webhook,.
         // I could not find a way to get the connector type from the webhook, so I will use the connector type from the
         // workspace and assume that both are the same. This is required because if the connector is an account
@@ -403,13 +420,29 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
                   .value(ctx.getMetadata().getTriggerPayload().getParsedPayload().getPr().getRepo().getClone())
                   .build());
         }
-        buildObject.type(BuildType.BRANCH);
-        buildObject.spec(
-            BranchBuildSpec.builder()
-                .branch(ParameterField.<String>builder()
-                            .value(ctx.getMetadata().getTriggerPayload().getParsedPayload().getPr().getPr().getSource())
-                            .build())
-                .build());
+        // If getPr is not null the trigger type is a PR trigger, and we want to use the PRBuildSpec.
+        // If getPush is not null, the trigger type is then a Push trigger, and we want to use the BranchBuildSpec as
+        // PR does not makes sense.
+        if (ctx.getTriggerPayload().getParsedPayload().getPr().hasPr()) {
+          buildObject.type(BuildType.PR);
+          buildObject.spec(PRBuildSpec.builder()
+                               .number(ParameterField.<String>builder().value("<+trigger.prNumber>").build())
+                               .build());
+        } else if (ctx.getTriggerPayload().getParsedPayload().getPush().hasCommit()) {
+          buildObject.type(BuildType.BRANCH);
+          buildObject.spec(BranchBuildSpec.builder()
+                               .branch(ParameterField.<String>builder().value("<+trigger.branch>").build())
+                               .build());
+        } else {
+          // This should be triggered only if the trigger is a tag. There could be a chance that we hit this with
+          // a trigger with comments but I was unable to test this so I will need to check if that has been implemented
+          // or not
+          buildObject.type(BuildType.TAG);
+          buildObject.spec(TagBuildSpec.builder()
+                               .tag(ParameterField.<String>builder().value("<+trigger.tag>").expression(true).build())
+                               .build());
+        }
+
       } else {
         // If the repository name is empty, it means that the connector is an account connector and the repo needs to be
         // defined
@@ -484,5 +517,20 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
   @Override
   public Set<String> getSupportedYamlVersions() {
     return Set.of(PipelineVersion.V0);
+  }
+
+  private String fetchCodeBaseNodeUUID(CodeBase codeBase, String executionNodeUUid,
+      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap) {
+    String codeBaseNodeUUID = generateUuid();
+    List<PlanNode> codeBasePlanNodeList =
+        CodebasePlanCreator.buildCodebasePlanNodes(codeBaseNodeUUID, executionNodeUUid, kryoSerializer, codeBase, null);
+    if (isNotEmpty(codeBasePlanNodeList)) {
+      for (PlanNode planNode : codeBasePlanNodeList) {
+        planCreationResponseMap.put(
+            planNode.getUuid(), PlanCreationResponse.builder().node(planNode.getUuid(), planNode).build());
+      }
+      return codeBaseNodeUUID;
+    }
+    return null;
   }
 }

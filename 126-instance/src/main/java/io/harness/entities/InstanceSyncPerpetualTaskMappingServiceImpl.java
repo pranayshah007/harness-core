@@ -38,11 +38,11 @@ public class InstanceSyncPerpetualTaskMappingServiceImpl implements InstanceSync
   }
 
   @Override
-  public Optional<InstanceSyncPerpetualTaskMappingDTO> findByConnectorRef(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorId) {
+  public Optional<InstanceSyncPerpetualTaskMappingDTO> findByConnectorRefAndDeploymentType(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String connectorId, String deploymentType) {
     Optional<InstanceSyncPerpetualTaskMapping> instanceSyncPerpetualTaskMappingOptional =
-        instanceSyncPerpetualTaskMappingRepository.findByConnectorRef(
-            accountIdentifier, orgIdentifier, projectIdentifier, connectorId);
+        instanceSyncPerpetualTaskMappingRepository.findByConnectorRefAndDeploymentType(
+            accountIdentifier, orgIdentifier, projectIdentifier, connectorId, deploymentType);
 
     return instanceSyncPerpetualTaskMappingOptional.map(InstanceSyncPerpetualTaskMappingMapper::toDTO);
   }

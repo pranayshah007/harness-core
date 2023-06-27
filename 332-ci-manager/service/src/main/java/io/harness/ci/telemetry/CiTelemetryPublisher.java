@@ -43,6 +43,9 @@ public class CiTelemetryPublisher {
   private static final String GROUP_TYPE = "group_type";
   private static final String GROUP_ID = "group_id";
 
+  private static final long HR_IN_MS = 60 * 60 * 1000;
+  private static final long DAY_IN_MS = 24 * HR_IN_MS;
+
   public void recordTelemetry() {
     log.info("CiTelemetryPublisher recordTelemetry execute started.");
     try {
@@ -89,7 +92,10 @@ public class CiTelemetryPublisher {
   }
 
   private void populateCreditUsage(HashMap<String, Object> map, String accountId) {
-    long hostedCreditUsage = ciOverviewDashboardService.getHostedCreditUsage(accountId);
+    long endInterval = System.currentTimeMillis();
+    long startInterval = endInterval - 30 * DAY_IN_MS;
+
+    long hostedCreditUsage = ciOverviewDashboardService.getHostedCreditUsage(accountId, startInterval, endInterval);
     if (hostedCreditUsage >= 0) {
       map.put(COUNT_HOSTED_CREDITS_USED, hostedCreditUsage);
     } else {

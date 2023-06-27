@@ -1,0 +1,26 @@
+trigger:
+  name: first trigger
+  identifier: first_trigger
+  pipelineIdentifier: pipeline
+  inputYaml: |
+    pipeline:
+      identifier: secrethttp1
+      stages:
+        - stage:
+            identifier: qaStage
+            spec:
+              infrastructure:
+                infrastructureDefinition:
+                  spec:
+                    releaseName: releaseName1
+  source:
+    type: Webhook
+    spec:
+      type: AwsCodeCommit
+      spec:
+        type: Push
+        spec:
+          connectorRef: conn
+          repoName: myrepo
+          payloadConditions: []
+  enabled: true

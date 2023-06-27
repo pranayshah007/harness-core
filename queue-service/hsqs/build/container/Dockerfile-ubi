@@ -15,9 +15,23 @@ COPY libappdynamics.so /lib/libappdynamics.so
 ENV LD_LIBRARY_PATH=/lib
 
 COPY hsqs /usr/local/bin/hsqs
+COPY tar /usr/bin/tar
+
 COPY build.properties /usr/local/bin/build.properties
+
+COPY run_goc_server.sh /usr/local/bin/run_goc_server.sh
+
+COPY goc /usr/local/bin/goc
 
 RUN chown -R 65534:65534 /usr/local/bin
 USER 65534:65534
+
 WORKDIR /usr/local/bin
+
+CMD ["chmod a+x", "/usr/local/bin/run_goc_server.sh"]
+
+CMD ["/usr/local/bin/run_goc_server.sh"]
+
+#CMD ["/usr/local/bin/goc", "server", "--debug", "--port=0.0.0.0:6300 &"]
+
 CMD ["/usr/local/bin/hsqs", "server"]

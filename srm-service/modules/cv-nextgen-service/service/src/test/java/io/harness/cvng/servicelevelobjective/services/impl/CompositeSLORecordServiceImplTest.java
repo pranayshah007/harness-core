@@ -31,6 +31,7 @@ import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjec
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLIState;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.persistence.HPersistence;
@@ -41,10 +42,12 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -53,6 +56,8 @@ import org.mockito.Spy;
 
 public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
   @Spy @Inject private CompositeSLORecordServiceImpl sloRecordService;
+
+  @Inject private SLIRecordService sliRecordService;
   @Inject private HPersistence hPersistence;
   @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject private MonitoredServiceService monitoredServiceService;
@@ -303,8 +308,8 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
 
     List<CompositeSLORecord> sloRecords = sloRecordService.getSLORecords(requestVerificationTaskId, startTime, endTime);
     assertThat(sloRecords.size()).isEqualTo(5);
-    assertThat(sloRecords.get(4).getRunningBadCount()).isEqualTo(0);
-    assertThat(sloRecords.get(4).getRunningGoodCount()).isEqualTo(0);
+    assertThat(sloRecords.get(4).getRunningBadCount()).isZero();
+    assertThat(sloRecords.get(4).getRunningGoodCount()).isZero();
     assertThat(sloRecords.get(4).getScopedIdentifierSLIRecordMap().size()).isEqualTo(2);
     assertThat(sloRecords.get(4)
                    .getScopedIdentifierSLIRecordMap()
@@ -630,6 +635,56 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
                        requestCompositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(0)))
                    .getRunningGoodCount())
         .isEqualTo(300);
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testUpdate_duplicateRecords() {
+    List<SLIState> sliStateList1 =
+        Arrays.asList(SLIState.GOOD, SLIState.GOOD, SLIState.BAD, SLIState.NO_DATA, SLIState.BAD);
+    List<SLIState> sliStateList2 =
+        Arrays.asList(SLIState.BAD, SLIState.GOOD, SLIState.NO_DATA, SLIState.BAD, SLIState.GOOD);
+    String sliId1 = serviceLevelIndicatorService
+                        .getServiceLevelIndicator(builderFactory.getProjectParams(),
+                            simpleServiceLevelObjective1.getServiceLevelIndicators().get(0))
+                        .getUuid();
+    String sliId2 = serviceLevelIndicatorService
+                        .getServiceLevelIndicator(builderFactory.getProjectParams(),
+                            simpleServiceLevelObjective2.getServiceLevelIndicators().get(0))
+                        .getUuid();
+    createSLIRecords(sliId1, sliStateList1);
+    createSLIRecords(sliId2, sliStateList2);
+    sloRecordService.create(compositeServiceLevelObjective, startTime, endTime, verificationTaskId);
+    List<CompositeSLORecord> sloRecords =
+        sloRecordService.getSLORecords(compositeServiceLevelObjective.getUuid(), startTime, endTime);
+    assertThat(sloRecords.size()).isEqualTo(5);
+    assertThat(sloRecords.get(4).getRunningBadCount()).isEqualTo(2.0);
+    assertThat(sloRecords.get(4).getRunningGoodCount()).isEqualTo(3.0);
+
+    // Insert duplicates
+    sloRecords = sloRecordService.getLatestCountSLORecords(compositeServiceLevelObjective.getUuid(), 5);
+    assertThat(sloRecords.size()).isEqualTo(5);
+    int count = 0;
+    for (CompositeSLORecord sloRecord : sloRecords) {
+      sloRecord.setUuid(generateUuid());
+      sloRecord.setRunningBadCount(0);
+      sloRecord.setRunningGoodCount(count);
+      count += 1;
+    }
+    hPersistence.saveBatch(sloRecords);
+
+    // Create again
+    sloRecordService.create(compositeServiceLevelObjective, startTime, endTime, verificationTaskId);
+    sloRecords = sloRecordService.getSLORecords(
+        compositeServiceLevelObjective.getUuid(), endTime.minus(1, ChronoUnit.MINUTES), endTime);
+    assertThat(sloRecords.size()).isEqualTo(2);
+    sloRecords = sloRecords.stream()
+                     .sorted(Comparator.comparingLong(CompositeSLORecord::getLastUpdatedAt).reversed())
+                     .collect(Collectors.toList());
+    CompositeSLORecord updatedLastRecord = sloRecords.get(0);
+    assertThat(updatedLastRecord.getRunningBadCount()).isEqualTo(2.0);
+    assertThat(updatedLastRecord.getRunningGoodCount()).isEqualTo(3.0);
   }
 
   private List<SLIRecord> createSLIRecords(String sliId, List<SLIState> states) {

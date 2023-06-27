@@ -17,9 +17,9 @@ go_library(
         "//commons/go/lib/exec",
         "//commons/go/lib/logs",
         "//product/ci/common/logs",
-        "//product/ci/ti-service/client",
-        "//product/ci/ti-service/types",
         "//product/log-service/client",
+        "@com_github_harness_ti_client//client",
+        "@com_github_harness_ti_client//types",
         "@org_uber_go_zap//:zap",
     ],
 )

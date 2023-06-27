@@ -9,12 +9,10 @@ package io.harness.beans.environment.pod;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
-import io.harness.delegate.beans.ci.pod.EmptyDirVolume;
 import io.harness.delegate.beans.ci.pod.PVCParams;
 import io.harness.delegate.beans.ci.pod.PodVolume;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
@@ -42,7 +40,6 @@ public class PodSetupInfo {
   private List<String> serviceIdList;
   private List<Integer> serviceGrpcPortList;
   @NotEmpty private String workDirPath;
-  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true, defaultImpl = EmptyDirVolume.class)
   private List<PodVolume> volumes;
 
   @Data

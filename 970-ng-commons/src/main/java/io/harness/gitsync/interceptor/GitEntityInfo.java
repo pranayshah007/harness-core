@@ -50,7 +50,7 @@ public class GitEntityInfo {
   @Setter String parentEntityAccountIdentifier;
   @Setter String parentEntityOrgIdentifier;
   @Setter String parentEntityProjectIdentifier;
-  @Setter Boolean isDefaultBranch;
+  @Wither @Setter Boolean isDefaultBranch;
   @Setter String transientBranch; // branch used when referring to static linking in yamls
 
   public boolean isNull() {

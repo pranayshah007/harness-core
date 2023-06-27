@@ -176,6 +176,9 @@ public class GitIntegrationServiceImplTest {
                                                     .orgIdentifier(null)
                                                     .projectIdentifier(null)
                                                     .build();
+    MockedStatic<ConfigManagerUtils> mockedStaticConfigManagerUtils = Mockito.mockStatic(ConfigManagerUtils.class);
+    mockedStaticConfigManagerUtils.when(() -> ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(any()))
+        .thenReturn("");
     when(ngSecretService.getDecryptedSecretValue(ACCOUNT_IDENTIFIER, null, null, TOKEN_SECRET_IDENTIFIER))
         .thenReturn(decryptedSecretValue);
 
@@ -186,6 +189,7 @@ public class GitIntegrationServiceImplTest {
         ((BackstageEnvSecretVariable) response.get(Constants.GITHUB_TOKEN)).getHarnessSecretIdentifier());
     assertEquals(Constants.GITHUB_TOKEN, response.get(Constants.GITHUB_TOKEN).getEnvName());
     mockRestStatic.close();
+    mockedStaticConfigManagerUtils.close();
   }
 
   @Test
@@ -227,6 +231,9 @@ public class GitIntegrationServiceImplTest {
                                                     .orgIdentifier(null)
                                                     .projectIdentifier(null)
                                                     .build();
+    MockedStatic<ConfigManagerUtils> mockedStaticConfigManagerUtils = Mockito.mockStatic(ConfigManagerUtils.class);
+    mockedStaticConfigManagerUtils.when(() -> ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(any()))
+        .thenReturn("");
     when(ngSecretService.getDecryptedSecretValue(ACCOUNT_IDENTIFIER, null, null, TOKEN_SECRET_IDENTIFIER))
         .thenReturn(decryptedSecretValue);
 
@@ -237,6 +244,7 @@ public class GitIntegrationServiceImplTest {
         ((BackstageEnvSecretVariable) response.get(Constants.GITLAB_TOKEN)).getHarnessSecretIdentifier());
     assertEquals(Constants.GITLAB_TOKEN, response.get(Constants.GITLAB_TOKEN).getEnvName());
     mockRestStatic.close();
+    mockedStaticConfigManagerUtils.close();
   }
 
   @Test
@@ -281,6 +289,9 @@ public class GitIntegrationServiceImplTest {
                                                     .orgIdentifier(null)
                                                     .projectIdentifier(null)
                                                     .build();
+    MockedStatic<ConfigManagerUtils> mockedStaticConfigManagerUtils = Mockito.mockStatic(ConfigManagerUtils.class);
+    mockedStaticConfigManagerUtils.when(() -> ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(any()))
+        .thenReturn("");
     when(ngSecretService.getDecryptedSecretValue(ACCOUNT_IDENTIFIER, null, null, PWD_SECRET_IDENTIFIER))
         .thenReturn(decryptedSecretValue);
 
@@ -291,6 +302,7 @@ public class GitIntegrationServiceImplTest {
         ((BackstageEnvSecretVariable) response.get(Constants.BITBUCKET_TOKEN)).getHarnessSecretIdentifier());
     assertEquals(Constants.BITBUCKET_TOKEN, response.get(Constants.BITBUCKET_TOKEN).getEnvName());
     mockRestStatic.close();
+    mockedStaticConfigManagerUtils.close();
   }
 
   @Test
@@ -335,6 +347,9 @@ public class GitIntegrationServiceImplTest {
                                                     .orgIdentifier(null)
                                                     .projectIdentifier(null)
                                                     .build();
+    MockedStatic<ConfigManagerUtils> mockedStaticConfigManagerUtils = Mockito.mockStatic(ConfigManagerUtils.class);
+    mockedStaticConfigManagerUtils.when(() -> ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(any()))
+        .thenReturn("");
     when(ngSecretService.getDecryptedSecretValue(ACCOUNT_IDENTIFIER, null, null, TOKEN_SECRET_IDENTIFIER))
         .thenReturn(decryptedSecretValue);
 
@@ -345,6 +360,7 @@ public class GitIntegrationServiceImplTest {
         ((BackstageEnvSecretVariable) response.get(Constants.AZURE_REPO_TOKEN)).getHarnessSecretIdentifier());
     assertEquals(Constants.AZURE_REPO_TOKEN, response.get(Constants.AZURE_REPO_TOKEN).getEnvName());
     mockRestStatic.close();
+    mockedStaticConfigManagerUtils.close();
   }
 
   @Test
@@ -402,10 +418,12 @@ public class GitIntegrationServiceImplTest {
                                                               .orgIdentifier(null)
                                                               .projectIdentifier(null)
                                                               .build();
+    MockedStatic<ConfigManagerUtils> mockedStaticConfigManagerUtils = Mockito.mockStatic(ConfigManagerUtils.class);
+    mockedStaticConfigManagerUtils.when(() -> ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(any()))
+        .thenReturn("");
     when(ngSecretService.getDecryptedSecretValue(any(), any(), any(), any()))
         .thenReturn(decryptedSecretValuePrivateRef)
         .thenReturn(decryptedSecretValueToken);
-
     Map<String, BackstageEnvVariable> response =
         githubConnectorProcessor.getConnectorAndSecretsInfo(ACCOUNT_IDENTIFIER, connectorInfoDTO);
 
@@ -419,6 +437,7 @@ public class GitIntegrationServiceImplTest {
         ((BackstageEnvSecretVariable) response.get(Constants.GITHUB_TOKEN)).getHarnessSecretIdentifier());
     assertEquals(Constants.GITHUB_TOKEN, response.get(Constants.GITHUB_TOKEN).getEnvName());
     mockRestStatic.close();
+    mockedStaticConfigManagerUtils.close();
   }
 
   @Test

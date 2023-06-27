@@ -7,6 +7,7 @@
 
 package io.harness.helper;
 
+import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -19,6 +20,7 @@ import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
+import io.harness.cdng.infra.beans.K8sRancherInfrastructureOutcome;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.K8sDeploymentInfoDTO;
@@ -146,5 +148,20 @@ public class K8sAndHelmInfrastructureUtilityTest extends InstancesTestBase {
     assertThat(k8sCloudConfigMetadata).isInstanceOf(K8sGcpCloudConfigMetadata.class);
     K8sGcpCloudConfigMetadata k8sAWSCloudConfigMetadata = (K8sGcpCloudConfigMetadata) k8sCloudConfigMetadata;
     assertThat(k8sAWSCloudConfigMetadata.getClusterName()).contains("cluster");
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testGetK8sRancherCloudConfigMetadata() {
+    InfrastructureOutcome infrastructureOutcome =
+        K8sRancherInfrastructureOutcome.builder().clusterName("cluster").namespace(NAMESPACE).build();
+    K8sCloudConfigMetadata k8sCloudConfigMetadata =
+        K8sAndHelmInfrastructureUtility.getK8sCloudConfigMetadata(infrastructureOutcome);
+    assertThat(k8sCloudConfigMetadata).isNotNull();
+    assertThat(k8sCloudConfigMetadata).isInstanceOf(K8sRancherCloudConfigMetadata.class);
+    K8sRancherCloudConfigMetadata k8sRancherCloudConfigMetadata =
+        (K8sRancherCloudConfigMetadata) k8sCloudConfigMetadata;
+    assertThat(k8sRancherCloudConfigMetadata.getClusterName()).isEqualTo("cluster");
   }
 }

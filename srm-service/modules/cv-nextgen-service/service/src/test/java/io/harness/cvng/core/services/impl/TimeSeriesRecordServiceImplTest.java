@@ -13,6 +13,7 @@ import static io.harness.cvng.core.services.CVNextGenConstants.CV_ANALYSIS_WINDO
 import static io.harness.cvng.core.services.CVNextGenConstants.PERFORMANCE_PACK_IDENTIFIER;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.persistence.HQuery.excludeAuthority;
+import static io.harness.rule.OwnerRule.DHRUVX;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.PRAVEEN;
 import static io.harness.rule.OwnerRule.RAGHU;
@@ -807,6 +808,17 @@ public class TimeSeriesRecordServiceImplTest extends CvNextGenTestBase {
     assertThat(timeSeriesRecordService.getTimeSeriesRecordDTOs(
                    verificationTaskId, startTime, startTime.plus(Duration.ofMinutes(2))))
         .hasSize(2 * 5 * 5);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetTimeSeriesRecordsForVerificationTaskId() {
+    Instant startTime = Instant.parse("2020-07-07T02:30:00.000Z");
+    saveTimeSeriesRecords(startTime, 10, 5, 5);
+    assertThat(timeSeriesRecordService.getTimeSeriesRecordsForVerificationTaskId(verificationTaskId))
+        .hasSize(10 * 5 * 5);
+    assertThat(timeSeriesRecordService.getTimeSeriesRecordsForVerificationTaskId("verificationTaskId")).hasSize(0);
   }
 
   private void saveTimeSeriesRecords(

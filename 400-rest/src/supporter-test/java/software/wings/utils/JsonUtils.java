@@ -58,4 +58,12 @@ public class JsonUtils {
   public static JsonNode toJsonNode(Object obj) {
     return objectMapper.convertValue(obj, JsonNode.class);
   }
+
+  public static JsonNode readTree(String strJson) {
+    try {
+      return objectMapper.readTree(strJson);
+    } catch (IOException e) {
+      throw new IllegalStateException(e);
+    }
+  }
 }

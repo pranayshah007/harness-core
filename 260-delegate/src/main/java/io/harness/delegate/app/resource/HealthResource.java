@@ -8,6 +8,7 @@
 package io.harness.delegate.app.resource;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.health.HealthException;
@@ -48,6 +49,9 @@ public class HealthResource {
     final HealthCheck.Result check = healthService.check();
     if (check.isHealthy()) {
       return ResponseDTO.newResponse(HealthService.HEALTHY);
+    }
+    if (isEmpty(check.getMessage())) {
+      throw new HealthException(check.getError());
     }
     throw new HealthException(check.getMessage(), check.getError());
   }

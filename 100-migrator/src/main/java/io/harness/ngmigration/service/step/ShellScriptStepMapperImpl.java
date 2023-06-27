@@ -90,6 +90,10 @@ public class ShellScriptStepMapperImpl extends StepMapper {
       refs.add(CgEntityId.builder().id(templateId).type(NGMigrationEntityType.TEMPLATE).build());
     }
     refs.addAll(secretRefUtils.getSecretRefFromExpressions(accountId, getExpressions(graphNode)));
+    ShellScriptState state = (ShellScriptState) getState(graphNode);
+    if (StringUtils.isNotBlank(state.getConnectionAttributes())) {
+      refs.add(CgEntityId.builder().id(state.getConnectionAttributes()).type(NGMigrationEntityType.CONNECTOR).build());
+    }
     return refs;
   }
 

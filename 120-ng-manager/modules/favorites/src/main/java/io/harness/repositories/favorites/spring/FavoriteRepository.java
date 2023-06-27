@@ -38,4 +38,8 @@ public interface FavoriteRepository extends PagingAndSortingRepository<Favorite,
   deleteByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndUserIdentifierAndResourceTypeAndResourceIdentifier(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String userIdentifier,
       ResourceType resourceType, String resourceIdentifier);
+
+  void deleteByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndResourceTypeAndResourceIdentifier(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, ResourceType resourceType,
+      String resourceIdentifier);
 }

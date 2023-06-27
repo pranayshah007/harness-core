@@ -7,12 +7,15 @@
 
 package io.harness.cvng.cdng.resources;
 
+import static java.util.stream.Collectors.groupingBy;
+
 import io.harness.beans.FeatureName;
 import io.harness.cvng.CVConstants;
 import io.harness.cvng.activity.beans.DeploymentActivityResultDTO.DeploymentVerificationJobInstanceSummary;
 import io.harness.cvng.analysis.beans.CanaryBlueGreenAdditionalInfo;
 import io.harness.cvng.analysis.beans.CanaryBlueGreenAdditionalInfo.HostSummaryInfo;
 import io.harness.cvng.analysis.beans.Risk;
+import io.harness.cvng.analysis.beans.TimeSeriesRecordDTO;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
 import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
@@ -31,6 +34,11 @@ import io.harness.cvng.cdng.beans.v2.BaselineType;
 import io.harness.cvng.cdng.beans.v2.HealthSource;
 import io.harness.cvng.cdng.beans.v2.MetricsAnalysis;
 import io.harness.cvng.cdng.beans.v2.ProviderType;
+import io.harness.cvng.cdng.beans.v2.VerificationMetricsTimeSeries;
+import io.harness.cvng.cdng.beans.v2.VerificationMetricsTimeSeries.Metric;
+import io.harness.cvng.cdng.beans.v2.VerificationMetricsTimeSeries.Node;
+import io.harness.cvng.cdng.beans.v2.VerificationMetricsTimeSeries.TimeSeriesValue;
+import io.harness.cvng.cdng.beans.v2.VerificationMetricsTimeSeries.TransactionGroup;
 import io.harness.cvng.cdng.beans.v2.VerificationOverview;
 import io.harness.cvng.cdng.beans.v2.VerificationResult;
 import io.harness.cvng.cdng.beans.v2.VerificationSpec;
@@ -41,7 +49,11 @@ import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceDTO;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentTimeSeriesAnalysisFilter;
+import io.harness.cvng.core.entities.CVConfig;
+import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.services.api.FeatureFlagService;
+import io.harness.cvng.core.services.api.TimeSeriesRecordService;
+import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.resources.VerifyStepResource;
 import io.harness.cvng.verificationjob.beans.AdditionalInfo;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
@@ -59,13 +71,17 @@ import io.harness.utils.PageUtils;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -78,6 +94,8 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
   @Inject private DeploymentTimeSeriesAnalysisService deploymentTimeSeriesAnalysisService;
   @Inject private TelemetryReporter telemetryReporter;
   @Inject private FeatureFlagService featureFlagService;
+  @Inject private VerificationTaskService verificationTaskService;
+  @Inject private TimeSeriesRecordService timeSeriesRecordService;
 
   @Override
   public List<String> getTransactionGroupsForVerifyStepExecutionId(VerifyStepPathParams verifyStepPathParams) {
@@ -362,6 +380,119 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
                 .build());
 
     return PageUtils.offsetAndLimit(metricsAnalyses, pageRequest.getPageIndex(), pageRequest.getPageSize());
+  }
+
+  @Override
+  public VerificationMetricsTimeSeries getMetricsTimeSeriesForVerifyStepExecutionId(
+      VerifyStepPathParams verifyStepPathParams) {
+    Map<String, Map<String, Map<String, Map<String, List<TimeSeriesRecordDTO>>>>> groupedTimeSeriesRecords =
+        getTimeSeriesRecordsGroupedByHealthSourceIds(verifyStepPathParams);
+    return VerificationMetricsTimeSeries.builder()
+        .verificationId(verifyStepPathParams.getVerifyStepExecutionId())
+        .healthSources(getHealthSources(groupedTimeSeriesRecords))
+        .build();
+  }
+
+  private Map<String, Map<String, Map<String, Map<String, List<TimeSeriesRecordDTO>>>>>
+  getTimeSeriesRecordsGroupedByHealthSourceIds(VerifyStepPathParams verifyStepPathParams) {
+    Map<String, Map<String, Map<String, Map<String, List<TimeSeriesRecordDTO>>>>> groupedTimeSeriesRecords =
+        new HashMap<>();
+    VerificationJobInstance verificationJobInstance =
+        verificationJobInstanceService.getVerificationJobInstance(verifyStepPathParams.getVerifyStepExecutionId());
+    Map<String, String> cvConfigIdToHealthSourceIdMap =
+        verificationJobInstance.getCvConfigMap().values().stream().collect(Collectors.toMap(CVConfig::getUuid,
+            cvConfig
+            -> cvConfig.getFullyQualifiedIdentifier().substring(
+                cvConfig.getFullyQualifiedIdentifier().indexOf("/") + 1),
+            (u, v) -> v));
+    Set<String> verificationTaskIds = verificationTaskService.getVerificationTaskIds(
+        verifyStepPathParams.getAccountIdentifier(), verifyStepPathParams.getVerifyStepExecutionId());
+    Map<String, String> verificationTaskIdToHealthSourceNameMap =
+        getVerificationTaskIdToHealthSourceIdMap(verificationTaskIds, cvConfigIdToHealthSourceIdMap);
+    for (String verificationTaskId : verificationTaskIds) {
+      List<TimeSeriesRecordDTO> timeSeriesRecords =
+          new ArrayList<>(timeSeriesRecordService.getTimeSeriesRecordsForVerificationTaskId(verificationTaskId));
+      groupedTimeSeriesRecords.put(verificationTaskIdToHealthSourceNameMap.getOrDefault(verificationTaskId, ""),
+          getGroupedTimeSeriesRecordDtos(timeSeriesRecords));
+    }
+    return groupedTimeSeriesRecords;
+  }
+
+  private Map<String, String> getVerificationTaskIdToHealthSourceIdMap(
+      Set<String> verificationTaskIds, Map<String, String> cvConfigIdToHealthSourceNameMap) {
+    return verificationTaskService.getVerificationTasksForGivenIds(verificationTaskIds)
+        .stream()
+        .filter(
+            verificationTask -> verificationTask.getTaskInfo().getTaskType() == VerificationTask.TaskType.DEPLOYMENT)
+        .collect(Collectors.toMap(VerificationTask::getUuid,
+            verificationTask
+            -> cvConfigIdToHealthSourceNameMap.getOrDefault(
+                ((VerificationTask.DeploymentInfo) verificationTask.getTaskInfo()).getCvConfigId(), ""),
+            (u, v) -> v));
+  }
+
+  private static Map<String, Map<String, Map<String, List<TimeSeriesRecordDTO>>>> getGroupedTimeSeriesRecordDtos(
+      List<TimeSeriesRecordDTO> allTimeSeriesRecords) {
+    return allTimeSeriesRecords.stream().collect(groupingBy(
+        dto -> Objects.nonNull(dto.getGroupName()) ? dto.getGroupName() : "", groupByMetricNameAndHostIdentifier()));
+  }
+
+  private static List<VerificationMetricsTimeSeries.HealthSource> getHealthSources(
+      Map<String, Map<String, Map<String, Map<String, List<TimeSeriesRecordDTO>>>>> healthSourceNameMappedDtos) {
+    List<VerificationMetricsTimeSeries.HealthSource> healthSources = new ArrayList<>();
+    for (Map.Entry<String, Map<String, Map<String, Map<String, List<TimeSeriesRecordDTO>>>>> healthSourceEntry :
+        healthSourceNameMappedDtos.entrySet()) {
+      healthSources.add(VerificationMetricsTimeSeries.HealthSource.builder()
+                            .healthSourceIdentifier(healthSourceEntry.getKey())
+                            .transactionGroups(getTransactionGroups(healthSourceEntry.getValue()))
+                            .build());
+    }
+    return healthSources;
+  }
+  private static List<TransactionGroup> getTransactionGroups(
+      Map<String, Map<String, Map<String, List<TimeSeriesRecordDTO>>>> transactionGroupMappedDtos) {
+    List<TransactionGroup> transactionGroups = new ArrayList<>();
+    for (Map.Entry<String, Map<String, Map<String, List<TimeSeriesRecordDTO>>>> transactionGroupEntry :
+        transactionGroupMappedDtos.entrySet()) {
+      transactionGroups.add(TransactionGroup.builder()
+                                .metrics(getMetrics(transactionGroupEntry.getValue()))
+                                .transactionGroupName(transactionGroupEntry.getKey())
+                                .build());
+    }
+    return transactionGroups;
+  }
+
+  private static List<Metric> getMetrics(Map<String, Map<String, List<TimeSeriesRecordDTO>>> metricMappedDtos) {
+    List<Metric> metrics = new ArrayList<>();
+    for (Map.Entry<String, Map<String, List<TimeSeriesRecordDTO>>> metricEntry : metricMappedDtos.entrySet()) {
+      metrics.add(Metric.builder().metricName(metricEntry.getKey()).nodes(getNodes(metricEntry.getValue())).build());
+    }
+    return metrics;
+  }
+
+  private static List<Node> getNodes(Map<String, List<TimeSeriesRecordDTO>> nodeMappedDtos) {
+    List<Node> nodes = new ArrayList<>();
+    for (Map.Entry<String, List<TimeSeriesRecordDTO>> nodeEntry : nodeMappedDtos.entrySet()) {
+      List<TimeSeriesValue> sortedTimeSeries =
+          nodeEntry.getValue()
+              .stream()
+              .sorted(Comparator.comparing(TimeSeriesRecordDTO::getEpochMinute))
+              .map(timeSeriesRecordDTO
+                  -> TimeSeriesValue.builder()
+                         .metricValue(timeSeriesRecordDTO.getMetricValue())
+                         .epochSecond(TimeUnit.MINUTES.toSeconds(timeSeriesRecordDTO.getEpochMinute()))
+                         .build())
+              .collect(Collectors.toList());
+      nodes.add(Node.builder().nodeIdentifier(nodeEntry.getKey()).timeSeries(sortedTimeSeries).build());
+    }
+    return nodes;
+  }
+
+  private static Collector<TimeSeriesRecordDTO, ?, Map<String, Map<String, List<TimeSeriesRecordDTO>>>>
+  groupByMetricNameAndHostIdentifier() {
+    return groupingBy(dto
+        -> Objects.nonNull(dto.getMetricName()) ? dto.getMetricName() : "",
+        groupingBy(dto -> Objects.nonNull(dto.getHost()) ? dto.getHost() : ""));
   }
 
   private Long getTestDataStartTimestamp(VerificationJobInstance verificationJobInstance) {

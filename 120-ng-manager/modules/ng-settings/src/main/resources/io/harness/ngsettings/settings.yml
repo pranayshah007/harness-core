@@ -1,6 +1,6 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 24
+version : 25
 settings :
   - identifier: mandate_webhook_secrets_for_github_triggers
     name: Mandate Webhook Secrets for Github Triggers
@@ -153,7 +153,7 @@ settings :
         defaultValue: 2
         editable: false
       TEAM:
-        # 500 for now. Will make it 200 once the previous execution entries are cleared.
+# 500 for now.Will make it 200 once the previous execution entries are cleared.
         defaultValue: 500
         editable: false
       ENTERPRISE:
@@ -382,4 +382,12 @@ settings :
     allowedScopes:
       - ACCOUNT
       - ORGANIZATION
+      - PROJECT
+  - identifier: git_experience_repo_allowlist
+    name: Git Experience Repo Allowlist
+    category: GIT_EXPERIENCE
+    defaultValue:
+    valueType: String
+    allowOverrides: true
+    allowedScopes:
       - PROJECT

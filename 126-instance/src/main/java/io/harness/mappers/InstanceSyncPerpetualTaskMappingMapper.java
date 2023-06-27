@@ -25,6 +25,7 @@ public class InstanceSyncPerpetualTaskMappingMapper {
         .accountId(instanceSyncPerpetualTaskMapping.getAccountId())
         .orgId(instanceSyncPerpetualTaskMapping.getOrgId())
         .projectId(instanceSyncPerpetualTaskMapping.getProjectId())
+        .deploymentType(instanceSyncPerpetualTaskMapping.getDeploymentType())
         .build();
   }
 
@@ -37,6 +38,7 @@ public class InstanceSyncPerpetualTaskMappingMapper {
         .accountId(instanceSyncPerpetualTaskMappingDTO.getAccountId())
         .orgId(instanceSyncPerpetualTaskMappingDTO.getOrgId())
         .projectId(instanceSyncPerpetualTaskMappingDTO.getProjectId())
+        .deploymentType(instanceSyncPerpetualTaskMappingDTO.getDeploymentType())
         .build();
   }
 }

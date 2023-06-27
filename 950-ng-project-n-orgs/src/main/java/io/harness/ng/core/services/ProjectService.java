@@ -10,6 +10,7 @@ package io.harness.ng.core.services;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.favorites.entities.Favorite;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ActiveProjectsCountDTO;
@@ -45,6 +46,8 @@ public interface ProjectService {
    */
   Page<Project> listPermittedProjects(
       String accountIdentifier, Pageable pageable, ProjectFilterDTO projectFilterDTO, Boolean onlyFavorites);
+
+  List<Favorite> getProjectFavorites(String accountIdentifier, ProjectFilterDTO projectFilterDTO, String userId);
 
   List<ProjectDTO> listPermittedProjects(String accountIdentifier, ProjectFilterDTO projectFilterDTO);
 

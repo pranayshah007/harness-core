@@ -39,6 +39,7 @@ modify_service_name() {
     ["batch-processing"]=1
     ["audit-event-streaming"]=1
     ["ce-nextgen"]=1
+    ["srm-service"]=1
   )
 
   local modified_service_name="${modified_service_name[$SERVICE_NAME]}"
@@ -52,6 +53,9 @@ modify_service_name() {
       modified_service_name+="/service"
   fi
 
+  if [[ $modified_service_name == *"srm-service"* ]]; then
+    modified_service_name="srm-service/modules/cv-nextgen-service/service"
+  fi
   echo "$modified_service_name"
 }
 

@@ -16,6 +16,7 @@ java_library(
         "//932-connector-task:module",
         "//950-delegate-tasks-beans:module",
         "//954-connector-beans:module",
+        "//960-api-services/src/main/java/io/harness/artifacts/githubpackages/beans:module",
         "//960-api-services/src/main/java/io/harness/exception/sanitizer:module",
         "//960-api-services/src/main/java/io/harness/pcf:module",
         "//960-api-services/src/main/java/io/harness/security/encryption:module",

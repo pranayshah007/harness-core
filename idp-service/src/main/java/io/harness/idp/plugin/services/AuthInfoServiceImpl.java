@@ -14,9 +14,9 @@ import static io.harness.idp.configmanager.utils.ConfigManagerUtils.asYaml;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.common.Constants;
-import io.harness.idp.configmanager.ConfigType;
 import io.harness.idp.configmanager.service.ConfigManagerService;
 import io.harness.idp.configmanager.utils.ConfigManagerUtils;
+import io.harness.idp.configmanager.utils.ConfigType;
 import io.harness.idp.envvariable.service.BackstageEnvVariableService;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.idp.plugin.mappers.AuthInfoMapper;
@@ -59,6 +59,7 @@ public class AuthInfoServiceImpl implements AuthInfoService {
   @Override
   public List<BackstageEnvVariable> saveAuthEnvVariables(
       String authId, List<BackstageEnvVariable> envVariables, String harnessAccount) throws Exception {
+    backstageEnvVariableService.deleteMultiUsingEnvNames(getEnvNamesForAuthId(authId), harnessAccount);
     List<BackstageEnvVariable> backstageEnvVariables =
         backstageEnvVariableService.createOrUpdate(envVariables, harnessAccount);
     createOrUpdateAppConfigForAuth(authId, harnessAccount, backstageEnvVariables);
@@ -79,8 +80,7 @@ public class AuthInfoServiceImpl implements AuthInfoService {
     appConfig.setConfigs(authConfig);
     appConfig.setEnabled(true);
 
-    configManagerService.saveOrUpdateConfigForAccount(appConfig, accountIdentifier, ConfigType.AUTH);
-    configManagerService.mergeAndSaveAppConfig(accountIdentifier);
+    configManagerService.saveUpdateAndMergeConfigForAccount(appConfig, accountIdentifier, ConfigType.AUTH);
 
     log.info("Merging for auth config completed for authId - {}", authId);
   }

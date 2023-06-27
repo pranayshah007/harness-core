@@ -6,7 +6,7 @@
 package utils
 
 import (
-	"github.com/harness/harness-core/product/ci/ti-service/types"
+	"github.com/harness/ti-client/types"
 	"testing"
 	"time"
 

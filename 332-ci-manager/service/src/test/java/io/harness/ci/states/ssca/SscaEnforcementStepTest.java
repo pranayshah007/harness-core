@@ -102,6 +102,7 @@ public class SscaEnforcementStepTest extends CIExecutionTestBase {
                                                       .stepExecutionId(SscaTestsUtility.STEP_EXECUTION_ID)
                                                       .imageName("library/nginx")
                                                       .id("someId")
+                                                      .tag("latest")
                                                       .build();
     StepResponse stepResponse =
         sscaEnforcementStep.handleAsyncResponseInternal(ambiance, stepElementParameters, responseDataMap);
@@ -160,6 +161,7 @@ public class SscaEnforcementStepTest extends CIExecutionTestBase {
                                                       .stepExecutionId(SscaTestsUtility.STEP_EXECUTION_ID)
                                                       .imageName("library/nginx")
                                                       .id("someId")
+                                                      .tag("latest")
                                                       .build();
     StepResponse stepResponse =
         sscaEnforcementStep.handleAsyncResponseInternal(ambiance, stepElementParameters, responseDataMap);

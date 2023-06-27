@@ -50,4 +50,5 @@ public class K8sBGDeployRequest implements K8sDeployRequest {
   @Expression(ALLOW_SECRETS) List<ServiceHookDelegateConfig> serviceHooks;
   boolean enabledSupportHPAAndPDB;
   boolean skipUnchangedManifest;
+  boolean storeReleaseHash;
 }

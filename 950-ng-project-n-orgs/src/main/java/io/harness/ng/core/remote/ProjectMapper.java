@@ -22,6 +22,7 @@ import io.harness.ng.core.entities.Project;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import org.springframework.data.domain.Page;
@@ -61,8 +62,8 @@ public class ProjectMapper {
   }
   public static Page<ProjectResponse> toResponseWithFavouritesInfo(
       Page<Project> projects, List<Favorite> favoriteProjects) {
-    List<String> favoriteProjectIds =
-        favoriteProjects.stream().map(Favorite::getResourceIdentifier).collect(Collectors.toList());
+    Set<String> favoriteProjectIds =
+        favoriteProjects.stream().map(Favorite::getResourceIdentifier).collect(Collectors.toSet());
     return projects.map(project
         -> ProjectMapper.toProjectResponseBuilder(project)
                .isFavorite(favoriteProjectIds.contains(project.getIdentifier()))

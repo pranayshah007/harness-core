@@ -31,6 +31,8 @@ scheduler:
 
 dataStorageMode: MONGO
 
+distributedLockImplementation: MONGO
+
 logging:
   level: INFO
   loggers:

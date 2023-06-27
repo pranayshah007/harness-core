@@ -175,7 +175,7 @@ public class PlanCreatorMergeServiceTest extends CategoryTest {
     assertThat(initialPlanCreationContext).containsKey("metadata");
     PlanCreationContextValue planCreationContextValue = initialPlanCreationContext.get("metadata");
     assertThat(planCreationContextValue.getGlobalDependency()).isNotNull();
-    assertThat(planCreationContextValue.getIsExecutionInputEnabled()).isFalse();
+    assertThat(planCreationContextValue.getIsExecutionInputEnabled()).isTrue();
     Dependency globalDependency = planCreationContextValue.getGlobalDependency();
     assertThat(globalDependency.getMetadataMap()).containsKey(YAMLFieldNameConstants.OPTIONS);
     byte[] bytes = globalDependency.getMetadataMap().get(YAMLFieldNameConstants.OPTIONS).toByteArray();
@@ -223,7 +223,7 @@ public class PlanCreatorMergeServiceTest extends CategoryTest {
     assertThat(initialPlanCreationContext).containsKey("metadata");
     PlanCreationContextValue planCreationContextValue = initialPlanCreationContext.get("metadata");
     assertThat(planCreationContextValue.getGlobalDependency()).isNotNull();
-    assertThat(planCreationContextValue.getIsExecutionInputEnabled()).isFalse();
+    assertThat(planCreationContextValue.getIsExecutionInputEnabled()).isTrue();
     Dependency globalDependency = planCreationContextValue.getGlobalDependency();
     assertThat(globalDependency.getMetadataMap()).containsKey(YAMLFieldNameConstants.OPTIONS);
     byte[] bytes = globalDependency.getMetadataMap().get(YAMLFieldNameConstants.OPTIONS).toByteArray();

@@ -24,7 +24,6 @@ import io.harness.EntityType;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EnvironmentType;
-import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.dependencies.ServiceDependency;
 import io.harness.beans.environment.ServiceDefinitionInfo;
@@ -386,8 +385,6 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
       throw new CIStageExecutionException("Please enable CI free plan or reach out to support.");
     }
 
-    boolean classExpansion = ciFeatureFlagService.isEnabled(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, accountId);
-
     Optional<Integer> maxExpansionLimit = Optional.of(Integer.valueOf(MAXIMUM_EXPANSION_LIMIT));
     if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE
         && ciStagePlanCreationUtils.isHostedInfra(initializeStepInfo.getInfrastructure())) {
@@ -396,12 +393,9 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
 
     for (ExecutionWrapperConfig config : executionElement.getSteps()) {
       ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo;
-      if (classExpansion) {
-        expandedExecutionWrapperInfo =
-            strategyHelper.expandExecutionWrapperConfigFromClass(config, maxExpansionLimit, CIAbstractStepNode.class);
-      } else {
-        expandedExecutionWrapperInfo = strategyHelper.expandExecutionWrapperConfig(config, maxExpansionLimit);
-      }
+      expandedExecutionWrapperInfo =
+          strategyHelper.expandExecutionWrapperConfigFromClass(config, maxExpansionLimit, CIAbstractStepNode.class);
+
       expandedExecutionElement.addAll(expandedExecutionWrapperInfo.getExpandedExecutionConfigs());
       strategyExpansionMap.putAll(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData());
     }

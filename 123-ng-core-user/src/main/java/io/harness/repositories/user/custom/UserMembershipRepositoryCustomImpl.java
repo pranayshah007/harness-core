@@ -56,6 +56,12 @@ public class UserMembershipRepositoryCustomImpl implements UserMembershipReposit
   }
 
   @Override
+  public List<UserMembership> findAllWithCriteria(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.find(query, UserMembership.class);
+  }
+
+  @Override
   public Page<String> findAllUserIds(Criteria criteria, Pageable pageable) {
     Query query = new Query(criteria).with(pageable);
     query.fields().include(UserMembershipKeys.userId);

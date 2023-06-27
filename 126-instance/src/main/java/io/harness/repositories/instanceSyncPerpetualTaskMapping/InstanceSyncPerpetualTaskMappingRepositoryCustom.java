@@ -15,6 +15,6 @@ import java.util.Optional;
 
 @OwnedBy(HarnessTeam.CDP)
 public interface InstanceSyncPerpetualTaskMappingRepositoryCustom {
-  Optional<InstanceSyncPerpetualTaskMapping> findByConnectorRef(
-      String accountId, String OrgId, String projectId, String ConnectorRef);
+  Optional<InstanceSyncPerpetualTaskMapping> findByConnectorRefAndDeploymentType(
+      String accountId, String OrgId, String projectId, String ConnectorRef, String deploymentType);
 }

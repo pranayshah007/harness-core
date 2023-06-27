@@ -23,34 +23,25 @@ import lombok.extern.slf4j.Slf4j;
 public class ResourceLocker {
   RedisPersistentLocker redisLocker;
 
-  public AcquiredLock acquireLock(String entityType, String messageId, String accountIdentifier,
-      String resourceIdentifier) throws InterruptedException {
+  public AcquiredLock acquireLock(String lockName) throws InterruptedException {
     AcquiredLock lock;
     while (true) {
-      lock = redisLocker.tryToAcquireLock(
-          accountIdentifier + "_" + entityType + "_" + resourceIdentifier, Duration.ofMinutes(1));
+      lock = redisLocker.tryToAcquireLock(lockName, Duration.ofMinutes(1));
 
       if (lock == null) {
-        log.info(
-            "Lock not acquired for crud event for resource of type {} with identifier {} for account {} with message id - {}, waiting to acquire lock",
-            entityType, resourceIdentifier, accountIdentifier, messageId);
+        log.info("Lock not acquired for {}, waiting to acquire lock", lockName);
         Thread.sleep(1000);
       } else {
-        log.info(
-            "Lock acquired for processing crud event for resource of type {} with identifier {} for account {} with message id - {}",
-            entityType, resourceIdentifier, accountIdentifier, messageId);
+        log.info("Lock acquired for {}", lockName);
         break;
       }
     }
     return lock;
   }
 
-  public void releaseLock(AcquiredLock lock, String entityType, String messageId, String accountIdentifier,
-      String resourceIdentifier) throws InterruptedException {
+  public void releaseLock(AcquiredLock lock) throws InterruptedException {
     redisLocker.destroy(lock);
     Thread.sleep(200);
-    log.debug(
-        "Lock released for processing crud event for resource of type {} with identifier {} for account {} with message id - {}",
-        entityType, resourceIdentifier, accountIdentifier, messageId);
+    log.debug("Lock released for {}", lock.getLock());
   }
 }

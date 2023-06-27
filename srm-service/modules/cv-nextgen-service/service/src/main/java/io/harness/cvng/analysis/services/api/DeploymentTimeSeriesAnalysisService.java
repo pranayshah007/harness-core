@@ -59,7 +59,6 @@ public interface DeploymentTimeSeriesAnalysisService {
   void addDemoMetricsAnalysisData(String verificationTaskId, CVConfig cvConfig,
       VerificationJobInstance verificationJobInstance, ActivityVerificationStatus activityVerificationStatus);
 
-  // TODO: Add UTs for getControlDataTimeRange getTestDataTimeRange
   Optional<TimeRange> getControlDataTimeRange(AppliedDeploymentAnalysisType appliedDeploymentAnalysisType,
       VerificationJobInstance verificationJobInstance, DeploymentTimeSeriesAnalysis timeSeriesAnalysis);
 

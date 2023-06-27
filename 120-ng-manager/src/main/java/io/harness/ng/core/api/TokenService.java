@@ -45,5 +45,7 @@ public interface TokenService {
 
   TokenDTO validateToken(String accountIdentifier, String apiKey);
 
+  void validateTokenListPermissions(TokenFilterDTO filterDTO);
+
   Long countApiTokens(String accountIdentifier);
 }
