@@ -22,6 +22,8 @@ import io.harness.encryptors.VaultEncryptor;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.SecretManagementException;
 import io.harness.exception.WingsException;
+import io.harness.gcp.helpers.GcpHttpTransportHelperService;
+import io.harness.network.Http;
 import io.harness.secretmanagerclient.exception.SecretManagementClientException;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
@@ -29,7 +31,11 @@ import io.harness.security.encryption.EncryptionConfig;
 
 import software.wings.beans.GcpSecretsManagerConfig;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
+import com.google.api.client.googleapis.auth.oauth2.OAuth2Utils;
+import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.gax.core.FixedCredentialsProvider;
+import com.google.auth.http.HttpTransportFactory;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.auth.oauth2.UserCredentials;
@@ -322,7 +328,7 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
   public GoogleCredentials getGoogleCredentials(GcpSecretsManagerConfig gcpSecretsManagerConfig) {
     try {
       if (BooleanUtils.isTrue(gcpSecretsManagerConfig.getAssumeCredentialsOnDelegate())) {
-        return GoogleCredentials.getApplicationDefault();
+        return getApplicationDefaultCredentials();
       }
       if (gcpSecretsManagerConfig.getCredentials() == null) {
         throw new SecretManagementException(GCP_SECRET_OPERATION_ERROR,
@@ -336,6 +342,12 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
           "Not able to create Google Credentials from given Configuration " + gcpSecretsManagerConfig.getUuid(), e,
           USER);
     }
+  }
+
+  public static GoogleCredentials getApplicationDefaultCredentials() throws IOException {
+    return Http.getProxyHostName() != null && !Http.shouldUseNonProxy(OAuth2Utils.getMetadataServerUrl())
+        ? GoogleCredentials.getApplicationDefault(GcpHttpTransportHelperService.getHttpTransportFactory())
+        : GoogleCredentials.getApplicationDefault();
   }
 
   public String getProjectId(GoogleCredentials credentials) {
