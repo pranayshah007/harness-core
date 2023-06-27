@@ -56,8 +56,7 @@ function get_info_from_file(){
 
 BAZEL_ARGS="--announce_rc --keep_going --show_timestamps --jobs=auto"
 BAZEL_OUTPUT_PATH="/tmp/execroot/harness_monorepo/bazel-out/k8-fastbuild/bin"
-COVERAGE_ARGS="--collect_code_coverage --combined_report=lcov --coverage_report_generator=//tools/bazel/sonarqube:sonarqube_coverage_generator \
---experimental_fetch_all_coverage_outputs"
+COVERAGE_ARGS="--collect_code_coverage --combined_report=lcov --coverage_report_generator=//tools/bazel/sonarqube:sonarqube_coverage_generator"
 COVERAGE_REPORT_PATH='/tmp/execroot/harness_monorepo/bazel-out/_coverage/_coverage_report.dat'
 JARS_ARRAY=("libmodule-hjar.jar" "libmodule.jar" "module.jar")
 JARS_FILE="modules_jars.txt"
