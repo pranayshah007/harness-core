@@ -67,9 +67,11 @@ import io.harness.git.model.GitRepositoryType;
 import io.harness.git.model.JgitSshAuthRequest;
 import io.harness.git.model.ListRemoteRequest;
 import io.harness.git.model.ListRemoteResult;
+import io.harness.git.model.PushRequest;
 import io.harness.git.model.PushResultGit;
 import io.harness.git.model.RevertAndPushRequest;
 import io.harness.git.model.RevertAndPushResult;
+import io.harness.git.model.RevertRequest;
 
 import software.wings.misc.CustomUserGitConfigSystemReader;
 
@@ -629,13 +631,16 @@ public class GitClientV2Impl implements GitClientV2 {
    */
   @Override
   public RevertAndPushResult revertAndPush(RevertAndPushRequest request) {
-    CommitResult commitResult = revert(request);
+    RevertRequest revertRequest = RevertRequest.mapFromRevertAndPushRequest(request);
+    CommitResult commitResult = revert(revertRequest);
+
+    PushRequest pushRequest = PushRequest.mapFromRevertAndPushRequest(request);
     RevertAndPushResult revertAndPushResult =
-        RevertAndPushResult.builder().gitCommitResult(commitResult).gitPushResult(push(request)).build();
+        RevertAndPushResult.builder().gitCommitResult(commitResult).gitPushResult(push(pushRequest)).build();
     return revertAndPushResult;
   }
 
-  protected CommitResult revert(RevertAndPushRequest request) {
+  protected CommitResult revert(RevertRequest request) {
     ensureRepoLocallyClonedAndUpdated(request);
 
     try (Git git = openGit(new File(gitClientHelper.getRepoDirectory(request)), request.getDisableUserGitConfig())) {
@@ -923,18 +928,18 @@ public class GitClientV2Impl implements GitClientV2 {
   }
 
   @VisibleForTesting
-  protected PushResultGit push(RevertAndPushRequest revertAndPushRequest) {
-    boolean forcePush = revertAndPushRequest.isForcePush();
+  protected PushResultGit push(PushRequest pushRequest) {
+    boolean forcePush = pushRequest.isForcePush();
 
-    log.info(gitClientHelper.getGitLogMessagePrefix(revertAndPushRequest.getRepoType())
+    log.info(gitClientHelper.getGitLogMessagePrefix(pushRequest.getRepoType())
         + "Performing git PUSH, forcePush is: " + forcePush);
 
-    try (Git git = openGit(new File(gitClientHelper.getRepoDirectory(revertAndPushRequest)),
-             revertAndPushRequest.getDisableUserGitConfig())) {
-      Iterable<PushResult> pushResults = ((PushCommand) (getAuthConfiguredCommand(git.push(), revertAndPushRequest)))
+    try (Git git =
+             openGit(new File(gitClientHelper.getRepoDirectory(pushRequest)), pushRequest.getDisableUserGitConfig())) {
+      Iterable<PushResult> pushResults = ((PushCommand) (getAuthConfiguredCommand(git.push(), pushRequest)))
                                              .setRemote("origin")
                                              .setForce(forcePush)
-                                             .setRefSpecs(new RefSpec(revertAndPushRequest.getBranch()))
+                                             .setRefSpecs(new RefSpec(pushRequest.getBranch()))
                                              .call();
 
       RemoteRefUpdate remoteRefUpdate = pushResults.iterator().next().getRemoteUpdates().iterator().next();
@@ -953,18 +958,17 @@ public class GitClientV2Impl implements GitClientV2 {
       } else {
         String errorMsg = format("Unable to push changes to git repository [%s] and branch [%s]. "
                 + "Status reported by Remote is: %s and message is: %s. \n \n",
-            revertAndPushRequest.getRepoUrl(), revertAndPushRequest.getBranch(), remoteRefUpdate.getStatus(),
+            pushRequest.getRepoUrl(), pushRequest.getBranch(), remoteRefUpdate.getStatus(),
             remoteRefUpdate.getMessage());
-        log.error(gitClientHelper.getGitLogMessagePrefix(revertAndPushRequest.getRepoType()) + errorMsg);
+        log.error(gitClientHelper.getGitLogMessagePrefix(pushRequest.getRepoType()) + errorMsg);
         throw new YamlException(errorMsg, ADMIN_SRE);
       }
     } catch (IOException | GitAPIException ex) {
-      log.error(gitClientHelper.getGitLogMessagePrefix(revertAndPushRequest.getRepoType()) + EXCEPTION_STRING
+      log.error(gitClientHelper.getGitLogMessagePrefix(pushRequest.getRepoType()) + EXCEPTION_STRING
           + ExceptionSanitizer.sanitizeForLogging(ex));
       String errorMsg = getMessage(ex);
       if (ex instanceof InvalidRemoteException || ex.getCause() instanceof NoRemoteRepositoryException) {
-        errorMsg = "Invalid git repo or user doesn't have write access to repository. repo:"
-            + revertAndPushRequest.getRepoUrl();
+        errorMsg = "Invalid git repo or user doesn't have write access to repository. repo:" + pushRequest.getRepoUrl();
       }
 
       gitClientHelper.checkIfGitConnectivityIssue(ex);

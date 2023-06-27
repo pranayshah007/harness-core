@@ -56,9 +56,11 @@ import io.harness.git.model.GitBaseRequest;
 import io.harness.git.model.GitFileChange;
 import io.harness.git.model.ListRemoteRequest;
 import io.harness.git.model.ListRemoteResult;
+import io.harness.git.model.PushRequest;
 import io.harness.git.model.PushResultGit;
 import io.harness.git.model.RevertAndPushRequest;
 import io.harness.git.model.RevertAndPushResult;
+import io.harness.git.model.RevertRequest;
 import io.harness.rule.Owner;
 
 import software.wings.misc.CustomUserGitConfigSystemReader;
@@ -736,7 +738,7 @@ public class GitClientV2ImplTest extends CategoryTest {
     doNothing().when(gitClient).ensureRepoLocallyClonedAndUpdated(revertAndPushRequest);
     doReturn(repoPath).when(gitClientHelper).getRepoDirectory(revertAndPushRequest);
 
-    final CommitResult commit = gitClient.revert(revertAndPushRequest);
+    final CommitResult commit = gitClient.revert(RevertRequest.mapFromRevertAndPushRequest(revertAndPushRequest));
     git.rm();
 
     assertThat(commit).isNotNull();
@@ -760,7 +762,8 @@ public class GitClientV2ImplTest extends CategoryTest {
     doReturn(repoPath).when(gitClientHelper).getRepoDirectory(revertAndPushRequest);
 
     git.rm();
-    assertThatThrownBy(() -> gitClient.revert(revertAndPushRequest)).isInstanceOf(YamlException.class);
+    assertThatThrownBy(() -> gitClient.revert(RevertRequest.mapFromRevertAndPushRequest(revertAndPushRequest)))
+        .isInstanceOf(YamlException.class);
   }
 
   @Test
@@ -784,7 +787,8 @@ public class GitClientV2ImplTest extends CategoryTest {
     doReturn(repoPath).when(gitClientHelper).getRepoDirectory(revertAndPushRequest);
 
     git.rm();
-    assertThatThrownBy(() -> gitClient.revert(revertAndPushRequest)).isInstanceOf(YamlException.class);
+    assertThatThrownBy(() -> gitClient.revert(RevertRequest.mapFromRevertAndPushRequest(revertAndPushRequest)))
+        .isInstanceOf(YamlException.class);
   }
 
   @Test
@@ -808,7 +812,7 @@ public class GitClientV2ImplTest extends CategoryTest {
     addRemote(repoPath);
     doNothing().when(gitClient).ensureRepoLocallyClonedAndUpdated(request);
     doReturn(repoPath).when(gitClientHelper).getRepoDirectory(request);
-    doReturn(toBeReturned).when(gitClient).push(request);
+    doReturn(toBeReturned).when(gitClient).push(PushRequest.mapFromRevertAndPushRequest(request));
     git.rm();
     final RevertAndPushResult revertAndPushResult = gitClient.revertAndPush(request);
     assertThat(revertAndPushResult).isNotNull();
