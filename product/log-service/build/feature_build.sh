@@ -17,22 +17,20 @@ echo "DISTRIBUTE_TESTING_WORKER=0" >> test-util.bzl
 echo "DISTRIBUTE_TESTING_WORKERS=1" >> test-util.bzl
 echo "OPTIMIZED_PACKAGE_TESTS=0" >> test-util.bzl
 
-yum update -y
-yum install curl -y
+apt-get update -y
+apt install curl -y
 curl -O https://dl.google.com/go/go1.19.8.linux-amd64.tar.gz
 tar -xvf go1.19.8.linux-amd64.tar.gz
-rm -rf
 mv go/ /usr/local/
 export GOROOT=/usr/local/go
 export GOPATH=/usr/local
 export PATH=$PATH:/usr/local/go/bin
-yum install patch git gcc java-11-openjdk-devel -y
-yum install make autoconf automake gcc-c++ pkgconfig zlib-devel -y
+apt-get install patch git gcc openjdk-11-jdk -y
 go install github.com/bazelbuild/bazelisk@latest
 export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
 export BAZEL_BIN=$(bazelisk info bazel-bin)/product/log-service
-#yum install build-essential -y
-#yum install zlib1g-dev -y
+apt-get install build-essential -y
+apt-get install zlib1g-dev -y
 
 bazelisk build //product/log-service/... --define=ABSOLUTE_JAVABASE=$JAVA_HOME --javabase=@bazel_tools//tools/jdk:absolute_javabase --host_javabase=@bazel_tools//tools/jdk:absolute_javabase --java_toolchain=@bazel_tools//tools/jdk:toolchain_vanilla --host_java_toolchain=@bazel_tools//tools/jdk:toolchain_vanilla
 bazelisk test //product/log-service/... --define=ABSOLUTE_JAVABASE=$JAVA_HOME --javabase=@bazel_tools//tools/jdk:absolute_javabase --host_javabase=@bazel_tools//tools/jdk:absolute_javabase --java_toolchain=@bazel_tools//tools/jdk:toolchain_vanilla --host_java_toolchain=@bazel_tools//tools/jdk:toolchain_vanilla
