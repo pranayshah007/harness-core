@@ -635,19 +635,15 @@ public class GitClientV2Impl implements GitClientV2 {
     return revertAndPushResult;
   }
 
-  public CommitResult revert(RevertAndPushRequest request) {
-    boolean pushOnlyIfHeadSeen = request.isPushOnlyIfHeadSeen();
-
+  protected CommitResult revert(RevertAndPushRequest request) {
     ensureRepoLocallyClonedAndUpdated(request);
 
     try (Git git = openGit(new File(gitClientHelper.getRepoDirectory(request)), request.getDisableUserGitConfig())) {
-      ensureLastProcessedCommitIsHead(pushOnlyIfHeadSeen, request.getCommitId(), git);
       ObjectId commitId = git.getRepository().resolve(request.getCommitId());
       if (commitId == null) {
         throw new YamlException("Commit not found with id: " + request.getCommitId(), ADMIN_SRE);
       }
       RevCommit commitToRevert = git.getRepository().parseCommit(commitId);
-
       RevCommit revertCommit = git.revert().include(commitToRevert).call();
 
       return CommitResult.builder()
