@@ -381,7 +381,7 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
   }
 
   private static String getProjectIdFromEnvironment() {
-    return System.getProperty(GCP_PROJECT);
+    return System.getenv(GCP_PROJECT);
   }
 
   @Override
