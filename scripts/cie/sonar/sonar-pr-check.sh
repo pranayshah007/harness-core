@@ -54,7 +54,7 @@ function get_info_from_file(){
   check_cmd_status "$?" "Unable to find file to extract info for sonar file."
 }
 
-BAZEL_ARGS="--announce_rc --keep_going --show_timestamps --verbose_failures --remote_max_connections=1000 --remote_retries=1 --experimental_sandbox_base=/tmp/bazel_sandbox"
+BAZEL_ARGS="--announce_rc --keep_going --show_timestamps --jobs=auto"
 BAZEL_OUTPUT_PATH="/tmp/execroot/harness_monorepo/bazel-out/k8-fastbuild/bin"
 COVERAGE_ARGS="--collect_code_coverage --combined_report=lcov --coverage_report_generator=//tools/bazel/sonarqube:sonarqube_coverage_generator \
 --experimental_fetch_all_coverage_outputs"
@@ -65,10 +65,7 @@ MODULES_FILE="modules.txt"
 MODULES_TESTS_FILE="modules_tests.txt"
 PR_SRCS_FILE="pr_srcs.txt"
 SONAR_CONFIG_FILE='sonar-project.properties'
-STARTUP_ARGS="--output_base=/tmp"
-
-#Creating a sandbox directory for bazel tests/coverage
-mkdir -p /tmp/bazel_sandbox
+TEST_ARGS="--test_verbose_timeout_warnings --build_tests_only --cache_test_results=yes --test_output=errors"
 
 # This script is required to generate the test util bzl file in root directory.
 scripts/bazel/generate_credentials.sh
@@ -83,6 +80,7 @@ while getopts ":hb:c:k:" opt; do
   esac
 done
 
+# Running a Bazel query to list down all Java targets
 HARNESS_CORE_MODULES=$(bazel query "//...:*" | grep -w "module" | awk -F/ '{print $3}' | sort -u | tr '\r\n' ' ')
 check_cmd_status "$?" "Failed to list harness core modules."
 #echo "HARNESS_CORE_MODULES: $HARNESS_CORE_MODULES"
@@ -93,6 +91,7 @@ echo "------------------------------------------------"
 echo -e "GIT DIFF:\n$GIT_DIFF"
 echo "------------------------------------------------"
 
+# Filtering out only Java files for sonar coverage
 for FILE in $GIT_DIFF;
   do
     extension=${FILE##*.}
@@ -121,11 +120,13 @@ PR_MODULES=$(cat $MODULES_FILE | sort -u | tr '\n' ' ')
 check_cmd_status "$?" "Failed to get modules from commits."
 echo -e "PR_MODULES:\n$PR_MODULES"
 
+# Checking if PR contains more than 1 module changes
 if [ "$(cat $MODULES_FILE | sort -u | wc -l)" -gt 1 ]; then
     echo "ERROR: PR is touching multiple modules, Generating Coverage and Code Smells is not possible. Exiting....."
     exit 1
 fi
 
+# Filtering out Bazel modules only
 for module in $PR_MODULES
   do
      [ -d ${module} ] && [[ "${HARNESS_CORE_MODULES}" =~ "${module}" ]] \
@@ -134,10 +135,11 @@ for module in $PR_MODULES
   done
 
 # Running Bazel Coverage
-echo "INFO: BAZEL COMMAND: bazel ${STARTUP_ARGS} coverage ${BAZEL_ARGS} ${COVERAGE_ARGS} -- ${BAZEL_COMPILE_MODULES[@]}"
-bazel ${STARTUP_ARGS} coverage ${BAZEL_ARGS} ${COVERAGE_ARGS} -- "${BAZEL_COMPILE_MODULES[@]}" || true
+echo "INFO: BAZEL COMMAND: bazel test ${BAZEL_ARGS} ${COVERAGE_ARGS} ${TEST_ARGS} -- ${BAZEL_COMPILE_MODULES[@]}"
+bazel test ${BAZEL_ARGS} ${COVERAGE_ARGS} ${TEST_ARGS} -- "${BAZEL_COMPILE_MODULES[@]}" || true
 check_cmd_status "$?" "Failed to run coverage."
 
+# Splitting path till 'src' folder inside module
 for file in $(echo $GIT_DIFF | tr '\r\n' ' ')
   do
      TEMP_RES=$(grep -w 'src' <<< $file | sed 's|src|:|' | awk -F: '{print $1}' | sed 's|$|src|')
@@ -146,12 +148,14 @@ for file in $(echo $GIT_DIFF | tr '\r\n' ' ')
 PR_SRCS_DIR=$(cat $PR_SRCS_FILE | sort -u)
 echo -e "PR_SRCS_DIR:\n${PR_SRCS_DIR}"
 
+# Getting all test classes in the module
 for DIR in ${PR_SRCS_DIR}
   do
     find ${DIR} -type f -name "*Test.java" | tr '\r\n' ',' >> $MODULES_TESTS_FILE
   done
 MODULES_TESTS=$(get_info_from_file $MODULES_TESTS_FILE)
 
+# Getting list of generated jars after bazel build/test/coverage
 for MODULE in $(cat $PR_SRCS_FILE | sort -u)
   do
     for JAR in ${JARS_ARRAY[@]}
@@ -164,6 +168,7 @@ for MODULE in $(cat $PR_SRCS_FILE | sort -u)
 echo -e "JARS:\n$(cat ${JARS_FILE})"
 JARS_BINS=$(get_info_from_file $JARS_FILE)
 
+# Preparing Sonar Properties file
 [ ! -f "${SONAR_CONFIG_FILE}" ] \
 && echo "sonar.projectKey=harness-core-sonar-pr" > ${SONAR_CONFIG_FILE} \
 && echo "sonar.log.level=DEBUG" >> ${SONAR_CONFIG_FILE}
