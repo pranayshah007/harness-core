@@ -32,6 +32,7 @@ public class RevertRequest extends GitBaseRequest {
         .disableUserGitConfig(parent.getDisableUserGitConfig())
         .connectorId(parent.getConnectorId())
         .repoType(parent.getRepoType())
+        .repoUrl(parent.getRepoUrl())
         .build();
   }
 }
