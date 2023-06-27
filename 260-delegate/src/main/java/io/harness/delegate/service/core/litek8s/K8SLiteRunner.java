@@ -57,6 +57,7 @@ public class K8SLiteRunner implements TaskRunner {
   private final ContainerFactory containerFactory;
   private final SecretsBuilder secretsBuilder;
   private final K8SRunnerConfig config;
+  private final InfraCleaner infraCleaner;
   //  private final K8EventHandler k8EventHandler;
 
   @Override
@@ -136,57 +137,15 @@ public class K8SLiteRunner implements TaskRunner {
   @Override
   public void cleanup(final String taskGroupId) {
     try {
-      deleteSecrets(taskGroupId);
-      deletePod(taskGroupId);
-      deleteServiceEndpoint(taskGroupId);
+      infraCleaner.deletePod(taskGroupId, config.getNamespace());
+      infraCleaner.deleteSecrets(taskGroupId, config.getNamespace());
+      infraCleaner.deleteServiceEndpoint(taskGroupId, config.getNamespace());
     } catch (ApiException e) {
       log.error("Failed to cleanup the task {}. {}", taskGroupId, ApiExceptionLogger.format(e), e);
     } catch (Exception e) {
       log.error("Failed to cleanup the task {}", taskGroupId, e);
       throw e;
     }
-  }
-
-  private void deleteSecrets(final String taskGroupId) throws ApiException {
-    final var secrets = coreApi.listNamespacedSecret(
-        config.getNamespace(), null, null, null, null, getTaskGroupSelector(taskGroupId), null, null, null, null, null);
-    log.info("Deleting {} secrets for task group {}", secrets.getItems().size(), taskGroupId);
-    secrets.getItems().forEach(secret -> {
-      try {
-        coreApi.deleteNamespacedSecret(
-            secret.getMetadata().getName(), config.getNamespace(), null, null, 0, null, null, null);
-      } catch (ApiException e) {
-        log.error("Failed to delete secret {}. {}", secret.getMetadata().getName(), ApiExceptionLogger.format(e), e);
-      }
-    });
-  }
-
-  private void deletePod(final String taskGroupId) throws ApiException {
-    final var pods = coreApi.listNamespacedPod(
-        config.getNamespace(), null, null, null, null, getTaskGroupSelector(taskGroupId), null, null, null, null, null);
-    log.info("Deleting {} pods for task group {}", pods.getItems().size(), taskGroupId);
-    pods.getItems().forEach(pod -> {
-      try {
-        coreApi.deleteNamespacedPod(
-            pod.getMetadata().getName(), config.getNamespace(), null, null, 0, null, null, null);
-      } catch (ApiException e) {
-        log.error("Failed to delete pod {}. {}", pod.getMetadata().getName(), ApiExceptionLogger.format(e), e);
-      }
-    });
-  }
-
-  private void deleteServiceEndpoint(final String taskGroupId) throws ApiException {
-    final var services = coreApi.listNamespacedService(
-        config.getNamespace(), null, null, null, null, getTaskGroupSelector(taskGroupId), null, null, null, null, null);
-    log.info("Deleting {} services for task group {}", services.getItems().size(), taskGroupId);
-    services.getItems().forEach(service -> {
-      try {
-        coreApi.deleteNamespacedService(
-            service.getMetadata().getName(), config.getNamespace(), null, null, 0, null, null, null);
-      } catch (ApiException e) {
-        log.error("Failed to delete service {}. {}", service.getMetadata().getName(), ApiExceptionLogger.format(e), e);
-      }
-    });
   }
 
   private V1Secret createLoggingSecret(final String taskGroupId, final String logServiceUri, final String loggingToken,
