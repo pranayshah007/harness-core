@@ -17,13 +17,11 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/redis/go-redis/v9"
-
 	"github.com/harness/harness-core/product/log-service/stream"
 
 	"github.com/go-co-op/gocron"
-	// TODO (vistaar): Move to redis v8. v8 accepts ctx in all calls.
-	// There is some bazel issue with otel library with v8, need to move it once that is resolved.
+	"github.com/redis/go-redis/v9"
+
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
