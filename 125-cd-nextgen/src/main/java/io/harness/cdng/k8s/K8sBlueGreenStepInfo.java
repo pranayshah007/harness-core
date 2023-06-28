@@ -55,8 +55,8 @@ public class K8sBlueGreenStepInfo extends K8sBlueGreenBaseStepInfo implements CD
   @Builder(builderMethodName = "infoBuilder")
   public K8sBlueGreenStepInfo(ParameterField<Boolean> skipDryRun, ParameterField<Boolean> pruningEnabled,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, List<K8sStepCommandFlag> commandFlags,
-      ParameterField<Boolean> skipDeploymentIfSameManifest) {
-    super(skipDryRun, pruningEnabled, delegateSelectors, commandFlags, skipDeploymentIfSameManifest);
+      ParameterField<Boolean> skipUnchangedManifest) {
+    super(skipDryRun, pruningEnabled, delegateSelectors, commandFlags, skipUnchangedManifest);
   }
 
   @Override
@@ -76,7 +76,7 @@ public class K8sBlueGreenStepInfo extends K8sBlueGreenBaseStepInfo implements CD
         .pruningEnabled(pruningEnabled)
         .delegateSelectors(delegateSelectors)
         .commandFlags(commandFlags)
-        .skipDeploymentIfSameManifest(skipDeploymentIfSameManifest)
+        .skipUnchangedManifest(skipUnchangedManifest)
         .build();
   }
 

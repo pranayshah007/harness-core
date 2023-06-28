@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import javax.validation.constraints.Max;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
@@ -79,10 +80,11 @@ public class OrgProjectApiImpl implements OrgProjectApi {
 
   @Override
   public Response getOrgScopedProjects(String org, List<String> projects, Boolean hasModule, String moduleType,
-      String searchTerm, Integer page, Integer limit, String account, String sort, String order) {
-    Page<ProjectResponse> projectPageResponses =
-        getProjects(account, org == null ? null : Sets.newHashSet(org), projects, hasModule,
-            moduleType == null ? null : ModuleType.fromString(moduleType), searchTerm, page, limit, sort, order);
+      Boolean onlyFavorites, String searchTerm, Integer page, @Max(1000L) Integer limit, String account, String sort,
+      String order) {
+    Page<ProjectResponse> projectPageResponses = getProjects(account, org == null ? null : Sets.newHashSet(org),
+        projects, hasModule, moduleType == null ? null : ModuleType.fromString(moduleType), searchTerm,
+        onlyFavorites == null ? Boolean.FALSE : onlyFavorites, page, limit, sort, order);
 
     ResponseBuilder responseBuilder = Response.ok();
 
@@ -138,7 +140,8 @@ public class OrgProjectApiImpl implements OrgProjectApi {
   }
 
   private Page<ProjectResponse> getProjects(String account, Set<String> orgs, List<String> projects, Boolean hasModule,
-      ModuleType moduleType, String searchTerm, Integer page, Integer limit, String sort, String order) {
+      ModuleType moduleType, String searchTerm, Boolean onlyFavorites, Integer page, Integer limit, String sort,
+      String order) {
     ProjectFilterDTO projectFilterDTO = ProjectFilterDTO.builder()
                                             .searchTerm(searchTerm)
                                             .orgIdentifiers(orgs)
@@ -147,7 +150,7 @@ public class OrgProjectApiImpl implements OrgProjectApi {
                                             .identifiers(projects)
                                             .build();
     Page<Project> projectPages = projectService.listPermittedProjects(
-        account, projectApiUtils.getPageRequest(page, limit, sort, order), projectFilterDTO);
+        account, projectApiUtils.getPageRequest(page, limit, sort, order), projectFilterDTO, onlyFavorites);
 
     return projectPages.map(projectApiUtils::getProjectResponse);
   }

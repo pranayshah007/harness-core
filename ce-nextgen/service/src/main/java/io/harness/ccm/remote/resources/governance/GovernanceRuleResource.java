@@ -8,6 +8,7 @@
 package io.harness.ccm.remote.resources.governance;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.rbac.CCMRbacPermissions.CONNECTOR_VIEW;
 import static io.harness.ccm.rbac.CCMRbacPermissions.RULE_EXECUTE;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_CREATED;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_DELETE;
@@ -15,12 +16,10 @@ import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE
 import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
 import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
 import static io.harness.ccm.remote.resources.TelemetryConstants.RULE_NAME;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.telemetry.Destination.AMPLITUDE;
 
-import io.harness.EntityType;
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
@@ -29,6 +28,7 @@ import io.harness.ccm.audittrails.events.RuleCreateEvent;
 import io.harness.ccm.audittrails.events.RuleDeleteEvent;
 import io.harness.ccm.audittrails.events.RuleUpdateEvent;
 import io.harness.ccm.rbac.CCMRbacHelper;
+import io.harness.ccm.service.intf.CCMConnectorDetailsService;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.dao.RuleEnforcementDAO;
 import io.harness.ccm.views.dto.CloneRuleDTO;
@@ -47,31 +47,26 @@ import io.harness.ccm.views.helper.GovernanceJobDetailsAWS;
 import io.harness.ccm.views.helper.GovernanceRuleFilter;
 import io.harness.ccm.views.helper.RuleCloudProviderType;
 import io.harness.ccm.views.helper.RuleExecutionStatusType;
+import io.harness.ccm.views.helper.RuleExecutionType;
 import io.harness.ccm.views.helper.RuleList;
 import io.harness.ccm.views.helper.RuleStoreType;
 import io.harness.ccm.views.service.GovernanceRuleService;
 import io.harness.ccm.views.service.RuleEnforcementService;
 import io.harness.ccm.views.service.RuleExecutionService;
 import io.harness.ccm.views.service.RuleSetService;
-import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResourceClient;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.delegate.beans.connector.CEFeatures;
-import io.harness.delegate.beans.connector.CcmConnectorFilter;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
-import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.faktory.FaktoryProducer;
-import io.harness.filter.FilterType;
-import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.outbox.api.OutboxService;
 import io.harness.remote.GovernanceConfig;
-import io.harness.remote.client.NGRestUtils;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.security.annotations.PublicApi;
@@ -82,7 +77,6 @@ import io.harness.yaml.validator.YamlSchemaValidator;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
@@ -163,6 +157,7 @@ public class GovernanceRuleResource {
   @Inject private YamlSchemaProvider yamlSchemaProvider;
   @Inject private YamlSchemaValidator yamlSchemaValidator;
   @Inject private RuleEnforcementDAO ruleEnforcementDAO;
+  @Inject CCMConnectorDetailsService connectorDetailsService;
   public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
   public static final String MALFORMED_ERROR = "Request payload is malformed";
   private static final RetryPolicy<Object> transactionRetryRule = DEFAULT_RETRY_POLICY;
@@ -192,6 +187,7 @@ public class GovernanceRuleResource {
   @POST
   @Path("enqueue")
   @Timed
+  @Hidden
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   @ApiOperation(value = "Enqueues job for execution", nickname = "enqueueGovernanceJob", hidden = true)
@@ -271,6 +267,7 @@ public class GovernanceRuleResource {
       // Step-4 Enqueue in faktory
       for (ConnectorInfoDTO connectorInfoDTO : nextGenConnectorResponses) {
         CEAwsConnectorDTO ceAwsConnectorDTO = (CEAwsConnectorDTO) connectorInfoDTO.getConnectorConfig();
+        List<RuleExecution> ruleExecutions = new ArrayList<>();
         for (String region : ruleEnforcement.getTargetRegions()) {
           for (Rule rule : rulesList) {
             try {
@@ -285,6 +282,7 @@ public class GovernanceRuleResource {
                       .region(region)
                       .ruleEnforcementId(ruleEnforcementUuid)
                       .policy(rule.getRulesYaml())
+                      .executionType(RuleExecutionType.EXTERNAL)
                       .build();
               Gson gson = new GsonBuilder().create();
               String json = gson.toJson(governanceJobDetailsAWS);
@@ -295,25 +293,25 @@ public class GovernanceRuleResource {
                   configuration.getGovernanceConfig().getAwsFaktoryQueueName(), json);
               log.info("For rule enforcement setting {}: Pushed job in Faktory: {}", ruleEnforcementUuid, jid);
               // Make a record in Mongo
-              // TO DO: We can bulk insert in mongo for all successfull faktory job pushes
-              RuleExecution ruleExecution = RuleExecution.builder()
-                                                .accountId(accountId)
-                                                .jobId(jid)
-                                                .cloudProvider(ruleCloudProviderType)
-                                                .executionLogPath("") // Updated by worker when execution finishes
-                                                .isDryRun(ruleEnforcement.getIsDryRun())
-                                                .ruleEnforcementIdentifier(ruleEnforcementUuid)
-                                                .ruleEnforcementName(ruleEnforcement.getName())
-                                                .executionCompletedAt(null) // Updated by worker when execution finishes
-                                                .ruleIdentifier(rule.getUuid())
-                                                .targetAccount(ceAwsConnectorDTO.getAwsAccountId())
-                                                .targetRegions(Arrays.asList(region))
-                                                .executionLogBucketType("")
-                                                .ruleName(rule.getName())
-                                                .OOTB(rule.getIsOOTB())
-                                                .executionStatus(RuleExecutionStatusType.ENQUEUED)
-                                                .build();
-              enqueuedRuleExecutionIds.add(ruleExecutionService.save(ruleExecution));
+              // TO DO: We can bulk insert in mongo for all successful faktory job pushes
+              ruleExecutions.add(RuleExecution.builder()
+                                     .accountId(accountId)
+                                     .jobId(jid)
+                                     .cloudProvider(ruleCloudProviderType)
+                                     .executionLogPath("") // Updated by worker when execution finishes
+                                     .isDryRun(ruleEnforcement.getIsDryRun())
+                                     .ruleEnforcementIdentifier(ruleEnforcementUuid)
+                                     .ruleEnforcementName(ruleEnforcement.getName())
+                                     .executionCompletedAt(null) // Updated by worker when execution finishes
+                                     .ruleIdentifier(rule.getUuid())
+                                     .targetAccount(ceAwsConnectorDTO.getAwsAccountId())
+                                     .targetRegions(Arrays.asList(region))
+                                     .executionLogBucketType("")
+                                     .ruleName(rule.getName())
+                                     .OOTB(rule.getIsOOTB())
+                                     .executionStatus(RuleExecutionStatusType.ENQUEUED)
+                                     .executionType(RuleExecutionType.EXTERNAL)
+                                     .build());
             } catch (Exception e) {
               log.warn(
                   "Exception enqueueing job for ruleEnforcementUuid: {} for targetAccount: {} for targetRegions: {}, {}",
@@ -321,6 +319,7 @@ public class GovernanceRuleResource {
             }
           }
         }
+        enqueuedRuleExecutionIds.addAll(ruleExecutionService.save(ruleExecutions));
       }
     }
     return ResponseDTO.newResponse(
@@ -625,32 +624,20 @@ public class GovernanceRuleResource {
       })
   public List<ConnectorResponseDTO>
   listV2(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
-      NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
-    List<ConnectorResponseDTO> nextGenConnectorResponses = new ArrayList<>();
-    PageResponse<ConnectorResponseDTO> response = null;
-    ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
-        ConnectorFilterPropertiesDTO.builder()
-            .types(Arrays.asList(ConnectorType.CE_AWS))
-            .ccmConnectorFilter(
-                CcmConnectorFilter.builder().featuresEnabled(Arrays.asList(CEFeatures.GOVERNANCE)).build())
-            .build();
-    connectorFilterPropertiesDTO.setFilterType(FilterType.CONNECTOR);
-    int page = 0;
-    int size = 1000;
-    do {
-      response = NGRestUtils.getResponse(connectorResourceClient.listConnectors(
-          accountId, null, null, page, size, connectorFilterPropertiesDTO, false));
-      if (response != null && isNotEmpty(response.getContent())) {
-        nextGenConnectorResponses.addAll(response.getContent());
-      }
-      page++;
-    } while (response != null && isNotEmpty(response.getContent()));
+             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @Parameter(description = "View governance connector list") @QueryParam("view") boolean view) {
+    List<ConnectorResponseDTO> nextGenConnectorResponses = connectorDetailsService.listNgConnectors(
+        accountId, Arrays.asList(ConnectorType.CE_AWS), Arrays.asList(CEFeatures.GOVERNANCE), null);
     Set<String> allowedAccountIds = null;
     List<ConnectorResponseDTO> connectorResponse = new ArrayList<>();
     if (nextGenConnectorResponses != null) {
+      String permissionCheck = RULE_EXECUTE;
+      if (view) {
+        permissionCheck = CONNECTOR_VIEW;
+      }
       allowedAccountIds = rbacHelper.checkAccountIdsGivenPermission(accountId, null, null,
           nextGenConnectorResponses.stream().map(e -> e.getConnector().getIdentifier()).collect(Collectors.toSet()),
-          RULE_EXECUTE);
+          permissionCheck);
       log.info("Allowed AccountIds {}", allowedAccountIds);
       for (ConnectorResponseDTO connector : nextGenConnectorResponses) {
         if (allowedAccountIds.contains(connector.getConnector().getIdentifier())) {
@@ -700,6 +687,7 @@ public class GovernanceRuleResource {
                 .isDryRun(governanceAdhocEnqueueDTO.getIsDryRun())
                 .policy(governanceAdhocEnqueueDTO.getPolicy())
                 .ruleCloudProviderType(governanceAdhocEnqueueDTO.getRuleCloudProviderType())
+                .executionType(RuleExecutionType.EXTERNAL)
                 .build();
         log.info("enqueued: {}", governanceJobEnqueueDTO);
         ruleExecutionId.add(governanceRuleService.enqueueAdhoc(accountId, governanceJobEnqueueDTO));
@@ -707,28 +695,6 @@ public class GovernanceRuleResource {
     }
 
     return ResponseDTO.newResponse(GovernanceEnqueueResponseDTO.builder().ruleExecutionId(ruleExecutionId).build());
-  }
-
-  @NextGenManagerAuth
-  @GET
-  @Path("entitySchema")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
-  @ApiOperation(value = "Get Schema for entity", nickname = "getSchemaForEntity")
-  @Operation(operationId = "getSchemaForEntity", description = "Get Schema for entity",
-      summary = "Get Schema for entity",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(description = "Schema", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
-      })
-  public ResponseDTO<JsonNode>
-  getEntityYamlSchema(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @QueryParam(NGCommonEntityConstants.ENTITY_TYPE) EntityType entityType, Scope scope) {
-    return ResponseDTO.newResponse(
-        yamlSchemaProvider.getYamlSchema(entityType, orgIdentifier, projectIdentifier, scope));
   }
 
   @NextGenManagerAuth

@@ -21,6 +21,7 @@ import io.harness.pms.tags.TagUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.SkipAutoEvaluation;
 import io.harness.steps.SdkCoreStepUtils;
+import io.harness.utils.CommonPlanCreatorUtils;
 import io.harness.yaml.core.properties.NGProperties;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.utils.NGVariablesUtils;
@@ -77,7 +78,8 @@ public class PipelineSetupStepParameters implements StepParameters {
           .executionId(ctx.getExecutionUuid())
           .build();
     }
-
+    CommonPlanCreatorUtils.validateVariables(infoConfig.getVariables(),
+        "Execution Input is not allowed for pipeline variables as it is similar to making it a runtime input");
     TagUtils.removeUuidFromTags(infoConfig.getTags());
 
     return new PipelineSetupStepParameters(childNodeID, infoConfig.getName(), infoConfig.getIdentifier(),

@@ -32,5 +32,7 @@ public interface IK8sRelease {
   IK8sRelease setReleaseData(@NotNull List<KubernetesResource> resources, boolean isPruningEnabled);
   IK8sRelease updateReleaseStatus(@NotNull Status status);
   String getBgEnvironment();
+  String getManifestHash();
   void setBgEnvironment(@NotNull String bgEnvironment);
+  void setManifestHash(@NotNull String manifestHash);
 }

@@ -30,6 +30,7 @@ public class TerraformStepConfigurationParameters implements TerraformStepConfig
   TerraformExecutionDataParameters spec;
   ParameterField<Boolean> skipTerraformRefresh;
   List<TerraformCliOptionFlag> commandFlags;
+  TerraformEncryptOutput encryptOutput;
 
   @Override
   public TerraformStepConfigurationEnumInterface getType() {
@@ -59,5 +60,15 @@ public class TerraformStepConfigurationParameters implements TerraformStepConfig
   @Override
   public void setCliOptions(List<TerraformCliOptionFlag> cliOptionFlags) {
     this.commandFlags = cliOptionFlags;
+  }
+
+  @Override
+  public void setEncryptOutputSecretManager(TerraformEncryptOutput terraformEncryptOutput) {
+    this.encryptOutput = terraformEncryptOutput;
+  }
+
+  @Override
+  public TerraformEncryptOutput getEncryptOutputSecretManager() {
+    return encryptOutput;
   }
 }

@@ -7,13 +7,11 @@
 
 package io.harness.cdng.provision.terraform;
 
-import static io.harness.beans.FeatureName.CDS_TERRAFORM_CLI_OPTIONS_NG;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.DESTROY;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -141,10 +139,6 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
     log.info("Running Obtain Inline Task for the Destroy Step");
     boolean isTerraformCloudCli = parameters.getConfiguration().getSpec().getIsTerraformCloudCli().getValue();
 
-    if (isTerraformCloudCli) {
-      helper.checkIfTerraformCloudCliIsEnabled(FeatureName.CD_TERRAFORM_CLOUD_CLI_NG, true, ambiance);
-    }
-
     helper.validateDestroyStepConfigFilesInline(parameters);
     TerraformExecutionDataParameters spec = parameters.getConfiguration().getSpec();
     TerraformTaskNGParametersBuilder builder = TerraformTaskNGParameters.builder();
@@ -157,9 +151,7 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
       builder.workspace(ParameterFieldHelper.getParameterFieldValue(spec.getWorkspace()));
     }
 
-    if (cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAFORM_CLI_OPTIONS_NG)) {
-      builder.terraformCommandFlags(helper.getTerraformCliFlags(parameters.getConfiguration().getCliOptions()));
-    }
+    builder.terraformCommandFlags(helper.getTerraformCliFlags(parameters.getConfiguration().getCliOptions()));
 
     ParameterField<Boolean> skipTerraformRefreshCommandParameter =
         parameters.getConfiguration().getIsSkipTerraformRefresh();
@@ -220,9 +212,7 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
     builder.entityId(entityId);
     builder.currentStateFileId(helper.getLatestFileId(entityId));
 
-    if (cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAFORM_CLI_OPTIONS_NG)) {
-      builder.terraformCommandFlags(helper.getTerraformCliFlags(parameters.getConfiguration().getCliOptions()));
-    }
+    builder.terraformCommandFlags(helper.getTerraformCliFlags(parameters.getConfiguration().getCliOptions()));
 
     TerraformInheritOutput inheritOutput =
         helper.getSavedInheritOutput(provisionerIdentifier, DESTROY.name(), ambiance);
@@ -248,6 +238,8 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
             .environmentVariables(inheritOutput.getEnvironmentVariables() == null
                     ? new HashMap<>()
                     : inheritOutput.getEnvironmentVariables())
+            .encryptDecryptPlanForHarnessSMOnManager(
+                helper.tfPlanEncryptionOnManager(accountId, inheritOutput.getEncryptionConfig()))
             .timeoutInMillis(
                 StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .useOptimizedTfPlan(true)
@@ -278,9 +270,7 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
     builder.entityId(entityId);
     builder.currentStateFileId(helper.getLatestFileId(entityId));
 
-    if (cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAFORM_CLI_OPTIONS_NG)) {
-      builder.terraformCommandFlags(helper.getTerraformCliFlags(parameters.getConfiguration().getCliOptions()));
-    }
+    builder.terraformCommandFlags(helper.getTerraformCliFlags(parameters.getConfiguration().getCliOptions()));
 
     TerraformConfig terraformConfig = helper.getLastSuccessfulApplyConfig(parameters, ambiance);
     builder.workspace(terraformConfig.getWorkspace())

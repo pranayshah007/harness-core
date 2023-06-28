@@ -84,7 +84,7 @@ public class DownloadManifestsPluginInfoProvider implements CDPluginInfoProvider
         awsSamDirectoryManifestOutcome, gitCloneStepInfo, cdAbstractStepNode);
 
     PluginCreationRequest pluginCreationRequest =
-        request.toBuilder().setStepJsonNode(YamlUtils.write(gitCloneStepNode)).build();
+        request.toBuilder().setStepJsonNode(YamlUtils.writeYamlString(gitCloneStepNode)).build();
 
     PluginCreationResponseWrapper pluginCreationResponseWrapper =
         gitClonePluginInfoProvider.getPluginInfo(pluginCreationRequest, usedPorts, ambiance);
@@ -107,7 +107,7 @@ public class DownloadManifestsPluginInfoProvider implements CDPluginInfoProvider
           valuesManifestOutcome, valuesGitCloneStepInfo, cdAbstractStepNode);
 
       PluginCreationRequest valuesPluginCreationRequest =
-          request.toBuilder().setStepJsonNode(YamlUtils.write(valuesGitCloneStepNode)).build();
+          request.toBuilder().setStepJsonNode(YamlUtils.writeYamlString(valuesGitCloneStepNode)).build();
 
       PluginCreationResponseWrapper valuesPluginCreationResponseWrapper =
           gitClonePluginInfoProvider.getPluginInfo(valuesPluginCreationRequest, usedPorts, ambiance);

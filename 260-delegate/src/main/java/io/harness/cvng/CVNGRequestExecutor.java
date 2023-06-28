@@ -70,7 +70,7 @@ public class CVNGRequestExecutor {
       if (response.isSuccessful()) {
         return response.body();
       } else {
-        String errorBody = response.errorBody().string();
+        String errorBody = response.errorBody() != null ? response.errorBody().string() : "";
         throw new IllegalStateException("Response Code: " + response.code()
             + ", Response Message: " + response.message() + ", Error Body: " + errorBody);
       }

@@ -11,7 +11,9 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//950-delegate-tasks-beans:module",  # TODO: This is 200Mb alone, needs to be broken down
+        "//950-delegate-tasks-beans/src/main/proto:950_delegate_tasks_beans_java_proto",
+        "//951-delegate-task-commons/src/main/java/io/harness/delegate/beans:module",
+        "//951-delegate-task-commons/src/main/java/software/wings/beans:module",
         "//970-api-services-beans/src/main/java/io/harness/security/encryption:module",
         "//980-commons/src/main/java/io/harness/serializer:module",
         "@maven//:com_esotericsoftware_kryo",

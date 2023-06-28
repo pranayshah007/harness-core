@@ -30,7 +30,8 @@ import javax.annotation.Nonnull;
 @OwnedBy(CDC)
 public interface ShellScriptHelperService {
   // Handles ParameterField and String type Objects, else throws Exception
-  Map<String, String> getEnvironmentVariables(Map<String, Object> inputVariables);
+  Map<String, String> getEnvironmentVariables(Map<String, Object> inputVariables, Ambiance ambiance);
+
   List<String> getOutputVars(Map<String, Object> outputVariables, Set<String> secretOutputVariables);
   List<String> getSecretOutputVars(Map<String, Object> outputVariables, Set<String> secretOutputVariables);
 

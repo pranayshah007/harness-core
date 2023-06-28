@@ -346,7 +346,12 @@ public class ArtifactConfigToDelegateReqMapper {
     String planKey = artifactConfig.getPlanKey() != null ? artifactConfig.getPlanKey().getValue() : "";
     String buildNumber = artifactConfig.getBuild() != null ? artifactConfig.getBuild().getValue() : "";
     if (isLastPublishedExpression(buildNumber)) {
-      buildNumber = getTagRegex(buildNumber);
+      if (ParameterField.isNotNull(artifactConfig.getBuild())
+          && tagHasInputValidator(artifactConfig.getBuild().getInputSetValidator(), buildNumber)) {
+        buildNumber = artifactConfig.getBuild().getInputSetValidator().getParameters();
+      } else {
+        buildNumber = getTagRegex(buildNumber);
+      }
     }
     return ArtifactDelegateRequestUtils.getBambooDelegateArtifactRequest(connectorRef, connectorDTO,
         encryptedDataDetails, ArtifactSourceType.BAMBOO, planKey, artifactPath, buildNumber);
@@ -737,12 +742,12 @@ public class ArtifactConfigToDelegateReqMapper {
         : artifactConfig.getArtifactDirectory().getValue();
 
     if (isLastPublishedExpression(artifactPath)) {
-      artifactPathFilter = artifactPath.equals(ACCEPT_ALL_REGEX) ? "*" : artifactPath;
+      artifactPathFilter = "*";
     }
 
     if (ParameterField.isNotNull(artifactConfig.getArtifactPath())
         && tagHasInputValidator(artifactConfig.getArtifactPath().getInputSetValidator(), artifactPath)) {
-      artifactPathFilter = artifactConfig.getTag().getInputSetValidator().getParameters();
+      artifactPathFilter = artifactConfig.getArtifactPath().getInputSetValidator().getParameters();
     }
 
     return ArtifactDelegateRequestUtils.getArtifactoryGenericArtifactDelegateRequest(
@@ -786,7 +791,19 @@ public class ArtifactConfigToDelegateReqMapper {
     if (StringUtils.isBlank(bucket)) {
       throw new InvalidRequestException("Please input bucket name.");
     }
+
+    String artifactPathRegex = null;
+    if (isLastPublishedExpression(artifactPath)) {
+      if (ParameterField.isNotNull(artifactConfig.getArtifactPath())
+          && tagHasInputValidator(artifactConfig.getArtifactPath().getInputSetValidator(), artifactPath)) {
+        artifactPathRegex = artifactConfig.getArtifactPath().getInputSetValidator().getParameters();
+      } else {
+        artifactPathRegex = getTagRegex(artifactPath);
+      }
+      artifactPath = "";
+    }
     return ArtifactDelegateRequestUtils.getGoogleCloudStorageArtifactDelegateRequest(bucket, project, artifactPath,
-        gcpConnectorDTO, connectorRef, encryptedDataDetails, ArtifactSourceType.GOOGLE_CLOUD_STORAGE_ARTIFACT);
+        artifactPathRegex, gcpConnectorDTO, connectorRef, encryptedDataDetails,
+        ArtifactSourceType.GOOGLE_CLOUD_STORAGE_ARTIFACT);
   }
 }

@@ -1,4 +1,5 @@
 integrations:
   gitlab:
     - host: HOST_VALUE
+      apiBaseUrl: https://HOST_VALUE/api/v4
       token: ${HARNESS_GITLAB_TOKEN}

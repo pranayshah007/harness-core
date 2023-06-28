@@ -92,7 +92,7 @@ public class SshSessionFactory {
         log.error("Interrupted exception while fetching ssh session", ie);
       } catch (JSchException jse) {
         if (retryCount == NR_OF_RETRIES_FOR_SSH_SESSION_CONNECTION) {
-          log.error("Jschexception while SSH connection with retry count {}, cause {}", retryCount, jse.getMessage());
+          log.warn("Jschexception while SSH connection with retry count {}, cause {}", retryCount, jse.getMessage());
           throw jse;
         }
       }

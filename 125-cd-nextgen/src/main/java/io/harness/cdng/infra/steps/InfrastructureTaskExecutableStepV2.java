@@ -38,6 +38,7 @@ import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
+import io.harness.cdng.infra.beans.K8sRancherInfrastructureOutcome;
 import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
@@ -434,7 +435,8 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     if (infrastructureOutcome instanceof K8sGcpInfrastructureOutcome
         || infrastructureOutcome instanceof K8sDirectInfrastructureOutcome
         || infrastructureOutcome instanceof K8sAzureInfrastructureOutcome
-        || infrastructureOutcome instanceof K8sAwsInfrastructureOutcome) {
+        || infrastructureOutcome instanceof K8sAwsInfrastructureOutcome
+        || infrastructureOutcome instanceof K8sRancherInfrastructureOutcome) {
       publishK8sInfraDelegateConfigOutput(infrastructureOutcome, ambiance);
     }
 

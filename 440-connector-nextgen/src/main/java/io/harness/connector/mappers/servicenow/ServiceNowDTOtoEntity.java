@@ -12,11 +12,13 @@ import static java.util.Objects.isNull;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowADFSAuthentication;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowConnector;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowConnector.ServiceNowConnectorBuilder;
+import io.harness.connector.entities.embedded.servicenow.ServiceNowRefreshTokenAuthentication;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowUserNamePasswordAuthentication;
 import io.harness.connector.mappers.ConnectorDTOToEntityMapper;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowADFSDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowRefreshTokenDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePasswordDTO;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.InvalidRequestException;
@@ -48,6 +50,11 @@ public class ServiceNowDTOtoEntity implements ConnectorDTOToEntityMapper<Service
         ServiceNowADFSDTO serviceNowADFSDTO = (ServiceNowADFSDTO) configDTO.getAuth().getCredentials();
         serviceNowConnectorBuilder.serviceNowAuthentication(
             ServiceNowADFSAuthentication.fromServiceNowAuthCredentialsDTO(serviceNowADFSDTO));
+      } else if (ServiceNowAuthType.REFRESH_TOKEN.equals(configDTO.getAuth().getAuthType())) {
+        ServiceNowRefreshTokenDTO serviceNowRefreshTokenDTO =
+            (ServiceNowRefreshTokenDTO) configDTO.getAuth().getCredentials();
+        serviceNowConnectorBuilder.serviceNowAuthentication(
+            ServiceNowRefreshTokenAuthentication.fromServiceNowAuthCredentialsDTO(serviceNowRefreshTokenDTO));
       } else {
         throw new InvalidRequestException(
             String.format("Unsupported servicenow auth type provided : %s", configDTO.getAuth().getAuthType()));

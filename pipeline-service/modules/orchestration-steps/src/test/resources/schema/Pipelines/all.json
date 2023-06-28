@@ -1898,30 +1898,6 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "DelegateInfra": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepGroupInfra"
-        },
-        {
-          "type": "object",
-          "required": [
-            "type"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "KubernetesDirect",
-                "Delegate",
-                "Noop"
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "Distribution": {
       "type": "object",
       "required": [
@@ -2516,6 +2492,32 @@
                   "additionalProperties": {
                     "type": "string"
                   }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheFrom": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheTo": {
+              "type": "string"
+            },
+            "caching": {
+              "oneOf": [
+                {
+                  "type": "boolean"
                 },
                 {
                   "type": "string"
@@ -4768,12 +4770,6 @@
         {
           "type": "object",
           "properties": {
-            "userGroups": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
             "webhookUrl": {
               "type": "string"
             }
@@ -4878,7 +4874,7 @@
         "type": {
           "type": "string",
           "enum": [
-            "harness"
+            "Harness"
           ]
         }
       },
@@ -4888,7 +4884,7 @@
           "if": {
             "properties": {
               "type": {
-                "const": "harness"
+                "const": "Harness"
               }
             }
           },
@@ -8103,9 +8099,6 @@
         "stepGroupInfra": {
           "oneOf": [
             {
-              "$ref": "#/definitions/DelegateInfra"
-            },
-            {
               "$ref": "#/definitions/K8sDirectInfra"
             }
           ]
@@ -8132,6 +8125,22 @@
         },
         "template": {
           "$ref": "#/definitions/TemplateLinkConfig"
+        },
+        "variables": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/NumberNGVariable"
+              },
+              {
+                "$ref": "#/definitions/SecretNGVariable"
+              },
+              {
+                "$ref": "#/definitions/StringNGVariable"
+              }
+            ]
+          }
         },
         "when": {
           "oneOf": [
@@ -8330,7 +8339,8 @@
             "format": {
               "type": "string",
               "enum": [
-                "spdx-json"
+                "spdx-json",
+                "cyclonedx-json"
               ]
             }
           }

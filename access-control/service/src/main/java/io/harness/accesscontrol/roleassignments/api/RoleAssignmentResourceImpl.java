@@ -226,9 +226,15 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
     PrincipalDTO principalFilter = roleAssignmentFilterV2WithPermittedFilters.getPrincipalFilter();
     RoleAssignmentFilter filter = null;
     List<UserGroup> userGroups = new ArrayList<>();
+    List<String> userGroupsScopeIdentifiers = new ArrayList<>();
     if (principalFilter != null) {
       if (USER.equals(principalFilter.getType())) {
         userGroups.addAll(userGroupService.list(principalFilter.getIdentifier()));
+        userGroupsScopeIdentifiers.addAll(
+            userGroups.stream()
+                .map(userGroup
+                    -> createScopeAndIdentifierPath(userGroup.getScopeIdentifier(), userGroup.getIdentifier()))
+                .collect(toList()));
         filter = roleAssignmentDTOMapper.fromDTO(
             principalFilter.getIdentifier(), userGroups, roleAssignmentFilterV2WithPermittedFilters);
       } else {
@@ -239,7 +245,9 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
     }
 
     PageResponse<RoleAssignment> pageResponse = roleAssignmentService.list(pageRequest, filter);
-    PageResponse<RoleAssignmentAggregate> roleAssignmentAggregateWithScope = pageResponse.map(response -> {
+    PageResponse<RoleAssignment> filteredRoleAssignments =
+        filterRoleAssignmentForUnwantedUserGroup(pageResponse, userGroupsScopeIdentifiers);
+    PageResponse<RoleAssignmentAggregate> roleAssignmentAggregateWithScope = filteredRoleAssignments.map(response -> {
       String principalName = null;
       String principalEmail = null;
       if (USER.equals(response.getPrincipalType())) {
@@ -261,6 +269,32 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
     });
 
     return ResponseDTO.newResponse(roleAssignmentAggregateWithScope);
+  }
+
+  @VisibleForTesting
+  protected PageResponse<RoleAssignment> filterRoleAssignmentForUnwantedUserGroup(
+      PageResponse<RoleAssignment> pageResponse, List<String> userGroupsScopeIdentifiers) {
+    List<RoleAssignment> roleAssignments =
+        pageResponse.getContent()
+            .stream()
+            .filter(roleAssignment -> {
+              if (USER_GROUP.equals(roleAssignment.getPrincipalType())
+                  && !userGroupsScopeIdentifiers.contains(createScopeAndIdentifierPath(
+                      roleAssignment.getScopeIdentifier(), roleAssignment.getPrincipalIdentifier()))) {
+                return false;
+              }
+              return true;
+            })
+            .collect(toList());
+    pageResponse.setContent(roleAssignments);
+    return pageResponse;
+  }
+
+  private String createScopeAndIdentifierPath(String scopeIdentifier, String principalIdentifier) {
+    if (isNotEmpty(scopeIdentifier) && isNotEmpty(principalIdentifier)) {
+      return scopeIdentifier.concat("/" + principalIdentifier);
+    }
+    return "";
   }
 
   private Optional<RoleAssignmentFilterV2> sanitizeRoleAssignmentFilterV2ForPermitted(

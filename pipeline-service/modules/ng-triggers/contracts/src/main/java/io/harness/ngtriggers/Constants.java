@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 
 @OwnedBy(PIPELINE)
 public interface Constants {
+  int COMMIT_SHA_STRING_LENGTH = 7;
   String PR = "PR";
   String PUSH = "PUSH";
 
@@ -84,6 +85,8 @@ public interface Constants {
   String MANIFEST_VERSION_EXPR = "version";
   String ARTIFACT_BUILD_EXPR = "build";
   String ARTIFACT_METADATA_EXPR = "metadata";
+  String SOURCE_EVENT_ID = "sourceEventId";
+  String SOURCE_EVENT_LINK = "sourceEventLink";
 
   String WEBHOOK_TYPE = "Webhook";
   String SCHEDULED_TYPE = "Scheduled";

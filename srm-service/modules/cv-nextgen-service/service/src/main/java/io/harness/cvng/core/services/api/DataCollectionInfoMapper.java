@@ -13,4 +13,6 @@ import io.harness.cvng.core.entities.VerificationTask.TaskType;
 
 public interface DataCollectionInfoMapper<R extends DataCollectionInfo, T extends CVConfig> {
   R toDataCollectionInfo(T cvConfig, TaskType taskType);
+
+  default void postProcessDataCollectionInfo(R dataCollectionInfo, T cvConfig, TaskType taskType) {}
 }

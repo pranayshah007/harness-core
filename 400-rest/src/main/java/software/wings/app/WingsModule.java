@@ -89,6 +89,7 @@ import io.harness.ccm.views.service.CEReportTemplateBuilderService;
 import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.DataResponseService;
+import io.harness.ccm.views.service.LabelFlattenedService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.ccm.views.service.ViewsBillingService;
 import io.harness.ccm.views.service.impl.BigQueryDataResponseServiceImpl;
@@ -96,6 +97,7 @@ import io.harness.ccm.views.service.impl.CEReportScheduleServiceImpl;
 import io.harness.ccm.views.service.impl.CEReportTemplateBuilderServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewFolderServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewServiceImpl;
+import io.harness.ccm.views.service.impl.LabelFlattenedServiceImpl;
 import io.harness.ccm.views.service.impl.ViewCustomFieldServiceImpl;
 import io.harness.ccm.views.service.impl.ViewsBillingServiceImpl;
 import io.harness.cdlicense.impl.CgCdLicenseUsageService;
@@ -105,6 +107,7 @@ import io.harness.configuration.DeployVariant;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.service.git.NGGitServiceImpl;
+import io.harness.credit.remote.admin.AdminCreditHttpClientModule;
 import io.harness.cv.CVCommonsServiceModule;
 import io.harness.cvng.CVNextGenCommonsServiceModule;
 import io.harness.cvng.perpetualtask.CVDataCollectionTaskService;
@@ -1254,6 +1257,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(ViewCustomFieldService.class).to(ViewCustomFieldServiceImpl.class);
     bind(ViewsBillingService.class).to(ViewsBillingServiceImpl.class);
     bind(DataResponseService.class).to(BigQueryDataResponseServiceImpl.class);
+    bind(LabelFlattenedService.class).to(LabelFlattenedServiceImpl.class);
     bind(CEViewService.class).to(CEViewServiceImpl.class);
     bind(CEViewFolderService.class).to(CEViewFolderServiceImpl.class);
     bind(BusinessMappingService.class).to(BusinessMappingServiceImpl.class);
@@ -1556,6 +1560,9 @@ public class WingsModule extends AbstractModule implements ServersModule {
 
     // admin ng-license dependencies
     install(new AdminLicenseHttpClientModule(configuration.getNgManagerServiceHttpClientConfig(),
+        configuration.getPortal().getJwtNextGenManagerSecret(), MANAGER.getServiceId()));
+
+    install(new AdminCreditHttpClientModule(configuration.getNgManagerServiceHttpClientConfig(),
         configuration.getPortal().getJwtNextGenManagerSecret(), MANAGER.getServiceId()));
 
     install(CgOrchestrationModule.getInstance());

@@ -343,7 +343,20 @@ public class DelegateCacheImpl implements DelegateCache {
   }
 
   private Delegate getDelegateFromRedisCache(String delegateId, boolean forceRefresh) {
-    if (delegateRedisCache.get(delegateId) == null || forceRefresh) {
+    if (forceRefresh) {
+      Delegate delegate = persistence.createQuery(Delegate.class).filter(DelegateKeys.uuid, delegateId).get();
+      if (delegate == null) {
+        log.warn("Unable to find delegate {} in DB.", delegateId);
+        return null;
+      }
+      delegateRedisCache.put(delegateId, delegate);
+      return delegateRedisCache.get(delegateId);
+    }
+
+    try {
+      delegateRedisCache.get(delegateId);
+    } catch (Exception ex) {
+      log.info("Exception occurred while loading Delegate from redis cache, loading from DB", ex);
       Delegate delegate = persistence.createQuery(Delegate.class).filter(DelegateKeys.uuid, delegateId).get();
       if (delegate == null) {
         log.warn("Unable to find delegate {} in DB.", delegateId);
@@ -355,7 +368,14 @@ public class DelegateCacheImpl implements DelegateCache {
   }
 
   private DelegateGroup getDelegateGroupRedisCache(String accountId, String delegateGroupId) {
-    if (delegateGroupRedisCache.get(delegateGroupId) == null) {
+    DelegateGroup delegateGroupFromCache = null;
+    try {
+      delegateGroupFromCache = delegateGroupRedisCache.get(delegateGroupId);
+    } catch (Exception ex) {
+      log.info("Exception occurred while loading Delegate Group from redis cache", ex);
+    }
+
+    if (delegateGroupFromCache == null) {
       DelegateGroup delegateGroup = persistence.createQuery(DelegateGroup.class)
                                         .filter(DelegateGroupKeys.accountId, accountId)
                                         .filter(DelegateGroupKeys.uuid, delegateGroupId)
@@ -366,7 +386,14 @@ public class DelegateCacheImpl implements DelegateCache {
   }
 
   private List<Delegate> getDelegatesForGroupRedisCache(String accountId, String delegateGroupId) {
-    if (delegatesFromGroupRedisCache.get(delegateGroupId) == null) {
+    List<Delegate> delegateListFromGroupCache = null;
+    try {
+      delegateListFromGroupCache = delegatesFromGroupRedisCache.get(delegateGroupId);
+    } catch (Exception ex) {
+      log.info("Exception occurred while loading Delegate list from redis cache", ex);
+    }
+
+    if (delegateListFromGroupCache == null) {
       List<Delegate> delegateList = persistence.createQuery(Delegate.class)
                                         .filter(DelegateKeys.accountId, accountId)
                                         .filter(DelegateKeys.ng, true)

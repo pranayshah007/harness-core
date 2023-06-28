@@ -8,6 +8,7 @@
 package io.harness.delegate.beans.git;
 
 public enum GitCommandType {
+  LIST_REMOTE,
   CLONE,
   CHECKOUT,
   DIFF,

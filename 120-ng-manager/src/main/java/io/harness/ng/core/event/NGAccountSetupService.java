@@ -32,6 +32,8 @@ import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.GeneralException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.ng.NextGenConfiguration;
+import io.harness.ng.accesscontrol.migrations.models.AccessControlMigration;
+import io.harness.ng.accesscontrol.migrations.services.AccessControlMigrationService;
 import io.harness.ng.core.AccountOrgProjectValidator;
 import io.harness.ng.core.accountsetting.services.NGAccountSettingService;
 import io.harness.ng.core.api.DefaultUserGroupService;
@@ -75,20 +77,20 @@ public class NGAccountSetupService {
   private final AccessControlAdminClient accessControlAdminClient;
   private final NgUserService ngUserService;
   private final UserClient userClient;
+  private final AccessControlMigrationService accessControlMigrationService;
   private final HarnessSMManager harnessSMManager;
   private final CIDefaultEntityManager ciDefaultEntityManager;
   private final boolean shouldAssignAdmins;
   private final NGAccountSettingService accountSettingService;
   private final FeatureFlagService featureFlagService;
   private final DefaultUserGroupService defaultUserGroupService;
-
   private final SampleManifestFileService sampleManifestFileService;
-
   @Inject
   public NGAccountSetupService(OrganizationService organizationService,
       AccountOrgProjectValidator accountOrgProjectValidator,
       @Named("PRIVILEGED") AccessControlAdminClient accessControlAdminClient, NgUserService ngUserService,
-      UserClient userClient, HarnessSMManager harnessSMManager, CIDefaultEntityManager ciDefaultEntityManager,
+      UserClient userClient, AccessControlMigrationService accessControlMigrationService,
+      HarnessSMManager harnessSMManager, CIDefaultEntityManager ciDefaultEntityManager,
       NextGenConfiguration nextGenConfiguration, NGAccountSettingService accountSettingService,
       ProjectService projectService, FeatureFlagService featureFlagService,
       SampleManifestFileService sampleManifestFileService, DefaultUserGroupService defaultUserGroupService) {
@@ -97,6 +99,7 @@ public class NGAccountSetupService {
     this.accessControlAdminClient = accessControlAdminClient;
     this.ngUserService = ngUserService;
     this.userClient = userClient;
+    this.accessControlMigrationService = accessControlMigrationService;
     this.harnessSMManager = harnessSMManager;
     this.ciDefaultEntityManager = ciDefaultEntityManager;
     this.shouldAssignAdmins =
@@ -191,17 +194,16 @@ public class NGAccountSetupService {
         cgUsers.stream().filter(UserInfo::isAdmin).map(UserInfo::getUuid).collect(Collectors.toSet());
 
     Scope accountScope = Scope.of(accountIdentifier, null, null);
-    if (!hasAdmin(accountScope)) {
-      if (featureFlagService.isNotEnabled(FeatureName.PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG, accountIdentifier)) {
-        cgUsers.forEach(user -> upsertUserMembership(accountScope, user.getUuid()));
-      } else {
-        cgAdmins.forEach(user -> upsertUserMembership(accountScope, user));
-      }
-      assignAdminRoleToUsers(accountScope, cgAdmins);
-      if (shouldAssignAdmins && !hasAdmin(accountScope)) {
-        throw new GeneralException(String.format("No Admin could be assigned in scope %s", accountScope));
-      }
+    if (featureFlagService.isNotEnabled(FeatureName.PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG, accountIdentifier)) {
+      cgUsers.forEach(user -> upsertUserMembership(accountScope, user.getUuid()));
+    } else {
+      cgAdmins.forEach(user -> upsertUserMembership(accountScope, user));
     }
+    assignAdminRoleToUsers(accountScope, cgAdmins);
+    if (shouldAssignAdmins && !hasAdmin(accountScope)) {
+      throw new GeneralException(String.format("No Admin could be assigned in scope %s", accountScope));
+    }
+    accessControlMigrationService.save(AccessControlMigration.builder().accountIdentifier(accountIdentifier).build());
 
     Scope orgScope = Scope.of(accountIdentifier, orgIdentifier, null);
     if (!hasAdmin(orgScope)) {
@@ -210,6 +212,8 @@ public class NGAccountSetupService {
       if (shouldAssignAdmins && !hasAdmin(orgScope)) {
         throw new GeneralException(String.format("No Admin could be assigned in scope %s", orgScope));
       }
+      accessControlMigrationService.save(
+          AccessControlMigration.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build());
     }
 
     Scope projectScope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
@@ -219,6 +223,11 @@ public class NGAccountSetupService {
       if (shouldAssignAdmins && !hasAdmin(projectScope)) {
         throw new GeneralException(String.format("No Admin could be assigned in scope %s", projectScope));
       }
+      accessControlMigrationService.save(AccessControlMigration.builder()
+                                             .accountIdentifier(accountIdentifier)
+                                             .orgIdentifier(orgIdentifier)
+                                             .projectIdentifier(projectIdentifier)
+                                             .build());
     }
     log.info(String.format("[NGAccountSetupService]: Rbac setup completed for account: %s", accountIdentifier));
   }
@@ -229,17 +238,16 @@ public class NGAccountSetupService {
         cgUsers.stream().filter(UserInfo::isAdmin).map(UserInfo::getUuid).collect(Collectors.toSet());
 
     Scope accountScope = Scope.of(accountIdentifier, null, null);
-    if (!hasAdmin(accountScope)) {
-      if (featureFlagService.isNotEnabled(FeatureName.PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG, accountIdentifier)) {
-        cgUsers.forEach(user -> upsertUserMembership(accountScope, user.getUuid()));
-      } else {
-        cgAdmins.forEach(user -> upsertUserMembership(accountScope, user));
-      }
-      assignAdminRoleToUsers(accountScope, cgAdmins);
-      if (shouldAssignAdmins && !hasAdmin(accountScope)) {
-        throw new GeneralException(String.format("No Admin could be assigned in scope %s", accountScope));
-      }
+    if (featureFlagService.isNotEnabled(FeatureName.PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG, accountIdentifier)) {
+      cgUsers.forEach(user -> upsertUserMembership(accountScope, user.getUuid()));
+    } else {
+      cgAdmins.forEach(user -> upsertUserMembership(accountScope, user));
     }
+    assignAdminRoleToUsers(accountScope, cgAdmins);
+    if (shouldAssignAdmins && !hasAdmin(accountScope)) {
+      throw new GeneralException(String.format("No Admin could be assigned in scope %s", accountScope));
+    }
+    accessControlMigrationService.save(AccessControlMigration.builder().accountIdentifier(accountIdentifier).build());
 
     Scope orgScope = Scope.of(accountIdentifier, orgIdentifier, null);
     if (!hasAdmin(orgScope)) {
@@ -248,6 +256,8 @@ public class NGAccountSetupService {
       if (shouldAssignAdmins && !hasAdmin(orgScope)) {
         throw new GeneralException(String.format("No Admin could be assigned in scope %s", orgScope));
       }
+      accessControlMigrationService.save(
+          AccessControlMigration.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build());
     }
     log.info(String.format("[NGAccountSetupService]: Rbac setup completed for account: %s", accountIdentifier));
   }
@@ -330,5 +340,20 @@ public class NGAccountSetupService {
       Thread.currentThread().interrupt();
       log.warn("Thread Interrupted", ex);
     }
+  }
+
+  public void cleanUsersFromAccountForNg(String accountIdentifier) {
+    Scope scope =
+        Scope.builder().accountIdentifier(accountIdentifier).orgIdentifier(null).projectIdentifier(null).build();
+    List<String> ngUsers = ngUserService.listUserIds(scope);
+    log.info("Number of NG users in account {} : {}", accountIdentifier, ngUsers.size());
+    List<String> ngNonAdmins = ngUsers.stream()
+                                   .filter(user -> !ngUserService.isAccountAdmin(user, accountIdentifier))
+                                   .collect(Collectors.toList());
+    log.info("Number of Non Admin users in account {} : {}", accountIdentifier, ngNonAdmins.size());
+    if (!ngNonAdmins.isEmpty()) {
+      ngUserService.cleanUsersFromAccountForNg(ngNonAdmins, accountIdentifier);
+    }
+    log.info("CleanUp for accountId {} is completed", accountIdentifier);
   }
 }

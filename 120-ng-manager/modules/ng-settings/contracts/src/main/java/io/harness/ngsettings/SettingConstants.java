@@ -29,4 +29,7 @@ public final class SettingConstants {
   public static final String GROUP_KEY = "group";
   public static final String ALLOW_EDIT = "Is the setting editable at the current scope";
   public static final String ALLOWED_SCOPES = "List of scopes where the setting is available";
+  public static final String INCLUDES_PARENT_SCOPE =
+      "Flag to include the settings which only exist at the parent scopes";
+  public static final String INCLUDES_PARENT_SCOPE_KEY = "includeParentScopes";
 }

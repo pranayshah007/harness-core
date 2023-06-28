@@ -17,6 +17,7 @@ import static io.harness.steps.StepUtils.buildAbstractions;
 import static java.util.Collections.singletonList;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.outcomes.VmDetailsOutcome;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.CIStepInfo;
@@ -24,6 +25,7 @@ import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.outcome.CIStepArtifactOutcome;
 import io.harness.beans.steps.outcome.CIStepOutcome;
 import io.harness.beans.steps.outcome.StepArtifacts;
+import io.harness.beans.steps.output.CIStageOutput;
 import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
@@ -57,6 +59,10 @@ import io.harness.delegate.beans.ci.vm.CIVmExecuteStepTaskParams;
 import io.harness.delegate.beans.ci.vm.CIVmInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmExecuteStepTaskParams;
+import io.harness.delegate.beans.ci.vm.steps.VmBackgroundStep;
+import io.harness.delegate.beans.ci.vm.steps.VmPluginStep;
+import io.harness.delegate.beans.ci.vm.steps.VmRunStep;
+import io.harness.delegate.beans.ci.vm.steps.VmRunTestStep;
 import io.harness.delegate.beans.ci.vm.steps.VmStepInfo;
 import io.harness.delegate.task.HDelegateTask;
 import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
@@ -101,6 +107,8 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
@@ -168,11 +176,12 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
     VmStepInfo vmStepInfo = vmStepSerializer.serialize(ambiance, ciStepInfo, stageInfraDetails, stepIdentifier,
         ParameterField.createValueField(Timeout.fromString(stringTimeout)), stageDetails.getRegistries(),
         stageDetails.getExecutionSource(), vmDetailsOutcome.getDelegateId());
+    injectOutputVarsAsEnvVars(vmStepInfo, accountId, ambiance.getStageExecutionId());
+
     Set<String> secrets = vmStepSerializer.getStepSecrets(vmStepInfo, ambiance);
     secrets.addAll(stepPreProcessSecrets);
     CIExecuteStepTaskParams params = getVmTaskParams(ambiance, vmStepInfo, secrets, stageInfraDetails, stageDetails,
         vmDetailsOutcome, runtimeId, stepIdentifier, logKey);
-
     List<String> eligibleToExecuteDelegateIds = new ArrayList<>();
     if (isNotEmpty(vmDetailsOutcome.getDelegateId())) {
       eligibleToExecuteDelegateIds.add(vmDetailsOutcome.getDelegateId());
@@ -186,6 +195,47 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
         .addCallbackIds(taskId)
         .addAllLogKeys(CollectionUtils.emptyIfNull(singletonList(logKey)))
         .build();
+  }
+
+  public void injectOutputVarsAsEnvVars(VmStepInfo stepInfo, String accountId, String stageExecutionId) {
+    if (!featureFlagService.isEnabled(FeatureName.CI_OUTPUT_VARIABLES_AS_ENV, accountId)) {
+      return;
+    }
+
+    Optional<CIStageOutput> ciStageOutputResponse =
+        ciStageOutputRepository.findFirstByStageExecutionId(stageExecutionId);
+    if (ciStageOutputResponse.isPresent()) {
+      CIStageOutput ciStageOutput = ciStageOutputResponse.get();
+      Map<String, String> outputs = ciStageOutput.getOutputs();
+      if (Objects.isNull(outputs) || outputs.isEmpty()) {
+        return;
+      }
+
+      switch (stepInfo.getType()) {
+        case RUN:
+          VmRunStep runStep = (VmRunStep) stepInfo;
+          outputs.putAll(runStep.getEnvVariables());
+          runStep.getEnvVariables().putAll(outputs);
+          break;
+        case PLUGIN:
+          VmPluginStep pluginStep = (VmPluginStep) stepInfo;
+          outputs.putAll(pluginStep.getEnvVariables());
+          pluginStep.getEnvVariables().putAll(outputs);
+          break;
+        case RUN_TEST:
+          VmRunTestStep runTestStep = (VmRunTestStep) stepInfo;
+          outputs.putAll(runTestStep.getEnvVariables());
+          runTestStep.getEnvVariables().putAll(outputs);
+          break;
+        case BACKGROUND:
+          VmBackgroundStep vmBackgroundStep = (VmBackgroundStep) stepInfo;
+          outputs.putAll(vmBackgroundStep.getEnvVariables());
+          vmBackgroundStep.getEnvVariables().putAll(outputs);
+          break;
+        default:
+          break;
+      }
+    }
   }
 
   private CIExecuteStepTaskParams getVmTaskParams(Ambiance ambiance, VmStepInfo vmStepInfo, Set<String> secrets,
@@ -300,6 +350,8 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
     }
 
     if (taskResponse.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {
+      populateCIStageOutputs(
+          taskResponse.getOutputVars(), AmbianceUtils.getAccountId(ambiance), ambiance.getStageExecutionId());
       if (isNotEmpty(taskResponse.getOutputVars())) {
         StepResponse.StepOutcome stepOutcome =
             StepResponse.StepOutcome.builder()

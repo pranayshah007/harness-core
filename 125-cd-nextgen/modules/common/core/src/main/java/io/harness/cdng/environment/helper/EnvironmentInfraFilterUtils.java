@@ -20,6 +20,7 @@ import io.harness.cdng.environment.filters.TagsFilter;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.gitops.entity.Cluster;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
@@ -230,7 +231,7 @@ public class EnvironmentInfraFilterUtils {
 
   public static boolean areFiltersSetOnIndividualEnvironments(
       ParameterField<List<EnvironmentYamlV2>> environmentYamlV2s) {
-    if (ParameterField.isNull(environmentYamlV2s)) {
+    if (ParameterField.isNull(environmentYamlV2s) || EmptyPredicate.isEmpty(environmentYamlV2s.getValue())) {
       return false;
     }
     List<EnvironmentYamlV2> envV2YamlsWithFilters =

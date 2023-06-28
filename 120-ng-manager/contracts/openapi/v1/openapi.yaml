@@ -41,9 +41,15 @@ tags:
   - name: Project Favorites
     description: This contains APIs for project-scoped Favorites.
     x-displayName: 'Project Favorites [Beta]'
-  - name: Rancher Infrastructure
-    description: This contains APIs for Rancher infra entities.
-    x-displayName: 'Rancher Infrastructure [Beta]'
+  - name: Account Rancher Infrastructure
+    description: This contains APIs for Rancher infra entities for account level.
+    x-displayName: 'Account Rancher Infrastructure [Beta]'
+  - name: Org Rancher Infrastructure
+    description: This contains APIs for Rancher infra entities for org level.
+    x-displayName: 'Org Rancher Infrastructure [Beta]'
+  - name: Project Rancher Infrastructure
+    description: This contains APIs for Rancher infra entities for project level.
+    x-displayName: 'Project Rancher Infrastructure [Beta]'
 paths:
   '/v1/orgs/{org}/projects/{project}/services/{service}':
     get:
@@ -483,6 +489,7 @@ paths:
           in: query
           name: module_type
           description: Project's module type
+        - $ref: '#/components/parameters/onlyFavorites'
         - $ref: '#/components/parameters/SearchTerm'
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
@@ -1285,7 +1292,7 @@ paths:
     get:
       summary: List rancher clusters using account level connector
       tags:
-        - Rancher Infrastructure
+        - Account Rancher Infrastructure
       responses:
         '200':
           $ref: '#/components/responses/RancherListClustersResponse'
@@ -1306,7 +1313,7 @@ paths:
     get:
       summary: List rancher clusters using org level connector
       tags:
-        - Rancher Infrastructure
+        - Org Rancher Infrastructure
       responses:
         '200':
           $ref: '#/components/responses/RancherListClustersResponse'
@@ -1328,7 +1335,7 @@ paths:
     get:
       summary: List rancher clusters using project level connector
       tags:
-        - Rancher Infrastructure
+        - Project Rancher Infrastructure
       responses:
         '200':
           $ref: '#/components/responses/RancherListClustersResponse'
@@ -1342,14 +1349,14 @@ paths:
       security:
         - x-api-key: []
       description: List rancher clusters using the given project level rancher connector
-  '/v1/environments/{environment}/rancher/infrastructure-definitions/{infrastructure-definition}/clusters':
+  '/v1/rancher/environments/{environment}/infrastructure-definitions/{infrastructure-definition}/clusters':
     parameters:
       - $ref: '#/components/parameters/EnvironmentPathParam'
       - $ref: '#/components/parameters/InfrastructureDefinitionPathParam'
     get:
       summary: List rancher clusters using account level env and infra def
       tags:
-        - Rancher Infrastructure
+        - Account Rancher Infrastructure
       responses:
         '200':
           $ref: '#/components/responses/RancherListClustersResponse'
@@ -1363,7 +1370,7 @@ paths:
       security:
         - x-api-key: []
       description: List rancher clusters using the given account level environment and infrastructure definition.
-  '/v1/orgs/{org}/environments/{environment}/rancher/infrastructure-definitions/{infrastructure-definition}/clusters':
+  '/v1/orgs/{org}/rancher/environments/{environment}/infrastructure-definitions/{infrastructure-definition}/clusters':
     parameters:
       - $ref: '#/components/parameters/OrgPathParam'
       - $ref: '#/components/parameters/EnvironmentPathParam'
@@ -1371,7 +1378,7 @@ paths:
     get:
       summary: List rancher clusters using org level env and infra def
       tags:
-        - Rancher Infrastructure
+        - Org Rancher Infrastructure
       responses:
         '200':
           $ref: '#/components/responses/RancherListClustersResponse'
@@ -1385,7 +1392,7 @@ paths:
       security:
         - x-api-key: []
       description: List rancher clusters using the given org level environment and infrastructure definition.
-  '/v1/orgs/{org}/projects/{project}/environments/{environment}/rancher/infrastructure-definitions/{infrastructure-definition}/clusters':
+  '/v1/orgs/{org}/projects/{project}/rancher/environments/{environment}/infrastructure-definitions/{infrastructure-definition}/clusters':
     parameters:
       - $ref: '#/components/parameters/OrgPathParam'
       - $ref: '#/components/parameters/ProjectPathParam'
@@ -1394,7 +1401,7 @@ paths:
     get:
       summary: List rancher clusters using project level env and infra def
       tags:
-        - Rancher Infrastructure
+        - Project Rancher Infrastructure
       responses:
         '200':
           $ref: '#/components/responses/RancherListClustersResponse'
@@ -1505,7 +1512,7 @@ components:
         user_id:
           type: string
           description: Identifier of the user.
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          pattern: '^[0-9a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
           maxLength: 128
         module:
@@ -1755,6 +1762,9 @@ components:
           type: integer
           format: int64
           description: Updated timestamp for the project
+        isFavorite:
+          type: boolean
+          description: True if its your favorite project
     OrganizationResponse:
       title: OrganizationResponse
       type: object
@@ -2563,6 +2573,7 @@ components:
                     property2: value2
                 created: 1234567890
                 updated: 1234567890
+                isFavorite: true
         application/yaml:
           schema:
             $ref: '#/components/schemas/ProjectResponse'
@@ -2582,6 +2593,7 @@ components:
                     property2: value2
                 created: 1234567890
                 updated: 1234567890
+                isFavorite: true
     FavoriteResponse:
       description: Favorite response
       content:
@@ -2654,6 +2666,7 @@ components:
                       property2: value2
                   created: 1234567890
                   updated: 1234567890
+                  isFavorite: true
         application/yaml:
           schema:
             type: array
@@ -2675,6 +2688,7 @@ components:
                       property2: value2
                   created: 1234567890
                   updated: 1234567890
+                  isFavorite: true
       headers:
         X-Total-Elements:
           schema:
@@ -3522,6 +3536,14 @@ components:
         default: 30
         maximum: 1000
       description: Number of items to return per page.
+    onlyFavorites:
+      name: only_favorites
+      in: query
+      required: false
+      schema:
+        type: boolean
+      description: >-
+        Enable this field to fetch only the entities that are marked as favorites.
     SearchTerm:
       name: search_term
       in: query
@@ -3640,7 +3662,13 @@ components:
       in: query
       required: false
       schema:
-        $ref: '#/components/schemas/FavoritesResourceType'
+        type: string
+        enum:
+          - CONNECTOR
+          - DELEGATE
+          - PIPELINE
+          - SECRET
+          - PROJECT
       description: Determines the type of favorite entity requested.
     ConnectorPathParam:
       name: connector

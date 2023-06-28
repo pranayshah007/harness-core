@@ -9,6 +9,7 @@ package io.harness.ngmigration.service.workflow;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ngmigration.utils.MigratorUtility.ELASTIC_GROUP_ACCOUNT_IDS;
 import static io.harness.ngmigration.utils.MigratorUtility.RUNTIME_INPUT;
 import static io.harness.ngmigration.utils.MigratorUtility.getRollbackPhases;
 import static io.harness.when.beans.WhenConditionStatus.SUCCESS;
@@ -113,6 +114,20 @@ public abstract class WorkflowHandler {
       CUSTOM_DEPLOYMENT_FETCH_INSTANCES.getName(), AWS_NODE_SELECT.name(), AZURE_NODE_SELECT.getName());
 
   @Inject private StepMapperFactory stepMapperFactory;
+
+  public Set<String> getBarriers(Workflow workflow) {
+    List<GraphNode> steps = MigratorUtility.getSteps(workflow);
+    if (EmptyPredicate.isEmpty(steps)) {
+      return Collections.emptySet();
+    }
+
+    return steps.stream()
+        .filter(step -> "BARRIER".equals(step.getType()))
+        .filter(step -> EmptyPredicate.isNotEmpty(step.getProperties()))
+        .filter(step -> EmptyPredicate.isNotEmpty((String) step.getProperties().get("identifier")))
+        .map(step -> (String) step.getProperties().get("identifier"))
+        .collect(Collectors.toSet());
+  }
 
   public List<CgEntityId> getReferencedEntities(StepMapperFactory stepMapperFactory, Workflow workflow) {
     List<GraphNode> steps = MigratorUtility.getSteps(workflow);
@@ -575,6 +590,10 @@ public abstract class WorkflowHandler {
     if (deploymentType != null) {
       ServiceDefinitionType serviceDefinitionType = ServiceV2Factory.mapDeploymentTypeToServiceDefType(deploymentType);
       if (serviceDefinitionType != null) {
+        if (ServiceDefinitionType.ASG.equals(serviceDefinitionType)
+            && ELASTIC_GROUP_ACCOUNT_IDS.contains(context.getWorkflow().getAccountId())) {
+          return ServiceDefinitionType.ELASTIGROUP;
+        }
         return serviceDefinitionType;
       }
     }

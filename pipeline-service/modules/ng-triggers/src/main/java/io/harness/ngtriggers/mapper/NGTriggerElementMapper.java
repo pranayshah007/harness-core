@@ -417,9 +417,11 @@ public class NGTriggerElementMapper {
 
     GitAware gitAware = WebhookConfigHelper.retrieveGitAware(webhookTriggerConfig);
     if (gitAware != null) {
+      boolean isHarnessScm = HARNESS.equals(webhookTriggerConfig.getType());
       return GitMetadata.builder()
           .connectorIdentifier(gitAware.fetchConnectorRef())
           .repoName(gitAware.fetchRepoName())
+          .isHarnessScm(isHarnessScm)
           .build();
     }
 
@@ -607,13 +609,18 @@ public class NGTriggerElementMapper {
               .planExecutionId(triggerEventHistory.get().getPlanExecutionId())
               .lastExecutionTime(triggerEventHistory.get().getCreatedAt())
               .build();
+      if (triggerEventHistory.get().getTargetExecutionSummary() != null) {
+        lastTriggerExecutionDetails.setPlanExecutionId(
+            triggerEventHistory.get().getTargetExecutionSummary().getPlanExecutionId());
+      }
       ngTriggerDetailsResponseDTO.lastTriggerExecutionDetails(lastTriggerExecutionDetails);
     }
 
     return ngTriggerDetailsResponseDTO.build();
   }
 
-  private NGTriggerEntity getTriggerEntityWithArtifactoryRepositoryUrl(NGTriggerEntity ngTriggerEntity) {
+  @VisibleForTesting
+  NGTriggerEntity getTriggerEntityWithArtifactoryRepositoryUrl(NGTriggerEntity ngTriggerEntity) {
     if (ngTriggerEntity == null) {
       return null;
     }
@@ -725,7 +732,8 @@ public class NGTriggerElementMapper {
     return arrayList;
   }
 
-  private YamlNode validateAndGetYamlNode(String yaml) {
+  @VisibleForTesting
+  YamlNode validateAndGetYamlNode(String yaml) {
     if (isEmpty(yaml)) {
       throw new InvalidRequestException("Service YAML is empty.");
     }
@@ -788,7 +796,7 @@ public class NGTriggerElementMapper {
       YamlNode triggerNode = yamlField.getNode().getField("trigger").getNode();
       ((ObjectNode) triggerNode.getCurrJsonNode()).put("enabled", ngTriggerEntity.getEnabled());
       String updateYml = YamlUtils.writeYamlString(yamlField);
-      ngTriggerEntity.setYaml(updateYml.replace("---\n", ""));
+      ngTriggerEntity.setYaml(updateYml);
     } catch (Exception e) {
       log.error(new StringBuilder("Failed to update enable attribute to ")
                     .append(ngTriggerEntity.getEnabled())

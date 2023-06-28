@@ -9,17 +9,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"path/filepath"
+	"strings"
+
 	fs "github.com/harness/harness-core/commons/go/lib/filesystem"
 	cgp "github.com/harness/harness-core/product/ci/addon/parser/cg"
 	"github.com/harness/harness-core/product/ci/common/avro"
 	"github.com/harness/harness-core/product/ci/common/external"
 	"github.com/pkg/errors"
-	"io"
-	"path/filepath"
-	"strings"
 
 	pb "github.com/harness/harness-core/product/ci/engine/proto"
-	"github.com/harness/harness-core/product/ci/ti-service/types"
+	"github.com/harness/ti-client/types"
 	"go.uber.org/zap"
 )
 

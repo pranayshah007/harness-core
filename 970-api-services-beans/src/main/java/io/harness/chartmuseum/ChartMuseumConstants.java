@@ -9,6 +9,8 @@ package io.harness.chartmuseum;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.OwnedBy;
 
 import java.util.regex.Pattern;
@@ -24,7 +26,12 @@ public class ChartMuseumConstants {
   public final int HEALTH_CHECK_TIME_GAP_SECONDS = 5; // 24*5 = 120 seconds is the timeout for health check
   public final Pattern VERSION_PATTERN = Pattern.compile("v?(\\d+\\.\\d+\\.\\d+)");
 
-  public final String CHART_MUSEUM_SERVER_URL = "http://127.0.0.1:${PORT}";
+  public final int CHART_MUSEUM_SERVICE_START_TIMEOUT = 60 * 1000;
+  public final String CHART_MUSEUM_SERVER_PROTOCOL = "http";
+  public final String CHART_MUSEUM_SERVER_HOST = "127.0.0.1";
+  public final String CHART_MUSEUM_SERVER_PORT = "${PORT}";
+  public final String CHART_MUSEUM_SERVER_URL =
+      format("%s://%s:%s", CHART_MUSEUM_SERVER_PROTOCOL, CHART_MUSEUM_SERVER_HOST, CHART_MUSEUM_SERVER_PORT);
 
   public final String NO_SUCH_BBUCKET_ERROR_CODE = "NoSuchBucket";
   public final String NO_SUCH_BBUCKET_ERROR = "NoSuchBucket: The specified bucket does not exist";
@@ -45,10 +52,16 @@ public class ChartMuseumConstants {
   public final String AMAZON_S3_COMMAND_TEMPLATE =
       " --port=${PORT} --storage=amazon --storage-amazon-bucket=${BUCKET_NAME} --storage-amazon-prefix=${FOLDER_PATH} --storage-amazon-region=${REGION}";
 
+  public final String DEBUG = " --debug";
+
+  public final String AMAZON_S3_COMMAND_TEMPLATE_DEBUG = AMAZON_S3_COMMAND_TEMPLATE + DEBUG;
+
   public final String GOOGLE_APPLICATION_CREDENTIALS = "GOOGLE_APPLICATION_CREDENTIALS";
 
   public final String GCS_COMMAND_TEMPLATE =
       " --port=${PORT} --storage=google --storage-google-bucket=${BUCKET_NAME} --storage-google-prefix=${FOLDER_PATH}";
+
+  public final String GCS_COMMAND_TEMPLATE_DEBUG = GCS_COMMAND_TEMPLATE + DEBUG;
 
   public final String DISABLE_STATEFILES = "--disable-statefiles --index-limit 100";
 

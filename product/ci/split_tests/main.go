@@ -8,14 +8,15 @@ package main
 import (
 	"context"
 	"fmt"
-	arg "github.com/alexflint/go-arg"
-	"github.com/harness/harness-core/product/ci/split_tests/ti"
-	stutils "github.com/harness/harness-core/product/ci/split_tests/utils"
-	"github.com/harness/harness-core/product/ci/ti-service/types"
-	"go.uber.org/zap"
 	"os"
 	"strconv"
 	"strings"
+
+	arg "github.com/alexflint/go-arg"
+	"github.com/harness/harness-core/product/ci/split_tests/ti"
+	stutils "github.com/harness/harness-core/product/ci/split_tests/utils"
+	"github.com/harness/ti-client/types"
+	"go.uber.org/zap"
 
 	junit "github.com/harness/harness-core/product/ci/split_tests/junit"
 )

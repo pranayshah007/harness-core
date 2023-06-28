@@ -33,6 +33,9 @@ import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.idp.allowlist.resources.AllowListApiImpl;
 import io.harness.idp.allowlist.services.AllowListService;
 import io.harness.idp.allowlist.services.AllowListServiceImpl;
+import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCache;
+import io.harness.idp.common.delegateselectors.cache.memory.DelegateSelectorsInMemoryCache;
+import io.harness.idp.common.delegateselectors.cache.redis.DelegateSelectorsRedisCache;
 import io.harness.idp.configmanager.resource.AppConfigApiImpl;
 import io.harness.idp.configmanager.resource.MergedPluginsConfigApiImpl;
 import io.harness.idp.configmanager.service.*;
@@ -49,8 +52,6 @@ import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory
 import io.harness.idp.gitintegration.resources.ConnectorInfoApiImpl;
 import io.harness.idp.gitintegration.service.GitIntegrationService;
 import io.harness.idp.gitintegration.service.GitIntegrationServiceImpl;
-import io.harness.idp.gitintegration.utils.delegateselectors.DelegateSelectorsCache;
-import io.harness.idp.gitintegration.utils.delegateselectors.DelegateSelectorsInMemoryCache;
 import io.harness.idp.health.resources.HealthResource;
 import io.harness.idp.health.service.HealthResourceImpl;
 import io.harness.idp.k8s.client.K8sApiClient;
@@ -76,6 +77,8 @@ import io.harness.idp.provision.service.ProvisionServiceImpl;
 import io.harness.idp.proxy.delegate.DelegateProxyApi;
 import io.harness.idp.proxy.delegate.DelegateProxyApiImpl;
 import io.harness.idp.proxy.layout.LayoutProxyApiImpl;
+import io.harness.idp.proxy.ngmanager.ManagerProxyApi;
+import io.harness.idp.proxy.ngmanager.ManagerProxyApiImpl;
 import io.harness.idp.proxy.ngmanager.NgManagerProxyApi;
 import io.harness.idp.proxy.ngmanager.NgManagerProxyApiImpl;
 import io.harness.idp.serializer.IdpServiceRegistrars;
@@ -157,6 +160,8 @@ import org.springframework.core.convert.converter.Converter;
 @Slf4j
 @OwnedBy(HarnessTeam.IDP)
 public class IdpModule extends AbstractModule {
+  public static final String REDIS = "redis";
+  public static final String IN_MEMORY = "in-memory";
   private final IdpConfiguration appConfig;
   public IdpModule(IdpConfiguration appConfig) {
     this.appConfig = appConfig;
@@ -304,6 +309,7 @@ public class IdpModule extends AbstractModule {
     bind(GitClientV2.class).to(GitClientV2Impl.class);
     bind(LayoutProxyApi.class).to(LayoutProxyApiImpl.class);
     bind(NgManagerProxyApi.class).to(NgManagerProxyApiImpl.class);
+    bind(ManagerProxyApi.class).to(ManagerProxyApiImpl.class);
     bind(PluginInfoApi.class).to(PluginInfoApiImpl.class);
     bind(DelegateProxyApi.class).to(DelegateProxyApiImpl.class);
     bind(PluginInfoService.class).to(PluginInfoServiceImpl.class);
@@ -328,7 +334,12 @@ public class IdpModule extends AbstractModule {
         .annotatedWith(Names.named("DefaultPREnvAccountIdToNamespaceMappingCreator"))
         .toInstance(new ManagedExecutorService(Executors.newSingleThreadExecutor()));
     bind(HealthResource.class).to(HealthResourceImpl.class);
-    bind(DelegateSelectorsCache.class).to(DelegateSelectorsInMemoryCache.class);
+
+    if (appConfig.getDelegateSelectorsCacheMode().equals(IN_MEMORY)) {
+      bind(DelegateSelectorsCache.class).to(DelegateSelectorsInMemoryCache.class);
+    } else if (appConfig.getDelegateSelectorsCacheMode().equals(REDIS)) {
+      bind(DelegateSelectorsCache.class).to(DelegateSelectorsRedisCache.class);
+    }
 
     MapBinder<BackstageEnvVariableType, BackstageEnvVariableMapper> backstageEnvVariableMapBinder =
         MapBinder.newMapBinder(binder(), BackstageEnvVariableType.class, BackstageEnvVariableMapper.class);
@@ -425,6 +436,20 @@ public class IdpModule extends AbstractModule {
   @Named("ngManagerServiceSecret")
   public String ngManagerServiceSecret() {
     return this.appConfig.getNgManagerServiceSecret();
+  }
+
+  @Provides
+  @Singleton
+  @Named("managerClientConfig")
+  public ServiceHttpClientConfig managerClientConfig() {
+    return this.appConfig.getManagerClientConfig();
+  }
+
+  @Provides
+  @Singleton
+  @Named("managerServiceSecret")
+  public String managerServiceSecret() {
+    return this.appConfig.getManagerServiceSecret();
   }
 
   @Provides

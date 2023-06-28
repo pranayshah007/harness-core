@@ -67,11 +67,12 @@ import io.harness.product.ci.scm.proto.GetLatestCommitResponse;
 import io.harness.product.ci.scm.proto.ListCommitsInPRResponse;
 import io.harness.product.ci.scm.proto.PullRequest;
 import io.harness.serializer.KryoSerializer;
-import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -86,8 +87,8 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
                                          SyncExecutable<CodeBaseTaskStepParameters> {
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType("CI_CODEBASE_TASK").setStepCategory(StepCategory.STEP).build();
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
-  @Inject private KryoSerializer kryoSerializer;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
 
@@ -124,8 +125,8 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
                                   .build();
 
     log.info("Created delegate task to fetch codebase info");
-    return StepUtils.prepareTaskRequest(
-        ambiance, taskData, kryoSerializer, false, Collections.emptyList(), false, null);
+    return TaskRequestsUtils.prepareTaskRequest(
+        ambiance, taskData, referenceFalseKryoSerializer, false, Collections.emptyList(), false, null);
   }
 
   @Override

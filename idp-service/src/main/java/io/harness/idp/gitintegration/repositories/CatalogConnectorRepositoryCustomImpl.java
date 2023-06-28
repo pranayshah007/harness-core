@@ -13,6 +13,7 @@ import io.harness.idp.events.producers.SetupUsageProducer;
 import io.harness.idp.gitintegration.entities.CatalogConnectorEntity;
 
 import com.google.inject.Inject;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Sort;
@@ -58,6 +59,17 @@ public class CatalogConnectorRepositoryCustomImpl implements CatalogConnectorRep
     query.with(Sort.by(Sort.Direction.DESC, CatalogConnectorEntity.CatalogConnectorKeys.lastUpdatedAt));
     query.limit(1);
     return mongoTemplate.findOne(query, CatalogConnectorEntity.class);
+  }
+
+  @Override
+  public List<CatalogConnectorEntity> findAllHostsByAccountIdentifier(String accountIdentifier) {
+    Criteria criteria =
+        Criteria.where(CatalogConnectorEntity.CatalogConnectorKeys.accountIdentifier).is(accountIdentifier);
+    Query query = new Query(criteria);
+    query.fields().include(CatalogConnectorEntity.CatalogConnectorKeys.type);
+    query.fields().include(CatalogConnectorEntity.CatalogConnectorKeys.host);
+    query.fields().include(CatalogConnectorEntity.CatalogConnectorKeys.delegateSelectors);
+    return mongoTemplate.find(query, CatalogConnectorEntity.class);
   }
 
   private CatalogConnectorEntity findOneByAccountIdentifierAndProviderType(Criteria criteria) {

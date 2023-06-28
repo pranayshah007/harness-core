@@ -9,11 +9,11 @@ package io.harness.plancreator.steps.pluginstep;
 
 import static io.harness.pms.yaml.YAMLFieldNameConstants.PARALLEL;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
-import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.advisers.rollback.RollbackStrategy;
+import io.harness.plancreator.steps.GenericPlanCreatorUtils;
 import io.harness.plancreator.steps.InitContainerStepPlanCreater;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
@@ -90,10 +90,8 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
     }
     PlanNode initPlanNode = InitContainerStepPlanCreater.createPlanForField(
         initStepNodeId, stepParameters, advisorParametersInitStep, StepSpecTypeConstants.INIT_CONTAINER_STEP);
-    boolean isStepInsideRollback = false;
-    if (YamlUtils.findParentNode(ctx.getCurrentField().getNode(), ROLLBACK_STEPS) != null) {
-      isStepInsideRollback = true;
-    }
+    final boolean isStepInsideRollback =
+        YamlUtils.findParentNode(ctx.getCurrentField().getNode(), ROLLBACK_STEPS) != null;
     PlanNode stepPlanNode = createPlanForStep(stepNodeId, stepParameters,
         PmsStepPlanCreatorUtils.getAdviserObtainmentForFailureStrategy(
             kryoSerializer, ctx.getCurrentField(), isStepInsideRollback, false));
@@ -124,6 +122,9 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
             .childNodeID(childrenNodeIds.get(0))
             .build();
 
+    final boolean isStepInsideRollback =
+        YamlUtils.findParentNode(ctx.getCurrentField().getNode(), ROLLBACK_STEPS) != null;
+
     return PlanNode.builder()
         .name(config.getName())
         .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, config.getUuid()))
@@ -138,7 +139,8 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
                 .build())
         .adviserObtainments(getAdviserObtainmentFromMetaData(
             ctx.getCurrentField(), StrategyUtils.isWrappedUnderStrategy(ctx.getCurrentField())))
-        .whenCondition(RunInfoUtils.getRunConditionForStep(config.getWhen()))
+        .whenCondition(isStepInsideRollback ? RunInfoUtils.getRunConditionForRollback(config.getWhen())
+                                            : RunInfoUtils.getRunConditionForStep(config.getWhen()))
         .timeoutObtainment(
             SdkTimeoutObtainment.builder()
                 .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
@@ -183,7 +185,7 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
   }
 
   private void addNextStepAdviser(YamlField currentField, List<AdviserObtainment> adviserObtainments) {
-    if (currentField.checkIfParentIsParallel(STEPS)) {
+    if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)) {
       return;
     }
     YamlField siblingField = currentField.getNode().nextSiblingFromParentArray(

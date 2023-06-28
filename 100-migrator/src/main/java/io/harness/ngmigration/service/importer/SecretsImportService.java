@@ -35,8 +35,10 @@ public class SecretsImportService implements ImportService {
     List<String> secretIds = new ArrayList<>();
     switch (filter.getImportType()) {
       case ALL:
-        List<EncryptedData> encryptedDataList =
-            hPersistence.createQuery(EncryptedData.class).filter(EncryptedDataKeys.accountId, accountId).asList();
+        List<EncryptedData> encryptedDataList = hPersistence.createQuery(EncryptedData.class)
+                                                    .filter(EncryptedDataKeys.accountId, accountId)
+                                                    .filter(EncryptedDataKeys.hideFromListing, false)
+                                                    .asList();
         if (EmptyPredicate.isNotEmpty(encryptedDataList)) {
           secretIds = encryptedDataList.stream().map(EncryptedData::getUuid).collect(Collectors.toList());
         }

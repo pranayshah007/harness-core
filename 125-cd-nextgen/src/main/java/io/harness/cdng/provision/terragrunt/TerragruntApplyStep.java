@@ -18,6 +18,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.executables.CdTaskExecutable;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.provision.ProvisionerOutputHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.ParameterFieldHelper;
@@ -71,6 +72,7 @@ public class TerragruntApplyStep extends CdTaskExecutable<TerragruntApplyTaskRes
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private StepHelper stepHelper;
   @Inject private ProvisionerOutputHelper provisionerOutputHelper;
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Override
   public Class getStepParametersClass() {
@@ -204,6 +206,8 @@ public class TerragruntApplyStep extends CdTaskExecutable<TerragruntApplyTaskRes
         .envVars(inheritOutput.environmentVariables)
         .encryptedDataDetailList(helper.getEncryptionDetailsFromTgInheritConfig(inheritOutput.getConfigFiles(),
             inheritOutput.getBackendConfigFile(), inheritOutput.getVarFileConfigs(), ambiance))
+        .encryptDecryptPlanForHarnessSMOnManager(
+            helper.tfPlanEncryptionOnManager(accountId, inheritOutput.encryptionConfig))
         .timeoutInMillis(StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), DEFAULT_TIMEOUT));
     builder.build();
 

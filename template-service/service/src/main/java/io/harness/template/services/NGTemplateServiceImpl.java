@@ -231,8 +231,12 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       }
     }
 
+    checkForChildTypesInTemplates(templateEntity, "create");
+
     // apply templates to template yaml for validation and populating module info
     applyTemplatesToYamlAndValidateSchema(templateEntity);
+
+    List<EntityDetailProtoDTO> referredEntities = templateReferenceHelper.calculateTemplateReferences(templateEntity);
 
     try {
       // Check if this is template identifier first entry, for marking it as stable template.
@@ -279,8 +283,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
       GitAwareContextHelper.setIsDefaultBranchInGitEntityInfo();
       if (doPublishSetupUsages(template)) {
-        templateReferenceHelper.populateTemplateReferences(
-            SetupUsageParams.builder().templateEntity(templateEntity).build());
+        templateReferenceHelper.publishTemplateReferences(
+            SetupUsageParams.builder().templateEntity(templateEntity).build(), referredEntities);
       }
 
       return template;
@@ -368,6 +372,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         templateEntity.getProjectIdentifier(), templateEntity.getRepo(), templateEntity.getConnectorRef());
     // apply templates to template yaml for validations and populating module info
     applyTemplatesToYamlAndValidateSchema(templateEntity);
+    // calculate the references, returns error if any errors occur while fetching references
+    List<EntityDetailProtoDTO> referredEntities = templateReferenceHelper.calculateTemplateReferences(templateEntity);
 
     TemplateEntity template = null;
 
@@ -380,8 +386,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
     GitAwareContextHelper.setIsDefaultBranchInGitEntityInfo();
     if (doPublishSetupUsages(template)) {
-      templateReferenceHelper.populateTemplateReferences(
-          SetupUsageParams.builder().templateEntity(templateEntity).build());
+      templateReferenceHelper.publishTemplateReferences(
+          SetupUsageParams.builder().templateEntity(templateEntity).build(), referredEntities);
     }
 
     return template;
@@ -394,6 +400,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         FeatureRestrictionName.TEMPLATE_SERVICE, templateEntity.getAccountIdentifier());
     // apply templates to template yaml for validations and populating module info
     applyTemplatesToYamlAndValidateSchema(templateEntity);
+    // calculate the references, returns error if any errors occur while fetching references
+    List<EntityDetailProtoDTO> referredEntities = templateReferenceHelper.calculateTemplateReferences(templateEntity);
 
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     if (gitEntityInfo != null) {
@@ -424,8 +432,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
     GitAwareContextHelper.setIsDefaultBranchInGitEntityInfo();
     if (doPublishSetupUsages(template)) {
-      templateReferenceHelper.populateTemplateReferences(
-          SetupUsageParams.builder().templateEntity(templateEntity).build());
+      templateReferenceHelper.publishTemplateReferences(
+          SetupUsageParams.builder().templateEntity(templateEntity).build(), referredEntities);
     }
 
     return template;
@@ -983,6 +991,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     TemplateEntity templateEntity =
         NGTemplateDtoMapper.toTemplateEntity(accountIdentifier, orgIdentifier, projectIdentifier, importedTemplateYAML);
 
+    checkForChildTypesInTemplates(templateEntity, "import");
+
     TemplateEntity templateEntityToSave = prepareTemplateEntity(templateEntity, repoUrl);
 
     try {
@@ -1002,6 +1012,25 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           format(DUP_KEY_EXP_FORMAT_STRING, templateEntity.getIdentifier(), templateImportRequest.getTemplateVersion(),
               templateEntity.getProjectIdentifier(), templateEntity.getOrgIdentifier()),
           USER_SRE, ex);
+    }
+  }
+
+  private void checkForChildTypesInTemplates(TemplateEntity templateEntity, String action) {
+    Set<TemplateEntityType> templatesWithChildTypes = new HashSet<>();
+    templatesWithChildTypes.add(TemplateEntityType.STAGE_TEMPLATE);
+    templatesWithChildTypes.add(TemplateEntityType.STEP_TEMPLATE);
+    templatesWithChildTypes.add(TemplateEntityType.STEPGROUP_TEMPLATE);
+    String error = "";
+    String actionType = action.equals("create") ? "save" : "import";
+    if (templatesWithChildTypes.contains(templateEntity.getTemplateEntityType())
+        && EmptyPredicate.isEmpty(templateEntity.getChildType())) {
+      if (templateEntity.getTemplateEntityType() == TemplateEntityType.STEPGROUP_TEMPLATE) {
+        error = "Unable to " + actionType + " the template. Missing property [stageType].";
+      } else {
+        error = "Unable to " + actionType + " the template. Missing property [type] for "
+            + templateEntity.getTemplateEntityType().toString() + " template";
+      }
+      throw new InvalidRequestException(error);
     }
   }
 
@@ -1328,7 +1357,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     }
   }
 
-  private TemplateEntity saveTemplate(TemplateEntity templateEntity, String comments) throws InvalidRequestException {
+  TemplateEntity saveTemplate(TemplateEntity templateEntity, String comments) throws InvalidRequestException {
     if (templateServiceHelper.isOldGitSync(templateEntity)) {
       return templateRepository.saveForOldGitSync(templateEntity, comments);
     } else {
@@ -1357,6 +1386,12 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           templateEntity.getIdentifier(), templateEntity.getVersionLabel(), templateEntity.getProjectIdentifier(),
           templateEntity.getOrgIdentifier(), oldTemplateEntity.getTemplateEntityType()));
     }
+
+    if (EmptyPredicate.isEmpty(oldTemplateEntity.getChildType())
+        && EmptyPredicate.isNotEmpty(templateEntity.getChildType())) {
+      return oldTemplateEntity.withChildType(templateEntity.getChildType());
+    }
+
     if (!((oldTemplateEntity.getChildType() == null && templateEntity.getChildType() == null)
             || oldTemplateEntity.getChildType().equals(templateEntity.getChildType()))) {
       throw new InvalidRequestException(format(

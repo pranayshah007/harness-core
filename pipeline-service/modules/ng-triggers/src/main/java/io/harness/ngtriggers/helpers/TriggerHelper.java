@@ -194,8 +194,7 @@ public class TriggerHelper {
   }
 
   public List<String> getAllTriggerExpressions() {
-    return Arrays.asList("trigger.targetBranch", "trigger.sourceBranch", "trigger.prNumber", "trigger.prTitle",
-        "trigger.payload._placeholder");
+    return Arrays.asList("trigger.targetBranch", "trigger.sourceBranch", "trigger.prNumber", "trigger.prTitle");
   }
 
   public static void stampWebhookRegistrationInfo(

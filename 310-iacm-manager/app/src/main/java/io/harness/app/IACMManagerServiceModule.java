@@ -192,7 +192,9 @@ public class IACMManagerServiceModule extends AbstractModule {
   @Provides
   @Singleton
   DistributedLockImplementation distributedLockImplementation() {
-    return MONGO;
+    return iacmManagerConfiguration.getDistributedLockImplementation() == null
+        ? MONGO
+        : iacmManagerConfiguration.getDistributedLockImplementation();
   }
 
   @Provides

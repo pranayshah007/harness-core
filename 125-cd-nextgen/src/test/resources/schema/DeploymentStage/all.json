@@ -1284,6 +1284,17 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AsgDeploymentMetaData": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/DeploymentMetaData"
+        },
+        {
+          "type": "object"
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AsgInfrastructure": {
       "allOf": [
         {
@@ -1622,6 +1633,17 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AwsLambdaDeploymentMetaData": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/DeploymentMetaData"
+        },
+        {
+          "type": "object"
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AwsLambdaFunctionAliasDefinitionManifest": {
       "allOf": [
         {
@@ -1754,9 +1776,6 @@
         },
         {
           "type": "object",
-          "required": [
-            "settings"
-          ],
           "properties": {
             "buildCommandOptions": {
               "oneOf": [
@@ -1851,16 +1870,6 @@
                   "minLength": 1
                 }
               ]
-            },
-            "settings": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
-                },
-                {
-                  "type": "string"
-                }
-              ]
             }
           }
         }
@@ -1875,7 +1884,7 @@
         {
           "type": "object",
           "required": [
-            "settings"
+            "stackName"
           ],
           "properties": {
             "connectorRef": {
@@ -1969,16 +1978,6 @@
                 }
               ]
             },
-            "settings": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
-                },
-                {
-                  "type": "string"
-                }
-              ]
-            },
             "stackName": {
               "oneOf": [
                 {
@@ -1992,6 +1991,17 @@
               ]
             }
           }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AwsSamDeploymentMetaData": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/DeploymentMetaData"
+        },
+        {
+          "type": "object"
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -2599,6 +2609,17 @@
               "type": "string"
             }
           }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureWebAppDeploymentMetaData": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/DeploymentMetaData"
+        },
+        {
+          "type": "object"
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -4920,6 +4941,17 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "CustomDeploymentMetaData": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/DeploymentMetaData"
+        },
+        {
+          "type": "object"
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "CustomDeploymentNGVariable": {
       "type": "object",
       "discriminator": "type",
@@ -5119,30 +5151,6 @@
           "properties": {
             "script": {
               "type": "string"
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "DelegateInfra": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepGroupInfra"
-        },
-        {
-          "type": "object",
-          "required": [
-            "type"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "KubernetesDirect",
-                "Delegate",
-                "Noop"
-              ]
             }
           }
         }
@@ -5371,6 +5379,118 @@
           "if": {
             "properties": {
               "deploymentType": {
+                "const": "AWS_SAM"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "deploymentMetadata": {
+                "$ref": "#/definitions/AwsSamDeploymentMetaData"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "deploymentType": {
+                "const": "Asg"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "deploymentMetadata": {
+                "$ref": "#/definitions/AsgDeploymentMetaData"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "deploymentType": {
+                "const": "AwsLambda"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "deploymentMetadata": {
+                "$ref": "#/definitions/AwsLambdaDeploymentMetaData"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "deploymentType": {
+                "const": "AzureWebApp"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "deploymentMetadata": {
+                "$ref": "#/definitions/AzureWebAppDeploymentMetaData"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "deploymentType": {
+                "const": "CustomDeployment"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "deploymentMetadata": {
+                "$ref": "#/definitions/CustomDeploymentMetaData"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "deploymentType": {
+                "const": "ECS"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "deploymentMetadata": {
+                "$ref": "#/definitions/EcsDeploymentMetaData"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "deploymentType": {
+                "const": "Elastigroup"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "deploymentMetadata": {
+                "$ref": "#/definitions/ElastiGroupDeploymentMetaData"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "deploymentType": {
                 "const": "GoogleCloudFunctions"
               }
             }
@@ -5379,6 +5499,102 @@
             "properties": {
               "deploymentMetadata": {
                 "$ref": "#/definitions/GoogleCloudFunctionDeploymentMetaData"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "deploymentType": {
+                "const": "Kubernetes"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "deploymentMetadata": {
+                "$ref": "#/definitions/KubernetesDeploymentMetaData"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "deploymentType": {
+                "const": "NativeHelm"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "deploymentMetadata": {
+                "$ref": "#/definitions/NativeHelmDeploymentMetaData"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "deploymentType": {
+                "const": "ServerlessAwsLambda"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "deploymentMetadata": {
+                "$ref": "#/definitions/ServerlessAwsLambdaDeploymentMetaData"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "deploymentType": {
+                "const": "Ssh"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "deploymentMetadata": {
+                "$ref": "#/definitions/SshDeploymentMetaData"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "deploymentType": {
+                "const": "TAS"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "deploymentMetadata": {
+                "$ref": "#/definitions/TasDeploymentMetaData"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "deploymentType": {
+                "const": "WinRm"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "deploymentMetadata": {
+                "$ref": "#/definitions/WinrmDeploymentMetaData"
               }
             }
           }
@@ -6167,6 +6383,17 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "EcsDeploymentMetaData": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/DeploymentMetaData"
+        },
+        {
+          "type": "object"
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "EcsInfrastructure": {
       "allOf": [
         {
@@ -6423,6 +6650,17 @@
               "$ref": "#/definitions/StoreConfigWrapper"
             }
           }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ElastiGroupDeploymentMetaData": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/DeploymentMetaData"
+        },
+        {
+          "type": "object"
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -7372,6 +7610,32 @@
                   "additionalProperties": {
                     "type": "string"
                   }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheFrom": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheTo": {
+              "type": "string"
+            },
+            "caching": {
+              "oneOf": [
+                {
+                  "type": "boolean"
                 },
                 {
                   "type": "string"
@@ -10183,7 +10447,17 @@
                 }
               ]
             },
-            "skipDeploymentIfSameManifest": {
+            "skipDryRun": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "skipUnchangedManifest": {
               "oneOf": [
                 {
                   "type": "boolean"
@@ -10192,16 +10466,6 @@
                   "type": "string",
                   "pattern": "(<\\+.+>.*)",
                   "minLength": 1
-                }
-              ]
-            },
-            "skipDryRun": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
                 }
               ]
             }
@@ -10723,6 +10987,17 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "KubernetesDeploymentMetaData": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/DeploymentMetaData"
+        },
+        {
+          "type": "object"
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "KubernetesServiceSpec": {
       "allOf": [
         {
@@ -10736,6 +11011,9 @@
               "items": {
                 "$ref": "#/definitions/ServiceHookWrapper"
               }
+            },
+            "manifestConfigurations": {
+              "$ref": "#/definitions/ManifestConfigurations"
             }
           }
         }
@@ -11411,6 +11689,15 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ManifestConfigurations": {
+      "type": "object",
+      "properties": {
+        "primaryManifestRef": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ManifestOverrideSetWrapper": {
       "type": "object",
       "properties": {
@@ -11666,6 +11953,17 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "NativeHelmDeploymentMetaData": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/DeploymentMetaData"
+        },
+        {
+          "type": "object"
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "NativeHelmServiceSpec": {
       "allOf": [
         {
@@ -11679,6 +11977,9 @@
               "items": {
                 "$ref": "#/definitions/ServiceHookWrapper"
               }
+            },
+            "manifestConfigurations": {
+              "$ref": "#/definitions/ManifestConfigurations"
             }
           }
         }
@@ -15097,6 +15398,134 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ServerlessAwsLambdaDeployV2StepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "settings"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "deployCommandOptions": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "image": {
+              "type": "string"
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "serverlessVersion": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ServerlessAwsLambdaDeploymentMetaData": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/DeploymentMetaData"
+        },
+        {
+          "type": "object"
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ServerlessAwsLambdaInfrastructure": {
       "allOf": [
         {
@@ -15155,7 +15584,140 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ServerlessAwsLambdaPrepareRollbackV2StepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "settings"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "downloadManifestsFqn": {
+              "type": "string"
+            },
+            "image": {
+              "type": "string"
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "serverlessVersion": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ServerlessAwsLambdaRollbackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ServerlessAwsLambdaRollbackV2StepInfo": {
       "allOf": [
         {
           "$ref": "#/definitions/StepSpecType"
@@ -16493,6 +17055,17 @@
           ]
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SshDeploymentMetaData": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/DeploymentMetaData"
+        },
+        {
+          "type": "object"
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "SshServiceSpec": {
@@ -18255,6 +18828,38 @@
           "if": {
             "properties": {
               "type": {
+                "const": "ServerlessAwsLambdaDeployV2"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ServerlessAwsLambdaDeployV2StepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ServerlessAwsLambdaPrepareRollbackV2"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ServerlessAwsLambdaPrepareRollbackV2StepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "ServerlessAwsLambdaRollback"
               }
             }
@@ -18263,6 +18868,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/ServerlessAwsLambdaRollbackStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ServerlessAwsLambdaRollbackV2"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ServerlessAwsLambdaRollbackV2StepInfo"
               }
             }
           }
@@ -18684,9 +19305,6 @@
         "stepGroupInfra": {
           "oneOf": [
             {
-              "$ref": "#/definitions/DelegateInfra"
-            },
-            {
               "$ref": "#/definitions/K8sDirectInfra"
             }
           ]
@@ -18713,6 +19331,22 @@
         },
         "template": {
           "$ref": "#/definitions/TemplateLinkConfig"
+        },
+        "variables": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/NumberNGVariable"
+              },
+              {
+                "$ref": "#/definitions/SecretNGVariable"
+              },
+              {
+                "$ref": "#/definitions/StringNGVariable"
+              }
+            ]
+          }
         },
         "when": {
           "oneOf": [
@@ -19903,6 +20537,17 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "TasDeploymentMetaData": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/DeploymentMetaData"
+        },
+        {
+          "type": "object"
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "TasInstanceSelectionBase": {
       "type": "object",
       "discriminator": "type",
@@ -20576,6 +21221,9 @@
           "items": {
             "$ref": "#/definitions/TerraformCliOptionFlag"
           }
+        },
+        "encryptOutput": {
+          "$ref": "#/definitions/TerraformEncryptOutput"
         },
         "spec": {
           "$ref": "#/definitions/TerraformCloudCliExecutionData"
@@ -21251,6 +21899,18 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "TerraformEncryptOutput": {
+      "type": "object",
+      "required": [
+        "outputSecretManagerRef"
+      ],
+      "properties": {
+        "outputSecretManagerRef": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "TerraformExecutionData": {
       "type": "object",
       "required": [
@@ -21520,6 +22180,9 @@
           "items": {
             "$ref": "#/definitions/TerraformCliOptionFlag"
           }
+        },
+        "encryptOutput": {
+          "$ref": "#/definitions/TerraformEncryptOutput"
         },
         "skipRefreshCommand": {
           "oneOf": [
@@ -22567,6 +23230,17 @@
               }
             }
           }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "WinrmDeploymentMetaData": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/DeploymentMetaData"
+        },
+        {
+          "type": "object"
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"

@@ -15,8 +15,11 @@ import static io.harness.rule.OwnerRule.KARAN_SARASWAT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.offset;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
@@ -27,6 +30,7 @@ import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.MSHealthReport;
 import io.harness.cvng.beans.change.ChangeSummaryDTO;
+import io.harness.cvng.client.FakeNotificationClient;
 import io.harness.cvng.core.services.api.ChangeEventService;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.monitoredService.MSHealthReportService;
@@ -43,6 +47,7 @@ import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjectiv
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
+import io.harness.notification.notificationclient.NotificationResultWithoutStatus;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
@@ -57,6 +62,7 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 public class MSHealthReportServiceImplTest extends CvNextGenTestBase {
@@ -69,6 +75,8 @@ public class MSHealthReportServiceImplTest extends CvNextGenTestBase {
   @Inject ServiceLevelIndicatorService serviceLevelIndicatorService;
   @Inject SLIRecordService sliRecordService;
   Clock clock;
+
+  @Mock FakeNotificationClient notificationClient;
 
   BuilderFactory builderFactory;
   FeatureFlagService featureFlagService;
@@ -85,6 +93,7 @@ public class MSHealthReportServiceImplTest extends CvNextGenTestBase {
              eq(builderFactory.getContext().getAccountId()), eq(FeatureFlagNames.SRM_INTERNAL_CHANGE_SOURCE_CE)))
         .thenReturn(true);
     FieldUtils.writeField(changeEventService, "featureFlagService", featureFlagService, true);
+    FieldUtils.writeField(msHealthReportService, "notificationClient", notificationClient, true);
   }
 
   @Test
@@ -126,31 +135,39 @@ public class MSHealthReportServiceImplTest extends CvNextGenTestBase {
 
     createHeatMaps(eventTime.plus(Duration.ofMinutes(10)));
 
-    MSHealthReport MSHealthReport = msHealthReportService.getMSHealthReport(builderFactory.getProjectParams(),
+    MSHealthReport msHealthReport = msHealthReportService.getMSHealthReport(builderFactory.getProjectParams(),
         builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier());
-    assertThat(MSHealthReport.getChangeSummary().getTotal()).isEqualTo(changeSummaryDTO.getTotal());
-    MSHealthReport.AssociatedSLOsDetails associatedSLODetails = MSHealthReport.getAssociatedSLOsDetails().get(0);
+    assertThat(msHealthReport.getChangeSummary().getTotal()).isEqualTo(changeSummaryDTO.getTotal());
+    MSHealthReport.AssociatedSLOsDetails associatedSLODetails = msHealthReport.getAssociatedSLOsDetails().get(0);
     assertThat(associatedSLODetails.getIdentifier()).isEqualTo(simpleServiceLevelObjective.getIdentifier());
-    assertThat(associatedSLODetails.getSloPerformance()).isEqualTo(50);
+    assertThat(associatedSLODetails.getCurrentSLOPerformance()).isEqualTo(50);
     assertThat(associatedSLODetails.getErrorBudgetBurnRate()).isEqualTo(10.41, offset(0.01));
-    MSHealthReport.ServiceHealthDetails serviceHealthDetails = MSHealthReport.getServiceHealthDetails();
-    assertThat(serviceHealthDetails.getCurrentHealthScore()).isEqualTo(65);
-    assertThat(serviceHealthDetails.getPastHealthScore()).isEqualTo(77);
-    assertThat(serviceHealthDetails.getPercentageChange()).isEqualTo(-15.58, offset(0.01));
+    assertThat(msHealthReport.getCurrentHealthScore()).isEqualTo(52);
   }
 
   @Test
   @Owner(developers = KARAN_SARASWAT)
   @Category(UnitTests.class)
   public void testGetMSHealthReport_WithNoData() {
-    MSHealthReport MSHealthReport = msHealthReportService.getMSHealthReport(builderFactory.getProjectParams(),
+    MSHealthReport msHealthReport = msHealthReportService.getMSHealthReport(builderFactory.getProjectParams(),
         builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier());
-    assertThat(MSHealthReport.getChangeSummary().getTotal().getCount()).isEqualTo(0);
-    assertThat(MSHealthReport.getAssociatedSLOsDetails().size()).isEqualTo(0);
-    MSHealthReport.ServiceHealthDetails serviceHealthDetails = MSHealthReport.getServiceHealthDetails();
-    assertThat(serviceHealthDetails.getCurrentHealthScore()).isEqualTo(0);
-    assertThat(serviceHealthDetails.getPastHealthScore()).isEqualTo(0);
-    assertThat(serviceHealthDetails.getPercentageChange()).isEqualTo(0);
+    assertThat(msHealthReport.getChangeSummary().getTotal().getCount()).isEqualTo(0);
+    assertThat(msHealthReport.getAssociatedSLOsDetails().size()).isEqualTo(0);
+    assertThat(msHealthReport.getCurrentHealthScore()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testHandleNotification() {
+    MSHealthReport msHealthReport = msHealthReportService.getMSHealthReport(builderFactory.getProjectParams(),
+        builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier());
+    when(notificationClient.sendNotificationAsync(any()))
+        .thenReturn(NotificationResultWithoutStatus.builder().notificationId("notificationId").build());
+
+    msHealthReportService.handleNotification(builderFactory.getProjectParams(), msHealthReport, "webhookUrl",
+        builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier());
+    verify(notificationClient, times(1)).sendNotificationAsync(any());
   }
 
   private void createData(Instant startTime, List<SLIState> sliStates, String sliId, String verificationTaskId) {

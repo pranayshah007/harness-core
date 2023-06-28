@@ -34,8 +34,8 @@ public class K8sBlueGreenStepParameters extends K8sBlueGreenBaseStepInfo impleme
   @Builder(builderMethodName = "infoBuilder")
   public K8sBlueGreenStepParameters(ParameterField<Boolean> skipDryRun, ParameterField<Boolean> pruningEnabled,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, List<K8sStepCommandFlag> commandFlags,
-      ParameterField<Boolean> skipDeploymentIfSameManifest) {
-    super(skipDryRun, pruningEnabled, delegateSelectors, commandFlags, skipDeploymentIfSameManifest);
+      ParameterField<Boolean> skipUnchangedManifest) {
+    super(skipDryRun, pruningEnabled, delegateSelectors, commandFlags, skipUnchangedManifest);
   }
   @NotNull
   @Override

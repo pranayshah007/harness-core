@@ -34,7 +34,6 @@ import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.run.NodeRunInfo;
-import io.harness.pms.contracts.execution.skip.SkipInfo;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.data.OrchestrationMap;
@@ -116,7 +115,6 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
   @Singular List<ExecutableResponse> executableResponses;
   @Singular List<InterruptEffect> interruptHistories;
   FailureInfo failureInfo;
-  SkipInfo skipInfo;
   NodeRunInfo nodeRunInfo;
 
   @Builder.Default Boolean executionInputConfigured = false;

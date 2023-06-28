@@ -30,6 +30,8 @@ public interface OrganizationService {
 
   Optional<Organization> get(String accountIdentifier, String identifier);
 
+  Optional<Organization> getConsideringCase(String accountIdentifier, String identifier);
+
   Organization update(String accountIdentifier, String identifier, OrganizationDTO organization);
 
   /**

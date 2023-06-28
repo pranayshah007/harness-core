@@ -19,6 +19,7 @@ import java.util.Map;
 
 public interface RuleExecutionService {
   String save(RuleExecution rulesExecution);
+  List<String> save(List<RuleExecution> rulesExecutions);
   RuleExecution get(String accountId, String uuid);
   List<RuleExecution> list(String accountId);
   RuleExecutionList filterExecution(RuleExecutionFilter rulesExecutionFilter);

@@ -14,7 +14,6 @@ import io.harness.ci.states.CleanupStep;
 import io.harness.ci.states.GitCloneStep;
 import io.harness.ci.states.IACMStep;
 import io.harness.ci.states.InitializeTaskStep;
-import io.harness.ci.states.IntegrationStageStepPMS;
 import io.harness.ci.states.PluginStep;
 import io.harness.ci.states.RunStep;
 import io.harness.ci.states.RunTestsStep;
@@ -22,6 +21,7 @@ import io.harness.ci.states.V1.InitializeTaskStepV2;
 import io.harness.ci.states.codebase.CodeBaseStep;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
 import io.harness.iacm.IACMStepType;
+import io.harness.iacm.execution.IACMIntegrationStageStepPMS;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.Step;
 import io.harness.registrar.NGCommonUtilStepsRegistrar;
@@ -43,8 +43,9 @@ public class IACMExecutionRegistrar {
     Map<StepType, Class<? extends Step>> engineSteps = new HashMap<>();
 
     engineSteps.put(InitializeTaskStep.STEP_TYPE, InitializeTaskStepV2.class);
-    engineSteps.put(IntegrationStageStepPMS.STEP_TYPE,
-        IntegrationStageStepPMS.class); // This seems to be the STAGE STEP per ser. So the stage is treated as a STEP
+    engineSteps.put(IACMIntegrationStageStepPMS.STEP_TYPE,
+        IACMIntegrationStageStepPMS
+            .class); // This seems to be the STAGE STEP per ser. So the stage is treated as a STEP
     engineSteps.put(CISpecStep.STEP_TYPE,
         CISpecStep.class); // No idea why I need this step, apart from been used in the IACMStagePMSPlanCreator.
     engineSteps.put(CleanupStep.STEP_TYPE, CleanupStep.class);

@@ -46,7 +46,7 @@ public class CreateProjectService {
   public List<ProjectCreateResultDTO> bulkCreateProjects(
       String accountId, String apiKey, BulkCreateProjectsDTO createRequest) throws IOException {
     List<Application> apps = appService.getAppsByAccountId(accountId);
-    NGClient ngClient = MigratorUtility.getRestClient(ngClientConfig, NGClient.class);
+    NGClient ngClient = MigratorUtility.getRestClient(null, ngClientConfig, NGClient.class);
 
     if (EmptyPredicate.isEmpty(apps)) {
       return Collections.emptyList();

@@ -40,7 +40,6 @@ import io.harness.exception.WeakPasswordException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.licensing.Edition;
-import io.harness.licensing.beans.modules.StartTrialDTO;
 import io.harness.licensing.services.LicenseService;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.user.SignupAction;
@@ -537,11 +536,6 @@ public class SignupServiceImpl implements SignupService {
   private void enableModuleLicense(ModuleType intent, Edition edition, SignupAction signupAction,
       String accountIdentifier, String referer, String gaClientId) {
     if (intent != null) {
-      if (signupAction != null && edition != null && signupAction.equals(SignupAction.TRIAL)) {
-        StartTrialDTO startTrialDTO = StartTrialDTO.builder().edition(edition).moduleType(intent).build();
-        licenseService.startTrialLicense(accountIdentifier, startTrialDTO, referer);
-        return;
-      }
       licenseService.startFreeLicense(accountIdentifier, intent, referer, gaClientId);
     }
   }

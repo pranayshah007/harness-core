@@ -18,9 +18,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.idp.common.CommonUtils;
 import io.harness.idp.common.YamlUtils;
-import io.harness.idp.configmanager.ConfigType;
 import io.harness.idp.configmanager.beans.entity.MergedAppConfigEntity;
 import io.harness.idp.configmanager.service.ConfigManagerService;
+import io.harness.idp.configmanager.utils.ConfigType;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.HostInfo;
@@ -38,6 +38,7 @@ public class AllowListServiceImplTest {
   @InjectMocks private AllowListServiceImpl allowListServiceImpl;
   @Mock private ConfigManagerService configManagerService;
   private static final String ACCOUNT_ID = "123";
+  @Captor private ArgumentCaptor<AppConfig> appConfigCaptor;
   private static final String schema =
       "{\"definitions\": {}, \"$schema\": \"http://json-schema.org/draft-07/schema#\", "
       + "\"$id\": \"https://example.com/object1686050391.json\", \"title\": \"Root\", \"type\": \"object\", \"required\": [\"backend\"], "
@@ -72,22 +73,29 @@ public class AllowListServiceImplTest {
   @Category(UnitTests.class)
   public void testSaveAllowList() throws Exception {
     List<HostInfo> hostInfoList = new ArrayList<>();
-    HostInfo hostInfo = new HostInfo();
-    hostInfo.setHost("stress.harness.io");
-    hostInfo.setPaths(new ArrayList<>());
+    HostInfo hostInfo1 = new HostInfo();
+    hostInfo1.setHost("stress.harness.io");
+    hostInfo1.setPaths(new ArrayList<>());
+    hostInfoList.add(hostInfo1);
+    HostInfo hostInfo2 = new HostInfo();
+    hostInfo2.setHost("qa.harness.io");
+    hostInfo2.setPaths(List.of("/v1/secrets"));
+    hostInfoList.add(hostInfo2);
     MockedStatic<YamlUtils> yamlUtilsMockedStatic = Mockito.mockStatic(YamlUtils.class);
     MockedStatic<CommonUtils> commonUtilsMockedStatic = Mockito.mockStatic(CommonUtils.class);
 
     String yamlString = "backend:\n  reading:\n    allow: []";
-    String allowListString = "- host: stress.harness.io\n  paths: []";
+    String allowListString = "- host: stress.harness.io\n  paths: []\n- host: qa.harness.io\n  paths:\n  - /v1/secrets";
     when(YamlUtils.writeObjectAsYaml(any())).thenReturn(allowListString);
     when(CommonUtils.readFileFromClassPath(any())).thenReturn(yamlString).thenReturn(schema);
 
-    when(configManagerService.saveOrUpdateConfigForAccount(any(), any(), any())).thenReturn(new AppConfig());
-    when(configManagerService.mergeAndSaveAppConfig(any())).thenReturn(MergedAppConfigEntity.builder().build());
-    List<HostInfo> result = allowListServiceImpl.saveAllowList(hostInfoList, ACCOUNT_ID);
-    assertEquals(hostInfoList, result);
-    verify(configManagerService, times(1)).saveOrUpdateConfigForAccount(any(), any(), any());
+    when(configManagerService.saveUpdateAndMergeConfigForAccount(any(), any(), any())).thenReturn(new AppConfig());
+    allowListServiceImpl.saveAllowList(hostInfoList, ACCOUNT_ID);
+
+    String expectedConfig =
+        "---\nbackend:\n  reading:\n    allow:\n    - host: stress.harness.io\n    - host: qa.harness.io\n      paths:\n      - /v1/secrets\n";
+    verify(configManagerService).saveUpdateAndMergeConfigForAccount(appConfigCaptor.capture(), any(), any());
+    assertEquals(expectedConfig, appConfigCaptor.getValue().getConfigs());
     yamlUtilsMockedStatic.close();
     commonUtilsMockedStatic.close();
   }

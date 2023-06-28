@@ -2756,6 +2756,118 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "CoverityStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "CustomExecutionSource": {
       "allOf": [
         {
@@ -2994,30 +3106,6 @@
             },
             "target": {
               "$ref": "#/definitions/STOYamlTarget"
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "DelegateInfra": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepGroupInfra"
-        },
-        {
-          "type": "object",
-          "required": [
-            "type"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "KubernetesDirect",
-                "Delegate",
-                "Noop"
-              ]
             }
           }
         }
@@ -3962,6 +4050,32 @@
                 }
               ]
             },
+            "cacheFrom": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheTo": {
+              "type": "string"
+            },
+            "caching": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "connectorRef": {
               "type": "string"
             },
@@ -4599,6 +4713,32 @@
                 "VM",
                 "KubernetesHosted"
               ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "IACMApprovalInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "env": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringString"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "image": {
+              "type": "string"
             }
           }
         }
@@ -7679,7 +7819,7 @@
         "type": {
           "type": "string",
           "enum": [
-            "harness"
+            "Harness"
           ]
         }
       },
@@ -7689,7 +7829,7 @@
           "if": {
             "properties": {
               "type": {
-                "const": "harness"
+                "const": "Harness"
               }
             }
           },
@@ -8926,7 +9066,7 @@
             },
             {
               "type": "string",
-              "pattern": "(<\\+.+>.*)",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
               "minLength": 1
             }
           ]
@@ -9014,7 +9154,7 @@
             },
             {
               "type": "string",
-              "pattern": "(<\\+.+>.*)",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
               "minLength": 1
             }
           ]
@@ -9152,7 +9292,7 @@
             },
             {
               "type": "string",
-              "pattern": "(<\\+.+>.*)",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
               "minLength": 1
             }
           ]
@@ -9231,7 +9371,7 @@
             },
             {
               "type": "string",
-              "pattern": "(<\\+.+>.*)",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
               "minLength": 1
             }
           ]
@@ -9333,7 +9473,7 @@
             },
             {
               "type": "string",
-              "pattern": "(<\\+.+>.*)",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
               "minLength": 1
             }
           ]
@@ -11034,6 +11174,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "Coverity"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CoverityStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "CustomIngest"
               }
             }
@@ -11186,6 +11342,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/IACMStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "IACMApproval"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/IACMApprovalInfo"
               }
             }
           }
@@ -11895,9 +12067,6 @@
         "stepGroupInfra": {
           "oneOf": [
             {
-              "$ref": "#/definitions/DelegateInfra"
-            },
-            {
               "$ref": "#/definitions/K8sDirectInfra"
             }
           ]
@@ -11924,6 +12093,22 @@
         },
         "template": {
           "$ref": "#/definitions/TemplateLinkConfig"
+        },
+        "variables": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/NumberNGVariable"
+              },
+              {
+                "$ref": "#/definitions/SecretNGVariable"
+              },
+              {
+                "$ref": "#/definitions/StringNGVariable"
+              }
+            ]
+          }
         },
         "when": {
           "oneOf": [
@@ -12132,7 +12317,8 @@
             "format": {
               "type": "string",
               "enum": [
-                "spdx-json"
+                "spdx-json",
+                "cyclonedx-json"
               ]
             }
           }

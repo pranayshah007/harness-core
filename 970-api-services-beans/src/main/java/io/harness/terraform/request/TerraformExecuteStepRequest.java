@@ -55,4 +55,6 @@ public class TerraformExecuteStepRequest {
   boolean isTerraformCloudCli;
   boolean skipTerraformRefresh; // NG
   Map<String, String> additionalCliFlags;
+  boolean encryptDecryptPlanForHarnessSMOnManager;
+  boolean isNG; // whether is request is coming from NG manager or CG manager
 }

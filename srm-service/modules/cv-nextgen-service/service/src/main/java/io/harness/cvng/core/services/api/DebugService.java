@@ -38,4 +38,10 @@ public interface DebugService {
   boolean registerInternalChangeEvent(ProjectParams projectParams, ChangeEventDTO changeEventDTO);
 
   void registerFFChangeEvent(FakeFeatureFlagSRMProducer.FFEventBody ffEventBody);
+
+  void enqueueDataCollectionFailure(ProjectParams projectParams, String sloIdentifier, long startTime, long endTime);
+
+  void restoreSLOData(ProjectParams projectParams, String sloIdentifier, long startTime, long endTime);
+
+  void updateFailedStateOfSLO(ProjectParams projectParams, String sloIdentifier, boolean failedState);
 }

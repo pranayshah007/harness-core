@@ -21,7 +21,7 @@ import java.util.Map;
  */
 @OwnedBy(CDC)
 public interface EcrService {
-  int MAX_NO_OF_TAGS_PER_IMAGE = 10000;
+  int MAX_NO_OF_IMAGES = 1000;
   /**
    * Gets builds.
    *

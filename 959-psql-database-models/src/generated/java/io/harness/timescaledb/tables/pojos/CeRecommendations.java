@@ -35,6 +35,8 @@ public class CeRecommendations implements Serializable {
   private String jiraissuekey;
   private String jirastatus;
   private String recommendationstate;
+  private String governanceruleid;
+  private String cloudprovider;
 
   public CeRecommendations() {}
 
@@ -54,12 +56,14 @@ public class CeRecommendations implements Serializable {
     this.jiraissuekey = value.jiraissuekey;
     this.jirastatus = value.jirastatus;
     this.recommendationstate = value.recommendationstate;
+    this.governanceruleid = value.governanceruleid;
+    this.cloudprovider = value.cloudprovider;
   }
 
   public CeRecommendations(String id, String name, String namespace, Double monthlycost, Double monthlysaving,
       String clustername, String resourcetype, String accountid, Boolean isvalid, OffsetDateTime lastprocessedat,
       OffsetDateTime updatedat, String jiraconnectorref, String jiraissuekey, String jirastatus,
-      String recommendationstate) {
+      String recommendationstate, String governanceruleid, String cloudprovider) {
     this.id = id;
     this.name = name;
     this.namespace = namespace;
@@ -75,6 +79,8 @@ public class CeRecommendations implements Serializable {
     this.jiraissuekey = jiraissuekey;
     this.jirastatus = jirastatus;
     this.recommendationstate = recommendationstate;
+    this.governanceruleid = governanceruleid;
+    this.cloudprovider = cloudprovider;
   }
 
   /**
@@ -302,6 +308,36 @@ public class CeRecommendations implements Serializable {
     return this;
   }
 
+  /**
+   * Getter for <code>public.ce_recommendations.governanceruleid</code>.
+   */
+  public String getGovernanceruleid() {
+    return this.governanceruleid;
+  }
+
+  /**
+   * Setter for <code>public.ce_recommendations.governanceruleid</code>.
+   */
+  public CeRecommendations setGovernanceruleid(String governanceruleid) {
+    this.governanceruleid = governanceruleid;
+    return this;
+  }
+
+  /**
+   * Getter for <code>public.ce_recommendations.cloudprovider</code>.
+   */
+  public String getCloudprovider() {
+    return this.cloudprovider;
+  }
+
+  /**
+   * Setter for <code>public.ce_recommendations.cloudprovider</code>.
+   */
+  public CeRecommendations setCloudprovider(String cloudprovider) {
+    this.cloudprovider = cloudprovider;
+    return this;
+  }
+
   @Override
   public boolean equals(Object obj) {
     if (this == obj)
@@ -386,6 +422,16 @@ public class CeRecommendations implements Serializable {
         return false;
     } else if (!recommendationstate.equals(other.recommendationstate))
       return false;
+    if (governanceruleid == null) {
+      if (other.governanceruleid != null)
+        return false;
+    } else if (!governanceruleid.equals(other.governanceruleid))
+      return false;
+    if (cloudprovider == null) {
+      if (other.cloudprovider != null)
+        return false;
+    } else if (!cloudprovider.equals(other.cloudprovider))
+      return false;
     return true;
   }
 
@@ -408,6 +454,8 @@ public class CeRecommendations implements Serializable {
     result = prime * result + ((this.jiraissuekey == null) ? 0 : this.jiraissuekey.hashCode());
     result = prime * result + ((this.jirastatus == null) ? 0 : this.jirastatus.hashCode());
     result = prime * result + ((this.recommendationstate == null) ? 0 : this.recommendationstate.hashCode());
+    result = prime * result + ((this.governanceruleid == null) ? 0 : this.governanceruleid.hashCode());
+    result = prime * result + ((this.cloudprovider == null) ? 0 : this.cloudprovider.hashCode());
     return result;
   }
 
@@ -430,6 +478,8 @@ public class CeRecommendations implements Serializable {
     sb.append(", ").append(jiraissuekey);
     sb.append(", ").append(jirastatus);
     sb.append(", ").append(recommendationstate);
+    sb.append(", ").append(governanceruleid);
+    sb.append(", ").append(cloudprovider);
 
     sb.append(")");
     return sb.toString();

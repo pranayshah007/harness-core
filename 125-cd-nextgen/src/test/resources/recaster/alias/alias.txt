@@ -18,6 +18,7 @@ io.harness.cdng.service.beans.ServiceOutcome$StageOverridesOutcome
 io.harness.cdng.provision.terragrunt.TerragruntApplyStepNode
 io.harness.cdng.service.steps.ServiceStepParameters
 io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters
+io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideAuditEventDTO
 io.harness.steps.group.GroupStepParametersV1
 io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig
 io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig
@@ -632,6 +633,7 @@ io.harness.cdng.tas.TasAppResizeStepNode
 io.harness.yaml.core.failurestrategy.marksuccess.MarkAsSuccessFailureActionConfig
 io.harness.cdng.provision.terragrunt.TerragruntExecutionDataParameters
 io.harness.cdng.manifest.steps.ManifestsOutcome
+io.harness.cdng.manifest.steps.output.UnresolvedManifestsOutcome
 io.harness.cdng.infra.beans.ServerlessAwsLambdaInfraMapping
 io.harness.cdng.provision.cloudformation.CloudformationDeleteStackStepNode
 io.harness.cdng.k8s.K8sBGStageScaleDownStepNode
@@ -992,3 +994,16 @@ io.harness.yaml.core.failurestrategy.retry.RetrySGFailureActionConfig
 io.harness.beans.sweepingoutputs.UniqueStepIdentifiersSweepingOutput
 io.harness.cdng.aws.sam.DownloadManifestsStepInfo
 io.harness.cdng.aws.sam.DownloadManifestsStepNode
+io.harness.cdng.serverless.container.steps.ServerlessValuesYamlDataOutcome
+io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepInfo
+io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepNode
+io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackDataOutcome
+io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepParameters
+io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaRollbackV2StepInfo
+io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaRollbackV2StepNode
+io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaRollbackV2StepParameters
+io.harness.cdng.provision.terraform.TerraformEncryptOutput
+io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2StepInfo
+io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2StepNode
+io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2StepParameters
+io.harness.cdng.manifestConfigs.ManifestConfigurations

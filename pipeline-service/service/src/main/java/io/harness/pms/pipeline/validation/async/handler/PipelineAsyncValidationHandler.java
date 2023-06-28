@@ -9,6 +9,7 @@ package io.harness.pms.pipeline.validation.async.handler;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
@@ -120,9 +121,11 @@ public class PipelineAsyncValidationHandler implements Runnable {
       ValidationResult templateValidationResult) {
     // policy evaluation will be done on the pipeline yaml which has both the template refs and the resolved template
     String mergedPipelineYamlWithTemplateRefs = templateMergeResponse.getMergedPipelineYamlWithTemplateRef();
+
+    String branch = GitAwareContextHelper.getBranchInRequestOrFromSCMGitMetadata();
     GovernanceMetadata governanceMetadata = pipelineGovernanceService.validateGovernanceRules(
-        pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(),
-        mergedPipelineYamlWithTemplateRefs);
+        pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), branch,
+        pipelineEntity, mergedPipelineYamlWithTemplateRefs);
     ValidationResult governanceValidationResult = templateValidationResult.withGovernanceMetadata(governanceMetadata);
     if (governanceMetadata.getDeny()) {
       validationService.updateEvent(validationEvent.getUuid(), ValidationStatus.FAILURE, governanceValidationResult);

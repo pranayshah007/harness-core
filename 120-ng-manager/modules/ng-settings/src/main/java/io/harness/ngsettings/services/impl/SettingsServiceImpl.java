@@ -46,6 +46,7 @@ import io.harness.repositories.ngsettings.spring.SettingRepository;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -90,14 +91,18 @@ public class SettingsServiceImpl implements SettingsService {
 
   @Override
   public List<SettingResponseDTO> list(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      SettingCategory category, String groupIdentifier) {
+      SettingCategory category, String groupIdentifier, Boolean includeParentScope) {
     Edition accountEdition = getEditionForAccount(accountIdentifier);
     Scope scope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
-    Map<String, SettingConfiguration> settingConfigurations = getSettingConfigurations(
-        accountIdentifier, orgIdentifier, projectIdentifier, category, groupIdentifier, accountEdition);
+
+    Map<String, SettingConfiguration> settingConfigurations = getSettingConfigurations(accountIdentifier, orgIdentifier,
+        projectIdentifier, category, groupIdentifier, accountEdition, includeParentScope);
+
     Map<Pair<String, Scope>, Setting> settings =
         getSettings(accountIdentifier, orgIdentifier, projectIdentifier, category, groupIdentifier);
+
     List<SettingResponseDTO> settingResponseDTOList = new ArrayList<>();
+
     settingConfigurations.forEach((identifier, settingConfiguration) -> {
       Pair<String, Scope> currentScopeSettingKey = new ImmutablePair<>(identifier, scope);
       Setting parentSetting = getSettingFromParentScope(scope, identifier, settingConfiguration, accountEdition);
@@ -298,11 +303,37 @@ public class SettingsServiceImpl implements SettingsService {
   }
 
   private Map<String, SettingConfiguration> getSettingConfigurations(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, SettingCategory category, String groupIdentifier, Edition accountEdition) {
-    Scope scope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
-    List<ScopeLevel> scopes = Collections.singletonList(ScopeLevel.of(scope));
-
+      String projectIdentifier, SettingCategory category, String groupIdentifier, Edition accountEdition,
+      Boolean includeParentScope) {
     List<SettingConfiguration> defaultSettingConfigurations;
+    Criteria criteria = getCriteriaForSettingConfigurations(accountIdentifier, orgIdentifier, projectIdentifier,
+        groupIdentifier, category, accountEdition, includeParentScope);
+
+    defaultSettingConfigurations = settingConfigurationRepository.findAll(criteria);
+
+    return defaultSettingConfigurations.stream().collect(
+        Collectors.toMap(SettingConfiguration::getIdentifier, Function.identity()));
+  }
+
+  private Criteria getCriteriaForSettingConfigurations(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String groupIdentifier, SettingCategory category, Edition accountEdition,
+      Boolean includeParentScope) {
+    Scope scope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
+    List<ScopeLevel> scopes = new ArrayList<>();
+    scopes.add(ScopeLevel.of(scope));
+
+    if (Boolean.TRUE.equals(includeParentScope)) {
+      switch (ScopeLevel.of(scope)) {
+        case PROJECT:
+          scopes.addAll(Arrays.asList(ScopeLevel.ACCOUNT, ScopeLevel.ORGANIZATION));
+          break;
+        case ORGANIZATION:
+          scopes.add(ScopeLevel.ACCOUNT);
+          break;
+        default:
+      }
+    }
+
     Criteria criteria =
         Criteria.where(SettingConfigurationKeys.category)
             .is(category)
@@ -310,14 +341,11 @@ public class SettingsServiceImpl implements SettingsService {
             .in(scopes)
             .orOperator(Criteria.where(SettingConfigurationKeys.allowedPlans).is(null),
                 Criteria.where(SettingConfigurationKeys.allowedPlans + "." + accountEdition.toString()).exists(true));
+
     if (isNotEmpty(groupIdentifier)) {
       criteria.and(SettingConfigurationKeys.groupIdentifier).is(groupIdentifier);
     }
-
-    defaultSettingConfigurations = settingConfigurationRepository.findAll(criteria);
-
-    return defaultSettingConfigurations.stream().collect(
-        Collectors.toMap(SettingConfiguration::getIdentifier, Function.identity()));
+    return criteria;
   }
 
   private SettingResponseDTO updateSetting(

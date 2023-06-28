@@ -2,7 +2,7 @@
   "stages": [
     {
       "stage": {
-        "name": "cs",
+        "name": "cs---",
         "identifier": "cs",
         "description": "",
         "type": "Custom",
@@ -20,7 +20,7 @@
                     "source": {
                       "type": "Inline",
                       "spec": {
-                        "script": "echo <+pipeline.variables.var1>"
+                        "script": "echo <+pipeline.variables.var1> ---\n echo <+pipeline.variables.var2>"
                       }
                     },
                     "environmentVariables": [],

@@ -12,14 +12,12 @@ import static io.harness.eraro.ErrorCode.SCM_BAD_REQUEST;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.context.GlobalContext;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ScmException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitx.USER_FLOW;
-import io.harness.manage.GlobalContextManager;
 
 import lombok.experimental.UtilityClass;
 
@@ -82,13 +80,5 @@ public class PipelineGitXHelper {
       return user_flow.equals(USER_FLOW.EXECUTION);
     }
     return false;
-  }
-
-  public void setUserFlowContext(USER_FLOW userFlow) {
-    if (!GlobalContextManager.isAvailable()) {
-      GlobalContextManager.set(new GlobalContext());
-    }
-    GlobalContextManager.upsertGlobalContextRecord(
-        ThreadOperationContextHelper.getOrInitThreadOperationContext().withUserFlow(userFlow));
   }
 }

@@ -44,6 +44,111 @@ pipeline:
                                   identifier: Wait_4
                                   spec:
                                     duration: 10m
+              - parallel:
+                  - stepGroup:
+                      name: sg21
+                      identifier: sg21
+                      steps:
+                        - stepGroup:
+                            name: sg22
+                            identifier: sg22
+                            steps:
+                              - step:
+                                  type: ShellScript
+                                  name: Shell Script_1
+                                  identifier: ShellScript_1
+                                  spec:
+                                    shell: Bash
+                                    onDelegate: true
+                                    source:
+                                      type: Inline
+                                      spec:
+                                        script: exit 1
+                                    environmentVariables: []
+                                    outputVariables: []
+                                  timeout: 10m
+                            failureStrategies:
+                              - onFailure:
+                                errors:
+                                  - AllErrors
+                                action:
+                                type: Retry
+                                spec:
+                                  retryCount: 2
+                                  retryIntervals:
+                                    - 5s
+                                    - 5s
+                                  onRetryFailure:
+                                  action:
+                                    type: Abort
+                        - stepGroup:
+                            name: sg222
+                            identifier: sg222
+                            steps:
+                              - step:
+                                  type: ShellScript
+                                  name: Shell Script_1
+                                  identifier: ShellScript_1
+                                  spec:
+                                    shell: Bash
+                                    onDelegate: true
+                                    source:
+                                      type: Inline
+                                      spec:
+                                        script: exit 1
+                                    environmentVariables: []
+                                    outputVariables: []
+                                  timeout: 10m
+                            failureStrategies:
+                              - onFailure:
+                                errors:
+                                  - AllErrors
+                                action:
+                                type: Retry
+                                spec:
+                                  retryCount: 2
+                                  retryIntervals:
+                                    - 5s
+                                    - 5s
+                                  onRetryFailure:
+                                  action:
+                                    type: Abort
+                  - stepGroup:
+                      name: sg31
+                      identifier: sg31
+                      steps:
+                        - stepGroup:
+                            name: sg32
+                            identifier: sg32
+                            steps:
+                              - step:
+                                  type: ShellScript
+                                  name: Shell Script_1
+                                  identifier: ShellScript_1
+                                  spec:
+                                    shell: Bash
+                                    onDelegate: true
+                                    source:
+                                      type: Inline
+                                      spec:
+                                        script: exit 1
+                                    environmentVariables: []
+                                    outputVariables: []
+                                  timeout: 10m
+                            failureStrategies:
+                              - onFailure:
+                                errors:
+                                  - AllErrors
+                                action:
+                                type: Retry
+                                spec:
+                                  retryCount: 2
+                                  retryIntervals:
+                                    - 5s
+                                    - 5s
+                                  onRetryFailure:
+                                  action:
+                                    type: Abort
             rollbackSteps: []
           serviceDependencies: []
         tags: {}

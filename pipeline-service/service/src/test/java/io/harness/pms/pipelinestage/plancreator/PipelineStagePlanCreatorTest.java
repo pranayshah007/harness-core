@@ -133,16 +133,16 @@ public class PipelineStagePlanCreatorTest {
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
   public void testCreatePlanForField() throws IOException {
-    String yamlField = "---\n"
-        + "name: \"parent pipeline\"\n"
-        + "identifier: parent_pipeline\n"
-        + "timeout: \"1w\"\n"
-        + "type: \"Pipeline\"\n"
-        + "__uuid: uuid\n"
-        + "spec:\n"
-        + "  pipeline: \"childPipeline\"\n"
-        + "  org: \"org\"\n"
-        + "  project: \"project\"\n";
+    String yamlField = "stage:\n"
+        + "  name: \"parent pipeline\"\n"
+        + "  identifier: parent_pipeline\n"
+        + "  timeout: \"1w\"\n"
+        + "  type: \"Pipeline\"\n"
+        + "  __uuid: uuid\n"
+        + "  spec:\n"
+        + "    pipeline: \"childPipeline\"\n"
+        + "    org: \"org\"\n"
+        + "    project: \"project\"\n";
 
     String pipelineYaml = "pipeline:\n"
         + "  name: parent\n"
@@ -168,7 +168,7 @@ public class PipelineStagePlanCreatorTest {
     PlanCreationContextValue value = PlanCreationContextValue.newBuilder().setAccountIdentifier("acc").build();
     PlanCreationContext ctx = PlanCreationContext.builder()
                                   .globalContext(Collections.singletonMap("metadata", value))
-                                  .currentField(pipelineStageYamlField)
+                                  .currentField(pipelineStageYamlField.getNode().getField("stage"))
                                   .yaml(pipelineYaml)
                                   .build();
 
@@ -180,12 +180,12 @@ public class PipelineStagePlanCreatorTest {
         .when(pmsGitSyncHelper)
         .getEntityGitDetailsFromBytes(any());
 
-    PipelineStageNode pipelineStageNode = YamlUtils.read(yamlField, PipelineStageNode.class);
+    PipelineStageNode pipelineStageNode = YamlUtils.read(
+        pipelineStageYamlField.getNode().getField("stage").getNode().toString(), PipelineStageNode.class);
     assertThat(SecurityContextBuilder.getPrincipal()).isNull();
     MockedStatic<YamlUtils> mockSettings = Mockito.mockStatic(YamlUtils.class, CALLS_REAL_METHODS);
     when(YamlUtils.getGivenYamlNodeFromParentPath(any(), any())).thenReturn(pipelineStageYamlField.getNode());
-    PlanCreationResponse response =
-        pipelineStagePlanCreator.createPlanForField(ctx, YamlUtils.read(yamlField, PipelineStageNode.class));
+    PlanCreationResponse response = pipelineStagePlanCreator.createPlanForField(ctx, pipelineStageNode);
     mockSettings.close();
     assertThat(SecurityContextBuilder.getPrincipal()).isNotNull();
     assertThat(response.getPlanNode()).isNotNull();
@@ -231,7 +231,7 @@ public class PipelineStagePlanCreatorTest {
     PlanCreationContextValue value = PlanCreationContextValue.newBuilder().setAccountIdentifier("acc").build();
     PlanCreationContext ctx = PlanCreationContext.builder()
                                   .globalContext(Collections.singletonMap("metadata", value))
-                                  .currentField(pipelineStageYamlField)
+                                  .currentField(pipelineStageYamlField.getNode().getField("stage"))
                                   .yaml(pipelineYaml)
                                   .build();
 
@@ -244,11 +244,12 @@ public class PipelineStagePlanCreatorTest {
         .getEntityGitDetailsFromBytes(any());
 
     doReturn(new byte[9]).when(kryoSerializer).asBytes(any());
-    PipelineStageNode stageNode = YamlUtils.read(ignoreFailureYamlField, PipelineStageNode.class);
+    PipelineStageNode stageNode = YamlUtils.read(
+        pipelineStageYamlField.getNode().getField("stage").getNode().toString(), PipelineStageNode.class);
 
     MockedStatic<YamlUtils> mockSettings = Mockito.mockStatic(YamlUtils.class, CALLS_REAL_METHODS);
     when(YamlUtils.getGivenYamlNodeFromParentPath(any(), any())).thenReturn(pipelineStageYamlField.getNode());
-    pipelineStagePlanCreator.createPlanForField(ctx, YamlUtils.read(ignoreFailureYamlField, PipelineStageNode.class));
+    pipelineStagePlanCreator.createPlanForField(ctx, stageNode);
     mockSettings.close();
 
     verify(pipelineStageHelper, times(1)).validateFailureStrategy(stageNode.getFailureStrategies());
@@ -256,22 +257,22 @@ public class PipelineStagePlanCreatorTest {
 
   @NotNull
   private String getFailureYamlField(String action) {
-    String yamlField = "---\n"
-        + "name: \"parent pipeline\"\n"
-        + "identifier: parent_pipeline\n"
-        + "timeout: \"1w\"\n"
-        + "type: \"Pipeline\"\n"
-        + "__uuid: uuid\n"
-        + "failureStrategies:\n"
-        + "  - onFailure:\n"
-        + "      errors:\n"
-        + "         - AllErrors\n"
-        + "      action:\n"
-        + "         type: " + action + "\n"
-        + "spec:\n"
-        + "  pipeline: \"childPipeline\"\n"
-        + "  org: \"org\"\n"
-        + "  project: \"project\"\n";
+    String yamlField = "stage:\n"
+        + "  name: \"parent pipeline\"\n"
+        + "  identifier: parent_pipeline\n"
+        + "  timeout: \"1w\"\n"
+        + "  type: \"Pipeline\"\n"
+        + "  __uuid: uuid\n"
+        + "  failureStrategies:\n"
+        + "    - onFailure:\n"
+        + "        errors:\n"
+        + "           - AllErrors\n"
+        + "        action:\n"
+        + "           type: " + action + "\n"
+        + "  spec:\n"
+        + "    pipeline: \"childPipeline\"\n"
+        + "    org: \"org\"\n"
+        + "    project: \"project\"\n";
     return yamlField;
   }
 

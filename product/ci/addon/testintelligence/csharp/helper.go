@@ -10,7 +10,7 @@ import (
 
 	"github.com/harness/harness-core/commons/go/lib/utils"
 	"github.com/harness/harness-core/product/ci/common/external"
-	"github.com/harness/harness-core/product/ci/ti-service/types"
+	"github.com/harness/ti-client/types"
 )
 
 var (

@@ -183,7 +183,7 @@ public class NGTemplateResourceImpl implements NGTemplateResource {
     if (governanceMetadata.getDeny()) {
       TemplateWrapperResponseDTO templateWrapperResponseDTO =
           TemplateWrapperResponseDTO.builder().isValid(true).governanceMetadata(governanceMetadata).build();
-      ResponseDTO.newResponse("", templateWrapperResponseDTO);
+      return ResponseDTO.newResponse(templateWrapperResponseDTO);
     }
 
     TemplateEntity createdTemplate =
@@ -235,7 +235,7 @@ public class NGTemplateResourceImpl implements NGTemplateResource {
     if (governanceMetadata.getDeny()) {
       TemplateWrapperResponseDTO templateWrapperResponseDTO =
           TemplateWrapperResponseDTO.builder().isValid(true).governanceMetadata(governanceMetadata).build();
-      ResponseDTO.newResponse("", templateWrapperResponseDTO);
+      return ResponseDTO.newResponse(templateWrapperResponseDTO);
     }
 
     TemplateEntity createdTemplate =

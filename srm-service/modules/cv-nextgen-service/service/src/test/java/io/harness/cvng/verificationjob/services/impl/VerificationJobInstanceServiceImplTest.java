@@ -694,6 +694,33 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
     additionalInfo.setPrimaryInstancesLabel("after");
   }
 
+  @Test
+  @Owner(developers = KAMAL)
+  @Category(UnitTests.class)
+  public void testGetDeploymentVerificationJobInstanceSummary_abortedVerificationJobInstance() {
+    VerificationJobInstance devVerificationJobInstance =
+        createVerificationJobInstance("dev", ExecutionStatus.ABORTED, CANARY);
+    devVerificationJobInstance.setExecutionStatus(ExecutionStatus.ABORTED);
+    DeploymentActivityResultDTO.DeploymentVerificationJobInstanceSummary deploymentVerificationJobInstanceSummary =
+        verificationJobInstanceService.getDeploymentVerificationJobInstanceSummary(
+            Lists.newArrayList(devVerificationJobInstance.getUuid()));
+    assertThat(deploymentVerificationJobInstanceSummary.getEnvironmentName()).isEqualTo("Harness dev");
+    assertThat(deploymentVerificationJobInstanceSummary.getVerificationJobInstanceId())
+        .isEqualTo(devVerificationJobInstance.getUuid());
+    assertThat(deploymentVerificationJobInstanceSummary.getActivityId()).isNull();
+    assertThat(deploymentVerificationJobInstanceSummary.getActivityStartTime()).isZero();
+    assertThat(deploymentVerificationJobInstanceSummary.getJobName())
+        .isEqualTo(devVerificationJobInstance.getResolvedJob().getJobName());
+    assertThat(deploymentVerificationJobInstanceSummary.getProgressPercentage()).isEqualTo(0);
+    assertThat(deploymentVerificationJobInstanceSummary.getRisk()).isNull();
+    assertThat(deploymentVerificationJobInstanceSummary.getStatus()).isEqualTo(ActivityVerificationStatus.ERROR);
+    CanaryAdditionalInfo additionalInfo = new CanaryAdditionalInfo();
+    additionalInfo.setCanary(new HashSet<>());
+    additionalInfo.setPrimary(new HashSet<>());
+    additionalInfo.setPrimaryInstancesLabel("before");
+    additionalInfo.setPrimaryInstancesLabel("after");
+  }
+
   private String getDataCollectionWorkerId(String connectorId) {
     return monitoringSourcePerpetualTaskService.getDeploymentWorkerId(
         accountId, orgIdentifier, projectIdentifier, connectorId, monitoringSourceIdentifier);

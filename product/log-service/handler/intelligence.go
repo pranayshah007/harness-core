@@ -27,8 +27,11 @@ import (
 const (
 	keysParam            = "keys"
 	maxLogLineSize       = 500
+	debugLogChars        = 200
 	genAIPlainTextPrompt = `
-Provide error message, root cause and remediation from the below logs preserving the markdown format. %s
+Provide error message, root cause and remediation from the below logs preserving the markdown format.
+Remediation is required in the response - error message and root cause can be truncated if needed. %s
+
 
 Logs:
 ` + "```" + `
@@ -36,10 +39,54 @@ Logs:
 %s
 ` + "```"
 
-	genAIJSONPrompt = `
-Provide error message, root cause and remediation from the below logs. Return list of json object with three keys using the following format {"error", "cause", "remediation"}. %s
+	genAIAzurePlainTextPrompt = `
+Provide error message, root cause and remediation from the below logs preserving the markdown format.
+Remediation is required in the response - error message and root cause can be truncated if needed. %s
 
 Logs:
+` + "```" + `
+%s
+%s
+` + "```" + `
+
+Provide your output in the following format:
+` + "```" + `
+## Error message
+<Error message>
+
+## Root cause
+<Root cause>
+
+## Remediation
+<Remediation>
+` + "```"
+
+	genAIJSONPrompt = `
+Provide error message, root cause and remediation from the below logs. Remediation is required in the response - error message and root cause can be truncated if needed. Return list of json object with three keys using the following format {"error", "cause", "remediation"}. %s
+
+Logs:
+` + "```" + `
+%s
+%s
+` + "```"
+
+	genAIBisonJSONPrompt = `
+I have a set of logs. The logs contain error messages. I want you to find the error messages in the logs, and suggest root cause and remediation or fix suggestions. Remediation is required in the response - error message and root cause can be truncated if needed. I want you to give me the response in JSON format, no text before or after the JSON. Example of response:
+[
+	{
+		"error": "error_1",
+		"cause": "cause_1",
+		"remediation": "fix line 2 of the command"
+	},
+	{
+		"error": "error_2",
+		"cause": "cause_2",
+		"remediation": "fix line 5 of the command"
+	}
+]
+%s
+
+Here is the logs, remember to give the response only in json format like the example provided above, no text before or after the json object:
 ` + "```" + `
 %s
 %s
@@ -53,6 +100,9 @@ Logs:
 	infraParam           = "infra"
 	stepTypeParam        = "step_type"
 	commandParam         = "command"
+	osParam              = "os"
+	archParam            = "arch"
+	pluginParam          = "plugin"
 
 	azureAIProvider  = "azureopenai"
 	azureAIModel     = "gpt3"
@@ -91,6 +141,10 @@ func HandleRCA(store store.Store, cfg config.Config) http.HandlerFunc {
 			return
 		}
 
+		logger.FromRequest(r).WithField("keys", keys).
+			WithField("time", time.Now().Format(time.RFC3339)).
+			Infoln("api: rca call received, fetching logs")
+
 		logs, err := fetchLogs(ctx, store, keys, cfg.GenAI.MaxInputPromptLen)
 		if err != nil {
 			WriteNotFound(w, err)
@@ -98,15 +152,23 @@ func HandleRCA(store store.Store, cfg config.Config) http.HandlerFunc {
 				WithError(err).
 				WithField("latency", time.Since(st)).
 				WithField("keys", keys).
-				Errorln("api: cannot find logs")
+				Errorln("api: could not fetch logs for rca call")
 			return
 		}
+
+		stepType := r.FormValue(stepTypeParam)
+		command := r.FormValue(commandParam)
+		errSummary := r.FormValue(errSummaryParam)
+
+		logger.FromRequest(r).WithField("keys", keys).
+			WithField("time", time.Now().Format(time.RFC3339)).
+			Infoln("api: fetched logs for rca call, initiating call to ml service")
 
 		genAISvcURL := cfg.GenAI.Endpoint
 		genAISvcSecret := cfg.GenAI.ServiceSecret
 		provider := cfg.GenAI.Provider
 		useJSONResponse := cfg.GenAI.UseJSONResponse
-		report, err := retrieveLogRCA(ctx, genAISvcURL, genAISvcSecret,
+		report, prompt, err := retrieveLogRCA(ctx, genAISvcURL, genAISvcSecret,
 			provider, logs, useJSONResponse, r)
 		if err != nil {
 			WriteInternalError(w, err)
@@ -121,7 +183,13 @@ func HandleRCA(store store.Store, cfg config.Config) http.HandlerFunc {
 		logger.FromRequest(r).
 			WithField("keys", keys).
 			WithField("latency", time.Since(st)).
+			WithField("command", trim(command, debugLogChars)).
+			WithField("step_type", stepType).
+			WithField("prompt", prompt).
+			WithField("error_summary", errSummary).
 			WithField("time", time.Now().Format(time.RFC3339)).
+			WithField("response.rca", report.Rca).
+			WithField("response.results", report.Results).
 			Infoln("api: successfully retrieved RCA")
 		WriteJSON(w, report, 200)
 	}
@@ -129,25 +197,34 @@ func HandleRCA(store store.Store, cfg config.Config) http.HandlerFunc {
 
 func retrieveLogRCA(ctx context.Context, endpoint, secret, provider,
 	logs string, useJSONResponse bool, r *http.Request) (
-	*RCAReport, error) {
+	*RCAReport, string, error) {
 	promptTmpl := genAIPlainTextPrompt
 	if useJSONResponse {
 		promptTmpl = genAIJSONPrompt
+		if provider == vertexAIProvider {
+			promptTmpl = genAIBisonJSONPrompt
+		}
+	} else {
+		if provider == azureAIProvider {
+			promptTmpl = genAIAzurePlainTextPrompt
+		}
 	}
+
 	prompt := generatePrompt(r, logs, promptTmpl)
 	client := genAIClient{endpoint: endpoint, secret: secret}
 
 	response, isBlocked, err := predict(ctx, client, provider, prompt)
 	if err != nil {
-		return nil, err
+		return nil, prompt, err
 	}
 	if isBlocked {
-		return nil, errors.New("received blocked response from genAI")
+		return nil, prompt, errors.New("received blocked response from genAI")
 	}
 	if useJSONResponse {
-		return parseGenAIResponse(response)
+		report, err := parseGenAIResponse(response)
+		return report, prompt, err
 	}
-	return &RCAReport{Rca: response}, nil
+	return &RCAReport{Rca: response}, prompt, nil
 }
 
 func predict(ctx context.Context, client genAIClient, provider, prompt string) (string, bool, error) {
@@ -176,13 +253,33 @@ func generatePrompt(r *http.Request, logs, promptTempl string) string {
 	command := r.FormValue(commandParam)
 	infra := r.FormValue(infraParam)
 	errSummary := r.FormValue(errSummaryParam)
+	os := r.FormValue(osParam)
+	arch := r.FormValue(archParam)
+	plugin := r.FormValue(pluginParam)
 
+	platformCtx := ""
+	if os != "" && arch != "" {
+		platformCtx = fmt.Sprintf("%s %s ", os, arch)
+	}
 	stepCtx := ""
 	if infra != "" {
-		stepCtx += fmt.Sprintf("Logs are generated on %s %s.\n", infra, getStepTypeContext(stepType))
+		stepCtx += fmt.Sprintf("Logs are generated on %s%s %s.\n", platformCtx, infra, getStepTypeContext(stepType, infra))
 	}
 	if command != "" {
 		stepCtx += fmt.Sprintf("Logs are generated by running command:\n```\n%s\n```", command)
+	} else if plugin != "" {
+		pluginType := ""
+		if stepType == "Plugin" {
+			pluginType = "drone plugin"
+		} else if stepType == "Action" {
+			pluginType = "github action"
+		} else if stepType == "Bitrise" {
+			pluginType = "bitrise plugin"
+		}
+
+		if pluginType != "" {
+			stepCtx += fmt.Sprintf("The logs below were generated when running %s %s", pluginType, plugin)
+		}
 	}
 	errSummaryCtx := ""
 	if errSummary != "" && !matchKnownPattern(errSummary) {
@@ -193,32 +290,37 @@ func generatePrompt(r *http.Request, logs, promptTempl string) string {
 	return prompt
 }
 
-func getStepTypeContext(stepType string) string {
+func getStepTypeContext(stepType, infra string) string {
 	switch stepType {
 	case "liteEngineTask":
-		return "while creating the pod"
+		if infra == "vm" {
+			return "while initializing the virtual machine in Harness CI"
+		}
+		return "while creating a Pod in Kubernetes cluster for running Harness CI builds."
 	case "BuildAndPushACR":
-		return "on building and pushing the image to ACR"
+		return "while building and pushing the image to Azure Container Registry in Harness CI"
 	case "BuildAndPushECR":
-		return "on building and pushing the image to ECR"
+		return "while building and pushing the image to Elastic Container Registry in Harness CI"
 	case "BuildAndPushGCR":
-		return "on building and pushing the image to GCR"
+		return "while building and pushing the image to Google Container Registry in Harness CI"
 	case "BuildAndPushDockerRegistry":
-		return "on building and pushing the image to docker registry"
+		return "while building and pushing the image to docker registry in Harness CI"
 	case "GCSUpload":
-		return "on uploading the files to GCS"
+		return "while uploading the files to GCS in Harness CI"
 	case "S3Upload":
-		return "on uploading the files to S3"
+		return "while uploading the files to S3 in Harness CI"
 	case "SaveCacheGCS":
-		return "on saving the files to GCS"
+		return "while saving the files to GCS in Harness CI"
 	case "SaveCacheS3":
-		return "on saving the files to S3"
+		return "while saving the files to S3 in Harness CI"
 	case "RestoreCacheGCS":
-		return "on restoring the files from GCS"
+		return "while restoring the files from GCS in Harness CI"
 	case "RestoreCacheS3":
-		return "on restoring the files from S3"
+		return "while restoring the files from S3 in Harness CI"
 	case "ArtifactoryUpload":
-		return "on uploading the files to Jfrog artifactory"
+		return "while uploading the files to Jfrog artifactory in Harness CI"
+	case "JiraUpdate":
+		return "while updating the Jira ticket in Harness"
 	}
 	return ""
 }
@@ -383,4 +485,14 @@ func getKeys(r *http.Request) ([]string, error) {
 		keys = append(keys, CreateAccountSeparatedKey(accountID, v))
 	}
 	return keys, nil
+}
+
+// given a string s, print the first n and the last n characters
+func trim(s string, n int) string {
+	length := len(s)
+	if length <= 2*n {
+		return s
+	} else {
+		return s[:n] + "..." + s[length-n:]
+	}
 }

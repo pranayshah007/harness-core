@@ -137,12 +137,15 @@ public class SerializerUtils {
   public static String getVmDebugCommand(String accountId, int timeoutSeconds, RunStepInfo runStepInfo,
       StageInfraDetails stageInfraDetails, String tmatePath) {
     if (isEmpty(tmatePath)) {
-      VmStageInfraDetails vmStageInfraDetails = (VmStageInfraDetails) stageInfraDetails;
+      if (stageInfraDetails.getType() == StageInfraDetails.Type.VM) {
+        VmStageInfraDetails vmStageInfraDetails = (VmStageInfraDetails) stageInfraDetails;
 
-      if (vmStageInfraDetails.getInfraInfo() == CIInitializeTaskParams.Type.DOCKER) {
-        throw new CIStageExecutionException(
-            "TMATE_PATH is empty. When running remote debug in local, you must  specify tmate path and set it as a shared path");
+        if (vmStageInfraDetails.getInfraInfo() == CIInitializeTaskParams.Type.DOCKER) {
+          throw new CIStageExecutionException(
+              "TMATE_PATH is empty. When running remote debug in local, you must  specify tmate path and set it as a shared path");
+        }
       }
+
       tmatePath = "/addon/tmate";
     }
     return getDebugCommand(accountId, timeoutSeconds, runStepInfo.getShell(), tmatePath);

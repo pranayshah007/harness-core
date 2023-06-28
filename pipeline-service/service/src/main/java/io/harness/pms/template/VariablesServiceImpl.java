@@ -9,6 +9,7 @@ package io.harness.pms.template;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.pms.contracts.service.VariableMergeResponseProto;
 import io.harness.pms.contracts.service.VariablesServiceGrpc.VariablesServiceImplBase;
 import io.harness.pms.contracts.service.VariablesServiceRequest;
@@ -16,6 +17,9 @@ import io.harness.pms.contracts.service.VariablesServiceRequestV2;
 import io.harness.pms.mappers.VariablesResponseDtoMapper;
 import io.harness.pms.variables.VariableCreatorMergeService;
 import io.harness.pms.variables.VariableMergeServiceResponse;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.SourcePrincipalContextBuilder;
+import io.harness.security.dto.ServicePrincipal;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -36,6 +40,9 @@ public class VariablesServiceImpl extends VariablesServiceImplBase {
   @Override
   public void getVariables(
       VariablesServiceRequest request, StreamObserver<VariableMergeResponseProto> responseObserver) {
+    SecurityContextBuilder.setContext(new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
+    SourcePrincipalContextBuilder.setSourcePrincipal(
+        new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
     VariableMergeServiceResponse variablesResponse =
         variableCreatorMergeService.createVariablesResponses(request.getYaml(), false);
     VariableMergeResponseProto variableMergeResponseProto = VariablesResponseDtoMapper.toProto(variablesResponse);
@@ -46,6 +53,9 @@ public class VariablesServiceImpl extends VariablesServiceImplBase {
   @Override
   public void getVariablesV2(
       VariablesServiceRequestV2 request, StreamObserver<VariableMergeResponseProto> responseObserver) {
+    SecurityContextBuilder.setContext(new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
+    SourcePrincipalContextBuilder.setSourcePrincipal(
+        new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
     VariableMergeServiceResponse variablesResponse = variableCreatorMergeService.createVariablesResponsesV2(
         request.getAccountId(), request.getOrgId(), request.getProjectId(), request.getYaml());
     VariableMergeResponseProto variableMergeResponseProto = VariablesResponseDtoMapper.toProto(variablesResponse);

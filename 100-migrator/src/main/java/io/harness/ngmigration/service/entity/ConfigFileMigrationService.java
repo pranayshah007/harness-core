@@ -97,6 +97,16 @@ public class ConfigFileMigrationService extends NgMigrationService {
       children.addAll(secretRefUtils.getSecretRefFromExpressions(
           configFile.getAccountId(), MigratorExpressionUtils.extractAll(new String(fileContent))));
     }
+    // Add service as a child if the config file is a service template config file
+    if (StringUtils.isNotBlank(configFile.getParentConfigFileId())
+        && EntityType.SERVICE_TEMPLATE.equals(configFile.getEntityType())) {
+      ConfigFile parentConfigFile = configService.get(configFile.getAppId(), configFile.getParentConfigFileId());
+      if (EntityType.SERVICE.equals(parentConfigFile.getEntityType())
+          && StringUtils.isNotBlank(parentConfigFile.getEntityId())) {
+        children.add(
+            CgEntityId.builder().id(parentConfigFile.getEntityId()).type(NGMigrationEntityType.SERVICE).build());
+      }
+    }
     return DiscoveryNode.builder().children(children).entityNode(cgEntityNode).build();
   }
 

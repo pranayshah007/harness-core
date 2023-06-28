@@ -39,6 +39,8 @@ public class GoogleCloudStorageArtifactDelegateRequest implements ArtifactSource
   String bucket;
   /** refers to artifact path in GCS bucket*/
   String artifactPath;
+
+  String artifactPathRegex;
   /** Gcp Connector*/
   GcpConnectorDTO gcpConnectorDTO;
   /** Encrypted details for decrypting.*/

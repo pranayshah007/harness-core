@@ -47,7 +47,7 @@ public class ServiceTokenGeneratorTest extends CategoryTest {
     serviceTokenAuthenticator.authenticate(token);
     JWT jwt = JWT.decode(token);
     Duration duration = Duration.ofMillis(Math.abs(jwt.getIssuedAt().getTime() - jwt.getExpiresAt().getTime()));
-    assertThat(duration).isEqualTo(Duration.ofHours(12));
+    assertThat(duration).isEqualTo(Duration.ofHours(12).plusMinutes(1));
   }
 
   @Test(expected = InvalidRequestException.class)

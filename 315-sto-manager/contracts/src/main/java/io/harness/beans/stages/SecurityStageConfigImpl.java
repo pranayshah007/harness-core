@@ -16,9 +16,7 @@ import io.harness.beans.dependencies.DependencyElement;
 import io.harness.beans.steps.STOStepSpecTypeConstants;
 import io.harness.beans.yaml.extended.cache.Caching;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
-import io.harness.beans.yaml.extended.infrastrucutre.UseFromStageInfraYaml;
 import io.harness.beans.yaml.extended.platform.Platform;
-import io.harness.beans.yaml.extended.runtime.CloudRuntime;
 import io.harness.beans.yaml.extended.runtime.Runtime;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.plancreator.execution.ExecutionElementConfig;
@@ -29,7 +27,6 @@ import io.harness.yaml.schema.beans.SupportedPossibleFieldTypes;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
@@ -61,11 +58,8 @@ public class SecurityStageConfigImpl implements IntegrationStageConfig {
 
   ExecutionElementConfig execution;
 
-  @JsonTypeInfo(
-      use = JsonTypeInfo.Id.NAME, property = "type", visible = true, defaultImpl = UseFromStageInfraYaml.class)
   Infrastructure infrastructure;
 
-  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true, defaultImpl = CloudRuntime.class)
   Runtime runtime;
 
   @YamlSchemaTypes(value = {SupportedPossibleFieldTypes.runtime})

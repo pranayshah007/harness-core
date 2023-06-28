@@ -4,7 +4,7 @@
 			"type": "section",
 			"text": {
 				"type": "mrkdwn",
-				"text": "*Budget Alert for ${PERSPECTIVE_NAME}* \n Hello, Your perspective ${IS_OR_HAS} *${APPROACHING_OR_EXCEEDED}* it's ${PERIOD} budget ${BUDGET_NAME}."
+				"text": "*Budget Alert for ${PERSPECTIVE_NAME}* \n Hello, The ${CURRENT_SPEND_OR_FORECASTED_SPEND} has *exceeded*${THRESHOLD_PERCENTAGE} it's ${PERIOD}-budget ${BUDGET_NAME}."
 			}
 		},
 		{
@@ -14,7 +14,7 @@
 			"type": "section",
 			"text": {
 				"type": "mrkdwn",
-				"text": "*Perspective:* ${PERSPECTIVE_NAME} \n *Budget amount:* ${BUDGET_AMOUNT}\n *Actual Spend: * ${ACTUAL_AMOUNT}  \n *Forecasted Spend: * ${FORECASTED_COST}  \n *Exceeded threshold:* ${THRESHOLD_PERCENTAGE}% of Budget amount \n *${ACTUAL_SPEND_OR_FORECASTED_SPEND} has exceeded set threshold.* "
+				"text": "*Perspective:* ${PERSPECTIVE_NAME} \n *Budget amount:* ${BUDGET_AMOUNT}\n *Current Spend:* ${CURRENT_SPEND}  \n *Forecasted Spend:* ${FORECASTED_SPEND}"
 			}
 		},
 		{

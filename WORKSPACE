@@ -4605,6 +4605,13 @@ go_repository(
     version = "v1.3.1",
 )
 
+go_repository(
+    name = "com_github_harness_ti_client",
+    importpath = "github.com/harness/ti-client",
+    sum = "h1:Ep30TUGSR+TlhMe8Ez0P9awmBUga0KEapfV438hzpP8=",
+    version = "v0.0.0-20230625231222-263e215b8017",
+)
+
 go_rules_dependencies()
 
 go_register_toolchains(version = "1.20.4")
@@ -4716,24 +4723,24 @@ plain_artifacts = [
     "com.esotericsoftware:kryo:4.0.3",
     "com.esotericsoftware:minlog:1.3.0",
     "com.esotericsoftware:reflectasm:1.11.6",
-    "com.fasterxml.jackson.core:jackson-annotations:2.14.2",
-    "com.fasterxml.jackson.core:jackson-core:2.14.2",
-    "com.fasterxml.jackson.core:jackson-databind:2.13.4.2",
-    "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.14.2",
-    "com.fasterxml.jackson.dataformat:jackson-dataformat-smile:2.14.2",
-    "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.14.2",
-    "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.14.2",
-    "com.fasterxml.jackson.datatype:jackson-datatype-guava:2.14.2",
-    "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.14.2",
-    "com.fasterxml.jackson.datatype:jackson-datatype-joda:2.14.2",
-    "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.14.2",
-    "com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:2.14.2",
-    "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:2.14.2",
-    "com.fasterxml.jackson.jaxrs:jackson-jaxrs-yaml-provider:2.14.2",
-    "com.fasterxml.jackson.module:jackson-module-afterburner:2.14.2",
-    "com.fasterxml.jackson.module:jackson-module-jaxb-annotations:2.14.2",
-    "com.fasterxml.jackson.module:jackson-module-jsonSchema:2.14.2",
-    "com.fasterxml.jackson.module:jackson-module-parameter-names:2.14.2",
+    "com.fasterxml.jackson.core:jackson-annotations:2.15.1",
+    "com.fasterxml.jackson.core:jackson-core:2.15.1",
+    "com.fasterxml.jackson.core:jackson-databind:2.15.1",
+    "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.15.1",
+    "com.fasterxml.jackson.dataformat:jackson-dataformat-smile:2.15.1",
+    "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.15.1",
+    "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.15.1",
+    "com.fasterxml.jackson.datatype:jackson-datatype-guava:2.15.1",
+    "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.15.1",
+    "com.fasterxml.jackson.datatype:jackson-datatype-joda:2.15.1",
+    "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.1",
+    "com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:2.15.1",
+    "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:2.15.1",
+    "com.fasterxml.jackson.jaxrs:jackson-jaxrs-yaml-provider:2.15.1",
+    "com.fasterxml.jackson.module:jackson-module-afterburner:2.15.1",
+    "com.fasterxml.jackson.module:jackson-module-jaxb-annotations:2.15.1",
+    "com.fasterxml.jackson.module:jackson-module-jsonSchema:2.15.1",
+    "com.fasterxml.jackson.module:jackson-module-parameter-names:2.15.1",
     "com.fasterxml.uuid:java-uuid-generator:4.0.1",
     "com.fasterxml.woodstox:woodstox-core:6.4.0",
     "com.fasterxml:classmate:1.4.0",
@@ -4993,7 +5000,7 @@ plain_artifacts = [
     "io.grpc:grpc-services:1.50.1",
     "io.grpc:grpc-stub:1.50.1",
     "io.gsonfire:gson-fire:1.8.3",
-    "io.harness.cv:data-collection-dsl:0.56-RELEASE",
+    "io.harness.cv:data-collection-dsl:0.62-RELEASE",
     "io.harness:ff-java-server-sdk:1.1.10",
     "io.jsonwebtoken:jjwt:0.9.1",
     "io.kubernetes:client-java-api:18.0.0",
@@ -5355,7 +5362,7 @@ plain_artifacts = [
     "io.swagger.core.v3:swagger-integration:2.2.0",
     "io.opentelemetry:opentelemetry-api:1.18.0",
     "io.harness:smp-license:1.0.11",
-    "com.clickhouse:clickhouse-jdbc:0.3.2-patch11",
+    "com.clickhouse:clickhouse-jdbc:0.4.6",
 ]
 
 amazon_artifacts = [

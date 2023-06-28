@@ -171,8 +171,8 @@ public class MatrixConfigServiceHelper {
     List<JsonNode> jsonNodes = new ArrayList<>();
     int currentIteration = 0;
     for (List<Integer> matrixData : matrixMetadata) {
-      JsonNode clonedNode = JsonPipelineUtils.asTree(JsonUtils.asMap(StrategyUtils.replaceExpressions(
-          jsonNode.deepCopy().toString(), combinations.get(currentIteration), currentIteration, totalCount, null)));
+      JsonNode clonedNode = StrategyUtils.replaceExpressions(
+          JsonPipelineUtils.asTree(jsonNode), combinations.get(currentIteration), currentIteration, totalCount, null);
       StrategyUtils.modifyJsonNode(clonedNode, matrixData.stream().map(String::valueOf).collect(Collectors.toList()));
       jsonNodes.add(clonedNode);
       currentIteration++;

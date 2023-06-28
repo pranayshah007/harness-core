@@ -20,7 +20,6 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.IDENTIFIER;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.NAME;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGES;
-import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 import static io.harness.strategy.StrategyValidationUtils.STRATEGY_IDENTIFIER_POSTFIX_ESCAPED;
 
 import io.harness.advisers.nextstep.NextStageAdviserParameters;
@@ -28,6 +27,7 @@ import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.jackson.JsonNodeUtils;
+import io.harness.plancreator.steps.GenericPlanCreatorUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.ambiance.Level;
@@ -192,7 +192,7 @@ public class StrategyUtils {
 
   public List<AdviserObtainment> getAdviserObtainmentFromMetaDataForStep(
       KryoSerializer kryoSerializer, YamlField currentField) {
-    if (currentField.checkIfParentIsParallel(STEPS)) {
+    if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)) {
       return new ArrayList<>();
     }
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
@@ -279,17 +279,16 @@ public class StrategyUtils {
 
   public void replaceExpressions(
       Object jsonString, Map<String, String> combinations, int currentIteration, int totalIteration, String itemValue) {
-    EngineExpressionEvaluator evaluator =
-        new StrategyExpressionEvaluator(combinations, currentIteration, totalIteration, itemValue,
-            Map.of(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY, "CI_DISABLE_RESOURCE_OPTIMIZATION"));
+    EngineExpressionEvaluator evaluator = new StrategyExpressionEvaluator(
+        combinations, currentIteration, totalIteration, itemValue, Collections.emptyMap());
     evaluator.resolve(jsonString, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
   }
 
-  public String replaceExpressions(
-      String jsonString, Map<String, String> combinations, int currentIteration, int totalIteration, String itemValue) {
+  public JsonNode replaceExpressions(
+      JsonNode jsonNode, Map<String, String> combinations, int currentIteration, int totalIteration, String itemValue) {
     EngineExpressionEvaluator evaluator =
         new StrategyExpressionEvaluator(combinations, currentIteration, totalIteration, itemValue);
-    return (String) evaluator.resolve(jsonString, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+    return (JsonNode) evaluator.resolve(jsonNode, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
   }
 
   /**

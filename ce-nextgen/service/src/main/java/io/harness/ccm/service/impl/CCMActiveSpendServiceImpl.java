@@ -103,10 +103,11 @@ public class CCMActiveSpendServiceImpl implements CCMActiveSpendService {
         getActiveSpend(startTimeForForecastedCost, endTimeForForecastedCost, accountIdentifier);
     double currentSpend = activeSpendDTO.getCost();
     long spendPeriod = ONE_DAY_MILLIS;
+    long timeCorrectionFactor = isClickHouseEnabled ? 1 : THOUSAND;
     if (!activeSpendDTO.getMaxDay().equals(activeSpendDTO.getMinDay())) {
-      spendPeriod = (activeSpendDTO.getMaxDay() - activeSpendDTO.getMinDay()) / THOUSAND + ONE_DAY_MILLIS;
+      spendPeriod = (activeSpendDTO.getMaxDay() - activeSpendDTO.getMinDay()) / timeCorrectionFactor + ONE_DAY_MILLIS;
     }
-    long forecastPeriod = endTimeForForecastedSpend + THOUSAND - (activeSpendDTO.getMaxDay() / THOUSAND);
+    long forecastPeriod = endTimeForForecastedSpend + THOUSAND - (activeSpendDTO.getMaxDay() / timeCorrectionFactor);
     double forecastedSpend = getRoundedDoubleValue(currentSpend
         * (new BigDecimal(forecastPeriod).divide(new BigDecimal(spendPeriod), 2, RoundingMode.HALF_UP)).doubleValue());
     if (spendPeriod < OBSERVATION_PERIOD) {

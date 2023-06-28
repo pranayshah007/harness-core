@@ -16,6 +16,7 @@ import static io.serializer.HObjectMapper.configureObjectMapperForNG;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.InvalidYamlException;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.fqn.FQNNode;
@@ -74,6 +75,7 @@ public class YamlUtils {
     mapper = new ObjectMapper(new YAMLFactory()
                                   .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
                                   .enable(YAMLGenerator.Feature.INDENT_ARRAYS_WITH_INDICATOR)
+                                  .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
                                   .enable(YAMLGenerator.Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS));
     mapper.registerModule(new EdgeCaseRegexModule());
     mapper.configure(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY, true);
@@ -112,20 +114,9 @@ public class YamlUtils {
     return mapper.readValue(yaml, valueTypeRef);
   }
 
-  @Deprecated
-  // Use writeYamlString method instead
-  // It will replace "---\n" with ""
-  public String write(Object object) {
-    try {
-      return mapper.writeValueAsString(object);
-    } catch (JsonProcessingException e) {
-      throw new InvalidRequestException("Couldn't convert object to Yaml", e);
-    }
-  }
-
   public String writeYamlString(Object object) {
     try {
-      return mapper.writeValueAsString(object).replace("---\n", "");
+      return mapper.writeValueAsString(object);
     } catch (JsonProcessingException e) {
       throw new InvalidRequestException("Couldn't convert object to Yaml", e);
     }
@@ -141,6 +132,15 @@ public class YamlUtils {
 
   public YamlField readTree(String content) throws IOException {
     return readTreeInternal(content, mapper);
+  }
+
+  public YamlField readYamlTree(String content) {
+    try {
+      return readTreeInternal(content, mapper);
+    } catch (IOException ex) {
+      throw new InvalidYamlException(
+          "Yaml could not be converted to jsonNode. Please check if the yaml is correct.", ex);
+    }
   }
 
   public YamlField readTreeWithDefaultObjectMapper(String content) throws IOException {

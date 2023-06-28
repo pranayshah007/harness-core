@@ -22,8 +22,6 @@ import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 
-import java.util.HashSet;
-import java.util.Set;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -89,14 +87,5 @@ public class GitIntegrationUtils {
 
   public String replaceAccountScopeFromConnectorId(String connectorIdentifier) {
     return connectorIdentifier.replace(GitIntegrationConstants.ACCOUNT_SCOPED, "");
-  }
-
-  public Set<String> extractDelegateSelectors(ConnectorInfoDTO connectorInfoDTO) {
-    Set<String> delegateSelectors = new HashSet<>();
-    ConnectorConfigDTO connectorConfig = connectorInfoDTO.getConnectorConfig();
-    if (connectorConfig instanceof DelegateSelectable) {
-      delegateSelectors = ((DelegateSelectable) connectorConfig).getDelegateSelectors();
-    }
-    return delegateSelectors;
   }
 }

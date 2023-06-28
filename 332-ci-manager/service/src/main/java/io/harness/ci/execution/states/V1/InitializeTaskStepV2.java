@@ -36,7 +36,6 @@ import static java.util.Collections.singletonList;
 import io.harness.EntityType;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.dependencies.ServiceDependency;
 import io.harness.beans.environment.ServiceDefinitionInfo;
@@ -590,16 +589,11 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
       maxExpansionLimit = Optional.of(Integer.valueOf(MAXIMUM_EXPANSION_LIMIT_FREE_ACCOUNT));
     }
 
-    boolean classExpansion = ciFeatureFlagService.isEnabled(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, accountId);
-
     for (ExecutionWrapperConfig config : executionElement.getSteps()) {
       ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo;
-      if (classExpansion) {
-        expandedExecutionWrapperInfo =
-            strategyHelper.expandExecutionWrapperConfigFromClass(config, maxExpansionLimit, CIAbstractStepNode.class);
-      } else {
-        expandedExecutionWrapperInfo = strategyHelper.expandExecutionWrapperConfig(config, maxExpansionLimit);
-      }
+      expandedExecutionWrapperInfo =
+          strategyHelper.expandExecutionWrapperConfigFromClass(config, maxExpansionLimit, CIAbstractStepNode.class);
+
       expandedExecutionElement.addAll(expandedExecutionWrapperInfo.getExpandedExecutionConfigs());
       strategyExpansionMap.putAll(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData());
     }

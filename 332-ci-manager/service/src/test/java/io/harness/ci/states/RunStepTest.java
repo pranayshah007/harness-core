@@ -16,6 +16,7 @@ import static io.harness.beans.sweepingoutputs.ContainerPortDetails.PORT_DETAILS
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
+import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.SHUBHAM;
 
@@ -30,9 +31,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome;
 import io.harness.beans.steps.outcome.CIStepOutcome;
+import io.harness.beans.steps.output.CIStageOutput;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.sweepingoutputs.CodeBaseConnectorRefSweepingOutput;
 import io.harness.beans.sweepingoutputs.ContainerPortDetails;
@@ -49,6 +52,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.executionplan.CIExecutionTestBase;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.serializer.RunStepProtobufSerializer;
 import io.harness.ci.serializer.vm.VmStepSerializer;
@@ -57,6 +61,7 @@ import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.runner.ExecuteStepRequest;
 import io.harness.delegate.beans.ci.vm.steps.VmRunStep;
+import io.harness.delegate.beans.ci.vm.steps.VmStepInfo;
 import io.harness.delegate.task.stepstatus.StepExecutionStatus;
 import io.harness.delegate.task.stepstatus.StepMapOutput;
 import io.harness.delegate.task.stepstatus.StepStatus;
@@ -85,6 +90,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.product.ci.engine.proto.UnitStep;
+import io.harness.repositories.CIStageOutputRepository;
 import io.harness.rule.Owner;
 import io.harness.tasks.ResponseData;
 import io.harness.vm.VmExecuteStepUtils;
@@ -98,6 +104,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.After;
 import org.junit.Before;
@@ -125,6 +132,8 @@ public class RunStepTest extends CIExecutionTestBase {
   @Mock CILogServiceUtils logServiceUtils;
   @Mock WaitNotifyEngine waitNotifyEngine;
   @Mock SerializedResponseDataHelper serializedResponseDataHelper;
+  @Mock protected CIFeatureFlagService featureFlagService;
+  @Mock protected CIStageOutputRepository ciStageOutputRepository;
   @Inject private ExceptionManager exceptionManager;
   @InjectMocks RunStep runStep;
   //@InjectMocks private DliteVmInfraInfo dliteVmInfraInfo;
@@ -222,6 +231,11 @@ public class RunStepTest extends CIExecutionTestBase {
                         .found(true)
                         .output(StageDetails.builder().stageRuntimeID("test").build())
                         .build());
+    when(featureFlagService.isEnabled(eq(FeatureName.CI_OUTPUT_VARIABLES_AS_ENV), any())).thenReturn(true);
+    Map<String, String> outputMap = new HashMap<>();
+    outputMap.put("output1", "output1Value");
+    when(ciStageOutputRepository.findFirstByStageExecutionId(any()))
+        .thenReturn(Optional.of(CIStageOutput.builder().stageExecutionId("stage").outputs(outputMap).build()));
     when(executionSweepingOutputResolver.resolve(eq(ambiance), eq(refObject1))).thenReturn(stepTaskDetails);
     when(executionSweepingOutputResolver.resolve(eq(ambiance), eq(refObject2))).thenReturn(stepLogKeyDetails);
     when(executionSweepingOutputResolver.resolve(eq(ambiance), eq(refObject3))).thenReturn(containerPortDetails);
@@ -541,5 +555,149 @@ public class RunStepTest extends CIExecutionTestBase {
     StepResponse stepResponse = runStep.handleAsyncResponse(ambiance, stepElementParameters, responseDataMap);
 
     assertThat(stepResponse).isEqualTo(StepResponse.builder().status(Status.SUCCEEDED).build());
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testInjectOutputVarsAsEnvVars() {
+    VmStepInfo vmStepInfo = VmRunStep.builder().envVariables(new HashMap<>()).build();
+    when(featureFlagService.isEnabled(eq(FeatureName.CI_OUTPUT_VARIABLES_AS_ENV), any())).thenReturn(true);
+    Map<String, String> outputMap = new HashMap<>();
+    outputMap.put("output1", "output1Value");
+    when(ciStageOutputRepository.findFirstByStageExecutionId(any()))
+        .thenReturn(Optional.of(CIStageOutput.builder().stageExecutionId("stage").outputs(outputMap).build()));
+
+    runStep.injectOutputVarsAsEnvVars(vmStepInfo, "acc", "stage");
+    assertThat(((VmRunStep) vmStepInfo).getEnvVariables().size()).isEqualTo(1);
+    assertThat(((VmRunStep) vmStepInfo).getEnvVariables().get("output1")).isEqualTo("output1Value");
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testInjectOutputVarsAsEnvVarsExisting() {
+    Map<String, String> existingEnv = new HashMap<>();
+    existingEnv.put("existing1", "existingValue1");
+    existingEnv.put("existing2", "existingValue2");
+    VmStepInfo vmStepInfo = VmRunStep.builder().envVariables(existingEnv).build();
+    when(featureFlagService.isEnabled(eq(FeatureName.CI_OUTPUT_VARIABLES_AS_ENV), any())).thenReturn(true);
+    Map<String, String> outputMap = new HashMap<>();
+    outputMap.put("output1", "output1Value");
+    outputMap.put("existing2", "overridenValue");
+    when(ciStageOutputRepository.findFirstByStageExecutionId(any()))
+        .thenReturn(Optional.of(CIStageOutput.builder().stageExecutionId("stage").outputs(outputMap).build()));
+
+    runStep.injectOutputVarsAsEnvVars(vmStepInfo, "acc", "stage");
+    assertThat(((VmRunStep) vmStepInfo).getEnvVariables().size()).isEqualTo(3);
+    assertThat(((VmRunStep) vmStepInfo).getEnvVariables().get("output1")).isEqualTo("output1Value");
+    assertThat(((VmRunStep) vmStepInfo).getEnvVariables().get("existing1")).isEqualTo("existingValue1");
+    assertThat(((VmRunStep) vmStepInfo).getEnvVariables().get("existing2")).isEqualTo("existingValue2");
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testInjectOutputVarsAsEnvVarsNoFF() {
+    Map<String, String> existingEnv = new HashMap<>();
+    existingEnv.put("existing1", "existingValue1");
+    existingEnv.put("existing2", "existingValue2");
+    VmStepInfo vmStepInfo = VmRunStep.builder().envVariables(existingEnv).build();
+    when(featureFlagService.isEnabled(eq(FeatureName.CI_OUTPUT_VARIABLES_AS_ENV), any())).thenReturn(false);
+    Map<String, String> outputMap = new HashMap<>();
+    outputMap.put("output1", "output1Value");
+    outputMap.put("existing2", "overridenValue");
+    when(ciStageOutputRepository.findFirstByStageExecutionId(any()))
+        .thenReturn(Optional.of(CIStageOutput.builder().stageExecutionId("stage").outputs(outputMap).build()));
+
+    runStep.injectOutputVarsAsEnvVars(vmStepInfo, "acc", "stage");
+    assertThat(((VmRunStep) vmStepInfo).getEnvVariables().size()).isEqualTo(2);
+    assertThat(((VmRunStep) vmStepInfo).getEnvVariables().get("existing1")).isEqualTo("existingValue1");
+    assertThat(((VmRunStep) vmStepInfo).getEnvVariables().get("existing2")).isEqualTo("existingValue2");
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testInjectOutputVarsAsEnvVarsK8Existing() {
+    Map<String, String> existingEnv = new HashMap<>();
+    existingEnv.put("existing1", "existingValue1");
+    existingEnv.put("existing2", "existingValue2");
+    UnitStep unitStep =
+        UnitStep.newBuilder()
+            .setRun(io.harness.product.ci.engine.proto.RunStep.newBuilder().putAllEnvironment(existingEnv).build())
+            .build();
+    when(featureFlagService.isEnabled(eq(FeatureName.CI_OUTPUT_VARIABLES_AS_ENV), any())).thenReturn(true);
+    Map<String, String> outputMap = new HashMap<>();
+    outputMap.put("output1", "output1Value");
+    outputMap.put("existing2", "overridenValue");
+    when(ciStageOutputRepository.findFirstByStageExecutionId(any()))
+        .thenReturn(Optional.of(CIStageOutput.builder().stageExecutionId("stage").outputs(outputMap).build()));
+
+    unitStep = runStep.injectOutputVarsAsEnvVars(unitStep, "acc", "stage");
+    assertThat(unitStep.getRun().getEnvironmentCount()).isEqualTo(3);
+    assertThat(unitStep.getRun().getEnvironmentOrThrow("existing1")).isEqualTo("existingValue1");
+    assertThat(unitStep.getRun().getEnvironmentOrThrow("output1")).isEqualTo("output1Value");
+    assertThat(unitStep.getRun().getEnvironmentOrThrow("existing2")).isEqualTo("existingValue2");
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testInjectOutputVarsAsEnvVarsK8() {
+    UnitStep unitStep =
+        UnitStep.newBuilder().setRun(io.harness.product.ci.engine.proto.RunStep.newBuilder().build()).build();
+    when(featureFlagService.isEnabled(eq(FeatureName.CI_OUTPUT_VARIABLES_AS_ENV), any())).thenReturn(true);
+    Map<String, String> outputMap = new HashMap<>();
+    outputMap.put("output1", "output1Value");
+    outputMap.put("output2", "output2Value");
+    when(ciStageOutputRepository.findFirstByStageExecutionId(any()))
+        .thenReturn(Optional.of(CIStageOutput.builder().stageExecutionId("stage").outputs(outputMap).build()));
+
+    unitStep = runStep.injectOutputVarsAsEnvVars(unitStep, "acc", "stage");
+    assertThat(unitStep.getRun().getEnvironmentCount()).isEqualTo(2);
+    assertThat(unitStep.getRun().getEnvironmentOrThrow("output1")).isEqualTo("output1Value");
+    assertThat(unitStep.getRun().getEnvironmentOrThrow("output2")).isEqualTo("output2Value");
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testInjectOutputVarsAsEnvVarsK8NoFF() {
+    Map<String, String> existingEnv = new HashMap<>();
+    existingEnv.put("existing1", "existingValue1");
+    existingEnv.put("existing2", "existingValue2");
+    UnitStep unitStep =
+        UnitStep.newBuilder()
+            .setRun(io.harness.product.ci.engine.proto.RunStep.newBuilder().putAllEnvironment(existingEnv).build())
+            .build();
+    when(featureFlagService.isEnabled(eq(FeatureName.CI_OUTPUT_VARIABLES_AS_ENV), any())).thenReturn(false);
+    Map<String, String> outputMap = new HashMap<>();
+    outputMap.put("output1", "output1Value");
+    outputMap.put("existing2", "overridenValue");
+    when(ciStageOutputRepository.findFirstByStageExecutionId(any()))
+        .thenReturn(Optional.of(CIStageOutput.builder().stageExecutionId("stage").outputs(outputMap).build()));
+
+    unitStep = runStep.injectOutputVarsAsEnvVars(unitStep, "acc", "stage");
+    assertThat(unitStep.getRun().getEnvironmentCount()).isEqualTo(2);
+    assertThat(unitStep.getRun().getEnvironmentOrThrow("existing1")).isEqualTo("existingValue1");
+    assertThat(unitStep.getRun().getEnvironmentOrThrow("existing2")).isEqualTo("existingValue2");
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testPopulateCIStageOutputs() {
+    Map<String, String> outputVariables = new HashMap<>();
+    outputVariables.put("key1", "value1");
+    outputVariables.put("key2", "null");
+    outputVariables.put("key3", null);
+    when(featureFlagService.isEnabled(eq(FeatureName.CI_OUTPUT_VARIABLES_AS_ENV), any())).thenReturn(true);
+    Map<String, String> outputMap = new HashMap<>();
+    outputMap.put("output1", "output1Value");
+    outputMap.put("output2", null);
+    when(ciStageOutputRepository.findFirstByStageExecutionId(any()))
+        .thenReturn(Optional.of(CIStageOutput.builder().stageExecutionId("stage").outputs(outputMap).build()));
+    runStep.populateCIStageOutputs(outputVariables, "acc", "stage");
   }
 }

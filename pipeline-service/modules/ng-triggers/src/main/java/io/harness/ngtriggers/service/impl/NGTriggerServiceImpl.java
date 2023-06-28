@@ -252,7 +252,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     executorService.submit(() -> { subscribePolling(ngTriggerEntity, isUpdate); });
   }
 
-  private void subscribePolling(NGTriggerEntity ngTriggerEntity, boolean isUpdate) {
+  public void subscribePolling(NGTriggerEntity ngTriggerEntity, boolean isUpdate) {
     PollingItem pollingItem = pollingSubscriptionHelper.generatePollingItem(ngTriggerEntity);
 
     try {
@@ -472,14 +472,14 @@ public class NGTriggerServiceImpl implements NGTriggerService {
         log.info("Submitting unsubscribe request after delete for Trigger :"
             + TriggerHelper.getTriggerRef(foundTriggerEntity));
         submitUnsubscribeAsync(foundTriggerEntity);
-        try {
-          triggerSetupUsageHelper.deleteExistingSetupUsages(foundTriggerEntity);
-        } catch (Exception ex) {
-          log.error(
-              "Error while deleting the setup usages for the trigger with the identifier {} in project {} in org {}",
-              foundTriggerEntity.getIdentifier(), foundTriggerEntity.getProjectIdentifier(),
-              foundTriggerEntity.getOrgIdentifier(), ex);
-        }
+      }
+      try {
+        triggerSetupUsageHelper.deleteExistingSetupUsages(foundTriggerEntity);
+      } catch (Exception ex) {
+        log.error(
+            "Error while deleting the setup usages for the trigger with the identifier {} in project {} in org {}",
+            foundTriggerEntity.getIdentifier(), foundTriggerEntity.getProjectIdentifier(),
+            foundTriggerEntity.getOrgIdentifier(), ex);
       }
     }
     return true;

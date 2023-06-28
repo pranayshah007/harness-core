@@ -94,6 +94,22 @@ public class BarrierVisitorTest extends OrchestrationStepsTestBase {
     assertBarrierPositionInfoMap();
   }
 
+  @Test
+  @Owner(developers = ALEXEI)
+  @Category(UnitTests.class)
+  public void shouldTestSkippingPipelineStage() throws IOException {
+    ClassLoader classLoader = getClass().getClassLoader();
+    String yamlFile = "barriers_with_pipeline_stage.yaml";
+    String yaml = Resources.toString(Objects.requireNonNull(classLoader.getResource(yamlFile)), StandardCharsets.UTF_8);
+
+    YamlNode yamlNode = YamlUtils.extractPipelineField(yaml).getNode();
+    barrierVisitor.walkElementTree(yamlNode);
+
+    assertThat(barrierVisitor.getBarrierIdentifierMap()).isNotEmpty();
+    // The barrier for the pipeline stage is not accounted
+    assertThat(barrierVisitor.getBarrierIdentifierMap().size()).isEqualTo(1);
+  }
+
   private void assertBarrierIdentifierMap() {
     String vbStage = "VBStage";
     String sampleStage = "SampleStage";

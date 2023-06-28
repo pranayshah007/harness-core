@@ -10,10 +10,13 @@ import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDa
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.EMAIL_MONITORED_SERVICE_NAME_HYPERLINK;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.EMAIL_NOTIFICATION_NAME_HYPERLINK;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.ENVIRONMENT_NAME;
-import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.MONITORED_SERVICE_URL;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_NAME;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_URL;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.SLACK_FORMATTED_VERSION_LIST;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_IDENTIFIER;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_NAME;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.MONITORED_SERVICE_URL;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_IDENTIFIER;
 import static io.harness.rule.OwnerRule.JAMES_RICKS;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,7 +51,7 @@ public class ErrorTrackingTemplateDataGeneratorTest {
 
   public static final String MONITORED_SERVICE_NAME = "monitoredServiceName";
   public static final String MONITORED_SERVICE_ID = "monitoredServiceId";
-  public static final String SERVICE_IDENTIFIER = "serviceId";
+  public static final String SERVICE_ID = "serviceId";
 
   public static final String ENVIRONMENT_NAME_VALUE = "environmentNameValue";
   public static final String SLACK_FORMATTED_VERSION_LIST_VALUE = "slackFormattedVersionListValue";
@@ -85,7 +88,7 @@ public class ErrorTrackingTemplateDataGeneratorTest {
     when(nextGenService.getOrganization(ACCOUNT_IDENTIFIER, ORGANIZATION_IDENTIFIER)).thenReturn(organizationDTO);
     when(nextGenService.getProject(ACCOUNT_IDENTIFIER, ORGANIZATION_IDENTIFIER, PROJECT_IDENTIFIER))
         .thenReturn(projectDTO);
-    when(nextGenService.getService(ACCOUNT_IDENTIFIER, ORGANIZATION_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER))
+    when(nextGenService.getService(ACCOUNT_IDENTIFIER, ORGANIZATION_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_ID))
         .thenReturn(serviceResponseDTO);
 
     FieldUtils.writeField(errorTrackingTemplateDataGenerator, "portalUrl", PORTAL_URL_VALUE, true);
@@ -106,9 +109,10 @@ public class ErrorTrackingTemplateDataGeneratorTest {
             .errorTrackingEventTypes(Collections.singletonList(ErrorTrackingEventType.EXCEPTION))
             .build();
 
-    final Map<String, String> templateData =
-        errorTrackingTemplateDataGenerator.getTemplateData(projectParams, MONITORED_SERVICE_NAME, MONITORED_SERVICE_ID,
-            SERVICE_IDENTIFIER, MONITORED_SERVICE_ID, codeErrorCondition, notificationDataMap);
+    Map<String, Object> entityDetails = Map.of(
+        ENTITY_NAME, MONITORED_SERVICE_NAME, ENTITY_IDENTIFIER, MONITORED_SERVICE_ID, SERVICE_IDENTIFIER, SERVICE_ID);
+    final Map<String, String> templateData = errorTrackingTemplateDataGenerator.getTemplateData(
+        projectParams, entityDetails, codeErrorCondition, notificationDataMap);
 
     assertThat(templateData.get(ENVIRONMENT_NAME)).isEqualTo(ENVIRONMENT_NAME_VALUE);
     assertThat(templateData.get(MONITORED_SERVICE_URL)).contains(MONITORED_SERVICE_ID);

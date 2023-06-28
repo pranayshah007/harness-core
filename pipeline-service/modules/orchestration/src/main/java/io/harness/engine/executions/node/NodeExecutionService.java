@@ -348,5 +348,6 @@ public interface NodeExecutionService {
   CloseableIterator<NodeExecution> fetchNodeExecutionsForGivenStageFQNs(
       String planExecutionId, List<String> stageFQNs, Collection<String> requiredFields);
 
-  NodeExecution fetchNodeExecutionForPlanNodeAndRetriedId(String planNode, boolean oldRetry, List<String> retriedId);
+  NodeExecution fetchNodeExecutionForPlanNodeAndRetriedId(
+      String planExecutionId, String planNode, boolean oldRetry, List<String> retriedId);
 }

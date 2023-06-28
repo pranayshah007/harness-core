@@ -9,7 +9,7 @@ package io.harness.delegate.task.artifacts.ecr;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
-import static software.wings.helpers.ext.ecr.EcrService.MAX_NO_OF_TAGS_PER_IMAGE;
+import static software.wings.helpers.ext.ecr.EcrService.MAX_NO_OF_IMAGES;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.beans.BuildDetailsInternal;
@@ -57,7 +57,7 @@ public class EcrArtifactTaskHandler extends DelegateArtifactTaskHandler<EcrArtif
     String ecrimageUrl = awsEcrApiHelperServiceDelegate.getEcrImageUrl(awsInternalConfig,
         attributesRequest.getRegistryId(), attributesRequest.getRegion(), attributesRequest.getImagePath());
     builds = ecrService.getBuilds(awsInternalConfig, attributesRequest.getRegistryId(), ecrimageUrl,
-        attributesRequest.getRegion(), attributesRequest.getImagePath(), MAX_NO_OF_TAGS_PER_IMAGE);
+        attributesRequest.getRegion(), attributesRequest.getImagePath(), MAX_NO_OF_IMAGES);
     List<EcrArtifactDelegateResponse> ecrArtifactDelegateResponseList =
         builds.stream()
             .sorted(new BuildDetailsInternalComparatorDateDescending()) // Sort by latest timestamp.

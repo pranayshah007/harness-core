@@ -25,6 +25,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+// this is dummy connector dto for Gitness
 @OwnedBy(HarnessTeam.DX)
 @Data
 @NoArgsConstructor

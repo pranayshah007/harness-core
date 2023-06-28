@@ -18,6 +18,8 @@ import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingHistoryService;
 import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.graphql.ViewsQueryBuilder;
+import io.harness.ccm.views.service.LabelFlattenedService;
+import io.harness.ff.FeatureFlagService;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.remote.NgLicenseHttpClient;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -57,14 +59,16 @@ public class BigQueryUpdateTopicSubscriber {
   private static final String FULL_SUBSCRIPTION_FORMAT = "projects/{}/subscriptions/{}";
   private static final String FULL_TOPIC_NAME_FORMAT = "projects/{}/topics/{}";
   @Inject private BatchMainConfig config;
-  @Inject BigQueryService bigQueryService;
-  @Inject BigQueryHelper bigQueryHelper;
-  @Inject BigQueryHelperService bigQueryHelperService;
-  @Inject BusinessMappingService businessMappingService;
-  @Inject BusinessMappingHistoryService businessMappingHistoryService;
-  @Inject ViewsQueryBuilder viewsQueryBuilder;
-  @Inject CloudToHarnessMappingService cloudToHarnessMappingService;
-  @Inject NgLicenseHttpClient ngLicenseHttpClient;
+  @Inject private BigQueryService bigQueryService;
+  @Inject private BigQueryHelper bigQueryHelper;
+  @Inject private BigQueryHelperService bigQueryHelperService;
+  @Inject private BusinessMappingService businessMappingService;
+  @Inject private BusinessMappingHistoryService businessMappingHistoryService;
+  @Inject private ViewsQueryBuilder viewsQueryBuilder;
+  @Inject private CloudToHarnessMappingService cloudToHarnessMappingService;
+  @Inject private NgLicenseHttpClient ngLicenseHttpClient;
+  @Inject private FeatureFlagService featureFlagService;
+  @Inject private LabelFlattenedService labelFlattenedService;
   Subscriber subscriber;
 
   public void subscribeAsync() throws IOException {
@@ -105,12 +109,13 @@ public class BigQueryUpdateTopicSubscriber {
         getNgAccounts().stream().map(ModuleLicenseDTO::getAccountIdentifier).collect(Collectors.toSet()));
 
     ProjectSubscriptionName projectSubscriptionName = ProjectSubscriptionName.of(gcpProjectId, gcpSubscriptionName);
-    subscriber = Subscriber
-                     .newBuilder(projectSubscriptionName,
-                         new BigQueryUpdateMessageReceiver(bigQueryHelper, bigQueryHelperService,
-                             businessMappingHistoryService, viewsQueryBuilder, accountsInCluster))
-                     .setCredentialsProvider(credentialsProvider)
-                     .build();
+    subscriber =
+        Subscriber
+            .newBuilder(projectSubscriptionName,
+                new BigQueryUpdateMessageReceiver(bigQueryHelper, bigQueryHelperService, businessMappingHistoryService,
+                    viewsQueryBuilder, accountsInCluster, featureFlagService, labelFlattenedService))
+            .setCredentialsProvider(credentialsProvider)
+            .build();
 
     log.info("Starting listening to pub/sub topic: {}; subscription: {}", fullTopicName, gcpSubscriptionName);
     try {

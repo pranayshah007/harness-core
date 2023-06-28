@@ -66,7 +66,7 @@ public class ArtifactUtils {
       + " connectorRef: %s%n";
 
   public String getArtifactKey(ArtifactConfig artifactConfig) {
-    return artifactConfig.isPrimaryArtifact() ? artifactConfig.getIdentifier()
+    return artifactConfig.isPrimaryArtifact() ? PRIMARY_ARTIFACT
                                               : SIDECAR_ARTIFACT + "." + artifactConfig.getIdentifier();
   }
 

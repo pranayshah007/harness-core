@@ -180,7 +180,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
             return;
           }
           String taskId =
-              delegateTaskServiceClassic.saveAndBroadcastDelegateTask(delegateTaskDequeue.getDelegateTask());
+              delegateTaskServiceClassic.saveAndBroadcastDelegateTaskV2(delegateTaskDequeue.getDelegateTask());
           log.info("Queued task {} broadcasting to delegate.", taskId);
         }
       }

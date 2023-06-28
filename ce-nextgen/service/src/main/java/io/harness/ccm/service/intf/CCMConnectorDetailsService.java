@@ -10,10 +10,13 @@ package io.harness.ccm.service.intf;
 import io.harness.ccm.commons.entities.CCMConnectorDetails;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorResponseDTO;
+import io.harness.delegate.beans.connector.CEFeatures;
+import io.harness.delegate.beans.connector.ConnectorType;
 
 import java.util.List;
 
 public interface CCMConnectorDetailsService {
-  List<ConnectorResponseDTO> listNgConnectors(String accountId, ConnectivityStatus status);
+  List<ConnectorResponseDTO> listNgConnectors(String accountId, List<ConnectorType> connectorTypes,
+      List<CEFeatures> ceFeatures, List<ConnectivityStatus> connectivityStatuses);
   CCMConnectorDetails getFirstConnectorDetails(String accountId);
 }

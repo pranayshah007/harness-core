@@ -146,6 +146,7 @@ import io.harness.signup.dto.SignupInviteDTO;
 import io.harness.telemetry.Destination;
 import io.harness.telemetry.TelemetryReporter;
 import io.harness.usermembership.remote.UserMembershipClient;
+import io.harness.utils.UserUtils;
 import io.harness.version.VersionInfoManager;
 
 import software.wings.app.MainConfiguration;
@@ -157,6 +158,7 @@ import software.wings.beans.AccountType;
 import software.wings.beans.Application;
 import software.wings.beans.ApplicationRole;
 import software.wings.beans.Base.BaseKeys;
+import software.wings.beans.CannySsoLoginResponse;
 import software.wings.beans.EmailVerificationToken;
 import software.wings.beans.EmailVerificationToken.EmailVerificationTokenKeys;
 import software.wings.beans.EntityType;
@@ -267,6 +269,8 @@ import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -291,8 +295,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.cache.Cache;
@@ -303,6 +305,7 @@ import javax.validation.executable.ValidateOnExecution;
 import javax.ws.rs.core.UriInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.NameValuePair;
@@ -345,7 +348,6 @@ public class UserServiceImpl implements UserService {
   private static final String SETUP_ACCOUNT_FROM_MARKETPLACE = "Account Setup from Marketplace";
   private static final String NG_AUTH_UI_PATH_PREFIX = "auth/";
   private static final String USER_INVITE = "user_invite";
-  private static final Pattern NAME_PATTERN = Pattern.compile("^[^:<>()=\\/]*$");
   private static final String CD = "CD";
   private static final String CI = "CI";
   private static final String FF = "FF";
@@ -3241,14 +3243,7 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public void validateName(String name) {
-    if (isBlank(name)) {
-      throw new InvalidRequestException("Name cannot be empty", USER);
-    }
-
-    Matcher matcher = NAME_PATTERN.matcher(name);
-    if (!matcher.matches()) {
-      throw new InvalidRequestException("Name is not valid. It should not contain :, <, >, (, ), =, /", USER);
-    }
+    UserUtils.validateUserName(name);
   }
 
   private void deleteUser(User user) {
@@ -3591,6 +3586,52 @@ public class UserServiceImpl implements UserService {
       redirectUrl += "&return_to=" + returnToUrl;
     }
     return ZendeskSsoLoginResponse.builder().redirectUrl(redirectUrl).userId(user.getUuid()).build();
+  }
+
+  @Override
+  public CannySsoLoginResponse generateCannySsoJwt(String returnToUrl, String companyID) {
+    User user = UserThreadLocal.get();
+    String jwtToken = createCannyToken(user);
+
+    String redirectUrl =
+        String.format("%s?companyID=%s&ssoToken=%s", configuration.getPortal().getCannyBaseUrl(), companyID, jwtToken);
+
+    if (StringUtils.isNotEmpty(returnToUrl)) {
+      redirectUrl += "&redirect=" + returnToUrl;
+    }
+    log.info("Canny login: successfully created jwt token and redirect URL for user {}", user.getUuid());
+    return CannySsoLoginResponse.builder().redirectUrl(redirectUrl).userId(user.getUuid()).build();
+  }
+
+  private String createCannyToken(User user) {
+    String jwtCannySecret = configuration.getPortal().getJwtCannySecret();
+
+    if (StringUtils.isEmpty(jwtCannySecret)) {
+      String errorMessage = "Canny secret is either null or empty.";
+      log.error(errorMessage);
+      throw new InvalidRequestException(errorMessage);
+    }
+
+    HashMap<String, Object> userData = new HashMap<>();
+    userData.put(UserKeys.email, user.getEmail());
+    userData.put("id", user.getUuid());
+    userData.put(UserKeys.name, user.getName());
+    userData.put(UserKeys.companyName, user.getCompanyName());
+
+    byte[] jwtCannySecretBytes;
+    try {
+      jwtCannySecretBytes = jwtCannySecret.getBytes("UTF-8");
+    } catch (UnsupportedEncodingException ex) {
+      String errorMessage = "Error while encoding the canny secret to bytes";
+      log.error(errorMessage, ex);
+      throw new InvalidRequestException(errorMessage, ex);
+    }
+
+    return Jwts.builder()
+        .setIssuedAt(new Date())
+        .setClaims(userData)
+        .signWith(SignatureAlgorithm.HS256, jwtCannySecretBytes)
+        .compact();
   }
 
   private Role ensureRolePresent(String roleId) {

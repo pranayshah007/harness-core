@@ -5,7 +5,7 @@
 
 FROM redhat/ubi8-minimal:8.7
 
-COPY --from=adoptopenjdk/openjdk11:jre-11.0.14_9-ubi-minimal /opt/java/openjdk/ /opt/java/openjdk/
+COPY --from=adoptopenjdk/openjdk11:jre-11.0.19_7-ubi-minimal /opt/java/openjdk/ /opt/java/openjdk/
 
 WORKDIR /opt/harness
 

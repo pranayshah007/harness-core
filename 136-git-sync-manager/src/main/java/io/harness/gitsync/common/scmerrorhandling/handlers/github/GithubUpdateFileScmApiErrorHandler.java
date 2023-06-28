@@ -43,6 +43,10 @@ public class GithubUpdateFileScmApiErrorHandler implements ScmApiErrorHandler {
       "Please check if requested filepath<FILEPATH> is a valid one.";
   public static final String UPDATE_FILE_UNPROCESSABLE_ENTITY_ERROR_EXPLANATION =
       "Requested filepath<FILEPATH> doesn't match with expected valid format.";
+  public static final String UPDATE_FAILURE_HINT =
+      ScmErrorHints.INVALID_CREDENTIALS + "\n- " + ScmErrorHints.OAUTH_ACCESS_FAILURE;
+  public static final String UPDATE_FAILURE_EXPLANATION = UPDATE_FILE_FAILED + "\n- "
+      + ScmErrorExplanations.INVALID_CONNECTOR_CREDS + "\n- " + ScmErrorExplanations.OAUTH_ACCESS_DENIED;
 
   @Override
   public void handleError(int statusCode, String errorMessage, ErrorMetadata errorMetadata) throws WingsException {
@@ -50,9 +54,8 @@ public class GithubUpdateFileScmApiErrorHandler implements ScmApiErrorHandler {
       case 401:
       case 403:
         throw NestedExceptionUtils.hintWithExplanationException(
-            ErrorMessageFormatter.formatMessage(ScmErrorHints.INVALID_CREDENTIALS, errorMetadata),
-            ErrorMessageFormatter.formatMessage(
-                UPDATE_FILE_FAILED + ScmErrorExplanations.INVALID_CONNECTOR_CREDS, errorMetadata),
+            ErrorMessageFormatter.formatMessage(UPDATE_FAILURE_HINT, errorMetadata),
+            ErrorMessageFormatter.formatMessage(UPDATE_FAILURE_EXPLANATION, errorMetadata),
             new ScmUnauthorizedException(errorMessage));
       case 404:
         throw NestedExceptionUtils.hintWithExplanationException(

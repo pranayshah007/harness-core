@@ -265,8 +265,15 @@ public class AzureRecommendationServiceImpl implements AzureRecommendationServic
       Response<AzureVmPricingResponseDTO> pricingInfo = azurePricingCall.execute();
       if (null != pricingInfo.body() && null != pricingInfo.body().getItems()) {
         // This API return list of potential prices for the VM, we get average of it
-        price =
-            pricingInfo.body().getItems().stream().mapToDouble(AzureVmItemDTO::getRetailPrice).average().orElse(0.0);
+        price = pricingInfo.body()
+                    .getItems()
+                    .stream()
+                    .filter(azureVmItemDTO
+                        -> !(azureVmItemDTO.getSkuName().contains("Spot")
+                            || azureVmItemDTO.getSkuName().contains("Low Priority")))
+                    .mapToDouble(AzureVmItemDTO::getRetailPrice)
+                    .average()
+                    .orElse(0.0);
         // Multiply with 730.5 since API returns price of 1 hour, and we need price for a month
         price *= 730.5;
       }

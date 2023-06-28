@@ -31,12 +31,14 @@ public class TerraformCloudCliStepConfiguration {
 
   @JsonProperty("spec") TerraformCloudCliExecutionData terraformCloudCliExecutionData;
   @VariableExpression(skipVariableExpression = true) List<TerraformCliOptionFlag> commandFlags;
+  TerraformEncryptOutput encryptOutput;
 
   public TerraformCloudCliStepConfigurationParameters toStepParameters() {
     TerraformCloudCliStepConfigurationParametersBuilder builder =
         TerraformCloudCliStepConfigurationParameters.builder();
     validateParams();
     builder.commandFlags(commandFlags);
+    builder.encryptOutput(encryptOutput);
 
     if (terraformCloudCliExecutionData != null) {
       builder.spec(terraformCloudCliExecutionData.toStepParameters());

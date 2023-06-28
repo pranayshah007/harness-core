@@ -114,7 +114,9 @@ public class FavoritesValidator {
     if (!resourceExist) {
       log.error("The Resource with ID {} and type {}, which is being marked as favorite does not exist in account {}",
           favoriteDTO.getResourceId(), favoriteDTO.getResourceType(), accountIdentifier);
-      throw new InvalidRequestException("The resource does not exist");
+      throw new InvalidRequestException(String.format(
+          "The Resource with ID [%s] and type [%s], which is being marked as favorite does not exist in account [%s]",
+          favoriteDTO.getResourceId(), favoriteDTO.getResourceType(), accountIdentifier));
     }
   }
 }

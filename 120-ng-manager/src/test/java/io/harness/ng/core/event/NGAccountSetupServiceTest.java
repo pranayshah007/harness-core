@@ -11,6 +11,7 @@ import static io.harness.NGConstants.DEFAULT_ORG_IDENTIFIER;
 import static io.harness.NGConstants.DEFAULT_PROJECT_IDENTIFIER;
 import static io.harness.ng.core.invites.mapper.RoleBindingMapper.getManagedAdminRole;
 import static io.harness.rule.OwnerRule.ASHISHSANODIA;
+import static io.harness.rule.OwnerRule.SAHIBA;
 
 import static java.util.Optional.of;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,6 +32,7 @@ import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.ff.FeatureFlagService;
 import io.harness.ng.NextGenConfiguration;
+import io.harness.ng.accesscontrol.migrations.services.AccessControlMigrationService;
 import io.harness.ng.core.AccountOrgProjectValidator;
 import io.harness.ng.core.accountsetting.services.NGAccountSettingService;
 import io.harness.ng.core.api.DefaultUserGroupService;
@@ -73,6 +75,7 @@ public class NGAccountSetupServiceTest extends CategoryTest {
   @Mock private AccessControlAdminClient accessControlAdminClient;
   @Mock private NgUserService ngUserService;
   @Mock private UserClient userClient;
+  @Mock private AccessControlMigrationService accessControlMigrationService;
   @Mock private HarnessSMManager harnessSMManager;
   @Mock private CIDefaultEntityManager ciDefaultEntityManager;
   @Mock private NextGenConfiguration nextGenConfiguration;
@@ -129,9 +132,9 @@ public class NGAccountSetupServiceTest extends CategoryTest {
         .thenReturn(List.of(UserMetadataDTO.builder().build()));
 
     ngAccountSetupService = new NGAccountSetupService(organizationService, accountOrgProjectValidator,
-        accessControlAdminClient, ngUserService, userClient, harnessSMManager, ciDefaultEntityManager,
-        nextGenConfiguration, accountSettingService, projectService, featureFlagService, sampleManifestFileService,
-        defaultUserGroupService);
+        accessControlAdminClient, ngUserService, userClient, accessControlMigrationService, harnessSMManager,
+        ciDefaultEntityManager, nextGenConfiguration, accountSettingService, projectService, featureFlagService,
+        sampleManifestFileService, defaultUserGroupService);
   }
 
   @Test
@@ -199,6 +202,54 @@ public class NGAccountSetupServiceTest extends CategoryTest {
     ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
     verify(ngUserService, times(2)).addUserToScope(captor.capture(), any(), any(), any(), any());
 
+    List<String> users = captor.getAllValues();
+    assertThat(users.size()).isEqualTo(2);
+    assertThat(users.contains(FIRST_ADMIN_USER)).isTrue();
+    assertThat(users.contains(SECOND_ADMIN_USER)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = SAHIBA)
+  @Category(UnitTests.class)
+  public void testCleanUpForNG() {
+    when(featureFlagService.isGlobalEnabled(FeatureName.CREATE_DEFAULT_PROJECT)).thenReturn(false);
+    when(featureFlagService.isNotEnabled(FeatureName.PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG, ACCOUNT_ID))
+        .thenReturn(true);
+    ngAccountSetupService.setupAccountForNG(ACCOUNT_ID);
+    ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+    verify(ngUserService, times(3)).addUserToScope(captor.capture(), any(), any(), any(), any());
+    List<String> users = captor.getAllValues();
+    assertThat(users.size()).isEqualTo(3);
+    ngAccountSetupService.cleanUsersFromAccountForNg(ACCOUNT_ID);
+    verify(ngUserService, times(1)).listUserIds(any());
+    verify(ngUserService, times(1)).listUsersHavingRole(any(), any());
+  }
+
+  @Test
+  @Owner(developers = SAHIBA)
+  @Category(UnitTests.class)
+  public void testSyncWithCG() {
+    when(featureFlagService.isNotEnabled(FeatureName.PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG, ACCOUNT_ID))
+        .thenReturn(true);
+    ngAccountSetupService.setupAccountForNG(ACCOUNT_ID);
+    ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+    verify(ngUserService, times(3)).addUserToScope(captor.capture(), any(), any(), any(), any());
+    List<String> users = captor.getAllValues();
+    assertThat(users.size()).isEqualTo(3);
+    assertThat(users.contains(FIRST_ADMIN_USER)).isTrue();
+    assertThat(users.contains(SECOND_ADMIN_USER)).isTrue();
+    assertThat(users.contains(NON_ADMIN_USER)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = SAHIBA)
+  @Category(UnitTests.class)
+  public void testSyncWithCGAdminOnly() {
+    when(featureFlagService.isNotEnabled(FeatureName.PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG, ACCOUNT_ID))
+        .thenReturn(false);
+    ngAccountSetupService.setupAccountForNG(ACCOUNT_ID);
+    ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+    verify(ngUserService, times(2)).addUserToScope(captor.capture(), any(), any(), any(), any());
     List<String> users = captor.getAllValues();
     assertThat(users.size()).isEqualTo(2);
     assertThat(users.contains(FIRST_ADMIN_USER)).isTrue();

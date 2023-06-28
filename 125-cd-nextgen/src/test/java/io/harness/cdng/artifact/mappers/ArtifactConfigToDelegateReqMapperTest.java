@@ -7,6 +7,7 @@
 
 package io.harness.cdng.artifact.mappers;
 
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
@@ -16,6 +17,7 @@ import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
@@ -78,6 +80,7 @@ import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.s3.S3ArtifactDelegateRequest;
 import io.harness.exception.InvalidArtifactServerException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -101,7 +104,15 @@ import org.mockito.Mock;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   private final String ACCEPT_ALL_REGEX = "\\*";
-  private final String LAST_PUBLISHED_EXPRESSION = "<+lastPublished.tag>";
+  private static final String ALL_REGEX = ".*?";
+  private static final String LAST_PUBLISHED_EXPRESSION = "<+lastPublished.tag>";
+  private static final String TAG = "tag";
+  private static final String CONNECTOR_REF = "connectorRef";
+  private static final ParameterField LAST_PUBLISHED_EXPRESSION_REGEX =
+      ParameterField.createValueFieldWithInputSetValidator(
+          LAST_PUBLISHED_EXPRESSION, new InputSetValidator(InputSetValidatorType.REGEX, TAG), true);
+  private static final ParameterField LAST_PUBLISHED_EXPRESSION_PARAMETER =
+      ParameterField.createValueField(LAST_PUBLISHED_EXPRESSION);
   @Mock DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Mock DelegateMetricsService delegateMetricsService;
   @Mock SecretManagerClientService ngSecretService;
@@ -1158,6 +1169,60 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetBambooDelegateRequestTagAsRegexWithSomeValue() {
+    BambooArtifactConfig bambooArtifactConfig =
+        BambooArtifactConfig.builder()
+            .artifactPaths(ParameterField.createValueField(Collections.singletonList("ARTIFACT")))
+            .planKey(ParameterField.createValueField("PLAN"))
+            .build(LAST_PUBLISHED_EXPRESSION_REGEX)
+            .build();
+    BambooConnectorDTO connectorDTO = BambooConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    BambooArtifactDelegateRequest bambooArtifactDelegateRequest =
+        ArtifactConfigToDelegateReqMapper.getBambooDelegateRequest(
+            bambooArtifactConfig, connectorDTO, encryptedDataDetailList, "");
+
+    assertThat(bambooArtifactDelegateRequest.getBambooConnectorDTO()).isEqualTo(connectorDTO);
+    assertThat(bambooArtifactDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(bambooArtifactDelegateRequest.getArtifactPaths())
+        .isEqualTo(bambooArtifactConfig.getArtifactPaths().fetchFinalValue());
+    assertThat(bambooArtifactDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.BAMBOO);
+    assertThat(bambooArtifactDelegateRequest.getPlanKey()).isEqualTo(bambooArtifactConfig.getPlanKey().getValue());
+    assertThat(bambooArtifactDelegateRequest.getConnectorRef()).isEqualTo("");
+    assertThat(bambooArtifactDelegateRequest.getBuildNumber()).isEqualTo(TAG);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetBambooDelegateRequestTag() {
+    BambooArtifactConfig bambooArtifactConfig =
+        BambooArtifactConfig.builder()
+            .artifactPaths(ParameterField.createValueField(Collections.singletonList("ARTIFACT")))
+            .planKey(ParameterField.createValueField("PLAN"))
+            .build(ParameterField.createValueField(TAG))
+            .build();
+    BambooConnectorDTO connectorDTO = BambooConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    BambooArtifactDelegateRequest bambooArtifactDelegateRequest =
+        ArtifactConfigToDelegateReqMapper.getBambooDelegateRequest(
+            bambooArtifactConfig, connectorDTO, encryptedDataDetailList, "");
+
+    assertThat(bambooArtifactDelegateRequest.getBambooConnectorDTO()).isEqualTo(connectorDTO);
+    assertThat(bambooArtifactDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(bambooArtifactDelegateRequest.getArtifactPaths())
+        .isEqualTo(bambooArtifactConfig.getArtifactPaths().fetchFinalValue());
+    assertThat(bambooArtifactDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.BAMBOO);
+    assertThat(bambooArtifactDelegateRequest.getPlanKey()).isEqualTo(bambooArtifactConfig.getPlanKey().getValue());
+    assertThat(bambooArtifactDelegateRequest.getConnectorRef()).isEqualTo("");
+    assertThat(bambooArtifactDelegateRequest.getBuildNumber()).isEqualTo(TAG);
+  }
+
+  @Test
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
   public void testGetCustomDelegateRequestTagAsRegex() {
@@ -1864,6 +1929,8 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(acrDelegateRequest.getTagRegex()).isEqualTo("stable*");
     assertThat(acrDelegateRequest.getTag()).isEqualTo(LAST_PUBLISHED_EXPRESSION);
   }
+
+  @Test
   @Owner(developers = PRAGYESH)
   @Category(UnitTests.class)
   public void testGetGCStorageDelegateRequest() {
@@ -1878,16 +1945,120 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
 
     GoogleCloudStorageArtifactDelegateRequest googleCloudStorageArtifactDelegateRequest =
         ArtifactConfigToDelegateReqMapper.getGoogleCloudStorageArtifactDelegateRequest(
-            googleCloudStorageArtifactConfig, connectorDTO, encryptedDataDetailList, "");
+            googleCloudStorageArtifactConfig, connectorDTO, encryptedDataDetailList, CONNECTOR_REF);
 
-    assertThat(googleCloudStorageArtifactDelegateRequest.getGcpConnectorDTO()).isEqualTo(connectorDTO);
-    assertThat(googleCloudStorageArtifactDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(googleCloudStorageArtifactDelegateRequest.getGcpConnectorDTO()).isSameAs(connectorDTO);
+    assertThat(googleCloudStorageArtifactDelegateRequest.getEncryptedDataDetails()).isSameAs(encryptedDataDetailList);
     assertThat(googleCloudStorageArtifactDelegateRequest.getArtifactPath())
         .isEqualTo(googleCloudStorageArtifactConfig.getArtifactPath().getValue());
     assertThat(googleCloudStorageArtifactDelegateRequest.getBucket())
         .isEqualTo(googleCloudStorageArtifactConfig.getBucket().getValue());
     assertThat(googleCloudStorageArtifactDelegateRequest.getProject())
         .isEqualTo(googleCloudStorageArtifactConfig.getProject().getValue());
+    assertThat(googleCloudStorageArtifactDelegateRequest.getConnectorRef()).isEqualTo(CONNECTOR_REF);
+    assertThat(googleCloudStorageArtifactDelegateRequest.getSourceType())
+        .isEqualTo(ArtifactSourceType.GOOGLE_CLOUD_STORAGE_ARTIFACT);
+    assertThat(googleCloudStorageArtifactDelegateRequest.getArtifactPathRegex()).isNull();
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetGCStorageDelegateRequestLastPublishedWithRegex() {
+    GoogleCloudStorageArtifactConfig googleCloudStorageArtifactConfig =
+        GoogleCloudStorageArtifactConfig.builder()
+            .project(ParameterField.createValueField("test-project"))
+            .bucket(ParameterField.createValueField("test-bucket"))
+            .artifactPath(LAST_PUBLISHED_EXPRESSION_REGEX)
+            .build();
+    GcpConnectorDTO connectorDTO = GcpConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    GoogleCloudStorageArtifactDelegateRequest googleCloudStorageArtifactDelegateRequest =
+        ArtifactConfigToDelegateReqMapper.getGoogleCloudStorageArtifactDelegateRequest(
+            googleCloudStorageArtifactConfig, connectorDTO, encryptedDataDetailList, CONNECTOR_REF);
+
+    assertThat(googleCloudStorageArtifactDelegateRequest.getGcpConnectorDTO()).isSameAs(connectorDTO);
+    assertThat(googleCloudStorageArtifactDelegateRequest.getEncryptedDataDetails()).isSameAs(encryptedDataDetailList);
+    assertThat(googleCloudStorageArtifactDelegateRequest.getArtifactPath()).isEqualTo("");
+    assertThat(googleCloudStorageArtifactDelegateRequest.getBucket())
+        .isEqualTo(googleCloudStorageArtifactConfig.getBucket().getValue());
+    assertThat(googleCloudStorageArtifactDelegateRequest.getProject())
+        .isEqualTo(googleCloudStorageArtifactConfig.getProject().getValue());
+    assertThat(googleCloudStorageArtifactDelegateRequest.getConnectorRef()).isEqualTo(CONNECTOR_REF);
+    assertThat(googleCloudStorageArtifactDelegateRequest.getSourceType())
+        .isEqualTo(ArtifactSourceType.GOOGLE_CLOUD_STORAGE_ARTIFACT);
+    assertThat(googleCloudStorageArtifactDelegateRequest.getArtifactPathRegex()).isEqualTo(TAG);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetGCStorageDelegateRequestLastPublished() {
+    GoogleCloudStorageArtifactConfig googleCloudStorageArtifactConfig =
+        GoogleCloudStorageArtifactConfig.builder()
+            .project(ParameterField.createValueField("test-project"))
+            .bucket(ParameterField.createValueField("test-bucket"))
+            .artifactPath(LAST_PUBLISHED_EXPRESSION_PARAMETER)
+            .build();
+    GcpConnectorDTO connectorDTO = GcpConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    GoogleCloudStorageArtifactDelegateRequest googleCloudStorageArtifactDelegateRequest =
+        ArtifactConfigToDelegateReqMapper.getGoogleCloudStorageArtifactDelegateRequest(
+            googleCloudStorageArtifactConfig, connectorDTO, encryptedDataDetailList, CONNECTOR_REF);
+
+    assertThat(googleCloudStorageArtifactDelegateRequest.getGcpConnectorDTO()).isSameAs(connectorDTO);
+    assertThat(googleCloudStorageArtifactDelegateRequest.getEncryptedDataDetails()).isSameAs(encryptedDataDetailList);
+    assertThat(googleCloudStorageArtifactDelegateRequest.getArtifactPath()).isEqualTo("");
+    assertThat(googleCloudStorageArtifactDelegateRequest.getBucket())
+        .isEqualTo(googleCloudStorageArtifactConfig.getBucket().getValue());
+    assertThat(googleCloudStorageArtifactDelegateRequest.getProject())
+        .isEqualTo(googleCloudStorageArtifactConfig.getProject().getValue());
+    assertThat(googleCloudStorageArtifactDelegateRequest.getConnectorRef()).isEqualTo(CONNECTOR_REF);
+    assertThat(googleCloudStorageArtifactDelegateRequest.getSourceType())
+        .isEqualTo(ArtifactSourceType.GOOGLE_CLOUD_STORAGE_ARTIFACT);
+    assertThat(googleCloudStorageArtifactDelegateRequest.getArtifactPathRegex()).isEqualTo(ALL_REGEX);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetGCStorageDelegateRequestEmptyProject() {
+    GoogleCloudStorageArtifactConfig googleCloudStorageArtifactConfig =
+        GoogleCloudStorageArtifactConfig.builder()
+            .project(ParameterField.createValueField("test-project"))
+            .bucket(ParameterField.createValueField(""))
+            .artifactPath(LAST_PUBLISHED_EXPRESSION_PARAMETER)
+            .build();
+    GcpConnectorDTO connectorDTO = GcpConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    assertThatThrownBy(()
+                           -> ArtifactConfigToDelegateReqMapper.getGoogleCloudStorageArtifactDelegateRequest(
+                               googleCloudStorageArtifactConfig, connectorDTO, encryptedDataDetailList, CONNECTOR_REF))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Please input bucket name.");
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetGCStorageDelegateRequestEmptyBucket() {
+    GoogleCloudStorageArtifactConfig googleCloudStorageArtifactConfig =
+        GoogleCloudStorageArtifactConfig.builder()
+            .project(ParameterField.createValueField(""))
+            .bucket(ParameterField.createValueField("test-bucket"))
+            .artifactPath(LAST_PUBLISHED_EXPRESSION_PARAMETER)
+            .build();
+    GcpConnectorDTO connectorDTO = GcpConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    assertThatThrownBy(()
+                           -> ArtifactConfigToDelegateReqMapper.getGoogleCloudStorageArtifactDelegateRequest(
+                               googleCloudStorageArtifactConfig, connectorDTO, encryptedDataDetailList, CONNECTOR_REF))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Please input project name.");
   }
 
   @Test
@@ -2009,5 +2180,62 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(s3ArtifactDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
     assertThat(s3ArtifactDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.AMAZONS3);
     assertThat(s3ArtifactDelegateRequest.getFilePathRegex()).isEqualTo("*");
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetS3DelegateRequestWithTagAsRegexGeneric() {
+    ArtifactoryRegistryArtifactConfig artifactConfig =
+        ArtifactoryRegistryArtifactConfig.builder()
+            .repository(ParameterField.createValueField("TEST_REPO"))
+            .repositoryFormat(ParameterField.createValueField(RepositoryFormat.generic.name()))
+            .artifactPath(ParameterField.createValueField(LAST_PUBLISHED_EXPRESSION))
+            .artifactDirectory(ParameterField.createValueField("IMAGE"))
+            .build();
+    ArtifactoryConnectorDTO connectorDTO = ArtifactoryConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    ArtifactoryGenericArtifactDelegateRequest delegateRequest =
+        (ArtifactoryGenericArtifactDelegateRequest) ArtifactConfigToDelegateReqMapper
+            .getArtifactoryArtifactDelegateRequest(artifactConfig, connectorDTO, encryptedDataDetailList, "");
+
+    assertThat(delegateRequest.getArtifactoryConnectorDTO()).isEqualTo(connectorDTO);
+    assertThat(delegateRequest.getRepositoryName()).isEqualTo(artifactConfig.getRepository().getValue());
+    assertThat(delegateRequest.getRepositoryFormat()).isEqualTo(RepositoryFormat.generic.name());
+    assertThat(delegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(delegateRequest.getArtifactPath()).isEqualTo(artifactConfig.getArtifactPath().getValue());
+    assertThat(delegateRequest.getArtifactDirectory()).isEqualTo(artifactConfig.getArtifactDirectory().getValue());
+    assertThat(delegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.ARTIFACTORY_REGISTRY);
+    assertThat(delegateRequest.getConnectorRef()).isEqualTo("");
+    assertThat(delegateRequest.getArtifactPathFilter()).isEqualTo("*");
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetS3DelegateRequestWithTagRegexGeneric() {
+    ArtifactoryRegistryArtifactConfig artifactConfig =
+        ArtifactoryRegistryArtifactConfig.builder()
+            .repository(ParameterField.createValueField("TEST_REPO"))
+            .repositoryFormat(ParameterField.createValueField(RepositoryFormat.generic.name()))
+            .artifactPath(ParameterField.createValueFieldWithInputSetValidator(
+                LAST_PUBLISHED_EXPRESSION, new InputSetValidator(InputSetValidatorType.REGEX, "stable*"), true))
+            .artifactDirectory(ParameterField.createValueField("IMAGE"))
+            .build();
+    ArtifactoryConnectorDTO connectorDTO = ArtifactoryConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    ArtifactoryGenericArtifactDelegateRequest delegateRequest =
+        (ArtifactoryGenericArtifactDelegateRequest) ArtifactConfigToDelegateReqMapper
+            .getArtifactoryArtifactDelegateRequest(artifactConfig, connectorDTO, encryptedDataDetailList, "");
+
+    assertThat(delegateRequest.getArtifactoryConnectorDTO()).isEqualTo(connectorDTO);
+    assertThat(delegateRequest.getRepositoryName()).isEqualTo(artifactConfig.getRepository().getValue());
+    assertThat(delegateRequest.getRepositoryFormat()).isEqualTo(RepositoryFormat.generic.name());
+    assertThat(delegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(delegateRequest.getArtifactPath()).isEqualTo(artifactConfig.getArtifactPath().getValue());
+    assertThat(delegateRequest.getArtifactDirectory()).isEqualTo(artifactConfig.getArtifactDirectory().getValue());
+    assertThat(delegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.ARTIFACTORY_REGISTRY);
+    assertThat(delegateRequest.getConnectorRef()).isEqualTo("");
+    assertThat(delegateRequest.getArtifactPathFilter()).isEqualTo("stable*");
   }
 }
