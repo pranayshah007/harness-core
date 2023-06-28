@@ -1,7 +1,7 @@
 site_name: 'platform-service'
 
 nav:
-  - Home: Readme.md
+  - Home: index.md
 
 plugins:
   - techdocs-core
