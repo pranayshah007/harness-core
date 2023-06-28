@@ -23,11 +23,11 @@ info:
       * [Harness key concepts](https://developer.harness.io/docs/getting-started/learn-harness-key-concepts/)
       * [Authentication](#section/Introduction/Authentication)
       * [Requests and responses](#section/Introduction/Requests-and-Responses)
-      * [Common Parameters](#section/Introduction/Common-Parameters)
+      * [Common Parameters](#section/Introduction/Common-Parameters-Beta)
       * [Status Codes](#section/Introduction/Status-Codes)
       * [Errors](#tag/Error-Response)
-      * [Versioning](#section/Introduction/Versioning)
-      * [Pagination](/#section/Introduction/Pagination)
+      * [Versioning](#section/Introduction/Versioning-Beta)
+      * [Pagination](/#section/Introduction/Pagination-Beta)
 
       The methods you need to integrate with depend on the functionality you want to use. Work with  your Harness Solutions Engineer to determine which methods you need.
 
@@ -40,7 +40,7 @@ info:
     ### Generate an API token
 
     To generate an API token, complete the following steps:
-      1. Go to the [Harness Platform](app.harness.io).
+      1. Go to the [Harness Platform](https://app.harness.io/).
       2. On the left-hand navigation, click **My Profile**.
       3. Click **+API Key**, enter a name for your key and then click **Save**.
       4. Within the API Key tile, click **+Token**.
@@ -56,7 +56,7 @@ info:
 
       The structure for each request and response is outlined in the API documentation. We have examples in JSON and YAML for every request and response. You can use our online editor to test the examples.
 
-    ## Common Parameters
+    ## Common Parameters [Beta]
 
     | Field Name | Type    | Default | Description    |
     |------------|---------|---------|----------------|
@@ -94,7 +94,7 @@ info:
     
       To view our error response structures, go [here](#tag/Error-Response).
 
-    ## Versioning
+    ## Versioning [Beta]
 
     ### Harness Version
       The current version of our Beta APIs is yet to be announced. The version number will use the date-header format and will be valid only for our Beta APIs.
@@ -104,7 +104,7 @@ info:
 
       The version number represents the core API and does not change frequently. The version number changes only if there is a significant departure from the basic underpinnings of the existing API. For example, when Harness performs a system-wide refactoring of core concepts or resources.
 
-    ## Pagination
+    ## Pagination [Beta]
 
     We use pagination to place limits on the number of responses associated with list endpoints. Pagination is achieved by the use of limit query parameters. The limit defaults to 30. Its maximum value is 100.
 

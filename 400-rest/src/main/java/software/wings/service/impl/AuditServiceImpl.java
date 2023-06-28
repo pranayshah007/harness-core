@@ -181,7 +181,7 @@ public class AuditServiceImpl implements AuditService {
   @Override
   @RestrictedApi(AuditTrailFeature.class)
   public PageResponse<AuditHeader> list(PageRequest<AuditHeader> req) {
-    return wingsPersistence.querySecondary(AuditHeader.class, req);
+    return wingsPersistence.queryAnalytics(AuditHeader.class, req);
   }
 
   @Override
@@ -652,7 +652,7 @@ public class AuditServiceImpl implements AuditService {
 
     PageRequest<AuditHeader> pageRequest =
         auditPreferenceHelper.generatePageRequestFromAuditPreference(auditPreference, offset, limit);
-    return wingsPersistence.querySecondary(AuditHeader.class, pageRequest);
+    return wingsPersistence.queryAnalytics(AuditHeader.class, pageRequest);
   }
 
   @VisibleForTesting

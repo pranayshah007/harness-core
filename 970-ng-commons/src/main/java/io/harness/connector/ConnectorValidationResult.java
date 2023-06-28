@@ -24,4 +24,5 @@ public class ConnectorValidationResult {
   @Schema(description = ConnectorConstants.ERROR_SUMMARY) String errorSummary;
   @Schema(description = ConnectorConstants.TESTED_AT) long testedAt;
   @Schema(description = ConnectorConstants.DELEGATE_ID) String delegateId;
+  @Schema(description = ConnectorConstants.DELEGATE_TASK_ID) String taskId;
 }

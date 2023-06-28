@@ -62,6 +62,12 @@ pmsSdkOrchestrationEventPoolConfig:
   idleTime: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME:-120}
   timeUnit: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
+podCleanUpThreadPoolConfig:
+  corePoolSize: ${POD_CLEANUP_POOL_CORE_SIZE:-5}
+  maxPoolSize: ${{POD_CLEANUP_POOL_MAX_SIZE:-10}
+  idleTime: ${{POD_CLEANUP_POOL_IDLE_TIME:-10}
+  timeUnit: ${{POD_CLEANUP_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
+
 mongo:
   uri: mongodb://localhost:27017/pms-harness
   connectTimeout: 30000
@@ -307,8 +313,8 @@ orchestrationStepConfig:
     defaultInternalImageConnector: 'account.harnessImage'
     pvcDefaultStorageSize: 25600
     delegateServiceEndpointVariableValue: "delegate-service:8080"
-    addonImage: harness/ci-addon:1.14.19
-    liteEngineImage: harness/ci-lite-engine:1.14.22
+    addonImage: harness/ci-addon:1.16.8
+    liteEngineImage: harness/ci-lite-engine:1.16.8
     isLocal: false
     logStreamingContainerStepBaseUrl: ${LOG_STREAMING_CONTAINER_STEP_BASE_URL:-http://localhost:8079}
     pluginConfig:
@@ -316,6 +322,14 @@ orchestrationStepConfig:
         image: harness/ssca-plugin:latest
         entrypoint:
           - /bin/ssca-plugin
+      sscaEnforcementConfig:
+        image: harness/ssca-plugin:latest
+        entrypoint:
+          - /bin/ssca-plugin
+    #Todo: Move to config Management Service
+    moduleToSupportedSteps:
+      cd: [ "DownloadManifests", "AwsSamBuild", "AwsSamDeploy", "ServerlessAwsLambdaPrepareRollbackV2", "ServerlessAwsLambdaDeployV2" ]
+      ci: [ "Background", "background", "GitClone", "Run", "Plugin", "Action"]
 
 
 shouldDeployWithGitSync: true
@@ -351,7 +365,7 @@ redisLockConfig:
   timeout: 6000
   subscriptionsPerConnection: 5
 
-distributedLockImplementation: MONGO
+distributedLockImplementation: REDIS
 
 enableDashboardTimescale: false
 
@@ -609,5 +623,13 @@ triggerAuthenticationPoolConfig:
   idleTime: ${TRIGGER_AUTHENTICATION_EXECUTOR_POOL_IDLE_TIME:-30}
   timeUnit: ${TRIGGER_AUTHENTICATION_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
+pipelineSetupUsageCreationExecutorServiceConfig:
+  corePoolSize: ${PIPELINE_SETUP_USAGE_CREATION_EXECUTOR_POOL_CORE_SIZE:-1}
+  maxPoolSize: ${PIPELINE_SETUP_USAGE_CREATION_EXECUTOR_POOL_MAX_SIZE:-10}
+  idleTime: ${PIPELINE_SETUP_USAGE_CREATION_EXECUTOR_POOL_IDLE_TIME:-30}
+  timeUnit: ${PIPELINE_SETUP_USAGE_CREATION_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
+
 expandedJsonConfig:
   lockTimeOutInMinutes: 2
+
+staticSchemaFileURL: ${STATIC_SCHEMA_FILE_URL:-"https://raw.githubusercontent.com/harness/harness-schema/main/%s/%s"}

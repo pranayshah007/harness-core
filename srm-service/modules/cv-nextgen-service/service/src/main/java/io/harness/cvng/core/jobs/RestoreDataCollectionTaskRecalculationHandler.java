@@ -9,6 +9,7 @@ package io.harness.cvng.core.jobs;
 
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
 import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
 import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
@@ -43,7 +44,7 @@ public class RestoreDataCollectionTaskRecalculationHandler
       orchestrationService.queueAnalysis(AnalysisInput.builder()
                                              .verificationTaskId(verificationTaskId)
                                              .startTime(Instant.ofEpochSecond(entity.getStartTime()))
-                                             .endTime(Instant.now())
+                                             .endTime(DateTimeUtils.roundDownTo5MinBoundary(Instant.now()))
                                              .isSLORestoreTask(true)
                                              .build());
     }

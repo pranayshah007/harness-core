@@ -65,7 +65,7 @@ public class ServerlessStepUtils extends CDStepHelper {
     return serverlessEntityHelper.getConnectorInfoDTO(connectorId, ngAccess);
   }
 
-  private List<String> getFolderPathsForManifest(GitStoreConfig gitStoreConfig) {
+  public List<String> getFolderPathsForManifest(GitStoreConfig gitStoreConfig) {
     List<String> folderPaths = new ArrayList<>();
 
     List<String> paths = getParameterFieldValue(gitStoreConfig.getPaths());

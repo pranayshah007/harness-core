@@ -22,6 +22,7 @@ import io.harness.execution.PlanExecutionMetadata;
 import io.harness.logging.AutoLogContext;
 import io.harness.notification.PipelineEventType;
 import io.harness.notification.PipelineEventTypeConstants;
+import io.harness.notification.TriggerExecutionInfo;
 import io.harness.notification.bean.NotificationChannelWrapper;
 import io.harness.notification.bean.NotificationRules;
 import io.harness.notification.bean.PipelineEvent;
@@ -38,12 +39,16 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.helpers.PipelineExpressionHelper;
+import io.harness.pms.notification.WebhookNotificationEvent.WebhookNotificationEventBuilder;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.yaml.BasicPipeline;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
+import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.sanitizer.HtmlInputSanitizer;
+import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -67,6 +72,7 @@ public class NotificationHelper {
   @Inject PMSPipelineService pmsPipelineService;
   @Inject PipelineExpressionHelper pipelineExpressionHelper;
   @Inject HtmlInputSanitizer userNameSanitizer;
+  @Inject PMSExecutionService pmsExecutionService;
 
   public Optional<PipelineEventType> getEventTypeForStage(NodeExecution nodeExecution) {
     if (!OrchestrationUtils.isStageNode(nodeExecution)) {
@@ -260,17 +266,36 @@ public class NotificationHelper {
       NodeExecution nodeExecution, Long updatedAt, String orgIdentifier, String projectIdentifier) {
     Map<String, String> templateData = new HashMap<>();
     PlanExecution planExecution = planExecutionService.getPlanExecutionMetadata(ambiance.getPlanExecutionId());
+    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
+        pmsExecutionService.getPipelineExecutionSummaryEntity(
+            AmbianceUtils.getAccountId(ambiance), orgIdentifier, projectIdentifier, ambiance.getPlanExecutionId());
     String pipelineId = ambiance.getMetadata().getPipelineIdentifier();
+
+    WebhookNotificationEventBuilder webhookNotificationEvent =
+        WebhookNotificationEvent.builder()
+            .triggeredBy(getTriggerExecutionInfo(pipelineExecutionSummaryEntity))
+            .moduleInfo(ModuleInfo.getModuleInfo(ambiance, pipelineExecutionSummaryEntity))
+            .accountIdentifier(AmbianceUtils.getAccountId(ambiance))
+            .orgIdentifier(orgIdentifier)
+            .projectIdentifier(projectIdentifier)
+            .pipelineIdentifier(pipelineId)
+            .planExecutionId(ambiance.getPlanExecutionId())
+            .eventType(pipelineEventType);
+
     String userName;
     Long startTs;
     Long endTs;
     String startDate;
     String endDate;
+    String nodeIdentifier = "";
     String stepIdentifier = "";
+    String stageIdentifier = "";
     String stepName = "";
     String imageStatus = PipelineNotificationUtils.getStatusForImage(planExecution.getStatus());
     String themeColor = PipelineNotificationUtils.getThemeColor(planExecution.getStatus());
     String nodeStatus = PipelineNotificationUtils.getNodeStatus(planExecution.getStatus());
+    String executionUrl = generateUrl(ambiance);
+    String pipelineUrl = generatePipelineUrl(ambiance);
     if (!pipelineEventType.getLevel().equals("Pipeline")) {
       imageStatus = PipelineNotificationUtils.getStatusForImage(nodeExecution.getStatus());
       themeColor = PipelineNotificationUtils.getThemeColor(nodeExecution.getStatus());
@@ -280,7 +305,16 @@ public class NotificationHelper {
       endTs = updatedAt / 1000;
       startDate = new Date(startTs * 1000).toString();
       endDate = new Date(endTs * 1000).toString();
-      stepIdentifier = AmbianceUtils.obtainStepIdentifier(nodeExecution.getAmbiance());
+      nodeIdentifier = AmbianceUtils.obtainStepIdentifier(nodeExecution.getAmbiance());
+      if (pipelineEventType.isStepLevelEvent()) {
+        stepIdentifier = nodeIdentifier;
+        Optional<Level> stageOptional = AmbianceUtils.getStageLevelFromAmbiance(ambiance);
+        if (stageOptional.isPresent()) {
+          stageIdentifier = stageOptional.get().getIdentifier();
+        }
+      } else {
+        stageIdentifier = nodeIdentifier;
+      }
       stepName = nodeExecution.getName();
     } else {
       userName = ambiance.getMetadata().getTriggerInfo().getTriggeredBy().getIdentifier();
@@ -298,7 +332,7 @@ public class NotificationHelper {
     templateData.put("PROJECT_IDENTIFIER", projectIdentifier);
     templateData.put("EVENT_TYPE", pipelineEventType.getDisplayName());
     templateData.put("PIPELINE", pipelineId);
-    templateData.put("PIPELINE_STEP", stepIdentifier);
+    templateData.put("PIPELINE_STEP", nodeIdentifier);
     templateData.put("PIPELINE_STEP_NAME", stepName);
     templateData.put("START_TS_SECS", String.valueOf(startTs));
     templateData.put("END_TS_SECS", String.valueOf(endTs));
@@ -306,12 +340,29 @@ public class NotificationHelper {
     templateData.put("END_DATE", endDate);
     templateData.put("DURATION_READABLE", ApprovalNotificationHandlerImpl.formatDuration((endTs - startTs) * 1000));
     templateData.put("DURATION", String.valueOf(endTs - startTs));
-    templateData.put("URL", generateUrl(ambiance));
-    templateData.put("PIPELINE_URL", generatePipelineUrl(ambiance));
+    templateData.put("URL", executionUrl);
+    templateData.put("PIPELINE_URL", pipelineUrl);
     templateData.put("OUTER_DIV", PipelineNotificationConstants.OUTER_DIV);
     templateData.put("IMAGE_STATUS", imageStatus);
     templateData.put("COLOR", themeColor);
     templateData.put("NODE_STATUS", nodeStatus);
+    webhookNotificationEvent.startTime(startDate);
+    webhookNotificationEvent.startTs(startTs);
+
+    webhookNotificationEvent.nodeStatus(nodeStatus);
+    webhookNotificationEvent.pipelineUrl(pipelineUrl);
+    webhookNotificationEvent.executionUrl(executionUrl);
+    if (!EmptyPredicate.isEmpty(endDate) && !PipelineEventType.startEvents.contains(pipelineEventType)) {
+      webhookNotificationEvent.endTime(endDate);
+      webhookNotificationEvent.endTs(endTs);
+    }
+    if (EmptyPredicate.isNotEmpty(stepIdentifier)) {
+      webhookNotificationEvent.stepIdentifier(stepIdentifier);
+    }
+    if (EmptyPredicate.isNotEmpty(stageIdentifier)) {
+      webhookNotificationEvent.stageIdentifier(stageIdentifier);
+    }
+    templateData.put("WEBHOOK_EVENT_DATA", JsonPipelineUtils.getJsonString(webhookNotificationEvent.build()));
     return templateData;
   }
 
@@ -329,5 +380,13 @@ public class NotificationHelper {
       }
     }
     return identifier;
+  }
+
+  private TriggerExecutionInfo getTriggerExecutionInfo(PipelineExecutionSummaryEntity summaryEntity) {
+    return TriggerExecutionInfo.builder()
+        .triggerType(summaryEntity.getExecutionTriggerInfo().getTriggerType().toString())
+        .name(summaryEntity.getExecutionTriggerInfo().getTriggeredBy().getIdentifier())
+        .email(summaryEntity.getExecutionTriggerInfo().getTriggeredBy().getExtraInfoMap().get("email"))
+        .build();
   }
 }

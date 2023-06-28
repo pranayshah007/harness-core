@@ -50,6 +50,7 @@ import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.execution.ExecutionSource.Type;
 import io.harness.beans.execution.ManualExecutionSource;
 import io.harness.beans.execution.PRWebhookEvent;
+import io.harness.beans.execution.ReleaseWebhookEvent;
 import io.harness.beans.execution.Repository;
 import io.harness.beans.execution.WebhookBaseAttributes;
 import io.harness.beans.execution.WebhookEvent;
@@ -100,6 +101,13 @@ public class BuildEnvironmentUtils {
         setBitbucketCloudCommitRef(prWebhookEvent, envVarMap);
 
         envVarMap.put(DRONE_BUILD_EVENT, "pull_request");
+      }
+      if (webhookExecutionSource.getWebhookEvent().getType() == WebhookEvent.Type.RELEASE) {
+        ReleaseWebhookEvent releaseWebhookEvent = (ReleaseWebhookEvent) webhookExecutionSource.getWebhookEvent();
+        envVarMap.putAll(getBaseEnvVars(releaseWebhookEvent.getBaseAttributes()));
+        envVarMap.putAll(getBuildRepoEnvvars(releaseWebhookEvent.getRepository()));
+        envVarMap.put(DRONE_TAG, releaseWebhookEvent.getReleaseTag());
+        envVarMap.put(DRONE_BUILD_EVENT, "release");
       }
     } else if (ciExecutionArgs.getExecutionSource().getType() == ExecutionSource.Type.MANUAL) {
       ManualExecutionSource manualExecutionSource = (ManualExecutionSource) ciExecutionArgs.getExecutionSource();

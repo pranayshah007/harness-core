@@ -16,7 +16,6 @@ import io.harness.connector.ConnectorValidationResult;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.nexus.NexusTaskParams;
-import io.harness.delegate.beans.nexus.NexusTaskResponse;
 import io.harness.delegate.task.TaskParameters;
 
 import com.google.inject.Singleton;
@@ -44,8 +43,8 @@ public class NexusConnectorValidator extends AbstractConnectorValidator {
   @Override
   public ConnectorValidationResult validate(ConnectorConfigDTO connectorDTO, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String identifier) {
-    NexusTaskResponse responseData = (NexusTaskResponse) super.validateConnector(
-        connectorDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    var responseData =
+        super.validateConnector(connectorDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     return responseData.getConnectorValidationResult();
   }
 

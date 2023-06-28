@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -35,8 +36,10 @@ import io.harness.errorhandling.NGErrorHelper;
 import io.harness.exception.ApprovalStepNGException;
 import io.harness.exception.HarnessCustomApprovalException;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogLevel;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.yaml.ParameterField;
@@ -63,6 +66,9 @@ import io.harness.steps.shellscript.ShellType;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.yaml.core.timeout.Timeout;
 
+import software.wings.beans.LogColor;
+import software.wings.beans.LogHelper;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
@@ -76,6 +82,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
@@ -139,7 +146,14 @@ public class CustomApprovalCallbackTest extends CategoryTest {
     instance.setAmbiance(ambiance);
     instance.setDeadline(0);
     when(approvalInstanceService.get(eq(APPROVAL_INSTANCE_ID))).thenReturn(instance);
-    customApprovalCallback.push(null);
+    try (MockedConstruction<NGLogCallback> mocked = mockConstruction(NGLogCallback.class)) {
+      customApprovalCallback.push(null);
+      NGLogCallback logCallback = mocked.constructed().get(0);
+      verify(logCallback)
+          .saveExecutionLog(LogHelper.color("Approval instance has expired", LogColor.Red), LogLevel.INFO,
+              CommandExecutionStatus.FAILURE);
+    }
+
     verify(approvalInstanceService).finalizeStatus(anyString(), eq(ApprovalStatus.EXPIRED), nullable(TicketNG.class));
     verify(approvalInstanceService).resetNextIterations(eq(APPROVAL_INSTANCE_ID), any());
     verify(customApprovalInstanceHandler).wakeup();

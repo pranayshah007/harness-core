@@ -20,7 +20,8 @@ public class SyftSbomOrchestration implements SbomOrchestrationSpec {
   SyftOrchestrationFormat format;
 
   public enum SyftOrchestrationFormat {
-    @JsonProperty(SbomToolConstants.SPDX_JSON) SPDX_JSON(SbomToolConstants.SPDX_JSON);
+    @JsonProperty(SbomToolConstants.SPDX_JSON) SPDX_JSON(SbomToolConstants.SPDX_JSON),
+    @JsonProperty(SbomToolConstants.CYCLONEDX_JSON) CYCLONEDX_JSON(SbomToolConstants.CYCLONEDX_JSON);
 
     private String name;
 

@@ -1,7 +1,7 @@
 environmentInputs:
-  identifier: "prod"
-  type: "Production"
+  identifier: prod
+  type: Production
   variables:
-  - name: "rtvar1"
-    type: "String"
-    value: "<+input>"
+    - name: rtvar1
+      type: String
+      value: <+input>

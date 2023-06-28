@@ -307,6 +307,7 @@ Resources:
                   - s3:List*
                   - cloudwatch:GetMetricStatistics
                   - tag:GetResources
+                  - account:ListRegions
                 Resource: "*"
       Roles:
         - !Ref HarnessCloudFormationRole

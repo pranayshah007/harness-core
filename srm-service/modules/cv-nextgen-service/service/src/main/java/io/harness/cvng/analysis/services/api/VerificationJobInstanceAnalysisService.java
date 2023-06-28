@@ -10,6 +10,7 @@ package io.harness.cvng.analysis.services.api;
 import io.harness.cvng.analysis.beans.CanaryBlueGreenAdditionalInfo;
 import io.harness.cvng.analysis.beans.Risk;
 import io.harness.cvng.core.beans.LoadTestAdditionalInfo;
+import io.harness.cvng.core.beans.SimpleVerificationAdditionalInfo;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 
@@ -22,6 +23,9 @@ public interface VerificationJobInstanceAnalysisService {
       String accountId, VerificationJobInstance verificationJobInstance);
 
   LoadTestAdditionalInfo getLoadTestAdditionalInfo(String accountId, VerificationJobInstance verificationJobInstance);
+
+  SimpleVerificationAdditionalInfo getSimpleVerificationAdditionalInfo(
+      String accountId, VerificationJobInstance verificationJobInstance);
 
   void addDemoAnalysisData(
       String verificationTaskId, CVConfig cvConfig, VerificationJobInstance verificationJobInstance);

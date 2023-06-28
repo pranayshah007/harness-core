@@ -16,6 +16,7 @@ import static io.serializer.HObjectMapper.configureObjectMapperForNG;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.InvalidYamlException;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.fqn.FQNNode;
@@ -35,11 +36,13 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import io.serializer.jackson.EdgeCaseRegexModule;
 import io.serializer.jackson.NGHarnessJacksonModule;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -69,7 +72,13 @@ public class YamlUtils {
       configureObjectMapperForNG(new ObjectMapper(new YAMLFactory()));
 
   static {
-    mapper = new ObjectMapper(new YAMLFactory());
+    mapper = new ObjectMapper(new YAMLFactory()
+                                  .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
+                                  .enable(YAMLGenerator.Feature.INDENT_ARRAYS_WITH_INDICATOR)
+                                  .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
+                                  .enable(YAMLGenerator.Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS));
+    mapper.registerModule(new EdgeCaseRegexModule());
+    mapper.configure(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY, true);
     mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
     mapper.disable(DeserializationFeature.FAIL_ON_MISSING_EXTERNAL_TYPE_ID_PROPERTY);
     mapper.setSubtypeResolver(AnnotationAwareJsonSubtypeResolver.newInstance(mapper.getSubtypeResolver()));
@@ -105,7 +114,7 @@ public class YamlUtils {
     return mapper.readValue(yaml, valueTypeRef);
   }
 
-  public String write(Object object) {
+  public String writeYamlString(Object object) {
     try {
       return mapper.writeValueAsString(object);
     } catch (JsonProcessingException e) {
@@ -113,11 +122,11 @@ public class YamlUtils {
     }
   }
 
-  public String writeYamlString(Object object) {
+  public JsonNode replaceYamlInJsonNode(JsonNode jsonNode, String yaml) {
     try {
-      return mapper.writeValueAsString(object).replace("---\n", "");
+      return mapper.readerForUpdating(jsonNode).readValue(yaml);
     } catch (JsonProcessingException e) {
-      throw new InvalidRequestException("Couldn't convert object to Yaml", e);
+      throw new InvalidRequestException("Couldn't replace yaml in jsonNode", e);
     }
   }
 
@@ -125,26 +134,12 @@ public class YamlUtils {
     return readTreeInternal(content, mapper);
   }
 
-  // This is added to prevent duplicate fields in the yaml. Without this, through api duplicate fields were allowed to
-  // save. The below yaml is invalid and should not be allowed to save.
-  /*
-  pipeline:
-    name: pipeline
-    orgIdentifier: org
-    projectIdentifier: project
-    orgIdentifier: org
-   */
-  public YamlField readTree(String content, boolean checkDuplicate) throws IOException {
-    ObjectMapper mapperWithDuplicate = new ObjectMapper(new YAMLFactory());
-    mapperWithDuplicate.configure(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY, checkDuplicate);
-    return readTreeInternal(content, mapperWithDuplicate);
-  }
-
-  public YamlField tryReadTree(String content) {
+  public YamlField readYamlTree(String content) {
     try {
       return readTreeInternal(content, mapper);
-    } catch (Exception ex) {
-      throw new InvalidRequestException("Invalid yaml", ex);
+    } catch (IOException ex) {
+      throw new InvalidYamlException(
+          "Yaml could not be converted to jsonNode. Please check if the yaml is correct.", ex);
     }
   }
 

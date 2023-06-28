@@ -13,7 +13,8 @@
     "spec": {
       "featuresEnabled": [
         "OPTIMIZATION",
-        "BILLING"
+        "BILLING",
+        "GOVERNANCE"
       ],
       "tenantId": "tenantId",
       "subscriptionId": "subscriptionId",

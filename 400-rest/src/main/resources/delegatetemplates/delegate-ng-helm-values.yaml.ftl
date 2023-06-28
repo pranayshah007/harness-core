@@ -22,6 +22,7 @@ accountId: ${accountId}
 delegateToken: ${delegateToken}
 
 delegateName: ${delegateName}
+deployMode: ${deployMode}
 delegateDockerImage: ${delegateDockerImage}
 managerEndpoint: ${managerHostAndPort}
 

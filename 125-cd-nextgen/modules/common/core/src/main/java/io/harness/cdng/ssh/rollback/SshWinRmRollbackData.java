@@ -26,4 +26,5 @@ public class SshWinRmRollbackData {
   @Nullable FileDelegateConfig fileDelegateConfig;
   Map<String, String> envVariables;
   List<String> outVariables;
+  List<String> secretOutVariables;
 }

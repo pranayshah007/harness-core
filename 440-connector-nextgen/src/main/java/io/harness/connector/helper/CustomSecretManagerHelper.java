@@ -100,7 +100,7 @@ public class CustomSecretManagerHelper {
     ((CustomSecretManagerConnectorDTO) connectorDTO.getConnectorInfo().getConnectorConfig())
         .getTemplate()
         .setTemplateInputs(customNGSecretManagerConfigDTO.getTemplate().getTemplateInputs());
-    String yaml = YamlUtils.write(connectorDTO);
+    String yaml = YamlUtils.writeYamlString(connectorDTO);
     return prepareEncryptedDataParamsSet(customNGSecretManagerConfigDTO, yaml);
   }
 

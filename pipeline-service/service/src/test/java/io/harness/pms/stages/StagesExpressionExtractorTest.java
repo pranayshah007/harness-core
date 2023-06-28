@@ -49,23 +49,23 @@ public class StagesExpressionExtractorTest extends CategoryTest {
     String pipelineYamlWithExpressions = "pipeline:\n"
         + "  stages:\n"
         + "  - stage:\n"
-        + "      identifier: \"s1\"\n"
-        + "      description: \"desc\"\n"
-        + "      name: \"s one\"\n"
+        + "      identifier: s1\n"
+        + "      description: desc\n"
+        + "      name: s one\n"
         + "  - stage:\n"
-        + "      identifier: \"s2\"\n"
-        + "      description: \"the description is <+pipeline.stages.s1.description>\"\n"
-        + "      name: \"<+pipeline.stages.s1.name>\"\n";
+        + "      identifier: s2\n"
+        + "      description: the description is <+pipeline.stages.s1.description>\n"
+        + "      name: <+pipeline.stages.s1.name>\n";
     String pipelineYaml = "pipeline:\n"
         + "  stages:\n"
         + "  - stage:\n"
-        + "      identifier: \"s1\"\n"
-        + "      description: \"desc\"\n"
-        + "      name: \"s one\"\n"
+        + "      identifier: s1\n"
+        + "      description: desc\n"
+        + "      name: s one\n"
         + "  - stage:\n"
-        + "      identifier: \"s2\"\n"
-        + "      description: \"the description is desc value\"\n"
-        + "      name: \"name value\"\n";
+        + "      identifier: s2\n"
+        + "      description: the description is desc value\n"
+        + "      name: name value\n";
     String res1 = StagesExpressionExtractor.replaceExpressions(pipelineYamlWithExpressions, null);
     assertThat(res1).isEqualTo(pipelineYamlWithExpressions);
 
@@ -272,10 +272,10 @@ public class StagesExpressionExtractorTest extends CategoryTest {
 
   private String getStage(String identifier, String name, String type, String field) {
     return "stage:\n"
-        + "  identifier: \"" + identifier + "\"\n"
-        + "  name: \"" + name + "\"\n"
-        + "  type: \"" + type + "\"\n"
-        + "  field: \"" + field + "\"\n";
+        + "  identifier: " + identifier + "\n"
+        + "  name: " + name + "\n"
+        + "  type: " + type + "\n"
+        + "  field: " + field + "\n";
   }
 
   @Test

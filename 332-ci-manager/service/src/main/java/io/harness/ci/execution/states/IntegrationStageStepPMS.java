@@ -11,6 +11,7 @@ import static io.harness.authorization.AuthorizationServiceHeader.CI_MANAGER;
 import static io.harness.beans.FeatureName.CODE_ENABLED;
 import static io.harness.beans.steps.outcome.CIOutcomeNames.INTEGRATION_STAGE_OUTCOME;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.STAGE_EXECUTION;
+import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.UNIQUE_STEP_IDENTIFIERS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildResponse;
@@ -29,6 +30,7 @@ import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.K8PodDetails;
 import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.beans.sweepingoutputs.StageExecutionSweepingOutput;
+import io.harness.beans.sweepingoutputs.UniqueStepIdentifiersSweepingOutput;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.ff.CIFeatureFlagService;
@@ -163,9 +165,20 @@ public class IntegrationStageStepPMS implements ChildExecutable<StageElementPara
 
     IntegrationStageStepParametersPMS integrationStageStepParametersPMS =
         (IntegrationStageStepParametersPMS) stepParameters.getSpecConfig();
-    StepResponseBuilder stepResponseBuilder = createStepResponseFromChildResponse(responseDataMap).toBuilder();
+    // For running executions initialise would have already happened so sweeping output won't be present.
+    // Keeping it as a backup.
     List<String> stepIdentifiers = integrationStageStepParametersPMS.getStepIdentifiers();
-    if (isNotEmpty(stepIdentifiers)) {
+
+    StepResponseBuilder stepResponseBuilder = createStepResponseFromChildResponse(responseDataMap).toBuilder();
+    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(UNIQUE_STEP_IDENTIFIERS));
+    if (optionalSweepingOutput.isFound() || isNotEmpty(stepIdentifiers)) {
+      // if sweeping output is found then use step identifiers from it
+      if (optionalSweepingOutput.isFound()) {
+        UniqueStepIdentifiersSweepingOutput uniqueStepIdentifiersSweepingOutput =
+            (UniqueStepIdentifiersSweepingOutput) optionalSweepingOutput.getOutput();
+        stepIdentifiers = uniqueStepIdentifiersSweepingOutput.getUniqueStepIdentifiers();
+      }
       List<Outcome> outcomes = stepIdentifiers.stream()
                                    .map(stepIdentifier
                                        -> outcomeService.resolveOptional(

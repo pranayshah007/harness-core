@@ -1,5 +1,5 @@
 inputs:
-  identifier: "Infra1"
-  type: "KubernetesDirect"
+  identifier: Infra1
+  type: KubernetesDirect
   spec:
-    namespace: "<+input>"
+    namespace: <+input>

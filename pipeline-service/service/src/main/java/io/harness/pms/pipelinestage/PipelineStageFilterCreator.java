@@ -89,7 +89,7 @@ public class PipelineStageFilterCreator extends GenericStageFilterJsonCreatorV2<
 
     Optional<PipelineEntity> childPipelineEntity =
         pmsPipelineService.getPipeline(setupMetadata.getAccountId(), pipelineStageConfig.getOrg(),
-            pipelineStageConfig.getProject(), pipelineStageConfig.getPipeline(), false, false);
+            pipelineStageConfig.getProject(), pipelineStageConfig.getPipeline(), false, false, false, true);
 
     if (!childPipelineEntity.isPresent()) {
       throw new InvalidRequestException(

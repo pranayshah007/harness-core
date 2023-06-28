@@ -763,7 +763,8 @@ public class K8sRollingRollbackBaseHandler {
   @VisibleForTesting
   ProcessResult runK8sExecutable(K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback logCallback,
       RolloutUndoCommand rolloutUndoCommand) throws Exception {
-    return K8sTaskHelperBase.executeCommand(rolloutUndoCommand, k8sDelegateTaskParams, logCallback).getProcessResult();
+    return K8sTaskHelperBase.executeCommand(rolloutUndoCommand, k8sDelegateTaskParams, logCallback, ERROR)
+        .getProcessResult();
   }
 
   public ResourceRecreationStatus recreatePrunedResources(K8sRollingRollbackHandlerConfig rollbackHandlerConfig,

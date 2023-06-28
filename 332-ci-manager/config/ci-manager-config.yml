@@ -120,6 +120,7 @@ sscaServiceConfig:
 
 stoServiceConfig:
   baseUrl: http://localhost:4000
+  internalUrl: ""
   globalToken: "551715ea-ca71-11ec-9d64-0242ac120002"
 
 iacmServiceConfig:
@@ -178,8 +179,8 @@ ciExecutionServiceConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.16.14
-  liteEngineImage: harness/ci-lite-engine:1.16.14
+  addonImage: harness/ci-addon:1.16.19
+  liteEngineImage: harness/ci-lite-engine:1.16.19
   isLocal: false
   remoteDebugTimeout: 3600
   cacheIntelligenceConfig:
@@ -242,6 +243,12 @@ ciExecutionServiceConfig:
           - /bin/sto_plugin
           - "--run-strategy"
           - single-container
+      - product: coverity_.*
+        image: harness/sto-plugin
+        entrypoint:
+          - /bin/sto_plugin
+          - "--run-strategy"
+          - single-container
       - product: gitleaks_.*
         image: harness/gitleaks-job-runner
       - product: fossa_.*
@@ -291,19 +298,19 @@ ciExecutionServiceConfig:
         - "pwsh"
         - "C:\\bin\\clone.ps1"
     buildAndPushDockerRegistryConfig:
-      image: plugins/kaniko:1.7.2
+      image: plugins/kaniko:1.7.5
       entrypoint:
         - /kaniko/kaniko-docker
     buildAndPushECRConfig:
-      image: plugins/kaniko-ecr:1.7.2
+      image: plugins/kaniko-ecr:1.7.5
       entrypoint:
         - /kaniko/kaniko-ecr
     buildAndPushGCRConfig:
-      image: plugins/kaniko-gcr:1.7.2
+      image: plugins/kaniko-gcr:1.7.5
       entrypoint:
         - /kaniko/kaniko-gcr
     buildAndPushACRConfig:
-      image: plugins/kaniko-acr:1.7.2
+      image: plugins/kaniko-acr:1.7.5
       entrypoint:
         - /kaniko/kaniko-acr
     gcsUploadConfig:
@@ -325,7 +332,7 @@ ciExecutionServiceConfig:
         - -c
         - python3 ${DOCKER_ENTRYPOINT}
     artifactoryUploadConfig:
-      image: plugins/artifactory:1.4.1
+      image: plugins/artifactory:1.4.4
       entrypoint:
         - /bin/plugin
       windowsEntrypoint:
@@ -360,7 +367,7 @@ ciExecutionServiceConfig:
       gcsUpload: plugins/gcs:1.4.0
       s3Upload: plugins/s3:1.2.3
       security: harness/sto-plugin:dev
-      artifactoryUpload: plugins/artifactory:1.4.1
+      artifactoryUpload: plugins/artifactory:1.4.4
       cacheGCS: plugins/cache:1.5.9
       cacheS3: plugins/cache:1.5.9
       sscaOrchestration: harness/ssca-plugin:latest
@@ -375,11 +382,13 @@ ciExecutionServiceConfig:
       cacheGCSConfig:
         name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.5.6
       gitCloneConfig:
-        name: github.com/wings-software/drone-git@refs/tags/v1.3.8
+        name: github.com/wings-software/drone-git@refs/tags/v1.3.9
       dockerBuildxConfig:
         name: github.com/drone-plugins/drone-buildx@refs/tags/v1.0.1
       dockerBuildxEcrConfig:
         name: github.com/drone-plugins/drone-buildx-ecr@refs/tags/v1.0.1
+      dockerBuildxGcrConfig:
+        name: github.com/drone-plugins/drone-buildx-gcr@refs/tags/v1.0.1
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}
@@ -477,3 +486,20 @@ opaClientConfig:
   baseUrl: http://localhost:3000
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
+
+cfClientConfig:
+  apiKey: ""
+  configUrl: "https://config.feature-flags.uat.harness.io/api/1.0"
+  eventUrl: "https://event.feature-flags.uat.harness.io/api/1.0"
+  analyticsEnabled: true
+  connectionTimeout: 10000
+  readTimeout: 45000
+  bufferSize: 10240
+  retries: 6
+  sleepInterval: 5000
+
+featureFlagConfig:
+  featureFlagSystem: LOCAL
+  syncFeaturesToCF: false
+
+enableQueue: ${ENABLE_QUEUE:-false}

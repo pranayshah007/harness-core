@@ -28,4 +28,5 @@ public interface BackstageEnvVariableService {
   List<BackstageEnvSecretVariable> getAllSecretIdentifierForMultipleEnvVariablesInAccount(
       String accountIdentifier, List<String> envVariables);
   void deleteMultiUsingEnvNames(List<String> envNames, String accountIdentifier);
+  List<BackstageEnvVariable> findByEnvNamesAndAccountIdentifier(List<String> envNames, String accountIdentifier);
 }

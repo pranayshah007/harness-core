@@ -32,4 +32,6 @@ public class VerificationOverview {
   ClusterAnalysisOverview logClusters;
   ClusterAnalysisOverview errorClusters;
   BaselineOverview baselineOverview;
+  Long controlDataStartTimestamp;
+  Long testDataStartTimestamp;
 }

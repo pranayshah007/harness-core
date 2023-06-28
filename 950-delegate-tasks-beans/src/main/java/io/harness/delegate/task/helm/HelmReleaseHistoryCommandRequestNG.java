@@ -31,6 +31,6 @@ public class HelmReleaseHistoryCommandRequestNG extends HelmCommandRequestNG {
     super(releaseName, HelmCommandType.RELEASE_HISTORY, valuesYamlList, k8sInfraDelegateConfig, manifestDelegateConfig,
         accountId, k8SteadyStateCheckEnabled, shouldOpenFetchFilesLogStream, commandUnitsProgress, logCallback,
         namespace, helmVersion, commandFlags, repoName, workingDir, kubeConfigLocation, ocPath, commandName,
-        useLatestKubectlVersion, gcpKeyPath, releaseHistoryPrefix, serviceHooks, false);
+        useLatestKubectlVersion, gcpKeyPath, releaseHistoryPrefix, serviceHooks, false, false);
   }
 }

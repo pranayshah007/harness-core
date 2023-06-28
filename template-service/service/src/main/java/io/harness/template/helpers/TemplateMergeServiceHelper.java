@@ -37,6 +37,7 @@ import io.harness.gitaware.dto.FetchRemoteEntityRequest;
 import io.harness.gitaware.dto.GetFileGitContextRequestParams;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.gitx.GitXTransientBranchGuard;
 import io.harness.logging.AutoLogContext;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
@@ -56,7 +57,6 @@ import io.harness.template.resources.beans.yaml.NGTemplateConfig;
 import io.harness.template.services.NGTemplateServiceHelper;
 import io.harness.template.services.TemplateGitXService;
 import io.harness.template.utils.TemplateUtils;
-import io.harness.template.yaml.TemplateYamlUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -101,9 +101,10 @@ public class TemplateMergeServiceHelper {
              new NgAutoLogContextForMethod(projectId, orgId, accountId, "getLinkedTemplateEntity", OVERRIDE_NESTS)) {
       log.info("[TemplateService] Fetching Template {} from project {}, org {}, account {}",
           templateUniqueIdentifier.getTemplateIdentifier(), projectId, orgId, accountId);
-      TemplateEntity template = getLinkedTemplateEntityHelper(accountId, orgId, projectId,
-          templateUniqueIdentifier.getTemplateIdentifier(), templateUniqueIdentifier.getVersionLabel(),
-          templateCacheMap, templateUniqueIdentifier.getVersionMaker(), loadFromCache);
+      TemplateEntity template =
+          getLinkedTemplateEntityHelper(accountId, orgId, projectId, templateUniqueIdentifier.getTemplateIdentifier(),
+              templateUniqueIdentifier.getVersionLabel(), templateCacheMap, templateUniqueIdentifier.getVersionMaker(),
+              loadFromCache, templateUniqueIdentifier.getGitBranch());
       return new TemplateEntityGetResponse(template, NGTemplateDtoMapper.getEntityGitDetails(template));
     } finally {
       log.debug("[TemplateService] Finished fetching Template {} from project {}, org {}, account {} took {}ms ",
@@ -114,30 +115,35 @@ public class TemplateMergeServiceHelper {
 
   // Gets the Template Entity linked to a YAML
   public TemplateEntity getLinkedTemplateEntity(String accountId, String orgId, String projectId, String identifier,
-      String versionLabel, Map<String, TemplateEntity> templateCacheMap) {
+      String versionLabel, Map<String, TemplateEntity> templateCacheMap, String branch) {
     String versionMarker = STABLE_VERSION;
     if (!EmptyPredicate.isEmpty(versionLabel)) {
       versionMarker = versionLabel;
     }
 
     return getLinkedTemplateEntityHelper(
-        accountId, orgId, projectId, identifier, versionLabel, templateCacheMap, versionMarker, false);
+        accountId, orgId, projectId, identifier, versionLabel, templateCacheMap, versionMarker, false, branch);
   }
+
   public TemplateEntity getLinkedTemplateEntityHelper(String accountId, String orgId, String projectId,
       String identifier, String versionLabel, Map<String, TemplateEntity> templateCacheMap, String versionMarker,
-      boolean loadFromCache) {
-    IdentifierRef templateIdentifierRef = TemplateUtils.getIdentifierRef(accountId, orgId, projectId, identifier);
+      boolean loadFromCache, String branch) {
+    IdentifierRef templateIdentifierRef =
+        TemplateUtils.getIdentifierRef(accountId, orgId, projectId, identifier, branch);
     String templateUniqueIdentifier = generateUniqueTemplateIdentifier(templateIdentifierRef.getAccountIdentifier(),
         templateIdentifierRef.getOrgIdentifier(), templateIdentifierRef.getProjectIdentifier(),
-        templateIdentifierRef.getIdentifier(), versionMarker);
+        templateIdentifierRef.getIdentifier(), versionMarker, branch);
     if (templateCacheMap.containsKey(templateUniqueIdentifier)) {
       return templateCacheMap.get(templateUniqueIdentifier);
     }
 
-    Optional<TemplateEntity> templateEntity =
-        templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(templateIdentifierRef.getAccountIdentifier(),
-            templateIdentifierRef.getOrgIdentifier(), templateIdentifierRef.getProjectIdentifier(),
-            templateIdentifierRef.getIdentifier(), versionLabel, false, loadFromCache);
+    Optional<TemplateEntity> templateEntity;
+    try (GitXTransientBranchGuard ignore = new GitXTransientBranchGuard(branch)) {
+      templateEntity =
+          templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(templateIdentifierRef.getAccountIdentifier(),
+              templateIdentifierRef.getOrgIdentifier(), templateIdentifierRef.getProjectIdentifier(),
+              templateIdentifierRef.getIdentifier(), versionLabel, false, loadFromCache);
+    }
     if (!templateEntity.isPresent()) {
       throw new NGTemplateException(String.format(
           "The template identifier %s and version label %s does not exist. Could not replace this template",
@@ -155,7 +161,7 @@ public class TemplateMergeServiceHelper {
 
   // Generates a unique Template Identifier
   private String generateUniqueTemplateIdentifier(
-      String accountId, String orgId, String projectId, String templateIdentifier, String versionLabel) {
+      String accountId, String orgId, String projectId, String templateIdentifier, String versionLabel, String branch) {
     List<String> fqnList = new LinkedList<>();
     fqnList.add(accountId);
     if (EmptyPredicate.isNotEmpty(orgId)) {
@@ -166,23 +172,8 @@ public class TemplateMergeServiceHelper {
     }
     fqnList.add(templateIdentifier);
     fqnList.add(versionLabel);
-
-    return EntityReferenceHelper.createFQN(fqnList);
-  }
-
-  private String generateUniqueTemplateIdentifier(IdentifierRef templateIdentifierRef, String versionLabel) {
-    List<String> fqnList = new LinkedList<>();
-    fqnList.add(templateIdentifierRef.getAccountIdentifier());
-    if (EmptyPredicate.isNotEmpty(templateIdentifierRef.getOrgIdentifier())) {
-      fqnList.add(templateIdentifierRef.getOrgIdentifier());
-    }
-    if (EmptyPredicate.isNotEmpty(templateIdentifierRef.getProjectIdentifier())) {
-      fqnList.add(templateIdentifierRef.getProjectIdentifier());
-    }
-    fqnList.add(templateIdentifierRef.getIdentifier());
-    fqnList.add(versionLabel);
-    if (isNotEmpty(templateIdentifierRef.getBranch())) {
-      fqnList.add(templateIdentifierRef.getBranch());
+    if (isNotEmpty(branch)) {
+      fqnList.add(branch);
     }
 
     return EntityReferenceHelper.createFQN(fqnList);
@@ -234,7 +225,7 @@ public class TemplateMergeServiceHelper {
       }
       JsonNode templateInputsYaml =
           YamlUtils.readTree(templateInputsYamlWithSpec).getNode().getCurrJsonNode().get(SPEC);
-      return TemplateYamlUtils.writeYamlString(templateInputsYaml);
+      return YamlUtils.writeYamlString(templateInputsYaml);
     } catch (IOException e) {
       log.error("Error occurred while creating template inputs " + e);
       throw new NGTemplateException("Error occurred while creating template inputs ", e);
@@ -346,11 +337,12 @@ public class TemplateMergeServiceHelper {
     TemplateUniqueIdentifier templateUniqueIdentification = parseYamlAndGetTemplateIdentifierAndVersion(value);
 
     IdentifierRef templateIdentifierRef =
-        TemplateUtils.getGitBranchAwareIdentifierRef(accountIdentifier, orgIdentifier, projectIdentifier,
+        TemplateUtils.getIdentifierRef(accountIdentifier, orgIdentifier, projectIdentifier,
             templateUniqueIdentification.getTemplateIdentifier(), templateUniqueIdentification.getGitBranch());
     String templateUniqueIdentifier = generateUniqueTemplateIdentifier(templateIdentifierRef.getAccountIdentifier(),
         templateIdentifierRef.getOrgIdentifier(), templateIdentifierRef.getProjectIdentifier(),
-        templateIdentifierRef.getIdentifier(), templateUniqueIdentification.getVersionMaker());
+        templateIdentifierRef.getIdentifier(), templateUniqueIdentification.getVersionMaker(),
+        templateIdentifierRef.getBranch());
     log.info("Unique template identifier: {}", templateUniqueIdentifier);
     return templateUniqueIdentifier;
   }
@@ -362,9 +354,8 @@ public class TemplateMergeServiceHelper {
     for (Map.Entry<String, YamlNode> entry : templatesToGet.entrySet()) {
       JsonNode yaml = entry.getValue().getCurrJsonNode();
       TemplateUniqueIdentifier templateUniqueIdentifier = parseYamlAndGetTemplateIdentifierAndVersion(yaml);
-      IdentifierRef templateIdentifierRef =
-          TemplateUtils.getGitBranchAwareIdentifierRef(accountIdentifier, orgIdentifier, projectIdentifier,
-              templateUniqueIdentifier.getTemplateIdentifier(), templateUniqueIdentifier.getGitBranch());
+      IdentifierRef templateIdentifierRef = TemplateUtils.getIdentifierRef(accountIdentifier, orgIdentifier,
+          projectIdentifier, templateUniqueIdentifier.getTemplateIdentifier(), templateUniqueIdentifier.getGitBranch());
 
       Scope templateScope = Scope.builder()
                                 .projectIdentifier(templateIdentifierRef.getProjectIdentifier())
@@ -613,7 +604,7 @@ public class TemplateMergeServiceHelper {
 
     JsonNode templateSpec;
     try {
-      NGTemplateConfig templateConfig = TemplateYamlUtils.read(templateYaml, NGTemplateConfig.class);
+      NGTemplateConfig templateConfig = YamlUtils.read(templateYaml, NGTemplateConfig.class);
       templateSpec = templateConfig.getTemplateInfoConfig().getSpec();
     } catch (IOException e) {
       log.error("Could not read template yaml", e);
@@ -634,14 +625,14 @@ public class TemplateMergeServiceHelper {
       JsonNode templateInputs, JsonNode templateSpec, boolean appendInputSetValidator) {
     Map<String, JsonNode> dummyTemplateSpecMap = new LinkedHashMap<>();
     dummyTemplateSpecMap.put(DUMMY_NODE, templateSpec);
-    String dummyTemplateSpecYaml = TemplateYamlUtils.writeYamlString(dummyTemplateSpecMap);
+    String dummyTemplateSpecYaml = YamlUtils.writeYamlString(dummyTemplateSpecMap);
 
     String mergedYaml = dummyTemplateSpecYaml;
     String dummyTemplateInputsYaml = "";
     if (templateInputs != null) {
       Map<String, JsonNode> dummyTemplateInputsMap = new LinkedHashMap<>();
       dummyTemplateInputsMap.put(DUMMY_NODE, templateInputs);
-      dummyTemplateInputsYaml = TemplateYamlUtils.writeYamlString(dummyTemplateInputsMap);
+      dummyTemplateInputsYaml = YamlUtils.writeYamlString(dummyTemplateInputsMap);
 
       mergedYaml = MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(
           dummyTemplateSpecYaml, dummyTemplateInputsYaml, appendInputSetValidator, true);
@@ -674,7 +665,7 @@ public class TemplateMergeServiceHelper {
     if (isEmpty(templateInputsErrorMap)) {
       return null;
     }
-    String errorYaml = TemplateYamlUtils.writeYamlString(errorYamlMap);
+    String errorYaml = YamlUtils.writeYamlString(errorYamlMap);
     String errorTemplateYaml = convertUuidErrorMapToFqnErrorMap(errorYaml, templateInputsErrorMap);
     return new TemplateInputsErrorMetadataDTO(errorTemplateYaml, templateInputsErrorMap);
   }
@@ -763,7 +754,7 @@ public class TemplateMergeServiceHelper {
     try {
       Map<String, JsonNode> dummyLinkedTemplateInputsMap = new LinkedHashMap<>();
       dummyLinkedTemplateInputsMap.put(DUMMY_NODE, linkedTemplateInputs);
-      String dummyLinkedTemplateInputsYaml = TemplateYamlUtils.writeYamlString(dummyLinkedTemplateInputsMap);
+      String dummyLinkedTemplateInputsYaml = YamlUtils.writeYamlString(dummyLinkedTemplateInputsMap);
 
       Map<String, TemplateInputsErrorDTO> uuidToErrorMessageMap = new LinkedHashMap<>();
       String invalidLinkedTemplateInputsYaml;
@@ -772,9 +763,8 @@ public class TemplateMergeServiceHelper {
             YamlUtils.readTree(templateSpecInputSetFormatYaml).getNode().getCurrJsonNode();
         Map<String, JsonNode> dummyTemplateSpecMap = new LinkedHashMap<>();
         dummyTemplateSpecMap.put(DUMMY_NODE, templateSpecInputSetFormatNode);
-        invalidLinkedTemplateInputsYaml =
-            getInvalidInputValuesYaml(TemplateYamlUtils.writeYamlString(dummyTemplateSpecMap),
-                dummyLinkedTemplateInputsYaml, uuidToErrorMessageMap, identifier);
+        invalidLinkedTemplateInputsYaml = getInvalidInputValuesYaml(YamlUtils.writeYamlString(dummyTemplateSpecMap),
+            dummyLinkedTemplateInputsYaml, uuidToErrorMessageMap, identifier);
       } else {
         invalidLinkedTemplateInputsYaml = getInvalidInputValuesYaml(
             templateSpecInputSetFormatYaml, dummyLinkedTemplateInputsYaml, uuidToErrorMessageMap, identifier);
@@ -789,7 +779,7 @@ public class TemplateMergeServiceHelper {
 
       Map<String, Object> originalTemplateMap = JsonUtils.jsonNodeToMap(linkedTemplate);
       originalTemplateMap.put(TEMPLATE_INPUTS, invalidLinkedTemplateInputsNode);
-      return YamlUtils.readTree(TemplateYamlUtils.writeYamlString(originalTemplateMap)).getNode().getCurrJsonNode();
+      return YamlUtils.readTree(YamlUtils.writeYamlString(originalTemplateMap)).getNode().getCurrJsonNode();
     } catch (IOException e) {
       log.error("Error while validating template inputs yaml ", e);
       throw new NGTemplateException("Error while validating template inputs yaml: " + e.getMessage());

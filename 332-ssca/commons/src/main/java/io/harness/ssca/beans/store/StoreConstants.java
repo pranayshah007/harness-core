@@ -12,5 +12,5 @@ import io.harness.annotations.dev.OwnedBy;
 
 @OwnedBy(HarnessTeam.SSCA)
 public interface StoreConstants {
-  String HARNESS = "harness";
+  String HARNESS = "Harness";
 }

@@ -39,7 +39,7 @@ public abstract class AsyncCreatorBaseEventHandler<T extends Message, C extends 
   protected abstract C extractContext(T message);
 
   @Override
-  public void handleEvent(T event, Map<String, String> metadataMap, long createdAt) {
+  public void handleEvent(T event, Map<String, String> metadataMap, long messageTimeStamp, long readTs) {
     try {
       AsyncCreatorResponse finalResponse =
           handleDependenciesRecursive(extractDependencies(event), extractContext(event));

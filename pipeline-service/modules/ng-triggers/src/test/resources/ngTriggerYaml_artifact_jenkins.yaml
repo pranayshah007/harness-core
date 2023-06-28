@@ -1,0 +1,41 @@
+trigger:
+  name: jenkins_trigger
+  identifier: jenkins_trigger
+  enabled: true
+  tags: {}
+  orgIdentifier: default
+  projectIdentifier: sridhartest
+  pipelineIdentifier: Jenkins_pipeline
+  stagesToExecute: []
+  source:
+    type: Artifact
+    spec:
+      type: Jenkins
+      spec:
+        connectorRef: JenkinsHarness
+        artifactPath: sad
+        jobName: alex-freestyle-test
+        eventConditions: []
+        metaDataConditions: []
+  inputYaml: |
+    pipeline:
+      identifier: Jenkins_pipeline
+      stages:
+        - stage:
+            identifier: jenkins
+            type: Deployment
+            spec:
+              service:
+                serviceInputs:
+                  serviceDefinition:
+                    type: Ssh
+                    spec:
+                      artifacts:
+                        primary:
+                          primaryArtifactRef: jenkins
+                          sources:
+                            - identifier: jenkins
+                              type: Jenkins
+                              spec:
+                                artifactPath: function.tar.gz
+                                build: "1.0"

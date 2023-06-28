@@ -7,9 +7,6 @@
 
 package io.harness.pms.notification.orchestration.handlers;
 
-import static io.harness.ngtriggers.Constants.ENABLE_NODE_EXECUTION_AUDIT_EVENTS;
-import static io.harness.ngtriggers.Constants.ENABLE_NODE_EXECUTION_AUDIT_EVENTS_TRUE_VALUE;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.observers.NodeExecutionStartObserver;
@@ -28,8 +25,6 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.notification.orchestration.NodeExecutionEventUtils;
 import io.harness.pms.notification.orchestration.helpers.AbortInfoHelper;
-import io.harness.pms.plan.execution.SetupAbstractionKeys;
-import io.harness.remote.client.NGRestUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -78,18 +73,9 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver, N
   @VisibleForTesting
   void sendOutboxEvents(NodeOutboxInfo nodeOutboxInfo) {
     Ambiance ambiance = nodeOutboxInfo.getNodeExecution().getAmbiance();
-    String enableNodeAudit = null;
-    try {
-      enableNodeAudit = NGRestUtils
-                            .getResponse(settingsClient.getSetting(ENABLE_NODE_EXECUTION_AUDIT_EVENTS,
-                                ambiance.getSetupAbstractionsMap().get(SetupAbstractionKeys.accountId), null, null))
-                            .getValue();
-    } catch (Exception ex) {
-      log.debug(String.format("Could not fetch setting: %s", ENABLE_NODE_EXECUTION_AUDIT_EVENTS), ex);
-      return;
-    }
+    boolean enableNodeAudit = AmbianceUtils.isNodeExecutionAuditsEnabled(ambiance);
 
-    if (ENABLE_NODE_EXECUTION_AUDIT_EVENTS_TRUE_VALUE.equals(enableNodeAudit)) {
+    if (enableNodeAudit) {
       try (AutoLogContext ignore = AmbianceUtils.autoLogContext(nodeOutboxInfo.getNodeExecution().getAmbiance())) {
         String nodeGroup = nodeOutboxInfo.getNodeExecution().getGroup();
         try {

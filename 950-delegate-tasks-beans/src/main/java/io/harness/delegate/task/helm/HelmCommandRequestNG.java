@@ -18,6 +18,7 @@ import io.harness.delegate.beans.connector.azureconnector.AzureCapabilityHelper;
 import io.harness.delegate.beans.connector.gcp.GcpCapabilityHelper;
 import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.k8Connector.K8sTaskCapabilityHelper;
+import io.harness.delegate.beans.connector.rancher.RancherTaskCapabilityHelper;
 import io.harness.delegate.beans.connector.scm.GitCapabilityHelper;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -38,6 +39,8 @@ import io.harness.delegate.task.k8s.GcpK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.ManifestDelegateConfig;
+import io.harness.delegate.task.k8s.RancherK8sInfraDelegateConfig;
+import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
 import io.harness.delegate.task.mixin.SocketConnectivityCapabilityGenerator;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
@@ -81,6 +84,7 @@ public class HelmCommandRequestNG implements TaskParameters, ExecutionCapability
   private String releaseHistoryPrefix;
   @Expression(ALLOW_SECRETS) List<ServiceHookDelegateConfig> serviceHooks;
   private boolean useRefactorSteadyStateCheck;
+  private boolean skipSteadyStateCheck;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
@@ -111,6 +115,11 @@ public class HelmCommandRequestNG implements TaskParameters, ExecutionCapability
           ((EksK8sInfraDelegateConfig) k8sInfraDelegateConfig).getAwsConnectorDTO(), maskingEvaluator));
     }
 
+    if (k8sInfraDelegateConfig instanceof RancherK8sInfraDelegateConfig) {
+      capabilities.addAll(RancherTaskCapabilityHelper.fetchRequiredExecutionCapabilities(
+          ((RancherK8sInfraDelegateConfig) k8sInfraDelegateConfig).getRancherConnectorDTO(), maskingEvaluator));
+    }
+
     if (manifestDelegateConfig != null) {
       HelmChartManifestDelegateConfig helManifestConfig = (HelmChartManifestDelegateConfig) manifestDelegateConfig;
       capabilities.add(HelmInstallationCapability.builder()
@@ -133,13 +142,15 @@ public class HelmCommandRequestNG implements TaskParameters, ExecutionCapability
           case HTTP_HELM:
             HttpHelmStoreDelegateConfig httpHelmStoreConfig =
                 (HttpHelmStoreDelegateConfig) helManifestConfig.getStoreDelegateConfig();
-            /*
-            We are henceforth using SocketConnectivityExecutionCapability instead of HttpConnectionExecutionCapability
-            this is to ensure that we don't fail Helm Repo Connector Validation in case the url returns 400
-            ref: https://harness.atlassian.net/browse/CDS-36189
-            */
-            SocketConnectivityCapabilityGenerator.addSocketConnectivityExecutionCapability(
-                httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), capabilities);
+            if (helManifestConfig.isIgnoreResponseCode()) {
+              capabilities.add(
+                  HttpConnectionExecutionCapabilityGenerator
+                      .buildHttpConnectionExecutionCapabilityWithIgnoreResponseCode(
+                          httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), maskingEvaluator, true));
+            } else {
+              SocketConnectivityCapabilityGenerator.addSocketConnectivityExecutionCapability(
+                  httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), capabilities);
+            }
             capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
                 httpHelmStoreConfig.getEncryptedDataDetails(), maskingEvaluator));
             populateDelegateSelectorCapability(

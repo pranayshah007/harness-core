@@ -23,6 +23,7 @@ import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.CVNGTestConstants;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
+import io.harness.cvng.beans.MonitoredServiceType;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.PrometheusMetricDefinition;
@@ -64,7 +65,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.ws.rs.client.Entity;
@@ -72,13 +72,11 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.yaml.snakeyaml.Yaml;
 
 public class MonitoredServiceResourceTest extends CvNextGenTestBase {
   @Inject private Injector injector;
@@ -1019,6 +1017,33 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testListMonitoredServicePlatform_listAPIAcrossHarnessApp() {
+    monitoredServiceService.createDefault(builderFactory.getProjectParams(), "service1", "env1");
+    monitoredServiceService.createDefault(builderFactory.getProjectParams(), "service2", "env2");
+    monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder().build();
+    monitoredServiceDTO.setType(MonitoredServiceType.INFRASTRUCTURE);
+    monitoredServiceDTO.setIdentifier("service3");
+    monitoredServiceDTO.setServiceRef("service3");
+    monitoredServiceDTO.setEnvironmentRef(null);
+    monitoredServiceDTO.setEnvironmentRefList(List.of("env1", "env2"));
+    monitoredServiceService.create(builderFactory.getProjectParams().getAccountIdentifier(), monitoredServiceDTO);
+
+    WebTarget webTarget = RESOURCES.client()
+                              .target("http://localhost:9998/monitored-service/platform/list")
+                              .queryParam("accountId", builderFactory.getContext().getAccountId())
+                              .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                              .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                              .queryParam("offset", 0)
+                              .queryParam("pageSize", 10);
+    webTarget = webTarget.queryParam("monitoredServiceType", "Application");
+    Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).get();
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(response.readEntity(String.class)).contains("\"totalItems\":3");
+  }
+
+  @Test
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
   public void testListMonitoredService_dependenciesList() {
@@ -1297,12 +1322,25 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
     }
   }
 
-  private static String convertToJson(String yamlString) {
-    Yaml yaml = new Yaml();
-    Map<String, Object> map = yaml.load(yamlString);
-
-    JSONObject jsonObject = new JSONObject(map);
-    return jsonObject.toString();
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testCreate_WithDefaultChangeSource() throws IOException {
+    String[] healthSources = {"monitoredservice/healthsources/app-dynamics-with-default-change-source.yaml"};
+    for (String file : healthSources) {
+      String monitoredServiceYaml = getResource(file);
+      monitoredServiceYaml =
+          monitoredServiceYaml.replace("$orgIdentifier", builderFactory.getContext().getOrgIdentifier());
+      monitoredServiceYaml =
+          monitoredServiceYaml.replace("$projectIdentifier", builderFactory.getContext().getProjectIdentifier());
+      monitoredServiceYaml = monitoredServiceYaml.replace("$enabled", "false");
+      Response response = RESOURCES.client()
+                              .target("http://localhost:9998/monitored-service/")
+                              .queryParam("accountId", builderFactory.getContext().getAccountId())
+                              .request(MediaType.APPLICATION_JSON_TYPE)
+                              .post(Entity.json(convertToJson(monitoredServiceYaml)));
+      assertThat(response.getStatus()).isEqualTo(200);
+    }
   }
 
   private static String convertToYaml(String jsonString) throws JsonProcessingException {

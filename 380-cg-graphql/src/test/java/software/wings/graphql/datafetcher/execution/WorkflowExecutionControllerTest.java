@@ -655,7 +655,7 @@ public class WorkflowExecutionControllerTest extends WingsBaseTest {
                            -> workflowExecutionController.startWorkflowExecution(
                                qlStartExecutionInput, MutationContext.builder().build()))
         .isInstanceOf(GeneralException.class)
-        .hasMessage("Cannot find helm chart for specified version number: 1.0");
+        .hasMessage("Cannot find helm chart for specified version number: 1.0 and service: SERVICE_ID");
 
     when(helmChartService.get(APP_ID, HELM_CHART_ID + 2)).thenReturn(null);
     when(helmChartService.getByChartVersion(APP_ID, SERVICE_ID, APP_MANIFEST_NAME, "1.0"))

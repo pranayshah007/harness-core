@@ -7,7 +7,6 @@
 
 package io.harness.ng.core.service.services;
 
-import static io.harness.beans.FeatureName.NG_SETTINGS;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 
@@ -26,7 +25,6 @@ import io.harness.mappers.InstanceMapper;
 import io.harness.ng.core.service.services.exception.ActiveServiceInstancesPresentException;
 import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
-import io.harness.remote.client.CGRestUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.instance.InstanceRepository;
 import io.harness.service.instance.InstanceService;
@@ -79,7 +77,7 @@ public class ServiceEntityManagementServiceImpl implements ServiceEntityManageme
     return success;
   }
   private boolean isForceDeleteEnabled(String accountIdentifier) {
-    return isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
+    return isForceDeleteFFEnabledViaSettings(accountIdentifier);
   }
 
   protected boolean isForceDeleteFFEnabledViaSettings(String accountIdentifier) {
@@ -87,9 +85,5 @@ public class ServiceEntityManagementServiceImpl implements ServiceEntityManageme
                             .getResponse(settingsClient.getSetting(
                                 SettingIdentifiers.ENABLE_FORCE_DELETE, accountIdentifier, null, null))
                             .getValue());
-  }
-
-  protected boolean isNgSettingsFFEnabled(String accountIdentifier) {
-    return CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(NG_SETTINGS.name(), accountIdentifier));
   }
 }

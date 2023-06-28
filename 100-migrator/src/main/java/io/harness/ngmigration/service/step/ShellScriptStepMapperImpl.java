@@ -90,6 +90,10 @@ public class ShellScriptStepMapperImpl extends StepMapper {
       refs.add(CgEntityId.builder().id(templateId).type(NGMigrationEntityType.TEMPLATE).build());
     }
     refs.addAll(secretRefUtils.getSecretRefFromExpressions(accountId, getExpressions(graphNode)));
+    ShellScriptState state = (ShellScriptState) getState(graphNode);
+    if (StringUtils.isNotBlank(state.getConnectionAttributes())) {
+      refs.add(CgEntityId.builder().id(state.getConnectionAttributes()).type(NGMigrationEntityType.CONNECTOR).build());
+    }
     return refs;
   }
 
@@ -127,9 +131,11 @@ public class ShellScriptStepMapperImpl extends StepMapper {
     ExecutionTarget executionTarget = null;
 
     if (!state.isExecuteOnDelegate()) {
+      ParameterField<String> connectorRef = MigratorUtility.getIdentifierWithScopeDefaultsRuntime(
+          migrationContext.getMigratedEntities(), state.getSshKeyRef(), NGMigrationEntityType.CONNECTOR);
       executionTarget = ExecutionTarget.builder()
                             .host(ParameterField.createValueField(state.getHost()))
-                            .connectorRef(ParameterField.createValueField("<+input>"))
+                            .connectorRef(connectorRef)
                             .workingDirectory(ParameterField.createValueField(state.getCommandPath()))
                             .build();
     }

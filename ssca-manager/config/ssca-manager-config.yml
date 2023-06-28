@@ -1,0 +1,38 @@
+logging:
+  level: INFO
+  loggers:
+    org.glassfish.jersey: WARN
+    allbegray.slack: WARN
+    org.glassfish.jersey.server.ServerRuntime.Responder: "OFF"
+  appenders:
+    - type: console
+      threshold: TRACE
+      target: STDOUT
+      logFormat: "%date{ISO8601} %green([%thread]) %highlight(%-5level) %cyan(%logger) - %msg %yellow(%replace(%mdc){'(.+)', '[$1]'}) %n"
+
+server:
+  applicationConnectors:
+    - type: http
+      port: 8188
+      maxRequestHeaderSize: 100KiB
+  adminConnectors:
+    - type: http
+      port: 8189
+  requestLog:
+    appenders: []
+  maxThreads: 1024
+
+mongo:
+  uri: mongodb://localhost:27017/ssca
+  connectTimeout: 30000
+  serverSelectionTimeout: 90000
+  socketTimeout: 360000
+  maxConnectionIdleTime: 600000
+  connectionsPerHost: 300
+  indexManagerMode: AUTO
+  transactionsEnabled: false
+  aliasDBName: ssca
+  traceMode: DISABLED
+
+allowedOrigins:
+  - "*"

@@ -7,6 +7,9 @@
 
 package io.harness.event.service.impl;
 
+import static io.harness.annotations.dev.HarnessTeam.CE;
+
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.entities.events.PublishedMessage;
 import io.harness.ccm.commons.entities.events.PublishedMessage.PublishedMessageKeys;
 import io.harness.event.app.EventServiceConfig;
@@ -26,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Singleton
 @Slf4j
+@OwnedBy(CE)
 public class EventDataBulkWriteServiceImpl implements EventDataBulkWriteService {
   private static final int BULK_WRITE_MAX_RETRIES = 3;
   private final HPersistence hPersistence;
@@ -86,7 +90,7 @@ public class EventDataBulkWriteServiceImpl implements EventDataBulkWriteService 
     for (int i = 1; i < BULK_WRITE_MAX_RETRIES; i++) {
       try {
         result = bulkWriteOperation.execute();
-        log.info("BulkWriteExecutor result: {}", result.toString());
+        log.info("BulkWriteExecutor result: {}", result);
         return result;
       } catch (final IllegalArgumentException ex) {
         log.error("Exception occurred with bulkWriteExecutor", ex);

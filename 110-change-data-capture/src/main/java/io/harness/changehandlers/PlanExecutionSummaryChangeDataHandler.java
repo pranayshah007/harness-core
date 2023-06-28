@@ -103,6 +103,9 @@ public class PlanExecutionSummaryChangeDataHandler extends AbstractChangeDataHan
       if (ciExecutionInfo.get("event") != null) {
         columnValueMapping.put("moduleInfo_event", ciExecutionInfo.get("event").toString());
       }
+      if (ciExecutionInfo.get("userSource") != null) {
+        columnValueMapping.put("user_source", ciExecutionInfo.get("userSource").toString());
+      }
     }
   }
 

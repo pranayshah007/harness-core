@@ -7,6 +7,9 @@
 
 package io.harness.delegate.beans.executioncapability;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 
 import java.time.Duration;
@@ -32,6 +35,9 @@ public class CIVmConnectionCapability implements ExecutionCapability {
   @Override
   public String fetchCapabilityBasis() {
     //    return infraInfo.fetchCapabilityBasis();
+    if (isEmpty(poolId) || isEmpty(stageRuntimeId)) {
+      return "";
+    }
     if (infraInfo == CIInitializeTaskParams.Type.VM) {
       return String.format("%s-%s", poolId, stageRuntimeId);
     } else {
@@ -47,5 +53,19 @@ public class CIVmConnectionCapability implements ExecutionCapability {
   @Override
   public Duration getPeriodUntilNextValidation() {
     return Duration.ofHours(4);
+  }
+
+  /**
+   * Error message to show mostly in delegate selection log if none of the delegates passed the validation check
+   */
+  @Override
+  public String getCapabilityValidationError() {
+    // Delegate(s) unable to connect to {url}, make sure to provide the connectivity with the
+    // following delegates : [h1,h2]
+    return isNotEmpty(fetchCapabilityBasis())
+        ? String.format(
+            "Delegate(s) unable to connect to %s, make sure to provide the connectivity with the following delegates",
+            fetchCapabilityBasis())
+        : ExecutionCapability.super.getCapabilityValidationError();
   }
 }

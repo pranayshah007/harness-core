@@ -13,9 +13,8 @@ import static io.harness.ccm.views.graphql.QLCEViewFilterOperator.IN;
 
 import io.harness.ccm.commons.entities.CCMField;
 import io.harness.ccm.graphql.core.msp.intf.ManagedAccountDataService;
+import io.harness.ccm.graphql.core.perspectives.PerspectiveService;
 import io.harness.ccm.graphql.dto.perspectives.PerspectiveTrendStats;
-import io.harness.ccm.graphql.query.perspectives.PerspectivesQuery;
-import io.harness.ccm.graphql.utils.GraphQLToRESTHelper;
 import io.harness.ccm.graphql.utils.RESTToGraphQLHelper;
 import io.harness.ccm.msp.dao.MarginDetailsDao;
 import io.harness.ccm.msp.entities.AmountDetails;
@@ -32,20 +31,21 @@ import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
 import io.harness.ccm.views.graphql.QLCEViewPreferences;
 
 import com.google.inject.Inject;
-import io.leangen.graphql.execution.ResolutionEnvironment;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class ManagedAccountDataServiceImpl implements ManagedAccountDataService {
-  @Inject private PerspectivesQuery perspectivesQuery;
+  @Inject private PerspectiveService perspectiveService;
   @Inject private MarginDetailsDao marginDetailsDao;
   @Inject private MspValidationService mspValidationService;
 
-  private static final long MAX_DAYS_IN_MONTH = 31;
+  private static final long MAX_DAYS_DIFF_IN_MONTH = 30;
   private static final long ONE_DAY_IN_MILLIS = 86400000;
 
   @Override
@@ -53,7 +53,6 @@ public class ManagedAccountDataServiceImpl implements ManagedAccountDataService 
       Integer limit, Integer offset) {
     mspValidationService.validateAccountIsManagedByMspAccount(mspAccountId, managedAccountId);
     try {
-      final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(managedAccountId);
       QLCEViewFieldInput entityConvertedToFieldInput = RESTToGraphQLHelper.getViewFieldInputFromCCMField(entity);
       List<QLCEViewFilterWrapper> filters = new ArrayList<>();
       filters.add(QLCEViewFilterWrapper.builder()
@@ -63,9 +62,9 @@ public class ManagedAccountDataServiceImpl implements ManagedAccountDataService 
                                     .values(Collections.singletonList("").toArray(new String[0]))
                                     .build())
                       .build());
-      return perspectivesQuery
+      return perspectiveService
           .perspectiveFilters(Collections.emptyList(), filters, Collections.emptyList(), Collections.emptyList(), limit,
-              offset, false, env)
+              offset, false, managedAccountId)
           .getValues();
     } catch (Exception e) {
       return Collections.emptyList();
@@ -95,7 +94,7 @@ public class ManagedAccountDataServiceImpl implements ManagedAccountDataService 
     double totalSpend;
     double totalMarkup;
 
-    if (diff >= MAX_DAYS_IN_MONTH) {
+    if (diff > MAX_DAYS_DIFF_IN_MONTH) {
       if (startTime < quarterStartThreshold) {
         totalMarkup = totalMarkupAndSpend.getTotalMarkupAmount().getLastQuarter();
         totalSpend = totalMarkupAndSpend.getTotalSpend().getLastQuarter();
@@ -109,7 +108,7 @@ public class ManagedAccountDataServiceImpl implements ManagedAccountDataService 
         totalSpend = totalMarkupAndSpend.getTotalSpend().getCurrentMonth();
       } else {
         totalMarkup = totalMarkupAndSpend.getTotalMarkupAmount().getLastMonth();
-        totalSpend = totalMarkupAndSpend.getTotalSpend().getLastQuarter();
+        totalSpend = totalMarkupAndSpend.getTotalSpend().getLastMonth();
       }
     }
 
@@ -126,15 +125,16 @@ public class ManagedAccountDataServiceImpl implements ManagedAccountDataService 
       return getManagedAccountStats(mspAccountId, startTime, endTime);
     }
     mspValidationService.validateAccountIsManagedByMspAccount(mspAccountId, managedAccountId);
-    final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(mspAccountId);
+    endTime = updateEndTimeToEndOfDay(endTime);
+    List<QLCEViewFilterWrapper> markupFilters = new ArrayList<>();
+    markupFilters.addAll(RESTToGraphQLHelper.getTimeFilters(startTime, endTime));
+    markupFilters.addAll(RESTToGraphQLHelper.getMarkupNotNullFilter());
+    PerspectiveTrendStats markupAmountStats = perspectiveService.perspectiveTrendStats(
+        markupFilters, Collections.emptyList(), RESTToGraphQLHelper.getMarkupAggregation(), false, managedAccountId);
 
     PerspectiveTrendStats totalSpendStats =
-        perspectivesQuery.perspectiveTrendStats(RESTToGraphQLHelper.getTimeFilters(startTime, endTime),
-            Collections.emptyList(), RESTToGraphQLHelper.getCostAggregation(), false, env);
-
-    PerspectiveTrendStats markupAmountStats =
-        perspectivesQuery.perspectiveTrendStats(RESTToGraphQLHelper.getTimeFilters(startTime, endTime),
-            Collections.emptyList(), RESTToGraphQLHelper.getMarkupAggregation(), false, env);
+        perspectiveService.perspectiveTrendStats(RESTToGraphQLHelper.getTimeFilters(startTime, endTime),
+            Collections.emptyList(), RESTToGraphQLHelper.getCostAggregation(), false, managedAccountId);
 
     return ManagedAccountStats.builder()
         .totalSpendStats(AmountTrendStats.builder()
@@ -152,23 +152,24 @@ public class ManagedAccountDataServiceImpl implements ManagedAccountDataService 
   public ManagedAccountTimeSeriesData getManagedAccountTimeSeriesData(
       String mspAccountId, String managedAccountId, long startTime, long endTime) {
     mspValidationService.validateAccountIsManagedByMspAccount(mspAccountId, managedAccountId);
-    final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(managedAccountId);
     QLCEViewPreferences qlCEViewPreferences =
         QLCEViewPreferences.builder().includeOthers(false).includeUnallocatedCost(false).build();
     List<TimeSeriesDataPoints> totalSpendStats =
-        perspectivesQuery
+        perspectiveService
             .perspectiveTimeSeriesStats(RESTToGraphQLHelper.getCostAggregation(),
                 RESTToGraphQLHelper.getTimeFilters(startTime, endTime),
                 Collections.singletonList(RESTToGraphQLHelper.getGroupByDay()), Collections.emptyList(),
-                (int) DEFAULT_LIMIT, (int) DEFAULT_OFFSET, qlCEViewPreferences, false, env)
+                (int) DEFAULT_LIMIT, (int) DEFAULT_OFFSET, qlCEViewPreferences, false, managedAccountId)
             .getStats();
 
+    List<QLCEViewFilterWrapper> markupFilters = new ArrayList<>();
+    markupFilters.addAll(RESTToGraphQLHelper.getTimeFilters(startTime, endTime));
+    markupFilters.addAll(RESTToGraphQLHelper.getMarkupNotNullFilter());
     List<TimeSeriesDataPoints> totalMarkupStats =
-        perspectivesQuery
-            .perspectiveTimeSeriesStats(RESTToGraphQLHelper.getMarkupAggregation(),
-                RESTToGraphQLHelper.getTimeFilters(startTime, endTime),
+        perspectiveService
+            .perspectiveTimeSeriesStats(RESTToGraphQLHelper.getMarkupAggregation(), markupFilters,
                 Collections.singletonList(RESTToGraphQLHelper.getGroupByDay()), Collections.emptyList(),
-                (int) DEFAULT_LIMIT, (int) DEFAULT_OFFSET, qlCEViewPreferences, false, env)
+                (int) DEFAULT_LIMIT, (int) DEFAULT_OFFSET, qlCEViewPreferences, false, managedAccountId)
             .getStats();
     return ManagedAccountTimeSeriesData.builder()
         .totalSpendStats(totalSpendStats)
@@ -254,12 +255,20 @@ public class ManagedAccountDataServiceImpl implements ManagedAccountDataService 
 
   private long getQuarterStartThreshold() {
     Calendar startOfMonthCalendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-    startOfMonthCalendar.set(Calendar.MONTH, -2);
+    int currentMonth = startOfMonthCalendar.get(Calendar.MONTH);
+    startOfMonthCalendar.set(Calendar.MONTH, currentMonth - (currentMonth % 3));
     startOfMonthCalendar.set(Calendar.DAY_OF_MONTH, 1);
     startOfMonthCalendar.set(Calendar.HOUR_OF_DAY, 0);
     startOfMonthCalendar.set(Calendar.MINUTE, 0);
     startOfMonthCalendar.set(Calendar.SECOND, 0);
     startOfMonthCalendar.set(Calendar.MILLISECOND, 0);
     return startOfMonthCalendar.getTimeInMillis();
+  }
+
+  private long updateEndTimeToEndOfDay(long endTime) {
+    if (endTime % ONE_DAY_IN_MILLIS == 0) {
+      return endTime + ONE_DAY_IN_MILLIS - 1;
+    }
+    return endTime;
   }
 }

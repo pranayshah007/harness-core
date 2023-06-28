@@ -15,6 +15,7 @@ import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.approval.step.harness.beans.ApproverInputInfo;
 import io.harness.steps.approval.step.harness.beans.Approvers;
+import io.harness.steps.approval.step.harness.beans.AutoApprovalParams;
 
 import java.util.List;
 import javax.validation.constraints.NotNull;
@@ -33,7 +34,7 @@ import org.springframework.data.annotation.TypeAlias;
 public class HarnessApprovalSpecParameters implements SpecParameters {
   @NotNull ParameterField<String> approvalMessage;
   @NotNull ParameterField<Boolean> includePipelineExecutionHistory;
-
+  AutoApprovalParams autoApproval;
   @NotNull Approvers approvers;
   List<ApproverInputInfo> approverInputs;
   ParameterField<Boolean> isAutoRejectEnabled;

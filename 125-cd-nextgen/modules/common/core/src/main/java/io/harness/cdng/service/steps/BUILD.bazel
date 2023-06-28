@@ -13,7 +13,6 @@ java_library(
     deps = [
         "//:lombok",
         "//125-cd-nextgen/modules/azure/core/src/main/java/io/harness/cdng/azure/webapp/steps:module",
-        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/beans/common:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/configfile/steps:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/envGroup/beans:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/envGroup/services:module",
@@ -32,6 +31,7 @@ java_library(
         "//125-freeze:module",
         "//127-cd-nextgen-entities:module",
         "//878-ng-common-utilities:module",
+        "//878-ng-common-utilities/src/main/java/io/harness/beans/common:module",
         "//884-pms-commons:module",
         "//953-events-api/src/main/proto:953_events_api_java_proto",
         "//953-yaml-commons:module",

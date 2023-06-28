@@ -296,38 +296,38 @@ public class MergeHelperTest extends CategoryTest {
         + "          value: <+input>.executionInput()";
     String merged = "pipeline:\n"
         + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: \"s1\"\n"
-        + "      service:\n"
-        + "        serviceRef: \"s1\"\n"
-        + "      environment:\n"
-        + "        environmentRef: \"e1\"\n"
-        + "        infrastructureDefinitions:\n"
-        + "        - identifier: \"i1\"\n"
-        + "        - identifier: \"i2\"\n"
-        + "          inputs:\n"
-        + "            isThisCorrect: \"maybe\"\n"
-        + "        randomFields:\n"
-        + "        - parallel:\n"
-        + "          - step:\n"
-        + "              identifier: \"s1\"\n"
-        + "              description: \"not valid\"\n"
-        + "          - step:\n"
-        + "              identifier: \"s2\"\n"
-        + "              description: \"not valid\"\n"
-        + "        - step:\n"
-        + "            identifier: \"s3\"\n"
-        + "            description: \"not valid\"\n"
-        + "        - parallel:\n"
-        + "          - step:\n"
-        + "              identifier: \"s4\"\n"
-        + "              description: \"not valid\"\n"
-        + "          - step:\n"
-        + "              identifier: \"s5\"\n"
-        + "              description: \"not valid\"\n"
-        + "      variables:\n"
-        + "      - name: \"var1\"\n"
-        + "        value: \"<+input>.executionInput()\"\n";
+        + "    - stage:\n"
+        + "        identifier: s1\n"
+        + "        service:\n"
+        + "          serviceRef: s1\n"
+        + "        environment:\n"
+        + "          environmentRef: e1\n"
+        + "          infrastructureDefinitions:\n"
+        + "            - identifier: i1\n"
+        + "            - identifier: i2\n"
+        + "              inputs:\n"
+        + "                isThisCorrect: maybe\n"
+        + "          randomFields:\n"
+        + "            - parallel:\n"
+        + "                - step:\n"
+        + "                    identifier: s1\n"
+        + "                    description: not valid\n"
+        + "                - step:\n"
+        + "                    identifier: s2\n"
+        + "                    description: not valid\n"
+        + "            - step:\n"
+        + "                identifier: s3\n"
+        + "                description: not valid\n"
+        + "            - parallel:\n"
+        + "                - step:\n"
+        + "                    identifier: s4\n"
+        + "                    description: not valid\n"
+        + "                - step:\n"
+        + "                    identifier: s5\n"
+        + "                    description: not valid\n"
+        + "        variables:\n"
+        + "          - name: var1\n"
+        + "            value: <+input>.executionInput()\n";
     String result = mergeRuntimeInputValuesIntoOriginalYaml(pipelineYaml, runtimeInput, false);
     assertThat(result).isEqualTo(merged);
   }
@@ -353,10 +353,10 @@ public class MergeHelperTest extends CategoryTest {
         + "  strategy:\n"
         + "    matrix:\n"
         + "      service:\n"
-        + "      - \"svc1\"\n"
+        + "        - svc1\n"
         + "      env:\n"
-        + "      - \"env1\"\n"
-        + "      - \"env2\"\n";
+        + "        - env1\n"
+        + "        - env2\n";
     String result = mergeRuntimeInputValuesIntoOriginalYaml(baseYaml, runtimeInput, false);
     assertThat(result).isEqualTo(merged);
   }
@@ -384,12 +384,12 @@ public class MergeHelperTest extends CategoryTest {
         + "  environmentGroup:\n"
         + "    environments:\n"
         + "      values:\n"
-        + "      - environmentRef: \"Env2\"\n"
-        + "        infrastructureDefinitions:\n"
-        + "        - identifier: \"Infra2\"\n"
-        + "      - environmentRef: \"Env3\"\n"
-        + "        infrastructureDefinitions:\n"
-        + "        - identifier: \"Infra3\"\n"
+        + "        - environmentRef: Env2\n"
+        + "          infrastructureDefinitions:\n"
+        + "            - identifier: Infra2\n"
+        + "        - environmentRef: Env3\n"
+        + "          infrastructureDefinitions:\n"
+        + "            - identifier: Infra3\n"
         + "    deployToAll: \"true\"\n";
     String result = mergeRuntimeInputValuesIntoOriginalYaml(baseYaml, runtimeInput, false);
     assertThat(result).isEqualTo(merged);
@@ -445,8 +445,8 @@ public class MergeHelperTest extends CategoryTest {
         + "  - b\n";
     String merged = "stage:\n"
         + "  key:\n"
-        + "  - \"a.allowedValues(a,b,c)\"\n"
-        + "  - \"b.allowedValues(a,b,c)\"\n";
+        + "    - \"a.allowedValues(a,b,c)\"\n"
+        + "    - \"b.allowedValues(a,b,c)\"\n";
     assertThat(mergeRuntimeInputValuesIntoOriginalYaml(base, correctRuntime, true)).isEqualTo(merged);
   }
 
@@ -508,7 +508,7 @@ public class MergeHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testMergeForServiceYaml() {
     String base = "service:\n"
-        + "  field: \"leaf\"\n";
+        + "  field: leaf\n";
     String runtime = "service:\n"
         + "  field: <+input>\n";
     String merged = MergeHelper.mergeInputSetFormatYamlToOriginYaml(base, runtime);
@@ -516,7 +516,7 @@ public class MergeHelperTest extends CategoryTest {
 
     base = "service:\n"
         + "  field:\n"
-        + "    leaf: \"correct\"\n";
+        + "    leaf: correct\n";
     runtime = "service:\n"
         + "  field: <+input>\n";
     merged = MergeHelper.mergeInputSetFormatYamlToOriginYaml(base, runtime);
@@ -528,9 +528,9 @@ public class MergeHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCheckIfPipelineValueIsRuntime() {
     String base = "stage:\n"
-        + "  field: \"leaf\"\n";
+        + "  field: leaf\n";
     String runtime = "stage:\n"
-        + "  field: \"not to be there\"\n";
+        + "  field: not to be there\n";
     YamlConfig baseConfig = new YamlConfig(base);
     YamlConfig runtimeConfig = new YamlConfig(runtime);
     String merged =
@@ -555,10 +555,10 @@ public class MergeHelperTest extends CategoryTest {
         + "  strategy:\n"
         + "    matrix:\n"
         + "      service:\n"
-        + "      - name: \"svc1\"\n"
-        + "      - name: \"svc2\"\n"
-        + "      - name: \"svc3\"\n"
-        + "      - name: \"svc4\"\n";
+        + "        - name: svc1\n"
+        + "        - name: svc2\n"
+        + "        - name: svc3\n"
+        + "        - name: svc4\n";
     String result = mergeRuntimeInputValuesIntoOriginalYaml(base, runtime, false);
     assertThat(result).isEqualTo(runtime);
   }

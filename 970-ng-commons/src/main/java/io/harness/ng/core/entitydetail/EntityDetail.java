@@ -10,8 +10,10 @@ package io.harness.ng.core;
 import io.harness.EntityType;
 import io.harness.beans.EntityReference;
 import io.harness.ng.core.entitydetail.EntityDetailDeserializer;
+import io.harness.ng.core.entitydetail.EntityGitMetadata;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,13 +21,14 @@ import lombok.experimental.FieldNameConstants;
 
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 @FieldNameConstants(innerTypeName = "EntityDetailKeys")
 @JsonDeserialize(using = EntityDetailDeserializer.class)
 public class EntityDetail {
   EntityType type;
   EntityReference entityRef;
   String name;
-
+  EntityGitMetadata entityGitMetadata;
   @Builder
   public EntityDetail(EntityType type, EntityReference entityRef, String name) {
     this.type = type;

@@ -7,7 +7,7 @@
 
 package software.wings.features;
 
-import static io.harness.rule.OwnerRule.UJJAWAL;
+import static io.harness.rule.OwnerRule.VIKAS_M;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -24,15 +24,31 @@ public class UserFeatureTest extends WingsBaseTest {
   @Inject private UsersFeature usersFeature;
 
   @Test
-  @Owner(developers = UJJAWAL)
+  @Owner(developers = VIKAS_M)
   @Category(UnitTests.class)
   public void testUserLimitCommunity() {
     int limit = usersFeature.getMaxUsageAllowed("COMMUNITY");
-    assertThat(limit).isEqualTo(5);
+    assertThat(limit).isEqualTo(50000);
   }
 
   @Test
-  @Owner(developers = UJJAWAL)
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testUserLimitFree() {
+    int limit = usersFeature.getMaxUsageAllowed("FREE");
+    assertThat(limit).isEqualTo(50000);
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testUserLimitTrial() {
+    int limit = usersFeature.getMaxUsageAllowed("TRIAL");
+    assertThat(limit).isEqualTo(50000);
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
   @Category(UnitTests.class)
   public void testUserLimitPaid() {
     int limit = usersFeature.getMaxUsageAllowed("PAID");

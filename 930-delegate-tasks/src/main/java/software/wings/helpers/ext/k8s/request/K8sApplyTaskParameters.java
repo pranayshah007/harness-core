@@ -52,10 +52,10 @@ public class K8sApplyTaskParameters extends K8sTaskParameters implements Manifes
       String filePaths, boolean skipSteadyStateCheck, boolean skipDryRun, HelmVersion helmVersion,
       Set<String> delegateSelectors, boolean skipRendering, boolean exportManifests, boolean inheritManifests,
       List<KubernetesResource> kubernetesResources, boolean useLatestChartMuseumVersion,
-      boolean useLatestKustomizeVersion, boolean useNewKubectlVersion) {
+      boolean useLatestKustomizeVersion, boolean useNewKubectlVersion, boolean timeoutSupported) {
     super(accountId, appId, commandName, activityId, k8sClusterConfig, workflowExecutionId, releaseName,
         timeoutIntervalInMin, k8sTaskType, helmVersion, delegateSelectors, useLatestChartMuseumVersion,
-        useLatestKustomizeVersion, useNewKubectlVersion);
+        useLatestKustomizeVersion, useNewKubectlVersion, timeoutSupported);
 
     this.k8sDelegateManifestConfig = k8sDelegateManifestConfig;
     this.valuesYamlList = valuesYamlList;

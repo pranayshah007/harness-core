@@ -160,9 +160,13 @@ public class ApiCallLogRecord extends CVNGLogRecord {
              tags.get(TAG_VERIFICATION_TYPE))) {
       metricService.recordDuration(
           API_CALL_EXECUTION_TIME, Duration.between(this.getRequestTime(), this.getResponseTime()));
-      metricService.recordMetric(API_CALL_RESPONSE_SIZE, this.getResponses().get(1).getValue().getBytes().length);
-      metricService.incCounter(
-          CVNGMetricsUtils.getApiCallLogResponseCodeMetricName(this.getResponses().get(0).getValue()));
+      if (this.getResponses().size() >= 2) {
+        metricService.recordMetric(API_CALL_RESPONSE_SIZE, this.getResponses().get(1).getValue().getBytes().length);
+      }
+      if (this.getResponses().size() >= 1) {
+        metricService.incCounter(
+            CVNGMetricsUtils.getApiCallLogResponseCodeMetricName(this.getResponses().get(0).getValue()));
+      }
     }
   }
 }

@@ -13,4 +13,6 @@ public interface HarnessLabelValues {
   String colorGreen = "green";
   String colorBlue = "blue";
   String colorDefault = "green";
+  String bgStageEnv = "stage";
+  String bgPrimaryEnv = "primary";
 }

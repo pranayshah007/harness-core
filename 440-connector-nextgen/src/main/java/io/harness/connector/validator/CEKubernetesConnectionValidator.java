@@ -17,13 +17,11 @@ import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.utils.CCMKubernetesConnectorHelper;
 import io.harness.connector.validator.scmValidators.AbstractKubernetesConnectorValidator;
-import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.connector.CEFeatures;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.cek8s.CEKubernetesClusterConfigDTO;
 import io.harness.delegate.beans.connector.k8Connector.CEKubernetesConnectionTaskParams;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
-import io.harness.delegate.beans.connector.k8Connector.KubernetesConnectionTaskResponse;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -51,10 +49,9 @@ public class CEKubernetesConnectionValidator extends AbstractKubernetesConnector
   @Override
   public ConnectorValidationResult validate(ConnectorConfigDTO kubernetesClusterConfig, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String identifier) {
-    DelegateResponseData responseData = super.validateConnector(
+    var responseData = super.validateConnector(
         kubernetesClusterConfig, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
-    KubernetesConnectionTaskResponse taskResponse = (KubernetesConnectionTaskResponse) responseData;
-    return taskResponse.getConnectorValidationResult();
+    return responseData.getConnectorValidationResult();
   }
 
   @Override

@@ -16,6 +16,7 @@ import io.harness.delegate.task.stepstatus.StepStatus;
 import io.harness.delegate.task.stepstatus.artifact.ArtifactMetadata;
 import io.harness.delegate.task.stepstatus.artifact.ArtifactMetadataType;
 import io.harness.delegate.task.stepstatus.artifact.SscaArtifactMetadata;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepType;
@@ -39,6 +40,11 @@ public class SscaEnforcementStep extends AbstractStepExecutable {
   }
 
   @Override
+  protected boolean shouldPublishArtifactForVm(CommandExecutionStatus commandExecutionStatus) {
+    return true;
+  }
+
+  @Override
   protected void modifyStepStatus(Ambiance ambiance, StepStatus stepStatus, String stepIdentifier) {
     String stepExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     SscaEnforcementSummary enforcementSummary = sscaServiceUtils.getEnforcementSummary(stepExecutionId);
@@ -54,8 +60,28 @@ public class SscaEnforcementStep extends AbstractStepExecutable {
                       .stepExecutionId(stepExecutionId)
                       .allowListViolationCount(enforcementSummary.getAllowListViolationCount())
                       .denyListViolationCount(enforcementSummary.getDenyListViolationCount())
+                      .imageTag(enforcementSummary.getArtifact().getTag())
                       .build())
             .build());
+  }
+
+  @Override
+  protected StepArtifacts handleArtifactForVm(
+      ArtifactMetadata artifactMetadata, StepElementParameters stepParameters, Ambiance ambiance) {
+    String stepExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+    SscaEnforcementSummary enforcementSummary = sscaServiceUtils.getEnforcementSummary(stepExecutionId);
+
+    return StepArtifacts.builder()
+        .publishedSbomArtifact(PublishedSbomArtifact.builder()
+                                   .id(enforcementSummary.getArtifact().getId())
+                                   .url(enforcementSummary.getArtifact().getUrl())
+                                   .imageName(enforcementSummary.getArtifact().getName())
+                                   .allowListViolationCount(enforcementSummary.getAllowListViolationCount())
+                                   .denyListViolationCount(enforcementSummary.getDenyListViolationCount())
+                                   .stepExecutionId(stepExecutionId)
+                                   .tag(enforcementSummary.getArtifact().getTag())
+                                   .build())
+        .build();
   }
 
   @Override
@@ -76,6 +102,7 @@ public class SscaEnforcementStep extends AbstractStepExecutable {
                 .stepExecutionId(sscaArtifactMetadata.getStepExecutionId())
                 .allowListViolationCount(sscaArtifactMetadata.getAllowListViolationCount())
                 .denyListViolationCount(sscaArtifactMetadata.getDenyListViolationCount())
+                .tag(sscaArtifactMetadata.getImageTag())
                 .build());
       }
     }

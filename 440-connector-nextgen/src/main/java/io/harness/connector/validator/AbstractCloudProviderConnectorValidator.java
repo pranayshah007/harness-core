@@ -11,21 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.ManagerExecutable;
-import io.harness.delegate.beans.DelegateResponseData;
-import io.harness.delegate.beans.azure.response.AzureValidateTaskResponse;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
-import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
-import io.harness.delegate.beans.connector.awsconnector.AwsValidateTaskResponse;
-import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
-import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
-import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
-import io.harness.delegate.beans.connector.spotconnector.SpotValidateTaskResponse;
-import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
-import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudConnectorDTO;
-import io.harness.delegate.beans.pcf.response.TasValidateTaskResponse;
-import io.harness.delegate.task.gcp.response.GcpValidationTaskResponse;
-import io.harness.delegate.task.terraformcloud.response.TerraformCloudValidateTaskResponse;
-import io.harness.exception.InvalidRequestException;
 
 @OwnedBy(HarnessTeam.CI)
 public abstract class AbstractCloudProviderConnectorValidator extends AbstractConnectorValidator {
@@ -44,28 +30,9 @@ public abstract class AbstractCloudProviderConnectorValidator extends AbstractCo
       return super.validateConnectorViaManager(
           connectorConfigDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     } else {
-      DelegateResponseData responseData =
+      var responseData =
           super.validateConnector(connectorConfigDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
-      return getValidationResult(connectorConfigDTO, responseData);
-    }
-  }
-
-  private ConnectorValidationResult getValidationResult(
-      ConnectorConfigDTO connectorConfigDTO, DelegateResponseData delegateResponseData) {
-    if (connectorConfigDTO instanceof AwsConnectorDTO) {
-      return ((AwsValidateTaskResponse) delegateResponseData).getConnectorValidationResult();
-    } else if (connectorConfigDTO instanceof GcpConnectorDTO) {
-      return ((GcpValidationTaskResponse) delegateResponseData).getConnectorValidationResult();
-    } else if (connectorConfigDTO instanceof AzureConnectorDTO) {
-      return ((AzureValidateTaskResponse) delegateResponseData).getConnectorValidationResult();
-    } else if (connectorConfigDTO instanceof SpotConnectorDTO) {
-      return ((SpotValidateTaskResponse) delegateResponseData).getConnectorValidationResult();
-    } else if (connectorConfigDTO instanceof TasConnectorDTO) {
-      return ((TasValidateTaskResponse) delegateResponseData).getConnectorValidationResult();
-    } else if (connectorConfigDTO instanceof TerraformCloudConnectorDTO) {
-      return ((TerraformCloudValidateTaskResponse) delegateResponseData).getConnectorValidationResult();
-    } else {
-      throw new InvalidRequestException("Invalid connector type found during connection test");
+      return responseData.getConnectorValidationResult();
     }
   }
 }

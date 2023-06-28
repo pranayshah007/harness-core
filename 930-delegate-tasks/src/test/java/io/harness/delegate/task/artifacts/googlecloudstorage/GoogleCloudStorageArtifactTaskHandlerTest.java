@@ -8,6 +8,7 @@
 package io.harness.delegate.task.artifacts.googlecloudstorage;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 import static io.harness.rule.OwnerRule.PRAGYESH;
 
@@ -55,6 +56,7 @@ public class GoogleCloudStorageArtifactTaskHandlerTest extends CategoryTest {
   private final String BUCKET = "bucket";
   private final String GCP_PASSWORD = "password";
   private final String ARTIFACT_PATH = "path/abc";
+  private final String ARTIFACT_PATH_2 = "artifactPath2";
 
   @Test(expected = InvalidRequestException.class)
   @Owner(developers = ALLU_VAMSI)
@@ -114,7 +116,7 @@ public class GoogleCloudStorageArtifactTaskHandlerTest extends CategoryTest {
     List<BuildDetails> builds = List.of(buildDetails);
     doReturn(builds).when(gcsHelperService).listBuilds(any());
     ArtifactTaskExecutionResponse actualArtifactTaskExecutionResponse =
-        googleCloudStorageArtifactTaskHandler.getLastSuccessfulBuild(getRequest(ARTIFACT_PATH));
+        googleCloudStorageArtifactTaskHandler.getLastSuccessfulBuild(getRequest(ARTIFACT_PATH, ""));
     assertThat(actualArtifactTaskExecutionResponse).isNotNull();
     assertThat(actualArtifactTaskExecutionResponse.getArtifactDelegateResponses().size()).isEqualTo(1);
     assertThat(actualArtifactTaskExecutionResponse.getArtifactDelegateResponses().get(0))
@@ -126,6 +128,44 @@ public class GoogleCloudStorageArtifactTaskHandlerTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuildFail() {
+    BuildDetails buildDetails1 =
+        BuildDetails.Builder.aBuildDetails().withArtifactPath(ARTIFACT_PATH).withUpdateTime(0l).build();
+    BuildDetails buildDetails2 =
+        BuildDetails.Builder.aBuildDetails().withArtifactPath(ARTIFACT_PATH_2).withUpdateTime(1l).build();
+    List<BuildDetails> builds = Arrays.asList(buildDetails1, buildDetails2);
+    doReturn(builds).when(gcsHelperService).listBuilds(any());
+
+    assertThatThrownBy(() -> googleCloudStorageArtifactTaskHandler.getLastSuccessfulBuild(getRequest("a", "")))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("No artifact exist for the provided artifact path. Please ensure that artifact path is valid");
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuildRegex() {
+    BuildDetails buildDetails1 =
+        BuildDetails.Builder.aBuildDetails().withArtifactPath(ARTIFACT_PATH).withUpdateTime(0l).build();
+    BuildDetails buildDetails2 =
+        BuildDetails.Builder.aBuildDetails().withArtifactPath(ARTIFACT_PATH_2).withUpdateTime(1l).build();
+    List<BuildDetails> builds = Arrays.asList(buildDetails1, buildDetails2);
+    doReturn(builds).when(gcsHelperService).listBuilds(any());
+    ArtifactTaskExecutionResponse actualArtifactTaskExecutionResponse =
+        googleCloudStorageArtifactTaskHandler.getLastSuccessfulBuild(getRequest("", "a"));
+    assertThat(actualArtifactTaskExecutionResponse).isNotNull();
+    assertThat(actualArtifactTaskExecutionResponse.getArtifactDelegateResponses().size()).isEqualTo(1);
+    assertThat(actualArtifactTaskExecutionResponse.getArtifactDelegateResponses().get(0))
+        .isInstanceOf(GoogleCloudStorageArtifactDelegateResponse.class);
+    GoogleCloudStorageArtifactDelegateResponse attributes =
+        (GoogleCloudStorageArtifactDelegateResponse) actualArtifactTaskExecutionResponse.getArtifactDelegateResponses()
+            .get(0);
+    assertThat(attributes.getArtifactPath()).isEqualTo(ARTIFACT_PATH_2);
+  }
+
+  @Test
   @Owner(developers = PRAGYESH)
   @Category(UnitTests.class)
   public void testGetBuild() {
@@ -134,7 +174,7 @@ public class GoogleCloudStorageArtifactTaskHandlerTest extends CategoryTest {
 
     doReturn(builds).when(gcsHelperService).listBuilds(any());
     ArtifactTaskExecutionResponse actualArtifactTaskExecutionResponse =
-        googleCloudStorageArtifactTaskHandler.getBuilds(getRequest(ARTIFACT_PATH));
+        googleCloudStorageArtifactTaskHandler.getBuilds(getRequest(ARTIFACT_PATH, null));
     assertThat(actualArtifactTaskExecutionResponse).isNotNull();
     assertThat(actualArtifactTaskExecutionResponse.getArtifactDelegateResponses().size()).isEqualTo(1);
     assertThat(actualArtifactTaskExecutionResponse.getArtifactDelegateResponses().get(0))
@@ -153,11 +193,12 @@ public class GoogleCloudStorageArtifactTaskHandlerTest extends CategoryTest {
     List<BuildDetails> builds = List.of(buildDetails);
 
     doReturn(builds).when(gcsHelperService).listBuilds(any());
-    assertThatThrownBy(() -> googleCloudStorageArtifactTaskHandler.getLastSuccessfulBuild(getRequest("")))
-        .isInstanceOf(InvalidRequestException.class);
+    assertThatThrownBy(() -> googleCloudStorageArtifactTaskHandler.getLastSuccessfulBuild(getRequest("", "")))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Please specify the artifact path for the GCS artifact source.");
   }
 
-  private GoogleCloudStorageArtifactDelegateRequest getRequest(String artifactPath) {
+  private GoogleCloudStorageArtifactDelegateRequest getRequest(String artifactPath, String artifactPathRegex) {
     GcpConnectorCredentialDTO gcpConnectorCredentialDTO =
         GcpConnectorCredentialDTO.builder().config(createGcpConnectorCredentialConfig()).build();
     return GoogleCloudStorageArtifactDelegateRequest.builder()
@@ -165,6 +206,7 @@ public class GoogleCloudStorageArtifactTaskHandlerTest extends CategoryTest {
         .project(PROJECT)
         .bucket(BUCKET)
         .artifactPath(artifactPath)
+        .artifactPathRegex(artifactPathRegex)
         .gcpConnectorDTO(createGcpConnector(gcpConnectorCredentialDTO))
         .build();
   }

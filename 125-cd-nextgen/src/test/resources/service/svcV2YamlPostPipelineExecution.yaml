@@ -1,47 +1,47 @@
 service:
-  name: "SVC_NAME"
-  identifier: "SVC_NAME"
+  name: SVC_NAME
+  identifier: SVC_NAME
   tags:
-    a: "b"
-  description: "SERVICE_DESCRIPTION"
+    a: b
+  description: SERVICE_DESCRIPTION
   serviceDefinition:
     spec:
       artifacts:
         sidecars:
-        - sidecar:
-            spec:
-              connectorRef: "gcp"
-              imagePath: "gcr.io/google-containers/busybox@sha256:545e6a6310a27636260920bc07b994a299b6708a1b26910cfefd335fdfb60d2b"
-              tag: "<+input>"
-              registryHostname: "gcr.io"
-            identifier: "gcr_test"
-            type: "Gcr"
+          - sidecar:
+              spec:
+                connectorRef: gcp
+                imagePath: gcr.io/google-containers/busybox@sha256:545e6a6310a27636260920bc07b994a299b6708a1b26910cfefd335fdfb60d2b
+                tag: <+input>
+                registryHostname: gcr.io
+              identifier: gcr_test
+              type: Gcr
         primary:
           spec:
-            connectorRef: "account.harnessImage"
-            imagePath: "library/nginx"
-            tag: "<+input>"
-          type: "DockerRegistry"
+            connectorRef: account.harnessImage
+            imagePath: library/nginx
+            tag: <+input>
+          type: DockerRegistry
       variables:
-      - name: "svar1"
-        type: "String"
-        value: "ServiceVariable1"
-      - name: "svar2"
-        type: "String"
-        value: "ServiceVariable2"
+        - name: svar1
+          type: String
+          value: ServiceVariable1
+        - name: svar2
+          type: String
+          value: ServiceVariable2
       manifests:
-      - manifest:
-          identifier: "nginx"
-          type: "K8sManifest"
-          spec:
-            store:
-              type: "Github"
-              spec:
-                connectorRef: "account.kubernetes_github"
-                gitFetchType: "Branch"
-                paths:
-                - "content/en/examples/application/nginx-app.yaml"
-                branch: "main"
-            skipResourceVersioning: false
-    type: "Kubernetes"
+        - manifest:
+            identifier: nginx
+            type: K8sManifest
+            spec:
+              store:
+                type: Github
+                spec:
+                  connectorRef: account.kubernetes_github
+                  gitFetchType: Branch
+                  paths:
+                    - content/en/examples/application/nginx-app.yaml
+                  branch: main
+              skipResourceVersioning: false
+    type: Kubernetes
   gitOpsEnabled: false

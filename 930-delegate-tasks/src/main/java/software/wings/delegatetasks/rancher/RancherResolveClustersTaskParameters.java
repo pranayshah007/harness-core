@@ -37,16 +37,20 @@ public class RancherResolveClustersTaskParameters
   private String activityId;
   private String appId;
   private List<EncryptedDataDetail> encryptedDataDetails;
+  private int timeout;
+  private boolean timeoutSupported;
 
   @Builder
   public RancherResolveClustersTaskParameters(RancherConfig rancherConfig,
       List<ClusterSelectionCriteriaEntry> clusterSelectionCriteria, List<EncryptedDataDetail> encryptedDataDetails,
-      String activityId, String appId) {
+      String activityId, String appId, boolean timeoutSupported, int timeout) {
     this.rancherConfig = rancherConfig;
     this.clusterSelectionCriteria = clusterSelectionCriteria;
     this.encryptedDataDetails = encryptedDataDetails;
     this.activityId = activityId;
     this.appId = appId;
+    this.timeoutSupported = timeoutSupported;
+    this.timeout = timeout;
   }
 
   @Override

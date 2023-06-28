@@ -20,6 +20,7 @@ import io.harness.opaclient.model.OpaEvaluationResponseHolder;
 import io.harness.opaclient.model.OpaPolicyEvaluationResponse;
 import io.harness.opaclient.model.OpaPolicySetEvaluationResponse;
 import io.harness.opaclient.model.PipelineOpaEvaluationContext;
+import io.harness.opaclient.model.TemplateOpaEvaluationContext;
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.UserPrincipal;
 import io.harness.serializer.JsonUtils;
@@ -134,5 +135,17 @@ public class GovernanceServiceHelper {
     }
     UserPrincipal userPrincipal = (UserPrincipal) SourcePrincipalContextBuilder.getSourcePrincipal();
     return userPrincipal.getName();
+  }
+
+  public String getEntityMetadata(String templateName) throws UnsupportedEncodingException {
+    Map<String, String> metadataMap = ImmutableMap.<String, String>builder().put("entityName", templateName).build();
+    return URLEncoder.encode(JsonUtils.asJson(metadataMap), StandardCharsets.UTF_8.toString());
+  }
+
+  public TemplateOpaEvaluationContext createEvaluationContextTemplate(String yaml) throws IOException {
+    return TemplateOpaEvaluationContext.builder()
+        .template(OpaUtils.extractObjectFromYamlString(yaml, OpaConstants.OPA_EVALUATION_TYPE_TEMPLATE))
+        .date(new Date())
+        .build();
   }
 }

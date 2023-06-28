@@ -136,7 +136,7 @@ public class CoreDelegateResource {
                   InputData.newBuilder().setBinaryData(ByteString.copyFrom(taskDataBytes)).build()) // Task input
               .build();
 
-      final var response = AcquireTasksResponse.newBuilder().setId(taskId).addTasks(task).build();
+      final var response = AcquireTasksResponse.newBuilder().setExecutionInfraId(taskId).addTask(task).build();
 
       return Response.ok(response).build();
     } catch (final Exception e) {

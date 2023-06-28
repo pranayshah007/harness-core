@@ -8,6 +8,7 @@
 package io.harness.cdng.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.cdng.ssh.utils.CommandStepUtils.prepareOutputVariables;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -229,8 +230,9 @@ public class CommandStep extends CdTaskExecutable<CommandTaskResponse> {
         && taskResponse.getExecuteCommandResponse().getCommandExecutionData() != null) {
       ShellExecutionData commandExecutionData =
           (ShellExecutionData) taskResponse.getExecuteCommandResponse().getCommandExecutionData();
-      outputVariables = sshCommandStepHelper.prepareOutputVariables(
-          commandExecutionData.getSweepingOutputEnvVariables(), executeCommandStepParameters.getOutputVariables());
+      outputVariables = prepareOutputVariables(commandExecutionData.getSweepingOutputEnvVariables(),
+          executeCommandStepParameters.getOutputVariables(),
+          executeCommandStepParameters.getSecretOutputVariablesNames());
     }
     return outputVariables;
   }

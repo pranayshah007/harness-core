@@ -7,6 +7,7 @@
 
 package io.harness.cdng.service.steps.helpers.beans;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
@@ -22,6 +23,7 @@ import lombok.Data;
 
 @Data
 @Builder
+@RecasterAlias("io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters")
 public class ServiceStepV3Parameters implements StepParameters {
   private ParameterField<String> serviceRef;
   private ParameterField<Map<String, Object>> inputs;

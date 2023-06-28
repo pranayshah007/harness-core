@@ -30,6 +30,7 @@ import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.core.beans.LoadTestAdditionalInfo;
 import io.harness.cvng.core.beans.LoadTestAdditionalInfo.LoadTestAdditionalInfoBuilder;
+import io.harness.cvng.core.beans.SimpleVerificationAdditionalInfo;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentLogAnalysisFilter;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentTimeSeriesAnalysisFilter;
@@ -103,6 +104,12 @@ public class VerificationJobInstanceAnalysisServiceImpl implements VerificationJ
           .baselineStartTime(baselineVerificationJobInstance.getStartTime().toEpochMilli());
     }
     return loadTestSummaryBuilder.build();
+  }
+
+  @Override
+  public SimpleVerificationAdditionalInfo getSimpleVerificationAdditionalInfo(
+      String accountId, VerificationJobInstance verificationJobInstance) {
+    return SimpleVerificationAdditionalInfo.builder().build();
   }
 
   @Override

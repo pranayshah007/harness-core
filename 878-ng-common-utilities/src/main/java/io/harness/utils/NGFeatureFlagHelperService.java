@@ -17,6 +17,7 @@ import io.harness.remote.client.CGRestUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -29,6 +30,13 @@ public class NGFeatureFlagHelperService {
   public boolean isEnabled(String accountId, FeatureName featureName) {
     try {
       return CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(featureName.name(), accountId), ERROR_MESSAGE);
+    } catch (InvalidRequestException e) {
+      throw new UnexpectedException(ERROR_MESSAGE);
+    }
+  }
+  public Set<String> getFeatureFlagEnabledAccountIds(String featureName) {
+    try {
+      return CGRestUtils.getResponse(accountClient.featureFlagEnabledAccounts(featureName));
     } catch (InvalidRequestException e) {
       throw new UnexpectedException(ERROR_MESSAGE);
     }

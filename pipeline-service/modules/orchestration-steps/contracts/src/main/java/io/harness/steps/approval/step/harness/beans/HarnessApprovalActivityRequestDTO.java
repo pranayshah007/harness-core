@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
@@ -41,4 +42,6 @@ public class HarnessApprovalActivityRequestDTO {
   @Parameter(description = "Approval activity with the comment")
   @Schema(description = "Approval activity with the comment")
   String comments;
+
+  @Parameter(description = "auto approval parameter") @ApiModelProperty(hidden = true) boolean autoApprove;
 }

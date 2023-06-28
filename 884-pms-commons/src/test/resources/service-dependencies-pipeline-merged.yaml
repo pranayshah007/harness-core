@@ -5,40 +5,40 @@ pipeline:
   orgIdentifier: Default
   tags: {}
   stages:
-  - stage:
-      identifier: Test
-      type: CI
-      name: Test
-      spec:
-        cloneCodebase: false
-        execution:
-          steps:
-          - step:
-              identifier: asdas
-              type: Run
-              name: asdas
+    - stage:
+        identifier: Test
+        type: CI
+        name: Test
+        spec:
+          cloneCodebase: false
+          execution:
+            steps:
+              - step:
+                  identifier: asdas
+                  type: Run
+                  name: asdas
+                  spec:
+                    connectorRef: Test_4_new
+                    image: asdas
+                    command: dasdasd
+                    privileged: false
+                  description: dasdasda
+          serviceDependencies:
+            - identifier: Service_Dependency
+              type: Service
+              name: Service Dependency
+              description: asdasd
               spec:
-                connectorRef: Test_4_new
-                image: asdas
-                command: dasdasd
-                privileged: false
-              description: dasdasda
-        serviceDependencies:
-        - identifier: Service_Dependency
-          type: Service
-          name: Service Dependency
-          description: asdasd
-          spec:
-            connectorRef: Test_3_new
-            image: asd
-            privileged: true
-            envVariables:
-              asd: asd
-            entrypoint:
-            - ads
-            args:
-            - asd
-            resources:
-              limits:
-                memory: 128Mi
-                cpu: 0.2
+                connectorRef: Test_3_new
+                image: asd
+                privileged: true
+                envVariables:
+                  asd: asd
+                entrypoint:
+                  - ads
+                args:
+                  - asd
+                resources:
+                  limits:
+                    memory: 128Mi
+                    cpu: 0.2

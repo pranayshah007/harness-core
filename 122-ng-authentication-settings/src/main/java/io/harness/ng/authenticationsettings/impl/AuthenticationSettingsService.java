@@ -37,14 +37,17 @@ public interface AuthenticationSettingsService {
   void updateWhitelistedDomains(String accountIdentifier, Set<String> whitelistedDomains);
   SSOConfig uploadSAMLMetadata(@NotNull String accountId, @NotNull MultipartBody.Part inputStream,
       @NotNull String displayName, String groupMembershipAttr, @NotNull Boolean authorizationEnabled, String logoutUrl,
-      String entityIdentifier, String samlProviderType, String clientId, String clientSecret, String friendlySamlName);
+      String entityIdentifier, String samlProviderType, String clientId, String clientSecret, String friendlySamlName,
+      @NotNull Boolean jitEnabled, String jitValidationKey, String jitValidationValue);
   SSOConfig updateSAMLMetadata(@NotNull String accountId, MultipartBody.Part inputStream, String displayName,
       String groupMembershipAttr, @NotNull Boolean authorizationEnabled, String logoutUrl, String entityIdentifier,
-      String samlProviderType, String clientId, String clientSecret);
+      String samlProviderType, String clientId, String clientSecret, @NotNull Boolean jitEnabled,
+      String jitValidationKey, String jitValidationValue);
   // this overloading is for case when updating a SAML setting among list of settings in account {samlSSOId}
   SSOConfig updateSAMLMetadata(@NotNull String accountId, String samlSSOId, MultipartBody.Part inputStream,
       String displayName, String groupMembershipAttr, @NotNull Boolean authorizationEnabled, String logoutUrl,
-      String entityIdentifier, String samlProviderType, String clientId, String clientSecret, String friendlySamlName);
+      String entityIdentifier, String samlProviderType, String clientId, String clientSecret, String friendlySamlName,
+      @NotNull Boolean jitEnabled, String jitValidationKey, String jitValidationValue);
   SSOConfig deleteSAMLMetadata(@NotNull String accountIdentifier);
   // this overloading is for case when we delete a SAML setting among list of settings in account {samlSSOId}
   SSOConfig deleteSAMLMetadata(@NotNull String accountIdentifier, @NotNull String samlSSOId);

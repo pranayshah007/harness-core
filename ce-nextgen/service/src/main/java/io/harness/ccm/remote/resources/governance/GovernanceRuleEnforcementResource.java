@@ -137,7 +137,7 @@ public class GovernanceRuleEnforcementResource {
   public static final String SCHEDULER_HTTP_METHOD = "POST";
   public static final String ENFORCEMENT_ID = "enforcementId";
   public static final String CONTENT_TYPE_APPLICATION_JSON = "Content-Type: application/json";
-  public static final String SCHEDULER_HTTP_TIMEOUT = "100";
+  public static final String SCHEDULER_HTTP_TIMEOUT = "200";
   public static final String SCHEDULER_IS_DEBUG = "true";
   public static final String CODE_MESSAGE_BODY = "code: {}, message: {}, body: {}";
   private final RuleEnforcementService ruleEnforcementService;

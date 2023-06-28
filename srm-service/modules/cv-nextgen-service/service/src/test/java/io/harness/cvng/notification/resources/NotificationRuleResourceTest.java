@@ -30,17 +30,14 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Map;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.yaml.snakeyaml.Yaml;
 
 public class NotificationRuleResourceTest extends CvNextGenTestBase {
   @Inject private NotificationRuleService notificationRuleService;
@@ -352,13 +349,5 @@ public class NotificationRuleResourceTest extends CvNextGenTestBase {
     sloYaml = sloYaml.replace(
         "$healthSourceRef", monitoredServiceDTO.getSources().getHealthSources().iterator().next().getIdentifier());
     return sloYaml;
-  }
-
-  private static String convertToJson(String yamlString) {
-    Yaml yaml = new Yaml();
-    Map<String, Object> map = yaml.load(yamlString);
-
-    JSONObject jsonObject = new JSONObject(map);
-    return jsonObject.toString();
   }
 }

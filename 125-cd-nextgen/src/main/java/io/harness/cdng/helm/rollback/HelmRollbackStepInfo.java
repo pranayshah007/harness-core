@@ -44,8 +44,9 @@ public class HelmRollbackStepInfo extends HelmRollbackBaseStepInfo implements CD
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Builder(builderMethodName = "infoBuilder")
-  public HelmRollbackStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors, String helmRollbackFqn) {
-    super(delegateSelectors, helmRollbackFqn);
+  public HelmRollbackStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors, String helmRollbackFqn,
+      ParameterField<Boolean> skipSteadyStateCheck) {
+    super(delegateSelectors, helmRollbackFqn, skipSteadyStateCheck);
   }
 
   @Override
@@ -60,7 +61,10 @@ public class HelmRollbackStepInfo extends HelmRollbackBaseStepInfo implements CD
 
   @Override
   public SpecParameters getSpecParameters() {
-    return HelmRollbackStepParams.infoBuilder().delegateSelectors(delegateSelectors).build();
+    return HelmRollbackStepParams.infoBuilder()
+        .delegateSelectors(delegateSelectors)
+        .skipSteadyStateCheck(skipSteadyStateCheck)
+        .build();
   }
 
   @Override

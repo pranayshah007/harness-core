@@ -315,6 +315,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       : DEFAULT_MAX_THRESHOLD;
   private final boolean dynamicRequestHandling = isNotBlank(System.getenv().get("DYNAMIC_REQUEST_HANDLING"))
       && Boolean.parseBoolean(System.getenv().get("DYNAMIC_REQUEST_HANDLING"));
+  private final Optional<Integer> delegateTaskCapacity = getDelegateTaskCapacity();
   private String MANAGER_PROXY_CURL = System.getenv().get("MANAGER_PROXY_CURL");
   private String MANAGER_HOST_AND_PORT = System.getenv().get("MANAGER_HOST_AND_PORT");
   private static final String DEFAULT_PATCH_VERSION = "000";
@@ -372,6 +373,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private final AtomicInteger maxExecutingTasksCount = new AtomicInteger();
   private final AtomicInteger maxExecutingFuturesCount = new AtomicInteger();
   private final AtomicInteger heartbeatSuccessCalls = new AtomicInteger();
+  private final AtomicInteger currentlyAcquiringTasksCount = new AtomicInteger();
 
   private final AtomicLong lastHeartbeatSentAt = new AtomicLong(System.currentTimeMillis());
   private final AtomicLong frozenAt = new AtomicLong(-1);
@@ -440,7 +442,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     delegateConfiguration.setImmutable(isImmutableDelegate);
 
     // check if someone used the older stateful set yaml with immutable image
-    checkForMismatchBetweenImageAndK8sResourceType();
+    checkForImmutbleAndStatefulset();
 
     try {
       // Initialize delegate process in background.
@@ -471,8 +473,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
    * This will indicate that the customer started an immutable delegate with older stateful set yaml
    */
   @SuppressWarnings("PMD")
-  private void checkForMismatchBetweenImageAndK8sResourceType() {
-    if (!KUBERNETES.equals(DELEGATE_TYPE) && !HELM_DELEGATE.equals(DELEGATE_TYPE)) {
+  private void checkForImmutbleAndStatefulset() {
+    if (!this.isImmutableDelegate || !KUBERNETES.equals(DELEGATE_TYPE) && !HELM_DELEGATE.equals(DELEGATE_TYPE)) {
       return;
     }
 
@@ -484,19 +486,13 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     try {
       int delegateIndex = Integer.parseInt(HOST_NAME.substring(index + 1));
       // a delegate can have a name like test-8bbd86b7b-23455 in which case we don't want to fail
-      if (delegateIndex < 1000 && isImmutableDelegate) {
+      if (delegateIndex < 1000) {
         log.error("It appears that you have used a legacy delegate yaml with the newer delegate image."
             + " Please note that for the delegate images formatted as YY.MM.XXXXX you should download a fresh yaml and not reuse legacy delegate yaml");
         System.exit(1);
       }
     } catch (NumberFormatException e) {
-      // if there is NumberFormatException then its a deployment
-      log.info("{} is not from a stateful set, checking whether its using immutable image", HOST_NAME);
-      if (!isImmutableDelegate) {
-        log.error(
-            "It appears that you have used a legacy delegate image with newer delegate yaml. Please use images formatted as YY.MM.XXXXX");
-        System.exit(1);
-      }
+      log.info("{} is not from a stateful set, continuing", HOST_NAME);
     } catch (StringIndexOutOfBoundsException e) {
       log.info("{} is an unexpected name, continuing", HOST_NAME);
     }
@@ -1874,7 +1870,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       }
 
       setSwitchStorage(receivedDelegateResponse.isUseCdn());
-      updateJreVersion(receivedDelegateResponse.getJreVersion());
+      // updateJreVersion(receivedDelegateResponse.getJreVersion());
 
       lastHeartbeatSentAt.set(clock.millis());
 
@@ -2015,6 +2011,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void dispatchDelegateTask(DelegateTaskEvent delegateTaskEvent) {
+    boolean incrementedCurrentlyAcquiredTaskCounter = false;
     try (TaskLogContext ignore = new TaskLogContext(delegateTaskEvent.getDelegateTaskId(), OVERRIDE_ERROR)) {
       String delegateTaskId = delegateTaskEvent.getDelegateTaskId();
 
@@ -2038,6 +2035,19 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         if (currentlyValidatingTasks.containsKey(delegateTaskId)) {
           log.info("Task [DelegateTaskEvent: {}] already validating. Don't validate again", delegateTaskEvent);
           return;
+        }
+
+        // So this feature works only if ENV - DELEGATE_TASK_CAPACITY is defined.
+        if (delegateTaskCapacity.isPresent()) {
+          // Check if current acquiring tasks is below capacity.
+          int taskCapacity = delegateTaskCapacity.get();
+          final int processingTaskCount = currentlyAcquiringTasksCount.getAndIncrement();
+          incrementedCurrentlyAcquiredTaskCounter = true;
+          if (processingTaskCount >= taskCapacity) {
+            log.info("Not acquiring task - currently processing {} tasks count exceeds task capacity {}",
+                processingTaskCount, taskCapacity);
+            return;
+          }
         }
 
         currentlyAcquiringTasks.add(delegateTaskId);
@@ -2082,6 +2092,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         log.error("Unable to get task for validation", e);
       } finally {
         currentlyAcquiringTasks.remove(delegateTaskId);
+        if (incrementedCurrentlyAcquiredTaskCounter) {
+          currentlyAcquiringTasksCount.getAndDecrement();
+        }
         currentlyExecutingFutures.remove(delegateTaskId);
       }
     }
@@ -2349,6 +2362,20 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       }
     }
     return secrets;
+  }
+
+  private static Optional<Integer> getDelegateTaskCapacity() {
+    String val = System.getenv().get("DELEGATE_TASK_CAPACITY");
+    Optional<Integer> taskCapacity = Optional.empty();
+    if (StringUtils.isNotEmpty(val)) {
+      try {
+        taskCapacity = Optional.of(Integer.parseInt(val));
+      } catch (NumberFormatException ex) {
+        log.error("Unable to parse DELEGATE_TASK_CAPACITY env variable {} ", ex);
+      }
+    }
+
+    return taskCapacity;
   }
 
   private BooleanSupplier getPreExecutionFunction(@NotNull DelegateTaskPackage delegateTaskPackage,
@@ -2696,6 +2723,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
       secretDetails.forEach((key, value) -> {
         char[] secretValue = decryptedRecords.get(value.getEncryptedRecord().getUuid());
+        if (secretValue == null) {
+          throw new UnexpectedException(format("Value for secret [%s] (uuid: [%s]) found null.",
+              value.getEncryptedRecord().getName(), value.getEncryptedRecord().getUuid()));
+        }
         secretUuidToValues.put(key, secretValue);
 
         // Adds secret values from the 3 phase decryption to the list of task secrets to be masked

@@ -1,9 +1,9 @@
 environment:
-  orgIdentifier: "ORG_ID"
-  projectIdentifier: "PROJECT_ID"
-  identifier: "ENV_NAME"
+  orgIdentifier: ORG_ID
+  projectIdentifier: PROJECT_ID
+  identifier: ENV_NAME
   tags:
-    updated_key: "updated_val"
-  name: "updated_name"
-  description: "updated_description"
-  type: "Production"
+    updated_key: updated_val
+  name: updated_name
+  description: updated_description
+  type: Production

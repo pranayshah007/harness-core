@@ -13,8 +13,10 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import io.kubernetes.client.util.Yaml;
 import java.io.IOException;
+import java.io.InputStream;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.LoaderOptions;
+import org.yaml.snakeyaml.introspector.PropertyUtils;
 import org.yaml.snakeyaml.representer.Representer;
 
 public class K8sYamlUtils {
@@ -41,10 +43,16 @@ public class K8sYamlUtils {
     return mapper.loadAs(yaml, cls);
   }
 
+  public <T> T read(InputStream io, Class<T> cls) throws JsonParseException, JsonMappingException, IOException {
+    return mapper.loadAs(io, cls);
+  }
+
   public static org.yaml.snakeyaml.Yaml createYamlWithCustomConstructor() {
     LoaderOptions loaderOptions = new LoaderOptions();
     loaderOptions.setCodePointLimit(customLoadSize());
     BooleanPatchedRepresenter booleanPatchedRepresenter = new BooleanPatchedRepresenter();
+    PropertyUtils propertyUtils = booleanPatchedRepresenter.getPropertyUtils();
+    propertyUtils.setSkipMissingProperties(true);
     return new org.yaml.snakeyaml.Yaml(new Yaml.CustomConstructor(Object.class, loaderOptions),
         booleanPatchedRepresenter, initDumperOptions(booleanPatchedRepresenter), loaderOptions);
   }

@@ -1,19 +1,19 @@
 stepGroup:
   steps:
-  - step:
-      type: "ShellScript"
-      name: "Shell Script"
-      identifier: "ShellScript"
-      spec:
-        shell: "Bash"
-        onDelegate: true
-        source:
-          type: "Inline"
-          spec:
-            script: "echo \"hi\""
-        environmentVariables: []
-        outputVariables: []
-      timeout: "10m"
+    - step:
+        type: ShellScript
+        name: Shell Script
+        identifier: ShellScript
+        spec:
+          shell: Bash
+          onDelegate: true
+          source:
+            type: Inline
+            spec:
+              script: echo "hi"
+          environmentVariables: []
+          outputVariables: []
+        timeout: 10m
   outputVariables: []
-  identifier: "templateInputs"
-  name: "templateInputs"
+  identifier: templateInputs
+  name: templateInputs

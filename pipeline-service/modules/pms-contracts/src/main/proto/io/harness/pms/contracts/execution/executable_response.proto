@@ -22,12 +22,22 @@ message ExecutableResponse {
     TaskChainExecutableResponse taskChain = 6;
     SyncExecutableResponse sync = 7;
     SkipTaskExecutableResponse skipTask = 8;
+    AsyncChainExecutableResponse asyncChain = 9;
   }
 }
 
 message SyncExecutableResponse {
   repeated string logKeys = 1;
   repeated string units = 2;
+}
+
+message AsyncChainExecutableResponse {
+  bool chainEnd = 1;
+  string callbackId = 2;
+  repeated string logKeys = 3;
+  repeated string units = 4;
+  int32 timeout = 5;
+  Status status = 6;
 }
 
 message AsyncExecutableResponse {

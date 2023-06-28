@@ -32,6 +32,7 @@ import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.SecretUtils;
 import io.harness.ci.buildstate.providers.InternalContainerParamsProvider;
 import io.harness.ci.executionplan.CIExecutionTestBase;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.delegate.beans.ci.k8s.CIK8InitializeTaskParams;
 import io.harness.delegate.beans.ci.pod.ContainerSecurityContext;
@@ -66,6 +67,7 @@ public class K8InitializeTaskParamsBuilderTest extends CIExecutionTestBase {
   @Mock private CodebaseUtils codebaseUtils;
   @Mock private K8InitializeTaskUtils k8InitializeTaskUtils;
   @Mock private SSCAServiceUtils sscaServiceUtils;
+  @Mock private CIFeatureFlagService featureFlagService;
 
   private Ambiance ambiance;
   private static final String accountId = "test";

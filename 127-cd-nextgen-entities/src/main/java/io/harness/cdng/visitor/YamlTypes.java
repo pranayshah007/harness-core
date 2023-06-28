@@ -115,6 +115,8 @@ public interface YamlTypes {
   String SERVICE_DEFINITION = "serviceDefinition";
   String SERVICE_SPEC = "spec";
   String SERVICE_OVERRIDE = "serviceOverrides";
+  String OVERRIDE = "overrides";
+  String VARIABLES = "variables";
   String SERVICE_INPUTS = "serviceInputs";
   String STAGE_OVERRIDES_CONFIG = "stageOverrides";
   String PATH_CONNECTOR = VisitorParentPathUtils.PATH_CONNECTOR;
@@ -217,7 +219,16 @@ public interface YamlTypes {
   String AWS_SAM_DEPLOY = StepSpecTypeConstants.AWS_SAM_DEPLOY;
   String AWS_SAM_BUILD = StepSpecTypeConstants.AWS_SAM_BUILD;
   String AWS_SAM_ROLLBACK = StepSpecTypeConstants.AWS_SAM_ROLLBACK;
+  String DOWNLOAD_MANIFESTS = StepSpecTypeConstants.DOWNLOAD_MANIFESTS;
+
+  String DOWNLOAD_SERVERLESS_MANIFESTS = StepSpecTypeConstants.DOWNLOAD_SERVERLESS_MANIFESTS;
 
   String AWS_LAMBDA_ROLLBACK = StepSpecTypeConstants.AWS_LAMBDA_ROLLBACK;
   String TAS_ROUTE_MAPPING = StepSpecTypeConstants.TAS_ROUTE_MAPPING;
+
+  // SERVERLESS CONTAINER STEPS
+  String SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2 = StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2;
+  String SERVERLESS_AWS_LAMBDA_ROLLBACK_V2 = StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2;
+  String SERVERLESS_AWS_LAMBDA_DEPLOY_V2 = StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2;
+  String SERVERLESS_AWS_LAMBDA_PACKAGE_V2 = StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PACKAGE_V2;
 }

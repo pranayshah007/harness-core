@@ -34,6 +34,7 @@ echo -e "${YELLOW}Merge Summary:\e[0m ${merge_summary[@]}"
 
 compile="true"
 sonar="true"
+GO_FILES=False
 
 function compile_check() {
   for file_name in "${merge_summary[@]}"; do
@@ -71,6 +72,21 @@ function sonar_check() {
     fi
   done
   echo "$sonar"
+}
+
+function go_build() {
+  for file in "${merge_summary[@]}"; do
+    # Check if the file does not have the .go extension
+    if [[ $file == *.go ]]; then
+      echo -e "${YELLOW}GO Build is required for $file ${NC}" >&2
+      GO_FILES=True
+      break
+    else
+      echo -e "${YELLOW}GO Build is not required for $file ${NC}" >&2
+      GO_FILES=False
+    fi
+  done
+  echo "$GO_FILES"
 }
 
 function print_log() {
@@ -176,15 +192,18 @@ function send_sonar_webhook() {
 }
 
 if [ -z "${merge_summary}" ]; then
-  echo "${GREEN}THIS IS AN EMPTY COMMIT${NC}"
+  printf >&2 "${GREEN} THIS IS AN EMPTY COMMIT ${NC}"
   COMPILE=False
   SONAR=False
+  GO_FILES=False
 else
   COMPILE=$( compile_check )
   SONAR=$( sonar_check )
+  GO_FILES=$( go_build )
 fi
 
-echo Overall Result: "$COMPILE"
+echo COMPILE Result: "$COMPILE"
+echo GO Result: "$GO_FILES"
 if [[ $COMPILE == False ]]; then
   export COMPILE="false"
   echo "false" >/tmp/COMPILE
@@ -202,6 +221,14 @@ if [[ $SONAR == False ]]; then
 else
   export SONAR="true"
   echo "true" >/tmp/SONAR
+fi
+
+if [[ $GO_FILES == True ]]; then
+  export GO_FILES="true"
+  echo "true" >/tmp/GO_FILES
+else
+  export GO_FILES="false"
+  echo "false" >/tmp/GO_FILES
 fi
 
 #cat /tmp/COMPILE

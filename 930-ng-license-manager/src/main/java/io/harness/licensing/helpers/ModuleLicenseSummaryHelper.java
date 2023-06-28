@@ -145,7 +145,7 @@ public class ModuleLicenseSummaryHelper {
           ChaosModuleLicenseDTO temp = (ChaosModuleLicenseDTO) moduleLicenseDTO;
           ChaosLicenseSummaryDTO chaosLicenseSummaryDTO = (ChaosLicenseSummaryDTO) summaryDTO;
           if (current < temp.getExpiryTime()) {
-            if (temp.getTotalChaosInfrastructures() != null) {
+            if (temp.getTotalChaosExperimentRuns() != null) {
               chaosLicenseSummaryDTO.setTotalChaosExperimentRuns(ModuleLicenseUtils.computeAdd(
                   chaosLicenseSummaryDTO.getTotalChaosExperimentRuns(), temp.getTotalChaosExperimentRuns()));
             }

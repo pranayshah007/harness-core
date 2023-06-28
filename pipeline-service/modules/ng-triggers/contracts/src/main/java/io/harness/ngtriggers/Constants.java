@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 
 @OwnedBy(PIPELINE)
 public interface Constants {
+  int COMMIT_SHA_STRING_LENGTH = 7;
   String PR = "PR";
   String PUSH = "PUSH";
 
@@ -84,6 +85,8 @@ public interface Constants {
   String MANIFEST_VERSION_EXPR = "version";
   String ARTIFACT_BUILD_EXPR = "build";
   String ARTIFACT_METADATA_EXPR = "metadata";
+  String SOURCE_EVENT_ID = "sourceEventId";
+  String SOURCE_EVENT_LINK = "sourceEventLink";
 
   String WEBHOOK_TYPE = "Webhook";
   String SCHEDULED_TYPE = "Scheduled";
@@ -129,8 +132,6 @@ public interface Constants {
   String PIPELINE_INPUTS_VALIDATION_ERROR = "PipelineInputsErrorMetadataV2";
   String MANDATE_CUSTOM_WEBHOOK_AUTHORIZATION = "mandate_custom_webhook_authorization";
   String MANDATE_CUSTOM_WEBHOOK_TRUE_VALUE = "true";
-  String ENABLE_NODE_EXECUTION_AUDIT_EVENTS = "enable_node_execution_audit_events";
-  String ENABLE_NODE_EXECUTION_AUDIT_EVENTS_TRUE_VALUE = "true";
   String API_SAMPLE_TRIGGER_YAML = "trigger:\n"
       + "  name: Trigger\n"
       + "  identifier: Trigger\n"

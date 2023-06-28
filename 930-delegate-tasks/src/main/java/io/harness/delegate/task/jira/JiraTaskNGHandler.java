@@ -8,6 +8,7 @@
 package io.harness.delegate.task.jira;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
 
 import static java.util.Objects.isNull;
@@ -32,18 +33,20 @@ import io.harness.jira.JiraStatusNG;
 import io.harness.jira.JiraUserData;
 
 import com.google.inject.Singleton;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(CDC)
 @Singleton
 @Slf4j
 public class JiraTaskNGHandler {
+  private static final String JIRA_USER_KEY = "JIRAUSER";
+
   public JiraTaskNGResponse validateCredentials(JiraTaskNGParameters params) {
     try {
       JiraClient jiraClient = getJiraClient(params);
@@ -170,38 +173,70 @@ public class JiraTaskNGHandler {
 
   private void setUserTypeCustomFieldsIfPresent(
       JiraClient jiraClient, Set<String> userTypeFields, JiraTaskNGParameters params) {
-    params.getFields().forEach((key, value) -> {
-      List<JiraUserData> userDataList = new ArrayList<>();
-
+    params.getFields().forEach((key, userQuery) -> {
       if (userTypeFields.contains(key)) {
-        if (value != null && !value.equals("")) {
-          if (value.startsWith("JIRAUSER")) {
-            JiraUserData userData = jiraClient.getUser(value);
+        if (userQuery != null && !userQuery.equals("")) {
+          if (userQuery.startsWith(JIRA_USER_KEY)) {
+            JiraUserData userData = jiraClient.getUser(userQuery);
             params.getFields().put(key, userData.getName());
             return;
           }
 
           JiraInstanceData jiraInstanceData = jiraClient.getInstanceData();
-          if (jiraInstanceData.getDeploymentType() == JiraDeploymentType.CLOUD) {
-            userDataList = jiraClient.getUsers(null, value, null);
-            if (userDataList.isEmpty()) {
-              userDataList = jiraClient.getUsers(value, null, null);
-            }
-          } else {
-            userDataList = jiraClient.getUsers(value, null, null);
-          }
-          if (userDataList.size() != 1) {
-            throw new InvalidRequestException(
-                "Found " + userDataList.size() + " jira users with this query. Should be exactly 1.");
-          }
-          if (userDataList.get(0).getAccountId().startsWith("JIRAUSER")) {
-            params.getFields().put(key, userDataList.get(0).getName());
-          } else {
-            params.getFields().put(key, userDataList.get(0).getAccountId());
-          }
+          final List<JiraUserData> userDataList = getJiraUserDataList(jiraClient, userQuery, jiraInstanceData);
+          params.getFields().put(key, extractUserValue(userDataList, userQuery));
         }
       }
     });
+  }
+
+  private String extractUserValue(List<JiraUserData> userDataList, String userToMatch) {
+    if (isEmpty(userDataList)) {
+      throw new InvalidRequestException("Found no jira users with this query");
+    }
+
+    if (userDataList.size() == 1) {
+      JiraUserData jiraUserData = userDataList.get(0);
+      return getUserNameOrAccountId(jiraUserData);
+    }
+
+    Set<String> matchedUsers = userDataList.stream()
+                                   .map(this::getUserNameOrAccountId)
+                                   .filter(user -> StringUtils.compare(userToMatch, user) == 0)
+                                   .collect(Collectors.toSet());
+
+    if (matchedUsers.isEmpty()) {
+      throw new InvalidRequestException("Found no jira users with exact match for this query");
+    }
+
+    if (matchedUsers.size() == 1) {
+      return matchedUsers.iterator().next();
+    }
+
+    throw new InvalidRequestException("Found " + matchedUsers.size()
+        + " jira users exact match with this query. Should be exactly 1. Total matches = " + userDataList.size());
+  }
+
+  private String getUserNameOrAccountId(JiraUserData jiraUserData) {
+    if (jiraUserData.getAccountId().startsWith(JIRA_USER_KEY)) {
+      return jiraUserData.getName();
+    } else {
+      return jiraUserData.getAccountId();
+    }
+  }
+
+  private List<JiraUserData> getJiraUserDataList(
+      JiraClient jiraClient, String userQuery, JiraInstanceData jiraInstanceData) {
+    List<JiraUserData> userDataList;
+    if (jiraInstanceData.getDeploymentType() == JiraDeploymentType.CLOUD) {
+      userDataList = jiraClient.getUsers(null, userQuery, null);
+      if (userDataList.isEmpty()) {
+        userDataList = jiraClient.getUsers(userQuery, null, null);
+      }
+    } else {
+      userDataList = jiraClient.getUsers(userQuery, null, null);
+    }
+    return userDataList;
   }
 
   private JiraClient getJiraClient(JiraTaskNGParameters parameters) {

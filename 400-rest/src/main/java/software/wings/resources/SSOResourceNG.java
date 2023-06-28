@@ -162,11 +162,14 @@ public class SSOResourceNG {
       @FormDataParam("authorizationEnabled") Boolean authorizationEnabled, @FormDataParam("logoutUrl") String logoutUrl,
       @FormDataParam("entityIdentifier") String entityIdentifier,
       @FormDataParam("samlProviderType") String samlProviderType, @FormDataParam("clientId") String clientId,
-      @FormDataParam("clientSecret") String clientSecret, @FormDataParam("friendlySamlName") String friendlySamlName) {
+      @FormDataParam("clientSecret") String clientSecret, @FormDataParam("friendlySamlName") String friendlySamlName,
+      @FormDataParam("jitEnabled") Boolean jitEnabled, @FormDataParam("jitValidationKey") String jitValidationKey,
+      @FormDataParam("jitValidationValue") String jitValidationValue) {
     final String clientSecretRef = getCGSecretManagerRefForClientSecret(accountId, true, clientId, clientSecret);
     return new RestResponse<>(ssoService.uploadSamlConfiguration(accountId, uploadedInputStream, displayName,
         groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
-        isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray(), friendlySamlName, true));
+        isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray(), friendlySamlName, true, jitEnabled,
+        jitValidationKey, jitValidationValue));
   }
 
   @PUT
@@ -180,11 +183,14 @@ public class SSOResourceNG {
       @FormDataParam("authorizationEnabled") Boolean authorizationEnabled, @FormDataParam("logoutUrl") String logoutUrl,
       @FormDataParam("entityIdentifier") String entityIdentifier,
       @FormDataParam("samlProviderType") String samlProviderType, @FormDataParam("clientId") String clientId,
-      @FormDataParam("clientSecret") String clientSecret) {
+      @FormDataParam("clientSecret") String clientSecret, @FormDataParam("jitEnabled") Boolean jitEnabled,
+      @FormDataParam("jitValidationKey") String jitValidationKey,
+      @FormDataParam("jitValidationValue") String jitValidationValue) {
     final String clientSecretRef = getCGSecretManagerRefForClientSecret(accountId, false, clientId, clientSecret);
     return new RestResponse<>(ssoService.updateSamlConfiguration(accountId, uploadedInputStream, displayName,
         groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
-        isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray(), true));
+        isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray(), true, jitEnabled, jitValidationKey,
+        jitValidationValue));
   }
 
   @PUT
@@ -199,12 +205,14 @@ public class SSOResourceNG {
       @FormDataParam("authorizationEnabled") Boolean authorizationEnabled, @FormDataParam("logoutUrl") String logoutUrl,
       @FormDataParam("entityIdentifier") String entityIdentifier,
       @FormDataParam("samlProviderType") String samlProviderType, @FormDataParam("clientId") String clientId,
-      @FormDataParam("clientSecret") String clientSecret,
-      @FormDataParam("friendlySamlName") String friendlySamlAppName) {
+      @FormDataParam("clientSecret") String clientSecret, @FormDataParam("friendlySamlName") String friendlySamlAppName,
+      @FormDataParam("jitEnabled") Boolean jitEnabled, @FormDataParam("jitValidationKey") String jitValidationKey,
+      @FormDataParam("jitValidationValue") String jitValidationValue) {
     final String clientSecretRef = getCGSecretManagerRefForClientSecret(accountId, false, clientId, clientSecret);
     return new RestResponse<>(ssoService.updateSamlConfiguration(accountId, samlSSOId, uploadedInputStream, displayName,
         groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
-        isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray(), friendlySamlAppName, true));
+        isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray(), friendlySamlAppName, true, jitEnabled,
+        jitValidationKey, jitValidationValue));
   }
 
   @PUT

@@ -10,7 +10,6 @@ package io.harness.plancreator.steps;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.PARALLEL;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
-import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
@@ -22,8 +21,6 @@ import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
-import io.harness.pms.contracts.plan.ExecutionMode;
-import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.execution.utils.SkipInfoUtils;
@@ -100,12 +97,8 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
     config.setName(StrategyUtils.getIdentifierWithExpression(ctx, config.getName()));
     StepParameters stepParameters = StepGroupStepParameters.getStepParameters(config, stepsField.getNode().getUuid());
 
-    boolean isStepGroupInsideRollback = false;
-    if (YamlUtils.findParentNode(ctx.getCurrentField().getNode(), ROLLBACK_STEPS) != null) {
-      isStepGroupInsideRollback = true;
-    }
-    PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
-    ExecutionMode executionMode = planCreationContextValue.getMetadata().getExecutionMode();
+    final boolean isStepGroupInsideRollback =
+        YamlUtils.findParentNode(ctx.getCurrentField().getNode(), ROLLBACK_STEPS) != null;
     return PlanNode.builder()
         .name(config.getName())
         .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, config.getUuid()))
@@ -114,9 +107,8 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
         .group(StepCategory.STEP_GROUP.name())
         .skipCondition(SkipInfoUtils.getSkipCondition(config.getSkipCondition()))
         // We Should add default when condition as StageFailure if stepGroup is inside rollback
-        .whenCondition(isStepGroupInsideRollback
-                ? RunInfoUtils.getRunConditionForRollback(config.getWhen(), executionMode)
-                : RunInfoUtils.getRunConditionForStep(config.getWhen()))
+        .whenCondition(isStepGroupInsideRollback ? RunInfoUtils.getRunConditionForRollback(config.getWhen())
+                                                 : RunInfoUtils.getRunConditionForStep(config.getWhen()))
         .stepParameters(stepParameters)
         .facilitatorObtainment(
             FacilitatorObtainment.newBuilder()
@@ -162,7 +154,7 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
   }
 
   private void addNextStepAdviser(YamlField currentField, List<AdviserObtainment> adviserObtainments) {
-    if (currentField.checkIfParentIsParallel(STEPS)) {
+    if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)) {
       return;
     }
     YamlField siblingField = currentField.getNode().nextSiblingFromParentArray(
@@ -178,7 +170,7 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
   }
 
   private void addOnSuccessAdviser(YamlField currentField, List<AdviserObtainment> adviserObtainments) {
-    if (currentField.checkIfParentIsParallel(ROLLBACK_STEPS)) {
+    if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)) {
       return;
     }
     YamlField siblingField = currentField.getNode().nextSiblingFromParentArray(

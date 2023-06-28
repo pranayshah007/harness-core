@@ -52,8 +52,11 @@ public class PluginUtils {
         ambiance, RefObjectUtils.getOutcomeRefObject(LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME));
     String ip = liteEnginePodDetailsOutcome.getIpAddress();
 
+    String runtimeId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+
     ExecuteStepRequest executeStepRequest = ExecuteStepRequest.newBuilder()
                                                 .setExecutionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance))
+                                                .setExecutionId(runtimeId)
                                                 .setStep(unitStep)
                                                 .setTmpFilePath(TMP_PATH)
                                                 .build();

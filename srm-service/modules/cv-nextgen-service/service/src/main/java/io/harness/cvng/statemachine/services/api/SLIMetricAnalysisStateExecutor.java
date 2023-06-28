@@ -11,6 +11,7 @@ import io.harness.cvng.analysis.beans.TimeSeriesRecordDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.downtime.beans.EntityType;
 import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.metrics.CVNGMetricsUtils;
@@ -136,6 +137,12 @@ public class SLIMetricAnalysisStateExecutor extends AnalysisStateExecutor<SLIMet
   @Override
   public AnalysisState handleSuccess(SLIMetricAnalysisState analysisState) {
     analysisState.setStatus(AnalysisStatus.SUCCESS);
+    handleFinalStatuses(analysisState);
+    return analysisState;
+  }
+
+  @Override
+  public void handleFinalStatuses(SLIMetricAnalysisState analysisState) {
     if (analysisState.getInputs().isSLORestoreTask()) {
       ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.get(
           verificationTaskService.getSliId(analysisState.getInputs().getVerificationTaskId()));
@@ -157,12 +164,11 @@ public class SLIMetricAnalysisStateExecutor extends AnalysisStateExecutor<SLIMet
         orchestrationService.queueAnalysis(AnalysisInput.builder()
                                                .verificationTaskId(verificationTaskId)
                                                .startTime(analysisState.getInputs().getStartTime())
-                                               .endTime(Instant.now())
+                                               .endTime(DateTimeUtils.roundDownTo5MinBoundary(Instant.now()))
                                                .isSLORestoreTask(true)
                                                .build());
       }
     }
-    return analysisState;
   }
 
   @Override

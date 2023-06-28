@@ -20,10 +20,16 @@ public interface PMSYamlSchemaService {
 
   boolean validateYamlSchema(String accountId, String orgId, String projectId, String yaml);
 
+  // TODO(shalini): remove older methods with yaml string once all are moved to jsonNode
+  boolean validateYamlSchema(String accountId, String orgId, String projectId, JsonNode jsonNode);
+
   void validateUniqueFqn(String yaml);
 
   void invalidateAllCache();
 
   JsonNode getIndividualYamlSchema(String accountId, String orgIdentifier, String projectIdentifier, Scope scope,
       EntityType entityType, String yamlGroup);
+
+  JsonNode getStaticSchema(String accountIdentifier, String projectIdentifier, String orgIdentifier, String identifier,
+      EntityType entityType, Scope scope, String version);
 }

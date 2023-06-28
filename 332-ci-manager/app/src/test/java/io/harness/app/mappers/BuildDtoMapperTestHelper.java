@@ -10,6 +10,7 @@ package io.harness.app.mappers;
 import io.harness.beans.execution.BranchWebhookEvent;
 import io.harness.beans.execution.CommitDetails;
 import io.harness.beans.execution.PRWebhookEvent;
+import io.harness.beans.execution.ReleaseWebhookEvent;
 import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.execution.WebhookGitUser;
 import io.harness.ci.beans.entities.CIBuild;
@@ -30,6 +31,8 @@ public class BuildDtoMapperTestHelper {
   public static final Long PR_ID = 1L;
   public static final String PR_TITLE = "Pull request";
   public static final String USER_GIT_ID = "foo";
+  public static final String RELEASE_TAG = "1.0";
+  public static final String RELEASE_TITLE = "Release";
 
   public static CIBuild getBuild(WebhookExecutionSource executionSource) {
     return CIBuild.builder()
@@ -59,6 +62,15 @@ public class BuildDtoMapperTestHelper {
                               .branchName(BRANCH_NAME)
                               .commitDetailsList(Arrays.asList(CommitDetails.builder().commitId(COMMIT_ID).build()))
                               .build())
+            .user(WebhookGitUser.builder().gitId(USER_GIT_ID).build())
+            .build();
+    return getBuild(executionSource);
+  }
+
+  public static CIBuild getReleaseBuild() {
+    WebhookExecutionSource executionSource =
+        WebhookExecutionSource.builder()
+            .webhookEvent(ReleaseWebhookEvent.builder().releaseTag(RELEASE_TAG).title(RELEASE_TITLE).build())
             .user(WebhookGitUser.builder().gitId(USER_GIT_ID).build())
             .build();
     return getBuild(executionSource);

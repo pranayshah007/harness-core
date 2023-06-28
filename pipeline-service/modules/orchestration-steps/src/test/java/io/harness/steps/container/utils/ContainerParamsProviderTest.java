@@ -79,7 +79,7 @@ public class ContainerParamsProviderTest extends CategoryTest {
     ConnectorDetails connectorDetails = ConnectorDetails.builder().build();
     CIK8ContainerParams resultParams = containerParamsProvider.getLiteEngineContainerParams(connectorDetails,
         ContainerDetailsSweepingOutput.builder().build(), 1, 1, Map.of("k1", "v1"), Map.of("path", "/volume"), "/work",
-        ContainerSecurityContext.builder().build(), "test", testAmbiance, null);
+        ContainerSecurityContext.builder().build(), "test", testAmbiance, null, "");
 
     verifyContainerParams(resultParams, HARNESS_DEFAULT_LITE_ENGINE_IMAGE);
   }
@@ -93,7 +93,7 @@ public class ContainerParamsProviderTest extends CategoryTest {
     CIK8ContainerParams resultParams = containerParamsProvider.getLiteEngineContainerParams(connectorDetails,
         ContainerDetailsSweepingOutput.builder().build(), 1, 1, Map.of("k1", "v1"), Map.of("path", "/volume"), "/work",
         ContainerSecurityContext.builder().build(), "test", testAmbiance,
-        CIExecutionImages.builder().liteEngineTag(overridenLiteEngineTag).build());
+        CIExecutionImages.builder().liteEngineTag(overridenLiteEngineTag).build(), "");
 
     verifyContainerParams(resultParams, overridenLiteEngineTag);
   }
@@ -128,7 +128,7 @@ public class ContainerParamsProviderTest extends CategoryTest {
   public void getSetupAddonContainerParams() {
     ConnectorDetails connectorDetails = ConnectorDetails.builder().build();
     CIK8ContainerParams resultParams = containerParamsProvider.getSetupAddonContainerParams(connectorDetails,
-        Map.of("path", "/volume"), "/work", ContainerSecurityContext.builder().build(), OSType.Linux, null);
+        Map.of("path", "/volume"), "/work", ContainerSecurityContext.builder().build(), OSType.Linux, null, "");
 
     verifyAddonParams(resultParams, HARNESS_DEFAULT_ADDON_TAG_IMAGE);
   }
@@ -142,7 +142,7 @@ public class ContainerParamsProviderTest extends CategoryTest {
     ConnectorDetails connectorDetails = ConnectorDetails.builder().build();
     CIK8ContainerParams resultParams = containerParamsProvider.getSetupAddonContainerParams(connectorDetails,
         Map.of("path", "/volume"), "/work", ContainerSecurityContext.builder().build(), OSType.Linux,
-        CIExecutionImages.builder().addonTag(overridenAddOnTag).build());
+        CIExecutionImages.builder().addonTag(overridenAddOnTag).build(), "");
 
     verifyAddonParams(resultParams, overridenAddOnTag);
   }

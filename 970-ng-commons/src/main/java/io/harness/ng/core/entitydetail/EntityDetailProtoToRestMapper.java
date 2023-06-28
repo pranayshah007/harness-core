@@ -42,12 +42,21 @@ import java.util.stream.Collectors;
 
 @Singleton
 public class EntityDetailProtoToRestMapper {
-  public EntityDetail createEntityDetailDTO(EntityDetailProtoDTO entityDetail) {
-    return EntityDetail.builder()
-        .name(entityDetail.getName())
-        .entityRef(createEntityReference(entityDetail))
-        .type(mapEventToRestEntityType(entityDetail.getType()))
-        .build();
+  public EntityDetail createEntityDetailDTO(EntityDetailProtoDTO entityDetailProtoDTO) {
+    EntityDetail entityDetail = EntityDetail.builder()
+                                    .name(entityDetailProtoDTO.getName())
+                                    .entityRef(createEntityReference(entityDetailProtoDTO))
+                                    .type(mapEventToRestEntityType(entityDetailProtoDTO.getType()))
+                                    .build();
+    if (entityDetailProtoDTO.hasEntityGitMetadata()) {
+      io.harness.eventsframework.schemas.entity.EntityGitMetadata entityGitMetadataProto =
+          entityDetailProtoDTO.getEntityGitMetadata();
+      entityDetail.setEntityGitMetadata(EntityGitMetadata.builder()
+                                            .repo(entityGitMetadataProto.getRepo())
+                                            .branch(entityGitMetadataProto.getBranch())
+                                            .build());
+    }
+    return entityDetail;
   }
 
   public List<EntityDetail> createEntityDetailsDTO(List<EntityDetailProtoDTO> entityDetails) {

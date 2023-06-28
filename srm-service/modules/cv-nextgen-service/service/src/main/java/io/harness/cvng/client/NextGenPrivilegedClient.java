@@ -42,6 +42,10 @@ public interface NextGenPrivilegedClient {
       @Query("accountIdentifier") String accountIdentifier, @Query("orgIdentifier") @NotNull String orgIdentifier,
       @Query("projectIdentifier") @NotNull String projectIdentifier);
 
+  @POST(CONNECTOR_BASE_PATH + "/listbyfqn")
+  Call<ResponseDTO<List<ConnectorResponseDTO>>> listConnector(
+      @Query("accountIdentifier") String accountIdentifier, @Body List<String> fnqIdentifierList);
+
   @GET("environmentsV2/{environmentIdentifier}")
   Call<ResponseDTO<EnvironmentResponse>> getEnvironment(@Path("environmentIdentifier") String environmentIdentifier,
       @Query("accountIdentifier") String accountId, @Query("orgIdentifier") String orgIdentifier,

@@ -139,7 +139,7 @@ public class RollbackModeYamlTransformer {
       }
     }
     pipelineInnerNode.set(YAMLFieldNameConstants.STAGES, reversedStages);
-    return YamlUtils.write(pipelineNode).replace("---\n", "");
+    return YamlUtils.writeYamlString(pipelineNode);
   }
 
   void handleSerialStage(JsonNode currentNode, List<String> executedStages, ArrayNode reversedStages) {

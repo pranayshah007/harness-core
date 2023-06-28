@@ -42,6 +42,7 @@ import io.harness.pms.helpers.PrincipalInfoHelper;
 import io.harness.pms.helpers.TriggeredByHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineSetupUsageHelper;
+import io.harness.pms.pipeline.references.FilterCreationParams;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.plan.creation.PlanCreatorServiceInfo;
 import io.harness.pms.sdk.PmsSdkHelper;
@@ -97,8 +98,10 @@ public class FilterCreatorMergeService {
     this.triggeredByHelper = triggeredByHelper;
   }
 
-  public FilterCreatorMergeServiceResponse getPipelineInfo(PipelineEntity pipelineEntity) throws IOException {
+  public FilterCreatorMergeServiceResponse getPipelineInfo(FilterCreationParams filterCreationParams)
+      throws IOException {
     try (ResponseTimeRecorder ignore1 = new ResponseTimeRecorder("[PMS_FilterCreatorMergeService]")) {
+      PipelineEntity pipelineEntity = filterCreationParams.getPipelineEntity();
       Map<String, PlanCreatorServiceInfo> services = getServices();
       Dependencies dependencies = getDependencies(pipelineEntity.getYaml());
       Map<String, String> filters = new HashMap<>();
@@ -129,7 +132,7 @@ public class FilterCreatorMergeService {
       if (gitConnectorReference.isPresent()) {
         response = response.toBuilder().addAllReferredEntities(Arrays.asList(gitConnectorReference.get())).build();
       }
-      pipelineSetupUsageHelper.publishSetupUsageEvent(pipelineEntity, response.getReferredEntitiesList());
+      pipelineSetupUsageHelper.publishSetupUsageEvent(filterCreationParams, response.getReferredEntitiesList());
       return FilterCreatorMergeServiceResponse.builder()
           .filters(filters)
           .stageCount(response.getStageCount())

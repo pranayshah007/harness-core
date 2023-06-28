@@ -154,7 +154,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
       case ACR:
         return getACRStepInfoEnvVariables((ACRStepInfo) stepInfo, identifier, infraType);
       case GCR:
-        return getGCRStepInfoEnvVariables((GCRStepInfo) stepInfo, identifier, infraType);
+        return getGCRStepInfoEnvVariables((GCRStepInfo) stepInfo, identifier, infraType, isContainerizedPlugin);
       case DOCKER:
         return getDockerStepInfoEnvVariables((DockerStepInfo) stepInfo, identifier, infraType, isContainerizedPlugin);
       case UPLOAD_ARTIFACTORY:
@@ -275,7 +275,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
   }
 
   private static Map<String, String> getGCRStepInfoEnvVariables(
-      GCRStepInfo stepInfo, String identifier, Type infraType) {
+      GCRStepInfo stepInfo, String identifier, Type infraType, boolean isContainerizedPlugin) {
     Map<String, String> map = new HashMap<>();
 
     String host = resolveStringParameter("host", "BuildAndPushGCR", identifier, stepInfo.getHost(), true);
@@ -337,6 +337,23 @@ public class PluginSettingUtils extends PluginServiceImpl {
       PluginServiceImpl.setOptionalEnvironmentVariable(map, PLUGIN_ARTIFACT_FILE, PLUGIN_ARTIFACT_FILE_VALUE);
     } else if (infraType == Type.VM) {
       PluginServiceImpl.setMandatoryEnvironmentVariable(map, PLUGIN_DAEMON_OFF, "true");
+      if (!isContainerizedPlugin) {
+        // Only populate cache-from and cache-to if we're using the buildx plugin
+        List<String> cacheFromList =
+            resolveListParameter("cacheFrom", "BuildAndPushGCR", identifier, stepInfo.getCacheFrom(), false);
+        if (!isEmpty(cacheFromList)) {
+          setOptionalEnvironmentVariable(map, PLUGIN_CACHE_FROM, listToCustomStringSlice(cacheFromList));
+        }
+        String cacheTo =
+            resolveStringParameterV2("cacheTo", "BuildAndPushGCR", identifier, stepInfo.getCacheTo(), false);
+        if (!isEmpty(cacheTo)) {
+          setOptionalEnvironmentVariable(map, PLUGIN_CACHE_TO, cacheTo);
+        }
+        if (resolveBooleanParameter(stepInfo.getCaching(), false)) {
+          setOptionalEnvironmentVariable(
+              map, PLUGIN_BUILDER_DRIVER_OPTS, String.format("image=%s", DOCKER_BUILDKIT_IMAGE));
+        }
+      }
     }
 
     return map;
@@ -858,6 +875,42 @@ public class PluginSettingUtils extends PluginServiceImpl {
     return BuildEnvironmentUtils.getBuildEnvironmentVariables(ciExecutionArgsCopy);
   }
 
+  public boolean buildxRequired(PluginCompatibleStep stepInfo) {
+    if (stepInfo == null) {
+      return false;
+    }
+    boolean caching;
+    List<String> cacheFrom;
+    String cacheTo;
+
+    switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
+      case DOCKER:
+        DockerStepInfo dockerStepInfo = (DockerStepInfo) stepInfo;
+        caching = resolveBooleanParameter(dockerStepInfo.getCaching(), false);
+        cacheFrom =
+            resolveListParameter("cacheFrom", "BuildAndPushDockerRegistry", "", dockerStepInfo.getCacheFrom(), false);
+        cacheTo =
+            resolveStringParameter("cacheTo", "BuildAndPushDockerRegistry", "", dockerStepInfo.getCacheTo(), false);
+        break;
+      case ECR:
+        ECRStepInfo ecrStepInfo = (ECRStepInfo) stepInfo;
+        caching = resolveBooleanParameter(ecrStepInfo.getCaching(), false);
+        cacheFrom = resolveListParameter("cacheFrom", "BuildAndPushECR", "", ecrStepInfo.getCacheFrom(), false);
+        cacheTo = resolveStringParameter("cacheTo", "BuildAndPushECR", "", ecrStepInfo.getCacheTo(), false);
+        break;
+      case GCR:
+        GCRStepInfo gcrStepInfo = (GCRStepInfo) stepInfo;
+        caching = resolveBooleanParameter(gcrStepInfo.getCaching(), false);
+        cacheFrom = resolveListParameter("cacheFrom", "BuildAndPushGCR", "", gcrStepInfo.getCacheFrom(), false);
+        cacheTo = resolveStringParameter("cacheTo", "BuildAndPushGCR", "", gcrStepInfo.getCacheTo(), false);
+        break;
+      case ACR:
+      default:
+        return false;
+    }
+    return caching || !isEmpty(cacheFrom) || !isEmpty(cacheTo);
+  }
+
   public boolean dlcSetupRequired(PluginCompatibleStep stepInfo) {
     switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
       case DOCKER:
@@ -866,8 +919,10 @@ public class PluginSettingUtils extends PluginServiceImpl {
       case ECR:
         ECRStepInfo ecrStepInfo = (ECRStepInfo) stepInfo;
         return resolveBooleanParameter(ecrStepInfo.getCaching(), false);
-      case ACR:
       case GCR:
+        GCRStepInfo gcrStepInfo = (GCRStepInfo) stepInfo;
+        return resolveBooleanParameter(gcrStepInfo.getCaching(), false);
+      case ACR:
       default:
         return false;
     }
@@ -884,8 +939,11 @@ public class PluginSettingUtils extends PluginServiceImpl {
         ECRStepInfo ecrStepInfo = (ECRStepInfo) stepInfo;
         repo = resolveStringParameter("imageName", "BuildAndPushECR", identifier, ecrStepInfo.getImageName(), true);
         return String.format("%s/%s/", accountId, repo);
-      case ACR:
       case GCR:
+        GCRStepInfo gcrStepInfo = (GCRStepInfo) stepInfo;
+        repo = resolveStringParameter("imageName", "BuildAndPushGCR", identifier, gcrStepInfo.getImageName(), true);
+        return String.format("%s/%s/", accountId, repo);
+      case ACR:
       default:
         return "";
     }
@@ -927,8 +985,23 @@ public class PluginSettingUtils extends PluginServiceImpl {
         // Overwrite cacheTo with cacheToArg
         ecrStepInfo.setCacheTo(ParameterField.createValueField(cacheToArg));
         return;
-      case ACR:
       case GCR:
+        GCRStepInfo gcrStepInfo = (GCRStepInfo) stepInfo;
+
+        // Append cacheFromArg to the list
+        cacheFrom = resolveListParameter("cacheFrom", "BuildAndPushECR", identifier, gcrStepInfo.getCacheFrom(), false);
+        if (isEmpty(cacheFrom)) {
+          cacheFrom = new ArrayList<>();
+        } else {
+          cacheFrom = new ArrayList(cacheFrom);
+        }
+        cacheFrom.add(cacheFromArg);
+        gcrStepInfo.setCacheFrom(ParameterField.createValueField(cacheFrom));
+
+        // Overwrite cacheTo with cacheToArg
+        gcrStepInfo.setCacheTo(ParameterField.createValueField(cacheToArg));
+        return;
+      case ACR:
       default:
         return;
     }

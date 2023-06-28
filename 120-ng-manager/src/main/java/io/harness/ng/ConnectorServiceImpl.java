@@ -21,6 +21,7 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.ng.NextGenModule.SECRET_MANAGER_CONNECTOR_SERVICE;
 
 import static java.lang.String.format;
+import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -54,6 +55,8 @@ import io.harness.connector.stats.ConnectorStatistics;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.jira.JiraAuthType;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import io.harness.errorhandling.NGErrorHelper;
 import io.harness.eventsframework.EventsFrameworkConstants;
@@ -195,10 +198,23 @@ public class ConnectorServiceImpl implements ConnectorService {
     }
   }
 
+  private void applyRefreshTokenAuthFFCheckForServiceNowConnector(ConnectorDTO connectorDTO, String accountIdentifier) {
+    if (connectorDTO.getConnectorInfo().getConnectorConfig() instanceof ServiceNowConnectorDTO) {
+      ConnectorInfoDTO connectorInfoDTO = connectorDTO.getConnectorInfo();
+      ServiceNowConnectorDTO serviceNowConnectorDTO = (ServiceNowConnectorDTO) connectorInfoDTO.getConnectorConfig();
+      if (!isNull(serviceNowConnectorDTO.getAuth())
+          && ServiceNowAuthType.REFRESH_TOKEN.equals(serviceNowConnectorDTO.getAuth().getAuthType())
+          && !ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.CDS_SERVICENOW_REFRESH_TOKEN_AUTH)) {
+        throw new InvalidRequestException("Unsupported servicenow auth type provided : Refresh Token Grant");
+      }
+    }
+  }
+
   private ConnectorResponseDTO createInternal(
       ConnectorDTO connectorDTO, String accountIdentifier, ChangeType gitChangeType) {
     skipAppRoleRenewalForVaultConnector(connectorDTO, accountIdentifier);
     applyPatAuthFFCheckForJiraConnector(connectorDTO, accountIdentifier);
+    applyRefreshTokenAuthFFCheckForServiceNowConnector(connectorDTO, accountIdentifier);
     PerpetualTaskId connectorHeartbeatTaskId = null;
     try (AutoLogContext ignore1 = new NgAutoLogContext(connectorDTO.getConnectorInfo().getProjectIdentifier(),
              connectorDTO.getConnectorInfo().getOrgIdentifier(), accountIdentifier, OVERRIDE_ERROR);
@@ -304,6 +320,7 @@ public class ConnectorServiceImpl implements ConnectorService {
   public ConnectorResponseDTO update(ConnectorDTO connectorDTO, String accountIdentifier, ChangeType gitChangeType) {
     skipAppRoleRenewalForVaultConnector(connectorDTO, accountIdentifier);
     applyPatAuthFFCheckForJiraConnector(connectorDTO, accountIdentifier);
+    applyRefreshTokenAuthFFCheckForServiceNowConnector(connectorDTO, accountIdentifier);
     try (AutoLogContext ignore1 = new NgAutoLogContext(connectorDTO.getConnectorInfo().getProjectIdentifier(),
              connectorDTO.getConnectorInfo().getOrgIdentifier(), accountIdentifier, OVERRIDE_ERROR);
          AutoLogContext ignore2 =
@@ -495,7 +512,7 @@ public class ConnectorServiceImpl implements ConnectorService {
     int page = 0;
     int size = 2;
     Page<ConnectorResponseDTO> connectorResponseDTOList =
-        list(page, size, accountIdentifier, null, null, null, null, SECRET_MANAGER, null, null);
+        list(page, size, accountIdentifier, null, null, null, null, SECRET_MANAGER, null, null, emptyList());
     if (connectorResponseDTOList.getContent().size() == 1) {
       throw new InvalidRequestException(
           String.format("Cannot delete the connector: %s as no other secret manager is present in the account.",
@@ -732,8 +749,9 @@ public class ConnectorServiceImpl implements ConnectorService {
 
   @Override
   public ConnectorStatistics getConnectorStatistics(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    return defaultConnectorService.getConnectorStatistics(accountIdentifier, orgIdentifier, projectIdentifier);
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> connectorIds) {
+    return defaultConnectorService.getConnectorStatistics(
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorIds);
   }
 
   @Override
@@ -764,19 +782,42 @@ public class ConnectorServiceImpl implements ConnectorService {
   @Override
   public Page<ConnectorResponseDTO> list(String accountIdentifier, ConnectorFilterPropertiesDTO filterProperties,
       String orgIdentifier, String projectIdentifier, String filterIdentifier, String searchTerm,
-      Boolean includeAllConnectorsAccessibleAtScope, Boolean getDistinctFromBranches, Pageable pageable,
-      String version) {
+      Boolean includeAllConnectorsAccessibleAtScope, Boolean getDistinctFromBranches, Pageable pageable, String version,
+      Boolean onlyFavorites) {
     return defaultConnectorService.list(accountIdentifier, filterProperties, orgIdentifier, projectIdentifier,
-        filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable,
-        version);
+        filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable, version,
+        onlyFavorites);
   }
 
   @Override
   public Page<ConnectorResponseDTO> list(int page, int size, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String searchTerm, ConnectorType type, ConnectorCategory category,
-      ConnectorCategory sourceCategory, String version) {
+      ConnectorCategory sourceCategory, String version, List<String> connectorIds) {
     return defaultConnectorService.list(page, size, accountIdentifier, orgIdentifier, projectIdentifier, searchTerm,
+        type, category, sourceCategory, version, connectorIds);
+  }
+
+  @Override
+  public Page<Connector> listAll(String accountIdentifier, ConnectorFilterPropertiesDTO filterProperties,
+      String orgIdentifier, String projectIdentifier, String filterIdentifier, String searchTerm,
+      Boolean includeAllConnectorsAccessibleAtScope, Boolean getDistinctFromBranches, Pageable pageable,
+      String version) {
+    return defaultConnectorService.listAll(accountIdentifier, filterProperties, orgIdentifier, projectIdentifier,
+        filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable,
+        version);
+  }
+
+  @Override
+  public Page<Connector> listAll(int page, int size, String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String searchTerm, ConnectorType type, ConnectorCategory category,
+      ConnectorCategory sourceCategory, String version) {
+    return defaultConnectorService.listAll(page, size, accountIdentifier, orgIdentifier, projectIdentifier, searchTerm,
         type, category, sourceCategory, version);
+  }
+
+  @Override
+  public Page<Connector> listAll(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    return defaultConnectorService.listAll(accountIdentifier, orgIdentifier, projectIdentifier);
   }
 
   @Override
@@ -848,5 +889,10 @@ public class ConnectorServiceImpl implements ConnectorService {
   public List<Map<String, String>> getAttributes(
       String accountId, String orgIdentifier, String projectIdentifier, List<String> connectorIdentifiers) {
     return defaultConnectorService.getAttributes(accountId, orgIdentifier, projectIdentifier, connectorIdentifiers);
+  }
+
+  @Override
+  public Long countConnectors(String accountIdentifier) {
+    return defaultConnectorService.countConnectors(accountIdentifier);
   }
 }

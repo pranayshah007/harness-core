@@ -8,6 +8,11 @@
 package io.harness.cdng.environment.helper;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.ENV_GLOBAL_OVERRIDE;
+import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.ENV_SERVICE_OVERRIDE;
+import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.INFRA_GLOBAL_OVERRIDE;
+import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.INFRA_SERVICE_OVERRIDE;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -19,6 +24,8 @@ import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
+import io.harness.ng.core.serviceoverridev2.beans.NGServiceOverrideConfigV2;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.core.variables.NGVariable;
@@ -28,6 +35,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
@@ -36,6 +45,8 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(HarnessTeam.CDC)
 @UtilityClass
 public class EnvironmentMapper {
+  private static final List<ServiceOverridesType> reverseOverridePriority =
+      List.of(ENV_GLOBAL_OVERRIDE, ENV_SERVICE_OVERRIDE, INFRA_GLOBAL_OVERRIDE, INFRA_SERVICE_OVERRIDE);
   public EnvironmentStepParameters toEnvironmentStepParameters(
       EnvironmentPlanCreatorConfig environmentPlanCreatorConfig) {
     Map<String, Object> serviceOverrides = new HashMap<>();
@@ -94,12 +105,15 @@ public class EnvironmentMapper {
 
   public EnvironmentOutcome toEnvironmentOutcome(Environment environment,
       @NonNull NGEnvironmentConfig ngEnvironmentConfig, @NonNull NGServiceOverrideConfig ngServiceOverrides,
-      @Nullable EnvironmentGroupEntity envGroup) {
+      @Nullable EnvironmentGroupEntity envGroup,
+      Map<ServiceOverridesType, NGServiceOverrideConfigV2> overridesV2Configs, boolean isOverrideV2Enabled) {
     List<NGVariable> svcOverrideVariables = ngServiceOverrides.getServiceOverrideInfoConfig() == null
         ? new ArrayList<>()
         : ngServiceOverrides.getServiceOverrideInfoConfig().getVariables();
-    final Map<String, Object> variables =
-        overrideVariables(ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables(), svcOverrideVariables);
+    final Map<String, Object> variables = isOverrideV2Enabled
+        ? overrideVariablesV2(overridesV2Configs)
+        : overrideVariables(ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables(), svcOverrideVariables);
+
     return EnvironmentOutcome.builder()
         .identifier(IdentifierRefHelper.getRefFromIdentifierOrRef(environment.getAccountId(),
             environment.getOrgIdentifier(), environment.getProjectIdentifier(), environment.getIdentifier()))
@@ -115,5 +129,22 @@ public class EnvironmentMapper {
                                       : null)
         .envGroupName(envGroup != null ? envGroup.getName() : null)
         .build();
+  }
+
+  private Map<String, Object> overrideVariablesV2(
+      Map<ServiceOverridesType, NGServiceOverrideConfigV2> overridesV2Configs) {
+    Map<String, NGVariable> finalNGVariables = new HashMap<>();
+
+    for (ServiceOverridesType overrideType : reverseOverridePriority) {
+      if (overridesV2Configs.containsKey(overrideType)
+          && isNotEmpty(overridesV2Configs.get(overrideType).getSpec().getVariables())) {
+        finalNGVariables.putAll(overridesV2Configs.get(overrideType)
+                                    .getSpec()
+                                    .getVariables()
+                                    .stream()
+                                    .collect(Collectors.toMap(NGVariable::getName, Function.identity())));
+      }
+    }
+    return NGVariablesUtils.getMapOfVariables(new ArrayList<>(finalNGVariables.values()));
   }
 }

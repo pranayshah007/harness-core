@@ -81,7 +81,7 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
     if (instance.hasExpired()) {
       log.warn("Jira Approval Instance expired for instance id - {}", instance.getId());
       updateApprovalInstanceAndLog(logCallback, "Approval instance has expired", LogColor.Red,
-          CommandExecutionStatus.RUNNING, ApprovalStatus.EXPIRED, instance.getId());
+          CommandExecutionStatus.FAILURE, ApprovalStatus.EXPIRED, instance.getId());
     }
 
     JiraTaskNGResponse jiraTaskNGResponse;

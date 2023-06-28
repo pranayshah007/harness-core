@@ -22,6 +22,7 @@ public class K8sDeploymentInfoMapper {
         .blueGreenStageColor(k8sDeploymentInfo.getBlueGreenStageColor())
         .namespaces(k8sDeploymentInfo.getNamespaces())
         .releaseName(k8sDeploymentInfo.getReleaseName())
+        .cloudConfigMetadata(k8sDeploymentInfo.getCloudConfigMetadata())
         .build();
   }
 
@@ -30,6 +31,7 @@ public class K8sDeploymentInfoMapper {
         .blueGreenStageColor(k8sDeploymentInfoDTO.getBlueGreenStageColor())
         .namespaces(k8sDeploymentInfoDTO.getNamespaces())
         .releaseName(k8sDeploymentInfoDTO.getReleaseName())
+        .cloudConfigMetadata(k8sDeploymentInfoDTO.getCloudConfigMetadata())
         .build();
   }
 }

@@ -115,7 +115,7 @@ public class JsonPipelineUtils {
   public String writeYamlString(Object value) throws IOException {
     String jsonString = JsonPipelineUtils.writeJsonString(value);
     JsonNode jsonNode = JsonPipelineUtils.getMapper().readTree(jsonString);
-    return YamlPipelineUtils.writeString(jsonNode);
+    return YamlPipelineUtils.writeYamlString(jsonNode);
   }
 
   public static JsonNode asTree(Object obj) {

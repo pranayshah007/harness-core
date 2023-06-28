@@ -31,7 +31,6 @@ import io.harness.security.SecurityContextBuilder;
 import io.harness.spec.server.ng.v1.ProjectSecretApi;
 import io.harness.spec.server.ng.v1.model.SecretRequest;
 import io.harness.spec.server.ng.v1.model.SecretResponse;
-import io.harness.spec.server.ng.v1.model.SecretValidationMetadata;
 import io.harness.spec.server.ng.v1.model.SecretValidationResponse;
 import io.harness.utils.ApiUtils;
 
@@ -138,14 +137,14 @@ public class ProjectSecretApiImpl implements ProjectSecretApi {
 
   @Override
   public Response validateProjectSecretRef(
-      String org, String project, @Valid SecretValidationMetadata body, String account) {
+      String org, String project, @Valid SecretRequest body, String harnessAccount) {
     boolean isValid;
+    SecretDTOV2 secretDto = secretApiUtils.toSecretDto(body.getSecret());
     try {
-      isValid = ngEncryptedDataService.validateSecretRef(
-          account, null, null, body.getSecretManagerIdentifier(), body.getSecretRefPath());
+      isValid = ngEncryptedDataService.validateSecretRef(harnessAccount, org, project, secretDto);
     } catch (Exception e) {
-      log.error("Secret path reference failed for secret on secretManager: {}, project:{}, org: {}, account: {}",
-          body.getSecretManagerIdentifier(), project, org, account);
+      log.error("Secret path reference failed for secret: {}, account: {}, org:{}, project:{}", secretDto.getName(),
+          harnessAccount, secretDto.getOrgIdentifier(), secretDto.getProjectIdentifier());
       throw e;
     }
     if (isValid) {

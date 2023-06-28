@@ -422,7 +422,7 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
                                                       .attributes(artifactSourceDelegateRequest)
                                                       .build();
     logCallback.saveExecutionLog(
-        LogHelper.color("Starting delegate task to fetch details of primary artifact", LogColor.Cyan, LogWeight.Bold));
+        LogHelper.color("Starting delegate task to fetch details of artifact", LogColor.Cyan, LogWeight.Bold));
 
     final List<TaskSelector> delegateSelectors = artifactStepHelper.getDelegateSelectors(artifactConfig, ambiance);
 

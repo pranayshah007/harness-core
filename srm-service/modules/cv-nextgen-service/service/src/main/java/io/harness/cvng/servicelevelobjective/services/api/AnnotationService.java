@@ -28,4 +28,6 @@ public interface AnnotationService {
 
   boolean delete(String annotationId);
   void delete(ProjectParams projectParams, String sloIdentifier);
+
+  void delete(ProjectParams projectParams, List<String> sloIdentifiers);
 }

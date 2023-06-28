@@ -23,6 +23,7 @@ import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
+import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
 import io.harness.delegate.task.mixin.SocketConnectivityCapabilityGenerator;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.k8s.model.HelmVersion;
@@ -55,13 +56,13 @@ public class HelmFetchChartVersionRequestNG implements TaskParameters, Execution
           case HTTP_HELM:
             HttpHelmStoreDelegateConfig httpHelmStoreConfig =
                 (HttpHelmStoreDelegateConfig) helmChartManifestDelegateConfig.getStoreDelegateConfig();
-            /*
-            We are henceforth using SocketConnectivityExecutionCapability instead of HttpConnectionExecutionCapability
-            this is to ensure that we don't fail Helm Repo Connector Validation in case the url returns 400
-            ref: https://harness.atlassian.net/browse/CDS-36189
-            */
-            SocketConnectivityCapabilityGenerator.addSocketConnectivityExecutionCapability(
-                httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), capabilities);
+            if (helmChartManifestDelegateConfig.isIgnoreResponseCode()) {
+              capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
+                  httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), maskingEvaluator));
+            } else {
+              SocketConnectivityCapabilityGenerator.addSocketConnectivityExecutionCapability(
+                  httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), capabilities);
+            }
             capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
                 httpHelmStoreConfig.getEncryptedDataDetails(), maskingEvaluator));
             populateDelegateSelectorCapability(

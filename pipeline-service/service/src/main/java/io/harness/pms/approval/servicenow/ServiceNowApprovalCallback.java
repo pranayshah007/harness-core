@@ -73,7 +73,7 @@ public class ServiceNowApprovalCallback extends AbstractApprovalCallback impleme
 
     if (instance.hasExpired()) {
       updateApprovalInstanceAndLog(logCallback, "Approval instance has expired", LogColor.Red,
-          CommandExecutionStatus.RUNNING, ApprovalStatus.EXPIRED, instance.getId());
+          CommandExecutionStatus.FAILURE, ApprovalStatus.EXPIRED, instance.getId());
     }
 
     ServiceNowTaskNGResponse serviceNowTaskNGResponse;

@@ -1,33 +1,33 @@
 dummyParallel:
-  type: "Approval"
+  type: Approval
   spec:
     execution:
       steps:
-      - step:
-          name: "Approval"
-          identifier: "approval"
-          template:
-            templateRef: "approvalTemplate"
-            versionLabel: 1
-            templateInputs:
-              type: "HarnessApproval"
-              spec:
-                approvers:
-                  userGroups: "<+input>"
-      - step:
-          name: "http"
-          identifier: "http"
-          template:
-            templateRef: "httpTemplate"
-            versionLabel: 1
-            templateInputs:
-              spec:
-                url: "<+input>"
-                method: "<+input>"
-                requestBody: "<+input>"
-              timeout: "<+input>"
-      - Step:
-          identifier: "identifier"
-          name: "name"
-  identifier: "identifier"
-  name: "name"
+        - step:
+            name: Approval
+            identifier: approval
+            template:
+              templateRef: approvalTemplate
+              versionLabel: 1
+              templateInputs:
+                type: HarnessApproval
+                spec:
+                  approvers:
+                    userGroups: <+input>
+        - step:
+            name: http
+            identifier: http
+            template:
+              templateRef: httpTemplate
+              versionLabel: 1
+              templateInputs:
+                spec:
+                  url: <+input>
+                  method: <+input>
+                  requestBody: <+input>
+                timeout: <+input>
+        - Step:
+            identifier: identifier
+            name: name
+  identifier: identifier
+  name: name

@@ -48,6 +48,7 @@ public class HttpHelmConnectivityDelegateTask extends AbstractDelegateRunnableTa
           HttpHelmValidationParams.builder()
               .encryptionDataDetails(httpHelmConnectivityTaskParams.getEncryptionDetails())
               .httpHelmConnectorDTO(httpHelmConnectorDTO)
+              .ignoreResponseCode(httpHelmConnectivityTaskParams.isIgnoreResponseCode())
               .build();
       ConnectorValidationResult httpHelmConnectorValidationResult =
           httpHelmValidationHandler.validate(httpHelmValidationParams, getAccountId());

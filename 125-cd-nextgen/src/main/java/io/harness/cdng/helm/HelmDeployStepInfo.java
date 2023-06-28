@@ -46,8 +46,8 @@ public class HelmDeployStepInfo extends HelmDeployBaseStepInfo implements CDAbst
 
   @Builder(builderMethodName = "infoBuilder")
   public HelmDeployStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors, String helmDeployFqn,
-      ParameterField<Boolean> ignoreReleaseHistFailStatus) {
-    super(delegateSelectors, helmDeployFqn, ignoreReleaseHistFailStatus);
+      ParameterField<Boolean> ignoreReleaseHistFailStatus, ParameterField<Boolean> skipSteadyStateCheck) {
+    super(delegateSelectors, helmDeployFqn, ignoreReleaseHistFailStatus, skipSteadyStateCheck);
   }
   @Override
   public StepType getStepType() {
@@ -64,6 +64,7 @@ public class HelmDeployStepInfo extends HelmDeployBaseStepInfo implements CDAbst
     return HelmDeployStepParams.infoBuilder()
         .delegateSelectors(delegateSelectors)
         .ignoreReleaseHistFailStatus(ignoreReleaseHistFailStatus)
+        .skipSteadyStateCheck(skipSteadyStateCheck)
         .build();
   }
 

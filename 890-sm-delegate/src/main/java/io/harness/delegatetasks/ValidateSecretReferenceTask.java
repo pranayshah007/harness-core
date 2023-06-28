@@ -73,7 +73,12 @@ public class ValidateSecretReferenceTask extends AbstractDelegateRunnableTask {
     EncryptionConfig encryptionConfig = parameters.getEncryptionConfig();
     VaultEncryptor vaultEncryptor = vaultEncryptorsRegistry.getVaultEncryptor(encryptionConfig.getEncryptionType());
     boolean isReferenceValid = vaultEncryptor.validateReference(encryptionConfig.getAccountId(),
-        SecretText.builder().path(encryptedRecord.getPath()).name(encryptedRecord.getName()).build(), encryptionConfig);
+        SecretText.builder()
+            .path(encryptedRecord.getPath())
+            .name(encryptedRecord.getName())
+            .additionalMetadata(encryptedRecord.getAdditionalMetadata())
+            .build(),
+        encryptionConfig);
     return ValidateSecretReferenceTaskResponse.builder().isReferenceValid(isReferenceValid).build();
   }
 

@@ -84,7 +84,7 @@ public class JiraStepHelperServiceImpl implements JiraStepHelperService {
     Optional<ConnectorDTO> connectorDTOOptional = NGRestUtils.getResponse(
         connectorResourceClient.get(identifierRef.getIdentifier(), identifierRef.getAccountIdentifier(),
             identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier()));
-    if (!connectorDTOOptional.isPresent()) {
+    if (connectorDTOOptional.isEmpty()) {
       throw new InvalidRequestException(
           String.format("Connector not found for identifier: [%s]", connectorRef), WingsException.USER);
     }

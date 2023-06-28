@@ -1,5 +1,5 @@
 pipeline:
   identifier: Test_Pipline11
   stages:
-  - stage:
-      identifier: qaStage
+    - stage:
+        identifier: qaStage

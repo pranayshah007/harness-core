@@ -9,9 +9,9 @@ package io.harness.delegate.beans;
 
 import io.harness.tasks.ResponseData;
 
+import software.wings.TaskTypeToRequestResponseMapper;
 import software.wings.beans.TaskType;
 
-import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -35,10 +35,11 @@ public class DelegateTaskResponseV2Deserializer extends StdDeserializer<Delegate
 
   @Override
   public DelegateTaskResponseV2 deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
-      throws IOException, JacksonException {
+      throws IOException {
     JsonNode node = jsonParser.getCodec().readTree(jsonParser);
     TaskType taskType = TaskType.valueOf(node.get("type").asText());
-    Class<? extends ResponseData> responseClass = taskType.getResponse();
+    Class<? extends ResponseData> responseClass =
+        TaskTypeToRequestResponseMapper.getTaskResponseClass(taskType).orElse(null);
     ObjectMapper objectMapper = new ObjectMapper();
     String id = node.get("id").asText();
     DelegateTaskResponse.ResponseCode code = DelegateTaskResponse.ResponseCode.valueOf(node.get("code").asText());

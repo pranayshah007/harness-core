@@ -9,12 +9,9 @@ package io.harness.connector.validator;
 
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.ManagerExecutable;
-import io.harness.delegate.beans.DelegateResponseData;
-import io.harness.delegate.beans.artifactory.ArtifactoryTaskResponse;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
-import io.harness.delegate.beans.connector.docker.DockerTestConnectionTaskResponse;
 import io.harness.exception.InvalidRequestException;
 
 public abstract class AbstractArtifactConnectorValidator extends AbstractConnectorValidator {
@@ -33,19 +30,13 @@ public abstract class AbstractArtifactConnectorValidator extends AbstractConnect
       return super.validateConnectorViaManager(
           connectorConfigDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     } else {
-      DelegateResponseData responseData =
+      var responseData =
           super.validateConnector(connectorConfigDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
-      return getValidationResult(connectorConfigDTO, responseData);
+      if (connectorConfigDTO instanceof ArtifactoryConnectorDTO || connectorConfigDTO instanceof DockerConnectorDTO) {
+        return responseData.getConnectorValidationResult();
+      } else {
+        throw new InvalidRequestException("Invalid connector type found during connection test");
+      }
     }
-  }
-
-  private ConnectorValidationResult getValidationResult(
-      ConnectorConfigDTO connectorConfigDTO, DelegateResponseData delegateResponseData) {
-    if (connectorConfigDTO instanceof ArtifactoryConnectorDTO) {
-      return ((ArtifactoryTaskResponse) delegateResponseData).getConnectorValidationResult();
-    } else if (connectorConfigDTO instanceof DockerConnectorDTO) {
-      return ((DockerTestConnectionTaskResponse) delegateResponseData).getConnectorValidationResult();
-    }
-    throw new InvalidRequestException("Invalid connector type found during connection test");
   }
 }

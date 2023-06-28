@@ -25,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 public class SecretsBuilder {
   private static final String DOCKER_CONFIG_KEY = ".dockercfg";
 
+  private final K8SRunnerConfig config;
   private final RunnerDecryptionService decryptionService;
   private final CoreV1Api coreApi;
 
@@ -48,27 +49,26 @@ public class SecretsBuilder {
           decryptedSecrets.values().size(), taskGroupId, index);
     }
     final var optionalSecret = decryptedSecrets.values().stream().findFirst();
-    if (optionalSecret.isPresent()) {
-      try {
-        return K8SSecret.imagePullSecret(secretName, K8SResourceHelper.getRunnerNamespace())
-            .putDataItem(DOCKER_CONFIG_KEY, String.valueOf(optionalSecret.get()).getBytes(Charsets.UTF_8))
-            .create(coreApi);
-      } catch (ApiException e) {
-        log.error(ApiExceptionLogger.format(e));
-        throw new RuntimeException("K8S Api invocation failed creating image pull secret", e);
-      }
+    if (optionalSecret.isEmpty()) {
+      throw new IllegalStateException(
+          "Trying to create registry secret, but no secret data present for " + taskGroupId + index);
     }
-    throw new IllegalStateException(
-        "Trying to create registry secret, but no secret data present for " + taskGroupId + index);
+
+    try {
+      return K8SSecret.imagePullSecret(secretName, config.getNamespace())
+          .putDataItem(DOCKER_CONFIG_KEY, String.valueOf(optionalSecret.get()).getBytes(Charsets.UTF_8))
+          .create(coreApi);
+    } catch (ApiException e) {
+      log.error(ApiExceptionLogger.format(e));
+      throw new RuntimeException("K8S Api invocation failed creating image pull secret", e);
+    }
   }
 
   public V1Secret createSecret(final String taskId, final Secret infraSecret) {
     final var secretName = K8SResourceHelper.getSecretName(taskId);
     final var decryptedSecrets = decryptionService.decrypt(infraSecret);
     try {
-      return K8SSecret.secret(secretName, K8SResourceHelper.getRunnerNamespace())
-          .putAllCharDataItems(decryptedSecrets)
-          .create(coreApi);
+      return K8SSecret.secret(secretName, config.getNamespace()).putAllCharDataItems(decryptedSecrets).create(coreApi);
     } catch (ApiException e) {
       log.error(ApiExceptionLogger.format(e));
       throw new RuntimeException("K8S Api invocation failed creating secret", e);

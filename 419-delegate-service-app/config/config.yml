@@ -45,20 +45,16 @@ commonPoolConfig:
   idleTime: ${COMMON_POOL_IDLE_TIME:-500}
   timeUnit: ${COMMON_POOL_IDLE_TIME_TIME_UNIT:-MILLISECONDS}
 
+
 mongo:
-  uri: mongodb://localhost:27017/harness
+  uri: mongodb://localhost:27017/dms-harness
   connectTimeout: 30000
   serverSelectionTimeout: 90000
   socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
-  traceMode: DISABLED
-  mongoSSLConfig:
-    mongoSSLEnabled: false
-    mongoTrustStorePath:
-    mongoTrustStorePassword:
-  aliasDBName: harness
+  aliasDBName: dms-harness
 
 cacheConfig:
   cacheBackend: HAZELCAST
@@ -71,3 +67,33 @@ managerClientConfig:
   readTimeOutSeconds: 15
 
 managerServiceSecret: "IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"
+
+cfClientConfig:
+  apiKey: ""
+  configUrl: "https://config.feature-flags.uat.harness.io/api/1.0"
+  eventUrl: "https://event.feature-flags.uat.harness.io/api/1.0"
+  analyticsEnabled: true
+  connectionTimeout: 10000
+  readTimeout: 45000
+  bufferSize: 10240
+  retries: 6
+  sleepInterval: 5000
+
+featureFlagConfig:
+  featureFlagSystem: LOCAL
+  syncFeaturesToCF: false
+
+distributedLockImplementation: REDIS
+
+redisLockConfig:
+  sentinel: false
+  masterName: "test"
+  redisUrl: "redis://localhost:6379"
+  sentinelUrls:
+    - "redis://redis1:26379"
+    - "redis://redis2:26379"
+    - "redis://redis3:26379"
+  envNamespace: ""
+  readMode: MASTER
+  nettyThreads: 16
+  useScriptCache: true

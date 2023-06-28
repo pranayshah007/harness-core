@@ -6,7 +6,13 @@
 
   USERS:
     COMMUNITY:
-      maxUsersAllowed: 5
+      maxUsersAllowed: 50000
+    TRIAL:
+      maxUsersAllowed: 50000
+    FREE:
+      maxUsersAllowed: 50000
+    PAID:
+      maxUsersAllowed: 50000
 
   JIRA_NOTIFICATION:
     COMMUNITY:

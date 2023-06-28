@@ -1,0 +1,22 @@
+pipeline:
+  identifier: Nexus3
+  stages:
+    - stage:
+        identifier: Nexus
+        type: Deployment
+        spec:
+          service:
+            serviceInputs:
+              serviceDefinition:
+                type: Kubernetes
+                spec:
+                  artifacts:
+                    primary:
+                      primaryArtifactRef: Test
+                      sources:
+                        - identifier: Test
+                          type: Nexus3Registry
+                          spec:
+                            tag: <+input>
+                            spec:
+                              repositoryUrl: ""

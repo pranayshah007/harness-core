@@ -1,18 +1,18 @@
 environmentInputs:
-  identifier: "ENV_ID"
-  type: "Production"
+  identifier: ENV_ID
+  type: Production
   variables:
-  - name: "envV1"
-    type: "String"
-    value: "<+input>"
+    - name: envV1
+      type: String
+      value: <+input>
   overrides:
     manifests:
-    - manifest:
-        identifier: "manifest1"
-        type: "Values"
-        spec:
-          store:
-            type: "Github"
-            spec:
-              connectorRef: "<+input>"
-              repoName: "<+input>"
+      - manifest:
+          identifier: manifest1
+          type: Values
+          spec:
+            store:
+              type: Github
+              spec:
+                connectorRef: <+input>
+                repoName: <+input>

@@ -52,6 +52,7 @@ import io.harness.service.DelegateGrpcClientWrapper;
 
 import java.util.Map;
 import java.util.Optional;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -63,6 +64,7 @@ import org.mockito.MockitoAnnotations;
 @OwnedBy(HarnessTeam.DX)
 public class GitConnectorValidatorTest extends CategoryTest {
   public static final String ACCOUNT_ID = "ACCOUNT_ID";
+  public static final String TASK_ID = "xxxxxx";
   @Mock DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Mock EncryptionHelper encryptionHelper;
   @Mock GitDecryptionHelper gitDecryptionHelper;
@@ -101,16 +103,18 @@ public class GitConnectorValidatorTest extends CategoryTest {
                                  .url("url")
                                  .gitAuthType(GitAuthType.HTTP)
                                  .build();
-    GitCommandExecutionResponse gitResponse =
+
+    Pair<String, GitCommandExecutionResponse> gitResponse = Pair.of(TASK_ID,
         GitCommandExecutionResponse.builder()
             .connectorValidationResult(ConnectorValidationResult.builder().status(FAILURE).build())
-            .build();
-    doReturn(gitResponse).when(delegateGrpcClientWrapper).executeSyncTaskV2(any());
+            .build());
+    doReturn(gitResponse).when(delegateGrpcClientWrapper).executeSyncTaskV2ReturnTaskId(any());
     when(encryptionHelper.getEncryptionDetail(any(), any(), any(), any())).thenReturn(null);
     ConnectorValidationResult connectorValidationResult =
         gitConnectorValidator.validate(gitConfig, ACCOUNT_ID, null, null, null);
-    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(any());
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2ReturnTaskId(any());
     assertThat(connectorValidationResult.getStatus()).isEqualTo(FAILURE);
+    assertThat(connectorValidationResult.getTaskId()).isEqualTo(TASK_ID);
   }
 
   @Test
@@ -128,17 +132,18 @@ public class GitConnectorValidatorTest extends CategoryTest {
             .branchName("branchName")
             .url("url")
             .build();
-    GitCommandExecutionResponse gitResponse =
+    Pair<String, GitCommandExecutionResponse> gitResponse = Pair.of(TASK_ID,
         GitCommandExecutionResponse.builder()
             .connectorValidationResult(ConnectorValidationResult.builder().status(SUCCESS).build())
-            .build();
+            .build());
     when(encryptionHelper.getEncryptionDetail(any(), any(), any(), any())).thenReturn(null);
 
-    doReturn(gitResponse).when(delegateGrpcClientWrapper).executeSyncTaskV2(any());
+    doReturn(gitResponse).when(delegateGrpcClientWrapper).executeSyncTaskV2ReturnTaskId(any());
     ConnectorValidationResult connectorValidationResult =
         gitConnectorValidator.validate(gitConfig, ACCOUNT_ID, null, null, null);
-    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(any());
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2ReturnTaskId(any());
     assertThat(connectorValidationResult.getStatus()).isEqualTo(SUCCESS);
+    assertThat(connectorValidationResult.getTaskId()).isEqualTo(TASK_ID);
   }
 
   @Test
@@ -157,17 +162,18 @@ public class GitConnectorValidatorTest extends CategoryTest {
             .url("url")
             .executeOnDelegate(true)
             .build();
-    GitCommandExecutionResponse gitResponse =
+    Pair<String, GitCommandExecutionResponse> gitResponse = Pair.of(TASK_ID,
         GitCommandExecutionResponse.builder()
             .connectorValidationResult(ConnectorValidationResult.builder().status(SUCCESS).build())
-            .build();
+            .build());
     when(encryptionHelper.getEncryptionDetail(any(), any(), any(), any())).thenReturn(null);
 
-    doReturn(gitResponse).when(delegateGrpcClientWrapper).executeSyncTaskV2(any());
+    doReturn(gitResponse).when(delegateGrpcClientWrapper).executeSyncTaskV2ReturnTaskId(any());
     ConnectorValidationResult connectorValidationResult =
         gitConnectorValidator.validate(gitConfig, ACCOUNT_ID, null, null, null);
-    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(any());
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2ReturnTaskId(any());
     assertThat(connectorValidationResult.getStatus()).isEqualTo(SUCCESS);
+    assertThat(connectorValidationResult.getTaskId()).isEqualTo(TASK_ID);
   }
 
   @Test

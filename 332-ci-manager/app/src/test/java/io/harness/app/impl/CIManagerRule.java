@@ -24,6 +24,9 @@ import io.harness.beans.entities.IACMServiceConfig;
 import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
+import io.harness.cf.AbstractCfModule;
+import io.harness.cf.CfClientConfig;
+import io.harness.cf.CfMigrationConfig;
 import io.harness.ci.beans.entities.LogServiceConfig;
 import io.harness.ci.beans.entities.TIServiceConfig;
 import io.harness.ci.config.CIExecutionServiceConfig;
@@ -34,6 +37,7 @@ import io.harness.ci.serializer.CiExecutionRegistrars;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
+import io.harness.ff.FeatureFlagConfig;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.hsqs.client.model.QueueServiceClientConfig;
@@ -197,8 +201,11 @@ public class CIManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
                 LogServiceConfig.builder().baseUrl("http://localhost-inc:8079").globalToken("global-token").build())
             .tiServiceConfig(
                 TIServiceConfig.builder().baseUrl("http://localhost-inc:8078").globalToken("global-token").build())
-            .stoServiceConfig(
-                STOServiceConfig.builder().baseUrl("http://localhost-inc:4000").globalToken("global-token").build())
+            .stoServiceConfig(STOServiceConfig.builder()
+                                  .baseUrl("http://localhost-inc:4000")
+                                  .internalUrl("http://localhost-inc:4000")
+                                  .globalToken("global-token")
+                                  .build())
             .iacmServiceConfig(
                 IACMServiceConfig.builder().baseUrl("http://localhost-inc:5000").globalToken("global-token").build())
             .sscaServiceConfig(
@@ -220,6 +227,22 @@ public class CIManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
     modules.add(new SpringPersistenceTestModule());
     modules.add(new CIManagerServiceModule(configuration, new CIManagerConfigurationOverride()));
     modules.add(PmsSdkModule.getInstance(getPmsSdkConfiguration()));
+    modules.add(new AbstractCfModule() {
+      @Override
+      public CfClientConfig cfClientConfig() {
+        return CfClientConfig.builder().build();
+      }
+
+      @Override
+      public CfMigrationConfig cfMigrationConfig() {
+        return CfMigrationConfig.builder().build();
+      }
+
+      @Override
+      public FeatureFlagConfig featureFlagConfig() {
+        return FeatureFlagConfig.builder().build();
+      }
+    });
     return modules;
   }
 

@@ -7,7 +7,6 @@
 
 package io.harness.yaml.core.failurestrategy.retry;
 
-import static io.harness.yaml.core.failurestrategy.NGFailureActionTypeConstants.RETRY;
 import static io.harness.yaml.core.failurestrategy.NGFailureActionTypeConstants.RETRY_STEP_GROUP;
 
 import io.harness.annotation.RecasterAlias;

@@ -19,6 +19,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.FileBucket.ARTIFACTS;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.persistence.HPersistence.DEFAULT_STORE;
 import static io.harness.persistence.HQuery.excludeAuthority;
@@ -626,7 +627,7 @@ public class ArtifactServiceImpl implements ArtifactService {
     List<String> artifactFileIds = new ArrayList<>();
     List<String> allArtifactIds = new ArrayList<>();
 
-    try (HIterator<Artifact> iterator = new HIterator<>(artifactQuery.fetch())) {
+    try (HIterator<Artifact> iterator = new HIterator<>(artifactQuery.limit(NO_LIMIT).fetch())) {
       for (Artifact artifact : iterator) {
         if (isNotEmpty(artifact.getArtifactFiles())) {
           artifactIdsWithFiles.add(artifact.getUuid());
@@ -830,6 +831,7 @@ public class ArtifactServiceImpl implements ArtifactService {
                                               .field(ArtifactKeys.contentStatus)
                                               .hasAnyOf(singletonList(DOWNLOADED))
                                               .order(Sort.descending(CREATED_AT_KEY))
+                                              .limit(NO_LIMIT)
                                               .asList(new FindOptions().skip(retentionSize));
     if (isEmpty(toBeDeletedArtifacts)) {
       return;
@@ -1008,12 +1010,16 @@ public class ArtifactServiceImpl implements ArtifactService {
         .filter(ArtifactKeys.accountId, accountId)
         .field(ArtifactKeys.uuid)
         .in(artifactIds)
+        .limit(NO_LIMIT)
         .asList();
   }
 
   @Override
   public List<Artifact> listByAccountId(String accountId) {
-    return wingsPersistence.createQuery(Artifact.class).filter(ArtifactKeys.accountId, accountId).asList();
+    return wingsPersistence.createQuery(Artifact.class)
+        .filter(ArtifactKeys.accountId, accountId)
+        .limit(NO_LIMIT)
+        .asList();
   }
 
   @Override
@@ -1041,6 +1047,7 @@ public class ArtifactServiceImpl implements ArtifactService {
         .filter(ArtifactKeys.accountId, accountId)
         .filter(ArtifactKeys.artifactStreamId, artifactStreamId)
         .order(Sort.descending(CREATED_AT_KEY))
+        .limit(NO_LIMIT)
         .asList();
   }
 
@@ -1051,6 +1058,7 @@ public class ArtifactServiceImpl implements ArtifactService {
         .filter(ArtifactKeys.artifactStreamId, artifactStreamId)
         .filter(ArtifactKeys.metadata_buildNo, buildNo)
         .order(Sort.descending(CREATED_AT_KEY))
+        .limit(NO_LIMIT)
         .asList();
   }
 

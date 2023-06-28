@@ -98,7 +98,8 @@ public class BatchJobRunner {
     if (batchJobType == BatchJobType.RERUN_JOB) {
       endAt = Instant.now().minus(15, ChronoUnit.HOURS);
     }
-    if (batchJobType == BatchJobType.DELEGATE_HEALTH_CHECK || batchJobType == BatchJobType.RECOMMENDATION_JIRA_STATUS) {
+    if (batchJobType == BatchJobType.DELEGATE_HEALTH_CHECK || batchJobType == BatchJobType.RECOMMENDATION_JIRA_STATUS
+        || batchJobType == BatchJobType.MSP_MARKUP_AMOUNT) {
       endAt = Instant.now();
     }
     BatchJobScheduleTimeProvider batchJobScheduleTimeProvider =

@@ -1,12 +1,12 @@
 a:
   c:
-  - s:
-      identifier: s1
-      j: 12
-      k: 13
-  - t:
-      identifier: t1
-      j: 14
-      k:
-        l: 11
-        m: ${env.name}
+    - s:
+        identifier: s1
+        j: 12
+        k: 13
+    - t:
+        identifier: t1
+        j: 14
+        k:
+          l: 11
+          m: ${env.name}

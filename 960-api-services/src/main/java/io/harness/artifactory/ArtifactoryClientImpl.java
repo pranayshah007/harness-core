@@ -171,7 +171,7 @@ public class ArtifactoryClientImpl {
   }
 
   public boolean validateArtifactServer(ArtifactoryConfigRequest config) {
-    if (!connectableHttpUrl(getBaseUrl(config))) {
+    if (!connectableHttpUrl(getBaseUrl(config), false)) {
       throw NestedExceptionUtils.hintWithExplanationException(
           "Check if the Artifactory URL is reachable from your delegate(s)",
           "The given artifactory URL is not reachable",

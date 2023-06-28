@@ -98,6 +98,21 @@ public class FakeNextGenService implements NextGenService {
   }
 
   @Override
+  public List<ConnectorResponseDTO> listConnector(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> connectorIdListWithScope) {
+    return connectorIdListWithScope.stream()
+        .map(connectorRef
+            -> ConnectorResponseDTO.builder()
+                   .connector(ConnectorInfoDTO.builder()
+                                  .orgIdentifier(orgIdentifier)
+                                  .projectIdentifier(projectIdentifier)
+                                  .identifier(connectorRef)
+                                  .build())
+                   .build())
+        .collect(Collectors.toList());
+  }
+
+  @Override
   public ProjectDTO getProject(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     return ProjectDTO.builder()
         .orgIdentifier(orgIdentifier)
@@ -141,6 +156,12 @@ public class FakeNextGenService implements NextGenService {
                 projectParams.getProjectIdentifier(), envIdentifier)
                 .getName()));
     return envIdNameMap;
+  }
+
+  @Override
+  public void validateConnectorIdList(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> connectorIdListWithScope) {
+    return;
   }
 
   @Override

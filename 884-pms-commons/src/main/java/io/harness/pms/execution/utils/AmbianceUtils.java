@@ -28,7 +28,9 @@ import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
+import io.harness.pms.utils.NGPipelineSettingsConstant;
 import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.strategy.StrategyValidationUtils;
 
@@ -314,7 +316,7 @@ public class AmbianceUtils {
 
   public static String modifyIdentifier(Ambiance ambiance, String identifier) {
     Level level = obtainCurrentLevel(ambiance);
-    return modifyIdentifier(level, identifier, ambiance.getMetadata().getUseMatrixFieldName());
+    return modifyIdentifier(level, identifier, shouldUseMatrixFieldName(ambiance));
   }
 
   public static String modifyIdentifier(Level level, String identifier, boolean useMatrixFieldName) {
@@ -469,6 +471,17 @@ public class AmbianceUtils {
     return executionMode == ExecutionMode.POST_EXECUTION_ROLLBACK || executionMode == ExecutionMode.PIPELINE_ROLLBACK;
   }
 
+  public boolean isUnderRollbackSteps(Ambiance ambiance) {
+    List<Level> levels = ambiance.getLevelsList();
+    for (Level level : levels) {
+      String identifier = level.getIdentifier();
+      if (identifier.equals(YAMLFieldNameConstants.ROLLBACK_STEPS)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   public String getStageExecutionIdForExecutionMode(Ambiance ambiance) {
     if (isRollbackModeExecution(ambiance)) {
       return ambiance.getOriginalStageExecutionIdForRollbackMode();
@@ -481,5 +494,29 @@ public class AmbianceUtils {
       return ambiance.getMetadata().getOriginalPlanExecutionIdForRollbackMode();
     }
     return ambiance.getPlanExecutionId();
+  }
+
+  public boolean shouldUseMatrixFieldName(Ambiance ambiance) {
+    return checkIfSettingEnabled(ambiance, NGPipelineSettingsConstant.ENABLE_MATRIX_FIELD_NAME_SETTING.getName());
+  }
+
+  public boolean isNodeExecutionAuditsEnabled(Ambiance ambiance) {
+    return checkIfSettingEnabled(ambiance, NGPipelineSettingsConstant.ENABLE_NODE_EXECUTION_AUDIT_EVENTS.getName());
+  }
+
+  public boolean shouldUseExpressionEngineV2(Ambiance ambiance) {
+    return checkIfSettingEnabled(ambiance, NGPipelineSettingsConstant.ENABLE_EXPRESSION_ENGINE_V2.getName());
+  }
+
+  // This method should be used when the setting value is of type boolean.
+  public boolean checkIfSettingEnabled(Ambiance ambiance, String settingId) {
+    Map<String, String> settingToValueMap = ambiance.getMetadata().getSettingToValueMapMap();
+    return settingToValueMap.containsKey(settingId) && "true".equals(settingToValueMap.get(settingId));
+  }
+
+  // This method should be used when the setting value is of type String.
+  public String getSettingValue(Ambiance ambiance, String settingId) {
+    Map<String, String> settingToValueMap = ambiance.getMetadata().getSettingToValueMapMap();
+    return settingToValueMap.get(settingId);
   }
 }

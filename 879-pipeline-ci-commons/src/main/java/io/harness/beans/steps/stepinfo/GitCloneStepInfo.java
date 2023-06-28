@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
+import static io.harness.beans.SwaggerConstants.STRING_LIST_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
@@ -38,6 +39,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.beans.ConstructorProperties;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
@@ -97,13 +99,16 @@ public class GitCloneStepInfo implements PluginCompatibleStep, WithConnectorRef 
 
   @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> cloneDirectory;
 
+  @ApiModelProperty(dataType = STRING_LIST_CLASSPATH) ParameterField<List<String>> outputFilePathsContent;
+
   @Builder
   @ConstructorProperties({"identifier", "name", "retry", "connectorRef", "resources", "runAsUser", "repoName", "build",
-      "projectName", "depth", "sslVerify", "cloneDirectory"})
+      "projectName", "depth", "sslVerify", "cloneDirectory", "outputFilePathsContent"})
   public GitCloneStepInfo(String identifier, String name, int retry, ParameterField<String> connectorRef,
       ContainerResource resources, ParameterField<Integer> runAsUser, ParameterField<String> repoName,
       ParameterField<Build> build, ParameterField<String> projectName, ParameterField<Integer> depth,
-      ParameterField<Boolean> sslVerify, ParameterField<String> cloneDirectory) {
+      ParameterField<Boolean> sslVerify, ParameterField<String> cloneDirectory,
+      ParameterField<List<String>> outputFilePathsContent) {
     this.identifier = identifier;
     this.name = name;
     this.retry = retry;
@@ -117,6 +122,7 @@ public class GitCloneStepInfo implements PluginCompatibleStep, WithConnectorRef 
     this.depth = depth;
     this.sslVerify = sslVerify;
     this.cloneDirectory = cloneDirectory;
+    this.outputFilePathsContent = outputFilePathsContent;
   }
 
   @Override

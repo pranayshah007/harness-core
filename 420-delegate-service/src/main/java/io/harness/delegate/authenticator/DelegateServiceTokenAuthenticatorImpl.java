@@ -73,7 +73,7 @@ public class DelegateServiceTokenAuthenticatorImpl implements DelegateTokenAuthe
   @Inject private DelegateJWTCache delegateJWTCache;
   @Inject private DelegateMetricsService delegateMetricsService;
   @Inject private AgentMtlsVerifier agentMtlsVerifier;
-  @Inject private DelegateTokenEncryptDecrypt delegateTokenEncryptDecrypt;
+  @Inject private DelegateSecretManager delegateSecretManager;
 
   public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
 
@@ -179,7 +179,7 @@ public class DelegateServiceTokenAuthenticatorImpl implements DelegateTokenAuthe
         DelegateToken delegateToken = iterator.next();
         try {
           decryptDelegateAuthV2Token(
-              accountId, tokenString, delegateTokenEncryptDecrypt.getDelegateTokenValue(delegateToken));
+              accountId, tokenString, delegateSecretManager.getDelegateTokenValue(delegateToken));
 
           return;
         } catch (Exception e) {
@@ -240,7 +240,7 @@ public class DelegateServiceTokenAuthenticatorImpl implements DelegateTokenAuthe
         DelegateToken delegateToken = iterator.next();
         log.info("Token name : " + delegateToken.getName());
         try {
-          decryptDelegateToken(encryptedJWT, delegateTokenEncryptDecrypt.getDelegateTokenValue(delegateToken));
+          decryptDelegateToken(encryptedJWT, delegateSecretManager.getDelegateTokenValue(delegateToken));
           if (DelegateTokenStatus.ACTIVE.equals(delegateToken.getStatus())) {
             setTokenNameInGlobalContext(shouldSetTokenNameInGlobalContext, delegateToken.getName());
           }
@@ -264,7 +264,7 @@ public class DelegateServiceTokenAuthenticatorImpl implements DelegateTokenAuthe
       return false;
     }
     try {
-      decryptDelegateToken(encryptedJWT, delegateTokenEncryptDecrypt.getDelegateTokenValue(delegateToken));
+      decryptDelegateToken(encryptedJWT, delegateSecretManager.getDelegateTokenValue(delegateToken));
       if (DelegateTokenStatus.ACTIVE.equals(delegateToken.getStatus())) {
         setTokenNameInGlobalContext(shouldSetTokenNameInGlobalContext, delegateToken.getName());
       }

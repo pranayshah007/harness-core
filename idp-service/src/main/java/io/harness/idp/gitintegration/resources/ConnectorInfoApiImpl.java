@@ -39,8 +39,7 @@ public class ConnectorInfoApiImpl implements ConnectorInfoApi {
   @Inject GitIntegrationService gitIntegrationService;
 
   @Override
-  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response getConnectorInfo(@AccountIdentifier String harnessAccount) {
+  public Response getConnectorInfo(String harnessAccount) {
     CatalogConnectorEntity catalogConnectorEntity = gitIntegrationService.findDefaultConnectorDetails(harnessAccount);
     if (catalogConnectorEntity == null) {
       log.warn("Could not fetch connector details for accountId: {}", harnessAccount);
@@ -52,8 +51,7 @@ public class ConnectorInfoApiImpl implements ConnectorInfoApi {
   }
 
   @Override
-  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response getConnectorInfoByProviderType(String providerType, @AccountIdentifier String harnessAccount) {
+  public Response getConnectorInfoByProviderType(String providerType, String harnessAccount) {
     Optional<CatalogConnectorEntity> catalogConnector =
         gitIntegrationService.findByAccountIdAndProviderType(harnessAccount, providerType);
     if (catalogConnector.isEmpty()) {

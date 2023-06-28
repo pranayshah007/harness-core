@@ -15,6 +15,7 @@ java_library(
         "//980-commons/src/main/java/io/harness/data/structure:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_squareup_retrofit2_converter_jaxb",
         "@maven//:javax_ws_rs_javax_ws_rs_api",
     ],
 )

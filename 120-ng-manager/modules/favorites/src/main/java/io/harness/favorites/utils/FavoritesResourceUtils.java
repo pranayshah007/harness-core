@@ -14,6 +14,7 @@ import io.harness.favorites.ResourceType;
 import io.harness.favorites.entities.Favorite;
 import io.harness.spec.server.ng.v1.model.FavoriteDTO;
 import io.harness.spec.server.ng.v1.model.FavoriteResponse;
+import io.harness.spec.server.ng.v1.model.FavoritesResourceType;
 
 import com.google.inject.Singleton;
 import java.util.List;
@@ -28,8 +29,8 @@ public class FavoritesResourceUtils {
         .org(favorite.getOrgIdentifier())
         .project(favorite.getProjectIdentifier())
         .userId(favorite.getUserIdentifier())
-        .module(favorite.getModule().toString())
-        .resourceType(favorite.getResourceType().toString())
+        .module(io.harness.spec.server.ng.v1.model.ModuleType.fromValue(favorite.getModule().toString()))
+        .resourceType(FavoritesResourceType.fromValue(favorite.getResourceType().toString()))
         .resourceId(favorite.getResourceIdentifier());
   }
 
@@ -39,8 +40,8 @@ public class FavoritesResourceUtils {
         .orgIdentifier(favoriteDTO.getOrg())
         .projectIdentifier(favoriteDTO.getProject())
         .userIdentifier(favoriteDTO.getUserId())
-        .module(EnumUtils.getEnum(ModuleType.class, favoriteDTO.getModule()))
-        .resourceType(EnumUtils.getEnum(ResourceType.class, favoriteDTO.getResourceType()))
+        .module(EnumUtils.getEnum(ModuleType.class, favoriteDTO.getModule().toString()))
+        .resourceType(EnumUtils.getEnum(ResourceType.class, favoriteDTO.getResourceType().toString()))
         .resourceIdentifier(favoriteDTO.getResourceId())
         .build();
   }

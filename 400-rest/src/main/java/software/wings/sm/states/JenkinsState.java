@@ -12,6 +12,7 @@ import static io.harness.beans.EnvironmentType.ALL;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.RUNNING;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
+import static io.harness.beans.FeatureName.SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW;
 import static io.harness.beans.OrchestrationWorkflowType.BUILD;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -36,6 +37,8 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
+import io.harness.exception.FailureType;
+import io.harness.ff.FeatureFlagService;
 import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ResponseData;
 
@@ -125,6 +128,7 @@ public class JenkinsState extends State implements SweepingOutputStateMixin {
   @Transient @Inject private KryoSerializer kryoSerializer;
   @Transient @Inject private InfrastructureMappingService infrastructureMappingService;
   @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
+  @Inject private FeatureFlagService featureFlagService;
 
   public JenkinsState(String name) {
     super(name, StateType.JENKINS.name());
@@ -304,6 +308,9 @@ public class JenkinsState extends State implements SweepingOutputStateMixin {
               context.renderExpression(filePathAssertionEntry.getFilePath()), filePathAssertionEntry.getAssertion()));
     }
 
+    boolean isTimeoutFailureSupported =
+        featureFlagService.isEnabled(SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW, context.getAccountId());
+
     String infrastructureMappingId = context.fetchInfraMappingId();
     String appId = ((ExecutionContextImpl) context).fetchRequiredApp().getAppId();
     JenkinsTaskParams jenkinsTaskParams = JenkinsTaskParams.builder()
@@ -318,6 +325,7 @@ public class JenkinsState extends State implements SweepingOutputStateMixin {
                                               .unstableSuccess(unstableSuccess)
                                               .injectEnvVars(injectEnvVars)
                                               .subTaskType(JenkinsSubTaskType.START_TASK)
+                                              .timeoutSupported(isTimeoutFailureSupported)
                                               .queuedBuildUrl(null)
                                               .appId(appId)
                                               .build();
@@ -486,6 +494,14 @@ public class JenkinsState extends State implements SweepingOutputStateMixin {
       if (SUCCESS != jenkinsExecutionResponse.getExecutionStatus()) {
         updateActivityStatus(jenkinsExecutionResponse.getActivityId(), ((ExecutionContextImpl) context).getAppId(),
             jenkinsExecutionResponse.getExecutionStatus());
+        if (jenkinsExecutionResponse.isTimeoutError() && jenkinsExecutionResponse.getExecutionStatus() == FAILED) {
+          return ExecutionResponse.builder()
+              .executionStatus(jenkinsExecutionResponse.getExecutionStatus())
+              .failureTypes(FailureType.TIMEOUT)
+              .stateExecutionData(jenkinsExecutionData)
+              .errorMessage("Timed out while waiting for task to complete")
+              .build();
+        }
         return ExecutionResponse.builder()
             .executionStatus(jenkinsExecutionResponse.getExecutionStatus())
             .stateExecutionData(jenkinsExecutionData)
@@ -515,6 +531,15 @@ public class JenkinsState extends State implements SweepingOutputStateMixin {
     }
 
     handleSweepingOutput(sweepingOutputService, context, jenkinsExecutionData);
+
+    if (jenkinsExecutionResponse.isTimeoutError() && jenkinsExecutionResponse.getExecutionStatus() == FAILED) {
+      return ExecutionResponse.builder()
+          .executionStatus(jenkinsExecutionResponse.getExecutionStatus())
+          .failureTypes(FailureType.TIMEOUT)
+          .stateExecutionData(jenkinsExecutionData)
+          .errorMessage("Timed out while waiting for task to complete")
+          .build();
+    }
 
     return ExecutionResponse.builder()
         .executionStatus(jenkinsExecutionResponse.getExecutionStatus())

@@ -9,6 +9,7 @@ package io.harness.cdng.creator.plan.service;
 
 import static io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils.SERVICE_OVERRIDE_INPUTS_EXPRESSION;
 import static io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils.SERVICE_REF_EXPRESSION;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -102,10 +103,18 @@ public class ServiceAllInOnePlanCreatorUtils {
       serviceOverrideInputs =
           ParameterField.createExpressionField(true, SERVICE_OVERRIDE_INPUTS_EXPRESSION, null, false);
     }
+
+    ParameterField<String> infraRef = ParameterField.createValueField(null);
+    if (ParameterField.isNotNull(environmentYamlV2.getInfrastructureDefinitions())
+        && isNotEmpty(environmentYamlV2.getInfrastructureDefinitions().getValue())) {
+      infraRef = environmentYamlV2.getInfrastructureDefinitions().getValue().get(0).getIdentifier();
+    } else if (ParameterField.isNotNull(environmentYamlV2.getInfrastructureDefinition())) {
+      infraRef = environmentYamlV2.getInfrastructureDefinition().getValue().getIdentifier();
+    }
     final ServiceStepV3ParametersBuilder stepParameters = ServiceStepV3Parameters.builder()
                                                               .serviceRef(finalServiceYaml.getServiceRef())
                                                               .inputs(finalServiceYaml.getServiceInputs())
-
+                                                              .infraId(infraRef)
                                                               .childrenNodeIds(childrenNodeIds)
                                                               .serviceOverrideInputs(serviceOverrideInputs)
                                                               .deploymentType(serviceType)
@@ -145,7 +154,7 @@ public class ServiceAllInOnePlanCreatorUtils {
           .envRefs(environmentGroupYaml.getEnvironments()
                        .getValue()
                        .stream()
-                       .map(e -> e.getEnvironmentRef())
+                       .map(EnvironmentYamlV2::getEnvironmentRef)
                        .collect(Collectors.toList()))
           .envToEnvInputs(getMergedEnvironmentRuntimeInputs(environmentGroupYaml.getEnvironments().getValue()))
           .envToSvcOverrideInputs(getMergedServiceOverrideInputs(environmentGroupYaml.getEnvironments().getValue()));
@@ -182,7 +191,7 @@ public class ServiceAllInOnePlanCreatorUtils {
           .envRefs(environmentsYaml.getValues()
                        .getValue()
                        .stream()
-                       .map(e -> e.getEnvironmentRef())
+                       .map(EnvironmentYamlV2::getEnvironmentRef)
                        .collect(Collectors.toList()))
           .envToEnvInputs(getMergedEnvironmentRuntimeInputs(environmentsYaml.getValues().getValue()))
           .envToSvcOverrideInputs(getMergedServiceOverrideInputs(environmentsYaml.getValues().getValue()));
@@ -219,7 +228,7 @@ public class ServiceAllInOnePlanCreatorUtils {
     return planCreationResponseMap;
   }
 
-  private boolean useFromStage(ServiceYamlV2 serviceYamlV2) {
+  public static boolean useFromStage(ServiceYamlV2 serviceYamlV2) {
     return serviceYamlV2.getUseFromStage() != null && serviceYamlV2.getUseFromStage().getStage() != null;
   }
 
@@ -369,8 +378,8 @@ public class ServiceAllInOnePlanCreatorUtils {
     return mergedServiceOverrideInputs;
   }
 
-  @NonNull
-  private ServiceYamlV2 useServiceYamlFromStage(@NotNull ServiceUseFromStageV2 useFromStage, YamlField specField) {
+  public static ServiceYamlV2 useServiceYamlFromStage(
+      @NotNull ServiceUseFromStageV2 useFromStage, YamlField specField) {
     final YamlField serviceField = specField.getNode().getField(YamlTypes.SERVICE_ENTITY);
     String stage = useFromStage.getStage();
     if (stage.isBlank()) {

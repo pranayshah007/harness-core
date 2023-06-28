@@ -32,10 +32,13 @@ public class K8sLegacyRelease implements IK8sRelease {
   private List<KubernetesResourceId> resources;
   private KubernetesResourceId managedWorkload;
   private String managedWorkloadRevision;
+  private String manifestHash;
 
   @Builder.Default private List<KubernetesResourceIdRevision> managedWorkloads = new ArrayList();
   @Builder.Default private List<KubernetesResource> customWorkloads = new ArrayList<>();
   @Builder.Default private List<KubernetesResource> resourcesWithSpec = new ArrayList<>();
+
+  private String bgEnvironment;
 
   @Override
   public Integer getReleaseNumber() {

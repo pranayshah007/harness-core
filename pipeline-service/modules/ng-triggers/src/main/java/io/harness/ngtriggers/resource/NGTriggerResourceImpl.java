@@ -23,7 +23,6 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
@@ -160,10 +159,10 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
       NGTriggerEntity updatedEntity;
 
       if (ignoreError) {
-        updatedEntity = ngTriggerService.update(triggerDetails.getNgTriggerEntity());
+        updatedEntity = ngTriggerService.update(triggerDetails.getNgTriggerEntity(), ngTriggerEntity.get());
       } else {
         ngTriggerService.validatePipelineRef(triggerDetails);
-        updatedEntity = ngTriggerService.update(triggerDetails.getNgTriggerEntity());
+        updatedEntity = ngTriggerService.update(triggerDetails.getNgTriggerEntity(), ngTriggerEntity.get());
       }
       return ResponseDTO.newResponse(
           updatedEntity.getVersion().toString(), ngTriggerElementMapper.toResponseDTO(updatedEntity));
@@ -289,14 +288,13 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
 
   private boolean getMandatoryAuthForCustomWebhookTriggers(
       String accountId, String orgIdentifier, String projectIdentifier) {
-    boolean mandatoryAuth = false;
-    if (pmsFeatureFlagService.isEnabled(accountId, FeatureName.NG_SETTINGS)) {
-      mandatoryAuth = Objects.equals(NGRestUtils
-                                         .getResponse(settingsClient.getSetting(MANDATE_CUSTOM_WEBHOOK_AUTHORIZATION,
-                                             accountId, orgIdentifier, projectIdentifier))
-                                         .getValue(),
-          "true");
-    }
+    boolean mandatoryAuth =
+        Objects.equals(NGRestUtils
+                           .getResponse(settingsClient.getSetting(
+                               MANDATE_CUSTOM_WEBHOOK_AUTHORIZATION, accountId, orgIdentifier, projectIdentifier))
+                           .getValue(),
+            "true");
+
     return mandatoryAuth;
   }
 }

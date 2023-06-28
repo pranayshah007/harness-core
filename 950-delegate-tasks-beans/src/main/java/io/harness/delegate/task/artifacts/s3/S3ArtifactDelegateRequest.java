@@ -56,6 +56,8 @@ public class S3ArtifactDelegateRequest implements ArtifactSourceDelegateRequest 
   /** Artifact Source type.*/
   ArtifactSourceType sourceType;
 
+  boolean shouldFetchObjectMetadata;
+
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> capabilities =

@@ -177,7 +177,8 @@ public class WebhookServiceImpl implements WebhookService, WebhookEventService {
     return baseUrls.getWebhookBaseUrl();
   }
 
-  private ScmConnector getScmConnector(
+  @VisibleForTesting
+  ScmConnector getScmConnector(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef) {
     Optional<ConnectorResponseDTO> connectorDTO =
         connectorService.getByRef(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef);

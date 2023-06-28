@@ -16,6 +16,7 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.CIRegistry;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
+import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 import io.harness.ci.buildstate.ConnectorUtils;
@@ -52,7 +53,8 @@ public class VmRunStepSerializer {
   @Inject private CIFeatureFlagService featureFlagService;
 
   public VmRunStep serialize(RunStepInfo runStepInfo, Ambiance ambiance, String identifier,
-      ParameterField<Timeout> parameterFieldTimeout, String stepName, List<CIRegistry> registries, String delegateId) {
+      ParameterField<Timeout> parameterFieldTimeout, String stepName, List<CIRegistry> registries, String delegateId,
+      StageInfraDetails stageInfraDetails) {
     String command =
         RunTimeInputHandler.resolveStringParameter("Command", "Run", identifier, runStepInfo.getCommand(), true);
     String image =
@@ -71,11 +73,9 @@ public class VmRunStepSerializer {
     }
 
     long timeout = TimeoutUtils.getTimeoutInSeconds(parameterFieldTimeout, runStepInfo.getDefaultTimeout());
-    boolean fVal = featureFlagService.isEnabled(
-        FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, AmbianceUtils.getAccountId(ambiance));
 
     Map<String, String> envVars =
-        resolveMapParameterV2("envVariables", "Run", identifier, runStepInfo.getEnvVariables(), false, fVal);
+        resolveMapParameterV2("envVariables", "Run", identifier, runStepInfo.getEnvVariables(), false);
     envVars = CIStepInfoUtils.injectAndResolveLoopingVariables(
         ambiance, AmbianceUtils.getAccountId(ambiance), featureFlagService, envVars);
 
@@ -100,8 +100,9 @@ public class VmRunStepSerializer {
     if (ambiance.hasMetadata() && ambiance.getMetadata().getIsDebug()
         && featureFlagService.isEnabled(FeatureName.CI_REMOTE_DEBUG, ngAccess.getAccountIdentifier())) {
       command = earlyExitCommand + System.lineSeparator()
-          + SerializerUtils.getVmDebugCommand(
-              ngAccess.getAccountIdentifier(), ciExecutionServiceConfig.getRemoteDebugTimeout(), runStepInfo.getShell())
+          + SerializerUtils.getVmDebugCommand(ngAccess.getAccountIdentifier(),
+              ciExecutionServiceConfig.getRemoteDebugTimeout(), runStepInfo, stageInfraDetails,
+              envVars.get("TMATE_PATH"))
           + System.lineSeparator() + command;
     } else {
       command = earlyExitCommand + command;

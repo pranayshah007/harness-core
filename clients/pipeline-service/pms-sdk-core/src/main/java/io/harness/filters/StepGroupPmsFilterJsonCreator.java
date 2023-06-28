@@ -24,6 +24,7 @@ import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
 import io.harness.pms.sdk.core.pipeline.filters.ChildrenFilterJsonCreator;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 
@@ -45,7 +46,10 @@ public class StepGroupPmsFilterJsonCreator extends ChildrenFilterJsonCreator<Ste
         Optional.of(Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField("steps")).getNode().asArray())
             .orElse(Collections.emptyList());
     List<YamlField> stepYamlFields = PlanCreatorUtils.getStepYamlFields(yamlNodes);
-
+    YamlField variablesField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.VARIABLES);
+    if (variablesField != null) {
+      FilterCreatorHelper.checkIfVariableNamesAreValid(variablesField);
+    }
     return stepYamlFields.stream().collect(
         Collectors.toMap(stepYamlField -> stepYamlField.getNode().getUuid(), stepYamlField -> stepYamlField));
   }

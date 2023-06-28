@@ -8,6 +8,7 @@
 package software.wings.sm.states.spotinst;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.ExceptionUtils.getMessage;
@@ -35,6 +36,7 @@ import io.harness.delegate.task.aws.LbDetailsForAlbTrafficShift;
 import io.harness.delegate.task.spotinst.request.SpotinstTrafficShiftAlbSetupParameters;
 import io.harness.delegate.task.spotinst.response.SpotInstTaskExecutionResponse;
 import io.harness.delegate.task.spotinst.response.SpotinstTrafficShiftAlbSetupResponse;
+import io.harness.exception.FailureType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.logging.CommandExecutionStatus;
@@ -152,6 +154,15 @@ public class SpotinstTrafficShiftAlbSetupState extends State {
       builder.detailsWithTargetGroups(spotinstTrafficShiftAlbSetupResponse.getLbDetailsWithTargetGroups());
     }
     SpotinstTrafficShiftAlbSetupElement contextElement = builder.build();
+
+    if (FAILED == executionStatus && executionResponse.isTimeoutError()) {
+      return ExecutionResponse.builder()
+          .executionStatus(executionStatus)
+          .failureTypes(FailureType.TIMEOUT)
+          .errorMessage(executionResponse.getErrorMessage())
+          .stateExecutionData(stateExecutionData)
+          .build();
+    }
 
     sweepingOutputService.save(
         context.prepareSweepingOutputBuilder(SweepingOutputInstance.Scope.WORKFLOW)

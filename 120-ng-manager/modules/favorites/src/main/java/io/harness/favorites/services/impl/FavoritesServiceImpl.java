@@ -30,6 +30,7 @@ public class FavoritesServiceImpl implements FavoritesService {
   private final FavoriteRepository favoriteRepository;
   private final FavoritesResourceUtils favoritesResourceUtils;
   private final FavoritesValidator favoritesValidator;
+  private static final String INVALID_RESOURCE_TYPE_ERROR_MESSAGE = "Please provide a valid resource Type";
 
   @Inject
   public FavoritesServiceImpl(FavoriteRepository favoriteRepository, FavoritesResourceUtils favoritesResourceUtils,
@@ -51,11 +52,30 @@ public class FavoritesServiceImpl implements FavoritesService {
   }
 
   @Override
-  public List<Favorite> getFavorites(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String userId, ResourceType resourceType) {
+  public List<Favorite> getFavorites(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String userId, String resourceType) {
+    ResourceType resourceTypeResolved =
+        resourceType != null ? EnumUtils.getEnum(ResourceType.class, resourceType) : null;
+    if (resourceType == null) {
+      throw new InvalidRequestException(INVALID_RESOURCE_TYPE_ERROR_MESSAGE);
+    }
     return favoriteRepository
         .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndUserIdentifierAndResourceType(
-            accountIdentifier, orgIdentifier, projectIdentifier, userId, resourceType);
+            accountIdentifier, orgIdentifier, projectIdentifier, userId, resourceTypeResolved);
+  }
+
+  @Override
+  public boolean isFavorite(String accountIdentifier, String orgIdentifier, String projectIdentifier, String userId,
+      String resourceType, String resourceId) {
+    ResourceType resourceTypeResolved =
+        resourceType != null ? EnumUtils.getEnum(ResourceType.class, resourceType) : null;
+    if (resourceType == null) {
+      throw new InvalidRequestException(INVALID_RESOURCE_TYPE_ERROR_MESSAGE);
+    }
+    return favoriteRepository
+        .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndUserIdentifierAndResourceTypeAndResourceIdentifier(
+            accountIdentifier, orgIdentifier, projectIdentifier, userId, resourceTypeResolved, resourceId)
+        .isPresent();
   }
 
   @Override
@@ -67,14 +87,27 @@ public class FavoritesServiceImpl implements FavoritesService {
 
   @Override
   public void deleteFavorite(String accountIdentifier, String orgIdentifier, String projectIdentifier, String userId,
-      String resourceType, String resourceId) {
-    ResourceType resourceTypeEnum = EnumUtils.getEnum(ResourceType.class, resourceType);
-    if (resourceTypeEnum != null) {
-      favoriteRepository
-          .deleteByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndUserIdentifierAndResourceTypeAndResourceIdentifier(
-              accountIdentifier, orgIdentifier, projectIdentifier, userId, resourceTypeEnum, resourceId);
-    } else {
-      throw new InvalidRequestException("Please provide a valid resource Type");
+      String resourceType, String resourceId) throws InvalidRequestException {
+    ResourceType resourceTypeResolved =
+        resourceType != null ? EnumUtils.getEnum(ResourceType.class, resourceType) : null;
+    if (resourceTypeResolved == null) {
+      throw new InvalidRequestException(INVALID_RESOURCE_TYPE_ERROR_MESSAGE);
     }
+    favoriteRepository
+        .deleteByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndUserIdentifierAndResourceTypeAndResourceIdentifier(
+            accountIdentifier, orgIdentifier, projectIdentifier, userId, resourceTypeResolved, resourceId);
+  }
+
+  @Override
+  public void deleteFavorites(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String resourceType, String resourceId) {
+    ResourceType resourceTypeResolved =
+        resourceType != null ? EnumUtils.getEnum(ResourceType.class, resourceType) : null;
+    if (resourceTypeResolved == null) {
+      throw new InvalidRequestException(INVALID_RESOURCE_TYPE_ERROR_MESSAGE);
+    }
+    favoriteRepository
+        .deleteByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndResourceTypeAndResourceIdentifier(
+            accountIdentifier, orgIdentifier, projectIdentifier, resourceTypeResolved, resourceId);
   }
 }

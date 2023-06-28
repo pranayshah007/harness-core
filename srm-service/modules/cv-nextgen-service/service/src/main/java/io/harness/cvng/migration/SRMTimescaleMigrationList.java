@@ -39,6 +39,7 @@ public class SRMTimescaleMigrationList implements MigrationDetails {
         .add(Pair.of(3, CreateSLOHistoryTable.class))
         .add(Pair.of(4, MigrateSLOtoTimeScaleDb.class))
         .add(Pair.of(5, CreateVerifyStepExecutionTables.class))
+        .add(Pair.of(6, CreateVerifyStepExecutionTables.class))
         .build();
   }
 }

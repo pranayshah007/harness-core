@@ -44,4 +44,5 @@ public class ConnectorResponseDTO {
   EntityGitDetails gitDetails;
   EntityValidityDetails entityValidityDetails;
   GovernanceMetadata governanceMetadata;
+  Boolean isFavorite;
 }

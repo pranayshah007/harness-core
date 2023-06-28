@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.INDER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
@@ -26,6 +27,7 @@ import io.harness.cdng.customdeployment.helper.CustomDeploymentEntitySetupHelper
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.eventsframework.api.Producer;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.environment.services.impl.EnvironmentServiceImpl;
 import io.harness.ng.core.infrastructure.dto.NoInputMergeInputAction;
@@ -35,14 +37,18 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.impl.ServiceEntityServiceImpl;
 import io.harness.ng.core.service.services.impl.ServiceEntitySetupUsageHelper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
+import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
 import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
+import io.harness.ngsettings.SettingValueType;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.repositories.environment.spring.EnvironmentRepository;
 import io.harness.repositories.infrastructure.spring.InfrastructureRepository;
 import io.harness.repositories.service.spring.ServiceRepository;
+import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.setupusage.EnvironmentEntitySetupUsageHelper;
 import io.harness.setupusage.InfrastructureEntitySetupUsageHelper;
@@ -60,6 +66,8 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.transaction.support.TransactionTemplate;
+import retrofit2.Call;
+import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDC)
 public class InputsValidationHelperTest extends NgManagerTestBase {
@@ -87,26 +95,39 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
   @Mock HPersistence hPersistence;
   @Mock NGFeatureFlagHelperService featureFlagHelperService;
   @Mock EnvironmentEntitySetupUsageHelper environmentEntitySetupUsageHelper;
+  @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
+  @Mock private Call<RestResponse<Boolean>> restRequest;
+
+  @Mock ServiceOverridesServiceV2 serviceOverridesServiceV2;
   ServiceEntityServiceImpl serviceEntityService;
   EnvironmentServiceImpl environmentService;
   InfrastructureEntityServiceImpl infrastructureEntityService;
   EnvironmentRefreshHelper environmentRefreshHelper;
 
   @Before
-  public void setup() {
+  public void setup() throws IOException {
     serviceEntityService = spy(new ServiceEntityServiceImpl(serviceRepository, entitySetupUsageService, eventProducer,
         outboxService, transactionTemplate, serviceOverrideService, entitySetupUsageHelper));
     infrastructureEntityService = spy(new InfrastructureEntityServiceImpl(infrastructureRepository, transactionTemplate,
         outboxService, customDeploymentEntitySetupHelper, infrastructureEntitySetupUsageHelper, hPersistence));
     environmentService = spy(new EnvironmentServiceImpl(environmentRepository, entitySetupUsageService, eventProducer,
         outboxService, transactionTemplate, infrastructureEntityService, clusterService, serviceOverrideService,
-        serviceEntityService, accountClient, settingsClient, environmentEntitySetupUsageHelper));
-    environmentRefreshHelper =
-        spy(new EnvironmentRefreshHelper(environmentService, infrastructureEntityService, serviceOverrideService));
+        serviceOverridesServiceV2, serviceEntityService, accountClient, settingsClient,
+        environmentEntitySetupUsageHelper));
+    environmentRefreshHelper = spy(new EnvironmentRefreshHelper(environmentService, infrastructureEntityService,
+        serviceOverrideService, serviceOverridesServiceV2, featureFlagHelperService, accountClient, settingsClient));
     on(entityFetchHelper).set("serviceEntityService", serviceEntityService);
     on(inputsValidationHelper).set("serviceEntityService", serviceEntityService);
     on(inputsValidationHelper).set("entityFetchHelper", entityFetchHelper);
     on(inputsValidationHelper).set("environmentRefreshHelper", environmentRefreshHelper);
+
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
+    doReturn(request).when(settingsClient).getSetting(anyString(), anyString(), anyString(), anyString());
+    doReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO))).when(request).execute();
+    doReturn(restRequest).when(accountClient).isFeatureFlagEnabled(anyString(), anyString());
+    RestResponse<Boolean> mockResponse = new RestResponse<>(true);
+    doReturn(Response.success(mockResponse)).when(restRequest).execute();
   }
 
   private String readFile(String filename) {

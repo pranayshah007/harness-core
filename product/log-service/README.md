@@ -11,6 +11,16 @@ Replace bazelisk -> bazel if needed
 Log service will start up on port 8079
 ```
 
+## TL;DR: How to run log service locally along with log intelligence
+```
+export LOG_SERVICE_DISABLE_AUTH=true
+export LOG_SERVICE_GENAI_ENDPOINT=http://<ip>
+bazelisk run //product/log-service:log-service server
+
+Replace bazelisk -> bazel if needed
+Log service will start up on port 8079
+```
+
 # Generating the binary
 
 Mac:

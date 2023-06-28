@@ -13,6 +13,7 @@ import static io.harness.ci.integrationstage.K8InitializeStepUtilsHelper.PLUGIN_
 import static io.harness.ci.integrationstage.K8InitializeStepUtilsHelper.PLUGIN_STEP_LIMIT_MEM;
 import static io.harness.ci.integrationstage.K8InitializeStepUtilsHelper.getRunStepElementConfigWithVariables;
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
+import static io.harness.rule.OwnerRule.JAMIE;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SHUBHAM;
 
@@ -23,7 +24,6 @@ import io.harness.beans.environment.ConnectorConversionInfo;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.stages.IntegrationStageNode;
-import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.category.element.UnitTests;
@@ -187,7 +187,7 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
     IntegrationStageConfig integrationStageConfig =
         IntegrationStageConfigImpl.builder().execution(executionElementConfig).build();
     List<String> identifiers =
-        IntegrationStageStepParametersPMS.getStepIdentifiers(integrationStageConfig.getExecution().getSteps());
+        IntegrationStageUtils.getStepIdentifiers(integrationStageConfig.getExecution().getSteps());
     assertThat(identifiers).isNotEmpty();
     assertThat(identifiers.get(0)).isEqualTo("step-2");
     assertThat(identifiers.get(1)).isEqualTo("step_g_run2");
@@ -221,7 +221,7 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
     IntegrationStageConfig integrationStageConfig =
         IntegrationStageConfigImpl.builder().execution(executionElementConfig).build();
     List<String> identifiers =
-        IntegrationStageStepParametersPMS.getStepIdentifiers(integrationStageConfig.getExecution().getSteps());
+        IntegrationStageUtils.getStepIdentifiers(integrationStageConfig.getExecution().getSteps());
     assertThat(identifiers).isNotEmpty();
     assertThat(identifiers.get(0)).isEqualTo("step_g_run2");
     assertThat(identifiers.get(1)).isEqualTo("step_g_sg1_run3");
@@ -367,6 +367,51 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
     assertThat(stepConnectorRefs.size()).isEqualTo(2);
     assertThat(stepConnectorRefs.containsKey("step-docker")).isTrue();
     assertThat(stepConnectorRefs.containsKey("step-group1_step-docker")).isTrue();
+  }
+
+  @Test
+  @Owner(developers = JAMIE)
+  @Category(UnitTests.class)
+  public void testGetStepConnectorRefsNestedStepGroup() throws Exception {
+    List<ExecutionWrapperConfig> wrapperConfigs =
+        K8InitializeStepUtilsHelper.getExecutionWrapperConfigListWithStepGroup1();
+
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode outerStepGroupElementConfig = mapper.createObjectNode();
+    ObjectNode innerStepGroupElementConfig = mapper.createObjectNode();
+    ObjectNode thirdStepGroupElementConfig = mapper.createObjectNode();
+
+    ArrayNode thirdArrayNode = mapper.createArrayNode();
+    thirdArrayNode.add(
+        mapper.createObjectNode().set("step", K8InitializeStepUtilsHelper.getDockerStepElementConfigAsJsonNode()));
+
+    thirdStepGroupElementConfig.put("identifier", "step-group-third");
+    thirdStepGroupElementConfig.put("steps", thirdArrayNode);
+
+    ArrayNode innerArrayNode = mapper.createArrayNode();
+    innerArrayNode.add(mapper.createObjectNode().set("stepGroup", thirdStepGroupElementConfig));
+
+    innerStepGroupElementConfig.put("identifier", "step-group-in");
+    innerStepGroupElementConfig.put("steps", innerArrayNode);
+
+    ArrayNode outerArrayNode = mapper.createArrayNode();
+    outerArrayNode.add(mapper.createObjectNode().set("stepGroup", innerStepGroupElementConfig));
+
+    outerStepGroupElementConfig.put("identifier", "step-group-out");
+    outerStepGroupElementConfig.put("steps", outerArrayNode);
+
+    wrapperConfigs.add(ExecutionWrapperConfig.builder().stepGroup(outerStepGroupElementConfig).build());
+    wrapperConfigs.add(ExecutionWrapperConfig.builder()
+                           .step(K8InitializeStepUtilsHelper.getDockerStepElementConfigAsJsonNode())
+                           .build());
+
+    ExecutionElementConfig executionElementConfig = ExecutionElementConfig.builder().steps(wrapperConfigs).build();
+    Ambiance ambiance = Ambiance.newBuilder().build();
+    Map<String, List<ConnectorConversionInfo>> stepConnectorRefs =
+        k8InitializeStepUtils.getStepConnectorRefs(executionElementConfig, ambiance);
+    assertThat(stepConnectorRefs.size()).isEqualTo(2);
+    assertThat(stepConnectorRefs.containsKey("step-docker")).isTrue();
+    assertThat(stepConnectorRefs.containsKey("step-group-out_step-group-in_step-group-third_step-docker")).isTrue();
   }
 
   @Test

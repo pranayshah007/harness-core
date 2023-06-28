@@ -87,6 +87,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
@@ -154,24 +155,26 @@ public class DelegateServiceGrpcClient {
    * @param <T>
    * @return
    */
-  public <T extends ResponseData> T executeSyncTaskReturningResponseData(
+  public <T extends ResponseData> Pair<String, T> executeSyncTaskReturningResponseData(
       DelegateTaskRequest taskRequest, DelegateCallbackToken delegateCallbackToken) {
     final SubmitTaskResponse submitTaskResponse =
         submitTaskInternal(TaskMode.SYNC, taskRequest, delegateCallbackToken, Duration.ZERO, false);
     final String taskId = submitTaskResponse.getTaskId().getId();
-    return delegateSyncService.waitForTask(taskId,
-        Strings.defaultIfEmpty(taskRequest.getTaskDescription(), taskRequest.getTaskType()),
-        Duration.ofMillis(HTimestamps.toMillis(submitTaskResponse.getTotalExpiry()) - currentTimeMillis()), null);
+    return Pair.of(taskId,
+        delegateSyncService.waitForTask(taskId,
+            Strings.defaultIfEmpty(taskRequest.getTaskDescription(), taskRequest.getTaskType()),
+            Duration.ofMillis(HTimestamps.toMillis(submitTaskResponse.getTotalExpiry()) - currentTimeMillis()), null));
   }
 
-  public <T extends ResponseData> T executeSyncTaskReturningResponseDataV2(
+  public <T extends ResponseData> Pair<String, T> executeSyncTaskReturningResponseDataV2(
       DelegateTaskRequest taskRequest, DelegateCallbackToken delegateCallbackToken) {
     final SubmitTaskResponse submitTaskResponse =
         submitTaskInternalV2(TaskMode.SYNC, taskRequest, delegateCallbackToken, Duration.ZERO, false);
     final String taskId = submitTaskResponse.getTaskId().getId();
-    return delegateSyncService.waitForTask(taskId,
-        Strings.defaultIfEmpty(taskRequest.getTaskDescription(), taskRequest.getTaskType()),
-        Duration.ofMillis(HTimestamps.toMillis(submitTaskResponse.getTotalExpiry()) - currentTimeMillis()), null);
+    return Pair.of(taskId,
+        delegateSyncService.waitForTask(taskId,
+            Strings.defaultIfEmpty(taskRequest.getTaskDescription(), taskRequest.getTaskType()),
+            Duration.ofMillis(HTimestamps.toMillis(submitTaskResponse.getTotalExpiry()) - currentTimeMillis()), null));
   }
 
   public SubmitTaskResponse submitTask(DelegateCallbackToken delegateCallbackToken, AccountId accountId,

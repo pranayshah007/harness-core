@@ -59,4 +59,5 @@ public class InstanceSyncPerpetualTaskInfo {
   String connectorIdentifier;
   @CreatedDate long createdAt;
   @LastModifiedDate long lastUpdatedAt;
+  Long lastSuccessfulRun;
 }

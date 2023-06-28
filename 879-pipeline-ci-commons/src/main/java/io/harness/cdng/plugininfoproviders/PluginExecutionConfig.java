@@ -25,5 +25,7 @@ public class PluginExecutionConfig {
   StepImageConfig samBuildStepImageConfig;
   StepImageConfig samDeployStepImageConfig;
   StepImageConfig gitCloneConfig;
+  StepImageConfig serverlessPrepareRollbackV2StepImageConfig;
+  StepImageConfig serverlessAwsLambdaDeployV2StepImageConfig;
   String apiUrl;
 }

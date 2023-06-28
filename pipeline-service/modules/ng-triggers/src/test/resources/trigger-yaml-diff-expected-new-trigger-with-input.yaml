@@ -12,11 +12,11 @@ trigger:
       spec: {}
   inputYaml: |
     pipeline:
-      identifier: "testing"
+      identifier: testing
       variables:
-      - name: "Var1"
-        type: "Number"
-        value: ""
-      - name: "Var2"
-        type: "String"
-        value: ""
+        - name: Var1
+          type: Number
+          value: ""
+        - name: Var2
+          type: String
+          value: ""

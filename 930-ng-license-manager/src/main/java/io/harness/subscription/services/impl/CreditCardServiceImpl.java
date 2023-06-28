@@ -8,23 +8,34 @@
 package io.harness.subscription.services.impl;
 
 import io.harness.exception.DuplicateFieldException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.repositories.CreditCardRepository;
+import io.harness.repositories.StripeCustomerRepository;
+import io.harness.subscription.dto.CardDTO;
 import io.harness.subscription.dto.CreditCardDTO;
 import io.harness.subscription.entities.CreditCard;
+import io.harness.subscription.entities.StripeCustomer;
 import io.harness.subscription.helpers.StripeHelper;
 import io.harness.subscription.responses.CreditCardResponse;
 import io.harness.subscription.services.CreditCardService;
 
 import com.google.inject.Inject;
+import java.time.LocalDate;
+import java.util.List;
 import javax.ws.rs.BadRequestException;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class CreditCardServiceImpl implements CreditCardService {
   private final CreditCardRepository creditCardRepository;
+  private final StripeCustomerRepository stripeCustomerRepository;
   private final StripeHelper stripeHelper;
 
   @Inject
-  public CreditCardServiceImpl(CreditCardRepository creditCardRepository, StripeHelper stripeHelper) {
+  public CreditCardServiceImpl(CreditCardRepository creditCardRepository,
+      StripeCustomerRepository stripeCustomerRepository, StripeHelper stripeHelper) {
     this.creditCardRepository = creditCardRepository;
+    this.stripeCustomerRepository = stripeCustomerRepository;
     this.stripeHelper = stripeHelper;
   }
 
@@ -47,6 +58,18 @@ public class CreditCardServiceImpl implements CreditCardService {
                                                               .build()));
   }
 
+  @Override
+  public boolean hasValidCard(String accountIdentifier) {
+    StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
+    if (stripeCustomer == null) {
+      log.warn("Customer with account identifier {} does not exist.", accountIdentifier);
+      throw new InvalidRequestException("Customer doesn't exists");
+    }
+    List<CardDTO> creditCards = stripeHelper.listPaymentMethods(stripeCustomer.getCustomerId()).getPaymentMethods();
+
+    return !creditCards.isEmpty() && hasAtLeastOneUnexpiredCard(creditCards);
+  }
+
   private CreditCardResponse toCreditCardResponse(CreditCard creditCard) {
     return CreditCardResponse.builder()
         .creditCardDTO(CreditCardDTO.builder()
@@ -56,5 +79,12 @@ public class CreditCardServiceImpl implements CreditCardService {
         .createdAt(creditCard.getCreatedAt())
         .lastUpdatedAt(creditCard.getLastUpdatedAt())
         .build();
+  }
+
+  private boolean hasAtLeastOneUnexpiredCard(List<CardDTO> creditCards) {
+    return creditCards.stream().anyMatch((CardDTO cardDTO)
+                                             -> cardDTO.getExpireYear() > LocalDate.now().getYear()
+            || (cardDTO.getExpireYear() == LocalDate.now().getYear()
+                && cardDTO.getExpireMonth() >= LocalDate.now().getMonth().getValue()));
   }
 }

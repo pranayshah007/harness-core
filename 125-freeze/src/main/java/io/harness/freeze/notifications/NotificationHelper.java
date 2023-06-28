@@ -9,6 +9,8 @@ package io.harness.freeze.notifications;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static java.util.Objects.isNull;
+
 import io.harness.freeze.beans.FreezeDuration;
 import io.harness.freeze.beans.FreezeEvent;
 import io.harness.freeze.beans.FreezeNotificationChannelWrapper;
@@ -19,6 +21,11 @@ import io.harness.freeze.beans.yaml.FreezeInfoConfig;
 import io.harness.freeze.helpers.FreezeTimeUtils;
 import io.harness.freeze.mappers.NGFreezeDtoMapper;
 import io.harness.notification.FreezeEventType;
+import io.harness.notification.channelDetails.PmsEmailChannel;
+import io.harness.notification.channelDetails.PmsMSTeamChannel;
+import io.harness.notification.channelDetails.PmsNotificationChannel;
+import io.harness.notification.channelDetails.PmsPagerDutyChannel;
+import io.harness.notification.channelDetails.PmsSlackChannel;
 import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -30,6 +37,7 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
@@ -55,6 +63,7 @@ public class NotificationHelper {
         continue;
       }
       FreezeNotificationChannelWrapper wrapper = freezeNotifications.getNotificationChannelWrapper().getValue();
+      wrapper.setNotificationChannel(updateNullUserGroupWithEmptyList(wrapper.getNotificationChannel()));
       if (wrapper.getType() != null) {
         for (FreezeEvent freezeEvent : freezeNotifications.getEvents()) {
           String templateId = getNotificationTemplate(wrapper.getType(), freezeEvent);
@@ -78,6 +87,33 @@ public class NotificationHelper {
         }
       }
     }
+  }
+
+  private PmsNotificationChannel updateNullUserGroupWithEmptyList(PmsNotificationChannel notificationChannel) {
+    if (notificationChannel instanceof PmsEmailChannel) {
+      List<String> userGroups = ((PmsEmailChannel) notificationChannel).getUserGroups();
+      if (isNull(userGroups)) {
+        ((PmsEmailChannel) notificationChannel).setUserGroups(Collections.emptyList());
+      }
+    }
+    if (notificationChannel instanceof PmsSlackChannel) {
+      List<String> userGroups = ((PmsSlackChannel) notificationChannel).getUserGroups();
+      if (isNull(userGroups)) {
+        ((PmsSlackChannel) notificationChannel).setUserGroups(Collections.emptyList());
+      }
+    }
+    if (notificationChannel instanceof PmsPagerDutyChannel) {
+      List<String> userGroups = ((PmsPagerDutyChannel) notificationChannel).getUserGroups();
+      if (isNull(userGroups)) {
+        ((PmsPagerDutyChannel) notificationChannel).setUserGroups(Collections.emptyList());
+      }
+    } else if (notificationChannel instanceof PmsMSTeamChannel) {
+      List<String> userGroups = ((PmsMSTeamChannel) notificationChannel).getUserGroups();
+      if (isNull(userGroups)) {
+        ((PmsMSTeamChannel) notificationChannel).setUserGroups(Collections.emptyList());
+      }
+    }
+    return notificationChannel;
   }
 
   public Map<String, String> constructTemplateData(FreezeEventType freezeEventType, FreezeInfoConfig freezeInfoConfig,

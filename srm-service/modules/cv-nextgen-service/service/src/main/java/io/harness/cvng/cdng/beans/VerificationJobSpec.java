@@ -13,6 +13,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
+import io.harness.cvng.models.VerificationType;
 import io.harness.cvng.verificationjob.entities.VerificationJob.RuntimeParameter;
 import io.harness.cvng.verificationjob.entities.VerificationJob.VerificationJobBuilder;
 import io.harness.pms.yaml.ParameterField;
@@ -22,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.base.Preconditions;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.Getter;
@@ -50,7 +52,7 @@ public abstract class VerificationJobSpec {
   @ApiModelProperty(
       dataType = SwaggerConstants.STRING_CLASSPATH, value = "Format example: 5m, 30m, please put multiple of 5")
   ParameterField<String> duration;
-  @NotNull
+
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH, value = "Possible values: [Low, Medium, High]")
   ParameterField<String> sensitivity;
 
@@ -93,4 +95,8 @@ public abstract class VerificationJobSpec {
   protected abstract void validateParams();
 
   protected abstract ParameterField<String> getBaseline();
+
+  public List<VerificationType> getSupportedDataTypesForVerification() {
+    return List.of(VerificationType.values());
+  }
 }

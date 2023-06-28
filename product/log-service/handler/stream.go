@@ -78,6 +78,12 @@ func HandleClose(logStream stream.Stream, store store.Store) http.HandlerFunc {
 		// with that prefix. If no keys are found with that prefix, it's not
 		// an error.
 		usePrefix := r.FormValue(usePrefixParam)
+
+		logger.FromRequest(r).WithField("key", key).
+			WithField("prefix", usePrefix).
+			WithField("time", time.Now().Format(time.RFC3339)).
+			Infoln("api: initiating close request on log service")
+
 		if usePrefix == "true" {
 			// Use the provided key as a prefix
 			var err error

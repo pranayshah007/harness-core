@@ -31,6 +31,7 @@ import io.harness.delegate.RegisterCallbackRequest;
 import io.harness.delegate.RegisterCallbackResponse;
 import io.harness.delegate.ResetPerpetualTaskRequest;
 import io.harness.delegate.ResetPerpetualTaskResponse;
+import io.harness.delegate.SchedulingConfig;
 import io.harness.delegate.SendTaskProgressRequest;
 import io.harness.delegate.SendTaskProgressResponse;
 import io.harness.delegate.SendTaskStatusRequest;
@@ -52,6 +53,7 @@ import io.harness.delegate.beans.DelegateProgressData;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.NoDelegatesException;
+import io.harness.delegate.beans.SchedulingTaskEvent;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -59,6 +61,8 @@ import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.executionInfra.ExecutionInfraLocation;
+import io.harness.executionInfra.ExecutionInfrastructureService;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskClientContext.PerpetualTaskClientContextBuilder;
 import io.harness.perpetualtask.PerpetualTaskId;
@@ -66,6 +70,7 @@ import io.harness.perpetualtask.PerpetualTaskService;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.intfc.DelegateCallbackRegistry;
 import io.harness.service.intfc.DelegateTaskService;
+import io.harness.taskclient.TaskClient;
 
 import software.wings.beans.SerializationFormat;
 import software.wings.service.intfc.DelegateService;
@@ -80,11 +85,13 @@ import com.google.protobuf.util.Durations;
 import com.google.protobuf.util.Timestamps;
 import io.grpc.stub.StreamObserver;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
@@ -104,13 +111,16 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
   private DelegateTaskServiceClassic delegateTaskServiceClassic;
 
   private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
+  private TaskClient taskClient;
+  private ExecutionInfrastructureService executionInfrastructureService;
 
   @Inject
   public DelegateServiceGrpcImpl(DelegateCallbackRegistry delegateCallbackRegistry,
       PerpetualTaskService perpetualTaskService, DelegateService delegateService,
       DelegateTaskService delegateTaskService, KryoSerializer kryoSerializer,
       @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer,
-      DelegateTaskServiceClassic delegateTaskServiceClassic, DelegateTaskMigrationHelper delegateTaskMigrationHelper) {
+      DelegateTaskServiceClassic delegateTaskServiceClassic, DelegateTaskMigrationHelper delegateTaskMigrationHelper,
+      TaskClient delegateAPIClient, ExecutionInfrastructureService executionInfrastructureService) {
     this.delegateCallbackRegistry = delegateCallbackRegistry;
     this.perpetualTaskService = perpetualTaskService;
     this.delegateService = delegateService;
@@ -119,6 +129,74 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
     this.delegateTaskService = delegateTaskService;
     this.delegateTaskServiceClassic = delegateTaskServiceClassic;
     this.delegateTaskMigrationHelper = delegateTaskMigrationHelper;
+    this.taskClient = taskClient;
+    this.executionInfrastructureService = executionInfrastructureService;
+  }
+
+  // Helper function that will persist a delegate grpc request to task.
+  private void sheduleTaskInternal(SchedulingConfig schedulingConfig, byte[] taskData, byte[] infraData,
+      SchedulingTaskEvent.Method method, String requestUri, Optional<String> executionInfraRef,
+      StreamObserver<SubmitTaskResponse> responseObserver) {
+    try {
+      String taskId = delegateTaskMigrationHelper.generateDelegateTaskUUID();
+      Map<String, String> setupAbstractions = schedulingConfig.getSetupAbstractions().getValuesMap();
+
+      List<ExecutionCapability> capabilities = new ArrayList<>();
+
+      // only selector capabilities are kept
+      if (isNotEmpty(schedulingConfig.getSelectorsList())) {
+        capabilities = schedulingConfig.getSelectorsList()
+                           .stream()
+                           .filter(s -> isNotEmpty(s.getSelector()))
+                           .map(this::toSelectorCapability)
+                           .collect(Collectors.toList());
+      }
+      // Read execution infrastructure location information
+      if (executionInfraRef.isPresent()) {
+        String locationId = executionInfraRef.get();
+        ExecutionInfraLocation locationInfo = executionInfrastructureService.getExecutionInfrastructure(locationId);
+        capabilities.add(SelectorCapability.builder()
+                             .selectors(Set.of(locationInfo.getRunnerType(), locationInfo.getDelegateGroupName()))
+                             .build());
+      }
+
+      DelegateTaskBuilder taskBuilder =
+          DelegateTask.builder()
+              .uuid(taskId)
+              .runnerType(schedulingConfig.getRunnerType())
+              .driverId(schedulingConfig.hasCallbackToken() ? schedulingConfig.getCallbackToken().getToken() : null)
+              .waitId(taskId)
+              .accountId(schedulingConfig.getAccountId())
+              .setupAbstractions(setupAbstractions)
+              .workflowExecutionId(setupAbstractions.get(DelegateTaskKeys.workflowExecutionId))
+              .executionCapabilities(capabilities)
+              .selectionLogsTrackingEnabled(schedulingConfig.getSelectionTrackingLogEnabled())
+              .taskData(taskData)
+              .runnerData(infraData)
+              .executionTimeout(Durations.toMillis(schedulingConfig.getExecutionTimeout()))
+              // TODO: we keep these configs internal until we realize use cases to expose
+              //  them through APIs
+              .executeOnHarnessHostedDelegates(false)
+              .emitEvent(false)
+              .async(true)
+              .forceExecute(false);
+
+      DelegateTask task = taskBuilder.build();
+      taskClient.sendTask(task, method, requestUri);
+      responseObserver.onNext(SubmitTaskResponse.newBuilder()
+                                  .setTaskId(TaskId.newBuilder().setId(taskId).build())
+                                  .setTotalExpiry(Timestamps.fromMillis(task.getExpiry() + task.getExecutionTimeout()))
+                                  .build());
+      responseObserver.onCompleted();
+    } catch (Exception ex) {
+      if (ex instanceof NoDelegatesException) {
+        log.warn("No delegate exception found while processing submit task request. reason {}",
+            ExceptionUtils.getMessage(ex));
+      } else {
+        log.error("Unexpected error occurred while processing submit task request.", ex);
+      }
+      responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
+    }
   }
 
   @Override

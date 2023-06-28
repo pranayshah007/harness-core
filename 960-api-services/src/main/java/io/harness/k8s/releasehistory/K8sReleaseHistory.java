@@ -86,6 +86,18 @@ public class K8sReleaseHistory implements IK8sReleaseHistory {
   }
 
   @Override
+  public IK8sRelease getLatestSuccessfulReleaseMatchingColor(String color) {
+    Optional<K8sRelease> latestSuccessfulRelease =
+        releaseHistory.stream()
+            .map(K8sRelease.class ::cast)
+            .filter(release -> K8sReleaseSecretHelper.checkReleaseColor(release.getReleaseSecret(), color))
+            .filter(release -> release.getReleaseStatus().equals(IK8sRelease.Status.Succeeded))
+            .max(Comparator.comparing(IK8sRelease::getReleaseNumber));
+
+    return latestSuccessfulRelease.orElse(null);
+  }
+
+  @Override
   public IK8sRelease getLatestSuccessfulBlueGreenRelease() {
     Optional<K8sRelease> lastSuccessfulReleaseOptional =
         releaseHistory.stream()

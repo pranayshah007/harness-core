@@ -14,7 +14,6 @@ import io.harness.connector.ConnectorValidationResult;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.helm.OciHelmAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.helm.OciHelmConnectivityTaskParams;
-import io.harness.delegate.beans.connector.helm.OciHelmConnectivityTaskResponse;
 import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.task.TaskParameters;
 
@@ -43,8 +42,8 @@ public class OciHelmRepoConnectionValidator extends AbstractConnectorValidator {
   @Override
   public ConnectorValidationResult validate(ConnectorConfigDTO connectorDTO, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String identifier) {
-    OciHelmConnectivityTaskResponse responseData = (OciHelmConnectivityTaskResponse) super.validateConnector(
-        connectorDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    var responseData =
+        super.validateConnector(connectorDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     return responseData.getConnectorValidationResult();
   }
 

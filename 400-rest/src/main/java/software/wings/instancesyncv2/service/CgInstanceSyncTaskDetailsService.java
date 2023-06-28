@@ -36,7 +36,7 @@ public class CgInstanceSyncTaskDetailsService {
 
   public void save(InstanceSyncTaskDetails taskDetails) {
     if (Objects.isNull(taskDetails)) {
-      log.error("Cannot save null task details. Doing nothing");
+      log.warn("Cannot save null task details. Doing nothing");
       return;
     }
 

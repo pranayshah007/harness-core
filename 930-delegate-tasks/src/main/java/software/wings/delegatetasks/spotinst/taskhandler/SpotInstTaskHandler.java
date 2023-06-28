@@ -91,6 +91,16 @@ public abstract class SpotInstTaskHandler {
       }
       return response;
     } catch (Exception ex) {
+      if (ex instanceof WingsException) {
+        WingsException we = (WingsException) ex;
+        if (spotInstTaskParameters.isTimeoutSupported() && INIT_TIMEOUT.equals(we.getCode())) {
+          return SpotInstTaskExecutionResponse.builder()
+              .commandExecutionStatus(FAILURE)
+              .errorMessage("Timed out while waiting for task to complete")
+              .isTimeoutError(true)
+              .build();
+        }
+      }
       if (spotInstTaskParameters.isSyncTask()) {
         throw new InvalidRequestException(ex.getMessage(), ex);
       } else {

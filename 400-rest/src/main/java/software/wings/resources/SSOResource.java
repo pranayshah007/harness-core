@@ -98,7 +98,7 @@ public class SSOResource {
       @FormDataParam("clientSecret") String clientSecret) {
     return new RestResponse<>(ssoService.uploadSamlConfiguration(accountId, uploadedInputStream, displayName,
         groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
-        isEmpty(clientSecret) ? null : clientSecret.toCharArray(), null, false));
+        isEmpty(clientSecret) ? null : clientSecret.toCharArray(), null, false, false, null, null));
   }
 
   @POST
@@ -147,7 +147,7 @@ public class SSOResource {
       @FormDataParam("clientSecret") String clientSecret) {
     return new RestResponse<>(ssoService.updateSamlConfiguration(accountId, uploadedInputStream, displayName,
         groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
-        isEmpty(clientSecret) ? null : clientSecret.toCharArray(), false));
+        isEmpty(clientSecret) ? null : clientSecret.toCharArray(), false, false, null, null));
   }
 
   @PUT

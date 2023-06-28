@@ -284,9 +284,9 @@ func (b *RemoteWriter) flush() error {
 		return nil
 	}
 	b.Lock()
+        defer b.Unlock()
 	lines := b.copy()
 	b.clear()
-	b.Unlock()
 	if len(lines) == 0 {
 		return nil
 	}

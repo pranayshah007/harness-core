@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.steps.StepSpecTypeConstants;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
+import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.integrationstage.V1.CIPlanCreatorUtils;
 import io.harness.ci.plan.creator.codebase.CodebasePlanCreator;
 import io.harness.ci.states.IntegrationStageStepPMS;
@@ -96,7 +97,7 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<Integr
         steps.stream().map(CIPlanCreatorUtils::getExecutionConfig).collect(Collectors.toList());
     IntegrationStageStepParametersPMS params =
         IntegrationStageStepParametersPMS.builder()
-            .stepIdentifiers(IntegrationStageStepParametersPMS.getStepIdentifiers(executionWrapperConfigs))
+            .stepIdentifiers(IntegrationStageUtils.getStepIdentifiers(executionWrapperConfigs))
             .infrastructure(infrastructure)
             .childNodeID(childrenNodeIds.get(0))
             .codeBase(codeBase)

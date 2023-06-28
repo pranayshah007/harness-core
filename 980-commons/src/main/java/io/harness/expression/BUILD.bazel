@@ -12,6 +12,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//980-commons/src/main/java/io/harness/beans/constants:module",
         "//980-commons/src/main/java/io/harness/data/algorithm:module",
         "//980-commons/src/main/java/io/harness/data/encoding:module",
         "//980-commons/src/main/java/io/harness/data/structure:module",

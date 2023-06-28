@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.GitServiceConfiguration;
 import io.harness.gitsync.caching.beans.CacheDetails;
 import io.harness.gitsync.caching.beans.CacheDetails.CacheDetailsBuilder;
+import io.harness.gitsync.caching.utils.GitCacheUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -46,7 +47,7 @@ public class GitFileCacheTTLHelper {
   }
 
   public Date getValidUntilTime(long currentTime) {
-    return Date.from(Instant.ofEpochMilli(currentTime + getMaxCacheDuration()));
+    return GitCacheUtils.getValidUntilTime(currentTime, getMaxCacheDuration());
   }
 
   public Date getFormattedValidUntilTime(long validUntilTime) {

@@ -26,4 +26,5 @@ public class CloudFormationCommandExecutionResponse implements DelegateResponseD
   private CloudFormationCommandResponse commandResponse;
   private String errorMessage;
   private CommandExecutionStatus commandExecutionStatus;
+  private boolean isTimeoutError;
 }

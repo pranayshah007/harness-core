@@ -33,9 +33,9 @@ public class SpotinstTrafficShiftAlbSwapRoutesParameters extends SpotInstTaskPar
       String commandName, String workflowExecutionId, Integer timeoutIntervalInMin, String awsRegion,
       ElastiGroup newElastigroup, ElastiGroup oldElastigroup, String elastigroupNamePrefix,
       boolean downsizeOldElastigroup, boolean rollback, List<LbDetailsForAlbTrafficShift> details,
-      int newElastigroupWeight) {
+      int newElastigroupWeight, boolean timeoutSupported) {
     super(appId, accountId, activityId, commandName, workflowExecutionId, timeoutIntervalInMin,
-        SPOT_INST_ALB_SHIFT_SWAP_ROUTES, awsRegion);
+        SPOT_INST_ALB_SHIFT_SWAP_ROUTES, awsRegion, timeoutSupported);
     this.newElastigroup = newElastigroup;
     this.oldElastigroup = oldElastigroup;
     this.elastigroupNamePrefix = elastigroupNamePrefix;

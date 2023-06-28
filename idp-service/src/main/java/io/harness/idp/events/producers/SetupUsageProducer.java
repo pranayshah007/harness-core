@@ -29,6 +29,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.IDP)
@@ -117,5 +118,72 @@ public class SetupUsageProducer {
             envVariable.getEnvName(), accountIdentifier, e);
       }
     });
+  }
+
+  public void publishConnectorSetupUsage(
+      String accountIdentifier, String harnessConnectorIdentifier, String idpConnectorIdentifier) {
+    IdentifierRefProtoDTO idpConnectorReference =
+        IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(accountIdentifier, null, null, idpConnectorIdentifier);
+    IdentifierRefProtoDTO connectorReference = IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
+        accountIdentifier, null, null, harnessConnectorIdentifier);
+
+    EntityDetailProtoDTO idpConnectorDetails = EntityDetailProtoDTO.newBuilder()
+                                                   .setIdentifierRef(idpConnectorReference)
+                                                   .setType(EntityTypeProtoEnum.IDP_CONNECTOR)
+                                                   .setName(idpConnectorIdentifier)
+                                                   .build();
+    EntityDetailProtoDTO connectorDetails = EntityDetailProtoDTO.newBuilder()
+                                                .setIdentifierRef(connectorReference)
+                                                .setType(EntityTypeProtoEnum.CONNECTORS)
+                                                .build();
+
+    EntitySetupUsageCreateV2DTO entityReferenceDTO = EntitySetupUsageCreateV2DTO.newBuilder()
+                                                         .setAccountIdentifier(accountIdentifier)
+                                                         .setReferredByEntity(idpConnectorDetails)
+                                                         .addReferredEntities(connectorDetails)
+                                                         .setDeleteOldReferredByRecords(false)
+                                                         .build();
+
+    try {
+      String messageId = eventProducer.send(
+          Message.newBuilder()
+              .putAllMetadata(Map.of(ACCOUNT_ID, accountIdentifier,
+                  EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, EntityTypeProtoEnum.CONNECTORS.name(),
+                  EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
+              .setData(entityReferenceDTO.toByteString())
+              .build());
+      log.info("Emitted idp connector event with id {} for entityReference {} and accountId {}", messageId,
+          entityReferenceDTO, accountIdentifier);
+    } catch (EventsFrameworkDownException e) {
+      log.error("Failed to send event to events framework for idp connector {}, accountId {}, error {}",
+          idpConnectorIdentifier, accountIdentifier, e.getMessage(), e);
+    }
+  }
+
+  public void deleteConnectorSetupUsage(String accountIdentifier, String idpConnectorIdentifier) {
+    EntityDetailProtoDTO entityDetail = EntityDetailProtoDTO.newBuilder()
+                                            .setIdentifierRef(IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
+                                                accountIdentifier, null, null, idpConnectorIdentifier))
+                                            .setType(EntityTypeProtoEnum.IDP_CONNECTOR)
+                                            .build();
+
+    EntitySetupUsageCreateV2DTO entityReferenceDTO = EntitySetupUsageCreateV2DTO.newBuilder()
+                                                         .setAccountIdentifier(accountIdentifier)
+                                                         .setReferredByEntity(entityDetail)
+                                                         .setDeleteOldReferredByRecords(true)
+                                                         .build();
+    try {
+      String messageId = eventProducer.send(
+          Message.newBuilder()
+              .putAllMetadata(Map.of(ACCOUNT_ID, accountIdentifier, EventsFrameworkMetadataConstants.ACTION,
+                  EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
+              .setData(entityReferenceDTO.toByteString())
+              .build());
+      log.info("Emitted delete idp connector event with id {} for entityReference {} and accountId {}", messageId,
+          entityReferenceDTO, accountIdentifier);
+    } catch (EventsFrameworkDownException e) {
+      log.error("Failed to send event to events framework for delete idp connector {}, accountId: {}, error {}",
+          idpConnectorIdentifier, accountIdentifier, e.getMessage(), e);
+    }
   }
 }

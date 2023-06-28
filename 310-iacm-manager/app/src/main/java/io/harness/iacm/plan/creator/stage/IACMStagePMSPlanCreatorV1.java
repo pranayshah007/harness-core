@@ -21,7 +21,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.entities.Workspace;
 import io.harness.beans.stages.IACMStageConfigImplV1;
 import io.harness.beans.stages.IACMStageNodeV1;
-import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.steps.IACMStepSpecTypeConstants;
 import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
@@ -33,10 +32,11 @@ import io.harness.beans.yaml.extended.platform.V1.PlatformV1;
 import io.harness.beans.yaml.extended.runtime.V1.RuntimeV1;
 import io.harness.beans.yaml.extended.runtime.V1.VMRuntimeV1;
 import io.harness.ci.plan.creator.codebase.CodebasePlanCreator;
-import io.harness.ci.states.IntegrationStageStepPMS;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.IACMStageExecutionException;
+import io.harness.iacm.execution.IACMIntegrationStageStepPMS;
+import io.harness.iacm.execution.IACMIntegrationStageStepParametersPMS;
 import io.harness.iacmserviceclient.IACMServiceUtils;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.plancreator.strategy.StrategyUtilsV1;
@@ -223,14 +223,14 @@ public class IACMStagePMSPlanCreatorV1 extends ChildrenPlanCreator<IACMStageNode
         getDeserializedObjectFromDependency(ctx.getMetadata().getGlobalDependency(), YAMLFieldNameConstants.OPTIONS);
     Options options = (Options) optionalOptions.orElse(Options.builder().build());
     Registry registry = options.getRegistry() == null ? Registry.builder().build() : options.getRegistry();
-    IntegrationStageStepParametersPMS params = IntegrationStageStepParametersPMS.builder()
-                                                   .infrastructure(infrastructure)
-                                                   .childNodeID(childrenNodeIds.get(0))
-                                                   .codeBase(codeBase)
-                                                   .triggerPayload(ctx.getTriggerPayload())
-                                                   .registry(registry)
-                                                   .cloneManually(shouldCloneManually(ctx, codeBase))
-                                                   .build();
+    IACMIntegrationStageStepParametersPMS params = IACMIntegrationStageStepParametersPMS.builder()
+                                                       .infrastructure(infrastructure)
+                                                       .childNodeID(childrenNodeIds.get(0))
+                                                       .codeBase(codeBase)
+                                                       .triggerPayload(ctx.getTriggerPayload())
+                                                       .registry(registry)
+                                                       .cloneManually(shouldCloneManually(ctx, codeBase))
+                                                       .build();
     PlanNodeBuilder builder =
         PlanNode.builder()
             .uuid(StrategyUtilsV1.getSwappedPlanNodeId(ctx, stageNode.getUuid()))
@@ -242,7 +242,7 @@ public class IACMStagePMSPlanCreatorV1 extends ChildrenPlanCreator<IACMStageNode
                                 .name(stageNode.getName())
                                 .specConfig(params)
                                 .build())
-            .stepType(IntegrationStageStepPMS.STEP_TYPE)
+            .stepType(IACMIntegrationStageStepPMS.STEP_TYPE)
             .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
             .whenCondition(RunInfoUtils.getRunConditionForStage(stageNode.getWhen()))
             .facilitatorObtainment(

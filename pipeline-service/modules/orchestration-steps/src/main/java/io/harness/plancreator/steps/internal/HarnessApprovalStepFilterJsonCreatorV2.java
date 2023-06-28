@@ -30,9 +30,13 @@ import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.approval.step.harness.HarnessApprovalSpecParameters;
 import io.harness.steps.approval.step.harness.HarnessApprovalStepNode;
 import io.harness.steps.approval.step.harness.beans.Approvers;
+import io.harness.timeout.TimeoutParameters;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.utils.TimeStampUtils;
+import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.common.collect.Sets;
+import io.dropwizard.util.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -41,6 +45,8 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PIPELINE)
 @Slf4j
 public class HarnessApprovalStepFilterJsonCreatorV2 extends GenericStepPMSFilterJsonCreatorV2 {
+  private final long MINIMUM_TIME_REQUIRED_FOR_AUTO_APPROVAL = Duration.minutes(15).toMilliseconds();
+
   @Override
   public Set<String> getSupportedStepTypes() {
     return Sets.newHashSet(StepSpecTypeConstants.HARNESS_APPROVAL);
@@ -52,6 +58,29 @@ public class HarnessApprovalStepFilterJsonCreatorV2 extends GenericStepPMSFilter
     HarnessApprovalStepNode harnessApprovalStepNode = (HarnessApprovalStepNode) yamlField;
     HarnessApprovalSpecParameters harnessApprovalSpecParameters =
         (HarnessApprovalSpecParameters) harnessApprovalStepNode.getHarnessApprovalStepInfo().getSpecParameters();
+
+    validateUserGroups(harnessApprovalSpecParameters, filterCreationContext);
+    validateTimestampForAutoApproval(harnessApprovalSpecParameters, filterCreationContext, harnessApprovalStepNode);
+    return FilterCreationResponse.builder().build();
+  }
+
+  private void validateTimestampForAutoApproval(HarnessApprovalSpecParameters harnessApprovalSpecParameters,
+      FilterCreationContext filterCreationContext, HarnessApprovalStepNode harnessApprovalStepNode) {
+    if (harnessApprovalSpecParameters.getAutoApproval() != null
+        && harnessApprovalSpecParameters.getAutoApproval().getScheduledDeadline() != null) {
+      String timeZone = getTimeZoneFromSchedule(harnessApprovalSpecParameters);
+      String time = getTimeStampFromSchedule(harnessApprovalSpecParameters);
+
+      if (isNotEmpty(time) && isNotEmpty(timeZone) && harnessApprovalStepNode.getTimeout().getValue() != null) {
+        Long timeoutForStep = getTimeoutForStep(harnessApprovalStepNode.getTimeout().getValue());
+        Long autoApprovalTimeout = TimeStampUtils.getTotalDurationWRTCurrentTimeFromTimeStamp(time, timeZone);
+        validateAutoApprovalTimeDuration(timeoutForStep, autoApprovalTimeout, filterCreationContext);
+      }
+    }
+  }
+
+  private void validateUserGroups(
+      HarnessApprovalSpecParameters harnessApprovalSpecParameters, FilterCreationContext filterCreationContext) {
     Scope contextScopeLevel = Scope.builder()
                                   .accountIdentifier(filterCreationContext.getSetupMetadata().getAccountId())
                                   .orgIdentifier(filterCreationContext.getSetupMetadata().getOrgId())
@@ -60,7 +89,7 @@ public class HarnessApprovalStepFilterJsonCreatorV2 extends GenericStepPMSFilter
     Approvers approvers = harnessApprovalSpecParameters.getApprovers();
     if (isNull(approvers) || ParameterField.isNull(approvers.getUserGroups())
         || approvers.getUserGroups().isExpression() || isEmpty(approvers.getUserGroups().getValue())) {
-      return FilterCreationResponse.builder().build();
+      return;
     }
     List<String> userGroupsIds = approvers.getUserGroups().getValue();
     List<String> userGroupsIdsWithInvalidScope = new ArrayList<>();
@@ -82,6 +111,26 @@ public class HarnessApprovalStepFilterJsonCreatorV2 extends GenericStepPMSFilter
           userGroupsIdsWithInvalidScope,
           YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
     }
-    return FilterCreationResponse.builder().build();
+  }
+
+  private String getTimeZoneFromSchedule(HarnessApprovalSpecParameters harnessApprovalSpecParameters) {
+    return harnessApprovalSpecParameters.getAutoApproval().getScheduledDeadline().getTimeZone();
+  }
+
+  private String getTimeStampFromSchedule(HarnessApprovalSpecParameters harnessApprovalSpecParameters) {
+    return harnessApprovalSpecParameters.getAutoApproval().getScheduledDeadline().getTime();
+  }
+
+  private void validateAutoApprovalTimeDuration(
+      Long timeoutForStep, Long autoApprovalTimeout, FilterCreationContext filterCreationContext) {
+    if (autoApprovalTimeout <= MINIMUM_TIME_REQUIRED_FOR_AUTO_APPROVAL) {
+      throw new InvalidYamlRuntimeException(format(
+          "Time given for auto approval in approval step %s should be greater than 15 minutes with respect to current time",
+          YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
+    }
+  }
+
+  private Long getTimeoutForStep(Timeout timeout) {
+    return isNull(timeout) ? TimeoutParameters.DEFAULT_TIMEOUT_IN_MILLIS : timeout.getTimeoutInMillis();
   }
 }

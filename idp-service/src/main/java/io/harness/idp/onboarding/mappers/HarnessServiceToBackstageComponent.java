@@ -35,12 +35,15 @@ import java.util.Map;
 public class HarnessServiceToBackstageComponent
     implements HarnessEntityToBackstageEntity<ServiceResponseDTO, BackstageCatalogComponentEntity> {
   private final OnboardingModuleConfig onboardingModuleConfig;
+  private final String env;
   public final List<String> entityNamesSeenSoFar = new ArrayList<>();
+  private final List<String> envOverrideForHarnessCiCdAnnotation = List.of("stress", "qa", "stage");
 
   @Inject
   public HarnessServiceToBackstageComponent(
-      @Named("onboardingModuleConfig") OnboardingModuleConfig onboardingModuleConfig) {
+      @Named("onboardingModuleConfig") OnboardingModuleConfig onboardingModuleConfig, @Named("env") String env) {
     this.onboardingModuleConfig = onboardingModuleConfig;
+    this.env = env;
   }
 
   @Override
@@ -81,10 +84,17 @@ public class HarnessServiceToBackstageComponent
 
   private Map<String, String> getHarnessCiCdAnnotations(ServiceResponseDTO serviceResponseDTO) {
     if (serviceResponseDTO.getOrgIdentifier() != null && serviceResponseDTO.getProjectIdentifier() != null) {
-      return Map.of(BACKSTAGE_HARNESS_ANNOTATION_PROJECT_URL, getProjectUrlForHarnessCiCdAnnotation(serviceResponseDTO),
-          BACKSTAGE_HARNESS_ANNOTATION_CD_SERVICE_ID, serviceResponseDTO.getIdentifier());
+      return Map.of(getBackstageHarnessAnnotationProjectUrlByEnv(),
+          getProjectUrlForHarnessCiCdAnnotation(serviceResponseDTO), BACKSTAGE_HARNESS_ANNOTATION_CD_SERVICE_ID,
+          serviceResponseDTO.getIdentifier());
     }
     return Map.of();
+  }
+
+  private String getBackstageHarnessAnnotationProjectUrlByEnv() {
+    if (envOverrideForHarnessCiCdAnnotation.contains(env))
+      return BACKSTAGE_HARNESS_ANNOTATION_PROJECT_URL + "-" + env;
+    return BACKSTAGE_HARNESS_ANNOTATION_PROJECT_URL;
   }
 
   private String getProjectUrlForHarnessCiCdAnnotation(ServiceResponseDTO serviceResponseDTO) {

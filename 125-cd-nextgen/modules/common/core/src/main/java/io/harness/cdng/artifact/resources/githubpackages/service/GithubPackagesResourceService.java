@@ -22,7 +22,6 @@ public interface GithubPackagesResourceService {
   // List Versions from a Github Package
   List<BuildDetails> getVersionsOfPackage(IdentifierRef connectorRef, String packageName, String packageType,
       String versionRegex, String org, String accountId, String orgIdentifier, String projectIdentifier);
-
   BuildDetails getLastSuccessfulVersion(IdentifierRef connectorRef, String packageName, String packageType,
       String version, String versionRegex, String org, String accountId, String orgIdentifier,
       String projectIdentifier);

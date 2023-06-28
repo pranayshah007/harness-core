@@ -2,77 +2,77 @@ pipeline:
   identifier: Vistaar_Pipeline_2
   name: Vistaar Pipeline 2
   variables:
-  - name: name
-    type: type
-    value: value
-  - name: name2
-    type: type
-    value: value
+    - name: name
+      type: type
+      value: value
+    - name: name2
+      type: type
+      value: value
   stages:
-  - stage:
-      identifier: Test_Build_and_Push
-      type: CI
-      name: Test Build and Push jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj j
-      spec:
-        cloneCodebase: true
-        execution:
-          steps:
-          - step:
-              identifier: Run_Unit_Tests
-              type: Run
-              name: Run Unit Tests
-              spec:
-                connectorRef: account.harnessimage
-                image: golang:1.15
-                command: go get gotest.tools/gotestsum
-                reports:
-                  type: JUnit
+    - stage:
+        identifier: Test_Build_and_Push
+        type: CI
+        name: Test Build and Push jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj j
+        spec:
+          cloneCodebase: true
+          execution:
+            steps:
+              - step:
+                  identifier: Run_Unit_Tests
+                  type: Run
+                  name: Run Unit Tests
                   spec:
-                    paths:
-                    - file1.xml
-          - step:
-              identifier: Build_and_push_image_to_DockerHub
-              type: BuildAndPushDockerRegistry
-              name: Build and push image to DockerHub
+                    connectorRef: account.harnessimage
+                    image: golang:1.15
+                    command: go get gotest.tools/gotestsum
+                    reports:
+                      type: JUnit
+                      spec:
+                        paths:
+                          - file1.xml
+              - step:
+                  identifier: Build_and_push_image_to_DockerHub
+                  type: BuildAndPushDockerRegistry
+                  name: Build and push image to DockerHub
+                  spec:
+                    connectorRef: account.harnessimage
+                    repo: harnessdev/godemo
+                    tags:
+                      - latest
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: account.k8cidelegate
+              namespace: harness-delegate-qb
+    - stage:
+        identifier: Run_Integration_Test
+        type: CI
+        name: Run Integration Test
+        spec:
+          cloneCodebase: false
+          execution:
+            steps:
+              - step:
+                  identifier: test_connection_to_server
+                  type: Run
+                  name: test connection to server
+                  spec:
+                    connectorRef: account.harnessimage
+                    image: curlimages/curl:7.73.0
+                    command: curl runhelloworldserver:8080
+          serviceDependencies:
+            - identifier: runhelloworldserver
+              type: Service
+              name: Run Hello World Server
               spec:
                 connectorRef: account.harnessimage
-                repo: harnessdev/godemo
-                tags:
-                - latest
-        infrastructure:
-          type: KubernetesDirect
-          spec:
-            connectorRef: account.k8cidelegate
-            namespace: harness-delegate-qb
-  - stage:
-      identifier: Run_Integration_Test
-      type: CI
-      name: Run Integration Test
-      spec:
-        cloneCodebase: false
-        execution:
-          steps:
-          - step:
-              identifier: test_connection_to_server
-              type: Run
-              name: test connection to server
-              spec:
-                connectorRef: account.harnessimage
-                image: curlimages/curl:7.73.0
-                command: curl runhelloworldserver:8080
-        serviceDependencies:
-        - identifier: runhelloworldserver
-          type: Service
-          name: Run Hello World Server
-          spec:
-            connectorRef: account.harnessimage
-            image: harnessdev/godemo
-        infrastructure:
-          type: KubernetesDirect
-          spec:
-            connectorRef: account.k8cidelegate
-            namespace: harness-delegate-qb
-      description: running integ tests
+                image: harnessdev/godemo
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: account.k8cidelegate
+              namespace: harness-delegate-qb
+        description: running integ tests
   properties:
     ci:
       codebase:

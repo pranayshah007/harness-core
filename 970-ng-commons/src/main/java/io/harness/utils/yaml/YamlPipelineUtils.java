@@ -18,9 +18,11 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.serializer.jackson.EdgeCaseRegexModule;
 import io.serializer.jackson.NGHarnessJacksonModule;
 import java.io.IOException;
 import java.net.URL;
@@ -39,7 +41,12 @@ public class YamlPipelineUtils {
   private final ObjectMapper mapper;
 
   static {
-    mapper = new ObjectMapper(new YAMLFactory());
+    mapper = new ObjectMapper(new YAMLFactory()
+                                  .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
+                                  .enable(YAMLGenerator.Feature.INDENT_ARRAYS_WITH_INDICATOR)
+                                  .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
+                                  .enable(YAMLGenerator.Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS));
+    mapper.registerModule(new EdgeCaseRegexModule());
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     mapper.configure(DeserializationFeature.FAIL_ON_MISSING_EXTERNAL_TYPE_ID_PROPERTY, false);
     mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
@@ -81,16 +88,15 @@ public class YamlPipelineUtils {
     return mapper.readValue(yaml, cls);
   }
 
-  public String writeString(Object value) throws JsonProcessingException {
-    return mapper.writeValueAsString(value);
-  }
-
   public ObjectMapper getMapper() {
     return mapper;
   }
 
+  @Deprecated
+  // Use writeYamlString method instead
+  // It will handle JsonProcessingException
   public String getYamlString(Object value) throws JsonProcessingException {
-    return writeString(value).replaceFirst("---\n", "");
+    return mapper.writeValueAsString(value);
   }
 
   /***
@@ -99,7 +105,7 @@ public class YamlPipelineUtils {
    */
   public String writeYamlString(Object value) {
     try {
-      return writeString(value).replaceFirst("---\n", "");
+      return mapper.writeValueAsString(value);
     } catch (JsonProcessingException e) {
       throw new InvalidRequestException("Couldn't convert object to Yaml");
     }

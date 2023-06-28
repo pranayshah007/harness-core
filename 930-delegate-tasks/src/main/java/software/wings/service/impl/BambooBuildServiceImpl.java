@@ -104,7 +104,7 @@ public class BambooBuildServiceImpl implements BambooBuildService {
 
   @Override
   public boolean validateArtifactServer(BambooConfig bambooConfig, List<EncryptedDataDetail> encryptionDetails) {
-    if (!connectableHttpUrl(bambooConfig.getBambooUrl())) {
+    if (!connectableHttpUrl(bambooConfig.getBambooUrl(), false)) {
       throw new WingsException(ErrorCode.INVALID_ARTIFACT_SERVER, USER)
           .addParam("message", "Could not reach Bamboo Server at : " + bambooConfig.getBambooUrl());
     }

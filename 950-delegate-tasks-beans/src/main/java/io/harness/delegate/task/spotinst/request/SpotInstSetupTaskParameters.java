@@ -31,9 +31,9 @@ public class SpotInstSetupTaskParameters extends SpotInstTaskParameters {
   public SpotInstSetupTaskParameters(String accountId, String appId, String commandName, String activityId,
       Integer timeoutIntervalInMin, String elastiGroupJson, String workflowExecutionId, String elastiGroupNamePrefix,
       boolean blueGreen, String image, String resizeStrategy, String awsRegion,
-      List<LoadBalancerDetailsForBGDeployment> awsLoadBalancerConfigs, String userData) {
+      List<LoadBalancerDetailsForBGDeployment> awsLoadBalancerConfigs, String userData, boolean timeouSupported) {
     super(appId, accountId, activityId, commandName, workflowExecutionId, timeoutIntervalInMin, SPOT_INST_SETUP,
-        awsRegion);
+        awsRegion, timeouSupported);
     this.blueGreen = blueGreen;
     this.elastiGroupJson = elastiGroupJson;
     this.elastiGroupNamePrefix = elastiGroupNamePrefix;

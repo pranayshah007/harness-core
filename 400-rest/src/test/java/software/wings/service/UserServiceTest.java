@@ -137,6 +137,7 @@ import software.wings.beans.AccountRole;
 import software.wings.beans.AccountStatus;
 import software.wings.beans.ApplicationRole;
 import software.wings.beans.Base.BaseKeys;
+import software.wings.beans.CannySsoLoginResponse;
 import software.wings.beans.EmailVerificationToken;
 import software.wings.beans.Event.Type;
 import software.wings.beans.LicenseInfo;
@@ -164,6 +165,7 @@ import software.wings.security.JWT_CATEGORY;
 import software.wings.security.PermissionAttribute.Action;
 import software.wings.security.PermissionAttribute.ResourceType;
 import software.wings.security.SecretManager;
+import software.wings.security.UserThreadLocal;
 import software.wings.security.authentication.AuthenticationManager;
 import software.wings.security.authentication.AuthenticationUtils;
 import software.wings.security.authentication.MarketPlaceConfig;
@@ -220,6 +222,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.validator.routines.UrlValidator;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -1610,6 +1613,13 @@ public class UserServiceTest extends WingsBaseTest {
     assertThatThrownBy(() -> userService.validateName(null)).isInstanceOf(InvalidRequestException.class);
     assertThatThrownBy(() -> userService.validateName("<a href='http://authorization.site'>Click ME</a>"))
         .isInstanceOf(InvalidRequestException.class);
+    assertThatThrownBy(
+        ()
+            -> userService.validateName(
+                "fghjkl78cfgvbhnjmdrfghjkldfcgvhbjnkwertyuiodgfhjkrtyuicvbndcfvbjdfghjdfghjdfghjkdfghjkdfghbjnkmdrtfyghujkrtfgyhujikldfghjkldfghjkfghjkl78cfgvbhnjmdrfghjkldfcgvhbjnkmdxfcvbnmdfghjdcfghcvbndcfvbjdfghjdfghjdfghjkdfghjkdfghbjnkmdrtfyghujkrtfgyhujikldfghjkldfghjk"))
+        .isInstanceOf(InvalidRequestException.class);
+    final String nameWithBraces = "firstName lastName (firstName.lastName)";
+    assertDoesNotThrow(() -> userService.validateName(nameWithBraces));
   }
   @Test
   @Owner(developers = RUSHABH)
@@ -2000,6 +2010,44 @@ public class UserServiceTest extends WingsBaseTest {
 
     assertThat(inviteOperationResponse).isEqualTo(InviteOperationResponse.USER_INVITED_SUCCESSFULLY);
     verify(signupService, times(1)).sendEmail(any(), anyString(), any());
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testGenerateCannySsoJwt() {
+    String returnToUrl = "https://harness-io.canny.io/admin/settings/sso-redirect?works=true";
+    String cannyBaseUrl = "https://canny.io/api/redirects/sso";
+    String companyId = "123456789";
+    when(configuration.getPortal().getCannyBaseUrl()).thenReturn(cannyBaseUrl);
+    when(configuration.getPortal().getJwtCannySecret()).thenReturn("yv7TV4NsP4fps8pLdGuVdV8CHgJT3wCaFgTEg7dKcanzKN7C");
+
+    User user = userBuilder.build();
+    UserThreadLocal.set(user);
+
+    CannySsoLoginResponse cannySsoLoginResponse = userService.generateCannySsoJwt(returnToUrl, companyId);
+
+    assertThat(cannySsoLoginResponse.getUserId()).isEqualTo(user.getUuid());
+
+    String redirectUrl = cannySsoLoginResponse.getRedirectUrl();
+    String cannyBaseUrlResult = redirectUrl.split("\\?")[0];
+    assertThat(cannyBaseUrlResult).isEqualTo(cannyBaseUrl);
+
+    String queryParams = redirectUrl.split("\\?")[1];
+    String companyIdResult = queryParams.split("&")[0];
+    assertThat(companyIdResult).isEqualTo("companyID=" + companyId);
+
+    String returnToUrlResult = redirectUrl.split("&")[2];
+    assertThat(returnToUrlResult).isEqualTo("redirect=" + returnToUrl);
+  }
+
+  private void assertDoesNotThrow(Runnable runnable) {
+    try {
+      runnable.run();
+    } catch (Exception ex) {
+      log.error("ERROR: ", ex);
+      Assert.fail();
+    }
   }
 
   private List<Account> getAccounts() {

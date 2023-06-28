@@ -30,6 +30,7 @@ import io.harness.beans.EnvironmentType;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
@@ -62,6 +63,7 @@ import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import lombok.AccessLevel;
@@ -159,6 +161,16 @@ public class ContainerInstanceSyncPerpetualTaskClientTest extends WingsBaseTest 
                                .useKubernetesDelegate(true)
                                .build())
             .build();
+
+    List<ExecutionCapability> executionCapabilities = K8sInstanceSyncTaskParameters.builder()
+                                                          .accountId(ACCOUNT_ID)
+                                                          .appId(APP_ID)
+                                                          .k8sClusterConfig(k8sClusterConfig)
+                                                          .namespace("namespace")
+                                                          .releaseName("release_name")
+                                                          .build()
+                                                          .fetchRequiredExecutionCapabilities(null);
+
     prepareK8sTaskData(k8sClusterConfig);
     final DelegateTask validationTask = client.getValidationTask(getClientContext(true), ACCOUNT_ID);
     assertThat(validationTask)
@@ -167,23 +179,17 @@ public class ContainerInstanceSyncPerpetualTaskClientTest extends WingsBaseTest 
                 .accountId(ACCOUNT_ID)
                 .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
                 .tags(ImmutableList.of("awsTag"))
+                .executionCapabilities(executionCapabilities)
                 .data(TaskData.builder()
                           .async(false)
-                          .taskType(TaskType.K8S_COMMAND_TASK.name())
-                          .parameters(new Object[] {K8sInstanceSyncTaskParameters.builder()
-                                                        .accountId(ACCOUNT_ID)
-                                                        .appId(APP_ID)
-                                                        .k8sClusterConfig(k8sClusterConfig)
-                                                        .namespace("namespace")
-                                                        .releaseName("release_name")
-                                                        .build()})
+                          .taskType(TaskType.CAPABILITY_VALIDATION.name())
+                          .parameters(executionCapabilities.toArray())
                           .timeout(TimeUnit.MINUTES.toMillis(InstanceSyncConstants.VALIDATION_TIMEOUT_MINUTES))
                           .build())
                 .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, ENV_ID)
                 .setupAbstraction(Cd1SetupFields.ENV_TYPE_FIELD, EnvironmentType.PROD.name())
                 .setupAbstraction(Cd1SetupFields.INFRASTRUCTURE_MAPPING_ID_FIELD, INFRA_MAPPING_ID)
                 .setupAbstraction(Cd1SetupFields.SERVICE_ID_FIELD, SERVICE_ID)
-                .waitId("12345")
                 .build(),
             DelegateTaskKeys.expiry, DelegateTaskKeys.validUntil);
   }

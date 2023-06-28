@@ -19,6 +19,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import okhttp3.Request;
 
 @Data
 @SuperBuilder
@@ -29,7 +30,11 @@ public class ApiCallLogDTO extends CVNGLogDTO {
   private static final int MAX_JSON_RESPONSE_LENGTH = 16384;
   public static final String PAYLOAD = "Payload";
   public static final String RESPONSE_BODY = "Response Body";
+  public static final String REQUEST_BODY = "Request Body";
+  public static final String REQUEST_URL = "url";
   public static final String STATUS_CODE = "Status Code";
+  public static final String REQUEST_METHOD = "Request Method";
+  public static final String REQUEST_HEADERS = "Request Headers";
 
   private List<ApiCallLogDTOField> requests;
   private List<ApiCallLogDTOField> responses;
@@ -50,25 +55,37 @@ public class ApiCallLogDTO extends CVNGLogDTO {
     requests.add(field);
   }
 
+  public void addCallDetailsBodyFieldToRequest(Request request) {
+    Preconditions.checkNotNull(request, "Api call request field is null.");
+    if (this.requests == null) {
+      this.requests = new ArrayList<>();
+    }
+    FieldType fieldType = ApiCallLogUtils.mapRequestBodyContentTypeToFieldType(request);
+    String jsonRequest = getCallObjectToLog(ApiCallLogUtils.requestBodyToString(request), fieldType);
+    this.requests.add(ApiCallLogDTOField.builder()
+                          .type(fieldType)
+                          .name(REQUEST_BODY)
+                          .value(jsonRequest.substring(0, Math.min(jsonRequest.length(), MAX_JSON_RESPONSE_LENGTH)))
+                          .build());
+  }
+
   public void addFieldToResponse(int statusCode, Object response, FieldType fieldType) {
     Preconditions.checkNotNull(response, "Api call log response field is null.");
 
     if (this.responses == null) {
       this.responses = new ArrayList<>();
     }
-    String jsonResponse = getResponseToLog(response, fieldType);
+    String jsonResponse = getCallObjectToLog(response, fieldType);
     this.responses.add(ApiCallLogDTOField.builder()
                            .type(FieldType.NUMBER)
                            .name(STATUS_CODE)
                            .value(Integer.toString(statusCode))
                            .build());
-    this.responses.add(
-        ApiCallLogDTOField.builder()
-            .type(fieldType)
-            .name(RESPONSE_BODY)
-            .value(jsonResponse.substring(
-                0, jsonResponse.length() < MAX_JSON_RESPONSE_LENGTH ? jsonResponse.length() : MAX_JSON_RESPONSE_LENGTH))
-            .build());
+    this.responses.add(ApiCallLogDTOField.builder()
+                           .type(fieldType)
+                           .name(RESPONSE_BODY)
+                           .value(jsonResponse.substring(0, Math.min(jsonResponse.length(), MAX_JSON_RESPONSE_LENGTH)))
+                           .build());
   }
 
   public void addFieldToResponse(ApiCallLogDTOField field) {
@@ -80,26 +97,24 @@ public class ApiCallLogDTO extends CVNGLogDTO {
     responses.add(field);
   }
 
-  private String getResponseToLog(Object response, FieldType fieldType) {
+  private String getCallObjectToLog(Object entity, FieldType fieldType) {
     if (fieldType == null) {
-      return response.toString();
+      return entity.toString();
     }
-
     switch (fieldType) {
       case JSON:
         try {
-          if (response instanceof String) {
-            return response.toString();
+          if (entity instanceof String) {
+            return entity.toString();
           }
-          return JsonUtils.asJson(response);
+          return JsonUtils.asJson(entity);
         } catch (Exception e) {
-          return response.toString();
+          return entity.toString();
         }
       default:
-        return response.toString();
+        return entity.toString();
     }
   }
-
   public List<ApiCallLogDTOField> getRequests() {
     if (requests == null) {
       return new ArrayList<>();

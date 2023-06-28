@@ -344,7 +344,7 @@ public class UserResourceNG {
     Integer pageSize = pageRequest.getPageSize();
 
     List<User> userList = userService.listUsers(
-        pageRequest, accountId, searchTerm, offset, pageSize, requireAdminStatus, false, false, true);
+        pageRequest, accountId, searchTerm, offset, pageSize, requireAdminStatus, false, false, false);
 
     PageResponse<UserInfo> pageResponse = aPageResponse()
                                               .withOffset(offset.toString())
@@ -352,7 +352,6 @@ public class UserResourceNG {
                                               .withResponse(convertUserToNgUser(userList, requireAdminStatus))
                                               .withTotal(userService.getTotalUserCount(accountId, true, true, true))
                                               .build();
-
     return new RestResponse<>(pageResponse);
   }
 
@@ -470,6 +469,9 @@ public class UserResourceNG {
   public RestResponse<Optional<UserInfo>>
   updateUser(@Body UserInfo userInfo) {
     User user = convertNgUserToUserWithNameUpdated(userInfo);
+    if (isNotEmpty(user.getName())) {
+      userService.validateName(user.getName());
+    }
     user = userService.update(user);
     return new RestResponse<>(Optional.ofNullable(convertUserToNgUser(user)));
   }

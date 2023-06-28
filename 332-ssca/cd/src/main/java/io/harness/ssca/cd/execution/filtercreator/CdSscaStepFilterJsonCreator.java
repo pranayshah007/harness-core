@@ -19,6 +19,6 @@ import java.util.Set;
 public class CdSscaStepFilterJsonCreator extends GenericStepPMSFilterJsonCreatorV2 {
   @Override
   public Set<String> getSupportedStepTypes() {
-    return Sets.newHashSet(SscaConstants.CD_SSCA_ORCHESTRATION);
+    return Sets.newHashSet(SscaConstants.CD_SSCA_ORCHESTRATION, SscaConstants.CD_SSCA_ENFORCEMENT);
   }
 }

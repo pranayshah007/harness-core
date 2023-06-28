@@ -32,23 +32,31 @@ import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
 import io.harness.eventsframework.protohelper.IdentifierRefProtoDTOHelper;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.eventsframework.schemas.entity.EntityGitMetadata;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.eventsframework.schemas.entitysetupusage.EntityDetailWithSetupUsageDetailProtoDTO;
 import io.harness.eventsframework.schemas.entitysetupusage.EntityDetailWithSetupUsageDetailProtoDTO.EntityReferredByPipelineDetailProtoDTO;
 import io.harness.eventsframework.schemas.entitysetupusage.EntityDetailWithSetupUsageDetailProtoDTO.PipelineDetailType;
 import io.harness.eventsframework.schemas.entitysetupusage.EntitySetupUsageCreateV2DTO;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.dto.SetupUsageDetailType;
 import io.harness.pms.events.PipelineDeleteEvent;
 import io.harness.pms.pipeline.observer.PipelineActionObserver;
+import io.harness.pms.pipeline.references.FilterCreationGitMetadata;
+import io.harness.pms.pipeline.references.FilterCreationParams;
 import io.harness.pms.rbac.InternalReferredEntityExtractor;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.preflight.PreFlightCheckMetadata;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -69,6 +77,7 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
   @Inject @Named(EventsFrameworkConstants.SETUP_USAGE) private Producer eventProducer;
   @Inject private EntitySetupUsageClient entitySetupUsageClient;
   @Inject private InternalReferredEntityExtractor internalReferredEntityExtractor;
+  @Inject private GitSyncSdkService gitSyncSdkService;
   private static final int PAGE = 0;
   private static final int SIZE = 100;
 
@@ -105,6 +114,21 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
     return entityDetails;
   }
 
+  public List<EntityDetail> getReferencesOfPipeline(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String pipelineId, JsonNode pipelineJsonNodeWithUnresolvedTemplates,
+      EntityType entityType) {
+    List<EntitySetupUsageDTO> allReferredUsages =
+        NGRestUtils.getResponse(entitySetupUsageClient.listAllReferredUsages(PAGE, SIZE, accountIdentifier,
+                                    FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(
+                                        accountIdentifier, orgIdentifier, projectIdentifier, pipelineId),
+                                    entityType, null),
+            "Could not extract setup usage of pipeline with id " + pipelineId + " after {} attempts.");
+    List<EntityDetail> entityDetails = PipelineSetupUsageUtils.extractInputReferredEntityFromYaml(accountIdentifier,
+        orgIdentifier, projectIdentifier, pipelineJsonNodeWithUnresolvedTemplates, allReferredUsages);
+    entityDetails.addAll(internalReferredEntityExtractor.extractInternalEntities(accountIdentifier, entityDetails));
+    return entityDetails;
+  }
+
   public void deleteExistingSetupUsages(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
     IdentifierRefProtoDTO pipelineReference = IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
@@ -131,20 +155,18 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
     }
   }
 
-  public void publishSetupUsageEvent(PipelineEntity pipelineEntity, List<EntityDetailProtoDTO> referredEntities) {
+  public void publishSetupUsageEvent(
+      FilterCreationParams filterCreationParams, List<EntityDetailProtoDTO> referredEntities) {
+    PipelineEntity pipelineEntity = filterCreationParams.getPipelineEntity();
+    FilterCreationGitMetadata gitMetadata = filterCreationParams.getFilterCreationGitMetadata();
+    if (!shouldPublishSetupUsage(pipelineEntity)) {
+      return;
+    }
     if (EmptyPredicate.isEmpty(referredEntities)) {
       deleteSetupUsagesForGivenPipeline(pipelineEntity);
       return;
     }
-    EntityDetailProtoDTO pipelineDetails =
-        EntityDetailProtoDTO.newBuilder()
-            .setIdentifierRef(IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(pipelineEntity.getAccountId(),
-                pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(),
-                pipelineEntity.getIdentifier()))
-            .setType(EntityTypeProtoEnum.PIPELINES)
-            .setName(pipelineEntity.getName())
-            .build();
-
+    EntityDetailProtoDTO pipelineDetails = populateEntityDetailProtoDTO(pipelineEntity, gitMetadata);
     Map<String, List<EntityDetailProtoDTO>> referredEntityTypeToReferredEntities = new HashMap<>();
     for (EntityDetailProtoDTO entityDetailProtoDTO : referredEntities) {
       List<EntityDetailProtoDTO> entityDetailProtoDTOS =
@@ -199,6 +221,39 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
         }
       }
     }
+  }
+
+  @VisibleForTesting
+  boolean shouldPublishSetupUsage(PipelineEntity pipelineEntity) {
+    //    TODO: Once the ticket https://harness.atlassian.net/browse/CDS-70970 is completed, we should be cleaning up
+    //    the second storeType check done from the Git context
+    if (!StoreType.REMOTE.equals(pipelineEntity.getStoreType())
+        && !StoreType.REMOTE.equals(GitAwareContextHelper.getStoreTypeFromGitContext())) {
+      return true;
+    } else {
+      return GitAwareContextHelper.isDefaultBranch();
+    }
+  }
+
+  private EntityDetailProtoDTO populateEntityDetailProtoDTO(
+      PipelineEntity pipelineEntity, FilterCreationGitMetadata gitMetadata) {
+    EntityDetailProtoDTO pipelineDetails =
+        EntityDetailProtoDTO.newBuilder()
+            .setIdentifierRef(IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(pipelineEntity.getAccountId(),
+                pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(),
+                pipelineEntity.getIdentifier()))
+            .setType(PIPELINES)
+            .setName(pipelineEntity.getName())
+            .build();
+    if (gitMetadata != null) {
+      pipelineDetails = EntityDetailProtoDTO.newBuilder(pipelineDetails)
+                            .setEntityGitMetadata(EntityGitMetadata.newBuilder()
+                                                      .setRepo(gitMetadata.getRepo())
+                                                      .setBranch(gitMetadata.getBranch())
+                                                      .build())
+                            .build();
+    }
+    return pipelineDetails;
   }
 
   private List<EntityDetailWithSetupUsageDetailProtoDTO> convertToReferredEntityWithSetupUsageDetail(

@@ -27,6 +27,7 @@ import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.environment.ConnectorConversionInfo;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
@@ -51,6 +52,7 @@ import io.harness.ci.buildstate.CodebaseUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.SecretUtils;
 import io.harness.ci.buildstate.providers.InternalContainerParamsProvider;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.ci.utils.LiteEngineSecretEvaluator;
 import io.harness.ci.utils.PortFinder;
@@ -106,6 +108,7 @@ public class K8InitializeTaskParamsBuilder {
   @Inject private CILicenseService ciLicenseService;
   @Inject CodebaseUtils codebaseUtils;
   @Inject SSCAServiceUtils sscaServiceUtils;
+  @Inject private CIFeatureFlagService featureFlagService;
 
   private static String RUNTIME_CLASS_NAME = "gvisor";
 
@@ -317,10 +320,13 @@ public class K8InitializeTaskParamsBuilder {
 
   private SecretEnvVars getSecretEnvVars(Ambiance ambiance) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
-    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
-    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
-    Map<String, String> sscaEnvVars = sscaServiceUtils.getSSCAServiceEnvVariables(accountId, orgId, projectId);
-    return SecretEnvVars.builder().sscaEnvVars(sscaEnvVars).build();
+    if (featureFlagService.isEnabled(FeatureName.SSCA_ENABLED, accountId)) {
+      String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+      String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+      Map<String, String> sscaEnvVars = sscaServiceUtils.getSSCAServiceEnvVariables(accountId, orgId, projectId);
+      return SecretEnvVars.builder().sscaEnvVars(sscaEnvVars).build();
+    }
+    return null;
   }
 
   private CIK8ContainerParams createCIK8ContainerParams(NGAccess ngAccess,

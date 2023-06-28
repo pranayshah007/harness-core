@@ -892,6 +892,8 @@ public class RetryExecuteHelperTest extends CategoryTest {
     assertThat(strategyNodes.get(0).getIdentifier()).isEqualTo(planNode3.getIdentifier());
     assertThat(strategyNodes.get(0).getName()).isEqualTo(planNode3.getName());
     assertThat(strategyNodes.get(0).getUuid()).isEqualTo(planNode3.getUuid());
+    assertThat(((IdentityPlanNode) strategyNodes.get(0)).getUseAdviserObtainments()).isTrue();
+    assertThat(strategyNodes.get(0).getAdviserObtainments()).isEqualTo(planNode3.getAdviserObtainments());
   }
 
   @Test

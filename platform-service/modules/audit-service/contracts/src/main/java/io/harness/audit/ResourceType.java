@@ -65,7 +65,9 @@ public enum ResourceType {
   NG_ACCOUNT_DETAILS(ResourceTypeConstants.NG_ACCOUNT_DETAILS),
   BUDGET_GROUP(ResourceTypeConstants.BUDGET_GROUP),
   IP_ALLOWLIST_CONFIG(ResourceTypeConstants.IP_ALLOWLIST_CONFIG),
-  NETWORK_MAP(ResourceTypeConstants.NETWORK_MAP);
+  NETWORK_MAP(ResourceTypeConstants.NETWORK_MAP),
+  CET_AGENT_TOKEN(ResourceTypeConstants.CET_AGENT_TOKEN),
+  CET_CRITICAL_EVENT(ResourceTypeConstants.CET_CRITICAL_EVENT);
 
   ResourceType(String resourceType) {
     if (!this.name().equals(resourceType)) {

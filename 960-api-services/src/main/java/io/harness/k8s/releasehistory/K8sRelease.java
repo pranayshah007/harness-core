@@ -14,6 +14,8 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_NUMBER_LABEL_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_PRUNING_ENABLED_KEY;
+import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_RELEASE_BG_ENVIRONMENT_KEY;
+import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_RELEASE_MANIFEST_HASH_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_STATUS_LABEL_KEY;
 
 import static java.util.Collections.emptyList;
@@ -33,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.zip.Deflater;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -124,6 +127,26 @@ public class K8sRelease implements IK8sRelease {
   @Override
   public String getReleaseColor() {
     return K8sReleaseSecretHelper.getReleaseColor(releaseSecret);
+  }
+
+  @Override
+  public String getBgEnvironment() {
+    return K8sReleaseSecretHelper.getReleaseBGEnvironment(releaseSecret);
+  }
+
+  @Override
+  public String getManifestHash() {
+    return K8sReleaseSecretHelper.getReleaseManifestHash(releaseSecret);
+  }
+
+  @Override
+  public void setBgEnvironment(@NotNull String bgEnv) {
+    K8sReleaseSecretHelper.putLabelsItem(releaseSecret, RELEASE_SECRET_RELEASE_BG_ENVIRONMENT_KEY, bgEnv);
+  }
+
+  @Override
+  public void setManifestHash(@NotNull String manifestHash) {
+    K8sReleaseSecretHelper.putLabelsItem(releaseSecret, RELEASE_SECRET_RELEASE_MANIFEST_HASH_KEY, manifestHash);
   }
 
   private byte[] getCompressedYaml(List<KubernetesResource> resources) throws IOException {

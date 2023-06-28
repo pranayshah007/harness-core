@@ -188,7 +188,9 @@ public class TerraformApplyTaskHandler extends TerraformAbstractTaskHandler {
               .accountId(taskParameters.getAccountId())
               .isTerraformCloudCli(taskParameters.isTerraformCloudCli())
               .skipTerraformRefresh(taskParameters.isSkipTerraformRefresh())
+              .encryptDecryptPlanForHarnessSMOnManager(taskParameters.isEncryptDecryptPlanForHarnessSMOnManager())
               .additionalCliFlags(taskParameters.getTerraformCommandFlags())
+              .isNG(true)
               .build();
 
       TerraformStepResponse terraformStepResponse =

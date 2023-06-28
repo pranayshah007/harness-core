@@ -46,6 +46,8 @@ public class NGCommonEntityConstants {
   public static final String GROUP_IDENTIFIER_KEY = "groupIdentifier";
   public static final String GROUP_IDENTIFIERS_KEY = "groupIdentifiers";
   public static final String NAME_KEY = "name";
+
+  public static final String VERSION_FIELD = "version";
   public static final String DELEGATE_IDENTIFIER_KEY = "delegateIdentifier";
   public static final String DRAFT_KEY = "skipValidation";
   public static final String TAGS_KEY = "tags";
@@ -206,4 +208,5 @@ public class NGCommonEntityConstants {
   public static final String PLAN_NAME = "planName";
   public static final String TARGET_IDENTIFIER_KEY = "targetIdentifier";
   public static final String NOTES_FOR_PIPELINE_EXECUTION = "notesForPipelineExecution";
+  public static final String APPLY_GITX_REPO_ALLOW_LIST_FILTER = "applyGitXRepoAllowListFilter";
 }

@@ -41,7 +41,9 @@ const (
 	// max. number of concurrent connections that Redis can handle. This limit is set to 10k by default on the latest
 	// Redis servers. To increase it, make sure it gets increased on the server side as well.
 	connectionPool = 5000
-	entryKey       = "line"
+	// scan redis keys in batches
+	scanBatch = 2000
+	entryKey  = "line"
 
 	// Redis TTL error values
 	TTL_NOT_SET          = -1
@@ -67,24 +69,35 @@ func newTlSConfig(certPathForTLS string) (*tls.Config, error) {
 	return &tls.Config{RootCAs: roots}, nil
 }
 
-func New(endpoint, password string, useTLS, disableExpiryWatcher bool, certPathForTLS string) *Redis {
-	opt := &redis.Options{
-		Addr:     endpoint,
-		Password: password,
-		DB:       0,
-		PoolSize: connectionPool,
-	}
-	if useTLS {
-		newTlSConfig, err := newTlSConfig(certPathForTLS)
-		if err != nil {
-			logrus.Fatalf("could not get TLS config: %s", err)
-			return nil
+func New(endpoint, password string, useTLS, disableExpiryWatcher, useSentinel bool, certPathForTLS string, masterName string, sentinelAddrs []string) *Redis {
+	var client redis.Cmdable
+	if useSentinel {
+		// Create Sentinel instance
+		client = redis.NewFailoverClient(&redis.FailoverOptions{
+			MasterName:    masterName,
+			SentinelAddrs: sentinelAddrs,
+			Password:      password,
+		})
+	} else {
+		// Create Redis instance
+		opt := &redis.Options{
+			Addr:     endpoint,
+			Password: password,
+			DB:       0,
+			PoolSize: connectionPool,
 		}
-		opt.TLSConfig = newTlSConfig
+		if useTLS {
+			newTlSConfig, err := newTlSConfig(certPathForTLS)
+			if err != nil {
+				logrus.Fatalf("could not get TLS config: %s", err)
+				return nil
+			}
+			opt.TLSConfig = newTlSConfig
+		}
+		client = redis.NewClient(opt)
 	}
-	rdb := redis.NewClient(opt)
 	rc := &Redis{
-		Client: rdb,
+		Client: client,
 	}
 
 	if !disableExpiryWatcher {
@@ -246,8 +259,8 @@ func (r *Redis) ListPrefix(ctx context.Context, prefix string) ([]string, error)
 	for {
 		var keys []string
 		var err error
-		// Scan upto 10 keys at a time
-		keys, cursor, err = r.Client.Scan(cursor, prefix, 10).Result()
+		// Scan keys in batches of size scanBatch at a time
+		keys, cursor, err = r.Client.Scan(cursor, prefix, scanBatch).Result()
 		if err != nil {
 			return l, err
 		}
@@ -380,8 +393,8 @@ func (r *Redis) expiryWatcher(expiry time.Duration) {
 	for {
 		var keys []string
 		var err error
-		// Scan upto 10 keys at a time
-		keys, cursor, err = r.Client.Scan(cursor, "*", 10).Result()
+		// Scan keys in batches of size scanBatch at a time
+		keys, cursor, err = r.Client.Scan(cursor, "*", scanBatch).Result()
 		if err != nil {
 			logrus.Error(errors.Wrap(err, "error in expiry watcher thread"))
 			return

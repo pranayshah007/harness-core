@@ -34,6 +34,7 @@ import software.wings.beans.Account;
 import software.wings.beans.AccountJoinRequest;
 import software.wings.beans.AccountRole;
 import software.wings.beans.ApplicationRole;
+import software.wings.beans.CannySsoLoginResponse;
 import software.wings.beans.LicenseInfo;
 import software.wings.beans.MarketPlace;
 import software.wings.beans.User;
@@ -437,6 +438,8 @@ public interface UserService extends OwnedByAccount {
    */
   User completeNGInviteAndSignIn(UserInviteDTO userInvite);
 
+  User completeUserCreationOrAdditionViaJitAndSignIn(String email, String accountId);
+
   /**
    * Complete the trial user signup. Both the trial account and the account admin user will be created
    * as part of this operation.
@@ -565,6 +568,8 @@ public interface UserService extends OwnedByAccount {
    * @return the zendesk sso login response
    */
   ZendeskSsoLoginResponse generateZendeskSsoJwt(String returnToUrl);
+
+  CannySsoLoginResponse generateCannySsoJwt(String returnToUrl, String companyID);
 
   /**
    *

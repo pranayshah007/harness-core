@@ -16,7 +16,7 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.extended.ci.container.ContainerResource;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.List;
 import java.util.Map;
 import lombok.Builder;
@@ -32,20 +32,23 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("awsSamBuildStepParameters")
 @RecasterAlias("io.harness.cdng.aws.sam.AwsSamBuildStepParameters")
 public class AwsSamBuildStepParameters extends AwsSamBaseStepInfo implements AwsSamSpecParameters, StepParameters {
-  ParameterField<List<String>> deployCommandOptions;
+  ParameterField<List<String>> buildCommandOptions;
   ParameterField<String> samBuildDockerRegistryConnectorRef;
+
+  @JsonIgnore String downloadManifestsFqn;
 
   @Builder(builderMethodName = "infoBuilder")
   public AwsSamBuildStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
-      ContainerResource resources, ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
+      ParameterField<String> image, ParameterField<String> connectorRef, ContainerResource resources,
+      ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
       ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
 
-      ParameterField<List<String>> deployCommandOptions, ParameterField<String> samBuildDockerRegistryConnectorRef,
-      ParameterField<String> samVersion) {
-    super(delegateSelectors, settings, image, connectorRef, resources, envVariables, privileged, runAsUser,
-        imagePullPolicy, samVersion);
-    this.deployCommandOptions = deployCommandOptions;
+      ParameterField<List<String>> buildCommandOptions, ParameterField<String> samBuildDockerRegistryConnectorRef,
+      ParameterField<String> samVersion, String downloadManifestsFqn) {
+    super(delegateSelectors, image, connectorRef, resources, envVariables, privileged, runAsUser, imagePullPolicy,
+        samVersion);
+    this.buildCommandOptions = buildCommandOptions;
     this.samBuildDockerRegistryConnectorRef = samBuildDockerRegistryConnectorRef;
+    this.downloadManifestsFqn = downloadManifestsFqn;
   }
 }

@@ -43,7 +43,7 @@ public class AwsEcrHelperServiceDelegateImpl
       AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails, String region, String imageName) {
     encryptionService.decrypt(awsConfig, encryptionDetails, false);
     return awsEcrApiHelperServiceDelegate.getEcrImageUrl(
-        AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), region, imageName);
+        AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), null, region, imageName);
   }
 
   @Override

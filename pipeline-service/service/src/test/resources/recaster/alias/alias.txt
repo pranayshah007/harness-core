@@ -28,6 +28,7 @@ io.harness.beans.steps.stepinfo.SaveCacheGCSStepInfo
 io.harness.beans.steps.stepinfo.SaveCacheS3StepInfo
 io.harness.beans.steps.stepinfo.SecurityStepInfo
 io.harness.ssca.cd.beans.stepnode.SscaOrchestrationStepNode
+io.harness.ssca.cd.beans.enforcement.CdSscaEnforcementStepNode
 io.harness.steps.http.HttpStepParameters
 io.harness.steps.barriers.beans.BarrierOutcome
 io.harness.beans.yaml.extended.volumes.EmptyDirYaml
@@ -65,6 +66,7 @@ io.harness.steps.jira.create.JiraCreateStepNode
 io.harness.steps.policy.PolicyStepSpecParameters
 io.harness.beans.yaml.extended.TIBuildTool
 io.harness.ssca.cd.beans.orchestration.CdSscaOrchestrationStepInfo
+io.harness.ssca.cd.beans.enforcement.CdSscaEnforcementStepInfo
 io.harness.steps.approval.step.servicenow.ServiceNowApprovalOutcome
 io.harness.beans.steps.stepinfo.RunTestsStepInfo
 io.harness.beans.yaml.extended.ImagePullPolicy
@@ -216,6 +218,7 @@ io.harness.steps.shellscript.ShellScriptInlineSource
 io.harness.steps.jira.update.JiraUpdateStepNode
 io.harness.advisers.rollback.RollbackTriggeredOutput
 io.harness.beans.execution.PRWebhookEvent
+io.harness.beans.execution.ReleaseWebhookEvent
 io.harness.beans.sweepingoutputs.K8PodDetails
 io.harness.steps.wait.WaitStepDetailsInfo
 io.harness.steps.jira.update.JiraUpdateSpecParameters
@@ -284,3 +287,10 @@ io.harness.beans.yaml.extended.volumes.V1.TempVolume
 io.harness.plancreator.execution.StepsExecutionConfig
 io.harness.beans.yaml.extended.runtime.CloudRuntime
 io.harness.steps.approval.step.harness.HarnessApprovalOutcome
+io.harness.yaml.core.failurestrategy.retry.RetrySGFailureActionConfig
+io.harness.steps.approval.step.harness.beans.ScheduledDeadline
+io.harness.steps.approval.step.harness.beans.AutoApprovalParams
+io.harness.steps.approval.step.harness.outcomes.HarnessApprovalStepOutcome
+io.harness.steps.approval.step.harness.beans.AutoApprovalAction
+io.harness.beans.sweepingoutputs.UniqueStepIdentifiersSweepingOutput
+io.harness.beans.common.VariablesSweepingOutput

@@ -8,6 +8,9 @@
 package io.harness.cvng;
 
 import static io.harness.annotations.dev.HarnessTeam.CV;
+import static io.harness.cvng.beans.cvnglog.ApiCallLogDTO.REQUEST_HEADERS;
+import static io.harness.cvng.beans.cvnglog.ApiCallLogDTO.REQUEST_METHOD;
+import static io.harness.cvng.beans.cvnglog.ApiCallLogDTO.REQUEST_URL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -19,6 +22,7 @@ import io.harness.cvng.beans.cvnglog.ApiCallLogDTO;
 import io.harness.cvng.beans.cvnglog.ApiCallLogDTO.ApiCallLogDTOField;
 import io.harness.cvng.beans.cvnglog.TraceableType;
 import io.harness.datacollection.DataCollectionDSLService;
+import io.harness.datacollection.entity.CallDetails;
 import io.harness.datacollection.entity.RuntimeParameters;
 import io.harness.perpetualtask.datacollection.DataCollectionLogContext;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -31,9 +35,13 @@ import software.wings.service.intfc.cvng.CVNGDataCollectionDelegateService;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 
@@ -88,6 +96,7 @@ public class CVNGDataCollectionDelegateServiceImpl implements CVNGDataCollection
         log.info("Starting execution of DSL ");
         String response = JsonUtils.asJson(dataCollectionDSLService.execute(dsl, runtimeParameters, callDetails -> {
           // TODO: write unit test case for this lambda expression.
+          // TODO : Add a test case asserting entries in the cvngLog
           if (dataCollectionRequest.getTracingId() != null) {
             final ApiCallLogDTO cvngLogDTO = ApiCallLogDTO.builder()
                                                  .traceableId(dataCollectionRequest.getTracingId())
@@ -98,17 +107,30 @@ public class CVNGDataCollectionDelegateServiceImpl implements CVNGDataCollection
                                                  .requestTime(callDetails.getRequestTime().toEpochMilli())
                                                  .responseTime(callDetails.getResponseTime().toEpochMilli())
                                                  .build();
+            String encodedURL = callDetails.getRequest().request().url().toString();
             cvngLogDTO.addFieldToRequest(ApiCallLogDTOField.builder()
-                                             .name("url")
+                                             .name(REQUEST_URL)
                                              .type(ApiCallLogDTO.FieldType.URL)
-                                             .value(callDetails.getRequest().request().url().toString())
+                                             .value(URLDecoder.decode(encodedURL, StandardCharsets.UTF_8))
                                              .build());
-
-            cvngLogDTO.addFieldToResponse(callDetails.getResponse().code(),
-                (callDetails.getResponse() != null && callDetails.getResponse().body() != null)
-                    ? callDetails.getResponse().body()
-                    : callDetails.getResponse(),
-                ApiCallLogDTO.FieldType.JSON);
+            String method = callDetails.getRequest().request().method();
+            cvngLogDTO.addFieldToRequest(ApiCallLogDTOField.builder()
+                                             .type(ApiCallLogDTO.FieldType.TEXT)
+                                             .name(REQUEST_METHOD)
+                                             .value(method)
+                                             .build());
+            Set<String> headerNames = callDetails.getRequest().request().headers().names();
+            if (headerNames.size() > 0) {
+              cvngLogDTO.addFieldToRequest(ApiCallLogDTOField.builder()
+                                               .type(ApiCallLogDTO.FieldType.TEXT)
+                                               .name(REQUEST_HEADERS)
+                                               .value(JsonUtils.asJson(headerNames))
+                                               .build());
+            }
+            if (callDetails.getRequest().request().body() != null) {
+              cvngLogDTO.addCallDetailsBodyFieldToRequest(callDetails.getRequest().request());
+            }
+            setApiCallLogDTOWithResponse(callDetails, cvngLogDTO);
             delegateLogService.save(accountId, cvngLogDTO);
           }
         }));
@@ -120,6 +142,21 @@ public class CVNGDataCollectionDelegateServiceImpl implements CVNGDataCollection
         throw new DataCollectionException(errorMessage);
       }
     }
+  }
+
+  private static void setApiCallLogDTOWithResponse(CallDetails callDetails, ApiCallLogDTO cvngLogDTO) {
+    Object responseObj = null;
+    if (callDetails.getResponse() != null && callDetails.getResponse().body() != null) {
+      responseObj = callDetails.getResponse().body();
+    } else if (callDetails.getResponse() != null && callDetails.getResponse().errorBody() != null) {
+      try {
+        responseObj = callDetails.getResponse().errorBody().string();
+      } catch (IOException ignored) {
+      }
+    } else {
+      responseObj = callDetails.getResponse();
+    }
+    cvngLogDTO.addFieldToResponse(callDetails.getResponse().code(), responseObj, ApiCallLogDTO.FieldType.JSON);
   }
 
   private String parseDSLExceptionMessage(String message) {

@@ -14,6 +14,7 @@ import static io.harness.threading.Morpheus.sleep;
 import static software.wings.beans.dto.Log.Builder.aLog;
 import static software.wings.delegatetasks.GcbDelegateResponse.failedGcbTaskResponse;
 import static software.wings.delegatetasks.GcbDelegateResponse.gcbDelegateResponseOf;
+import static software.wings.delegatetasks.GcbDelegateResponse.timeoutGcbTaskResponse;
 import static software.wings.sm.states.gcbconfigs.GcbRemoteBuildSpec.RemoteFileSource.BRANCH;
 
 import static java.lang.String.format;
@@ -25,6 +26,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
+import io.harness.concurrent.HTimeLimiter;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
@@ -52,10 +54,12 @@ import software.wings.sm.states.gcbconfigs.GcbOptions;
 import software.wings.sm.states.gcbconfigs.GcbRemoteBuildSpec;
 import software.wings.sm.states.gcbconfigs.GcbTriggerBuildSpec;
 
+import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -76,6 +80,7 @@ public class GcbTask extends AbstractDelegateRunnableTask {
   @Inject private DelegateLogService logService;
   @Inject private GcbService gcbService;
   @Inject private GitClient git;
+  @Inject TimeLimiter timeLimiter;
   private final AtomicInteger alreadyLogged = new AtomicInteger(0); // move to taskParams
 
   public GcbTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
@@ -97,16 +102,35 @@ public class GcbTask extends AbstractDelegateRunnableTask {
     try {
       switch (params.getType()) {
         case FETCH_TRIGGERS:
+          if (params.isTimeoutSupported()) {
+            return HTimeLimiter.callInterruptible(
+                timeLimiter, Duration.ofMillis(params.getTimeout()), () -> fetchTriggers(params));
+          }
           return fetchTriggers(params);
         case START:
+          if (params.isTimeoutSupported()) {
+            return HTimeLimiter.callInterruptible(
+                timeLimiter, Duration.ofMillis(params.getTimeout()), () -> startGcbBuild(params));
+          }
           return startGcbBuild(params);
         case POLL:
+          if (params.isTimeoutSupported()) {
+            return HTimeLimiter.callInterruptible(
+                timeLimiter, Duration.ofMillis(params.getTimeout()), () -> pollGcbBuild(params));
+          }
           return pollGcbBuild(params);
         case CANCEL:
+          if (params.isTimeoutSupported()) {
+            return HTimeLimiter.callInterruptible(
+                timeLimiter, Duration.ofMillis(params.getTimeout()), () -> cancelBuild(params));
+          }
           return cancelBuild(params);
         default:
           throw new UnsupportedOperationException(format("Unsupported TaskType: %s", params.getType()));
       }
+    } catch (TimeoutException e) {
+      log.warn("GCB_TASK - GCB task failed due to: ", e);
+      return timeoutGcbTaskResponse(params, "Timed out while waiting for task to complete");
     } catch (Exception e) {
       log.warn("GCB_TASK - GCB task failed due to: ", e);
       return failedGcbTaskResponse(params, e.getMessage());

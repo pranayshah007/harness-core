@@ -142,6 +142,7 @@
 1205:io.harness.exception.FailureType
 1206:io.harness.context.MdcGlobalContextData
 1207:java.util.HashMap.KeySet
+1400:io.harness.git.model.ListRemoteRequest
 1401:io.harness.security.encryption.EncryptedRecordData
 1402:io.harness.pcf.model.ManifestType
 1403:com.amazonaws.services.ec2.model.HibernationOptions
@@ -151,6 +152,7 @@
 1407:io.harness.deployment.InstanceDetails.PCF
 1408:io.harness.deployment.InstanceDetails.AWS
 1409:io.harness.deployment.InstanceDetails.InstanceType
+1410:io.harness.git.model.ListRemoteResult
 1411:io.harness.deployment.InstanceDetails.PHYSICAL_HOST
 1412:io.harness.deployment.InstanceDetails.K8s
 1413:io.harness.security.encryption.EncryptedDataParams
@@ -672,6 +674,7 @@
 5583:net.sf.json.JSONArray
 5584:net.sf.json.JSONObject
 5585:io.harness.exception.SecretManagementDelegateException
+5586:java.nio.file.NoSuchFileException
 5589:io.harness.exception.FunctorException
 5590:io.harness.eraro.Level
 5592:software.wings.service.impl.stackdriver.StackDriverSetupTestNodeData
@@ -1647,6 +1650,7 @@
 25002:io.harness.delegate.beans.ci.DockerInfraInfo
 25003:io.harness.delegate.beans.ci.VmInfraInfo
 25004:io.harness.delegate.beans.ci.DliteVmInfraInfo
+25005:io.harness.delegate.InitializeExecutionInfraResponse
 26001:io.harness.connector.ConnectorDTO
 26002:io.harness.connector.ConnectorInfoDTO
 29112:io.harness.delegate.beans.connector.jenkins.JenkinsAuthCredentialsDTO
@@ -1738,6 +1742,7 @@
 55217:io.harness.delegate.beans.NotificationProcessingResponse
 55218:com.github.dikhan.pagerduty.client.events.domain.Severity
 55219:io.harness.notification.remote.SmtpConfigResponse
+55220:io.harness.delegate.beans.WebhookTaskParams
 55299:io.harness.notification.SmtpConfig
 55300:io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppTaskRequest
 55301:io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppRequestType
@@ -2344,6 +2349,7 @@
 563535:io.harness.delegate.beans.executioncapability.AwsCliInstallationCapability
 563536:io.harness.delegate.task.serverless.ServerlessS3ArtifactConfig
 563537:io.harness.delegate.task.k8s.EksK8sInfraDelegateConfig
+563538:io.harness.delegate.task.k8s.RancherK8sInfraDelegateConfig
 573401:io.harness.delegate.task.gitcommon.GitTaskNGRequest
 573402:io.harness.delegate.task.gitcommon.GitTaskNGResponse
 573403:io.harness.delegate.task.gitcommon.GitFetchFilesResult
@@ -2671,6 +2677,7 @@
 5731607:io.harness.delegate.task.aws.asg.AsgBlueGreenDeployRequest
 5731608:io.harness.delegate.task.aws.asg.AsgBlueGreenDeployResponse
 5731609:io.harness.delegate.task.aws.asg.AsgBlueGreenDeployResult
+5731610:io.harness.delegate.beans.instancesync.info.NativeHelmServerInstanceInfo
 
 9000312:software.wings.helpers.ext.nexus.NexusRepositories
 9000313:io.harness.provision.model.TfConfigInspectVersion
@@ -2690,6 +2697,7 @@
 9800012:io.harness.delegate.task.ssh.artifact.EcrArtifactDelegateConfig
 9800013:io.harness.delegate.task.ssh.artifact.AcrArtifactDelegateConfig
 9800014:io.harness.delegate.task.ssh.artifact.DockerArtifactDelegateConfig
+9800015:io.harness.delegate.task.ssh.artifact.GithubPackagesArtifactDelegateConfig
 10000001:io.harness.delegate.beans.connector.elkconnector.ELKConnectorDTO
 10000002:io.harness.delegate.beans.connector.elkconnector.ELKAuthType
 10000101:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO
@@ -2702,8 +2710,11 @@
 10000114:io.harness.delegate.beans.connector.servicenow.ServiceNowAuthCredentialsDTO
 10000115:io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePasswordDTO
 10000116:io.harness.delegate.beans.connector.servicenow.ServiceNowADFSDTO
+10000117:io.harness.delegate.beans.connector.servicenow.ServiceNowRefreshTokenDTO
 10000120:io.harness.exception.AdfsAuthException
 10000121:io.harness.adfs.AdfsAccessTokenResponse
+10000122:io.harness.exception.ServiceNowOIDCException
+10000123:io.harness.servicenow.auth.refreshtoken.AccessTokenResponse
 10000201:io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO
 10000202:io.harness.delegate.beans.connector.tasconnector.TasCredentialDTO
 10000203:io.harness.delegate.beans.connector.tasconnector.TasCredentialSpecDTO
@@ -2808,6 +2819,7 @@
 20000503:io.harness.delegate.beans.connector.rancher.RancherTestConnectionTaskParams
 20000504:io.harness.delegate.beans.connector.rancher.RancherTestConnectionTaskResponse
 20000505:io.harness.delegate.beans.connector.rancher.RancherTaskType
+20000507:io.harness.delegate.beans.connector.rancher.RancherListClustersTaskResponse
 20000601:io.harness.delegate.beans.connector.rancher.RancherAuthType
 20000602:io.harness.delegate.beans.connector.rancher.RancherConfigType
 20000603:io.harness.delegate.beans.connector.rancher.RancherConnectorBearerTokenAuthenticationDTO
@@ -2817,3 +2829,10 @@
 20000607:io.harness.delegate.beans.connector.rancher.RancherConnectorConfigAuthenticationSpecDTO
 20000608:io.harness.delegate.beans.connector.rancher.RancherConnectorConfigDTO
 20000609:io.harness.delegate.beans.connector.rancher.RancherConnectorDTO
+20000610:io.harness.delegate.task.serverless.request.ServerlessRollbackV2Request
+20000611:io.harness.delegate.task.serverless.ServerlessAwsLambdaRollbackV2Config
+20000612:io.harness.delegate.beans.serverless.StackDetails
+20000613:io.harness.delegate.beans.serverless.Parameter
+20000614:io.harness.delegate.beans.serverless.RollbackConfiguration
+20000615:io.harness.delegate.beans.serverless.RollbackTrigger
+20000616:io.harness.delegate.beans.serverless.Tag

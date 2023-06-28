@@ -34,7 +34,7 @@ public class EcrArtifactDelegateResponseTest {
   public void testDescribe() {
     ArtifactBuildDetailsNG buildDetailsNG = ArtifactBuildDetailsNG.builder().build();
     ecrArtifactDelegateResponse = new EcrArtifactDelegateResponse(
-        buildDetailsNG, ArtifactSourceType.ECR, "hello-world", "v3.0", "", "", new HashMap<>());
+        buildDetailsNG, ArtifactSourceType.ECR, null, "hello-world", "v3.0", "", "", new HashMap<>());
     String resp = ecrArtifactDelegateResponse.describe();
     String[] values = resp.split("\n");
     assertThat(resp).isNotNull();

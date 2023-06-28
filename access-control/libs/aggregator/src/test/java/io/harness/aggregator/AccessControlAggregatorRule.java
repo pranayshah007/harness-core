@@ -51,6 +51,7 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
+import com.google.inject.name.Names;
 import dev.morphia.converters.TypeConverter;
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
@@ -114,7 +115,7 @@ public class AccessControlAggregatorRule implements MethodRule, InjectorRuleMixi
             .toInstance(Sets.newHashSet("test_permission_1", "test_permission_2"));
         implicitPermissionsByScope.addBinding(Pair.of(TEST_SCOPE, false))
             .toInstance(Collections.singleton("test_permission_1"));
-
+        bind(boolean.class).annotatedWith(Names.named("disableRedundantACLs")).toInstance(false);
         bind(ACLGeneratorService.class).to(ACLGeneratorServiceImpl.class);
       }
     });

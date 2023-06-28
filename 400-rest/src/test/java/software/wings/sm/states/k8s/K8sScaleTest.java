@@ -205,9 +205,12 @@ public class K8sScaleTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testExecuteWingsException() {
     InvalidArgumentsException exceptionToBeThrown = new InvalidArgumentsException(Pair.of("args", "missing"));
-    doThrow(exceptionToBeThrown).when(k8sStateHelper).fetchContainerInfrastructureMapping(context);
+    ExecutionContext executionContext = spy(context);
+    doThrow(exceptionToBeThrown).when(k8sStateHelper).fetchContainerInfrastructureMapping(executionContext);
+    doReturn("accountId").when(executionContext).getAccountId();
+    when(featureFlagService.isEnabled(FeatureName.SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW, "accountId")).thenReturn(false);
 
-    assertThatThrownBy(() -> k8sScale.execute(context)).isSameAs(exceptionToBeThrown);
+    assertThatThrownBy(() -> k8sScale.execute(executionContext)).isSameAs(exceptionToBeThrown);
   }
 
   @Test
@@ -215,9 +218,12 @@ public class K8sScaleTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testExecuteAnyException() {
     IllegalStateException exceptionToBeThrown = new IllegalStateException();
-    doThrow(exceptionToBeThrown).when(k8sStateHelper).fetchContainerInfrastructureMapping(context);
+    ExecutionContext executionContext = spy(context);
+    doThrow(exceptionToBeThrown).when(k8sStateHelper).fetchContainerInfrastructureMapping(executionContext);
+    doReturn("accountId").when(executionContext).getAccountId();
+    when(featureFlagService.isEnabled(FeatureName.SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW, "accountId")).thenReturn(false);
 
-    assertThatThrownBy(() -> k8sScale.execute(context)).isInstanceOf(InvalidRequestException.class);
+    assertThatThrownBy(() -> k8sScale.execute(executionContext)).isInstanceOf(InvalidRequestException.class);
   }
 
   @Test

@@ -14,6 +14,9 @@ import io.harness.idp.common.Constants;
 import io.harness.idp.common.FileUtils;
 import io.harness.idp.configmanager.service.ConfigEnvVariablesService;
 import io.harness.idp.configmanager.service.ConfigManagerService;
+import io.harness.idp.configmanager.service.PluginsProxyInfoService;
+import io.harness.idp.configmanager.utils.ConfigManagerUtils;
+import io.harness.idp.configmanager.utils.ConfigType;
 import io.harness.idp.envvariable.service.BackstageEnvVariableService;
 import io.harness.idp.plugin.beans.PluginInfoEntity;
 import io.harness.idp.plugin.beans.PluginRequestEntity;
@@ -26,11 +29,13 @@ import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.PluginDetailedInfo;
 import io.harness.spec.server.idp.v1.model.PluginInfo;
+import io.harness.spec.server.idp.v1.model.ProxyHostDetail;
 import io.harness.spec.server.idp.v1.model.RequestPlugin;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +59,8 @@ public class PluginInfoServiceImpl implements PluginInfoService {
   private ConfigManagerService configManagerService;
   private ConfigEnvVariablesService configEnvVariablesService;
   private BackstageEnvVariableService backstageEnvVariableService;
+  private PluginsProxyInfoService pluginsProxyInfoService;
+  @Inject @Named("env") private String env;
   @Override
   public List<PluginInfo> getAllPluginsInfo(String accountId) {
     List<PluginInfoEntity> plugins = pluginInfoRepository.findByIdentifierIn(Constants.pluginIds);
@@ -75,7 +82,7 @@ public class PluginInfoServiceImpl implements PluginInfoService {
       throw new InvalidRequestException(String.format("Plugin Info not found for pluginId [%s]", identifier));
     }
     PluginInfoEntity pluginEntity = pluginInfoEntity.get();
-    AppConfig appConfig = configManagerService.getPluginConfig(harnessAccount, identifier);
+    AppConfig appConfig = configManagerService.getAppConfig(harnessAccount, identifier, ConfigType.PLUGIN);
     List<BackstageEnvSecretVariable> backstageEnvSecretVariables = new ArrayList<>();
     if (appConfig != null) {
       List<String> envNames =
@@ -93,7 +100,12 @@ public class PluginInfoServiceImpl implements PluginInfoService {
         backstageEnvSecretVariables.add(backstageEnvSecretVariable);
       }
     }
-    return PluginDetailedInfoMapper.toDTO(pluginEntity, appConfig, backstageEnvSecretVariables);
+    if (pluginEntity.getIdentifier().equals("harness-ci-cd") && appConfig == null) {
+      pluginEntity.setConfig(ConfigManagerUtils.getHarnessCiCdAppConfig(env));
+    }
+    List<ProxyHostDetail> proxyHostDetails =
+        pluginsProxyInfoService.getProxyHostDetailsForPluginId(harnessAccount, identifier);
+    return PluginDetailedInfoMapper.toDTO(pluginEntity, appConfig, backstageEnvSecretVariables, proxyHostDetails);
   }
 
   @Override

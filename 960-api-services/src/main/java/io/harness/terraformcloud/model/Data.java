@@ -18,7 +18,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Map;
 
 @OwnedBy(CDP)
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true)
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXISTING_PROPERTY, visible = true)
 @JsonSubTypes({
   @JsonSubTypes.Type(value = RunData.class, name = "runs")
   , @JsonSubTypes.Type(value = OrganizationData.class, name = "organizations"),

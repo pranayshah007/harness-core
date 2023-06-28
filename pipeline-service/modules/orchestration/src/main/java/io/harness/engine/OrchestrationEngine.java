@@ -67,7 +67,7 @@ public class OrchestrationEngine {
     Node node = planService.fetchNode(ambiance.getPlanId(), nodeId);
     Ambiance clonedAmbiance = AmbianceUtils.cloneForChild(ambiance,
         PmsLevelUtils.buildLevelFromNode(
-            runtimeId, node, strategyMetadata, ambiance.getMetadata().getUseMatrixFieldName()));
+            runtimeId, node, strategyMetadata, AmbianceUtils.shouldUseMatrixFieldName(ambiance)));
     NodeExecutionStrategy strategy = strategyFactory.obtainStrategy(node.getNodeType());
     return (T) strategy.runNode(clonedAmbiance, node, metadata, initiateMode);
   }

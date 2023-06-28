@@ -7,6 +7,7 @@
 
 package io.harness.licensing;
 
+import static io.harness.beans.execution.ExecutionSource.Type.MANUAL;
 import static io.harness.beans.execution.ExecutionSource.Type.WEBHOOK;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
@@ -86,9 +87,9 @@ public class CILicenseUsageImpl implements LicenseUsageInterface<CILicenseUsageD
           + " where accountid=? and moduleinfo_type ='CI'"
           + " and %s is not null"
           + " and moduleinfo_is_private=true"
-          + " and trigger_type='%s'"
+          + " and (trigger_type='%s' OR (trigger_type='%s' AND user_source='GIT'))"
           + " and startts<=? and startts>=?",
-      COLUMN_NAME_AUTHOR_ID, WEBHOOK);
+      COLUMN_NAME_AUTHOR_ID, WEBHOOK, MANUAL);
   private static final String DEVELOPER_QUERY_BODY = QUERY_COLUMN_WITH_TOTAL + QUERY_BODY;
   private static final String ORDER_BY_CLAUSE = " order by %s";
   private static final String PAGER_OFFSET = " offset ? rows fetch next ? rows only";
@@ -106,9 +107,9 @@ public class CILicenseUsageImpl implements LicenseUsageInterface<CILicenseUsageD
           + " and moduleinfo_type ='CI'"
           + " and %s is not null"
           + " and moduleinfo_is_private=true"
-          + " and trigger_type='" + WEBHOOK + "'"
+          + " and (trigger_type='%s' OR (trigger_type='%s' AND user_source='GIT'))"
           + " and startts<=? and startts>=?;",
-      COLUMN_NAME_AUTHOR_ID, COLUMN_NAME_AUTHOR_ID);
+      COLUMN_NAME_AUTHOR_ID, COLUMN_NAME_AUTHOR_ID, WEBHOOK, MANUAL);
 
   private static final Map<String, String> sortToColumnMap = new HashMap<>() {
     {

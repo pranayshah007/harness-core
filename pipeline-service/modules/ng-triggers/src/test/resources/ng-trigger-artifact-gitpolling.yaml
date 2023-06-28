@@ -1,0 +1,25 @@
+trigger:
+  name: first trigger
+  identifier: first_trigger
+  enabled: true
+  description: ""
+  tags: {}
+  orgIdentifier: org
+  projectIdentifier: proj
+  pipelineIdentifier: pipeline
+  source:
+    type: Webhook
+    pollInterval: 2m
+    webhookId: ""
+    spec:
+      type: Github
+      spec:
+        type: PullRequest
+        spec:
+          connectorRef: GithubRepo
+          autoAbortPreviousExecutions: false
+          payloadConditions: [ ]
+          headerConditions: [ ]
+          actions: [ ]
+  inputYaml: |
+    pipeline: {}

@@ -14,7 +14,9 @@ import io.harness.account.services.AccountService;
 import io.harness.beans.Scope;
 import io.harness.cdng.pipeline.helpers.CDPipelineInstrumentationHelper;
 import io.harness.cdng.provision.terraform.TerraformStepHelper;
+import io.harness.cdng.provision.terraform.executions.TFApplyExecutionDetailsKey;
 import io.harness.cdng.provision.terraform.executions.TFPlanExecutionDetailsKey;
+import io.harness.cdng.provision.terraform.executions.TerraformApplyExecutionDetails;
 import io.harness.cdng.provision.terraform.executions.TerraformCloudPlanExecutionDetails;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExecutionDetails;
 import io.harness.cdng.provision.terraformcloud.TerraformCloudStepHelper;
@@ -72,6 +74,18 @@ public class CDPipelineEndEventHandler implements OrchestrationEventHandler {
             }
           } catch (Exception e) {
             log.error("Failure in cleaning up the TF plan Json files from the GCS Bucket: {}", e.getMessage());
+          }
+
+          try {
+            TFApplyExecutionDetailsKey tfApplyExecutionDetailsKey = helper.createTFApplyExecutionDetailsKey(ambiance);
+            List<TerraformApplyExecutionDetails> terraformApplyExecutionDetails =
+                helper.getAllPipelineTFApplyExecutionDetails(tfApplyExecutionDetailsKey);
+            if (isNotEmpty(terraformApplyExecutionDetails)) {
+              helper.cleanupTerraformJsonOutputSecret(terraformApplyExecutionDetails);
+              helper.cleanupAllTerraformApplyExecutionDetails(tfApplyExecutionDetailsKey);
+            }
+          } catch (Exception e) {
+            log.error("Failure in cleaning up the TF Apply json secret output with exception: ", e);
           }
 
           try {

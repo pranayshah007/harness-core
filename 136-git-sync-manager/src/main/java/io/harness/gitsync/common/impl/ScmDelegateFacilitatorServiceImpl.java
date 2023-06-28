@@ -1084,6 +1084,9 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
     }
 
     if (delegateResponseData instanceof ErrorNotifyResponseData) {
+      ErrorNotifyResponseData errorNotifyResponseData = (ErrorNotifyResponseData) delegateResponseData;
+      log.error("Got Error Response from Delegate. {}", errorNotifyResponseData.getErrorMessage(),
+          errorNotifyResponseData.getException());
       throw new ScmDelegateException(defaultDelegateErrorMessage);
     }
     return delegateResponseData;
@@ -1098,8 +1101,11 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
         connectorDetailsToFileLocationMapping = new HashMap<>();
 
     gitFileBatchRequest.getGetBatchFileRequestIdentifierGitFileRequestV2Map().forEach((identifier, request) -> {
-      ConnectorDetails key =
-          ConnectorDetails.builder().scope(request.getScope()).connectorRef(request.getConnectorRef()).build();
+      ConnectorDetails key = ConnectorDetails.builder()
+                                 .scope(request.getScope())
+                                 .connectorRef(request.getConnectorRef())
+                                 .repo(request.getRepo())
+                                 .build();
       populateScmConnectorEncryptionDetailsMap(
           key, connectorDetailsToEncryptedDataDetailsMapping, request.getScope(), request.getScmConnector());
       GitFileLocationDetails gitFileLocationDetails = getGitFileLocationDetails(request);

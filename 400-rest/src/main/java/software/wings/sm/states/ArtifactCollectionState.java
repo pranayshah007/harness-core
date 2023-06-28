@@ -14,6 +14,7 @@ import static io.harness.beans.FeatureName.ADD_MANIFEST_COLLECTION_STEP;
 import static io.harness.beans.FeatureName.ARTIFACT_COLLECTION_CONFIGURABLE;
 import static io.harness.beans.FeatureName.SAVE_ARTIFACT_TO_DB;
 import static io.harness.beans.FeatureName.SORT_ARTIFACTS_IN_UPDATED_ORDER;
+import static io.harness.beans.FeatureName.SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -41,6 +42,7 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.manifests.request.ManifestCollectionParams;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.FailureType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.expression.ExpressionEvaluator;
@@ -301,6 +303,8 @@ public class ArtifactCollectionState extends State {
   private ExecutionResponse collectArtifact(ExecutionContext context, ArtifactStream artifactStream) {
     String evaluatedBuildNo = getEvaluatedBuildNo(context);
     String waitId = generateUuid();
+    boolean isTimeoutFailureSupported =
+        featureFlagService.isEnabled(SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW, context.getAccountId());
 
     // if collection enabled and buildno is empty, get last collected artifact from db and return.
     if (!Boolean.FALSE.equals(artifactStream.getCollectionEnabled()) && (isBlank(evaluatedBuildNo) || isRegex())) {
@@ -358,6 +362,8 @@ public class ArtifactCollectionState extends State {
           artifactCollectionUtils.getBuildSourceParameters(artifactStream, settingAttribute, false, false);
       buildSourceRequest.setBuildSourceRequestType(BuildSourceRequestType.GET_BUILD);
       buildSourceRequest.setShouldFetchSecretFromCache(false);
+      buildSourceRequest.setTimeoutSupported(isTimeoutFailureSupported);
+      buildSourceRequest.setTimeout(getTimeoutMillis());
       buildSourceRequest.setBuildCollectParameters(
           BuildCollectParameters.builder()
               .buildNo(evaluatedBuildNo)
@@ -692,6 +698,15 @@ public class ArtifactCollectionState extends State {
           }
         }
         String errorMessage = buildSourceExecutionResponse.getErrorMessage();
+        if (buildSourceExecutionResponse.isTimeoutError()) {
+          return ExecutionResponse.builder()
+              .executionStatus(FAILED)
+              .failureTypes(FailureType.TIMEOUT)
+              .errorMessage(isEmpty(errorMessage) ? String.format("Collect artifact stream %s, buildNo %s timed out",
+                                artifactStream.getName(), evaluatedBuildNo)
+                                                  : errorMessage)
+              .build();
+        }
         return ExecutionResponse.builder()
             .executionStatus(FAILED)
             .errorMessage(isEmpty(errorMessage)
@@ -794,6 +809,16 @@ public class ArtifactCollectionState extends State {
             .build();
       } else {
         String errorMessage = helmCollectChartResponse.getErrorMessage();
+        if (helmCollectChartResponse.isTimeoutError()) {
+          return ExecutionResponse.builder()
+              .executionStatus(FAILED)
+              .failureTypes(FailureType.TIMEOUT)
+              .errorMessage(errorMessage.isEmpty()
+                      ? String.format("Collect build version %s for manifest source %s timed out", evaluatedBuildNo,
+                          applicationManifest.getName())
+                      : errorMessage)
+              .build();
+        }
         return ExecutionResponse.builder()
             .executionStatus(FAILED)
             .errorMessage(isEmpty(errorMessage)

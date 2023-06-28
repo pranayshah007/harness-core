@@ -1,7 +1,7 @@
-subject: "Pipeline ${pipelineName} ${status}."
+subject: "Pipeline ${pipelineName} ${status} for stage: ${runningStages}."
 body: "
 <html>
-<b>Pipeline  <a href=\"${pipelineExecutionLink}\">${pipelineName}</a>  ${status}</b><br><br>
+<b>Pipeline  <a href=\"${pipelineExecutionLink}\">${pipelineName}</a>  ${status} for stage: ${runningStages}.</b><br><br>
 
 <b>Actions:</b><br>
 <b>${action}</b><br><br>

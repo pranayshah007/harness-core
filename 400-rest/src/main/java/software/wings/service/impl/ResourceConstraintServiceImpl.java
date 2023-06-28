@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.govern.Switch.unhandled;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.persistence.HQuery.allChecks;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
@@ -69,6 +70,7 @@ import software.wings.sm.states.HoldingScope;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.DuplicateKeyException;
@@ -93,6 +95,7 @@ import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 @ValidateOnExecution
 @Slf4j
 public class ResourceConstraintServiceImpl implements ResourceConstraintService, ConstraintRegistry {
+  private static final int PARTITION_SIZE = 250;
   @Inject private WorkflowExecutionService workflowExecutionService;
   @Inject private StateExecutionService stateExecutionService;
 
@@ -337,52 +340,45 @@ public class ResourceConstraintServiceImpl implements ResourceConstraintService,
   public List<ResourceConstraintUsage> usage(String accountId, List<String> resourceConstraintIds) {
     Map<String, List<ResourceConstraintUsage.ActiveScope>> map = new HashMap<>();
 
-    try (HIterator<ResourceConstraintInstance> iterator = new HIterator<ResourceConstraintInstance>(
-             wingsPersistence.createQuery(ResourceConstraintInstance.class, excludeAuthority)
-                 .field(ResourceConstraintInstanceKeys.resourceConstraintId)
-                 .in(resourceConstraintIds)
-                 .filter(ResourceConstraintInstanceKeys.state, State.ACTIVE.name())
-                 .order(Sort.ascending(ResourceConstraintInstanceKeys.order))
-                 .fetch())) {
-      for (ResourceConstraintInstance instance : iterator) {
-        final List<ActiveScope> activeScopes =
-            map.computeIfAbsent(instance.getResourceConstraintId(), key -> new ArrayList<ActiveScope>());
+    final List<List<String>> partitions = Lists.partition(resourceConstraintIds, PARTITION_SIZE);
 
-        final ActiveScopeBuilder builder = ActiveScope.builder()
-                                               .releaseEntityType(instance.getReleaseEntityType())
-                                               .releaseEntityId(instance.getReleaseEntityId())
-                                               .unit(instance.getResourceUnit())
-                                               .permits(instance.getPermits())
-                                               .acquiredAt(instance.getAcquiredAt());
+    for (List<String> partition : partitions) {
+      try (HIterator<ResourceConstraintInstance> iterator = new HIterator<>(createUsageQuery(partition).fetch())) {
+        for (ResourceConstraintInstance instance : iterator) {
+          final List<ActiveScope> activeScopes =
+              map.computeIfAbsent(instance.getResourceConstraintId(), key -> new ArrayList<>());
 
-        HoldingScope scope = HoldingScope.valueOf(instance.getReleaseEntityType());
-        switch (scope) {
-          case PIPELINE: {
-            final WorkflowExecution workflowExecution = workflowExecutionService.fetchWorkflowExecution(
-                instance.getAppId(), instance.getReleaseEntityId(), WorkflowExecutionKeys.name);
-            builder.releaseEntityName(workflowExecution.getName());
-            break;
+          final ActiveScopeBuilder builder = ActiveScope.builder()
+                                                 .releaseEntityType(instance.getReleaseEntityType())
+                                                 .releaseEntityId(instance.getReleaseEntityId())
+                                                 .unit(instance.getResourceUnit())
+                                                 .permits(instance.getPermits())
+                                                 .acquiredAt(instance.getAcquiredAt());
+
+          HoldingScope scope = HoldingScope.valueOf(instance.getReleaseEntityType());
+          switch (scope) {
+            case PIPELINE:
+            case WORKFLOW: {
+              final WorkflowExecution workflowExecution = workflowExecutionService.fetchWorkflowExecution(
+                  instance.getAppId(), instance.getReleaseEntityId(), WorkflowExecutionKeys.name);
+              builder.releaseEntityName(workflowExecution.getName());
+              break;
+            }
+            case PHASE: {
+              final WorkflowExecution workflowExecution =
+                  workflowExecutionService.fetchWorkflowExecution(instance.getAppId(),
+                      ResourceConstraintService.workflowExecutionIdFromReleaseEntityId(instance.getReleaseEntityId()),
+                      WorkflowExecutionKeys.name);
+              builder.releaseEntityName(workflowExecution.getName() + ", Phase: "
+                  + ResourceConstraintService.phaseNameFromReleaseEntityId(instance.getReleaseEntityId()));
+              break;
+            }
+            default:
+              unhandled(scope);
           }
-          case WORKFLOW: {
-            final WorkflowExecution workflowExecution = workflowExecutionService.fetchWorkflowExecution(
-                instance.getAppId(), instance.getReleaseEntityId(), WorkflowExecutionKeys.name);
-            builder.releaseEntityName(workflowExecution.getName());
-            break;
-          }
-          case PHASE: {
-            final WorkflowExecution workflowExecution =
-                workflowExecutionService.fetchWorkflowExecution(instance.getAppId(),
-                    ResourceConstraintService.workflowExecutionIdFromReleaseEntityId(instance.getReleaseEntityId()),
-                    WorkflowExecutionKeys.name);
-            builder.releaseEntityName(workflowExecution.getName()
-                + ", Phase: " + ResourceConstraintService.phaseNameFromReleaseEntityId(instance.getReleaseEntityId()));
-            break;
-          }
-          default:
-            unhandled(scope);
+
+          activeScopes.add(builder.build());
         }
-
-        activeScopes.add(builder.build());
       }
     }
 
@@ -394,6 +390,24 @@ public class ResourceConstraintServiceImpl implements ResourceConstraintService,
                    .activeScopes(entry.getValue())
                    .build())
         .collect(toList());
+  }
+
+  private Query<ResourceConstraintInstance> createUsageQuery(List<String> resourceConstraintIds) {
+    final Query<ResourceConstraintInstance> query =
+        wingsPersistence.createQuery(ResourceConstraintInstance.class, excludeAuthority)
+            .field(ResourceConstraintInstanceKeys.resourceConstraintId)
+            .in(resourceConstraintIds)
+            .filter(ResourceConstraintInstanceKeys.state, State.ACTIVE.name())
+            .order(Sort.ascending(ResourceConstraintInstanceKeys.order))
+            .limit(NO_LIMIT);
+    query.project(ResourceConstraintInstanceKeys.releaseEntityId, true);
+    query.project(ResourceConstraintInstanceKeys.releaseEntityType, true);
+    query.project(ResourceConstraintInstanceKeys.resourceConstraintId, true);
+    query.project(ResourceConstraintInstanceKeys.resourceUnit, true);
+    query.project(ResourceConstraintInstanceKeys.permits, true);
+    query.project(ResourceConstraintInstanceKeys.acquiredAt, true);
+    query.project(ResourceConstraintInstanceKeys.appId, true);
+    return query;
   }
 
   @Override

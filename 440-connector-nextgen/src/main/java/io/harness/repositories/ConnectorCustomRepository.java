@@ -34,6 +34,8 @@ public interface ConnectorCustomRepository {
   Page<Connector> findAll(
       Criteria criteria, Pageable pageable, String projectIdentifier, String orgIdentifier, String accountIdentifier);
 
+  Page<Connector> findAll(Criteria criteria, Pageable pageable);
+
   Connector update(Criteria criteria, Update update, ChangeType changeType, String projectIdentifier,
       String orgIdentifier, String accountIdentifier);
 

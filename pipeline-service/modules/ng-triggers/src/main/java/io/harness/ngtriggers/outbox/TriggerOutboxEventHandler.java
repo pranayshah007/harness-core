@@ -61,7 +61,7 @@ public class TriggerOutboxEventHandler implements OutboxEventHandler {
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.UPDATE)
                                 .module(ModuleType.CORE)
-                                .newYaml(event.getNewTriggerEntity().getYaml())
+                                .newYaml(event.getNewTriggerEntity().getYaml().replace("---\n", ""))
                                 .oldYaml(event.getOldTriggerEntity().getYaml())
                                 .timestamp(outboxEvent.getCreatedAt())
                                 .resource(ResourceDTO.fromResource(outboxEvent.getResource()))

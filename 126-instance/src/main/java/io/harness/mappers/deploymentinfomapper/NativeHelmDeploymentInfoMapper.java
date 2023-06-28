@@ -23,6 +23,7 @@ public class NativeHelmDeploymentInfoMapper {
         .releaseName(nativeHelmDeploymentInfo.getReleaseName())
         .helmChartInfo(nativeHelmDeploymentInfo.getHelmChartInfo())
         .helmVersion(nativeHelmDeploymentInfo.getHelmVersion())
+        .cloudConfigMetadata(nativeHelmDeploymentInfo.getCloudConfigMetadata())
         .build();
   }
 
@@ -32,6 +33,7 @@ public class NativeHelmDeploymentInfoMapper {
         .releaseName(nativeHelmDeploymentInfoDTO.getReleaseName())
         .helmChartInfo(nativeHelmDeploymentInfoDTO.getHelmChartInfo())
         .helmVersion(nativeHelmDeploymentInfoDTO.getHelmVersion())
+        .cloudConfigMetadata(nativeHelmDeploymentInfoDTO.getCloudConfigMetadata())
         .build();
   }
 }

@@ -37,7 +37,7 @@ import java.util.List;
 public class JenkinsBuildStep extends CdTaskExecutable<ArtifactTaskResponse> {
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType(StepSpecTypeConstants.JENKINS_BUILD).setStepCategory(StepCategory.STEP).build();
-  public String COMMAND_UNIT = "Execute";
+  public static final String COMMAND_UNIT = "Execute";
 
   @Inject private JenkinsBuildStepHelperService jenkinsBuildStepHelperService;
   @Inject private PipelineRbacHelper pipelineRbacHelper;

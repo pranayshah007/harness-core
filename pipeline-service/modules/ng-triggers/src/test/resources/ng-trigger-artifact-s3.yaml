@@ -1,0 +1,45 @@
+trigger:
+  name: first trigger
+  identifier: first_trigger
+  enabled: true
+  description: ""
+  tags: {}
+  orgIdentifier: org
+  projectIdentifier: proj
+  pipelineIdentifier: pipeline
+  source:
+    type: Artifact
+    spec:
+        stageIdentifier: dev
+        artifactRef: primary
+        type: AmazonS3
+        spec:
+          connectorRef: conn
+          bucketName: test1
+          filePathRegex: test/*
+          region: us-east-1
+          eventConditions:
+            - key: build
+              operator: Regex
+              value: release.*
+  inputYaml: |
+    pipeline:
+      identifier: AmazonS3
+      stages:
+        - stage:
+            identifier: S3
+            type: Deployment
+            spec:
+              service:
+                serviceInputs:
+                  serviceDefinition:
+                    type: ServerlessAwsLambda
+                    spec:
+                      artifacts:
+                        primary:
+                          primaryArtifactRef: das
+                          sources:
+                            - identifier: das
+                              type: AmazonS3
+                              spec:
+                                filePath: <+trigger.artifact.build>

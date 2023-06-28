@@ -19,8 +19,10 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.exception.TaskNGDataException;
+import io.harness.delegate.serverless.ServerlessAwsLambdaRollbackV2CommandTaskHandler;
 import io.harness.delegate.serverless.ServerlessCommandTaskHandler;
 import io.harness.delegate.task.serverless.request.ServerlessCommandRequest;
+import io.harness.delegate.task.serverless.request.ServerlessRollbackV2Request;
 import io.harness.delegate.task.serverless.response.ServerlessCommandResponse;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.serverless.model.ServerlessDelegateTaskParams;
@@ -72,6 +74,46 @@ public class ServerlessDelegateTaskHelper {
     } finally {
       cleanup(workingDirectory);
     }
+  }
+
+  public ServerlessCommandResponse getServerlessRollbackV2Response(
+      ServerlessAwsLambdaRollbackV2CommandTaskHandler commandTaskHandler,
+      ServerlessRollbackV2Request serverlessCommandRequest, ILogStreamingTaskClient iLogStreamingTaskClient) {
+    CommandUnitsProgress commandUnitsProgress = serverlessCommandRequest.getCommandUnitsProgress() != null
+        ? serverlessCommandRequest.getCommandUnitsProgress()
+        : CommandUnitsProgress.builder().build();
+
+    log.info("Starting task execution for command: {}", serverlessCommandRequest.getServerlessCommandType().name());
+    decryptRollbackV2RequestDTOs(serverlessCommandRequest);
+    String workingDirectory = Paths.get(WORKING_DIR_BASE, convertBase64UuidToCanonicalForm(generateUuid()))
+                                  .normalize()
+                                  .toAbsolutePath()
+                                  .toString();
+
+    try {
+      createDirectoryIfDoesNotExist(workingDirectory);
+      waitForDirectoryToBeAccessibleOutOfProcess(workingDirectory, 10);
+      ServerlessDelegateTaskParams serverlessDelegateTaskParams =
+          ServerlessDelegateTaskParams.builder().workingDirectory(workingDirectory).build();
+      ServerlessCommandResponse serverlessCommandResponse = commandTaskHandler.executeTaskInternal(
+          serverlessCommandRequest, serverlessDelegateTaskParams, iLogStreamingTaskClient, commandUnitsProgress);
+      serverlessCommandResponse.setCommandUnitsProgress(
+          UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress));
+      return serverlessCommandResponse;
+    } catch (Exception e) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception in processing serverless task [{}]",
+          serverlessCommandRequest.getCommandName() + ":" + serverlessCommandRequest.getServerlessCommandType(),
+          sanitizedException);
+      throw new TaskNGDataException(
+          UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), sanitizedException);
+    } finally {
+      cleanup(workingDirectory);
+    }
+  }
+
+  private void decryptRollbackV2RequestDTOs(ServerlessRollbackV2Request serverlessRollbackV2Request) {
+    serverlessInfraConfigHelper.decryptServerlessInfraConfig(serverlessRollbackV2Request.getServerlessInfraConfig());
   }
 
   private void decryptRequestDTOs(ServerlessCommandRequest serverlessCommandRequest) {

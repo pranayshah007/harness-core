@@ -50,4 +50,5 @@ public interface StripeHelper {
 
   PaymentMethodCollectionDTO listPaymentMethods(String customerId);
   InvoiceDetailDTO finalizeInvoice(String invoiceId);
+  String retrieveClientSecret(String customerId);
 }

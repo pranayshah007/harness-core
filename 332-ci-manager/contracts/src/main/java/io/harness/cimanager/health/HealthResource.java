@@ -39,4 +39,14 @@ public interface HealthResource {
   @ApiOperation(value = "get health for CI service", nickname = "getCIHealthStatus", hidden = true)
   @Operation(hidden = true)
   RestResponse<String> get() throws Exception;
+
+  @GET
+  @Path("liveness")
+  @Timed
+  @ExceptionMetered
+  @ApiOperation(
+      value = "get liveness status for CIManager service", nickname = "getCIManagerLivenessStatus", hidden = true)
+  @Operation(hidden = true)
+  RestResponse<String>
+  doLivenessCheck();
 }

@@ -12,6 +12,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
@@ -33,15 +34,19 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class GithubPackagesRequestResponseMapper {
   public GithubPackagesInternalConfig toGithubPackagesInternalConfig(GithubPackagesArtifactDelegateRequest request) {
+    return toGithubPackagesInternalConfig(request.getGithubConnectorDTO());
+  }
+
+  public GithubPackagesInternalConfig toGithubPackagesInternalConfig(GithubConnectorDTO githubConnectorDTO) {
     String password = "";
     String username = "";
     String token = "";
 
-    if (request.getGithubConnectorDTO().getAuthentication() != null
-        && request.getGithubConnectorDTO().getAuthentication().getCredentials() != null) {
-      if (request.getGithubConnectorDTO().getAuthentication().getAuthType() == GitAuthType.HTTP) {
+    if (githubConnectorDTO.getAuthentication() != null
+        && githubConnectorDTO.getAuthentication().getCredentials() != null) {
+      if (githubConnectorDTO.getAuthentication().getAuthType() == GitAuthType.HTTP) {
         GithubHttpCredentialsDTO httpDTO =
-            (GithubHttpCredentialsDTO) request.getGithubConnectorDTO().getAuthentication().getCredentials();
+            (GithubHttpCredentialsDTO) githubConnectorDTO.getAuthentication().getCredentials();
 
         if (httpDTO.getType() == GithubHttpAuthenticationType.USERNAME_AND_PASSWORD) {
           GithubUsernamePasswordDTO githubUsernamePasswordDTO =
@@ -59,7 +64,7 @@ public class GithubPackagesRequestResponseMapper {
       }
     }
 
-    GithubApiAccessDTO githubApiAccessDTO = request.getGithubConnectorDTO().getApiAccess();
+    GithubApiAccessDTO githubApiAccessDTO = githubConnectorDTO.getApiAccess();
 
     if (githubApiAccessDTO == null) {
       throw new InvalidRequestException("Please enable the API Access for the Github Connector");
@@ -84,8 +89,8 @@ public class GithubPackagesRequestResponseMapper {
     }
 
     return GithubPackagesInternalConfig.builder()
-        .githubPackagesUrl(request.getGithubConnectorDTO().getUrl())
-        .authMechanism(((GithubHttpCredentialsDTO) request.getGithubConnectorDTO().getAuthentication().getCredentials())
+        .githubPackagesUrl(githubConnectorDTO.getUrl())
+        .authMechanism(((GithubHttpCredentialsDTO) githubConnectorDTO.getAuthentication().getCredentials())
                            .getType()
                            .getDisplayName())
         .username(username)

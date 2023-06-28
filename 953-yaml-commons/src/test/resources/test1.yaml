@@ -6,6 +6,6 @@ a:
     f: harness
     g: default
     h:
-    - listElem1
-    - listElem2
-    - listElem3
+      - listElem1
+      - listElem2
+      - listElem3

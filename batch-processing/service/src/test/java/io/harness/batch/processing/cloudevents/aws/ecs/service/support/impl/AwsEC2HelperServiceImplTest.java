@@ -7,6 +7,7 @@
 
 package io.harness.batch.processing.cloudevents.aws.ecs.service.support.impl;
 
+import static io.harness.rule.OwnerRule.ANMOL;
 import static io.harness.rule.OwnerRule.HITESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,6 +27,8 @@ import com.amazonaws.services.ec2.model.DescribeInstancesResult;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.Reservation;
 import com.google.common.collect.ImmutableSet;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import org.junit.Before;
@@ -33,9 +36,16 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import software.amazon.awssdk.services.account.AccountClient;
+import software.amazon.awssdk.services.account.model.ListRegionsRequest;
+import software.amazon.awssdk.services.account.model.ListRegionsResponse;
+import software.amazon.awssdk.services.account.model.Region;
+import software.amazon.awssdk.services.account.model.RegionOptStatus;
 
 public class AwsEC2HelperServiceImplTest extends CategoryTest {
   @Spy private AwsEC2HelperServiceImpl awsEC2HelperService;
+  private static final List<RegionOptStatus> REGION_OPT_STATUSES =
+      Arrays.asList(RegionOptStatus.ENABLED, RegionOptStatus.ENABLED_BY_DEFAULT);
 
   @Before
   public void setUp() throws Exception {
@@ -68,5 +78,35 @@ public class AwsEC2HelperServiceImplTest extends CategoryTest {
         awsEC2HelperService.listEc2Instances(AwsCrossAccountAttributes.builder().build(), instanceIds, "REGION");
     assertThat(instances).hasSize(2);
     assertThat(instances.get(0)).isEqualTo(instanceOne);
+  }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testListRegions() {
+    AccountClient mockClient = mock(AccountClient.class);
+    doReturn(mockClient).when(awsEC2HelperService).getAmazonAccountClient(any());
+
+    List<Region> regions = Collections.singletonList(Region.builder().regionName("us-east-1").build());
+    doReturn(ListRegionsResponse.builder().regions(regions).build())
+        .when(mockClient)
+        .listRegions(ListRegionsRequest.builder().regionOptStatusContains(REGION_OPT_STATUSES).build());
+
+    List<String> actualRegions = awsEC2HelperService.listRegions(AwsCrossAccountAttributes.builder().build());
+    assertThat(actualRegions).hasSize(1);
+    assertThat(actualRegions.get(0)).isEqualTo(regions.get(0).regionName());
+  }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testListRegions_ListRegionsThrowsException() {
+    AccountClient mockClient = mock(AccountClient.class);
+    doReturn(mockClient).when(awsEC2HelperService).getAmazonAccountClient(any());
+
+    doReturn(null).when(mockClient).listRegions(ListRegionsRequest.builder().build());
+
+    List<String> actualRegions = awsEC2HelperService.listRegions(AwsCrossAccountAttributes.builder().build());
+    assertThat(actualRegions).hasSize(5);
   }
 }

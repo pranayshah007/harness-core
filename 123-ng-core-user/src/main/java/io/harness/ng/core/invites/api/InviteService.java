@@ -45,6 +45,8 @@ public interface InviteService {
 
   boolean completeInvite(Optional<Invite> inviteOpt);
 
+  boolean completeUserNgSetupWithoutInvite(String email, String accountId);
+
   Optional<Invite> deleteInvite(String inviteId);
 
   Optional<Invite> getInviteFromToken(String jwtToken, boolean allowDeleted);

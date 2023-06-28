@@ -102,5 +102,5 @@ public class SLIRecord extends VerificationTaskBase implements PersistentEntity,
 
   private int sliVersion;
 
-  @Builder.Default @FdTtlIndex private Date validUntil = Date.from(OffsetDateTime.now().plusDays(180).toInstant());
+  @Builder.Default @FdTtlIndex private Date validUntil = Date.from(OffsetDateTime.now().plusDays(90).toInstant());
 }

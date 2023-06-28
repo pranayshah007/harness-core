@@ -75,8 +75,9 @@ public class ExceptionLogger {
       if (list.stream().noneMatch(msg -> StringUtils.equals(finalResponseMessage.getMessage(), msg.getMessage()))) {
         list.add(responseMessage);
       }
-    }
 
+      list.addAll(exception.getResponseMessages());
+    }
     return list;
   }
   // the following method is added to log the exceptions that are coming from wingsExceptionMapperV2

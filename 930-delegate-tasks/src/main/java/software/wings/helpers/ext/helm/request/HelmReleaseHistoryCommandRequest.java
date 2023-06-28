@@ -52,6 +52,6 @@ public class HelmReleaseHistoryCommandRequest extends HelmCommandRequest {
         containerServiceParams, releaseName, null, null, gitConfig, encryptedDataDetails, executionLogCallback,
         commandFlags, helmCommandFlag, null, helmVersion, ocPath, workingDir, variableOverridesYamlFiles, gitFileConfig,
         k8SteadyStateCheckEnabled, mergeCapabilities, isGitHostConnectivityCheck, useLatestChartMuseumVersion,
-        useNewKubectlVersion, gcpKeyPath, false);
+        useNewKubectlVersion, gcpKeyPath, false, false);
   }
 }

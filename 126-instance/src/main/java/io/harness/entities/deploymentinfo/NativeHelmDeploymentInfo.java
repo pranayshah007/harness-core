@@ -10,6 +10,7 @@ package io.harness.entities.deploymentinfo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.helm.HelmChartInfo;
+import io.harness.helper.K8sCloudConfigMetadata;
 import io.harness.k8s.model.HelmVersion;
 
 import java.util.LinkedHashSet;
@@ -27,4 +28,5 @@ public class NativeHelmDeploymentInfo extends DeploymentInfo {
   @NotNull private String releaseName;
   private HelmChartInfo helmChartInfo;
   @NotNull private HelmVersion helmVersion;
+  @EqualsAndHashCode.Exclude private K8sCloudConfigMetadata cloudConfigMetadata;
 }

@@ -21,6 +21,7 @@ import io.github.resilience4j.core.IntervalFunction;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
 import java.time.Duration;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import retrofit2.Response;
 
@@ -46,11 +47,12 @@ public class RancherClusterClientImpl implements RancherClusterClient {
   @Inject private RancherRestClientFactory rancherRestClientFactory;
 
   @Override
-  public RancherListClustersResponse listClusters(String bearerToken, String url) {
+  public RancherListClustersResponse listClusters(
+      String bearerToken, String url, Map<String, String> pageRequestParams) {
     try {
       RancherRestClient rancherRestClient = rancherRestClientFactory.getRestClient(url, bearerToken);
       Response<RancherListClustersResponse> listClustersResponse =
-          Retry.decorateCallable(retry, () -> rancherRestClient.listClusters().execute()).call();
+          Retry.decorateCallable(retry, () -> rancherRestClient.listClusters(pageRequestParams).execute()).call();
 
       if (isResponseUnsuccessfulOrEmpty(listClustersResponse)) {
         throw createRancherRuntimeException(

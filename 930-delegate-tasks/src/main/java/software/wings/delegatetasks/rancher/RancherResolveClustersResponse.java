@@ -28,4 +28,5 @@ public final class RancherResolveClustersResponse implements DelegateTaskNotifyR
   private ExecutionStatus executionStatus;
   private String errorMessage;
   private List<String> clusters;
+  private boolean isTimeoutError;
 }

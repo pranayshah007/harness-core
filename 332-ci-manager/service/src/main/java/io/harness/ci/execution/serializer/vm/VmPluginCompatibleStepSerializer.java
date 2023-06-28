@@ -53,7 +53,7 @@ public class VmPluginCompatibleStepSerializer {
       String stepName) {
     long timeout = TimeoutUtils.getTimeoutInSeconds(parameterFieldTimeout, pluginCompatibleStep.getDefaultTimeout());
     if (CIStepInfoUtils.canRunVmStepOnHost(pluginCompatibleStep.getNonYamlInfo().getStepInfoType(), stageInfraDetails,
-            AmbianceUtils.getAccountId(ambiance), ciExecutionConfigService, featureFlagService)) {
+            AmbianceUtils.getAccountId(ambiance), ciExecutionConfigService, featureFlagService, pluginCompatibleStep)) {
       Map<String, String> envVars = pluginSettingUtils.getPluginCompatibleEnvVariables(
           pluginCompatibleStep, identifier, timeout, ambiance, Type.VM, true, false);
       return getHostedStep(ambiance, pluginCompatibleStep, envVars, timeout);
@@ -66,7 +66,7 @@ public class VmPluginCompatibleStepSerializer {
   private VmRunStep getHostedStep(
       Ambiance ambiance, PluginCompatibleStep pluginCompatibleStep, Map<String, String> envVars, long timeout) {
     String name = ciExecutionConfigService.getContainerlessPluginNameForVM(
-        pluginCompatibleStep.getNonYamlInfo().getStepInfoType());
+        pluginCompatibleStep.getNonYamlInfo().getStepInfoType(), pluginCompatibleStep);
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     return VmRunStep.builder()
         .entrypoint(Arrays.asList("plugin", "-kind", "harness", "-name", name))
@@ -111,7 +111,7 @@ public class VmPluginCompatibleStepSerializer {
       StageInfraDetails stageInfraDetails, String identifier) {
     Set<String> secretSet = new HashSet<>();
     if (CIStepInfoUtils.canRunVmStepOnHost(pluginCompatibleStep.getNonYamlInfo().getStepInfoType(), stageInfraDetails,
-            AmbianceUtils.getAccountId(ambiance), ciExecutionConfigService, featureFlagService)) {
+            AmbianceUtils.getAccountId(ambiance), ciExecutionConfigService, featureFlagService, pluginCompatibleStep)) {
       // Check if DLC Setup is required
       if (pluginSettingUtils.dlcSetupRequired(pluginCompatibleStep)) {
         Set<String> dlcSecrets = setupDlc(pluginCompatibleStep, AmbianceUtils.getAccountId(ambiance), identifier);

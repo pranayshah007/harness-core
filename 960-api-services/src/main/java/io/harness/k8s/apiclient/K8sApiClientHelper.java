@@ -16,18 +16,20 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.k8s.model.KubernetesConfig;
+import io.harness.utils.system.SystemWrapper;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
-import com.google.inject.Singleton;
+import java.util.Optional;
+import lombok.experimental.UtilityClass;
 
-@Singleton
+@UtilityClass
 @OwnedBy(CDP)
 public class K8sApiClientHelper {
-  public static String generateExecFormatKubeconfig(KubernetesConfig config) {
+  public String generateExecFormatKubeconfig(KubernetesConfig config) {
     String insecureSkipTlsVerify = isEmpty(config.getCaCert()) ? "insecure-skip-tls-verify: true" : "";
     String certificateAuthorityData =
         isNotEmpty(config.getCaCert()) ? ("certificate-authority-data: " + String.valueOf(config.getCaCert())) : "";
@@ -60,5 +62,17 @@ public class K8sApiClientHelper {
                        .replace("CURRENT_CONTEXT", config.getAzureConfig().getCurrentContext());
     }
     return kubeconfig;
+  }
+
+  public Optional<Long> getTimeout(String environmentVariable) {
+    try {
+      String timeout = SystemWrapper.getenv(environmentVariable);
+      if (isEmpty(timeout)) {
+        return Optional.empty();
+      }
+      return Optional.of(Long.parseLong(timeout));
+    } catch (Exception e) {
+      return Optional.empty();
+    }
   }
 }

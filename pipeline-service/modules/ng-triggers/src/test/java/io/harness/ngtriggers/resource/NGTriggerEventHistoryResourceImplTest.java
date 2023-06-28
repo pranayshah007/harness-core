@@ -158,6 +158,7 @@ public class NGTriggerEventHistoryResourceImplTest extends CategoryTest {
     assertThat(responseDto.getTriggerIdentifier()).isEqualTo(IDENTIFIER);
     assertThat(responseDto.getFinalStatus())
         .isEqualTo(TriggerEventResponse.FinalStatus.valueOf(eventHistory.getFinalStatus()));
+    assertThat(responseDto.getTriggerEventStatus().getMessage()).isEqualTo("No matching trigger for repo");
   }
 
   @Test
@@ -202,7 +203,7 @@ public class NGTriggerEventHistoryResourceImplTest extends CategoryTest {
     assertThat(responseDto.getTargetIdentifier()).isEqualTo(PIPELINE_IDENTIFIER);
     assertThat(responseDto.getFinalStatus()).isNull();
     assertThat(responseDto.getTriggerEventStatus().getStatus()).isEqualTo(TriggerEventStatus.FinalResponse.FAILURE);
-    assertThat(responseDto.getTriggerEventStatus().getMessage()).isEqualTo("UNKNOWN_STATUS");
+    assertThat(responseDto.getTriggerEventStatus().getMessage()).isEqualTo("Unknown status");
   }
 
   @Test
@@ -237,6 +238,7 @@ public class NGTriggerEventHistoryResourceImplTest extends CategoryTest {
     assertThat(responseDto.getEventCorrelationId()).isEqualTo(EVENT_CORRELATION_ID);
     assertThat(responseDto.getFinalStatus())
         .isEqualTo(TriggerEventResponse.FinalStatus.valueOf(eventHistory.getFinalStatus()));
+    assertThat(responseDto.getTriggerEventStatus().getMessage()).isEqualTo("No matching trigger for repo");
   }
 
   @Test
@@ -270,6 +272,6 @@ public class NGTriggerEventHistoryResourceImplTest extends CategoryTest {
     NGTriggerEventHistoryBaseDTO responseDto = content.toList().get(0);
     assertThat(responseDto.getFinalStatus()).isNull();
     assertThat(responseDto.getTriggerEventStatus().getStatus()).isEqualTo(TriggerEventStatus.FinalResponse.FAILURE);
-    assertThat(responseDto.getTriggerEventStatus().getMessage()).isEqualTo("UNKNOWN_STATUS");
+    assertThat(responseDto.getTriggerEventStatus().getMessage()).isEqualTo("Unknown status");
   }
 }

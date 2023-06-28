@@ -71,7 +71,7 @@ public class HttpConnectionExecutionCapabilityCheckTest {
 
       when(Http.connectableHttpUrlWithoutFollowingRedirect(
                eq(httpConnectionExecutionCapability_HeaderNull_IgnoreRedirectTrue.fetchConnectableUrl()),
-               ArgumentMatchers.isNull()))
+               ArgumentMatchers.isNull(), eq(false)))
           .thenAnswer(mockBool -> true);
       CapabilityResponse response = httpConnectionExecutionCapabilityCheck.performCapabilityCheck(
           httpConnectionExecutionCapability_HeaderNull_IgnoreRedirectTrue);
@@ -88,7 +88,7 @@ public class HttpConnectionExecutionCapabilityCheckTest {
          MockedStatic<Http> ignored1 = mockStatic(Http.class)) {
       when(StringUtils.isNotBlank(anyString())).thenAnswer(mockBool -> false);
       when(Http.connectableHttpUrl(
-               httpConnectionExecutionCapability_HeaderNull_IgnoreRedirectFalse.fetchConnectableUrl()))
+               httpConnectionExecutionCapability_HeaderNull_IgnoreRedirectFalse.fetchConnectableUrl(), false))
           .thenAnswer(mockBool -> true);
 
       CapabilityResponse response = httpConnectionExecutionCapabilityCheck.performCapabilityCheck(
@@ -107,7 +107,7 @@ public class HttpConnectionExecutionCapabilityCheckTest {
       when(StringUtils.isNotBlank(anyString())).thenAnswer(mockBool -> false);
 
       when(Http.connectableHttpUrlWithHeaders(httpConnectionExecutionCapability_Header.fetchConnectableUrl(),
-               httpConnectionExecutionCapability_Header.getHeaders()))
+               httpConnectionExecutionCapability_Header.getHeaders(), false))
           .thenAnswer(mockBool -> true);
 
       CapabilityResponse response =
@@ -123,10 +123,10 @@ public class HttpConnectionExecutionCapabilityCheckTest {
   public void performCapabilityCheck_NG_Headers_Valid() {
     try (MockedStatic<Http> ignored = mockStatic(Http.class)) {
       when(Http.connectableHttpUrlWithHeaders(httpConnectionExecutionCapability_Header.fetchConnectableUrl(),
-               httpConnectionExecutionCapability_Header.getHeaders()))
+               httpConnectionExecutionCapability_Header.getHeaders(), false))
           .thenAnswer(mockBool -> true);
       when(Http.connectableHttpUrlWithoutFollowingRedirect(
-               httpConnectionExecutionCapability_Header.fetchConnectableUrl(), new ArrayList<>()))
+               httpConnectionExecutionCapability_Header.fetchConnectableUrl(), new ArrayList<>(), false))
           .thenAnswer(mockBool -> true);
 
       CapabilityResponse response =
@@ -157,7 +157,7 @@ public class HttpConnectionExecutionCapabilityCheckTest {
       when(parameters.getCapabilityCase()).thenReturn(CapabilityParameters.CapabilityCase.HTTP_CONNECTION_PARAMETERS);
       when(parameters.getHttpConnectionParameters()).thenReturn(temp);
 
-      when(Http.connectableHttpUrl(temp.getUrl())).thenAnswer(mockBool -> false);
+      when(Http.connectableHttpUrl(temp.getUrl(), false)).thenAnswer(mockBool -> false);
 
       CapabilitySubjectPermission result =
           httpConnectionExecutionCapabilityCheck.performCapabilityCheckWithProto(parameters);
@@ -183,7 +183,8 @@ public class HttpConnectionExecutionCapabilityCheckTest {
                temp.getHeadersList()
                    .stream()
                    .map(entry -> KeyValuePair.builder().key(entry.getKey()).value(entry.getValue()).build())
-                   .collect(Collectors.toList())))
+                   .collect(Collectors.toList()),
+               false))
           .thenAnswer(mockBool -> false);
 
       CapabilitySubjectPermission result =

@@ -153,9 +153,7 @@ public class PreflightServiceImplTest extends CategoryTest {
     doReturn(entityDetails)
         .when(pipelineSetupUsageHelper)
         .getReferencesOfPipeline(accountId, orgId, projectId, pipelineId, pipelineYaml, null);
-    doNothing()
-        .when(pipelineRbacServiceImpl)
-        .validateStaticallyReferredEntities(accountId, orgId, projectId, pipelineId, pipelineYaml, entityDetails);
+    doNothing().when(pipelineRbacServiceImpl).validateStaticallyReferredEntities(entityDetails);
 
     // keeping any() here cuz saveInitialPreflightEntity has a separate test
     doReturn(Collections.emptyList()).when(connectorPreflightHandler).getConnectorCheckResponseTemplate(any());

@@ -7,7 +7,6 @@
 
 package io.harness.favorites.services;
 
-import io.harness.favorites.ResourceType;
 import io.harness.favorites.entities.Favorite;
 import io.harness.spec.server.ng.v1.model.FavoriteDTO;
 
@@ -31,8 +30,21 @@ public interface FavoritesService {
    * @return a list of favorite present in the scope for the matching resource type of the user
    */
 
-  List<Favorite> getFavorites(String accountIdentifier, String orgIdentifier, String projectIdentifier, String userId,
-      ResourceType resourceType);
+  List<Favorite> getFavorites(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String userId, String resourceType);
+
+  /**
+   *
+   * @param accountIdentifier
+   * @param orgIdentifier
+   * @param projectIdentifier
+   * @param userId
+   * @param resourceType
+   * @param resourceId
+   * @return a boolean whether the resource is a favorite
+   */
+  boolean isFavorite(String accountIdentifier, String orgIdentifier, String projectIdentifier, String userId,
+      String resourceType, String resourceId);
 
   /**
    *
@@ -57,4 +69,15 @@ public interface FavoritesService {
 
   void deleteFavorite(String accountIdentifier, String orgIdentifier, String projectIdentifier, String userId,
       String resourceType, String resourceId);
+
+  /**
+   *
+   * @param accountIdentifier
+   * @param orgIdentifier
+   * @param projectIdentifier
+   * @param resourceType
+   * @param resourceId
+   */
+  void deleteFavorites(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String resourceType, String resourceId);
 }

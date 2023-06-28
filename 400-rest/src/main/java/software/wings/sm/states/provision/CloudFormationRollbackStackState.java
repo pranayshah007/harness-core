@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.ExecutionStatus.SKIPPED;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.FeatureName.CLOUDFORMATION_CHANGE_SET;
+import static io.harness.beans.FeatureName.SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW;
 import static io.harness.context.ContextElementType.CLOUD_FORMATION_ROLLBACK;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -299,6 +300,9 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
                                                  .collect(Collectors.toList()));
       }
 
+      boolean isTimeoutFailureSupported =
+          featureFlagService.isEnabled(SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW, context.getAccountId());
+
       CloudFormationCreateStackRequest request =
           builder.stackNameSuffix(configParameter.getEntityId())
               .customStackName(configParameter.getCustomStackName())
@@ -308,6 +312,7 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
               .appId(context.getAppId())
               .cloudFormationRoleArn(roleArnRendered)
               .commandName(mainCommandUnit())
+              .timeoutSupported(isTimeoutFailureSupported)
               .activityId(activityId)
               .variables(textVariables)
               .encryptedVariables(encryptedTextVariables)
@@ -379,6 +384,10 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
     AwsConfig awsConfig = getAwsConfig(stackElement.getAwsConfigId());
     AwsHelperServiceManager.setAmazonClientSDKDefaultBackoffStrategyIfExists(context, awsConfig);
     DelegateTask delegateTask;
+
+    boolean isTimeoutFailureSupported =
+        featureFlagService.isEnabled(SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW, context.getAccountId());
+
     if (!stackElement.isStackExisted()) {
       CloudFormationDeleteStackRequest request =
           CloudFormationDeleteStackRequest.builder()
@@ -386,6 +395,7 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
               .stackNameSuffix(stackElement.getStackNameSuffix())
               .customStackName(stackElement.getCustomStackName())
               .commandType(CloudFormationCommandType.DELETE_STACK)
+              .timeoutSupported(isTimeoutFailureSupported)
               .accountId(executionContext.getApp().getAccountId())
               .cloudFormationRoleArn(executionContext.renderExpression(getCloudFormationRoleArn()))
               .appId(executionContext.getApp().getUuid())
@@ -422,6 +432,7 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
           .cloudFormationRoleArn(executionContext.renderExpression(getCloudFormationRoleArn()))
           .appId(executionContext.fetchRequiredApp().getUuid())
           .activityId(activityId)
+          .timeoutSupported(isTimeoutFailureSupported)
           .commandName(mainCommandUnit())
           .variables(stackElement.getOldStackParameters())
           .awsConfig(awsConfig)

@@ -14,7 +14,8 @@ import static io.harness.cdng.ssh.CommandUnitSpecType.DOWNLOAD_ARTIFACT;
 import static io.harness.cdng.ssh.CommandUnitSpecType.SCRIPT;
 import static io.harness.cdng.ssh.SshWinRmConstants.FILE_STORE_SCRIPT_ERROR_MSG;
 import static io.harness.cdng.ssh.utils.CommandStepUtils.getHost;
-import static io.harness.cdng.ssh.utils.CommandStepUtils.getOutputVariables;
+import static io.harness.cdng.ssh.utils.CommandStepUtils.getOutputVariableValuesWithoutSecrets;
+import static io.harness.cdng.ssh.utils.CommandStepUtils.getSecretOutputVariableValues;
 import static io.harness.cdng.ssh.utils.CommandStepUtils.getWorkingDirectory;
 import static io.harness.cdng.ssh.utils.CommandStepUtils.mergeEnvironmentVariables;
 import static io.harness.common.ParameterFieldHelper.getBooleanParameterFieldValue;
@@ -49,7 +50,6 @@ import io.harness.cdng.ssh.rollback.CommandStepRollbackHelper;
 import io.harness.cdng.ssh.rollback.SshWinRmPrepareRollbackDataOutcome;
 import io.harness.cdng.ssh.rollback.SshWinRmRollbackData;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.shell.CommandTaskParameters;
@@ -220,10 +220,13 @@ public class SshCommandStepHelper extends CDStepHelper {
 
   Map<String, String> getMergedEnvVariablesMap(
       Ambiance ambiance, CommandStepParameters commandStepParameters, InfrastructureOutcome infrastructure) {
-    LinkedHashMap<String, Object> evaluatedStageVariables =
+    Map<String, Object> evaluatedStageVariables =
         cdExpressionResolver.evaluateExpression(ambiance, "<+stage.variables>", LinkedHashMap.class);
-    LinkedHashMap<String, Object> evaluatedPipelineVariables =
+    evaluatedStageVariables = evaluateVariables(ambiance, evaluatedStageVariables);
+
+    Map<String, Object> evaluatedPipelineVariables =
         cdExpressionResolver.evaluateExpression(ambiance, "<+pipeline.variables>", LinkedHashMap.class);
+    evaluatedPipelineVariables = evaluateVariables(ambiance, evaluatedPipelineVariables);
 
     Map<String, String> finalEnvVariables = new HashMap<>();
     finalEnvVariables = mergeEnvironmentVariables(evaluatedStageVariables, finalEnvVariables);
@@ -233,17 +236,27 @@ public class SshCommandStepHelper extends CDStepHelper {
     return mergeEnvironmentVariables(commandStepParameters.getEnvironmentVariables(), finalEnvVariables);
   }
 
-  private HashMap<String, Object> getServiceVariables(Ambiance ambiance) {
-    HashMap<String, Object> serviceVariablesMap = new HashMap<>();
+  private Map<String, Object> getServiceVariables(Ambiance ambiance) {
     VariablesSweepingOutput serviceVariablesOutput = ServiceOutcomeHelper.getVariablesSweepingOutput(
         ambiance, executionSweepingOutputService, YAMLFieldNameConstants.SERVICE_VARIABLES);
+    return evaluateVariables(ambiance, serviceVariablesOutput);
+  }
 
-    serviceVariablesOutput.entrySet().stream().forEach(entry -> {
+  Map<String, Object> evaluateVariables(Ambiance ambiance, Map<String, Object> variables) {
+    if (isEmpty(variables)) {
+      return Collections.emptyMap();
+    }
+
+    HashMap<String, Object> result = new HashMap<>();
+
+    variables.entrySet().stream().forEach(entry -> {
       String value = null;
       if (entry.getValue() instanceof ParameterField) {
         ParameterField<?> parameterFieldValue = (ParameterField<?>) entry.getValue();
         if (parameterFieldValue.getValue() != null) {
           value = parameterFieldValue.getValue().toString();
+        } else if (parameterFieldValue.getExpressionValue() != null) {
+          value = parameterFieldValue.getExpressionValue();
         }
       } else if (entry.getValue() instanceof String) {
         value = (String) entry.getValue();
@@ -251,13 +264,14 @@ public class SshCommandStepHelper extends CDStepHelper {
 
       if (value != null) {
         if (EngineExpressionEvaluator.hasExpressions(value)) {
-          serviceVariablesMap.putAll(evaluateExpression(ambiance, entry, value));
+          result.putAll(evaluateExpression(ambiance, entry, value));
         } else {
-          serviceVariablesMap.put(entry.getKey(), value);
+          result.put(entry.getKey(), value);
         }
       }
     });
-    return serviceVariablesMap;
+
+    return result;
   }
 
   private HashMap<String, Object> evaluateExpression(Ambiance ambiance, Map.Entry<String, Object> entry, String value) {
@@ -301,7 +315,10 @@ public class SshCommandStepHelper extends CDStepHelper {
         .accountId(AmbianceUtils.getAccountId(ambiance))
         .executeOnDelegate(onDelegate)
         .executionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance))
-        .outputVariables(getOutputVariables(commandStepParameters.getOutputVariables()))
+        .outputVariables(getOutputVariableValuesWithoutSecrets(
+            commandStepParameters.getOutputVariables(), commandStepParameters.getSecretOutputVariablesNames()))
+        .secretOutputVariables(getSecretOutputVariableValues(
+            commandStepParameters.getOutputVariables(), commandStepParameters.getSecretOutputVariablesNames()))
         .environmentVariables(mergedEnvVariables)
         .sshInfraDelegateConfig(sshInfraDelegateConfigOutput.getSshInfraDelegateConfig())
         .artifactDelegateConfig(getArtifactDelegateConfig(ambiance))
@@ -325,6 +342,7 @@ public class SshCommandStepHelper extends CDStepHelper {
         .executeOnDelegate(onDelegate)
         .executionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance))
         .outputVariables(sshWinRmRollbackData.getOutVariables())
+        .secretOutputVariables(sshWinRmRollbackData.getSecretOutVariables())
         .environmentVariables(sshWinRmRollbackData.getEnvVariables())
         .sshInfraDelegateConfig(sshInfraDelegateConfigOutput.getSshInfraDelegateConfig())
         .artifactDelegateConfig(sshWinRmRollbackData.getArtifactDelegateConfig())
@@ -345,7 +363,10 @@ public class SshCommandStepHelper extends CDStepHelper {
         .accountId(accountId)
         .executeOnDelegate(onDelegate)
         .executionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance))
-        .outputVariables(getOutputVariables(commandStepParameters.getOutputVariables()))
+        .outputVariables(getOutputVariableValuesWithoutSecrets(
+            commandStepParameters.getOutputVariables(), commandStepParameters.getSecretOutputVariablesNames()))
+        .secretOutputVariables(getSecretOutputVariableValues(
+            commandStepParameters.getOutputVariables(), commandStepParameters.getSecretOutputVariablesNames()))
         .environmentVariables(mergedEnvVariables)
         .winRmInfraDelegateConfig(winRmInfraDelegateConfigOutput.getWinRmInfraDelegateConfig())
         .artifactDelegateConfig(getArtifactDelegateConfig(ambiance))
@@ -375,6 +396,7 @@ public class SshCommandStepHelper extends CDStepHelper {
         .executeOnDelegate(onDelegate)
         .executionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance))
         .outputVariables(sshWinRmRollbackData.getOutVariables())
+        .secretOutputVariables(sshWinRmRollbackData.getSecretOutVariables())
         .environmentVariables(sshWinRmRollbackData.getEnvVariables())
         .winRmInfraDelegateConfig(winRmInfraDelegateConfigOutput.getWinRmInfraDelegateConfig())
         .artifactDelegateConfig(sshWinRmRollbackData.getArtifactDelegateConfig())
@@ -581,19 +603,5 @@ public class SshCommandStepHelper extends CDStepHelper {
     } else {
       throw new InvalidRequestException("Unsupported source type: " + shellScriptSourceWrapper.getType());
     }
-  }
-
-  public Map<String, String> prepareOutputVariables(
-      Map<String, String> sweepingOutputEnvVariables, Map<String, Object> outputVariables) {
-    if (EmptyPredicate.isEmpty(outputVariables) || EmptyPredicate.isEmpty(sweepingOutputEnvVariables)) {
-      return Collections.EMPTY_MAP;
-    }
-
-    Map<String, String> resolvedOutputVariables = new HashMap<>();
-    outputVariables.keySet().forEach(name -> {
-      Object value = ((ParameterField<?>) outputVariables.get(name)).getValue();
-      resolvedOutputVariables.put(name, sweepingOutputEnvVariables.get(value));
-    });
-    return resolvedOutputVariables;
   }
 }

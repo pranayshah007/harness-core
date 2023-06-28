@@ -1,8 +1,8 @@
 serviceOverrideInputs:
   variables:
-  - name: "memory"
-    type: "String"
-    value: "<+input>"
-  - name: "cpu"
-    type: "String"
-    value: "<+input>"
+    - name: memory
+      type: String
+      value: <+input>
+    - name: cpu
+      type: String
+      value: <+input>

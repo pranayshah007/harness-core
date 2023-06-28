@@ -7,12 +7,9 @@
 
 package io.harness.cdng.provision.terraform;
 
-import static io.harness.beans.FeatureName.CDS_TERRAFORM_CLI_OPTIONS_NG;
-
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -49,6 +46,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.provision.TerraformConstants;
+import io.harness.security.encryption.EncryptionConfig;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
@@ -94,10 +92,6 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
-
-    if (isTerraformCloudCli) {
-      helper.checkIfTerraformCloudCliIsEnabled(FeatureName.CD_TERRAFORM_CLOUD_CLI_NG, true, ambiance);
-    }
 
     List<EntityDetail> entityDetailList = new ArrayList<>();
 
@@ -154,23 +148,23 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
 
     boolean isTerraformCloudCli = planStepParameters.getConfiguration().getIsTerraformCloudCli().getValue();
 
+    EncryptionConfig secretManagerEncryptionConfig = helper.getEncryptionConfig(ambiance, planStepParameters);
+
     if (!isTerraformCloudCli) {
       exportTfPlanJsonField = planStepParameters.getConfiguration().getExportTerraformPlanJson();
       exportTfHumanReadablePlanField = planStepParameters.getConfiguration().getExportTerraformHumanReadablePlan();
       builder.saveTerraformStateJson(!ParameterField.isNull(exportTfPlanJsonField) && exportTfPlanJsonField.getValue());
       builder.saveTerraformHumanReadablePlan(
           !ParameterField.isNull(exportTfHumanReadablePlanField) && exportTfHumanReadablePlanField.getValue());
-      builder.encryptionConfig(helper.getEncryptionConfig(ambiance, planStepParameters));
+      builder.encryptionConfig(secretManagerEncryptionConfig);
       builder.workspace(ParameterFieldHelper.getParameterFieldValue(configuration.getWorkspace()));
     }
     ParameterField<Boolean> skipTerraformRefreshCommand =
         planStepParameters.getConfiguration().getSkipTerraformRefresh();
     builder.skipTerraformRefresh(ParameterFieldHelper.getBooleanParameterFieldValue(skipTerraformRefreshCommand));
 
-    if (featureFlagHelper.isEnabled(accountId, CDS_TERRAFORM_CLI_OPTIONS_NG)) {
-      builder.terraformCommandFlags(
-          helper.getTerraformCliFlags(planStepParameters.getConfiguration().getCliOptionFlags()));
-    }
+    builder.terraformCommandFlags(
+        helper.getTerraformCliFlags(planStepParameters.getConfiguration().getCliOptionFlags()));
 
     TerraformTaskNGParameters terraformTaskNGParameters =
         builder.taskType(TFTaskType.PLAN)
@@ -198,6 +192,8 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
             .timeoutInMillis(
                 StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .useOptimizedTfPlan(true)
+            .encryptDecryptPlanForHarnessSMOnManager(
+                helper.tfPlanEncryptionOnManager(accountId, secretManagerEncryptionConfig))
             .isTerraformCloudCli(isTerraformCloudCli)
             .build();
 
@@ -270,11 +266,11 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
         boolean exportHumanReadablePlan = !ParameterField.isNull(exportTfHumanReadablePlanField)
             && ParameterFieldHelper.getBooleanParameterFieldValue(exportTfHumanReadablePlanField);
 
+        helper.saveTerraformPlanExecutionDetails(
+            ambiance, terraformTaskNGResponse, provisionerIdentifier, planStepParameters);
+
         if (exportHumanReadablePlan || exportTfPlanJson) {
           // First we save the terraform plan execution detail
-
-          helper.saveTerraformPlanExecutionDetails(
-              ambiance, terraformTaskNGResponse, provisionerIdentifier, planStepParameters);
 
           String stepFqn = AmbianceUtils.getFQNUsingLevels(ambiance.getLevelsList());
           if (exportHumanReadablePlan) {

@@ -102,8 +102,8 @@ public class HelmRollbackState extends HelmDeployState {
             .variableOverridesYamlFiles(helmValueOverridesYamlFilesEvaluated)
             .isGitHostConnectivityCheck(
                 featureFlagService.isEnabled(FeatureName.HELM_MERGE_CAPABILITIES, context.getAccountId()))
-            .useNewKubectlVersion(
-                featureFlagService.isEnabled(FeatureName.NEW_KUBECTL_VERSION, context.getAccountId()));
+            .useNewKubectlVersion(featureFlagService.isEnabled(FeatureName.NEW_KUBECTL_VERSION, context.getAccountId()))
+            .skipSteadyStateCheck(isSkipSteadyStateCheck());
 
     if (getGitFileConfig() != null) {
       requestBuilder.gitFileConfig(getGitFileConfig());

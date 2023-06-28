@@ -361,7 +361,7 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
   public boolean validateCredentials(DockerInternalConfig dockerConfig) {
     String connectableHttpUrl =
         generateConnectivityUrl(dockerConfig.getDockerRegistryUrl(), dockerConfig.getProviderType());
-    if (!connectableHttpUrl(connectableHttpUrl)) {
+    if (!connectableHttpUrl(connectableHttpUrl, false)) {
       throw NestedExceptionUtils.hintWithExplanationException(
           "Check if the Docker Registry URL is correct & reachable from your delegate(s)",
           "The given Docker Registry URL may be incorrect or not reachable from your delegate(s)",

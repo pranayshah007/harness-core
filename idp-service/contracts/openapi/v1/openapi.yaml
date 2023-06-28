@@ -363,23 +363,6 @@ paths:
         '200':
           $ref: '#/components/responses/ImportEntitiesResponse'
       x-internal: true
-  /v1/onboarding/manual-import:
-    post:
-      summary: Manually import entity to IDP
-      operationId: manual-import-entity
-      description: Manually import entity to IDP
-      security:
-        - x-api-key: []
-      parameters:
-        - $ref: '#/components/parameters/AccountHeader'
-      requestBody:
-        $ref: '#/components/requestBodies/ManualImportEntityRequest'
-      tags:
-        - OnboardingResource
-      responses:
-        '200':
-          $ref: '#/components/responses/ImportEntitiesResponse'
-      x-internal: true
   /v1/layout:
     get:
       summary: List Layouts
@@ -554,7 +537,7 @@ paths:
       x-internal: true
   /v1/connector-info:
     get:
-      summary: 'Get Connector Info'
+      summary: Get Connector Info
       tags:
         - ConnectorInfo
       operationId: get-connector-info
@@ -718,6 +701,91 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
       requestBody:
         $ref: '#/components/requestBodies/GenerateYamlRequest'
+  '/v1/auth-info/{auth-id}':
+    get:
+      summary: Get Auth Info
+      tags:
+        - AuthInfo
+      responses:
+        '200':
+          $ref: '#/components/responses/AuthInfoResponse'
+      operationId: get-auth-info-auth-id
+      description: Get auth details for given authId
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/AuthId'
+      x-internal: true
+    post:
+      summary: Save Auth Info
+      tags:
+        - AuthInfo
+      operationId: save-auth-info-auth-id
+      responses:
+        '201':
+          $ref: '#/components/responses/BackstageEnvVariableResponseList'
+      description: Save auth details for given authId
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/AuthId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BackstageEnvVariableBatchRequest'
+  /v1/allow-list:
+    get:
+      summary: Get backend url allow list
+      tags:
+        - AllowList
+      responses:
+        '200':
+          $ref: '#/components/responses/AllowListResponse'
+      operationId: get-allow-list
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      x-internal: true
+      description: Get backend url allow list
+    post:
+      summary: Save backend url allow list
+      tags:
+        - AllowList
+      operationId: save-allow-list
+      responses:
+        '201':
+          $ref: '#/components/responses/AllowListResponse'
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AllowListRequest'
+        description: Save backend url allow list
+  /v1/configuration-entities:
+    put:
+      summary: Updates entities present in the configuration screen
+      operationId: update-configuration-entities
+      responses:
+        '200':
+          $ref: '#/components/responses/ConfigurationEntitiesResponse'
+      description: Updates entities present in the configuration screen
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/ConfigurationEntitiesRequest'
+      x-internal: true
+      tags:
+        - MergedPluginsConfig
 components:
   schemas:
     BackstageEnvVariable:
@@ -831,6 +899,8 @@ components:
             $ref: '#/components/schemas/BackstageEnvVariable'
             x-stoplight:
               id: i9tsq5o4dan8z
+      required:
+        - env_variables
     BackstageEnvVariableResponse:
       x-stoplight:
         id: e8875709fc5b1
@@ -840,6 +910,8 @@ components:
           $ref: '#/components/schemas/BackstageEnvVariable'
           x-stoplight:
             id: h1ub7r23fswfs
+      required:
+        - env_variable
     BackstagePermissions:
       title: BackstagePermissions
       x-stoplight:
@@ -1159,8 +1231,6 @@ components:
         id: ggn3lgk0pl7jx
       allOf:
         - $ref: '#/components/schemas/PluginDetails'
-          x-stoplight:
-            id: 8r3tc7aptshub
         - type: object
           properties:
             env_variables:
@@ -1169,34 +1239,19 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/BackstageEnvSecretVariable'
-                x-stoplight:
-                  id: v8fluu5h3dt3n
             saved:
               type: boolean
               x-stoplight:
                 id: b06clr6ww9ku0
+            proxy:
+              x-stoplight:
+                id: cxtlzxhi15ly8
+              type: array
+              items:
+                $ref: '#/components/schemas/ProxyHostDetail'
           required:
             - env_variables
             - saved
-    ManualImportEntityRequest:
-      title: ManualImportEntityRequest
-      x-stoplight:
-        id: ssbm06g65ld8t
-      type: object
-      description: Details of entity to import manually to IDP
-      properties:
-        yaml:
-          type: string
-          x-stoplight:
-            id: g8wygfate3kph
-          description: yaml in form on json
-        entity_name:
-          type: string
-          x-stoplight:
-            id: 2axpvz6rwf0ds
-      required:
-        - yaml
-        - entity_name
     LayoutRequest:
       title: LayoutRequest
       x-stoplight:
@@ -1268,12 +1323,16 @@ components:
             id: rbsynehqc2icl
           items:
             $ref: '#/components/schemas/BackstageEnvSecretVariable'
-            x-stoplight:
-              id: h8yoj2ikr9k75
         config_name:
           type: string
           x-stoplight:
             id: jqz82xb7khx5d
+        proxy:
+          type: array
+          x-stoplight:
+            id: vvman59mk8g63
+          items:
+            $ref: '#/components/schemas/ProxyHostDetail'
       required:
         - config_id
         - configs
@@ -1382,11 +1441,16 @@ components:
             id: rvzbk4sw9nxvp
           items:
             $ref: '#/components/schemas/BackstageEnvSecretVariable'
-            x-stoplight:
-              id: lv3438bpnl1d1
+        proxy:
+          type: array
+          x-stoplight:
+            id: mwvxo7zsdc5zo
+          items:
+            $ref: '#/components/schemas/ProxyHostDetail'
       required:
         - config
         - env_variables
+        - proxy
     MergedPluginConfigResponse:
       title: MergedPluginConfigResponse
       x-stoplight:
@@ -1603,7 +1667,7 @@ components:
     ImportEntitiesBase:
       title: ImportEntitiesBase
       x-stoplight:
-        id: wjxl1hwpwycv4
+        id: 8yii7dwgw6iq4
       type: object
       description: Abstract base for import entities
       discriminator:
@@ -1628,6 +1692,130 @@ components:
       required:
         - type
         - catalog_connector_info
+    AuthInfoResponse:
+      title: AuthInfoResponse
+      x-stoplight:
+        id: zl71x322v2f97
+      type: object
+      properties:
+        authInfo:
+          $ref: '#/components/schemas/AuthInfo'
+      required:
+        - authInfo
+    AuthInfo:
+      title: AuthInfo
+      x-stoplight:
+        id: v6t3w7hydbjp3
+      type: object
+      properties:
+        namespace:
+          x-stoplight:
+            id: fp9ttpkqvfppc
+          type: string
+        env_variables:
+          x-stoplight:
+            id: srzbmdfx793md
+          type: array
+          items:
+            $ref: '#/components/schemas/BackstageEnvVariable'
+      required:
+        - namespace
+        - env_variables
+    HostInfo:
+      title: HostInfo
+      x-stoplight:
+        id: ep3jvjucdina8
+      type: object
+      properties:
+        host:
+          type: string
+          x-stoplight:
+            id: ztb1a9uvhi3la
+        paths:
+          type: array
+          x-stoplight:
+            id: e9ukqgpupvls0
+          items:
+            x-stoplight:
+              id: x7pr16tq4n7ck
+            type: string
+      required:
+        - host
+    AllowListRequest:
+      title: AllowListRequest
+      x-stoplight:
+        id: xfurar7bwajs8
+      type: object
+      properties:
+        allow:
+          type: array
+          x-stoplight:
+            id: sxxcmr0vzwe89
+          items:
+            $ref: '#/components/schemas/HostInfo'
+      required:
+        - allow
+    AllowListResponse:
+      title: AllowListResponse
+      x-stoplight:
+        id: ijattu5dxrl7a
+      type: object
+      properties:
+        allow:
+          x-stoplight:
+            id: 5wy6szxaizdr9
+          type: array
+          items:
+            $ref: '#/components/schemas/HostInfo'
+      required:
+        - allow
+    ProxyHostDetail:
+      title: ProxyHostDetail
+      x-stoplight:
+        id: qzvmc7ygi53g8
+      type: object
+      properties:
+        host:
+          type: string
+          x-stoplight:
+            id: cd7j4zdyj0wqa
+        proxy:
+          type: boolean
+          x-stoplight:
+            id: hida2jcczo9jn
+        selectors:
+          type: array
+          x-stoplight:
+            id: 6t6308uuj8wrp
+          items:
+            x-stoplight:
+              id: 0sgdczdy6graq
+            type: string
+      required:
+        - host
+        - proxy
+      description: Proxy Host Detail
+    ConfigurationEntities:
+      title: ConfigurationEntities
+      x-stoplight:
+        id: f0upqtv6bktce
+      type: object
+      properties:
+        env_variables:
+          type: array
+          x-stoplight:
+            id: evwoa6kfuf4zg
+          items:
+            $ref: '#/components/schemas/BackstageEnvVariable'
+        proxy:
+          type: array
+          x-stoplight:
+            id: fin6y5q4eggxu
+          items:
+            $ref: '#/components/schemas/ProxyHostDetail'
+      required:
+        - env_variables
+        - proxy
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -1730,6 +1918,16 @@ components:
       required: true
       schema:
         type: string
+    AuthId:
+      name: auth-id
+      in: path
+      description: Auth Identifier
+      required: true
+      schema:
+        type: string
+        enum:
+          - github-auth
+          - google-auth
   requestBodies:
     BackstageEnvVariableRequest:
       content:
@@ -1789,13 +1987,6 @@ components:
             $ref: '#/components/schemas/ImportEntitiesBase'
           examples: {}
       description: Details of Harness Entities and Catalog Location info
-    ManualImportEntityRequest:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ManualImportEntityRequest'
-      description: Details of entity to import manually to IDP
     LayoutRequest:
       content:
         application/json:
@@ -1849,6 +2040,19 @@ components:
           schema:
             $ref: '#/components/schemas/GenerateYamlRequest'
       description: Request to generate yaml for any one entity if provided or generate sample entity yaml definition
+    AllowListRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AllowListRequest'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/AllowListRequest'
+    ConfigurationEntitiesRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConfigurationEntities'
   responses:
     BackstageEnvVariableResponse:
       description: Example response
@@ -2048,6 +2252,30 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/GenerateYamlResponse'
+    AuthInfoResponse:
+      description: Response containing auth environment variables and namespace
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AuthInfoResponse'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/AuthInfoResponse'
+    AllowListResponse:
+      description: Response containing backend url allow list
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AllowListResponse'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/AllowListResponse'
+    ConfigurationEntitiesResponse:
+      description: Response for configuration screen resources
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConfigurationEntities'
   securitySchemes:
     x-api-key:
       name: x-api-key

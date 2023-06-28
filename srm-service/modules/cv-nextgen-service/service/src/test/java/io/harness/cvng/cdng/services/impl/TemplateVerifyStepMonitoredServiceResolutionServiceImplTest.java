@@ -181,7 +181,7 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
             .filter(MonitoringSourcePerpetualTaskKeys.projectIdentifier, projectIdentifier)
             .filter(MonitoringSourcePerpetualTaskKeys.orgIdentifier, orgIdentifier);
     List<MonitoringSourcePerpetualTask> savedPerpetualTasks = query.asList();
-    assertThat(savedPerpetualTasks).hasSize(2);
+    assertThat(savedPerpetualTasks).hasSize(1);
   }
 
   @Test
@@ -236,24 +236,23 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
                                                                     .versionLabel("1")
                                                                     .templateInputs(templateInputsNode)
                                                                     .build();
-    String expectedResponse = "---\n"
-        + "monitoredService:\n"
+    String expectedResponse = "monitoredService:\n"
         + "  template:\n"
-        + "    templateRef: \"abc\"\n"
+        + "    templateRef: abc\n"
         + "    versionLabel: \"1\"\n"
         + "    templateInputs:\n"
         + "      sources:\n"
         + "        healthSources:\n"
-        + "        - identifier: \"datadog\"\n"
-        + "          type: \"DatadogLog\"\n"
-        + "          spec:\n"
-        + "            queries:\n"
-        + "            - identifier: \"Datadog_Logs_Query\"\n"
-        + "              indexes:\n"
-        + "              - \"abc\"\n"
-        + "              query: \"abc\"\n"
-        + "              serviceInstanceIdentifier: \"Instance\"\n"
-        + "      type: \"Application\"\n";
+        + "          - identifier: datadog\n"
+        + "            type: DatadogLog\n"
+        + "            spec:\n"
+        + "              queries:\n"
+        + "                - identifier: Datadog_Logs_Query\n"
+        + "                  indexes:\n"
+        + "                    - abc\n"
+        + "                  query: abc\n"
+        + "                  serviceInstanceIdentifier: Instance\n"
+        + "      type: Application\n";
     String response = templateVerifyStepMonitoredServiceResolutionService.getTemplateYaml(templateMonitoredServiceSpec);
     assertThat(expectedResponse).isEqualTo(response);
   }

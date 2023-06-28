@@ -145,7 +145,7 @@ public class PipelineExecutorTest extends CategoryTest {
     doReturn(execArgs)
         .when(executionHelper)
         .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(),
-            Collections.emptyMap(), executionTriggerInfo, null, retryExecutionParameters, false, false, null);
+            Collections.emptyMap(), executionTriggerInfo, null, retryExecutionParameters, false, false, null, null);
 
     doReturn(planExecution)
         .when(executionHelper)
@@ -164,7 +164,7 @@ public class PipelineExecutorTest extends CategoryTest {
     verify(executionHelper, times(1)).fetchPipelineEntity(accountId, orgId, projectId, pipelineId);
     verify(executionHelper, times(1))
         .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(),
-            Collections.emptyMap(), executionTriggerInfo, null, retryExecutionParameters, false, false, null);
+            Collections.emptyMap(), executionTriggerInfo, null, retryExecutionParameters, false, false, null, null);
   }
 
   @Test
@@ -226,7 +226,7 @@ public class PipelineExecutorTest extends CategoryTest {
         .when(executionHelper)
         .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(),
             Collections.emptyMap(), executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false,
-            null);
+            null, null);
 
     doReturn(planExecution)
         .when(executionHelper)
@@ -247,7 +247,7 @@ public class PipelineExecutorTest extends CategoryTest {
     verify(executionHelper, times(1))
         .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(),
             Collections.emptyMap(), executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false,
-            null);
+            null, null);
   }
 
   private void doReturnStatementsForFreshRun(
@@ -267,12 +267,12 @@ public class PipelineExecutorTest extends CategoryTest {
           .when(executionHelper)
           .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(),
               Collections.emptyMap(), executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false,
-              null);
+              null, null);
     } else {
       doReturn(execArgs)
           .when(executionHelper)
           .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, stageIdentifiers, Collections.emptyMap(),
-              executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false, null);
+              executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false, null, null);
     }
 
     doReturn(planExecution)
@@ -295,11 +295,11 @@ public class PipelineExecutorTest extends CategoryTest {
       verify(executionHelper, times(1))
           .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(),
               Collections.emptyMap(), executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false,
-              null);
+              null, null);
     } else {
       verify(executionHelper, times(1))
           .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, stageIdentifiers, Collections.emptyMap(),
-              executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false, null);
+              executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false, null, null);
     }
     verify(executionHelper, times(1))
         .startExecution(accountId, orgId, projectId, metadata, planExecutionMetadata, false, null, null, null);

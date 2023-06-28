@@ -39,9 +39,9 @@ public class AzureRecommendationTasklet implements Tasklet {
 
   @Override
   public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
-    log.info("Running the Azure recommendation job");
     final JobConstants jobConstants = CCMJobConstants.fromContext(chunkContext);
     String accountId = jobConstants.getAccountId();
+    log.info("Running the Azure recommendation job for account: {} ", accountId);
     Instant startTime = Instant.ofEpochMilli(jobConstants.getJobStartTime());
     Map<String, AzureAccountAttributes> azureAccountAttributes = azureConfigHelper.getAzureAccountAttributes(accountId);
 

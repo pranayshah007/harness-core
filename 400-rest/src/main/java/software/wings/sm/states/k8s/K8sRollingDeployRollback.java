@@ -13,6 +13,7 @@ import static io.harness.beans.ExecutionStatus.SKIPPED;
 import static io.harness.beans.FeatureName.CDP_USE_K8S_DECLARATIVE_ROLLBACK;
 import static io.harness.beans.FeatureName.NEW_KUBECTL_VERSION;
 import static io.harness.beans.FeatureName.PRUNE_KUBERNETES_RESOURCES;
+import static io.harness.beans.FeatureName.SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static software.wings.sm.StateExecutionData.StateExecutionDataBuilder.aStateExecutionData;
@@ -29,6 +30,7 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.context.ContextElementType;
 import io.harness.delegate.task.k8s.K8sTaskType;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.FailureType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
@@ -128,6 +130,9 @@ public class K8sRollingDeployRollback extends AbstractK8sState {
       return k8sStateHelper.getInvalidInfraDefFailedResponse();
     }
 
+    boolean isTimeoutFailureSupported =
+        featureFlagService.isEnabled(SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW, context.getAccountId());
+
     try {
       K8sContextElement k8sContextElement = context.getContextElement(ContextElementType.K8S);
       ContainerInfrastructureMapping infraMapping = k8sStateHelper.fetchContainerInfrastructureMapping(context);
@@ -150,6 +155,7 @@ public class K8sRollingDeployRollback extends AbstractK8sState {
               .commandName(K8S_DEPLOYMENT_ROLLING_ROLLBACK_COMMAND_NAME)
               .k8sTaskType(K8sTaskType.DEPLOYMENT_ROLLING_ROLLBACK)
               .timeoutIntervalInMin(firstNonNull(stateTimeoutInMinutes, DEFAULT_TIMEOUT_MINS))
+              .timeoutSupported(isTimeoutFailureSupported)
               .delegateSelectors((k8sContextElement.getDelegateSelectors() == null)
                       ? null
                       : new HashSet<>(k8sContextElement.getDelegateSelectors()))
@@ -216,6 +222,15 @@ public class K8sRollingDeployRollback extends AbstractK8sState {
       stateExecutionData.setNewInstanceStatusSummaries(
           fetchInstanceStatusSummaries(instanceElementListParam.getInstanceElements(), executionStatus));
       saveInstanceInfoToSweepingOutput(context, fetchInstanceElementList(pods, true), fetchInstanceDetails(pods, true));
+
+      if (executionResponse.isTimeoutError()) {
+        return ExecutionResponse.builder()
+            .executionStatus(executionStatus)
+            .stateExecutionData(stateExecutionData)
+            .failureTypes(FailureType.TIMEOUT)
+            .errorMessage("Timed out while waiting for k8s task to complete")
+            .build();
+      }
 
       return ExecutionResponse.builder()
           .executionStatus(executionStatus)

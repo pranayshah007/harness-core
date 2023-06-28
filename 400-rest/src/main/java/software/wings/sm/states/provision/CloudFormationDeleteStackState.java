@@ -9,6 +9,7 @@ package software.wings.sm.states.provision;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.CLOUDFORMATION_SKIP_WAIT_FOR_RESOURCES;
+import static io.harness.beans.FeatureName.SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.TaskData.DEFAULT_ASYNC_CALL_TIMEOUT;
 import static io.harness.validation.Validator.notNullCheck;
@@ -63,6 +64,9 @@ public class CloudFormationDeleteStackState extends CloudFormationState {
       CloudFormationInfrastructureProvisioner provisioner, AwsConfig awsConfig, String activityId) {
     notNullCheck("Application cannot be null", executionContext.getApp());
 
+    boolean isTimeoutFailureSupported =
+        featureFlagService.isEnabled(SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW, executionContext.getAccountId());
+
     CloudFormationDeleteStackRequest request =
         CloudFormationDeleteStackRequest.builder()
             .region(region)
@@ -76,6 +80,7 @@ public class CloudFormationDeleteStackState extends CloudFormationState {
             .activityId(activityId)
             .commandName(mainCommandUnit())
             .awsConfig(awsConfig)
+            .timeoutSupported(isTimeoutFailureSupported)
             .skipWaitForResources(
                 featureFlagService.isEnabled(CLOUDFORMATION_SKIP_WAIT_FOR_RESOURCES, executionContext.getAccountId()))
             .build();

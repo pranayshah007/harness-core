@@ -8,6 +8,7 @@
 package io.harness.pms.pipelinestage.step;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.OrchestrationStepTypes;
@@ -18,9 +19,11 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.interrupts.InterruptService;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.interrupts.Interrupt;
+import io.harness.logging.ResponseTimeRecorder;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
@@ -59,6 +62,10 @@ import lombok.extern.slf4j.Slf4j;
 public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageStepParameters> {
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType(OrchestrationStepTypes.PIPELINE_STAGE).setStepCategory(StepCategory.STAGE).build();
+
+  public static String NESTED_CHAINING_HINT = "Unable to run pipeline [%s]";
+  public static String NESTED_CHAINING_ERROR =
+      "The referred pipeline [%s] invokes a child pipeline, so it cannot be included within another pipeline. Nested Pipeline Chaining is not supported";
 
   @Inject private PipelineExecutor pipelineExecutor;
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
@@ -100,6 +107,11 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
 
   @Override
   public void validateResources(Ambiance ambiance, PipelineStageStepParameters stepParameters) {
+    if (ambiance.getMetadata().getPipelineStageInfo().getHasParentPipeline()) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          String.format(NESTED_CHAINING_HINT, ambiance.getMetadata().getPipelineStageInfo().getIdentifier()),
+          String.format(NESTED_CHAINING_ERROR, ambiance.getMetadata().getPipelineIdentifier()));
+    }
     pipelineStageHelper.validateResource(client, ambiance, stepParameters);
   }
 
@@ -114,10 +126,20 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
     setSourcePrincipal(ambiance);
 
     PipelineStageInfo info = prepareParentStageInfo(ambiance, stepParameters);
-    responseDto = pipelineExecutor.runPipelineAsChildPipeline(ambiance.getSetupAbstractions().get("accountId"),
-        stepParameters.getOrg(), stepParameters.getProject(), stepParameters.getPipeline(),
-        ambiance.getMetadata().getModuleType(), stepParameters.getPipelineInputs(), false, false,
-        stepParameters.getInputSetReferences(), info, ambiance.getMetadata().getIsDebug());
+    try (ResponseTimeRecorder ignore1 = new ResponseTimeRecorder("[PMS_PIPELINE_STAGE_STEP]")) {
+      if (!isEmpty(stepParameters.getPipelineInputsJsonNode())) {
+        responseDto =
+            pipelineExecutor.runPipelineAsChildPipelineWithJsonNode(ambiance.getSetupAbstractions().get("accountId"),
+                stepParameters.getOrg(), stepParameters.getProject(), stepParameters.getPipeline(),
+                ambiance.getMetadata().getModuleType(), stepParameters.getPipelineInputsJsonNode(), false, false,
+                stepParameters.getInputSetReferences(), info, ambiance.getMetadata().getIsDebug());
+      } else {
+        responseDto = pipelineExecutor.runPipelineAsChildPipeline(ambiance.getSetupAbstractions().get("accountId"),
+            stepParameters.getOrg(), stepParameters.getProject(), stepParameters.getPipeline(),
+            ambiance.getMetadata().getModuleType(), stepParameters.getPipelineInputs(), false, false,
+            stepParameters.getInputSetReferences(), info, ambiance.getMetadata().getIsDebug());
+      }
+    }
 
     if (responseDto == null) {
       throw new InvalidRequestException(

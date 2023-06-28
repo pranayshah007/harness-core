@@ -51,15 +51,18 @@ public class ServiceNowConnectorValidator extends AbstractConnectorValidator {
   @Override
   public ConnectorValidationResult validate(ConnectorConfigDTO jiraConnectorDTO, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String identifier) {
+    var responseEntry = super.validateConnectorReturnPair(
+        jiraConnectorDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     ServiceNowTestConnectionTaskNGResponse delegateResponseData =
-        (ServiceNowTestConnectionTaskNGResponse) super.validateConnector(
-            jiraConnectorDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+        (ServiceNowTestConnectionTaskNGResponse) responseEntry.getValue();
+    String taskId = responseEntry.getKey();
     return ConnectorValidationResult.builder()
         .delegateId(delegateResponseData.getDelegateMetaInfo() == null
                 ? null
                 : delegateResponseData.getDelegateMetaInfo().getId())
         .status(delegateResponseData.getCanConnect() ? ConnectivityStatus.SUCCESS : ConnectivityStatus.FAILURE)
         .errorSummary(delegateResponseData.getErrorMessage())
+        .taskId(taskId)
         .build();
   }
 

@@ -1,56 +1,56 @@
 environment:
-  name: "updated_name"
-  identifier: "ENV_NAME"
+  name: updated_name
+  identifier: ENV_NAME
   tags:
-    updated_key: "updated_val"
-  type: "Production"
-  orgIdentifier: "ORG_ID"
-  projectIdentifier: "PROJECT_ID"
+    updated_key: updated_val
+  type: Production
+  orgIdentifier: ORG_ID
+  projectIdentifier: PROJECT_ID
   variables:
-  - name: "a"
-    type: "String"
-    value: "valueab"
+    - name: a
+      type: String
+      value: valueab
   overrides:
     manifests:
-    - manifest:
-        identifier: "m1"
-        type: "Values"
-        spec:
-          store:
-            type: "Git"
-            spec:
-              connectorRef: "gitConnector"
-              gitFetchType: "Branch"
-              paths:
-              - "path.yaml"
-              branch: "master"
-    - manifest:
-        identifier: "m2"
-        type: "Values"
-        spec:
-          store:
-            type: "Git"
-            spec:
-              connectorRef: "gitConnector"
-              gitFetchType: "Branch"
-              paths:
-              - "path.yaml"
-              branch: "master"
+      - manifest:
+          identifier: m1
+          type: Values
+          spec:
+            store:
+              type: Git
+              spec:
+                connectorRef: gitConnector
+                gitFetchType: Branch
+                paths:
+                  - path.yaml
+                branch: master
+      - manifest:
+          identifier: m2
+          type: Values
+          spec:
+            store:
+              type: Git
+              spec:
+                connectorRef: gitConnector
+                gitFetchType: Branch
+                paths:
+                  - path.yaml
+                branch: master
     configFiles:
-    - configFile:
-        identifier: "c1"
-        spec:
-          store:
-            type: "Harness"
-            spec:
-              files:
-              - "account:/Sample manifests"
-    - configFile:
-        identifier: "c2"
-        spec:
-          store:
-            type: "Harness"
-            spec:
-              files:
-              - "account:/Sample manifests"
-  description: "updated_description"
+      - configFile:
+          identifier: c1
+          spec:
+            store:
+              type: Harness
+              spec:
+                files:
+                  - account:/Sample manifests
+      - configFile:
+          identifier: c2
+          spec:
+            store:
+              type: Harness
+              spec:
+                files:
+                  - account:/Sample manifests
+  description: updated_description

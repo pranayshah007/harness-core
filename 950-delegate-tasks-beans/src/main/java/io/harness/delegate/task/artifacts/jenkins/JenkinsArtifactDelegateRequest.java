@@ -25,10 +25,8 @@ import software.wings.helpers.ext.jenkins.JobDetails;
 import software.wings.sm.states.FilePathAssertionEntry;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -71,17 +69,6 @@ public class JenkinsArtifactDelegateRequest implements ArtifactSourceDelegateReq
   private String buildFullDisplayName;
   private String description;
   private List<FilePathAssertionEntry> filePathAssertionMap;
-
-  public Set<String> getDelegateSelectors() {
-    Set<String> combinedDelegateSelectors = new HashSet<>();
-    if (jenkinsConnectorDTO != null && jenkinsConnectorDTO.getDelegateSelectors() != null) {
-      combinedDelegateSelectors.addAll(jenkinsConnectorDTO.getDelegateSelectors());
-    }
-    if (delegateSelectors != null) {
-      combinedDelegateSelectors.addAll(delegateSelectors);
-    }
-    return combinedDelegateSelectors;
-  }
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

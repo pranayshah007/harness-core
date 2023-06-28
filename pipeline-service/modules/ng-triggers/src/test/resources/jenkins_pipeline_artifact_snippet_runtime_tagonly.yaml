@@ -1,0 +1,21 @@
+pipeline:
+  identifier: Jenkins_pipeline
+  stages:
+    - stage:
+        identifier: jenkins
+        type: Deployment
+        spec:
+          service:
+            serviceInputs:
+              serviceDefinition:
+                type: Ssh
+                spec:
+                  artifacts:
+                    primary:
+                      primaryArtifactRef: jenkins
+                      sources:
+                        - identifier: jenkins
+                          type: Jenkins
+                          spec:
+                            artifactPath: function.tar.gz
+                            build: <+input>

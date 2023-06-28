@@ -136,6 +136,8 @@ io.harness.beans.yaml.extended.platform.ArchType
 io.harness.ci.pipeline.executions.beans.CIBuildAuthor
 io.harness.beans.steps.stepinfo.security.BrakemanStepInfo
 io.harness.beans.steps.nodes.security.CodeqlScanNode
+io.harness.beans.steps.nodes.security.CoverityScanNode
+io.harness.beans.steps.stepinfo.security.CoverityStepInfo
 io.harness.sto.config.STOImageConfig
 io.harness.beans.steps.stepinfo.security.NessusStepInfo
 io.harness.beans.steps.nodes.security.CheckmarxScanNode
@@ -146,6 +148,7 @@ io.harness.beans.steps.nodes.security.JfrogXrayScanNode
 io.harness.beans.steps.stepinfo.V1.BackgroundStepInfoV1
 io.harness.beans.environment.pod.PodSetupInfo
 io.harness.ci.pipeline.executions.beans.CIBuildPRHook
+io.harness.ci.pipeline.executions.beans.CIBuildReleaseHook
 io.harness.beans.GCPArtifactUploadInfo
 io.harness.beans.environment.pod.container.ContainerSource
 io.harness.beans.yaml.extended.ArchiveFormat
@@ -272,6 +275,7 @@ io.harness.beans.steps.nodes.V1.BackgroundStepNodeV1
 io.harness.ci.beans.entities.TIServiceConfig
 io.harness.beans.steps.nodes.iacm.IACMTerraformPluginStepNode
 io.harness.beans.execution.PRWebhookEvent
+io.harness.beans.execution.ReleaseWebhookEvent
 io.harness.beans.steps.stepinfo.security.ZapStepInfo
 io.harness.beans.sweepingoutputs.K8PodDetails
 io.harness.beans.steps.stepinfo.InitializeStepInfo
@@ -364,3 +368,8 @@ io.harness.beans.yaml.extended.TIPythonVersion
 io.harness.ci.config.CICacheIntelligenceS3Config
 io.harness.ci.config.CIDockerLayerCachingGCSConfig
 io.harness.yaml.sto.variables.STOYamlBurpConfig
+io.harness.beans.steps.stepinfo.IACMApprovalInfo
+io.harness.beans.steps.nodes.iacm.IACMApprovalStepNode
+io.harness.yaml.core.failurestrategy.retry.RetrySGFailureActionConfig
+io.harness.beans.sweepingoutputs.UniqueStepIdentifiersSweepingOutput
+io.harness.iacm.execution.IACMIntegrationStageStepParametersPMS

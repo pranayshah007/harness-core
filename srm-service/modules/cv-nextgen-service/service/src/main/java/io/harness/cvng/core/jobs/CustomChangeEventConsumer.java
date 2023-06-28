@@ -7,6 +7,8 @@
 
 package io.harness.cvng.core.jobs;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.CustomChangeEvent;
 import io.harness.cvng.beans.change.CustomChangeEventMetadata;
@@ -67,6 +69,7 @@ public class CustomChangeEventConsumer extends AbstractStreamConsumer {
     Preconditions.checkArgument(!customChangeEventDTO.getChangeSourceIdentifier().isEmpty(),
         "ChangeSourceIdentifier is invalid for current Internal Change Event");
   }
+
   private void registerChangeEvents(CustomChangeEventDTO customChangeEventDTO) {
     ChangeSource changeSource =
         changeSourceService.get(MonitoredServiceParams.builder()
@@ -87,6 +90,8 @@ public class CustomChangeEventConsumer extends AbstractStreamConsumer {
                     .changeEventDetailsLink(customChangeEventDTO.getEventDetails().getChangeEventDetailsLink())
                     .externalLinkToEntity(customChangeEventDTO.getEventDetails().getExternalLinkToEntity())
                     .description(customChangeEventDTO.getEventDetails().getDescription())
+                    .channelUrl(customChangeEventDTO.getEventDetails().getChannelUrl())
+                    .webhookUrl(customChangeEventDTO.getEventDetails().getWebhookUrl())
                     .build())
             .type(changeSource.getType());
 
@@ -104,6 +109,11 @@ public class CustomChangeEventConsumer extends AbstractStreamConsumer {
             .metadata(customChangeEventMetadataBuilder.build())
             .build();
 
-    changeEventService.register(changeEventDTO);
+    if (isNotEmpty(customChangeEventDTO.getEventDetails().getWebhookUrl())) {
+      changeEventService.registerWithHealthReport(
+          changeEventDTO, customChangeEventDTO.getEventDetails().getWebhookUrl());
+    } else {
+      changeEventService.register(changeEventDTO);
+    }
   }
 }

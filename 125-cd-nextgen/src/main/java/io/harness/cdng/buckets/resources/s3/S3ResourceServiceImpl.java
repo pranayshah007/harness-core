@@ -94,6 +94,7 @@ public class S3ResourceServiceImpl implements S3ResourceService {
                                       .region(region)
                                       .bucketName(bucketName)
                                       .filePathRegex(filePathRegex)
+                                      .shouldFetchObjectMetadata(false)
                                       .build();
 
     S3BuildsResponse s3BuildsResponse =

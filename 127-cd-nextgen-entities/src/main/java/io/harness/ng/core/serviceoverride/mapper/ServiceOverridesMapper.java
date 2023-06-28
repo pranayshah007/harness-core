@@ -21,7 +21,6 @@ import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServi
 import io.harness.ng.core.serviceoverride.beans.ServiceOverrideRequestDTO;
 import io.harness.ng.core.serviceoverride.beans.ServiceOverrideResponseDTO;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
-import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.scope.ScopeHelper;
@@ -101,7 +100,7 @@ public class ServiceOverridesMapper {
                 ((ObjectNode) serviceOverridesJsonNode)
                     .put(NGServiceOverridesEntityKeys.environmentRef, qualifiedEnvRef);
               }
-              updatedYaml = CDYamlUtils.writeYamlString(yamlField.getNode().getCurrJsonNode());
+              updatedYaml = YamlUtils.writeYamlString(yamlField.getNode().getCurrJsonNode());
             }
           } catch (Exception ex) {
             throw new InvalidRequestException("Can not update service override due to " + ex.getMessage());

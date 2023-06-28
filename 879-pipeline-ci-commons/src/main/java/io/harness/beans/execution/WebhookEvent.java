@@ -14,9 +14,10 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
     use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)
 @JsonSubTypes({
   @JsonSubTypes.Type(value = BranchWebhookEvent.class, name = "BRANCH")
-  , @JsonSubTypes.Type(value = PRWebhookEvent.class, name = "PR")
+  , @JsonSubTypes.Type(value = PRWebhookEvent.class, name = "PR"),
+      @JsonSubTypes.Type(value = ReleaseWebhookEvent.class, name = "RELEASE")
 })
 public interface WebhookEvent {
-  enum Type { PR, BRANCH }
+  enum Type { PR, BRANCH, RELEASE }
   WebhookEvent.Type getType();
 }

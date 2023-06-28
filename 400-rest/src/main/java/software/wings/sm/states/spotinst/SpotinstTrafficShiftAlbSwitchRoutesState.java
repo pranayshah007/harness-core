@@ -8,6 +8,7 @@
 package software.wings.sm.states.spotinst;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.SKIPPED;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.spotinst.model.SpotInstConstants.DEPLOYMENT_ERROR;
@@ -30,6 +31,7 @@ import io.harness.context.ContextElementType;
 import io.harness.delegate.task.spotinst.request.SpotinstTrafficShiftAlbSwapRoutesParameters;
 import io.harness.delegate.task.spotinst.response.SpotInstTaskExecutionResponse;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.FailureType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.logging.CommandExecutionStatus;
@@ -201,6 +203,15 @@ public class SpotinstTrafficShiftAlbSwitchRoutesState extends State {
     stateExecutionData.setStatus(executionStatus);
 
     spotinstStateHelper.saveInstanceInfoToSweepingOutput(context, getNewElastigroupWeight(context));
+
+    if (FAILED == executionStatus && executionResponse.isTimeoutError()) {
+      return ExecutionResponse.builder()
+          .executionStatus(executionStatus)
+          .failureTypes(FailureType.TIMEOUT)
+          .errorMessage(executionResponse.getErrorMessage())
+          .stateExecutionData(stateExecutionData)
+          .build();
+    }
 
     return ExecutionResponse.builder()
         .executionStatus(executionStatus)

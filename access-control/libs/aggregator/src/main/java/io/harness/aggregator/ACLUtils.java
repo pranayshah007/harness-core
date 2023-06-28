@@ -27,7 +27,7 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class ACLUtils {
   public static ACL buildACL(String permission, Principal principal, RoleAssignmentDBO roleAssignment,
-      ResourceSelector resourceSelector, boolean isImplicitForScope) {
+      ResourceSelector resourceSelector, boolean isImplicitForScope, boolean enabled) {
     String scopeIdentifier, selector;
     if (resourceSelector.getSelector().contains("$")) {
       scopeIdentifier = resourceSelector.getSelector().split("\\$")[0];
@@ -60,7 +60,7 @@ public class ACLUtils {
         .principalIdentifier(principal.getPrincipalIdentifier())
         .aclQueryString(ACL.getAclQueryString(scopeIdentifier, selector, principal.getPrincipalType().name(),
             principal.getPrincipalIdentifier(), permission))
-        .enabled(!roleAssignment.isDisabled())
+        .enabled(enabled)
         .build();
   }
 

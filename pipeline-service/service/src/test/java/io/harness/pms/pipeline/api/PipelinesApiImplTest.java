@@ -403,7 +403,7 @@ public class PipelinesApiImplTest extends CategoryTest {
     gitMoveDetails.setConnectorRef(connectorRef);
     PipelineMoveConfigRequestBody pipelineMoveConfigRequestBody = new PipelineMoveConfigRequestBody();
     pipelineMoveConfigRequestBody.setGitDetails(gitMoveDetails);
-    pipelineMoveConfigRequestBody.setMoveConfigOperationType(MoveConfigOperationType.REMOTE_TO_INLINE);
+    pipelineMoveConfigRequestBody.setMoveConfigOperationType(MoveConfigOperationType.INLINE_TO_REMOTE);
     pipelineMoveConfigRequestBody.setPipelineIdentifier(identifier);
     doReturn(PipelineCRUDResult.builder().pipelineEntity(entity).build())
         .when(pmsPipelineService)

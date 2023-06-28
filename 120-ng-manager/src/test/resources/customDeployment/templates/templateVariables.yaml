@@ -1,7 +1,7 @@
-- name: "clusterUrl"
-  type: "String"
-  value: "<+input>"
-- name: "image"
-  type: "Connector"
-  value: "account.harnessImage"
-  description: "Connector"
+  - name: clusterUrl
+    type: String
+    value: <+input>
+  - name: image
+    type: Connector
+    value: account.harnessImage
+    description: Connector

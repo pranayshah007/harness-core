@@ -16,6 +16,7 @@ import io.harness.delegate.beans.DelegateFeedback;
 import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateRing;
 import io.harness.delegate.beans.VersionOverride;
+import io.harness.executionInfra.ExecutionInfraLocation;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
 import io.harness.perpetualtask.internal.PerpetualTaskRecord;
@@ -37,6 +38,7 @@ public class DelegateServiceMorphiaRegistrar implements MorphiaRegistrar {
     set.add(PerpetualTaskRecord.class);
     set.add(DelegateRing.class);
     set.add(DelegateFeedback.class);
+    set.add(ExecutionInfraLocation.class);
     set.add(VersionOverride.class);
     set.add(DelegateConnectionResult.class);
     set.add(AgentMtlsEndpoint.class);

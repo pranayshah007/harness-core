@@ -19,6 +19,8 @@ import java.util.Set;
 public interface GraphGenerationService {
   OrchestrationGraph getCachedOrchestrationGraph(String planExecutionId);
 
+  OrchestrationGraph getCachedOrchestrationGraphFromSecondary(String planExecutionId);
+
   void cacheOrchestrationGraph(OrchestrationGraph adjacencyListInternal);
 
   OrchestrationGraphDTO generateOrchestrationGraphV2(String planExecutionId);

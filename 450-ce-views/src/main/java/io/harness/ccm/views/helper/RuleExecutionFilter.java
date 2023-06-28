@@ -7,7 +7,9 @@
 
 package io.harness.ccm.views.helper;
 
+import io.harness.ccm.commons.entities.CCMSortOrder;
 import io.harness.ccm.commons.entities.CCMTimeFilter;
+import io.harness.ccm.views.entities.RuleExecutionSortType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -37,12 +39,14 @@ public class RuleExecutionFilter {
   @Schema(description = "limit") int limit;
   @Schema(description = "offset") int offset;
   @Schema(description = "savings") Double savings;
-  @Schema(description = "sortByCost") Boolean sortByCost;
+  @Schema(description = "ruleExecutionSortType") RuleExecutionSortType ruleExecutionSortType;
+  @Schema(description = "sortOrder") CCMSortOrder sortOrder;
 
   @Builder
   public RuleExecutionFilter(String accountId, List<String> accountName, List<String> region, List<String> rulesId,
       List<String> rulePackId, RuleCloudProviderType cloudProvider, List<String> ruleEnforcementId,
-      List<CCMTimeFilter> time, int limit, int offset, ExecutionStatus executionStatus, List<String> executionIds) {
+      List<CCMTimeFilter> time, int limit, int offset, ExecutionStatus executionStatus, List<String> executionIds,
+      RuleExecutionSortType ruleExecutionSortType, CCMSortOrder sortOrder) {
     this.accountId = accountId;
     this.targetAccount = accountName;
     this.region = region;
@@ -55,5 +59,7 @@ public class RuleExecutionFilter {
     this.offset = offset;
     this.executionStatus = executionStatus;
     this.executionIds = executionIds;
+    this.ruleExecutionSortType = ruleExecutionSortType;
+    this.sortOrder = sortOrder;
   }
 }

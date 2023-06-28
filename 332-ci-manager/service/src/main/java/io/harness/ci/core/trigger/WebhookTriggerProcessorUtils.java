@@ -13,6 +13,7 @@ import static io.harness.exception.WingsException.USER;
 import io.harness.beans.execution.BranchWebhookEvent;
 import io.harness.beans.execution.CommitDetails;
 import io.harness.beans.execution.PRWebhookEvent;
+import io.harness.beans.execution.ReleaseWebhookEvent;
 import io.harness.beans.execution.Repository;
 import io.harness.beans.execution.WebhookBaseAttributes;
 import io.harness.beans.execution.WebhookEvent;
@@ -27,6 +28,8 @@ import io.harness.product.ci.scm.proto.ParseWebhookResponse;
 import io.harness.product.ci.scm.proto.PullRequest;
 import io.harness.product.ci.scm.proto.PullRequestHook;
 import io.harness.product.ci.scm.proto.PushHook;
+import io.harness.product.ci.scm.proto.Release;
+import io.harness.product.ci.scm.proto.ReleaseHook;
 import io.harness.product.ci.scm.proto.SCMGrpc;
 import io.harness.product.ci.scm.proto.Signature;
 import io.harness.product.ci.scm.proto.User;
@@ -77,6 +80,9 @@ public class WebhookTriggerProcessorUtils {
     } else if (parseWebhookResponse.hasPush()) {
       PushHook pushHook = parseWebhookResponse.getPush();
       return converPushHook(pushHook);
+    } else if (parseWebhookResponse.hasRelease()) {
+      ReleaseHook releaseHook = parseWebhookResponse.getRelease();
+      return convertReleaseHook(releaseHook);
     } else {
       log.error("Unknown webhook event");
       throw new InvalidRequestException("Unknown webhook event", USER);
@@ -93,6 +99,13 @@ public class WebhookTriggerProcessorUtils {
   private WebhookExecutionSource converPushHook(PushHook pushHook) {
     WebhookGitUser webhookGitUser = convertUser(pushHook.getSender());
     WebhookEvent webhookEvent = convertPushWebhookEvent(pushHook);
+
+    return WebhookExecutionSource.builder().user(webhookGitUser).webhookEvent(webhookEvent).build();
+  }
+
+  private WebhookExecutionSource convertReleaseHook(ReleaseHook releaseHook) {
+    WebhookGitUser webhookGitUser = convertUser(releaseHook.getSender());
+    WebhookEvent webhookEvent = convertReleaseWebhookEvent(releaseHook);
 
     return WebhookExecutionSource.builder().user(webhookGitUser).webhookEvent(webhookEvent).build();
   }
@@ -125,6 +138,21 @@ public class WebhookTriggerProcessorUtils {
         .merged(pr.getMerged())
         .repository(convertRepository(prHook.getRepo()))
         .baseAttributes(convertPrHookBaseAttributes(prHook))
+        .build();
+  }
+
+  private WebhookEvent convertReleaseWebhookEvent(ReleaseHook releaseHook) {
+    Release release = releaseHook.getRelease();
+
+    return ReleaseWebhookEvent.builder()
+        .releaseLink(release.getLink())
+        .releaseBody(release.getDescription())
+        .releaseTag(release.getTag())
+        .title(release.getTitle())
+        .prerelease(release.getPrerelease())
+        .draft(release.getDraft())
+        .repository(convertRepository(releaseHook.getRepo()))
+        .baseAttributes(convertReleaseHookBaseAttributes(releaseHook))
         .build();
   }
 
@@ -168,6 +196,25 @@ public class WebhookTriggerProcessorUtils {
         .authorEmail(author.getEmail())
         .authorAvatar(author.getAvatar())
         .sender(pushHook.getSender().getLogin())
+        .build();
+  }
+
+  private static WebhookBaseAttributes convertReleaseHookBaseAttributes(ReleaseHook releaseHook) {
+    Release release = releaseHook.getRelease();
+    User author = releaseHook.getSender();
+    String message = release.getDescription();
+    if (message.equals("")) {
+      message = release.getTitle();
+    }
+    return WebhookBaseAttributes.builder()
+        .link(release.getLink())
+        .message(message)
+        .authorLogin(author.getLogin())
+        .authorName(author.getName())
+        .authorEmail(author.getEmail())
+        .authorAvatar(author.getAvatar())
+        .sender(author.getLogin())
+        .action(releaseHook.getAction().toString().toLowerCase())
         .build();
   }
 

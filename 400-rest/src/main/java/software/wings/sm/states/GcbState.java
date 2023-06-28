@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionStatus.DISCONTINUING;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.RUNNING;
+import static io.harness.beans.FeatureName.SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.beans.TaskData.DEFAULT_ASYNC_CALL_TIMEOUT;
 
@@ -39,6 +40,7 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.exception.UnsupportedOperationException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ResponseData;
@@ -120,6 +122,7 @@ public class GcbState extends State implements SweepingOutputStateMixin {
   @Transient @Inject KryoSerializer kryoSerializer;
   @Transient @Inject InfrastructureMappingService infrastructureMappingService;
   @Transient @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
+  @Inject private FeatureFlagService featureFlagService;
 
   public GcbState(String name) {
     super(name, StateType.GCB.name());
@@ -217,11 +220,14 @@ public class GcbState extends State implements SweepingOutputStateMixin {
     List<EncryptedDataDetail> allEncryptionDetails = Stream.of(gcpEncryptionDetails, gitConfigEncryptionDetails)
                                                          .flatMap(Collection::stream)
                                                          .collect(Collectors.toList());
+    boolean isTimeoutFailureSupported =
+        featureFlagService.isEnabled(SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW, context.getAccountId());
     GcbTaskParams gcbTaskParams = GcbTaskParams.builder()
                                       .gcpConfig(gcpConfig)
                                       .type(START)
                                       .gcbOptions(gcbOptions)
                                       .substitutions(substitutions)
+                                      .timeoutSupported(isTimeoutFailureSupported)
                                       .encryptedDataDetails(allEncryptionDetails)
                                       .activityId(activityId)
                                       .unitName(GCB_LOGS)
@@ -293,6 +299,14 @@ public class GcbState extends State implements SweepingOutputStateMixin {
     }
 
     GcbDelegateResponse delegateResponse = (GcbDelegateResponse) notifyResponseData;
+
+    if (delegateResponse.isTimeoutError()) {
+      return ExecutionResponse.builder()
+          .executionStatus(FAILED)
+          .failureTypes(delegateResponse.getFailureTypes())
+          .errorMessage(delegateResponse.getErrorMsg())
+          .build();
+    }
 
     if (delegateResponse.isInterrupted()) {
       return ExecutionResponse.builder().executionStatus(DISCONTINUING).build();

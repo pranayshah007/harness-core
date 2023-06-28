@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 import io.harness.accesscontrol.acl.persistence.ACL;
 import io.harness.accesscontrol.acl.persistence.repositories.ACLRepository;
 import io.harness.accesscontrol.common.filter.ManagedFilter;
+import io.harness.accesscontrol.permissions.persistence.repositories.InMemoryPermissionRepository;
 import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.principals.usergroups.UserGroup;
 import io.harness.accesscontrol.principals.usergroups.UserGroupService;
@@ -68,6 +69,7 @@ public class ResourceGroupChangeConsumerImplTest extends AggregatorTestBase {
   private int randomCount;
   private String id = randomAlphabetic(10);
   private ResourceGroupDBO resourceGroupDBO = getResourceGroupDBO(id);
+  private InMemoryPermissionRepository inMemoryPermissionRepository;
 
   @Before
   public void setup() {
@@ -77,8 +79,8 @@ public class ResourceGroupChangeConsumerImplTest extends AggregatorTestBase {
     userGroupService = mock(UserGroupService.class);
     roleAssignmentRepository = mock(RoleAssignmentRepository.class);
     resourceGroupRepository = mock(ResourceGroupRepository.class);
-    ACLGeneratorService changeConsumerService = new ACLGeneratorServiceImpl(
-        roleService, userGroupService, resourceGroupService, scopeService, new HashMap<>(), aclRepository);
+    ACLGeneratorService changeConsumerService = new ACLGeneratorServiceImpl(roleService, userGroupService,
+        resourceGroupService, scopeService, new HashMap<>(), aclRepository, false, inMemoryPermissionRepository);
     resourceGroupChangeConsumer = new ResourceGroupChangeConsumerImpl(aclRepository, roleAssignmentRepository,
         resourceGroupRepository, AggregatorJobType.PRIMARY.name(), changeConsumerService);
     aclRepository.cleanCollection();

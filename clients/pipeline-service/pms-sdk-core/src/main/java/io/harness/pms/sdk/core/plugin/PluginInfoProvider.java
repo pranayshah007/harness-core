@@ -7,6 +7,7 @@
 
 package io.harness.pms.sdk.core.plugin;
 
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
 import io.harness.pms.contracts.plan.PluginCreationResponseList;
 import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
@@ -14,9 +15,10 @@ import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
 import java.util.Set;
 
 public interface PluginInfoProvider {
-  PluginCreationResponseWrapper getPluginInfo(PluginCreationRequest request, Set<Integer> usedPorts);
+  PluginCreationResponseWrapper getPluginInfo(PluginCreationRequest request, Set<Integer> usedPorts, Ambiance ambiance);
 
-  default PluginCreationResponseList getPluginInfoList(PluginCreationRequest request, Set<Integer> usedPorts) {
+  default PluginCreationResponseList getPluginInfoList(
+      PluginCreationRequest request, Set<Integer> usedPorts, Ambiance ambiance) {
     return null;
   }
 

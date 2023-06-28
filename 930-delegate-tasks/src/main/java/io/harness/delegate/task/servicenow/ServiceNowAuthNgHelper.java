@@ -27,6 +27,7 @@ import io.harness.delegate.beans.connector.servicenow.ServiceNowADFSDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowRefreshTokenDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePasswordDTO;
 import io.harness.encryption.FieldWithPlainTextOrSecretValueHelper;
 import io.harness.encryption.SecretRefData;
@@ -38,6 +39,7 @@ import io.harness.exception.WingsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.network.Http;
 import io.harness.security.ADFSAuthHelper;
+import io.harness.servicenow.auth.refreshtoken.RefreshTokenAuthNgHelper;
 
 import software.wings.delegatetasks.utils.UrlUtility;
 
@@ -91,6 +93,9 @@ public class ServiceNowAuthNgHelper {
     } else if (ServiceNowAuthType.ADFS.equals(serviceNowAuthType)) {
       ServiceNowADFSDTO serviceNowADFSDTO = (ServiceNowADFSDTO) serviceNowAuthCredentialsDTO;
       return getAuthTokenUsingAdfs(serviceNowADFSDTO);
+    } else if (ServiceNowAuthType.REFRESH_TOKEN.equals(serviceNowAuthType)) {
+      ServiceNowRefreshTokenDTO serviceNowRefreshTokenDTO = (ServiceNowRefreshTokenDTO) serviceNowAuthCredentialsDTO;
+      return getAuthTokenUsingRefreshToken(serviceNowRefreshTokenDTO);
     } else {
       throw new InvalidRequestException(
           String.format("Unsupported auth type in servicenow connector: %s", serviceNowAuthType));
@@ -105,6 +110,14 @@ public class ServiceNowAuthNgHelper {
     return Credentials.basic(finalUserName, password);
   }
 
+  /**
+   * Responsible for generating ADFS access token via openId protocol using x509 certificates and Pkcs8 format private
+   * key <p> Exact scenario : <a
+   * href="https://learn.microsoft.com/en-us/windows-server/identity/ad-fs/overview/ad-fs-openid-connect-oauth-flows-scenarios#second-case-access-token-request-with-a-certificate-1">...</a>
+   * <p>
+   * Only modification at the time of writing this is one additional parameter resource_id is being used to indicate the
+   * resource for which token is generated.
+   */
   private static String getAuthTokenUsingAdfs(ServiceNowADFSDTO serviceNowADFSDTO) {
     try {
       String clientId = new String(serviceNowADFSDTO.getClientIdRef().getDecryptedValue());
@@ -128,7 +141,7 @@ public class ServiceNowAuthNgHelper {
       if (sanitizedException.getMessage().equals(INVALID_ADFS_CREDENTIALS)) {
         throw NestedExceptionUtils.hintWithExplanationException(
             "Check if the ADFS credentials are correct and client have necessary permissions to access the ServiceNow resource",
-            "The credentials provided are invalid or client have necessary permissions to access the ServiceNow resource",
+            "The credentials provided are invalid or client doesn't have necessary permissions to access the ServiceNow resource",
             sanitizedException);
       } else if (sanitizedException.getMessage().equals(NOT_FOUND)) {
         throw NestedExceptionUtils.hintWithExplanationException(
@@ -143,6 +156,26 @@ public class ServiceNowAuthNgHelper {
       throw wrapInNestedException(
           new AdfsAuthException(ExceptionUtils.getMessage(sanitizedException), ADFS_ERROR, USER, sanitizedException));
     }
+  }
+
+  /**
+   * Responsible for generating access token via oauth refresh token grant type protocol
+   *
+   * Protocol description : https://www.oauth.com/oauth2-servers/access-tokens/refreshing-access-tokens/
+   *
+   * Tested using ServiceNow and Okta as authentication severs.
+   */
+  private static String getAuthTokenUsingRefreshToken(ServiceNowRefreshTokenDTO serviceNowRefreshTokenDTO) {
+    String refreshToken = new String(serviceNowRefreshTokenDTO.getRefreshTokenRef().getDecryptedValue());
+    String clientId = new String(serviceNowRefreshTokenDTO.getClientIdRef().getDecryptedValue());
+    String clientSecret = isNull(serviceNowRefreshTokenDTO.getClientSecretRef())
+            || serviceNowRefreshTokenDTO.getClientSecretRef().isNull()
+        ? null
+        : new String(serviceNowRefreshTokenDTO.getClientSecretRef().getDecryptedValue());
+    String scope = serviceNowRefreshTokenDTO.getScope();
+    String tokenUrl = serviceNowRefreshTokenDTO.getTokenUrl();
+
+    return RefreshTokenAuthNgHelper.getAuthToken(refreshToken, clientId, clientSecret, scope, tokenUrl, true);
   }
 
   private static AdfsRestClient getAdfsRestClient(String url) {

@@ -44,6 +44,7 @@ import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService
 import io.harness.cvng.analysis.services.api.LearningEngineTaskService;
 import io.harness.cvng.analysis.services.api.TimeSeriesAnalysisService;
 import io.harness.cvng.analysis.services.api.TimeSeriesAnomalousPatternsService;
+import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.beans.TimeSeriesMetricDefinition;
 import io.harness.cvng.core.entities.CVConfig;
@@ -150,12 +151,15 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
     String taskId = generateUuid();
     VerificationJobInstance verificationJobInstance = verificationJobInstanceService.getVerificationJobInstance(
         verificationTaskService.getVerificationJobInstanceId(input.getVerificationTaskId()));
-    TestVerificationJob verificationJob = (TestVerificationJob) verificationJobInstance.getResolvedJob();
     Preconditions.checkNotNull(verificationJobInstance, "verificationJobInstance can not be null");
     VerificationJobInstance baseline = null;
-    if (verificationJob.getBaselineVerificationJobInstanceId() != null) {
-      baseline = verificationJobInstanceService.getVerificationJobInstance(
-          verificationJob.getBaselineVerificationJobInstanceId());
+    VerificationJob verificationJob = verificationJobInstance.getResolvedJob();
+    if (verificationJob.getType() == VerificationJobType.TEST) {
+      TestVerificationJob testVerificationJob = (TestVerificationJob) verificationJob;
+      if (testVerificationJob.getBaselineVerificationJobInstanceId() != null) {
+        baseline = verificationJobInstanceService.getVerificationJobInstance(
+            testVerificationJob.getBaselineVerificationJobInstanceId());
+      }
     }
     TimeSeriesLoadTestLearningEngineTask timeSeriesLearningEngineTask =
         TimeSeriesLoadTestLearningEngineTask.builder()

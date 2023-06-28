@@ -18,6 +18,7 @@ import io.harness.ccm.audittrails.events.CostCategoryDeleteEvent;
 import io.harness.ccm.audittrails.events.CostCategoryUpdateEvent;
 import io.harness.ccm.commons.entities.CCMSortOrder;
 import io.harness.ccm.rbac.CCMRbacHelper;
+import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessmapping.entities.BusinessMappingListDTO;
 import io.harness.ccm.views.businessmapping.entities.CostCategorySortType;
@@ -26,6 +27,8 @@ import io.harness.ccm.views.dto.CostCategoryDeleteDTO;
 import io.harness.ccm.views.dto.CostCategoryDeleteDTO.CostCategoryDeleteDTOBuilder;
 import io.harness.ccm.views.dto.LinkedPerspectives;
 import io.harness.ccm.views.service.CEViewService;
+import io.harness.ng.core.dto.ErrorDTO;
+import io.harness.ng.core.dto.FailureDTO;
 import io.harness.outbox.api.OutboxService;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -41,7 +44,9 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Collections;
 import java.util.List;
 import javax.validation.Valid;
@@ -64,11 +69,18 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 @Api("business-mapping")
 @Path("/business-mapping")
-@Produces("application/json")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
 @NextGenManagerAuth
 @Slf4j
 @Service
 @OwnedBy(CE)
+@Tag(name = "Cloud Cost Cost Categories",
+    description = "Allows you to categorize based on business requirements and get a contextual view of your expenses.")
+@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad Request",
+    content = { @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = FailureDTO.class)) })
+@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Internal server error",
+    content = { @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ErrorDTO.class)) })
 public class BusinessMappingResource {
   @Inject BusinessMappingService businessMappingService;
   @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private TransactionTemplate transactionTemplate;
@@ -82,10 +94,21 @@ public class BusinessMappingResource {
 
   @POST
   @Timed
+  @LogAccountIdentifier
   @ExceptionMetered
   @ApiOperation(value = "Create Business Mapping", nickname = "createBusinessMapping")
-  public RestResponse<BusinessMapping> save(
-      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId, @Valid BusinessMapping businessMapping) {
+  @Operation(operationId = "createBusinessMapping",
+      description = "Create Cost category that allows you to categorize based on business requirements and "
+          + "get a contextual view of your expenses",
+      summary = "Create Cost category",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns a created Cost category object with all the cost and shared buckets",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public RestResponse<BusinessMapping>
+  save(@QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId, @Valid BusinessMapping businessMapping) {
     rbacHelper.checkCostCategoryEditPermission(accountId, null, null);
     BusinessMapping costCategory = businessMappingService.save(businessMapping);
     Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
@@ -97,9 +120,19 @@ public class BusinessMappingResource {
 
   @GET
   @Timed
+  @LogAccountIdentifier
   @ExceptionMetered
   @ApiOperation(value = "Get List Of Business Mappings", nickname = "getBusinessMappingList")
-  public RestResponse<BusinessMappingListDTO> list(@QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+  @Operation(operationId = "getBusinessMappingList",
+      description = "Return details of all the Cost categories for the given account ID.",
+      summary = "Return details of all the Cost categories",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns a List of Cost Categories",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public RestResponse<BusinessMappingListDTO>
+  list(@QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.SEARCH_KEY) String searchKey,
       @QueryParam(NGCommonEntityConstants.SORT_TYPE) CostCategorySortType sortType,
       @QueryParam(NGCommonEntityConstants.SORT_ORDER) CCMSortOrder sortOrder,
@@ -112,20 +145,41 @@ public class BusinessMappingResource {
   @GET
   @Path("{id}")
   @Timed
+  @LogAccountIdentifier
   @ExceptionMetered
   @ApiOperation(value = "Get Business Mapping", nickname = "getBusinessMapping")
-  public RestResponse<BusinessMapping> get(
-      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId, @PathParam("id") String businessMappingId) {
+  @Operation(operationId = "getBusinessMapping",
+      description = "Fetch details of a Cost category for the given Cost category ID.",
+      summary = "Fetch details of a Cost category",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns a Cost category object with all the cost and shared buckets, "
+                + "returns null if no Cost category exists for that particular identifier",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public RestResponse<BusinessMapping>
+  get(@QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId, @PathParam("id") String businessMappingId) {
     rbacHelper.checkCostCategoryViewPermission(accountId, null, null);
     return new RestResponse<>(businessMappingService.get(businessMappingId, accountId));
   }
 
   @PUT
   @Timed
+  @LogAccountIdentifier
   @ExceptionMetered
   @ApiOperation(value = "Update Business Mapping", nickname = "updateBusinessMapping")
-  public RestResponse<String> update(
-      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId, BusinessMapping businessMapping) {
+  @Operation(operationId = "updateBusinessMapping",
+      description = "Update a Cost category. "
+          + "It accepts a BusinessMapping object and upserts it using the uuid mentioned in the definition.",
+      summary = "Update a Cost category",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Successfully updated the Business Mapping",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public RestResponse<String>
+  update(@QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId, BusinessMapping businessMapping) {
     rbacHelper.checkCostCategoryEditPermission(accountId, null, null);
     BusinessMapping oldCostCategory = businessMappingService.get(businessMapping.getUuid(), accountId);
     BusinessMapping newCostCategory = businessMappingService.update(businessMapping, oldCostCategory);
@@ -142,10 +196,22 @@ public class BusinessMappingResource {
   @DELETE
   @Path("{id}")
   @Timed
+  @LogAccountIdentifier
   @ExceptionMetered
   @ApiOperation(value = "Delete Business Mapping", nickname = "deleteBusinessMapping")
-  public RestResponse<CostCategoryDeleteDTO> delete(@NotEmpty @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY)
-                                                    String accountId, @PathParam("id") String businessMappingId) {
+  @Operation(operationId = "deleteBusinessMapping",
+      description = "Delete a Cost category for the given Cost category ID.", summary = "Delete a Cost category",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "A string text message whether the delete was successful or not. "
+                + "If the cost category is used in the perspective, "
+                + "the deletion will fail and it will send you the IDs of all the linked perspectives",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public RestResponse<CostCategoryDeleteDTO>
+  delete(@NotEmpty @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @PathParam("id") String businessMappingId) {
     rbacHelper.checkCostCategoryDeletePermission(accountId, null, null);
     LinkedPerspectives perspectiveListMessage =
         ceViewService.getViewsByBusinessMapping(accountId, Collections.singletonList(businessMappingId)).get(0);
@@ -172,18 +238,17 @@ public class BusinessMappingResource {
   @Path("linkedPerspectives")
   @Timed
   @Hidden
-  @Consumes(MediaType.APPLICATION_JSON)
+  @LogAccountIdentifier
   @ExceptionMetered
-  @ApiOperation(value = "Get related Perspectives given Business Mapping Ids",
-      nickname = "getPerspectivesGivenBusinessMappingIds")
+  @ApiOperation(
+      value = "Get related Perspectives given Cost Category Ids", nickname = "getPerspectivesGivenBusinessMappingIds")
   @Operation(operationId = "getPerspectivesGivenBusinessMappingIds",
-      description =
-          "Given Business Mapping Id, find out Perspectives where Business Mapping is present in Rules or Group By",
-      summary = "Return list of perspectives corresponding to Business Mapping Id",
+      description = "Given Cost Category Id, find out Perspectives where Cost Category is present in Rules or Group By",
+      summary = "Return list of perspectives corresponding to Cost Category Ids",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(description = "Return list of perspectives corresponding to Business Mapping Id",
+        ApiResponse(description = "Return list of perspectives corresponding to Cost Category Ids",
             content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
   public RestResponse<List<LinkedPerspectives>>

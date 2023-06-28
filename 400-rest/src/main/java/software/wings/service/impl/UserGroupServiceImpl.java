@@ -333,7 +333,8 @@ public class UserGroupServiceImpl implements UserGroupService {
   }
 
   private void loadUsersForUserGroups(List<UserGroup> userGroups, Account account) {
-    PageRequest<User> req = aPageRequest().addFilter(UserKeys.accounts, Operator.HAS, account).build();
+    PageRequest<User> req =
+        aPageRequest().addFilter(UserKeys.accounts, Operator.HAS, account).withLimit(String.valueOf(10000)).build();
     PageResponse<User> res = userService.list(req, false);
     List<User> allUsersList = res.getResponse();
     if (isEmpty(allUsersList)) {
@@ -355,7 +356,8 @@ public class UserGroupServiceImpl implements UserGroupService {
           members.add(user);
         }
       });
-      log.info("For user group: {} Members added- size: {}, members: {}", userGroup.getName(), members.size(), members);
+      log.info("For user group id: {}, name: {}, Members added- size: {}", userGroup.getUuid(), userGroup.getName(),
+          members.size());
       userGroup.setMembers(members);
     });
   }

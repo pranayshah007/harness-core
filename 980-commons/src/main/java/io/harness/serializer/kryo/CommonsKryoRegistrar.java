@@ -66,6 +66,7 @@ import io.harness.exception.NexusRegistryException;
 import io.harness.exception.NexusServerException;
 import io.harness.exception.SecretNotFoundException;
 import io.harness.exception.ServiceNowException;
+import io.harness.exception.ServiceNowOIDCException;
 import io.harness.exception.ShellExecutionException;
 import io.harness.exception.TerraformCloudException;
 import io.harness.exception.TerraformCommandExecutionException;
@@ -207,5 +208,6 @@ public class CommonsKryoRegistrar implements KryoRegistrar {
     kryo.register(AdfsAuthException.class, 10000120);
     kryo.register(TerragruntCommandExecutionException.class, 10000262);
     kryo.register(TerraformCloudException.class, 10000305);
+    kryo.register(ServiceNowOIDCException.class, 10000122);
   }
 }

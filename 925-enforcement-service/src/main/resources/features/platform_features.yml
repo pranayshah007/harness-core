@@ -122,6 +122,57 @@ features:
       ENTERPRISE:
         restrictionType: AVAILABILITY
         enabled: true
+  - name: MULTIPLE_API_KEYS
+    description: Allow creating multiple Api Keys within an account
+    restrictions:
+      COMMUNITY:
+        restrictionType: STATIC_LIMIT
+        limit: 100
+        clientName: ngmanager
+      FREE:
+        restrictionType: STATIC_LIMIT
+        limit: 100
+        clientName: ngmanager
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
+  - name: MULTIPLE_API_TOKENS
+    description: Allow creating multiple Api Tokens within an account
+    restrictions:
+      COMMUNITY:
+        restrictionType: STATIC_LIMIT
+        limit: 100
+        clientName: ngmanager
+      FREE:
+        restrictionType: STATIC_LIMIT
+        limit: 100
+        clientName: ngmanager
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
+  - name: MULTIPLE_CONNECTORS
+    description: Allow creating multiple connectors within an account
+    restrictions:
+      COMMUNITY:
+        restrictionType: STATIC_LIMIT
+        limit: 100
+        clientName: ngmanager
+      FREE:
+        restrictionType: STATIC_LIMIT
+        limit: 100
+        clientName: ngmanager
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
   - name: SECRET_MANAGERS
     description: Allow creating secret managers
     restrictions:
@@ -209,8 +260,9 @@ features:
         restrictionType: AVAILABILITY
         enabled: false
       FREE:
-        restrictionType: AVAILABILITY
-        enabled: false
+        restrictionType: STATIC_LIMIT
+        limit: 100
+        clientName: ngmanager
       TEAM:
         restrictionType: AVAILABILITY
         enabled: false
@@ -225,8 +277,9 @@ features:
         restrictionType: AVAILABILITY
         enabled: false
       FREE:
-        restrictionType: AVAILABILITY
-        enabled: false
+        restrictionType: STATIC_LIMIT
+        limit: 100
+        clientName: ngmanager
       TEAM:
         restrictionType: AVAILABILITY
         enabled: false

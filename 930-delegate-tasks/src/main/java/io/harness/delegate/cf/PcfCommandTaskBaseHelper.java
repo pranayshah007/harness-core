@@ -417,7 +417,7 @@ public class PcfCommandTaskBaseHelper {
     cfRequestConfig.setApplicationName(cfServiceData.getName());
     cfRequestConfig.setDesiredCount(cfServiceData.getDesiredCount());
 
-    ApplicationDetail applicationDetail = pcfDeploymentManager.resizeApplication(cfRequestConfig);
+    ApplicationDetail applicationDetail = pcfDeploymentManager.resizeApplication(cfRequestConfig, executionLogCallback);
 
     executionLogCallback.saveExecutionLog("# Downsizing successful");
     executionLogCallback.saveExecutionLog("\n# App details after downsize:");
@@ -524,11 +524,34 @@ public class PcfCommandTaskBaseHelper {
     if (isEmpty(previousReleases)) {
       return null;
     }
+    String releaseNamePrefix = cfRequestConfig.getApplicationName();
 
+    ApplicationSummary activeApplication =
+        findActiveBasedOnEnvironmentVariable(previousReleases, cfRequestConfig, executionLogCallback);
+
+    if (activeApplication == null) {
+      activeApplication = findActiveBasedOnServiceName(previousReleases, releaseNamePrefix, executionLogCallback);
+    }
+
+    if (activeApplication == null) {
+      StringBuilder msgBuilder =
+          new StringBuilder(256)
+              .append("Invalid PCF Deployment State. No applications were found having Env variable as ")
+              .append(HARNESS__STATUS__IDENTIFIER)
+              .append(
+                  ": ACTIVE' identifier and no applications were found having same name as release name as specified by customer.");
+      executionLogCallback.saveExecutionLog(msgBuilder.toString(), ERROR);
+      throw new InvalidPcfStateException(msgBuilder.toString(), INVALID_INFRA_STATE, USER_SRE);
+    }
+
+    return activeApplication;
+  }
+
+  private ApplicationSummary findActiveBasedOnEnvironmentVariable(List<ApplicationSummary> previousReleases,
+      CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) throws PivotalClientApiException {
     // For existing
-    ApplicationSummary activeApplication = previousReleases.get(previousReleases.size() - 1);
-    boolean logPrinted = false;
     List<ApplicationSummary> activeVersions = new ArrayList<>();
+    ApplicationSummary activeApplication = null;
     for (int i = previousReleases.size() - 1; i >= 0; i--) {
       ApplicationSummary applicationSummary = previousReleases.get(i);
       cfRequestConfig.setApplicationName(applicationSummary.getName());
@@ -536,7 +559,6 @@ public class PcfCommandTaskBaseHelper {
       if (pcfDeploymentManager.isActiveApplication(cfRequestConfig, executionLogCallback)) {
         activeApplication = applicationSummary;
         activeVersions.add(applicationSummary);
-        logPrinted = true;
         executionLogCallback.saveExecutionLog(
             String.format("Found current Active App: [%s], as it has HARNESS__STATUS__IDENTIFIER set as ACTIVE",
                 PcfUtils.encodeColor(applicationSummary.getName())));
@@ -555,10 +577,21 @@ public class PcfCommandTaskBaseHelper {
       throw new InvalidPcfStateException(msgBuilder.toString(), INVALID_INFRA_STATE, USER_SRE);
     }
 
-    if (!logPrinted) {
-      executionLogCallback.saveExecutionLog(
-          String.format("Found current Active App: [%s], as it's most recent application",
-              PcfUtils.encodeColor(activeApplication.getName())));
+    return activeApplication;
+  }
+
+  public ApplicationSummary findActiveBasedOnServiceName(List<ApplicationSummary> previousReleases,
+      String releaseNamePrefix, LogCallback executionLogCallback) throws PivotalClientApiException {
+    ApplicationSummary activeApplication = null;
+    for (int i = previousReleases.size() - 1; i >= 0; i--) {
+      ApplicationSummary applicationSummary = previousReleases.get(i);
+
+      if (releaseNamePrefix.equals(applicationSummary.getName())) {
+        activeApplication = applicationSummary;
+        executionLogCallback.saveExecutionLog(
+            String.format("Found current Active App: [%s], as it has same name as release name specified by user",
+                PcfUtils.encodeColor(activeApplication.getName())));
+      }
     }
     return activeApplication;
   }
@@ -835,6 +868,7 @@ public class PcfCommandTaskBaseHelper {
     }
     // case 3 : for non-version -> non-version, rename the inactive app to <name-prefix>__<max_version+1>
     // case 4 : for non-version -> version, rename the inactive app to <name-prefix>__<max_version+1>
+    cfRequestConfig.setApplicationName(releaseNamePrefix);
     ApplicationSummary activeApplication =
         findActiveApplication(executionLogCallback, true, cfRequestConfig, previousReleases);
 

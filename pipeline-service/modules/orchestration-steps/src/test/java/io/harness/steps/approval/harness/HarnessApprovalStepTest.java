@@ -9,30 +9,40 @@ package io.harness.steps.approval.harness;
 
 import static io.harness.eraro.ErrorCode.APPROVAL_REJECTION;
 import static io.harness.rule.OwnerRule.PRABU;
+import static io.harness.rule.OwnerRule.SOURABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.shell.ShellScriptTaskNG;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.dto.UserGroupDTO;
+import io.harness.ng.core.user.UserInfo;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.execution.AsyncTimeoutResponseData;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.steps.approval.ApprovalNotificationHandler;
 import io.harness.steps.approval.step.ApprovalInstanceService;
@@ -44,10 +54,18 @@ import io.harness.steps.approval.step.harness.HarnessApprovalResponseData;
 import io.harness.steps.approval.step.harness.HarnessApprovalSpecParameters;
 import io.harness.steps.approval.step.harness.HarnessApprovalStep;
 import io.harness.steps.approval.step.harness.beans.Approvers;
+import io.harness.steps.approval.step.harness.beans.AutoApprovalAction;
+import io.harness.steps.approval.step.harness.beans.AutoApprovalParams;
+import io.harness.steps.approval.step.harness.beans.ScheduledDeadline;
 import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
+import io.harness.steps.approval.step.harness.outcomes.HarnessApprovalStepOutcome;
+import io.harness.user.remote.UserClient;
+import io.harness.utils.PmsFeatureFlagHelper;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import org.junit.Before;
 import org.junit.Rule;
@@ -58,16 +76,22 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import retrofit2.Call;
+import retrofit2.Response;
 
 public class HarnessApprovalStepTest {
   public static final String APPROVAL_MESSAGE = "Approval_Message";
   public static final String USER_GROUP = "User_Group";
   public static final String INSTANCE_ID = "INSTANCE_ID";
+  public static final String TIMEOUT_DATA = "timeoutData";
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock ApprovalInstanceService approvalInstanceService;
   @Mock ExecutorService executorService;
   @Mock ApprovalNotificationHandler approvalNotificationHandler;
   @Mock LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Mock ExecutionSweepingOutputService sweepingOutputService;
+  @Mock private UserClient userClient;
+  @Mock private PmsFeatureFlagHelper pmsFeatureFlagHelper;
   @InjectMocks private HarnessApprovalStep harnessApprovalStep;
   private ILogStreamingStepClient logStreamingStepClient;
 
@@ -75,6 +99,7 @@ public class HarnessApprovalStepTest {
   public void setup() {
     logStreamingStepClient = mock(ILogStreamingStepClient.class);
     when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(logStreamingStepClient);
+    when(pmsFeatureFlagHelper.isEnabled(any(), eq(FeatureName.CDS_AUTO_APPROVAL))).thenReturn(true);
   }
 
   @Test
@@ -92,6 +117,7 @@ public class HarnessApprovalStepTest {
         .save(any());
     when(approvalNotificationHandler.getUserGroups(HarnessApprovalInstance.fromStepParameters(ambiance, parameters)))
         .thenReturn(Collections.emptyList());
+    when(sweepingOutputService.consume(any(), any(), any(), any())).thenReturn("");
     assertThatThrownBy(() -> harnessApprovalStep.executeAsync(ambiance, parameters, null, null))
         .isInstanceOf(InvalidRequestException.class);
     when(approvalNotificationHandler.getUserGroups(any())).thenReturn(Collections.singletonList(buildUserGroup()));
@@ -178,6 +204,52 @@ public class HarnessApprovalStepTest {
         .isNotNull()
         .isInstanceOf(HarnessApprovalOutcome.class);
     verify(logStreamingStepClient).closeStream(ShellScriptTaskNG.COMMAND_UNIT);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testHandleAsyncResponseForAutoApproval() throws IOException {
+    Ambiance ambiance = buildAmbiance();
+    StepElementParameters parameters = getStepElementParameters();
+
+    HarnessApprovalSpecParameters specParameters = (HarnessApprovalSpecParameters) parameters.getSpec();
+    AutoApprovalParams autoApprovalParams =
+        AutoApprovalParams.builder()
+            .action(AutoApprovalAction.APPROVE)
+            .scheduledDeadline(ScheduledDeadline.builder().time("time").timeZone("timezone").build())
+            .comments(ParameterField.<String>builder().value("comments").build())
+            .build();
+    specParameters.setAutoApproval(autoApprovalParams);
+    parameters.setSpec(specParameters);
+
+    Call userCall = mock(Call.class);
+    when(userClient.getUserById(any())).thenReturn(userCall);
+    when(userCall.execute()).thenReturn(Response.success(new RestResponse(Optional.of(UserInfo.builder().build()))));
+
+    AsyncTimeoutResponseData responseData = AsyncTimeoutResponseData.builder().build();
+    HarnessApprovalInstance approvalInstance = HarnessApprovalInstance.builder().build();
+
+    OptionalSweepingOutput outputOptional =
+        OptionalSweepingOutput.builder()
+            .found(true)
+            .output(HarnessApprovalStepOutcome.builder().approvalInstanceId(INSTANCE_ID).build())
+            .build();
+
+    approvalInstance.setStatus(ApprovalStatus.REJECTED);
+
+    doReturn(approvalInstance)
+        .when(approvalInstanceService)
+        .addHarnessApprovalActivityV2(any(), any(), any(), anyBoolean());
+    doReturn(outputOptional).when(sweepingOutputService).resolveOptional(any(), any());
+    doNothing().when(approvalNotificationHandler).sendNotification(any(), any());
+
+    StepResponse response = harnessApprovalStep.handleAsyncResponse(
+        ambiance, parameters, Collections.singletonMap(TIMEOUT_DATA, responseData));
+
+    verify(logStreamingStepClient).closeStream(ShellScriptTaskNG.COMMAND_UNIT);
+    verify(approvalInstanceService, times(1)).addHarnessApprovalActivityV2(eq(INSTANCE_ID), any(), any(), anyBoolean());
+    assertThat(response.getStepOutcomes().iterator().next().getOutcome()).isInstanceOf(HarnessApprovalOutcome.class);
   }
 
   @Test

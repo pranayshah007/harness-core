@@ -102,7 +102,7 @@ public class PipelineStageFilterCreatorTest extends CategoryTest {
 
     doReturn(Optional.of(PipelineEntity.builder().yaml(yamlField).build()))
         .when(pmsPipelineService)
-        .getPipeline("acc", "org", "project", "childPipeline", false, false);
+        .getPipeline("acc", "org", "project", "childPipeline", false, false, false, true);
 
     GitEntityInfo gitRequestParamsInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     assertThat(gitRequestParamsInfo.getParentEntityAccountIdentifier()).isNull();

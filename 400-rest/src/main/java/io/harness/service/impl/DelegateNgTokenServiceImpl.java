@@ -8,13 +8,17 @@
 package io.harness.service.impl;
 
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
+import static io.harness.delegate.message.ManagerMessageConstants.SELF_DESTRUCT;
+import static io.harness.delegate.utils.DelegateServiceConstants.STREAM_DELEGATE;
 
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.UUIDGenerator;
-import io.harness.delegate.authenticator.DelegateTokenEncryptDecrypt;
+import io.harness.delegate.authenticator.DelegateSecretManager;
+import io.harness.delegate.beans.Delegate;
+import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateToken;
 import io.harness.delegate.beans.DelegateToken.DelegateTokenKeys;
@@ -51,6 +55,7 @@ import java.util.stream.Collectors;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.atmosphere.cpr.BroadcasterFactory;
 
 @Singleton
 @Slf4j
@@ -62,14 +67,16 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
 
   private final HPersistence persistence;
   private final OutboxService outboxService;
-  private final DelegateTokenEncryptDecrypt delegateTokenEncryptDecrypt;
+  private final DelegateSecretManager delegateSecretManager;
+  private final BroadcasterFactory broadcasterFactory;
 
   @Inject
-  public DelegateNgTokenServiceImpl(
-      HPersistence persistence, OutboxService outboxService, DelegateTokenEncryptDecrypt delegateTokenEncryptDecrypt) {
+  public DelegateNgTokenServiceImpl(HPersistence persistence, OutboxService outboxService,
+      DelegateSecretManager delegateSecretManager, BroadcasterFactory broadcasterFactory) {
     this.persistence = persistence;
     this.outboxService = outboxService;
-    this.delegateTokenEncryptDecrypt = delegateTokenEncryptDecrypt;
+    this.delegateSecretManager = delegateSecretManager;
+    this.broadcasterFactory = broadcasterFactory;
   }
 
   @Override
@@ -90,7 +97,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
             .isNg(true)
             .status(DelegateTokenStatus.ACTIVE)
             .value(token)
-            .encryptedTokenId(delegateTokenEncryptDecrypt.encrypt(accountId, token, tokenIdentifier.trim()))
+            .encryptedTokenId(delegateSecretManager.encrypt(accountId, token, tokenIdentifier.trim()))
             .createdByNgUser(SourcePrincipalContextBuilder.getSourcePrincipal())
             .revokeAfter(revokeAfter)
             .build();
@@ -126,13 +133,20 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
     // mins.
 
     publishRevokeTokenAuditEvent(updatedDelegateToken);
-
+    List<Delegate> delegates = persistence.createQuery(Delegate.class)
+                                   .filter(DelegateKeys.accountId, accountId)
+                                   .filter(DelegateKeys.delegateTokenName, tokenName)
+                                   .asList();
+    delegates.forEach(delegate -> {
+      broadcasterFactory.lookup(STREAM_DELEGATE + accountId, true).broadcast(SELF_DESTRUCT + delegate.getUuid());
+      log.warn("Sent self destruct command to delegate {} due to revoked token", delegate.getUuid());
+    });
     return getDelegateTokenDetails(updatedDelegateToken, false);
   }
 
   @Override
   public List<DelegateTokenDetails> getDelegateTokens(
-      String accountId, DelegateEntityOwner owner, DelegateTokenStatus status) {
+      String accountId, DelegateEntityOwner owner, DelegateTokenStatus status, boolean includeValue) {
     Query<DelegateToken> query = persistence.createQuery(DelegateToken.class)
                                      .filter(DelegateTokenKeys.accountId, accountId)
                                      .filter(DelegateTokenKeys.isNg, true)
@@ -140,7 +154,10 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
     if (status != null) {
       query = query.filter(DelegateTokenKeys.status, status);
     }
-    return query.asList().stream().map(token -> getDelegateTokenDetails(token, false)).collect(Collectors.toList());
+    return query.asList()
+        .stream()
+        .map(token -> getDelegateTokenDetails(token, includeValue))
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -163,7 +180,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
   public String getDelegateTokenValue(String accountId, String name) {
     DelegateToken delegateToken = matchNameTokenQuery(accountId, name).get();
     if (delegateToken != null) {
-      return delegateTokenEncryptDecrypt.getDelegateTokenValue(delegateToken);
+      return delegateSecretManager.getDelegateTokenValue(delegateToken);
     }
     log.warn("Not able to find delegate token {} for account {} . Please verify manually.", name, accountId);
     return null;
@@ -203,7 +220,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
     }
     String tokenNameSanitized = StringUtils.replaceAll(tokenIdentifier, TOKEN_NAME_ILLEGAL_CHARACTERS, "_");
     updateOperations.set(DelegateTokenKeys.encryptedTokenId,
-        delegateTokenEncryptDecrypt.encrypt(accountId, getDefaultTokenName(owner), tokenNameSanitized.trim()));
+        delegateSecretManager.encrypt(accountId, getDefaultTokenName(owner), tokenNameSanitized.trim()));
 
     DelegateToken delegateToken = persistence.upsert(query, updateOperations, HPersistence.upsertReturnNewOptions);
     log.info("Default Delegate NG Token inserted/updated for account {}, organization {} and project {}", accountId,
@@ -280,7 +297,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
                                                                   .status(delegateToken.getStatus());
 
     if (includeTokenValue) {
-      delegateTokenDetailsBuilder.value(delegateTokenEncryptDecrypt.getBase64EncodedTokenValue(delegateToken));
+      delegateTokenDetailsBuilder.value(delegateSecretManager.getBase64EncodedTokenValue(delegateToken));
     }
 
     if (delegateToken.getOwner() != null) {

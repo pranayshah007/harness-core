@@ -31,6 +31,7 @@ import io.harness.beans.SweepingOutputInstance;
 import io.harness.beans.TriggeredBy;
 import io.harness.context.ContextElementType;
 import io.harness.delegate.beans.TaskData;
+import io.harness.exception.FailureType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.CommandExecutionStatus;
@@ -177,6 +178,15 @@ public abstract class CloudFormationState extends State {
         : ExecutionStatus.FAILED;
     activityService.updateStatus(activityId, context.getAppId(), executionStatus);
     ExecutionResponseBuilder builder = ExecutionResponse.builder().executionStatus(executionStatus);
+
+    if (ExecutionStatus.FAILED == executionStatus && executionResponse.isTimeoutError()) {
+      return ExecutionResponse.builder()
+          .executionStatus(executionStatus)
+          .failureTypes(FailureType.TIMEOUT)
+          .errorMessage("Timed out while waiting for task to complete")
+          .build();
+    }
+
     if (ExecutionStatus.SUCCESS == executionStatus) {
       List<CloudFormationElement> elements = handleResponse(executionResponse.getCommandResponse(), context);
       if (isNotEmpty(elements)) {

@@ -64,6 +64,9 @@ public class BuildSourceParameters implements TaskParameters, ExecutionCapabilit
   // stream types like buildNo, revision or artifactPath.
   private Set<String> savedBuildDetailsKeys;
 
+  private boolean timeoutSupported;
+  private Integer timeout;
+
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     if (settingValue == null) {

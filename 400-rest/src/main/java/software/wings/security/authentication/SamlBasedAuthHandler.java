@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessModule._950_NG_AUTHENTICATION_SE
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.eraro.ErrorCode.USER_DISABLED;
+import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static software.wings.security.saml.SamlClientService.SAML_TRIGGER_TYPE;
@@ -44,6 +46,7 @@ import software.wings.logcontext.UserLogContext;
 import software.wings.security.saml.SamlClientService;
 import software.wings.security.saml.SamlClientService.HostType;
 import software.wings.security.saml.SamlUserGroupSync;
+import software.wings.service.impl.UserServiceHelper;
 import software.wings.service.intfc.SSOSettingService;
 import software.wings.service.intfc.UserService;
 import software.wings.service.intfc.security.EncryptionService;
@@ -101,6 +104,7 @@ public class SamlBasedAuthHandler implements AuthHandler {
   @Inject private SamlUserGroupSync samlUserGroupSync;
   @Inject private SSOSettingService ssoSettingService;
   @Inject private UserService userService;
+  @Inject private UserServiceHelper userServiceHelper;
   @Inject private DomainWhitelistCheckerService domainWhitelistCheckerService;
   @Inject private NgSamlAuthorizationEventPublisher ngSamlAuthorizationEventPublisher;
   @Inject private SecretManager secretManager;
@@ -728,6 +732,24 @@ public class SamlBasedAuthHandler implements AuthHandler {
     return attributeValue.getTextContent();
   }
 
+  private boolean matchAssertionsForJit(
+      Assertion samlAssertionValue, String jitValidationKey, String jitValidationValue) {
+    List<AttributeStatement> attributeStatements = samlAssertionValue.getAttributeStatements();
+    for (AttributeStatement attributeStatement : attributeStatements) {
+      for (Attribute attribute : attributeStatement.getAttributes()) {
+        if (attribute.getName().equals(jitValidationKey)) {
+          for (XMLObject xmlObject : attribute.getAttributeValues()) {
+            final String value = getAttributeValue(xmlObject);
+            if (Objects.equals(value, jitValidationValue)) {
+              return true;
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+
   private boolean entityIdForSamlResponseMatchesWithSamlSettings(String samlResponseStr, SamlSettings settings) {
     try {
       SamlClient samlClient = samlClientService.getSamlClient(settings);
@@ -762,19 +784,50 @@ public class SamlBasedAuthHandler implements AuthHandler {
     try {
       SamlClient samlClient = samlClientService.getSamlClient(samlSettings);
       SamlResponse samlResponse = samlClient.decodeAndValidateSamlResponse(samlResponseString);
-      String nameId = samlResponse.getNameID();
-      User user = authenticationUtils.getUser(nameId);
-      validateUser(user, samlSettings.getAccountId());
+      String email = samlResponse.getNameID();
+      User user = userService.getUserByEmail(email, samlSettings.getAccountId());
+      if (user == null) {
+        if (isUserApplicableToJustInTimeUserProvision(samlResponse, samlSettings)) {
+          return createNewUserOrAddUserToAccountViaJIT(email, samlSettings.getAccountId());
+        }
+        log.info("User {} does not exists.", email);
+        throw new WingsException(ErrorCode.USER_DOES_NOT_EXIST);
+      } else if (user.isDisabled()) {
+        log.info("User {} is disabled.", email);
+        throw new WingsException(USER_DISABLED, USER);
+      } else if (isUserApplicableToJustInTimeUserProvision(samlResponse, samlSettings)
+          && !userServiceHelper.isUserActiveInNG(user, samlSettings.getAccountId())) {
+        // this is to handle the case where the user is applicable to just in time user provision and is only part of cg
+        // and not part of ng
+        return createNewUserOrAddUserToAccountViaJIT(email, samlSettings.getAccountId());
+      }
       return user;
     } catch (SamlException e) {
       log.warn("SAML: SamlResponse cannot be validated for saml settings id=[{}], url=[{}], accountId=[{}]",
           samlSettings.getUuid(), samlSettings.getUrl(), samlSettings.getAccountId());
-    } catch (WingsException e) {
-      log.warn("SAML: SamlResponse contains nameId which does not exist in db, url=[{}], accountId=[{}]",
-          samlSettings.getUrl(), samlSettings.getAccountId());
-      throw new WingsException(ErrorCode.USER_DOES_NOT_EXIST, e);
     }
     return null;
+  }
+
+  private boolean isUserApplicableToJustInTimeUserProvision(SamlResponse samlResponse, SamlSettings samlSettings)
+      throws SamlException {
+    return samlSettings.isJitEnabled() && checkForKeyValuePairAndMatchWithAssertion(samlResponse, samlSettings);
+  }
+
+  private boolean checkForKeyValuePairAndMatchWithAssertion(SamlResponse samlResponse, SamlSettings samlSettings)
+      throws SamlException {
+    if (samlResponse == null) {
+      return false;
+    }
+    Assertion samlAssertionValue = samlResponse.getAssertion();
+    // if samlSettings does not have key-value pair set, this mean all users are to be JIT provisioned
+    return isEmpty(samlSettings.getJitValidationKey()) || isEmpty(samlSettings.getJitValidationValue())
+        || matchAssertionsForJit(
+            samlAssertionValue, samlSettings.getJitValidationKey(), samlSettings.getJitValidationValue());
+  }
+
+  private User createNewUserOrAddUserToAccountViaJIT(String email, String accountId) {
+    return userService.completeUserCreationOrAdditionViaJitAndSignIn(email, accountId);
   }
 
   private String getAccessTokenForAzure(

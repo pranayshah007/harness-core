@@ -34,8 +34,6 @@ public interface InstanceSyncPerpetualTaskService {
 
   void deletePerpetualTask(String accountIdentifier, String perpetualTaskId);
 
-  boolean isInstanceSyncV2Enabled();
-
   String createPerpetualTaskV2(AbstractInstanceSyncHandler abstractInstanceSyncHandler,
       InfrastructureMappingDTO infrastructureMappingDTO, ConnectorInfoDTO connectorInfoDTO);
 }

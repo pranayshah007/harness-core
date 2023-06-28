@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.CDP_USE_K8S_DECLARATIVE_ROLLBACK;
 import static io.harness.beans.FeatureName.NEW_KUBECTL_VERSION;
+import static io.harness.beans.FeatureName.SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
 
@@ -26,6 +27,7 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
 import io.harness.context.ContextElementType;
 import io.harness.delegate.task.k8s.K8sTaskType;
+import io.harness.exception.FailureType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.k8s.model.K8sPod;
@@ -163,6 +165,9 @@ public class K8sCanaryDeploy extends AbstractK8sState {
     ContainerInfrastructureMapping infraMapping = k8sStateHelper.fetchContainerInfrastructureMapping(context);
     storePreviousHelmDeploymentInfo(context, appManifestMap.get(K8sValuesLocation.Service));
 
+    boolean isTimeoutFailureSupported =
+        featureFlagService.isEnabled(SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW, context.getAccountId());
+
     K8sDelegateManifestConfig k8sDelegateManifestConfig =
         createDelegateManifestConfig(context, appManifestMap.get(K8sValuesLocation.Service));
     k8sDelegateManifestConfig.setShouldSaveManifest(shouldSaveManifest(context));
@@ -187,6 +192,7 @@ public class K8sCanaryDeploy extends AbstractK8sState {
             .instances(Integer.valueOf(context.renderExpression(this.instances)))
             .instanceUnitType(this.instanceUnitType)
             .timeoutIntervalInMin(stateTimeoutInMinutes)
+            .timeoutSupported(isTimeoutFailureSupported)
             .k8sDelegateManifestConfig(k8sDelegateManifestConfig)
             .valuesYamlList(fetchRenderedValuesFiles(appManifestMap, context))
             .skipDryRun(skipDryRun)
@@ -236,6 +242,15 @@ public class K8sCanaryDeploy extends AbstractK8sState {
           saveK8sElement(
               context, K8sElement.builder().canaryWorkload(k8sCanaryDeployResponse.getCanaryWorkload()).build());
         }
+      }
+
+      if (executionResponse.isTimeoutError()) {
+        return ExecutionResponse.builder()
+            .executionStatus(executionStatus)
+            .stateExecutionData(stateExecutionData)
+            .failureTypes(FailureType.TIMEOUT)
+            .errorMessage("Timed out while waiting for k8s task to complete")
+            .build();
       }
 
       return ExecutionResponse.builder()

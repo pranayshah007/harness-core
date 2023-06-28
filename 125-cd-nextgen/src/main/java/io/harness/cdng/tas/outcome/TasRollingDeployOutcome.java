@@ -12,6 +12,7 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.execution.tas.TasStageExecutionDetails;
 import io.harness.expression.Expression;
 import io.harness.pcf.model.CfCliVersionNG;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
@@ -38,5 +39,6 @@ public class TasRollingDeployOutcome implements Outcome, ExecutionSweepingOutput
   @Setter @NonFinal boolean isFirstDeployment;
   @Setter @NonFinal CfCliVersionNG cfCliVersion;
   @Setter @NonFinal boolean deploymentStarted;
+  @Expression(ALLOW_SECRETS) @Setter @NonFinal TasStageExecutionDetails tasStageExecutionDetails;
   @Expression(ALLOW_SECRETS) @Setter @NonFinal List<String> routeMaps;
 }

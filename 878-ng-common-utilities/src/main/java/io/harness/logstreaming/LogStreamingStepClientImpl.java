@@ -11,10 +11,14 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.network.SafeHttpCall;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Data
@@ -28,6 +32,8 @@ public class LogStreamingStepClientImpl implements ILogStreamingStepClient {
   private final String token;
   private final String accountId;
   private final String baseLogKey;
+  private final @NonNull Cache<Object, Object> logKeyCache =
+      Caffeine.newBuilder().expireAfterWrite(5, TimeUnit.MINUTES).maximumSize(1000).build();
 
   @Override
   public void openStream(String logKeySuffix) {
@@ -53,15 +59,19 @@ public class LogStreamingStepClientImpl implements ILogStreamingStepClient {
   @Override
   public void writeLogLine(LogLine logLine, String logKeySuffix) {
     // we don't want steps to hang because of any log reasons.
+    String logKey = generateLogKey(baseLogKey, logKeySuffix);
     try {
-      String logKey = generateLogKey(baseLogKey, logKeySuffix);
       logStreamingSanitizer.sanitizeLogMessage(logLine);
       LogStreamingHelper.colorLog(logLine);
 
       SafeHttpCall.executeWithExceptions(
           logStreamingClient.pushMessage(token, accountId, logKey, Collections.singletonList(logLine)));
     } catch (Exception ex) {
-      log.error("Unable to push message to log stream for account {} and logKeySuffix {}", accountId, logKeySuffix, ex);
+      if (logKeyCache.getIfPresent(logKey) == null) {
+        logKeyCache.put(logKey, true);
+        log.error(
+            "Unable to push message to log stream for account {} and logKeySuffix {}", accountId, logKeySuffix, ex);
+      }
     }
   }
 

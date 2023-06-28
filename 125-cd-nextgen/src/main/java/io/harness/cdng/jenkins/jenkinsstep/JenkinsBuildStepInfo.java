@@ -73,12 +73,12 @@ public class JenkinsBuildStepInfo implements CDAbstractStepInfo, WithConnectorRe
 
   @Override
   public StepType getStepType() {
-    return JenkinsBuildStep.STEP_TYPE;
+    return JenkinsBuildStepV2.STEP_TYPE;
   }
 
   @Override
   public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
+    return OrchestrationFacilitatorType.TASK_CHAIN;
   }
 
   @Override

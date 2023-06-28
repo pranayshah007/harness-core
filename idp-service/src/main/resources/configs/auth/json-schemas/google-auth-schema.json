@@ -1,0 +1,84 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/object1685002186.json",
+  "title": "Root",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "auth"
+  ],
+  "properties": {
+    "auth": {
+      "$id": "#root/auth",
+      "title": "Auth",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "environment",
+        "providers"
+      ],
+      "properties": {
+        "environment": {
+          "$id": "#root/auth/environment",
+          "title": "Environment",
+          "type": "string",
+          "default": "",
+          "pattern": "^.*$"
+        },
+        "providers": {
+          "$id": "#root/auth/providers",
+          "title": "Providers",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "google"
+          ],
+          "properties": {
+            "google": {
+              "$id": "#root/auth/providers/google",
+              "title": "Google",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "development"
+              ],
+              "properties": {
+                "development": {
+                  "$id": "#root/auth/providers/google/development",
+                  "title": "Development",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "clientId",
+                    "clientSecret"
+                  ],
+                  "properties": {
+                    "clientId": {
+                      "$id": "#root/auth/providers/google/development/clientId",
+                      "title": "Clientid",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "clientSecret": {
+                      "$id": "#root/auth/providers/google/development/clientSecret",
+                      "title": "Clientsecret",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    }
+                  }
+                }
+
+              }
+            }
+
+          }
+        }
+
+      }
+    }
+
+  }
+}

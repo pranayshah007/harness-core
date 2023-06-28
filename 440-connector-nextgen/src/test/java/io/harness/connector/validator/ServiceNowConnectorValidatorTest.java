@@ -33,6 +33,7 @@ import io.harness.rule.OwnerRule;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.service.DelegateGrpcClientWrapper;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -71,14 +72,14 @@ public class ServiceNowConnectorValidatorTest extends CategoryTest {
     when(encryptionHelper.getEncryptionDetail(any(), any(), any(), any())).thenReturn(null);
 
     when(ngSecretService.getEncryptionDetails(any(), any())).thenReturn(null);
-    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
-        .thenReturn(ServiceNowTestConnectionTaskNGResponse.builder().canConnect(true).build());
+    when(delegateGrpcClientWrapper.executeSyncTaskV2ReturnTaskId(any()))
+        .thenReturn(Pair.of("xxxxxx", ServiceNowTestConnectionTaskNGResponse.builder().canConnect(true).build()));
 
     ConnectorValidationResult result = connectorValidator.validate(
         serviceNowConnectorDTO, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER);
 
     assertThat(result.getStatus()).isEqualTo(SUCCESS);
-    verify(delegateGrpcClientWrapper).executeSyncTaskV2(any());
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2ReturnTaskId(any());
   }
 
   @Test
@@ -93,14 +94,14 @@ public class ServiceNowConnectorValidatorTest extends CategoryTest {
     when(encryptionHelper.getEncryptionDetail(any(), any(), any(), any())).thenReturn(null);
 
     when(ngSecretService.getEncryptionDetails(any(), any())).thenReturn(null);
-    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
-        .thenReturn(ServiceNowTestConnectionTaskNGResponse.builder().canConnect(false).build());
+    when(delegateGrpcClientWrapper.executeSyncTaskV2ReturnTaskId(any()))
+        .thenReturn(Pair.of("xxxxxx", ServiceNowTestConnectionTaskNGResponse.builder().canConnect(false).build()));
 
     ConnectorValidationResult result = connectorValidator.validate(
         serviceNowConnectorDTO, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER);
 
     assertThat(result.getStatus()).isEqualTo(FAILURE);
-    verify(delegateGrpcClientWrapper).executeSyncTaskV2(any());
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2ReturnTaskId(any());
   }
 
   @Test

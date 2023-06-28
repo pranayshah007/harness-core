@@ -8,6 +8,7 @@
 package io.harness.cdng.helm;
 
 import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.bool;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
@@ -43,4 +44,5 @@ public class HelmDeployBaseStepInfo {
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
   @YamlSchemaTypes({string})
   ParameterField<Boolean> ignoreReleaseHistFailStatus;
+  @YamlSchemaTypes({expression, bool}) ParameterField<Boolean> skipSteadyStateCheck;
 }

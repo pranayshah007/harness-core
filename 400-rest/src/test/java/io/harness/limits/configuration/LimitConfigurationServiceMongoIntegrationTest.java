@@ -9,6 +9,8 @@ package io.harness.limits.configuration;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.limits.ActionType.CREATE_APPLICATION;
+import static io.harness.limits.ActionType.MAX_QPM_PER_MANAGER;
+import static io.harness.rule.OwnerRule.RAGHAV_MURALI;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,6 +44,8 @@ public class LimitConfigurationServiceMongoIntegrationTest extends IntegrationTe
   // namespacing accountId with class name to prevent collision with other tests
   private static final String SOME_ACCOUNT_ID =
       "some-account-id-" + LimitConfigurationServiceMongoIntegrationTest.class.getSimpleName();
+  private static final String GLOBAL_ACCOUNT_ID =
+      "global-account-id-" + LimitConfigurationServiceMongoIntegrationTest.class.getSimpleName();
 
   private boolean indexesEnsured;
 
@@ -119,5 +123,43 @@ public class LimitConfigurationServiceMongoIntegrationTest extends IntegrationTe
     assertThat(configured).isTrue();
     fetchedValue = configuredLimitService.get(accountId, CREATE_APPLICATION);
     assertThat(fetchedValue).isEqualTo(cl);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_MURALI)
+  @Category(DeprecatedIntegrationTests.class)
+  @Ignore("skipping the integration test")
+  public void testgetOrDefaultToGlobal_ReturnsGivenAccountLimit() {
+    String accountId = SOME_ACCOUNT_ID;
+    String globalAccountId = GLOBAL_ACCOUNT_ID;
+
+    StaticLimit accountLimit = new StaticLimit(10);
+    StaticLimit globalLimit = new StaticLimit(20);
+    ConfiguredLimit<StaticLimit> cl = new ConfiguredLimit<>(accountId, accountLimit, MAX_QPM_PER_MANAGER);
+    boolean configured = configuredLimitService.configure(accountId, MAX_QPM_PER_MANAGER, cl.getLimit());
+    assertThat(configured).isTrue();
+    ConfiguredLimit<StaticLimit> gcl = new ConfiguredLimit<>(globalAccountId, globalLimit, MAX_QPM_PER_MANAGER);
+    configured = configuredLimitService.configure(globalAccountId, MAX_QPM_PER_MANAGER, gcl.getLimit());
+    assertThat(configured).isTrue();
+    ConfiguredLimit fetchedValue =
+        configuredLimitService.getOrDefaultToGlobal(accountId, globalAccountId, MAX_QPM_PER_MANAGER);
+    assertThat(fetchedValue).isEqualTo(cl);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_MURALI)
+  @Category(DeprecatedIntegrationTests.class)
+  @Ignore("skipping the integration test")
+  public void testgetOrDefaultToGlobal_ReturnsGlobalAccountLimit() {
+    String accountId = SOME_ACCOUNT_ID;
+    String globalAccountId = GLOBAL_ACCOUNT_ID;
+
+    StaticLimit globalLimit = new StaticLimit(20);
+    ConfiguredLimit<StaticLimit> gcl = new ConfiguredLimit<>(globalAccountId, globalLimit, MAX_QPM_PER_MANAGER);
+    boolean configured = configuredLimitService.configure(globalAccountId, MAX_QPM_PER_MANAGER, gcl.getLimit());
+    assertThat(configured).isTrue();
+    ConfiguredLimit fetchedValue =
+        configuredLimitService.getOrDefaultToGlobal(accountId, globalAccountId, MAX_QPM_PER_MANAGER);
+    assertThat(fetchedValue).isEqualTo(gcl);
   }
 }

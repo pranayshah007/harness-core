@@ -9,14 +9,14 @@ package io.harness.delegate.beans.connector.bamboo;
 
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.delegate.beans.DelegateMetaInfo;
-import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.delegate.beans.connector.ConnectorValidationResponseData;
 
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
-public class BambooConnectionTaskResponse implements DelegateResponseData {
+public class BambooConnectionTaskResponse implements ConnectorValidationResponseData {
   private ConnectorValidationResult connectorValidationResult;
   private DelegateMetaInfo delegateMetaInfo;
 }

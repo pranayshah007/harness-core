@@ -10,6 +10,7 @@ package io.harness.aggregator.consumers;
 import static io.harness.accesscontrol.principals.PrincipalType.SERVICE_ACCOUNT;
 import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
+import static io.harness.accesscontrol.resources.resourcegroups.ResourceSelector.validateResourceType;
 import static io.harness.accesscontrol.scopes.core.ScopeHelper.toParentScope;
 import static io.harness.aggregator.ACLUtils.buildACL;
 import static io.harness.aggregator.ACLUtils.buildResourceSelector;
@@ -20,6 +21,7 @@ import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.acl.persistence.ACL;
 import io.harness.accesscontrol.acl.persistence.repositories.ACLRepository;
 import io.harness.accesscontrol.common.filter.ManagedFilter;
+import io.harness.accesscontrol.permissions.persistence.repositories.InMemoryPermissionRepository;
 import io.harness.accesscontrol.principals.usergroups.UserGroup;
 import io.harness.accesscontrol.principals.usergroups.UserGroupService;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceGroup;
@@ -58,18 +60,24 @@ public class ACLGeneratorServiceImpl implements ACLGeneratorService {
   private final ScopeService scopeService;
   private final Map<Pair<ScopeLevel, Boolean>, Set<String>> implicitPermissionsByScope;
   private final ACLRepository aclRepository;
+  private final boolean disableRedundantACLs;
+  private final InMemoryPermissionRepository inMemoryPermissionRepository;
 
   @Inject
   public ACLGeneratorServiceImpl(RoleService roleService, UserGroupService userGroupService,
       ResourceGroupService resourceGroupService, ScopeService scopeService,
       Map<Pair<ScopeLevel, Boolean>, Set<String>> implicitPermissionsByScope,
-      @Named(ACL.PRIMARY_COLLECTION) ACLRepository aclRepository) {
+      @Named(ACL.PRIMARY_COLLECTION) ACLRepository aclRepository,
+      @Named("disableRedundantACLs") boolean disableRedundantACLs,
+      InMemoryPermissionRepository inMemoryPermissionRepository) {
     this.roleService = roleService;
     this.userGroupService = userGroupService;
     this.resourceGroupService = resourceGroupService;
     this.scopeService = scopeService;
     this.implicitPermissionsByScope = implicitPermissionsByScope;
     this.aclRepository = aclRepository;
+    this.disableRedundantACLs = disableRedundantACLs;
+    this.inMemoryPermissionRepository = inMemoryPermissionRepository;
   }
 
   @Override
@@ -119,15 +127,20 @@ public class ACLGeneratorServiceImpl implements ACLGeneratorService {
       return 0L;
     }
 
+    boolean isResourceTypeApplicableToPermission = true;
     for (String principalIdentifier : principals) {
       for (String permission : permissions) {
         for (ResourceSelector resourceSelector : resourceSelectors) {
+          if (disableRedundantACLs) {
+            isResourceTypeApplicableToPermission = validateResourceType(
+                inMemoryPermissionRepository.getResourceTypeBy(permission), resourceSelector.getSelector());
+          }
           if (SERVICE_ACCOUNT.equals(roleAssignmentDBO.getPrincipalType())) {
             acls.add(buildACL(permission, Principal.of(SERVICE_ACCOUNT, principalIdentifier), roleAssignmentDBO,
-                resourceSelector, false));
+                resourceSelector, false, isEnabled(roleAssignmentDBO, isResourceTypeApplicableToPermission)));
           } else {
-            acls.add(buildACL(
-                permission, Principal.of(USER, principalIdentifier), roleAssignmentDBO, resourceSelector, false));
+            acls.add(buildACL(permission, Principal.of(USER, principalIdentifier), roleAssignmentDBO, resourceSelector,
+                false, isEnabled(roleAssignmentDBO, isResourceTypeApplicableToPermission)));
           }
           if (acls.size() >= 50000) {
             numberOfACLsCreated += aclRepository.insertAllIgnoringDuplicates(acls);
@@ -141,6 +154,10 @@ public class ACLGeneratorServiceImpl implements ACLGeneratorService {
       acls.clear();
     }
     return numberOfACLsCreated;
+  }
+
+  private boolean isEnabled(RoleAssignmentDBO roleAssignmentDBO, boolean isResourceTypeApplicableToPermission) {
+    return !roleAssignmentDBO.isDisabled() && isResourceTypeApplicableToPermission;
   }
 
   private List<ACL> getImplicitACLsForRoleAssignment(RoleAssignmentDBO roleAssignment) {
@@ -157,18 +174,23 @@ public class ACLGeneratorServiceImpl implements ACLGeneratorService {
           ? scopeService.buildScopeFromScopeIdentifier(roleAssignment.getScopeIdentifier())
           : scopeService.buildScopeFromScopeIdentifier(scopeSelector.getScopeIdentifier());
       boolean givePermissionOnChildScopes = scopeSelector.isIncludingChildScopes();
+      boolean isResourceTypeApplicableToPermission = true;
       while (currentScope != null) {
         ResourceSelector resourceSelector =
             ResourceSelector.builder().selector(buildResourceSelector(currentScope)).build();
         Set<String> permissions = getPermissions(currentScope, givePermissionOnChildScopes, permissionsFromRole);
         for (String principalIdentifier : principals) {
           for (String permission : permissions) {
+            if (disableRedundantACLs) {
+              isResourceTypeApplicableToPermission = validateResourceType(
+                  inMemoryPermissionRepository.getResourceTypeBy(permission), resourceSelector.getSelector());
+            }
             if (SERVICE_ACCOUNT.equals(roleAssignment.getPrincipalType())) {
               acls.add(buildACL(permission, Principal.of(SERVICE_ACCOUNT, principalIdentifier), roleAssignment,
-                  resourceSelector, true));
+                  resourceSelector, true, isEnabled(roleAssignment, isResourceTypeApplicableToPermission)));
             } else {
-              acls.add(buildACL(
-                  permission, Principal.of(USER, principalIdentifier), roleAssignment, resourceSelector, true));
+              acls.add(buildACL(permission, Principal.of(USER, principalIdentifier), roleAssignment, resourceSelector,
+                  true, isEnabled(roleAssignment, isResourceTypeApplicableToPermission)));
             }
           }
         }

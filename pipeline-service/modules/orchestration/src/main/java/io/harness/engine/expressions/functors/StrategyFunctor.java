@@ -17,6 +17,7 @@ import io.harness.expression.LateBindingMap;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.execution.utils.AmbianceUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -46,7 +47,7 @@ public class StrategyFunctor extends LateBindingMap {
     List<Level> levelsWithStrategyMetadata =
         ambiance.getLevelsList().stream().filter(Level::hasStrategyMetadata).collect(Collectors.toList());
     Map<String, Object> map = StrategyUtils.fetchStrategyObjectMap(
-        levelsWithStrategyMetadata, ambiance.getMetadata().getUseMatrixFieldName());
+        levelsWithStrategyMetadata, AmbianceUtils.shouldUseMatrixFieldName(ambiance));
     return Optional.of(map.get(key));
   }
 

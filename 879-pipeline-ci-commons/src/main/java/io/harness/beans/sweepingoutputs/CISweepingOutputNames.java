@@ -19,4 +19,5 @@ public class CISweepingOutputNames {
   public static final String STAGE_EXECUTION = "stageExecution";
 
   public static final String TASK_SELECTORS = "taskselectors";
+  public static final String UNIQUE_STEP_IDENTIFIERS = "uniqueStepIdentifiers";
 }

@@ -7,19 +7,42 @@
 
 package io.harness.ccm.msp.service.impl;
 
+import io.harness.account.AccountClient;
 import io.harness.ccm.msp.dao.ManagedAccountDao;
 import io.harness.ccm.msp.dto.ManagedAccount;
 import io.harness.ccm.msp.service.intf.ManagedAccountService;
+import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.dto.AccountDTO;
+import io.harness.remote.client.CGRestUtils;
 
 import com.google.inject.Inject;
 import java.util.List;
 
 public class ManagedAccountServiceImpl implements ManagedAccountService {
   @Inject private ManagedAccountDao managedAccountDao;
+  @Inject private AccountClient accountClient;
+
+  private static final String INVALID_MSP_ACCOUNT_ID_EXCEPTION = "Invalid msp account id";
+
+  private static final String INVALID_MANAGED_ACCOUNT_ID_EXCEPTION = "Invalid managed account id.";
 
   @Override
-  public String save(ManagedAccount managedAccount) {
-    return managedAccountDao.save(managedAccount);
+  public String save(String mspAccountId, String managedAccountId) {
+    AccountDTO mspAccountDTO = CGRestUtils.getResponse(accountClient.getAccountDTO(mspAccountId));
+    AccountDTO managedAccountDTO = CGRestUtils.getResponse(accountClient.getAccountDTO(managedAccountId));
+    if (mspAccountDTO != null && managedAccountDTO != null) {
+      return managedAccountDao.save(ManagedAccount.builder()
+                                        .accountName(managedAccountDTO.getName())
+                                        .accountId(managedAccountId)
+                                        .mspAccountId(mspAccountId)
+                                        .build());
+    } else {
+      if (managedAccountDTO == null) {
+        throw new InvalidRequestException(INVALID_MANAGED_ACCOUNT_ID_EXCEPTION);
+      } else {
+        throw new InvalidRequestException(INVALID_MSP_ACCOUNT_ID_EXCEPTION);
+      }
+    }
   }
 
   @Override

@@ -248,6 +248,7 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonProperty(value = "lockNotifyResponseCleanup") private boolean lockNotifyResponseCleanup;
   @JsonProperty(value = "enableRedisForDelegateService", defaultValue = "false")
   private boolean enableRedisForDelegateService;
+  @JsonProperty("runScheduleJobsInManagerIteratorOnly") private boolean runScheduleJobsInManagerIteratorOnly;
 
   private int applicationPort;
   private boolean sslEnabled;

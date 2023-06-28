@@ -15,9 +15,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
+import io.harness.pms.merger.helpers.FQNMapGenerator;
 import io.harness.pms.merger.helpers.InputSetTemplateHelper;
 import io.harness.pms.merger.helpers.InputSetYamlHelper;
+import io.harness.pms.merger.helpers.YamlMapGenerator;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import java.util.Map;
 import java.util.Set;
@@ -80,7 +83,11 @@ public class InputSetSanitizer {
   }
 
   public YamlConfig trimValues(YamlConfig config) {
-    Map<FQN, Object> fqnToValueMap = config.getFqnToValueMap();
+    return new YamlConfig(trimValues(config.getYamlMap()));
+  }
+
+  public JsonNode trimValues(JsonNode config) {
+    Map<FQN, Object> fqnToValueMap = FQNMapGenerator.generateFQNMap(config);
     for (FQN fqn : fqnToValueMap.keySet()) {
       Object value = fqnToValueMap.get(fqn);
       if (value instanceof TextNode) {
@@ -88,6 +95,6 @@ public class InputSetSanitizer {
         fqnToValueMap.put(fqn, new TextNode(trimValue));
       }
     }
-    return new YamlConfig(fqnToValueMap, config.getYamlMap());
+    return YamlMapGenerator.generateYamlMap(fqnToValueMap, config, false);
   }
 }

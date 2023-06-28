@@ -9,6 +9,7 @@ package io.harness.cvng.statemachine.services.api;
 
 import io.harness.beans.FeatureName;
 import io.harness.cvng.analysis.entities.LearningEngineTask;
+import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
@@ -91,8 +92,11 @@ public class DeploymentLogAnalysisStateExecutor extends LogAnalysisStateExecutor
         verificationTaskService.getVerificationJobInstanceId(analysisState.getInputs().getVerificationTaskId());
     VerificationJobInstance verificationJobInstance =
         verificationJobInstanceService.getVerificationJobInstance(verificationJobInstanceId);
-    // once analysis is completed successfully, check whether it's last state or not
-    if (isLastState(analysisState, verificationJobInstance)
+
+    if (verificationJobInstance.getResolvedJob().getType() == VerificationJobType.TEST
+        && verificationJobInstance.getResolvedJob().getBaselineVerificationJobInstanceId() == null) {
+      return analysisState;
+    } else if (isLastState(analysisState, verificationJobInstance)
         && featureFlagService.isFeatureFlagEnabled(
             verificationJobInstance.getAccountId(), FeatureName.SRM_LOG_FEEDBACK_ENABLE_UI.toString())) {
       DeploymentLogFeedbackState deploymentLogFeedbackState = new DeploymentLogFeedbackState();

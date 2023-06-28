@@ -59,6 +59,8 @@ public class IdentityPlanNodeTest {
             .identifier("test")
             .name("Test Node")
             .stepType(PMS_IDENTITY)
+            .adviserObtainments(
+                Collections.singletonList(AdviserObtainment.newBuilder().setType(NextStepAdviser.ADVISER_TYPE).build()))
             .advisorObtainmentsForExecutionMode(planNode.getAdvisorObtainmentsForExecutionMode())
             .skipGraphType(SkipType.NOOP)
             .build();
@@ -74,6 +76,8 @@ public class IdentityPlanNodeTest {
                                    .identifier("test")
                                    .name("Test Node")
                                    .stepType(PMS_IDENTITY)
+                                   .adviserObtainments(Collections.singletonList(
+                                       AdviserObtainment.newBuilder().setType(NextStepAdviser.ADVISER_TYPE).build()))
                                    .advisorObtainmentsForExecutionMode(planNode.getAdvisorObtainmentsForExecutionMode())
                                    .skipGraphType(SkipType.SKIP_NODE)
                                    .build();

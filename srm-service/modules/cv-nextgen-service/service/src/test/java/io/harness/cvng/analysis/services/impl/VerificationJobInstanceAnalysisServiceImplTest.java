@@ -13,6 +13,7 @@ import static io.harness.cvng.analysis.CVAnalysisConstants.CANARY;
 import static io.harness.cvng.analysis.CVAnalysisConstants.PRIMARY;
 import static io.harness.cvng.beans.DataSourceType.APP_DYNAMICS;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.DHRUVX;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.NEMANJA;
 import static io.harness.rule.OwnerRule.SOWMYA;
@@ -53,9 +54,11 @@ import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.LoadTestAdditionalInfo;
+import io.harness.cvng.core.beans.SimpleVerificationAdditionalInfo;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.services.api.HostRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.verificationjob.beans.AdditionalInfo;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
@@ -684,6 +687,15 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
         () -> verificationJobInstanceAnalysisService.getLoadTestAdditionalInfo(accountId, verificationJobInstance))
         .isInstanceOf(IllegalStateException.class)
         .hasMessage("Activity not found for verificationJobInstanceId: " + verificationJobInstanceId);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetSimpleVerificationAdditionalInfo() {
+    AdditionalInfo additionalInfo =
+        verificationJobInstanceAnalysisService.getSimpleVerificationAdditionalInfo(accountId, null);
+    assertThat(additionalInfo).isInstanceOf(SimpleVerificationAdditionalInfo.class);
   }
 
   @Test

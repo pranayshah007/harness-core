@@ -105,7 +105,7 @@ public abstract class AbstractGitConnectorValidator extends AbstractConnectorVal
   }
 
   public ConnectorValidationResult buildConnectorValidationResult(
-      GitCommandExecutionResponse gitCommandExecutionResponse) {
+      GitCommandExecutionResponse gitCommandExecutionResponse, String taskId) {
     String delegateId = null;
     if (gitCommandExecutionResponse.getDelegateMetaInfo() != null) {
       delegateId = gitCommandExecutionResponse.getDelegateMetaInfo().getId();
@@ -114,6 +114,7 @@ public abstract class AbstractGitConnectorValidator extends AbstractConnectorVal
     if (validationResult != null) {
       validationResult.setDelegateId(delegateId);
     }
+    validationResult.setTaskId(taskId);
     return validationResult;
   }
 
@@ -133,9 +134,10 @@ public abstract class AbstractGitConnectorValidator extends AbstractConnectorVal
       return super.validateConnectorViaManager(
           connectorConfigDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     } else {
-      GitCommandExecutionResponse gitCommandExecutionResponse = (GitCommandExecutionResponse) super.validateConnector(
+      var responseEntry = super.validateConnectorReturnPair(
           connectorConfigDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
-      return buildConnectorValidationResult(gitCommandExecutionResponse);
+      GitCommandExecutionResponse gitRespones = (GitCommandExecutionResponse) responseEntry.getValue();
+      return buildConnectorValidationResult(gitRespones, responseEntry.getKey());
     }
   }
 }

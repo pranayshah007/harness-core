@@ -252,7 +252,10 @@ public class TriggerEventExecutionHelper {
     }
 
     if (parseWebhookResponse != null) {
-      if (parseWebhookResponse.hasPr()) {
+      if (parseWebhookResponse.hasRelease()) {
+        builder.setParsedPayload(ParsedPayload.newBuilder().setRelease(parseWebhookResponse.getRelease()).build())
+            .build();
+      } else if (parseWebhookResponse.hasPr()) {
         builder.setParsedPayload(ParsedPayload.newBuilder().setPr(parseWebhookResponse.getPr()).build()).build();
       } else {
         builder.setParsedPayload(ParsedPayload.newBuilder().setPush(parseWebhookResponse.getPush()).build()).build();
@@ -281,14 +284,16 @@ public class TriggerEventExecutionHelper {
       PlanExecution response = triggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionRequest(
           triggerDetails, triggerPayload, triggerWebhookEvent, payload, runtimeInputYaml);
       return generateEventHistoryForSuccess(
-          triggerDetails, runtimeInputYaml, ngTriggerEntity, triggerWebhookEvent, response);
+          triggerDetails, runtimeInputYaml, ngTriggerEntity, triggerWebhookEvent, response, null);
     } catch (Exception e) {
-      return generateEventHistoryForError(triggerWebhookEvent, triggerDetails, runtimeInputYaml, ngTriggerEntity, e);
+      return generateEventHistoryForError(
+          triggerWebhookEvent, triggerDetails, runtimeInputYaml, ngTriggerEntity, e, null);
     }
   }
 
   public TriggerEventResponse generateEventHistoryForError(TriggerWebhookEvent triggerWebhookEvent,
-      TriggerDetails triggerDetails, String runtimeInputYaml, NGTriggerEntity ngTriggerEntity, Exception e) {
+      TriggerDetails triggerDetails, String runtimeInputYaml, NGTriggerEntity ngTriggerEntity, Exception e,
+      String pollingDocId) {
     log.error(new StringBuilder(512)
                   .append("Exception occurred while requesting pipeline execution using Trigger ")
                   .append(TriggerHelper.getTriggerRef(ngTriggerEntity))
@@ -299,8 +304,8 @@ public class TriggerEventExecutionHelper {
 
     TargetExecutionSummary targetExecutionSummary = TriggerEventResponseHelper.prepareTargetExecutionSummary(
         (PlanExecution) null, triggerDetails, runtimeInputYaml);
-    return TriggerEventResponseHelper.toResponse(
-        INVALID_RUNTIME_INPUT_YAML, triggerWebhookEvent, null, ngTriggerEntity, e.getMessage(), targetExecutionSummary);
+    return TriggerEventResponseHelper.toResponseWithPollingInfo(INVALID_RUNTIME_INPUT_YAML, triggerWebhookEvent, null,
+        ngTriggerEntity, e.getMessage(), targetExecutionSummary, pollingDocId);
   }
 
   public TriggerEventResponse generateEventHistoryForAuthenticationError(
@@ -329,6 +334,7 @@ public class TriggerEventExecutionHelper {
 
   public TriggerEventResponse triggerEventPipelineExecution(
       TriggerDetails triggerDetails, PollingResponse pollingResponse) {
+    String pollingDocId = null;
     String runtimeInputYaml = null;
     NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
     TriggerWebhookEvent pseudoEvent = TriggerWebhookEvent.builder()
@@ -339,6 +345,7 @@ public class TriggerEventExecutionHelper {
              ngTriggerEntity.getIdentifier(), ngTriggerEntity.getTargetIdentifier(),
              ngTriggerEntity.getProjectIdentifier(), ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getAccountId(),
              AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
+      pollingDocId = pollingResponse.getPollingDocId();
       if (isEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())
           && isEmpty(triggerDetails.getNgTriggerConfigV2().getInputSetRefs())) {
         runtimeInputYaml = triggerDetails.getNgTriggerConfigV2().getInputYaml();
@@ -363,20 +370,26 @@ public class TriggerEventExecutionHelper {
         }
         triggerPayloadBuilder.setArtifactData(
             ArtifactData.newBuilder().setBuild(build).putAllMetadata(metadata).build());
+
       } else if (buildType == Type.MANIFEST) {
         triggerPayloadBuilder.setManifestData(ManifestData.newBuilder().setVersion(build).build());
       }
-
+      TriggerPayload triggerPayload = triggerPayloadBuilder.build();
       PlanExecution response = triggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionReques(
-          triggerDetails, triggerPayloadBuilder.build(), runtimeInputYaml);
-      return generateEventHistoryForSuccess(triggerDetails, runtimeInputYaml, ngTriggerEntity, pseudoEvent, response);
+          triggerDetails, triggerPayload, runtimeInputYaml);
+      if (triggerPayload != null) {
+        pseudoEvent.setPayload(triggerPayload.toString());
+      }
+      return generateEventHistoryForSuccess(
+          triggerDetails, runtimeInputYaml, ngTriggerEntity, pseudoEvent, response, pollingDocId);
     } catch (Exception e) {
-      return generateEventHistoryForError(pseudoEvent, triggerDetails, runtimeInputYaml, ngTriggerEntity, e);
+      return generateEventHistoryForError(
+          pseudoEvent, triggerDetails, runtimeInputYaml, ngTriggerEntity, e, pollingDocId);
     }
   }
 
   private TriggerEventResponse generateEventHistoryForSuccess(TriggerDetails triggerDetails, String runtimeInputYaml,
-      NGTriggerEntity ngTriggerEntity, TriggerWebhookEvent pseudoEvent, PlanExecution response) {
+      NGTriggerEntity ngTriggerEntity, TriggerWebhookEvent pseudoEvent, PlanExecution response, String pollingDocId) {
     try (AutoLogContext ignore1 = new NgAutoLogContext(ngTriggerEntity.getProjectIdentifier(),
              ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getAccountId(), OVERRIDE_ERROR);
          AutoLogContext ignore2 = new AutoLogContext(ImmutableMap.of("planExecutionId", response.getPlanId()),
@@ -387,8 +400,8 @@ public class TriggerEventExecutionHelper {
       log.info(ngTriggerEntity.getTargetType() + " execution was requested successfully for Pipeline: "
           + ngTriggerEntity.getTargetIdentifier() + ", using trigger: " + ngTriggerEntity.getIdentifier());
 
-      return TriggerEventResponseHelper.toResponse(TARGET_EXECUTION_REQUESTED, pseudoEvent, ngTriggerEntity,
-          "Pipeline execution was requested successfully", targetExecutionSummary);
+      return TriggerEventResponseHelper.toResponseWithPollingInfo(TARGET_EXECUTION_REQUESTED, pseudoEvent,
+          ngTriggerEntity, "Pipeline execution was requested successfully", targetExecutionSummary, pollingDocId);
     }
   }
 
@@ -493,12 +506,9 @@ public class TriggerEventExecutionHelper {
     // Only GitHub events authentication is supported for now
     List<TriggerDetails> triggersToAuthenticate = new ArrayList<>();
     if (GITHUB.name().equalsIgnoreCase(triggerWebhookEvent.getSourceRepoType())) {
-      Boolean ngSettingsFFEnabled =
-          pmsFeatureFlagService.isEnabled(triggerWebhookEvent.getAccountId(), FeatureName.NG_SETTINGS);
       for (TriggerDetails triggerDetails : webhookEventMappingResponse.getTriggers()) {
         NGTriggerConfigV2 ngTriggerConfigV2 = triggerDetails.getNgTriggerConfigV2();
-        if (ngTriggerConfigV2 != null
-            && shouldAuthenticateTrigger(triggerWebhookEvent, ngTriggerConfigV2, ngSettingsFFEnabled)) {
+        if (ngTriggerConfigV2 != null && shouldAuthenticateTrigger(triggerWebhookEvent, ngTriggerConfigV2)) {
           triggersToAuthenticate.add(triggerDetails);
         }
       }
@@ -521,17 +531,16 @@ public class TriggerEventExecutionHelper {
   }
 
   private Boolean shouldAuthenticateTrigger(
-      TriggerWebhookEvent triggerWebhookEvent, NGTriggerConfigV2 ngTriggerConfigV2, Boolean ngSettingsFFEnabled) {
-    if (ngSettingsFFEnabled) {
-      String mandatoryAuth = NGRestUtils
-                                 .getResponse(settingsClient.getSetting(TRIGGERS_MANDATE_GITHUB_AUTHENTICATION,
-                                     triggerWebhookEvent.getAccountId(), ngTriggerConfigV2.getOrgIdentifier(),
-                                     ngTriggerConfigV2.getProjectIdentifier()))
-                                 .getValue();
-      if (mandatoryAuth.equals(MANDATE_GITHUB_AUTHENTICATION_TRUE_VALUE)) {
-        return true;
-      }
+      TriggerWebhookEvent triggerWebhookEvent, NGTriggerConfigV2 ngTriggerConfigV2) {
+    String mandatoryAuth = NGRestUtils
+                               .getResponse(settingsClient.getSetting(TRIGGERS_MANDATE_GITHUB_AUTHENTICATION,
+                                   triggerWebhookEvent.getAccountId(), ngTriggerConfigV2.getOrgIdentifier(),
+                                   ngTriggerConfigV2.getProjectIdentifier()))
+                               .getValue();
+    if (mandatoryAuth.equals(MANDATE_GITHUB_AUTHENTICATION_TRUE_VALUE)) {
+      return true;
     }
+
     return isNotEmpty(ngTriggerConfigV2.getEncryptedWebhookSecretIdentifier());
   }
 

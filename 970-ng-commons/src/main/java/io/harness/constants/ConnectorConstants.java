@@ -51,6 +51,7 @@ public class ConnectorConstants {
   public static final String ERROR_SUMMARY = "Summary of errors.";
   public static final String TESTED_AT = "Time at which Test Connection was completed ";
   public static final String DELEGATE_ID = "ID of Delegate on which Test Connection is executed.";
+  public static final String DELEGATE_TASK_ID = "ID of Delegate Task.";
   public static final String CONNECTOR_IDENTIFIER_MSG = "Identifier of the Connector.";
   public static final String LAST_CONNECTED_AT =
       "This is the last time at which the Connector was successfully connected.";

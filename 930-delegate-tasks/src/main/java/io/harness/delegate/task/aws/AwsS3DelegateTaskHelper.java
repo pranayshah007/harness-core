@@ -80,8 +80,8 @@ public class AwsS3DelegateTaskHelper {
 
     AwsInternalConfig awsInternalConfig = getAwsInternalConfig(awsTaskParams);
 
-    List<BuildDetails> builds = awsApiHelperService.listBuilds(
-        awsInternalConfig, awsTaskParams.getRegion(), awsTaskParams.getBucketName(), awsTaskParams.getFilePathRegex());
+    List<BuildDetails> builds = awsApiHelperService.listBuilds(awsInternalConfig, awsTaskParams.getRegion(),
+        awsTaskParams.getBucketName(), awsTaskParams.getFilePathRegex(), awsTaskParams.isShouldFetchObjectMetadata());
 
     return S3BuildsResponse.builder()
         .commandExecutionStatus(SUCCESS)
@@ -112,15 +112,14 @@ public class AwsS3DelegateTaskHelper {
 
     AwsInternalConfig awsInternalConfig = getAwsInternalConfig(awsTaskParams);
 
-    List<BuildDetails> builds = awsApiHelperService.listBuilds(
-        awsInternalConfig, awsTaskParams.getRegion(), awsTaskParams.getBucketName(), awsTaskParams.getFilePathRegex());
+    List<BuildDetails> builds = awsApiHelperService.listBuilds(awsInternalConfig, awsTaskParams.getRegion(),
+        awsTaskParams.getBucketName(), awsTaskParams.getFilePathRegex(), true);
 
     if (builds.isEmpty()) {
       return S3BuildResponse.builder().commandExecutionStatus(FAILURE).build();
     }
 
     BuildDetails buildDetails = builds.get(builds.size() - 1);
-
     String filePath;
     if (buildDetails == new BuildDetails()) {
       return S3BuildResponse.builder().commandExecutionStatus(FAILURE).build();

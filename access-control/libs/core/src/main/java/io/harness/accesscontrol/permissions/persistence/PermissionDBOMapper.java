@@ -15,7 +15,7 @@ import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.PL)
 @UtilityClass
-class PermissionDBOMapper {
+public class PermissionDBOMapper {
   public static PermissionDBO toDBO(Permission object) {
     return PermissionDBO.builder()
         .identifier(object.getIdentifier())

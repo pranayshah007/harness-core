@@ -14,6 +14,7 @@ import io.harness.notification.entities.MicrosoftTeamsChannel;
 import io.harness.notification.entities.Notification;
 import io.harness.notification.entities.PagerDutyChannel;
 import io.harness.notification.entities.SlackChannel;
+import io.harness.notification.entities.WebhookChannel;
 import io.harness.notification.remote.dto.NotificationDTO;
 
 import java.util.Optional;
@@ -49,6 +50,8 @@ public class NotificationMapper {
         return PagerDutyChannel.toPagerDutyEntity(notificationRequest.getPagerDuty());
       case MSTEAM:
         return MicrosoftTeamsChannel.toMicrosoftTeamsEntity(notificationRequest.getMsTeam());
+      case WEBHOOK:
+        return WebhookChannel.toWebhookEntity(notificationRequest.getWebhook());
       default:
         log.error("Channel type of the notification request unidentified {}", notificationRequest.getChannelCase());
     }
@@ -81,6 +84,8 @@ public class NotificationMapper {
       builder.setPagerDuty((NotificationRequest.PagerDuty) channelDetails);
     } else if (channelDetails instanceof NotificationRequest.MSTeam) {
       builder.setMsTeam((NotificationRequest.MSTeam) channelDetails);
+    } else if (channelDetails instanceof NotificationRequest.Webhook) {
+      builder.setWebhook((NotificationRequest.Webhook) channelDetails);
     }
   }
 

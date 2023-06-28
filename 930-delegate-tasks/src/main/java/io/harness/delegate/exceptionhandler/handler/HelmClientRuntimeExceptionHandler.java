@@ -25,6 +25,7 @@ import static io.harness.delegate.task.helm.HelmExceptionConstants.Explanations.
 import static io.harness.delegate.task.helm.HelmExceptionConstants.Explanations.EXPLAIN_NO_CHART_FOUND;
 import static io.harness.delegate.task.helm.HelmExceptionConstants.Explanations.EXPLAIN_NO_CHART_VERSION_FOUND;
 import static io.harness.delegate.task.helm.HelmExceptionConstants.Explanations.EXPLAIN_NO_RELEASES_ERROR;
+import static io.harness.delegate.task.helm.HelmExceptionConstants.Explanations.EXPLAIN_RESOURCE_ALREADY_EXISTS;
 import static io.harness.delegate.task.helm.HelmExceptionConstants.Explanations.EXPLAIN_RESOURCE_CONFLICT;
 import static io.harness.delegate.task.helm.HelmExceptionConstants.Explanations.EXPLAIN_TIMEOUT_EXCEPTION;
 import static io.harness.delegate.task.helm.HelmExceptionConstants.Explanations.EXPLAIN_UNKNOWN_COMMAND_FLAG;
@@ -39,6 +40,7 @@ import static io.harness.delegate.task.helm.HelmExceptionConstants.HelmCliErrorM
 import static io.harness.delegate.task.helm.HelmExceptionConstants.HelmCliErrorMessages.NO_DEPLOYED_RELEASES;
 import static io.harness.delegate.task.helm.HelmExceptionConstants.HelmCliErrorMessages.NO_SUCH_HOST;
 import static io.harness.delegate.task.helm.HelmExceptionConstants.HelmCliErrorMessages.PROTOCOL_HANDLER_MISSING;
+import static io.harness.delegate.task.helm.HelmExceptionConstants.HelmCliErrorMessages.RESOURCE_ALREADY_EXISTS;
 import static io.harness.delegate.task.helm.HelmExceptionConstants.HelmCliErrorMessages.TIMEOUT_EXCEPTION;
 import static io.harness.delegate.task.helm.HelmExceptionConstants.HelmCliErrorMessages.UNAUTHORIZED_401;
 import static io.harness.delegate.task.helm.HelmExceptionConstants.HelmCliErrorMessages.UNKNOWN_COMMAND_FLAG;
@@ -59,6 +61,7 @@ import static io.harness.delegate.task.helm.HelmExceptionConstants.Hints.HINT_MI
 import static io.harness.delegate.task.helm.HelmExceptionConstants.Hints.HINT_NO_CHART_FOUND;
 import static io.harness.delegate.task.helm.HelmExceptionConstants.Hints.HINT_NO_CHART_VERSION_FOUND;
 import static io.harness.delegate.task.helm.HelmExceptionConstants.Hints.HINT_NO_RELEASES_ERROR;
+import static io.harness.delegate.task.helm.HelmExceptionConstants.Hints.HINT_RESOURCE_ALREADY_EXISTS;
 import static io.harness.delegate.task.helm.HelmExceptionConstants.Hints.HINT_RESOURCE_CONFLICT;
 import static io.harness.delegate.task.helm.HelmExceptionConstants.Hints.HINT_TIMEOUT_ERROR;
 import static io.harness.delegate.task.helm.HelmExceptionConstants.Hints.HINT_UNKNOWN_COMMAND_FLAG;
@@ -221,6 +224,11 @@ public class HelmClientRuntimeExceptionHandler implements ExceptionHandler {
     if (lowerCaseMessage.contains(TIMEOUT_EXCEPTION)) {
       return NestedExceptionUtils.hintWithExplanationException(
           String.format(HINT_TIMEOUT_ERROR, commandType), EXPLAIN_TIMEOUT_EXCEPTION + commandType, helmClientException);
+    }
+
+    if (lowerCaseMessage.contains(RESOURCE_ALREADY_EXISTS)) {
+      return NestedExceptionUtils.hintWithExplanationException(
+          HINT_RESOURCE_ALREADY_EXISTS, EXPLAIN_RESOURCE_ALREADY_EXISTS, helmClientException);
     }
 
     // TODO : Handle some more negative scenarios here

@@ -26,6 +26,7 @@ import io.harness.ng.core.ResourceScope;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideAuditEventDTO;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -34,6 +35,7 @@ import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(PIPELINE)
 @Getter
@@ -51,6 +53,10 @@ public class EnvironmentUpdatedEvent implements Event {
 
   private NGServiceOverridesEntity oldServiceOverridesEntity;
   private NGServiceOverridesEntity newServiceOverridesEntity;
+
+  private ServiceOverrideAuditEventDTO oldOverrideAuditEventDTO;
+  private ServiceOverrideAuditEventDTO newOverrideAuditEventDTO;
+  private boolean overrideAuditV2;
 
   private Environment newEnvironment;
   private Environment oldEnvironment;
@@ -73,9 +79,7 @@ public class EnvironmentUpdatedEvent implements Event {
   private String getProjectIdentifier() {
     switch (resourceType) {
       case SERVICE_OVERRIDE:
-        NGServiceOverridesEntity ngServiceOverridesEntity =
-            newServiceOverridesEntity == null ? oldServiceOverridesEntity : newServiceOverridesEntity;
-        return ngServiceOverridesEntity.getProjectIdentifier();
+        return getProjectIdentifierFromOverride();
       case INFRASTRUCTURE:
         InfrastructureEntity infrastructure =
             newInfrastructureEntity == null ? oldInfrastructureEntity : newInfrastructureEntity;
@@ -84,12 +88,26 @@ public class EnvironmentUpdatedEvent implements Event {
         return newEnvironment.getProjectIdentifier();
     }
   }
+
+  private String getProjectIdentifierFromOverride() {
+    String projectIdentifier = StringUtils.EMPTY;
+    if (overrideAuditV2) {
+      ServiceOverrideAuditEventDTO overrideAuditEventDTO =
+          newOverrideAuditEventDTO == null ? oldOverrideAuditEventDTO : newOverrideAuditEventDTO;
+      projectIdentifier = overrideAuditEventDTO.getProjectIdentifier();
+
+    } else {
+      NGServiceOverridesEntity ngServiceOverridesEntity =
+          newServiceOverridesEntity == null ? oldServiceOverridesEntity : newServiceOverridesEntity;
+      projectIdentifier = ngServiceOverridesEntity.getProjectIdentifier();
+    }
+    return projectIdentifier;
+  }
+
   private String getOrgIdentifier() {
     switch (resourceType) {
       case SERVICE_OVERRIDE:
-        NGServiceOverridesEntity ngServiceOverridesEntity =
-            newServiceOverridesEntity == null ? oldServiceOverridesEntity : newServiceOverridesEntity;
-        return ngServiceOverridesEntity.getOrgIdentifier();
+        return getOrgIdentifierFromOverride();
       case INFRASTRUCTURE:
         InfrastructureEntity infrastructure =
             newInfrastructureEntity == null ? oldInfrastructureEntity : newInfrastructureEntity;
@@ -99,12 +117,25 @@ public class EnvironmentUpdatedEvent implements Event {
     }
   }
 
+  private String getOrgIdentifierFromOverride() {
+    String orgIdentifier = StringUtils.EMPTY;
+    if (overrideAuditV2) {
+      ServiceOverrideAuditEventDTO overrideAuditEventDTO =
+          newOverrideAuditEventDTO == null ? oldOverrideAuditEventDTO : newOverrideAuditEventDTO;
+      orgIdentifier = overrideAuditEventDTO.getOrgIdentifier();
+
+    } else {
+      NGServiceOverridesEntity ngServiceOverridesEntity =
+          newServiceOverridesEntity == null ? oldServiceOverridesEntity : newServiceOverridesEntity;
+      orgIdentifier = ngServiceOverridesEntity.getOrgIdentifier();
+    }
+    return orgIdentifier;
+  }
+
   private String resourceName() {
     switch (resourceType) {
       case SERVICE_OVERRIDE:
-        NGServiceOverridesEntity ngServiceOverridesEntity =
-            newServiceOverridesEntity == null ? oldServiceOverridesEntity : newServiceOverridesEntity;
-        return ngServiceOverridesEntity.getServiceRef() + " Override";
+        return getResourceNameFromOverride();
       case INFRASTRUCTURE:
         InfrastructureEntity infrastructure =
             newInfrastructureEntity == null ? oldInfrastructureEntity : newInfrastructureEntity;
@@ -112,6 +143,23 @@ public class EnvironmentUpdatedEvent implements Event {
       default:
         return newEnvironment.getName();
     }
+  }
+
+  private String getResourceNameFromOverride() {
+    String resourceIdentifier = StringUtils.EMPTY;
+    if (overrideAuditV2) {
+      ServiceOverrideAuditEventDTO overrideAuditEventDTO =
+          newOverrideAuditEventDTO == null ? oldOverrideAuditEventDTO : newOverrideAuditEventDTO;
+      resourceIdentifier = overrideAuditEventDTO.isEntityV2() ? overrideAuditEventDTO.getIdentifier()
+                                                              : overrideAuditEventDTO.getServiceRef() + " Override";
+    } else {
+      NGServiceOverridesEntity ngServiceOverridesEntity =
+          newServiceOverridesEntity == null ? oldServiceOverridesEntity : newServiceOverridesEntity;
+      resourceIdentifier = Boolean.TRUE.equals(ngServiceOverridesEntity.getIsV2())
+          ? ngServiceOverridesEntity.getIdentifier()
+          : ngServiceOverridesEntity.getServiceRef() + " Override";
+    }
+    return resourceIdentifier;
   }
 
   @JsonIgnore
@@ -132,9 +180,7 @@ public class EnvironmentUpdatedEvent implements Event {
   private String getEnvIdentifier() {
     switch (resourceType) {
       case SERVICE_OVERRIDE:
-        NGServiceOverridesEntity ngServiceOverridesEntity =
-            newServiceOverridesEntity == null ? oldServiceOverridesEntity : newServiceOverridesEntity;
-        return IdentifierRefHelper.getIdentifier(ngServiceOverridesEntity.getEnvironmentRef());
+        return getEnvIdentifierFromOverride();
       case INFRASTRUCTURE:
         InfrastructureEntity infrastructure =
             newInfrastructureEntity == null ? oldInfrastructureEntity : newInfrastructureEntity;
@@ -142,6 +188,20 @@ public class EnvironmentUpdatedEvent implements Event {
       default:
         return newEnvironment.getIdentifier();
     }
+  }
+
+  private String getEnvIdentifierFromOverride() {
+    String envRef = StringUtils.EMPTY;
+    if (overrideAuditV2) {
+      ServiceOverrideAuditEventDTO overrideAuditEventDTO =
+          newOverrideAuditEventDTO == null ? oldOverrideAuditEventDTO : newOverrideAuditEventDTO;
+      envRef = overrideAuditEventDTO.getEnvironmentRef();
+    } else {
+      NGServiceOverridesEntity ngServiceOverridesEntity =
+          newServiceOverridesEntity == null ? oldServiceOverridesEntity : newServiceOverridesEntity;
+      envRef = ngServiceOverridesEntity.getEnvironmentRef();
+    }
+    return IdentifierRefHelper.getIdentifier(envRef);
   }
 
   @JsonIgnore

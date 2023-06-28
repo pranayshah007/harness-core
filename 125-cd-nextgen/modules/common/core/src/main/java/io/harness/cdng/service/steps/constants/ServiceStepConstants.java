@@ -7,9 +7,17 @@
 
 package io.harness.cdng.service.steps.constants;
 
+import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.ENV_GLOBAL_OVERRIDE;
+import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.ENV_SERVICE_OVERRIDE;
+import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.INFRA_GLOBAL_OVERRIDE;
+import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.INFRA_SERVICE_OVERRIDE;
+
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+
+import java.util.List;
 
 public class ServiceStepConstants {
   public static final String SERVICE = "service";
@@ -25,4 +33,9 @@ public class ServiceStepConstants {
   public static final String ENV_VARIABLES_PATTERN_REGEX = "(.*<\\+env\\.variables\\..+>.*)";
   public static final String ENV_REF = "environment ref";
   public static final String ENV_GROUP_REF = "environment group ref";
+
+  public static final String SERVICE_CONFIGURATION_NOT_FOUND = "No service configuration found in the service";
+
+  public static final List<ServiceOverridesType> OVERRIDE_IN_REVERSE_PRIORITY =
+      List.of(ENV_GLOBAL_OVERRIDE, ENV_SERVICE_OVERRIDE, INFRA_GLOBAL_OVERRIDE, INFRA_SERVICE_OVERRIDE);
 }

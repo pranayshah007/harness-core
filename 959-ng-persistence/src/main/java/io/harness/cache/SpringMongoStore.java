@@ -15,6 +15,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.SpringCacheEntity.SpringCacheEntityKeys;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
 import io.harness.serializer.KryoSerializer;
 import io.harness.springdata.HMongoTemplate;
 import io.harness.springdata.PersistenceUtils;
@@ -45,11 +46,17 @@ public class SpringMongoStore implements DistributedStore {
   private static final int VERSION = 1;
 
   @Inject private MongoTemplate mongoTemplate;
+  @Inject private SecondaryMongoTemplateHolder secondaryMongoTemplateHolder;
   @Inject private KryoSerializer kryoSerializer;
 
   @Override
   public <T extends Distributable> T get(long algorithmId, long structureHash, String key, List<String> params) {
     return get(null, algorithmId, structureHash, key, params);
+  }
+
+  public <T extends Distributable> T getFromSecondary(
+      long algorithmId, long structureHash, String key, List<String> params) {
+    return getFromSecondary(null, algorithmId, structureHash, key, params);
   }
 
   public Long getEntityUpdatedAt(long algorithmId, long structureHash, String key, List<String> params) {
@@ -122,6 +129,30 @@ public class SpringMongoStore implements DistributedStore {
       }
 
       final io.harness.cache.SpringCacheEntity cacheEntity = mongoTemplate.findOne(query, SpringCacheEntity.class);
+
+      if (cacheEntity == null) {
+        return null;
+      }
+
+      return (T) kryoSerializer.asInflatedObject(cacheEntity.getEntity());
+    } catch (RuntimeException ex) {
+      log.error("Failed to obtain from cache", ex);
+    }
+    return null;
+  }
+
+  private <T extends Distributable> T getFromSecondary(
+      Long contextValue, long algorithmId, long structureHash, String key, List<String> params) {
+    try {
+      Query query = new Query(
+          where(SpringCacheEntityKeys.canonicalKey).is(canonicalKey(algorithmId, structureHash, key, params)));
+
+      if (contextValue != null) {
+        query.addCriteria(where(SpringCacheEntityKeys.contextValue).is(contextValue));
+      }
+
+      final io.harness.cache.SpringCacheEntity cacheEntity =
+          secondaryMongoTemplateHolder.getSecondaryMongoTemplate().findOne(query, SpringCacheEntity.class);
 
       if (cacheEntity == null) {
         return null;

@@ -1,83 +1,84 @@
 pipeline:
-  identifier: "path_input_set_validators"
-  name: "path input set validators"
-  projectIdentifier: "LocalDev"
-  orgIdentifier: "default"
+  identifier: path_input_set_validators
+  name: path input set validators
+  projectIdentifier: LocalDev
+  orgIdentifier: default
   tags: {}
   stages:
-  - stage:
-      identifier: "d1"
-      type: "Deployment"
-      name: "d1"
-      description: ""
-      spec:
-        serviceConfig:
-          serviceRef: "s1help"
-          serviceDefinition:
-            type: "Kubernetes"
-            spec:
-              variables: []
-              manifests:
-              - manifest:
-                  identifier: "m1"
-                  type: "K8sManifest"
-                  spec:
-                    store:
-                      type: "Github"
-                      spec:
-                        connectorRef: "repo_in_payload"
-                        gitFetchType: "Branch"
-                        paths:
-                        - "a.allowedValues(a,b,c)"
-                        - "a.allowedValues(a,b,c)"
-                        - "b.allowedValues(a,b,c)"
-                        branch: "master"
-                    skipResourceVersioning: false
-              - manifest:
-                  identifier: "m2"
-                  type: "Values"
-                  spec:
-                    store:
-                      type: "Github"
-                      spec:
-                        connectorRef: "repo_in_payload"
-                        gitFetchType: "Branch"
-                        paths:
-                        - "adha.regex(a.*a)"
-                        - "australia.regex(a.*a)"
-                        branch: "master"
-        infrastructure:
-          environmentRef: "ee"
-          infrastructureDefinition:
-            type: "KubernetesDirect"
-            spec:
-              connectorRef: "account.temp"
-              namespace: "s1"
-              releaseName: "release-<+INFRA_KEY>"
-          allowSimultaneousDeployments: false
-        execution:
-          steps:
-          - step:
-              identifier: "echo"
-              type: "ShellScript"
-              name: "echo"
+    - stage:
+        identifier: d1
+        type: Deployment
+        name: d1
+        description: ""
+        spec:
+          serviceConfig:
+            serviceRef: s1help
+            serviceDefinition:
+              type: Kubernetes
               spec:
-                shell: "Bash"
-                onDelegate: true
-                source:
-                  type: "Inline"
+                variables: []
+                manifests:
+                  - manifest:
+                      identifier: m1
+                      type: K8sManifest
+                      spec:
+                        store:
+                          type: Github
+                          spec:
+                            connectorRef: repo_in_payload
+                            gitFetchType: Branch
+                            paths:
+                              - "a.allowedValues(a,b,c)"
+                              - "a.allowedValues(a,b,c)"
+                              - "b.allowedValues(a,b,c)"
+                            branch: master
+                        skipResourceVersioning: false
+                  - manifest:
+                      identifier: m2
+                      type: Values
+                      spec:
+                        store:
+                          type: Github
+                          spec:
+                            connectorRef: repo_in_payload
+                            gitFetchType: Branch
+                            paths:
+                              - adha.regex(a.*a)
+                              - australia.regex(a.*a)
+                            branch: master
+          infrastructure:
+            environmentRef: ee
+            infrastructureDefinition:
+              type: KubernetesDirect
+              spec:
+                connectorRef: account.temp
+                namespace: s1
+                releaseName: release-<+INFRA_KEY>
+            allowSimultaneousDeployments: false
+          execution:
+            steps:
+              - step:
+                  identifier: echo
+                  type: ShellScript
+                  name: echo
                   spec:
-                    script: "echo <+serviceConfig.serviceDefinition.spec.manifests.m1.spec.store.spec.paths>\n\
-                      echo <+serviceConfig.serviceDefinition.spec.manifests.m2.spec.store.spec.paths>"
-                environmentVariables: []
-                outputVariables: []
-                executionTarget: {}
-              timeout: "10m"
-          rollbackSteps: []
-      tags: {}
-      failureStrategies:
-      - onFailure:
-          errors:
-          - "AllErrors"
-          action:
-            type: "StageRollback"
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: |-
+                          echo <+serviceConfig.serviceDefinition.spec.manifests.m1.spec.store.spec.paths>
+                          echo <+serviceConfig.serviceDefinition.spec.manifests.m2.spec.store.spec.paths>
+                    environmentVariables: []
+                    outputVariables: []
+                    executionTarget: {}
+                  timeout: 10m
+            rollbackSteps: []
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback

@@ -29,6 +29,7 @@ public class FetchS3FilesExecutionResponse implements DelegateTaskNotifyResponse
   private String errorMessage;
   private ErrorCode errorCode;
   private DelegateMetaInfo delegateMetaInfo;
+  private boolean isTimeoutError;
 
   public enum FetchS3FilesCommandStatus { SUCCESS, FAILURE }
 }

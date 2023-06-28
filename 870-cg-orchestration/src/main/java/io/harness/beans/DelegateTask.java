@@ -45,6 +45,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Builder.Default;
@@ -102,23 +103,18 @@ public class DelegateTask implements PersistentEntity, UuidAware, CreatedAtAware
         .build();
   }
 
-  private static final Long DEFAULT_FORCE_EXECUTE_TIMEOUT = Duration.ofSeconds(5).toMillis();
   public static final Long DELEGATE_QUEUE_TIMEOUT = Duration.ofSeconds(6).toMillis();
 
-  /**
-   * New Delegate architecture params
-   */
   private String runnerType;
   private byte[] taskData;
   private byte[] runnerData;
-  private String resourceUri;
-  private String resourceMethod;
+  private String requestUri;
+  private String requestMethod;
   // moved from TaskData to here
   private long executionTimeout;
+  // TODO: remove this async
   private boolean async;
-  // --------------------------------------
 
-  // Will be marked deprecated after tasks are containerized
   private TaskData data;
 
   // Will be marked deprecated after tasks are containerized
@@ -235,13 +231,6 @@ public class DelegateTask implements PersistentEntity, UuidAware, CreatedAtAware
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 
-  public Long fetchExtraTimeoutForForceExecution() {
-    if (forceExecute) {
-      return DEFAULT_FORCE_EXECUTE_TIMEOUT;
-    }
-    return 0L;
-  }
-
   // Following getters, setters have been added temporarily because of backward compatibility
 
   public String calcDescription() {
@@ -261,6 +250,13 @@ public class DelegateTask implements PersistentEntity, UuidAware, CreatedAtAware
   public boolean isNGTask(Map<String, String> setupAbstractions) {
     return !isEmpty(setupAbstractions) && setupAbstractions.get(NgSetupFields.NG) != null
         && Boolean.TRUE.equals(Boolean.valueOf(setupAbstractions.get(NgSetupFields.NG)));
+  }
+
+  public String getTaskSummary() {
+    if (Objects.nonNull(data)) {
+      return String.format("task type: %s", data.getTaskType());
+    }
+    return String.format("Delegate Task: %s %s", requestMethod, requestUri);
   }
 
   public enum Status {

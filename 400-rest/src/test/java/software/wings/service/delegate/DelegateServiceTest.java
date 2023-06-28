@@ -4024,10 +4024,10 @@ public class DelegateServiceTest extends WingsBaseTest {
 
   public static JreConfig getOpenjdk11JreConfig() {
     return JreConfig.builder()
-        .version("11.0.14")
-        .jreDirectory("jdk-11.0.14+9-jre")
-        .jreMacDirectory("jdk-11.0.14+9-jre")
-        .jreTarPath("jre/openjdk-11.0.14_9/OpenJDK11U-jre_x64_${OS}_hotspot_11.0.14_9.tar.gz")
+        .version("11.0.19")
+        .jreDirectory("jdk-11.0.19+7-jre")
+        .jreMacDirectory("jdk-11.0.19+7-jre")
+        .jreTarPath("jre/openjdk-11.0.19_7/OpenJDK11U-jre_x64_${OS}_hotspot_11.0.19_7.tar.gz")
         .build();
   }
 

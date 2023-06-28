@@ -1,25 +1,25 @@
 pipeline:
-  identifier: "Test_Pipline11"
+  identifier: Test_Pipline11
   variables:
-  - name: "port2"
-    type: "String"
-    value: "<+input>"
+    - name: port2
+      type: String
+      value: <+input>
   stages:
-  - parallel:
-    - stage:
-        identifier: "qaStage3"
-        type: "Deployment"
-        spec:
-          service:
-            identifier: "manager"
-            serviceDefinition:
-              type: "Kubernetes"
-              spec:
-                manifests: "<+input>"
-          execution:
-            steps:
-            - step:
-                identifier: "httpStep5"
-                type: "Http"
-                spec:
-                  method: "<+input>"
+    - parallel:
+        - stage:
+            identifier: qaStage3
+            type: Deployment
+            spec:
+              service:
+                identifier: manager
+                serviceDefinition:
+                  type: Kubernetes
+                  spec:
+                    manifests: <+input>
+              execution:
+                steps:
+                  - step:
+                      identifier: httpStep5
+                      type: Http
+                      spec:
+                        method: <+input>

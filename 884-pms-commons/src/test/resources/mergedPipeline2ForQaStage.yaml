@@ -1,106 +1,106 @@
 pipeline:
-  identifier: "Test_Pipline11"
-  name: "Test Pipline"
+  identifier: Test_Pipline11
+  name: Test Pipline
   stages:
-  - stage:
-      identifier: "qaStage"
-      type: "Deployment"
-      name: "qa stage"
-      spec:
-        serviceConfig:
-          serviceRef: "thisOne"
-          serviceDefinition:
-            type: "Kubernetes"
-            spec:
-              manifests:
-              - manifest:
-                  identifier: "baseValues"
-                  type: "K8sManifest"
-                  spec:
-                    store:
-                      type: "Git"
+    - stage:
+        identifier: qaStage
+        type: Deployment
+        name: qa stage
+        spec:
+          serviceConfig:
+            serviceRef: thisOne
+            serviceDefinition:
+              type: Kubernetes
+              spec:
+                manifests:
+                  - manifest:
+                      identifier: baseValues
+                      type: K8sManifest
                       spec:
-                        connectorRef: "my_git_connector"
-                        gitFetchType: "Branch"
-                        branch: "master"
-                        paths:
-                        - "a.yaml"
-        infrastructure:
-          environmentRef: "thisOne"
-          infrastructureDefinition:
-            type: "KubernetesDirect"
+                        store:
+                          type: Git
+                          spec:
+                            connectorRef: my_git_connector
+                            gitFetchType: Branch
+                            branch: master
+                            paths:
+                              - a.yaml
+          infrastructure:
+            environmentRef: thisOne
+            infrastructureDefinition:
+              type: KubernetesDirect
+              spec:
+                connectorRef: aa
+                namespace: aa
+                releaseName: aa
+          execution:
+            steps:
+              - step:
+                  identifier: httpStep1
+                  type: Http
+                  name: http step 1
+                  spec:
+                    socketTimeoutMillis: 1000
+                    method: GET
+                    url: www.google.com
+    - stage:
+        identifier: qaStage4
+        type: Approval
+        name: qa stage4
+        spec:
+          execution:
+            steps:
+              - step:
+                  identifier: httpStep7
+                  type: Http
+                  name: http step 7
+                  spec:
+                    socketTimeoutMillis: 1000
+                    method: GET
+                    url: https://google.com
+    - stage:
+        identifier: app
+        type: Approval
+        name: app
+        spec:
+          execution:
+            steps:
+              - step:
+                  identifier: httpStep7
+                  type: Http
+                  name: http step 7
+                  spec:
+                    socketTimeoutMillis: 1000
+                    method: GET
+                    url: <+input>
+    - parallel:
+        - stage:
+            identifier: pq1
+            type: Approval
+            name: pq1
             spec:
-              connectorRef: "aa"
-              namespace: "aa"
-              releaseName: "aa"
-        execution:
-          steps:
-          - step:
-              identifier: "httpStep1"
-              type: "Http"
-              name: "http step 1"
-              spec:
-                socketTimeoutMillis: 1000
-                method: "GET"
-                url: "www.google.com"
-  - stage:
-      identifier: "qaStage4"
-      type: "Approval"
-      name: "qa stage4"
-      spec:
-        execution:
-          steps:
-          - step:
-              identifier: "httpStep7"
-              type: "Http"
-              name: "http step 7"
-              spec:
-                socketTimeoutMillis: 1000
-                method: "GET"
-                url: "https://google.com"
-  - stage:
-      identifier: "app"
-      type: "Approval"
-      name: "app"
-      spec:
-        execution:
-          steps:
-          - step:
-              identifier: "httpStep7"
-              type: "Http"
-              name: "http step 7"
-              spec:
-                socketTimeoutMillis: 1000
-                method: "GET"
-                url: "<+input>"
-  - parallel:
-    - stage:
-        identifier: "pq1"
-        type: "Approval"
-        name: "pq1"
-        spec:
-          execution:
-            steps:
-            - step:
-                identifier: "httpStep7"
-                type: "Http"
-                name: "http step 7"
-                spec:
-                  socketTimeoutMillis: 1000
-                  method: "GET"
-                  url: "https://google.com"
-    - stage:
-        identifier: "pq2"
-        type: "Approval"
-        name: "pq2"
-        spec:
-          execution:
-            steps:
-            - step:
-                identifier: "httpStep7"
-                type: "Http"
-                name: "http step 7"
-                spec:
-                  socketTimeoutMillis: 1000
-                  method: "GET"
-                  url: "<+input>"
+              execution:
+                steps:
+                  - step:
+                      identifier: httpStep7
+                      type: Http
+                      name: http step 7
+                      spec:
+                        socketTimeoutMillis: 1000
+                        method: GET
+                        url: https://google.com
+        - stage:
+            identifier: pq2
+            type: Approval
+            name: pq2
+            spec:
+              execution:
+                steps:
+                  - step:
+                      identifier: httpStep7
+                      type: Http
+                      name: http step 7
+                      spec:
+                        socketTimeoutMillis: 1000
+                        method: GET
+                        url: <+input>

@@ -24,12 +24,15 @@ import io.harness.cvng.activity.entities.ActivityBucket.ActivityBucketKeys;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity.KubernetesClusterActivityKeys;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity.RelatedAppMonitoredService.ServiceEnvironmentKeys;
 import io.harness.cvng.activity.services.api.ActivityService;
+import io.harness.cvng.beans.MSHealthReport;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeSourceType;
-import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
-import io.harness.cvng.core.beans.change.ChangeSummaryDTO.CategoryCountDetails;
+import io.harness.cvng.beans.change.ChangeSummaryDTO;
+import io.harness.cvng.beans.change.ChangeSummaryDTO.CategoryCountDetails;
+import io.harness.cvng.beans.change.CustomChangeEvent;
+import io.harness.cvng.beans.change.CustomChangeEventMetadata;
 import io.harness.cvng.core.beans.change.ChangeTimeline;
 import io.harness.cvng.core.beans.change.ChangeTimeline.ChangeTimelineBuilder;
 import io.harness.cvng.core.beans.change.ChangeTimeline.TimeRangeDetail;
@@ -44,10 +47,12 @@ import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.services.api.ChangeEventService;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.monitoredService.ChangeSourceService;
+import io.harness.cvng.core.services.api.monitoredService.MSHealthReportService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.transformer.changeEvent.ChangeEventEntityAndDTOTransformer;
 import io.harness.cvng.core.utils.FeatureFlagNames;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapResolution;
+import io.harness.cvng.utils.MathUtils;
 import io.harness.cvng.utils.ScopedInformation;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
@@ -91,6 +96,7 @@ public class ChangeEventServiceImpl implements ChangeEventService {
   @Inject ActivityService activityService;
   @Inject HPersistence hPersistence;
   @Inject MonitoredServiceService monitoredServiceService;
+  @Inject MSHealthReportService msHealthReportService;
   @Inject FeatureFlagService featureFlagService;
 
   @Override
@@ -135,6 +141,28 @@ public class ChangeEventServiceImpl implements ChangeEventService {
       changeEventDTO.setChangeSourceIdentifier(changeSourceOptional.get().getIdentifier());
     }
     activityService.upsert(transformer.getEntity(changeEventDTO));
+    return true;
+  }
+
+  @Override
+  public Boolean registerWithHealthReport(ChangeEventDTO changeEventDTO, String webhookUrl) {
+    register(changeEventDTO);
+
+    ProjectParams projectParams = ProjectParams.builder()
+                                      .accountIdentifier(changeEventDTO.getAccountId())
+                                      .orgIdentifier(changeEventDTO.getOrgIdentifier())
+                                      .projectIdentifier(changeEventDTO.getProjectIdentifier())
+                                      .build();
+    MSHealthReport msHealthReport =
+        msHealthReportService.getMSHealthReport(projectParams, changeEventDTO.getMonitoredServiceIdentifier());
+    CustomChangeEvent customChangeEvent =
+        ((CustomChangeEventMetadata) changeEventDTO.getMetadata()).getCustomChangeEvent();
+    customChangeEvent.setMsHealthReport(msHealthReport);
+    ((CustomChangeEventMetadata) changeEventDTO.getMetadata()).setCustomChangeEvent(customChangeEvent);
+
+    activityService.upsert(transformer.getEntity(changeEventDTO));
+    msHealthReportService.handleNotification(
+        projectParams, msHealthReport, webhookUrl, changeEventDTO.getMonitoredServiceIdentifier());
     return true;
   }
 
@@ -344,11 +372,12 @@ public class ChangeEventServiceImpl implements ChangeEventService {
         changeCategoryToIndexToCount.values().stream().map(c -> c.getOrDefault(1, 0)).mapToLong(num -> num).sum();
     long previousTotalCount =
         changeCategoryToIndexToCount.values().stream().map(c -> c.getOrDefault(0, 0)).mapToLong(num -> num).sum();
-    CategoryCountDetails total = CategoryCountDetails.builder()
-                                     .count(currentTotalCount)
-                                     .countInPrecedingWindow(previousTotalCount)
-                                     .percentageChange(getPercentageChange(currentTotalCount, previousTotalCount))
-                                     .build();
+    CategoryCountDetails total =
+        CategoryCountDetails.builder()
+            .count(currentTotalCount)
+            .countInPrecedingWindow(previousTotalCount)
+            .percentageChange(MathUtils.getPercentageChange(currentTotalCount, previousTotalCount))
+            .build();
 
     return ChangeSummaryDTO.builder()
         .total(total)
@@ -357,20 +386,11 @@ public class ChangeEventServiceImpl implements ChangeEventService {
             -> CategoryCountDetails.builder()
                    .count(entry.getValue().getOrDefault(1, 0))
                    .countInPrecedingWindow(entry.getValue().getOrDefault(0, 0))
-                   .percentageChange(
-                       getPercentageChange(entry.getValue().getOrDefault(1, 0), entry.getValue().getOrDefault(0, 0)))
+                   .percentageChange(MathUtils.getPercentageChange(
+                       entry.getValue().getOrDefault(1, 0), entry.getValue().getOrDefault(0, 0)))
                    .build(),
             (u, v) -> u, LinkedHashMap::new)))
         .build();
-  }
-
-  private double getPercentageChange(long current, long previous) {
-    if (previous == 0 && current > 0) {
-      return 100;
-    } else if (previous == 0 && current == 0) {
-      return 0;
-    }
-    return ((double) (current - previous) * 100) / previous;
   }
 
   private List<Criteria> getCriterias(Query<Activity> q, List<ChangeCategory> changeCategories,
@@ -461,11 +481,14 @@ public class ChangeEventServiceImpl implements ChangeEventService {
     }
   }
 
-  private Query<ActivityBucket> createQueryForActivityBucket(Instant startTime, Instant endTime,
-      ProjectParams projectParams, List<String> monitoredServiceIdentifiers, String searchText,
-      List<ChangeCategory> changeCategories, List<ChangeSourceType> changeSourceTypes,
-      boolean isMonitoredServiceIdentifierScoped) {
+  @VisibleForTesting
+  Query<ActivityBucket> createQueryForActivityBucket(Instant startTime, Instant endTime, ProjectParams projectParams,
+      List<String> monitoredServiceIdentifiers, String searchText, List<ChangeCategory> changeCategories,
+      List<ChangeSourceType> changeSourceTypes, boolean isMonitoredServiceIdentifierScoped) {
     Query<ActivityBucket> query = hPersistence.createQuery(ActivityBucket.class);
+    if (StringUtils.isNotEmpty(searchText)) {
+      query = query.search(searchText).disableValidation();
+    }
     Stream<ChangeSourceType> changeSourceTypeStream = getChangeSourceEvent(changeCategories, changeSourceTypes);
     List<Criteria> criteria = new ArrayList<>(Arrays.asList(
         query.criteria(ActivityBucketKeys.type)
@@ -507,14 +530,13 @@ public class ChangeEventServiceImpl implements ChangeEventService {
   @VisibleForTesting
   Query<Activity> createTextSearchQuery(Instant startTime, Instant endTime, String searchText,
       List<ChangeCategory> changeCategories, List<ChangeSourceType> changeSourceTypes) {
-    Query<Activity> query = hPersistence.createQuery(Activity.class)
-                                .search(searchText)
-                                .field(ActivityKeys.eventTime)
-                                .lessThan(endTime)
-                                .field(ActivityKeys.eventTime)
-                                .greaterThanOrEq(startTime)
-                                .disableValidation();
-    return query;
+    return hPersistence.createQuery(Activity.class)
+        .search(searchText)
+        .field(ActivityKeys.eventTime)
+        .lessThan(endTime)
+        .field(ActivityKeys.eventTime)
+        .greaterThanOrEq(startTime)
+        .disableValidation();
   }
 
   @VisibleForTesting

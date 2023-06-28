@@ -25,6 +25,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.git.model.ChangeType;
+import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitImportInfoDTO;
 import io.harness.gitaware.helper.TemplateMoveConfigRequestDTO;
 import io.harness.gitsync.beans.StoreType;
@@ -33,6 +34,7 @@ import io.harness.gitsync.interceptor.GitEntityDeleteInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
 import io.harness.gitx.USER_FLOW;
+import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.customDeployment.CustomDeploymentVariableResponseDTO;
 import io.harness.ng.core.customDeployment.CustomDeploymentYamlRequestDTO;
@@ -54,6 +56,7 @@ import io.harness.pms.contracts.service.VariablesServiceGrpc.VariablesServiceBlo
 import io.harness.pms.contracts.service.VariablesServiceRequest;
 import io.harness.pms.mappers.VariablesResponseDtoMapper;
 import io.harness.pms.variables.VariableMergeServiceResponse;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.template.entity.TemplateEntity;
@@ -142,7 +145,17 @@ public class NGTemplateResourceImpl implements NGTemplateResource {
             -> new NotFoundException(String.format(
                 "Template with the given Identifier: %s and %s does not exist or has been deleted", templateIdentifier,
                 EmptyPredicate.isEmpty(versionLabel) ? "stable versionLabel" : "versionLabel: " + versionLabel))));
+
+    if (isDefaultRemoteTemplate(templateEntity)) {
+      templateService.populateSetupUsageAsync(templateEntity.get());
+    }
+
     return ResponseDTO.newResponse(version, templateResponseDTO);
+  }
+
+  private boolean isDefaultRemoteTemplate(Optional<TemplateEntity> templateEntity) {
+    return templateEntity.get().getStoreType() == StoreType.REMOTE
+        && GitAwareContextHelper.getIsDefaultBranchFromGitEntityInfo();
   }
 
   @Override
@@ -166,12 +179,20 @@ public class NGTemplateResourceImpl implements NGTemplateResource {
           "created", templateEntity.getIdentifier(), gitEntityCreateInfo.getCommitMsg());
     }
 
+    GovernanceMetadata governanceMetadata = templateService.validateGovernanceRules(templateEntity);
+    if (governanceMetadata.getDeny()) {
+      TemplateWrapperResponseDTO templateWrapperResponseDTO =
+          TemplateWrapperResponseDTO.builder().isValid(true).governanceMetadata(governanceMetadata).build();
+      return ResponseDTO.newResponse(templateWrapperResponseDTO);
+    }
+
     TemplateEntity createdTemplate =
         templateService.create(templateEntity, setDefaultTemplate, comments, isNewTemplate);
     TemplateWrapperResponseDTO templateWrapperResponseDTO =
         TemplateWrapperResponseDTO.builder()
             .isValid(true)
             .templateResponseDTO(NGTemplateDtoMapper.writeTemplateResponseDto(createdTemplate))
+            .governanceMetadata(governanceMetadata)
             .build();
     return ResponseDTO.newResponse(createdTemplate.getVersion().toString(), templateWrapperResponseDTO);
   }
@@ -209,11 +230,20 @@ public class NGTemplateResourceImpl implements NGTemplateResource {
       comments =
           templateServiceHelper.getComment("updated", templateEntity.getIdentifier(), gitEntityInfo.getCommitMsg());
     }
+
+    GovernanceMetadata governanceMetadata = templateService.validateGovernanceRules(templateEntity);
+    if (governanceMetadata.getDeny()) {
+      TemplateWrapperResponseDTO templateWrapperResponseDTO =
+          TemplateWrapperResponseDTO.builder().isValid(true).governanceMetadata(governanceMetadata).build();
+      return ResponseDTO.newResponse(templateWrapperResponseDTO);
+    }
+
     TemplateEntity createdTemplate =
         templateService.updateTemplateEntity(templateEntity, ChangeType.MODIFY, setDefaultTemplate, comments);
     TemplateWrapperResponseDTO templateWrapperResponseDTO =
         TemplateWrapperResponseDTO.builder()
             .isValid(true)
+            .governanceMetadata(governanceMetadata)
             .templateResponseDTO(NGTemplateDtoMapper.writeTemplateResponseDto(createdTemplate))
             .build();
     return ResponseDTO.newResponse(createdTemplate.getVersion().toString(), templateWrapperResponseDTO);
@@ -398,10 +428,10 @@ public class NGTemplateResourceImpl implements NGTemplateResource {
     if (templateApplyRequestDTO.isGetOnlyFileContent()) {
       TemplateUtils.setUserFlowContext(USER_FLOW.EXECUTION);
     }
-    TemplateMergeResponseDTO templateMergeResponseDTO =
-        templateMergeService.applyTemplatesToYamlV2(accountId, orgId, projectId,
-            templateApplyRequestDTO.getOriginalEntityYaml(), templateApplyRequestDTO.isGetMergedYamlWithTemplateField(),
-            NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache), appendInputSetValidator);
+    TemplateMergeResponseDTO templateMergeResponseDTO = templateMergeService.applyTemplatesToYamlV2(accountId, orgId,
+        projectId, YamlUtils.readAsJsonNode(templateApplyRequestDTO.getOriginalEntityYaml()),
+        templateApplyRequestDTO.isGetMergedYamlWithTemplateField(),
+        NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache), appendInputSetValidator);
     checkLinkedTemplateAccess(accountId, orgId, projectId, templateApplyRequestDTO, templateMergeResponseDTO);
     log.info("[TemplateService] applyTemplatesV2 took {}ms ", System.currentTimeMillis() - start);
     return ResponseDTO.newResponse(templateMergeResponseDTO);

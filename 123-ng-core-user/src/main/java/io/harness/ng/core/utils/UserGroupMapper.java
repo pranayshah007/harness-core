@@ -29,11 +29,13 @@ import io.harness.ng.core.entities.MicrosoftTeamsConfig;
 import io.harness.ng.core.entities.NotificationSettingConfig;
 import io.harness.ng.core.entities.PagerDutyConfig;
 import io.harness.ng.core.entities.SlackConfig;
+import io.harness.ng.core.entities.WebhookConfig;
 import io.harness.ng.core.notification.EmailConfigDTO;
 import io.harness.ng.core.notification.MicrosoftTeamsConfigDTO;
 import io.harness.ng.core.notification.NotificationSettingConfigDTO;
 import io.harness.ng.core.notification.PagerDutyConfigDTO;
 import io.harness.ng.core.notification.SlackConfigDTO;
+import io.harness.ng.core.notification.WebhookConfigDTO;
 import io.harness.ng.core.user.entities.UserGroup;
 
 import software.wings.beans.sso.SSOType;
@@ -206,6 +208,8 @@ public class UserGroupMapper {
             .groupEmail(((EmailConfigDTO) dto).getGroupEmail())
             .sendEmailToAllUsers(((EmailConfigDTO) dto).getSendEmailToAllUsers())
             .build();
+      case WEBHOOK:
+        return WebhookConfig.builder().webhookUrl(((WebhookConfigDTO) dto).getWebhookUrl()).build();
       default:
         throw new IllegalArgumentException("This is not a valid Notification Setting Type: " + dto.getType());
     }
@@ -229,6 +233,8 @@ public class UserGroupMapper {
             .groupEmail(((EmailConfig) entity).getGroupEmail())
             .sendEmailToAllUsers(((EmailConfig) entity).getSendEmailToAllUsers())
             .build();
+      case WEBHOOK:
+        return WebhookConfigDTO.builder().webhookUrl(((WebhookConfig) entity).getWebhookUrl()).build();
       default:
         throw new IllegalArgumentException("This is not a valid Notification Setting Type: " + entity.getType());
     }

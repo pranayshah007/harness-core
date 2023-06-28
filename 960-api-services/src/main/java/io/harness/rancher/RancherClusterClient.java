@@ -10,8 +10,10 @@ package io.harness.rancher;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import java.util.Map;
+
 @OwnedBy(HarnessTeam.CDP)
 public interface RancherClusterClient {
-  RancherListClustersResponse listClusters(String bearerToken, String url);
+  RancherListClustersResponse listClusters(String bearerToken, String url, Map<String, String> pageRequestParams);
   RancherGenerateKubeconfigResponse generateKubeconfig(String bearerToken, String url, String clusterName);
 }

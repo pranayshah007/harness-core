@@ -9,6 +9,7 @@ package io.harness.chartmuseum;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.chartmuseum.ChartMuseumConstants.GCS_COMMAND_TEMPLATE;
+import static io.harness.chartmuseum.ChartMuseumConstants.GCS_COMMAND_TEMPLATE_DEBUG;
 import static io.harness.chartmuseum.ChartMuseumConstants.GOOGLE_APPLICATION_CREDENTIALS;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -20,7 +21,9 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Builder;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @OwnedBy(CDP)
 public class ChartmuseumGcsClient extends AbstractChartmuseumClient {
   private final String bucket;
@@ -46,7 +49,8 @@ public class ChartmuseumGcsClient extends AbstractChartmuseumClient {
       environment.put(GOOGLE_APPLICATION_CREDENTIALS, credentialFilePath);
     }
 
-    String evaluatedArguments = GCS_COMMAND_TEMPLATE.replace("${BUCKET_NAME}", bucket)
+    String evaluatedArguments = (log.isDebugEnabled() ? GCS_COMMAND_TEMPLATE_DEBUG : GCS_COMMAND_TEMPLATE)
+                                    .replace("${BUCKET_NAME}", bucket)
                                     .replace("${FOLDER_PATH}", basePath == null ? "" : basePath);
 
     return startServer(evaluatedArguments, environment);

@@ -16,11 +16,13 @@ import io.harness.git.model.FetchFilesBwCommitsRequest;
 import io.harness.git.model.FetchFilesByPathRequest;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitBaseRequest;
+import io.harness.git.model.ListRemoteRequest;
+import io.harness.git.model.ListRemoteResult;
+import io.harness.git.model.RevertAndPushRequest;
+import io.harness.git.model.RevertAndPushResult;
 
 import java.io.IOException;
-import java.util.Map;
 import javax.annotation.Nullable;
-import org.eclipse.jgit.lib.Ref;
 
 public interface GitClientV2 {
   void ensureRepoLocallyClonedAndUpdated(GitBaseRequest request);
@@ -36,6 +38,7 @@ public interface GitClientV2 {
   DiffResult diff(DiffRequest request);
 
   CommitAndPushResult commitAndPush(CommitAndPushRequest request);
+  RevertAndPushResult revertAndPush(RevertAndPushRequest request);
 
   FetchFilesResult fetchFilesBetweenCommits(FetchFilesBwCommitsRequest request);
 
@@ -52,5 +55,5 @@ public interface GitClientV2 {
    */
   @Nullable String cloneRepoAndCopyToDestDir(DownloadFilesRequest request);
 
-  Map<String, Ref> listRemote(GitBaseRequest request);
+  ListRemoteResult listRemote(ListRemoteRequest request);
 }

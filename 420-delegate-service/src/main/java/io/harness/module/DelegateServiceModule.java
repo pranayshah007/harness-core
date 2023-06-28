@@ -9,6 +9,7 @@ package io.harness.module;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.authenticator.DelegateSecretManager;
 import io.harness.delegate.filter.DelegateFilterPropertiesMapper;
 import io.harness.delegate.filter.DelegateProfileFilterPropertiesMapper;
 import io.harness.ff.FeatureFlagModule;
@@ -19,6 +20,7 @@ import io.harness.metrics.impl.DelegateMetricsServiceImpl;
 import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.service.impl.DelegateAuthServiceImpl;
 import io.harness.service.impl.DelegateCallbackRegistryImpl;
+import io.harness.service.impl.DelegateSecretManagerImpl;
 import io.harness.service.impl.DelegateSetupServiceImpl;
 import io.harness.service.impl.DelegateTaskSelectorMapServiceImpl;
 import io.harness.service.impl.DelegateTaskServiceImpl;
@@ -46,6 +48,7 @@ public class DelegateServiceModule extends AbstractModule {
     bind(TaskProgressService.class).to(TaskProgressServiceImpl.class);
     bind(DelegateSetupService.class).to(DelegateSetupServiceImpl.class);
     bind(DelegateAuthService.class).to(DelegateAuthServiceImpl.class);
+    bind(DelegateSecretManager.class).to(DelegateSecretManagerImpl.class);
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.DELEGATE.toString()).to(DelegateFilterPropertiesMapper.class);

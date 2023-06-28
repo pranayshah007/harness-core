@@ -31,7 +31,6 @@ import io.harness.cvng.core.beans.monitoredService.HistoricalTrend;
 import io.harness.cvng.core.beans.monitoredService.RiskData;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.entities.CVConfig;
-import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.dashboard.entities.HeatMap;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapKeys;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapResolution;
@@ -65,7 +64,6 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 public class HeatMapServiceImplTest extends CvNextGenTestBase {
@@ -78,7 +76,6 @@ public class HeatMapServiceImplTest extends CvNextGenTestBase {
   private String orgIdentifier;
   private CVConfig cvConfig;
   @Inject private HPersistence hPersistence;
-  @Mock private CVConfigService cvConfigService;
   private Clock clock;
   private BuilderFactory builderFactory;
 

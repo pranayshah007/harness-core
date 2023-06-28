@@ -354,6 +354,24 @@ public class SubscriptionResource {
   //    return ResponseDTO.newResponse(subscriptionService.listStripeCustomers(accountIdentifier));
   //  }
 
+  @POST
+  @Path("/client-secret")
+  @ApiOperation(value = "Creates a client secret for the Stripe customer", nickname = "createClientSecret")
+  @Operation(operationId = "createClientSecret", summary = "Creates a client secret for the Stripe customer",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns a Stripe credit card element client secret")
+      })
+  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = EDIT_LICENSE_PERMISSION)
+  public ResponseDTO<String>
+  createClientSecret(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                         NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(required = true, description = "Billing email for transaction correspondence") @NotNull @QueryParam(
+          "billingEmail") @AccountIdentifier String billingEmail) {
+    return ResponseDTO.newResponse(subscriptionService.createClientSecret(accountIdentifier, billingEmail));
+  }
+
   @GET
   @Path("/payment_methods")
   @ApiOperation(value = "Lists all payment methods for the customer", nickname = "listPaymentMethods")

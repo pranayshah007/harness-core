@@ -271,7 +271,7 @@ public class CfSwapRollbackCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = pcfRollbackCommandTaskHandler.executeTaskInternal(
         cfRollbackCommandRequestNG, logStreamingTaskClient, commandUnitsProgress);
@@ -477,7 +477,7 @@ public class CfSwapRollbackCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = pcfRollbackCommandTaskHandler.executeTaskInternal(
         cfRollbackCommandRequestNG, logStreamingTaskClient, commandUnitsProgress);
@@ -684,7 +684,7 @@ public class CfSwapRollbackCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = pcfRollbackCommandTaskHandler.executeTaskInternal(
         cfRollbackCommandRequestNG, logStreamingTaskClient, commandUnitsProgress);
@@ -890,7 +890,7 @@ public class CfSwapRollbackCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = pcfRollbackCommandTaskHandler.executeTaskInternal(
         cfRollbackCommandRequestNG, logStreamingTaskClient, commandUnitsProgress);
@@ -1099,7 +1099,7 @@ public class CfSwapRollbackCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = pcfRollbackCommandTaskHandler.executeTaskInternal(
         cfRollbackCommandRequestNG, logStreamingTaskClient, commandUnitsProgress);
@@ -1307,7 +1307,7 @@ public class CfSwapRollbackCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = pcfRollbackCommandTaskHandler.executeTaskInternal(
         cfRollbackCommandRequestNG, logStreamingTaskClient, commandUnitsProgress);
@@ -1515,7 +1515,7 @@ public class CfSwapRollbackCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = pcfRollbackCommandTaskHandler.executeTaskInternal(
         cfRollbackCommandRequestNG, logStreamingTaskClient, commandUnitsProgress);
@@ -1723,7 +1723,7 @@ public class CfSwapRollbackCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = pcfRollbackCommandTaskHandler.executeTaskInternal(
         cfRollbackCommandRequestNG, logStreamingTaskClient, commandUnitsProgress);
@@ -1931,7 +1931,7 @@ public class CfSwapRollbackCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = pcfRollbackCommandTaskHandler.executeTaskInternal(
         cfRollbackCommandRequestNG, logStreamingTaskClient, commandUnitsProgress);
@@ -2139,7 +2139,7 @@ public class CfSwapRollbackCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = pcfRollbackCommandTaskHandler.executeTaskInternal(
         cfRollbackCommandRequestNG, logStreamingTaskClient, commandUnitsProgress);
@@ -2347,7 +2347,7 @@ public class CfSwapRollbackCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = pcfRollbackCommandTaskHandler.executeTaskInternal(
         cfRollbackCommandRequestNG, logStreamingTaskClient, commandUnitsProgress);
@@ -2554,7 +2554,7 @@ public class CfSwapRollbackCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = pcfRollbackCommandTaskHandler.executeTaskInternal(
         cfRollbackCommandRequestNG, logStreamingTaskClient, commandUnitsProgress);
@@ -2763,7 +2763,7 @@ public class CfSwapRollbackCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = pcfRollbackCommandTaskHandler.executeTaskInternal(
         cfRollbackCommandRequestNG, logStreamingTaskClient, commandUnitsProgress);
@@ -2974,7 +2974,7 @@ public class CfSwapRollbackCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = pcfRollbackCommandTaskHandler.executeTaskInternal(
         cfRollbackCommandRequestNG, logStreamingTaskClient, commandUnitsProgress);
@@ -3187,7 +3187,7 @@ public class CfSwapRollbackCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = pcfRollbackCommandTaskHandler.executeTaskInternal(
         cfRollbackCommandRequestNG, logStreamingTaskClient, commandUnitsProgress);
@@ -3400,7 +3400,7 @@ public class CfSwapRollbackCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = pcfRollbackCommandTaskHandler.executeTaskInternal(
         cfRollbackCommandRequestNG, logStreamingTaskClient, commandUnitsProgress);
@@ -3634,7 +3634,7 @@ public class CfSwapRollbackCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = pcfRollbackCommandTaskHandler.executeTaskInternal(
         cfRollbackCommandRequestNG, logStreamingTaskClient, commandUnitsProgress);
@@ -3874,7 +3874,7 @@ public class CfSwapRollbackCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = pcfRollbackCommandTaskHandler.executeTaskInternal(
         CfSwapRoutesRequestNG.builder().build(), logStreamingTaskClient, commandUnitsProgress);

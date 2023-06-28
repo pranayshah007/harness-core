@@ -1,0 +1,20 @@
+pipeline:
+  identifier: GithibPackage
+  stages:
+    - stage:
+        identifier: Github
+        type: Deployment
+        spec:
+          service:
+            serviceInputs:
+              serviceDefinition:
+                type: Kubernetes
+                spec:
+                  artifacts:
+                    primary:
+                      primaryArtifactRef: GithubPackage
+                      sources:
+                        - identifier: GithubPackage
+                          type: GithubPackageRegistry
+                          spec:
+                            version: <+input>

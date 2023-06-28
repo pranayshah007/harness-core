@@ -12,17 +12,21 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.UnexpectedException;
 import io.harness.utils.YamlPipelineUtils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.IOException;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 @OwnedBy(HarnessTeam.IDP)
 public class YamlUtils {
   public static String writeObjectAsYaml(Object obj) {
+    return YamlPipelineUtils.writeYamlString(obj);
+  }
+
+  public static <T> T read(String value, Class<T> cls) {
     try {
-      return YamlPipelineUtils.writeString(obj);
-    } catch (JsonProcessingException e) {
-      throw new UnexpectedException("Error writing object as yaml");
+      return YamlPipelineUtils.read(value, cls);
+    } catch (IOException e) {
+      throw new UnexpectedException("Error reading the content", e);
     }
   }
 }

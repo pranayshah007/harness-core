@@ -4,7 +4,7 @@
       "type" : "section",
       "text" : {
         "type" : "mrkdwn",
-        "text" : "*Pipeline <${pipelineExecutionLink}|${pipelineName}>  ${status}*\n\n${action}"
+        "text" : "*Pipeline <${pipelineExecutionLink}|${pipelineName}>  ${status} for stage: ${runningStages}*\n\n${action}"
       },
       "fields" : [
         {"type" : "mrkdwn", "text" : "*Organization:*\n${orgName}"},

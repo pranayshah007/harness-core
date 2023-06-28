@@ -20,6 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.exception.ExceptionUtils;
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesConfig;
@@ -134,10 +135,9 @@ public class ContainerInstanceSyncPerpetualTaskExecutor implements PerpetualTask
           .namespace(containerServicePerpetualTaskParams.getNamespace())
           .build();
     } catch (Exception exception) {
-      log.error(String.format("Failed to fetch containers info for namespace: [%s] and svc:[%s] ",
-                    containerServicePerpetualTaskParams.getNamespace(),
-                    containerServicePerpetualTaskParams.getContainerSvcName()),
-          exception);
+      log.warn(String.format("Failed to fetch containers info for namespace: [%s] and svc:[%s] due to [%s] ",
+          containerServicePerpetualTaskParams.getNamespace(), containerServicePerpetualTaskParams.getContainerSvcName(),
+          ExceptionUtils.getMessage(exception)));
 
       return ContainerSyncResponse.builder()
           .commandExecutionStatus(FAILURE)
@@ -190,10 +190,9 @@ public class ContainerInstanceSyncPerpetualTaskExecutor implements PerpetualTask
           .build();
 
     } catch (Exception exception) {
-      log.warn(String.format("Failed to fetch k8s pod list for namespace: [%s] and releaseName:[%s] ",
-                   k8sContainerInstanceSyncPerpetualTaskParams.getNamespace(),
-                   k8sContainerInstanceSyncPerpetualTaskParams.getReleaseName()),
-          exception);
+      log.warn(String.format("Failed to fetch k8s pod list for namespace: [%s] and releaseName:[%s] due to [%s]",
+          k8sContainerInstanceSyncPerpetualTaskParams.getNamespace(),
+          k8sContainerInstanceSyncPerpetualTaskParams.getReleaseName(), ExceptionUtils.getMessage(exception)));
       return K8sTaskExecutionResponse.builder()
           .commandExecutionStatus(FAILURE)
           .errorMessage(exception.getMessage())
@@ -206,10 +205,9 @@ public class ContainerInstanceSyncPerpetualTaskExecutor implements PerpetualTask
     try {
       execute(delegateAgentManagerClient.publishInstanceSyncResult(taskId.getId(), accountId, responseData));
     } catch (Exception e) {
-      log.error(
-          String.format("Failed to publish container instance sync result. namespace [%s] and PerpetualTaskId [%s]",
-              namespace, taskId.getId()),
-          e);
+      log.warn(String.format(
+          "Failed to publish container instance sync result. namespace [%s] and PerpetualTaskId [%s] due to [%s]",
+          namespace, taskId.getId(), ExceptionUtils.getMessage(e)));
     }
   }
 

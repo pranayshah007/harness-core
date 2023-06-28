@@ -76,12 +76,16 @@ public class AccountDTO {
   @VariableExpression(skipVariableExpression = true)
   private String ringName;
 
+  @Schema(description = "SessionTimeout in minutes")
+  @VariableExpression(skipVariableExpression = true)
+  private Integer sessionTimeoutInMinutes;
+
   @Builder
   public AccountDTO(String identifier, String name, String companyName, String cluster,
       DefaultExperience defaultExperience, boolean isCrossGenerationAccessEnabled,
       AuthenticationMechanism authenticationMechanism, ServiceAccountConfig serviceAccountConfig,
-      boolean isNextGenEnabled, boolean isProductLed, boolean isTwoFactorAdminEnforced, long createdAt,
-      String ringName) {
+      boolean isNextGenEnabled, boolean isProductLed, boolean isTwoFactorAdminEnforced, long createdAt, String ringName,
+      Integer sessionTimeoutInMinutes) {
     this.identifier = identifier;
     this.name = name;
     this.companyName = companyName;
@@ -95,5 +99,6 @@ public class AccountDTO {
     this.isTwoFactorAdminEnforced = isTwoFactorAdminEnforced;
     this.ringName = ringName;
     this.createdAt = createdAt;
+    this.sessionTimeoutInMinutes = sessionTimeoutInMinutes;
   }
 }

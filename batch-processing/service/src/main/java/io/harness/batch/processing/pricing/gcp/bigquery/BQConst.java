@@ -80,8 +80,12 @@ public class BQConst {
   public static final String COST_CATEGORY_REMOVE = "UPDATE `%s` SET %s = [] "
       + "WHERE startTime >= '%s' AND startTime <= '%s' AND %s IN %s";
 
-  public static final String COST_CATEGORY_UPDATE = "UPDATE `%s` "
+  public static final String COST_CATEGORY_SET = "UPDATE `%s` "
       + "SET %s = %s "
+      + "WHERE startTime >= '%s' AND startTime <= '%s' AND %s IN %s";
+
+  public static final String COST_CATEGORY_ADD = "UPDATE `%s` "
+      + "SET %s = ARRAY_CONCAT(%s, %s) "
       + "WHERE startTime >= '%s' AND startTime <= '%s' AND %s IN %s";
 
   public static final String CLOUD_PROVIDER_ENTITY_TAGS_TABLE_NAME = "cloudProviderEntityTags";

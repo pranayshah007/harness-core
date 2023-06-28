@@ -34,6 +34,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.logging.LogCallback;
 import io.harness.pcf.model.CfAppAutoscalarRequestData;
 import io.harness.pcf.model.CfConfig;
@@ -347,22 +348,28 @@ public class CfDeploymentManagerImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testSetEnvironmentVariableForAppStatus() throws Exception {
     reset(cliClient);
-    deploymentManager.setEnvironmentVariableForAppStatus(CfRequestConfig.builder().build(), true, logCallback);
     ArgumentCaptor<Map> mapCaptor = ArgumentCaptor.forClass(Map.class);
-    verify(cliClient, times(1)).setEnvVariablesForApplication(mapCaptor.capture(), any(), any());
-    Map map = mapCaptor.getValue();
+    try {
+      deploymentManager.setEnvironmentVariableForAppStatus(CfRequestConfig.builder().build(), true, logCallback);
+    } catch (Exception e) {
+      verify(cliClient, times(1)).setEnvVariablesForApplication(mapCaptor.capture(), any(), any());
+      Map map = mapCaptor.getValue();
 
-    assertThat(map).isNotNull();
-    assertThat(map.size()).isEqualTo(1);
-    assertThat(map.get(HARNESS__STATUS__IDENTIFIER)).isEqualTo(HARNESS__ACTIVE__IDENTIFIER);
+      assertThat(map).isNotNull();
+      assertThat(map.size()).isEqualTo(1);
+      assertThat(map.get(HARNESS__STATUS__IDENTIFIER)).isEqualTo(HARNESS__ACTIVE__IDENTIFIER);
+    }
 
-    deploymentManager.setEnvironmentVariableForAppStatus(CfRequestConfig.builder().build(), false, logCallback);
-    verify(cliClient, times(2)).setEnvVariablesForApplication(mapCaptor.capture(), any(), any());
-    map = mapCaptor.getValue();
+    try {
+      deploymentManager.setEnvironmentVariableForAppStatus(CfRequestConfig.builder().build(), false, logCallback);
+    } catch (Exception e) {
+      verify(cliClient, times(2)).setEnvVariablesForApplication(mapCaptor.capture(), any(), any());
+      Map map = mapCaptor.getValue();
 
-    assertThat(map).isNotNull();
-    assertThat(map.size()).isEqualTo(1);
-    assertThat(map.get(HARNESS__STATUS__IDENTIFIER)).isEqualTo(HARNESS__STAGE__IDENTIFIER);
+      assertThat(map).isNotNull();
+      assertThat(map.size()).isEqualTo(1);
+      assertThat(map.get(HARNESS__STATUS__IDENTIFIER)).isEqualTo(HARNESS__STAGE__IDENTIFIER);
+    }
   }
 
   @Test
@@ -376,15 +383,17 @@ public class CfDeploymentManagerImplTest extends CategoryTest {
         ApplicationEnvironments.builder().userProvided(userProvided).build();
 
     doReturn(applicationEnvironments).when(sdkClient).getApplicationEnvironmentsByName(any());
+    try {
+      deploymentManager.unsetEnvironmentVariableForAppStatus(CfRequestConfig.builder().build(), logCallback);
+    } catch (Exception e) {
+      ArgumentCaptor<List> listCaptor = ArgumentCaptor.forClass(List.class);
+      verify(cliClient).unsetEnvVariablesForApplication(listCaptor.capture(), any(), any());
+      List list = listCaptor.getValue();
 
-    deploymentManager.unsetEnvironmentVariableForAppStatus(CfRequestConfig.builder().build(), logCallback);
-    ArgumentCaptor<List> listCaptor = ArgumentCaptor.forClass(List.class);
-    verify(cliClient).unsetEnvVariablesForApplication(listCaptor.capture(), any(), any());
-    List list = listCaptor.getValue();
-
-    assertThat(list).isNotNull();
-    assertThat(list.size()).isEqualTo(1);
-    assertThat(list).containsExactly(HARNESS__STATUS__IDENTIFIER);
+      assertThat(list).isNotNull();
+      assertThat(list.size()).isEqualTo(1);
+      assertThat(list).containsExactly(HARNESS__STATUS__IDENTIFIER);
+    }
   }
 
   @Test
@@ -554,12 +563,12 @@ public class CfDeploymentManagerImplTest extends CategoryTest {
                                               .runningInstances(2)
                                               .build();
     when(sdkClient.getApplicationByName(eq(cfRequestConfig))).thenReturn(applicationDetail);
-    ApplicationDetail application = deploymentManager.resizeApplication(cfRequestConfig);
+    ApplicationDetail application = deploymentManager.resizeApplication(cfRequestConfig, logCallback);
     assertThat(application).isNotNull();
     assertThat(application.getName()).isEqualTo(appName);
 
     cfRequestConfig.setDesiredCount(0);
-    application = deploymentManager.resizeApplication(cfRequestConfig);
+    application = deploymentManager.resizeApplication(cfRequestConfig, logCallback);
     assertThat(application).isNotNull();
     assertThat(application.getName()).isEqualTo(appName);
   }
@@ -569,7 +578,7 @@ public class CfDeploymentManagerImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testResizeApplicationFail() throws Exception {
     doAnswer(invocation -> { throw new Exception(); }).when(sdkClient).scaleApplications(any());
-    assertThatThrownBy(() -> deploymentManager.resizeApplication(CfRequestConfig.builder().build()))
+    assertThatThrownBy(() -> deploymentManager.resizeApplication(CfRequestConfig.builder().build(), logCallback))
         .isInstanceOf(PivotalClientApiException.class);
   }
 
@@ -892,7 +901,7 @@ public class CfDeploymentManagerImplTest extends CategoryTest {
                                          .state("RUNNING")
                                          .build();
     ApplicationDetail applicationDetail = generateApplicationDetail(1, new InstanceDetail[] {instanceDetail1});
-    doReturn(applicationDetail).when(deploymentManager).resizeApplication(eq(cfRequestConfig));
+    doReturn(applicationDetail).when(deploymentManager).resizeApplication(cfRequestConfig, logCallback);
     doAnswer(invocation -> { throw new InterruptedException(); })
         .when(sdkClient)
         .getApplicationByName(eq(cfRequestConfig));

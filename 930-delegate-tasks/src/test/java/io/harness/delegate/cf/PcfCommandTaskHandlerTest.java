@@ -199,7 +199,7 @@ public class PcfCommandTaskHandlerTest extends CategoryTest {
                                       .build())
                  .build())
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     doReturn(ApplicationDetail.builder()
                  .id("10")

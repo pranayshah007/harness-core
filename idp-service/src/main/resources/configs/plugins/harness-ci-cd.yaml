@@ -1,0 +1,7 @@
+proxy:
+  '/harness/prod':
+    target: 'https://app.harness.io/'
+    pathRewrite:
+      '/api/proxy/harness/prod/?': '/'
+    allowedHeaders:
+      - authorization

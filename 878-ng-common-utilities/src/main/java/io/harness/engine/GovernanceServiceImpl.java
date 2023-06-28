@@ -19,6 +19,7 @@ import io.harness.opaclient.OpaServiceClient;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.opaclient.model.OpaEvaluationResponseHolder;
 import io.harness.opaclient.model.PipelineOpaEvaluationContext;
+import io.harness.opaclient.model.TemplateOpaEvaluationContext;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
@@ -87,6 +88,49 @@ public class GovernanceServiceImpl implements GovernanceService {
         response = SafeHttpCall.executeWithExceptions(
             opaServiceClient.evaluateWithCredentials(OpaConstants.OPA_EVALUATION_TYPE_PIPELINE, accountId,
                 orgIdentifier, projectIdentifier, action, entityString, entityMetadata, userIdentifier, context));
+      } catch (Exception ex) {
+        log.error("Exception while evaluating OPA rules", ex);
+        throw new InvalidRequestException("Exception while evaluating OPA rules: " + ex.getMessage(), ex);
+      }
+
+      return GovernanceServiceHelper.mapResponseToMetadata(response);
+    } finally {
+      log.info("[PMS_Governance_Metadata] Time taken to evaluate governance policies: {}ms",
+          System.currentTimeMillis() - startTs);
+    }
+  }
+
+  @Override
+  public GovernanceMetadata evaluateGovernancePoliciesForTemplate(String templateJson, String accountId,
+      String orgIdentifier, String projectIdentifier, String action, String type) {
+    long startTs = System.currentTimeMillis();
+    try {
+      if (isEmpty(templateJson)) {
+        return GovernanceMetadata.newBuilder().setDeny(false).build();
+      }
+      log.info("Initiating policy check for template with expanded JSON:\n" + templateJson);
+
+      TemplateOpaEvaluationContext context;
+      try {
+        context = GovernanceServiceHelper.createEvaluationContextTemplate(templateJson);
+      } catch (IOException ex) {
+        log.error("Could not create OPA evaluation context", ex);
+        return GovernanceMetadata.newBuilder()
+            .setDeny(true)
+            .setMessage(String.format("Could not create OPA context: [%s]", ex.getMessage()))
+            .build();
+      }
+
+      OpaEvaluationResponseHolder response;
+      try {
+        YamlField pipelineField = YamlUtils.readTree(templateJson);
+        String templateIdentifier = pipelineField.getNode().getField(type).getNode().getIdentifier();
+        String templateName = pipelineField.getNode().getField(type).getNode().getName();
+        String entityMetadata = GovernanceServiceHelper.getEntityMetadata(templateName);
+        String userIdentifier = GovernanceServiceHelper.getUserIdentifier();
+
+        response = SafeHttpCall.executeWithExceptions(opaServiceClient.evaluateWithCredentials(type, accountId,
+            orgIdentifier, projectIdentifier, action, templateIdentifier, entityMetadata, userIdentifier, context));
       } catch (Exception ex) {
         log.error("Exception while evaluating OPA rules", ex);
         throw new InvalidRequestException("Exception while evaluating OPA rules: " + ex.getMessage(), ex);

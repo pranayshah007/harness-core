@@ -20,6 +20,7 @@ import io.harness.delegate.beans.connector.azureconnector.AzureCapabilityHelper;
 import io.harness.delegate.beans.connector.gcp.GcpCapabilityHelper;
 import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.k8Connector.K8sTaskCapabilityHelper;
+import io.harness.delegate.beans.connector.rancher.RancherTaskCapabilityHelper;
 import io.harness.delegate.beans.connector.scm.GitCapabilityHelper;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -90,6 +91,11 @@ public interface K8sDeployRequest extends TaskParameters, ExecutionCapabilityDem
           ((EksK8sInfraDelegateConfig) k8sInfraDelegateConfig).getAwsConnectorDTO(), maskingEvaluator));
     }
 
+    if (k8sInfraDelegateConfig instanceof RancherK8sInfraDelegateConfig) {
+      capabilities.addAll(RancherTaskCapabilityHelper.fetchRequiredExecutionCapabilities(
+          ((RancherK8sInfraDelegateConfig) k8sInfraDelegateConfig).getRancherConnectorDTO(), maskingEvaluator));
+    }
+
     if (getManifestDelegateConfig() != null) {
       if (KUSTOMIZE == getManifestDelegateConfig().getManifestType()) {
         KustomizeManifestDelegateConfig kustomizeManifestConfig =
@@ -121,8 +127,9 @@ public interface K8sDeployRequest extends TaskParameters, ExecutionCapabilityDem
           case HTTP_HELM:
             HttpHelmStoreDelegateConfig httpHelmStoreConfig =
                 (HttpHelmStoreDelegateConfig) helManifestConfig.getStoreDelegateConfig();
-            capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-                httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), maskingEvaluator));
+            capabilities.add(
+                HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapabilityWithIgnoreResponseCode(
+                    httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), maskingEvaluator, true));
             capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
                 httpHelmStoreConfig.getEncryptedDataDetails(), maskingEvaluator));
             populateDelegateSelectorCapability(

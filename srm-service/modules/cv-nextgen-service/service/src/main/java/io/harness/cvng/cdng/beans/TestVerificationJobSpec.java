@@ -7,6 +7,8 @@
 
 package io.harness.cvng.cdng.beans;
 
+import static io.harness.cvng.core.utils.ErrorMessageUtils.generateErrorMessageFromParam;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
@@ -16,6 +18,7 @@ import io.harness.cvng.verificationjob.entities.VerificationJob.VerificationJobB
 import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.google.common.base.Preconditions;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -49,5 +52,7 @@ public class TestVerificationJobSpec extends VerificationJobSpec {
   }
 
   @Override
-  protected void validateParams() {}
+  protected void validateParams() {
+    Preconditions.checkNotNull(sensitivity, generateErrorMessageFromParam(VerificationJobSpecKeys.sensitivity));
+  }
 }

@@ -39,6 +39,7 @@ java_library(
         "//980-commons/src/main/java/io/harness/validation:module",
         "//980-commons/src/main/java/io/harness/version:module",
         "//999-annotations:module",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
     ],
 )
 

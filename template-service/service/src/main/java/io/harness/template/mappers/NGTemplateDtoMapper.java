@@ -33,6 +33,7 @@ import io.harness.ng.core.template.TemplateMetadataSummaryResponseDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateSummaryResponseDTO;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntityGetResponse;
 import io.harness.template.resources.beans.FilterParamsDTO;
@@ -41,7 +42,6 @@ import io.harness.template.resources.beans.TemplateFilterProperties;
 import io.harness.template.resources.beans.TemplateFilterPropertiesDTO;
 import io.harness.template.resources.beans.yaml.NGTemplateConfig;
 import io.harness.template.resources.beans.yaml.NGTemplateInfoConfig;
-import io.harness.template.yaml.TemplateYamlUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
@@ -271,7 +271,7 @@ public class NGTemplateDtoMapper {
       }
       return toTemplateEntityResponse(accountId, templateConfig.getTemplateInfoConfig().getOrgIdentifier(),
           templateConfig.getTemplateInfoConfig().getProjectIdentifier(), templateConfig,
-          TemplateYamlUtils.getYamlString(templateConfig));
+          YamlUtils.writeYamlString(templateConfig));
     } catch (Exception e) {
       throw new InvalidRequestException("Cannot create template entity due to " + e.getMessage());
     }
@@ -308,7 +308,7 @@ public class NGTemplateDtoMapper {
   }
 
   private NGTemplateConfig getTemplateConfigOrThrow(String templateYaml) throws IOException {
-    NGTemplateConfig config = TemplateYamlUtils.read(templateYaml, NGTemplateConfig.class);
+    NGTemplateConfig config = YamlUtils.read(templateYaml, NGTemplateConfig.class);
     if (config.getTemplateInfoConfig() == null) {
       throw new InvalidRequestException(
           "The provided template yaml does not contain the \"template\" keyword at the root level");
@@ -326,7 +326,7 @@ public class NGTemplateDtoMapper {
 
   public NGTemplateConfig toDTO(TemplateEntity templateEntity) {
     try {
-      return TemplateYamlUtils.read(templateEntity.getYaml(), NGTemplateConfig.class);
+      return YamlUtils.read(templateEntity.getYaml(), NGTemplateConfig.class);
     } catch (IOException ex) {
       throw new InvalidRequestException("Cannot create template yaml: " + ex.getMessage(), ex);
     }

@@ -277,6 +277,23 @@ public class InviteResource {
     return ResponseDTO.newResponse(inviteService.completeInvite(inviteOpt));
   }
 
+  @POST
+  @Hidden
+  @Path("complete-jit")
+  @ApiOperation(value = "Complete user creation in ng for JIT", nickname = "completeJIT", hidden = true)
+  @Operation(operationId = "completeJIT", summary = "Complete user creation in ng for JIT",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the boolean status")
+      })
+  public ResponseDTO<Boolean>
+  completeInvite(@Parameter(description = "email") @QueryParam("email") String email,
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) {
+    return ResponseDTO.newResponse(inviteService.completeUserNgSetupWithoutInvite(email, accountIdentifier));
+  }
+
   @PUT
   @Path("{inviteId}")
   @ApiOperation(value = "Resend invite mail", nickname = "updateInvite")

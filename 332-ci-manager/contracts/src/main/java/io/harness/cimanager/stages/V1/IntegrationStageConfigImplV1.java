@@ -64,7 +64,8 @@ public class IntegrationStageConfigImplV1 implements StageInfoConfig {
     return this.clone;
   }
 
-  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true)
+  @JsonTypeInfo(
+      use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXISTING_PROPERTY, visible = true)
   @JsonProperty("runtime")
   RuntimeV1 runtime;
   public RuntimeV1 getRuntime() {

@@ -13,6 +13,7 @@ import io.harness.app.beans.entities.CIBuildAuthor;
 import io.harness.app.beans.entities.CIBuildBranchHook;
 import io.harness.app.beans.entities.CIBuildPRHook;
 import io.harness.app.beans.entities.CIBuildPipeline;
+import io.harness.ci.pipeline.executions.beans.CIBuildReleaseHook;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -35,4 +36,5 @@ public class CIBuildResponseDTO {
   private CIBuildAuthor author;
   private CIBuildBranchHook branch;
   private CIBuildPRHook pullRequest;
+  private CIBuildReleaseHook release;
 }

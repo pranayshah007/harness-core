@@ -35,17 +35,9 @@ public class RunInfoUtils {
   String ALWAYS = "Always";
   String ROLLBACK_MODE_EXECUTION = "OnRollbackModeExecution";
 
-  // adding == true here because if <+pipeline.rollback.isPipelineRollback> is null, then
-  // (<+pipeline.rollback.isPipelineRollback> || <+OnStageFailure>) will equate to (null || true) and this leads to a
-  // jexl error
-  String IS_PIPELINE_ROLLBACK = "(<+pipeline.rollback.isPipelineRollback> == true)";
-
-  // If when conditions configured as <+input> and no value is given, when.getValue() will still
-  // be null and handled accordingly
   public String getRunConditionForStage(ParameterField<StageWhenCondition> stageWhenCondition) {
     return getRunConditionForStage(stageWhenCondition, NORMAL);
   }
-
   public String getRunConditionForStage(
       ParameterField<StageWhenCondition> stageWhenCondition, ExecutionMode executionMode) {
     if (ParameterField.isNull(stageWhenCondition) || stageWhenCondition.getValue() == null) {
@@ -73,8 +65,7 @@ public class RunInfoUtils {
         getGivenRunCondition(stepWhenCondition.getValue().getCondition()));
   }
 
-  public String getRunConditionForRollback(
-      ParameterField<StepWhenCondition> stepWhenCondition, ExecutionMode executionMode) {
+  public String getRunConditionForRollback(ParameterField<StepWhenCondition> stepWhenCondition) {
     if (ParameterField.isNull(stepWhenCondition) || stepWhenCondition.getValue() == null) {
       return getStatusExpression(ROLLBACK_MODE_EXECUTION) + " || " + getStatusExpression(STAGE_FAILURE);
     }

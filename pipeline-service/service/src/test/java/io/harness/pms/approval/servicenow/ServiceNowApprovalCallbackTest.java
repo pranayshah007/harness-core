@@ -31,6 +31,7 @@ import io.harness.delegate.task.servicenow.ServiceNowTaskNGResponse;
 import io.harness.errorhandling.NGErrorHelper;
 import io.harness.exception.ApprovalStepNGException;
 import io.harness.exception.ServiceNowException;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
@@ -285,6 +286,17 @@ public class ServiceNowApprovalCallbackTest extends CategoryTest {
                 LogHelper.color(String.format("Failed to fetch ticket. Ticket number might be invalid: %s", issueKey),
                     LogColor.Red),
                 LogLevel.ERROR);
+      }
+
+      // Case when expired, then should close log stream
+      instance.setDeadline(0);
+      doReturn(ServiceNowTaskNGResponse.builder().build()).when(referenceFalseKryoSerializer).asInflatedObject(any());
+      try (MockedConstruction<NGLogCallback> mocked = mockConstruction(NGLogCallback.class)) {
+        serviceNowApprovalCallback.push(response);
+        NGLogCallback logCallback = mocked.constructed().get(0);
+        verify(logCallback)
+            .saveExecutionLog(LogHelper.color("Approval instance has expired", LogColor.Red), LogLevel.INFO,
+                CommandExecutionStatus.FAILURE);
       }
     }
   }

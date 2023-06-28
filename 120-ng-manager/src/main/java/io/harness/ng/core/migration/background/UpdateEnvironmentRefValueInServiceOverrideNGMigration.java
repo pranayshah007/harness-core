@@ -17,7 +17,6 @@ import io.harness.migration.NGMigration;
 import io.harness.mongo.MongoPersistence;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
-import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.persistence.HIterator;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -136,7 +135,7 @@ public class UpdateEnvironmentRefValueInServiceOverrideNGMigration implements NG
         if (envRefJsonNode != null && envRefJsonNode.isTextual()) {
           ((ObjectNode) serviceOverridesJsonNode).put(NGServiceOverridesEntityKeys.environmentRef, qualifiedEnvRef);
         }
-        updatedYaml = CDYamlUtils.writeYamlString(yamlField.getNode().getCurrJsonNode());
+        updatedYaml = YamlUtils.writeYamlString(yamlField.getNode().getCurrJsonNode());
       }
     }
     return updatedYaml;

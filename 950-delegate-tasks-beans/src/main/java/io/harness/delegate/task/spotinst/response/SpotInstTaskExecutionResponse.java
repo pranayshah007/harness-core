@@ -21,4 +21,5 @@ public class SpotInstTaskExecutionResponse implements DelegateTaskNotifyResponse
   private SpotInstTaskResponse spotInstTaskResponse;
   private String errorMessage;
   private CommandExecutionStatus commandExecutionStatus;
+  private boolean isTimeoutError;
 }

@@ -113,9 +113,9 @@ public class RuntimeInputFormHelperTest extends CategoryTest {
   public void testCreateExecutionInputFormAndUpdateYamlFieldForStage() throws JsonProcessingException {
     String filename = "execution-input-pipeline.yaml";
     String expectedTemplateYaml = "stage:\n"
-        + "  identifier: \"sd\"\n"
-        + "  type: \"Approval\"\n"
-        + "  description: \"<+input>.executionInput()\"\n";
+        + "  identifier: sd\n"
+        + "  type: Approval\n"
+        + "  description: <+input>.executionInput()\n";
     String yaml = readFile(filename);
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     JsonNode jsonNode = mapper.readTree(yaml);

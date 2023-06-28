@@ -33,7 +33,6 @@ import io.harness.cvng.servicelevelobjective.services.api.GraphDataService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
-import io.harness.persistence.HPersistence;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -43,8 +42,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -56,7 +57,6 @@ public class GraphDataServiceImpl implements GraphDataService {
   @Inject ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject MonitoredServiceService monitoredServiceService;
   @Inject EntityDisabledTimeService entityDisabledTimeService;
-  @Inject HPersistence hPersistence;
   @Inject private Clock clock;
   @VisibleForTesting static int MAX_NUMBER_OF_POINTS = 2000;
 
@@ -494,7 +494,13 @@ public class GraphDataServiceImpl implements GraphDataService {
       compositeSLORecords.add(lastRecordInRange);
     }
     compositeSLORecords.add(lastRecord);
-    return compositeSLORecords;
+    return compositeSLORecords.stream()
+        .collect(Collectors.toMap(CompositeSLORecord::getTimestamp, Function.identity(),
+            (record1, record2) -> record1.getLastUpdatedAt() > record2.getLastUpdatedAt() ? record1 : record2))
+        .values()
+        .stream()
+        .sorted(Comparator.comparing(CompositeSLORecord::getTimestamp))
+        .collect(Collectors.toList());
   }
 
   private List<SLIRecord> getSLIRecords(
@@ -528,7 +534,14 @@ public class GraphDataServiceImpl implements GraphDataService {
       sliRecords.add(lastRecordInRange);
     }
     sliRecords.add(lastRecord);
-    return sliRecords;
+    return sliRecords.stream()
+        .collect(Collectors.toMap(SLIRecord::getTimestamp, Function.identity(),
+            (sliRecord1,
+                sliRecord2) -> sliRecord1.getLastUpdatedAt() > sliRecord2.getLastUpdatedAt() ? sliRecord1 : sliRecord2))
+        .values()
+        .stream()
+        .sorted(Comparator.comparing(SLIRecord::getTimestamp))
+        .collect(Collectors.toList());
   }
 
   @VisibleForTesting

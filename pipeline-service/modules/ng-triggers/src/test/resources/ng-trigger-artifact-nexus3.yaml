@@ -1,0 +1,49 @@
+trigger:
+  name: Nexus3_trigger
+  identifier: Nexus3_trigger
+  enabled: true
+  tags: {}
+  orgIdentifier: default
+  projectIdentifier: sridhartest
+  pipelineIdentifier: Nexus3
+  stagesToExecute: []
+  source:
+    type: Artifact
+    spec:
+      type: Nexus3Registry
+      spec:
+        connectorRef: Nexus3
+        eventConditions: []
+        imagePath: ""
+        repositoryFormat: docker
+        repository: todolist
+        repositoryPortorRepositoryURL: repositoryUrl
+        tag: <+trigger.artifact.build>
+        repositoryUrl: http://test
+        artifactPath: test
+        groupId: ""
+        artifactId: ""
+        metaDataConditions: []
+  inputYaml: |
+    pipeline:
+      identifier: Nexus3
+      stages:
+        - stage:
+            identifier: Nexus
+            type: Deployment
+            spec:
+              service:
+                serviceInputs:
+                  serviceDefinition:
+                    type: Kubernetes
+                    spec:
+                      artifacts:
+                        primary:
+                          primaryArtifactRef: Test
+                          sources:
+                            - identifier: Test
+                              type: Nexus3Registry
+                              spec:
+                                tag: v1.0
+                                spec:
+                                  repositoryUrl: ""

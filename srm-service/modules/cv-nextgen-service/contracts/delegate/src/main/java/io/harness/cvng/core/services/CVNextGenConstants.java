@@ -65,6 +65,7 @@ public interface CVNextGenConstants {
   String HEALTH_SOURCE_PATH = PROJECT_PATH + "/health-source";
   String VERIFY_STEP_PATH = PROJECT_PATH + "/verify-step";
   String SLO_V2_PATH = SLASH_DELIMITER + "slo/v2";
+  String Webhook_PATH = SLASH_DELIMITER + "webhook";
   String DOWNTIME_PATH = SLASH_DELIMITER + "downtime";
   String ANNOTATION_PATH = SLASH_DELIMITER + "annotation";
   String SLO_NG_ACCOUNT_PATH = ACCOUNT_PATH + SLO_V2_PATH;
@@ -73,6 +74,7 @@ public interface CVNextGenConstants {
   String DOWNTIME_PROJECT_PATH = PROJECT_PATH + DOWNTIME_PATH;
   String ANNOTATION_PROJECT_PATH = PROJECT_PATH + ANNOTATION_PATH;
   String ANNOTATION_ACCOUNT_PATH = ACCOUNT_PATH + ANNOTATION_PATH;
+  String Webhook_NG_PROJECT_PATH = PROJECT_PATH + Webhook_PATH;
   String MONITORED_SERVICE_YAML_ROOT = "monitoredService";
   String ACCOUNTS_RESOURCE_PATH = "account/{" + ACCOUNT_IDENTIFIER_KEY + "}";
   String ORGS_RESOURCE_PATH = ACCOUNTS_RESOURCE_PATH + "/orgs/{" + ORG_IDENTIFIER_KEY + "}";

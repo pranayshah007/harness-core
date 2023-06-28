@@ -7,6 +7,8 @@
 
 package io.harness.delegate.beans.executioncapability;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import java.time.Duration;
 import lombok.Builder;
 import lombok.Builder.Default;
@@ -41,5 +43,16 @@ public class AwsRegionCapability implements ExecutionCapability {
   @Override
   public Duration getPeriodUntilNextValidation() {
     return Duration.ofHours(4);
+  }
+
+  /**
+   * Error message to show mostly in delegate selection log if none of the delegates passed the validation check
+   */
+  @Override
+  public String getCapabilityValidationError() {
+    // Following delegate(s) not running in same region : %s : [h1,h2]
+    return isNotEmpty(fetchCapabilityBasis())
+        ? String.format("Following delegate(s) not running in same region as %s", fetchCapabilityBasis())
+        : ExecutionCapability.super.getCapabilityValidationError();
   }
 }

@@ -7,12 +7,13 @@
 
 package io.harness.cvng.metrics.beans;
 
-import io.harness.cvng.statemachine.beans.AnalysisState.StateType;
-import io.harness.metrics.AutoMetricContext;
+import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
+import io.harness.metrics.RecordContext;
 
-public class AnalysisStateMachineContext extends AutoMetricContext {
-  public AnalysisStateMachineContext(String accountId, StateType analysisStateType) {
-    put("accountId", accountId);
-    put("analysisStateType", analysisStateType.name());
+public class AnalysisStateMachineContext extends RecordContext {
+  public AnalysisStateMachineContext(AnalysisStateMachine stateMachine) {
+    put("accountId", stateMachine.getAccountId());
+    put("analysisStateType", stateMachine.getCurrentState().getType().name());
+    put("verificationTaskId", stateMachine.getVerificationTaskId());
   }
 }

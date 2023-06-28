@@ -19,6 +19,7 @@ import io.harness.ng.core.EntityDetail;
 import io.harness.pms.pipeline.PipelineSetupUsageHelper;
 import io.harness.pms.rbac.PipelineRbacHelper;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
@@ -38,14 +39,22 @@ public class PipelineRbacServiceImpl implements PipelineRbacService {
     long start = System.currentTimeMillis();
     List<EntityDetail> entityDetails = pipelineSetupUsageHelper.getReferencesOfPipeline(
         accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, pipelineYaml, null);
-    validateStaticallyReferredEntities(
-        accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, pipelineYaml, entityDetails);
+    validateStaticallyReferredEntities(entityDetails);
     log.info("[PMS_RBAC] Rbac validation for referred entities for size {} took {}ms", entityDetails.size(),
         System.currentTimeMillis() - start);
   }
 
-  public void validateStaticallyReferredEntities(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String pipelineId, String pipelineYaml, List<EntityDetail> entityDetails) {
+  public void extractAndValidateStaticallyReferredEntities(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String pipelineId, JsonNode pipelineJsonNode) {
+    long start = System.currentTimeMillis();
+    List<EntityDetail> entityDetails = pipelineSetupUsageHelper.getReferencesOfPipeline(
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, pipelineJsonNode, null);
+    validateStaticallyReferredEntities(entityDetails);
+    log.info("[PMS_RBAC] Rbac validation for referred entities for size {} took {}ms", entityDetails.size(),
+        System.currentTimeMillis() - start);
+  }
+
+  public void validateStaticallyReferredEntities(List<EntityDetail> entityDetails) {
     List<PermissionCheckDTO> permissionCheckDTOS =
         entityDetails.stream().map(pipelineRbacHelper::convertToPermissionCheckDTO).collect(Collectors.toList());
     if (isNotEmpty(permissionCheckDTOS)) {

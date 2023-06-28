@@ -1,10 +1,11 @@
 module "delegate" {
   source = "harness/harness-delegate/kubernetes"
-  version = "0.1.6"
+  version = "0.1.7"
 
   account_id = "1234567"
   delegate_token = "eHh4eHhiYmJiYgo="
   delegate_name = "terraform-delegate"
+  deploy_mode = "KUBERNETES"
   namespace = "harness-delegate-ng"
   manager_endpoint = "https://app.harness.io"
   delegate_image = "delegate:latest"

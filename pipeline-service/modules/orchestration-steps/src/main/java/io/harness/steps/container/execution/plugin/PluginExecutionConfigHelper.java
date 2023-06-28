@@ -24,6 +24,8 @@ public class PluginExecutionConfigHelper {
     switch (pluginStep.getType()) {
       case CD_SSCA_ORCHESTRATION:
         return pluginConfig.getSscaOrchestrationConfig();
+      case CD_SSCA_ENFORCEMENT:
+        return pluginConfig.getSscaEnforcementConfig();
       default:
         throw new InvalidRequestException("Plugin image not handled");
     }

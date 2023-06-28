@@ -17,6 +17,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.exception.runtime.NoInstancesException;
 import io.harness.ff.FeatureFlagService;
@@ -113,12 +114,12 @@ public class CgInstanceSyncServiceV2 {
 
   public void handleInstanceSync(DeploymentEvent event) {
     if (isNull(event)) {
-      log.error("Null event sent for Instance Sync Processing. Doing nothing");
+      log.warn("Null event sent for Instance Sync Processing. Doing nothing");
       return;
     }
 
     if (CollectionUtils.isEmpty(event.getDeploymentSummaries())) {
-      log.error("No deployment summaries present in the deployment event. Doing nothing");
+      log.warn("No deployment summaries present in the deployment event. Doing nothing");
       return;
     }
 
@@ -149,7 +150,7 @@ public class CgInstanceSyncServiceV2 {
       } catch (NotSupportedException ex) {
         throw ex;
       } catch (Exception ex) {
-        log.error(
+        log.warn(
             format("Failed Attempt no. [%s] while handling deployment event for executionId [%s], infraMappingId [%s]",
                 retryCount + 1, event.getDeploymentSummaries().iterator().next().getWorkflowExecutionId(),
                 infrastructureMapping.getUuid()),
@@ -170,7 +171,7 @@ public class CgInstanceSyncServiceV2 {
     List<DeploymentSummary> deploymentSummaries = event.getDeploymentSummaries();
 
     if (isEmpty(deploymentSummaries)) {
-      log.error("Deployment Summaries can not be empty or null");
+      log.warn("Deployment Summaries can not be empty or null");
       return;
     }
 
@@ -219,7 +220,7 @@ public class CgInstanceSyncServiceV2 {
 
     if (!result.getExecutionStatus().isEmpty()
         && !result.getExecutionStatus().equals(CommandExecutionStatus.SUCCESS.name())) {
-      log.error("Instance Sync failed for perpetual task: [{}] and response [{}], with error: [{}]", perpetualTaskId,
+      log.warn("Instance Sync failed for perpetual task: [{}] and response [{}], with error: [{}]", perpetualTaskId,
           result, result.getErrorMessage());
 
       if (!featureFlagService.isEnabled(FeatureName.INSTANCE_SYNC_V2_CG, result.getAccountId())) {
@@ -347,7 +348,7 @@ public class CgInstanceSyncServiceV2 {
             // No Action Required
           } catch (Exception ex) {
             handleSyncFailure(infraMapping, ex);
-            log.error(ex.getMessage());
+            log.warn(ExceptionUtils.getMessage(ex));
           } finally {
             Status status = instanceSyncHandler.getStatus(infraMapping, delegateResponse);
             if (status.isSuccess()) {

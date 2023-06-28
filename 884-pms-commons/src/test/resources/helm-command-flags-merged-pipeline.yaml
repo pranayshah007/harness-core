@@ -1,72 +1,72 @@
 pipeline:
-  identifier: "helm_command_flags"
-  name: "helm command flags"
-  projectIdentifier: "LocalDev"
-  orgIdentifier: "default"
+  identifier: helm_command_flags
+  name: helm command flags
+  projectIdentifier: LocalDev
+  orgIdentifier: default
   tags: {}
   stages:
-  - stage:
-      identifier: "s1"
-      type: "Deployment"
-      name: "s1"
-      description: ""
-      spec:
-        serviceConfig:
-          serviceDefinition:
-            type: "Kubernetes"
-            spec:
-              artifacts:
-                sidecars: []
-              manifests:
-              - manifest:
-                  identifier: "m1"
-                  type: "HelmChart"
-                  spec:
-                    store:
-                      type: "Http"
-                      spec: {}
-                    chartName: "something"
-                    chartVersion: ""
-                    helmVersion: "V2"
-                    skipResourceVersioning: false
-                    commandFlags:
-                    - commandType: "Fetch"
-                      flag: "uh what"
-                    - commandType: "Template"
-                      flag: "uh what"
-              variables: []
-          serviceRef: "ssd"
-        infrastructure:
-          environmentRef: "ee"
-          infrastructureDefinition:
-            type: "KubernetesDirect"
-            spec:
-              connectorRef: "account.temp"
-              namespace: "ss1"
-              releaseName: "release-<+INFRA_KEY>"
-          allowSimultaneousDeployments: false
-        execution:
-          steps:
-          - step:
-              identifier: "echo"
-              type: "ShellScript"
-              name: "echo"
+    - stage:
+        identifier: s1
+        type: Deployment
+        name: s1
+        description: ""
+        spec:
+          serviceConfig:
+            serviceDefinition:
+              type: Kubernetes
               spec:
-                shell: "Bash"
-                onDelegate: true
-                source:
-                  type: "Inline"
+                artifacts:
+                  sidecars: []
+                manifests:
+                  - manifest:
+                      identifier: m1
+                      type: HelmChart
+                      spec:
+                        store:
+                          type: Http
+                          spec: {}
+                        chartName: something
+                        chartVersion: ""
+                        helmVersion: V2
+                        skipResourceVersioning: false
+                        commandFlags:
+                          - commandType: Fetch
+                            flag: uh what
+                          - commandType: Template
+                            flag: uh what
+                variables: []
+            serviceRef: ssd
+          infrastructure:
+            environmentRef: ee
+            infrastructureDefinition:
+              type: KubernetesDirect
+              spec:
+                connectorRef: account.temp
+                namespace: ss1
+                releaseName: release-<+INFRA_KEY>
+            allowSimultaneousDeployments: false
+          execution:
+            steps:
+              - step:
+                  identifier: echo
+                  type: ShellScript
+                  name: echo
                   spec:
-                    script: "echo done"
-                environmentVariables: []
-                outputVariables: []
-                executionTarget: {}
-              timeout: "10m"
-          rollbackSteps: []
-      tags: {}
-      failureStrategies:
-      - onFailure:
-          errors:
-          - "AllErrors"
-          action:
-            type: "StageRollback"
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: echo done
+                    environmentVariables: []
+                    outputVariables: []
+                    executionTarget: {}
+                  timeout: 10m
+            rollbackSteps: []
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback

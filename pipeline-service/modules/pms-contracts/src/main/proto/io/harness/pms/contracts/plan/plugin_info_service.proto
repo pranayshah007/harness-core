@@ -19,6 +19,8 @@ service PluginInfoProviderService {
 
 message PluginCreationBatchRequest {
   repeated PluginCreationRequest pluginCreationRequest = 1;
+  PortDetails usedPortDetails = 2;
+  io.harness.pms.contracts.ambiance.Ambiance ambiance = 3;
 }
 
 message PluginCreationBatchResponse {

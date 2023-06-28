@@ -1,6 +1,6 @@
 service:
-  name: "SVC_NAME"
-  identifier: "SVC_NAME"
-  description: "SERVICE_DESCRIPTION"
+  name: SVC_NAME
+  identifier: SVC_NAME
+  description: SERVICE_DESCRIPTION
   tags:
-    a: "b"
+    a: b

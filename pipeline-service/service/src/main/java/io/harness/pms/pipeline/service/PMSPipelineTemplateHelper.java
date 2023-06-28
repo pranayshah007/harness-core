@@ -91,7 +91,7 @@ public class PMSPipelineTemplateHelper {
       String yaml, boolean checkForTemplateAccess, boolean getMergedTemplateWithTemplateReferences,
       String loadFromCache, boolean appendInputSetValidator) {
     // validating the duplicate fields in yaml field
-    if (TemplateRefHelper.hasTemplateRef(yaml, true)
+    if (TemplateRefHelper.hasTemplateRefWithCheckDuplicate(yaml)
         && pipelineEnforcementService.isFeatureRestricted(accountId, FeatureRestrictionName.TEMPLATE_SERVICE.name())) {
       String TEMPLATE_RESOLVE_EXCEPTION_MSG = "Exception in resolving template refs in given pipeline yaml.";
       long start = System.currentTimeMillis();

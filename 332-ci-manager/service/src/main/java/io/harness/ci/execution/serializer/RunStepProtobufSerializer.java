@@ -70,8 +70,8 @@ public class RunStepProtobufSerializer implements ProtobufStepSerializer<RunStep
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     if (ambiance.hasMetadata() && ambiance.getMetadata().getIsDebug()
         && featureFlagService.isEnabled(FeatureName.CI_REMOTE_DEBUG, accountId)) {
-      command = SerializerUtils.getK8sDebugCommand(
-                    accountId, ciExecutionServiceConfig.getRemoteDebugTimeout(), runStepInfo.getShell())
+      command =
+          SerializerUtils.getK8sDebugCommand(accountId, ciExecutionServiceConfig.getRemoteDebugTimeout(), runStepInfo)
           + System.lineSeparator()
           + RunTimeInputHandler.resolveStringParameter("Command", "Run", identifier, runStepInfo.getCommand(), true);
     } else {
@@ -83,9 +83,8 @@ public class RunStepProtobufSerializer implements ProtobufStepSerializer<RunStep
     runStepBuilder.setCommand(gitSafeCMD + command);
 
     runStepBuilder.setContainerPort(port);
-    boolean fVal = featureFlagService.isEnabled(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, accountId);
     Map<String, String> envvars =
-        resolveMapParameterV2("envVariables", "Run", identifier, runStepInfo.getEnvVariables(), false, fVal);
+        resolveMapParameterV2("envVariables", "Run", identifier, runStepInfo.getEnvVariables(), false);
     envvars = CIStepInfoUtils.injectAndResolveLoopingVariables(ambiance, accountId, featureFlagService, envvars);
     if (!isEmpty(envvars)) {
       runStepBuilder.putAllEnvironment(envvars);

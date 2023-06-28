@@ -107,3 +107,12 @@ git add ${VERSION_FILE}
 git commit --allow-empty -m "Set the proper version branch release/${PURPOSE}/${VERSION}xx"
 git push origin release/${PURPOSE}/${VERSION}xx
 
+
+echo "STEP4: INFO: Updating Jira with release version"
+#creating the fix version
+chmod +x ce-nextgen/release/create-jira-fix-versions.sh
+ce-nextgen/release/create-jira-fix-versions.sh
+
+#updating jiras with the fix version
+chmod +x ce-nextgen/release/update-jiras.sh
+ce-nextgen/release/update-jiras.sh

@@ -5,7 +5,7 @@
 
 # To be used when building in CIE
 
-FROM us.gcr.io/platform-205701/ubi/ubi-java:8.7 as base
+FROM us.gcr.io/platform-205701/ubi/ubi-java:8.8 as base
 
 ARG INCLUDE_SAAS_APM
 
@@ -16,6 +16,8 @@ COPY --chown=65534:65534 ci-manager-config.yml /opt/harness/
 COPY --chown=65534:65534 redisson-jcache.yaml /opt/harness/
 COPY --chown=65534:65534 enterprise-redisson-jcache.yaml /opt/harness/
 COPY --chown=65534:65534 scripts /opt/harness
+COPY --chown=65534:65534 default.jfc /opt/harness/
+COPY --chown=65534:65534 profile.jfc /opt/harness/
 
 RUN chmod +x /opt/harness/*.sh
 CMD [ "/opt/harness/run.sh" ]

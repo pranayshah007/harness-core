@@ -10,7 +10,7 @@
 #
 # > docker build -t harness/log-service:valpha-0.1 -f product/log-service/docker/Dockerfile-ubi $(bazel info bazel-bin)/product/log-service/
 
-FROM us.gcr.io/platform-205701/ubi/ubi-base:8.7
+FROM us.gcr.io/platform-205701/ubi/ubi-base:8.8
 # Copy go binary
 COPY log-service_/log-service /usr/local/bin/log-service
 USER root

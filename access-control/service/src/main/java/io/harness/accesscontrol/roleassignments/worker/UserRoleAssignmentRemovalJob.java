@@ -17,7 +17,6 @@ import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
 import static io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupConstants.ALL_RESOURCES_INCLUDING_CHILD_SCOPES_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupConstants.DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.authorization.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
-import static io.harness.beans.FeatureName.ACCOUNT_BASIC_ROLE_ONLY;
 import static io.harness.beans.FeatureName.PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
@@ -108,9 +107,8 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
       return;
     }
     try {
-      List<String> filteredAccountsByFF = filterAccountsForAccountBasicRoleOnlyFF(targetAccounts);
       HashSet<String> filteredAccountIds =
-          new HashSet<>(filterAccountsWhereDefaultUserGroupHaveViewerRoleAssignment(filteredAccountsByFF));
+          new HashSet<>(filterAccountsWhereDefaultUserGroupHaveViewerRoleAssignment(targetAccounts));
       for (String accountId : targetAccounts) {
         if (filteredAccountIds.contains(accountId)) {
           deleteAccountScopeRoleAssignments(accountId);
@@ -139,21 +137,6 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
       log.error(DEBUG_MESSAGE + "Failed to filter accounts for FF PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS");
     }
     return targetAccounts;
-  }
-
-  private List<String> filterAccountsForAccountBasicRoleOnlyFF(List<String> accountIds) {
-    List<String> filteredAccounts = new ArrayList<>();
-    try {
-      for (String accountId : accountIds) {
-        boolean isAccountBasicRoleOnlyEnabled = featureFlagService.isEnabled(ACCOUNT_BASIC_ROLE_ONLY, accountId);
-        if (!isAccountBasicRoleOnlyEnabled) {
-          filteredAccounts.add(accountId);
-        }
-      }
-    } catch (Exception ex) {
-      log.error(DEBUG_MESSAGE + "Failed to filter accounts for FF ACCOUNT_BASIC_ROLE_ONLY");
-    }
-    return filteredAccounts;
   }
 
   private void deleteAccountScopeRoleAssignments(String accountId) {

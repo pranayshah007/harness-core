@@ -23,6 +23,7 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
+import io.harness.delegate.utils.DelegateLogContextHelper;
 import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.AutoLogContext;
@@ -44,7 +45,6 @@ import io.harness.version.VersionInfoManager;
 import io.harness.waiter.WaitNotifyEngine;
 
 import software.wings.beans.SerializationFormat;
-import software.wings.beans.TaskType;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -159,8 +159,7 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
     DelegateTask delegateTask = taskQuery.get();
     copyTaskDataV2ToTaskData(delegateTask);
     if (delegateTask != null) {
-      try (AutoLogContext ignore = new TaskLogContext(taskId, delegateTask.getData().getTaskType(),
-               TaskType.valueOf(delegateTask.getData().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR)) {
+      try (AutoLogContext ignore = DelegateLogContextHelper.getLogContext(delegateTask)) {
         if (response.getResponseCode() == ResponseCode.RETRY_ON_OTHER_DELEGATE) {
           RetryDelegate retryDelegate =
               RetryDelegate.builder().delegateId(delegateId).delegateTask(delegateTask).taskQuery(taskQuery).build();
@@ -321,8 +320,12 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
             "Failed to obtain Delegate callback service for the given task. Skipping processing of task response.");
         return;
       }
-      boolean async = delegateTask.getTaskDataV2() != null ? delegateTask.getTaskDataV2().isAsync()
-                                                           : delegateTask.getData().isAsync();
+      boolean async = delegateTask.isAsync();
+      if (delegateTask.getTaskDataV2() != null) {
+        async = delegateTask.getTaskDataV2().isAsync();
+      } else if (delegateTask.getData() != null) {
+        async = delegateTask.getData().isAsync();
+      }
       if (async) {
         delegateCallbackService.publishAsyncTaskResponse(
             delegateTask.getUuid(), referenceFalseKryoSerializer.asDeflatedBytes(response.getResponse()));

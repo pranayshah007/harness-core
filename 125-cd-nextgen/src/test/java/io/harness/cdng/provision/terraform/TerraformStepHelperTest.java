@@ -18,6 +18,7 @@ import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.NGONZALEZ;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.SATYAM;
+import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VLICA;
 
@@ -97,7 +98,10 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.filesystem.FileIo;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.api.NGEncryptedDataService;
+import io.harness.ng.core.api.SecretCrudService;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
+import io.harness.ng.core.dto.secrets.SecretDTOV2;
+import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
@@ -112,6 +116,8 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.NGSecretManagerMetadata;
+import io.harness.secretmanagerclient.SecretType;
+import io.harness.secretmanagerclient.ValueType;
 import io.harness.secretmanagerclient.dto.LocalConfigDTO;
 import io.harness.secretmanagerclient.dto.VaultConfigDTO;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -119,6 +125,7 @@ import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
 import io.harness.security.encryption.EncryptionType;
 
+import software.wings.beans.GcpKmsConfig;
 import software.wings.beans.VaultConfig;
 
 import com.google.common.collect.ImmutableMap;
@@ -164,7 +171,10 @@ public class TerraformStepHelperTest extends CategoryTest {
   @Mock private CDStepHelper cdStepHelper;
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Mock private NGEncryptedDataService ngEncryptedDataService;
+  @Mock private SecretCrudService ngSecretService;
+
   @InjectMocks private TerraformStepHelper helper;
+  public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
 
   private Ambiance getAmbiance() {
     return Ambiance.newBuilder()
@@ -1342,7 +1352,6 @@ public class TerraformStepHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testParseTerraformOutputs() {
     String terraformOutputString = "demo";
-
     Map<String, Object> response = helper.parseTerraformOutputs(terraformOutputString);
     assertThat(response.size()).isEqualTo(0);
   }
@@ -2084,5 +2093,46 @@ public class TerraformStepHelperTest extends CategoryTest {
                                               .build())
                               .build())
         .build();
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testEncryptTerraformJsonOutput() {
+    final Ambiance ambiance = getAmbiance();
+
+    String tfJsonOutput =
+        "{   \"test-output-name1\": {     \"sensitive\": false,     \"type\": \"string\",     \"value\": "
+        + "\"test-output-value1\"   },   \"test-output-name2\": {     \"sensitive\": false,     \"type\": \"string\",    "
+        + " \"value\": \"test-output-value2\"   } }";
+
+    ArgumentCaptor<SecretDTOV2> captor = ArgumentCaptor.forClass(SecretDTOV2.class);
+
+    Map<String, Object> outputs =
+        helper.encryptTerraformJsonOutput(tfJsonOutput, ambiance, "secretManagerRef-test", "provisionerId-test");
+    verify(ngSecretService).create(anyString(), captor.capture());
+    SecretDTOV2 secret = captor.getValue();
+
+    assertThat(outputs).isNotEmpty();
+    assertThat((String) outputs.get("TF_JSON_OUTPUT_ENCRYPTED"))
+        .contains("<+secrets.getValue(\"terraform_output_provisionerId-test_");
+
+    assertThat(secret).isNotNull();
+    assertThat(secret.getType()).isEqualTo(SecretType.SecretText);
+    SecretTextSpecDTO secretTextSpecDTO = (SecretTextSpecDTO) secret.getSpec();
+    assertThat(secretTextSpecDTO.getValue()).isEqualTo(tfJsonOutput);
+    assertThat(secretTextSpecDTO.getValueType()).isEqualTo(ValueType.Inline);
+    assertThat(secretTextSpecDTO.getSecretManagerIdentifier()).isEqualTo("secretManagerRef-test");
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testTfPlanEncryptionOnManager() {
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
+
+    boolean flag = helper.tfPlanEncryptionOnManager(
+        "accountIdentifier", GcpKmsConfig.builder().accountId(GLOBAL_ACCOUNT_ID).build());
+    assertThat(flag).isTrue();
   }
 }

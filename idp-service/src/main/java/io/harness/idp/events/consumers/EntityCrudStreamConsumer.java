@@ -7,7 +7,7 @@
 
 package io.harness.idp.events.consumers;
 
-import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
+import static io.harness.authorization.AuthorizationServiceHeader.IDP_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -52,7 +52,7 @@ public class EntityCrudStreamConsumer extends RedisTraceConsumer implements IdpR
   public void run() {
     log.info("Started the consumer for entity crud stream");
     try {
-      SecurityContextBuilder.setContext(new ServicePrincipal(NG_MANAGER.getServiceId()));
+      SecurityContextBuilder.setContext(new ServicePrincipal(IDP_SERVICE.getServiceId()));
       while (!Thread.currentThread().isInterrupted() && !shouldStop.get()) {
         if (queueController.isNotPrimary()) {
           log.info("Entity crud consumer is not running on primary deployment, will try again after some time...");

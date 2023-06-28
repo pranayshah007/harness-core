@@ -1,7 +1,7 @@
 infrastructureDefinitions:
-- identifier: "IDENTIFIER"
-  inputs:
-    identifier: "IDENTIFIER"
-    type: "KubernetesDirect"
-    spec:
-      namespace: "<+input>"
+  - identifier: IDENTIFIER
+    inputs:
+      identifier: IDENTIFIER
+      type: KubernetesDirect
+      spec:
+        namespace: <+input>

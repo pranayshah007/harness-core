@@ -9,11 +9,14 @@ package io.harness.cdng.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.BOJAN;
+import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.VITALIE;
 
 import static software.wings.beans.TaskType.COMMAND_TASK_NG;
 import static software.wings.beans.TaskType.COMMAND_TASK_NG_WITH_AZURE_ARTIFACT;
+import static software.wings.beans.TaskType.COMMAND_TASK_NG_WITH_GITHUB_PACKAGE_ARTIFACT;
 import static software.wings.beans.TaskType.COMMAND_TASK_NG_WITH_GIT_CONFIGS;
+import static software.wings.beans.TaskType.COMMAND_TASK_NG_WITH_OUTPUT_VARIABLE_SECRETS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -31,6 +34,7 @@ import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.AwsS3ArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.AzureArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.GithubPackagesArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.NexusArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.NexusDockerArtifactDelegateConfig;
@@ -39,6 +43,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
 import java.util.Arrays;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -193,5 +198,41 @@ public class CommandTaskDataFactoryTest extends CategoryTest {
             .build();
     TaskData taskData = commandTaskDataFactory.create(sshCommandTaskParameters, ParameterField.createValueField("5"));
     assertThat(taskData.getTaskType()).isEqualTo(COMMAND_TASK_NG_WITH_GIT_CONFIGS.name());
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testCreateTaskData_WITH_OUTPUT_VARIABLE_SECRETS() {
+    SshCommandTaskParameters sshCommandTaskParameters =
+        SshCommandTaskParameters.builder()
+            .sshInfraDelegateConfig(PdcSshInfraDelegateConfig.builder().build())
+            .fileDelegateConfig(
+                FileDelegateConfig.builder().stores(List.of(GitFetchedStoreDelegateConfig.builder().build())).build())
+            .secretOutputVariables(List.of("secret-var-to-collect-on-delegate"))
+            .executeOnDelegate(false)
+            .accountId("accountId")
+            .commandUnits(Arrays.asList(NgInitCommandUnit.builder().build(),
+                ScriptCommandUnit.builder().name("test").build(), NgCleanupCommandUnit.builder().build()))
+            .build();
+    TaskData taskData = commandTaskDataFactory.create(sshCommandTaskParameters, ParameterField.createValueField("5"));
+    assertThat(taskData.getTaskType()).isEqualTo(COMMAND_TASK_NG_WITH_OUTPUT_VARIABLE_SECRETS.name());
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testCreateTaskData_WITH_GITHUB_PACKAGE_ARTIFACT() {
+    SshCommandTaskParameters sshCommandTaskParameters =
+        SshCommandTaskParameters.builder()
+            .sshInfraDelegateConfig(PdcSshInfraDelegateConfig.builder().build())
+            .artifactDelegateConfig(GithubPackagesArtifactDelegateConfig.builder().build())
+            .executeOnDelegate(false)
+            .accountId("accountId")
+            .commandUnits(Arrays.asList(NgInitCommandUnit.builder().build(),
+                ScriptCommandUnit.builder().name("test").build(), NgCleanupCommandUnit.builder().build()))
+            .build();
+    TaskData taskData = commandTaskDataFactory.create(sshCommandTaskParameters, ParameterField.createValueField("5"));
+    assertThat(taskData.getTaskType()).isEqualTo(COMMAND_TASK_NG_WITH_GITHUB_PACKAGE_ARTIFACT.name());
   }
 }

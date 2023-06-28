@@ -80,13 +80,16 @@ public class CVConnectorValidator extends AbstractConnectorValidator {
   @Override
   public ConnectorValidationResult validate(ConnectorConfigDTO connectorDTO, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String identifier) {
-    final DelegateResponseData delegateResponseData =
-        super.validateConnector(connectorDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    var responseEntry = super.validateConnectorReturnPair(
+        connectorDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    final DelegateResponseData delegateResponseData = responseEntry.getValue();
+    String taskId = responseEntry.getKey();
     CVConnectorTaskResponse cvConnectorTaskResponse = (CVConnectorTaskResponse) delegateResponseData;
     return ConnectorValidationResult.builder()
         .status(cvConnectorTaskResponse.isValid() ? ConnectivityStatus.SUCCESS : ConnectivityStatus.FAILURE)
         .errorSummary(cvConnectorTaskResponse.getErrorMessage())
         .delegateId(getDelegateId(cvConnectorTaskResponse))
+        .taskId(taskId)
         .build();
   }
 

@@ -119,6 +119,7 @@ import io.harness.cvng.verificationjob.entities.AutoVerificationJob;
 import io.harness.cvng.verificationjob.entities.BlueGreenVerificationJob;
 import io.harness.cvng.verificationjob.entities.CanaryBlueGreenVerificationJob;
 import io.harness.cvng.verificationjob.entities.CanaryVerificationJob;
+import io.harness.cvng.verificationjob.entities.SimpleVerificationJob;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
@@ -254,6 +255,7 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(SRMTelemetrySentStatus.class);
     set.add(ActivityBucket.class);
     set.add(SLIRecordBucket.class);
+    set.add(SimpleVerificationJob.class);
   }
 
   @Override

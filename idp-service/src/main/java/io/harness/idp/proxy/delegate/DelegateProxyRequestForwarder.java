@@ -48,7 +48,6 @@ public class DelegateProxyRequestForwarder {
           continue;
         }
         headerList.add(HttpHeaderConfig.builder().key(entry.getKey()).value(entry.getValue()).build());
-        log.info("header {} : {}", entry.getKey(), entry.getValue());
       }
     } catch (Exception ex) {
       log.error("Error while mapping the headers", ex);

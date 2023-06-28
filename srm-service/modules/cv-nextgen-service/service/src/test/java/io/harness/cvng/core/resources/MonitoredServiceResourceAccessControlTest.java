@@ -23,16 +23,13 @@ import io.harness.rule.ResourceTestRule;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import java.io.IOException;
-import java.util.Map;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.yaml.snakeyaml.Yaml;
 
 public class MonitoredServiceResourceAccessControlTest extends CVNGResourceTestWithoutAccessBase {
   @Inject private Injector injector;
@@ -88,13 +85,5 @@ public class MonitoredServiceResourceAccessControlTest extends CVNGResourceTestW
     assertThat(response.readEntity(String.class))
         .contains(
             "\"message\":\"Missing permission chi_monitoredservice_edit on monitoredservice with identifier MSIdentifier\"");
-  }
-
-  private static String convertToJson(String yamlString) {
-    Yaml yaml = new Yaml();
-    Map<String, Object> map = yaml.load(yamlString);
-
-    JSONObject jsonObject = new JSONObject(map);
-    return jsonObject.toString();
   }
 }

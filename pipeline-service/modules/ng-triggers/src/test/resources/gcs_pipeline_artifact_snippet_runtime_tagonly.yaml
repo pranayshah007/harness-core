@@ -1,0 +1,21 @@
+pipeline:
+  identifier: GCS
+  stages:
+    - stage:
+        identifier: GCS
+        type: Deployment
+        spec:
+          service:
+            serviceInputs:
+              serviceDefinition:
+                type: GoogleCloudFunctions
+                spec:
+                  artifacts:
+                    primary:
+                      primaryArtifactRef: gcs
+                      sources:
+                        - identifier: gcs
+                          type: GoogleCloudStorage
+                          spec:
+                            bucket: cloud-functions-automation-bucket
+                            artifactPath: <+input>

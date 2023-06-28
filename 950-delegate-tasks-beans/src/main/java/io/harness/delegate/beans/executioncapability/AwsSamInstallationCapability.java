@@ -8,6 +8,7 @@
 package io.harness.delegate.beans.executioncapability;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -43,5 +44,15 @@ public class AwsSamInstallationCapability implements ExecutionCapability {
   @Override
   public Duration getPeriodUntilNextValidation() {
     return Duration.ofHours(4);
+  }
+
+  /**
+   * Error message to show mostly in delegate selection log if none of the delegates passed the validation check
+   */
+  @Override
+  public String getCapabilityValidationError() {
+    return isNotEmpty(fetchCapabilityBasis())
+        ? String.format("Following delegate(s) missing capability %s", fetchCapabilityBasis())
+        : ExecutionCapability.super.getCapabilityValidationError();
   }
 }

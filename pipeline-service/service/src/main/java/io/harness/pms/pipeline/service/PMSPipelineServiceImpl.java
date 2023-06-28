@@ -8,7 +8,6 @@
 package io.harness.pms.pipeline.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.beans.FeatureName.NG_SETTINGS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
@@ -91,7 +90,6 @@ import io.harness.pms.utils.PipelineYamlHelper;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.project.remote.ProjectClient;
-import io.harness.remote.client.CGRestUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.utils.PipelineGitXHelper;
@@ -187,7 +185,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       if (governanceMetadata.getDeny()) {
         return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
       }
-
+      // TODO: As part of this ticket https://harness.atlassian.net/browse/CDS-70970, we should publish the setup usages
+      // after the entity has been created
       PipelineEntity entityWithUpdatedInfo =
           pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
       PipelineEntity createdEntity;
@@ -319,6 +318,9 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       pipelineEntity = getAndValidatePipeline(
           accountId, orgIdentifier, projectIdentifier, pipelineId, false, loadFromFallbackBranch, loadFromCache);
     }
+    if (pipelineEntity.isPresent() && StoreType.REMOTE.equals(pipelineEntity.get().getStoreType())) {
+      pmsPipelineServiceHelper.computePipelineReferences(pipelineEntity.get(), loadFromCache);
+    }
     return PipelineGetResult.builder().pipelineEntity(pipelineEntity).asyncValidationUUID(validationUUID).build();
   }
 
@@ -357,7 +359,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   // call of inline Pipeline
   public void validateStoredYaml(PipelineEntity pipelineEntity) {
     try {
-      YamlUtils.readTree(pipelineEntity.getYaml(), true);
+      YamlUtils.readTree(pipelineEntity.getYaml());
     } catch (Exception ex) {
       YamlSchemaErrorWrapperDTO errorWrapperDTO =
           YamlSchemaErrorWrapperDTO.builder()
@@ -632,8 +634,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
   private boolean isForceDeleteEnabled(String accountIdentifier) {
     try {
-      boolean isForceDeleteEnabledBySettings =
-          isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
+      boolean isForceDeleteEnabledBySettings = isForceDeleteFFEnabledViaSettings(accountIdentifier);
       return isForceDeleteEnabledBySettings;
     } catch (Exception e) {
       log.error("Failed to fetch feature flag info for force delete ", e);
@@ -641,9 +642,6 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     }
   }
 
-  protected boolean isNgSettingsFFEnabled(String accountIdentifier) {
-    return CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(NG_SETTINGS.name(), accountIdentifier));
-  }
   @VisibleForTesting
   protected boolean isForceDeleteFFEnabledViaSettings(String accountIdentifier) {
     return parseBoolean(NGRestUtils
@@ -743,7 +741,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(accountId, orgIdentifier, projectIdentifier,
         pipelineImportRequest.getPipelineName(), importedPipelineYAML, false, pipelineVersion);
     pipelineEntity.setRepoURL(repoUrl);
-
+    pipelineEntity.setStoreType(StoreType.REMOTE);
     try {
       PipelineEntity entityWithUpdatedInfo =
           pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineVersion);
@@ -800,6 +798,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     for (StepPalleteModuleInfo request : stepPalleteFilterWrapper.getStepPalleteModuleInfos()) {
       String module = request.getModule();
       String category = request.getCategory();
+
       StepPalleteInfo stepPalleteInfo = serviceInstanceNameToSupportedSteps.get(module);
       if (stepPalleteInfo == null) {
         continue;
@@ -858,8 +857,10 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     if (!pmsFeatureFlagService.isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE)) {
       return null;
     }
-    return pipelineGovernanceService.getExpandedPipelineJSONFromYaml(
-        accountId, orgIdentifier, projectIdentifier, pipelineEntityOptional.get().getYaml(), null, null);
+
+    String branch = GitAwareContextHelper.getBranchInRequestOrFromSCMGitMetadata();
+    return pipelineGovernanceService.getExpandedPipelineJSONFromYaml(accountId, orgIdentifier, projectIdentifier,
+        pipelineEntityOptional.get().getYaml(), branch, pipelineEntityOptional.get());
   }
 
   @Override

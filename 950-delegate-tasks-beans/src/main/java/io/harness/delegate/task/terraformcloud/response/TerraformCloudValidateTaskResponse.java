@@ -10,6 +10,7 @@ package io.harness.delegate.task.terraformcloud.response;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorValidationResult;
+import io.harness.delegate.beans.connector.ConnectorValidationResponseData;
 import io.harness.delegate.task.terraformcloud.TerraformCloudTaskType;
 
 import lombok.Data;
@@ -20,7 +21,8 @@ import lombok.experimental.SuperBuilder;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
-public class TerraformCloudValidateTaskResponse extends TerraformCloudDelegateTaskResponse {
+public class TerraformCloudValidateTaskResponse
+    extends TerraformCloudDelegateTaskResponse implements ConnectorValidationResponseData {
   private ConnectorValidationResult connectorValidationResult;
 
   @Override

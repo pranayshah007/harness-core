@@ -32,12 +32,15 @@ cp ../../120-ng-manager/src/main/resources/enterprise-redisson-jcache.yaml .
 cp ../../120-ng-manager/src/main/resources/jfr/default.jfc .
 cp ../../120-ng-manager/src/main/resources/jfr/profile.jfc .
 
-cp ../../dockerization/ng-manager/Dockerfile-ng-manager-jenkins-k8-openjdk ./Dockerfile
+
 cp ../../dockerization/ng-manager/Dockerfile-ng-manager-cie-jdk ./Dockerfile-cie-jdk
-cp ../../dockerization/ng-manager/Dockerfile-ng-manager-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
 cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
 cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 cp -r ../../dockerization/ng-manager/scripts/ .
+
+for file in scripts/*.sh; do
+    chmod 755 "$file"
+done
 
 cp ../../protocol.info .
 java -jar ng-manager-capsule.jar scan-classpath-metadata

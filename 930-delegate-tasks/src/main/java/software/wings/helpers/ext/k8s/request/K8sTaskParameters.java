@@ -53,6 +53,27 @@ public class K8sTaskParameters implements TaskParameters, ActivityAccess, Execut
   private boolean useLatestChartMuseumVersion;
   private boolean useLatestKustomizeVersion;
   private boolean useNewKubectlVersion;
+  private boolean timeoutSupported;
+
+  public K8sTaskParameters(String accountId, String appId, String commandName, String activityId,
+      K8sClusterConfig k8sClusterConfig, String workflowExecutionId, String releaseName, Integer timeoutIntervalInMin,
+      K8sTaskType commandType, HelmVersion helmVersion, Set<String> delegateSelectors,
+      boolean useLatestChartMuseumVersion, boolean useLatestKustomizeVersion, boolean useNewKubectlVersion) {
+    this.accountId = accountId;
+    this.appId = appId;
+    this.commandName = commandName;
+    this.activityId = activityId;
+    this.k8sClusterConfig = k8sClusterConfig;
+    this.workflowExecutionId = workflowExecutionId;
+    this.releaseName = releaseName;
+    this.timeoutIntervalInMin = timeoutIntervalInMin;
+    this.commandType = commandType;
+    this.helmVersion = helmVersion;
+    this.delegateSelectors = delegateSelectors;
+    this.useLatestChartMuseumVersion = useLatestChartMuseumVersion;
+    this.useLatestKustomizeVersion = useLatestKustomizeVersion;
+    this.useNewKubectlVersion = useNewKubectlVersion;
+  }
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

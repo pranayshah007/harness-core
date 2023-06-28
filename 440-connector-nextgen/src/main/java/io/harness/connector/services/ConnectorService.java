@@ -25,7 +25,8 @@ public interface ConnectorService extends ConnectorCrudService, ConnectorValidat
   boolean validateTheIdentifierIsUnique(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier);
 
-  ConnectorStatistics getConnectorStatistics(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  ConnectorStatistics getConnectorStatistics(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> connectorIds);
 
   String getHeartbeatPerpetualTaskId(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
@@ -47,4 +48,6 @@ public interface ConnectorService extends ConnectorCrudService, ConnectorValidat
 
   List<Map<String, String>> getAttributes(
       String accountId, String orgIdentifier, String projectIdentifier, List<String> connectorIdentifiers);
+
+  Long countConnectors(String accountIdentifier);
 }

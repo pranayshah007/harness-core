@@ -454,9 +454,10 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.IACM)
   IACM_TERRAFORM_PLUGIN(ModuleType.IACM, EntityTypeConstants.IACM_TERRAFORM_PLUGIN, IdentifierRef.class,
       EntityYamlRootNames.IACM_TERRAFORM_PLUGIN),
+
   @JsonProperty(EntityTypeConstants.IACM)
-  IACM_TEMPLATE(
-      ModuleType.IACM, EntityTypeConstants.IACM_TEMPLATE, IdentifierRef.class, EntityYamlRootNames.IACM_TEMPLATE),
+  IACM_APPROVAL(
+      ModuleType.IACM, EntityTypeConstants.IACM_APPROVAL, IdentifierRef.class, EntityYamlRootNames.IACM_APPROVAL),
   @JsonProperty(EntityTypeConstants.ELASTIGROUP_BG_STAGE_SETUP)
   ELASTIGROUP_BG_STAGE_SETUP_STEP(ModuleType.CD, EntityTypeConstants.ELASTIGROUP_BG_STAGE_SETUP, IdentifierRef.class,
       EntityYamlRootNames.ELASTIGROUP_BG_STAGE_SETUP),
@@ -592,7 +593,26 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.SEMGREP)
   SEMGREP(ModuleType.STO, EntityTypeConstants.SEMGREP, IdentifierRef.class, EntityYamlRootNames.SEMGREP),
   @JsonProperty(EntityTypeConstants.SSCA_ENFORCEMENT)
-  SSCA_ENFORCEMENT(ModuleType.CI, EntityTypeConstants.SSCA_ENFORCEMENT, IdentifierRef.class);
+  SSCA_ENFORCEMENT(ModuleType.CI, EntityTypeConstants.SSCA_ENFORCEMENT, IdentifierRef.class),
+  @JsonProperty(EntityTypeConstants.IDP_CONNECTOR)
+  IDP_CONNECTOR(ModuleType.IDP, EntityTypeConstants.IDP_CONNECTOR, IdentifierRef.class),
+  @JsonProperty(EntityTypeConstants.CD_SSCA_ENFORCEMENT)
+  CD_SSCA_ENFORCEMENT(ModuleType.CI, EntityTypeConstants.CD_SSCA_ENFORCEMENT, IdentifierRef.class),
+  @JsonProperty(EntityTypeConstants.DOWNLOAD_MANIFESTS)
+  DOWNLOAD_MANIFESTS(ModuleType.CD, EntityTypeConstants.DOWNLOAD_MANIFESTS, IdentifierRef.class,
+      EntityYamlRootNames.DOWNLOAD_MANIFESTS),
+  @JsonProperty(EntityTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2)
+  SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2(ModuleType.CD,
+      EntityTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2, IdentifierRef.class,
+      EntityYamlRootNames.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2),
+  @JsonProperty(EntityTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2)
+  SERVERLESS_AWS_LAMBDA_ROLLBACK_V2(ModuleType.CD, EntityTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2,
+      IdentifierRef.class, EntityYamlRootNames.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2),
+  @JsonProperty(EntityTypeConstants.COVERITY)
+  COVERITY(ModuleType.STO, EntityTypeConstants.COVERITY, IdentifierRef.class, EntityYamlRootNames.COVERITY),
+  @JsonProperty(EntityTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2)
+  SERVERLESS_AWS_LAMBDA_DEPLOY_V2(ModuleType.CD, EntityTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2,
+      IdentifierRef.class, EntityYamlRootNames.SERVERLESS_AWS_LAMBDA_DEPLOY_V2);
 
   private final ModuleType moduleType;
   String yamlName;

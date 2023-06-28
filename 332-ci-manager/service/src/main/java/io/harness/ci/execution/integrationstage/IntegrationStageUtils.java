@@ -9,6 +9,7 @@ package io.harness.ci.integrationstage;
 
 import static io.harness.beans.execution.WebhookEvent.Type.BRANCH;
 import static io.harness.beans.execution.WebhookEvent.Type.PR;
+import static io.harness.beans.execution.WebhookEvent.Type.RELEASE;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.HOSTED_VM;
@@ -46,6 +47,7 @@ import io.harness.beans.execution.BranchWebhookEvent;
 import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.execution.ManualExecutionSource;
 import io.harness.beans.execution.PRWebhookEvent;
+import io.harness.beans.execution.ReleaseWebhookEvent;
 import io.harness.beans.execution.WebhookEvent;
 import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.execution.license.CILicenseService;
@@ -387,6 +389,17 @@ public class IntegrationStageUtils {
       }
       if (branchWebhookEvent.getRepository().getHttpURL().equalsIgnoreCase(url)
           || branchWebhookEvent.getRepository().getSshURL().equalsIgnoreCase(url)) {
+        return true;
+      }
+    } else if (webhookExecutionSource.getWebhookEvent().getType() == RELEASE) {
+      ReleaseWebhookEvent releaseWebhookEvent = (ReleaseWebhookEvent) webhookExecutionSource.getWebhookEvent();
+
+      if (releaseWebhookEvent == null || releaseWebhookEvent.getRepository() == null
+          || releaseWebhookEvent.getRepository().getHttpURL() == null) {
+        return false;
+      }
+      if (releaseWebhookEvent.getRepository().getHttpURL().equalsIgnoreCase(url)
+          || releaseWebhookEvent.getRepository().getSshURL().equalsIgnoreCase(url)) {
         return true;
       }
     }
@@ -985,5 +998,32 @@ public class IntegrationStageUtils {
       default:
     }
     return false;
+  }
+
+  public static List<String> getStepIdentifiers(List<ExecutionWrapperConfig> executionWrapperConfigs) {
+    List<String> stepIdentifiers = new ArrayList<>();
+    executionWrapperConfigs.forEach(executionWrapper -> addStepIdentifier(executionWrapper, stepIdentifiers, ""));
+    return stepIdentifiers;
+  }
+
+  private static void addStepIdentifier(
+      ExecutionWrapperConfig executionWrapper, List<String> stepIdentifiers, String parentId) {
+    if (executionWrapper != null) {
+      if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
+        CIAbstractStepNode stepNode = getStepNode(executionWrapper);
+        stepIdentifiers.add(parentId + stepNode.getIdentifier());
+      } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
+        ParallelStepElementConfig parallelStepElementConfig = getParallelStepElementConfig(executionWrapper);
+        parallelStepElementConfig.getSections().forEach(
+            section -> addStepIdentifier(section, stepIdentifiers, parentId));
+      } else if (executionWrapper.getStepGroup() != null && !executionWrapper.getStepGroup().isNull()) {
+        StepGroupElementConfig stepGroupElementConfig = getStepGroupElementConfig(executionWrapper);
+        for (ExecutionWrapperConfig wrapper : stepGroupElementConfig.getSteps()) {
+          addStepIdentifier(wrapper, stepIdentifiers, parentId + stepGroupElementConfig.getIdentifier() + "_");
+        }
+      } else {
+        throw new InvalidRequestException("Only Parallel, StepElement and StepGroup are supported");
+      }
+    }
   }
 }

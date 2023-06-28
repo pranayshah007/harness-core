@@ -28,9 +28,10 @@ public class SpotinstTrafficShiftAlbSetupParameters extends SpotInstTaskParamete
   @Builder
   public SpotinstTrafficShiftAlbSetupParameters(String appId, String accountId, String activityId, String commandName,
       String workflowExecutionId, Integer timeoutIntervalInMin, String awsRegion, String elastigroupJson,
-      String elastigroupNamePrefix, String image, List<LbDetailsForAlbTrafficShift> lbDetails, String userData) {
+      String elastigroupNamePrefix, String image, List<LbDetailsForAlbTrafficShift> lbDetails, String userData,
+      boolean timeoutSupported) {
     super(appId, accountId, activityId, commandName, workflowExecutionId, timeoutIntervalInMin,
-        SPOT_INST_ALB_SHIFT_SETUP, awsRegion);
+        SPOT_INST_ALB_SHIFT_SETUP, awsRegion, timeoutSupported);
     this.elastigroupJson = elastigroupJson;
     this.elastigroupNamePrefix = elastigroupNamePrefix;
     this.image = image;

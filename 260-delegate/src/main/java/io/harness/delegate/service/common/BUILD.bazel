@@ -21,7 +21,6 @@ java_library(
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/tasklogging:module",
         "//950-delegate-tasks-beans:module",
         "//955-delegate-beans:module",
-        "//955-delegate-beans/src/main/proto/io/harness/delegate/core/beans:955_delegate_core_task_java_proto",
         "//960-api-services/src/main/java/io/harness/delegate/configuration:module",
         "//970-api-services-beans/src/main/java/io/harness/logging:module",
         "//980-commons/src/main/java/io/harness/concurrent:module",

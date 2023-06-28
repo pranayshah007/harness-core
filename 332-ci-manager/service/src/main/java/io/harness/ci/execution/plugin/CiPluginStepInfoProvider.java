@@ -14,10 +14,12 @@ import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.CIAbstractStepNode;
-import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
+import io.harness.ci.buildstate.PluginSettingUtils;
 import io.harness.ci.integrationstage.K8InitializeStepUtils;
 import io.harness.ci.utils.PortFinder;
+import io.harness.filters.WithConnectorRef;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ConnectorDetails;
 import io.harness.pms.contracts.plan.ImageDetails;
 import io.harness.pms.contracts.plan.PluginContainerResources;
@@ -28,7 +30,6 @@ import io.harness.pms.contracts.plan.PluginDetails;
 import io.harness.pms.contracts.plan.PortDetails;
 import io.harness.pms.contracts.plan.SecretVariable;
 import io.harness.pms.contracts.plan.StepInfoProto;
-import io.harness.pms.expression.ExpressionResolverUtils;
 import io.harness.pms.sdk.core.plugin.ContainerPluginParseException;
 import io.harness.pms.sdk.core.plugin.ImageDetailsUtils;
 import io.harness.pms.sdk.core.plugin.PluginInfoProvider;
@@ -48,9 +49,9 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
   @Inject K8InitializeStepUtils k8InitializeStepUtils;
 
   @Override
-  public PluginCreationResponseWrapper getPluginInfo(PluginCreationRequest request, Set<Integer> usedPorts) {
+  public PluginCreationResponseWrapper getPluginInfo(
+      PluginCreationRequest request, Set<Integer> usedPorts, Ambiance ambiance) {
     String stepJsonNode = request.getStepJsonNode();
-    PluginCompatibleStep pluginCompatibleStep;
     CIAbstractStepNode ciAbstractStepNode;
     try {
       ciAbstractStepNode = YamlUtils.read(stepJsonNode, CIAbstractStepNode.class);
@@ -61,7 +62,7 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(usedPorts).build();
     ContainerDefinitionInfo containerDefinitionInfo =
         k8InitializeStepUtils.createStepContainerDefinition(ciAbstractStepNode, null, null, portFinder, 0,
-            request.getAccountId(), OSType.fromString(request.getOsType()), request.getAmbiance(), 0, 0);
+            request.getAccountId(), OSType.fromString(request.getOsType()), ambiance, 0, 0);
     List<SecretVariable> secretVariables = containerDefinitionInfo.getSecretVariables()
                                                .stream()
                                                .map(SecretNgVariableUtils::getSecretVariable)
@@ -92,19 +93,16 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
       pluginDetailsBuilder.setRunAsUser(containerDefinitionInfo.getRunAsUser());
     }
 
-    if (!(CIStepInfoType.BACKGROUND_V1.getDisplayName().equals(ciAbstractStepNode.getType())
-            || CIStepInfoType.BACKGROUND.getDisplayName().equals(ciAbstractStepNode.getType()))) {
-      pluginCompatibleStep = (PluginCompatibleStep) ciAbstractStepNode.getStepSpecType();
+    if ((ciAbstractStepNode.getStepSpecType() instanceof PluginCompatibleStep)
+        && (ciAbstractStepNode.getStepSpecType() instanceof WithConnectorRef)) {
+      PluginCompatibleStep step = (PluginCompatibleStep) ciAbstractStepNode.getStepSpecType();
 
-      String stepConnectorRef =
-          ExpressionResolverUtils.resolveStringParameter("connectorRef", pluginCompatibleStep.getStepType().toString(),
-              pluginCompatibleStep.getIdentifier(), pluginCompatibleStep.getConnectorRef(), false);
-      if (isNotEmpty(stepConnectorRef)) {
-        // todo: if we need to support more steps we need to add connector env conversion map too.
-        pluginDetailsBuilder.addConnectorsForStep(
-            ConnectorDetails.newBuilder().setConnectorRef(stepConnectorRef).build());
+      String connectorRef = PluginSettingUtils.getConnectorRef(step);
+      if (isNotEmpty(connectorRef)) {
+        pluginDetailsBuilder.addConnectorsForStep(ConnectorDetails.newBuilder().setConnectorRef(connectorRef).build());
       }
     }
+
     PluginCreationResponse response =
         PluginCreationResponse.newBuilder().setPluginDetails(pluginDetailsBuilder.build()).build();
     StepInfoProto stepInfoProto = StepInfoProto.newBuilder()
@@ -124,8 +122,6 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
 
   @Override
   public boolean isSupported(String stepType) {
-    return CIStepInfoType.BACKGROUND.getDisplayName().equals(stepType)
-        || CIStepInfoType.BACKGROUND_V1.getDisplayName().equals(stepType)
-        || CIStepInfoType.GIT_CLONE.getDisplayName().equals(stepType);
+    return true;
   }
 }

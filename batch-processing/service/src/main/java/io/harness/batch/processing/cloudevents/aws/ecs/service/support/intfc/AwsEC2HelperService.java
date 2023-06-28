@@ -16,4 +16,5 @@ import java.util.Set;
 public interface AwsEC2HelperService {
   List<Instance> listEc2Instances(
       AwsCrossAccountAttributes awsCrossAccountAttributes, Set<String> instanceIds, String region);
+  List<String> listRegions(AwsCrossAccountAttributes awsCrossAccountAttributes);
 }

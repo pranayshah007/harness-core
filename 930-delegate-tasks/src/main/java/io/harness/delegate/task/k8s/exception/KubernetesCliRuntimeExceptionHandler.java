@@ -55,6 +55,7 @@ public class KubernetesCliRuntimeExceptionHandler implements ExceptionHandler {
   private static final String KUBECTL_DRY_RUN_CONSOLE_ERROR = "Dry run manifest failed with error:\n%s";
   private static final String KUBECTL_STEADY_STATE_CONSOLE_ERROR = "Steady state check failed with error:\n%s";
   private static final String KUBECTL_SCALE_CONSOLE_ERROR = "Failed to scale resource(s) with error:\n%s";
+  private static final String KUBECTL_HASH_CONSOLE_ERROR = "Failed to calculate hash of resource(s) with error:\n%s";
 
   private static final String INVALID_RESOURCE_REGEX = "((\\S+) \"([^\"]*)\" is invalid:)";
   private static final String RESOURCE_NOT_FOUND_REGEX = ".* \"(.*?)\" not found.*";
@@ -93,6 +94,8 @@ public class KubernetesCliRuntimeExceptionHandler implements ExceptionHandler {
         return handleDryRunException(kubernetesTaskException);
       case STEADY_STATE_CHECK:
         return handleSteadyStateCheckFailure(kubernetesTaskException);
+      case GENERATE_HASH:
+        return handleHashCalculationException(kubernetesTaskException);
       default:
         return getExplanationException(KubernetesExceptionHints.GENERIC_CLI_FAILURE,
             getExecutedCommandWithOutputWithExitCode(kubernetesTaskException), cliErrorMessage);
@@ -132,6 +135,11 @@ public class KubernetesCliRuntimeExceptionHandler implements ExceptionHandler {
           KubernetesExceptionExplanation.FORBIDDEN_MESSAGE,
           getExecutedCommandWithOutputWithExitCode(kubernetesTaskException), consolidatedError);
     }
+    if (cliErrorMessage.contains(TIMEOUT_MESSAGE)) {
+      return getExplanationException(KubernetesExceptionHints.APPLY_MANIFEST_FAILED,
+          getExecutedCommandWithOutputWithExitCode(kubernetesTaskException), consolidatedError,
+          FailureType.CONNECTIVITY);
+    }
     return getExplanationException(KubernetesExceptionHints.APPLY_MANIFEST_FAILED,
         getExecutedCommandWithOutputWithExitCode(kubernetesTaskException), consolidatedError);
   }
@@ -146,6 +154,11 @@ public class KubernetesCliRuntimeExceptionHandler implements ExceptionHandler {
       return getExplanationExceptionWithCommand(KubernetesExceptionHints.SCALE_CLI_FAILED,
           format(KubernetesExceptionExplanation.SCALE_CLI_FAILED, resourceName),
           getExecutedCommandWithOutputWithExitCode(kubernetesTaskException), consolidatedError);
+    }
+    if (cliErrorMessage.contains(TIMEOUT_MESSAGE)) {
+      return getExplanationException(KubernetesExceptionHints.SCALE_CLI_FAILED_GENERIC,
+          getExecutedCommandWithOutputWithExitCode(kubernetesTaskException), consolidatedError,
+          FailureType.CONNECTIVITY);
     }
     return getExplanationException(KubernetesExceptionHints.SCALE_CLI_FAILED_GENERIC,
         getExecutedCommandWithOutputWithExitCode(kubernetesTaskException), consolidatedError);
@@ -216,11 +229,31 @@ public class KubernetesCliRuntimeExceptionHandler implements ExceptionHandler {
           hint, KubernetesExceptionExplanation.WAIT_FOR_STEADY_STATE_FAILED, commandSummary, consolidatedError);
     }
 
+    if (cliErrorMessage.contains(TIMEOUT_MESSAGE)) {
+      return getExplanationException(KubernetesExceptionHints.WAIT_FOR_STEADY_STATE_FAILED,
+          getExecutedCommandWithOutputWithExitCode(kubernetesTaskException), consolidatedError,
+          FailureType.CONNECTIVITY);
+    }
+
     if (EmptyPredicate.isEmpty(commandSummary)) {
       commandSummary = KubernetesExceptionExplanation.WAIT_FOR_STEADY_STATE_FAILED;
     }
     return getExplanationException(
         KubernetesExceptionHints.WAIT_FOR_STEADY_STATE_FAILED, commandSummary, consolidatedError);
+  }
+
+  private WingsException handleHashCalculationException(KubernetesCliTaskRuntimeException kubernetesTaskException) {
+    String cliErrorMessage = kubernetesTaskException.getProcessResponse().getErrorMessage();
+    String consolidatedError = format(KUBECTL_HASH_CONSOLE_ERROR, cliErrorMessage);
+
+    if (cliErrorMessage.contains(TIMEOUT_MESSAGE)) {
+      return getExplanationException(KubernetesExceptionHints.HASH_CALCULATION_FAILED_ERROR,
+          getExecutedCommandWithOutputWithExitCode(kubernetesTaskException), consolidatedError,
+          FailureType.CONNECTIVITY);
+    }
+
+    return getExplanationException(KubernetesExceptionHints.HASH_CALCULATION_FAILED_ERROR,
+        getExecutedCommandWithOutputWithExitCode(kubernetesTaskException), consolidatedError);
   }
 
   private String getExecutedCommandWithOutputWithExitCode(KubernetesCliTaskRuntimeException exception) {

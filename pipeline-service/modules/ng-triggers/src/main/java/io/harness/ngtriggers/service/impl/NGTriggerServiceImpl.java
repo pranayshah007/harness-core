@@ -71,9 +71,9 @@ import io.harness.ngtriggers.beans.source.GitMoveOperationType;
 import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
 import io.harness.ngtriggers.beans.source.NGTriggerSpecV2;
 import io.harness.ngtriggers.beans.source.TriggerUpdateCount;
-import io.harness.ngtriggers.beans.source.artifact.ArtifactTypeSpec;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactTypeSpecWrapper;
 import io.harness.ngtriggers.beans.source.artifact.BuildAware;
-import io.harness.ngtriggers.beans.source.artifact.MultiArtifactTriggerConfig;
+import io.harness.ngtriggers.beans.source.artifact.MultiRegionArtifactTriggerConfig;
 import io.harness.ngtriggers.beans.source.scheduled.CronTriggerSpec;
 import io.harness.ngtriggers.beans.source.scheduled.ScheduledTriggerConfig;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
@@ -252,7 +252,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     executorService.submit(() -> { subscribePolling(ngTriggerEntity, isUpdate); });
   }
 
-  private void subscribePolling(NGTriggerEntity ngTriggerEntity, boolean isUpdate) {
+  public void subscribePolling(NGTriggerEntity ngTriggerEntity, boolean isUpdate) {
     PollingItem pollingItem = pollingSubscriptionHelper.generatePollingItem(ngTriggerEntity);
 
     try {
@@ -393,7 +393,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   }
 
   @Override
-  public NGTriggerEntity update(NGTriggerEntity ngTriggerEntity) {
+  public NGTriggerEntity update(NGTriggerEntity ngTriggerEntity, NGTriggerEntity oldNgTriggerEntity) {
     ngTriggerEntity.setYmlVersion(TRIGGER_CURRENT_YML_VERSION);
     if (pmsFeatureFlagService.isEnabled(
             ngTriggerEntity.getAccountId(), FeatureName.CDS_ENABLE_TRIGGER_YAML_VALIDATION)) {
@@ -403,7 +403,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     Criteria criteria = getTriggerEqualityCriteria(ngTriggerEntity, false);
     NGTriggerEntity updatedTriggerEntity = updateTriggerEntity(ngTriggerEntity, criteria);
     outboxService.save(new TriggerUpdateEvent(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
-        ngTriggerEntity.getProjectIdentifier(), updatedTriggerEntity, ngTriggerEntity));
+        ngTriggerEntity.getProjectIdentifier(), oldNgTriggerEntity, updatedTriggerEntity));
     try {
       List<EntityDetailProtoDTO> referredEntities = triggerReferenceHelper.getReferences(
           updatedTriggerEntity.getAccountId(), ngTriggerElementMapper.toTriggerConfigV2(updatedTriggerEntity));
@@ -472,14 +472,14 @@ public class NGTriggerServiceImpl implements NGTriggerService {
         log.info("Submitting unsubscribe request after delete for Trigger :"
             + TriggerHelper.getTriggerRef(foundTriggerEntity));
         submitUnsubscribeAsync(foundTriggerEntity);
-        try {
-          triggerSetupUsageHelper.deleteExistingSetupUsages(foundTriggerEntity);
-        } catch (Exception ex) {
-          log.error(
-              "Error while deleting the setup usages for the trigger with the identifier {} in project {} in org {}",
-              foundTriggerEntity.getIdentifier(), foundTriggerEntity.getProjectIdentifier(),
-              foundTriggerEntity.getOrgIdentifier(), ex);
-        }
+      }
+      try {
+        triggerSetupUsageHelper.deleteExistingSetupUsages(foundTriggerEntity);
+      } catch (Exception ex) {
+        log.error(
+            "Error while deleting the setup usages for the trigger with the identifier {} in project {} in org {}",
+            foundTriggerEntity.getIdentifier(), foundTriggerEntity.getProjectIdentifier(),
+            foundTriggerEntity.getOrgIdentifier(), ex);
       }
     }
     return true;
@@ -789,14 +789,14 @@ public class NGTriggerServiceImpl implements NGTriggerService {
         validateStageIdentifierAndBuildRef(
             (BuildAware) spec, "artifactRef", triggerDetails.getNgTriggerEntity().getWithServiceV2());
         return;
-      case MULTI_ARTIFACT:
+      case MULTI_REGION_ARTIFACT:
         if (!pmsFeatureFlagService.isEnabled(
                 triggerDetails.getNgTriggerEntity().getAccountId(), FeatureName.CDS_NG_TRIGGER_MULTI_ARTIFACTS)) {
           throw new InvalidRequestException(
-              "Feature Flag CDS_NG_TRIGGER_MULTI_ARTIFACTS must be enabled for creation of multi-artifact triggers.");
+              "Feature Flag CDS_NG_TRIGGER_MULTI_ARTIFACTS must be enabled for creation of multi-region artifact triggers.");
         }
-        validateMultiArtifactTriggerConfig(
-            (MultiArtifactTriggerConfig) spec, triggerDetails.getNgTriggerEntity().getWithServiceV2());
+        validateMultiRegionArtifactTriggerConfig(
+            (MultiRegionArtifactTriggerConfig) spec, triggerDetails.getNgTriggerEntity().getWithServiceV2());
         return;
       default:
         return; // not implemented
@@ -829,7 +829,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
         throw new InvalidRequestException("Invalid Trigger Yaml.");
       }
       JsonNode pipelineNode = YamlUtils.readTree(inputYaml.asText()).getNode().getCurrJsonNode();
-      return YamlUtils.write(pipelineNode).replace("---\n", "");
+      return YamlUtils.writeYamlString(pipelineNode);
     } catch (IOException e) {
       throw new InvalidYamlException("Invalid Trigger Yaml", e);
     }
@@ -928,7 +928,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     }
   }
 
-  private void validateMultiArtifactTriggerConfig(MultiArtifactTriggerConfig triggerConfig, boolean serviceV2) {
+  private void validateMultiRegionArtifactTriggerConfig(
+      MultiRegionArtifactTriggerConfig triggerConfig, boolean serviceV2) {
     StringBuilder msg = new StringBuilder(128);
     boolean validationFailed = false;
     if (!serviceV2) {
@@ -936,17 +937,17 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       validationFailed = true;
     }
     if (triggerConfig.getType() == null) {
-      msg.append("Multi-Artifact trigger source type must have a valid artifact source type value.\n");
+      msg.append("Multi-region Artifact trigger source type must have a valid artifact source type value.\n");
     }
     if (isEmpty(triggerConfig.getSources())) {
-      msg.append("Multi-Artifact trigger sources list must have at least one element.\n");
+      msg.append("Multi-region Artifact trigger sources list must have at least one element.\n");
       validationFailed = true;
     }
     if (isNotEmpty(triggerConfig.getSources())) {
       String artifactBuildType = triggerConfig.fetchBuildType();
-      for (ArtifactTypeSpec artifactSource : triggerConfig.getSources()) {
-        if (!artifactBuildType.equals(artifactSource.fetchBuildType())) {
-          msg.append("Multi-Artifact sources must all be of type ").append(artifactBuildType).append(".\n");
+      for (ArtifactTypeSpecWrapper artifactSpecWrapper : triggerConfig.getSources()) {
+        if (!artifactBuildType.equals(artifactSpecWrapper.getSpec().fetchBuildType())) {
+          msg.append("Multi-region Artifact sources must all be of type ").append(artifactBuildType).append(".\n");
           validationFailed = true;
           break;
         }
@@ -1154,7 +1155,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
         break;
       }
     }
-    if (!hasApiKey && pmsFeatureFlagService.isEnabled(accountIdentifier, FeatureName.NG_SETTINGS)) {
+    if (!hasApiKey) {
       String mandatoryAuth = NGRestUtils
                                  .getResponse(settingsClient.getSetting(MANDATE_CUSTOM_WEBHOOK_AUTHORIZATION,
                                      accountIdentifier, orgIdentifier, projectIdentifier))

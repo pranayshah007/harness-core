@@ -9,10 +9,12 @@ package io.harness.ngmigration.utils;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.network.Http.getOkHttpClientBuilder;
 import static io.harness.ngmigration.utils.CaseFormat.CAMEL_CASE;
 import static io.harness.ngmigration.utils.CaseFormat.LOWER_CASE;
 import static io.harness.ngmigration.utils.CaseFormat.SNAKE_CASE;
 import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
+import static io.harness.security.NextGenAuthenticationFilter.X_API_KEY;
 import static io.harness.when.beans.WhenConditionStatus.SUCCESS;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -21,7 +23,6 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
-import io.harness.network.Http;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.filestore.FileUsage;
 import io.harness.ngmigration.beans.BaseProvidedInput;
@@ -65,6 +66,7 @@ import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import io.serializer.HObjectMapper;
 import java.io.IOException;
@@ -81,7 +83,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.OkHttpClient;
+import okhttp3.OkHttpClient.Builder;
+import okhttp3.Request;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.CaseUtils;
 import org.apache.commons.validator.routines.UrlValidator;
@@ -104,16 +107,67 @@ public class MigratorUtility {
 
   private static final String[] schemes = {"https", "http"};
 
+  // Choice, GumGum
+  public static final List<String> ELASTIC_GROUP_ACCOUNT_IDS =
+      Lists.newArrayList("R7OsqSbNQS69mq74kMNceQ", "EBGrtCo0RE6i_E9yNDdCOg");
+
   private MigratorUtility() {}
 
-  public static <T> T getRestClient(ServiceHttpClientConfig ngClientConfig, Class<T> clazz) {
-    OkHttpClient okHttpClient = Http.getOkHttpClient(ngClientConfig.getBaseUrl(), false);
+  public static <T> T getRestClient(
+      MigrationInputDTO inputDTO, ServiceHttpClientConfig ngClientConfig, Class<T> clazz) {
+    String baseUrl = StringUtils.defaultIfBlank(constructBaseUrl(inputDTO, clazz), ngClientConfig.getBaseUrl());
+    Builder okHttpClient = getOkHttpClientBuilder(baseUrl, false);
+    okHttpClient.addInterceptor(chain -> {
+      Request original = chain.request();
+      Request request = original.newBuilder()
+                            .header(X_API_KEY, inputDTO.getDestinationAuthToken())
+                            .method(original.method(), original.body())
+                            .build();
+      return chain.proceed(request);
+    });
     Retrofit retrofit = new Retrofit.Builder()
-                            .client(okHttpClient)
-                            .baseUrl(ngClientConfig.getBaseUrl())
+                            .client(okHttpClient.build())
+                            .baseUrl(baseUrl)
                             .addConverterFactory(JacksonConverterFactory.create(HObjectMapper.NG_DEFAULT_OBJECT_MAPPER))
                             .build();
     return retrofit.create(clazz);
+  }
+
+  private static <T> String constructBaseUrl(MigrationInputDTO inputDTO, Class<T> clazz) {
+    if (inputDTO == null || StringUtils.isBlank(inputDTO.getDestinationGatewayUrl())) {
+      return null;
+    }
+    String baseUrl = inputDTO.getDestinationGatewayUrl();
+    if (baseUrl.endsWith("/")) {
+      baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+    }
+    String basePath;
+    switch (clazz.getName()) {
+      case "io.harness.ngmigration.client.NGClient":
+        basePath = "/ng/api/";
+        break;
+      case "io.harness.ngmigration.client.PmsClient":
+        basePath = "/pipeline/api/";
+        break;
+      case "io.harness.ngmigration.client.TemplateClient":
+        basePath = "/template/api/";
+        break;
+      case "io.harness.template.remote.TemplateResourceClient":
+        basePath = "/template/api/";
+        break;
+      case "io.harness.infrastructure.InfrastructureResourceClient":
+        basePath = "/ng/api/";
+        break;
+      case "io.harness.service.remote.ServiceResourceClient":
+        basePath = "/ng/api/";
+        break;
+      case " io.harness.pipeline.remote.PipelineServiceClient":
+        basePath = "/pipeline/api/";
+        break;
+      default:
+        throw new InvalidRequestException("Invalid client class");
+    }
+    return baseUrl + basePath;
   }
 
   public static String generateManifestIdentifier(String name, CaseFormat caseFormat) {
@@ -354,7 +408,7 @@ public class MigratorUtility {
       return StringNGVariable.builder()
           .type(NGVariableType.STRING)
           .name(name)
-          .value(ParameterField.createValueField(value))
+          .value(ParameterField.createValueField(StringUtils.defaultIfBlank(value, "")))
           .build();
     }
   }
@@ -440,6 +494,9 @@ public class MigratorUtility {
 
   public static ParameterField<String> getIdentifierWithScopeDefaultsRuntime(
       Map<CgEntityId, NGYamlFile> migratedEntities, String entityId, NGMigrationEntityType entityType) {
+    if (StringUtils.isBlank(entityId) || entityType == null) {
+      return RUNTIME_INPUT;
+    }
     NGYamlFile ngYamlFile = migratedEntities.get(CgEntityId.builder().type(entityType).id(entityId).build());
     if (ngYamlFile == null) {
       return RUNTIME_INPUT;
@@ -645,6 +702,7 @@ public class MigratorUtility {
     }
 
     return MigrationInputDTO.builder()
+        .destinationGatewayUrl(StringUtils.defaultIfBlank(importDTO.getDestinationDetails().getGatewayUrl(), null))
         .destinationAccountIdentifier(StringUtils.defaultIfBlank(
             importDTO.getDestinationDetails().getAccountIdentifier(), importDTO.getAccountIdentifier()))
         .destinationAuthToken(

@@ -29,9 +29,9 @@ public class CloudFormationListStacksRequest extends CloudFormationCommandReques
   @Builder
   public CloudFormationListStacksRequest(CloudFormationCommandType commandType, String accountId, String appId,
       String activityId, String commandName, String cloudFormationRoleArn, AwsConfig awsConfig, int timeoutInMs,
-      String stackId, String region) {
+      String stackId, String region, boolean timeoutSupported) {
     super(commandType, accountId, appId, activityId, commandName, awsConfig, timeoutInMs, region, cloudFormationRoleArn,
-        false);
+        false, timeoutSupported);
     this.stackId = stackId;
   }
 }

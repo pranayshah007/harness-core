@@ -19,7 +19,6 @@ import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenti
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsCredentialsDTO;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTestConnectionTaskParams;
-import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTestConnectionTaskResponse;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTokenDTO;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.exception.InvalidRequestException;
@@ -96,10 +95,8 @@ public class AzureArtifactsConnectorValidator extends AbstractConnectorValidator
   @Override
   public ConnectorValidationResult validate(ConnectorConfigDTO azureArtifactsConnector, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String identifier) {
-    AzureArtifactsTestConnectionTaskResponse responseData =
-        (AzureArtifactsTestConnectionTaskResponse) super.validateConnector(
-            azureArtifactsConnector, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
-
+    var responseData = super.validateConnector(
+        azureArtifactsConnector, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     return responseData.getConnectorValidationResult();
   }
 

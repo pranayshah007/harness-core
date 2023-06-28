@@ -284,6 +284,7 @@ public class ExpressionEvaluatorUtils {
       boolean useFallback = false;
       Map<Object, Object> updatedMap =
           new LinkedHashMap<>(); // create an intermediate map to hold updated key-value pairs
+      final Set<Integer> cacheCopy = new HashSet<>(cache); // Maintain a copy of cache in case a retry is attempted.
       for (Map.Entry<Object, Object> entry : (Set<Map.Entry<Object, Object>>) m.entrySet()) {
         try {
           Object updatedKey = entry.getKey();
@@ -303,7 +304,7 @@ public class ExpressionEvaluatorUtils {
       if (useFallback) {
         m.replaceAll((k, v) -> {
           try {
-            return updateExpressionsInternal(v, functor, depth - 1, cache);
+            return updateExpressionsInternal(v, functor, depth - 1, cacheCopy);
           } catch (UnresolvedExpressionsException ex) {
             // Throwing the error again with field name added in the message
             // Now the error message would like this: "Some expressions couldn't be evaluated: 'key': expr2, expr2"

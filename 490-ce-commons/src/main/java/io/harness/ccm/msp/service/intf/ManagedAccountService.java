@@ -12,7 +12,7 @@ import io.harness.ccm.msp.dto.ManagedAccount;
 import java.util.List;
 
 public interface ManagedAccountService {
-  String save(ManagedAccount managedAccount);
+  String save(String mspAccountId, String managedAccountId);
   ManagedAccount get(String mspAccountId, String managedAccountId);
   List<ManagedAccount> list(String mspAccountId);
   ManagedAccount update(ManagedAccount managedAccount);

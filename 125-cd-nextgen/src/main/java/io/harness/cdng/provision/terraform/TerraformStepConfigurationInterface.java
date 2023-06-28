@@ -22,4 +22,6 @@ public interface TerraformStepConfigurationInterface {
   ParameterField<Boolean> getIsSkipTerraformRefresh();
   List<TerraformCliOptionFlag> getCliOptions();
   void setCliOptions(List<TerraformCliOptionFlag> cliOptionFlags);
+  void setEncryptOutputSecretManager(TerraformEncryptOutput terraformEncryptOutput);
+  TerraformEncryptOutput getEncryptOutputSecretManager();
 }

@@ -95,7 +95,7 @@ func NewHTTPClient(endpoint, accountID, token string, skipverify bool, additiona
 			// Append certs to the global certs
 			ok := rootCAs.AppendCertsFromPEM(rootPem)
 			if !ok {
-				fmt.Errorf("error adding cert (%s) to pool, error: %s", path, err.Error())
+				fmt.Errorf("error adding cert (%s) to pool, please check format of the certs provided", path)
 				continue
 			}
 			fmt.Printf("successfully added cert at: %s to root certs", path)

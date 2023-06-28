@@ -33,7 +33,7 @@ import java.util.Set;
 public class PostProdRollbackServiceImpl implements PostProdRollbackService {
   // Each instanceType will have its own separate FF.
   private static final Map<InstanceType, FeatureName> INSTANCE_TYPE_TO_FF_MAP =
-      Map.of(InstanceType.K8S_INSTANCE, POST_PROD_ROLLBACK);
+      Map.of(InstanceType.K8S_INSTANCE, POST_PROD_ROLLBACK, InstanceType.TAS_INSTANCE, POST_PROD_ROLLBACK);
   private static final Set<RollbackStatus> ALLOWED_ROLLBACK_START_STATUSES =
       Set.of(RollbackStatus.NOT_STARTED, RollbackStatus.UNAVAILABLE);
   @Inject private PipelineServiceClient pipelineServiceClient;

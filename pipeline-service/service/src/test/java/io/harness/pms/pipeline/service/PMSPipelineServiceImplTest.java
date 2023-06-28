@@ -42,6 +42,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.git.model.ChangeType;
@@ -70,6 +71,7 @@ import io.harness.pms.pipeline.SourceIdentifierConfig;
 import io.harness.pms.pipeline.StepCategory;
 import io.harness.pms.pipeline.StepData;
 import io.harness.pms.pipeline.StepPalleteInfo;
+import io.harness.pms.pipeline.gitsync.PMSUpdateGitDetailsParams;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.yaml.PipelineVersion;
@@ -661,5 +663,22 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     inOrder.verify(gitXSettingsHelper).enforceGitExperienceIfApplicable(any(), any(), any());
     inOrder.verify(gitXSettingsHelper).setConnectorRefForRemoteEntity(any(), any(), any());
     inOrder.verify(gitXSettingsHelper).setDefaultStoreTypeForEntities(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testUpdateGitMetadata() {
+    PMSUpdateGitDetailsParams pmsUpdateGitDetailsParams = PMSUpdateGitDetailsParams.builder()
+                                                              .connectorRef("newConnectorRef")
+                                                              .filePath("newFilePath")
+                                                              .repoName("repoName")
+                                                              .build();
+    doReturn(null).when(pmsPipelineRepositoryMock).updateEntity(any(), any());
+    assertThatThrownBy(()
+                           -> pmsPipelineService.updateGitMetadata(accountId, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               PIPELINE_IDENTIFIER, pmsUpdateGitDetailsParams))
+        .isInstanceOf(EntityNotFoundException.class)
+        .hasMessageContaining("Pipeline with id [myPipeline] is not present or has been deleted");
   }
 }

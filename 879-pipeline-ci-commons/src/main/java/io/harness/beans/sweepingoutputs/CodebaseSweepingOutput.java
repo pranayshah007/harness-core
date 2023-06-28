@@ -53,6 +53,10 @@ public class CodebaseSweepingOutput implements ExecutionSweepingOutput {
   List<CodeBaseCommit> commits;
   String mergeSha;
   String commitMessage;
+  String releaseTag;
+  String releaseTitle;
+  String releaseLink;
+  String releaseBody;
   @Id @NotNull(groups = {Update.class}) @SchemaIgnore String uuid;
 
   @Value

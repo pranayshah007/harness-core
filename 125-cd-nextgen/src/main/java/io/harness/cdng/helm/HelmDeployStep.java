@@ -26,7 +26,6 @@ import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
-import io.harness.common.NGTimeConversionHelper;
 import io.harness.delegate.beans.instancesync.mapper.K8sContainerToHelmServiceInstanceInfoMapper;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
@@ -53,7 +52,6 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
@@ -194,10 +192,15 @@ public class HelmDeployStep extends TaskChainExecutableWithRollbackAndRbac imple
     List<String> manifestFilesContents =
         nativeHelmStepHelper.renderValues(manifestOutcome, ambiance, valuesFileContents);
     HelmChartManifestOutcome helmChartManifestOutcome = (HelmChartManifestOutcome) manifestOutcome;
+    HelmDeployStepParams helmDeployStepParams = (HelmDeployStepParams) stepParameters.getSpec();
 
-    boolean ignoreHelmHistFailure = CDStepHelper.getParameterFieldBooleanValue(
-        ((HelmDeployStepParams) stepParameters.getSpec()).getIgnoreReleaseHistFailStatus(),
-        HelmDeployBaseStepInfoKeys.ignoreReleaseHistFailStatus, stepParameters);
+    boolean ignoreHelmHistFailure =
+        CDStepHelper.getParameterFieldBooleanValue(helmDeployStepParams.getIgnoreReleaseHistFailStatus(),
+            HelmDeployBaseStepInfoKeys.ignoreReleaseHistFailStatus, stepParameters);
+
+    boolean skipSteadyStateCheck =
+        CDStepHelper.getParameterFieldBooleanValue(helmDeployStepParams.getSkipSteadyStateCheck(),
+            HelmDeployBaseStepInfoKeys.skipSteadyStateCheck, stepParameters);
 
     HelmInstallCommandRequestNGBuilder helmCommandRequestBuilder =
         HelmInstallCommandRequestNG.builder()
@@ -219,16 +222,17 @@ public class HelmDeployStep extends TaskChainExecutableWithRollbackAndRbac imple
                 cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.NEW_KUBECTL_VERSION))
             .releaseHistoryPrefix(nativeHelmStepHelper.getReleaseHistoryPrefix(ambiance))
             .shouldOpenFetchFilesLogStream(true)
-            .ignoreReleaseHistFailStatus(ignoreHelmHistFailure);
+            .ignoreReleaseHistFailStatus(ignoreHelmHistFailure)
+            .useRefactorSteadyStateCheck(cdFeatureFlagHelper.isEnabled(
+                AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_STEADY_STATE_CHECK_1_16_V2_NG))
+            .skipSteadyStateCheck(skipSteadyStateCheck);
 
     if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_K8S_SERVICE_HOOKS_NG)) {
       helmCommandRequestBuilder.serviceHooks(nativeHelmStepHelper.getServiceHooks(ambiance));
     }
     HelmInstallCommandRequestNG helmCommandRequest = helmCommandRequestBuilder.build();
-    if (!ParameterField.isNull(stepParameters.getTimeout())) {
-      helmCommandRequest.setTimeoutInMillis(
-          NGTimeConversionHelper.convertTimeStringToMilliseconds(stepParameters.getTimeout().getValue()));
-    }
+
+    helmCommandRequest.setTimeoutInMillis(CDStepHelper.getTimeoutInMillis(stepParameters));
 
     nativeHelmStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);
 

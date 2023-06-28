@@ -20,6 +20,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.JsonUtils;
 import io.harness.steps.StepSpecTypeConstants;
+import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
@@ -69,12 +70,26 @@ public class PipelineStageHelperV1 {
   public String getInputSet(YamlField pipelineInputs) {
     String inputSetAsJson = "{}";
     if (pipelineInputs != null) {
-      JsonNode inputJsonNode = pipelineInputs.getNode().getCurrJsonNode();
-      YamlUtils.removeUuid(inputJsonNode);
-      Map<String, JsonNode> map = new HashMap<>();
-      map.put("inputs", inputJsonNode);
+      Map<String, JsonNode> map = getInputSetMapInternal(pipelineInputs);
       inputSetAsJson = JsonUtils.asJson(map);
     }
     return inputSetAsJson;
+  }
+
+  public JsonNode getInputSetJsonNode(YamlField pipelineInputs) {
+    JsonNode inputJsonNode = null;
+    if (pipelineInputs != null) {
+      Map<String, JsonNode> map = getInputSetMapInternal(pipelineInputs);
+      inputJsonNode = JsonPipelineUtils.asTree(map);
+    }
+    return inputJsonNode;
+  }
+
+  private Map<String, JsonNode> getInputSetMapInternal(YamlField pipelineInputs) {
+    JsonNode inputJsonNode = pipelineInputs.getNode().getCurrJsonNode();
+    YamlUtils.removeUuid(inputJsonNode);
+    Map<String, JsonNode> map = new HashMap<>();
+    map.put("inputs", inputJsonNode);
+    return map;
   }
 }

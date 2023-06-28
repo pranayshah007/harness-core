@@ -25,6 +25,7 @@ import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
+import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
 import io.harness.delegate.task.mixin.SocketConnectivityCapabilityGenerator;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.k8s.model.HelmVersion;
@@ -51,11 +52,12 @@ public class HelmValuesFetchRequest implements TaskParameters, ExecutionCapabili
     HelmVersion helmVersion = helmChartManifestDelegateConfig.getHelmVersion();
     StoreDelegateConfig storeDelegateConfig = helmChartManifestDelegateConfig.getStoreDelegateConfig();
 
-    return getHelmExecutionCapabilities(helmVersion, storeDelegateConfig, maskingEvaluator);
+    return getHelmExecutionCapabilities(
+        helmVersion, storeDelegateConfig, maskingEvaluator, helmChartManifestDelegateConfig.isIgnoreResponseCode());
   }
 
-  public static List<ExecutionCapability> getHelmExecutionCapabilities(
-      HelmVersion helmVersion, StoreDelegateConfig storeDelegateConfig, ExpressionEvaluator maskingEvaluator) {
+  public static List<ExecutionCapability> getHelmExecutionCapabilities(HelmVersion helmVersion,
+      StoreDelegateConfig storeDelegateConfig, ExpressionEvaluator maskingEvaluator, boolean ignoreResponseCode) {
     List<ExecutionCapability> capabilities = new ArrayList<>();
     if (helmVersion != null) {
       capabilities.add(HelmInstallationCapability.builder()
@@ -68,13 +70,14 @@ public class HelmValuesFetchRequest implements TaskParameters, ExecutionCapabili
       case HTTP_HELM:
         HttpHelmStoreDelegateConfig httpHelmStoreConfig = (HttpHelmStoreDelegateConfig) storeDelegateConfig;
         if (httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl() != null) {
-          /*
-          We are henceforth using SocketConnectivityExecutionCapability instead of HttpConnectionExecutionCapability
-          this is to ensure that we don't fail Helm Repo Connector Validation in case the url returns 400
-          ref: https://harness.atlassian.net/browse/CDS-36189
-          */
-          SocketConnectivityCapabilityGenerator.addSocketConnectivityExecutionCapability(
-              httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), capabilities);
+          if (ignoreResponseCode) {
+            capabilities.add(
+                HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapabilityWithIgnoreResponseCode(
+                    httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), maskingEvaluator, true));
+          } else {
+            SocketConnectivityCapabilityGenerator.addSocketConnectivityExecutionCapability(
+                httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), capabilities);
+          }
         }
         capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
             httpHelmStoreConfig.getEncryptedDataDetails(), maskingEvaluator));
