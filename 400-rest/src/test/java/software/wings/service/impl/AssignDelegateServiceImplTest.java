@@ -945,7 +945,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
 
     for (NameTestData test : tests) {
       Delegate delegate = delegateBuilder.delegateName(test.getDelegateName()).hostName(test.getHostName()).build();
-      when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID", false)).thenReturn(delegate);
+      when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID")).thenReturn(delegate);
 
       DelegateTask delegateTask = delegateTaskBuilder.executionCapabilities(test.getExecutionCapabilities()).build();
       assertThat(assignDelegateService.canAssign("DELEGATE_ID", delegateTask)).isEqualTo(test.isAssignable());
@@ -1197,7 +1197,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                             .excludeScopes(emptyList())
                             .supportedTaskTypes(Arrays.asList(TaskType.HTTP.name()))
                             .build();
-    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID", false)).thenReturn(delegate);
+    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID")).thenReturn(delegate);
     assertThat(assignDelegateService.canAssign("DELEGATE_ID", delegateTask)).isTrue();
   }
 
@@ -1223,7 +1223,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                             .excludeScopes(singletonList(null))
                             .supportedTaskTypes(Arrays.asList(TaskType.HTTP.name()))
                             .build();
-    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID", false)).thenReturn(delegate);
+    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID")).thenReturn(delegate);
     assertThat(assignDelegateService.canAssign("DELEGATE_ID", delegateTask)).isTrue();
   }
 
@@ -1253,7 +1253,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                             .excludeScopes(emptyList())
                             .supportedTaskTypes(Arrays.asList(TaskType.HTTP.name()))
                             .build();
-    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID", false)).thenReturn(delegate);
+    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID")).thenReturn(delegate);
     assertThat(assignDelegateService.canAssign("DELEGATE_ID", delegateTask)).isTrue();
   }
 
@@ -1313,7 +1313,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                             .supportedTaskTypes(Arrays.asList(TaskType.SCRIPT.name()))
                             .build();
     when(infrastructureMappingService.get("APP_ID", "infraMapping_Id")).thenReturn(infrastructureMapping);
-    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID", false)).thenReturn(delegate);
+    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID")).thenReturn(delegate);
     assertThat(assignDelegateService.canAssign("DELEGATE_ID", delegateTask)).isTrue();
 
     assertThat(assignDelegateService.canAssign("DELEGATE_ID", delegateTask2)).isFalse();
@@ -1904,7 +1904,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                             .supportedTaskTypes(Arrays.asList(TaskType.HTTP.name()))
                             .build();
 
-    when(delegateCache.get(accountId, delegateId, false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegateId)).thenReturn(delegate);
 
     // Test delegate cg and task cg
     canAssignCgNgAssert(delegateTask, delegate, false, null, true);
@@ -1956,7 +1956,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                             .build();
 
     // Test matching mustExecuteOnDelegateId
-    when(delegateCache.get(accountId, delegateId, false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegateId)).thenReturn(delegate);
 
     DelegateEntityOwner orgOwner = DelegateEntityOwner.builder().identifier("o1").build();
     DelegateEntityOwner projectOwner = DelegateEntityOwner.builder().identifier("o1/p1").build();
@@ -2375,8 +2375,8 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                                                     .build();
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate1.getUuid(), connectionResult.getCriteria())))
         .thenReturn(of(connectionResult));
-    when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
-    when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
+    when(delegateCache.get(accountId, delegate2.getUuid())).thenReturn(delegate2);
+    when(delegateCache.get(accountId, delegate1.getUuid())).thenReturn(delegate1);
     when(delegateCache.getDelegatesForGroup(accountId, delegate1.getDelegateGroupId()))
         .thenReturn(Lists.newArrayList(delegate1, delegate2));
     // verify delegate2 is not whitelisted by itself
@@ -2397,8 +2397,8 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
 
     DelegateTask delegateTask = getDelegateTaskWithCapabilities(accountId);
 
-    when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
-    when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
+    when(delegateCache.get(accountId, delegate2.getUuid())).thenReturn(delegate2);
+    when(delegateCache.get(accountId, delegate1.getUuid())).thenReturn(delegate1);
     when(delegateCache.getDelegatesForGroup(accountId, delegate1.getDelegateGroupId()))
         .thenReturn(Lists.newArrayList(delegate1, delegate2));
 
@@ -2469,8 +2469,8 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate1.getUuid(), connectionResult2.getCriteria())))
         .thenReturn(of(connectionResult2));
 
-    when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
-    when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
+    when(delegateCache.get(accountId, delegate2.getUuid())).thenReturn(delegate2);
+    when(delegateCache.get(accountId, delegate1.getUuid())).thenReturn(delegate1);
     when(delegateCache.getDelegatesForGroup(accountId, delegate1.getDelegateGroupId()))
         .thenReturn(Lists.newArrayList(delegate1, delegate2));
     // verify delegate2 is not whitelisted by itself
@@ -2512,8 +2512,8 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate2.getUuid(), connectionResult2.getCriteria())))
         .thenReturn(of(connectionResult2));
 
-    when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
-    when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
+    when(delegateCache.get(accountId, delegate2.getUuid())).thenReturn(delegate2);
+    when(delegateCache.get(accountId, delegate1.getUuid())).thenReturn(delegate1);
     when(delegateCache.getDelegatesForGroup(accountId, delegate1.getDelegateGroupId()))
         .thenReturn(Lists.newArrayList(delegate1, delegate2));
     // verify delegate2 is not whitelisted by itself
