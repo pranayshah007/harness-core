@@ -66,7 +66,7 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
   public void testOrderByTotalNumberOfTaskAssignedCriteria_OneDelegate() {
     String accountId = generateUuid();
     Delegate delegate = createDelegate(accountId, "");
-    when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegate.getUuid())).thenReturn(delegate);
     createDelegateTaskWithStatusStarted(accountId, delegate.getUuid());
     List<Delegate> eligibleDelegateIds = Collections.singletonList(delegate);
     List<Delegate> delegateList = orderByTotalNumberOfTaskAssignedCriteria.getFilteredEligibleDelegateList(
@@ -85,9 +85,9 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
     Delegate delegate3 = createDelegate(accountId, "delegate3");
 
     List<Delegate> eligibleDelegateIds = Lists.newArrayList(delegate1, delegate2, delegate3);
-    when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
-    when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
-    when(delegateCache.get(accountId, delegate3.getUuid(), false)).thenReturn(delegate3);
+    when(delegateCache.get(accountId, delegate1.getUuid())).thenReturn(delegate1);
+    when(delegateCache.get(accountId, delegate2.getUuid())).thenReturn(delegate2);
+    when(delegateCache.get(accountId, delegate3.getUuid())).thenReturn(delegate3);
 
     createDelegateTaskWithStatusStarted(accountId, delegate1.getUuid());
     IntStream.range(0, 2).forEach(i -> createDelegateTaskWithStatusStarted(accountId, delegate2.getUuid()));
@@ -111,7 +111,7 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
     Delegate delegate1 = createDelegate(accountId, "delegate1");
 
     List<Delegate> eligibleDelegateIds = Lists.newArrayList(delegate1);
-    when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
+    when(delegateCache.get(accountId, delegate1.getUuid())).thenReturn(delegate1);
     List<Delegate> delegateList = orderByTotalNumberOfTaskAssignedCriteria.getFilteredEligibleDelegateList(
         eligibleDelegateIds, TaskType.INITIALIZATION_PHASE, accountId);
     assertThat(delegateList.size()).isEqualTo(1);
@@ -131,11 +131,11 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
     Delegate delegate5 = createDelegate(accountId, "delegate3");
 
     List<Delegate> eligibleDelegateIds = Lists.newArrayList(delegate1, delegate2, delegate3, delegate4, delegate5);
-    when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
-    when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
-    when(delegateCache.get(accountId, delegate3.getUuid(), false)).thenReturn(delegate3);
-    when(delegateCache.get(accountId, delegate4.getUuid(), false)).thenReturn(delegate4);
-    when(delegateCache.get(accountId, delegate5.getUuid(), false)).thenReturn(delegate5);
+    when(delegateCache.get(accountId, delegate1.getUuid())).thenReturn(delegate1);
+    when(delegateCache.get(accountId, delegate2.getUuid())).thenReturn(delegate2);
+    when(delegateCache.get(accountId, delegate3.getUuid())).thenReturn(delegate3);
+    when(delegateCache.get(accountId, delegate4.getUuid())).thenReturn(delegate4);
+    when(delegateCache.get(accountId, delegate5.getUuid())).thenReturn(delegate5);
 
     createDelegateTaskWithStatusStarted(accountId, delegate1.getUuid());
     IntStream.range(0, 2).forEach(i -> createDelegateTaskWithStatusStarted(accountId, delegate2.getUuid()));
@@ -168,11 +168,11 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
     Delegate delegate5 = createDelegate(accountId, "delegate3");
 
     List<Delegate> eligibleDelegateIds = Lists.newArrayList(delegate1, delegate2, delegate3, delegate4, delegate5);
-    when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
-    when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
-    when(delegateCache.get(accountId, delegate3.getUuid(), false)).thenReturn(delegate3);
-    when(delegateCache.get(accountId, delegate4.getUuid(), false)).thenReturn(delegate4);
-    when(delegateCache.get(accountId, delegate5.getUuid(), false)).thenReturn(delegate5);
+    when(delegateCache.get(accountId, delegate1.getUuid())).thenReturn(delegate1);
+    when(delegateCache.get(accountId, delegate2.getUuid())).thenReturn(delegate2);
+    when(delegateCache.get(accountId, delegate3.getUuid())).thenReturn(delegate3);
+    when(delegateCache.get(accountId, delegate4.getUuid())).thenReturn(delegate4);
+    when(delegateCache.get(accountId, delegate5.getUuid())).thenReturn(delegate5);
 
     createDelegateTaskWithStatusStarted(accountId, delegate2.getUuid());
     IntStream.range(0, 2).forEach(i -> createDelegateTaskWithStatusStarted(accountId, delegate1.getUuid()));
@@ -199,11 +199,11 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
     Delegate delegate5 = createDelegate(accountId, "delegate5");
 
     List<Delegate> eligibleDelegateIds = Lists.newArrayList(delegate1, delegate2, delegate3, delegate4, delegate5);
-    when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
-    when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
-    when(delegateCache.get(accountId, delegate3.getUuid(), false)).thenReturn(delegate3);
-    when(delegateCache.get(accountId, delegate4.getUuid(), false)).thenReturn(delegate4);
-    when(delegateCache.get(accountId, delegate5.getUuid(), false)).thenReturn(delegate5);
+    when(delegateCache.get(accountId, delegate1.getUuid())).thenReturn(delegate1);
+    when(delegateCache.get(accountId, delegate2.getUuid())).thenReturn(delegate2);
+    when(delegateCache.get(accountId, delegate3.getUuid())).thenReturn(delegate3);
+    when(delegateCache.get(accountId, delegate4.getUuid())).thenReturn(delegate4);
+    when(delegateCache.get(accountId, delegate5.getUuid())).thenReturn(delegate5);
 
     createDelegateTaskWithStatusStartedWithStageId(accountId, delegate2.getUuid(), generateUuid());
     String stageId1 = generateUuid();
@@ -310,9 +310,9 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
     persistence.save(delegate3);
 
     List<Delegate> eligibleDelegateIds = Lists.newArrayList(delegate1, delegate2, delegate3);
-    when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
-    when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
-    when(delegateCache.get(accountId, delegate3.getUuid(), false)).thenReturn(delegate3);
+    when(delegateCache.get(accountId, delegate1.getUuid())).thenReturn(delegate1);
+    when(delegateCache.get(accountId, delegate2.getUuid())).thenReturn(delegate2);
+    when(delegateCache.get(accountId, delegate3.getUuid())).thenReturn(delegate3);
 
     createDelegateTaskWithStatusStarted(accountId, delegate1.getUuid());
     IntStream.range(0, 2).forEach(i -> createDelegateTaskWithStatusStarted(accountId, delegate2.getUuid()));
@@ -347,11 +347,11 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
     persistence.save(delegate5);
 
     List<Delegate> eligibleDelegateIds = Lists.newArrayList(delegate1, delegate2, delegate3, delegate4, delegate5);
-    when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
-    when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
-    when(delegateCache.get(accountId, delegate3.getUuid(), false)).thenReturn(delegate3);
-    when(delegateCache.get(accountId, delegate4.getUuid(), false)).thenReturn(delegate4);
-    when(delegateCache.get(accountId, delegate5.getUuid(), false)).thenReturn(delegate5);
+    when(delegateCache.get(accountId, delegate1.getUuid())).thenReturn(delegate1);
+    when(delegateCache.get(accountId, delegate2.getUuid())).thenReturn(delegate2);
+    when(delegateCache.get(accountId, delegate3.getUuid())).thenReturn(delegate3);
+    when(delegateCache.get(accountId, delegate4.getUuid())).thenReturn(delegate4);
+    when(delegateCache.get(accountId, delegate5.getUuid())).thenReturn(delegate5);
 
     createDelegateTaskWithStatusStarted(accountId, delegate1.getUuid());
     IntStream.range(0, 2).forEach(i -> createDelegateTaskWithStatusStarted(accountId, delegate2.getUuid()));
@@ -388,11 +388,11 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
     persistence.save(delegate5);
 
     List<Delegate> eligibleDelegateIds = Lists.newArrayList(delegate1, delegate2, delegate3, delegate4, delegate5);
-    when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
-    when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
-    when(delegateCache.get(accountId, delegate3.getUuid(), false)).thenReturn(delegate3);
-    when(delegateCache.get(accountId, delegate4.getUuid(), false)).thenReturn(delegate4);
-    when(delegateCache.get(accountId, delegate5.getUuid(), false)).thenReturn(delegate5);
+    when(delegateCache.get(accountId, delegate1.getUuid())).thenReturn(delegate1);
+    when(delegateCache.get(accountId, delegate2.getUuid())).thenReturn(delegate2);
+    when(delegateCache.get(accountId, delegate3.getUuid())).thenReturn(delegate3);
+    when(delegateCache.get(accountId, delegate4.getUuid())).thenReturn(delegate4);
+    when(delegateCache.get(accountId, delegate5.getUuid())).thenReturn(delegate5);
 
     createDelegateTaskWithStatusStartedWithStageId(accountId, delegate2.getUuid(), generateUuid());
     String stageId1 = generateUuid();
@@ -450,9 +450,9 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
     persistence.save(delegate3);
 
     List<Delegate> eligibleDelegateIds = Lists.newArrayList(delegate1, delegate2, delegate3);
-    when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
-    when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
-    when(delegateCache.get(accountId, delegate3.getUuid(), false)).thenReturn(delegate3);
+    when(delegateCache.get(accountId, delegate1.getUuid())).thenReturn(delegate1);
+    when(delegateCache.get(accountId, delegate2.getUuid())).thenReturn(delegate2);
+    when(delegateCache.get(accountId, delegate3.getUuid())).thenReturn(delegate3);
 
     createDelegateTaskWithStatusStarted(accountId, delegate1.getUuid());
     IntStream.range(0, 2).forEach(i -> createDelegateTaskWithStatusStarted(accountId, delegate2.getUuid()));
@@ -481,11 +481,11 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
     persistence.save(delegate5);
 
     List<Delegate> eligibleDelegateIds = Lists.newArrayList(delegate1, delegate2, delegate3, delegate4, delegate5);
-    when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
-    when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
-    when(delegateCache.get(accountId, delegate3.getUuid(), false)).thenReturn(delegate3);
-    when(delegateCache.get(accountId, delegate4.getUuid(), false)).thenReturn(delegate4);
-    when(delegateCache.get(accountId, delegate5.getUuid(), false)).thenReturn(delegate5);
+    when(delegateCache.get(accountId, delegate1.getUuid())).thenReturn(delegate1);
+    when(delegateCache.get(accountId, delegate2.getUuid())).thenReturn(delegate2);
+    when(delegateCache.get(accountId, delegate3.getUuid())).thenReturn(delegate3);
+    when(delegateCache.get(accountId, delegate4.getUuid())).thenReturn(delegate4);
+    when(delegateCache.get(accountId, delegate5.getUuid())).thenReturn(delegate5);
 
     createDelegateTaskWithStatusStarted(accountId, delegate1.getUuid());
     IntStream.range(0, 2).forEach(i -> createDelegateTaskWithStatusStarted(accountId, delegate2.getUuid()));

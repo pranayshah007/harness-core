@@ -282,7 +282,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
     for (DelegateScopeTestData test : tests) {
       Delegate delegate =
           delegateBuilder.includeScopes(test.getIncludeScopes()).excludeScopes(test.getExcludeScopes()).build();
-      when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID", false)).thenReturn(delegate);
+      when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID")).thenReturn(delegate);
 
       assertThat(assignDelegateService.canAssign("DELEGATE_ID", delegateTaskBuilder.build()))
           .isEqualTo(test.isAssignable());
@@ -312,7 +312,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                             .includeScopes(ImmutableList.of(
                                 DelegateScope.builder().applications(ImmutableList.of("APPLICATION_ID")).build()))
                             .build();
-    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID", false)).thenReturn(delegate);
+    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID")).thenReturn(delegate);
     when(featureFlagService.isEnabled(any(), anyString())).thenReturn(true);
 
     assertThat(assignDelegateService.canAssign("DELEGATE_ID", delegateTaskBuilder.build())).isEqualTo(true);
@@ -321,7 +321,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                    .includeScopes(ImmutableList.of(
                        DelegateScope.builder().environments(ImmutableList.of("ENVIRONMENT_ID")).build()))
                    .build();
-    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID", false)).thenReturn(delegate);
+    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID")).thenReturn(delegate);
 
     delegateTaskBuilder.setupAbstraction("envId", SCOPE_WILDCARD);
 
@@ -351,7 +351,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                             .excludeScopes(ImmutableList.of(
                                 DelegateScope.builder().applications(ImmutableList.of("APPLICATION_ID")).build()))
                             .build();
-    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID", false)).thenReturn(delegate);
+    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID")).thenReturn(delegate);
     when(featureFlagService.isEnabled(any(), anyString())).thenReturn(true);
 
     assertThat(assignDelegateService.canAssign("DELEGATE_ID", delegateTaskBuilder.build())).isEqualTo(true);
@@ -360,7 +360,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                    .excludeScopes(ImmutableList.of(
                        DelegateScope.builder().environments(ImmutableList.of("ENVIRONMENT_ID")).build()))
                    .build();
-    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID", false)).thenReturn(delegate);
+    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID")).thenReturn(delegate);
 
     delegateTaskBuilder.setupAbstraction("enviId", SCOPE_WILDCARD);
 
@@ -638,7 +638,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
             .build();
 
     for (DelegateProfileScopeTestData test : tests) {
-      when(delegateCache.get(accountId, test.getDelegate().getUuid(), false)).thenReturn(test.getDelegate());
+      when(delegateCache.get(accountId, test.getDelegate().getUuid())).thenReturn(test.getDelegate());
 
       DelegateProfile delegateProfile = DelegateProfile.builder()
                                             .uuid(test.getDelegate().getDelegateProfileId())
@@ -666,7 +666,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                                                   .delegateProfileId(generateUuid())
                                                   .supportedTaskTypes(Arrays.asList(TaskType.HTTP.name()))
                                                   .build();
-    when(delegateCache.get(accountId, delegateWithNonExistingProfile.getUuid(), false))
+    when(delegateCache.get(accountId, delegateWithNonExistingProfile.getUuid()))
         .thenReturn(delegateWithNonExistingProfile);
     assertThat(assignDelegateService.canAssign(delegateWithNonExistingProfile.getUuid(),
                    DelegateTask.builder()
@@ -857,7 +857,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
 
     for (TagTestData test : tests) {
       Delegate delegate = delegateBuilder.tags(test.getDelegateTags()).build();
-      when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID", false)).thenReturn(delegate);
+      when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID")).thenReturn(delegate);
       when(delegateService.retrieveDelegateSelectors(delegate, true))
           .thenReturn(delegate.getTags() == null ? new HashSet<>() : new HashSet<>(test.getDelegateTags()));
 
@@ -871,7 +871,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
 
     for (TagTestData test : tests) {
       Delegate delegate = delegateBuilder.tags(test.getDelegateTags()).build();
-      when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID", false)).thenReturn(delegate);
+      when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID")).thenReturn(delegate);
       when(delegateService.retrieveDelegateSelectors(delegate, true))
           .thenReturn(delegate.getTags() == null ? new HashSet<>() : new HashSet<>(test.getDelegateTags()));
 
