@@ -28,7 +28,7 @@ go_library(
         "//product/log-service/store/bolt",
         "//product/log-service/stream",
         "//product/platform/client",
-        "@com_github_aws_aws_sdk_go_v2//service/s3/types",
+        "@com_github_aws_aws_sdk_go_v2_service_s3//types",
         "@com_github_cenkalti_backoff_v4//:backoff",
         "@com_github_dchest_authcookie//:authcookie",
         "@com_github_go_chi_chi//:chi",
