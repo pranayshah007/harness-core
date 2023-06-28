@@ -29,35 +29,5 @@ public class FreezeNotificationTemplateRegistrar implements Runnable {
 
   @Override
   public void run() {
-    try {
-      int timout = 1;
-      List<PredefinedTemplate> templates =
-          new ArrayList<>(Arrays.asList(PredefinedTemplate.FREEZE_EMAIL_ALERT, PredefinedTemplate.FREEZE_SLACK_ALERT,
-              PredefinedTemplate.FREEZE_MSTEAMS_ALERT, PredefinedTemplate.FREEZE_PD_ALERT,
-              PredefinedTemplate.PIPELINE_REJECTED_PD_ALERT, PredefinedTemplate.PIPELINE_REJECTED_EMAIL_ALERT,
-              PredefinedTemplate.PIPELINE_REJECTED_SLACK_ALERT, PredefinedTemplate.PIPELINE_REJECTED_MSTEAMS_ALERT));
-      while (true) {
-        List<PredefinedTemplate> unprocessedTemplate = new ArrayList<>();
-        for (PredefinedTemplate template : templates) {
-          log.info("Registering {} with NotificationService", template);
-          try {
-            notificationClient.saveNotificationTemplate(Team.PIPELINE, template, true);
-          } catch (Exception ex) {
-            log.error(String.format("Unable to register template with id: %s", template.getIdentifier()), ex);
-            unprocessedTemplate.add(template);
-          }
-        }
-        if (unprocessedTemplate.isEmpty()) {
-          break;
-        }
-
-        Thread.sleep(timout);
-
-        timout *= 10;
-        templates = unprocessedTemplate;
-      }
-    } catch (InterruptedException e) {
-      log.error("", e);
-    }
   }
 }
