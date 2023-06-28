@@ -7,12 +7,15 @@
 
 package io.harness.delegate.service.core.litek8s;
 
+import static io.harness.rule.OwnerRule.MARKO;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import io.harness.category.element.UnitTests;
+import io.harness.rule.Owner;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -25,6 +28,7 @@ import io.kubernetes.client.openapi.models.V1ServiceList;
 import java.util.Arrays;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -45,6 +49,8 @@ public class InfraCleanerTest {
   }
 
   @Test
+  @Owner(developers = MARKO)
+  @Category(UnitTests.class)
   public void testDeleteSecrets() throws ApiException {
     final String secretName1 = "secretName1";
     final String secretName2 = "secretName2";
@@ -62,6 +68,8 @@ public class InfraCleanerTest {
   }
 
   @Test
+  @Owner(developers = MARKO)
+  @Category(UnitTests.class)
   public void testDeleteSecretsWhenNoSecretsFound() throws ApiException {
     when(coreApi.listNamespacedSecret(NAMESPACE, null, null, null, null, LABEL_SELECTOR, null, null, null, null, null))
         .thenReturn(createSecrets());
@@ -74,6 +82,8 @@ public class InfraCleanerTest {
   }
 
   @Test
+  @Owner(developers = MARKO)
+  @Category(UnitTests.class)
   public void testDeleteSecretsWhenApiException() throws ApiException {
     when(coreApi.listNamespacedSecret(NAMESPACE, null, null, null, null, LABEL_SELECTOR, null, null, null, null, null))
         .thenThrow(ApiException.class);
@@ -85,6 +95,8 @@ public class InfraCleanerTest {
   }
 
   @Test
+  @Owner(developers = MARKO)
+  @Category(UnitTests.class)
   public void testDeletePod() throws ApiException {
     final String podName = "podName";
 
@@ -99,6 +111,8 @@ public class InfraCleanerTest {
   }
 
   @Test
+  @Owner(developers = MARKO)
+  @Category(UnitTests.class)
   public void testDeletePodsWhenNoPodFound() throws ApiException {
     when(coreApi.listNamespacedPod(NAMESPACE, null, null, null, null, LABEL_SELECTOR, null, null, null, null, null))
         .thenReturn(createPods());
@@ -110,6 +124,8 @@ public class InfraCleanerTest {
   }
 
   @Test
+  @Owner(developers = MARKO)
+  @Category(UnitTests.class)
   public void testDeletePodsWhenApiException() throws ApiException {
     when(coreApi.listNamespacedPod(NAMESPACE, null, null, null, null, LABEL_SELECTOR, null, null, null, null, null))
         .thenThrow(ApiException.class);
@@ -119,6 +135,8 @@ public class InfraCleanerTest {
     verifyNoMoreInteractions(coreApi);
   }
   @Test
+  @Owner(developers = MARKO)
+  @Category(UnitTests.class)
   public void testDeleteServices() throws ApiException {
     final String serviceName1 = "serviceName1";
     final String serviceName2 = "serviceName2";
@@ -136,6 +154,8 @@ public class InfraCleanerTest {
   }
 
   @Test
+  @Owner(developers = MARKO)
+  @Category(UnitTests.class)
   public void testDeleteServicesWhenNoServicesFound() throws ApiException {
     when(coreApi.listNamespacedService(NAMESPACE, null, null, null, null, LABEL_SELECTOR, null, null, null, null, null))
         .thenReturn(createServices());
@@ -148,6 +168,8 @@ public class InfraCleanerTest {
   }
 
   @Test
+  @Owner(developers = MARKO)
+  @Category(UnitTests.class)
   public void testDeleteServicesWhenApiException() throws ApiException {
     when(coreApi.listNamespacedService(NAMESPACE, null, null, null, null, LABEL_SELECTOR, null, null, null, null, null))
         .thenThrow(ApiException.class);

@@ -9,7 +9,6 @@ package io.harness.delegate.service.core.litek8s;
 
 import static io.harness.delegate.service.core.litek8s.ContainerFactory.RESERVED_LE_PORT;
 import static io.harness.delegate.service.core.util.K8SConstants.DELEGATE_FIELD_MANAGER;
-import static io.harness.delegate.service.core.util.LabelHelper.getTaskGroupSelector;
 
 import static java.util.stream.Collectors.flatMapping;
 import static java.util.stream.Collectors.groupingBy;
