@@ -62,7 +62,7 @@ public class DelegateDao {
       query.filter(DelegateKeys.version, version);
     }
     if (enableRedisForDelegateService) {
-      return isDelegateHeartBeatExpired(delegateCache.get(accountId, delegateId), EXPIRY_TIME.toMillis());
+      return isDelegateHeartBeatUpToDate(delegateCache.get(accountId, delegateId), EXPIRY_TIME.toMillis());
     }
     return query.field(DelegateKeys.lastHeartBeat)
                .greaterThan(currentTimeMillis() - EXPIRY_TIME.toMillis())
@@ -85,7 +85,7 @@ public class DelegateDao {
 
   public boolean checkDelegateLiveness(String accountId, String delegateId) {
     if (enableRedisForDelegateService) {
-      return isDelegateHeartBeatExpired(delegateCache.get(accountId, delegateId), EXPIRY_TIME.toMillis());
+      return isDelegateHeartBeatUpToDate(delegateCache.get(accountId, delegateId), EXPIRY_TIME.toMillis());
     }
 
     Query<Delegate> query = persistence.createQuery(Delegate.class)
@@ -154,7 +154,7 @@ public class DelegateDao {
     return delegate.getLastHeartBeat();
   }
 
-  public boolean isDelegateHeartBeatExpired(String delegateId, String accountId, long maxExpiry) {
+  public boolean isDelegateHeartBeatUpToDate(String delegateId, String accountId, long maxExpiry) {
     Delegate delegateFromCache = delegateCache.get(accountId, delegateId);
     if (delegateFromCache == null) {
       return true;
@@ -162,7 +162,7 @@ public class DelegateDao {
     return delegateFromCache.getLastHeartBeat() >= (currentTimeMillis() - maxExpiry);
   }
 
-  public boolean isDelegateHeartBeatExpired(Delegate delegate, long maxExpiry) {
+  public boolean isDelegateHeartBeatUpToDate(Delegate delegate, long maxExpiry) {
     long delegateHeartBeat = delegate.getLastHeartBeat();
     if (enableRedisForDelegateService) {
       Delegate delegateFromCache = delegateCache.get(delegate.getAccountId(), delegate.getUuid());

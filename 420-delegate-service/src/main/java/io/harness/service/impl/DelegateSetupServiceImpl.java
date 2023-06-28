@@ -447,7 +447,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
         groupDelegates.stream()
             .map(delegate -> {
               boolean isDelegateConnected =
-                  delegateDao.isDelegateHeartBeatExpired(delegate, HEARTBEAT_EXPIRY_TIME_FIVE_MINS.toMillis());
+                  delegateDao.isDelegateHeartBeatUpToDate(delegate, HEARTBEAT_EXPIRY_TIME_FIVE_MINS.toMillis());
               countOfDelegatesConnected.addAndGet(isDelegateConnected ? 1 : 0);
 
               String delegateTokenName = delegate.getDelegateTokenName();
@@ -618,7 +618,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
         groupDelegates.stream()
             .map(delegate -> {
               boolean isDelegateConnected =
-                  delegateDao.isDelegateHeartBeatExpired(delegate, HEARTBEAT_EXPIRY_TIME_FIVE_MINS.toMillis());
+                  delegateDao.isDelegateHeartBeatUpToDate(delegate, HEARTBEAT_EXPIRY_TIME_FIVE_MINS.toMillis());
               return DelegateListResponse.DelegateReplica.builder()
                   .uuid(delegate.getUuid())
                   .lastHeartbeat(delegate.getLastHeartBeat())
@@ -715,13 +715,13 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
       List<Delegate> delegateList, DelegateFilterPropertiesDTO filterProperties) {
     if (filterProperties.getStatus().equals(DelegateInstanceConnectivityStatus.DISCONNECTED)) {
       return delegateList.stream()
-          .filter(
-              delegate -> delegateDao.isDelegateHeartBeatExpired(delegate, HEARTBEAT_EXPIRY_TIME_FIVE_MINS.toMillis()))
+          .filter(delegate
+              -> !delegateDao.isDelegateHeartBeatUpToDate(delegate, HEARTBEAT_EXPIRY_TIME_FIVE_MINS.toMillis()))
           .collect(toList());
     } else if (filterProperties.getStatus().equals(DelegateInstanceConnectivityStatus.CONNECTED)) {
       return delegateList.stream()
           .filter(
-              delegate -> delegateDao.isDelegateHeartBeatExpired(delegate, HEARTBEAT_EXPIRY_TIME_FIVE_MINS.toMillis()))
+              delegate -> delegateDao.isDelegateHeartBeatUpToDate(delegate, HEARTBEAT_EXPIRY_TIME_FIVE_MINS.toMillis()))
           .collect(toList());
     }
     return delegateList;
