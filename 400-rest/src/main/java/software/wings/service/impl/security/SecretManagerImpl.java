@@ -813,18 +813,19 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
   @Override
   public String fetchSecretValue(String accountId, String secretRecordId) {
     // this flow doesn't need any permission as it's used only internally to fetch encrypted records
-    Optional<EncryptedData> encryptedDataOptional = secretsDao.getSecretById(accountId, secretRecordId);
+    /*Optional<EncryptedData> encryptedDataOptional = secretsDao.getSecretById(accountId, secretRecordId);
     if (encryptedDataOptional.isEmpty()){
       log.error("[jen]: unable to find encrypted data");
-    }
-    log.error("[jen] Encrypted id account id {}", encryptedDataOptional.get().getAccountId());
-    log.error("[jen] :Encrypted id kms id {}", encryptedDataOptional.get().getKmsId());
-    log.error("[jen]: Encryption type {}", encryptedDataOptional.get().getEncryptionType());
-    log.error("[jen]: Encryption val {}", encryptedDataOptional.get().getEncryptedValue());
+    }*/
 
-    log.error("[jen]: Value is ",  String.valueOf(secretService.fetchSecretValue(encryptedDataOptional.get())));
-    return encryptedDataOptional.map(encryptedData -> String.valueOf(secretService.fetchSecretValue(encryptedData)))
-        .orElse(EMPTY);
+    EncryptedData encryptedData = getSecretById(accountId, secretRecordId);
+    log.error("[jen] Encrypted id account id {}", encryptedData.getAccountId());
+    log.error("[jen] :Encrypted id kms id {}", encryptedData.getKmsId());
+    log.error("[jen]: Encryption type {}", encryptedData.getEncryptionType());
+    log.error("[jen]: Encryption val {}", encryptedData.getEncryptedValue());
+
+    log.error("[jen]: Value is ", String.valueOf(secretService.fetchSecretValue(encryptedData)));
+    return String.valueOf(secretService.fetchSecretValue(encryptedData));
   }
 
   @Override
