@@ -664,11 +664,7 @@ public enum FeatureName {
   SPG_NEW_DEPLOYMENT_FREEZE_EXCLUSIONS(
       "Flag to support deployment freeze exclusions. Depends on NEW_DEPLOYMENT_FREEZE", HarnessTeam.SPG),
   SPG_OPTIMIZE_PIPELINE_QUERY_ON_AUTH("Optimizes auth on pipelines making the query more efficient.", HarnessTeam.SPG),
-  SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING(
-      "Make the workflowExecutions listing better providing appId for children ids", HarnessTeam.SPG),
   SPG_PIPELINE_ROLLBACK("Enables pipeline rollback on failure option", HarnessTeam.SPG),
-  SPG_REDUCE_KEYWORDS_PERSISTENCE_ON_EXECUTIONS(
-      "Gradually reducing the amount of keywords being stored on workflow executions", HarnessTeam.SPG),
   SPG_REMOVE_REDUNDANT_UPDATE_IN_AUDIT("It removes a redudant update on the audit", HarnessTeam.SPG),
   SPG_REMOVE_RESTRICTION_APPS_UNNECESSARY_CALLS(
       "Unnecessary restriction apps calls are not called from UI", HarnessTeam.SPG),

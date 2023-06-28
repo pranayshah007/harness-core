@@ -8,7 +8,6 @@
 package software.wings.graphql.datafetcher.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.beans.FeatureName.SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -40,7 +39,6 @@ import software.wings.security.annotations.AuthRule;
 import software.wings.service.intfc.AppService;
 
 import com.google.inject.Inject;
-import com.mongodb.BasicDBObject;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import graphql.schema.DataFetchingEnvironment;
@@ -90,13 +88,8 @@ public class ExecutionConnectionDataFetcher
       query.field(WorkflowExecutionKeys.pipelineExecutionId).doesNotExist();
     }
 
-    BasicDBObject hint = null;
-    if (featureFlagService.isEnabled(SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING, getAccountId())) {
-      hint = executionQueryHelper.getIndexHint(filters);
-    }
-
     QLExecutionConnectionBuilder connectionBuilder = QLExecutionConnection.builder();
-    connectionBuilder.pageInfo(utils.populate(pageQueryParameters, query, hint, execution -> {
+    connectionBuilder.pageInfo(utils.populate(pageQueryParameters, query, null, execution -> {
       if (execution.getWorkflowType() == WorkflowType.PIPELINE) {
         final QLPipelineExecutionBuilder builder = QLPipelineExecution.builder();
         pipelineExecutionController.populatePipelineExecution(execution, builder);
@@ -123,26 +116,9 @@ public class ExecutionConnectionDataFetcher
 
   private List<QLExecutionFilter> addAppIdValidation(List<QLExecutionFilter> filters) {
     List<QLExecutionFilter> updatedFilters = filters != null ? new ArrayList<>(filters) : new ArrayList<>();
-    boolean appIdFilterFound = false;
     if (featureFlagService.isEnabled(FeatureName.GRAPHQL_WORKFLOW_EXECUTION_OPTIMIZATION, getAccountId())) {
       validateQlExecutionFiltersWhenOnlyOneAppIsAllowed(filters);
       return filters;
-    }
-    if (isNotEmpty(filters)) {
-      for (QLExecutionFilter filter : filters) {
-        if (filter.getApplication() != null) {
-          appIdFilterFound = true;
-          break;
-        }
-      }
-    }
-
-    if (!appIdFilterFound) {
-      List<String> appIds = appService.getAppIdsByAccountId(super.getAccountId());
-      updatedFilters.add(
-          QLExecutionFilter.builder()
-              .application(QLIdFilter.builder().operator(QLIdOperator.IN).values(appIds.toArray(new String[0])).build())
-              .build());
     }
 
     return updatedFilters;
