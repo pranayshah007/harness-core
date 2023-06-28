@@ -276,8 +276,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
         scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmGetFileByBranchRequestDTO.getConnectorRef(),
         scmGetFileByBranchRequestDTO.getRepoName());
 
-    Optional<ScmGetFileResponseDTO> getFileResponseDTOOptional =
-        getFileCacheResponseIfApplicable(scmGetFileByBranchRequestDTO, scmConnector);
+    Optional<ScmGetFileResponseDTO> getFileResponseDTOOptional = getFileCacheResponseIfApplicable(
+        scmGetFileByBranchRequestDTO, scmConnector, scmGetFileByBranchRequestDTO.getBranchName());
     if (getFileResponseDTOOptional.isPresent()) {
       return getFileResponseDTOOptional.get();
     }
@@ -372,7 +372,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
         scmGetFileByBranchRequestDTO.getRepoName(), requestBranch);
 
     Optional<ScmGetFileResponseDTO> getFileResponseDTOOptional =
-        getFileCacheResponseIfApplicable(scmGetFileByBranchRequestDTO, scmConnector);
+        getFileCacheResponseIfApplicable(scmGetFileByBranchRequestDTO, scmConnector, resolvedBranch);
     if (getFileResponseDTOOptional.isPresent()) {
       return getFileResponseDTOOptional.get();
     }
@@ -430,7 +430,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
           GetBatchFileRequestIdentifier identifier =
               GetBatchFileRequestIdentifier.builder().identifier(requestIdentifier.getIdentifier()).build();
           Optional<ScmGetFileResponseDTO> optionalScmGetFileResponseDTO =
-              getFileCacheResponseIfApplicable(scmGetFileByBranchRequestDTO, scmConnector);
+              getFileCacheResponseIfApplicable(scmGetFileByBranchRequestDTO, scmConnector, resolvedBranch);
           if (optionalScmGetFileResponseDTO.isPresent()) {
             cachedScmGetFileResponseMap.put(
                 requestIdentifier, optionalScmGetFileResponseDTO.get().toScmGetFileResponseV2DTO());
@@ -887,14 +887,14 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   }
 
   private GitFileCacheKey getCacheKey(
-      ScmGetFileByBranchRequestDTO scmGetFileByBranchRequestDTO, ScmConnector scmConnector) {
+      ScmGetFileByBranchRequestDTO scmGetFileByBranchRequestDTO, ScmConnector scmConnector, String resolvedBranch) {
     return GitFileCacheKey.builder()
         .accountIdentifier(scmGetFileByBranchRequestDTO.getScope().getAccountIdentifier())
         .completeFilePath(scmGetFileByBranchRequestDTO.getFilePath())
         .repoName(scmGetFileByBranchRequestDTO.getRepoName())
         .gitProvider(GitProviderUtils.getGitProvider(scmConnector))
-        .ref(scmGetFileByBranchRequestDTO.getBranchName())
-        .isDefaultBranch(isEmpty(scmGetFileByBranchRequestDTO.getBranchName()))
+        .ref(resolvedBranch)
+        .isDefaultBranch(isEmpty(resolvedBranch))
         .build();
   }
 
@@ -910,9 +910,9 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   }
 
   private Optional<ScmGetFileResponseDTO> getFileCacheResponseIfApplicable(
-      ScmGetFileByBranchRequestDTO scmGetFileByBranchRequestDTO, ScmConnector scmConnector) {
+      ScmGetFileByBranchRequestDTO scmGetFileByBranchRequestDTO, ScmConnector scmConnector, String resolvedBranch) {
     if (scmGetFileByBranchRequestDTO.isUseCache()) {
-      GitFileCacheKey cacheKey = getCacheKey(scmGetFileByBranchRequestDTO, scmConnector);
+      GitFileCacheKey cacheKey = getCacheKey(scmGetFileByBranchRequestDTO, scmConnector, resolvedBranch);
       GitFileCacheResponse gitFileCacheResponse = getFileFromCache(cacheKey);
       if (gitFileCacheResponse != null) {
         log.info("CACHE HIT for cacheKey : {}", cacheKey);
