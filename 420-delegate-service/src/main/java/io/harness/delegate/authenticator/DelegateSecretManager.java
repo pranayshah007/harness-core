@@ -56,11 +56,7 @@ public abstract class DelegateSecretManager {
       log.error("[jen] :secret value : ",fetchSecretValue(delegateToken.getAccountId(), delegateToken.getEncryptedTokenId()));
       log.error("[jen] :Decoded secret value : ",fetchSecretValue(delegateToken.getAccountId(), delegateToken.getEncryptedTokenId()));
     }
-
-
-    return delegateToken.isNg()
-        ? decodeBase64ToString(fetchSecretValue(delegateToken.getAccountId(), delegateToken.getEncryptedTokenId()))
-        : fetchSecretValue(delegateToken.getAccountId(), delegateToken.getEncryptedTokenId());
+    return fetchSecretValue(delegateToken.getAccountId(), delegateToken.getEncryptedTokenId());
   }
 
   protected abstract String fetchSecretValue(String accountId, String ecryptedTokenId);

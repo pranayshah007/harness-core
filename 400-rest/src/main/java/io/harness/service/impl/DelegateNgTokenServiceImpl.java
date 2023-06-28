@@ -297,7 +297,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
                                                                   .status(delegateToken.getStatus());
 
     if (includeTokenValue) {
-      delegateTokenDetailsBuilder.value(delegateSecretManager.getBase64EncodedTokenValue(delegateToken));
+      delegateTokenDetailsBuilder.value(delegateSecretManager.decrypt(delegateToken));
     }
 
     if (delegateToken.getOwner() != null) {
