@@ -23,6 +23,7 @@ import io.harness.cdng.artifact.resources.docker.dtos.DockerRequestDTO;
 import io.harness.cdng.artifact.resources.docker.dtos.DockerResponseDTO;
 import io.harness.cdng.artifact.resources.docker.service.DockerResourceService;
 import io.harness.common.NGExpressionUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
@@ -111,7 +112,11 @@ public class DockerArtifactResource {
         tagRegex = dockerHubArtifactConfig.getTag().getInputSetValidator().getParameters();
       }
     }
-
+    String inputTagRegex = artifactResourceUtils.getInputTagRegex(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml, fqnPath, gitEntityBasicInfo);
+    if (EmptyPredicate.isNotEmpty(inputTagRegex)) {
+      tagRegex = inputTagRegex;
+    }
     dockerConnectorIdentifier = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, dockerConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
 

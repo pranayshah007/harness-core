@@ -22,6 +22,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.ResourceTypeConstants;
 import io.harness.beans.IdentifierRef;
+import io.harness.beans.InputSetValidatorType;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
@@ -64,6 +65,7 @@ import io.harness.cdng.artifact.resources.nexus.service.NexusResourceService;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.algorithm.HashGenerator;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.azure.AcrBuildDetailsDTO;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.evaluators.CDExpressionEvaluator;
@@ -228,6 +230,27 @@ public class ArtifactResourceUtils {
         return imageParameter.getValue();
       }
     }
+  }
+
+  public String getInputTagRegex(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String runtimeInputYaml, String fqnPath, GitEntityFindInfoDTO gitEntityBasicInfo) {
+    String tagRegex = null;
+    String mergedCompleteYaml = getMergedCompleteYaml(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml, gitEntityBasicInfo);
+    String[] split = fqnPath.split("\\.");
+    String stageIdentifier = split[2];
+    YamlConfig yamlConfig = new YamlConfig(mergedCompleteYaml);
+    Map<FQN, Object> fqnObjectMap = yamlConfig.getFqnToValueMap();
+    EntityRefAndFQN serviceRefAndFQN = getEntityRefAndFQN(fqnObjectMap, stageIdentifier, YamlTypes.TAG);
+    String inputTag = serviceRefAndFQN.getEntityRef();
+    final ParameterField<String> inputTagParameterField =
+        RuntimeInputValuesValidator.getInputSetParameterField(inputTag);
+    if (inputTagParameterField != null && inputTagParameterField.getExpressionValue() != null
+        && inputTagParameterField.getInputSetValidator() != null
+        && inputTagParameterField.getInputSetValidator().getValidatorType() == InputSetValidatorType.REGEX) {
+      tagRegex = inputTagParameterField.getInputSetValidator().getParameters();
+    }
+    return tagRegex;
   }
 
   @Nullable
