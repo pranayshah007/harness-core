@@ -22,8 +22,8 @@ import (
 	"github.com/go-co-op/gocron"
 	// TODO (vistaar): Move to redis v8. v8 accepts ctx in all calls.
 	// There is some bazel issue with otel library with v8, need to move it once that is resolved.
-	"github.com/go-redis/redis/v7"
 	"github.com/pkg/errors"
+	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 )
 
@@ -120,28 +120,28 @@ func (r *Redis) Create(ctx context.Context, key string) error {
 	// macro node. MaxLen will always be >= 5000 but can be a few tens of entries
 	// more as well.
 	args := &redis.XAddArgs{
-		Stream:       key,
-		ID:           "*",
-		MaxLenApprox: maxStreamSize,
-		Values:       map[string]interface{}{entryKey: []byte{}},
+		Stream: key,
+		ID:     "*",
+		MaxLen: maxStreamSize,
+		Values: map[string]interface{}{entryKey: []byte{}},
 	}
-	resp := r.Client.XAdd(args)
+	resp := r.Client.XAdd(ctx, args)
 	if err := resp.Err(); err != nil {
 		return errors.Wrap(err, fmt.Sprintf("could not create stream with key: %s", key))
 	}
 
-	r.setExpiry(key, defaultKeyExpiryTimeSeconds*time.Second)
+	r.setExpiry(ctx, key, defaultKeyExpiryTimeSeconds*time.Second)
 	return nil
 }
 
 // Delete deletes a stream
 func (r *Redis) Delete(ctx context.Context, key string) error {
-	exists := r.Client.Exists(key)
+	exists := r.Client.Exists(ctx, key)
 	if exists.Err() != nil || exists.Val() == 0 {
 		return stream.ErrNotFound
 	}
 
-	resp := r.Client.Del(key)
+	resp := r.Client.Del(ctx, key)
 	if err := resp.Err(); err != nil {
 		return errors.Wrap(err, fmt.Sprintf("could not delete stream with key: %s", key))
 	}
@@ -151,7 +151,7 @@ func (r *Redis) Delete(ctx context.Context, key string) error {
 // Write writes information into the Redis stream
 func (r *Redis) Write(ctx context.Context, key string, lines ...*stream.Line) error {
 	var werr error
-	exists := r.Client.Exists(key)
+	exists := r.Client.Exists(ctx, key)
 	if exists.Err() != nil || exists.Val() == 0 {
 		return stream.ErrNotFound
 	}
@@ -160,18 +160,18 @@ func (r *Redis) Write(ctx context.Context, key string, lines ...*stream.Line) er
 	for _, line := range lines {
 		bytes, _ := json.Marshal(line)
 		arg := &redis.XAddArgs{
-			Stream:       key,
-			Values:       map[string]interface{}{entryKey: bytes},
-			MaxLenApprox: maxStreamSize,
-			ID:           "*",
+			Stream: key,
+			Values: map[string]interface{}{entryKey: bytes},
+			MaxLen: maxStreamSize,
+			ID:     "*",
 		}
-		resp := r.Client.XAdd(arg)
+		resp := r.Client.XAdd(ctx, arg)
 		if err := resp.Err(); err != nil {
 			werr = fmt.Errorf("could not write to stream with key: %s. Error: %s", key, err)
 		}
 	}
 
-	r.setExpiry(key, defaultKeyExpiryTimeSeconds*time.Second)
+	r.setExpiry(ctx, key, defaultKeyExpiryTimeSeconds*time.Second)
 	return werr
 }
 
@@ -180,7 +180,7 @@ func (r *Redis) Write(ctx context.Context, key string, lines ...*stream.Line) er
 func (r *Redis) Tail(ctx context.Context, key string) (<-chan *stream.Line, <-chan error) {
 	handler := make(chan *stream.Line, bufferSize)
 	err := make(chan error, 1)
-	exists := r.Client.Exists(key)
+	exists := r.Client.Exists(ctx, key)
 	if exists.Err() != nil || exists.Val() == 0 {
 		return nil, nil
 	}
@@ -203,7 +203,7 @@ func (r *Redis) Tail(ctx context.Context, key string) (<-chan *stream.Line, <-ch
 					Block:   readPollTime, // periodically check for ctx.Done
 				}
 
-				resp := r.Client.XRead(args)
+				resp := r.Client.XRead(ctx, args)
 				if resp.Err() != nil && resp.Err() != redis.Nil { // resp.Err() is sometimes set to "redis: nil" instead of nil
 					logrus.WithError(resp.Err()).Errorln("received error on redis read call")
 					err <- resp.Err()
@@ -237,7 +237,7 @@ func (r *Redis) Tail(ctx context.Context, key string) (<-chan *stream.Line, <-ch
 
 // Exists checks whether the key exists in the stream
 func (r *Redis) Exists(ctx context.Context, key string) error {
-	exists := r.Client.Exists(key)
+	exists := r.Client.Exists(ctx, key)
 	if exists.Err() != nil || exists.Val() == 0 {
 		return stream.ErrNotFound
 	}
@@ -260,7 +260,7 @@ func (r *Redis) ListPrefix(ctx context.Context, prefix string) ([]string, error)
 		var keys []string
 		var err error
 		// Scan keys in batches of size scanBatch at a time
-		keys, cursor, err = r.Client.Scan(cursor, prefix, scanBatch).Result()
+		keys, cursor, err = r.Client.Scan(ctx, cursor, prefix, scanBatch).Result()
 		if err != nil {
 			return l, err
 		}
@@ -282,7 +282,7 @@ func (r *Redis) ListPrefix(ctx context.Context, prefix string) ([]string, error)
 // CopyTo copies the contents from the redis stream to the writer
 func (r *Redis) CopyTo(ctx context.Context, key string, wc io.WriteCloser) error {
 	defer wc.Close()
-	exists := r.Client.Exists(key)
+	exists := r.Client.Exists(ctx, key)
 	if exists.Err() != nil || exists.Val() == 0 {
 		return stream.ErrNotFound
 	}
@@ -293,7 +293,7 @@ func (r *Redis) CopyTo(ctx context.Context, key string, wc io.WriteCloser) error
 		Block:   readPollTime, // periodically check for ctx.Done
 	}
 
-	resp := r.Client.XRead(args)
+	resp := r.Client.XRead(ctx, args)
 	if resp.Err() != nil && resp.Err() != redis.Nil { // resp.Err() is sometimes set to "redis: nil" instead of nil
 		logrus.WithError(resp.Err()).Errorln("received error on redis read call")
 		return resp.Err()
@@ -318,7 +318,7 @@ func (r *Redis) CopyTo(ctx context.Context, key string, wc io.WriteCloser) error
 }
 
 func (r *Redis) Ping(ctx context.Context) error {
-	_, err := r.Client.Ping().Result()
+	_, err := r.Client.Ping(ctx).Result()
 	if err != nil {
 		return err
 	}
@@ -329,18 +329,18 @@ func (r *Redis) Ping(ctx context.Context) error {
 // NOTE: This is super slow for Redis and hogs up all the resources.
 // TODO: (vistaar) Return only top x entries
 func (r *Redis) Info(ctx context.Context) *stream.Info {
-	resp := r.Client.Keys("*") // Get all keys
+	resp := r.Client.Keys(ctx, "*") // Get all keys
 	info := &stream.Info{
 		Streams: map[string]stream.Stats{},
 	}
 	for _, key := range resp.Val() {
 		ttl := "-1" // default
 		size := -1  // default
-		ttlResp := r.Client.TTL(key)
+		ttlResp := r.Client.TTL(ctx, key)
 		if err := ttlResp.Err(); err == nil {
 			ttl = ttlResp.Val().String()
 		}
-		lenResp := r.Client.XLen(key)
+		lenResp := r.Client.XLen(ctx, key)
 		if err := lenResp.Err(); err == nil {
 			size = int(lenResp.Val())
 		}
@@ -355,8 +355,8 @@ func (r *Redis) Info(ctx context.Context) *stream.Info {
 }
 
 // Helper function to set an expiry to a key if it's not already set
-func (r *Redis) setExpiry(key string, expiry time.Duration) error {
-	ttl := r.Client.TTL(key)
+func (r *Redis) setExpiry(ctx context.Context, key string, expiry time.Duration) error {
+	ttl := r.Client.TTL(ctx, key)
 	if ttl.Err() != nil {
 		logrus.Errorf("could not retrieve TTL for key: %s. Error: %s", key, ttl.Err())
 		return ttl.Err()
@@ -373,7 +373,7 @@ func (r *Redis) setExpiry(key string, expiry time.Duration) error {
 		return errors.New("could not set expiry as key doesn't exist")
 	} else if resp == TTL_NOT_SET {
 		// Set a TTL for the stream
-		res := r.Client.Expire(key, expiry)
+		res := r.Client.Expire(ctx, key, expiry)
 		if err := res.Err(); err != nil {
 			logrus.Errorf("could not set expiry on key: %s. Error: %s", key, err)
 			return errors.Wrap(err, fmt.Sprintf("could not set expiry for key: %s", key))
@@ -385,7 +385,7 @@ func (r *Redis) setExpiry(key string, expiry time.Duration) error {
 }
 
 // Scan all the keys and set an expiry on them if it's not set
-func (r *Redis) expiryWatcher(expiry time.Duration) {
+func (r *Redis) expiryWatcher(ctx context.Context, expiry time.Duration) {
 	logrus.Infof("running expiry watcher thread")
 	st := time.Now()
 	var cursor uint64
@@ -394,13 +394,13 @@ func (r *Redis) expiryWatcher(expiry time.Duration) {
 		var keys []string
 		var err error
 		// Scan keys in batches of size scanBatch at a time
-		keys, cursor, err = r.Client.Scan(cursor, "*", scanBatch).Result()
+		keys, cursor, err = r.Client.Scan(ctx, cursor, "*", scanBatch).Result()
 		if err != nil {
 			logrus.Error(errors.Wrap(err, "error in expiry watcher thread"))
 			return
 		}
 		for _, k := range keys {
-			if err := r.setExpiry(k, expiry); err == nil {
+			if err := r.setExpiry(ctx, k, expiry); err == nil {
 				logrus.Infof("set an expiry %s on non-volatile key: %s", expiry, k)
 				cnt++
 			}
