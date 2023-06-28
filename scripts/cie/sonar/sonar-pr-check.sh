@@ -157,16 +157,17 @@ for DIR in ${PR_SRCS_DIR}
 MODULES_TESTS=$(get_info_from_file $MODULES_TESTS_FILE)
 
 # Getting list of generated jars after bazel build/test/coverage
-for MODULE in $(cat $PR_SRCS_FILE | sort -u)
+for MODULE in ${PR_SRCS_DIR[@]}
   do
-    find "${BAZEL_OUTPUT_PATH}/${MODULE}/.." -type f -name '*.jar' >> $LIBS_FILE
+    TEMP_RES=$(grep -w 'src' <<< ${MODULE} | sed 's|\/src||')
+    find "${BAZEL_OUTPUT_PATH}/${TEMP_RES}" -type f -name '*.jar' >> $LIBS_FILE
     echo -e "\n" >> $LIBS_FILE
     for JAR in ${JARS_ARRAY[@]}
       do
-        echo "INFO: Looking for ${BAZEL_OUTPUT_PATH}/${MODULE}/../$JAR"
-        if [ -f "${BAZEL_OUTPUT_PATH}/${MODULE}/../$JAR" ]; then
-          echo "INFO: Found: ${BAZEL_OUTPUT_PATH}/${MODULE}/../$JAR"
-          echo "${BAZEL_OUTPUT_PATH}/${MODULE}/../$JAR" >> $JARS_FILE
+        echo "INFO: Looking for ${BAZEL_OUTPUT_PATH}/${TEMP_RES}/$JAR"
+        if [ -f "${BAZEL_OUTPUT_PATH}/${TEMP_RES}/$JAR" ]; then
+          echo "INFO: Found: ${BAZEL_OUTPUT_PATH}/${TEMP_RES}/$JAR"
+          echo "${BAZEL_OUTPUT_PATH}/${TEMP_RES}/$JAR" >> $JARS_FILE
         fi
       done
   done
