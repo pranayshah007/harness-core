@@ -497,6 +497,7 @@ public class SecretServiceImpl implements SecretService {
       String accountId, EncryptedData encryptedData, SecretManagerConfig secretManagerConfig) {
     char[] value;
     EncryptedData encryptedRecord = kryoSerializer.clone(encryptedData);
+
     if (encryptedData.getType() == CONFIG_FILE && secretManagerConfig.getType() == KMS) {
       char[] fileId = encryptedRecord.getEncryptedValue();
       encryptedRecord.setEncryptedValue(secretsFileService.getFileContents(String.valueOf(fileId)));
@@ -519,6 +520,7 @@ public class SecretServiceImpl implements SecretService {
       String message = format("Empty or null value returned. Could not migrate secret %s", encryptedRecord.getName());
       throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, message, USER);
     }
+    log.error("[jen]Encrypted value ", value);
     return value;
   }
 
@@ -597,6 +599,7 @@ public class SecretServiceImpl implements SecretService {
   public char[] fetchSecretValue(EncryptedData encryptedData) {
     SecretManagerConfig secretManagerConfig = secretManagerConfigService.getSecretManager(
         encryptedData.getAccountId(), encryptedData.getKmsId(), encryptedData.getEncryptionType());
+    log.error("[jen]: secret manager encry type ", secretManagerConfig.getEncryptionType().name());
     return fetchSecretValue(encryptedData.getAccountId(), encryptedData, secretManagerConfig);
   }
 

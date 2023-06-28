@@ -817,6 +817,10 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
     if (encryptedDataOptional.isEmpty()){
       log.error("[jen]: unable to find encrypted data");
     }
+    log.error("[jen] Encrypted id account id {}", encryptedDataOptional.get().getAccountId());
+    log.error("[jen] :Encrypted id kms id {}", encryptedDataOptional.get().getKmsId());
+    log.error("[jen]: Encryption type {}", encryptedDataOptional.get().getEncryptionType());
+
     log.error("[jen]: Value is ",  String.valueOf(secretService.fetchSecretValue(encryptedDataOptional.get())));
     return encryptedDataOptional.map(encryptedData -> String.valueOf(secretService.fetchSecretValue(encryptedData)))
         .orElse(EMPTY);
