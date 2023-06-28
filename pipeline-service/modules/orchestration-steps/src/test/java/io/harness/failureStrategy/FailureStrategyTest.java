@@ -7,6 +7,7 @@
 
 package io.harness.failureStrategy;
 
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.yaml.core.failurestrategy.NGFailureType.AUTHENTICATION_ERROR;
 import static io.harness.yaml.core.failurestrategy.NGFailureType.AUTHORIZATION_ERROR;
@@ -15,11 +16,13 @@ import static io.harness.yaml.core.failurestrategy.NGFailureType.TIMEOUT_ERROR;
 import static io.harness.yaml.core.failurestrategy.NGFailureType.VERIFICATION_ERROR;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.steps.FailureStrategiesUtils;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.yaml.ParameterField;
@@ -28,15 +31,20 @@ import io.harness.yaml.core.failurestrategy.FailureStrategyActionConfig;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 import io.harness.yaml.core.failurestrategy.NGFailureType;
 import io.harness.yaml.core.failurestrategy.OnFailureConfig;
+import io.harness.yaml.core.failurestrategy.ProceedWithDefaultValuesFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.abort.AbortFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.ignore.IgnoreFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.manualintervention.ManualFailureSpecConfig;
+import io.harness.yaml.core.failurestrategy.manualintervention.ManualFailureSpecConfig.ManualFailureSpecConfigBuilder;
 import io.harness.yaml.core.failurestrategy.manualintervention.ManualInterventionFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.manualintervention.ManualInterventionFailureActionConfig.ManualInterventionFailureActionConfigBuilder;
 import io.harness.yaml.core.failurestrategy.manualintervention.OnTimeoutConfig;
 import io.harness.yaml.core.failurestrategy.marksuccess.MarkAsSuccessFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.retry.OnRetryFailureConfig;
 import io.harness.yaml.core.failurestrategy.retry.RetryFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.retry.RetryFailureActionConfig.RetryFailureActionConfigBuilder;
 import io.harness.yaml.core.failurestrategy.retry.RetryFailureSpecConfig;
+import io.harness.yaml.core.failurestrategy.retry.RetryFailureSpecConfig.RetryFailureSpecConfigBuilder;
 import io.harness.yaml.core.failurestrategy.rollback.StageRollbackFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.rollback.StepGroupFailureActionConfig;
 import io.harness.yaml.core.timeout.Timeout;
@@ -200,6 +208,80 @@ public class FailureStrategyTest extends CategoryTest {
     assertThat(ans).isEqualTo(true);
   }
 
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testValidateRetryFailureAction() {
+    RetryFailureSpecConfigBuilder specBuilder =
+        RetryFailureSpecConfig.builder()
+            .retryCount(ParameterField.createValueField(2))
+            .retryIntervals(ParameterField.createValueField(
+                Collections.singletonList(Timeout.builder().timeoutString("10s").build())))
+            .onRetryFailure(
+                OnRetryFailureConfig.builder().action(MarkAsSuccessFailureActionConfig.builder().build()).build());
+    RetryFailureActionConfigBuilder configBuilder = RetryFailureActionConfig.builder().specConfig(specBuilder.build());
+    assertThatCode(() -> FailureStrategiesUtils.validateRetryFailureAction(configBuilder.build()))
+        .doesNotThrowAnyException();
+
+    specBuilder.onRetryFailure(
+        OnRetryFailureConfig.builder().action(IgnoreFailureActionConfig.builder().build()).build());
+    configBuilder.specConfig(specBuilder.build());
+    assertThatCode(() -> FailureStrategiesUtils.validateRetryFailureAction(configBuilder.build()))
+        .doesNotThrowAnyException();
+
+    specBuilder.onRetryFailure(
+        OnRetryFailureConfig.builder().action(ProceedWithDefaultValuesFailureActionConfig.builder().build()).build());
+    configBuilder.specConfig(specBuilder.build());
+    assertThatCode(() -> FailureStrategiesUtils.validateRetryFailureAction(configBuilder.build()))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Retry action cannot have post retry failure action as ProceedWithDefaultValues");
+
+    specBuilder.onRetryFailure(
+        OnRetryFailureConfig.builder().action(RetryFailureActionConfig.builder().build()).build());
+    configBuilder.specConfig(specBuilder.build());
+    assertThatCode(() -> FailureStrategiesUtils.validateRetryFailureAction(configBuilder.build()))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Retry action cannot have post retry failure action as Retry");
+
+    specBuilder.retryIntervals(ParameterField.createExpressionField(true, "", null, true));
+    configBuilder.specConfig(specBuilder.build());
+    assertThatCode(() -> FailureStrategiesUtils.validateRetryFailureAction(configBuilder.build()))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Retry Interval cannot be null or empty");
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testValidateManualInterventionFailureAction() {
+    ManualFailureSpecConfigBuilder specBuilder =
+        ManualFailureSpecConfig.builder()
+            .timeout(ParameterField.createValueField(Timeout.builder().timeoutString("20s").build()))
+            .onTimeout(OnTimeoutConfig.builder().action(MarkAsSuccessFailureActionConfig.builder().build()).build());
+    ManualInterventionFailureActionConfigBuilder configBuilder =
+        ManualInterventionFailureActionConfig.builder().specConfig(specBuilder.build());
+    assertThatCode(() -> FailureStrategiesUtils.validateManualInterventionFailureAction(configBuilder.build()))
+        .doesNotThrowAnyException();
+
+    specBuilder.onTimeout(OnTimeoutConfig.builder().action(IgnoreFailureActionConfig.builder().build()).build());
+    configBuilder.specConfig(specBuilder.build());
+    assertThatCode(() -> FailureStrategiesUtils.validateManualInterventionFailureAction(configBuilder.build()))
+        .doesNotThrowAnyException();
+
+    specBuilder.onTimeout(
+        OnTimeoutConfig.builder().action(ProceedWithDefaultValuesFailureActionConfig.builder().build()).build());
+    configBuilder.specConfig(specBuilder.build());
+    assertThatCode(() -> FailureStrategiesUtils.validateManualInterventionFailureAction(configBuilder.build()))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("ProceedWithDefaultValues is not allowed as post timeout action in Manual intervention");
+
+    specBuilder.onTimeout(OnTimeoutConfig.builder().action(RetryFailureActionConfig.builder().build()).build());
+    configBuilder.specConfig(specBuilder.build());
+    assertThatCode(() -> FailureStrategiesUtils.validateManualInterventionFailureAction(configBuilder.build()))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "Retry is not allowed as post timeout action in Manual intervention as it can lead to an infinite loop");
+  }
   @Test
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
