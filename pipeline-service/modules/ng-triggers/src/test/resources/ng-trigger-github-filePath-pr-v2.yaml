@@ -48,7 +48,7 @@ trigger:
               operator: Equals
               value: File1_Removed.txt
           headerConditions:
-            - key: h1
+            - key: <+trigger.header['h1']>
               operator: Equals
               value: v1
           jexlCondition: true

@@ -13,10 +13,10 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
+import io.harness.beans.HeaderConfig;
 import io.harness.beans.IssueCommentWebhookEvent;
 import io.harness.beans.Repository;
 import io.harness.category.element.UnitTests;
@@ -72,10 +72,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.slf4j.LoggerFactory;
 
-public class GitlabMRCommentTriggerFilterTest extends CategoryTest {
+public class HeaderTriggerFilterTest extends CategoryTest {
   private Logger logger;
   private ListAppender<ILoggingEvent> listAppender;
-  @Inject @InjectMocks private GitlabMRCommentTriggerFilter gitlabMRCommentTriggerFilter;
+  @Inject @InjectMocks private HeaderTriggerFilter headerTriggerFilter;
   @Mock private KryoSerializer kryoSerializer;
   @InjectMocks @Inject private NGTriggerElementMapper ngTriggerElementMapper;
 
@@ -195,7 +195,13 @@ public class GitlabMRCommentTriggerFilterTest extends CategoryTest {
             .build();
 
     TriggerWebhookEvent triggerWebhookEvent =
-        TriggerWebhookEvent.builder().payload(pushPayload).sourceRepoType("Github").createdAt(creatAt).build();
+        TriggerWebhookEvent.builder()
+            .payload(pushPayload)
+            .headers(Collections.singletonList(
+                HeaderConfig.builder().key("h1").values(Collections.singletonList("v1")).build()))
+            .sourceRepoType("Github")
+            .createdAt(creatAt)
+            .build();
 
     FilterRequestData filterRequestData =
         FilterRequestData.builder()
@@ -233,16 +239,105 @@ public class GitlabMRCommentTriggerFilterTest extends CategoryTest {
                  .build())
         .when(payloadConditionsTriggerFilter)
         .applyFilter(filterRequestData);
-    WebhookEventMappingResponse webhookEventMappingResponse =
-        gitlabMRCommentTriggerFilter.applyFilter(filterRequestData);
+    WebhookEventMappingResponse webhookEventMappingResponse = headerTriggerFilter.applyFilter(filterRequestData);
     assertThat(webhookEventMappingResponse).isNotNull();
+    assertThat(webhookEventMappingResponse.getTriggers()).isNotNull();
     assertThat(webhookEventMappingResponse.isFailedToFindTrigger()).isFalse();
   }
 
   @Test
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
-  public void applyFilterExceptionTest() throws IOException {
+  public void applyFilterForEmptyTriggerConfigTest() throws IOException {
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put("key1", "value1");
+    metadata.put("key2", "value1value2");
+    Long creatAt = 12L;
+    ClassLoader classLoader = getClass().getClassLoader();
+    String ngTriggerYaml_github_pr =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource("ng-trigger-github-filePath-pr-v2.yaml")),
+            StandardCharsets.UTF_8);
+    NGTriggerConfigV2 ngTriggerConfigV2 = ngTriggerElementMapper.toTriggerConfigV2(ngTriggerYaml_github_pr);
+    ParseWebhookResponse parseWebhookResponse =
+        ParseWebhookResponse.newBuilder()
+            .setPr(PullRequestHook.newBuilder().setPr(PullRequest.newBuilder().setNumber(2).build()).build())
+            .setComment(IssueCommentHook.newBuilder()
+                            .setIssue(Issue.newBuilder().setPr(PullRequest.newBuilder().build()).build())
+                            .build())
+            .setPush(PushHook.newBuilder().addCommits(Commit.newBuilder().build()).build())
+            .build();
+    TriggerDetails details1 =
+        TriggerDetails.builder()
+            .ngTriggerEntity(
+                NGTriggerEntity.builder()
+                    .accountId("acc")
+                    .orgIdentifier("org")
+                    .projectIdentifier("proj")
+                    .metadata(NGTriggerMetadata.builder()
+                                  .webhook(WebhookMetadata.builder()
+                                               .type("GITHUB")
+                                               .git(GitMetadata.builder().connectorIdentifier("account.con1").build())
+                                               .build())
+                                  .build())
+                    .yaml(ngTriggerYaml_github_pr)
+                    .build())
+            .build();
+
+    TriggerWebhookEvent triggerWebhookEvent =
+        TriggerWebhookEvent.builder()
+            .payload(pushPayload)
+            .headers(Collections.singletonList(
+                HeaderConfig.builder().key("h1").values(Collections.singletonList("v1")).build()))
+            .sourceRepoType("Github")
+            .createdAt(creatAt)
+            .build();
+
+    FilterRequestData filterRequestData =
+        FilterRequestData.builder()
+            .accountId("p")
+            .webhookPayloadData(
+                WebhookPayloadData.builder()
+                    .originalEvent(TriggerWebhookEvent.builder().accountId("acc").sourceRepoType("GITHUB").build())
+                    .webhookEvent(IssueCommentWebhookEvent.builder().pullRequestNum("20").build())
+                    .originalEvent(triggerWebhookEvent)
+                    .parseWebhookResponse(parseWebhookResponse)
+                    .repository(repository1)
+                    .build())
+            .pollingResponse(PollingResponse.newBuilder()
+                                 .setBuildInfo(BuildInfo.newBuilder()
+                                                   .addAllVersions(Collections.singletonList("release.1234"))
+                                                   .addAllMetadata(Collections.singletonList(
+                                                       Metadata.newBuilder().putAllMetadata(metadata).build()))
+                                                   .build())
+                                 .build())
+            .details(asList(details1))
+            .build();
+    byte[] data = new byte[0];
+    final URL testFile = classLoader.getResource("github_PR.json");
+    String prJson = Resources.toString(testFile, Charsets.UTF_8);
+    doReturn(BinaryResponseData.builder().data(data).build()).when(taskExecutionUtils).executeSyncTask(any());
+    doReturn(GitApiTaskResponse.builder()
+                 .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                 .gitApiResult(GitApiFindPRTaskResponse.builder().prJson(prJson).build())
+                 .build())
+        .when(kryoSerializer)
+        .asInflatedObject(any());
+    doReturn(WebhookEventMappingResponse.builder()
+                 .webhookEventResponse(TriggerEventResponse.builder().payload(pushPayload).build())
+                 .failedToFindTrigger(false)
+                 .build())
+        .when(payloadConditionsTriggerFilter)
+        .applyFilter(filterRequestData);
+    WebhookEventMappingResponse webhookEventMappingResponse = headerTriggerFilter.applyFilter(filterRequestData);
+    assertThat(webhookEventMappingResponse).isNotNull();
+    assertThat(webhookEventMappingResponse.getTriggers()).isNotNull();
+    assertThat(webhookEventMappingResponse.isFailedToFindTrigger()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void applyFilterNoMatchTest() throws IOException {
     Map<String, String> metadata = new HashMap<>();
     metadata.put("key1", "value1");
     metadata.put("key2", "value1value2");
@@ -278,7 +373,13 @@ public class GitlabMRCommentTriggerFilterTest extends CategoryTest {
             .build();
 
     TriggerWebhookEvent triggerWebhookEvent =
-        TriggerWebhookEvent.builder().payload(pushPayload).sourceRepoType("Github").createdAt(creatAt).build();
+        TriggerWebhookEvent.builder()
+            .payload(pushPayload)
+            .headers(Collections.singletonList(
+                HeaderConfig.builder().key("h2").values(Collections.singletonList("v2")).build()))
+            .sourceRepoType("Github")
+            .createdAt(creatAt)
+            .build();
 
     FilterRequestData filterRequestData =
         FilterRequestData.builder()
@@ -316,13 +417,12 @@ public class GitlabMRCommentTriggerFilterTest extends CategoryTest {
                  .build())
         .when(payloadConditionsTriggerFilter)
         .applyFilter(filterRequestData);
-    doThrow(NullPointerException.class).when(webhookParserSCMService).convertPRWebhookEvent(any());
-    WebhookEventMappingResponse webhookEventMappingResponse =
-        gitlabMRCommentTriggerFilter.applyFilter(filterRequestData);
+    WebhookEventMappingResponse webhookEventMappingResponse = headerTriggerFilter.applyFilter(filterRequestData);
     assertThat(webhookEventMappingResponse).isNotNull();
-    assertThat(webhookEventMappingResponse.getWebhookEventResponse().getMessage())
-        .isEqualTo("Failed to update Webhook payload with PR Details: java.lang.NullPointerException");
-    assertThat(webhookEventMappingResponse.getWebhookEventResponse().getPayload()).isEqualTo(pushPayload);
+    assertThat(webhookEventMappingResponse.getTriggers()).isNotNull();
     assertThat(webhookEventMappingResponse.isFailedToFindTrigger()).isTrue();
+    assertThat(webhookEventMappingResponse.getWebhookEventResponse().getMessage())
+        .isEqualTo("No Trigger matched conditions for payload event for Account: p");
+    assertThat(webhookEventMappingResponse.getWebhookEventResponse().isExceptionOccurred()).isTrue();
   }
 }
