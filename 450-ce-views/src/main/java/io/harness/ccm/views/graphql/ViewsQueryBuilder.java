@@ -1785,8 +1785,7 @@ public class ViewsQueryBuilder {
     if (conditionKey.toString().equals(ViewsMetaDataFields.LABEL_VALUE.getFieldName())) {
       String labelKey = filter.getField().getFieldName();
       String labelSubQuery = getLabelSubQuery(viewLabelsFlattened, labelKey);
-      if (viewLabelsFlattened.isShouldUseFlattenedLabelsColumn()
-          && Objects.nonNull(viewLabelsFlattened.getFlattenedLabelsTableColumns())
+      if (viewLabelsFlattened.isShouldUseFlattenedLabelsColumn() && viewLabelsFlattened.isClusterTable()
           && !viewLabelsFlattened.getFlattenedLabelsTableColumns().contains(labelSubQuery)) {
         return BinaryCondition.notEqualTo(1, 1);
       }
@@ -2201,9 +2200,8 @@ public class ViewsQueryBuilder {
     }
   }
 
-  private Set<String> getFlattenedLabelsTableColumns(String accountId, String cloudProviderTableName) {
+  private Set<String> getFlattenedLabelsTableColumns(String accountId, String tableIdentifier) {
     Set<String> flattenedLabelsTableColumns = new HashSet<>();
-    String tableIdentifier = getTableIdentifier(cloudProviderTableName);
     if (isClusterTable(tableIdentifier)) {
       flattenedLabelsTableColumns = labelFlattenedService.getFlattenedLabelsTableColumns(accountId, tableIdentifier);
     }
@@ -2213,11 +2211,13 @@ public class ViewsQueryBuilder {
   public ViewLabelsFlattened getViewLabelsFlattened(
       Map<String, String> labelsKeyAndColumnMapping, String accountId, String cloudProviderTableName) {
     boolean shouldUseFlattenedLabelsColumn = featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, accountId);
-    Set<String> flattenedLabelsTableColumns = getFlattenedLabelsTableColumns(accountId, cloudProviderTableName);
+    String tableIdentifier = getTableIdentifier(cloudProviderTableName);
+    Set<String> flattenedLabelsTableColumns = getFlattenedLabelsTableColumns(accountId, tableIdentifier);
     return ViewLabelsFlattened.builder()
         .labelsKeyAndColumnMapping(labelsKeyAndColumnMapping)
         .shouldUseFlattenedLabelsColumn(shouldUseFlattenedLabelsColumn)
         .flattenedLabelsTableColumns(flattenedLabelsTableColumns)
+        .isClusterTable(isClusterTable(tableIdentifier))
         .build();
   }
 
