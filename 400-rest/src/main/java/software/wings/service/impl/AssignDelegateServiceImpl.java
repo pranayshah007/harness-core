@@ -1187,7 +1187,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     List<Delegate> accountDelegates = getAccountDelegates(delegateTask.getAccountId());
     List<Delegate> nonConnectedDelegates =
         accountDelegates.stream()
-            .filter(delegate -> delegateDao.isDelegateHeartBeatUpToDate(delegate, MAX_DELEGATE_LONG_LAST_HEARTBEAT))
+            .filter(delegate -> !delegateDao.isDelegateHeartBeatUpToDate(delegate, MAX_DELEGATE_LONG_LAST_HEARTBEAT))
             .collect(Collectors.toList());
     List<String> nonConnectedDelegatesIds =
         nonConnectedDelegates.stream().map(Delegate::getHostName).collect(Collectors.toList());

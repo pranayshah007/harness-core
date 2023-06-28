@@ -1548,7 +1548,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
     Delegate activeDelegate1 =
         createDelegateBuilder().accountId(accountId).uuid(delegateId).hostName("hostname").build();
     when(accountDelegatesCache.get(accountId)).thenReturn(asList(activeDelegate1));
-    when(delegateCache.get(accountId, delegateId, false)).thenReturn(activeDelegate1);
+    when(delegateCache.get(accountId, delegateId)).thenReturn(activeDelegate1);
 
     DelegateTask delegateTask = DelegateTask.builder()
                                     .uuid(uuid)
@@ -1588,7 +1588,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
     Delegate activeDelegate1 =
         createDelegateBuilder().accountId(accountId).uuid(delegateId).hostName("hostname").build();
     when(accountDelegatesCache.get(accountId)).thenReturn(asList(activeDelegate1));
-    when(delegateCache.get(accountId, delegateId, false)).thenReturn(activeDelegate1);
+    when(delegateCache.get(accountId, delegateId)).thenReturn(activeDelegate1);
 
     DelegateTask delegateTask = DelegateTask.builder()
                                     .uuid(uuid)
@@ -1689,7 +1689,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                                     .supportedTaskTypes(Arrays.asList(TaskType.HTTP.name()))
                                     .build();
     when(accountDelegatesCache.get(accountId)).thenReturn(Arrays.asList(eligibleDelegate));
-    when(delegateCache.get(accountId, eligibleDelegateId, false)).thenReturn(eligibleDelegate);
+    when(delegateCache.get(accountId, eligibleDelegateId)).thenReturn(eligibleDelegate);
 
     DelegateTask taskWithCapability = DelegateTask.builder()
                                           .accountId(accountId)
@@ -1744,8 +1744,8 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                              .supportedTaskTypes(Arrays.asList(TaskType.HTTP.name()))
                              .build();
     when(accountDelegatesCache.get(accountId)).thenReturn(Arrays.asList(delegate1, delegate2));
-    when(delegateCache.get(accountId, delegate1Id, false)).thenReturn(delegate1);
-    when(delegateCache.get(accountId, delegate2Id, false)).thenReturn(delegate2);
+    when(delegateCache.get(accountId, delegate1Id)).thenReturn(delegate1);
+    when(delegateCache.get(accountId, delegate2Id)).thenReturn(delegate2);
 
     DelegateTask taskWithCapability = DelegateTask.builder()
                                           .accountId(accountId)
@@ -2082,8 +2082,8 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
 
     persistence.save(delegate1);
     persistence.save(delegate2);
-    when(delegateCache.get("accountId", delegateId1, false)).thenReturn(delegate1);
-    when(delegateCache.get("accountId", delegateId2, false)).thenReturn(delegate2);
+    when(delegateCache.get("accountId", delegateId1)).thenReturn(delegate1);
+    when(delegateCache.get("accountId", delegateId2)).thenReturn(delegate2);
     DelegateTask asyncTask = DelegateTask.builder()
                                  .uuid(generateUuid())
                                  .status(DelegateTask.Status.QUEUED)
@@ -2127,7 +2127,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
     Delegate delegate = createAccountDelegate();
     DelegateTask task = constructDelegateTask(false, Collections.emptySet(), DelegateTask.Status.QUEUED);
     when(accountDelegatesCache.get(ACCOUNT_ID)).thenReturn(asList(delegate));
-    when(delegateCache.get(ACCOUNT_ID, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(ACCOUNT_ID, delegate.getUuid())).thenReturn(delegate);
     assertThat(assignDelegateService.getEligibleDelegatesToExecuteTask(task)).isNotEmpty();
     assertThat(assignDelegateService.getEligibleDelegatesToExecuteTask(task)).contains(delegate.getUuid());
   }
@@ -2140,7 +2140,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
     DelegateTask task = constructDelegateTask(false, Collections.emptySet(), DelegateTask.Status.QUEUED);
 
     when(accountDelegatesCache.get(ACCOUNT_ID)).thenReturn(asList(delegate));
-    when(delegateCache.get(ACCOUNT_ID, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(ACCOUNT_ID, delegate.getUuid())).thenReturn(delegate);
     DelegateConnectionResult connectionResult = DelegateConnectionResult.builder()
                                                     .accountId(ACCOUNT_ID)
                                                     .delegateId(delegate.getUuid())
@@ -2221,7 +2221,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                                       .build())
                             .build();
     when(accountDelegatesCache.get(ACCOUNT_ID)).thenReturn(asList(delegate));
-    when(delegateCache.get(ACCOUNT_ID, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(ACCOUNT_ID, delegate.getUuid())).thenReturn(delegate);
 
     assertThat(assignDelegateService.getEligibleDelegatesToExecuteTask(task)).isNotEmpty();
     assertThat(assignDelegateService.getEligibleDelegatesToExecuteTask(task)).contains(delegate.getUuid());
@@ -2233,6 +2233,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
   public void testGetActiveCGEligibleDelegatesForTask() throws ExecutionException {
     Delegate delegate = createNGDelegate();
     delegate.setNg(false);
+    delegate.setLastHeartBeat(System.currentTimeMillis());
     persistence.save(delegate);
     delegate.setSupportedTaskTypes(Collections.singletonList(NGTaskType.JIRA_TASK_NG.name()));
     // DelegateTask task = constructDelegateTask(false, Collections.emptySet(), DelegateTask.Status.QUEUED);
@@ -2247,7 +2248,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                                       .build())
                             .build();
     when(accountDelegatesCache.get(ACCOUNT_ID)).thenReturn(asList(delegate));
-    when(delegateCache.get(ACCOUNT_ID, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(ACCOUNT_ID, delegate.getUuid())).thenReturn(delegate);
 
     assertThat(assignDelegateService.getEligibleDelegatesToExecuteTask(task)).isNotEmpty();
     assertThat(assignDelegateService.getEligibleDelegatesToExecuteTask(task)).contains(delegate.getUuid());
