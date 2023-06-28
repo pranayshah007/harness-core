@@ -169,7 +169,7 @@ for MODULE in $(cat $PR_SRCS_FILE | sort -u)
           echo "${BAZEL_OUTPUT_PATH}/${MODULE}/../$JAR" >> $JARS_FILE
         fi
       done
-  done < $PR_SRCS_FILE
+  done
 echo -e "JARS:\n$(cat ${JARS_FILE})"
 JARS_BINS=$(get_info_from_file $JARS_FILE)
 LIBS_BINS=$(get_info_from_file $LIBS_FILE)
