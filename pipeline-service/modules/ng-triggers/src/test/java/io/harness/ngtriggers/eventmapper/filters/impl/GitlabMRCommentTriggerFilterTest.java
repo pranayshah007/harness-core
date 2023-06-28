@@ -72,10 +72,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.slf4j.LoggerFactory;
 
-public class GithubIssueCommentTriggerFilterTest extends CategoryTest {
+public class GitlabMRCommentTriggerFilterTest extends CategoryTest {
   private Logger logger;
   private ListAppender<ILoggingEvent> listAppender;
-  @Inject @InjectMocks private GithubIssueCommentTriggerFilter githubIssueCommentTriggerFilter;
+  @Inject @InjectMocks private GitlabMRCommentTriggerFilter gitlabMRCommentTriggerFilter;
   @Mock private KryoSerializer kryoSerializer;
   @InjectMocks @Inject private NGTriggerElementMapper ngTriggerElementMapper;
 
@@ -234,93 +234,9 @@ public class GithubIssueCommentTriggerFilterTest extends CategoryTest {
         .when(payloadConditionsTriggerFilter)
         .applyFilter(filterRequestData);
     WebhookEventMappingResponse webhookEventMappingResponse =
-        githubIssueCommentTriggerFilter.applyFilter(filterRequestData);
+        gitlabMRCommentTriggerFilter.applyFilter(filterRequestData);
     assertThat(webhookEventMappingResponse).isNotNull();
     assertThat(webhookEventMappingResponse.isFailedToFindTrigger()).isFalse();
-  }
-
-  @Test
-  @Owner(developers = SHIVAM)
-  @Category(UnitTests.class)
-  public void applyFilterEmptyPrJsonTest() throws IOException {
-    Map<String, String> metadata = new HashMap<>();
-    metadata.put("key1", "value1");
-    metadata.put("key2", "value1value2");
-    Long creatAt = 12L;
-    ClassLoader classLoader = getClass().getClassLoader();
-    String ngTriggerYaml_github_pr =
-        Resources.toString(Objects.requireNonNull(classLoader.getResource("ng-trigger-github-filePath-pr-v2.yaml")),
-            StandardCharsets.UTF_8);
-    NGTriggerConfigV2 ngTriggerConfigV2 = ngTriggerElementMapper.toTriggerConfigV2(ngTriggerYaml_github_pr);
-    ParseWebhookResponse parseWebhookResponse =
-        ParseWebhookResponse.newBuilder()
-            .setPr(PullRequestHook.newBuilder().setPr(PullRequest.newBuilder().setNumber(2).build()).build())
-            .setComment(IssueCommentHook.newBuilder()
-                            .setIssue(Issue.newBuilder().setPr(PullRequest.newBuilder().build()).build())
-                            .build())
-            .setPush(PushHook.newBuilder().addCommits(Commit.newBuilder().build()).build())
-            .build();
-    TriggerDetails details1 =
-        TriggerDetails.builder()
-            .ngTriggerEntity(
-                NGTriggerEntity.builder()
-                    .accountId("acc")
-                    .orgIdentifier("org")
-                    .projectIdentifier("proj")
-                    .metadata(NGTriggerMetadata.builder()
-                                  .webhook(WebhookMetadata.builder()
-                                               .type("GITHUB")
-                                               .git(GitMetadata.builder().connectorIdentifier("account.con1").build())
-                                               .build())
-                                  .build())
-                    .build())
-            .ngTriggerConfigV2(ngTriggerConfigV2)
-            .build();
-
-    TriggerWebhookEvent triggerWebhookEvent =
-        TriggerWebhookEvent.builder().payload(pushPayload).sourceRepoType("Github").createdAt(creatAt).build();
-
-    FilterRequestData filterRequestData =
-        FilterRequestData.builder()
-            .accountId("p")
-            .webhookPayloadData(
-                WebhookPayloadData.builder()
-                    .originalEvent(TriggerWebhookEvent.builder().accountId("acc").sourceRepoType("GITHUB").build())
-                    .webhookEvent(IssueCommentWebhookEvent.builder().pullRequestNum("20").build())
-                    .originalEvent(triggerWebhookEvent)
-                    .parseWebhookResponse(parseWebhookResponse)
-                    .repository(repository1)
-                    .build())
-            .pollingResponse(PollingResponse.newBuilder()
-                                 .setBuildInfo(BuildInfo.newBuilder()
-                                                   .addAllVersions(Collections.singletonList("release.1234"))
-                                                   .addAllMetadata(Collections.singletonList(
-                                                       Metadata.newBuilder().putAllMetadata(metadata).build()))
-                                                   .build())
-                                 .build())
-            .details(asList(details1))
-            .build();
-    byte[] data = new byte[0];
-    doReturn(BinaryResponseData.builder().data(data).build()).when(taskExecutionUtils).executeSyncTask(any());
-    doReturn(GitApiTaskResponse.builder()
-                 .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-                 .gitApiResult(GitApiFindPRTaskResponse.builder().prJson("").build())
-                 .build())
-        .when(kryoSerializer)
-        .asInflatedObject(any());
-    doReturn(WebhookEventMappingResponse.builder()
-                 .webhookEventResponse(TriggerEventResponse.builder().payload(pushPayload).build())
-                 .failedToFindTrigger(false)
-                 .build())
-        .when(payloadConditionsTriggerFilter)
-        .applyFilter(filterRequestData);
-    WebhookEventMappingResponse webhookEventMappingResponse =
-        githubIssueCommentTriggerFilter.applyFilter(filterRequestData);
-    assertThat(webhookEventMappingResponse).isNotNull();
-    assertThat(webhookEventMappingResponse.getWebhookEventResponse().getMessage())
-        .isEqualTo("Failed to fetch PR Details");
-    assertThat(webhookEventMappingResponse.getWebhookEventResponse().getPayload()).isEqualTo(pushPayload);
-    assertThat(webhookEventMappingResponse.isFailedToFindTrigger()).isTrue();
   }
 
   @Test
@@ -388,7 +304,6 @@ public class GithubIssueCommentTriggerFilterTest extends CategoryTest {
     final URL testFile = classLoader.getResource("github_PR.json");
     String prJson = Resources.toString(testFile, Charsets.UTF_8);
     doReturn(BinaryResponseData.builder().data(data).build()).when(taskExecutionUtils).executeSyncTask(any());
-    doThrow(NullPointerException.class).when(webhookParserSCMService).convertPRWebhookEvent(any());
     doReturn(GitApiTaskResponse.builder()
                  .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                  .gitApiResult(GitApiFindPRTaskResponse.builder().prJson(prJson).build())
@@ -401,11 +316,12 @@ public class GithubIssueCommentTriggerFilterTest extends CategoryTest {
                  .build())
         .when(payloadConditionsTriggerFilter)
         .applyFilter(filterRequestData);
+    doThrow(NullPointerException.class).when(webhookParserSCMService).convertPRWebhookEvent(any());
     WebhookEventMappingResponse webhookEventMappingResponse =
-        githubIssueCommentTriggerFilter.applyFilter(filterRequestData);
+        gitlabMRCommentTriggerFilter.applyFilter(filterRequestData);
     assertThat(webhookEventMappingResponse).isNotNull();
     assertThat(webhookEventMappingResponse.getWebhookEventResponse().getMessage())
-        .isEqualTo("Failed to fetch PR Details: java.lang.NullPointerException");
+        .isEqualTo("Failed to update Webhook payload with PR Details : java.lang.NullPointerException");
     assertThat(webhookEventMappingResponse.getWebhookEventResponse().getPayload()).isEqualTo(pushPayload);
     assertThat(webhookEventMappingResponse.isFailedToFindTrigger()).isTrue();
   }
