@@ -31,7 +31,7 @@ const (
 	debugLogChars        = 200
 	genAIPlainTextPrompt = `
 Provide error message, root cause and remediation from the below logs preserving the markdown format.
-Remediation is required in the response - error message and root cause can be truncated if needed. %s
+Remediation is required in the response - error message and root cause can be truncated if needed, but make sure to preserve the markdown format. %s
 
 
 Logs:
@@ -42,7 +42,7 @@ Logs:
 
 	genAIAzurePlainTextPrompt = `
 Provide error message, root cause and remediation from the below logs preserving the markdown format.
-Remediation is required in the response - error message and root cause can be truncated if needed. %s
+Remediation is required in the response - error message and root cause can be truncated if needed, but make sure to preserve the markdown format. %s
 
 Logs:
 ` + "```" + `
@@ -63,7 +63,7 @@ Provide your output in the following format:
 ` + "```"
 
 	genAIJSONPrompt = `
-Provide error message, root cause and remediation from the below logs. Remediation is required in the response - error message and root cause can be truncated if needed. Return list of json object with three keys using the following format {"error", "cause", "remediation"}. %s
+Provide error message, root cause and remediation from the below logs. Remediation is required in the response - error message and root cause can be truncated if needed, but make sure to preserve the markdown format. Return list of json object with three keys using the following format {"error", "cause", "remediation"}. %s
 
 Logs:
 ` + "```" + `
@@ -72,7 +72,7 @@ Logs:
 ` + "```"
 
 	genAIBisonJSONPrompt = `
-I have a set of logs. The logs contain error messages. I want you to find the error messages in the logs, and suggest root cause and remediation or fix suggestions. Remediation is required in the response - error message and root cause can be truncated if needed. I want you to give me the response in JSON format, no text before or after the JSON. Example of response:
+I have a set of logs. The logs contain error messages. I want you to find the error messages in the logs, and suggest root cause and remediation or fix suggestions. Remediation is required in the response - error message and root cause can be truncated if needed, but make sure to preserve the markdown format. I want you to give me the response in JSON format, no text before or after the JSON. Example of response:
 [
 	{
 		"error": "error_1",
