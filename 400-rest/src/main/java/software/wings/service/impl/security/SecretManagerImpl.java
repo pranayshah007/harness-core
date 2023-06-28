@@ -820,6 +820,7 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
     log.error("[jen] Encrypted id account id {}", encryptedDataOptional.get().getAccountId());
     log.error("[jen] :Encrypted id kms id {}", encryptedDataOptional.get().getKmsId());
     log.error("[jen]: Encryption type {}", encryptedDataOptional.get().getEncryptionType());
+    log.error("[jen]: Encryption val {}", encryptedDataOptional.get().getEncryptedValue());
 
     log.error("[jen]: Value is ",  String.valueOf(secretService.fetchSecretValue(encryptedDataOptional.get())));
     return encryptedDataOptional.map(encryptedData -> String.valueOf(secretService.fetchSecretValue(encryptedData)))

@@ -37,8 +37,11 @@ public class LocalEncryptor implements KmsEncryptor {
 
   @Override
   public char[] fetchSecretValue(String accountId, EncryptedRecord encryptedRecord, EncryptionConfig encryptionConfig) {
+    log.error("[jen]: lOCAL ENCRYP");
     if (isEmpty(encryptedRecord.getEncryptionKey())) {
+      log.error("[jen]: local encryptedData.getEncryptedValue is null");
       return null;
+
     }
     final SimpleEncryption simpleEncryption = new SimpleEncryption(encryptedRecord.getEncryptionKey());
     return simpleEncryption.decryptChars(encryptedRecord.getEncryptedValue());

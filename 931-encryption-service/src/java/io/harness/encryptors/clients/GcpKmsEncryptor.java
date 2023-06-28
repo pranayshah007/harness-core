@@ -162,8 +162,10 @@ public class GcpKmsEncryptor implements KmsEncryptor {
   }
 
   public char[] fetchSecretValue(String accountId, EncryptedRecord encryptedData, EncryptionConfig encryptionConfig) {
+    log.error("[jen]: GCP KMS ENCRYP");
     GcpKmsConfig gcpKmsConfig = (GcpKmsConfig) encryptionConfig;
     if (encryptedData.getEncryptedValue() == null) {
+      log.error("[jen]: GCP encryptedData.getEncryptedValue is null");
       return null;
     }
     int failedAttempts = 0;

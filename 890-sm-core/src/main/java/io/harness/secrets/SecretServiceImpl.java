@@ -504,6 +504,9 @@ public class SecretServiceImpl implements SecretService {
     }
     if (secretManagerConfig.getType() == KMS) {
       KmsEncryptor kmsEncryptor = kmsRegistry.getKmsEncryptor(secretManagerConfig);
+      if (kmsEncryptor == null){
+        log.error("[jen]: KmsEncryptor is null");
+      }
       value = kmsEncryptor.fetchSecretValue(accountId, encryptedRecord, secretManagerConfig);
     } else if (secretManagerConfig.getType() == VAULT) {
       VaultEncryptor vaultEncryptor = vaultRegistry.getVaultEncryptor(secretManagerConfig.getEncryptionType());

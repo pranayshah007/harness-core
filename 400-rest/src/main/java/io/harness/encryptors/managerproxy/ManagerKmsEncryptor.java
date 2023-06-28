@@ -27,6 +27,7 @@ import io.harness.exception.SecretManagementException;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptionConfig;
 
+import lombok.extern.slf4j.Slf4j;
 import software.wings.service.intfc.DelegateService;
 
 import com.google.inject.Inject;
@@ -36,6 +37,7 @@ import javax.validation.executable.ValidateOnExecution;
 @ValidateOnExecution
 @OwnedBy(PL)
 @Singleton
+@Slf4j
 public class ManagerKmsEncryptor implements KmsEncryptor {
   private final DelegateService delegateService;
   private final ManagerEncryptorHelper managerEncryptorHelper;
@@ -82,6 +84,7 @@ public class ManagerKmsEncryptor implements KmsEncryptor {
 
   @Override
   public char[] fetchSecretValue(String accountId, EncryptedRecord encryptedRecord, EncryptionConfig encryptionConfig) {
+    log.error("[jen]: Manager kms ENCRYP");
     return managerEncryptorHelper.fetchSecretValue(accountId, encryptedRecord, encryptionConfig);
   }
 
