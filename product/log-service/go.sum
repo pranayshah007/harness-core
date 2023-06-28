@@ -409,10 +409,10 @@ github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0/go.mod h1:8NvIoxWQoOIhqOTXgf
 github.com/grpc-ecosystem/grpc-gateway v1.9.0/go.mod h1:vNeuVxBJEsws4ogUvrchl83t/GYV9WGTSLVdBhOQFDY=
 github.com/grpc-ecosystem/grpc-gateway v1.9.5/go.mod h1:vNeuVxBJEsws4ogUvrchl83t/GYV9WGTSLVdBhOQFDY=
 github.com/grpc-ecosystem/grpc-gateway v1.16.0/go.mod h1:BDjrQk3hbvj6Nolgz8mAMFbcEtjT1g+wF4CSlocrBnw=
-github.com/harness/harness-core v0.0.0-20230612114953-bed058c48188 h1:nft9As2HGrP+pT/0cC89ZpFQqa0nvKDdX/VbgWSkFwI=
-github.com/harness/harness-core v0.0.0-20230612114953-bed058c48188/go.mod h1:qZzSzF0sIdsj9DJxtRquoBzOCdgWLOG6KRV8mIakjzY=
-github.com/harness/harness-core/commons/go/lib v0.0.0-20230612114953-bed058c48188 h1:vhGlmon9ZDL74O18dCCRVbVVGGiNTdox4Frvq+7JgQA=
-github.com/harness/harness-core/commons/go/lib v0.0.0-20230612114953-bed058c48188/go.mod h1:qdIXmYz6NMV8X7IV8Pfn/n/966DeC6N8GIH1x+1MkFk=
+github.com/harness/harness-core v0.0.0-20230628212059-1682a9ebc65b h1:1rfgtjGxIADH+45ZkR9iM/29i7E5G6tAB0lhlA3hU8M=
+github.com/harness/harness-core v0.0.0-20230628212059-1682a9ebc65b/go.mod h1:qZzSzF0sIdsj9DJxtRquoBzOCdgWLOG6KRV8mIakjzY=
+github.com/harness/harness-core/commons/go/lib v0.0.0-20230628212059-1682a9ebc65b h1:Q3/2Vw63tYYxMBQcStcyeCYCqPkiIelLTcdD/GjUV9c=
+github.com/harness/harness-core/commons/go/lib v0.0.0-20230628212059-1682a9ebc65b/go.mod h1:qdIXmYz6NMV8X7IV8Pfn/n/966DeC6N8GIH1x+1MkFk=
 github.com/hashicorp/consul/api v1.3.0/go.mod h1:MmDNSzIMUjNpY/mQ398R4bk2FnqQLoPndWW5VkKPlCE=
 github.com/hashicorp/consul/sdk v0.3.0/go.mod h1:VKf9jXwCTEY1QZP2MOLRhb5i/I/ssyNV1vwHyQBF0x8=
 github.com/hashicorp/errwrap v1.0.0/go.mod h1:YH+1FKiLXxHSkmPseP+kNlulaMuP3n2brvKWEqk/Jc4=
