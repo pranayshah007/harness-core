@@ -16,8 +16,10 @@ import io.harness.ff.FeatureFlagService;
 
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RequiredArgsConstructor
+@Slf4j
 public abstract class DelegateSecretManager {
   final FeatureFlagService featureFlagService;
 
@@ -49,6 +51,13 @@ public abstract class DelegateSecretManager {
   }
 
   public String decrypt(DelegateToken delegateToken) {
+    if (delegateToken.isNg()){
+      log.error("[jen]: Token value ", delegateToken.getValue());
+      log.error("[jen] :secret value : ",fetchSecretValue(delegateToken.getAccountId(), delegateToken.getEncryptedTokenId()));
+      log.error("[jen] :Decoded secret value : ",fetchSecretValue(delegateToken.getAccountId(), delegateToken.getEncryptedTokenId()));
+    }
+
+
     return delegateToken.isNg()
         ? decodeBase64ToString(fetchSecretValue(delegateToken.getAccountId(), delegateToken.getEncryptedTokenId()))
         : fetchSecretValue(delegateToken.getAccountId(), delegateToken.getEncryptedTokenId());
