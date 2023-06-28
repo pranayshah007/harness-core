@@ -172,6 +172,7 @@ import io.harness.pms.expressions.functors.FileStoreFunctor;
 import io.harness.pms.expressions.functors.ImagePullSecretFunctor;
 import io.harness.pms.expressions.functors.InstanceFunctor;
 import io.harness.pms.expressions.functors.KubernetesReleaseFunctor;
+import io.harness.pms.expressions.functors.ServiceVariableOverridesFunctor;
 import io.harness.pms.governance.EnvironmentExpansionHandler;
 import io.harness.pms.governance.EnvironmentGroupExpandedHandler;
 import io.harness.pms.governance.EnvironmentRefExpansionHandler;
@@ -772,6 +773,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     sdkFunctorMap.put(CONFIG_FILE_FUNCTOR, ConfigFileFunctor.class);
     sdkFunctorMap.put(FILE_STORE_FUNCTOR, FileStoreFunctor.class);
     sdkFunctorMap.put(KUBERNETES_RELEASE_FUNCTOR_NAME, KubernetesReleaseFunctor.class);
+    sdkFunctorMap.put("serviceVariableOverrides", ServiceVariableOverridesFunctor.class);
     return sdkFunctorMap;
   }
 
