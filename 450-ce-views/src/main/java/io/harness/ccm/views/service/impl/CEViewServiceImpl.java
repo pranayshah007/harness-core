@@ -9,7 +9,12 @@ package io.harness.ccm.views.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD;
+import static io.harness.ccm.views.entities.ViewFieldIdentifier.AWS;
+import static io.harness.ccm.views.entities.ViewFieldIdentifier.AZURE;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.CLUSTER;
+import static io.harness.ccm.views.entities.ViewFieldIdentifier.GCP;
+import static io.harness.ccm.views.entities.ViewIdOperator.IN;
+import static io.harness.ccm.views.entities.ViewIdOperator.NOT_IN;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.AFTER;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.BEFORE;
 
@@ -270,7 +275,7 @@ public class CEViewServiceImpl implements CEViewService {
             viewFieldIdentifierSet.add(ViewFieldIdentifier.BUSINESS_MAPPING);
           }
           if (viewIdCondition.getViewField().getIdentifier() == ViewFieldIdentifier.COMMON) {
-            viewFieldIdentifierSet.addAll(getDataSourcesFromCloudProviderField(viewIdCondition));
+            viewFieldIdentifierSet.addAll(getDataSourcesFromCloudProviderField(viewIdCondition, ceView.getAccountId()));
           }
         }
       }
@@ -280,22 +285,53 @@ public class CEViewServiceImpl implements CEViewService {
     ceView.setViewPreferences(CEViewPreferenceUtils.getCEViewPreferences(ceView));
   }
 
-  private Set<ViewFieldIdentifier> getDataSourcesFromCloudProviderField(final ViewIdCondition viewIdCondition) {
-    final Set<ViewFieldIdentifier> viewFieldIdentifiers = new HashSet<>();
+  private Set<ViewFieldIdentifier> getDataSourcesFromCloudProviderField(
+      final ViewIdCondition viewIdCondition, String accountId) {
+    Set<ViewFieldIdentifier> viewFieldIdentifiers = new HashSet<>();
     if (ViewFieldConstants.CLOUD_PROVIDER_FIELD_ID.equals(viewIdCondition.getViewField().getFieldId())) {
+      ViewIdOperator operator = viewIdCondition.getViewOperator();
+      Set<ViewFieldIdentifier> dataSourcesFromValues = new HashSet<>();
       for (final String value : viewIdCondition.getValues()) {
         if (ViewFieldIdentifier.AWS.name().equals(value)) {
-          viewFieldIdentifiers.add(ViewFieldIdentifier.AWS);
+          dataSourcesFromValues.add(ViewFieldIdentifier.AWS);
         } else if (ViewFieldIdentifier.GCP.name().equals(value)) {
-          viewFieldIdentifiers.add(ViewFieldIdentifier.GCP);
+          dataSourcesFromValues.add(ViewFieldIdentifier.GCP);
         } else if (ViewFieldIdentifier.AZURE.name().equals(value)) {
-          viewFieldIdentifiers.add(ViewFieldIdentifier.AZURE);
+          dataSourcesFromValues.add(ViewFieldIdentifier.AZURE);
         } else if (ViewFieldIdentifier.CLUSTER.name().equals(value)) {
-          viewFieldIdentifiers.add(ViewFieldIdentifier.CLUSTER);
+          dataSourcesFromValues.add(ViewFieldIdentifier.CLUSTER);
+        }
+      }
+      if (operator == IN) {
+        viewFieldIdentifiers = dataSourcesFromValues;
+      } else if (operator == NOT_IN) {
+        Set<ViewFieldIdentifier> allDataSources = getAllPossibleDataSourcesForAccount(accountId);
+        for (ViewFieldIdentifier dataSource : allDataSources) {
+          if (!dataSourcesFromValues.contains(dataSource)) {
+            viewFieldIdentifiers.add(dataSource);
+          }
         }
       }
     }
     return viewFieldIdentifiers;
+  }
+
+  private Set<ViewFieldIdentifier> getAllPossibleDataSourcesForAccount(String accountId) {
+    Set<ViewFieldIdentifier> dataSources = new HashSet<>();
+    DefaultViewIdDto defaultViewIds = getDefaultViewIds(accountId);
+    if (defaultViewIds.getAwsViewId() != null) {
+      dataSources.add(AWS);
+    }
+    if (defaultViewIds.getAzureViewId() != null) {
+      dataSources.add(AZURE);
+    }
+    if (defaultViewIds.getGcpViewId() != null) {
+      dataSources.add(GCP);
+    }
+    if (defaultViewIds.getClusterViewId() != null) {
+      dataSources.add(CLUSTER);
+    }
+    return dataSources;
   }
 
   private void setDataSources(final CEView ceView, final Set<ViewFieldIdentifier> viewFieldIdentifierSet) {

@@ -507,4 +507,13 @@ public class AmbianceUtils {
     Map<String, String> settingToValueMap = ambiance.getMetadata().getSettingToValueMapMap();
     return settingToValueMap.get(settingId);
   }
+
+  // Use this method to fetch the value of FF during pipeline execution
+  public boolean isFFEnabled(Ambiance ambiance, String featureName) {
+    if (ambiance.getMetadata() != null && ambiance.getMetadata().getFeatureFlagToValueMapMap() != null
+        && ambiance.getMetadata().getFeatureFlagToValueMapMap().containsKey(featureName)) {
+      return ambiance.getMetadata().getFeatureFlagToValueMapMap().get(featureName);
+    }
+    return false;
+  }
 }

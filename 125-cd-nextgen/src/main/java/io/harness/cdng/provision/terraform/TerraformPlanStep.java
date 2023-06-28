@@ -7,8 +7,6 @@
 
 package io.harness.cdng.provision.terraform;
 
-import static io.harness.beans.FeatureName.CDS_TERRAFORM_CLI_OPTIONS_NG;
-
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -165,10 +163,8 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
         planStepParameters.getConfiguration().getSkipTerraformRefresh();
     builder.skipTerraformRefresh(ParameterFieldHelper.getBooleanParameterFieldValue(skipTerraformRefreshCommand));
 
-    if (featureFlagHelper.isEnabled(accountId, CDS_TERRAFORM_CLI_OPTIONS_NG)) {
-      builder.terraformCommandFlags(
-          helper.getTerraformCliFlags(planStepParameters.getConfiguration().getCliOptionFlags()));
-    }
+    builder.terraformCommandFlags(
+        helper.getTerraformCliFlags(planStepParameters.getConfiguration().getCliOptionFlags()));
 
     TerraformTaskNGParameters terraformTaskNGParameters =
         builder.taskType(TFTaskType.PLAN)

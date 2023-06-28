@@ -633,6 +633,7 @@ io.harness.cdng.tas.TasAppResizeStepNode
 io.harness.yaml.core.failurestrategy.marksuccess.MarkAsSuccessFailureActionConfig
 io.harness.cdng.provision.terragrunt.TerragruntExecutionDataParameters
 io.harness.cdng.manifest.steps.ManifestsOutcome
+io.harness.cdng.manifest.steps.output.UnresolvedManifestsOutcome
 io.harness.cdng.infra.beans.ServerlessAwsLambdaInfraMapping
 io.harness.cdng.provision.cloudformation.CloudformationDeleteStackStepNode
 io.harness.cdng.k8s.K8sBGStageScaleDownStepNode
@@ -1005,3 +1006,4 @@ io.harness.cdng.provision.terraform.TerraformEncryptOutput
 io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2StepInfo
 io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2StepNode
 io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2StepParameters
+io.harness.cdng.manifestConfigs.ManifestConfigurations

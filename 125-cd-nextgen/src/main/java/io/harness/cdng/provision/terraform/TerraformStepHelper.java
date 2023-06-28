@@ -8,7 +8,6 @@
 package io.harness.cdng.provision.terraform;
 
 import static io.harness.beans.FeatureName.CDS_NOT_ALLOW_READ_ONLY_SECRET_MANAGER_TERRAFORM_TERRAGRUNT_PLAN;
-import static io.harness.beans.FeatureName.CDS_TERRAFORM_S3_NG;
 import static io.harness.beans.FeatureName.CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_NG;
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
@@ -90,11 +89,8 @@ import io.harness.delegate.task.terraform.TerraformBackendConfigFileInfo;
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
 import io.harness.delegate.task.terraform.TerraformVarFileInfo;
 import io.harness.delegate.task.terraform.cleanup.TerraformSecretCleanupTaskParameters;
-import io.harness.eraro.ErrorCode;
-import io.harness.exception.AccessDeniedException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
@@ -341,13 +337,6 @@ public class TerraformStepHelper {
             ((ArtifactoryConnectorDTO) connectorDTO.getConnectorConfig()).getAuth().getCredentials());
         break;
       case ManifestStoreType.S3:
-        if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), CDS_TERRAFORM_S3_NG)) {
-          throw new AccessDeniedException(
-              format(
-                  "Supporting S3 storage type in the Terraform step is not enabled for account '%s'. Please contact harness customer care to enable FF [%s].",
-                  AmbianceUtils.getAccountId(ambiance), CDS_TERRAFORM_S3_NG.name()),
-              ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
-        }
         fileStoreFetchFilesConfig = getS3StoreDelegateConfig((S3StoreConfig) store, identifier);
         encryptedDataDetails = secretManagerClientService.getEncryptionDetails(
             basicNGAccessObject, ((AwsConnectorDTO) connectorDTO.getConnectorConfig()).getCredential().getConfig());

@@ -44,9 +44,12 @@ import com.google.inject.name.Named;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -214,7 +217,9 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
   public JsonNode getStaticYamlSchema(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String templateChildType, TemplateEntityType entityType, Scope scope, String version) {
     String env = System.getenv("ENV");
-    if (PRE_QA.equals(env)) {
+    Set<TemplateEntityType> notSupportedStaticSchemaTemplateTypes = new HashSet<>(
+        Arrays.asList(TemplateEntityType.ARTIFACT_SOURCE_TEMPLATE, TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE));
+    if (PRE_QA.equals(env) && !notSupportedStaticSchemaTemplateTypes.contains(entityType)) {
       String fileUrl = calculateFileURL(entityType, version);
       try {
         // Read the JSON file as JsonNode
@@ -267,8 +272,8 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
       case STEPGROUP_TEMPLATE:
       case PIPELINE_TEMPLATE:
       case STAGE_TEMPLATE:
-      case CUSTOM_DEPLOYMENT_TEMPLATE:
-      case ARTIFACT_SOURCE_TEMPLATE:
+      case MONITORED_SERVICE_TEMPLATE:
+      case SECRET_MANAGER_TEMPLATE:
         filePath = TEMPLATE_JSON_PATH;
         break;
       default:

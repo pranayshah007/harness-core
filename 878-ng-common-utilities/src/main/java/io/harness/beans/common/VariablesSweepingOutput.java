@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
+import io.harness.pms.sdk.core.data.Outcome;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.HashMap;
@@ -21,4 +22,4 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName("variablesSweepingOutput")
 @OwnedBy(CDC)
 @RecasterAlias("io.harness.beans.common.VariablesSweepingOutput")
-public class VariablesSweepingOutput extends HashMap<String, Object> implements ExecutionSweepingOutput {}
+public class VariablesSweepingOutput extends HashMap<String, Object> implements ExecutionSweepingOutput, Outcome {}

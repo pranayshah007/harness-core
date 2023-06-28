@@ -15,6 +15,7 @@ import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.beans.ScopeLevel;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.gitops.beans.FetchLinkedAppsStepParams;
@@ -212,11 +213,17 @@ public class FetchLinkedAppsStep extends CdTaskExecutable<GitOpsFetchAppTaskResp
                                          .map(clusterdata
                                              -> IdentifierRef.builder()
                                                     .identifier(clusterdata.getClusterId())
-                                                    .scope(Scope.fromString(clusterdata.getScope()))
+                                                    .scope(getScope(clusterdata.getScope()))
                                                     .build())
                                          .collect(Collectors.toList());
 
     return clusterIds.stream().map(IdentifierRef::buildScopedIdentifier).collect(Collectors.toList());
+  }
+
+  // In commons, some places refer to org scope as ORGANIZATION and others refer it as ORG
+  // This method takes care of both the mappings
+  private Scope getScope(String scope) {
+    return ScopeLevel.ORGANIZATION.toString().equalsIgnoreCase(scope) ? Scope.ORG : Scope.fromString(scope);
   }
 
   private void populateAppUrls(List<Application> applications, IdentifierRef identifierRef) {

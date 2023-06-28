@@ -35,4 +35,5 @@ public class RecommendationItemDTO {
   String perspectiveId;
   String perspectiveName;
   String cloudProvider;
+  String governanceRuleId;
 }

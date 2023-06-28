@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngtriggers.mapper;
+
 import static io.harness.constants.Constants.AMZ_SUBSCRIPTION_CONFIRMATION_TYPE;
 import static io.harness.constants.Constants.X_AMZ_SNS_MESSAGE_TYPE;
 import static io.harness.constants.Constants.X_BIT_BUCKET_EVENT;
@@ -512,28 +513,30 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
     String ngCustomTriggerYaml2 =
         Resources.toString(Objects.requireNonNull(classLoader.getResource(fileName2)), StandardCharsets.UTF_8);
 
-    NGTriggerEntity ngTriggerEntity =
-        NGTriggerEntity.builder()
-            .accountId("account")
-            .orgIdentifier("org")
-            .projectIdentifier("project")
-            .targetIdentifier("pipeline")
-            .name("first trigger")
-            .identifier("first_trigger")
-            .targetType(TargetType.PIPELINE)
-            .withServiceV2(true)
-            .pollInterval("")
-            .metadata(
-                NGTriggerMetadata.builder()
-                    .webhook(WebhookMetadata.builder()
-                                 .type("AWS_CODECOMMIT")
-                                 .git(GitMetadata.builder().connectorIdentifier("conn").repoName("myrepo").build())
-                                 .build())
-                    .build())
-            .yaml(ngCustomTriggerYaml2)
-            .enabled(true)
-            .type(WEBHOOK)
-            .build();
+    NGTriggerEntity ngTriggerEntity = NGTriggerEntity.builder()
+                                          .accountId("account")
+                                          .orgIdentifier("org")
+                                          .projectIdentifier("project")
+                                          .targetIdentifier("pipeline")
+                                          .name("first trigger")
+                                          .identifier("first_trigger")
+                                          .targetType(TargetType.PIPELINE)
+                                          .withServiceV2(true)
+                                          .pollInterval("")
+                                          .metadata(NGTriggerMetadata.builder()
+                                                        .webhook(WebhookMetadata.builder()
+                                                                     .type("AWS_CODECOMMIT")
+                                                                     .git(GitMetadata.builder()
+                                                                              .connectorIdentifier("conn")
+                                                                              .repoName("myrepo")
+                                                                              .isHarnessScm(false)
+                                                                              .build())
+                                                                     .build())
+                                                        .build())
+                                          .yaml(ngCustomTriggerYaml2)
+                                          .enabled(true)
+                                          .type(WEBHOOK)
+                                          .build();
     NGTriggerConfigV2 ngTriggerConfigV2 =
         NGTriggerConfigV2.builder()
             .pipelineIdentifier("pipeline")

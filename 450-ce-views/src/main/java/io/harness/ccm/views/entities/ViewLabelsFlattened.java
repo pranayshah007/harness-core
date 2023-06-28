@@ -21,4 +21,5 @@ public class ViewLabelsFlattened {
   Map<String, String> labelsKeyAndColumnMapping;
   boolean shouldUseFlattenedLabelsColumn;
   Set<String> flattenedLabelsTableColumns;
+  boolean isClusterTable;
 }

@@ -27,7 +27,6 @@ import io.harness.spec.server.idp.v1.model.HarnessEntitiesCountResponse;
 import io.harness.spec.server.idp.v1.model.HarnessEntitiesResponse;
 import io.harness.spec.server.idp.v1.model.ImportEntitiesBase;
 import io.harness.spec.server.idp.v1.model.ImportEntitiesResponse;
-import io.harness.spec.server.idp.v1.model.ManualImportEntityRequest;
 import io.harness.utils.ApiUtils;
 
 import com.google.inject.Inject;
@@ -87,17 +86,6 @@ public class OnboardingResourceApiImpl implements OnboardingResourceApi {
         importHarnessEntitiesRequest);
     ImportEntitiesResponse importHarnessEntities =
         onboardingService.importHarnessEntities(harnessAccount, importHarnessEntitiesRequest);
-    return Response.status(Response.Status.OK).entity(importHarnessEntities).build();
-  }
-
-  @Override
-  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response manualImportEntity(
-      @Valid ManualImportEntityRequest manualImportEntityRequest, @AccountIdentifier String harnessAccount) {
-    log.info("Request received to import entity manually to IDP. Account = {}, Request = {}", harnessAccount,
-        manualImportEntityRequest);
-    ImportEntitiesResponse importHarnessEntities =
-        onboardingService.manualImportEntity(harnessAccount, manualImportEntityRequest);
     return Response.status(Response.Status.OK).entity(importHarnessEntities).build();
   }
 }

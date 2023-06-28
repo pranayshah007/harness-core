@@ -170,9 +170,3 @@ featureFlagConfig:
 staticSchemaFileURL: ${STATIC_SCHEMA_FILE_URL:-"https://raw.githubusercontent.com/harness/harness-schema/main/%s/%s"}
 
 distributedLockImplementation: MONGO
-
-segmentConfiguration:
-  enabled: false
-  url: "segment_url_place_holder"
-  apiKey: "segment_api_key"
-  certValidationRequired: false

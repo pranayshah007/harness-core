@@ -7,7 +7,6 @@
 
 package io.harness.cdng.provision.terraform;
 
-import static io.harness.beans.FeatureName.CDS_TERRAFORM_CLI_OPTIONS_NG;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.DESTROY;
 
 import io.harness.EntityType;
@@ -152,9 +151,7 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
       builder.workspace(ParameterFieldHelper.getParameterFieldValue(spec.getWorkspace()));
     }
 
-    if (cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAFORM_CLI_OPTIONS_NG)) {
-      builder.terraformCommandFlags(helper.getTerraformCliFlags(parameters.getConfiguration().getCliOptions()));
-    }
+    builder.terraformCommandFlags(helper.getTerraformCliFlags(parameters.getConfiguration().getCliOptions()));
 
     ParameterField<Boolean> skipTerraformRefreshCommandParameter =
         parameters.getConfiguration().getIsSkipTerraformRefresh();
@@ -215,9 +212,7 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
     builder.entityId(entityId);
     builder.currentStateFileId(helper.getLatestFileId(entityId));
 
-    if (cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAFORM_CLI_OPTIONS_NG)) {
-      builder.terraformCommandFlags(helper.getTerraformCliFlags(parameters.getConfiguration().getCliOptions()));
-    }
+    builder.terraformCommandFlags(helper.getTerraformCliFlags(parameters.getConfiguration().getCliOptions()));
 
     TerraformInheritOutput inheritOutput =
         helper.getSavedInheritOutput(provisionerIdentifier, DESTROY.name(), ambiance);
@@ -275,9 +270,7 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
     builder.entityId(entityId);
     builder.currentStateFileId(helper.getLatestFileId(entityId));
 
-    if (cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAFORM_CLI_OPTIONS_NG)) {
-      builder.terraformCommandFlags(helper.getTerraformCliFlags(parameters.getConfiguration().getCliOptions()));
-    }
+    builder.terraformCommandFlags(helper.getTerraformCliFlags(parameters.getConfiguration().getCliOptions()));
 
     TerraformConfig terraformConfig = helper.getLastSuccessfulApplyConfig(parameters, ambiance);
     builder.workspace(terraformConfig.getWorkspace())

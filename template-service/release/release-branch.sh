@@ -43,6 +43,28 @@ function check_file_present(){
      fi
 }
 
+function perform_curl_with_retry() {
+    local url="$1"
+    local output_file="$2"
+    local max_attempts=3
+    local attempt=1
+
+    while [ $attempt -le $max_attempts ]; do
+        echo "Attempt $attempt: curling $url"
+        if curl -o "$output_file" -s -w "%{http_code}" "$url" | grep -q -E "^[23]..$"; then
+            echo "Curl succeeded, updating file: $output_file"
+            return 0
+        else
+            echo "Curl attempt $attempt failed"
+            attempt=$((attempt + 1))
+            sleep 1
+        fi
+    done
+
+    echo "All curl attempts failed. File not updated: $output_file"
+    return 1
+}
+
 export PURPOSE=template-service
 export STATUS_ID_TO_MOVE=151
 
@@ -179,27 +201,5 @@ template-service/release/release-branch-create-template-versions.sh
 
 chmod +x template-service/release/release-branch-update-jiras.sh
 template-service/release/release-branch-update-jiras.sh
-
-perform_curl_with_retry() {
-    local url="$1"
-    local output_file="$2"
-    local max_attempts=3
-    local attempt=1
-
-    while [ $attempt -le $max_attempts ]; do
-        echo "Attempt $attempt: curling $url"
-        if curl -o "$output_file" -s -w "%{http_code}" "$url" | grep -q -E "^[23]..$"; then
-            echo "Curl succeeded, updating file: $output_file"
-            return 0
-        else
-            echo "Curl attempt $attempt failed"
-            attempt=$((attempt + 1))
-            sleep 1
-        fi
-    done
-
-    echo "All curl attempts failed. File not updated: $output_file"
-    return 1
-}
 
 

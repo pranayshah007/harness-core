@@ -146,6 +146,7 @@ import io.harness.signup.dto.SignupInviteDTO;
 import io.harness.telemetry.Destination;
 import io.harness.telemetry.TelemetryReporter;
 import io.harness.usermembership.remote.UserMembershipClient;
+import io.harness.utils.UserUtils;
 import io.harness.version.VersionInfoManager;
 
 import software.wings.app.MainConfiguration;
@@ -294,8 +295,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.cache.Cache;
@@ -349,7 +348,6 @@ public class UserServiceImpl implements UserService {
   private static final String SETUP_ACCOUNT_FROM_MARKETPLACE = "Account Setup from Marketplace";
   private static final String NG_AUTH_UI_PATH_PREFIX = "auth/";
   private static final String USER_INVITE = "user_invite";
-  private static final Pattern NAME_PATTERN = Pattern.compile("^[^:<>=\\/]*$");
   private static final String CD = "CD";
   private static final String CI = "CI";
   private static final String FF = "FF";
@@ -3245,14 +3243,7 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public void validateName(String name) {
-    if (isBlank(name)) {
-      throw new InvalidRequestException("Name cannot be empty", USER);
-    }
-
-    Matcher matcher = NAME_PATTERN.matcher(name);
-    if (!matcher.matches()) {
-      throw new InvalidRequestException("Name is not valid. It should not contain :, <, >, =, /", USER);
-    }
+    UserUtils.validateUserName(name);
   }
 
   private void deleteUser(User user) {

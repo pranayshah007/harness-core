@@ -417,9 +417,11 @@ public class NGTriggerElementMapper {
 
     GitAware gitAware = WebhookConfigHelper.retrieveGitAware(webhookTriggerConfig);
     if (gitAware != null) {
+      boolean isHarnessScm = HARNESS.equals(webhookTriggerConfig.getType());
       return GitMetadata.builder()
           .connectorIdentifier(gitAware.fetchConnectorRef())
           .repoName(gitAware.fetchRepoName())
+          .isHarnessScm(isHarnessScm)
           .build();
     }
 

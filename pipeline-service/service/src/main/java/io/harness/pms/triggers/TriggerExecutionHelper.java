@@ -282,6 +282,8 @@ public class TriggerExecutionHelper {
       }
 
       executionHelper.updateSettingsInExecutionMetadataBuilder(pipelineEntity, executionMetaDataBuilder);
+      executionHelper.updateFeatureFlagsInExecutionMetadataBuilder(
+          pipelineEntity.getAccountId(), executionHelper.featureNames, executionMetaDataBuilder);
 
       PlanExecutionMetadata.Builder planExecutionMetadataBuilder =
           PlanExecutionMetadata.builder().planExecutionId(executionId).triggerJsonPayload(payload);

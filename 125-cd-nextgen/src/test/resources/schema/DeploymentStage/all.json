@@ -11011,6 +11011,9 @@
               "items": {
                 "$ref": "#/definitions/ServiceHookWrapper"
               }
+            },
+            "manifestConfigurations": {
+              "$ref": "#/definitions/ManifestConfigurations"
             }
           }
         }
@@ -11686,6 +11689,15 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ManifestConfigurations": {
+      "type": "object",
+      "properties": {
+        "primaryManifestRef": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ManifestOverrideSetWrapper": {
       "type": "object",
       "properties": {
@@ -11965,6 +11977,9 @@
               "items": {
                 "$ref": "#/definitions/ServiceHookWrapper"
               }
+            },
+            "manifestConfigurations": {
+              "$ref": "#/definitions/ManifestConfigurations"
             }
           }
         }

@@ -304,6 +304,10 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
         + "key";
     public String tagsValue = PlanExecutionSummaryKeys.tags + "."
         + "value";
+    public String labelsKey = PlanExecutionSummaryKeys.labels + "."
+        + "key";
+    public String labelsValue = PlanExecutionSummaryKeys.labels + "."
+        + "value";
     public String isChildPipeline = PlanExecutionSummaryKeys.parentStageInfo + "."
         + "hasParentPipeline";
     public String rollbackModeExecutionId = PlanExecutionSummaryKeys.rollbackExecutionInfo + "."

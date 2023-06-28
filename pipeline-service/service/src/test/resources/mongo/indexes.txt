@@ -121,6 +121,8 @@ resourceRestraintInstances {"name": "resourceRestraintId_resourceUnit_state_idx"
 resourceRestraintInstances {"name": "resourceRestraintId_state_idx", "background": true} {"resourceRestraintId": 1, "state": 1}
 resourceRestraintInstances {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 resourceRestraints {"name": "uniqueName", "unique": true} {"accountId": 1, "name": 1}
+stageExecutionEntity {"name": "stage_execution_entity_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "stageExecutionId": 1, "createdAt": -1}
+stageExecutionEntity {"name": "unique_stage_execution_entity_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "stageExecutionId": 1}
 stepDetailInstance {"name": "nodeExecutionId_name_unique_idx", "unique": true} {"nodeExecutionId": 1, "name": 1}
 stepDetailInstance {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 stepExecutionEntity {"name": "step_execution_entity_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "stepExecutionId": 1, "createdAt": -1}

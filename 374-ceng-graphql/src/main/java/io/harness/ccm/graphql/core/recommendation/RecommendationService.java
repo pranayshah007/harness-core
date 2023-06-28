@@ -56,6 +56,7 @@ public class RecommendationService {
                    .jiraIssueKey(ceRecommendations.getJiraissuekey())
                    .jiraStatus(ceRecommendations.getJirastatus())
                    .cloudProvider(ceRecommendations.getCloudprovider())
+                   .governanceRuleId(ceRecommendations.getGovernanceruleid())
                    .build())
         .collect(Collectors.toList());
   }

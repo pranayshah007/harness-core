@@ -791,6 +791,33 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
   }
 
   @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetMergedYamlFromInputSetReferencesAndRuntimeInputYamlWithNoInputSetIdentifiers() {
+    doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountId, orgId, projectId);
+    String base = "pipeline:\n"
+        + "  stages:\n"
+        + "  - stage:\n"
+        + "      identifier: s1\n"
+        + "      field1: lastRuntimeYaml\n"
+        + "      field2: lastRuntimeYaml\n"
+        + "  - stage:\n"
+        + "      identifier: s2\n"
+        + "      field1: lastRuntimeYaml\n"
+        + "      field2: lastRuntimeYaml\n"
+        + "  - stage:\n"
+        + "      identifier: s3\n"
+        + "      field1: lastRuntimeYaml\n"
+        + "      field2: lastRuntimeYaml\n";
+    doReturn(Optional.of(PipelineEntity.builder().yaml(base).build()))
+        .when(pmsPipelineService)
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false, false, true);
+    String merged1 = validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(
+        accountId, orgId, projectId, pipelineId, null, null, null, Collections.emptyList(), null, false, true);
+    assertThat(merged1).isEqualTo("{}\n");
+  }
+
+  @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testGetMergedYamlFromInputSetReferencesAndRuntimeInputYamlWithDefaultValues() {

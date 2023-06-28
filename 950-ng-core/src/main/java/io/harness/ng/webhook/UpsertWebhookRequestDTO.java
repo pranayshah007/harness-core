@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.HookEventType;
+import io.harness.validation.OneOfField;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import javax.validation.constraints.NotNull;
@@ -28,11 +29,12 @@ import org.hibernate.validator.constraints.NotEmpty;
 @OwnedBy(DX)
 @Schema(name = "UpsertWebhookRequest",
     description = "This is the view of the UpsertWebhookRequest entity defined in Harness")
+@OneOfField(fields = {"connectorIdentifierRef", "isHarnessCode"})
 public class UpsertWebhookRequestDTO {
   @NotNull @NotEmpty String accountIdentifier;
   String orgIdentifier;
   String projectIdentifier;
-  @NotNull @NotEmpty String connectorIdentifierRef;
+  String connectorIdentifierRef;
   @NotNull HookEventType hookEventType;
   String repoURL;
   String webhookSecretIdentifierRef;

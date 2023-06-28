@@ -1349,7 +1349,7 @@ paths:
       security:
         - x-api-key: []
       description: List rancher clusters using the given project level rancher connector
-  '/v1/environments/{environment}/rancher/infrastructure-definitions/{infrastructure-definition}/clusters':
+  '/v1/rancher/environments/{environment}/infrastructure-definitions/{infrastructure-definition}/clusters':
     parameters:
       - $ref: '#/components/parameters/EnvironmentPathParam'
       - $ref: '#/components/parameters/InfrastructureDefinitionPathParam'
@@ -1370,7 +1370,7 @@ paths:
       security:
         - x-api-key: []
       description: List rancher clusters using the given account level environment and infrastructure definition.
-  '/v1/orgs/{org}/environments/{environment}/rancher/infrastructure-definitions/{infrastructure-definition}/clusters':
+  '/v1/orgs/{org}/rancher/environments/{environment}/infrastructure-definitions/{infrastructure-definition}/clusters':
     parameters:
       - $ref: '#/components/parameters/OrgPathParam'
       - $ref: '#/components/parameters/EnvironmentPathParam'
@@ -1392,7 +1392,7 @@ paths:
       security:
         - x-api-key: []
       description: List rancher clusters using the given org level environment and infrastructure definition.
-  '/v1/orgs/{org}/projects/{project}/environments/{environment}/rancher/infrastructure-definitions/{infrastructure-definition}/clusters':
+  '/v1/orgs/{org}/projects/{project}/rancher/environments/{environment}/infrastructure-definitions/{infrastructure-definition}/clusters':
     parameters:
       - $ref: '#/components/parameters/OrgPathParam'
       - $ref: '#/components/parameters/ProjectPathParam'
