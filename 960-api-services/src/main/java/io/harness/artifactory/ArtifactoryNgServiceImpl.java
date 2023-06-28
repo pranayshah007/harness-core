@@ -87,14 +87,19 @@ public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
       buildDetails = buildDetails.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList());
     } else {
       Pattern finalArtifactPathRegexPattern = artifactPathRegexPattern;
+      int directoryPathLength = EmptyPredicate.isNotEmpty(artifactDirectory)
+          ? filePath.equalsIgnoreCase("/*") ? 0 : filePath.length() - resolvedArtifactPath.length()
+          : 0;
       buildDetails = buildDetails.stream()
                          .filter(bd -> {
-                           Matcher matcher = finalArtifactPathRegexPattern.matcher(bd.getArtifactPath());
-                           return matcher.find();
+                           String fileName = bd.getArtifactPath().substring(directoryPathLength);
+                           Matcher matcher = finalArtifactPathRegexPattern.matcher(fileName);
+                           return matcher.matches();
                          })
                          .sorted(new BuildDetailsComparatorDescending())
                          .collect(Collectors.toList());
     }
+
     if (buildDetails.isEmpty()) {
       if (EmptyPredicate.isEmpty(artifactPath)) {
         throw NestedExceptionUtils.hintWithExplanationException(

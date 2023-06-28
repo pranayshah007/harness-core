@@ -147,11 +147,12 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
   public void testaGetLatestArtifact() {
     ArtifactoryConfigRequest artifactoryConfigRequest = ArtifactoryConfigRequest.builder().build();
     List<BuildDetails> buildDetails = new ArrayList<>();
-    buildDetails.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.exe.temp").build());
+    buildDetails.add(
+        BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactDirectory/artifactPath.exe.temp").build());
     doReturn(buildDetails).when(artifactoryClient).getArtifactList(any(), any(), any(), anyInt());
 
     assertThat(artifactoryNgService.getLatestArtifact(
-                   artifactoryConfigRequest, "repoName", "artifactDirectory", "artifactPath.exe.temp", "", 10))
+                   artifactoryConfigRequest, "repoName", "artifactDirectory", "(artifactPath.exe.temp)", "", 10))
         .isEqualTo(
             buildDetails.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList()).get(0));
 
@@ -187,49 +188,102 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
   public void testaGetLatestArtifact2() {
     ArtifactoryConfigRequest artifactoryConfigRequest = ArtifactoryConfigRequest.builder().build();
     List<BuildDetails> buildDetails1 = new ArrayList<>();
-    buildDetails1.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.exe.temp").build());
-    buildDetails1.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.exe.hash").build());
+    buildDetails1.add(BuildDetails.Builder.aBuildDetails()
+                          .withArtifactPath("artifactDirectory/subfolder/artifactPath.exe.temp")
+                          .build());
+    buildDetails1.add(BuildDetails.Builder.aBuildDetails()
+                          .withArtifactPath("artifactDirectory/subfolder/artifactPath.exe.hash")
+                          .build());
     doReturn(buildDetails1).when(artifactoryClient).getArtifactList(any(), anyString(), anyString(), anyInt());
 
     assertThat(artifactoryNgService.getLatestArtifact(
-                   artifactoryConfigRequest, "repoName", "artifactDirectory", null, "artifactPath.exe.", 10))
+                   artifactoryConfigRequest, "repoName", "artifactDirectory/subfolder", null, "artifactPath.exe.", 10))
         .isEqualTo(
             buildDetails1.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList()).get(0));
 
     List<BuildDetails> buildDetails2 = new ArrayList<>();
-    buildDetails2.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.exe.temp").build());
-    buildDetails2.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.exe").build());
-    buildDetails2.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.exe.hash").build());
+    buildDetails2.add(BuildDetails.Builder.aBuildDetails()
+                          .withArtifactPath("artifactDirectory/subfolder/artifactPath.exe.temp")
+                          .build());
+    buildDetails2.add(
+        BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactDirectory/subfolder/artifactPath.exe").build());
+    buildDetails2.add(BuildDetails.Builder.aBuildDetails()
+                          .withArtifactPath("artifactDirectory/subfolder/artifactPath.exe.hash")
+                          .build());
     doReturn(buildDetails2).when(artifactoryClient).getArtifactList(any(), anyString(), anyString(), anyInt());
 
     assertThat(artifactoryNgService.getLatestArtifact(
-                   artifactoryConfigRequest, "repoName", "artifactDirectory", "", "artifactPath.exe", 10))
+                   artifactoryConfigRequest, "repoName", "artifactDirectory/subfolder", "", "artifactPath.exe", 10))
         .isEqualTo(
             buildDetails2.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList()).get(1));
 
     List<BuildDetails> buildDetails3 = new ArrayList<>();
-    buildDetails3.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.exe.hash").build());
+    buildDetails3.add(BuildDetails.Builder.aBuildDetails()
+                          .withArtifactPath("artifactDirectory/subfolder/artifactPath.exe.hash")
+                          .build());
     doReturn(buildDetails3).when(artifactoryClient).getArtifactList(any(), anyString(), anyString(), anyInt());
 
-    assertThat(artifactoryNgService.getLatestArtifact(
-                   artifactoryConfigRequest, "repoName", "artifactDirectory", "", "artifactPath.exe.hash", 10))
+    assertThat(artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName",
+                   "artifactDirectory/subfolder", "", "artifactPath.exe.hash", 10))
         .isEqualTo(
             buildDetails3.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList()).get(0));
 
     List<BuildDetails> buildDetails4 = new ArrayList<>();
-    buildDetails4.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.exe.temp").build());
-    buildDetails4.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.exe").build());
-    buildDetails4.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.exe.hash").build());
+    buildDetails4.add(BuildDetails.Builder.aBuildDetails()
+                          .withArtifactPath("artifactDirectory/subfolder/artifactPath.exe.temp")
+                          .build());
+    buildDetails4.add(
+        BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactDirectory/subfolder/artifactPath.exe").build());
+    buildDetails4.add(BuildDetails.Builder.aBuildDetails()
+                          .withArtifactPath("artifactDirectory/subfolder/artifactPath.exe.hash")
+                          .build());
     doReturn(buildDetails4).when(artifactoryClient).getArtifactList(any(), anyString(), anyString(), anyInt());
 
-    assertThat(artifactoryNgService.getLatestArtifact(
-                   artifactoryConfigRequest, "repoName", "artifactDirectory", "[a-zA-Z.]+(exe)[.a-zA-Z]+", "", 10))
-        .isEqualTo(
-            buildDetails4.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList()).get(0));
+    BuildDetails result4 = artifactoryNgService.getLatestArtifact(
+        artifactoryConfigRequest, "repoName", "artifactDirectory/subfolder", "[a-zA-Z.]+(exe).*", "", 10);
+    assertThat(result4.getArtifactPath()).endsWith("artifactPath.exe.temp");
+
+    List<BuildDetails> buildDetails5 = new ArrayList<>();
+    buildDetails5.add(BuildDetails.Builder.aBuildDetails()
+                          .withArtifactPath("artifactDirectory/subfolder/artifactPath.exe.temp")
+                          .build());
+    buildDetails5.add(
+        BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactDirectory/subfolder/artifactPath.exe").build());
+    buildDetails5.add(BuildDetails.Builder.aBuildDetails()
+                          .withArtifactPath("artifactDirectory/subfolder/artifactPath.exe.hash")
+                          .build());
+    doReturn(buildDetails5).when(artifactoryClient).getArtifactList(any(), anyString(), anyString(), anyInt());
+
+    BuildDetails result5 = artifactoryNgService.getLatestArtifact(
+        artifactoryConfigRequest, "repoName", "artifactDirectory/subfolder", "[a-zA-Z.]+(exe)", "", 10);
+    assertThat(result5.getArtifactPath()).endsWith("artifactPath.exe");
+
+    List<BuildDetails> buildDetails6 = new ArrayList<>();
+    buildDetails6.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.exe.temp").build());
+    buildDetails6.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.exe").build());
+    buildDetails6.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.exe.hash").build());
+    buildDetails6.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.bin.asd").build());
+    buildDetails6.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.exe.asd").build());
+    buildDetails6.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.zip").build());
+    doReturn(buildDetails6).when(artifactoryClient).getArtifactList(any(), anyString(), anyString(), anyInt());
+
+    BuildDetails result6 =
+        artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName", "/", "[a-zA-Z.]+(exe)", "", 10);
+    assertThat(result6.getArtifactPath()).endsWith("artifactPath.exe");
+
+    List<BuildDetails> buildDetails7 = new ArrayList<>();
+    buildDetails7.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.exe.temp").build());
+    buildDetails7.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.exe").build());
+    buildDetails7.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.exe.hash").build());
+    doReturn(buildDetails7).when(artifactoryClient).getArtifactList(any(), anyString(), anyString(), anyInt());
+
+    BuildDetails result7 =
+        artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName", "", "[a-zA-Z.]+(exe)", "", 10);
+    assertThat(result7.getArtifactPath()).endsWith("artifactPath.exe");
 
     assertThatThrownBy(()
                            -> artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName",
-                               "artifactDirectory", "[a-zA-Z.]+(exe)[.a-zA-Z]+)", "", 10))
+                               "artifactDirectory/subfolder", "[a-zA-Z.]+(exe)[.a-zA-Z]+)", "", 10))
         .isInstanceOf(WingsException.class)
         .getCause()
         .isInstanceOf(ExplanationException.class)
