@@ -33,6 +33,7 @@ import io.harness.beans.gitsync.GitFilePathDetails;
 import io.harness.beans.gitsync.GitPRCreateRequest;
 import io.harness.beans.request.GitFileBatchRequest;
 import io.harness.beans.request.GitFileRequest;
+import io.harness.beans.request.GitFileRequestDTO;
 import io.harness.beans.request.GitFileRequestV2;
 import io.harness.beans.response.GitFileResponse;
 import io.harness.category.element.UnitTests;
@@ -431,15 +432,19 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
                                            .scope(getScope(accountIdentifier, orgIdentifier, projectIdentifier))
                                            .scmConnector(githubConnector)
                                            .build();
-    Map<GetBatchFileRequestIdentifier, GitFileRequestV2> getBatchFileRequestIdentifierGitFileRequestV2Map =
+    Map<GetBatchFileRequestIdentifier, GitFileRequestDTO> getBatchFileRequestIdentifierGitFileRequestV2Map =
         new HashMap<>();
     GitFileBatchRequest gitFileBatchRequest =
         GitFileBatchRequest.builder()
             .accountIdentifier(accountIdentifier)
             .getBatchFileRequestIdentifierGitFileRequestV2Map(getBatchFileRequestIdentifierGitFileRequestV2Map)
             .build();
-    getBatchFileRequestIdentifierGitFileRequestV2Map.put(getRandomRequestIdentifier(), gitFileRequest1);
-    getBatchFileRequestIdentifierGitFileRequestV2Map.put(getRandomRequestIdentifier(), gitFileRequest2);
+    GitFileRequestDTO gitFileRequestDTO1 =
+        GitFileRequestDTO.builder().isInputBranchEmpty(false).gitFileRequestV2(gitFileRequest1).build();
+    GitFileRequestDTO gitFileRequestDTO2 =
+        GitFileRequestDTO.builder().isInputBranchEmpty(false).gitFileRequestV2(gitFileRequest2).build();
+    getBatchFileRequestIdentifierGitFileRequestV2Map.put(getRandomRequestIdentifier(), gitFileRequestDTO1);
+    getBatchFileRequestIdentifierGitFileRequestV2Map.put(getRandomRequestIdentifier(), gitFileRequestDTO2);
     ScmBatchGetFileTaskParams responseParams =
         scmDelegateFacilitatorService.getScmBatchGetFileTaskParams(gitFileBatchRequest);
     assertThat(responseParams.getGetFileTaskParamsPerConnectorList().size()).isEqualTo(2);
@@ -449,7 +454,9 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
                                            .scope(getScope(accountIdentifier, orgIdentifier, projectIdentifier))
                                            .scmConnector(githubConnector)
                                            .build();
-    getBatchFileRequestIdentifierGitFileRequestV2Map.put(getRandomRequestIdentifier(), gitFileRequest3);
+    GitFileRequestDTO gitFileRequestDTO3 =
+        GitFileRequestDTO.builder().isInputBranchEmpty(false).gitFileRequestV2(gitFileRequest3).build();
+    getBatchFileRequestIdentifierGitFileRequestV2Map.put(getRandomRequestIdentifier(), gitFileRequestDTO3);
     responseParams = scmDelegateFacilitatorService.getScmBatchGetFileTaskParams(gitFileBatchRequest);
     assertThat(responseParams.getGetFileTaskParamsPerConnectorList().size()).isEqualTo(2);
 
@@ -458,7 +465,9 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
                                            .scope(getScope(null, orgIdentifier, projectIdentifier))
                                            .scmConnector(githubConnector)
                                            .build();
-    getBatchFileRequestIdentifierGitFileRequestV2Map.put(getRandomRequestIdentifier(), gitFileRequest4);
+    GitFileRequestDTO gitFileRequestDTO4 =
+        GitFileRequestDTO.builder().isInputBranchEmpty(false).gitFileRequestV2(gitFileRequest4).build();
+    getBatchFileRequestIdentifierGitFileRequestV2Map.put(getRandomRequestIdentifier(), gitFileRequestDTO4);
     responseParams = scmDelegateFacilitatorService.getScmBatchGetFileTaskParams(gitFileBatchRequest);
     assertThat(responseParams.getGetFileTaskParamsPerConnectorList().size()).isEqualTo(3);
   }
@@ -471,15 +480,19 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
         GitFileRequestV2.builder().scope(getScope(accountIdentifier, orgIdentifier, projectIdentifier)).build();
     GitFileRequestV2 gitFileRequest2 =
         GitFileRequestV2.builder().scope(getScope(accountIdentifier, orgIdentifier, projectIdentifier)).build();
-    Map<GetBatchFileRequestIdentifier, GitFileRequestV2> getBatchFileRequestIdentifierGitFileRequestV2Map =
+    Map<GetBatchFileRequestIdentifier, GitFileRequestDTO> getBatchFileRequestIdentifierGitFileRequestV2Map =
         new HashMap<>();
     GitFileBatchRequest gitFileBatchRequest =
         GitFileBatchRequest.builder()
             .accountIdentifier(accountIdentifier)
             .getBatchFileRequestIdentifierGitFileRequestV2Map(getBatchFileRequestIdentifierGitFileRequestV2Map)
             .build();
-    getBatchFileRequestIdentifierGitFileRequestV2Map.put(getRandomRequestIdentifier(), gitFileRequest1);
-    getBatchFileRequestIdentifierGitFileRequestV2Map.put(getRandomRequestIdentifier(), gitFileRequest2);
+    GitFileRequestDTO gitFileRequestDTO1 =
+        GitFileRequestDTO.builder().isInputBranchEmpty(false).gitFileRequestV2(gitFileRequest1).build();
+    GitFileRequestDTO gitFileRequestDTO2 =
+        GitFileRequestDTO.builder().isInputBranchEmpty(false).gitFileRequestV2(gitFileRequest2).build();
+    getBatchFileRequestIdentifierGitFileRequestV2Map.put(getRandomRequestIdentifier(), gitFileRequestDTO1);
+    getBatchFileRequestIdentifierGitFileRequestV2Map.put(getRandomRequestIdentifier(), gitFileRequestDTO2);
     Scope scope = scmDelegateFacilitatorService.getEligibleScopeOfDelegates(gitFileBatchRequest);
     assertThat(scope.getAccountIdentifier()).isEqualTo(accountIdentifier);
     assertThat(scope.getOrgIdentifier()).isEqualTo(orgIdentifier);
@@ -487,7 +500,9 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
 
     GitFileRequestV2 gitFileRequest3 =
         GitFileRequestV2.builder().scope(getScope(accountIdentifier, orgIdentifier, null)).build();
-    getBatchFileRequestIdentifierGitFileRequestV2Map.put(getRandomRequestIdentifier(), gitFileRequest3);
+    GitFileRequestDTO gitFileRequestDTO3 =
+        GitFileRequestDTO.builder().isInputBranchEmpty(false).gitFileRequestV2(gitFileRequest3).build();
+    getBatchFileRequestIdentifierGitFileRequestV2Map.put(getRandomRequestIdentifier(), gitFileRequestDTO3);
     scope = scmDelegateFacilitatorService.getEligibleScopeOfDelegates(gitFileBatchRequest);
     assertThat(scope.getAccountIdentifier()).isEqualTo(accountIdentifier);
     assertThat(scope.getOrgIdentifier()).isEqualTo(orgIdentifier);
@@ -495,7 +510,9 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
 
     GitFileRequestV2 gitFileRequest4 =
         GitFileRequestV2.builder().scope(getScope(accountIdentifier, null, null)).build();
-    getBatchFileRequestIdentifierGitFileRequestV2Map.put(getRandomRequestIdentifier(), gitFileRequest4);
+    GitFileRequestDTO gitFileRequestDTO4 =
+        GitFileRequestDTO.builder().isInputBranchEmpty(false).gitFileRequestV2(gitFileRequest4).build();
+    getBatchFileRequestIdentifierGitFileRequestV2Map.put(getRandomRequestIdentifier(), gitFileRequestDTO4);
     scope = scmDelegateFacilitatorService.getEligibleScopeOfDelegates(gitFileBatchRequest);
     assertThat(scope.getAccountIdentifier()).isEqualTo(accountIdentifier);
     assertThat(scope.getOrgIdentifier()).isEqualTo(null);

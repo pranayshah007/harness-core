@@ -22,6 +22,7 @@ import io.harness.beans.PageRequestDTO;
 import io.harness.beans.Scope;
 import io.harness.beans.request.GitFileBatchRequest;
 import io.harness.beans.request.GitFileRequest;
+import io.harness.beans.request.GitFileRequestDTO;
 import io.harness.beans.request.GitFileRequestV2;
 import io.harness.beans.request.ListFilesInCommitRequest;
 import io.harness.beans.response.GitFileBatchResponse;
@@ -395,7 +396,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
         scmGetFileByBranchRequestDTO.getBranchName(), scmGetFileByBranchRequestDTO.isGetOnlyFileContent());
 
     gitDefaultBranchCacheHelper.cacheDefaultBranchResponse(scope.getAccountIdentifier(), scmConnector,
-        scmGetFileByBranchRequestDTO.getRepoName(), requestBranch, resolvedBranch, gitFileResponse.getBranch());
+        scmGetFileByBranchRequestDTO.getRepoName(), isEmpty(requestBranch), resolvedBranch,
+        gitFileResponse.getBranch());
     return getScmGetFileResponseDTO(gitFileResponse);
   }
 
@@ -408,8 +410,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
       return processGetBatchFileTaskUsingSingleGetFileAPI(scmGetBatchFilesByBranchRequestDTO);
     }
 
-    Map<GetBatchFileRequestIdentifier, GitFileRequestV2> gitFileRequestMapForManager = new HashMap<>();
-    Map<GetBatchFileRequestIdentifier, GitFileRequestV2> gitFileRequestMapForDelegate = new HashMap<>();
+    Map<GetBatchFileRequestIdentifier, GitFileRequestDTO> gitFileRequestMapForManager = new HashMap<>();
+    Map<GetBatchFileRequestIdentifier, GitFileRequestDTO> gitFileRequestMapForDelegate = new HashMap<>();
     Map<ScmGetBatchFileRequestIdentifier, ScmGetFileResponseV2DTO> cachedScmGetFileResponseMap = new HashMap<>();
 
     // Check if each file is present in cache, capture the response if yes
@@ -421,6 +423,10 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
               gitSyncConnectorHelper.getScmConnectorForGivenRepo(scmGetFileByBranchRequestDTO.getScope(),
                   scmGetFileByBranchRequestDTO.getConnectorRef(), scmGetFileByBranchRequestDTO.getRepoName());
 
+          String resolvedBranch = gitDefaultBranchCacheHelper.setDefaultBranchIfInputBranchEmpty(
+              scmGetFileByBranchRequestDTO.getScope().getAccountIdentifier(), scmConnector,
+              scmGetFileByBranchRequestDTO.getRepoName(), scmGetFileByBranchRequestDTO.getBranchName());
+
           GetBatchFileRequestIdentifier identifier =
               GetBatchFileRequestIdentifier.builder().identifier(requestIdentifier.getIdentifier()).build();
           Optional<ScmGetFileResponseDTO> optionalScmGetFileResponseDTO =
@@ -429,11 +435,15 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
             cachedScmGetFileResponseMap.put(
                 requestIdentifier, optionalScmGetFileResponseDTO.get().toScmGetFileResponseV2DTO());
           } else {
-            GitFileRequestV2 gitFileRequest = getGitFileRequestV2(scmGetFileByBranchRequestDTO, scmConnector);
+            GitFileRequestDTO gitFileRequestDTO =
+                GitFileRequestDTO.builder()
+                    .isInputBranchEmpty(isEmpty(scmGetFileByBranchRequestDTO.getBranchName()))
+                    .gitFileRequestV2(getGitFileRequestV2(scmGetFileByBranchRequestDTO, scmConnector, resolvedBranch))
+                    .build();
             if (gitSyncConnectorHelper.isScmConnectorManagerExecutable(scmConnector)) {
-              gitFileRequestMapForManager.put(identifier, gitFileRequest);
+              gitFileRequestMapForManager.put(identifier, gitFileRequestDTO);
             } else {
-              gitFileRequestMapForDelegate.put(identifier, gitFileRequest);
+              gitFileRequestMapForDelegate.put(identifier, gitFileRequestDTO);
             }
           }
         });
@@ -952,10 +962,10 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   }
 
   private GitFileRequestV2 getGitFileRequestV2(
-      ScmGetFileByBranchRequestDTO scmGetFileByBranchRequestDTO, ScmConnector scmConnector) {
+      ScmGetFileByBranchRequestDTO scmGetFileByBranchRequestDTO, ScmConnector scmConnector, String resolvedBranch) {
     return GitFileRequestV2.builder()
         .scope(scmGetFileByBranchRequestDTO.getScope())
-        .branch(scmGetFileByBranchRequestDTO.getBranchName())
+        .branch(resolvedBranch)
         .filepath(scmGetFileByBranchRequestDTO.getFilePath())
         .repo(scmGetFileByBranchRequestDTO.getRepoName())
         .scmConnector(scmConnector)
@@ -988,9 +998,9 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   }
 
   private ScmGetBatchFilesResponseDTO processGitFileBatchRequest(String accountIdentifier,
-      Map<GetBatchFileRequestIdentifier, GitFileRequestV2> requestsViaManager,
-      Map<GetBatchFileRequestIdentifier, GitFileRequestV2> requestsViaDelegate) {
-    Map<GetBatchFileRequestIdentifier, GitFileRequestV2> allFileRequestMap = new HashMap<>();
+      Map<GetBatchFileRequestIdentifier, GitFileRequestDTO> requestsViaManager,
+      Map<GetBatchFileRequestIdentifier, GitFileRequestDTO> requestsViaDelegate) {
+    Map<GetBatchFileRequestIdentifier, GitFileRequestDTO> allFileRequestMap = new HashMap<>();
 
     GitFileBatchResponse gitFileBatchResponseForManager =
         processGitFileBatchRequest(accountIdentifier, requestsViaManager, true);
@@ -1011,7 +1021,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
 
   @VisibleForTesting
   protected GitFileBatchResponse processGitFileBatchRequest(String accountIdentifier,
-      Map<GetBatchFileRequestIdentifier, GitFileRequestV2> gitFileRequestMap, boolean isManagerExecutable) {
+      Map<GetBatchFileRequestIdentifier, GitFileRequestDTO> gitFileRequestMap, boolean isManagerExecutable) {
     if (gitFileRequestMap.isEmpty()) {
       return GitFileBatchResponse.builder().getBatchFileRequestIdentifierGitFileResponseMap(new HashMap<>()).build();
     }
@@ -1033,12 +1043,13 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
 
   private ScmGetBatchFilesResponseDTO prepareScmGetBatchFilesResponse(String accountIdentifier,
       Map<GetBatchFileRequestIdentifier, GitFileResponse> gitFileResponseMap,
-      Map<GetBatchFileRequestIdentifier, GitFileRequestV2> gitFileRequestMap) {
+      Map<GetBatchFileRequestIdentifier, GitFileRequestDTO> gitFileRequestMap) {
     Map<ScmGetBatchFileRequestIdentifier, ScmGetFileResponseV2DTO> finalResponseMap = new HashMap<>();
     Map<GetBatchFileRequestIdentifier, GitFileRequestV2> requestsToCacheInBackground = new HashMap<>();
 
     gitFileResponseMap.forEach((requestIdentifier, gitFileResponse) -> {
-      GitFileRequestV2 gitFileRequest = gitFileRequestMap.get(requestIdentifier);
+      GitFileRequestDTO gitFileRequestDTO = gitFileRequestMap.get(requestIdentifier);
+      GitFileRequestV2 gitFileRequest = gitFileRequestDTO.getGitFileRequestV2();
       ScmGetBatchFileRequestIdentifier identifier =
           ScmGetBatchFileRequestIdentifier.fromGetBatchFileRequestIdentifier(requestIdentifier);
       try {
@@ -1049,6 +1060,10 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
         } else {
           upsertGetFileCache(accountIdentifier, gitFileResponse, gitFileRequest.getScmConnector(),
               gitFileRequest.getRepo(), gitFileRequest.getBranch(), gitFileRequest.getFilepath());
+
+          gitDefaultBranchCacheHelper.cacheDefaultBranchResponse(accountIdentifier, gitFileRequest.getScmConnector(),
+              gitFileRequest.getRepo(), gitFileRequestDTO.isInputBranchEmpty(), gitFileRequest.getBranch(),
+              gitFileResponse.getBranch());
         }
         finalResponseMap.put(identifier, getScmGetFileResponseDTO(gitFileResponse).toScmGetFileResponseV2DTO());
       } catch (Exception exception) {

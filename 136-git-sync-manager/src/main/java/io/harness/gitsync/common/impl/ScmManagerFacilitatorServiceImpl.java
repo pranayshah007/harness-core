@@ -25,6 +25,7 @@ import io.harness.beans.gitsync.GitPRCreateRequest;
 import io.harness.beans.gitsync.GitWebhookDetails;
 import io.harness.beans.request.GitFileBatchRequest;
 import io.harness.beans.request.GitFileRequest;
+import io.harness.beans.request.GitFileRequestDTO;
 import io.harness.beans.request.GitFileRequestV2;
 import io.harness.beans.request.ListFilesInCommitRequest;
 import io.harness.beans.response.GitFileBatchResponse;
@@ -450,22 +451,27 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
   @Override
   public GitFileBatchResponse getFileBatch(GitFileBatchRequest gitFileBatchRequest) {
     Map<ConnectorDetails, ScmConnector> decryptedConnectorMap = new HashMap<>();
-    Map<GetBatchFileRequestIdentifier, GitFileRequestV2> getBatchFileRequestIdentifierGitFileRequestV2Map =
+    Map<GetBatchFileRequestIdentifier, GitFileRequestDTO> getBatchFileRequestIdentifierGitFileRequestV2Map =
         new HashMap<>();
 
     gitFileBatchRequest.getGetBatchFileRequestIdentifierGitFileRequestV2Map().forEach((identifier, request) -> {
-      ScmConnector decryptedScmConnector = getDecryptedScmConnector(decryptedConnectorMap, request.getScope(),
-          request.getConnectorRef(), request.getScmConnector(), request.getRepo());
+      GitFileRequestV2 gitFileRequestV2 = request.getGitFileRequestV2();
+      ScmConnector decryptedScmConnector = getDecryptedScmConnector(decryptedConnectorMap, gitFileRequestV2.getScope(),
+          gitFileRequestV2.getConnectorRef(), gitFileRequestV2.getScmConnector(), gitFileRequestV2.getRepo());
+
       getBatchFileRequestIdentifierGitFileRequestV2Map.put(identifier,
-          GitFileRequestV2.builder()
-              .scope(request.getScope())
-              .connectorRef(request.getConnectorRef())
-              .scmConnector(decryptedScmConnector)
-              .repo(request.getRepo())
-              .filepath(request.getFilepath())
-              .commitId(request.getCommitId())
-              .branch(request.getBranch())
-              .getOnlyFileContent(request.isGetOnlyFileContent())
+          GitFileRequestDTO.builder()
+              .isInputBranchEmpty(request.isInputBranchEmpty())
+              .gitFileRequestV2(GitFileRequestV2.builder()
+                                    .scope(gitFileRequestV2.getScope())
+                                    .connectorRef(gitFileRequestV2.getConnectorRef())
+                                    .scmConnector(decryptedScmConnector)
+                                    .repo(gitFileRequestV2.getRepo())
+                                    .filepath(gitFileRequestV2.getFilepath())
+                                    .commitId(gitFileRequestV2.getCommitId())
+                                    .branch(gitFileRequestV2.getBranch())
+                                    .getOnlyFileContent(gitFileRequestV2.isGetOnlyFileContent())
+                                    .build())
               .build());
     });
 

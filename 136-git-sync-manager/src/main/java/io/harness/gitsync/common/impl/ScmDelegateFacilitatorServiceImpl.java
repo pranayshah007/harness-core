@@ -1101,14 +1101,15 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
         connectorDetailsToFileLocationMapping = new HashMap<>();
 
     gitFileBatchRequest.getGetBatchFileRequestIdentifierGitFileRequestV2Map().forEach((identifier, request) -> {
+      GitFileRequestV2 gitFileRequestV2 = request.getGitFileRequestV2();
       ConnectorDetails key = ConnectorDetails.builder()
-                                 .scope(request.getScope())
-                                 .connectorRef(request.getConnectorRef())
-                                 .repo(request.getRepo())
+                                 .scope(gitFileRequestV2.getScope())
+                                 .connectorRef(gitFileRequestV2.getConnectorRef())
+                                 .repo(gitFileRequestV2.getRepo())
                                  .build();
-      populateScmConnectorEncryptionDetailsMap(
-          key, connectorDetailsToEncryptedDataDetailsMapping, request.getScope(), request.getScmConnector());
-      GitFileLocationDetails gitFileLocationDetails = getGitFileLocationDetails(request);
+      populateScmConnectorEncryptionDetailsMap(key, connectorDetailsToEncryptedDataDetailsMapping,
+          gitFileRequestV2.getScope(), gitFileRequestV2.getScmConnector());
+      GitFileLocationDetails gitFileLocationDetails = getGitFileLocationDetails(gitFileRequestV2);
       populateGitFileLocationDetailsMap(key, connectorDetailsToFileLocationMapping, gitFileLocationDetails, identifier);
     });
 
@@ -1186,7 +1187,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
     String orgIdentifier = null, projectIdentifier = null;
     boolean isThereAnyTaskNotProjectScoped = false;
     for (var entry : gitFileBatchRequest.getGetBatchFileRequestIdentifierGitFileRequestV2Map().entrySet()) {
-      String requestOrgIdentifier = entry.getValue().getScope().getOrgIdentifier();
+      String requestOrgIdentifier = entry.getValue().getGitFileRequestV2().getScope().getOrgIdentifier();
       if (requestOrgIdentifier == null) {
         orgIdentifier = null;
         projectIdentifier = null;
@@ -1194,7 +1195,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
       } else {
         orgIdentifier = requestOrgIdentifier;
       }
-      String requestProjectIdentifier = entry.getValue().getScope().getProjectIdentifier();
+      String requestProjectIdentifier = entry.getValue().getGitFileRequestV2().getScope().getProjectIdentifier();
       if (isThereAnyTaskNotProjectScoped == false) {
         if (requestProjectIdentifier == null) {
           isThereAnyTaskNotProjectScoped = true;

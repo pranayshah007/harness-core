@@ -7,10 +7,13 @@
 
 package io.harness.delegate.task.scm;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.GetBatchFileRequestIdentifier;
 import io.harness.beans.request.GitFileBatchRequest;
+import io.harness.beans.request.GitFileRequestDTO;
 import io.harness.beans.request.GitFileRequestV2;
 import io.harness.beans.response.GitFileBatchResponse;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
@@ -55,7 +58,7 @@ public class ScmBatchGetFileTask extends AbstractDelegateRunnableTask {
   public DelegateResponseData run(TaskParameters parameters) throws IOException, JoseException {
     ScmBatchGetFileTaskParams scmBatchGetFileTaskParams = (ScmBatchGetFileTaskParams) parameters;
 
-    Map<GetBatchFileRequestIdentifier, GitFileRequestV2> getBatchFileRequestIdentifierGitFileRequestV2Map =
+    Map<GetBatchFileRequestIdentifier, GitFileRequestDTO> getBatchFileRequestIdentifierGitFileRequestV2Map =
         new HashMap<>();
     scmBatchGetFileTaskParams.getGetFileTaskParamsPerConnectorList().forEach(getFileTaskParamsPerConnector -> {
       ScmConnector scmConnector = getFileTaskParamsPerConnector.getConnectorDecryptionParams().getScmConnector();
@@ -64,13 +67,16 @@ public class ScmBatchGetFileTask extends AbstractDelegateRunnableTask {
 
       getFileTaskParamsPerConnector.getGitFileLocationDetailsMap().forEach((identifier, gitFileLocationDetails) -> {
         getBatchFileRequestIdentifierGitFileRequestV2Map.put(identifier,
-            GitFileRequestV2.builder()
-                .branch(gitFileLocationDetails.getBranch())
-                .repo(gitFileLocationDetails.getRepo())
-                .commitId(gitFileLocationDetails.getCommitId())
-                .filepath(gitFileLocationDetails.getFilepath())
-                .getOnlyFileContent(gitFileLocationDetails.isGetOnlyFileContent())
-                .scmConnector(scmConnector)
+            GitFileRequestDTO.builder()
+                .isInputBranchEmpty(isEmpty(gitFileLocationDetails.getBranch()))
+                .gitFileRequestV2(GitFileRequestV2.builder()
+                                      .branch(gitFileLocationDetails.getBranch())
+                                      .repo(gitFileLocationDetails.getRepo())
+                                      .commitId(gitFileLocationDetails.getCommitId())
+                                      .filepath(gitFileLocationDetails.getFilepath())
+                                      .getOnlyFileContent(gitFileLocationDetails.isGetOnlyFileContent())
+                                      .scmConnector(scmConnector)
+                                      .build())
                 .build());
       });
     });

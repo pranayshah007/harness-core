@@ -27,6 +27,7 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.GetBatchFileRequestIdentifier;
 import io.harness.beans.Scope;
+import io.harness.beans.request.GitFileRequestDTO;
 import io.harness.beans.request.GitFileRequestV2;
 import io.harness.beans.response.GitFileBatchResponse;
 import io.harness.category.element.UnitTests;
@@ -593,9 +594,13 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
         scmFacilitatorService.processGitFileBatchRequest(null, new HashMap<>(), true);
     assertThat(gitFileBatchResponse.getGetBatchFileRequestIdentifierGitFileResponseMap()).isEmpty();
 
-    Map<GetBatchFileRequestIdentifier, GitFileRequestV2> gitFileRequestMap = new HashMap<>();
-    gitFileRequestMap.put(GetBatchFileRequestIdentifier.builder().identifier(UUID.randomUUID().toString()).build(),
-        GitFileRequestV2.builder().build());
+    Map<GetBatchFileRequestIdentifier, GitFileRequestDTO> gitFileRequestMap = new HashMap<>();
+    GitFileRequestDTO gitFileRequestDTO = GitFileRequestDTO.builder()
+                                              .isInputBranchEmpty(true)
+                                              .gitFileRequestV2(GitFileRequestV2.builder().build())
+                                              .build();
+    gitFileRequestMap.put(
+        GetBatchFileRequestIdentifier.builder().identifier(UUID.randomUUID().toString()).build(), gitFileRequestDTO);
     scmFacilitatorService.processGitFileBatchRequest(null, gitFileRequestMap, true);
     verify(scmOrchestratorService, times(1)).processScmRequestUsingManager(any());
     verify(scmOrchestratorService, times(0)).processScmRequestUsingDelegate(any());

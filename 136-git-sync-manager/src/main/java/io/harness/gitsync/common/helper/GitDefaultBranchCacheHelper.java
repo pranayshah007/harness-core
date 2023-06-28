@@ -76,8 +76,8 @@ public class GitDefaultBranchCacheHelper {
   }
 
   public void cacheDefaultBranchResponse(String accountIdentifier, ScmConnector scmConnector, String repoName,
-      String requestBranch, String resolvedBranch, String responseBranch) {
-    if (isEmpty(requestBranch) && isEmpty(resolvedBranch)) {
+      boolean isInputBranchEmpty, String resolvedBranch, String responseBranch) {
+    if (isInputBranchEmpty && isEmpty(resolvedBranch)) {
       upsertDefaultBranch(accountIdentifier, repoName, responseBranch, scmConnector);
     }
   }

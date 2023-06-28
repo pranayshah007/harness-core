@@ -1112,12 +1112,12 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     Map<GetBatchFileRequestIdentifier, GitFileResponse> getBatchFileRequestIdentifierGitFileResponseMap =
         new HashMap<>();
     gitFileBatchRequest.getGetBatchFileRequestIdentifierGitFileRequestV2Map().forEach((identifier, request) -> {
-      GitFileResponse gitFileResponse = getFile(request.getScmConnector(),
+      GitFileResponse gitFileResponse = getFile(request.getGitFileRequestV2().getScmConnector(),
           GitFileRequest.builder()
-              .commitId(request.getCommitId())
-              .filepath(request.getFilepath())
-              .branch(request.getBranch())
-              .getOnlyFileContent(request.isGetOnlyFileContent())
+              .commitId(request.getGitFileRequestV2().getCommitId())
+              .filepath(request.getGitFileRequestV2().getFilepath())
+              .branch(request.getGitFileRequestV2().getBranch())
+              .getOnlyFileContent(request.getGitFileRequestV2().isGetOnlyFileContent())
               .build(),
           scmBlockingStub);
       getBatchFileRequestIdentifierGitFileResponseMap.put(identifier, gitFileResponse);

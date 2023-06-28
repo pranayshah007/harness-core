@@ -9,16 +9,17 @@ package io.harness.beans.request;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.GetBatchFileRequestIdentifier;
 
-import java.util.Map;
+import lombok.AccessLevel;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Getter;
+import lombok.experimental.FieldDefaults;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-@Value
+@Getter
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-public class GitFileBatchRequest {
-  String accountIdentifier;
-  Map<GetBatchFileRequestIdentifier, GitFileRequestDTO> getBatchFileRequestIdentifierGitFileRequestV2Map;
+public class GitFileRequestDTO {
+  GitFileRequestV2 gitFileRequestV2;
+  boolean isInputBranchEmpty;
 }

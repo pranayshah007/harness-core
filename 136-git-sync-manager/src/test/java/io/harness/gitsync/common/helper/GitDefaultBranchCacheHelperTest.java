@@ -7,6 +7,7 @@
 
 package io.harness.gitsync.common.helper;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.rule.OwnerRule.ADITHYA;
 
 import static junit.framework.TestCase.assertEquals;
@@ -138,7 +139,7 @@ public class GitDefaultBranchCacheHelperTest extends GitSyncTestBase {
     String branchName = defaultBranch;
     String responseBranch = defaultBranch;
     gitDefaultBranchCacheHelper.cacheDefaultBranchResponse(
-        accountIdentifier, scmConnector, repoName, inputBranch, branchName, responseBranch);
+        accountIdentifier, scmConnector, repoName, isEmpty(inputBranch), branchName, responseBranch);
     verify(gitDefaultBranchCacheService, times(0)).upsertCache(any(), any());
   }
 
@@ -150,7 +151,7 @@ public class GitDefaultBranchCacheHelperTest extends GitSyncTestBase {
     String branchName = "";
     String responseBranch = defaultBranch;
     gitDefaultBranchCacheHelper.cacheDefaultBranchResponse(
-        accountIdentifier, scmConnector, repoName, inputBranch, branchName, responseBranch);
+        accountIdentifier, scmConnector, repoName, isEmpty(inputBranch), branchName, responseBranch);
     verify(gitDefaultBranchCacheService, times(1)).upsertCache(any(), any());
   }
 
@@ -162,7 +163,7 @@ public class GitDefaultBranchCacheHelperTest extends GitSyncTestBase {
     String branchName = branch;
     String responseBranch = branch;
     gitDefaultBranchCacheHelper.cacheDefaultBranchResponse(
-        accountIdentifier, scmConnector, repoName, inputBranch, branchName, responseBranch);
+        accountIdentifier, scmConnector, repoName, isEmpty(inputBranch), branchName, responseBranch);
     verify(gitDefaultBranchCacheService, times(0)).upsertCache(any(), any());
   }
 }
