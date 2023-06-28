@@ -12,11 +12,12 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//product/log-service/store",
-        "@com_github_aws_aws_sdk_go_v2",
+        "@com_github_aws_aws_sdk_go_v2//aws",
         "@com_github_aws_aws_sdk_go_v2//config",
         "@com_github_aws_aws_sdk_go_v2//credentials",
         "@com_github_aws_aws_sdk_go_v2//feature/s3/manager",
         "@com_github_aws_aws_sdk_go_v2//service/s3",
+        "@com_github_aws_aws_sdk_go_v2//service/s3/types",
     ],
 )
 
