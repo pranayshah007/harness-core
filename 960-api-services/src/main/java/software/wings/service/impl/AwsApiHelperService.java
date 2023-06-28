@@ -245,6 +245,8 @@ public class AwsApiHelperService {
       return convertToPutObjectResultResponse(
           closeableAmazonS3Client.getClient().putObject(bucketName, key, messageJson));
     } catch (AmazonServiceException amazonServiceException) {
+      log.error(String.format("Unable to write to S3 bucket [%s]. Please check the credentials.", bucketName),
+          amazonServiceException);
       if (amazonServiceException.getStatusCode() == 403) {
         throw new InvalidRequestException(
             String.format("Unable to write to S3 bucket [%s]. Please check the credentials.", bucketName));
