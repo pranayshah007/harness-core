@@ -1,4 +1,4 @@
-# Copyright 2022 Harness Inc. All rights reserved.
+# Copyright 2023 Harness Inc. All rights reserved.
 # Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -10,15 +10,7 @@ java_library(
     name = "module",
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
-    deps = [
-        "//:lombok",
-        "//260-delegate/src/main/java/io/harness/delegate/service/core/litek8s:module",
-        "//260-delegate/src/main/java/io/harness/delegate/service/core/runner:module",
-        "//260-delegate/src/main/java/io/harness/delegate/service/runners/itfc:module",
-        "@maven//:com_google_inject_guice",
-        "@maven//:io_kubernetes_client_java",
-        "@maven//:io_kubernetes_client_java_api",
-    ],
+    deps = ["@maven//:com_google_inject_guice"],
 )
 
 run_analysis_per_module()

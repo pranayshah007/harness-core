@@ -21,10 +21,11 @@ import io.harness.delegate.core.beans.StepRuntime;
 import io.harness.delegate.service.core.k8s.K8SEnvVar;
 import io.harness.delegate.service.core.k8s.K8SSecret;
 import io.harness.delegate.service.core.k8s.K8SService;
-import io.harness.delegate.service.core.runner.TaskRunner;
 import io.harness.delegate.service.core.util.AnyUtils;
 import io.harness.delegate.service.core.util.ApiExceptionLogger;
 import io.harness.delegate.service.core.util.K8SResourceHelper;
+import io.harness.delegate.service.handlermapping.context.Context;
+import io.harness.delegate.service.runners.itfc.Runner;
 
 import com.google.common.collect.Streams;
 import com.google.inject.Inject;
@@ -46,7 +47,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RequiredArgsConstructor(onConstructor_ = @Inject)
-public class K8SLiteRunner implements TaskRunner {
+public class K8SLiteRunner implements Runner {
   private static final int CONTAINER_START_PORT = 20002;
   private static final String LOG_SERVICE_TOKEN_VARIABLE = "HARNESS_LOG_SERVICE_TOKEN";
   private static final String LOG_SERVICE_ENDPOINT_VARIABLE = "HARNESS_LOG_SERVICE_ENDPOINT";
@@ -59,7 +60,7 @@ public class K8SLiteRunner implements TaskRunner {
   //  private final K8EventHandler k8EventHandler;
 
   @Override
-  public void init(final String taskGroupId, final InputData infra) {
+  public void init(final String taskGroupId, final InputData infra, final Context context) {
     log.info("Setting up pod spec");
 
     try {
@@ -139,12 +140,12 @@ public class K8SLiteRunner implements TaskRunner {
   }
 
   @Override
-  public void execute(final String taskGroupId, final InputData tasks) {
+  public void execute(final String taskGroupId, final InputData tasks, final Context context) {
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
-  public void cleanup(final String taskGroupId) {
+  public void cleanup(final String taskGroupId, final Context context) {
     throw new UnsupportedOperationException("Not implemented");
   }
 
