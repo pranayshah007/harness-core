@@ -77,7 +77,7 @@ eventsFramework:
   redis:
     sentinel: false
     masterName: "test"
-    redisUrl: "dummyRedisUrl" # "redis://localhost:6379"
+    redisUrl: "redis://localhost:6379"
     sentinelUrls:
       - "redis://redis1:26379"
       - "redis://redis2:26379"
@@ -92,6 +92,21 @@ eventsFramework:
       enabled: false
       CATrustStorePath: "/tmp/ca_trust_store"
       CATrustStorePassword: ""
+
+redisLockConfig:
+  sentinel: false
+  masterName: "test"
+  redisUrl: "redis://localhost:6379"
+  sentinelUrls:
+    - "redis://redis1:26379"
+    - "redis://redis2:26379"
+    - "redis://redis3:26379"
+  envNamespace: ""
+  readMode: MASTER
+  nettyThreads: 16
+  useScriptCache: true
+  userName: ""
+  password: ""
 
 #feature configs
 managerClientConfig:
