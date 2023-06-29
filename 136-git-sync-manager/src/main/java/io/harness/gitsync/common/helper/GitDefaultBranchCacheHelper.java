@@ -67,8 +67,8 @@ public class GitDefaultBranchCacheHelper {
 
   public String getDefaultBranchIfInputBranchEmpty(
       String accountIdentifier, ScmConnector scmConnector, String repoName, String inputBranch) {
-    if (isEmpty(inputBranch)) {
-      //        && ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PIE_GIT_DEFAULT_BRANCH_CACHE)) {
+    if (isEmpty(inputBranch)
+        && ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PIE_GIT_DEFAULT_BRANCH_CACHE)) {
       return getDefaultBranchFromCache(accountIdentifier, repoName, scmConnector);
     } else {
       return inputBranch;
