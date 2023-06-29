@@ -1415,6 +1415,57 @@ paths:
       security:
         - x-api-key: []
       description: List rancher clusters using the given project level environment and infrastructure definition.
+  '/v1/orgs/{org}/projects/{project}/services/{service}/primary-manifests':
+    parameters:
+      - $ref: '#/components/parameters/ServicePathParam'
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/ProjectPathParam'
+    get:
+      summary: List primary manifests of a project scoped service
+      responses:
+        '200':
+          $ref: '#/components/responses/ManifestsResponseDTO'
+      operationId: get-primary-manifests
+      description: Returns a list of eligible primary manifests from all configured manifest in a project-scoped service.
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      tags:
+        - Project Services
+  '/v1/orgs/{org}/services/{service}/primary-manifests':
+    parameters:
+      - $ref: '#/components/parameters/ServicePathParam'
+      - $ref: '#/components/parameters/OrgPathParam'
+    get:
+      summary: List primary manifests of a org scoped service
+      responses:
+        '200':
+          $ref: '#/components/responses/ManifestsResponseDTO'
+      operationId: get-org-scoped-primary-manifests
+      description: Returns a list of eligible primary manifests from all configured manifest in an org-scoped service.
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      tags:
+        - Org Services
+  '/v1/services/{service}/primary-manifests':
+    parameters:
+      - $ref: '#/components/parameters/ServicePathParam'
+    get:
+      summary: List primary manifests of a account scoped service
+      responses:
+        '200':
+          $ref: '#/components/responses/ManifestsResponseDTO'
+      operationId: get-account-scoped-primary-manifests
+      description: Returns a list of eligible primary manifests from all configured manifest in an account-scoped service.
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      tags:
+        - Account Services
 components:
   schemas:
     Service:
@@ -2395,6 +2446,22 @@ components:
         allowed_for_api:
           type: boolean
           description: This indicates if a given IP is allowlisted in Harness for API requests
+    ManifestsResponseDTO:
+      title: ManifestsResponseDTO
+      type: object
+      properties:
+        identifiers:
+          type: array
+          description: List of Manifest Identifiers
+          items:
+            type: string
+      description: ManifestsResponseDTO returns a list of manifest identifiers from a service's eligible primary manifests.
+      x-internal: false
+      x-examples:
+        Example 1:
+          identifiers:
+            - id1
+            - id2
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -2967,6 +3034,22 @@ components:
           schema:
             type: integer
           description: Maximum page size in Paginated response.
+    ManifestsResponseDTO:
+      description: Response containing a list of eligible manifest identifiers that can be applied as primary manifest.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ManifestsResponseDTO'
+          examples:
+            Example 1:
+              value:
+                identifiers:
+                  - id1
+                  - id2
+        application/xml:
+          schema:
+            type: object
+            properties: {}
   requestBodies:
     ServiceRequest:
       content:

@@ -235,7 +235,7 @@ public class TerraformDestroyStepInfoTest extends CategoryTest {
   public void testGetFacilitatorType() {
     TerraformDestroyStepInfo terraformDestroyStepInfo = new TerraformDestroyStepInfo();
     String response = terraformDestroyStepInfo.getFacilitatorType();
-    assertThat(response).isEqualTo("TASK");
+    assertThat(response).isEqualTo("TASK_CHAIN");
   }
 
   @Test
@@ -245,6 +245,6 @@ public class TerraformDestroyStepInfoTest extends CategoryTest {
     TerraformDestroyStepInfo terraformDestroyStepInfo = new TerraformDestroyStepInfo();
     StepType response = terraformDestroyStepInfo.getStepType();
     assertThat(response).isNotNull();
-    assertThat(response.getType()).isEqualTo("TerraformDestroy");
+    assertThat(response.getType()).isEqualTo("TERRAFORM_DESTROY_V2");
   }
 }

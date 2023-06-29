@@ -93,17 +93,16 @@ Here is the logs, remember to give the response only in json format like the exa
 %s
 ` + "```"
 
-	genAITemperature     = 0.0
-	genAITopP            = 1.0
-	genAITopK            = 1
-	genAIMaxOuptutTokens = 1024
-	errSummaryParam      = "err_summary"
-	infraParam           = "infra"
-	stepTypeParam        = "step_type"
-	commandParam         = "command"
-	osParam              = "os"
-	archParam            = "arch"
-	pluginParam          = "plugin"
+	genAITemperature = 0.0
+	genAITopP        = 1.0
+	genAITopK        = 1
+	errSummaryParam  = "err_summary"
+	infraParam       = "infra"
+	stepTypeParam    = "step_type"
+	commandParam     = "command"
+	osParam          = "os"
+	archParam        = "arch"
+	pluginParam      = "plugin"
 
 	azureAIProvider  = "azureopenai"
 	azureAIModel     = "gpt3"
@@ -168,9 +167,10 @@ func HandleRCA(store store.Store, cfg config.Config) http.HandlerFunc {
 		genAISvcURL := cfg.GenAI.Endpoint
 		genAISvcSecret := cfg.GenAI.ServiceSecret
 		provider := cfg.GenAI.Provider
+		maxOutputTokens := cfg.GenAI.MaxOutputTokens
 		useJSONResponse := cfg.GenAI.UseJSONResponse
 		report, prompt, err := retrieveLogRCA(ctx, genAISvcURL, genAISvcSecret,
-			provider, logs, useJSONResponse, r)
+			provider, logs, maxOutputTokens, useJSONResponse, r)
 		if err != nil {
 			WriteInternalError(w, err)
 			logger.FromRequest(r).
@@ -181,12 +181,20 @@ func HandleRCA(store store.Store, cfg config.Config) http.HandlerFunc {
 			return
 		}
 
+		logPrompt := prompt
+
+		// don't print full prompt if debug mode is disabled
+		if !cfg.GenAI.Debug {
+			logPrompt = trim(prompt, debugLogChars)
+		}
+
 		logger.FromRequest(r).
 			WithField("keys", keys).
 			WithField("latency", time.Since(st)).
 			WithField("command", trim(command, debugLogChars)).
 			WithField("step_type", stepType).
-			WithField("prompt", prompt).
+			WithField("logs", trim(logs, debugLogChars)).
+			WithField("prompt", logPrompt).
 			WithField("error_summary", errSummary).
 			WithField("time", time.Now().Format(time.RFC3339)).
 			WithField("response.rca", report.Rca).
@@ -197,7 +205,7 @@ func HandleRCA(store store.Store, cfg config.Config) http.HandlerFunc {
 }
 
 func retrieveLogRCA(ctx context.Context, endpoint, secret, provider,
-	logs string, useJSONResponse bool, r *http.Request) (
+	logs string, maxOutputTokens int, useJSONResponse bool, r *http.Request) (
 	*RCAReport, string, error) {
 	promptTmpl := genAIPlainTextPrompt
 	if useJSONResponse {
@@ -214,7 +222,7 @@ func retrieveLogRCA(ctx context.Context, endpoint, secret, provider,
 	prompt := generatePrompt(r, logs, promptTmpl)
 	client := genAIClient{endpoint: endpoint, secret: secret}
 
-	response, isBlocked, err := predict(ctx, client, provider, prompt)
+	response, isBlocked, err := predict(ctx, client, provider, prompt, maxOutputTokens)
 	if err != nil {
 		return nil, prompt, err
 	}
@@ -228,18 +236,18 @@ func retrieveLogRCA(ctx context.Context, endpoint, secret, provider,
 	return &RCAReport{Rca: response}, prompt, nil
 }
 
-func predict(ctx context.Context, client genAIClient, provider, prompt string) (string, bool, error) {
+func predict(ctx context.Context, client genAIClient, provider, prompt string, maxOutputTokens int) (string, bool, error) {
 	switch provider {
 	case vertexAIProvider:
 		response, err := client.Complete(ctx, vertexAIProvider, vertexAIModel, prompt,
-			genAITemperature, genAITopP, genAITopK, genAIMaxOuptutTokens)
+			genAITemperature, genAITopP, genAITopK, maxOutputTokens)
 		if err != nil {
 			return "", false, err
 		}
 		return response.Text, response.Blocked, nil
 	case azureAIProvider:
 		response, err := client.Chat(ctx, azureAIProvider, azureAIModel, prompt,
-			genAITemperature, -1, -1, genAIMaxOuptutTokens)
+			genAITemperature, -1, -1, maxOutputTokens)
 		if err != nil {
 			return "", false, err
 		}

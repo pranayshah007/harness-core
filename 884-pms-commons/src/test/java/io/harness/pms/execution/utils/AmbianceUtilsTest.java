@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
@@ -44,7 +45,9 @@ import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -593,5 +596,23 @@ public class AmbianceUtilsTest extends CategoryTest {
     assertThat(AmbianceUtils.checkIfSettingEnabled(ambiance, "setting1")).isTrue();
     assertThat(AmbianceUtils.checkIfSettingEnabled(ambiance, "setting2")).isFalse();
     assertThat(AmbianceUtils.checkIfSettingEnabled(ambiance, "setting3")).isFalse();
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testGetStrategyPostfix() {
+    Map<String, String> values = new HashMap<>();
+    values.put("a", "true");
+    values.put("matrixIdentifierPostfixForDuplicates", "0");
+    values.put("command", "hi");
+    MatrixMetadata matrixMetadata = MatrixMetadata.newBuilder()
+                                        .putAllMatrixValues(values)
+                                        .addAllMatrixCombination(Collections.singletonList(1))
+                                        .build();
+    StrategyMetadata strategyMetadata = StrategyMetadata.newBuilder().setMatrixMetadata(matrixMetadata).build();
+    Level level = Level.newBuilder().setStrategyMetadata(strategyMetadata).build();
+    String identifier = AmbianceUtils.getStrategyPostfix(level, true);
+    assertThat(identifier).isEqualTo("_true_hi_0");
   }
 }

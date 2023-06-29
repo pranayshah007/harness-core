@@ -161,7 +161,7 @@ if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
     sed -i "s:build.staticSchemaCommitId=${staticVersion}:build.staticSchemaCommitId=${head_static_commit}:g" ${VERSION_FILE}
 
     # Updating static-schema for template.json
-    TEMPLATE_JSON="../../template-service/service/src/main/resources/static-schema/template.json"
+    TEMPLATE_JSON="template-service/service/src/main/resources/static-schema/template.json"
     perform_curl_with_retry "https://raw.githubusercontent.com/harness/harness-schema/${head_static_commit}/v0/template.json" ${TEMPLATE_JSON}
     template_curl_result=$?
 
@@ -186,9 +186,26 @@ if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
     git checkout ${SHA}
     git checkout -b release/${PURPOSE}/${newBranch}
 
+
+    # Updating static-schema for template.json
+    TEMPLATE_JSON="template-service/service/src/main/resources/static-schema/template.json"
+    perform_curl_with_retry "https://raw.githubusercontent.com/harness/harness-schema/${head_static_commit}/v0/template.json" ${TEMPLATE_JSON}
+    template_curl_result=$?
+
+    if [ $template_curl_result -eq 0 ]; then
+        git add ${TEMPLATE_JSON}
+        echo "Template file was updated"
+    else
+        echo "Template file was not updated"
+    fi
+
+    # Continue with the rest of the script
+    echo "Curl commands completed"
+
     sed -i "s:build.majorVersion=${major}:build.majorVersion=${major}:g" ${VERSION_FILE}
     sed -i "s:build.minorVersion=${minor}:build.minorVersion=${minor}:g" ${VERSION_FILE}
     sed -i "s:build.patchVersion=${patchVersion}:build.patchVersion=${patchVersion}:g" ${VERSION_FILE}
+    sed -i "s:build.staticSchemaCommitId=${staticVersion}:build.staticSchemaCommitId=${head_static_commit}:g" ${VERSION_FILE}
 
     git add ${VERSION_FILE}
     git commit --allow-empty -m "Set the proper version branch release/${PURPOSE}/${newBranch}"

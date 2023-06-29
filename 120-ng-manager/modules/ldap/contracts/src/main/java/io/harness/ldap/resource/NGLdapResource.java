@@ -181,4 +181,27 @@ public interface NGLdapResource {
       @Parameter(description = "This should be a valid test email") @FormDataParam("email") String email,
       @Parameter(description = "This should be a valid password for the test email") @FormDataParam(
           "password") String password);
+
+  @GET
+  @Path("/sync-group/{userGroupId}")
+  @Hidden
+  @ApiOperation(value = "Trigger sync for a harness user group linked to an LDAP user group in an account",
+      nickname = "syncUserGroupLinkedToLDAP")
+  @Operation(operationId = "syncUserGroupLinkedToLDAP",
+      summary = "Trigger sync for a harness user group linked to an LDAP user group in an account",
+      description =
+          "Returns Boolean status whether sync for harness user group linked to Ldap group got triggered on not",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Returns status whether sync for harness user group linked to Ldap group started")
+      })
+  RestResponse<Void>
+  syncUserGroupLinkedToLDAP(@Parameter(description = "Identifier of the harness user group",
+                                required = true) @PathParam("userGroupId") String userGroupId,
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @NotBlank String accountId,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier);
 }

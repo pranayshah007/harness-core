@@ -41,7 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
-public class InputsValidationHelper {
+public class CDInputsValidationHelper {
   private static final List<String> keysToIgnoreInNodeToValidate =
       Collections.singletonList("artifacts.primary.sources");
   @Inject ServiceEntityService serviceEntityService;
@@ -169,14 +169,44 @@ public class InputsValidationHelper {
 
     YamlNode primaryArtifactRefNode = YamlNodeUtils.goToPathUsingFqn(
         entityNode, "serviceInputs.serviceDefinition.spec.artifacts.primary.primaryArtifactRef");
+
+    String primaryArtifactRefNodeValue = primaryArtifactRefNode == null ? null : primaryArtifactRefNode.asText();
     String serviceRuntimeInputYaml = serviceEntityService.createServiceInputsYamlGivenPrimaryArtifactRef(
-        serviceYaml, serviceRef, primaryArtifactRefNode == null ? null : primaryArtifactRefNode.asText());
+        serviceYaml, serviceRef, primaryArtifactRefNodeValue);
+
+    YamlNode primaryArtifactRefNodeInServiceEntity = YamlNodeUtils.goToPathUsingFqn(
+        validateAndGetYamlNode(serviceYaml), "service.serviceDefinition.spec.artifacts.primary.primaryArtifactRef");
+    String primaryArtifactRefNodeValueInServiceEntity =
+        primaryArtifactRefNodeInServiceEntity == null ? null : primaryArtifactRefNodeInServiceEntity.asText();
+
+    // in case the primary artifact field is strictly expression in service entity
+    // and also in pipeline yaml, and the expression match, then don't check for service inputs validity
+    // and validate manual service inputs given by the user
+    if (EmptyPredicate.isNotEmpty(primaryArtifactRefNodeValueInServiceEntity)
+        && NGExpressionUtils.isStrictlyExpressionField(primaryArtifactRefNodeValueInServiceEntity)
+        && EmptyPredicate.isNotEmpty(primaryArtifactRefNodeValue)
+        && NGExpressionUtils.isStrictlyExpressionField(primaryArtifactRefNodeValue)
+        && primaryArtifactRefNodeValueInServiceEntity.equals(primaryArtifactRefNodeValue)) {
+      return;
+    }
+
+    // in case the primary artifact field is runtime input in service entity
+    // but strictly expression in pipeline yaml, then don't check for service inputs validity
+    // and validate manual service inputs given by the user
+    if (EmptyPredicate.isNotEmpty(primaryArtifactRefNodeValueInServiceEntity)
+        && NGExpressionUtils.isRuntimeField(primaryArtifactRefNodeValueInServiceEntity)
+        && EmptyPredicate.isNotEmpty(primaryArtifactRefNodeValue)
+        && NGExpressionUtils.isStrictlyExpressionField(primaryArtifactRefNodeValue)) {
+      return;
+    }
+
     if (EmptyPredicate.isEmpty(serviceRuntimeInputYaml)) {
       if (EnvironmentRefreshHelper.isNodeNotNullAndNotHaveRuntimeValue(serviceInputs)) {
         errorNodeSummary.setValid(false);
       }
       return;
     }
+
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode serviceInputsNode = mapper.createObjectNode();
     serviceInputsNode.set(YamlTypes.SERVICE_INPUTS, serviceInputs);

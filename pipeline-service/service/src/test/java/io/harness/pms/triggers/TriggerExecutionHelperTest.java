@@ -67,6 +67,7 @@ import io.harness.ngtriggers.beans.target.TargetType;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.pipeline.remote.PipelineServiceClient;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.contracts.triggers.ParsedPayload;
@@ -105,6 +106,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.groovy.util.Maps;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -132,6 +134,11 @@ public class TriggerExecutionHelperTest extends CategoryTest {
   private final ExecutionMetadata metadata = ExecutionMetadata.newBuilder().build();
   private final PlanExecutionMetadata planExecutionMetadata = PlanExecutionMetadata.builder().build();
   private final PlanExecution planExecution = PlanExecution.builder().build();
+
+  private final Ambiance ambiance = Ambiance.newBuilder()
+                                        .putAllSetupAbstractions(Maps.of("accountId", "accountId", "projectIdentifier",
+                                            "projectIdentfier", "orgIdentifier", "orgIdentifier"))
+                                        .build();
 
   @Mock PmsGitSyncHelper pmsGitSyncHelper;
   @Mock NGTriggerElementMapper ngTriggerElementMapper;
@@ -547,7 +554,7 @@ public class TriggerExecutionHelperTest extends CategoryTest {
         .thenReturn(execArgs);
     when(executionHelper.startExecution("acc", "default", "test", execArgs.getMetadata(),
              execArgs.getPlanExecutionMetadata(), false, null, null, null))
-        .thenReturn(PlanExecution.builder().build());
+        .thenReturn(PlanExecution.builder().ambiance(ambiance).build());
 
     triggerExecutionHelper.createPlanExecutionV2(
         triggerDetails, null, null, null, null, null, triggerDetails.getNgTriggerConfigV2().getInputYaml());
@@ -595,7 +602,7 @@ public class TriggerExecutionHelperTest extends CategoryTest {
         .thenReturn(execArgs);
     when(executionHelper.startExecution("acc", "default", "test", execArgs.getMetadata(),
              execArgs.getPlanExecutionMetadata(), false, null, null, null))
-        .thenReturn(PlanExecution.builder().build());
+        .thenReturn(PlanExecution.builder().ambiance(ambiance).build());
 
     triggerExecutionHelper.createPlanExecutionV2(
         triggerDetails, null, null, null, null, null, triggerDetails.getNgTriggerConfigV2().getInputYaml());
@@ -646,7 +653,7 @@ public class TriggerExecutionHelperTest extends CategoryTest {
         .thenReturn(execArgs);
     when(executionHelper.startExecution("acc", "default", "test", execArgs.getMetadata(),
              execArgs.getPlanExecutionMetadata(), false, null, null, null))
-        .thenReturn(PlanExecution.builder().build());
+        .thenReturn(PlanExecution.builder().ambiance(ambiance).build());
 
     triggerExecutionHelper.createPlanExecutionV2(
         triggerDetails, null, null, null, null, null, triggerDetails.getNgTriggerConfigV2().getInputYaml());

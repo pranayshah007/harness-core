@@ -97,6 +97,10 @@ public class CommandStepMapperImpl extends StepMapper {
                                  .id(serviceId + SERVICE_COMMAND_TEMPLATE_SEPARATOR + commandName)
                                  .type(NGMigrationEntityType.SERVICE_COMMAND_TEMPLATE)
                                  .build();
+      if (migrationContext.getEntities().get(commandId) == null) {
+        log.warn("Command {} not found in migration context", commandId);
+        throw new InvalidRequestException("Command " + commandId + " not found in migration context");
+      }
       ServiceCommand serviceCommand = (ServiceCommand) migrationContext.getEntities().get(commandId).getEntity();
       NGYamlFile template;
       // If the service command is referencing a template, then use that template

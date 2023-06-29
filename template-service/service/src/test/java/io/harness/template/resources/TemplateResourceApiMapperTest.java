@@ -8,6 +8,7 @@
 package io.harness.template.resources;
 
 import static io.harness.rule.OwnerRule.TARUN_UBA;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
@@ -149,6 +150,62 @@ public class TemplateResourceApiMapperTest extends CategoryTest {
     assertEquals(entityGitDetails.getRepoUrl(), templateMetadataSummaryResponse.getGitDetails().getRepoUrl());
     assertEquals(entityGitDetails.getObjectId(), templateMetadataSummaryResponse.getGitDetails().getObjectId());
   }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testTemplateMetadataResponseWithNullStoreType() {
+    EntityGitDetails entityGitDetails = EntityGitDetails.builder()
+                                            .branch(BRANCH)
+                                            .filePath(FILE_PATH)
+                                            .commitId(COMMIT_ID)
+                                            .fileUrl(FILE_URL)
+                                            .objectId(OBJECT_ID)
+                                            .repoName(REPO_NAME)
+                                            .repoUrl(REPO_URL)
+                                            .build();
+    TemplateMetadataSummaryResponseDTO templateMetadataSummaryResponseDTO =
+        TemplateMetadataSummaryResponseDTO.builder()
+            .accountId(ACCOUNT_ID)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .projectIdentifier(PROJ_IDENTIFIER)
+            .identifier(OBJECT_ID)
+            .name(name)
+            .description(description)
+            .versionLabel(versionLabel)
+            .templateScope(Scope.fromString("project"))
+            .templateEntityType(TemplateEntityType.getTemplateType("STAGE"))
+            .gitDetails(entityGitDetails)
+            .lastUpdatedAt(123456789L)
+            .stableTemplate(true)
+            .build();
+
+    TemplateMetadataSummaryResponse templateMetadataSummaryResponse =
+        templateResourceApiMapper.mapToTemplateMetadataResponse(templateMetadataSummaryResponseDTO);
+    Set<ConstraintViolation<Object>> violations = validator.validate(templateMetadataSummaryResponse);
+    assertThat(violations.isEmpty()).as(violations.toString()).isTrue();
+
+    assertEquals(ACCOUNT_ID, templateMetadataSummaryResponse.getAccount());
+    assertEquals(description, templateMetadataSummaryResponse.getDescription());
+    assertEquals(ORG_IDENTIFIER, templateMetadataSummaryResponse.getOrg());
+    assertEquals(PROJ_IDENTIFIER, templateMetadataSummaryResponse.getProject());
+    assertEquals(name, templateMetadataSummaryResponse.getName());
+    assertEquals("Stage", templateMetadataSummaryResponse.getEntityType().toString());
+    assertThat(templateMetadataSummaryResponseDTO.getStoreType()).isNull();
+    assertEquals("project", templateMetadataSummaryResponse.getScope().toString());
+    assertEquals(OBJECT_ID, templateMetadataSummaryResponse.getIdentifier());
+    assertEquals(true, templateMetadataSummaryResponse.isStableTemplate().booleanValue());
+    assertEquals(123456789L, templateMetadataSummaryResponse.getUpdated().longValue());
+    assertEquals(versionLabel, templateMetadataSummaryResponse.getVersionLabel());
+    assertEquals(entityGitDetails.getBranch(), templateMetadataSummaryResponse.getGitDetails().getBranchName());
+    assertEquals(entityGitDetails.getCommitId(), templateMetadataSummaryResponse.getGitDetails().getCommitId());
+    assertEquals(entityGitDetails.getFilePath(), templateMetadataSummaryResponse.getGitDetails().getFilePath());
+    assertEquals(entityGitDetails.getRepoName(), templateMetadataSummaryResponse.getGitDetails().getRepoName());
+    assertEquals(entityGitDetails.getFileUrl(), templateMetadataSummaryResponse.getGitDetails().getFileUrl());
+    assertEquals(entityGitDetails.getRepoUrl(), templateMetadataSummaryResponse.getGitDetails().getRepoUrl());
+    assertEquals(entityGitDetails.getObjectId(), templateMetadataSummaryResponse.getGitDetails().getObjectId());
+  }
+
   @Test
   @Owner(developers = TARUN_UBA)
   @Category(UnitTests.class)

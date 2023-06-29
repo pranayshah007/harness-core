@@ -253,7 +253,7 @@ public class VerificationServiceApplication extends Application<VerificationServ
       @Named("lock")
       @Singleton
       RedisConfig redisConfig() {
-        return RedisConfig.builder().build();
+        return configuration.getRedisLockConfig();
       }
 
       @Provides

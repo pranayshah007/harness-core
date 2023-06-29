@@ -8,6 +8,7 @@
 package io.harness.ng.core.refresh.helper;
 
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.NAMANG;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
@@ -39,6 +40,7 @@ import io.harness.ng.core.service.services.impl.ServiceEntitySetupUsageHelper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
 import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
+import io.harness.ng.core.utils.ServiceOverrideV2ValidationHelper;
 import io.harness.ngsettings.SettingValueType;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngsettings.dto.SettingValueResponseDTO;
@@ -70,12 +72,12 @@ import retrofit2.Call;
 import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDC)
-public class InputsValidationHelperTest extends NgManagerTestBase {
+public class CDInputsValidationHelperTest extends NgManagerTestBase {
   private static final String RESOURCE_PATH_PREFIX = "refresh/validate/";
   private static final String ACCOUNT_ID = "accountId";
   private static final String ORG_ID = "orgId";
   private static final String PROJECT_ID = "projectId";
-  @InjectMocks InputsValidationHelper inputsValidationHelper;
+  @InjectMocks CDInputsValidationHelper CDInputsValidationHelper;
   @InjectMocks EntityFetchHelper entityFetchHelper;
   @Mock ServiceRepository serviceRepository;
   @Mock EnvironmentRepository environmentRepository;
@@ -97,8 +99,9 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
   @Mock EnvironmentEntitySetupUsageHelper environmentEntitySetupUsageHelper;
   @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
   @Mock private Call<RestResponse<Boolean>> restRequest;
-
   @Mock ServiceOverridesServiceV2 serviceOverridesServiceV2;
+  @Mock ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
+  @Mock io.harness.utils.NGFeatureFlagHelperService ngFeatureFlagHelperService;
   ServiceEntityServiceImpl serviceEntityService;
   EnvironmentServiceImpl environmentService;
   InfrastructureEntityServiceImpl infrastructureEntityService;
@@ -107,19 +110,20 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
   @Before
   public void setup() throws IOException {
     serviceEntityService = spy(new ServiceEntityServiceImpl(serviceRepository, entitySetupUsageService, eventProducer,
-        outboxService, transactionTemplate, serviceOverrideService, entitySetupUsageHelper));
+        outboxService, transactionTemplate, serviceOverrideService, serviceOverridesServiceV2, entitySetupUsageHelper));
     infrastructureEntityService = spy(new InfrastructureEntityServiceImpl(infrastructureRepository, transactionTemplate,
-        outboxService, customDeploymentEntitySetupHelper, infrastructureEntitySetupUsageHelper, hPersistence));
+        outboxService, customDeploymentEntitySetupHelper, infrastructureEntitySetupUsageHelper, hPersistence,
+        serviceOverridesServiceV2, overrideV2ValidationHelper));
     environmentService = spy(new EnvironmentServiceImpl(environmentRepository, entitySetupUsageService, eventProducer,
         outboxService, transactionTemplate, infrastructureEntityService, clusterService, serviceOverrideService,
         serviceOverridesServiceV2, serviceEntityService, accountClient, settingsClient,
-        environmentEntitySetupUsageHelper));
+        environmentEntitySetupUsageHelper, overrideV2ValidationHelper));
     environmentRefreshHelper = spy(new EnvironmentRefreshHelper(environmentService, infrastructureEntityService,
-        serviceOverrideService, serviceOverridesServiceV2, featureFlagHelperService, accountClient, settingsClient));
+        serviceOverrideService, serviceOverridesServiceV2, accountClient, overrideV2ValidationHelper));
     on(entityFetchHelper).set("serviceEntityService", serviceEntityService);
-    on(inputsValidationHelper).set("serviceEntityService", serviceEntityService);
-    on(inputsValidationHelper).set("entityFetchHelper", entityFetchHelper);
-    on(inputsValidationHelper).set("environmentRefreshHelper", environmentRefreshHelper);
+    on(CDInputsValidationHelper).set("serviceEntityService", serviceEntityService);
+    on(CDInputsValidationHelper).set("entityFetchHelper", entityFetchHelper);
+    on(CDInputsValidationHelper).set("environmentRefreshHelper", environmentRefreshHelper);
 
     SettingValueResponseDTO settingValueResponseDTO =
         SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
@@ -157,7 +161,7 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
             Collections.singletonList("infra2"), false, NoInputMergeInputAction.ADD_IDENTIFIER_NODE);
 
     InputsValidationResponse validationResponse =
-        inputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
+        CDInputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
     assertThat(validationResponse).isNotNull();
     assertThat(validationResponse.isValid()).isTrue();
     assertThat(validationResponse.getChildrenErrorNodes()).isNullOrEmpty();
@@ -178,7 +182,7 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
         .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
 
     InputsValidationResponse validationResponse =
-        inputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
+        CDInputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
     assertThat(validationResponse).isNotNull();
     assertThat(validationResponse.isValid()).isFalse();
     assertThat(validationResponse.getChildrenErrorNodes()).isNullOrEmpty();
@@ -195,7 +199,7 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
     String pipelineYmlWithService = readFile("pipeline-with-svc-runtime-serviceInputs-fixed.yaml");
 
     InputsValidationResponse validationResponse =
-        inputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
+        CDInputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
     assertThat(validationResponse).isNotNull();
     assertThat(validationResponse.isValid()).isFalse();
     assertThat(validationResponse.getChildrenErrorNodes()).isNullOrEmpty();
@@ -216,7 +220,7 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
         .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
 
     InputsValidationResponse validationResponse =
-        inputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
+        CDInputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
     assertThat(validationResponse).isNotNull();
     assertThat(validationResponse.isValid()).isFalse();
     assertThat(validationResponse.getChildrenErrorNodes()).isNullOrEmpty();
@@ -237,7 +241,7 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
         .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
 
     InputsValidationResponse validationResponse =
-        inputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
+        CDInputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
     assertThat(validationResponse).isNotNull();
     assertThat(validationResponse.isValid()).isFalse();
     assertThat(validationResponse.getChildrenErrorNodes()).isNullOrEmpty();
@@ -258,7 +262,7 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
         .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
 
     InputsValidationResponse validationResponse =
-        inputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
+        CDInputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
     assertThat(validationResponse).isNotNull();
     assertThat(validationResponse.isValid()).isTrue();
     assertThat(validationResponse.getChildrenErrorNodes()).isNullOrEmpty();
@@ -275,7 +279,7 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
         .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
 
     InputsValidationResponse validationResponse =
-        inputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
+        CDInputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
     assertThat(validationResponse).isNotNull();
     assertThat(validationResponse.isValid()).isFalse();
     assertThat(validationResponse.getChildrenErrorNodes()).isNullOrEmpty();
@@ -292,7 +296,7 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
         .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
 
     InputsValidationResponse validationResponse =
-        inputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
+        CDInputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
     assertThat(validationResponse).isNotNull();
     assertThat(validationResponse.isValid()).isTrue();
     assertThat(validationResponse.getChildrenErrorNodes()).isNullOrEmpty();
@@ -310,7 +314,7 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
     doReturn(null).when(environmentService).createEnvironmentInputsYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testenv");
 
     InputsValidationResponse validationResponse =
-        inputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
+        CDInputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
     assertThat(validationResponse).isNotNull();
     assertThat(validationResponse.isValid()).isFalse();
     assertThat(validationResponse.getChildrenErrorNodes()).isNullOrEmpty();
@@ -333,7 +337,7 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
             Collections.singletonList("IDENTIFIER"), false, NoInputMergeInputAction.ADD_IDENTIFIER_NODE);
 
     InputsValidationResponse validationResponse =
-        inputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
+        CDInputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
     assertThat(validationResponse).isNotNull();
     assertThat(validationResponse.isValid()).isFalse();
     assertThat(validationResponse.getChildrenErrorNodes()).isNullOrEmpty();
@@ -352,8 +356,74 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
         .createInfrastructureInputsFromYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testenv",
             Collections.singletonList("infra1"), false, NoInputMergeInputAction.ADD_IDENTIFIER_NODE);
 
-    InputsValidationResponse validationResponse = inputsValidationHelper.validateInputsForYaml(
+    InputsValidationResponse validationResponse = CDInputsValidationHelper.validateInputsForYaml(
         ACCOUNT_ID, ORG_ID, PROJECT_ID, templateWithInfraFixed, resolvedTemplateWithInfraFixed);
+    assertThat(validationResponse).isNotNull();
+    assertThat(validationResponse.isValid()).isFalse();
+    assertThat(validationResponse.getChildrenErrorNodes()).isNullOrEmpty();
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testValidateInputsForPipelineYamlWithPrimaryRefExpressionAndSourcesRuntime() {
+    doNothing()
+        .when(environmentRefreshHelper)
+        .validateEnvironmentInputs(
+            any(YamlNode.class), any(EntityRefreshContext.class), any(InputsValidationResponse.class));
+    String pipelineYmlWithService = readFile("pipeline-with-primaryRef-expression-source-runtime.yaml");
+    String serviceYaml = readFile("serverless-service.yaml");
+
+    when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false))
+        .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
+
+    InputsValidationResponse validationResponse =
+        CDInputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
+    assertThat(validationResponse).isNotNull();
+    assertThat(validationResponse.isValid()).isTrue();
+    assertThat(validationResponse.getChildrenErrorNodes()).isNullOrEmpty();
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void
+  testValidateInputsForServiceYamlWithPrimaryRefExpressionForPipelineYamlWithPrimaryRefExpressionAndSourcesRuntime() {
+    doNothing()
+        .when(environmentRefreshHelper)
+        .validateEnvironmentInputs(
+            any(YamlNode.class), any(EntityRefreshContext.class), any(InputsValidationResponse.class));
+    String pipelineYmlWithService = readFile("pipeline-with-primaryRef-expression-source-runtime.yaml");
+    String serviceYaml = readFile("serverless-service-with-primary-artifact-ref-expression.yaml");
+
+    when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false))
+        .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
+
+    InputsValidationResponse validationResponse =
+        CDInputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
+    assertThat(validationResponse).isNotNull();
+    assertThat(validationResponse.isValid()).isTrue();
+    assertThat(validationResponse.getChildrenErrorNodes()).isNullOrEmpty();
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void
+  testValidateInputsForServiceYamlWithPrimaryRefExpressionForPipelineYamlWithPrimaryRefExpressionAndSourcesRuntimeButDifferentExpression() {
+    doNothing()
+        .when(environmentRefreshHelper)
+        .validateEnvironmentInputs(
+            any(YamlNode.class), any(EntityRefreshContext.class), any(InputsValidationResponse.class));
+    String pipelineYmlWithService =
+        readFile("pipeline-with-primaryRef-expression-different-from-service-source-runtime.yaml");
+    String serviceYaml = readFile("serverless-service-with-primary-artifact-ref-expression.yaml");
+
+    when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false))
+        .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
+
+    InputsValidationResponse validationResponse =
+        CDInputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
     assertThat(validationResponse).isNotNull();
     assertThat(validationResponse.isValid()).isFalse();
     assertThat(validationResponse.getChildrenErrorNodes()).isNullOrEmpty();

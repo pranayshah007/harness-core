@@ -380,17 +380,18 @@ public class ServiceStepOverrideHelper {
   private List<ApplicationSettingsConfiguration> prepareFinalAppSettingsV2(
       NGServiceV2InfoConfig serviceV2Config, Map<ServiceOverridesType, NGServiceOverrideConfigV2> overrideV2Configs) {
     List<ApplicationSettingsConfiguration> applicationSettingsConfiguration = getSvcAppSettings(serviceV2Config);
-
+    ApplicationSettingsConfiguration configuration = null;
     for (ServiceOverridesType overridesType : OVERRIDE_IN_REVERSE_PRIORITY) {
       if (overrideV2Configs.containsKey(overridesType)) {
         ServiceOverridesSpec spec = overrideV2Configs.get(overridesType).getSpec();
-        ApplicationSettingsConfiguration configuration = spec.getApplicationSettings();
-        if (configuration != null) {
-          applicationSettingsConfiguration = Collections.singletonList(configuration);
+        if (spec.getApplicationSettings() != null) {
+          configuration = spec.getApplicationSettings();
         }
       }
     }
-
+    if (configuration != null) {
+      applicationSettingsConfiguration = Collections.singletonList(configuration);
+    }
     return applicationSettingsConfiguration;
   }
 
@@ -414,17 +415,18 @@ public class ServiceStepOverrideHelper {
   private List<ConnectionStringsConfiguration> prepareFinalConnectionStringsV2(
       NGServiceV2InfoConfig serviceV2Config, Map<ServiceOverridesType, NGServiceOverrideConfigV2> overrideV2Configs) {
     List<ConnectionStringsConfiguration> connectionStringsConfiguration = getSvcConnectionStrings(serviceV2Config);
-
+    ConnectionStringsConfiguration configuration = null;
     for (ServiceOverridesType overridesType : OVERRIDE_IN_REVERSE_PRIORITY) {
       if (overrideV2Configs.containsKey(overridesType)) {
         ServiceOverridesSpec spec = overrideV2Configs.get(overridesType).getSpec();
-        ConnectionStringsConfiguration configuration = spec.getConnectionStrings();
-        if (configuration != null) {
-          connectionStringsConfiguration = Collections.singletonList(configuration);
+        if (spec.getConnectionStrings() != null) {
+          configuration = spec.getConnectionStrings();
         }
       }
     }
-
+    if (configuration != null) {
+      connectionStringsConfiguration = Collections.singletonList(configuration);
+    }
     return connectionStringsConfiguration;
   }
 

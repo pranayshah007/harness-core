@@ -17,7 +17,6 @@ import io.harness.walktree.visitor.utilities.VisitorParentPathUtils;
 
 @OwnedBy(CDC)
 public interface YamlTypes {
-  String GITOPS_CREATE_PR = StepSpecTypeConstants.GITOPS_CREATE_PR;
   String GITOPS_MERGE_PR = StepSpecTypeConstants.GITOPS_MERGE_PR;
   String UPDATE_RELEASE_REPO = StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO;
   String GITOPS_SYNC = StepSpecTypeConstants.GITOPS_SYNC;
