@@ -29,4 +29,5 @@ public class AwsS3FetchFilesResponse implements DelegateTaskNotifyResponseData {
   CommandExecutionStatus commandExecutionStatus;
   UnitProgressData unitProgressData;
   @NonFinal @Setter DelegateMetaInfo delegateMetaInfo;
+  Map<String, Map<String, String>> keyVersionMap;
 }

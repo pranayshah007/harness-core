@@ -410,8 +410,8 @@ public class TriggerExecutionHelper {
             ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(),
             executionMetaDataBuilder.build(), planExecutionMetadataBuilder.build(), false, null, null, null);
         log.info("Plan execution created with planExecutionId {}, accountId {} and triggerId {}",
-            planExecution != null ? planExecution.getPlanId() : null, pipelineEntity.getAccountId(),
-            triggerDetails.getNgTriggerEntity().getIdentifier());
+            planExecution != null ? planExecution.getAmbiance().getPlanExecutionId() : null,
+            pipelineEntity.getAccountId(), triggerDetails.getNgTriggerEntity().getIdentifier());
         // check if abort prev execution needed.
         requestPipelineExecutionAbortForSameExecTagIfNeeded(triggerDetails, planExecution, executionTagForGitEvent);
         return planExecution;
@@ -456,7 +456,7 @@ public class TriggerExecutionHelper {
           ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(), execArgs.getMetadata(),
           execArgs.getPlanExecutionMetadata(), false, null, null, null);
       log.info("Plan execution created with planExecutionId {}, accountId {} and triggerId {}",
-          planExecution.getPlanId(), pipelineEntity.getAccountId(),
+          planExecution.getAmbiance().getPlanExecutionId(), pipelineEntity.getAccountId(),
           triggerDetails.getNgTriggerEntity().getIdentifier());
       // check if abort prev execution needed.
       requestPipelineExecutionAbortForSameExecTagIfNeeded(triggerDetails, planExecution, executionTagForGitEvent);

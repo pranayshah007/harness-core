@@ -254,7 +254,7 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
       if (!planStepParameters.getConfiguration().getIsTerraformCloudCli().getValue()) {
         String provisionerIdentifier =
             ParameterFieldHelper.getParameterFieldValue(planStepParameters.getProvisionerIdentifier());
-        helper.saveTerraformInheritOutput(planStepParameters, terraformTaskNGResponse, ambiance);
+        helper.saveTerraformInheritOutput(planStepParameters, terraformTaskNGResponse, ambiance, null);
 
         ParameterField<Boolean> exportTfPlanJsonField =
             planStepParameters.getConfiguration().getExportTerraformPlanJson();

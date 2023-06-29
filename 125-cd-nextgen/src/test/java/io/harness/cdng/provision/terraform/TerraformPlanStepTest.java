@@ -467,7 +467,7 @@ public class TerraformPlanStepTest extends CategoryTest {
     assertThat(stepOutcome.getOutcome()).isInstanceOf(TerraformPlanOutcome.class);
     assertThat(((TerraformPlanOutcome) (stepOutcome.getOutcome())).getDetailedExitCode()).isEqualTo(2);
 
-    verify(terraformStepHelper, times(1)).saveTerraformInheritOutput(any(), any(), any());
+    verify(terraformStepHelper, times(1)).saveTerraformInheritOutput(any(), any(), any(), eq(null));
     verify(terraformStepHelper, times(1)).updateParentEntityIdAndVersion(any(), any());
     verify(terraformStepHelper)
         .saveTerraformPlanExecutionDetails(eq(ambiance), eq(terraformTaskNGResponse), eq("id"), any());

@@ -71,6 +71,8 @@ type Config struct {
 		ServiceSecret     string `envconfig:"LOG_SERVICE_GENAI_SERVICE_SECRET"`
 		Provider          string `envconfig:"LOG_SERVICE_GENAI_PROVIDER" default:"azureopenai"`
 		MaxInputPromptLen int    `envconfig:"LOG_SERVICE_GENAI_MAX_INPUT_PROMPT_LEN" default:"10000"`
+		MaxOutputTokens   int    `envconfig:"LOG_SERVICE_GENAI_MAX_OUTPUT_TOKENS" default:"2048"`
+		Debug             bool   `envconfig:"LOG_SERVICE_GENAI_DEBUG_MODE"`
 		UseJSONResponse   bool   `envconfig:"LOG_SERVICE_GENAI_USE_JSON_RESPONSE" default:"false"`
 	}
 }

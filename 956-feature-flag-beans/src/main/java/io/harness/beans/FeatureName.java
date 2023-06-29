@@ -169,6 +169,8 @@ public enum FeatureName {
   CDS_STAGE_EXECUTION_DATA_SYNC(
       "This flag controls if you want CD Stage execution data saved in cd service and eventually synced to timescale",
       HarnessTeam.CDC),
+  CDS_SUPPORT_EXPRESSION_REMOTE_TERRAFORM_VAR_FILES_NG(
+      "FF to support expressions in remote terraform var files", HarnessTeam.CDP),
   CDS_SUPPORT_HPA_AND_PDB_NG(
       "Enabling support for HPA and PDB kind resources in k8s deployments in NG", HarnessTeam.CDP),
   CDS_SUPPORT_SKIPPING_BG_DEPLOYMENT_NG(
@@ -589,7 +591,6 @@ public enum FeatureName {
   SERVICE_ID_FILTER_FOR_TRIGGERS(
       "Filter last deployed artifacts for triggers using serviceId as well", HarnessTeam.SPG),
   SETTINGS_OPTIMIZATION,
-  SETTING_ATTRIBUTES_SERVICE_ACCOUNT_TOKEN_MIGRATION("Migrate erroneous service account tokens", HarnessTeam.PL),
   SINGLE_MANIFEST_SUPPORT,
   SKIP_ADDING_TRACK_LABEL_SELECTOR_IN_ROLLING,
   SKIP_BASED_ON_STACK_STATUSES,
@@ -664,11 +665,7 @@ public enum FeatureName {
   SPG_NEW_DEPLOYMENT_FREEZE_EXCLUSIONS(
       "Flag to support deployment freeze exclusions. Depends on NEW_DEPLOYMENT_FREEZE", HarnessTeam.SPG),
   SPG_OPTIMIZE_PIPELINE_QUERY_ON_AUTH("Optimizes auth on pipelines making the query more efficient.", HarnessTeam.SPG),
-  SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING(
-      "Make the workflowExecutions listing better providing appId for children ids", HarnessTeam.SPG),
   SPG_PIPELINE_ROLLBACK("Enables pipeline rollback on failure option", HarnessTeam.SPG),
-  SPG_REDUCE_KEYWORDS_PERSISTENCE_ON_EXECUTIONS(
-      "Gradually reducing the amount of keywords being stored on workflow executions", HarnessTeam.SPG),
   SPG_REMOVE_REDUNDANT_UPDATE_IN_AUDIT("It removes a redudant update on the audit", HarnessTeam.SPG),
   SPG_REMOVE_RESTRICTION_APPS_UNNECESSARY_CALLS(
       "Unnecessary restriction apps calls are not called from UI", HarnessTeam.SPG),
@@ -804,6 +801,7 @@ public enum FeatureName {
   WINRM_SCRIPT_COMMAND_SPLIT_NG(
       "Enables the new way of how to copy powershell/winrm script commands content to file on remote. (Copy is done in chunks of 6KB) ",
       HarnessTeam.CDP),
+  PLG_CD_CLI_WIZARD_ENABLED("Enables new cd onboarding wizard with harness-cli", HarnessTeam.GTM),
   WORKFLOW_DATA_COLLECTION_ITERATOR,
   WORKFLOW_EXECUTION_REFRESH_STATUS,
   WORKFLOW_EXECUTION_ZOMBIE_MONITOR,

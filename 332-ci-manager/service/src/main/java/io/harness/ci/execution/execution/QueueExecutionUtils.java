@@ -26,7 +26,7 @@ public class QueueExecutionUtils {
       IntegrationStageConfig stageConfig = initializeStepInfo.getStageElementConfig();
 
       Infrastructure.Type infraType = initializeStepInfo.getInfrastructure().getType();
-      OSType buildType = IntegrationStageUtils.getBuildType(stageConfig.getInfrastructure());
+      OSType buildType = IntegrationStageUtils.getBuildType(initializeStepInfo.getInfrastructure());
       CIExecutionMetadata ciAccountBuildMetadata = CIExecutionMetadata.builder()
                                                        .accountId(accountID)
                                                        .buildType(buildType)

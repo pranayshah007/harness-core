@@ -47,7 +47,6 @@ spec:
                 spec:
                   connectorRef: account.harnessImage
                   image: harnessdev/sam-deploy:1.82.0-latest
-                  stackName: "stack-name"
                   imagePullPolicy: Always
                 when:
                   stageStatus: Success
@@ -60,7 +59,5 @@ spec:
           stepGroupInfra:
             type: KubernetesDirect
             spec:
-              connectorRef: ""
               namespace: "default"
-              harnessImageConnectorRef: "account.harnessImage"
     rollbackSteps: []

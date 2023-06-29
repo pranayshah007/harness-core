@@ -1,0 +1,14 @@
+serviceInputs:
+  serviceDefinition:
+    type: Kubernetes
+    spec:
+      manifests:
+        - manifest:
+            identifier: mani_id
+            type: HelmChart
+            spec:
+              chartName: <+input>
+      variables:
+        - name: variable1
+          type: String
+          value: <+input>

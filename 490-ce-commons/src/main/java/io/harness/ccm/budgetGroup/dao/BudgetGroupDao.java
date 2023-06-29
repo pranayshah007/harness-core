@@ -13,13 +13,18 @@ import io.harness.ccm.budget.ValueDataPoint;
 import io.harness.ccm.budgetGroup.BudgetGroup;
 import io.harness.ccm.budgetGroup.BudgetGroup.BudgetGroupKeys;
 import io.harness.ccm.budgetGroup.BudgetGroupChildEntityDTO;
+import io.harness.ccm.budgetGroup.BudgetGroupSortType;
+import io.harness.ccm.commons.entities.CCMSortOrder;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
+import com.mongodb.client.model.Collation;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
 import java.util.List;
+import java.util.Objects;
 
 public class BudgetGroupDao {
   @Inject private HPersistence hPersistence;
@@ -32,6 +37,7 @@ public class BudgetGroupDao {
       BudgetGroupKeys.budgetGroupMonthlyBreakdown + "." + BudgetMonthlyBreakdownKeys.forecastMonthlyCost;
   private static final String BUDGET_GROUP_MONTHLY_BREAKDOWN_YEARLY_LAST_PERIOD_COST =
       BudgetGroupKeys.budgetGroupMonthlyBreakdown + "." + BudgetMonthlyBreakdownKeys.yearlyLastPeriodCost;
+  private static final String LOCALE_EN = "en";
 
   public String save(BudgetGroup budgetGroup) {
     return hPersistence.save(budgetGroup);
@@ -138,13 +144,28 @@ public class BudgetGroupDao {
   }
 
   public List<BudgetGroup> list(String accountId) {
-    return list(accountId, Integer.MAX_VALUE - 1, 0);
+    return list(accountId, Integer.MAX_VALUE - 1, 0, null, null);
   }
 
-  public List<BudgetGroup> list(String accountId, Integer count, Integer startIndex) {
+  public List<BudgetGroup> list(String accountId, Integer count, Integer startIndex,
+      BudgetGroupSortType budgetGroupSortType, CCMSortOrder ccmSortOrder) {
     Query<BudgetGroup> query =
         hPersistence.createQuery(BudgetGroup.class).field(BudgetGroupKeys.accountId).equal(accountId);
-    return query.asList(new FindOptions().skip(startIndex).limit(count));
+
+    final BudgetGroupSortType finalBudgetGroupSortType =
+        Objects.isNull(budgetGroupSortType) ? BudgetGroupSortType.BUDGET_GROUP_NAME : budgetGroupSortType;
+    final Sort sort = (Objects.isNull(ccmSortOrder) || ccmSortOrder == CCMSortOrder.ASCENDING)
+        ? Sort.ascending(finalBudgetGroupSortType.getColumnName())
+        : Sort.descending(finalBudgetGroupSortType.getColumnName());
+
+    final FindOptions options = new FindOptions();
+    if (budgetGroupSortType.equals(BudgetGroupSortType.BUDGET_GROUP_NAME)) {
+      options.collation(Collation.builder().locale(LOCALE_EN).build());
+    }
+    options.limit(count);
+    options.skip(startIndex);
+
+    return query.order(sort).asList(options);
   }
 
   public List<BudgetGroup> list(String accountId, List<BudgetPeriod> budgetPeriods, Integer count, Integer startIndex) {

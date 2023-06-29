@@ -10,6 +10,7 @@ package software.wings.service.impl;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.EnvironmentType.NON_PROD;
 import static io.harness.beans.EnvironmentType.PROD;
+import static io.harness.beans.FeatureName.CDS_QUERY_OPTIMIZATION;
 import static io.harness.beans.FeatureName.HARNESS_TAGS;
 import static io.harness.beans.FeatureName.PURGE_DANGLING_APP_ENV_REFS;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
@@ -121,7 +122,9 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.ReadPreference;
 import dev.morphia.Key;
+import dev.morphia.query.FindOptions;
 import dev.morphia.query.UpdateOperations;
 import java.io.File;
 import java.io.FileInputStream;
@@ -667,13 +670,27 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     if (isEmpty(appIds)) {
       return new HashMap<>();
     }
-    PageRequest<Environment> pageRequest = aPageRequest()
-                                               .addFilter(EnvironmentKeys.accountId, EQ, accountId)
-                                               .addFilter(EnvironmentKeys.appId, Operator.IN, appIds.toArray())
-                                               .addFieldsIncluded("_id", "appId", "environmentType")
-                                               .build();
+    List<Environment> list;
 
-    List<Environment> list = wingsPersistence.getAllEntities(pageRequest, () -> list(pageRequest, false, null, true));
+    if (featureFlagService.isEnabled(CDS_QUERY_OPTIMIZATION, accountId)) {
+      FindOptions findOptions = new FindOptions();
+      findOptions.readPreference(ReadPreference.secondaryPreferred());
+      list = wingsPersistence.createQuery(Environment.class)
+                 .filter(EnvironmentKeys.accountId, accountId)
+                 .field(EnvironmentKeys.appId)
+                 .in(appIds)
+                 .project(EnvironmentKeys.appId, true)
+                 .project(EnvironmentKeys.environmentType, true)
+                 .asList(findOptions);
+    } else {
+      PageRequest<Environment> pageRequest = aPageRequest()
+                                                 .addFilter(EnvironmentKeys.accountId, EQ, accountId)
+                                                 .addFilter(EnvironmentKeys.appId, Operator.IN, appIds.toArray())
+                                                 .addFieldsIncluded("_id", "appId", "environmentType")
+                                                 .build();
+
+      list = wingsPersistence.getAllEntities(pageRequest, () -> list(pageRequest, false, null, true));
+    }
 
     List<Base> emptyList = new ArrayList<>();
 

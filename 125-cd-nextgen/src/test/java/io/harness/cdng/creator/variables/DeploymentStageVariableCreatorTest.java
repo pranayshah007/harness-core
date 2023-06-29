@@ -37,6 +37,7 @@ import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec;
 import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
+import io.harness.ng.core.utils.ServiceOverrideV2ValidationHelper;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.persistence.HIterator;
@@ -92,6 +93,7 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
   @Mock NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock NGSettingsClient ngSettingsClient;
   @Mock ServiceOverridesServiceV2 serviceOverridesServiceV2;
+  @Mock ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
   InfrastructureMapper infrastructureMapper = new InfrastructureMapper();
   @InjectMocks private DeploymentStageVariableCreator deploymentStageVariableCreator;
 
@@ -466,6 +468,7 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
     when(serviceOverrideService.get(any(), any(), any(), any(), any()))
         .thenReturn(Optional.of(NGServiceOverridesEntity.builder().build()));
     when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
+    when(overrideV2ValidationHelper.isOverridesV2Enabled(any(), any(), any())).thenReturn(true);
     SettingValueResponseDTO settingValueResponseDTO = SettingValueResponseDTO.builder().value("true").build();
     MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
     mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(settingValueResponseDTO);

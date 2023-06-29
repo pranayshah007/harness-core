@@ -348,7 +348,7 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
         : terraformTaskNGResponse.getUnitProgressData().getUnitProgresses();
     stepResponseBuilder.unitProgressList(unitProgresses);
     if (CommandExecutionStatus.SUCCESS == terraformTaskNGResponse.getCommandExecutionStatus()) {
-      helper.saveRollbackDestroyConfigInline(stepParameters, terraformTaskNGResponse, ambiance);
+      helper.saveRollbackDestroyConfigInline(stepParameters, terraformTaskNGResponse, ambiance, null);
       addStepOutcome(ambiance, stepResponseBuilder, terraformTaskNGResponse.getOutputs(), stepParameters);
       helper.updateParentEntityIdAndVersion(
           helper.generateFullIdentifier(
