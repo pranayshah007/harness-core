@@ -119,8 +119,9 @@ public final class VerificationJobInstance
   // this stuff is only required for deployment verification
   @Setter(AccessLevel.NONE) private Duration dataCollectionDelay;
 
-  private Set<String> oldVersionHosts;
-  private Set<String> newVersionHosts;
+  private ServiceInstanceDetails serviceInstanceDetailsFromCD;
+  @Deprecated private Set<String> oldVersionHosts;
+  @Deprecated private Set<String> newVersionHosts;
   private Integer newHostsTrafficSplitPercentage;
   private ActivityVerificationStatus verificationStatus;
 

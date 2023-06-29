@@ -11,8 +11,16 @@ import io.harness.cvng.beans.DataCollectionInfo;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
 
+import java.util.List;
+
 public interface DataCollectionInfoMapper<R extends DataCollectionInfo, T extends CVConfig> {
   R toDataCollectionInfo(T cvConfig, TaskType taskType);
+
+  default R toDeploymentDataCollectionInfo(T cvConfig, List<String> serviceInstances) {
+    R dataCollectionInfo = toDataCollectionInfo(cvConfig, TaskType.DEPLOYMENT);
+    dataCollectionInfo.setServiceInstances(serviceInstances);
+    return dataCollectionInfo;
+  }
 
   default void postProcessDataCollectionInfo(R dataCollectionInfo, T cvConfig, TaskType taskType) {}
 }
