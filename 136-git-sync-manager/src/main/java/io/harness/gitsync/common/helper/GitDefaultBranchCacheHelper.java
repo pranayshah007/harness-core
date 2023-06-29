@@ -67,18 +67,18 @@ public class GitDefaultBranchCacheHelper {
 
   public String getDefaultBranchIfInputBranchEmpty(
       String accountIdentifier, ScmConnector scmConnector, String repoName, String inputBranch) {
-    if (isEmpty(inputBranch)
-        && ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PIE_GIT_DEFAULT_BRANCH_CACHE)) {
+    if (isEmpty(inputBranch)) {
+      //        && ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PIE_GIT_DEFAULT_BRANCH_CACHE)) {
       return getDefaultBranchFromCache(accountIdentifier, repoName, scmConnector);
     } else {
       return inputBranch;
     }
   }
 
-  public void cacheDefaultBranchResponse(
-      String accountIdentifier, ScmConnector scmConnector, String repoName, String workingBranch, String gitBranch) {
+  public void cacheDefaultBranchResponse(String accountIdentifier, ScmConnector scmConnector, String repoName,
+      String workingBranch, String defaultBranchToSet) {
     if (isEmpty(workingBranch)) {
-      upsertDefaultBranch(accountIdentifier, repoName, gitBranch, scmConnector);
+      upsertDefaultBranch(accountIdentifier, repoName, defaultBranchToSet, scmConnector);
     }
   }
 
