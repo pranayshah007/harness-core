@@ -69,9 +69,11 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.ldaptive.ResultCode;
@@ -183,11 +185,8 @@ public class NGLdapServiceImpl implements NGLdapService {
     LdapSettingsWithEncryptedDataDetail settingsWithEncryptedDataDetail =
         getLdapSettingsWithEncryptedDataInternal(accountIdentifier);
 
-    if (null != settingsWithEncryptedDataDetail && null != settingsWithEncryptedDataDetail.getLdapSettings()
-        && settingsWithEncryptedDataDetail.getLdapSettings().isDisabled()) {
-      log.info(
-          "NGLDAP: Sync user group is disabled for NG LDAP on account: {}, organization: {}, project: {}. Skipping user group sync",
-          accountIdentifier, orgIdentifier, projectIdentifier);
+    if (checkAndLogIfLDAPAuthorizationIsEnabled(
+            accountIdentifier, orgIdentifier, projectIdentifier, settingsWithEncryptedDataDetail)) {
       return;
     }
 
@@ -195,34 +194,7 @@ public class NGLdapServiceImpl implements NGLdapService {
         accountIdentifier, orgIdentifier, projectIdentifier);
     List<UserGroup> userGroupsToSync = userGroupService.getUserGroupsBySsoId(
         accountIdentifier, settingsWithEncryptedDataDetail.getLdapSettings().getUuid());
-    Map<UserGroup, LdapGroupResponse> userGroupsToLdapGroupMap = new HashMap<>();
-
-    for (UserGroup userGroup : userGroupsToSync) {
-      NGLdapGroupSearchTaskParameters parameters =
-          NGLdapGroupSearchTaskParameters.builder()
-              .ldapSettings(settingsWithEncryptedDataDetail.getLdapSettings())
-              .encryptedDataDetail(settingsWithEncryptedDataDetail.getEncryptedDataDetail())
-              .name(userGroup.getSsoGroupId())
-              .build();
-
-      DelegateResponseData delegateResponseData = getDelegateResponseData(userGroup.getAccountIdentifier(),
-          userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier(), parameters, NG_LDAP_GROUPS_SYNC);
-
-      NGLdapGroupSyncTaskResponse groupSearchResponse = (NGLdapGroupSyncTaskResponse) delegateResponseData;
-      log.info("NGLDAP: Received delegate response for syncLdapGroupByDn in NG LDAP for group {} in account: {}",
-          userGroup.getIdentifier(), accountIdentifier);
-
-      if (null != groupSearchResponse.getLdapGroupsResponse()) {
-        userGroupsToLdapGroupMap.put(userGroup, groupSearchResponse.getLdapGroupsResponse());
-      } else {
-        log.error(
-            "NGLDAP: No LDAP group response received in delegate response. Points to some error in delegate task execution for group: {} in account: {}",
-            userGroup, accountIdentifier);
-      }
-    }
-
-    ngLdapGroupSyncHelper.reconcileAllUserGroups(
-        userGroupsToLdapGroupMap, settingsWithEncryptedDataDetail.getLdapSettings().getUuid(), accountIdentifier);
+    syncUserGroupsJobInternal(accountIdentifier, settingsWithEncryptedDataDetail, userGroupsToSync);
   }
 
   @Override
@@ -253,6 +225,79 @@ public class NGLdapServiceImpl implements NGLdapService {
       }
     }
     return ldapAuthTestResponse;
+  }
+
+  @Override
+  public void syncAUserGroupJob(
+      String userGroupIdentifier, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    LdapSettingsWithEncryptedDataDetail settingsWithEncryptedDataDetail =
+        getLdapSettingsWithEncryptedDataInternal(accountIdentifier);
+
+    if (checkAndLogIfLDAPAuthorizationIsEnabled(
+            accountIdentifier, orgIdentifier, projectIdentifier, settingsWithEncryptedDataDetail)) {
+      return;
+    }
+
+    log.info("NGLDAP: Sync a user group with id {} for NG LDAP starting for account: {}, organization: {}, project: {}",
+        userGroupIdentifier, accountIdentifier, orgIdentifier, projectIdentifier);
+    Optional<UserGroup> userGroup =
+        userGroupService.get(accountIdentifier, orgIdentifier, projectIdentifier, userGroupIdentifier);
+
+    if (userGroup.isEmpty()) {
+      log.warn(
+          "NGLDAP: User group with identifier {} not found to trigger LDAP sync in account: {}, organization: {}, project: {}",
+          userGroupIdentifier, accountIdentifier, orgIdentifier, projectIdentifier);
+      return;
+    }
+
+    List<UserGroup> userGroupsToSync = Collections.singletonList(userGroup.get());
+    syncUserGroupsJobInternal(accountIdentifier, settingsWithEncryptedDataDetail, userGroupsToSync);
+  }
+
+  private boolean checkAndLogIfLDAPAuthorizationIsEnabled(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, LdapSettingsWithEncryptedDataDetail settingsWithEncryptedDataDetail) {
+    if (null != settingsWithEncryptedDataDetail && null != settingsWithEncryptedDataDetail.getLdapSettings()
+        && settingsWithEncryptedDataDetail.getLdapSettings().isDisabled()) {
+      log.info(
+          "NGLDAP: Sync user group is disabled at LDAP setting level for NG LDAP on account: {}, organization: {}, project: {}. Skipping user group sync",
+          accountIdentifier, orgIdentifier, projectIdentifier);
+      return true;
+    }
+    return false;
+  }
+
+  private void syncUserGroupsJobInternal(String accountIdentifier,
+      LdapSettingsWithEncryptedDataDetail settingsWithEncryptedDataDetail, List<UserGroup> userGroupsToSync) {
+    Map<UserGroup, LdapGroupResponse> userGroupsToLdapGroupMap = new HashMap<>();
+
+    if (isNotEmpty(userGroupsToSync)) {
+      for (UserGroup userGroup : userGroupsToSync) {
+        NGLdapGroupSearchTaskParameters parameters =
+            NGLdapGroupSearchTaskParameters.builder()
+                .ldapSettings(settingsWithEncryptedDataDetail.getLdapSettings())
+                .encryptedDataDetail(settingsWithEncryptedDataDetail.getEncryptedDataDetail())
+                .name(userGroup.getSsoGroupId())
+                .build();
+
+        DelegateResponseData delegateResponseData = getDelegateResponseData(userGroup.getAccountIdentifier(),
+            userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier(), parameters, NG_LDAP_GROUPS_SYNC);
+
+        NGLdapGroupSyncTaskResponse groupSearchResponse = (NGLdapGroupSyncTaskResponse) delegateResponseData;
+        log.info("NGLDAP: Received delegate response for syncLdapGroupByDn in NG LDAP for group {} in account: {}",
+            userGroup.getIdentifier(), accountIdentifier);
+
+        if (null != groupSearchResponse.getLdapGroupsResponse()) {
+          userGroupsToLdapGroupMap.put(userGroup, groupSearchResponse.getLdapGroupsResponse());
+        } else {
+          log.error(
+              "NGLDAP: No LDAP group response received in delegate response. Points to some error in delegate task execution for group: {} in account: {}",
+              userGroup, accountIdentifier);
+        }
+      }
+
+      ngLdapGroupSyncHelper.reconcileAllUserGroups(
+          userGroupsToLdapGroupMap, settingsWithEncryptedDataDetail.getLdapSettings().getUuid(), accountIdentifier);
+    }
   }
 
   private void handleErrorResponseMessageFromDelegate(String errorMessage, String ldapTestResponseMessage) {
