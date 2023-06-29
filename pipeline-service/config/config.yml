@@ -319,11 +319,11 @@ orchestrationStepConfig:
     logStreamingContainerStepBaseUrl: ${LOG_STREAMING_CONTAINER_STEP_BASE_URL:-http://localhost:8079}
     pluginConfig:
       sscaOrchestrationConfig:
-        image: harness/ssca-plugin:latest
+        image: ${SSCA_ORCHESTRATION_IMAGE:-harness/ssca-plugin:latest}
         entrypoint:
           - /bin/ssca-plugin
       sscaEnforcementConfig:
-        image: harness/ssca-plugin:latest
+        image: ${SSCA_ENFORCEMENT_IMAGE:-harness/ssca-plugin:latest}
         entrypoint:
           - /bin/ssca-plugin
     #Todo: Move to config Management Service
