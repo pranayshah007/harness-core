@@ -589,7 +589,6 @@ public enum FeatureName {
   SERVICE_ID_FILTER_FOR_TRIGGERS(
       "Filter last deployed artifacts for triggers using serviceId as well", HarnessTeam.SPG),
   SETTINGS_OPTIMIZATION,
-  SETTING_ATTRIBUTES_SERVICE_ACCOUNT_TOKEN_MIGRATION("Migrate erroneous service account tokens", HarnessTeam.PL),
   SINGLE_MANIFEST_SUPPORT,
   SKIP_ADDING_TRACK_LABEL_SELECTOR_IN_ROLLING,
   SKIP_BASED_ON_STACK_STATUSES,
