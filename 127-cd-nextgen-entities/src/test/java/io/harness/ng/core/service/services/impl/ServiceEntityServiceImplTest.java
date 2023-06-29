@@ -16,6 +16,7 @@ import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
 import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.PRABU;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.YOGESH;
 import static io.harness.rule.OwnerRule.vivekveman;
 
@@ -39,6 +40,8 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
+import io.harness.exception.UnsupportedOperationException;
+import io.harness.exception.YamlException;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
@@ -66,6 +69,7 @@ import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.service.spring.ServiceRepository;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
+import io.harness.spec.server.ng.v1.model.ManifestsResponseDTO;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.utils.PageUtils;
 
@@ -1199,6 +1203,60 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     String resFile = "service/merged-service-input-runtime-primary-artifact-expression.yaml";
     String resTemplate = readFile(resFile);
     assertThat(templateYaml).isEqualTo(resTemplate);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetManifestIdentifiersListServiceV2KubernetesSpec() {
+    String filename = "service/service-with-primaryManifestRef-Kubernetes.yaml";
+    String yaml = readFile(filename);
+    ManifestsResponseDTO responseDTO = serviceEntityService.getManifestIdentifiers(yaml, SERVICE_ID);
+    assertThat(responseDTO).isNotNull();
+    assertThat(responseDTO.getIdentifiers()).isNotNull().isNotEmpty().hasSize(2);
+    assertThat(responseDTO.getIdentifiers()).hasSameElementsAs(Arrays.asList("mani_i1", "mani_i2"));
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetManifestIdentifiersListServiceV2HelmSpec() {
+    String filename = "service/service-with-primaryManifestRef-NativeHelm.yaml";
+    String yaml = readFile(filename);
+    ManifestsResponseDTO responseDTO = serviceEntityService.getManifestIdentifiers(yaml, SERVICE_ID);
+    assertThat(responseDTO).isNotNull();
+    assertThat(responseDTO.getIdentifiers()).isNotNull().isNotEmpty().hasSize(2);
+    assertThat(responseDTO.getIdentifiers()).hasSameElementsAs(Arrays.asList("mani_i1", "mani_i2"));
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetManifestIdentifiersListServiceV2Others() {
+    String filename = "service/service-with-primaryManifestRef-Others.yaml";
+    String InvalidYaml = readFile(filename);
+    assertThatThrownBy(() -> serviceEntityService.getManifestIdentifiers(InvalidYaml, SERVICE_ID))
+        .isInstanceOf(UnsupportedOperationException.class)
+        .hasMessage("Service Spec Type ECS is not supported");
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testFailGetManifestIdentifiersServiceV2YamlException() {
+    assertThatThrownBy(() -> serviceEntityService.getManifestIdentifiers("service:", SERVICE_ID))
+        .isInstanceOf(YamlException.class)
+        .hasMessage("Yaml provided for service " + SERVICE_ID + " does not have service root field.");
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetEmptyManifestIdentifiersListServiceV2() {
+    String filename = "service/service-with-no-manifests.yaml";
+    String yaml = readFile(filename);
+    ManifestsResponseDTO responseDTO = serviceEntityService.getManifestIdentifiers(yaml, SERVICE_ID);
+    assertThat(responseDTO).isEqualTo(new ManifestsResponseDTO());
   }
 
   private String readFile(String filename) {

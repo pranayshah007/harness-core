@@ -72,6 +72,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.service.spring.ServiceRepository;
+import io.harness.spec.server.ng.v1.model.ManifestsResponseDTO;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.utils.IdentifierRefHelper;
@@ -1063,5 +1064,28 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     }
 
     return ValidateTemplateInputsResponseDTO.builder().validYaml(true).build();
+  }
+
+  @Override
+  public ManifestsResponseDTO getManifestIdentifiers(String yaml, String serviceIdentifier) {
+    try {
+      YamlField serviceYamlField = YamlUtils.readTree(yaml).getNode().getField(YamlTypes.SERVICE_ENTITY);
+      if (serviceYamlField == null) {
+        throw new YamlException(
+            String.format("Yaml provided for service %s does not have service root field.", serviceIdentifier));
+      }
+
+      YamlField serviceDefinitionField = serviceYamlField.getNode().getField(YamlTypes.SERVICE_DEFINITION);
+      YamlField manifestsField = ServiceFilterHelper.getManifestsNodeFromServiceDefinitionYaml(serviceDefinitionField);
+      if (manifestsField == null) {
+        return new ManifestsResponseDTO();
+      }
+
+      return new ManifestsResponseDTO().identifiers(ServiceFilterHelper.getManifestIdentifiersFilteredOnServiceType(
+          manifestsField, serviceDefinitionField.getType()));
+    } catch (IOException e) {
+      throw new InvalidRequestException(
+          String.format("Error occurred while fetching list of manifests for service %s", serviceIdentifier), e);
+    }
   }
 }
