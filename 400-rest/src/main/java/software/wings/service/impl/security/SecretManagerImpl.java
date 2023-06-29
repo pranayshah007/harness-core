@@ -813,9 +813,13 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
   @Override
   public String fetchSecretValue(String accountId, String secretRecordId) {
     // this flow doesn't need any permission as it's used only internally to fetch encrypted records
+    // adding permission will break download delegate flow
     Optional<EncryptedData> encryptedDataOptional = secretsDao.getSecretById(accountId, secretRecordId);
-    return encryptedDataOptional.map(encryptedData -> String.valueOf(secretService.fetchSecretValue(encryptedData)))
-        .orElse(EMPTY);
+    if (encryptedDataOptional.isPresent()) {
+      EncryptedData encryptedData = encryptedDataOptional.get();
+      return String.valueOf(secretService.fetchSecretValue(encryptedData));
+    }
+    return EMPTY;
   }
 
   @Override
