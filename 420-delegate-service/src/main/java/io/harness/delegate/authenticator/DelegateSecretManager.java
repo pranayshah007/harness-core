@@ -41,7 +41,7 @@ public abstract class DelegateSecretManager {
   }
 
   public String decrypt(DelegateToken delegateToken) {
-    return fetchSecretValue(delegateToken.getAccountId(), delegateToken.getEncryptedTokenId();
+    return fetchSecretValue(delegateToken.getAccountId(), delegateToken.getEncryptedTokenId());
   }
 
   protected abstract String fetchSecretValue(String accountId, String ecryptedTokenId);
