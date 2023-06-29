@@ -1100,16 +1100,17 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
     Map<ConnectorDetails, Map<GetBatchFileRequestIdentifier, GitFileLocationDetails>>
         connectorDetailsToFileLocationMapping = new HashMap<>();
 
-    gitFileBatchRequest.getGetBatchFileRequestIdentifierGitFileRequestV2Map().forEach((identifier, request) -> {
-      GitFileRequestV2 gitFileRequestV2 = request.getGitFileRequestV2();
+    gitFileBatchRequest.getGetBatchFileRequestIdentifierGitFileRequestV2Map().forEach((identifier,
+                                                                                          gitFileRequestDTO) -> {
+      GitFileRequestV2 request = gitFileRequestDTO.getGitFileRequestV2();
       ConnectorDetails key = ConnectorDetails.builder()
-                                 .scope(gitFileRequestV2.getScope())
-                                 .connectorRef(gitFileRequestV2.getConnectorRef())
-                                 .repo(gitFileRequestV2.getRepo())
+                                 .scope(request.getScope())
+                                 .connectorRef(request.getConnectorRef())
+                                 .repo(request.getRepo())
                                  .build();
-      populateScmConnectorEncryptionDetailsMap(key, connectorDetailsToEncryptedDataDetailsMapping,
-          gitFileRequestV2.getScope(), gitFileRequestV2.getScmConnector());
-      GitFileLocationDetails gitFileLocationDetails = getGitFileLocationDetails(gitFileRequestV2);
+      populateScmConnectorEncryptionDetailsMap(
+          key, connectorDetailsToEncryptedDataDetailsMapping, request.getScope(), request.getScmConnector());
+      GitFileLocationDetails gitFileLocationDetails = getGitFileLocationDetails(request);
       populateGitFileLocationDetailsMap(key, connectorDetailsToFileLocationMapping, gitFileLocationDetails, identifier);
     });
 

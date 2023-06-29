@@ -107,7 +107,7 @@ public class GitDefaultBranchCacheHelperTest extends GitSyncTestBase {
         GitDefaultBranchCacheResponse.builder().defaultBranch(defaultBranch).build();
     when(gitDefaultBranchCacheService.fetchFromCache(any())).thenReturn(gitDefaultBranchCacheResponse);
     String defaultBranchResponse =
-        gitDefaultBranchCacheHelper.setDefaultBranchIfInputBranchEmpty(accountIdentifier, scmConnector, repoName, "");
+        gitDefaultBranchCacheHelper.getDefaultBranchIfInputBranchEmpty(accountIdentifier, scmConnector, repoName, "");
     assertEquals(defaultBranchResponse, defaultBranch);
   }
 
@@ -118,7 +118,7 @@ public class GitDefaultBranchCacheHelperTest extends GitSyncTestBase {
     when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
     when(gitDefaultBranchCacheService.fetchFromCache(any())).thenReturn(null);
     String defaultBranchResponse =
-        gitDefaultBranchCacheHelper.setDefaultBranchIfInputBranchEmpty(accountIdentifier, scmConnector, repoName, "");
+        gitDefaultBranchCacheHelper.getDefaultBranchIfInputBranchEmpty(accountIdentifier, scmConnector, repoName, "");
     assertNull(defaultBranchResponse);
   }
 
@@ -126,7 +126,7 @@ public class GitDefaultBranchCacheHelperTest extends GitSyncTestBase {
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
   public void testSetDefaultBranchIfInputBranchEmptyWhenInputBranchIsNotEmpty() {
-    String defaultBranchResponse = gitDefaultBranchCacheHelper.setDefaultBranchIfInputBranchEmpty(
+    String defaultBranchResponse = gitDefaultBranchCacheHelper.getDefaultBranchIfInputBranchEmpty(
         accountIdentifier, scmConnector, repoName, branch);
     assertEquals(defaultBranchResponse, branch);
   }
