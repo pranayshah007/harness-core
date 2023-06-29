@@ -208,10 +208,6 @@ if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
   yq -i '.useScriptCache=false' $REDISSON_CACHE_FILE
 fi
 
-if [[ "" != "$SHOULD_CONFIGURE_WITH_PMS" ]]; then
-  export SHOULD_CONFIGURE_WITH_PMS; yq -i '.shouldConfigureWithPMS=env(SHOULD_CONFIGURE_WITH_PMS)' $CONFIG_FILE
-fi
-
 replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE
 replace_key_value cacheConfig.cacheBackend $CACHE_BACKEND
 replace_key_value cacheConfig.enterpriseCacheEnabled $ENTERPRISE_CACHE_ENABLED
