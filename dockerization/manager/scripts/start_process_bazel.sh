@@ -89,11 +89,11 @@ fi
 
 
 if [[ "${DEPLOY_MODE}" == "KUBERNETES" || "${DEPLOY_MODE}" == "KUBERNETES_ONPREM" || "${DEPLOY_VERSION}" == "COMMUNITY" ]]; then
-    java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/config.yml
+    java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/config/config.yml
 else
     if [[ "${ROLLING_FILE_LOGGING_ENABLED}" == "true" ]]; then
-        java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/config.yml
+        java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/config/config.yml
     else
-        java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/config.yml > /opt/harness/logs/portal.log 2>&1
+        java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/config/config.yml > /opt/harness/logs/portal.log 2>&1
     fi
 fi

@@ -5,5 +5,4 @@
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 source set_default_variables.sh
-bash ./replace_configs.sh
 bash ./start_process.sh
