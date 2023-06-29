@@ -40,6 +40,7 @@ import io.harness.ng.core.service.services.impl.ServiceEntitySetupUsageHelper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
 import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
+import io.harness.ng.core.utils.ServiceOverrideV2ValidationHelper;
 import io.harness.ngsettings.SettingValueType;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngsettings.dto.SettingValueResponseDTO;
@@ -98,8 +99,9 @@ public class CDInputsValidationHelperTest extends NgManagerTestBase {
   @Mock EnvironmentEntitySetupUsageHelper environmentEntitySetupUsageHelper;
   @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
   @Mock private Call<RestResponse<Boolean>> restRequest;
-
   @Mock ServiceOverridesServiceV2 serviceOverridesServiceV2;
+  @Mock ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
+  @Mock io.harness.utils.NGFeatureFlagHelperService ngFeatureFlagHelperService;
   ServiceEntityServiceImpl serviceEntityService;
   EnvironmentServiceImpl environmentService;
   InfrastructureEntityServiceImpl infrastructureEntityService;
@@ -108,15 +110,16 @@ public class CDInputsValidationHelperTest extends NgManagerTestBase {
   @Before
   public void setup() throws IOException {
     serviceEntityService = spy(new ServiceEntityServiceImpl(serviceRepository, entitySetupUsageService, eventProducer,
-        outboxService, transactionTemplate, serviceOverrideService, entitySetupUsageHelper));
+        outboxService, transactionTemplate, serviceOverrideService, serviceOverridesServiceV2, entitySetupUsageHelper));
     infrastructureEntityService = spy(new InfrastructureEntityServiceImpl(infrastructureRepository, transactionTemplate,
-        outboxService, customDeploymentEntitySetupHelper, infrastructureEntitySetupUsageHelper, hPersistence));
+        outboxService, customDeploymentEntitySetupHelper, infrastructureEntitySetupUsageHelper, hPersistence,
+        serviceOverridesServiceV2, overrideV2ValidationHelper));
     environmentService = spy(new EnvironmentServiceImpl(environmentRepository, entitySetupUsageService, eventProducer,
         outboxService, transactionTemplate, infrastructureEntityService, clusterService, serviceOverrideService,
         serviceOverridesServiceV2, serviceEntityService, accountClient, settingsClient,
-        environmentEntitySetupUsageHelper));
+        environmentEntitySetupUsageHelper, overrideV2ValidationHelper));
     environmentRefreshHelper = spy(new EnvironmentRefreshHelper(environmentService, infrastructureEntityService,
-        serviceOverrideService, serviceOverridesServiceV2, featureFlagHelperService, accountClient, settingsClient));
+        serviceOverrideService, serviceOverridesServiceV2, accountClient, overrideV2ValidationHelper));
     on(entityFetchHelper).set("serviceEntityService", serviceEntityService);
     on(CDInputsValidationHelper).set("serviceEntityService", serviceEntityService);
     on(CDInputsValidationHelper).set("entityFetchHelper", entityFetchHelper);

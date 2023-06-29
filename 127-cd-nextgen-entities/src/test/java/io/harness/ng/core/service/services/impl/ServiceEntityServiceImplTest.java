@@ -63,14 +63,19 @@ import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.ng.core.template.refresh.ErrorNodeSummary;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
+import io.harness.ng.core.utils.ServiceOverrideV2ValidationHelper;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.service.spring.ServiceRepository;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.spec.server.ng.v1.model.ManifestsResponseDTO;
 import io.harness.template.remote.TemplateResourceClient;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.PageUtils;
 
 import com.google.common.io.Resources;
@@ -92,6 +97,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -111,6 +118,9 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Mock private ServiceRepository serviceRepository;
 
   @Mock private TemplateResourceClient templateResourceClient;
+  @Mock NGSettingsClient settingsClient;
+  @Mock NGFeatureFlagHelperService featureFlagHelperService;
+  @Mock ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
 
   @Inject @InjectMocks private ServiceEntityServiceImpl serviceEntityService;
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
@@ -140,6 +150,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     Reflect.on(serviceEntityService).set("entitySetupUsageHelper", entitySetupUsageHelper);
     Reflect.on(serviceEntityService).set("serviceEntityValidatorFactory", serviceEntityValidatorFactory);
     Reflect.on(serviceEntityService).set("templateResourceClient", templateResourceClient);
+    Reflect.on(serviceEntityService).set("overrideV2ValidationHelper", overrideV2ValidationHelper);
     when(serviceEntityValidatorFactory.getServiceEntityValidator(any())).thenReturn(noOpServiceEntityValidator);
   }
   @Parameterized.Parameters
@@ -319,6 +330,10 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     assertThat(dtoList).containsOnly(ServiceElementMapper.writeDTO(upsertService));
 
     // Delete operations
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    SettingValueResponseDTO settingValueResponseDTO = SettingValueResponseDTO.builder().value("false").build();
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(settingValueResponseDTO);
+
     when(entitySetupUsageService.listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString()))
         .thenReturn(Page.empty());
     boolean delete = serviceEntityService.delete("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "IDENTIFIER", 1L, false);
@@ -468,6 +483,9 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Category(UnitTests.class)
   public void testErrorMessageWhenServiceIsReferenced() {
     List<EntitySetupUsageDTO> referencedByEntities = List.of(getEntitySetupUsageDTO());
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    SettingValueResponseDTO settingValueResponseDTO = SettingValueResponseDTO.builder().value("false").build();
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(settingValueResponseDTO);
     when(entitySetupUsageService.listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString()))
         .thenReturn(new PageImpl<>(referencedByEntities));
     assertThatThrownBy(() -> serviceEntityService.delete(ACCOUNT_ID, ORG_ID, PROJECT_ID, "SERVICE", 0L, false))
@@ -534,6 +552,9 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
                                       .build();
 
     serviceEntityService.create(serviceEntity);
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    SettingValueResponseDTO settingValueResponseDTO = SettingValueResponseDTO.builder().value("false").build();
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(settingValueResponseDTO);
     when(entitySetupUsageService.listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString()))
         .thenReturn(Page.empty());
     boolean delete = serviceEntityService.delete("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", id, 0L, false);
@@ -907,6 +928,9 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     Page<ServiceEntity> list = serviceEntityService.list(criteriaFromServiceFilter, pageRequest);
     assertThat(list.getContent()).isNotNull();
     assertThat(list.getContent().size()).isEqualTo(2);
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    SettingValueResponseDTO settingValueResponseDTO = SettingValueResponseDTO.builder().value("false").build();
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(settingValueResponseDTO);
 
     boolean delete = serviceEntityService.delete("ACCOUNT_ID", null, null, "IDENTIFIER", 1L, false);
     assertThat(delete).isTrue();
@@ -963,6 +987,9 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     serviceEntityService.create(serviceEntity);
     when(entitySetupUsageService.listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString()))
         .thenReturn(Page.empty());
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    SettingValueResponseDTO settingValueResponseDTO = SettingValueResponseDTO.builder().value("false").build();
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(settingValueResponseDTO);
     serviceEntityService.delete("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", id, 0L, true);
     verify(entitySetupUsageService, times(0))
         .listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString());

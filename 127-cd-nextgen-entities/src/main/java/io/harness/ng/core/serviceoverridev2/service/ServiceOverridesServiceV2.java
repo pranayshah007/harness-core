@@ -19,6 +19,7 @@ import java.util.Optional;
 import javax.validation.Valid;
 import lombok.NonNull;
 import org.apache.commons.lang3.tuple.Pair;
+import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -62,4 +63,17 @@ public interface ServiceOverridesServiceV2 {
 
   Optional<NGServiceOverrideConfigV2> mergeOverridesGroupedByType(
       @NonNull List<NGServiceOverridesEntity> overridesEntities);
+
+  boolean deleteAllInOrg(@NotEmpty String accountId, @NotEmpty String orgIdentifier);
+  boolean deleteAllInProject(
+      @NotEmpty String accountId, @NotEmpty String orgIdentifier, @NotEmpty String projectIdentifier);
+
+  boolean deleteAllForEnv(@NotEmpty String accountId, @NotEmpty String orgIdentifier,
+      @NotEmpty String projectIdentifier, @NotEmpty String environmentRef);
+
+  boolean deleteAllForInfra(@NotEmpty String accountId, @NotEmpty String orgIdentifier,
+      @NotEmpty String projectIdentifier, @NotEmpty String environmentRef, @NotEmpty String infraIdentifier);
+
+  boolean deleteAllOfService(@NotEmpty String accountId, @NotEmpty String orgIdentifier,
+      @NotEmpty String projectIdentifier, @NotEmpty String serviceRef);
 }
