@@ -362,13 +362,11 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
             scope.getProjectIdentifier(), scmGetFileByBranchRequestDTO.getConnectorRef(),
             scmGetFileByBranchRequestDTO.getRepoName());
 
-    String requestBranch = scmGetFileByBranchRequestDTO.getBranchName();
-
     String workingBranch = gitDefaultBranchCacheHelper.getDefaultBranchIfInputBranchEmpty(scope.getAccountIdentifier(),
         gitSyncConnectorHelper.getScmConnectorForGivenRepo(scope.getAccountIdentifier(), scope.getOrgIdentifier(),
             scope.getProjectIdentifier(), scmGetFileByBranchRequestDTO.getConnectorRef(),
             scmGetFileByBranchRequestDTO.getRepoName()),
-        scmGetFileByBranchRequestDTO.getRepoName(), requestBranch);
+        scmGetFileByBranchRequestDTO.getRepoName(), scmGetFileByBranchRequestDTO.getBranchName());
 
     Optional<ScmGetFileResponseDTO> getFileResponseDTOOptional =
         getFileCacheResponseIfApplicable(scmGetFileByBranchRequestDTO, scmConnector);
