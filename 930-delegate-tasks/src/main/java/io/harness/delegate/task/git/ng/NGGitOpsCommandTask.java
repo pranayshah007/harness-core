@@ -144,9 +144,8 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     switch (gitOpsTaskParams.getGitOpsTaskType()) {
       case MERGE_PR:
         return handleMergePR(gitOpsTaskParams);
-      case CREATE_PR:
       case UPDATE_RELEASE_REPO:
-        return handleCreatePR(gitOpsTaskParams);
+        return handleUpdateReleaseRepo(gitOpsTaskParams);
       default:
         return NGGitOpsResponse.builder()
             .taskStatus(TaskStatus.FAILURE)
@@ -276,7 +275,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     fetchFilesResult.setFiles(updatedGitFiles);
   }
 
-  public DelegateResponseData handleCreatePR(NGGitOpsTaskParams gitOpsTaskParams) {
+  public DelegateResponseData handleUpdateReleaseRepo(NGGitOpsTaskParams gitOpsTaskParams) {
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
     try {
       log.info("Running Create PR Task for activityId {}", gitOpsTaskParams.getActivityId());

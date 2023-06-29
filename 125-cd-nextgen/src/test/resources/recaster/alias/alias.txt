@@ -56,7 +56,6 @@ io.harness.beans.steps.stepinfo.UploadToArtifactoryStepInfo
 io.harness.ngpipeline.artifact.bean.ArtifactsOutcome
 io.harness.cdng.ecs.beans.EcsS3FetchFailurePassThroughData
 io.harness.cdng.elastigroup.beans.ElastigroupStartupScriptFetchFailurePassThroughData
-io.harness.cdng.gitops.CreatePROutcome
 io.harness.cdng.provision.azure.beans.AzureARMValidator
 io.harness.cdng.provision.cloudformation.CloudformationCreateStackStepConfiguration
 io.harness.cdng.tasks.manifestFetch.step.ManifestFetchParameters
@@ -102,7 +101,6 @@ io.harness.cdng.environment.filters.AllowAllFilter
 io.harness.cdng.manifest.yaml.AwsLambdaDefinitionManifestOutcome
 io.harness.cdng.ecs.EcsCanaryDeployStepNode
 io.harness.cdng.aws.sam.AwsSamDeployStepNode
-io.harness.steps.shellscript.CreatePRStepUpdateConfigScriptInlineSource
 io.harness.cdng.tas.TasCountInstanceSelection
 io.harness.cdng.manifest.yaml.kinds.GoogleCloudFunctionGenOneDefinitionManifest
 io.harness.cdng.k8s.beans.K8sRollingReleaseOutput
@@ -412,7 +410,6 @@ io.harness.cdng.k8s.K8sRollingStepParameters
 io.harness.cdng.ecs.EcsCanaryDeleteStepInfo
 io.harness.beans.execution.BranchWebhookEvent
 io.harness.steps.shellscript.ShellScriptInlineSource
-io.harness.cdng.gitops.CreatePRStepInfo
 io.harness.ngpipeline.artifact.bean.AMIArtifactOutcome
 io.harness.cdng.provision.azure.AzureResourceGroupSpec
 io.harness.cdng.ecs.EcsRollingDeployStepNode
@@ -548,7 +545,6 @@ io.harness.cdng.elastigroup.ElastigroupSetupStepInfo
 io.harness.ngpipeline.artifact.bean.SidecarsOutcome
 io.harness.cdng.service.beans.ServiceConfigOutcome
 io.harness.cdng.provision.terraform.TerraformCloudCliExecutionData
-io.harness.cdng.gitOps.CreatePRPassThroughData
 io.harness.beans.sweepingoutputs.StepTaskDetails
 io.harness.beans.steps.TypeInfo
 io.harness.cdng.provision.terragrunt.TerragruntPlanStepInfo
@@ -674,7 +670,6 @@ io.harness.cdng.service.beans.ServiceOutcome$VariablesWrapperOutcome
 io.harness.cdng.azure.webapp.AzureWebAppRollbackStepInfo
 io.harness.cdng.infra.beans.EcsInfrastructureOutcome
 io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepNode
-io.harness.cdng.gitops.CreatePRStepNode
 io.harness.cdng.provision.terraformcloud.params.TerraformCloudPlanSpecParameters
 io.harness.cdng.artifact.steps.ArtifactStepParameters
 io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStepInfo
@@ -894,7 +889,6 @@ io.harness.cdng.provision.cloudformation.InlineCloudformationDeleteStackStepConf
 io.harness.cdng.infra.beans.AzureWebAppInfraMapping
 io.harness.steps.policy.step.outcome.PolicyOutcome
 io.harness.cdng.provision.cloudformation.CloudformationCreateStackStepParameters
-io.harness.steps.shellscript.CreatePRStepUpdateConfigScriptWrapper
 io.harness.cdng.service.beans.AwsLambdaServiceSpec
 io.harness.yaml.core.failurestrategy.manualintervention.ManualFailureSpecConfig
 io.harness.cdng.ssh.CopyCommandUnitSpec
