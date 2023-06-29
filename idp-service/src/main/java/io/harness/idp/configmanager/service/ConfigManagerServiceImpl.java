@@ -33,6 +33,7 @@ import io.harness.spec.server.idp.v1.model.*;
 import io.harness.springdata.TransactionHelper;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.*;
@@ -47,14 +48,14 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(access = AccessLevel.PUBLIC, onConstructor = @__({ @com.google.inject.Inject }))
 public class ConfigManagerServiceImpl implements ConfigManagerService {
   @Inject @Named("env") private String env;
-  private AppConfigRepository appConfigRepository;
-  private MergedAppConfigRepository mergedAppConfigRepository;
-  private K8sClient k8sClient;
-  private NamespaceService namespaceService;
-  private ConfigEnvVariablesService configEnvVariablesService;
-  private BackstageEnvVariableService backstageEnvVariableService;
-  private PluginsProxyInfoService pluginsProxyInfoService;
-  private TransactionHelper transactionHelper;
+  AppConfigRepository appConfigRepository;
+  MergedAppConfigRepository mergedAppConfigRepository;
+  K8sClient k8sClient;
+  NamespaceService namespaceService;
+  ConfigEnvVariablesService configEnvVariablesService;
+  BackstageEnvVariableService backstageEnvVariableService;
+  PluginsProxyInfoService pluginsProxyInfoService;
+  TransactionHelper transactionHelper;
 
   private static final String PLUGIN_CONFIG_NOT_FOUND =
       "Plugin configs for plugin - %s is not present for account - %s";
@@ -392,8 +393,8 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     }
     return true;
   }
-
-  private void createOrUpdateTimeStampEnvVariable(String accountIdentifier) {
+  @VisibleForTesting
+  void createOrUpdateTimeStampEnvVariable(String accountIdentifier) {
     BackstageEnvVariable timeStampEnvVariable = new BackstageEnvConfigVariable()
                                                     .value(String.valueOf(System.currentTimeMillis()))
                                                     .envName(Constants.LAST_UPDATED_TIMESTAMP_FOR_PLUGIN_WITH_NO_CONFIG)
