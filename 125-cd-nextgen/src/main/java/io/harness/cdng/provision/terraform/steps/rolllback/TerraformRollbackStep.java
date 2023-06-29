@@ -7,8 +7,6 @@
 
 package io.harness.cdng.provision.terraform.steps.rolllback;
 
-import static io.harness.beans.FeatureName.CDS_TERRAFORM_CLI_OPTIONS_NG;
-
 import static java.lang.String.format;
 
 import io.harness.account.services.AccountService;
@@ -164,9 +162,7 @@ public class TerraformRollbackStep extends CdTaskExecutable<TerraformTaskNGRespo
 
       builder.isTerraformCloudCli(rollbackConfig.isTerraformCloudCli());
 
-      if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), CDS_TERRAFORM_CLI_OPTIONS_NG)) {
-        builder.terraformCommandFlags(terraformStepHelper.getTerraformCliFlags(stepParametersSpec.getCommandFlags()));
-      }
+      builder.terraformCommandFlags(terraformStepHelper.getTerraformCliFlags(stepParametersSpec.getCommandFlags()));
 
       builder.backendConfig(rollbackConfig.getBackendConfig())
           .targets(rollbackConfig.getTargets())

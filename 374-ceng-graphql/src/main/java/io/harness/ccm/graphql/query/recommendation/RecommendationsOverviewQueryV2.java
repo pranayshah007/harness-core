@@ -223,6 +223,8 @@ public class RecommendationsOverviewQueryV2 {
                            .jiraConnectorRef(item.getJiraConnectorRef())
                            .jiraIssueKey(item.getJiraIssueKey())
                            .jiraStatus(item.getJiraStatus())
+                           .cloudProvider(item.getCloudProvider())
+                           .governanceRuleId(item.getGovernanceRuleId())
                            .recommendationDetails(item.getRecommendationDetails() != null
                                    ? item.getRecommendationDetails()
                                    : getRecommendationDetails(item, env))
@@ -271,8 +273,9 @@ public class RecommendationsOverviewQueryV2 {
     return genericCountQuery(env);
   }
 
-  @GraphQLQuery(name = "markRecommendationAsApplied", description = "Mark a recommendation as applied")
-  public void markRecommendationAsApplied(@GraphQLArgument(name = "recommendationId") String recommendationId,
+  @GraphQLQuery(name = "changeRecommendationState", description = "Mark a recommendation as applied/open")
+  public void changeState(@GraphQLArgument(name = "recommendationId") String recommendationId,
+      @GraphQLArgument(name = "newState") RecommendationState newState,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
     if (!rbacHelper.hasPerspectiveViewOnAllResources(accountId, null, null)) {
@@ -283,7 +286,10 @@ public class RecommendationsOverviewQueryV2 {
             String.format(PERMISSION_MISSING_MESSAGE, PERSPECTIVE_VIEW, RESOURCE_FOLDER), WingsException.USER, null);
       }
     }
-    recommendationService.updateRecommendationState(recommendationId, RecommendationState.APPLIED);
+    if (!ImmutableSet.of(RecommendationState.OPEN, RecommendationState.APPLIED).contains(newState)) {
+      throw new InvalidRequestException("Recommendation State should either be OPEN or APPLIED");
+    }
+    recommendationService.updateRecommendationState(recommendationId, newState);
   }
 
   private int genericCountQuery(@NotNull final ResolutionEnvironment env) {

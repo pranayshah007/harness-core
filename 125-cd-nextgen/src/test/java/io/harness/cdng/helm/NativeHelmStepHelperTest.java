@@ -60,6 +60,7 @@ import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.HelmValuesFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.ManifestStoreType;
+import io.harness.cdng.manifest.delegate.K8sManifestDelegateMapper;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig;
 import io.harness.cdng.manifest.yaml.GcsStoreConfig;
@@ -228,6 +229,8 @@ public class NativeHelmStepHelperTest extends CategoryTest {
   @Mock private GitConfigAuthenticationInfoHelper gitConfigAuthenticationInfoHelper;
   @Mock private FileStoreService fileStoreService;
   @Mock private FileStoreNodeUtils fileStoreNodeUtils;
+
+  @Spy @InjectMocks private K8sManifestDelegateMapper manifestDelegateMapper;
   @Spy @InjectMocks private K8sEntityHelper k8sEntityHelper;
   @Spy @InjectMocks private NativeHelmStepHelper nativeHelmStepHelper;
   @Spy @InjectMocks private CDStepHelper cdStepHelper;

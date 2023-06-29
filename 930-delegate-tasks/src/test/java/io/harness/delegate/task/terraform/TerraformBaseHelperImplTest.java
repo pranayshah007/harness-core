@@ -17,6 +17,7 @@ import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.JELENA;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
+import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 import static io.harness.rule.OwnerRule.VLICA;
@@ -68,6 +69,8 @@ import io.harness.delegate.beans.storeconfig.S3StoreTFDelegateConfig;
 import io.harness.delegate.task.artifactory.ArtifactoryRequestMapper;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
+import io.harness.delegate.task.terraform.handlers.HarnessSMEncryptionDecryptionHandler;
+import io.harness.delegate.task.terraform.handlers.HarnessSMEncryptionDecryptionHandlerNG;
 import io.harness.filesystem.FileIo;
 import io.harness.git.GitClientHelper;
 import io.harness.git.GitClientV2;
@@ -149,6 +152,8 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
   @Mock ListObjectsV2Result listObjectsV2Result;
   @Mock S3Object s3Object;
   @Mock ObjectMetadata objectMetadata;
+  @Mock HarnessSMEncryptionDecryptionHandler harnessSMEncryptionDecryptionHandler;
+  @Mock HarnessSMEncryptionDecryptionHandlerNG harnessSMEncryptionDecryptionHandlerNG;
 
   private File tfBackendConfig;
   private final EncryptedRecordData encryptedPlanContent =
@@ -501,8 +506,66 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
     List<FileData> fileDataList = FileIo.getFilesUnderPath(scriptDirectory);
     assertThat(fileDataList.size()).isEqualTo(1);
     assertThat(fileDataList.get(0).getFileBytes()).isEqualTo(planContent);
-
     FileIo.deleteDirectoryAndItsContentIfExists(scriptDirectory);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testsaveTerraformPlanforEncryptionOnManagerForCG() throws IOException {
+    String scriptDirectory = "repository/testSaveAndGetTerraformPlanFile";
+    FileIo.createDirectoryIfDoesNotExist(scriptDirectory);
+    byte[] planContent = "terraformPlanContent".getBytes();
+
+    doReturn(planContent).when(harnessSMEncryptionDecryptionHandler).getDecryptedContent(any(), any(), any());
+
+    terraformBaseHelper.saveTerraformPlanContentToFile(encryptionConfig, encryptedPlanContent, scriptDirectory,
+        "accountId", TERRAFORM_PLAN_FILE_OUTPUT_NAME, true, false);
+    List<FileData> fileDataList = FileIo.getFilesUnderPath(scriptDirectory);
+    assertThat(fileDataList.size()).isEqualTo(1);
+    assertThat(fileDataList.get(0).getFileBytes()).isEqualTo(planContent);
+    Mockito.verify(harnessSMEncryptionDecryptionHandler, times(1)).getDecryptedContent(any(), any(), any());
+    FileIo.deleteDirectoryAndItsContentIfExists(scriptDirectory);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testsaveTerraformPlanforEncryptionOnManagerForNG() throws IOException {
+    String scriptDirectory = "repository/testSaveAndGetTerraformPlanFile";
+    FileIo.createDirectoryIfDoesNotExist(scriptDirectory);
+    byte[] planContent = "terraformPlanContent".getBytes();
+
+    doReturn(planContent).when(harnessSMEncryptionDecryptionHandlerNG).getDecryptedContent(any(), any(), any());
+
+    terraformBaseHelper.saveTerraformPlanContentToFile(encryptionConfig, encryptedPlanContent, scriptDirectory,
+        "accountId", TERRAFORM_PLAN_FILE_OUTPUT_NAME, true, true);
+    List<FileData> fileDataList = FileIo.getFilesUnderPath(scriptDirectory);
+    assertThat(fileDataList.size()).isEqualTo(1);
+    assertThat(fileDataList.get(0).getFileBytes()).isEqualTo(planContent);
+    Mockito.verify(harnessSMEncryptionDecryptionHandlerNG, times(1)).getDecryptedContent(any(), any(), any());
+    FileIo.deleteDirectoryAndItsContentIfExists(scriptDirectory);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testEncryptPlan() throws IOException {
+    char[] planContent = "terraformPlanContent".toCharArray();
+    byte[] encryptedData = "terraformPlanContent".getBytes();
+
+    doReturn(EncryptedRecordData.builder().encryptedValue(planContent).build())
+        .when(harnessSMEncryptionDecryptionHandlerNG)
+        .encryptContent(any(), any());
+    TerraformTaskNGParameters terraformTaskNGParameters = TerraformTaskNGParameters.builder()
+                                                              .encryptDecryptPlanForHarnessSMOnManager(true)
+                                                              .accountId("account")
+                                                              .taskType(TFTaskType.APPLY)
+                                                              .entityId("entity")
+                                                              .useOptimizedTfPlan(false)
+                                                              .build();
+    terraformBaseHelper.encryptPlan(encryptedData, terraformTaskNGParameters, "delegate", "task");
+    Mockito.verify(harnessSMEncryptionDecryptionHandlerNG, times(1)).encryptContent(any(), any());
   }
 
   @Test

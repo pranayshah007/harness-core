@@ -25,6 +25,13 @@ connector_endpoint = "/gateway/ng/api/connectors"
 template_endpoint = "/gateway/template/api/templates"
 pipeline_endpoint = "/gateway/pipeline/api/pipelines"
 input_set_endpoint = "/gateway/pipeline/api/inputSets"
+variable_endpoint = "gateway/ng/api/variables"
+roles_endpoint = "gateway/authz/api/roles"
+resourcegroup_endpoint="gateway/resourcegroup/api/v2/resourcegroup"
+usergroup_list = "gateway/ng/api/aggregate/acl/usergroups"
+usergroup_post = "gateway/ng/api/user-groups"
+roleAssignurl = "gateway/authz/api/roleassignments/multi"
+
 routing_and_accountId_param = "?routingId="+accountIdentifier+"&accountIdentifier="+accountIdentifier
 source_query_param = routing_and_accountId_param+"&orgIdentifier="+from_orgIdentifier+"&projectIdentifier="+from_projectIdentifier
 ssl._create_default_https_context = ssl._create_unverified_context
@@ -33,7 +40,7 @@ headers = {
   'x-api-key': apikey,
   'content-type': 'application/json'
   }
-Entities = ["Secret","Connector","Service","Environment","Template","Pipeline"]
+Entities = ["Secret","Connector","Service","Environment","Template","Pipeline","Variables","Roles","RGs","UserGroup","RoleAssignToUG"]
 success_failure_count = [[0 for i in range(3)] for j in range(len(Entities))]
 global success_count
 global failure_count
@@ -261,6 +268,254 @@ class Pipeline(ImportExport):
     response_create_pipeline = create_and_print_entity(url_create_pipeline, payload)
     export_input_set(json.loads(payload)["pipeline"]["identifier"])
     return response_create_pipeline
+
+class Variables(ImportExport):
+  def list_entity(self):
+    url_variable_list = variable_endpoint + source_query_param+"&pageIndex=0&pageSize=10"
+    return get_response_data("GET", url_variable_list, "")
+
+  def list_entity_paginated(self, j):
+    url_variable_list_paginated = variable_endpoint + source_query_param+"&pageIndex="+str(j)+"&pageSize=10"
+    return get_response_data("GET",url_variable_list_paginated, "")
+
+  def get_entity_identifier(self, response_list_entity, i):
+    return response_list_entity["data"]["content"][i]["variable"]["identifier"]
+
+  def get_entity(self, response_list_entity, i):
+    url_get_variable = variable_endpoint + "/"+response_list_entity["data"]["content"][i]["variable"]["identifier"]+source_query_param
+    return get_response_data("GET", url_get_variable, "")
+
+  def get_payload(self, response_get_entity):
+    return modify_payload(response_get_entity["data"], "variable")
+
+  def create_entity(self, payload):
+    url_create_variable = variable_endpoint + "?routingId="+accountIdentifier+"&accountIdentifier="+accountIdentifier+"&projectIdentifier="+to_projectIdentifier+"&orgIdentifier=" + to_orgIdentifier
+    return create_and_print_entity(url_create_variable, payload)
+
+class Roles(ImportExport):
+  def list_entity(self):
+    url_roles_list = roles_endpoint + source_query_param+"&pageIndex=0&pageSize=10"
+    return get_response_data("GET", url_roles_list, "")
+
+  def list_entity_paginated(self, j):
+    url_roles_list_paginated = roles_endpoint + source_query_param+"&pageIndex="+str(j)+"&pageSize=10"
+    return get_response_data("GET",url_roles_list_paginated, "")
+
+  def get_entity_identifier(self, response_list_entity, i):
+    return response_list_entity["data"]["content"][i]["role"]["identifier"]
+
+  def get_entity(self, response_list_entity, i):
+    url_get_role = roles_endpoint + "/"+response_list_entity["data"]["content"][i]["role"]["identifier"]+source_query_param
+    return get_response_data("GET", url_get_role, "")
+
+  def get_payload(self, response_get_entity):
+
+    identifier = response_get_entity["data"]["role"]["identifier"]
+    name = response_get_entity["data"]["role"]["name"]
+    roles_permission = response_get_entity["data"]["role"]["permissions"]
+    allowed_scope = response_get_entity["data"]["role"]["allowedScopeLevels"]
+    description = response_get_entity["data"]["role"]["description"]
+    tag = response_get_entity["data"]["role"]["tags"]
+
+    payload = {
+      "name": name,
+      "identifier": identifier,
+      "tags": tag,
+      "permissions": roles_permission,
+      "allowedScopeLevels" : allowed_scope
+    }
+    return json.dumps(payload)
+
+  def create_entity(self, payload):
+    if isinstance(payload, str):
+        payload = json.loads(payload)
+
+    identifier = payload.get("identifier")
+
+    if identifier and identifier.startswith("_"):
+        print("Skipping create_entity for the following role ID " + identifier)
+
+        return {'status': 'SUCCESS'}
+    url_create_role = roles_endpoint + "?routingId="+accountIdentifier+"&accountIdentifier="+accountIdentifier+"&projectIdentifier="+to_projectIdentifier+"&orgIdentifier=" + to_orgIdentifier
+    payload = json.dumps(payload)
+    return create_and_print_entity(url_create_role, payload)
+
+class RGs(ImportExport):
+  def list_entity(self):
+    url_rg_list = resourcegroup_endpoint + source_query_param+"&pageIndex=0&pageSize=10"
+    return get_response_data("GET", url_rg_list, "")
+
+  def list_entity_paginated(self, j):
+    url_rg_list_paginated = resourcegroup_endpoint + source_query_param+"&pageIndex="+str(j)+"&pageSize=10"
+    return get_response_data("GET",url_rg_list_paginated, "")
+
+  def get_entity_identifier(self, response_list_entity, i):
+    return response_list_entity["data"]["content"][i]["resourceGroup"]["identifier"]
+
+  def get_entity(self, response_list_entity, i):
+    url_get_rg = resourcegroup_endpoint + "/"+response_list_entity["data"]["content"][i]["resourceGroup"]["identifier"]+source_query_param
+    return get_response_data("GET", url_get_rg, "")
+
+  def get_payload(self, response_get_entity):
+
+    identifier = response_get_entity["data"]["resourceGroup"]["identifier"]
+    name = response_get_entity["data"]["resourceGroup"]["name"]
+
+    allowed_scope = response_get_entity["data"]["resourceGroup"]["allowedScopeLevels"]
+    resourceFilter = response_get_entity["data"]["resourceGroup"]["resourceFilter"]
+    included_scopes = response_get_entity["data"]["resourceGroup"]["includedScopes"]
+    tag = response_get_entity["data"]["resourceGroup"]["tags"]
+
+    new_included_scopes = []
+    for scope in included_scopes:
+        new_scope = {
+            "filter": scope["filter"],
+            "accountIdentifier" : sys.argv[1],
+            "projectIdentifier": sys.argv[3],
+            "orgIdentifier": sys.argv[5],
+        }
+        new_included_scopes.append(new_scope)
+
+
+    payload = {
+      "resourceGroup":{
+       "name": name,
+      "identifier": identifier,
+      "accountIdentifier" : sys.argv[1],
+      "projectIdentifier": sys.argv[3],
+      "orgIdentifier": sys.argv[5],
+      "tags": tag,
+      "includedScopes" : new_included_scopes,
+      "resourceFilter": resourceFilter,
+      "allowedScopeLevels" : allowed_scope
+      }
+
+    }
+    return json.dumps(payload)
+
+  def create_entity(self, payload):
+    if isinstance(payload, str):
+        payload = json.loads(payload)
+
+    identifier = payload.get("resourceGroup", {}).get("identifier")
+
+    if identifier and identifier.startswith("_"):
+        print("Skipping create_entity for the following role ID " + identifier)
+        return {'status': 'SUCCESS'}
+
+    url_create_rg = resourcegroup_endpoint + "?routingId="+accountIdentifier+"&accountIdentifier="+accountIdentifier+"&projectIdentifier="+to_projectIdentifier+"&orgIdentifier=" + to_orgIdentifier
+    payload = json.dumps(payload)
+    return create_and_print_entity(url_create_rg, payload)
+
+class UserGroup(ImportExport):
+  def list_entity(self):
+    url_usergroup_list = usergroup_list + source_query_param+"&pageIndex=0&pageSize=10"
+    return get_response_data("GET", url_usergroup_list, "")
+
+  def list_entity_paginated(self, j):
+    url_usergroup_list_paginated = usergroup_list + source_query_param+"&pageIndex="+str(j)+"&pageSize=10"
+    return get_response_data("GET",url_usergroup_list_paginated, "")
+
+  def get_entity_identifier(self, response_list_entity, i):
+    return response_list_entity["data"]["content"][i]["userGroupDTO"]["identifier"]
+
+  def get_entity(self, response_list_entity, i):
+    url_get_usergroup = usergroup_list + "/"+response_list_entity["data"]["content"][i]["userGroupDTO"]["identifier"]+source_query_param
+    return get_response_data("GET", url_get_usergroup, "")
+
+  def get_payload(self, response_get_entity):
+
+    identifier = response_get_entity["data"]["userGroupDTO"]["identifier"]
+    name = response_get_entity["data"]["userGroupDTO"]["name"]
+    roleassignment = response_get_entity["data"]["roleAssignmentsMetadataDTO"]
+    notificationConfigs = response_get_entity["data"]["userGroupDTO"]["notificationConfigs"]
+    user_list = response_get_entity["data"]["userGroupDTO"]["users"]
+    description = response_get_entity["data"]["userGroupDTO"]["description"]
+    tagList = response_get_entity["data"]["userGroupDTO"]["tags"]
+
+    payload = {
+      "name": name,
+      "identifier": identifier,
+      "users": user_list,
+      "description": description,
+      "notificationConfigs": notificationConfigs,
+      "tags":tagList,
+      "projectIdentifier": to_projectIdentifier,
+      "orgIdentifier": to_orgIdentifier
+    }
+    return json.dumps(payload)
+
+  def create_entity(self, payload):
+    if isinstance(payload, str):
+        payload = json.loads(payload)
+
+    identifier = payload.get("identifier")
+
+    if identifier and identifier.startswith("_"):
+        print("Skipping create_entity for the following  ID " + identifier)
+
+        return {'status': 'SUCCESS'}
+    url_create_usergroup = usergroup_post + "?routingId="+accountIdentifier+"&accountIdentifier="+accountIdentifier+"&projectIdentifier="+to_projectIdentifier+"&orgIdentifier=" + to_orgIdentifier
+    payload = json.dumps(payload)
+    response = create_and_print_entity(url_create_usergroup, payload)
+    return response
+
+
+class RoleAssignToUG(ImportExport):
+  def list_entity(self):
+    url_roleassigntoUg_list = usergroup_list + source_query_param+"&pageIndex=0&pageSize=10"
+    return get_response_data("GET", url_roleassigntoUg_list, "")
+
+  def list_entity_paginated(self, j):
+    url_roleassigntoUg_list_paginated = usergroup_list + source_query_param+"&pageIndex="+str(j)+"&pageSize=10"
+    return get_response_data("GET",url_roleassigntoUg_list_paginated, "")
+
+  def get_entity_identifier(self, response_list_entity, i):
+    return response_list_entity["data"]["content"][i]["userGroupDTO"]["identifier"]
+
+  def get_entity(self, response_list_entity, i):
+    url_get_roleassigntoUg = usergroup_list + "/"+response_list_entity["data"]["content"][i]["userGroupDTO"]["identifier"]+source_query_param
+    return get_response_data("GET", url_get_roleassigntoUg, "")
+
+  def get_payload(self, response_get_entity):
+
+    identifier = response_get_entity["data"]["userGroupDTO"]["identifier"]
+    name = response_get_entity["data"]["userGroupDTO"]["name"]
+    roleassignment = response_get_entity["data"]["roleAssignmentsMetadataDTO"]
+    new_included_roleIdentifier = []
+    for role in roleassignment:
+        new_scope = {
+            "roleIdentifier": role["roleIdentifier"],
+            "resourceGroupIdentifier" : role["resourceGroupIdentifier"] ,
+            "principal" : {
+                "identifier" : identifier,
+                "type" : "USER_GROUP"
+            }
+        }
+        new_included_roleIdentifier.append(new_scope)
+
+    payload = {
+      "roleAssignments": new_included_roleIdentifier,
+    }
+    return json.dumps(payload)
+
+
+  def create_entity(self, payload):
+    if isinstance(payload, str):
+        payload = json.loads(payload)
+
+    identifier = payload.get("identifier")
+
+    if identifier and identifier.startswith("_"):
+        print("Skipping create_entity for the following  ID " + identifier)
+
+        return {'status': 'SUCCESS'}
+
+    url_create_roleAssigntoUG = roleAssignurl + "?routingId="+accountIdentifier+"&accountIdentifier="+accountIdentifier+"&projectIdentifier="+to_projectIdentifier+"&orgIdentifier=" + to_orgIdentifier
+    payload = json.dumps(payload)
+    return create_and_print_entity(url_create_roleAssigntoUG, payload)
+
+
 
 def main_export(entityType):
   classname = globals()[entityType]

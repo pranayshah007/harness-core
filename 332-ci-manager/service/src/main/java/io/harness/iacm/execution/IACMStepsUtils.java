@@ -12,7 +12,6 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.WORKSPACE_ID;
 import io.harness.beans.entities.Workspace;
 import io.harness.beans.entities.WorkspaceVariables;
 import io.harness.beans.steps.CIStepInfoType;
-import io.harness.beans.steps.stepinfo.IACMTerraformPluginInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.PluginSettingUtils;
@@ -137,27 +136,8 @@ public class IACMStepsUtils {
         && !Objects.equals(pluginStepInfo.getEnvVariables().getValue().get(WORKSPACE_ID).getValue(), "");
   }
 
-  public ConnectorDetails retrieveIACMConnectorDetails(Ambiance ambiance, PluginStepInfo stepInfo) {
+  public ConnectorDetails retrieveIACMConnectorDetails(Ambiance ambiance, String workspaceId) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    String workspaceId = stepInfo.getEnvVariables().getValue().get(WORKSPACE_ID).getValue();
-    Workspace workspaceInfo = getIACMWorkspaceInfo(
-        ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), ngAccess.getAccountIdentifier(), workspaceId);
-    if (workspaceInfo.getProvider_connector() != null) {
-      Map<EnvVariableEnum, String> connectorSecretEnvMap = null;
-      if (workspaceInfo.getProvisioner().equals("terraform")) {
-        connectorSecretEnvMap = PluginSettingUtils.getConnectorSecretEnvMap(CIStepInfoType.IACM_TERRAFORM_PLUGIN);
-      }
-      ConnectorDetails connectorDetails =
-          connectorUtils.getConnectorDetails(ngAccess, workspaceInfo.getProvider_connector());
-      connectorDetails.setEnvToSecretsMap(connectorSecretEnvMap);
-      return connectorDetails;
-    }
-    return null;
-  }
-
-  public ConnectorDetails retrieveIACMConnectorDetails(Ambiance ambiance, IACMTerraformPluginInfo stepInfo) {
-    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    String workspaceId = stepInfo.getWorkspace();
     Workspace workspaceInfo = getIACMWorkspaceInfo(
         ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), ngAccess.getAccountIdentifier(), workspaceId);
     if (workspaceInfo.getProvider_connector() != null) {

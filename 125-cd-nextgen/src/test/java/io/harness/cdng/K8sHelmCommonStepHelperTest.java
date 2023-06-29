@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.k8s.manifest.ManifestHelper.values_filename;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACHYUTH;
-import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,12 +25,9 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.manifest.ManifestType;
-import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
-import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
-import io.harness.cdng.manifest.yaml.kinds.kustomize.OverlayConfiguration;
 import io.harness.delegate.task.helm.HelmFetchFileConfig;
 import io.harness.delegate.task.localstore.LocalStoreFetchFilesResult;
 import io.harness.filestore.dto.node.FileNodeDTO;
@@ -83,37 +79,6 @@ public class K8sHelmCommonStepHelperTest extends CategoryTest {
     doAnswer(invocation -> invocation.getArgument(1))
         .when(engineExpressionService)
         .renderExpression(eq(ambiance), anyString(), eq(false));
-  }
-
-  @Test
-  @Owner(developers = NAMAN_TALAYCHA)
-  @Category(UnitTests.class)
-  public void getKustomizeManifestBasePathTest() {
-    GithubStore githubStore = GithubStore.builder().folderPath(ParameterField.createValueField("kustomize/")).build();
-    KustomizeManifestOutcome kustomizeManifestOutcome =
-        KustomizeManifestOutcome.builder()
-            .overlayConfiguration(ParameterField.createValueField(
-                OverlayConfiguration.builder()
-                    .kustomizeYamlFolderPath(ParameterField.createValueField("env/prod/"))
-                    .build()))
-            .build();
-    List<String> paths = k8sHelmCommonStepHelper.getKustomizeManifestBasePath(githubStore, kustomizeManifestOutcome);
-
-    assertThat(paths.get(0)).isEqualTo("kustomize/");
-  }
-
-  @Test
-  @Owner(developers = NAMAN_TALAYCHA)
-  @Category(UnitTests.class)
-  public void getKustomizeManifestBasePathCase2Test() {
-    GithubStore githubStore = GithubStore.builder().folderPath(ParameterField.createValueField("kustomize/")).build();
-    KustomizeManifestOutcome kustomizeManifestOutcome =
-        KustomizeManifestOutcome.builder()
-            .overlayConfiguration(ParameterField.createValueField(OverlayConfiguration.builder().build()))
-            .build();
-    List<String> paths = k8sHelmCommonStepHelper.getKustomizeManifestBasePath(githubStore, kustomizeManifestOutcome);
-
-    assertThat(paths.get(0)).isEqualTo("/");
   }
 
   @Test

@@ -17,6 +17,9 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptedRecord;
+import io.harness.beans.DelegateFileEncryptedDataPackage;
+import io.harness.beans.DelegateFileEncryptedRecordDataPackage;
+import io.harness.beans.DelegateFileMetadata;
 import io.harness.beans.EncryptData;
 import io.harness.beans.EncryptedSMData;
 import io.harness.delegate.beans.DelegateFile;
@@ -24,20 +27,17 @@ import io.harness.delegate.beans.DelegateFileManagerBase;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.task.terraform.mappers.EncryptedRecordDataToEncryptedSMDataMapper;
 import io.harness.managerclient.DelegateManagerEncryptionDecryptionHarnessSMClient;
-import io.harness.security.encryption.AdditionalMetadata;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
 
 import com.google.common.base.Charsets;
 import com.google.inject.Inject;
-import java.io.CharArrayReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.input.ReaderInputStream;
 
 @OwnedBy(PL)
 @Slf4j
@@ -57,7 +57,7 @@ public class HarnessSMEncryptionDecryptionHandlerNG {
                    .getResource();
 
     } catch (Exception e) {
-      log.error("Not able to encrypt harness SM secrets", e);
+      log.error(format("Not able to encrypt harness SM secrets: %s", e.getMessage()));
       throw e;
     }
     long endTime = Instant.now().getEpochSecond();
@@ -69,33 +69,45 @@ public class HarnessSMEncryptionDecryptionHandlerNG {
 
   public EncryptedRecord encryptFile(byte[] content, EncryptionConfig config, DelegateFile delegateFile)
       throws IOException {
-    EncryptedRecord encryptedRecord = encryptContent(content, config);
-    uploadEncryptedValueToFileStorage((EncryptedRecordData) encryptedRecord, delegateFile);
-    return encryptedRecord;
+    return encryptContentWithFileUpload(content, config, delegateFile);
+  }
+
+  private EncryptedRecord encryptContentWithFileUpload(
+      byte[] content, EncryptionConfig config, DelegateFile delegateFile) throws IOException {
+    long startTime = Instant.now().getEpochSecond();
+    log.info("Making api call for encryption of TF plan for Harness SM with file upload");
+    EncryptedRecordData record;
+    try {
+      EncryptData encryptData = EncryptData.builder().content(content).build();
+      DelegateFileMetadata delegateFileMetadata = DelegateFileMetadata.builder()
+                                                      .accountId(delegateFile.getAccountId())
+                                                      .bucket(delegateFile.getBucket())
+                                                      .fileName(delegateFile.getFileName())
+                                                      .build();
+      DelegateFileEncryptedDataPackage delegateFileEncryptedDataPackage = DelegateFileEncryptedDataPackage.builder()
+                                                                              .delegateFile(delegateFileMetadata)
+                                                                              .encryptData(encryptData)
+                                                                              .build();
+      DelegateFileEncryptedRecordDataPackage delegateFileEncryptedRecordDataPackage =
+          execute(delegateManagerEncryptionDecryptionHarnessSMClient.encryptHarnessSMSecretNGWithFileUpload(
+                      config.getAccountId(), delegateFileEncryptedDataPackage))
+              .getResource();
+      record = delegateFileEncryptedRecordDataPackage.getEncryptedRecordData();
+      delegateFile.setFileId(delegateFileEncryptedRecordDataPackage.getDelegateFileId());
+    } catch (Exception e) {
+      log.error(format("Not able to encrypt harness SM secrets: %s", e.getMessage()));
+      throw e;
+    }
+    long endTime = Instant.now().getEpochSecond();
+    log.info(format("Encryption of TF plan completed with total time taken in seconds : %s", endTime - startTime));
+
+    record.setUuid(generateUuid());
+    return record;
   }
 
   public byte[] getDecryptedContent(EncryptionConfig config, EncryptedRecordData record) throws IOException {
     char[] decryptedContent = decryptDataInManager(record, config).getDecryptedValue();
     return decodeBase64(decryptedContent);
-  }
-
-  private DecryptedRecord decryptDataInManager(EncryptedRecordData record, EncryptionConfig config) throws IOException {
-    log.info("Making api call for decryption of TF plan for Harness SM");
-    long startTime = Instant.now().getEpochSecond();
-    DecryptedRecord decryptedRecord;
-
-    try {
-      EncryptedSMData encryptedSMData = EncryptedRecordDataToEncryptedSMDataMapper.toEncryptedSMData(record);
-      decryptedRecord = execute(delegateManagerEncryptionDecryptionHarnessSMClient.decryptHarnessSMSecretNG(
-                                    config.getAccountId(), encryptedSMData))
-                            .getResource();
-    } catch (Exception e) {
-      log.error("Not able to decrypt harness SM secrets", e);
-      throw e;
-    }
-    long endTime = Instant.now().getEpochSecond();
-    log.info(format("Encryption of TF plan completed with total time taken in seconds : %s", endTime - startTime));
-    return decryptedRecord;
   }
 
   public byte[] getDecryptedContent(EncryptionConfig config, EncryptedRecordData record, String accountId)
@@ -113,13 +125,22 @@ public class HarnessSMEncryptionDecryptionHandlerNG {
     }
   }
 
-  private void uploadEncryptedValueToFileStorage(EncryptedRecordData encryptedRecordData, DelegateFile delegateFile)
-      throws IOException {
-    CharArrayReader charArrayReader = new CharArrayReader(encryptedRecordData.getEncryptedValue());
-    try (InputStream inputStream = new ReaderInputStream(charArrayReader, Charsets.UTF_8)) {
-      delegateFileManager.upload(delegateFile, inputStream);
+  private DecryptedRecord decryptDataInManager(EncryptedRecordData record, EncryptionConfig config) throws IOException {
+    log.info("Making api call for decryption of TF plan for Harness SM");
+    long startTime = Instant.now().getEpochSecond();
+    DecryptedRecord decryptedRecord;
+
+    try {
+      EncryptedSMData encryptedSMData = EncryptedRecordDataToEncryptedSMDataMapper.toEncryptedSMData(record);
+      decryptedRecord = execute(delegateManagerEncryptionDecryptionHarnessSMClient.decryptHarnessSMSecretNG(
+                                    config.getAccountId(), encryptedSMData))
+                            .getResource();
+    } catch (Exception e) {
+      log.error(format("Not able to decrypt harness SM secrets : %s", e.getMessage()));
+      throw e;
     }
-    encryptedRecordData.setEncryptedValue(delegateFile.getFileId().toCharArray());
-    encryptedRecordData.setAdditionalMetadata(AdditionalMetadata.builder().value(ON_FILE_STORAGE, TRUE).build());
+    long endTime = Instant.now().getEpochSecond();
+    log.info(format("Encryption of TF plan completed with total time taken in seconds : %s", endTime - startTime));
+    return decryptedRecord;
   }
 }

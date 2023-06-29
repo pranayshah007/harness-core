@@ -35,4 +35,8 @@ public class TokenFilterDTO {
   ApiKeyType apiKeyType;
   String apiKeyIdentifier;
   @Schema(description = NGResourceFilterConstants.IDENTIFIER_LIST) List<String> identifiers;
+  @Schema(
+      description =
+          "Boolean value to indicate whether to list only active tokens or all tokens. By default, all tokens will be listed.")
+  boolean includeOnlyActiveTokens;
 }

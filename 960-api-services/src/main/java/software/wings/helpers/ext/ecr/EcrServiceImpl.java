@@ -197,26 +197,42 @@ public class EcrServiceImpl implements EcrService {
     List<BuildDetailsInternal> builds =
         getBuilds(awsInternalConfig, registryId, imageUrl, region, imageName, MAX_NO_OF_IMAGES);
 
-    Pattern pattern = Pattern.compile(tagRegex.replace(".", "\\.").replace("?", ".?").replace("*", ".*?"));
-
     if (EmptyPredicate.isEmpty(builds)) {
       throw new InvalidArtifactServerException(
           "There are no builds for this image: " + imageName + " and tagRegex: " + tagRegex, USER);
     }
 
-    List<BuildDetailsInternal> buildsResponse =
-        builds.stream()
-            .filter(build -> !build.getNumber().endsWith("/") && pattern.matcher(build.getNumber()).find())
-            .sorted(new BuildDetailsInternalComparatorDescending())
-            .collect(Collectors.toList());
+    final String modifiedTagRegex = tagRegex.replace(".", "\\.").replace("?", ".?").replace("*", ".*?");
+    final Pattern modifiedPattern = Pattern.compile(modifiedTagRegex);
+    final Pattern originalPattern = Pattern.compile(tagRegex);
 
-    if (buildsResponse.isEmpty()) {
-      throw new InvalidArtifactServerException(
-          "There are no builds for this image: " + imageName + " and tagRegex: " + tagRegex, USER);
+    List<BuildDetailsInternal> buildsResponse = filterByRegex(builds, modifiedPattern);
+
+    if (EmptyPredicate.isEmpty(buildsResponse)) {
+      // CDS-71903: If the modified regex does not match any build, try to match the builds with original regex.
+      List<BuildDetailsInternal> buildsResponseWithOriginalRegex = filterByRegex(builds, originalPattern);
+      if (EmptyPredicate.isEmpty(buildsResponseWithOriginalRegex)) {
+        throw new InvalidArtifactServerException(
+            "There are no builds for this image: " + imageName + " and tagRegex: " + tagRegex, USER);
+      }
+      log.info("Tag {} matched with original regex {}, did not match modified regex, {}",
+          buildsResponseWithOriginalRegex.get(0).getNumber(), tagRegex, modifiedTagRegex);
+      return verifyBuildNumber(awsInternalConfig, registryId, imageUrl, region, imageName,
+          buildsResponseWithOriginalRegex.get(0).getNumber());
     }
+    final String buildNumber = buildsResponse.get(0).getNumber();
+    if (!originalPattern.matcher(buildNumber).find()) {
+      log.info("Tag {} matched with modified regex {}, did not match with original regex {}", buildNumber,
+          modifiedTagRegex, tagRegex);
+    }
+    return verifyBuildNumber(awsInternalConfig, registryId, imageUrl, region, imageName, buildNumber);
+  }
 
-    return verifyBuildNumber(
-        awsInternalConfig, registryId, imageUrl, region, imageName, buildsResponse.get(0).getNumber());
+  private List<BuildDetailsInternal> filterByRegex(List<BuildDetailsInternal> builds, Pattern pattern) {
+    return builds.stream()
+        .filter(build -> !build.getNumber().endsWith("/") && pattern.matcher(build.getNumber()).find())
+        .sorted(new BuildDetailsInternalComparatorDescending())
+        .collect(Collectors.toList());
   }
 
   @Override

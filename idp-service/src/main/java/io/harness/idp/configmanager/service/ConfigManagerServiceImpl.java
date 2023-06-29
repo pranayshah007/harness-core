@@ -30,8 +30,10 @@ import io.harness.idp.k8s.client.K8sClient;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.spec.server.idp.v1.model.*;
+import io.harness.springdata.TransactionHelper;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.*;
@@ -46,13 +48,14 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(access = AccessLevel.PUBLIC, onConstructor = @__({ @com.google.inject.Inject }))
 public class ConfigManagerServiceImpl implements ConfigManagerService {
   @Inject @Named("env") private String env;
-  private AppConfigRepository appConfigRepository;
-  private MergedAppConfigRepository mergedAppConfigRepository;
-  private K8sClient k8sClient;
-  private NamespaceService namespaceService;
-  private ConfigEnvVariablesService configEnvVariablesService;
-  private BackstageEnvVariableService backstageEnvVariableService;
-  private PluginsProxyInfoService pluginsProxyInfoService;
+  AppConfigRepository appConfigRepository;
+  MergedAppConfigRepository mergedAppConfigRepository;
+  K8sClient k8sClient;
+  NamespaceService namespaceService;
+  ConfigEnvVariablesService configEnvVariablesService;
+  BackstageEnvVariableService backstageEnvVariableService;
+  PluginsProxyInfoService pluginsProxyInfoService;
+  TransactionHelper transactionHelper;
 
   private static final String PLUGIN_CONFIG_NOT_FOUND =
       "Plugin configs for plugin - %s is not present for account - %s";
@@ -101,8 +104,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   }
 
   @Override
-  public AppConfig saveConfigForAccount(AppConfig appConfig, String accountIdentifier, ConfigType configType)
-      throws Exception {
+  public AppConfig saveConfigForAccount(AppConfig appConfig, String accountIdentifier, ConfigType configType) {
     AppConfigEntity appConfigEntity = AppConfigMapper.fromDTO(appConfig, accountIdentifier);
     appConfigEntity.setConfigType(configType);
     appConfigEntity.setEnabledDisabledAt(System.currentTimeMillis());
@@ -124,8 +126,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   }
 
   @Override
-  public AppConfig updateConfigForAccount(AppConfig appConfig, String accountIdentifier, ConfigType configType)
-      throws Exception {
+  public AppConfig updateConfigForAccount(AppConfig appConfig, String accountIdentifier, ConfigType configType) {
     AppConfigEntity appConfigEntity = AppConfigMapper.fromDTO(appConfig, accountIdentifier);
     appConfigEntity.setConfigType(configType);
 
@@ -145,12 +146,21 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   }
 
   @Override
-  public AppConfig saveOrUpdateConfigForAccount(AppConfig appConfig, String accountIdentifier, ConfigType configType)
-      throws Exception {
+  public AppConfig saveOrUpdateConfigForAccount(AppConfig appConfig, String accountIdentifier, ConfigType configType) {
     if (appConfigRepository.findByAccountIdentifierAndConfigId(accountIdentifier, appConfig.getConfigId()) == null) {
       return saveConfigForAccount(appConfig, accountIdentifier, configType);
     }
     return updateConfigForAccount(appConfig, accountIdentifier, configType);
+  }
+
+  @Override
+  public AppConfig saveUpdateAndMergeConfigForAccount(
+      AppConfig appConfig, String accountIdentifier, ConfigType configType) {
+    return transactionHelper.performTransaction(() -> {
+      AppConfig returnConfig = saveOrUpdateConfigForAccount(appConfig, accountIdentifier, configType);
+      mergeAndSaveAppConfig(accountIdentifier);
+      return returnConfig;
+    });
   }
 
   @Override
@@ -199,7 +209,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   }
 
   @Override
-  public MergedAppConfigEntity mergeAndSaveAppConfig(String accountIdentifier) throws Exception {
+  public MergedAppConfigEntity mergeAndSaveAppConfig(String accountIdentifier) {
     String mergedAppConfig = mergeAllAppConfigsForAccount(accountIdentifier);
     if (!ConfigManagerUtils.isValidSchema(mergedAppConfig, readFileFromClassPath(MERGED_APP_CONFIG_JSON_SCHEMA_PATH))) {
       throw new InvalidRequestException(String.format(INVALID_MERGED_APP_CONFIG_SCHEMA, accountIdentifier));
@@ -253,7 +263,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     return appConfigRepository.deleteDisabledPluginsConfigBasedOnTimestampsForEnabledDisabledTime(baseTimeStamp);
   }
 
-  private String mergeAppConfigs(List<String> configs) throws Exception {
+  private String mergeAppConfigs(List<String> configs) {
     String baseAppConfigPath = getBaseAppConfigPath();
     log.info("Base config path - {} for env - {}: ", baseAppConfigPath, env);
     String baseAppConfig = readFileFromClassPath(baseAppConfigPath);
@@ -271,7 +281,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   }
 
   @Override
-  public String mergeAllAppConfigsForAccount(String accountIdentifier) throws Exception {
+  public String mergeAllAppConfigsForAccount(String accountIdentifier) {
     List<String> enabledPluginConfigs = getAllEnabledConfigs(accountIdentifier);
     return mergeAppConfigs(enabledPluginConfigs);
   }
@@ -343,8 +353,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     appConfig.setConfigs(integrationConfigs);
     appConfig.setEnabled(true);
 
-    saveOrUpdateConfigForAccount(appConfig, accountIdentifier, ConfigType.INTEGRATION);
-    mergeAndSaveAppConfig(accountIdentifier);
+    saveUpdateAndMergeConfigForAccount(appConfig, accountIdentifier, ConfigType.INTEGRATION);
 
     log.info("Merging for git integration completed for connector - {}", connectorTypeAsString);
   }
@@ -384,8 +393,8 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     }
     return true;
   }
-
-  private void createOrUpdateTimeStampEnvVariable(String accountIdentifier) {
+  @VisibleForTesting
+  void createOrUpdateTimeStampEnvVariable(String accountIdentifier) {
     BackstageEnvVariable timeStampEnvVariable = new BackstageEnvConfigVariable()
                                                     .value(String.valueOf(System.currentTimeMillis()))
                                                     .envName(Constants.LAST_UPDATED_TIMESTAMP_FOR_PLUGIN_WITH_NO_CONFIG)

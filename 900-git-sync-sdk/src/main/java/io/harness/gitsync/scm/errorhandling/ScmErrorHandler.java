@@ -64,7 +64,8 @@ public class ScmErrorHandler {
   }
 
   private WingsException addMetadata(WingsException wingsException, ScmGitMetaData errorMetadata) {
-    wingsException.setMetadata(GitErrorMetadataDTO.builder().branch(errorMetadata.getBranchName()).build());
+    wingsException.setMetadata(
+        GitErrorMetadataDTO.builder().branch(errorMetadata.getBranchName()).repo(errorMetadata.getRepoName()).build());
 
     return wingsException;
   }

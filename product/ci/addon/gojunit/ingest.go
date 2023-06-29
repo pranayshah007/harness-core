@@ -1,3 +1,8 @@
+// Copyright 2023 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
 // Copyright Josh Komoroske. All rights reserved.
 // Use of this source code is governed by the MIT license,
 // a copy of which can be found in the LICENSE.txt file.
@@ -9,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/harness/harness-core/product/ci/ti-service/types"
+	"github.com/harness/ti-client/types"
 )
 
 // findSuites performs a depth-first search through the XML document, and

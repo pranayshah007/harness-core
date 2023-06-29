@@ -108,7 +108,10 @@ java_library(
     name = "tests",
     testonly = True,
     srcs = glob(["src/test/**/*.java"]),
-    resources = ["//template-service/service/src/test/resources:resource"],
+    resources = [
+        "//template-service/service/src/main/resources:static_resource",
+        "//template-service/service/src/test/resources:resource",
+    ],
     visibility = ["//template-service-service/build:__subpackages__"],
     deps = shared_dependencies + [
         ":module",

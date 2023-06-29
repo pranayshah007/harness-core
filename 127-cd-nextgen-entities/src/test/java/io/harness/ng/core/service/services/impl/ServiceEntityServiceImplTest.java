@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
+import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.YOGESH;
 import static io.harness.rule.OwnerRule.vivekveman;
@@ -600,9 +601,13 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   public void testCreateServiceInputsForServiceWithPrimaryArtifactRefExpression() {
     String filename = "service/service-with-primaryArtifactRef-expression.yaml";
     String yaml = readFile(filename);
-    assertThatThrownBy(() -> serviceEntityService.createServiceInputsYaml(yaml, SERVICE_ID))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage(String.format("Primary artifact ref cannot be an expression inside the service %s", SERVICE_ID));
+
+    String templateYaml = serviceEntityService.createServiceInputsYaml(yaml, SERVICE_ID);
+    assertThat(templateYaml).isNotNull();
+
+    String resFile = "service/serviceInputs-with-primaryArtifactRef-expression.yaml";
+    String resTemplate = readFile(resFile);
+    assertThat(templateYaml).isEqualTo(resTemplate);
   }
 
   @Test
@@ -1162,6 +1167,38 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
             + "              type: DockerRegistry\n"
             + "              spec:\n"
             + "                tag: <+input>\n");
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testMergeServiceInputsWhenPrimaryRefExpressionInputReconciledWithExpressionValue() {
+    String filename = "service/service-with-primaryArtifactRef-expression.yaml";
+    String yaml = readFile(filename);
+    String templateYaml = serviceEntityService.createServiceInputsYamlGivenPrimaryArtifactRef(
+        yaml, "svc", "<+serviceVariables.primaryRef>");
+
+    assertThat(templateYaml).isNotNull();
+
+    String resFile = "service/serviceInputs-with-primaryArtifactRef-expression.yaml";
+    String resTemplate = readFile(resFile);
+    assertThat(templateYaml).isEqualTo(resTemplate);
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testMergeServiceInputsWhenPrimaryRefRuntimeInputReconciledWithExpressionValue() {
+    String filename = "service/service-with-primaryArtifactRef-runtime.yaml";
+    String yaml = readFile(filename);
+    String templateYaml = serviceEntityService.createServiceInputsYamlGivenPrimaryArtifactRef(
+        yaml, "svc", "<+serviceVariables.primaryRef>");
+
+    assertThat(templateYaml).isNotNull();
+
+    String resFile = "service/merged-service-input-runtime-primary-artifact-expression.yaml";
+    String resTemplate = readFile(resFile);
+    assertThat(templateYaml).isEqualTo(resTemplate);
   }
 
   private String readFile(String filename) {

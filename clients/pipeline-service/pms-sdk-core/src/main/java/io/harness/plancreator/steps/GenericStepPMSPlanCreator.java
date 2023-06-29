@@ -36,8 +36,6 @@ import io.harness.pms.contracts.commons.RepairActionCode;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
-import io.harness.pms.contracts.plan.ExecutionMode;
-import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.execution.utils.SkipInfoUtils;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.adviser.abort.OnAbortAdviser;
@@ -115,16 +113,12 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
 
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, StepElementConfig stepElement) {
-    boolean isStepInsideRollback = false;
-    if (YamlUtils.findParentNode(ctx.getCurrentField().getNode(), ROLLBACK_STEPS) != null) {
-      isStepInsideRollback = true;
-    }
+    final boolean isStepInsideRollback =
+        YamlUtils.findParentNode(ctx.getCurrentField().getNode(), ROLLBACK_STEPS) != null;
 
     List<AdviserObtainment> adviserObtainmentFromMetaData = getAdviserObtainmentFromMetaData(ctx.getCurrentField());
 
     StepParameters stepParameters = getStepParameters(ctx, stepElement);
-    PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
-    ExecutionMode executionMode = planCreationContextValue.getMetadata().getExecutionMode();
     PlanNode stepPlanNode =
         PlanNode.builder()
             .uuid(ctx.getCurrentField().getNode().getUuid())
@@ -140,9 +134,8 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
                                        .build())
             .adviserObtainments(adviserObtainmentFromMetaData)
             .skipCondition(SkipInfoUtils.getSkipCondition(stepElement.getSkipCondition()))
-            .whenCondition(isStepInsideRollback
-                    ? RunInfoUtils.getRunConditionForRollback(stepElement.getWhen(), executionMode)
-                    : RunInfoUtils.getRunConditionForStep(stepElement.getWhen()))
+            .whenCondition(isStepInsideRollback ? RunInfoUtils.getRunConditionForRollback(stepElement.getWhen())
+                                                : RunInfoUtils.getRunConditionForStep(stepElement.getWhen()))
             .timeoutObtainment(
                 SdkTimeoutObtainment.builder()
                     .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
@@ -201,10 +194,7 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
   protected List<AdviserObtainment> getAdviserObtainmentFromMetaData(YamlField currentField) {
     List<AdviserObtainment> adviserObtainmentList = new ArrayList<>();
 
-    boolean isStepInsideRollback = false;
-    if (YamlUtils.findParentNode(currentField.getNode(), ROLLBACK_STEPS) != null) {
-      isStepInsideRollback = true;
-    }
+    final boolean isStepInsideRollback = YamlUtils.findParentNode(currentField.getNode(), ROLLBACK_STEPS) != null;
 
     List<FailureStrategyConfig> stageFailureStrategies =
         getFieldFailureStrategies(currentField, STAGE, isStepInsideRollback);
@@ -466,8 +456,7 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
       case PIPELINE_ROLLBACK:
         return RepairActionCode.PIPELINE_ROLLBACK;
       default:
-        throw new InvalidRequestException(
-            action.toString() + " Failure action doesn't have corresponding RepairAction Code.");
+        throw new InvalidRequestException(action + " Failure action doesn't have corresponding RepairAction Code.");
     }
   }
 
@@ -493,8 +482,7 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
 
     try {
       if (failureStrategy != null) {
-        failureStrategyConfigs = YamlUtils.read(
-            failureStrategy.getNode().toString(), new TypeReference<ParameterField<List<FailureStrategyConfig>>>() {});
+        failureStrategyConfigs = YamlUtils.read(failureStrategy.getNode().toString(), new TypeReference<>() {});
       }
     } catch (IOException e) {
       throw new InvalidRequestException("Invalid yaml", e);

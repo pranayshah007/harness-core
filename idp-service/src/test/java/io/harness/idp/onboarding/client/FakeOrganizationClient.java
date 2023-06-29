@@ -47,7 +47,7 @@ public class FakeOrganizationClient implements OrganizationClient {
     return new Call<>() {
       @Override
       public Response<ResponseDTO<PageResponse<OrganizationResponse>>> execute() {
-        if (Objects.equals(accountIdentifier, ACCOUNT_IDENTIFIER)) {
+        if (Objects.equals(accountIdentifier, ACCOUNT_IDENTIFIER) && page < 1) {
           return Response.success(ResponseDTO.newResponse(
               PageResponse.<OrganizationResponse>builder()
                   .content(Collections.singletonList(OrganizationResponse.builder()

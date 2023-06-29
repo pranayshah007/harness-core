@@ -27,7 +27,9 @@ import lombok.Value;
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 public class HelmFetchChartManifestTaskParameters implements TaskParameters, ExecutionCapabilityDemander {
+  String accountId;
   @Expression(ALLOW_SECRETS) HelmChartManifestDelegateConfig helmChartConfig;
+  long timeoutInMillis;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

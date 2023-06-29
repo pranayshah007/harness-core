@@ -4605,6 +4605,13 @@ go_repository(
     version = "v1.3.1",
 )
 
+go_repository(
+    name = "com_github_harness_ti_client",
+    importpath = "github.com/harness/ti-client",
+    sum = "h1:5bAthnUBEV3zE9utLY4b6AKs/ZQ5y188uv2GkVJeetI=",
+    version = "v0.0.0-20230628234729-894f996b3046",
+)
+
 go_rules_dependencies()
 
 go_register_toolchains(version = "1.20.4")
@@ -5355,7 +5362,7 @@ plain_artifacts = [
     "io.swagger.core.v3:swagger-integration:2.2.0",
     "io.opentelemetry:opentelemetry-api:1.18.0",
     "io.harness:smp-license:1.0.11",
-    "com.clickhouse:clickhouse-jdbc:0.3.2-patch11",
+    "com.clickhouse:clickhouse-jdbc:0.4.6",
 ]
 
 amazon_artifacts = [

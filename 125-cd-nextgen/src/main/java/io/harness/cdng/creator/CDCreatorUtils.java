@@ -69,6 +69,6 @@ public class CDCreatorUtils {
         StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK,
         StepSpecTypeConstants.K8S_BLUE_GREEN_STAGE_SCALE_DOWN,
         StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2,
-        StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2);
+        StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2, StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2);
   }
 }

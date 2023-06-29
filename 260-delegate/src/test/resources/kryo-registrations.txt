@@ -674,6 +674,7 @@
 5583:net.sf.json.JSONArray
 5584:net.sf.json.JSONObject
 5585:io.harness.exception.SecretManagementDelegateException
+5586:java.nio.file.NoSuchFileException
 5589:io.harness.exception.FunctorException
 5590:io.harness.eraro.Level
 5592:software.wings.service.impl.stackdriver.StackDriverSetupTestNodeData

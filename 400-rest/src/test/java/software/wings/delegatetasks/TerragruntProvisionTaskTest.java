@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.beans.TaskData.DEFAULT_ASYNC_CALL_TIMEOUT;
 import static io.harness.git.model.GitRepositoryType.TERRAGRUNT;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 
 import static software.wings.beans.delegation.TerragruntProvisionParameters.TerragruntCommand.APPLY;
@@ -47,6 +48,7 @@ import io.harness.delegate.beans.DelegateFile;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.task.terraform.handlers.HarnessSMEncryptionDecryptionHandler;
 import io.harness.filesystem.FileIo;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.EncryptDecryptHelper;
@@ -104,6 +106,7 @@ public class TerragruntProvisionTaskTest extends CategoryTest {
   @Mock private DelegateLogService delegateLogService;
   @Mock private TerragruntRunAllTaskHandler terragruntRunAllTaskHandler;
   @Mock private TerragruntApplyDestroyTaskHandler terragruntApplyDestroyTaskHandler;
+  @Mock private HarnessSMEncryptionDecryptionHandler harnessSMEncryptionDecryptionHandler;
 
   @InjectMocks
   TerragruntProvisionTask terragruntProvisionTask =
@@ -227,7 +230,7 @@ public class TerragruntProvisionTaskTest extends CategoryTest {
   public void testRunApplySpecificModule() throws IOException {
     setupForApply();
     TerragruntProvisionParameters terragruntProvisionParameters =
-        createTerragruntProvisionParameters(false, false, null, Apply, APPLY, false, false, false);
+        createTerragruntProvisionParameters(false, false, null, Apply, APPLY, false, false, false, false);
 
     doReturn(new File(GIT_REPO_DIRECTORY.concat("/scriptPath/backend_configs-ENTITY_ID")))
         .when(terragruntProvisionTaskHelper)
@@ -244,8 +247,8 @@ public class TerragruntProvisionTaskTest extends CategoryTest {
   public void testApplyUsingApprovedPlan() throws IOException, TimeoutException, InterruptedException {
     setupForApply();
 
-    TerragruntProvisionParameters terragruntProvisionParameters =
-        createTerragruntProvisionParameters(false, false, encryptedPlanContent, Apply, APPLY, false, false, false);
+    TerragruntProvisionParameters terragruntProvisionParameters = createTerragruntProvisionParameters(
+        false, false, encryptedPlanContent, Apply, APPLY, false, false, false, false);
 
     TerragruntExecutionData terragruntExecutionData = terragruntProvisionTask.run(terragruntProvisionParameters);
 
@@ -266,8 +269,8 @@ public class TerragruntProvisionTaskTest extends CategoryTest {
       throws IOException, TimeoutException, InterruptedException {
     setupForApply();
 
-    TerragruntProvisionParameters terragruntProvisionParameters =
-        createTerragruntProvisionParameters(false, false, encryptedPlanContent, Apply, APPLY, false, true, false);
+    TerragruntProvisionParameters terragruntProvisionParameters = createTerragruntProvisionParameters(
+        false, false, encryptedPlanContent, Apply, APPLY, false, true, false, false);
     TerragruntExecutionData terragruntExecutionData = terragruntProvisionTask.run(terragruntProvisionParameters);
 
     Mockito.verify(terragruntClient, never()).refresh(any(), any(), any(), any(), any());
@@ -289,9 +292,28 @@ public class TerragruntProvisionTaskTest extends CategoryTest {
     // run plan only and execute terraform show command
     byte[] terraformPlan = "terraformPlan".getBytes();
     TerragruntProvisionParameters terragruntProvisionParameters =
-        createTerragruntProvisionParameters(true, true, null, Apply, APPLY, true, false, false);
+        createTerragruntProvisionParameters(true, true, null, Apply, APPLY, true, false, false, false);
     doReturn(terraformPlan).when(terragruntProvisionTaskHelper).getTerraformPlanFile(anyString(), anyString());
     doReturn(encryptedPlanContent).when(encryptDecryptHelper).encryptContent(any(), any(), any());
+    TerragruntExecutionData terragruntExecutionData = terragruntProvisionTask.run(terragruntProvisionParameters);
+    verify(terragruntExecutionData, APPLY, false);
+    Mockito.verify(terragruntClient, times(1)).refresh(any(), any(), any(), any(), any());
+    Mockito.verify(terragruntApplyDestroyTaskHandler, times(1))
+        .executeApplyTask(any(TerragruntProvisionParameters.class), any(TerragruntCliCommandRequestParams.class),
+            any(DelegateLogService.class), anyString(), anyString());
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testPlanAndExportForHarnessSMEncryption() throws IOException, TimeoutException, InterruptedException {
+    setupForApply();
+    // run plan only and execute terraform show command
+    byte[] terraformPlan = "terraformPlan".getBytes();
+    TerragruntProvisionParameters terragruntProvisionParameters =
+        createTerragruntProvisionParameters(true, true, null, Apply, APPLY, true, false, false, true);
+    doReturn(terraformPlan).when(terragruntProvisionTaskHelper).getTerraformPlanFile(anyString(), anyString());
+    doReturn(encryptedPlanContent).when(harnessSMEncryptionDecryptionHandler).encryptContent(any(), any());
     TerragruntExecutionData terragruntExecutionData = terragruntProvisionTask.run(terragruntProvisionParameters);
     verify(terragruntExecutionData, APPLY, false);
     Mockito.verify(terragruntClient, times(1)).refresh(any(), any(), any(), any(), any());
@@ -346,7 +368,7 @@ public class TerragruntProvisionTaskTest extends CategoryTest {
 
     byte[] terraformDestroyPlan = "terraformDestroyPlan".getBytes();
     TerragruntProvisionParameters terraformProvisionParameters =
-        createTerragruntProvisionParameters(true, true, null, Destroy, DESTROY, true, false, false);
+        createTerragruntProvisionParameters(true, true, null, Destroy, DESTROY, true, false, false, false);
     doReturn(terraformDestroyPlan).when(terragruntProvisionTaskHelper).getTerraformPlanFile(anyString(), anyString());
     doReturn(encryptedPlanContent).when(encryptDecryptHelper).encryptContent(any(), any(), any());
     TerragruntExecutionData terragruntExecutionData = terragruntProvisionTask.run(terraformProvisionParameters);
@@ -381,7 +403,8 @@ public class TerragruntProvisionTaskTest extends CategoryTest {
 
   private TerragruntProvisionParameters createTerragruntProvisionParameters(boolean runPlanOnly,
       boolean exportPlanToApplyStep, EncryptedRecordData encryptedTfPlan, TerragruntCommandUnit commandUnit,
-      TerragruntCommand command, boolean saveTerragruntJson, boolean skipRefresh, boolean runAll) {
+      TerragruntCommand command, boolean saveTerragruntJson, boolean skipRefresh, boolean runAll,
+      boolean encryptionHarnessSMManager) {
     Map<String, String> backendConfigs = new HashMap<>();
     backendConfigs.put("var1", "value1");
 
@@ -403,6 +426,7 @@ public class TerragruntProvisionTaskTest extends CategoryTest {
         .workspace(WORKSPACE)
         .entityId(ENTITY_ID)
         .backendConfigs(backendConfigs)
+        .encryptDecryptPlanForHarnessSMOnManager(encryptionHarnessSMManager)
         .encryptedBackendConfigs(encryptedBackendConfigs)
         .encryptedTfPlan(encryptedTfPlan)
         .runPlanOnly(runPlanOnly)

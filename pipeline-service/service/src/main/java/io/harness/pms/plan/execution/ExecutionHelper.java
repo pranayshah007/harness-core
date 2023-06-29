@@ -8,6 +8,8 @@
 package io.harness.pms.plan.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.beans.FeatureName.PIE_EXPRESSION_CONCATENATION;
+import static io.harness.beans.FeatureName.PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -157,6 +159,9 @@ public class ExecutionHelper {
   RollbackModeExecutionHelper rollbackModeExecutionHelper;
   RollbackGraphGenerator rollbackGraphGenerator;
 
+  // Add all FFs to this list that we want to use during pipeline execution
+  public final List<FeatureName> featureNames =
+      List.of(PIE_EXPRESSION_CONCATENATION, PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT);
   public static final String PMS_EXECUTION_SETTINGS_GROUP_IDENTIFIER = "pms_execution_settings";
 
   public PipelineEntity fetchPipelineEntity(@NotNull String accountId, @NotNull String orgIdentifier,
@@ -399,6 +404,7 @@ public class ExecutionHelper {
     }
     // adding metadata populated by Pipeline NG Settings
     updateSettingsInExecutionMetadataBuilder(pipelineEntity, builder);
+    updateFeatureFlagsInExecutionMetadataBuilder(pipelineEntity.getAccountIdentifier(), featureNames, builder);
     return builder.build();
   }
 
@@ -798,6 +804,14 @@ public class ExecutionHelper {
       }
     } catch (Exception e) {
       log.error("Error in fetching pipeline Settings due to {}", e.getMessage());
+    }
+  }
+
+  public void updateFeatureFlagsInExecutionMetadataBuilder(
+      String accountIdentifier, List<FeatureName> featureNames, ExecutionMetadata.Builder builder) {
+    for (FeatureName featureName : featureNames) {
+      builder.putFeatureFlagToValueMap(
+          featureName.name(), featureFlagService.isEnabled(accountIdentifier, featureName));
     }
   }
 }

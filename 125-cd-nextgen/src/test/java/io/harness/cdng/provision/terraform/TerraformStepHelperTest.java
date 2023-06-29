@@ -18,6 +18,7 @@ import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.NGONZALEZ;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.SATYAM;
+import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VLICA;
 
@@ -124,6 +125,7 @@ import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
 import io.harness.security.encryption.EncryptionType;
 
+import software.wings.beans.GcpKmsConfig;
 import software.wings.beans.VaultConfig;
 
 import com.google.common.collect.ImmutableMap;
@@ -172,6 +174,7 @@ public class TerraformStepHelperTest extends CategoryTest {
   @Mock private SecretCrudService ngSecretService;
 
   @InjectMocks private TerraformStepHelper helper;
+  public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
 
   private Ambiance getAmbiance() {
     return Ambiance.newBuilder()
@@ -2120,5 +2123,16 @@ public class TerraformStepHelperTest extends CategoryTest {
     assertThat(secretTextSpecDTO.getValue()).isEqualTo(tfJsonOutput);
     assertThat(secretTextSpecDTO.getValueType()).isEqualTo(ValueType.Inline);
     assertThat(secretTextSpecDTO.getSecretManagerIdentifier()).isEqualTo("secretManagerRef-test");
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testTfPlanEncryptionOnManager() {
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
+
+    boolean flag = helper.tfPlanEncryptionOnManager(
+        "accountIdentifier", GcpKmsConfig.builder().accountId(GLOBAL_ACCOUNT_ID).build());
+    assertThat(flag).isTrue();
   }
 }

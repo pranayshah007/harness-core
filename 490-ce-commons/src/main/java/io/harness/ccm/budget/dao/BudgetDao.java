@@ -11,20 +11,26 @@ import io.harness.ccm.budget.BudgetMonthlyBreakdown;
 import io.harness.ccm.budget.BudgetMonthlyBreakdown.BudgetMonthlyBreakdownKeys;
 import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.budget.ValueDataPoint;
+import io.harness.ccm.commons.entities.CCMSortOrder;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.commons.entities.billing.Budget.BudgetKeys;
+import io.harness.ccm.commons.entities.billing.BudgetSortType;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
+import com.mongodb.client.model.Collation;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
 import java.util.List;
+import java.util.Objects;
 
 public class BudgetDao {
   @Inject private HPersistence persistence;
   private static final String SCOPE_VIEW_ID = "scope.viewId";
   private static final String SCOPE_VIEW_NAME = "scope.viewName";
+  private static final String LOCALE_EN = "en";
   private static final String BUDGET_MONTHLY_BREAKDOWN_BUDGET_MONTHLY_AMOUNT =
       BudgetKeys.budgetMonthlyBreakdown + "." + BudgetMonthlyBreakdownKeys.budgetMonthlyAmount;
   private static final String BUDGET_MONTHLY_BREAKDOWN_BUDGET_BREAKDOWN =
@@ -59,7 +65,7 @@ public class BudgetDao {
   }
 
   public List<Budget> list(String accountId) {
-    return list(accountId, Integer.MAX_VALUE - 1, 0);
+    return list(accountId, Integer.MAX_VALUE - 1, 0, null, null);
   }
 
   public List<Budget> list(String accountId, List<BudgetPeriod> budgetPeriods, Integer count, Integer startIndex) {
@@ -69,6 +75,25 @@ public class BudgetDao {
                               .field(BudgetKeys.period)
                               .in(budgetPeriods);
     return query.asList(new FindOptions().skip(startIndex).limit(count));
+  }
+
+  public List<Budget> list(
+      String accountId, Integer count, Integer startIndex, BudgetSortType budgetSortType, CCMSortOrder ccmSortOrder) {
+    Query<Budget> query = persistence.createQuery(Budget.class).field(BudgetKeys.accountId).equal(accountId);
+
+    final BudgetSortType finalBudgetSortType = Objects.isNull(budgetSortType) ? BudgetSortType.NAME : budgetSortType;
+    final Sort sort = (Objects.isNull(ccmSortOrder) || ccmSortOrder == CCMSortOrder.ASCENDING)
+        ? Sort.ascending(finalBudgetSortType.getColumnName())
+        : Sort.descending(finalBudgetSortType.getColumnName());
+
+    final FindOptions options = new FindOptions();
+    if (budgetSortType.equals(BudgetSortType.NAME)) {
+      options.collation(Collation.builder().locale(LOCALE_EN).build());
+    }
+    options.limit(count);
+    options.skip(startIndex);
+
+    return query.order(sort).asList(options);
   }
 
   public List<Budget> list(String accountId, Integer count, Integer startIndex) {

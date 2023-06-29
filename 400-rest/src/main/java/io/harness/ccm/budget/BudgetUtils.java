@@ -18,7 +18,6 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EnvironmentType;
-import io.harness.ccm.budget.dao.BudgetDao;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.graphql.QLCEViewAggregateOperation;
@@ -77,7 +76,6 @@ import lombok.extern.slf4j.Slf4j;
 public class BudgetUtils {
   @Inject WingsPersistence wingsPersistence;
   @Inject BudgetTimescaleQueryHelper budgetTimescaleQueryHelper;
-  @Inject BudgetDao budgetDao;
   @Inject ViewsBillingService viewsBillingService;
   @Inject ViewsBillingServiceImpl viewsBillingServiceImpl;
   private String DEFAULT_TIMEZONE = "GMT";
@@ -326,10 +324,6 @@ public class BudgetUtils {
     }
     crossedAt -= ONE_DAY_MILLIS;
     return startOfMonth <= crossedAt;
-  }
-
-  public List<Budget> listBudgetsForAccount(String accountId) {
-    return budgetDao.list(accountId);
   }
 
   public void updateBudgetCosts(Budget budget, String cloudProviderTable) {

@@ -53,6 +53,7 @@ import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.enforcement.constants.FeatureRestrictionName;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -79,6 +80,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
@@ -325,8 +327,7 @@ public class PerspectiveResource {
       String defaultFolderId = ceViewService.getDefaultFolderId(ceView.getAccountId());
       List<CEViewFolder> ceViewFolders = ceViewFolderService.getFolders(accountId, "");
       Set<String> allowedFolderIds = rbacHelper.checkFolderIdsGivenPermission(accountId, null, null,
-          ceViewFolders.stream().map(ceViewFolder -> ceViewFolder.getUuid()).collect(Collectors.toSet()),
-          PERSPECTIVE_CREATE_AND_EDIT);
+          ceViewFolders.stream().map(CEViewFolder::getUuid).collect(Collectors.toSet()), PERSPECTIVE_CREATE_AND_EDIT);
       boolean setFolderIdSuccess = ceViewService.setFolderId(ceView, allowedFolderIds, ceViewFolders, defaultFolderId);
       if (!setFolderIdSuccess) {
         throw new NGAccessDeniedException(
@@ -353,15 +354,23 @@ public class PerspectiveResource {
       ceView.setUuid(null);
       ceView.setViewType(ViewType.CUSTOMER);
     }
-    CEView ceViewCheck = updateTotalCost(ceViewService.save(ceView, clone));
-    properties.put(PERSPECTIVE_ID, clone ? ceViewCheck.getUuid() : ceView.getUuid());
+    CEView savedCEView = saveAndUpdateTotalCostCEView(ceView, clone);
+    properties.put(PERSPECTIVE_ID, clone ? savedCEView.getUuid() : ceView.getUuid());
     telemetryReporter.sendTrackEvent(
         PERSPECTIVE_CREATED, null, accountId, properties, Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(
         Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-          outboxService.save(new PerspectiveCreateEvent(accountId, ceViewCheck.toDTO()));
-          return ceViewCheck;
+          outboxService.save(new PerspectiveCreateEvent(accountId, savedCEView.toDTO()));
+          return savedCEView;
         })));
+  }
+
+  private CEView saveAndUpdateTotalCostCEView(CEView ceView, boolean clone) {
+    CEView savedCEView = ceViewService.save(ceView, clone);
+    if (!clone) {
+      savedCEView = updateTotalCost(savedCEView);
+    }
+    return savedCEView;
   }
 
   private CEView updateTotalCost(CEView ceView) {
@@ -390,9 +399,17 @@ public class PerspectiveResource {
       @QueryParam("perspectiveId") @Parameter(required = true,
           description = "Unique identifier for the Perspective") @NotBlank @Valid String perspectiveId) {
     CEView ceView = ceViewService.get(perspectiveId);
+    checkPerspectiveExists(perspectiveId, ceView);
     rbacHelper.checkPerspectiveViewPermission(accountId, null, null, ceView.getFolderId());
     awsAccountFieldHelper.mergeAwsAccountNameInAccountRules(ceView.getViewRules(), accountId);
     return ResponseDTO.newResponse(ceView);
+  }
+
+  private void checkPerspectiveExists(String perspectiveId, CEView ceView) {
+    if (Objects.isNull(ceView)) {
+      String errorMessage = String.format("Perspective %s doesn't exist", perspectiveId);
+      throw new InvalidRequestException(errorMessage);
+    }
   }
 
   @GET
@@ -417,8 +434,7 @@ public class PerspectiveResource {
     List<QLCEView> allowedPerspectives = null;
     if (allPerspectives != null) {
       Set<String> allowedFolderIds = rbacHelper.checkFolderIdsGivenPermission(accountId, null, null,
-          allPerspectives.stream().map(perspective -> perspective.getFolderId()).collect(Collectors.toSet()),
-          PERSPECTIVE_VIEW);
+          allPerspectives.stream().map(QLCEView::getFolderId).collect(Collectors.toSet()), PERSPECTIVE_VIEW);
       allowedPerspectives = allPerspectives.stream()
                                 .filter(perspective -> allowedFolderIds.contains(perspective.getFolderId()))
                                 .collect(Collectors.toList());
@@ -448,6 +464,7 @@ public class PerspectiveResource {
       @Valid @RequestBody(required = true, description = "Perspective's CEView object") CEView ceView) {
     rbacHelper.checkPerspectiveEditPermission(accountId, null, null, ceView.getFolderId());
     CEView oldPerspective = ceViewService.get(ceView.getUuid());
+    checkPerspectiveExists(ceView.getUuid(), oldPerspective);
     ceView.setAccountId(accountId);
     log.info(ceView.toString());
     CEView newPerspective = updateTotalCost(ceViewService.update(ceView));
@@ -481,6 +498,7 @@ public class PerspectiveResource {
       @QueryParam("perspectiveId") @Parameter(required = true,
           description = "Unique identifier for the Perspective") @NotNull @Valid String perspectiveId) {
     CEView perspective = ceViewService.get(perspectiveId);
+    checkPerspectiveExists(perspectiveId, perspective);
     rbacHelper.checkPerspectiveDeletePermission(accountId, null, null, perspective.getFolderId());
     ceViewService.delete(perspectiveId, accountId);
 
@@ -520,6 +538,7 @@ public class PerspectiveResource {
       @Valid @NotNull @Parameter(required = true, description = "Name for the Perspective clone") @QueryParam(
           "cloneName") String cloneName) {
     CEView perspective = ceViewService.get(perspectiveId);
+    checkPerspectiveExists(perspectiveId, perspective);
     rbacHelper.checkPerspectiveEditPermission(accountId, null, null, perspective.getFolderId());
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
@@ -530,7 +549,7 @@ public class PerspectiveResource {
     }
     properties.put(DATA_SOURCES, dataSources);
     properties.put(IS_CLONE, "YES");
-    CEView ceViewCheck = updateTotalCost(ceViewService.clone(accountId, perspectiveId, cloneName));
+    CEView ceViewCheck = ceViewService.clone(accountId, perspectiveId, cloneName);
     properties.put(PERSPECTIVE_ID, ceViewCheck.getUuid());
     telemetryReporter.sendTrackEvent(
         PERSPECTIVE_CREATED, null, accountId, properties, Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
