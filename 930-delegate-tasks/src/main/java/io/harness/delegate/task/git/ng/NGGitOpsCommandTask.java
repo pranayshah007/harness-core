@@ -49,6 +49,7 @@ import io.harness.delegate.task.gitapi.client.impl.BitbucketApiClient;
 import io.harness.delegate.task.gitapi.client.impl.GithubApiClient;
 import io.harness.delegate.task.gitapi.client.impl.GitlabApiClient;
 import io.harness.delegate.task.gitops.GitOpsTaskHelper;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.helper.BitbucketHelper;
 import io.harness.git.model.CommitAndPushRequest;
@@ -517,7 +518,12 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     JSONObject existingFile = new JSONObject();
     if (!StringUtils.isEmpty(fileContent)) {
       JSONParser parser = new JSONParser();
-      existingFile = (JSONObject) parser.parse(fileContent);
+      try {
+        existingFile = (JSONObject) parser.parse(fileContent);
+      } catch (ClassCastException exception) {
+        throw new InvalidArgumentsException(
+            format("Failed to read existing file content, error: %s", exception.getMessage()));
+      }
     }
 
     for (String key : stringObjectMap.keySet()) {
