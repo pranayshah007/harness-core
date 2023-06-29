@@ -22,7 +22,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.cdng.beans.MonitoredServiceNode;
-import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
+import io.harness.cvng.cdng.beans.MonitoredServiceSpecType;
 import io.harness.cvng.cdng.beans.ResolvedCVConfigInfo;
 import io.harness.cvng.cdng.beans.TemplateMonitoredServiceSpec;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
@@ -52,12 +52,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends CvNextGenTestBase {
-  @Inject private TemplateVerifyStepMonitoredServiceResolutionServiceImpl templateService;
+public class TemplatePipelineStepMonitoredServiceResolutionServiceImplTest extends CvNextGenTestBase {
+  @Inject private TemplatePipelineStepMonitoredServiceResolutionServiceImpl templateService;
   @Inject private MetricPackService metricPackService;
   @Inject HPersistence hPersistence;
   @Inject ObjectMapper objectMapper;
-  @Inject TemplateVerifyStepMonitoredServiceResolutionServiceImpl templateVerifyStepMonitoredServiceResolutionService;
+  @Inject TemplatePipelineStepMonitoredServiceResolutionServiceImpl templateVerifyStepMonitoredServiceResolutionService;
   private BuilderFactory builderFactory;
   private String accountId;
   private String projectIdentifier;
@@ -82,8 +82,8 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
     monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder().build();
     serviceEnvironmentParams = getServiceEnvironmentParams();
     metricPackService.createDefaultMetricPackAndThresholds(accountId, orgIdentifier, projectIdentifier);
-    URL testFile =
-        TemplateVerifyStepMonitoredServiceResolutionServiceImplTest.class.getResource("verify-step-with-template.json");
+    URL testFile = TemplatePipelineStepMonitoredServiceResolutionServiceImplTest.class.getResource(
+        "verify-step-with-template.json");
     JsonNode templateInputsNode = objectMapper.readTree(testFile);
     templateMonitoredServiceSpec =
         builderFactory.getTemplateMonitoredServiceSpecBuilder().templateInputs(templateInputsNode).build();
@@ -227,7 +227,7 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
   @Owner(developers = DEEPAK_CHHIKARA)
   @Category(UnitTests.class)
   public void testGetTemplateYaml() throws IOException {
-    URL testFile = TemplateVerifyStepMonitoredServiceResolutionServiceImplTest.class.getResource(
+    URL testFile = TemplatePipelineStepMonitoredServiceResolutionServiceImplTest.class.getResource(
         "verify-step-with-template-1.json");
     JsonNode templateInputsNode = objectMapper.readTree(testFile);
     ParameterField<String> parameterField = io.harness.pms.yaml.ParameterField.createValueField("abc");

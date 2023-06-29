@@ -8,12 +8,13 @@
 package io.harness.cvng.cdng.services.impl;
 
 import io.harness.common.NGExpressionUtils;
+import io.harness.cvng.cdng.beans.CVNGDeploymentStepInfo;
 import io.harness.cvng.cdng.beans.CVNGStepInfo;
 import io.harness.cvng.cdng.beans.ConfiguredMonitoredServiceSpec;
 import io.harness.cvng.cdng.beans.MonitoredServiceNode;
 import io.harness.cvng.cdng.beans.ResolvedCVConfigInfo;
 import io.harness.cvng.cdng.beans.ResolvedCVConfigInfo.ResolvedCVConfigInfoBuilder;
-import io.harness.cvng.cdng.services.api.VerifyStepMonitoredServiceResolutionService;
+import io.harness.cvng.cdng.services.api.PipelineStepMonitoredServiceResolutionService;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
@@ -34,8 +35,8 @@ import java.util.List;
 import java.util.Objects;
 import org.apache.commons.collections.CollectionUtils;
 
-public class ConfiguredVerifyStepMonitoredServiceResolutionServiceImpl
-    implements VerifyStepMonitoredServiceResolutionService {
+public class ConfiguredPipelineStepMonitoredServiceResolutionServiceImpl
+    implements PipelineStepMonitoredServiceResolutionService {
   @Inject private CVConfigService cvConfigService;
   @Inject private MonitoredServiceService monitoredServiceService;
 
@@ -54,6 +55,19 @@ public class ConfiguredVerifyStepMonitoredServiceResolutionServiceImpl
       FilterCreationContext filterCreationContext, CVNGStepInfo cvngStepInfo, ProjectParams projectParams) {
     ConfiguredMonitoredServiceSpec configuredMonitoredServiceSpec =
         (ConfiguredMonitoredServiceSpec) cvngStepInfo.getMonitoredService().getSpec();
+    return getReferredEntities(filterCreationContext, configuredMonitoredServiceSpec, projectParams);
+  }
+
+  @Override
+  public List<EntityDetailProtoDTO> getReferredEntities(
+      FilterCreationContext filterCreationContext, CVNGDeploymentStepInfo cvngStepInfo, ProjectParams projectParams) {
+    ConfiguredMonitoredServiceSpec configuredMonitoredServiceSpec =
+        (ConfiguredMonitoredServiceSpec) cvngStepInfo.getMonitoredService().getSpec();
+    return getReferredEntities(filterCreationContext, configuredMonitoredServiceSpec, projectParams);
+  }
+
+  private List<EntityDetailProtoDTO> getReferredEntities(FilterCreationContext filterCreationContext,
+      ConfiguredMonitoredServiceSpec configuredMonitoredServiceSpec, ProjectParams projectParams) {
     ParameterField<String> monitoredServiceRef = configuredMonitoredServiceSpec.getMonitoredServiceRef();
     List<EntityDetailProtoDTO> result = new ArrayList<>();
     if (monitoredServiceRef.isExpression()
@@ -72,7 +86,6 @@ public class ConfiguredVerifyStepMonitoredServiceResolutionServiceImpl
     CVNGStepUtils.addReferredEntities(monitoredServiceDTO, result, filterCreationContext, projectParams);
     return result;
   }
-
   private String getMonitoredServiceIdentifier(MonitoredServiceNode monitoredServiceNode) {
     ConfiguredMonitoredServiceSpec configuredMonitoredServiceSpec =
         (ConfiguredMonitoredServiceSpec) monitoredServiceNode.getSpec();

@@ -8,12 +8,13 @@
 package io.harness.cvng.cdng.services.impl;
 
 import io.harness.common.NGExpressionUtils;
+import io.harness.cvng.cdng.beans.CVNGDeploymentStepInfo;
 import io.harness.cvng.cdng.beans.CVNGStepInfo;
 import io.harness.cvng.cdng.beans.MonitoredServiceNode;
 import io.harness.cvng.cdng.beans.ResolvedCVConfigInfo;
 import io.harness.cvng.cdng.beans.ResolvedCVConfigInfo.ResolvedCVConfigInfoBuilder;
 import io.harness.cvng.cdng.services.api.CDStageMetaDataService;
-import io.harness.cvng.cdng.services.api.VerifyStepMonitoredServiceResolutionService;
+import io.harness.cvng.cdng.services.api.PipelineStepMonitoredServiceResolutionService;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
@@ -37,8 +38,8 @@ import java.util.Objects;
 import java.util.Optional;
 import org.apache.commons.collections.CollectionUtils;
 
-public class DefaultVerifyStepMonitoredServiceResolutionServiceImpl
-    implements VerifyStepMonitoredServiceResolutionService {
+public class DefaultPipelineStepMonitoredServiceResolutionServiceImpl
+    implements PipelineStepMonitoredServiceResolutionService {
   @Inject private CVConfigService cvConfigService;
   @Inject private MonitoredServiceService monitoredServiceService;
 
@@ -58,6 +59,17 @@ public class DefaultVerifyStepMonitoredServiceResolutionServiceImpl
   @Override
   public List<EntityDetailProtoDTO> getReferredEntities(
       FilterCreationContext filterCreationContext, CVNGStepInfo cvngStepInfo, ProjectParams projectParams) {
+    return getReferredEntities(filterCreationContext, projectParams);
+  }
+
+  @Override
+  public List<EntityDetailProtoDTO> getReferredEntities(FilterCreationContext filterCreationContext,
+      CVNGDeploymentStepInfo cvngDeploymentStepInfo, ProjectParams projectParams) {
+    return getReferredEntities(filterCreationContext, projectParams);
+  }
+
+  private List<EntityDetailProtoDTO> getReferredEntities(
+      FilterCreationContext filterCreationContext, ProjectParams projectParams) {
     YamlNode stageLevelYamlNode = getStageSpecYamlNode(filterCreationContext.getCurrentField().getNode());
     List<EntityDetailProtoDTO> result = new ArrayList<>();
 

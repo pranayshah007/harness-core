@@ -719,6 +719,7 @@ public enum FeatureName {
   SRM_SLO_TOGGLE,
   SRM_SPLUNK_SIGNALFX("Will enable SignalFX metric health source in SRM", HarnessTeam.CV),
   SRM_TELEMETRY("Will enable telemetry for verify step result", HarnessTeam.CV),
+  SRM_ENABLE_ANALYZE_DEPLOYMENT_STEP("This is used to enable analyze deployment step in the pipeline", HarnessTeam.CV),
   SSCA_ENABLED("FF to enable SSCA on Harness", HarnessTeam.SSCA),
   SSH_JSCH_LOGS,
   STALE_FLAGS_FFM_1510,

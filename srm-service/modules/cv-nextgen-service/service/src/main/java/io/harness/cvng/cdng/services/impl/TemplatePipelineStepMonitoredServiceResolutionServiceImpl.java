@@ -11,12 +11,13 @@ import static io.harness.cvng.core.utils.FeatureFlagNames.CVNG_MONITORED_SERVICE
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import io.harness.cvng.cdng.VerifyStepConstants;
+import io.harness.cvng.cdng.beans.CVNGDeploymentStepInfo;
 import io.harness.cvng.cdng.beans.CVNGStepInfo;
 import io.harness.cvng.cdng.beans.MonitoredServiceNode;
 import io.harness.cvng.cdng.beans.ResolvedCVConfigInfo;
 import io.harness.cvng.cdng.beans.ResolvedCVConfigInfo.ResolvedCVConfigInfoBuilder;
 import io.harness.cvng.cdng.beans.TemplateMonitoredServiceSpec;
-import io.harness.cvng.cdng.services.api.VerifyStepMonitoredServiceResolutionService;
+import io.harness.cvng.cdng.services.api.PipelineStepMonitoredServiceResolutionService;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
@@ -57,8 +58,8 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 @Slf4j
-public class TemplateVerifyStepMonitoredServiceResolutionServiceImpl
-    implements VerifyStepMonitoredServiceResolutionService {
+public class TemplatePipelineStepMonitoredServiceResolutionServiceImpl
+    implements PipelineStepMonitoredServiceResolutionService {
   @Inject private Clock clock;
   @Inject private FeatureFlagService featureFlagService;
   @Inject private MetricPackService metricPackService;
@@ -113,6 +114,12 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImpl
   public List<EntityDetailProtoDTO> getReferredEntities(
       FilterCreationContext filterCreationContext, CVNGStepInfo cvngStepInfo, ProjectParams projectParams) {
     return new ArrayList<>();
+  }
+
+  @Override
+  public List<EntityDetailProtoDTO> getReferredEntities(
+      FilterCreationContext filterCreationContext, CVNGDeploymentStepInfo cvngStepInfo, ProjectParams projectParams) {
+    throw new RuntimeException("Template Monitored Service is not supported in analyze deployment step");
   }
 
   private void populateSourceDataFromTemplate(ServiceEnvironmentParams serviceEnvironmentParams,

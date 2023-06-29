@@ -16,7 +16,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.cdng.beans.ConfiguredMonitoredServiceSpec;
 import io.harness.cvng.cdng.beans.MonitoredServiceNode;
-import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
+import io.harness.cvng.cdng.beans.MonitoredServiceSpecType;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.entities.CVConfig;
@@ -31,9 +31,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class ConfiguredVerifyStepMonitoredServiceResolutionServiceImplTest extends CvNextGenTestBase {
+public class ConfiguredPipelineStepMonitoredServiceResolutionServiceImplTest extends CvNextGenTestBase {
   @Inject private MonitoredServiceService monitoredServiceService;
-  @Inject private ConfiguredVerifyStepMonitoredServiceResolutionServiceImpl configuredService;
+  @Inject private ConfiguredPipelineStepMonitoredServiceResolutionServiceImpl configuredService;
   @Inject private MetricPackService metricPackService;
 
   private BuilderFactory builderFactory;
