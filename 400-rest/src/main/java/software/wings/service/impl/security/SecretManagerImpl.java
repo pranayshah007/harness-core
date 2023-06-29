@@ -818,14 +818,15 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
       log.error("[jen]: unable to find encrypted data");
     }*/
 
-    EncryptedData encryptedData = getSecretById(accountId, secretRecordId);
-    log.error("[jen] Encrypted id account id {}", encryptedData.getAccountId());
-    log.error("[jen] :Encrypted id kms id {}", encryptedData.getKmsId());
-    log.error("[jen]: Encryption type {}", encryptedData.getEncryptionType());
-    log.error("[jen]: Encryption val {}", encryptedData.getEncryptedValue());
+    Optional<EncryptedData> encryptedDataOptional = secretsDao.getSecretById(accountId, secretRecordId);
 
-    log.error("[jen]: Value is ", String.valueOf(secretService.fetchSecretValue(encryptedData)));
-    return String.valueOf(secretService.fetchSecretValue(encryptedData));
+
+    if (encryptedDataOptional.isPresent()) {
+      EncryptedData encryptedData = encryptedDataOptional.get();
+      return String.valueOf(secretService.fetchSecretValue(encryptedData));
+    }
+    log.error("Should not come here");
+   return EMPTY;
   }
 
   @Override
