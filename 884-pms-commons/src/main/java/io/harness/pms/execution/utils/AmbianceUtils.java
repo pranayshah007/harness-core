@@ -10,6 +10,7 @@ package io.harness.pms.execution.utils;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
+import static io.harness.yaml.core.MatrixConstants.MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -345,10 +346,20 @@ public class AmbianceUtils {
                             .getMatrixValuesMap()
                             .entrySet()
                             .stream()
-                            .filter(entry -> !matrixKeysToSkipInName.contains(entry.getKey()))
+                            .filter(entry
+                                -> !matrixKeysToSkipInName.contains(entry.getKey())
+                                    && !MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES.equals(entry.getKey()))
                             .sorted(Map.Entry.comparingByKey())
                             .map(t -> t.getValue().replace(".", ""))
                             .collect(Collectors.joining("_"));
+
+      // Making sure that identifier postfix is added at the last while forming the identifier for the matrix stage
+      if (level.getStrategyMetadata().getMatrixMetadata().getMatrixValuesMap().containsKey(
+              MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES)) {
+        levelIdentifier = levelIdentifier + "_"
+            + level.getStrategyMetadata().getMatrixMetadata().getMatrixValuesMap().get(
+                MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES);
+      }
     }
     String modifiedString =
         "_" + (levelIdentifier.length() <= 126 ? levelIdentifier : levelIdentifier.substring(0, 126));

@@ -7,6 +7,8 @@
 
 package io.harness.steps.matrix;
 
+import static io.harness.yaml.core.MatrixConstants.MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
@@ -64,11 +66,15 @@ public class MatrixConfigServiceHelper {
       Set<Map.Entry<String, String>> entries = combination.entrySet();
       String variableName = entries.stream().map(t -> t.getValue().replace(".", "")).collect(Collectors.joining("_"));
 
-      combinationStringMap.computeIfPresent(variableName, (k, count) -> {
-        Optional<Map.Entry<String, String>> first = entries.stream().findFirst();
-        first.ifPresent(entry -> entry.setValue((count + 1) + "_" + entry.getValue()));
-        return count + 1;
-      });
+      // Earlier we were modifying the value of fields in the json object which made it impossible to use the matrix
+      // expressions as the keys of different values in object are changed. Suppose connectorRef becomes 1_connectorRef.
+      // So instead we are adding another field having value as the count of that field in the combination to make them
+      // two different combinations
+      if (combinationStringMap.containsKey(variableName)) {
+        Integer cnt = combinationStringMap.getOrDefault(variableName, 0);
+        combination.put(MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES, cnt.toString());
+        combinationStringMap.put(variableName, cnt + 1);
+      }
 
       combinationStringMap.computeIfAbsent(variableName, k -> 0);
 
