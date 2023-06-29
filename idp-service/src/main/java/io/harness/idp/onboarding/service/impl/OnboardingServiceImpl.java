@@ -287,9 +287,6 @@ public class OnboardingServiceImpl implements OnboardingService {
       log.error("Error in producing event for async catalog import.");
     }
 
-    publishConnectorSetupUsage(accountIdentifier, connectorInfoDTO.getIdentifier(),
-        getIdpCatalogConnectorIdentifier(catalogConnectorInfo.getConnector().getIdentifier()));
-
     return new ImportEntitiesResponse().status(SUCCESS_RESPONSE_STRING);
   }
 
@@ -516,9 +513,6 @@ public class OnboardingServiceImpl implements OnboardingService {
     log.info("Cleaning up directories created during IDP onboarding");
     cleanUpDirectories(sampleYamlPath);
 
-    publishConnectorSetupUsage(accountIdentifier, connectorInfoDTO.getIdentifier(),
-        getIdpCatalogConnectorIdentifier(catalogConnectorInfo.getConnector().getIdentifier()));
-
     return new ImportEntitiesResponse().status(SUCCESS_RESPONSE_STRING);
   }
 
@@ -718,7 +712,7 @@ public class OnboardingServiceImpl implements OnboardingService {
     catalogConnectorEntity.setHost(host);
     catalogConnectorEntity.setDelegateSelectors(delegateSelectors);
 
-    catalogConnectorRepository.save(catalogConnectorEntity);
+    catalogConnectorRepository.saveOrUpdate(catalogConnectorEntity);
     if (!delegateSelectors.isEmpty()) {
       delegateSelectorsCache.put(accountIdentifier, host, delegateSelectors);
     }
@@ -810,17 +804,5 @@ public class OnboardingServiceImpl implements OnboardingService {
     statusInfo.setCurrentStatus(currentStatus);
     statusInfo.setReason(reason);
     statusInfoService.save(statusInfo, accountIdentifier, type);
-  }
-
-  private void publishConnectorSetupUsage(
-      String accountIdentifier, String harnessConnectorIdentifier, String idpConnectorIdentifier) {
-    try {
-      setupUsageProducer.publishConnectorSetupUsage(
-          accountIdentifier, harnessConnectorIdentifier, idpConnectorIdentifier);
-    } catch (Exception ex) {
-      log.error(
-          "Error in publishConnectorSetupUsage for accountIdentifier {} harnessConnectorIdentifier {} idpConnectorIdentifier {} Error {}",
-          accountIdentifier, harnessConnectorIdentifier, idpConnectorIdentifier, ex.getMessage(), ex);
-    }
   }
 }

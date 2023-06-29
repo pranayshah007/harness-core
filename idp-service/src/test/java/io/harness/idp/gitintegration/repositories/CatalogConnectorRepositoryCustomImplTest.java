@@ -22,6 +22,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.idp.events.producers.SetupUsageProducer;
 import io.harness.idp.gitintegration.beans.CatalogInfraConnectorType;
+import io.harness.idp.gitintegration.beans.CatalogRepositoryDetails;
 import io.harness.idp.gitintegration.entities.CatalogConnectorEntity;
 import io.harness.rule.Owner;
 
@@ -109,6 +110,7 @@ public class CatalogConnectorRepositoryCustomImplTest {
         .connectorIdentifier(GITHUB_IDENTIFIER)
         .connectorProviderType(GITHUB_CONNECTOR_TYPE)
         .type(CatalogInfraConnectorType.DIRECT)
+        .catalogRepositoryDetails(new CatalogRepositoryDetails("harness-core", "develop", "/harness-services"))
         .build();
   }
 }
