@@ -221,7 +221,7 @@ public class TerraformPlanStepInfoTest extends CategoryTest {
   public void testGetFacilitatorType() {
     TerraformPlanStepInfo terraformPlanStepInfo = new TerraformPlanStepInfo();
     String response = terraformPlanStepInfo.getFacilitatorType();
-    assertThat(response).isEqualTo("TASK");
+    assertThat(response).isEqualTo("TASK_CHAIN");
   }
 
   @Test
@@ -231,7 +231,7 @@ public class TerraformPlanStepInfoTest extends CategoryTest {
     TerraformPlanStepInfo terraformPlanStepInfo = new TerraformPlanStepInfo();
     StepType response = terraformPlanStepInfo.getStepType();
     assertThat(response).isNotNull();
-    assertThat(response.getType()).isEqualTo("TerraformPlan");
+    assertThat(response.getType()).isEqualTo("TERRAFORM_PLAN_V2");
   }
 
   @Test

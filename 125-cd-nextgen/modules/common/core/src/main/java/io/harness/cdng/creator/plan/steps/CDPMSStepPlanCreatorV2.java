@@ -43,6 +43,7 @@ import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.SkipInfoUtils;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.adviser.abort.OnAbortAdviser;
@@ -117,14 +118,13 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
             .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, stepElement.getUuid()))
             .name(getName(stepElement))
             .identifier(stepElement.getIdentifier())
-            .stepType(stepElement.getStepSpecType().getStepType())
+            .stepType(getStepSpecType(ctx, stepElement))
             .group(StepOutcomeGroup.STEP.name())
             .stepParameters(stepParameters)
-            .facilitatorObtainment(FacilitatorObtainment.newBuilder()
-                                       .setType(FacilitatorType.newBuilder()
-                                                    .setType(stepElement.getStepSpecType().getFacilitatorType())
-                                                    .build())
-                                       .build())
+            .facilitatorObtainment(
+                FacilitatorObtainment.newBuilder()
+                    .setType(FacilitatorType.newBuilder().setType(getFacilitatorType(ctx, stepElement)).build())
+                    .build())
             .adviserObtainments(adviserObtainmentFromMetaData)
             .skipCondition(SkipInfoUtils.getSkipCondition(stepElement.getSkipCondition()))
             .whenCondition(isStepInsideRollback ? RunInfoUtils.getRunConditionForRollback(stepElement.getWhen())
@@ -147,6 +147,14 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
                               stepElement.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
                           .build())
         .build();
+  }
+
+  protected StepType getStepSpecType(PlanCreationContext ctx, T stepElement) {
+    return stepElement.getStepSpecType().getStepType();
+  }
+
+  protected String getFacilitatorType(PlanCreationContext ctx, T stepElement) {
+    return stepElement.getStepSpecType().getFacilitatorType();
   }
 
   protected List<AdviserObtainment> getAdviserObtainmentFromMetaData(YamlField currentField) {

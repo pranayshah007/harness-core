@@ -111,9 +111,13 @@ import io.harness.cdng.provision.cloudformation.CloudformationDeleteStackStep;
 import io.harness.cdng.provision.cloudformation.CloudformationRollbackStep;
 import io.harness.cdng.provision.shellscript.ShellScriptProvisionStep;
 import io.harness.cdng.provision.terraform.TerraformApplyStep;
+import io.harness.cdng.provision.terraform.TerraformApplyStepV2;
 import io.harness.cdng.provision.terraform.TerraformDestroyStep;
+import io.harness.cdng.provision.terraform.TerraformDestroyStepV2;
 import io.harness.cdng.provision.terraform.TerraformPlanStep;
+import io.harness.cdng.provision.terraform.TerraformPlanStepV2;
 import io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStep;
+import io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStepV2;
 import io.harness.cdng.provision.terraformcloud.steps.TerraformCloudRollbackStep;
 import io.harness.cdng.provision.terraformcloud.steps.TerraformCloudRunStep;
 import io.harness.cdng.provision.terragrunt.TerragruntApplyStep;
@@ -318,6 +322,11 @@ public class NgStepRegistrar {
     engineSteps.put(ServerlessAwsLambdaPrepareRollbackV2Step.STEP_TYPE, ServerlessAwsLambdaPrepareRollbackV2Step.class);
     engineSteps.put(ServerlessAwsLambdaRollbackV2Step.STEP_TYPE, ServerlessAwsLambdaRollbackV2Step.class);
     engineSteps.put(ServerlessAwsLambdaDeployV2Step.STEP_TYPE, ServerlessAwsLambdaDeployV2Step.class);
+
+    engineSteps.put(TerraformPlanStepV2.STEP_TYPE, TerraformPlanStepV2.class);
+    engineSteps.put(TerraformApplyStepV2.STEP_TYPE, TerraformApplyStepV2.class);
+    engineSteps.put(TerraformDestroyStepV2.STEP_TYPE, TerraformDestroyStepV2.class);
+    engineSteps.put(TerraformRollbackStepV2.STEP_TYPE, TerraformRollbackStepV2.class);
     return engineSteps;
   }
 }

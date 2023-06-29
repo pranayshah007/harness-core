@@ -169,6 +169,8 @@ public enum FeatureName {
   CDS_STAGE_EXECUTION_DATA_SYNC(
       "This flag controls if you want CD Stage execution data saved in cd service and eventually synced to timescale",
       HarnessTeam.CDC),
+  CDS_SUPPORT_EXPRESSION_REMOTE_TERRAFORM_VAR_FILES_NG(
+      "FF to support expressions in remote terraform var files", HarnessTeam.CDP),
   CDS_SUPPORT_HPA_AND_PDB_NG(
       "Enabling support for HPA and PDB kind resources in k8s deployments in NG", HarnessTeam.CDP),
   CDS_SUPPORT_SKIPPING_BG_DEPLOYMENT_NG(
