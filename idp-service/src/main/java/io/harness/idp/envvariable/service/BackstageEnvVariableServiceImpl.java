@@ -29,9 +29,7 @@ import io.harness.idp.envvariable.repositories.BackstageEnvVariableRepository;
 import io.harness.idp.events.producers.SetupUsageProducer;
 import io.harness.idp.k8s.client.K8sClient;
 import io.harness.idp.namespace.service.NamespaceService;
-import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.remote.client.CGRestUtils;
-import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.spec.server.idp.v1.model.BackstageEnvConfigVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
@@ -41,7 +39,6 @@ import io.harness.spec.server.idp.v1.model.ResolvedEnvVariable;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
@@ -317,7 +314,14 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
   }
 
   @Override
-  public List<ResolvedEnvVariable> resolveSecrets(String accountIdentifier) {
+  public List<ResolvedEnvVariable> resolveSecrets(String accountIdentifier, String namespace) {
+    NamespaceInfo namespaceInfo = namespaceService.getNamespaceForAccountIdentifier(accountIdentifier);
+    if (!namespaceInfo.getNamespace().equals(namespace)) {
+      throw new InvalidRequestException(
+          String.format("The request namespace [%s] does not match with the account namespace [%s] for account [%s]",
+              namespace, namespaceInfo.getNamespace(), accountIdentifier));
+    }
+
     List<BackstageEnvVariableEntity> entities =
         backstageEnvVariableRepository.findByAccountIdentifier(accountIdentifier);
     List<ResolvedEnvVariable> resolvedEnvVariables = new ArrayList<>();
