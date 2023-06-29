@@ -23,7 +23,7 @@ public abstract class DelegateSecretManager {
 
   public String getDelegateTokenValue(DelegateToken delegateToken) {
     if (featureFlagService.isEnabled(FeatureName.READ_ENCRYPTED_DELEGATE_TOKEN, delegateToken.getAccountId())) {
-      return decrypt(delegateToken);
+      return decodeBase64ToString(decrypt(delegateToken));
     }
     return delegateToken.isNg() ? decodeBase64ToString(delegateToken.getValue()) : delegateToken.getValue();
   }
@@ -41,10 +41,7 @@ public abstract class DelegateSecretManager {
   }
 
   public String decrypt(DelegateToken delegateToken) {
-    if (featureFlagService.isEnabled(FeatureName.READ_ENCRYPTED_DELEGATE_TOKEN, delegateToken.getAccountId())) {
-      return fetchSecretValue(delegateToken.getAccountId(), delegateToken.getEncryptedTokenId());
-    }
-    return delegateToken.getValue();
+    return fetchSecretValue(delegateToken.getAccountId(), delegateToken.getEncryptedTokenId();
   }
 
   protected abstract String fetchSecretValue(String accountId, String ecryptedTokenId);
