@@ -1,3 +1,10 @@
+/*
+ * Copyright 2023 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Shield 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+ */
+
 package io.harness.cdng.manifest.steps.task;
 
 import static io.harness.cdng.manifest.steps.task.HelmChartManifestTaskHandler.DEFAULT_FETCH_TIMEOUT_MILLIS;
@@ -7,8 +14,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
-import com.google.common.collect.ImmutableMap;
 import io.harness.CategoryTest;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.manifest.delegate.K8sManifestDelegateMapper;
@@ -31,6 +39,9 @@ import io.harness.utils.NGFeatureFlagHelperService;
 
 import software.wings.beans.TaskType;
 
+import com.google.common.collect.ImmutableMap;
+import java.util.Map;
+import java.util.Optional;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -39,9 +50,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-import java.util.Map;
-import java.util.Optional;
-
+@OwnedBy(HarnessTeam.CDP)
 public class HelmChartManifestTaskHandlerTest extends CategoryTest {
   private static final String ACCOUNT_ID = "test-account";
 

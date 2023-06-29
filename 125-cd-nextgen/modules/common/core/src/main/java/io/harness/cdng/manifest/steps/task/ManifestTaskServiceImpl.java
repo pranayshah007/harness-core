@@ -1,5 +1,14 @@
+/*
+ * Copyright 2023 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Shield 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+ */
+
 package io.harness.cdng.manifest.steps.task;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
@@ -14,6 +23,7 @@ import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@OwnedBy(HarnessTeam.CDP)
 public class ManifestTaskServiceImpl implements ManifestTaskService {
   @Inject private Map<String, ManifestTaskHandler> manifestTaskHandlers;
 
@@ -50,7 +60,8 @@ public class ManifestTaskServiceImpl implements ManifestTaskService {
 
     if (response instanceof ErrorNotifyResponseData) {
       ErrorNotifyResponseData errorResponseData = (ErrorNotifyResponseData) response;
-      throw errorResponseData.getException() != null ? errorResponseData.getException() : new InvalidRequestException(errorResponseData.getErrorMessage());
+      throw errorResponseData.getException() != null ? errorResponseData.getException()
+                                                     : new InvalidRequestException(errorResponseData.getErrorMessage());
     }
 
     ManifestOutcome manifestOutcome = manifests.get(manifestIdentifier);

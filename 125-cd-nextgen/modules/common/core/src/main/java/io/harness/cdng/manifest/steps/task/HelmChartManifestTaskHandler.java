@@ -1,3 +1,10 @@
+/*
+ * Copyright 2023 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Shield 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+ */
+
 package io.harness.cdng.manifest.steps.task;
 
 import static io.harness.common.ParameterFieldHelper.getBooleanParameterFieldValue;
@@ -5,6 +12,7 @@ import static io.harness.common.ParameterFieldHelper.getBooleanParameterFieldVal
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.delegate.K8sManifestDelegateMapper;
 import io.harness.cdng.manifest.outcome.HelmChartOutcome;
@@ -38,7 +46,7 @@ public class HelmChartManifestTaskHandler implements ManifestTaskHandler {
 
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
 
-  @Inject private NGFeatureFlagHelperService featureFlagHelperService;
+  @Inject private CDFeatureFlagHelper featureFlagHelperService;
 
   @Override
   public boolean isSupported(Ambiance ambiance, ManifestOutcome manifest) {
@@ -66,8 +74,9 @@ public class HelmChartManifestTaskHandler implements ManifestTaskHandler {
   @Override
   public Optional<TaskData> createTaskData(Ambiance ambiance, ManifestOutcome manifest) {
     if (!(manifest instanceof HelmChartManifestOutcome)) {
-      log.warn("Incorrect type used: {}, expected: {}", manifest != null ? manifest.getClass().getSimpleName() : "<null>",
-              HelmChartManifestOutcome.class.getSimpleName());
+      log.warn("Incorrect type used: {}, expected: {}",
+          manifest != null ? manifest.getClass().getSimpleName() : "<null>",
+          HelmChartManifestOutcome.class.getSimpleName());
       return Optional.empty();
     }
 
@@ -75,8 +84,8 @@ public class HelmChartManifestTaskHandler implements ManifestTaskHandler {
         manifestDelegateMapper.getManifestDelegateConfig(manifest, ambiance);
     if (!(manifestDelegateConfig instanceof HelmChartManifestDelegateConfig)) {
       log.warn("Incorrect manifest delegate config type: {}, expected: {}",
-              manifestDelegateConfig != null ? manifestDelegateConfig.getClass().getSimpleName() : "<null>",
-              HelmChartManifestDelegateConfig.class.getSimpleName());
+          manifestDelegateConfig != null ? manifestDelegateConfig.getClass().getSimpleName() : "<null>",
+          HelmChartManifestDelegateConfig.class.getSimpleName());
       return Optional.empty();
     }
 

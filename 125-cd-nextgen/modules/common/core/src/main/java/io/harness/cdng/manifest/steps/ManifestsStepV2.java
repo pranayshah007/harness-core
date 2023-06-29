@@ -129,15 +129,10 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
   @Inject private NGSettingsClient ngSettingsClient;
 
   @Inject NGFeatureFlagHelperService featureFlagHelperService;
-
   @Inject private ManifestTaskService manifestTaskService;
-
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
-
   @Inject private CDStepHelper cdStepHelper;
-
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
-
   @Inject private StrategyHelper strategyHelper;
 
   private static final String OVERRIDE_PROJECT_SETTING_IDENTIFIER = "service_override_v2";
@@ -217,7 +212,8 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
         .orElseGet(() -> StepResponse.builder().status(Status.SKIPPED).build());
   }
 
-  private void handleManifests(Ambiance ambiance, ManifestsOutcome manifests, List<String> callbackIds, NGLogCallback logCallback) {
+  private void handleManifests(
+      Ambiance ambiance, ManifestsOutcome manifests, List<String> callbackIds, NGLogCallback logCallback) {
     Map<String, String> taskIdMapping = new HashMap<>();
 
     manifests.forEach((identifier, manifest) -> {
@@ -226,7 +222,9 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
         taskData.ifPresent(task -> {
           String taskId = queueTask(ambiance, task);
           logCallback.saveExecutionLog(
-                  LogHelper.color(String.format("Queued delegate task id: %s to fetch metadata for manifest: %s", taskId, manifest.getIdentifier()), LogColor.Cyan, LogWeight.Bold));
+              LogHelper.color(String.format("Queued delegate task id: %s to fetch metadata for manifest: %s", taskId,
+                                  manifest.getIdentifier()),
+                  LogColor.Cyan, LogWeight.Bold));
           taskIdMapping.put(taskId, identifier);
           callbackIds.add(taskId);
         });

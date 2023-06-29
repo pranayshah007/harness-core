@@ -28,8 +28,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.protobuf.ByteString;
 import io.harness.CategoryTest;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
@@ -93,6 +91,8 @@ import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.NGFeatureFlagHelperService;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -132,10 +132,9 @@ public class ManifestsStepV2Test extends CategoryTest {
   @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
   @Mock private ManifestTaskService manifestTaskService;
   @Mock private StrategyHelper strategyHelper;
-
   @Mock private KryoSerializer referenceFalseKryoSerializer;
-
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+
   @InjectMocks private ManifestsStepV2 step = new ManifestsStepV2();
 
   private AutoCloseable mocks;
@@ -188,17 +187,17 @@ public class ManifestsStepV2Test extends CategoryTest {
     finalManifests.put(SERVICE, Collections.singletonList(file1));
 
     doReturn(OptionalSweepingOutput.builder()
-            .found(true)
-            .output(NgManifestsMetadataSweepingOutput.builder()
-                    .finalSvcManifestsMap(finalManifests)
-                    .serviceIdentifier(SVC_ID)
-                    .environmentIdentifier(ENV_ID)
-                    .serviceDefinitionType(ServiceDefinitionType.KUBERNETES)
-                    .build())
-            .build())
-            .when(sweepingOutputService)
-            .resolveOptional(any(Ambiance.class),
-                    eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
+                 .found(true)
+                 .output(NgManifestsMetadataSweepingOutput.builder()
+                             .finalSvcManifestsMap(finalManifests)
+                             .serviceIdentifier(SVC_ID)
+                             .environmentIdentifier(ENV_ID)
+                             .serviceDefinitionType(ServiceDefinitionType.KUBERNETES)
+                             .build())
+                 .build())
+        .when(sweepingOutputService)
+        .resolveOptional(any(Ambiance.class),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
 
     List<EntityDetail> listEntityDetail = new ArrayList<>();
 
@@ -209,18 +208,23 @@ public class ManifestsStepV2Test extends CategoryTest {
     doReturn(setEntityDetail).when(entityReferenceExtractorUtils).extractReferredEntities(any(), any());
 
     doReturn(listEntityDetail)
-            .when(entityDetailProtoToRestMapper)
-            .createEntityDetailsDTO(new ArrayList<>(emptyIfNull(setEntityDetail)));
+        .when(entityDetailProtoToRestMapper)
+        .createEntityDetailsDTO(new ArrayList<>(emptyIfNull(setEntityDetail)));
     doReturn(true).when(manifestTaskService).isSupported(any(Ambiance.class), any(ManifestOutcome.class));
-    doReturn(Optional.of(TaskData.builder().parameters(new Object[] {taskParameters}).taskType("TEST_TASK").build())).when(manifestTaskService).createTaskData(any(Ambiance.class), any(ManifestOutcome.class));
-    doReturn("taskId").when(delegateGrpcClientWrapper).submitAsyncTaskV2(nullable(DelegateTaskRequest.class), any(Duration.class));
+    doReturn(Optional.of(TaskData.builder().parameters(new Object[] {taskParameters}).taskType("TEST_TASK").build()))
+        .when(manifestTaskService)
+        .createTaskData(any(Ambiance.class), any(ManifestOutcome.class));
+    doReturn("taskId")
+        .when(delegateGrpcClientWrapper)
+        .submitAsyncTaskV2(nullable(DelegateTaskRequest.class), any(Duration.class));
 
     AsyncExecutableResponse asyncResponse = step.executeAsync(buildAmbiance(), new EmptyStepParameters(), null, null);
-    assertThat(asyncResponse.getCallbackIdsList().asByteStringList()).containsExactlyInAnyOrder(ByteString.copyFromUtf8("taskId"));
+    assertThat(asyncResponse.getCallbackIdsList().asByteStringList())
+        .containsExactlyInAnyOrder(ByteString.copyFromUtf8("taskId"));
 
     ArgumentCaptor<UnresolvedManifestsOutput> captor = ArgumentCaptor.forClass(UnresolvedManifestsOutput.class);
     verify(sweepingOutputService, times(1))
-            .consume(any(Ambiance.class), eq(OutcomeExpressionConstants.UNRESOLVED_MANIFESTS), captor.capture(), eq(""));
+        .consume(any(Ambiance.class), eq(OutcomeExpressionConstants.UNRESOLVED_MANIFESTS), captor.capture(), eq(""));
     UnresolvedManifestsOutput unresolvedManifestsOutput = captor.getValue();
     assertThat(unresolvedManifestsOutput.getTaskIdMapping()).isEqualTo(ImmutableMap.of("taskId", "file1"));
     assertThat(unresolvedManifestsOutput.getManifestsOutcome().keySet()).containsExactlyInAnyOrder("file1");
@@ -907,15 +911,16 @@ public class ManifestsStepV2Test extends CategoryTest {
   public void handleAsyncResponseWithResponse() {
     final ManifestsOutcome manifestsOutcome = new ManifestsOutcome();
     final Map<String, String> taskIdMapping = ImmutableMap.of("task1", "manifest1");
-    final UnresolvedManifestsOutput output = UnresolvedManifestsOutput.builder()
-            .taskIdMapping(taskIdMapping)
-            .manifestsOutcome(manifestsOutcome)
-            .build();
-    final OptionalSweepingOutput optionalSweepingOutput = OptionalSweepingOutput.builder().found(true).output(output).build();
+    final UnresolvedManifestsOutput output =
+        UnresolvedManifestsOutput.builder().taskIdMapping(taskIdMapping).manifestsOutcome(manifestsOutcome).build();
+    final OptionalSweepingOutput optionalSweepingOutput =
+        OptionalSweepingOutput.builder().found(true).output(output).build();
     final Map<String, ResponseData> responses = ImmutableMap.of("task1", mock(ResponseData.class));
 
-    doReturn(optionalSweepingOutput).when(sweepingOutputService)
-            .resolveOptional(any(Ambiance.class), eq(RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.UNRESOLVED_MANIFESTS)));
+    doReturn(optionalSweepingOutput)
+        .when(sweepingOutputService)
+        .resolveOptional(any(Ambiance.class),
+            eq(RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.UNRESOLVED_MANIFESTS)));
 
     StepResponse stepResponse = step.handleAsyncResponse(buildAmbiance(), new EmptyStepParameters(), responses);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
@@ -928,19 +933,19 @@ public class ManifestsStepV2Test extends CategoryTest {
   public void handleAsyncResponseWithErrorResponse() {
     final ManifestsOutcome manifestsOutcome = new ManifestsOutcome();
     final Map<String, String> taskIdMapping = ImmutableMap.of("task1", "manifest1");
-    final UnresolvedManifestsOutput output = UnresolvedManifestsOutput.builder()
-            .taskIdMapping(taskIdMapping)
-            .manifestsOutcome(manifestsOutcome)
-            .build();
-    final OptionalSweepingOutput optionalSweepingOutput = OptionalSweepingOutput.builder().found(true).output(output).build();
+    final UnresolvedManifestsOutput output =
+        UnresolvedManifestsOutput.builder().taskIdMapping(taskIdMapping).manifestsOutcome(manifestsOutcome).build();
+    final OptionalSweepingOutput optionalSweepingOutput =
+        OptionalSweepingOutput.builder().found(true).output(output).build();
     final Map<String, ResponseData> responses = ImmutableMap.of("task1", mock(ResponseData.class));
     final StepResponse failedResponse = StepResponse.builder().status(Status.FAILED).build();
     final Exception exception = new InvalidRequestException("Something went wrong");
 
-    doReturn(optionalSweepingOutput).when(sweepingOutputService)
-            .resolveOptional(any(Ambiance.class), eq(RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.UNRESOLVED_MANIFESTS)));
-    doThrow(exception)
-            .when(manifestTaskService).handleTaskResponses(responses, manifestsOutcome, taskIdMapping);
+    doReturn(optionalSweepingOutput)
+        .when(sweepingOutputService)
+        .resolveOptional(any(Ambiance.class),
+            eq(RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.UNRESOLVED_MANIFESTS)));
+    doThrow(exception).when(manifestTaskService).handleTaskResponses(responses, manifestsOutcome, taskIdMapping);
     doReturn(failedResponse).when(strategyHelper).handleException(exception);
 
     StepResponse stepResponse = step.handleAsyncResponse(buildAmbiance(), new EmptyStepParameters(), responses);
