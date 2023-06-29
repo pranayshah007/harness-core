@@ -801,6 +801,7 @@ public enum FeatureName {
   WINRM_SCRIPT_COMMAND_SPLIT_NG(
       "Enables the new way of how to copy powershell/winrm script commands content to file on remote. (Copy is done in chunks of 6KB) ",
       HarnessTeam.CDP),
+  PLG_CD_CLI_WIZARD_ENABLED("Enables new cd onboarding wizard with harness-cli", HarnessTeam.GTM),
   WORKFLOW_DATA_COLLECTION_ITERATOR,
   WORKFLOW_EXECUTION_REFRESH_STATUS,
   WORKFLOW_EXECUTION_ZOMBIE_MONITOR,
