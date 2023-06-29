@@ -150,9 +150,8 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
 
     boolean isTerraformCloudCli = planStepParameters.getConfiguration().getIsTerraformCloudCli().getValue();
 
-    EncryptionConfig secretManagerEncryptionConfig = helper.getEncryptionConfig(ambiance, planStepParameters);
-
     if (!isTerraformCloudCli) {
+      EncryptionConfig secretManagerEncryptionConfig = helper.getEncryptionConfig(ambiance, planStepParameters);
       exportTfPlanJsonField = planStepParameters.getConfiguration().getExportTerraformPlanJson();
       exportTfHumanReadablePlanField = planStepParameters.getConfiguration().getExportTerraformHumanReadablePlan();
       builder.saveTerraformStateJson(!ParameterField.isNull(exportTfPlanJsonField) && exportTfPlanJsonField.getValue());
@@ -160,6 +159,8 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
           !ParameterField.isNull(exportTfHumanReadablePlanField) && exportTfHumanReadablePlanField.getValue());
       builder.encryptionConfig(secretManagerEncryptionConfig);
       builder.workspace(ParameterFieldHelper.getParameterFieldValue(configuration.getWorkspace()));
+      builder.encryptDecryptPlanForHarnessSMOnManager(
+          helper.tfPlanEncryptionOnManager(accountId, secretManagerEncryptionConfig));
     }
     ParameterField<Boolean> skipTerraformRefreshCommand =
         planStepParameters.getConfiguration().getSkipTerraformRefresh();
@@ -196,8 +197,6 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
             .timeoutInMillis(
                 StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .useOptimizedTfPlan(true)
-            .encryptDecryptPlanForHarnessSMOnManager(
-                helper.tfPlanEncryptionOnManager(accountId, secretManagerEncryptionConfig))
             .isTerraformCloudCli(isTerraformCloudCli)
             .build();
 

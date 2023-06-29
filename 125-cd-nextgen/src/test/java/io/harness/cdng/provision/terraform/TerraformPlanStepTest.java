@@ -72,6 +72,8 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.TaskRequestsUtils;
 
+import software.wings.beans.GcpKmsConfig;
+
 import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -238,6 +240,8 @@ public class TerraformPlanStepTest extends CategoryTest {
     doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
     doReturn(varFileInfo).when(terraformStepHelper).toTerraformVarFileInfo(any(), any());
     doReturn(EnvironmentType.NON_PROD).when(stepHelper).getEnvironmentType(any());
+    doReturn(GcpKmsConfig.builder().build()).when(terraformStepHelper).getEncryptionConfig(any(), any());
+    doReturn(true).when(terraformStepHelper).tfPlanEncryptionOnManager(any(), any());
     doReturn("back-content").when(terraformStepHelper).getBackendConfig(any());
     doReturn(ImmutableMap.of("KEY", ParameterField.createValueField("VAL")))
         .when(terraformStepHelper)
@@ -264,6 +268,8 @@ public class TerraformPlanStepTest extends CategoryTest {
     assertThat(taskParameters.getPlanName()).isEqualTo("planName");
     assertThat(taskParameters.isSkipTerraformRefresh()).isTrue();
     assertThat(taskParameters.getTerraformCommandFlags().get("APPLY")).isEqualTo("-lock-timeout=0s");
+    verify(terraformStepHelper, times(1)).getEncryptionConfig(any(), any());
+    assertThat(taskParameters.isEncryptDecryptPlanForHarnessSMOnManager()).isTrue();
   }
 
   @Test
@@ -318,6 +324,8 @@ public class TerraformPlanStepTest extends CategoryTest {
     doReturn("planName").when(terraformStepHelper).getTerraformPlanName(any(), any(), any());
     doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
     doReturn(varFileInfo).when(terraformStepHelper).toTerraformVarFileInfo(any(), any());
+    doReturn(GcpKmsConfig.builder().build()).when(terraformStepHelper).getEncryptionConfig(any(), any());
+    doReturn(true).when(terraformStepHelper).tfPlanEncryptionOnManager(any(), any());
     doReturn(EnvironmentType.NON_PROD).when(stepHelper).getEnvironmentType(any());
     doReturn("back-content").when(terraformStepHelper).getBackendConfig(any());
     doReturn(ImmutableMap.of("KEY", ParameterField.createValueField("VAL")))
@@ -348,6 +356,8 @@ public class TerraformPlanStepTest extends CategoryTest {
     assertThat(taskParameters.isTerraformCloudCli()).isTrue();
     assertThat(taskParameters.isSkipTerraformRefresh()).isFalse();
     assertThat(taskParameters.getTerraformCommandFlags().get("APPLY")).isEqualTo("-lock-timeout=0s");
+    verify(terraformStepHelper, times(0)).getEncryptionConfig(any(), any());
+    assertThat(taskParameters.isEncryptDecryptPlanForHarnessSMOnManager()).isFalse();
   }
 
   @Test
