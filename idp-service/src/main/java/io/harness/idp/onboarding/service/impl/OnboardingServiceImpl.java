@@ -584,7 +584,7 @@ public class OnboardingServiceImpl implements OnboardingService {
     harnessEntitiesProjects.forEach(project -> {
       String[] orgProject = project.split("\\|");
       if (projectIdentifiers.containsKey(orgProject[0])) {
-        List<String> existingProjects = projectIdentifiers.get(orgProject[0]);
+        List<String> existingProjects = new ArrayList<>(projectIdentifiers.get(orgProject[0]));
         existingProjects.add(orgProject[1]);
         projectIdentifiers.put(orgProject[0], existingProjects);
       } else {

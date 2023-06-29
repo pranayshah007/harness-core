@@ -28,6 +28,7 @@ import io.harness.ng.core.service.dto.ServiceResponseDTO;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -84,9 +85,11 @@ public class HarnessServiceToBackstageComponent
 
   private Map<String, String> getHarnessCiCdAnnotations(ServiceResponseDTO serviceResponseDTO) {
     if (serviceResponseDTO.getOrgIdentifier() != null && serviceResponseDTO.getProjectIdentifier() != null) {
-      return Map.of(getBackstageHarnessAnnotationProjectUrlByEnv(),
-          getProjectUrlForHarnessCiCdAnnotation(serviceResponseDTO), BACKSTAGE_HARNESS_ANNOTATION_CD_SERVICE_ID,
-          serviceResponseDTO.getIdentifier());
+      Map<String, String> harnessCiCdAnnotations = new LinkedHashMap<>();
+      harnessCiCdAnnotations.put(
+          getBackstageHarnessAnnotationProjectUrlByEnv(), getProjectUrlForHarnessCiCdAnnotation(serviceResponseDTO));
+      harnessCiCdAnnotations.put(BACKSTAGE_HARNESS_ANNOTATION_CD_SERVICE_ID, serviceResponseDTO.getIdentifier());
+      return harnessCiCdAnnotations;
     }
     return Map.of();
   }
