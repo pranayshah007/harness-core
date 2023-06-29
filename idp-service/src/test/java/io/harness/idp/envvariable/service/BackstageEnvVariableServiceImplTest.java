@@ -15,6 +15,7 @@ import static junit.framework.TestCase.assertTrue;
 import static org.mockito.Mockito.*;
 
 import io.harness.CategoryTest;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptedSecretValue;
@@ -91,6 +92,7 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
   @Inject private Map<BackstageEnvVariableType, BackstageEnvVariableMapper> mapBinder;
   @InjectMocks IdpCommonService idpCommonService;
   @Mock NgConnectorManagerClient ngConnectorManagerClient;
+  @Mock AccountClient accountClient;
   private BackstageEnvVariableServiceImpl backstageEnvVariableService;
   private static final String ADMIN_USER_ID = "lv0euRhKRCyiXWzS7pOg6g";
   private static final String ACCOUNT_ID = "123";
@@ -99,8 +101,8 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
   @Before
   public void setUp() {
     openMocks = MockitoAnnotations.openMocks(this);
-    backstageEnvVariableService = new BackstageEnvVariableServiceImpl(
-        backstageEnvVariableRepository, k8sClient, ngSecretService, namespaceService, mapBinder, setupUsageProducer);
+    backstageEnvVariableService = new BackstageEnvVariableServiceImpl(backstageEnvVariableRepository, k8sClient,
+        ngSecretService, namespaceService, mapBinder, setupUsageProducer, accountClient);
   }
 
   @Test

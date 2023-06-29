@@ -162,6 +162,22 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
       tags:
         - BackstageEnvVariable
+  /v1/backstage-env-variables/resolve:
+    get:
+      summary: Resolve Backstage Environment Variables
+      tags:
+        - BackstageEnvVariable
+      responses:
+        '200':
+          $ref: '#/components/responses/ResolvedEnvVariableResponseList'
+      operationId: resolve-backstage-env-variables
+      description: Returns a list of backstage env variables with their decrypted values for the given account
+      x-internal: true
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Namespace'
+      security:
+        - x-api-key: []
   /v1/backstage-permissions:
     get:
       summary: Get Backstage Permissions
@@ -753,6 +769,7 @@ paths:
       description: Get backend url allow list
     post:
       summary: Save backend url allow list
+      description: Save backend url allow list
       tags:
         - AllowList
       operationId: save-allow-list
@@ -1816,6 +1833,37 @@ components:
       required:
         - env_variables
         - proxy
+    ResolvedEnvVariable:
+      title: ResolvedEnvVariable
+      x-stoplight:
+        id: 1p2e5wdpnmac2
+      type: object
+      x-examples:
+        Example 1:
+          env_name: GITHUB_TOKEN
+          decrypted_value: abc
+      properties:
+        env_name:
+          type: string
+          x-stoplight:
+            id: 9xmh541xavavh
+        decrypted_value:
+          type: string
+          x-stoplight:
+            id: 4rb955gwxdpgt
+    ResolvedEnvVariableResponse:
+      title: ResolvedEnvVariableResponse
+      x-stoplight:
+        id: kemf8ikjwhko7
+      type: object
+      properties:
+        resolved_env_variable:
+          $ref: '#/components/schemas/ResolvedEnvVariable'
+      x-examples:
+        Example 1:
+          resolved_env_variable:
+            env_name: GITHUB_TOKEN
+            decrypted_value: abc
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -1928,6 +1976,13 @@ components:
         enum:
           - github-auth
           - google-auth
+    Namespace:
+      name: namespace
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Namespace from where the request is being made
   requestBodies:
     BackstageEnvVariableRequest:
       content:
@@ -2276,6 +2331,26 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ConfigurationEntities'
+    ResolvedEnvVariableResponseList:
+      description: Returns list of env variables with the decrypted value
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ResolvedEnvVariableResponse'
+          examples:
+            Example 1:
+              value:
+                - resolved_env_variable:
+                    env_name: GITHUB_TOKEN
+                    decrypted_value: abc
+        application/yaml:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ResolvedEnvVariable'
+          examples: {}
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -2306,3 +2381,7 @@ tags:
     description: Status Information
   - name: MergedPluginsConfig
     description: Merged Plugins Configurations
+  - name: AllowList
+    description: Backstage Allow List
+  - name: AuthInfo
+    description: Auth Information

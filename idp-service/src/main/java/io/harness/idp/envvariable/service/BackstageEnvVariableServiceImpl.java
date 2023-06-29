@@ -8,16 +8,20 @@
 package io.harness.idp.envvariable.service;
 
 import static io.harness.idp.common.Constants.GITHUB_APP_PRIVATE_KEY_REF;
+import static io.harness.idp.common.Constants.LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES;
 import static io.harness.idp.k8s.constants.K8sConstants.BACKSTAGE_SECRET;
 
 import static java.lang.String.format;
 
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptedSecretValue;
+import io.harness.beans.FeatureName;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.common.CommonUtils;
+import io.harness.idp.envvariable.beans.entity.BackstageEnvSecretVariableEntity;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableEntity;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableEntity.BackstageEnvVariableMapper;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableType;
@@ -26,12 +30,14 @@ import io.harness.idp.events.producers.SetupUsageProducer;
 import io.harness.idp.k8s.client.K8sClient;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.spec.server.idp.v1.model.BackstageEnvConfigVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 import io.harness.spec.server.idp.v1.model.NamespaceInfo;
+import io.harness.spec.server.idp.v1.model.ResolvedEnvVariable;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -58,6 +64,7 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
   private NamespaceService namespaceService;
   private Map<BackstageEnvVariableType, BackstageEnvVariableMapper> envVariableMap;
   private SetupUsageProducer setupUsageProducer;
+  private final AccountClient accountClient;
 
   @Override
   public Optional<BackstageEnvVariable> findByIdAndAccountIdentifier(String identifier, String accountIdentifier) {
@@ -249,26 +256,29 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
     if (envVariables.isEmpty()) {
       return;
     }
+    boolean loadSecretsDynamically = CGRestUtils.getResponse(
+        accountClient.isFeatureFlagEnabled(FeatureName.IDP_DYNAMIC_SECRET_RESOLUTION.name(), accountIdentifier));
     envVariables = removeAccountFromIdentifierForBackstageEnvVarList(envVariables);
     Map<String, byte[]> secretData = new HashMap<>();
+
     for (BackstageEnvVariable envVariable : envVariables) {
       String envName = envVariable.getEnvName();
 
       if (envVariable.getType().name().equals(BackstageEnvVariableType.SECRET.name())) {
-        String secretIdentifier = ((BackstageEnvSecretVariable) envVariable).getHarnessSecretIdentifier();
-        DecryptedSecretValue decryptedValue =
-            ngSecretService.getDecryptedSecretValue(accountIdentifier, null, null, secretIdentifier);
-
-        if (envName.equals(GITHUB_APP_PRIVATE_KEY_REF)) {
-          SecretResponseWrapper secretResponseWrapper =
-              ngSecretService.getSecret(accountIdentifier, null, null, secretIdentifier);
-          if (secretResponseWrapper.getSecret().getType().equals(SecretType.SecretFile)) {
-            decryptedValue.setDecryptedValue(
-                new String(Base64.getDecoder().decode(decryptedValue.getDecryptedValue()), StandardCharsets.UTF_8));
-          }
+        if (loadSecretsDynamically) {
+          log.debug("IDP_DYNAMIC_SECRET_RESOLUTION FF is enabled for account {}. "
+                  + "Just updating LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES",
+              accountIdentifier);
+          secretData.put(
+              LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES, String.valueOf(System.currentTimeMillis()).getBytes());
+        } else {
+          BackstageEnvSecretVariable secretEnvVariable = (BackstageEnvSecretVariable) envVariable;
+          secretData.put(envName,
+              getDecryptedValue(
+                  secretEnvVariable.getEnvName(), secretEnvVariable.getHarnessSecretIdentifier(), accountIdentifier)
+                  .getBytes());
         }
 
-        secretData.put(envName, decryptedValue.getDecryptedValue().getBytes());
       } else {
         secretData.put(envName, ((BackstageEnvConfigVariable) envVariable).getValue().getBytes());
       }
@@ -306,6 +316,25 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
     return backstageEnvVariables;
   }
 
+  @Override
+  public List<ResolvedEnvVariable> resolveSecrets(String accountIdentifier) {
+    List<BackstageEnvVariableEntity> entities =
+        backstageEnvVariableRepository.findByAccountIdentifier(accountIdentifier);
+    List<ResolvedEnvVariable> resolvedEnvVariables = new ArrayList<>();
+    for (BackstageEnvVariableEntity entity : entities) {
+      if (entity.getType().equals(BackstageEnvVariableType.CONFIG)) {
+        continue;
+      }
+      BackstageEnvSecretVariableEntity secretVariableEntity = ((BackstageEnvSecretVariableEntity) entity);
+      ResolvedEnvVariable resolvedEnv = new ResolvedEnvVariable();
+      resolvedEnv.setEnvName(secretVariableEntity.getEnvName());
+      resolvedEnv.setDecryptedValue(getDecryptedValue(
+          secretVariableEntity.getEnvName(), secretVariableEntity.getHarnessSecretIdentifier(), accountIdentifier));
+      resolvedEnvVariables.add(resolvedEnv);
+    }
+    return resolvedEnvVariables;
+  }
+
   private String getNamespaceForAccount(String accountIdentifier) {
     NamespaceInfo namespaceInfo = namespaceService.getNamespaceForAccountIdentifier(accountIdentifier);
     return namespaceInfo.getNamespace();
@@ -329,6 +358,7 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
         })
         .collect(Collectors.toList());
   }
+
   private List<BackstageEnvVariable> removeAccountFromIdentifierForBackstageEnvVarList(
       List<BackstageEnvVariable> backstageEnvVariableList) {
     List<BackstageEnvVariable> returnList = new ArrayList<>();
@@ -337,7 +367,6 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
     }
     return returnList;
   }
-
   private BackstageEnvVariable removeAccountFromIdentifierForBackstageEnvVariable(
       BackstageEnvVariable backstageEnvVariable) {
     if (backstageEnvVariable.getType().name().equals(BackstageEnvVariableType.SECRET.name())) {
@@ -347,5 +376,14 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
       return backstageEnvSecretVariable;
     }
     return backstageEnvVariable;
+  }
+
+  private String getDecryptedValue(String envName, String secretIdentifier, String accountIdentifier) {
+    DecryptedSecretValue decryptedValue =
+        ngSecretService.getDecryptedSecretValue(accountIdentifier, null, null, secretIdentifier);
+    if (envName.equals(GITHUB_APP_PRIVATE_KEY_REF)) {
+      decryptedValue.setDecryptedValue(new String(Base64.getDecoder().decode(decryptedValue.getDecryptedValue())));
+    }
+    return decryptedValue.getDecryptedValue();
   }
 }

@@ -7,11 +7,14 @@
 
 package io.harness.idp.envvariable.jobs;
 
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
+import io.harness.ff.FeatureFlagService;
 import io.harness.idp.envvariable.service.BackstageEnvVariableService;
 import io.harness.idp.namespace.service.NamespaceService;
-import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
+import io.harness.remote.client.CGRestUtils;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
@@ -32,13 +35,16 @@ public class BackstageEnvVariablesSyncJob implements Managed {
   private ScheduledExecutorService executorService;
   private final BackstageEnvVariableService backstageEnvVariableService;
   private final NamespaceService namespaceService;
+  private final AccountClient accountClient;
 
   @Inject
   public BackstageEnvVariablesSyncJob(@Named("backstageEnvVariableSyncer") ScheduledExecutorService executorService,
-      BackstageEnvVariableService backstageEnvVariableService, NamespaceService namespaceService) {
+      BackstageEnvVariableService backstageEnvVariableService, NamespaceService namespaceService,
+      AccountClient accountClient) {
     this.executorService = executorService;
     this.backstageEnvVariableService = backstageEnvVariableService;
     this.namespaceService = namespaceService;
+    this.accountClient = accountClient;
   }
 
   @Override
@@ -59,6 +65,11 @@ public class BackstageEnvVariablesSyncJob implements Managed {
     List<String> accountIds = namespaceService.getAccountIds();
     accountIds.forEach(account -> {
       try {
+        if (CGRestUtils.getResponse(
+                accountClient.isFeatureFlagEnabled(FeatureName.IDP_DYNAMIC_SECRET_RESOLUTION.name(), account))) {
+          log.debug("Skipping sync job as IDP_DYNAMIC_SECRET_RESOLUTION FF is enabled for account {}", account);
+          return;
+        }
         backstageEnvVariableService.findAndSync(account);
       } catch (Exception e) {
         log.error("Could not sync backstage env variables for account {}", account, e);

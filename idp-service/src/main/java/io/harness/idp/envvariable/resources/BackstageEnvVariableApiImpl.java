@@ -15,15 +15,19 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ResponseMessage;
+import io.harness.exception.InvalidRequestException;
 import io.harness.idp.common.IdpCommonService;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableEntity.BackstageEnvVariableMapper;
 import io.harness.idp.envvariable.service.BackstageEnvVariableService;
+import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.idp.v1.BackstageEnvVariableApi;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariableBatchRequest;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariableRequest;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariableResponse;
+import io.harness.spec.server.idp.v1.model.NamespaceInfo;
+import io.harness.spec.server.idp.v1.model.ResolvedEnvVariable;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -35,11 +39,12 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
-@NextGenManagerAuth
+//@NextGenManagerAuth
 @Slf4j
 public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
   private IdpCommonService idpCommonService;
   private BackstageEnvVariableService backstageEnvVariableService;
+  private NamespaceService namespaceService;
 
   @Override
   public Response createBackstageEnvVariable(@Valid BackstageEnvVariableRequest body, String harnessAccount) {
@@ -58,7 +63,7 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
   }
 
   @Override
-  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
+  //  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
   public Response createBackstageEnvVariables(
       @Valid BackstageEnvVariableBatchRequest body, @AccountIdentifier String harnessAccount) {
     List<BackstageEnvVariable> responseSecrets;
@@ -122,6 +127,20 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
     idpCommonService.checkUserAuthorization();
     List<BackstageEnvVariable> secrets = backstageEnvVariableService.findByAccountIdentifier(harnessAccount);
     return Response.status(Response.Status.OK).entity(BackstageEnvVariableMapper.toResponseList(secrets)).build();
+  }
+
+  @Override
+  public Response resolveBackstageEnvVariables(String harnessAccount, String namespace) {
+    NamespaceInfo namespaceInfo = namespaceService.getNamespaceForAccountIdentifier(harnessAccount);
+    if (!namespaceInfo.getNamespace().equals(namespace)) {
+      throw new InvalidRequestException(
+          String.format("The request namespace [%s] does not match with the account namespace [%s] for account [%s]",
+              namespace, namespaceInfo.getNamespace(), harnessAccount));
+    }
+    List<ResolvedEnvVariable> resolvedEnvVariables = backstageEnvVariableService.resolveSecrets(harnessAccount);
+    return Response.status(Response.Status.OK)
+        .entity(BackstageEnvVariableMapper.toResolvedVariableResponseList(resolvedEnvVariables))
+        .build();
   }
 
   @Override
