@@ -223,6 +223,8 @@ public class RecommendationsOverviewQueryV2 {
                            .jiraConnectorRef(item.getJiraConnectorRef())
                            .jiraIssueKey(item.getJiraIssueKey())
                            .jiraStatus(item.getJiraStatus())
+                           .cloudProvider(item.getCloudProvider())
+                           .governanceRuleId(item.getGovernanceRuleId())
                            .recommendationDetails(item.getRecommendationDetails() != null
                                    ? item.getRecommendationDetails()
                                    : getRecommendationDetails(item, env))
