@@ -54,6 +54,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PIPELINE)
 public class AmbianceUtils {
   public static final String STAGE = "STAGE";
+  public static final String SPECIAL_CHARACTER_REGEX = "[^a-zA-Z0-9]";
 
   public static Ambiance cloneForFinish(@NonNull Ambiance ambiance) {
     return clone(ambiance, ambiance.getLevelsList().size() - 1);
@@ -349,7 +350,10 @@ public class AmbianceUtils {
                             .map(t -> t.getValue().replace(".", ""))
                             .collect(Collectors.joining("_"));
     }
-    return "_" + (levelIdentifier.length() <= 126 ? levelIdentifier : levelIdentifier.substring(0, 126));
+    String modifiedString =
+        "_" + (levelIdentifier.length() <= 126 ? levelIdentifier : levelIdentifier.substring(0, 126));
+
+    return modifiedString.replaceAll(SPECIAL_CHARACTER_REGEX, "_");
   }
 
   public boolean isCurrentStrategyLevelAtStage(Ambiance ambiance) {
