@@ -18,4 +18,3 @@ RUN chmod +x /app/scripts/bazel/testDistribute.sh
 
 RUN /app/platform-service/build/feature_build.sh
 RUN /app/platform-service/build/build_jar.sh
-RUN /app/platform-service/build/build_dist.sh
