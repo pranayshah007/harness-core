@@ -96,10 +96,8 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
         PmsStepPlanCreatorUtils.getAdviserObtainmentForFailureStrategy(
             kryoSerializer, ctx.getCurrentField(), isStepInsideRollback, false));
 
-    planCreationResponseMap.put(
-        initPlanNode.getUuid(), PlanCreationResponse.builder().node(initPlanNode.getUuid(), initPlanNode).build());
-    planCreationResponseMap.put(
-        stepPlanNode.getUuid(), PlanCreationResponse.builder().node(stepPlanNode.getUuid(), stepPlanNode).build());
+    planCreationResponseMap.put(initPlanNode.getUuid(), PlanCreationResponse.builder().planNode(initPlanNode).build());
+    planCreationResponseMap.put(stepPlanNode.getUuid(), PlanCreationResponse.builder().planNode(stepPlanNode).build());
 
     addStrategyFieldDependencyIfPresent(
         kryoSerializer, ctx, config.getUuid(), config.getName(), config.getIdentifier(), planCreationResponseMap);
