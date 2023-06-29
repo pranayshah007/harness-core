@@ -12,14 +12,12 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.InvalidYamlException;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.FQNMapGenerator;
 import io.harness.pms.merger.helpers.YamlMapGenerator;
 import io.harness.pms.yaml.YamlUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -38,21 +36,6 @@ public class YamlConfig {
     this.yaml = yaml;
     try {
       yamlMap = YamlUtils.readTree(yaml).getNode().getCurrJsonNode();
-    } catch (IOException e) {
-      log.error("Could not convert yaml to JsonNode. Yaml:\n" + yaml, e);
-      throw new InvalidRequestException("Could not convert yaml to JsonNode: " + e.getMessage());
-    }
-    fqnToValueMap = FQNMapGenerator.generateFQNMap(yamlMap);
-  }
-
-  public YamlConfig(String yaml, boolean checkDuplicate) {
-    this.yaml = yaml;
-    try {
-      yamlMap = YamlUtils.readTree(yaml, checkDuplicate).getNode().getCurrJsonNode();
-    } catch (MismatchedInputException e) {
-      log.error("Could not convert yaml to JsonNode. Yaml:\n" + yaml, e);
-      throw new InvalidYamlException(
-          "Invalid Yaml: Duplicate field found in yaml at line: " + e.getLocation().getLineNr());
     } catch (IOException e) {
       log.error("Could not convert yaml to JsonNode. Yaml:\n" + yaml, e);
       throw new InvalidRequestException("Could not convert yaml to JsonNode: " + e.getMessage());

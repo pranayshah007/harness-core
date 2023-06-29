@@ -13,5 +13,10 @@ metrics:
   - metricName: state_machine_execution_time
     metricDefinition: Time taken to execute the state machine.
     type: Duration
+    distribution: [ 0m, 1ms, 15s, 30s, 1m]
+    unit: "ms"
+  - metricName: state_machine_evaluation_time
+    metricDefinition: Time taken to execute the state machine from when it became valid.
+    type: Duration
     distribution: [ 0m, 1ms, 15s, 30s, 1m, 2m, 4m, 8m, 16m, 32m ]
     unit: "ms"

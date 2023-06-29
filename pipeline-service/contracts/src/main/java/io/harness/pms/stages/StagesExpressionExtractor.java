@@ -16,12 +16,14 @@ import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.utils.YamlPipelineUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -53,6 +55,25 @@ public class StagesExpressionExtractor {
       pipelineYaml = pipelineYaml.replace(expression, replacement);
     }
     return pipelineYaml;
+  }
+
+  public String replaceExpressionsWithJsonNode(String pipelineYaml, Map<String, String> expressionValues) {
+    if (EmptyPredicate.isEmpty(expressionValues)) {
+      return pipelineYaml;
+    }
+    for (Map.Entry<String, String> entry : expressionValues.entrySet()) {
+      String expression = entry.getKey();
+      if (!NGExpressionUtils.containsPattern(NGExpressionUtils.GENERIC_EXPRESSIONS_PATTERN, expression)) {
+        log.error(expression + " is not a syntactically valid pipeline expression.");
+        throw new InvalidRequestException(
+            expression + " is not a syntactically valid pipeline expression. Is the expression surrounded by <+ >?");
+      }
+    }
+    JsonNode pipelineJsonNode = YamlUtils.readAsJsonNode(pipelineYaml);
+    StagesExpressionEvaluator expressionEvaluator = new StagesExpressionEvaluator(expressionValues);
+    pipelineJsonNode = (JsonNode) expressionEvaluator.resolve(
+        pipelineJsonNode, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+    return YamlUtils.writeYamlString(pipelineJsonNode);
   }
 
   public Set<String> getNonLocalExpressions(String pipelineYaml, List<String> stageIdentifiers) {

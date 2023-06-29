@@ -23,5 +23,5 @@ import java.util.Map;
 public interface DataResponseService {
   Map<String, Double> getCostBucketEntityCost(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
       List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName, ViewQueryParams queryParams,
-      boolean skipRoundOff, BusinessMapping sharedCostBusinessMapping);
+      boolean skipRoundOff, BusinessMapping sharedCostBusinessMapping, Map<String, String> labelsKeyAndColumnMapping);
 }

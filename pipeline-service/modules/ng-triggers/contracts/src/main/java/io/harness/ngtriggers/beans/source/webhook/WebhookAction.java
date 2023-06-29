@@ -133,4 +133,17 @@ public enum WebhookAction {
         throw new InvalidRequestException("Event " + event.name() + " not an AWS code commit event");
     }
   }
+
+  public static Set<WebhookAction> getHarnessScmActionForEvent(WebhookEvent event) {
+    switch (event) {
+      case PULL_REQUEST:
+        return EnumSet.of(OPENED, REOPENED, UPDATED);
+      case PUSH:
+        return emptySet();
+      case ISSUE_COMMENT:
+        return EnumSet.of(CREATED, EDITED, DELETED);
+      default:
+        throw new InvalidRequestException("Event " + event.name() + " not a harness scm event");
+    }
+  }
 }

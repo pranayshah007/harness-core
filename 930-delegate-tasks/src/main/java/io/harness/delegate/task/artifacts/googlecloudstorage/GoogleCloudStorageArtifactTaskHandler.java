@@ -9,6 +9,8 @@ package io.harness.delegate.task.artifacts.googlecloudstorage;
 
 import static io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType.INHERIT_FROM_DELEGATE;
 
+import io.harness.artifacts.comparator.BuildDetailsUpdateTimeComparator;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
 import io.harness.delegate.task.artifacts.DelegateArtifactTaskHandler;
@@ -28,6 +30,8 @@ import software.wings.helpers.ext.jenkins.BuildDetails;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -51,25 +55,31 @@ public class GoogleCloudStorageArtifactTaskHandler
     if (StringUtils.isBlank(artifactDelegateRequest.getBucket())) {
       throw new InvalidRequestException("Please specify the bucket for the GCS artifact source.");
     }
-    if (StringUtils.isBlank(artifactDelegateRequest.getArtifactPath())) {
+    if (StringUtils.isBlank(artifactDelegateRequest.getArtifactPath())
+        && StringUtils.isBlank(artifactDelegateRequest.getArtifactPathRegex())) {
       throw new InvalidRequestException("Please specify the artifact path for the GCS artifact source.");
     }
     GcsInternalConfig gcsInternalConfig = getGcsInternalConfig(artifactDelegateRequest);
 
     List<BuildDetails> builds = gcsHelperService.listBuilds(gcsInternalConfig);
+
+    if (EmptyPredicate.isNotEmpty(artifactDelegateRequest.getArtifactPathRegex())) {
+      Pattern pattern = Pattern.compile(artifactDelegateRequest.getArtifactPathRegex());
+      builds = builds.stream()
+                   .filter(build -> pattern.matcher(build.getArtifactPath()).find())
+                   .sorted(new BuildDetailsUpdateTimeComparator())
+                   .collect(Collectors.toList());
+    } else {
+      builds = builds.stream()
+                   .filter(build -> artifactDelegateRequest.getArtifactPath().equals(build.getArtifactPath()))
+                   .sorted(new BuildDetailsUpdateTimeComparator())
+                   .collect(Collectors.toList());
+    }
+
     if (builds.isEmpty()) {
       throw new InvalidRequestException(INVALID_ARTIFACT_PATH_ERROR);
     }
-    BuildDetails expectedBuildDetail = new BuildDetails();
-    for (BuildDetails buildDetail : builds) {
-      if (artifactDelegateRequest.getArtifactPath().equals(buildDetail.getArtifactPath())) {
-        expectedBuildDetail = buildDetail;
-        break;
-      }
-    }
-    if (!artifactDelegateRequest.getArtifactPath().equals(expectedBuildDetail.getArtifactPath())) {
-      throw new InvalidRequestException(INVALID_ARTIFACT_PATH_ERROR);
-    }
+    BuildDetails expectedBuildDetail = builds.get(0);
     return ArtifactTaskExecutionResponse.builder()
         .artifactDelegateResponse(GoogleCloudStorageRequestResponseMapper.toGoogleCloudStorageResponse(
             expectedBuildDetail, artifactDelegateRequest))

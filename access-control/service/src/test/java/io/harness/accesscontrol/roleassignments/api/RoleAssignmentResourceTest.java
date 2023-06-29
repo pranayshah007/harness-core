@@ -96,11 +96,13 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import io.serializer.HObjectMapper;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import org.junit.Before;
 import org.junit.Test;
@@ -177,12 +179,34 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
     return getRoleAssignmentDTO(PrincipalType.USER);
   }
 
+  private RoleAssignment getRoleAssignment(
+      String identifier, String scopeId, PrincipalType principalType, String principalId) {
+    return RoleAssignment.builder()
+        .identifier(identifier)
+        .scopeIdentifier(scopeId)
+        .scopeLevel("organization")
+        .principalType(principalType)
+        .principalIdentifier(principalId)
+        .build();
+  }
+
   private RoleAssignmentDTO getRoleAssignmentDTO(PrincipalType principalType) {
-    return RoleAssignmentDTO.builder()
+    return RoleAssignmentDTO
+        .builder()
+
         .identifier(randomAlphabetic(10))
         .roleIdentifier(randomAlphabetic(10))
         .resourceGroupIdentifier(randomAlphabetic(10))
         .principal(PrincipalDTO.builder().identifier(randomAlphabetic(10)).type(principalType).build())
+        .build();
+  }
+  private RoleAssignmentDTO getRoleAssignmentDTO(PrincipalType principalType, String scope) {
+    return RoleAssignmentDTO.builder()
+        .identifier(randomAlphabetic(10))
+        .roleIdentifier(randomAlphabetic(10))
+        .resourceGroupIdentifier(randomAlphabetic(10))
+        .principal(
+            PrincipalDTO.builder().identifier(randomAlphabetic(10)).type(principalType).scopeLevel(scope).build())
         .build();
   }
 
@@ -515,6 +539,26 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
     assertSyncDependencies(roleAssignmentDTOClone, true, true, true);
     assertCheckUpdatePermission(roleAssignmentDTOClone);
     verify(transactionTemplate, times(1)).execute(any());
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testCreate_accountScopeUserGroupRoleAtProjectScope() {
+    HarnessScopeParams harnessScopeParams1 = HarnessScopeParams.builder()
+                                                 .accountIdentifier(randomAlphabetic(10))
+                                                 .orgIdentifier(randomAlphabetic(10))
+                                                 .projectIdentifier(randomAlphabetic(10))
+                                                 .build();
+    RoleAssignmentDTO roleAssignmentDTO = getRoleAssignmentDTO(USER_GROUP, "account");
+    RoleAssignmentDTO roleAssignmentDTOClone = (RoleAssignmentDTO) HObjectMapper.clone(roleAssignmentDTO);
+    preSyncDependencies(roleAssignmentDTO, true, true, true);
+    preCheckUpdatePermission(roleAssignmentDTO);
+
+    roleAssignmentResource.create(harnessScopeParams1, roleAssignmentDTO);
+    assertSyncDependencies(2, roleAssignmentDTOClone, true, true, true);
+    assertCheckUpdatePermission(2, roleAssignmentDTOClone);
+    verify(transactionTemplate, times(2)).execute(any());
   }
 
   @Test
@@ -896,6 +940,33 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
                 .roleAssignmentId(id3)
                 .errorMessage("Failed due to missing permission to manage users")
                 .build()));
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testFilterRoleAssignmentForUnwantedUserGroup() {
+    List<RoleAssignment> roleAssignments = new ArrayList<>();
+    RoleAssignment roleAssignment1 = getRoleAssignment(
+        "RA1", "/ACCOUNT/kmpySmUISimoRrJL6NL73w/ORGANIZATION/orgtest2", USER_GROUP, "_organization_all_users");
+    RoleAssignment roleAssignment2 = getRoleAssignment(
+        "RA2", "/ACCOUNT/kmpySmUISimoRrJL6NL73w/ORGANIZATION/orgtest", USER_GROUP, "_organization_all_users");
+    RoleAssignment roleAssignment3 =
+        getRoleAssignment("RA3", "/ACCOUNT/kmpySmUISimoRrJL6NL73w/ORGANIZATION/orgtest2", USER, "userid");
+    roleAssignments.add(roleAssignment1);
+    roleAssignments.add(roleAssignment2);
+    roleAssignments.add(roleAssignment3);
+    PageResponse pageResponse = getEmptyPageResponse(pageRequest);
+    pageResponse.setContent(roleAssignments);
+    List<String> userGroupScopes = new ArrayList<>();
+    userGroupScopes.add("/ACCOUNT/kmpySmUISimoRrJL6NL73w/ORGANIZATION/orgtest2/_organization_all_users");
+
+    PageResponse result =
+        roleAssignmentResource.filterRoleAssignmentForUnwantedUserGroup(pageResponse, userGroupScopes);
+    assertThat(result.getContent().size()).isEqualTo(2);
+    List<RoleAssignment> resultRoleAssignments = result.getContent();
+    assertThat(resultRoleAssignments.stream().map(RoleAssignment::getIdentifier).collect(Collectors.toList()))
+        .isEqualTo(Arrays.asList("RA1", "RA3"));
   }
 
   private void mockCallForBulkDelete(RoleAssignmentDTO roleAssignmentDTO1, RoleAssignmentDTO roleAssignmentDTO2,

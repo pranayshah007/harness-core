@@ -18,7 +18,6 @@ import io.harness.favorites.utils.FavoritesResourceUtils;
 import io.harness.spec.server.ng.v1.OrgFavoritesApi;
 import io.harness.spec.server.ng.v1.model.FavoriteDTO;
 import io.harness.spec.server.ng.v1.model.FavoriteResponse;
-import io.harness.spec.server.ng.v1.model.FavoritesResourceType;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -47,7 +46,7 @@ public class OrgFavoritesApiImpl implements OrgFavoritesApi {
 
   @Override
   public Response deleteOrgFavorite(
-      String org, String userId, String harnessAccount, FavoritesResourceType resourceType, String resourceId) {
+      String org, String userId, String harnessAccount, String resourceType, String resourceId) {
     try {
       favoritesService.deleteFavorite(harnessAccount, org, null, userId, resourceType, resourceId);
     } catch (InvalidRequestException exception) {
@@ -64,8 +63,7 @@ public class OrgFavoritesApiImpl implements OrgFavoritesApi {
   }
 
   @Override
-  public Response getOrgFavorites(
-      String org, String userId, String harnessAccount, FavoritesResourceType resourceType) {
+  public Response getOrgFavorites(String org, String userId, String harnessAccount, String resourceType) {
     if (resourceType != null) {
       List<FavoriteResponse> favoriteResponses = favoritesResourceUtils.toFavoriteResponse(
           favoritesService.getFavorites(harnessAccount, org, null, userId, resourceType));

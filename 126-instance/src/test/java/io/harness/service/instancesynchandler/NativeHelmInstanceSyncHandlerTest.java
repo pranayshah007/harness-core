@@ -7,6 +7,7 @@
 
 package io.harness.service.instancesynchandler;
 
+import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
@@ -26,15 +27,21 @@ import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.NativeHelmDeploymentInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instanceinfo.NativeHelmInstanceInfoDTO;
+import io.harness.dtos.instancesyncperpetualtaskinfo.DeploymentInfoDetailsDTO;
+import io.harness.dtos.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoDTO;
 import io.harness.entities.InstanceType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.models.infrastructuredetails.K8sInfrastructureDetails;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.perpetualtask.PerpetualTaskType;
+import io.harness.perpetualtask.instancesync.DeploymentReleaseDetails;
+import io.harness.perpetualtask.instancesync.helm.NativeHelmDeploymentReleaseDetails;
 import io.harness.rule.Owner;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -60,6 +67,37 @@ public class NativeHelmInstanceSyncHandlerTest extends InstancesTestBase {
 
     assertThat(infrastructureDetails.getNamespace()).isEqualTo(NAMESPACE);
     assertThat(infrastructureDetails.getReleaseName()).isEqualTo(RELEASE_NAME);
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testGetDeploymentReleaseDetails() {
+    LinkedHashSet<String> namespaces = new LinkedHashSet<>();
+    namespaces.add("namespace1");
+    List<DeploymentInfoDetailsDTO> deploymentInfoDetailsDTOList =
+        Arrays.asList(DeploymentInfoDetailsDTO.builder()
+                          .deploymentInfoDTO(NativeHelmDeploymentInfoDTO.builder()
+                                                 .releaseName("releaseName")
+                                                 .namespaces(namespaces)
+                                                 .helmVersion(HelmVersion.V3)
+                                                 .build())
+                          .build());
+    DeploymentReleaseDetails deploymentReleaseDetails = nativeHelmInstanceSyncHandler.getDeploymentReleaseDetails(
+        InstanceSyncPerpetualTaskInfoDTO.builder()
+            .id("taskInfoId")
+            .deploymentInfoDetailsDTOList(deploymentInfoDetailsDTOList)
+            .build());
+
+    assertThat(deploymentReleaseDetails).isNotNull();
+    assertThat(deploymentReleaseDetails.getDeploymentDetails().size()).isEqualTo(1);
+    assertThat(
+        ((NativeHelmDeploymentReleaseDetails) deploymentReleaseDetails.getDeploymentDetails().get(0)).getReleaseName())
+        .isEqualTo("releaseName");
+    assertThat(((NativeHelmDeploymentReleaseDetails) deploymentReleaseDetails.getDeploymentDetails().get(0))
+                   .getNamespaces()
+                   .size())
+        .isEqualTo(1);
   }
 
   @Test

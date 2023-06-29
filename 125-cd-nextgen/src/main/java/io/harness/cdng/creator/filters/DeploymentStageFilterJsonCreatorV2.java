@@ -548,6 +548,10 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
 
   private void populateProvisionerRefs(
       List<String> provisionerRefs, List<ExecutionWrapperConfig> executionWrapperConfigs) throws IOException {
+    if (isEmpty(executionWrapperConfigs)) {
+      return;
+    }
+
     for (ExecutionWrapperConfig executionWrapperConfig : executionWrapperConfigs) {
       if (executionWrapperConfig.getStepGroup() != null && !executionWrapperConfig.getStepGroup().isNull()) {
         StepGroupElementConfig stepGroupElementConfig =

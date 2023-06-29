@@ -122,7 +122,6 @@ public class GraphStatusUpdateHelper {
             .stepType(level.getStepType().getType())
             .status(nodeExecution.getStatus())
             .failureInfo(nodeExecution.getFailureInfo())
-            .skipInfo(nodeExecution.getSkipInfo())
             .nodeRunInfo(nodeExecution.getNodeRunInfo())
             .mode(nodeExecution.getMode())
             .executableResponses(CollectionUtils.emptyIfNull(nodeExecution.getExecutableResponses()))

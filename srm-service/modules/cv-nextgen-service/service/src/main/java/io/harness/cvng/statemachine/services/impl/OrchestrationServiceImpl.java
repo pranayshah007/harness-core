@@ -8,8 +8,6 @@
 package io.harness.cvng.statemachine.services.impl;
 
 import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_LIMIT;
-import static io.harness.cvng.metrics.CVNGMetricsUtils.ORCHESTRATION_TIME;
-import static io.harness.cvng.metrics.CVNGMetricsUtils.STATE_MACHINE_EXECUTION_TIME;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.eventsframework.EventsFrameworkConstants.SRM_STATEMACHINE_LOCK;
@@ -43,6 +41,7 @@ import com.google.inject.Inject;
 import dev.morphia.FindAndModifyOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -67,6 +66,8 @@ public class OrchestrationServiceImpl implements OrchestrationService {
   @Inject private MetricContextBuilder metricContextBuilder;
   @Inject private DeploymentTimeSeriesAnalysisService deploymentTimeSeriesAnalysisService;
   @Inject private Map<VerificationTask.TaskType, AnalysisStateMachineService> taskTypeAnalysisStateMachineServiceMap;
+
+  @Inject private Clock clock;
 
   @Override
   public void queueAnalysis(AnalysisInput analysisInput) {
@@ -134,7 +135,7 @@ public class OrchestrationServiceImpl implements OrchestrationService {
         long endTime = System.currentTimeMillis();
         if (context != null) {
           Duration duration = Duration.ofMillis(endTime - context.getStartTime());
-          metricService.recordDuration(ORCHESTRATION_TIME, duration);
+          //          metricService.recordDuration(ORCHESTRATION_TIME, duration);
         }
       }
 
@@ -224,7 +225,7 @@ public class OrchestrationServiceImpl implements OrchestrationService {
             long endTime = System.currentTimeMillis();
             if (context != null) {
               Duration duration = Duration.ofMillis(endTime - context.getStartTime());
-              metricService.recordDuration(STATE_MACHINE_EXECUTION_TIME, duration);
+              //              metricService.recordDuration(STATE_MACHINE_EXECUTION_TIME, duration);
             }
           }
           break;
@@ -246,6 +247,11 @@ public class OrchestrationServiceImpl implements OrchestrationService {
       }
       if ((AnalysisStatus.SUCCESS == stateMachineStatus || AnalysisStatus.COMPLETED == stateMachineStatus)
           && !AnalysisOrchestratorStatus.getFinalStates().contains(orchestrator.getStatus())) {
+        try (AnalysisStateMachineContext stateMachineContext =
+                 new AnalysisStateMachineContext(currentlyExecutingStateMachine)) {
+          metricService.recordDuration(CVNGMetricsUtils.STATE_MACHINE_EVALUATION_TIME,
+              Duration.between(clock.instant(), currentlyExecutingStateMachine.getAnalysisStartTime()));
+        }
         orchestrateNewAnalysisStateMachine(
             orchestrator.getVerificationTaskId(), currentlyExecutingStateMachine.getTotalRetryCountToBePropagated());
       }

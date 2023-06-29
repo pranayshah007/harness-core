@@ -9,10 +9,10 @@ package io.harness.ngtriggers.beans.dto;
 
 import lombok.AccessLevel;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 import lombok.experimental.FieldDefaults;
 
-@Value
+@Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class LastTriggerExecutionDetails {

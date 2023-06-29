@@ -112,6 +112,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -278,8 +279,8 @@ public class AwsApiHelperService {
     return String.format("%s_%s_%s", startTime, endTime, Instant.now().toEpochMilli());
   }
 
-  public List<BuildDetails> listBuilds(
-      AwsInternalConfig awsInternalConfig, String region, String bucketName, String filePathRegex) {
+  public List<BuildDetails> listBuilds(AwsInternalConfig awsInternalConfig, String region, String bucketName,
+      String filePathRegex, boolean fetchObjectMetadata) {
     List<BuildDetails> buildDetailsList = Lists.newArrayList();
 
     try {
@@ -307,13 +308,13 @@ public class AwsApiHelperService {
 
       sortDescending(objectSummaryListFinal);
 
-      List<BuildDetails> pageBuildDetails =
-          getObjectSummariesNG(pattern, objectSummaryListFinal, awsInternalConfig, versioningEnabledForBucket, region);
+      List<BuildDetails> pageBuildDetails = getObjectSummariesNG(
+          pattern, objectSummaryListFinal, awsInternalConfig, versioningEnabledForBucket, region, fetchObjectMetadata);
 
       int size = pageBuildDetails.size();
 
       if (size > FETCH_FILE_COUNT_IN_BUCKET) {
-        pageBuildDetails.subList(0, size - FETCH_FILE_COUNT_IN_BUCKET).clear();
+        pageBuildDetails = pageBuildDetails.subList(0, FETCH_FILE_COUNT_IN_BUCKET);
       }
 
       buildDetailsList.addAll(pageBuildDetails);
@@ -334,7 +335,7 @@ public class AwsApiHelperService {
       boolean versioningEnabledForBucket = isVersioningEnabledForBucket(awsInternalConfig, bucketName, region);
 
       buildDetails =
-          getArtifactBuildDetails(awsInternalConfig, bucketName, filePath, versioningEnabledForBucket, 1, region);
+          getArtifactBuildDetails(awsInternalConfig, bucketName, filePath, versioningEnabledForBucket, 1, region, true);
 
     } catch (WingsException e) {
       e.excludeReportTarget(AWS_ACCESS_DENIED, EVERYBODY);
@@ -369,18 +370,20 @@ public class AwsApiHelperService {
   }
 
   private List<BuildDetails> getObjectSummariesNG(Pattern pattern, List<S3ObjectSummary> objectSummaryList,
-      AwsInternalConfig awsInternalConfig, boolean versioningEnabledForBucket, String region) {
+      AwsInternalConfig awsInternalConfig, boolean versioningEnabledForBucket, String region,
+      boolean fetchObjectMetadata) {
     return objectSummaryList.stream()
         .filter(
             objectSummary -> !objectSummary.getKey().endsWith("/") && pattern.matcher(objectSummary.getKey()).find())
         .map(objectSummary
             -> getArtifactBuildDetails(awsInternalConfig, objectSummary.getBucketName(), objectSummary.getKey(),
-                versioningEnabledForBucket, objectSummary.getSize(), region))
+                versioningEnabledForBucket, objectSummary.getSize(), region, fetchObjectMetadata))
         .collect(toList());
   }
 
-  private BuildDetails getArtifactBuildDetails(AwsInternalConfig awsInternalConfig, String bucketName,
-      String keyWithVersionId, boolean versioningEnabledForBucket, long artifactFileSize, String region) {
+  public BuildDetails getArtifactBuildDetails(AwsInternalConfig awsInternalConfig, String bucketName,
+      String keyWithVersionId, boolean versioningEnabledForBucket, long artifactFileSize, String region,
+      boolean fetchObjectMetadata) {
     String key = keyWithVersionId;
     String versionId = null;
     if (versioningEnabledForBucket && key.contains(":")) {
@@ -391,14 +394,24 @@ public class AwsApiHelperService {
       }
     }
     String outputVersionKey = null;
-    ObjectMetadata objectMetadata = getObjectMetadataFromS3(awsInternalConfig, region, bucketName, key, versionId);
-    if (objectMetadata == null) {
-      throw new InvalidRequestException("The provided key does not exist");
-    }
-    if (versioningEnabledForBucket) {
-      outputVersionKey = key + ":" + objectMetadata.getVersionId();
-    }
+    Map<String, String> metadata = new HashMap<>();
+    if (fetchObjectMetadata) {
+      ObjectMetadata objectMetadata = getObjectMetadataFromS3(awsInternalConfig, region, bucketName, key, versionId);
 
+      if (objectMetadata == null) {
+        throw new InvalidRequestException("The provided key does not exist");
+      }
+      if (versioningEnabledForBucket) {
+        outputVersionKey = key + ":" + objectMetadata.getVersionId();
+      }
+      Map<String, Object> rawMetadata = objectMetadata.getRawMetadata();
+      if (EmptyPredicate.isNotEmpty(rawMetadata) && EmptyPredicate.isNotEmpty(rawMetadata.entrySet())) {
+        metadata = rawMetadata.entrySet()
+                       .stream()
+                       .filter(e -> e.getValue() != null)
+                       .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString()));
+      }
+    }
     if (outputVersionKey == null) {
       outputVersionKey = key;
     }
@@ -420,6 +433,7 @@ public class AwsApiHelperService {
         .withArtifactFileSize(String.valueOf(artifactFileSize))
         .withBuildParameters(map)
         .withUiDisplayName("Build# " + outputVersionKey)
+        .withMetadata(metadata)
         .build();
   }
 
@@ -526,12 +540,13 @@ public class AwsApiHelperService {
   }
 
   public Map<String, String> fetchLabels(
-      AwsInternalConfig awsConfig, String imageName, String region, List<String> tags) {
+      AwsInternalConfig awsConfig, String registryId, String imageName, String region, List<String> tags) {
     AmazonECRClient ecrClient = getAmazonEcrClient(awsConfig, region);
     return tags.stream()
         .map(tag
             -> ecrClient.batchGetImage(
                 new BatchGetImageRequest()
+                    .withRegistryId(registryId)
                     .withRepositoryName(imageName)
                     .withImageIds(new ImageIdentifier().withImageTag(tag))
                     .withAcceptedMediaTypes("application/vnd.docker.distribution.manifest.v1+json")))

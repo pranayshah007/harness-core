@@ -389,6 +389,8 @@ TASK_TYPES:
       value: APM
     - name: AppDynamics
       value: APPDYNAMICS
+    - name: Azure App Services
+      value: AZURE_APP_SERVICE
     - name: Artifact Collection In Pipeline
       value: ARTIFACT_COLLECT
     - name: Artifactory

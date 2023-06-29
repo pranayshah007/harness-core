@@ -17,7 +17,6 @@ import io.harness.delegate.beans.connector.ceazure.CEAzureConnectorDTO;
 
 import software.wings.beans.AzureAccountAttributes;
 
-import io.fabric8.utils.Lists;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -34,15 +33,12 @@ public class AzureConfigHelper {
   public Map<String, AzureAccountAttributes> getAzureAccountAttributes(String accountId) {
     Map<String, AzureAccountAttributes> azureAccountAttributesMap = new HashMap<>();
     List<ConnectorResponseDTO> nextGenConnectors = ngConnectorHelper.getNextGenConnectors(accountId,
-        Arrays.asList(ConnectorType.CE_AZURE), Arrays.asList(CEFeatures.VISIBILITY, CEFeatures.BILLING),
+        Arrays.asList(ConnectorType.CE_AZURE), Arrays.asList(CEFeatures.VISIBILITY),
         Arrays.asList(ConnectivityStatus.SUCCESS, ConnectivityStatus.FAILURE, ConnectivityStatus.PARTIAL,
             ConnectivityStatus.UNKNOWN));
     for (ConnectorResponseDTO connector : nextGenConnectors) {
       ConnectorInfoDTO connectorInfo = connector.getConnector();
       CEAzureConnectorDTO ceAzureConnectorDTO = (CEAzureConnectorDTO) connectorInfo.getConnectorConfig();
-      if (visibilityAndInventoryNotEnabled(ceAzureConnectorDTO.getFeaturesEnabled())) {
-        continue;
-      }
       if (ceAzureConnectorDTO != null) {
         AzureAccountAttributes azureAccountAttributes = AzureAccountAttributes.builder()
                                                             .connectorId(connectorInfo.getIdentifier())
@@ -55,12 +51,5 @@ public class AzureConfigHelper {
       }
     }
     return azureAccountAttributesMap;
-  }
-
-  private boolean visibilityAndInventoryNotEnabled(List<CEFeatures> ceFeaturesList) {
-    if (Lists.isNullOrEmpty(ceFeaturesList)) {
-      return true;
-    }
-    return !ceFeaturesList.contains(CEFeatures.VISIBILITY) || !ceFeaturesList.contains(CEFeatures.BILLING);
   }
 }

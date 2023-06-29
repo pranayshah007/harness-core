@@ -100,7 +100,6 @@ public class SLIConsecutiveMinutesProcessorServiceImpl implements SLIConsecutive
     if (firstSliRecordParam != null && firstSliRecordParam.getGoodEventCount() == 1
         && !isSLIStateGood(firstSliRecordParam.getSliState(), serviceLevelIndicator)) {
       firstSliRecordParam.setSliState(SLIState.GOOD);
-      instantSLIRecordMap.replace(currentTime, firstSliRecordParam);
     }
     return instantSLIRecordMap;
   }

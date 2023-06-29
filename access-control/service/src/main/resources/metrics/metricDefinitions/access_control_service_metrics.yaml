@@ -2,28 +2,12 @@ name: Access Control Service Metrics
 identifier: accessControlServiceMetrics
 metricGroup: accessControlServiceMetricsGroup
 metrics:
-  - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_percent_4xx_15m
-    metricDefinition: Percentage of 4xx errors in the last 15 minutes
+  - metricName: nextgen_manager_io_dropwizard_jetty_MutableServletContextHandler_4xx_responses_count
+    metricDefinition: Total number of 4xx error responses
     type: LastValue
     unit: count
-  - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_percent_4xx_5m
-    metricDefinition: Percentage of 4xx errors in the last 5 minutes
-    type: LastValue
-    unit: count
-  - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_percent_4xx_1m
-    metricDefinition: Percentage of 4xx errors in the last 1 minute
-    type: LastValue
-    unit: count
-  - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_percent_5xx_15m
-    metricDefinition: Percentage of 5xx errors in the last 15 minutes
-    type: LastValue
-    unit: count
-  - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_percent_5xx_5m
-    metricDefinition: Percentage of 5xx errors in the last 5 minutes
-    type: LastValue
-    unit: count
-  - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_percent_5xx_1m
-    metricDefinition: Percentage of 5xx errors in the last 1 minute
+  - metricName: nextgen_manager_io_dropwizard_jetty_MutableServletContextHandler_5xx_responses_count
+    metricDefinition: Total number of 5xx error responses
     type: LastValue
     unit: count
   - metricName: access_control_jvm_memory_total_max
@@ -42,16 +26,8 @@ metrics:
     metricDefinition: JVM Memory - Max Non-Heap Memory
     type: LastValue
     unit: count
-  - metricName: access_control_jvm_memory_non_heap_init
-    metricDefinition: JVM Memory - Initial Non-Heap Memory
-    type: LastValue
-    unit: count
   - metricName: access_control_jvm_memory_non_heap_committed
     metricDefinition: JVM Memory - Committed Non-Heap Memory
-    type: LastValue
-    unit: count
-  - metricName: access_control_jvm_memory_non_heap_usage
-    metricDefinition: JVM Memory - Non-Heap Memory Usage Percentage
     type: LastValue
     unit: count
   - metricName: access_control_jvm_memory_non_heap_used
@@ -62,16 +38,8 @@ metrics:
     metricDefinition: JVM Memory - Max Heap Memory
     type: LastValue
     unit: count
-  - metricName: access_control_jvm_memory_heap_init
-    metricDefinition: JVM Memory - Initial Heap Memory
-    type: LastValue
-    unit: count
   - metricName: access_control_jvm_memory_heap_committed
     metricDefinition: JVM Memory - Committed Heap Memory
-    type: LastValue
-    unit: count
-  - metricName: access_control_jvm_memory_heap_usage
-    metricDefinition: JVM Memory - Heap Memory Usage Percentage
     type: LastValue
     unit: count
   - metricName: access_control_jvm_memory_heap_used
@@ -80,10 +48,6 @@ metrics:
     unit: count
   - metricName: access_control_jvm_memory_pools_Metaspace_committed
     metricDefinition: JVM Memory - Committed Metaspace Memory
-    type: LastValue
-    unit: count
-  - metricName: access_control_jvm_memory_pools_Metaspace_usage
-    metricDefinition: JVM Memory - Metaspace Memory Usage Percentage
     type: LastValue
     unit: count
   - metricName: access_control_jvm_memory_pools_Metaspace_used
@@ -96,10 +60,6 @@ metrics:
     unit: count
   - metricName: access_control_jvm_threads_blocked_count
     metricDefinition: JVM Threads - Blocked Count
-    type: LastValue
-    unit: count
-  - metricName: access_control_jvm_threads_terminated_count
-    metricDefinition: JVM Threads - Terminated Count
     type: LastValue
     unit: count
   - metricName: access_control_jvm_threads_daemon_count
@@ -127,39 +87,19 @@ metrics:
     type: LastValue
     unit: count
   - metricName: access_control_org_eclipse_jetty_util_thread_QueuedThreadPool_dw_size
-    metricDefinition: Jetty QueuedThreadPool - Thread Count
+    metricDefinition: Number of threads in (Jetty) web server pool that are servicing requests
     type: LastValue
     unit: count
   - metricName: access_control_org_eclipse_jetty_util_thread_QueuedThreadPool_dw_utilization
-    metricDefinition: Jetty QueuedThreadPool - ThreadPool Utilization
-    type: LastValue
-    unit: count
-  - metricName: access_control_org_eclipse_jetty_util_thread_QueuedThreadPool_dw_jobs_queue_utilization
-    metricDefinition: Jetty QueuedThreadPool - Queue Utilization
+    metricDefinition: Number of threads in (Jetty) web server that are currently being used
     type: LastValue
     unit: count
   - metricName: access_control_org_eclipse_jetty_util_thread_QueuedThreadPool_dw_jobs
-    metricDefinition: Jetty QueuedThreadPool - Queued Jobs Count
+    metricDefinition: Number of jobs queued waiting for a thread from (Jetty) web server
     type: LastValue
     unit: count
   - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_requests_count
-    metricDefinition: Jetty - Requests Count
-    type: LastValue
-    unit: count
-  - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_requests_oneMinuteRate
-    metricDefinition: Jetty - Requests/sec in Last 1 minute
-    type: LastValue
-    unit: count
-  - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_requests_fiveMinuteRate
-    metricDefinition: Jetty - Requests/sec in Last 5 minutes
-    type: LastValue
-    unit: count
-  - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_requests_fifteenMinuteRate
-    metricDefinition: Jetty - Requests/sec in Last 15 minutes
-    type: LastValue
-    unit: count
-  - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_requests_meanRate
-    metricDefinition: Jetty - Average Requests/sec
+    metricDefinition: Jetty - Total number of Requests Count
     type: LastValue
     unit: count
   - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_requests_snapshot_999thPercentile
@@ -172,22 +112,6 @@ metrics:
     unit: count
   - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_requests_snapshot_95thPercentile
     metricDefinition: Jetty - P95 Response Time
-    type: LastValue
-    unit: count
-  - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_requests_snapshot_mean
-    metricDefinition: Jetty - Average Response Time
-    type: LastValue
-    unit: count
-  - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_active_dispatches
-    metricDefinition: Jetty - Dispatched Requests Count
-    type: LastValue
-    unit: count
-  - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_active_suspended
-    metricDefinition: Jetty - Suspended Requests Count
-    type: LastValue
-    unit: count
-  - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_active_requests
-    metricDefinition: Jetty - Active Requests Count
     type: LastValue
     unit: count
   - metricName: access_control_org_eclipse_jetty_server_HttpConnectionFactory_7090_connections_count

@@ -20,7 +20,8 @@ import util
 import requests
 from util import create_dataset, if_tbl_exists, createTable, print_, run_batch_query, COSTAGGREGATED, UNIFIED, \
     PREAGGREGATED, CURRENCYCONVERSIONFACTORUSERINPUT, CEINTERNALDATASET, update_connector_data_sync_status, \
-    add_currency_preferences_columns_to_schema, CURRENCY_LIST, BACKUP_CURRENCY_FX_RATES, send_event
+    add_currency_preferences_columns_to_schema, CURRENCY_LIST, BACKUP_CURRENCY_FX_RATES, send_event, \
+    flatten_label_keys_in_table, LABELKEYSTOCOLUMNMAPPING, run_bq_query_with_retries
 from calendar import monthrange
 
 """
@@ -30,7 +31,8 @@ Event format:
 	"path": "kmpySmUISimoRrJL6NL73w/JUKVZIGKQzCVKXYbDhmM_g/20210101-20210131/cereportnikunj_0e8fa366-608d-4aa8-8fb7-dc8fef9fe717.csv",
 	"accountId": "kmpysmuisimorrjl6nl73w",
 	"triggerHistoricalCostUpdateInPreferredCurrency": True,
-    "disableHistoricalUpdateForMonths": ['2022-12-01', '2022-11-01']
+    "disableHistoricalUpdateForMonths": ['2022-12-01', '2022-11-01'],
+    "skipRawCSVIngestion": False
 }
 """
 
@@ -102,6 +104,7 @@ def main(event, context):
     unifiedTableTableName = "%s.%s.%s" % (PROJECTID, jsonData["datasetName"], UNIFIED)
     currencyConversionFactorUserInputTableRef = dataset.table(CURRENCYCONVERSIONFACTORUSERINPUT)
     currencyConversionFactorUserInputTableName = "%s.%s.%s" % (PROJECTID, jsonData["datasetName"], CURRENCYCONVERSIONFACTORUSERINPUT)
+    label_keys_to_column_mapping_table_ref = dataset.table(LABELKEYSTOCOLUMNMAPPING)
 
     if not if_tbl_exists(client, unifiedTableRef):
         print_("%s table does not exists, creating table..." % unifiedTableRef)
@@ -124,6 +127,12 @@ def main(event, context):
         createTable(client, currencyConversionFactorUserInputTableRef)
     else:
         print_("%s table exists" % currencyConversionFactorUserInputTableName)
+
+    if not if_tbl_exists(client, label_keys_to_column_mapping_table_ref):
+        print_("%s table does not exist, creating table..." % LABELKEYSTOCOLUMNMAPPING)
+        createTable(client, label_keys_to_column_mapping_table_ref)
+    else:
+        print_("%s table exists" % LABELKEYSTOCOLUMNMAPPING)
 
     ds = f"{PROJECTID}.{jsonData['datasetName']}"
     table_ids = ["%s.%s" % (ds, "unifiedTable"),
@@ -158,7 +167,7 @@ def main(event, context):
     ingest_data_into_preagg(jsonData, azure_column_mapping)
     ingest_data_into_unified(jsonData, azure_column_mapping)
     update_connector_data_sync_status(jsonData, PROJECTID, client)
-    ingest_data_to_costagg(jsonData)
+    # ingest_data_to_costagg(jsonData)
     if jsonData.get("triggerHistoricalCostUpdateInPreferredCurrency") and jsonData["ccmPreferredCurrency"]:
         trigger_historical_cost_update_in_preferred_currency(jsonData)
     send_event(publisher.topic_path(PROJECTID, COSTCATEGORIESUPDATETOPIC), {
@@ -659,6 +668,8 @@ def is_valid_month_folder(folderstr):
     return True
 
 def ingest_data_from_csv(jsonData):
+    if jsonData.get('skipRawCSVIngestion', False):
+        return True
     csvtoingest = None
     # Determine either 'sub folder' of highest size in this month folder or max size csv
     blobs = storage_client.list_blobs(
@@ -1014,9 +1025,23 @@ def ingest_data_into_unified(jsonData, azure_column_mapping):
             )
         ]
     )
-    query_job = client.query(query, job_config=job_config)
-    query_job.result()
+    try:
+        run_bq_query_with_retries(client, query, max_retry_count=3, job_config=job_config)
+        flatten_label_keys_in_table(client, jsonData.get("accountId"), PROJECTID, jsonData["datasetName"], UNIFIED,
+                                    "labels", fetch_ingestion_filters(jsonData))
+    except Exception as e:
+        print_(e, "ERROR")
+        raise e
     print_("Loaded into %s table..." % tableName)
+
+
+def fetch_ingestion_filters(jsonData):
+    year, month = jsonData["reportYear"], jsonData["reportMonth"]
+    date_start = "%s-%s-01" % (year, month)
+    date_end = "%s-%s-%s" % (year, month, monthrange(int(year), int(month))[1])
+
+    return """ DATE(startTime) >= '%s' AND DATE(startTime) <= '%s' 
+    AND cloudProvider = "AZURE" AND azureSubscriptionGuid IN (%s) """ % (date_start, date_end, jsonData["subsId"])
 
 
 def create_bq_udf():

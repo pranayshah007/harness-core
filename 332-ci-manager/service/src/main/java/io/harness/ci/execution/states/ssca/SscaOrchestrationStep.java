@@ -52,6 +52,7 @@ public class SscaOrchestrationStep extends AbstractStepExecutable {
                                                  .sbomName(sbomArtifactResponse.getSbom().getName())
                                                  .sbomUrl(sbomArtifactResponse.getSbom().getUrl())
                                                  .stepExecutionId(stepExecutionId)
+                                                 .imageTag(sbomArtifactResponse.getArtifact().getTag())
                                                  .build())
                                        .build());
   }
@@ -74,6 +75,7 @@ public class SscaOrchestrationStep extends AbstractStepExecutable {
                                    .sbomName(sbomArtifactResponse.getSbom().getName())
                                    .sbomUrl(sbomArtifactResponse.getSbom().getUrl())
                                    .stepExecutionId(stepExecutionId)
+                                   .tag(sbomArtifactResponse.getArtifact().getTag())
                                    .build())
         .build();
   }
@@ -96,6 +98,7 @@ public class SscaOrchestrationStep extends AbstractStepExecutable {
                                                        .sbomName(sscaArtifactMetadata.getSbomName())
                                                        .sbomUrl(sscaArtifactMetadata.getSbomUrl())
                                                        .stepExecutionId(sscaArtifactMetadata.getStepExecutionId())
+                                                       .tag(sscaArtifactMetadata.getImageTag())
                                                        .build());
       }
     }

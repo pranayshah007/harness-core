@@ -9,6 +9,7 @@ package io.harness.connector.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mockStatic;
@@ -42,6 +43,7 @@ import io.harness.rule.OwnerRule;
 
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -104,7 +106,7 @@ public class ConnectorStatisticsHelperTest extends ConnectorsTestBase {
     }
 
     ConnectorStatistics connectorStatistics =
-        connectorStatisticsHelper.getStats(accountIdentifier, orgIdentifier, projectIdentifier);
+        connectorStatisticsHelper.getStats(accountIdentifier, orgIdentifier, projectIdentifier, emptyList());
     assertThat(connectorStatistics).isNotNull();
     List<ConnectorTypeStats> connectorTypeStatsList = connectorStatistics.getTypeStats();
     assertThat(connectorTypeStatsList.size()).isEqualTo(3);
@@ -120,6 +122,74 @@ public class ConnectorStatisticsHelperTest extends ConnectorsTestBase {
         Collectors.toMap(ConnectorStatusStats::getStatus, ConnectorStatusStats::getCount));
     assertThat(statusCount.get(ConnectivityStatus.SUCCESS)).isEqualTo(11);
     assertThat(statusCount.get(ConnectivityStatus.FAILURE)).isEqualTo(7);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.JIMIT_GANDHI)
+  @Category(UnitTests.class)
+  public void getStatsForSpecificConnectors() throws IOException {
+    when(settingsClient.getSetting(
+             SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
+        .thenReturn(request);
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("false").valueType(SettingValueType.BOOLEAN).build();
+    when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
+    mockStatic(CGRestUtils.class);
+    when(CGRestUtils.getResponse(any())).thenReturn(true);
+    List<String> connectorIds = new ArrayList<>();
+
+    for (int i = 0; i < 5; i++) {
+      Connector connector = KubernetesConnectorTestHelper.createK8sConnector(
+          accountIdentifier, orgIdentifier, projectIdentifier, identifier, Scope.PROJECT);
+      setStatus(connector, ConnectivityStatus.SUCCESS);
+      connector = connectorRepository.save(connector, ChangeType.ADD);
+      connectorIds.add(connector.getId());
+    }
+
+    for (int i = 0; i < 3; i++) {
+      Connector connector = KubernetesConnectorTestHelper.createK8sConnector(
+          accountIdentifier, orgIdentifier, projectIdentifier, identifier, Scope.PROJECT);
+      setStatus(connector, ConnectivityStatus.FAILURE);
+      connector = connectorRepository.save(connector, ChangeType.ADD);
+      connectorIds.add(connector.getId());
+    }
+
+    for (int i = 0; i < 3; i++) {
+      Connector connector = AWSConnectorTestHelper.createAWSConnector(
+          accountIdentifier, orgIdentifier, projectIdentifier, identifier, Scope.PROJECT);
+      setStatus(connector, ConnectivityStatus.FAILURE);
+      connectorRepository.save(connector, ChangeType.ADD);
+    }
+
+    for (int i = 0; i < 4; i++) {
+      Connector connector = DockerConnectorTestHelper.createDockerConnector(
+          accountIdentifier, orgIdentifier, projectIdentifier, identifier, Scope.PROJECT);
+      setStatus(connector, ConnectivityStatus.FAILURE);
+      connectorRepository.save(connector, ChangeType.ADD);
+    }
+
+    for (int i = 0; i < 6; i++) {
+      Connector connector = DockerConnectorTestHelper.createDockerConnector(
+          accountIdentifier, orgIdentifier, projectIdentifier, identifier, Scope.PROJECT);
+      setStatus(connector, ConnectivityStatus.SUCCESS);
+      connectorRepository.save(connector, ChangeType.ADD);
+    }
+
+    ConnectorStatistics connectorStatistics =
+        connectorStatisticsHelper.getStats(accountIdentifier, orgIdentifier, projectIdentifier, connectorIds);
+    assertThat(connectorStatistics).isNotNull();
+    List<ConnectorTypeStats> connectorTypeStatsList = connectorStatistics.getTypeStats();
+    assertThat(connectorTypeStatsList.size()).isEqualTo(1);
+    Map<ConnectorType, Integer> typeCount = connectorTypeStatsList.stream().collect(
+        Collectors.toMap(ConnectorTypeStats::getType, ConnectorTypeStats::getCount));
+    assertThat(typeCount.get(ConnectorType.KUBERNETES_CLUSTER)).isEqualTo(8);
+
+    List<ConnectorStatusStats> connectorStatusStatsList = connectorStatistics.getStatusStats();
+    assertThat(connectorStatusStatsList.size()).isEqualTo(2);
+    Map<ConnectivityStatus, Integer> statusCount = connectorStatusStatsList.stream().collect(
+        Collectors.toMap(ConnectorStatusStats::getStatus, ConnectorStatusStats::getCount));
+    assertThat(statusCount.get(ConnectivityStatus.SUCCESS)).isEqualTo(5);
+    assertThat(statusCount.get(ConnectivityStatus.FAILURE)).isEqualTo(3);
   }
 
   private void setStatus(Connector connector, ConnectivityStatus status) {

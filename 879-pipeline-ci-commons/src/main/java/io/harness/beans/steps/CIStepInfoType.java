@@ -47,6 +47,7 @@ public enum CIStepInfoType {
   CHECKMARX(CI_LITE_ENGINE, "Checkmarx"),
   CLAIR(CI_LITE_ENGINE, "Clair"),
   CODEQL(CI_LITE_ENGINE, "CodeQL"),
+  COVERITY(CI_LITE_ENGINE, "Coverity"),
   DATA_THEOREM(CI_LITE_ENGINE, "DataTheorem"),
   DOCKER_CONTENT_TRUST(CI_LITE_ENGINE, "DockerContentTrust"),
   CUSTOM_INGEST(CI_LITE_ENGINE, "CustomIngest"),
@@ -81,6 +82,8 @@ public enum CIStepInfoType {
   PLUGIN_V1(CI_LITE_ENGINE, "plugin"),
   IACM(CI_LITE_ENGINE, "IACM"),
   IACM_TERRAFORM_PLUGIN(CI_LITE_ENGINE, "IACMTerraformPlugin"),
+  IACM_APPROVAL(CI_LITE_ENGINE, "IACMApproval"),
+
   BACKGROUND_V1(CI_LITE_ENGINE, "background"),
   BITRISE_V1(CI_LITE_ENGINE, "bitrise"),
   ACTION_V1(CI_LITE_ENGINE, "action"),

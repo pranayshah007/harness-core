@@ -37,13 +37,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class ManagedAccountDataServiceImpl implements ManagedAccountDataService {
   @Inject private PerspectiveService perspectiveService;
   @Inject private MarginDetailsDao marginDetailsDao;
   @Inject private MspValidationService mspValidationService;
 
-  private static final long MAX_DAYS_IN_MONTH = 31;
+  private static final long MAX_DAYS_DIFF_IN_MONTH = 30;
   private static final long ONE_DAY_IN_MILLIS = 86400000;
 
   @Override
@@ -92,7 +94,7 @@ public class ManagedAccountDataServiceImpl implements ManagedAccountDataService 
     double totalSpend;
     double totalMarkup;
 
-    if (diff >= MAX_DAYS_IN_MONTH) {
+    if (diff > MAX_DAYS_DIFF_IN_MONTH) {
       if (startTime < quarterStartThreshold) {
         totalMarkup = totalMarkupAndSpend.getTotalMarkupAmount().getLastQuarter();
         totalSpend = totalMarkupAndSpend.getTotalSpend().getLastQuarter();
@@ -106,7 +108,7 @@ public class ManagedAccountDataServiceImpl implements ManagedAccountDataService 
         totalSpend = totalMarkupAndSpend.getTotalSpend().getCurrentMonth();
       } else {
         totalMarkup = totalMarkupAndSpend.getTotalMarkupAmount().getLastMonth();
-        totalSpend = totalMarkupAndSpend.getTotalSpend().getLastQuarter();
+        totalSpend = totalMarkupAndSpend.getTotalSpend().getLastMonth();
       }
     }
 
@@ -123,7 +125,7 @@ public class ManagedAccountDataServiceImpl implements ManagedAccountDataService 
       return getManagedAccountStats(mspAccountId, startTime, endTime);
     }
     mspValidationService.validateAccountIsManagedByMspAccount(mspAccountId, managedAccountId);
-
+    endTime = updateEndTimeToEndOfDay(endTime);
     List<QLCEViewFilterWrapper> markupFilters = new ArrayList<>();
     markupFilters.addAll(RESTToGraphQLHelper.getTimeFilters(startTime, endTime));
     markupFilters.addAll(RESTToGraphQLHelper.getMarkupNotNullFilter());
@@ -253,12 +255,20 @@ public class ManagedAccountDataServiceImpl implements ManagedAccountDataService 
 
   private long getQuarterStartThreshold() {
     Calendar startOfMonthCalendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-    startOfMonthCalendar.set(Calendar.MONTH, -2);
+    int currentMonth = startOfMonthCalendar.get(Calendar.MONTH);
+    startOfMonthCalendar.set(Calendar.MONTH, currentMonth - (currentMonth % 3));
     startOfMonthCalendar.set(Calendar.DAY_OF_MONTH, 1);
     startOfMonthCalendar.set(Calendar.HOUR_OF_DAY, 0);
     startOfMonthCalendar.set(Calendar.MINUTE, 0);
     startOfMonthCalendar.set(Calendar.SECOND, 0);
     startOfMonthCalendar.set(Calendar.MILLISECOND, 0);
     return startOfMonthCalendar.getTimeInMillis();
+  }
+
+  private long updateEndTimeToEndOfDay(long endTime) {
+    if (endTime % ONE_DAY_IN_MILLIS == 0) {
+      return endTime + ONE_DAY_IN_MILLIS - 1;
+    }
+    return endTime;
   }
 }

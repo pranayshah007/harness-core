@@ -13,6 +13,7 @@ import static io.harness.notification.NotificationServiceConstants.TEST_MAIL_TEM
 import static io.harness.notification.NotificationServiceConstants.TEST_MSTEAMS_TEMPLATE;
 import static io.harness.notification.NotificationServiceConstants.TEST_PD_TEMPLATE;
 import static io.harness.notification.NotificationServiceConstants.TEST_SLACK_TEMPLATE;
+import static io.harness.notification.NotificationServiceConstants.TEST_WEBHOOK_TEMPLATE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.notification.NotificationRequest;
@@ -43,6 +44,12 @@ public class NotificationRequestTestUtils {
                                                 .setTemplateId(TEST_SLACK_TEMPLATE)
                                                 .putAllTemplateData(Collections.emptyMap())
                                                 .addAllSlackWebHookUrls(Collections.singleton("slack-webhookurl")));
+        break;
+      case WEBHOOK:
+        notificationRequestBuilder.setWebhook(NotificationRequest.Webhook.newBuilder()
+                                                  .setTemplateId(TEST_WEBHOOK_TEMPLATE)
+                                                  .putAllTemplateData(Collections.emptyMap())
+                                                  .addAllUrls(Collections.singleton("webhook-url")));
         break;
       case MSTEAM:
         notificationRequestBuilder.setMsTeam(NotificationRequest.MSTeam.newBuilder()

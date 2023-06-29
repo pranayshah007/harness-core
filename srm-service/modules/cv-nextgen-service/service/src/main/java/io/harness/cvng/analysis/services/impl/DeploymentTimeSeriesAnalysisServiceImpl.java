@@ -743,7 +743,7 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
     }
   }
 
-  private Optional<TimeRange> getControlDataTimeRange(AppliedDeploymentAnalysisType appliedDeploymentAnalysisType,
+  public Optional<TimeRange> getControlDataTimeRange(AppliedDeploymentAnalysisType appliedDeploymentAnalysisType,
       VerificationJobInstance verificationJobInstance, DeploymentTimeSeriesAnalysis timeSeriesAnalysis) {
     if (appliedDeploymentAnalysisType == AppliedDeploymentAnalysisType.TEST) {
       return getControlDataTimeRangeForLoadTestAnalysis(verificationJobInstance);
@@ -767,11 +767,11 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
     }
   }
 
-  private TimeRange getTestDataTimeRange(
+  public TimeRange getTestDataTimeRange(
       VerificationJobInstance verificationJobInstance, DeploymentTimeSeriesAnalysis timeSeriesAnalysis) {
     return TimeRange.builder()
         .startTime(verificationJobInstance.getStartTime())
-        .endTime(timeSeriesAnalysis.getEndTime())
+        .endTime(Objects.nonNull(timeSeriesAnalysis) ? timeSeriesAnalysis.getEndTime() : null)
         .build();
   }
 
@@ -853,7 +853,7 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
       VerificationJobInstance verificationJobInstance, DeploymentTimeSeriesAnalysis timeSeriesAnalysis) {
     return Optional.of(TimeRange.builder()
                            .startTime(verificationJobInstance.getStartTime())
-                           .endTime(timeSeriesAnalysis.getEndTime())
+                           .endTime(Objects.nonNull(timeSeriesAnalysis) ? timeSeriesAnalysis.getEndTime() : null)
                            .build());
   }
 

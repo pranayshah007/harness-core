@@ -109,7 +109,7 @@ public class DeploymentMetricHostSamplingStateExecutorTest extends CategoryTest 
         .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2")));
 
     when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
-             hostSamplingState.getInputs().getStartTime(), hostSamplingState.getInputs().getEndTime()))
+             verificationJobInstance.getStartTime(), hostSamplingState.getInputs().getEndTime()))
         .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2")));
 
     hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.execute(hostSamplingState);
@@ -179,7 +179,7 @@ public class DeploymentMetricHostSamplingStateExecutorTest extends CategoryTest 
         .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2")));
 
     when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
-             hostSamplingState.getInputs().getStartTime(), hostSamplingState.getInputs().getEndTime()))
+             verificationJobInstance.getStartTime(), hostSamplingState.getInputs().getEndTime()))
         .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2", "host3")));
 
     hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.execute(hostSamplingState);
@@ -215,7 +215,7 @@ public class DeploymentMetricHostSamplingStateExecutorTest extends CategoryTest 
         .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2")));
 
     when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
-             hostSamplingState.getInputs().getStartTime(), hostSamplingState.getInputs().getEndTime()))
+             verificationJobInstance.getStartTime(), hostSamplingState.getInputs().getEndTime()))
         .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host3", "host4")));
 
     hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.execute(hostSamplingState);
@@ -251,7 +251,7 @@ public class DeploymentMetricHostSamplingStateExecutorTest extends CategoryTest 
         .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2")));
 
     when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
-             hostSamplingState.getInputs().getStartTime(), hostSamplingState.getInputs().getEndTime()))
+             verificationJobInstance.getStartTime(), hostSamplingState.getInputs().getEndTime()))
         .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2")));
 
     hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.execute(hostSamplingState);
@@ -287,7 +287,7 @@ public class DeploymentMetricHostSamplingStateExecutorTest extends CategoryTest 
         .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2")));
 
     when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
-             hostSamplingState.getInputs().getStartTime(), hostSamplingState.getInputs().getEndTime()))
+             verificationJobInstance.getStartTime(), hostSamplingState.getInputs().getEndTime()))
         .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2", "host3")));
 
     hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.execute(hostSamplingState);
@@ -323,7 +323,7 @@ public class DeploymentMetricHostSamplingStateExecutorTest extends CategoryTest 
         .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2")));
 
     when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
-             hostSamplingState.getInputs().getStartTime(), hostSamplingState.getInputs().getEndTime()))
+             verificationJobInstance.getStartTime(), hostSamplingState.getInputs().getEndTime()))
         .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host3", "host4")));
 
     hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.execute(hostSamplingState);
@@ -359,7 +359,7 @@ public class DeploymentMetricHostSamplingStateExecutorTest extends CategoryTest 
         .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2")));
 
     when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
-             hostSamplingState.getInputs().getStartTime(), hostSamplingState.getInputs().getEndTime()))
+             verificationJobInstance.getStartTime(), hostSamplingState.getInputs().getEndTime()))
         .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2")));
 
     hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.execute(hostSamplingState);
@@ -395,7 +395,7 @@ public class DeploymentMetricHostSamplingStateExecutorTest extends CategoryTest 
         .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2")));
 
     when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
-             hostSamplingState.getInputs().getStartTime(), hostSamplingState.getInputs().getEndTime()))
+             verificationJobInstance.getStartTime(), hostSamplingState.getInputs().getEndTime()))
         .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2", "host3")));
 
     hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.execute(hostSamplingState);
@@ -431,7 +431,7 @@ public class DeploymentMetricHostSamplingStateExecutorTest extends CategoryTest 
         .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2")));
 
     when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
-             hostSamplingState.getInputs().getStartTime(), hostSamplingState.getInputs().getEndTime()))
+             verificationJobInstance.getStartTime(), hostSamplingState.getInputs().getEndTime()))
         .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host3", "host4")));
 
     hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.execute(hostSamplingState);

@@ -25,7 +25,7 @@ import (
 	//mreports "github.com/harness/harness-core/product/ci/addon/testreports/mocks"
 	//ticlient "github.com/harness/harness-core/product/ci/ti-service/client"
 	//mclient "github.com/harness/harness-core/product/ci/ti-service/client/mocks"
-	//"github.com/harness/harness-core/product/ci/ti-service/types"
+	//"github.com/harness/ti-client/types"
 )
 
 func TestExecuteSuccess(t *testing.T) {

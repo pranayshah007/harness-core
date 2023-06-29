@@ -41,6 +41,9 @@ public interface BigQueryHelperService {
   void removeAllCostCategories(String tableName, String startTime, String endTime, CloudProvider cloudProvider,
       List<String> cloudProviderAccountIds);
 
+  void insertCostCategories(String tableName, String costCategoriesStatement, String startTime, String endTime,
+      CloudProvider cloudProvider, List<String> cloudProviderAccountIds);
+
   void addCostCategory(String tableName, String costCategoriesStatement, String startTime, String endTime,
       CloudProvider cloudProvider, List<String> cloudProviderAccountIds);
 }

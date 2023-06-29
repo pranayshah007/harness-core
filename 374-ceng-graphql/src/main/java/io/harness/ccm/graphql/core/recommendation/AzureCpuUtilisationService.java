@@ -17,6 +17,7 @@ import io.harness.ccm.commons.beans.recommendation.AzureVmUtilisationDTO;
 import io.harness.ccm.commons.utils.BigQueryHelper;
 
 import com.google.cloud.bigquery.BigQuery;
+import com.google.cloud.bigquery.BigQueryException;
 import com.google.cloud.bigquery.FieldValueList;
 import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.cloud.bigquery.TableResult;
@@ -38,14 +39,14 @@ public class AzureCpuUtilisationService {
       + " TIMESTAMP_TRUNC(metricStartTime, DAY) AS startTime,"
       + " TIMESTAMP_TRUNC(metricEndTime, DAY) AS endTime"
       + " FROM %s WHERE (TIMESTAMP_TRUNC(metricStartTime, DAY) >= '%s')"
-      + " AND vmId = '%s' AND metricName = 'Percentage CPU'"
+      + " AND LOWER(vmId) = LOWER('%s') AND metricName = 'Percentage CPU'"
       + " GROUP BY startTime, endTime ORDER BY startTime";
   private static final String AVERAGE_QUERY_TEMPLATE_BIGQUERY = "SELECT avg(average) as average"
       + " FROM %s WHERE (TIMESTAMP_TRUNC(metricStartTime, DAY) >= '%s')"
-      + " AND vmId = '%s' AND metricName = 'Percentage CPU'";
+      + " AND LOWER(vmId) = LOWER('%s') AND metricName = 'Percentage CPU'";
   private static final String MAXIMUM_QUERY_TEMPLATE_BIGQUERY = "SELECT max(maximum) as maximum"
       + " FROM %s WHERE (TIMESTAMP_TRUNC(metricStartTime, DAY) >= '%s')"
-      + " AND vmId = '%s' AND metricName = 'Percentage CPU'";
+      + " AND LOWER(vmId) = LOWER('%s') AND metricName = 'Percentage CPU'";
 
   private static final String START_TIME = "startTime";
   private static final String END_TIME = "endTime";
@@ -75,6 +76,8 @@ public class AzureCpuUtilisationService {
     } catch (InterruptedException e) {
       log.error("Failed to get Azure VM Cpu Utilisation data for Account:{}, {}", accountIdentifier, e);
       Thread.currentThread().interrupt();
+    } catch (BigQueryException e) {
+      log.error("Failed to get Azure VM Cpu Utilisation data for Account:{}, {}", accountIdentifier, e.getMessage());
     }
     return null;
   }
@@ -96,6 +99,8 @@ public class AzureCpuUtilisationService {
       }
     } catch (InterruptedException e) {
       log.error("Failed to get Azure VM Average Cpu Utilisation for Account:{}, {}", accountIdentifier, e);
+    } catch (BigQueryException e) {
+      log.error("Failed to get Azure VM Average Cpu Utilisation for Account:{}, {}", accountIdentifier, e.getMessage());
     }
     return null;
   }
@@ -117,6 +122,8 @@ public class AzureCpuUtilisationService {
       }
     } catch (InterruptedException e) {
       log.error("Failed to get Azure VM Maximum Cpu Utilisation for Account:{}, {}", accountIdentifier, e);
+    } catch (BigQueryException e) {
+      log.error("Failed to get Azure VM Maximum Cpu Utilisation for Account:{}, {}", accountIdentifier, e.getMessage());
     }
     return null;
   }

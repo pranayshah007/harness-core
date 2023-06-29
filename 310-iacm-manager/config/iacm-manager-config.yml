@@ -61,6 +61,8 @@ iacmmanager-mongo:
 
 enableAuth: false
 
+distributedLockImplementation: MONGO
+
 logServiceConfig:
   baseUrl: https://qa.harness.io/log-service/
   globalToken: "c76e567a-b341-404d-a8dd-d9738714eb82"
@@ -214,7 +216,7 @@ ciExecutionServiceConfig:
       artifactoryUpload: plugins/artifactory:1.2.0
       cacheGCS: plugins/cache:1.4.6
       cacheS3: plugins/cache:1.4.6
-      iacmTerraform: plugins/harness_terraform
+      iacmTerraform: plugins/harness_terraform:dev
 
 scmConnectionConfig:
   url: localhost:8091

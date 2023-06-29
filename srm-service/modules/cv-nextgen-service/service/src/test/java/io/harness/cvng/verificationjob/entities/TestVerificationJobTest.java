@@ -9,6 +9,7 @@ package io.harness.cvng.verificationjob.entities;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.KAMAL;
+import static io.harness.rule.OwnerRule.NAVEEN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -66,6 +67,22 @@ public class TestVerificationJobTest extends CategoryTest {
         .thenReturn(Optional.of(baseline));
     testVerificationJob.resolveAdditionsFields(verificationJobInstanceService, BaselineType.LAST);
     assertThat(testVerificationJob.getBaselineVerificationJobInstanceId()).isEqualTo(baseline);
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category({UnitTests.class})
+  public void testResolveAdditionsFields_withNoBaseline() {
+    TestVerificationJob testVerificationJob = createTestVerificationJob();
+    assertThat(testVerificationJob.getBaselineVerificationJobInstanceId()).isNull();
+    VerificationJobInstanceService verificationJobInstanceService = mock(VerificationJobInstanceService.class);
+    String baseline = generateUuid();
+    VerificationJobInstance verificationJobInstance = mock(VerificationJobInstance.class);
+    verificationJobInstance.setIsBaseline(null);
+    when(verificationJobInstanceService.getPinnedBaselineVerificationJobInstance(any()))
+        .thenReturn(Optional.of(verificationJobInstance));
+    testVerificationJob.resolveAdditionsFields(verificationJobInstanceService, BaselineType.PINNED);
+    assertThat(testVerificationJob.getBaselineVerificationJobInstanceId()).isEqualTo(null);
   }
 
   @Test

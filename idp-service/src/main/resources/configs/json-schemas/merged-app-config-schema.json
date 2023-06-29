@@ -13,7 +13,8 @@
     "kubernetes",
     "kafka",
     "integrations",
-    "lighthouse"
+    "lighthouse",
+    "jenkins"
   ],
   "properties": {
     "app": {
@@ -47,6 +48,10 @@
     "lighthouse": {
       "$id": "#root/lighthouse",
       "title": "Lighthouse"
+    },
+    "jenkins": {
+      "$id": "#root/jenkins",
+      "title": "Jenkins"
     }
   }
 }

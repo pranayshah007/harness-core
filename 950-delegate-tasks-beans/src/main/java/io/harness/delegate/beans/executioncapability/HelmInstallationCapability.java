@@ -7,6 +7,8 @@
 
 package io.harness.delegate.beans.executioncapability;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.k8s.model.HelmVersion;
 
 import java.time.Duration;
@@ -38,5 +40,18 @@ public class HelmInstallationCapability implements ExecutionCapability {
   @Override
   public Duration getPeriodUntilNextValidation() {
     return Duration.ofHours(4);
+  }
+
+  /**
+   * Error message to show mostly in delegate selection log if none of the delegates passed the validation check
+   */
+  @Override
+  public String getCapabilityValidationError() {
+    // Delegate(s) missing the commandRequest.getHelmVersion().name(), make sure to include
+    // commandRequest.getHelmVersion().name()) with the following delegates : [h1,h2]
+    return isNotEmpty(fetchCapabilityBasis()) && version != null
+        ? String.format("Delegate(s) missing the %s , make sure to include version %s with following delegates",
+            fetchCapabilityBasis(), version.toString())
+        : ExecutionCapability.super.getCapabilityValidationError();
   }
 }

@@ -40,6 +40,7 @@ import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.preflight.PreFlightCheckMetadata;
 import io.harness.rule.Owner;
 import io.harness.template.TemplateReferenceProtoUtils;
+import io.harness.template.async.beans.SetupUsageParams;
 import io.harness.template.entity.TemplateEntity;
 
 import com.google.common.collect.ImmutableMap;
@@ -104,7 +105,8 @@ public class TemplateSetupUsageHelperTest extends TemplateServiceTestBase {
   @Owner(developers = INDER)
   @Category(UnitTests.class)
   public void testPublishSetupUsageEvent_EmptyReferredEntities() throws IOException {
-    templateSetupUsageHelper.publishSetupUsageEvent(templateEntity, new ArrayList<>(), new HashMap<>());
+    SetupUsageParams setupUsageParams = SetupUsageParams.builder().templateEntity(templateEntity).build();
+    templateSetupUsageHelper.publishSetupUsageEvent(setupUsageParams, new ArrayList<>(), new HashMap<>());
     assertDeleteExistingSetupUsagesIsCalled();
   }
 
@@ -151,8 +153,9 @@ public class TemplateSetupUsageHelperTest extends TemplateServiceTestBase {
                                                                   .addReferredEntities(connectorManagerDetails)
                                                                   .setDeleteOldReferredByRecords(true)
                                                                   .build();
+    SetupUsageParams setupUsageParams = SetupUsageParams.builder().templateEntity(templateEntity).build();
 
-    templateSetupUsageHelper.publishSetupUsageEvent(templateEntity, referredEntities, new HashMap<>());
+    templateSetupUsageHelper.publishSetupUsageEvent(setupUsageParams, referredEntities, new HashMap<>());
 
     verify(eventProducer)
         .send(Message.newBuilder()

@@ -50,6 +50,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Created by brett on 7/15/17
@@ -62,18 +63,21 @@ public class EcrServiceImpl implements EcrService {
 
   @VisibleForTesting
   List<BuildDetailsInternal> getBuildsFallback(
-      AwsInternalConfig awsConfig, String imageUrl, String region, String imageName, int maxNumberOfBuilds) {
+      AwsInternalConfig awsConfig, String registryId, String imageUrl, String region, String imageName) {
     List<BuildDetailsInternal> buildDetailsInternals = new ArrayList<>();
     try {
       ListImagesResult listImageResult;
       ListImagesRequest listImagesRequest = new ListImagesRequest().withRepositoryName(imageName);
+      if (StringUtils.isNotBlank(registryId)) {
+        listImagesRequest.withRegistryId(registryId);
+      }
       do {
         listImageResult = awsApiHelperService.listEcrImages(awsConfig, region, listImagesRequest);
         listImageResult.getImageIds()
             .stream()
             .filter(imageIdentifier -> imageIdentifier != null && isNotEmpty(imageIdentifier.getImageTag()))
             .forEach(imageIdentifier -> {
-              Map<String, String> metadata = new HashMap();
+              Map<String, String> metadata = new HashMap<>();
               metadata.put(BuildDetailsInternalMetadataKeys.image, imageUrl + ":" + imageIdentifier.getImageTag());
               metadata.put(BuildDetailsInternalMetadataKeys.tag, imageIdentifier.getImageTag());
               buildDetailsInternals.add(BuildDetailsInternal.builder()
@@ -92,41 +96,49 @@ public class EcrServiceImpl implements EcrService {
         .sorted(new BuildDetailsInternalComparatorAscending())
         .collect(Collectors.toList());
   }
+
   @Override
-  public List<BuildDetailsInternal> getBuilds(
-      AwsInternalConfig awsConfig, String imageUrl, String region, String imageName, int maxNumberOfBuilds) {
+  public List<BuildDetailsInternal> getBuilds(AwsInternalConfig awsConfig, String registryId, String imageUrl,
+      String region, String imageName, int maxNumberOfImagesPerPage) {
     List<BuildDetailsInternal> buildDetailsInternals = new ArrayList<>();
     try {
+      log.debug("GetBuilds for {} in region {} with maxPageSize {}", imageName, region, maxNumberOfImagesPerPage);
       DescribeImagesResult describeImagesResult;
-      DescribeImagesRequest describeImagesRequest = new DescribeImagesRequest().withRepositoryName(imageName);
+      DescribeImagesRequest describeImagesRequest =
+          new DescribeImagesRequest().withRepositoryName(imageName).withMaxResults(maxNumberOfImagesPerPage);
+      if (StringUtils.isNotBlank(registryId)) {
+        describeImagesRequest.setRegistryId(registryId);
+      }
+      int pageCounter = 0;
       do {
+        log.debug("Making a describeImages API call page request no. {}", ++pageCounter);
         describeImagesResult = awsApiHelperService.describeEcrImages(awsConfig, region, describeImagesRequest);
+        log.debug(
+            "DescribeImages API page result got back with {} images", describeImagesResult.getImageDetails().size());
 
         describeImagesResult.getImageDetails()
             .stream()
             .filter(imageIdentifier -> imageIdentifier != null && isNotEmpty(imageIdentifier.getImageTags()))
             .forEach(imageIdentifier -> {
-              imageIdentifier.getImageTags()
-                  .stream()
-                  .filter(image -> image != null && isNotEmpty(image))
-                  .forEach(image -> {
-                    Map<String, String> metadata = new HashMap();
-                    metadata.put(BuildDetailsInternalMetadataKeys.image, imageUrl + ":" + image);
-                    metadata.put(BuildDetailsInternalMetadataKeys.tag, image);
-                    buildDetailsInternals.add(BuildDetailsInternal.builder()
-                                                  .number(image)
-                                                  .metadata(metadata)
-                                                  .uiDisplayName("Tag# " + image)
-                                                  .imagePushedAt(imageIdentifier.getImagePushedAt())
-                                                  .build());
-                  });
+              imageIdentifier.getImageTags().stream().filter(EmptyPredicate::isNotEmpty).forEach(image -> {
+                Map<String, String> metadata = new HashMap<>();
+                metadata.put(BuildDetailsInternalMetadataKeys.image, imageUrl + ":" + image);
+                metadata.put(BuildDetailsInternalMetadataKeys.tag, image);
+                buildDetailsInternals.add(BuildDetailsInternal.builder()
+                                              .number(image)
+                                              .metadata(metadata)
+                                              .uiDisplayName("Tag# " + image)
+                                              .imagePushedAt(imageIdentifier.getImagePushedAt())
+                                              .build());
+              });
             });
         describeImagesRequest.setNextToken(describeImagesResult.getNextToken());
+        log.debug("Finished processing page no. {} for describeImages API call", pageCounter);
       } while (describeImagesRequest.getNextToken() != null);
     } catch (Exception e) {
-      return getBuildsFallback(awsConfig, imageUrl, region, imageName, maxNumberOfBuilds);
+      return getBuildsFallback(awsConfig, registryId, imageUrl, region, imageName);
     }
-    // Sorting at build tag for docker artifacts.
+    log.debug("GetBuilds describeImages API has done with the fetch of {} tags", buildDetailsInternals.size());
     return buildDetailsInternals;
   }
 
@@ -136,8 +148,9 @@ public class EcrServiceImpl implements EcrService {
   }
 
   @Override
-  public boolean verifyRepository(AwsInternalConfig awsConfig, String region, String repositoryName) {
-    return listEcrRegistry(awsConfig, region).contains(repositoryName);
+  public boolean verifyRepository(
+      AwsInternalConfig awsConfig, String region, String registryId, String repositoryName) {
+    return listEcrRegistry(awsConfig, region, registryId).contains(repositoryName);
   }
 
   @Override
@@ -146,10 +159,13 @@ public class EcrServiceImpl implements EcrService {
   }
 
   @Override
-  public List<String> listEcrRegistry(AwsInternalConfig awsConfig, String region) {
+  public List<String> listEcrRegistry(AwsInternalConfig awsConfig, String region, String registryId) {
     List<String> repoNames = new ArrayList<>();
     DescribeRepositoriesRequest describeRepositoriesRequest = new DescribeRepositoriesRequest();
     DescribeRepositoriesResult describeRepositoriesResult;
+    if (StringUtils.isNotBlank(registryId)) {
+      describeRepositoriesRequest.setRegistryId(registryId);
+    }
     do {
       describeRepositoriesResult = awsApiHelperService.listRepositories(awsConfig, describeRepositoriesRequest, region);
       describeRepositoriesResult.getRepositories().forEach(repository -> repoNames.add(repository.getRepositoryName()));
@@ -161,8 +177,8 @@ public class EcrServiceImpl implements EcrService {
 
   @Override
   public List<Map<String, String>> getLabels(
-      AwsInternalConfig awsConfig, String imageName, String region, List<String> tags) {
-    return Collections.singletonList(awsApiHelperService.fetchLabels(awsConfig, imageName, region, tags));
+      AwsInternalConfig awsConfig, String registryId, String imageName, String region, List<String> tags) {
+    return Collections.singletonList(awsApiHelperService.fetchLabels(awsConfig, registryId, imageName, region, tags));
   }
 
   private String getSHA(DescribeImagesResult describeImagesResult) {
@@ -176,36 +192,54 @@ public class EcrServiceImpl implements EcrService {
   }
 
   @Override
-  public BuildDetailsInternal getLastSuccessfulBuildFromRegex(
-      AwsInternalConfig awsInternalConfig, String imageUrl, String region, String imageName, String tagRegex) {
+  public BuildDetailsInternal getLastSuccessfulBuildFromRegex(AwsInternalConfig awsInternalConfig, String registryId,
+      String imageUrl, String region, String imageName, String tagRegex) {
     List<BuildDetailsInternal> builds =
-        getBuilds(awsInternalConfig, imageUrl, region, imageName, MAX_NO_OF_TAGS_PER_IMAGE);
-
-    Pattern pattern = Pattern.compile(tagRegex.replace(".", "\\.").replace("?", ".?").replace("*", ".*?"));
+        getBuilds(awsInternalConfig, registryId, imageUrl, region, imageName, MAX_NO_OF_IMAGES);
 
     if (EmptyPredicate.isEmpty(builds)) {
       throw new InvalidArtifactServerException(
           "There are no builds for this image: " + imageName + " and tagRegex: " + tagRegex, USER);
     }
 
-    List<BuildDetailsInternal> buildsResponse =
-        builds.stream()
-            .filter(build -> !build.getNumber().endsWith("/") && pattern.matcher(build.getNumber()).find())
-            .sorted(new BuildDetailsInternalComparatorDescending())
-            .collect(Collectors.toList());
+    final String modifiedTagRegex = tagRegex.replace(".", "\\.").replace("?", ".?").replace("*", ".*?");
+    final Pattern modifiedPattern = Pattern.compile(modifiedTagRegex);
+    final Pattern originalPattern = Pattern.compile(tagRegex);
 
-    if (buildsResponse.isEmpty()) {
-      throw new InvalidArtifactServerException(
-          "There are no builds for this image: " + imageName + " and tagRegex: " + tagRegex, USER);
+    List<BuildDetailsInternal> buildsResponse = filterByRegex(builds, modifiedPattern);
+
+    if (EmptyPredicate.isEmpty(buildsResponse)) {
+      // CDS-71903: If the modified regex does not match any build, try to match the builds with original regex.
+      List<BuildDetailsInternal> buildsResponseWithOriginalRegex = filterByRegex(builds, originalPattern);
+      if (EmptyPredicate.isEmpty(buildsResponseWithOriginalRegex)) {
+        throw new InvalidArtifactServerException(
+            "There are no builds for this image: " + imageName + " and tagRegex: " + tagRegex, USER);
+      }
+      log.info("Tag {} matched with original regex {}, did not match modified regex, {}",
+          buildsResponseWithOriginalRegex.get(0).getNumber(), tagRegex, modifiedTagRegex);
+      return verifyBuildNumber(awsInternalConfig, registryId, imageUrl, region, imageName,
+          buildsResponseWithOriginalRegex.get(0).getNumber());
     }
+    final String buildNumber = buildsResponse.get(0).getNumber();
+    if (!originalPattern.matcher(buildNumber).find()) {
+      log.info("Tag {} matched with modified regex {}, did not match with original regex {}", buildNumber,
+          modifiedTagRegex, tagRegex);
+    }
+    return verifyBuildNumber(awsInternalConfig, registryId, imageUrl, region, imageName, buildNumber);
+  }
 
-    return verifyBuildNumber(awsInternalConfig, imageUrl, region, imageName, buildsResponse.get(0).getNumber());
+  private List<BuildDetailsInternal> filterByRegex(List<BuildDetailsInternal> builds, Pattern pattern) {
+    return builds.stream()
+        .filter(build -> !build.getNumber().endsWith("/") && pattern.matcher(build.getNumber()).find())
+        .sorted(new BuildDetailsInternalComparatorDescending())
+        .collect(Collectors.toList());
   }
 
   @Override
-  public boolean verifyImageName(AwsInternalConfig awsConfig, String imageUrl, String region, String imageName) {
+  public boolean verifyImageName(
+      AwsInternalConfig awsConfig, String registryId, String imageUrl, String region, String imageName) {
     try {
-      getBuilds(awsConfig, imageUrl, region, imageName, 1);
+      getBuilds(awsConfig, registryId, imageUrl, region, imageName, 1);
     } catch (Exception e) {
       return false;
     }
@@ -213,9 +247,10 @@ public class EcrServiceImpl implements EcrService {
   }
 
   @Override
-  public boolean validateCredentials(AwsInternalConfig awsConfig, String imageUrl, String region, String imageName) {
+  public boolean validateCredentials(
+      AwsInternalConfig awsConfig, String registryId, String imageUrl, String region, String imageName) {
     try {
-      getBuilds(awsConfig, imageUrl, region, imageName, 1);
+      getBuilds(awsConfig, registryId, imageUrl, region, imageName, 1);
     } catch (Exception e) {
       return false;
     }
@@ -223,8 +258,8 @@ public class EcrServiceImpl implements EcrService {
   }
 
   @Override
-  public BuildDetailsInternal verifyBuildNumber(
-      AwsInternalConfig awsInternalConfig, String imageUrl, String region, String imageName, String tag) {
+  public BuildDetailsInternal verifyBuildNumber(AwsInternalConfig awsInternalConfig, String registryId, String imageUrl,
+      String region, String imageName, String tag) {
     boolean isSHA = GARUtils.isSHA(tag);
     ImageIdentifier imageIdentifier;
     if (isSHA) {
@@ -232,8 +267,13 @@ public class EcrServiceImpl implements EcrService {
     } else {
       imageIdentifier = new ImageIdentifier().withImageTag(tag);
     }
-    DescribeImagesResult describeImagesResult = awsApiHelperService.describeEcrImages(awsInternalConfig, region,
-        new DescribeImagesRequest().withRepositoryName(imageName).withImageIds(imageIdentifier));
+    DescribeImagesRequest imagesRequest =
+        new DescribeImagesRequest().withRepositoryName(imageName).withImageIds(imageIdentifier);
+    if (StringUtils.isNotBlank(registryId)) {
+      imagesRequest.setRegistryId(registryId);
+    }
+    DescribeImagesResult describeImagesResult =
+        awsApiHelperService.describeEcrImages(awsInternalConfig, region, imagesRequest);
     String sha = getSHA(describeImagesResult);
     if (EmptyPredicate.isEmpty(sha)) {
       Map<String, String> imageDataMap = new HashMap<>();
@@ -250,7 +290,8 @@ public class EcrServiceImpl implements EcrService {
       throw exception;
     }
     Map<String, String> label = null;
-    List<Map<String, String>> labels = getLabels(awsInternalConfig, imageName, region, Collections.singletonList(tag));
+    List<Map<String, String>> labels =
+        getLabels(awsInternalConfig, registryId, imageName, region, Collections.singletonList(tag));
     if (EmptyPredicate.isNotEmpty(labels)) {
       label = labels.get(0);
     }

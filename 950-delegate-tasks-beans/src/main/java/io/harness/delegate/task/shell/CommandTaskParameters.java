@@ -55,6 +55,7 @@ public abstract class CommandTaskParameters implements TaskParameters, Execution
   SshWinRmArtifactDelegateConfig artifactDelegateConfig;
   @Expression(ALLOW_SECRETS) FileDelegateConfig fileDelegateConfig;
   @Expression(ALLOW_SECRETS) List<String> outputVariables;
+  @Expression(ALLOW_SECRETS) List<String> secretOutputVariables;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

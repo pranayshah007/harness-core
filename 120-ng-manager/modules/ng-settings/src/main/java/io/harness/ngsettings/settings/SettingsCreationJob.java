@@ -13,6 +13,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ScopeLevel;
 import io.harness.exception.InvalidRequestException;
+import io.harness.lock.AcquiredLock;
+import io.harness.lock.PersistentLocker;
 import io.harness.ngsettings.entities.SettingConfiguration;
 import io.harness.ngsettings.entities.SettingsConfigurationState;
 import io.harness.ngsettings.services.SettingsService;
@@ -26,6 +28,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.net.URL;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -46,11 +49,15 @@ public class SettingsCreationJob {
   private final SettingsService settingsService;
   private final ConfigurationStateRepository configurationStateRepository;
   private static final String SETTINGS_YAML_PATH = "io/harness/ngsettings/settings.yml";
+  private PersistentLocker persistentLocker;
+  private static final Duration LOCK_TIMEOUT = Duration.ofSeconds(10);
+  private static final Duration WAIT_TIMEOUT = Duration.ofSeconds(20);
 
   @Inject
-  public SettingsCreationJob(
-      SettingsService settingsService, ConfigurationStateRepository configurationStateRepository) {
+  public SettingsCreationJob(SettingsService settingsService, ConfigurationStateRepository configurationStateRepository,
+      PersistentLocker persistentLocker) {
     this.configurationStateRepository = configurationStateRepository;
+    this.persistentLocker = persistentLocker;
     ObjectMapper om = new ObjectMapper(new YAMLFactory());
     URL url = getClass().getClassLoader().getResource(SETTINGS_YAML_PATH);
     try {
@@ -105,47 +112,54 @@ public class SettingsCreationJob {
   }
 
   public void run() {
-    Optional<SettingsConfigurationState> optional =
-        configurationStateRepository.getByIdentifier(settingsConfig.getName());
-    if (optional.isPresent() && optional.get().getConfigVersion() >= settingsConfig.getVersion()) {
-      log.info("Settings are already updated in the database");
-      return;
-    }
-    log.info("Updating settings in the database");
-    Set<SettingConfiguration> latestSettings =
-        isNotEmpty(settingsConfig.getSettings()) ? settingsConfig.getSettings() : new HashSet<>();
-    Set<SettingConfiguration> currentSettings = new HashSet<>(settingsService.listDefaultSettings());
-
-    Set<String> latestIdentifiers =
-        latestSettings.stream().map(SettingConfiguration::getIdentifier).collect(Collectors.toSet());
-    Set<String> currentIdentifiers =
-        currentSettings.stream().map(SettingConfiguration::getIdentifier).collect(Collectors.toSet());
-    Set<String> removedIdentifiers = Sets.difference(currentIdentifiers, latestIdentifiers);
-
-    Map<String, String> settingIdMap = new HashMap<>();
-    currentSettings.forEach(settingConfiguration -> {
-      settingIdMap.put(settingConfiguration.getIdentifier(), settingConfiguration.getId());
-      settingConfiguration.setId(null);
-    });
-    Set<SettingConfiguration> upsertedSettings = new HashSet<>(latestSettings);
-    upsertedSettings.removeAll(currentSettings);
-    deleteSettingsAtDisallowedScopes(currentSettings, upsertedSettings);
-    upsertedSettings.forEach(setting -> {
-      setting.setId(settingIdMap.get(setting.getIdentifier()));
-      try {
-        settingsService.upsertSettingConfiguration(setting);
-      } catch (Exception exception) {
-        log.error(String.format("Error while updating setting [%s]", setting.getIdentifier()), exception);
-        throw exception;
+    String lockName = String.format("%s_settingConfigurationsLock", SettingsCreationJob.class.getName());
+    try (AcquiredLock<?> lock = persistentLocker.waitToAcquireLockOptional(lockName, LOCK_TIMEOUT, WAIT_TIMEOUT)) {
+      if (lock == null) {
+        log.warn("Count not acquire the lock- {}", lockName);
+        return;
       }
-    });
-    removedIdentifiers.forEach(settingsService::removeSetting);
-    log.info("Updated the settings in the database");
+      Optional<SettingsConfigurationState> optional =
+          configurationStateRepository.getByIdentifier(settingsConfig.getName());
+      if (optional.isPresent() && optional.get().getConfigVersion() >= settingsConfig.getVersion()) {
+        log.info("Settings are already updated in the database");
+        return;
+      }
+      log.info("Updating settings in the database");
+      Set<SettingConfiguration> latestSettings =
+          isNotEmpty(settingsConfig.getSettings()) ? settingsConfig.getSettings() : new HashSet<>();
+      Set<SettingConfiguration> currentSettings = new HashSet<>(settingsService.listDefaultSettings());
 
-    SettingsConfigurationState configurationState =
-        optional.orElseGet(() -> SettingsConfigurationState.builder().identifier(settingsConfig.getName()).build());
-    configurationState.setConfigVersion(settingsConfig.getVersion());
-    configurationStateRepository.upsert(configurationState);
+      Set<String> latestIdentifiers =
+          latestSettings.stream().map(SettingConfiguration::getIdentifier).collect(Collectors.toSet());
+      Set<String> currentIdentifiers =
+          currentSettings.stream().map(SettingConfiguration::getIdentifier).collect(Collectors.toSet());
+      Set<String> removedIdentifiers = Sets.difference(currentIdentifiers, latestIdentifiers);
+
+      Map<String, String> settingIdMap = new HashMap<>();
+      currentSettings.forEach(settingConfiguration -> {
+        settingIdMap.put(settingConfiguration.getIdentifier(), settingConfiguration.getId());
+        settingConfiguration.setId(null);
+      });
+      Set<SettingConfiguration> upsertedSettings = new HashSet<>(latestSettings);
+      upsertedSettings.removeAll(currentSettings);
+      deleteSettingsAtDisallowedScopes(currentSettings, upsertedSettings);
+      upsertedSettings.forEach(setting -> {
+        setting.setId(settingIdMap.get(setting.getIdentifier()));
+        try {
+          settingsService.upsertSettingConfiguration(setting);
+        } catch (Exception exception) {
+          log.error(String.format("Error while updating setting [%s]", setting.getIdentifier()), exception);
+          throw exception;
+        }
+      });
+      removedIdentifiers.forEach(settingsService::removeSetting);
+      log.info("Updated the settings in the database");
+
+      SettingsConfigurationState configurationState =
+          optional.orElseGet(() -> SettingsConfigurationState.builder().identifier(settingsConfig.getName()).build());
+      configurationState.setConfigVersion(settingsConfig.getVersion());
+      configurationStateRepository.upsert(configurationState);
+    }
   }
 
   private void deleteSettingsAtDisallowedScopes(

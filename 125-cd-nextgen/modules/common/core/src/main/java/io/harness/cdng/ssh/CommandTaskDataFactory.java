@@ -8,6 +8,7 @@
 package io.harness.cdng.ssh;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -43,13 +44,17 @@ public class CommandTaskDataFactory {
 
   private TaskType getTaskType(CommandTaskParameters taskParameters) {
     SshWinRmArtifactDelegateConfig artifactDelegateConfig = taskParameters.getArtifactDelegateConfig();
-    if (gitConfigExists(taskParameters)) {
+    if (isNotEmpty(taskParameters.getSecretOutputVariables())) {
+      return TaskType.COMMAND_TASK_NG_WITH_OUTPUT_VARIABLE_SECRETS;
+    } else if (gitConfigExists(taskParameters)) {
       return TaskType.COMMAND_TASK_NG_WITH_GIT_CONFIGS;
     } else if (artifactDelegateConfig != null
         && SshWinRmArtifactType.AZURE.equals(artifactDelegateConfig.getArtifactType())) {
       return TaskType.COMMAND_TASK_NG_WITH_AZURE_ARTIFACT;
+    } else if (artifactDelegateConfig != null
+        && SshWinRmArtifactType.GITHUB_PACKAGE.equals(artifactDelegateConfig.getArtifactType())) {
+      return TaskType.COMMAND_TASK_NG_WITH_GITHUB_PACKAGE_ARTIFACT;
     }
-
     return TaskType.COMMAND_TASK_NG;
   }
 

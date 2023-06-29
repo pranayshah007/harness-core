@@ -42,10 +42,10 @@ public class AccessControlAdminService {
     this.blockedEntityRepository = blockedEntityRepository;
     this.generateACLsFromRoleAssignmentsJob = generateACLsFromRoleAssignmentsJob;
     executorService =
-        Executors.newFixedThreadPool(5, new ThreadFactoryBuilder().setNameFormat("blocked-event-processor-%d").build());
+        Executors.newFixedThreadPool(2, new ThreadFactoryBuilder().setNameFormat("blocked-event-processor-%d").build());
     blockedAccountCache = Caffeine.newBuilder()
                               .maximumSize(10000)
-                              .expireAfterWrite(30, TimeUnit.MINUTES)
+                              .expireAfterWrite(1, TimeUnit.MINUTES)
                               .build(accountId -> blockedEntityRepository.find(accountId).isPresent());
   }
 

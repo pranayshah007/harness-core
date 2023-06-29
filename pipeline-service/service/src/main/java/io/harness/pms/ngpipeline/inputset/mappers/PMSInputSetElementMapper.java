@@ -146,7 +146,7 @@ public class PMSInputSetElementMapper {
     JsonNode inputSetNode;
     try {
       // validating the duplicate fields in yaml fields
-      inputSetNode = YamlUtils.readTree(yaml, true).getNode().getCurrJsonNode();
+      inputSetNode = YamlUtils.readTree(yaml).getNode().getCurrJsonNode();
     } catch (IOException exception) {
       throw new InvalidRequestException("Invalid input set yaml provided");
     }

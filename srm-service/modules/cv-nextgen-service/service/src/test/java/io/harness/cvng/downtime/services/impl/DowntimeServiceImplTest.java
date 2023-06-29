@@ -15,8 +15,6 @@ import static io.harness.rule.TestUserProvider.testUserProvider;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CvNextGenTestBase;
@@ -27,6 +25,7 @@ import io.harness.cvng.CVNGTestConstants;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.services.api.DeleteEntityByHandler;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.downtime.beans.AffectedEntity;
 import io.harness.cvng.downtime.beans.AllEntitiesRule;
@@ -52,6 +51,7 @@ import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
 import io.harness.cvng.downtime.beans.OnetimeDowntimeSpec;
 import io.harness.cvng.downtime.beans.RecurringDowntimeSpec;
 import io.harness.cvng.downtime.entities.Downtime;
+import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
 import io.harness.cvng.downtime.services.api.DowntimeService;
 import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.downtime.transformer.DowntimeSpecDetailsTransformer;
@@ -88,6 +88,8 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
   private BuilderFactory builderFactory;
 
   @Inject private DowntimeService downtimeService;
+
+  @Inject DeleteEntityByHandler deleteEntityByHandler;
 
   @Inject private MonitoredServiceService monitoredServiceService;
 
@@ -1303,35 +1305,77 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
-  public void testDeleteByProjectIdentifier_Success() {
-    DowntimeService mockDowntimeService = spy(downtimeService);
+  public void testDeleteByProjectIdentifier_Success() throws IllegalAccessException {
+    FieldUtils.writeField(
+        downtimeService, "entityUnavailabilityStatusesService", entityUnavailabilityStatusesService, true);
     downtimeService.create(projectParams, recurringDowntimeDTO);
     downtimeService.create(projectParams, oneTimeEndTimeBasedDowntimeDTO);
-    mockDowntimeService.deleteByProjectIdentifier(Downtime.class, projectParams.getAccountIdentifier(),
+    assertThat(downtimeService
+                   .list(projectParams, PageParams.builder().page(0).size(20).build(), new DowntimeDashboardFilter())
+                   .getContent()
+                   .size())
+        .isEqualTo(2);
+    assertThat(entityUnavailabilityStatusesService.getAllInstances(projectParams).size()).isEqualTo(54);
+    deleteEntityByHandler.deleteByProjectIdentifier(Downtime.class, projectParams.getAccountIdentifier(),
         projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier());
-    verify(mockDowntimeService, times(2)).delete(any(), any());
+    deleteEntityByHandler.deleteByProjectIdentifier(EntityUnavailabilityStatuses.class,
+        projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier());
+    assertThat(downtimeService
+                   .list(projectParams, PageParams.builder().page(0).size(20).build(), new DowntimeDashboardFilter())
+                   .getContent()
+                   .size())
+        .isEqualTo(0);
+    assertThat(entityUnavailabilityStatusesService.getAllInstances(projectParams).size()).isEqualTo(0);
   }
 
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
-  public void testDeleteByOrgIdentifier_Success() {
-    DowntimeService mockDowntimeService = spy(downtimeService);
+  public void testDeleteByOrgIdentifier_Success() throws IllegalAccessException {
+    FieldUtils.writeField(
+        downtimeService, "entityUnavailabilityStatusesService", entityUnavailabilityStatusesService, true);
     downtimeService.create(projectParams, recurringDowntimeDTO);
     downtimeService.create(projectParams, oneTimeEndTimeBasedDowntimeDTO);
-    mockDowntimeService.deleteByOrgIdentifier(
+    assertThat(downtimeService
+                   .list(projectParams, PageParams.builder().page(0).size(20).build(), new DowntimeDashboardFilter())
+                   .getContent()
+                   .size())
+        .isEqualTo(2);
+    assertThat(entityUnavailabilityStatusesService.getAllInstances(projectParams).size()).isEqualTo(54);
+    deleteEntityByHandler.deleteByOrgIdentifier(
         Downtime.class, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier());
-    verify(mockDowntimeService, times(2)).delete(any(), any());
+    deleteEntityByHandler.deleteByOrgIdentifier(
+        EntityUnavailabilityStatuses.class, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier());
+    assertThat(downtimeService
+                   .list(projectParams, PageParams.builder().page(0).size(20).build(), new DowntimeDashboardFilter())
+                   .getContent()
+                   .size())
+        .isEqualTo(0);
+    assertThat(entityUnavailabilityStatusesService.getAllInstances(projectParams).size()).isEqualTo(0);
   }
 
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
-  public void testDeleteByAccountIdentifier_Success() {
-    DowntimeService mockDowntimeService = spy(downtimeService);
+  public void testDeleteByAccountIdentifier_Success() throws IllegalAccessException {
+    FieldUtils.writeField(
+        downtimeService, "entityUnavailabilityStatusesService", entityUnavailabilityStatusesService, true);
     downtimeService.create(projectParams, recurringDowntimeDTO);
     downtimeService.create(projectParams, oneTimeEndTimeBasedDowntimeDTO);
-    mockDowntimeService.deleteByAccountIdentifier(Downtime.class, projectParams.getAccountIdentifier());
-    verify(mockDowntimeService, times(2)).delete(any(), any());
+    assertThat(downtimeService
+                   .list(projectParams, PageParams.builder().page(0).size(20).build(), new DowntimeDashboardFilter())
+                   .getContent()
+                   .size())
+        .isEqualTo(2);
+    assertThat(entityUnavailabilityStatusesService.getAllInstances(projectParams).size()).isEqualTo(54);
+    deleteEntityByHandler.deleteByAccountIdentifier(Downtime.class, projectParams.getAccountIdentifier());
+    deleteEntityByHandler.deleteByAccountIdentifier(
+        EntityUnavailabilityStatuses.class, projectParams.getAccountIdentifier());
+    assertThat(downtimeService
+                   .list(projectParams, PageParams.builder().page(0).size(20).build(), new DowntimeDashboardFilter())
+                   .getContent()
+                   .size())
+        .isEqualTo(0);
+    assertThat(entityUnavailabilityStatusesService.getAllInstances(projectParams).size()).isEqualTo(0);
   }
 }

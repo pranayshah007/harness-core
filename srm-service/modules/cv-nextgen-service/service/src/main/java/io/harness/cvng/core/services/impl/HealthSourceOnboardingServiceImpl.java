@@ -55,6 +55,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
 public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboardingService {
@@ -63,6 +64,8 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
   private static final String DEFAULT_GROUP = ONBOARDING_PREFIX + "default_group";
   private static final String MONITORED_SERVICE_IDENTIFIER = ONBOARDING_PREFIX + "monitored_service";
   private static final String QUERY_NAME = ONBOARDING_PREFIX + "query_name";
+  public static final String SAMPLE_TIMESERIES = "sampleTimeseries";
+  public static final int TIME_SERIES_LIMIT_FOR_CHART = 50;
   @Inject private OnboardingService onboardingService;
 
   @Inject private MetricPackService metricPackService;
@@ -136,15 +139,32 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
     OnboardingResponseDTO response = onboardingService.getOnboardingResponse(accountIdentifier, onboardingRequestDTO);
     List<TimeSeriesRecord> timeSeriesRecords =
         JsonUtils.asList(JsonUtils.asJson(response.getResult()), new TypeReference<>() {});
-    TimeSeries timeSeries =
-        TimeSeries.builder().timeseriesName("sampleTimeseries").build(); // TODO Understand multiple Timeseries
-    // map and collect
-    timeSeriesRecords.forEach(timeSeriesRecord
-        -> timeSeries.getData().add(TimeSeriesDataPoint.builder()
-                                        .timestamp(timeSeriesRecord.getTimestamp())
-                                        .value(timeSeriesRecord.getMetricValue())
-                                        .build()));
-    return MetricRecordsResponse.builder().timeSeriesData(Collections.singletonList(timeSeries)).build();
+    Map<String, List<TimeSeriesRecord>> timeSeriesRecordHostsMap =
+        timeSeriesRecords.stream().collect(Collectors.groupingBy(timeSeriesRecord
+            -> StringUtils.isEmpty(timeSeriesRecord.getHostname()) ? SAMPLE_TIMESERIES
+                                                                   : timeSeriesRecord.getHostname()));
+    List<TimeSeries> timeSeriesList = new ArrayList<>();
+    for (Map.Entry<String, List<TimeSeriesRecord>> timeSeriesRecordForHost : timeSeriesRecordHostsMap.entrySet()) {
+      List<TimeSeriesDataPoint> timeSeriesDataPoints = timeSeriesRecordForHost.getValue()
+                                                           .stream()
+                                                           .map(timeSeriesRecord
+                                                               -> TimeSeriesDataPoint.builder()
+                                                                      .timestamp(timeSeriesRecord.getTimestamp())
+                                                                      .value(timeSeriesRecord.getMetricValue())
+                                                                      .build())
+                                                           .collect(Collectors.toList());
+      String timeSeriesName = timeSeriesRecordForHost.getKey();
+      TimeSeries timeSeriesForHost =
+          TimeSeries.builder().timeseriesName(timeSeriesName).data(timeSeriesDataPoints).build();
+      timeSeriesList.add(timeSeriesForHost);
+      if (timeSeriesList.size() >= TIME_SERIES_LIMIT_FOR_CHART) {
+        break;
+      }
+    }
+    return MetricRecordsResponse.builder()
+        .serviceInstances(new ArrayList<>(timeSeriesRecordHostsMap.keySet()))
+        .timeSeriesData(timeSeriesList)
+        .build();
   }
 
   private DataCollectionInfo<ConnectorConfigDTO> getDataCollectionInfoForMetric(

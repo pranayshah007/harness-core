@@ -23,6 +23,7 @@ import io.harness.accesscontrol.acl.persistence.ACLDAO;
 import io.harness.accesscontrol.permissions.Permission;
 import io.harness.accesscontrol.permissions.PermissionFilter;
 import io.harness.accesscontrol.permissions.PermissionService;
+import io.harness.accesscontrol.permissions.persistence.repositories.InMemoryPermissionRepository;
 import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.principals.usergroups.persistence.UserGroupDBO;
 import io.harness.accesscontrol.principals.usergroups.persistence.UserGroupDBO.UserGroupDBOKeys;
@@ -64,14 +65,17 @@ public class ACLServiceImpl implements ACLService {
   private volatile Set<String> disabledPermissions;
   private final ACLExpressionEvaluatorProvider aclExpressionEvaluatorProvider;
   private final MongoTemplate mongoTemplate;
+  private final InMemoryPermissionRepository inMemoryPermissionRepository;
 
   @Inject
   public ACLServiceImpl(ACLDAO aclDAO, PermissionService permissionService,
-      ACLExpressionEvaluatorProvider aclExpressionEvaluatorProvider, MongoTemplate mongoTemplate) {
+      ACLExpressionEvaluatorProvider aclExpressionEvaluatorProvider, MongoTemplate mongoTemplate,
+      InMemoryPermissionRepository inMemoryPermissionRepository) {
     this.aclDAO = aclDAO;
     this.permissionService = permissionService;
     this.aclExpressionEvaluatorProvider = aclExpressionEvaluatorProvider;
     this.mongoTemplate = mongoTemplate;
+    this.inMemoryPermissionRepository = inMemoryPermissionRepository;
   }
 
   private PermissionCheckResult getPermissionCheckResult(PermissionCheck permissionCheck, boolean permitted) {
@@ -197,6 +201,14 @@ public class ACLServiceImpl implements ACLService {
   @Override
   public List<PermissionCheckResult> checkAccess(Principal principal, List<PermissionCheck> permissionChecks,
       ResourceAttributeProvider resourceAttributeProvider) {
+    permissionChecks.stream()
+        .filter(permissionCheck
+            -> !permissionCheck.getResourceType().equalsIgnoreCase(
+                inMemoryPermissionRepository.getResourceTypeBy(permissionCheck.getPermission())))
+        .forEach(permissionCheck
+            -> log.debug("Access check requested for redundant combination of resource : {} with permission : {}",
+                permissionCheck.getResourceType(), permissionCheck.getPermission()));
+
     List<List<ACL>> matchingACLs = aclDAO.getMatchingACLs(principal, permissionChecks);
     List<Boolean> allowedAccessList = checkAccessInternal(permissionChecks, matchingACLs, resourceAttributeProvider);
 

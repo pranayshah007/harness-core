@@ -333,17 +333,29 @@ public class ClusterResource {
     PageResponse<ClusterFromGitops> accountLevelClusters =
         fetchClustersFromGitopsService(page, size, accountId, "", "", searchTerm);
 
+    // Org level clusters
+    PageResponse<ClusterFromGitops> orgLevelClusters =
+        fetchClustersFromGitopsService(page, size, accountId, orgIdentifier, "", searchTerm);
+
     // Project level clusters
     PageResponse<ClusterFromGitops> projectLevelClusters =
         fetchClustersFromGitopsService(page, size, accountId, orgIdentifier, projectIdentifier, searchTerm);
 
     Map<String, ClusterFromGitops> allClusters =
-        Stream.of(accountLevelClusters.getContent(), projectLevelClusters.getContent())
+        Stream.of(accountLevelClusters.getContent(), orgLevelClusters.getContent(), projectLevelClusters.getContent())
             .flatMap(List::stream)
-            .collect(Collectors.toMap(e
-                -> e.getScopeLevel().toString().toLowerCase() + "." + e.getIdentifier(),
-                Function.identity(), (c1, c2) -> c1));
+            .collect(Collectors.toMap(
+                e -> getScope(e.getScopeLevel()) + "." + e.getIdentifier(), Function.identity(), (c1, c2) -> c1));
     return ResponseDTO.newResponse(getNGPageResponse(entities.map(e -> ClusterEntityMapper.writeDTO(e, allClusters))));
+  }
+
+  private String getScope(ScopeLevel scopeLevel) {
+    // For Organization scoped clusters, the prefix used is "org"
+    if (ScopeLevel.ORGANIZATION.equals(scopeLevel)) {
+      return ClusterEntityMapper.ORG;
+    }
+    // For Account and Project scoped clusters, the prefix used is the scope itself
+    return scopeLevel.toString().toLowerCase();
   }
 
   @GET

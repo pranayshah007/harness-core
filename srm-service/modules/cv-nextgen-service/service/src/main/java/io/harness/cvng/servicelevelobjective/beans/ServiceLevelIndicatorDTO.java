@@ -10,7 +10,6 @@ package io.harness.cvng.servicelevelobjective.beans;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -29,9 +28,7 @@ public class ServiceLevelIndicatorDTO {
   @NotNull
   ServiceLevelIndicatorSpec spec;
   @Deprecated SLIMissingDataType sliMissingDataType;
-  @JsonIgnore
-  @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-  String healthSourceRef; // TODO: we need to move health source ref to this level.
+  String healthSourceRef;
 
   @JsonIgnore
   public String getEvaluationAndMetricType() {

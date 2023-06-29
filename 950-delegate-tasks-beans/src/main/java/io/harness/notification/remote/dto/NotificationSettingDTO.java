@@ -33,6 +33,7 @@ import lombok.Setter;
   , @JsonSubTypes.Type(value = MSTeamSettingDTO.class, name = "MSTEAMS"),
       @JsonSubTypes.Type(value = SlackSettingDTO.class, name = "SLACK"),
       @JsonSubTypes.Type(value = PagerDutySettingDTO.class, name = "PAGERDUTY"),
+      @JsonSubTypes.Type(value = WebhookSettingDTO.class, name = "WEBHOOK"),
 })
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(name = "NotificationSetting", description = "Details of the Notification settings configured in Harness.")

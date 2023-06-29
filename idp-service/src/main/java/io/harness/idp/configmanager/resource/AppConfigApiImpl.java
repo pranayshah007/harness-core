@@ -15,8 +15,8 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ResponseMessage;
-import io.harness.idp.configmanager.ConfigType;
 import io.harness.idp.configmanager.service.ConfigManagerService;
+import io.harness.idp.configmanager.utils.ConfigType;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.idp.v1.AppConfigApi;
 import io.harness.spec.server.idp.v1.model.AppConfig;
@@ -41,11 +41,10 @@ public class AppConfigApiImpl implements AppConfigApi {
     try {
       AppConfig appConfig = body.getAppConfig();
       configManagerService.validateSchemaForPlugin(appConfig.getConfigs(), appConfig.getConfigId());
-      AppConfig updatedAppConfig =
-          configManagerService.saveOrUpdateConfigForAccount(appConfig, harnessAccount, ConfigType.PLUGIN);
-      configManagerService.mergeAndSaveAppConfig(harnessAccount);
+      AppConfig savedOrUpdatedAppConfig =
+          configManagerService.saveUpdateAndMergeConfigForAccount(appConfig, harnessAccount, ConfigType.PLUGIN);
       AppConfigResponse appConfigResponse = new AppConfigResponse();
-      appConfigResponse.appConfig(updatedAppConfig);
+      appConfigResponse.appConfig(savedOrUpdatedAppConfig);
       return Response.status(Response.Status.OK).entity(appConfigResponse).build();
     } catch (Exception e) {
       log.error("Error in saving or updating configs for Plugin id - {} in account - {}",

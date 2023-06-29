@@ -12,11 +12,13 @@ import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
@@ -38,6 +40,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 
 public class PipelineAsyncValidationHandlerTest extends CategoryTest {
@@ -85,9 +88,13 @@ public class PipelineAsyncValidationHandlerTest extends CategoryTest {
     doReturn(new HashSet<>(Arrays.asList("CD", "CI")))
         .when(pipelineTemplateHelper)
         .getTemplatesModuleInfo(templateMergeResponse);
+
+    MockedStatic<GitAwareContextHelper> gitAwareContextHelperMockedStatic = mockStatic(GitAwareContextHelper.class);
+    gitAwareContextHelperMockedStatic.when(GitAwareContextHelper::getBranchInRequestOrFromSCMGitMetadata)
+        .thenReturn("branch");
     doReturn(io.harness.governance.GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pipelineGovernanceService)
-        .validateGovernanceRules("acc", "org", "proj", "yaml");
+        .validateGovernanceRules("acc", "org", "proj", "branch", pipelineEntity, "yaml");
     pipelineAsyncValidationHandler.run();
     verify(validationService, times(1))
         .updateEvent("abc123", ValidationStatus.IN_PROGRESS, ValidationResult.builder().build());
@@ -106,9 +113,12 @@ public class PipelineAsyncValidationHandlerTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testEvaluatePoliciesAndUpdateResultForFailure() {
+    MockedStatic<GitAwareContextHelper> gitAwareContextHelperMockedStatic = mockStatic(GitAwareContextHelper.class);
+    gitAwareContextHelperMockedStatic.when(GitAwareContextHelper::getBranchInRequestOrFromSCMGitMetadata)
+        .thenReturn("branch");
     doReturn(GovernanceMetadata.newBuilder().setDeny(true).build())
         .when(pipelineGovernanceService)
-        .validateGovernanceRules("acc", "org", "proj", "yaml");
+        .validateGovernanceRules("acc", "org", "proj", "branch", pipelineEntity, "yaml");
     pipelineAsyncValidationHandler.evaluatePoliciesAndUpdateResult(pipelineEntity,
         TemplateMergeResponseDTO.builder().mergedPipelineYamlWithTemplateRef("yaml").build(),
         ValidationResult.builder().build());
@@ -131,9 +141,12 @@ public class PipelineAsyncValidationHandlerTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testEvaluatePoliciesAndUpdateResultForSuccess() {
+    MockedStatic<GitAwareContextHelper> gitAwareContextHelperMockedStatic = mockStatic(GitAwareContextHelper.class);
+    gitAwareContextHelperMockedStatic.when(GitAwareContextHelper::getBranchInRequestOrFromSCMGitMetadata)
+        .thenReturn("branch");
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pipelineGovernanceService)
-        .validateGovernanceRules("acc", "org", "proj", "yaml");
+        .validateGovernanceRules("acc", "org", "proj", "branch", pipelineEntity, "yaml");
     pipelineAsyncValidationHandler.evaluatePoliciesAndUpdateResult(pipelineEntity,
         TemplateMergeResponseDTO.builder().mergedPipelineYamlWithTemplateRef("yaml").build(),
         ValidationResult.builder().build());

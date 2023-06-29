@@ -83,6 +83,7 @@ public class K8sScaleTaskHandlerTest extends WingsBaseTest {
   private static final String kubeConfigNamespace = "kubeConfigNamespace";
   private static final String releaseName = "releaseName";
   private static final String workload = "deployment/workload";
+  private KubernetesResourceId kubernetesResourceId;
 
   @Before
   public void setup() {
@@ -96,6 +97,8 @@ public class K8sScaleTaskHandlerTest extends WingsBaseTest {
                                  .build();
     kubernetesConfig = KubernetesConfig.builder().namespace(kubeConfigNamespace).accountId(ACCOUNT_ID).build();
     k8sDelegateTaskParams = K8sDelegateTaskParams.builder().build();
+    kubernetesResourceId =
+        KubernetesResourceId.builder().namespace(kubeConfigNamespace).name("workload").kind("deployment").build();
   }
 
   @Test
@@ -104,6 +107,8 @@ public class K8sScaleTaskHandlerTest extends WingsBaseTest {
   public void testExecuteForNamespaceFromKubeConfig() throws Exception {
     when(containerDeploymentDelegateHelper.getKubernetesConfig(nullable(K8sClusterConfig.class), anyBoolean()))
         .thenReturn(kubernetesConfig);
+    when(k8sTaskHelperBase.findScalableKubernetesResourceIdFromWorkload(eq(k8sScaleTaskParameters.getWorkload())))
+        .thenReturn(kubernetesResourceId);
     when(k8sTaskHelperBase.scale(any(Kubectl.class), any(K8sDelegateTaskParams.class), any(KubernetesResourceId.class),
              anyInt(), any(ExecutionLogCallback.class), eq(false)))
         .thenReturn(false);
@@ -125,9 +130,13 @@ public class K8sScaleTaskHandlerTest extends WingsBaseTest {
     String namespace = "namespace";
     String namespacedWorkload = "namespace/deployment/workload";
     k8sScaleTaskParameters.setWorkload(namespacedWorkload);
+    KubernetesResourceId k8sResourceId =
+        KubernetesResourceId.builder().namespace(namespace).name("workload").kind("deployment").build();
 
     when(containerDeploymentDelegateHelper.getKubernetesConfig(nullable(K8sClusterConfig.class), anyBoolean()))
         .thenReturn(kubernetesConfig);
+    when(k8sTaskHelperBase.findScalableKubernetesResourceIdFromWorkload(eq(k8sScaleTaskParameters.getWorkload())))
+        .thenReturn(k8sResourceId);
     when(k8sTaskHelperBase.getPodDetails(kubernetesConfig, namespace, releaseName, LONG_TIMEOUT_INTERVAL))
         .thenReturn(null);
     when(k8sTaskHelperBase.scale(any(Kubectl.class), any(K8sDelegateTaskParams.class), any(KubernetesResourceId.class),
@@ -184,6 +193,8 @@ public class K8sScaleTaskHandlerTest extends WingsBaseTest {
     Reflect.on(k8sScaleTaskHandler).set("k8sTaskHelper", new K8sTaskHelper());
     when(containerDeploymentDelegateHelper.getKubernetesConfig(nullable(K8sClusterConfig.class), anyBoolean()))
         .thenReturn(kubernetesConfig);
+    when(k8sTaskHelperBase.findScalableKubernetesResourceIdFromWorkload(eq(k8sScaleTaskParameters.getWorkload())))
+        .thenReturn(kubernetesResourceId);
     k8sScaleTaskParameters.setInstanceUnitType(InstanceUnitType.PERCENTAGE);
 
     // max instances is not present
@@ -213,6 +224,8 @@ public class K8sScaleTaskHandlerTest extends WingsBaseTest {
   public void skipSteadyStateCheckFail() throws Exception {
     when(containerDeploymentDelegateHelper.getKubernetesConfig(nullable(K8sClusterConfig.class), anyBoolean()))
         .thenReturn(kubernetesConfig);
+    when(k8sTaskHelperBase.findScalableKubernetesResourceIdFromWorkload(eq(k8sScaleTaskParameters.getWorkload())))
+        .thenReturn(kubernetesResourceId);
     when(k8sTaskHelperBase.scale(any(Kubectl.class), any(K8sDelegateTaskParams.class), any(KubernetesResourceId.class),
              anyInt(), any(ExecutionLogCallback.class), eq(false)))
         .thenReturn(true);
@@ -235,6 +248,8 @@ public class K8sScaleTaskHandlerTest extends WingsBaseTest {
   public void skipSteadyStateCheckSuccess() throws Exception {
     when(containerDeploymentDelegateHelper.getKubernetesConfig(nullable(K8sClusterConfig.class), anyBoolean()))
         .thenReturn(kubernetesConfig);
+    when(k8sTaskHelperBase.findScalableKubernetesResourceIdFromWorkload(eq(k8sScaleTaskParameters.getWorkload())))
+        .thenReturn(kubernetesResourceId);
     when(k8sTaskHelperBase.scale(any(Kubectl.class), any(K8sDelegateTaskParams.class), any(KubernetesResourceId.class),
              anyInt(), any(ExecutionLogCallback.class), eq(false)))
         .thenReturn(true);

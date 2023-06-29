@@ -8,7 +8,8 @@
 package io.harness.cdng.ssh.rollback;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.cdng.ssh.utils.CommandStepUtils.getOutputVariables;
+import static io.harness.cdng.ssh.utils.CommandStepUtils.getOutputVariableValuesWithoutSecrets;
+import static io.harness.cdng.ssh.utils.CommandStepUtils.getSecretOutputVariableValues;
 import static io.harness.cdng.ssh.utils.CommandStepUtils.mergeEnvironmentVariables;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -110,8 +111,7 @@ public class CommandStepRollbackHelper extends CDStepHelper {
     // if pipeline rollback happens then need to update the executionDetails with one from prepared for rollback
     ExecutionMode executionMode = ambiance.getMetadata().getExecutionMode();
     boolean isPipelineRollbackModeExecution = ExecutionModeUtils.isRollbackMode(executionMode);
-    if (isPipelineRollbackModeExecution
-        && cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.PIPELINE_ROLLBACK)) {
+    if (isPipelineRollbackModeExecution) {
       stageExecutionHelper.saveStageExecutionDetails(
           ambiance, sshWinRmPrepareRollbackDataOutcome.getExecutionInfoKey(), sshWinRmExecutionDetails);
     }
@@ -129,13 +129,17 @@ public class CommandStepRollbackHelper extends CDStepHelper {
         : null;
     Map<String, String> environmentVariables =
         mergeEnvironmentVariables(sshWinRmExecutionDetails.getEnvVariables(), builtInEnvVariables);
-    List<String> outputVariables = getOutputVariables(sshWinRmExecutionDetails.getOutVariables());
+    List<String> outputVariables = getOutputVariableValuesWithoutSecrets(
+        commandStepParameters.getOutputVariables(), commandStepParameters.getSecretOutputVariablesNames());
+    List<String> secretOutputVariables = getSecretOutputVariableValues(
+        commandStepParameters.getOutputVariables(), commandStepParameters.getSecretOutputVariablesNames());
 
     return Optional.of(SshWinRmRollbackData.builder()
                            .artifactDelegateConfig(artifactDelegateConfig)
                            .fileDelegateConfig(fileDelegateConfig)
                            .envVariables(environmentVariables)
                            .outVariables(outputVariables)
+                           .secretOutVariables(secretOutputVariables)
                            .build());
   }
 

@@ -69,8 +69,8 @@ public class SshScriptCommandHandler implements CommandHandler {
 
     AbstractScriptExecutor executor = sshScriptExecutorFactory.getExecutor(context);
 
-    ExecuteCommandResponse executeCommandResponse =
-        executor.executeCommandString(scriptCommandUnit.getCommand(), sshCommandTaskParameters.getOutputVariables());
+    ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(scriptCommandUnit.getCommand(),
+        sshCommandTaskParameters.getOutputVariables(), sshCommandTaskParameters.getSecretOutputVariables(), null);
     if (executeCommandResponse == null) {
       if (parameters.isExecuteOnDelegate()) {
         executor.getLogCallback().saveExecutionLog("Command finished with status " + CommandExecutionStatus.FAILURE,

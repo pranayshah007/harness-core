@@ -8,6 +8,7 @@
 package io.harness.pms.merger.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.NGExpressionUtils;
@@ -15,7 +16,9 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.YamlUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.BooleanNode;
 import java.util.HashSet;
 import java.util.List;
@@ -27,13 +30,22 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class InputSetTemplateHelper {
+  // TODO(shalini): remove older methods with yaml string once all are moved to jsonNode
   public String createTemplateFromPipeline(String pipelineYaml) {
     return RuntimeInputFormHelper.createRuntimeInputForm(pipelineYaml, true);
+  }
+
+  public JsonNode createTemplateFromPipeline(JsonNode pipelineJsonNode) {
+    return RuntimeInputFormHelper.createRuntimeInputFormWithJsonNode(pipelineJsonNode, true);
   }
 
   // only to be used for get runtime input form API, everywhere else the above method is to be used
   public String createTemplateWithDefaultValuesFromPipeline(String pipelineYaml) {
     return RuntimeInputFormHelper.createRuntimeInputFormWithDefaultValues(pipelineYaml);
+  }
+
+  public JsonNode createTemplateWithDefaultValuesFromPipeline(JsonNode pipelineJsonNode) {
+    return RuntimeInputFormHelper.createRuntimeInputFormWithDefaultValues(pipelineJsonNode);
   }
 
   public String createTemplateFromPipelineForGivenStages(String pipelineYaml, List<String> stageIdentifiers) {
@@ -44,13 +56,21 @@ public class InputSetTemplateHelper {
     return removeNonRequiredStages(template, pipelineYaml, stageIdentifiers, false);
   }
 
-  public String createTemplateWithDefaultValuesFromPipelineForGivenStages(
-      String pipelineYaml, List<String> stageIdentifiers) {
-    String template = RuntimeInputFormHelper.createRuntimeInputFormWithDefaultValues(pipelineYaml);
-    if (EmptyPredicate.isEmpty(template)) {
+  public JsonNode createTemplateFromPipelineForGivenStages(JsonNode pipelineJsonNode, List<String> stageIdentifiers) {
+    JsonNode template = RuntimeInputFormHelper.createRuntimeInputFormWithJsonNode(pipelineJsonNode, true);
+    if (isEmpty(template)) {
       return null;
     }
-    return removeNonRequiredStages(template, pipelineYaml, stageIdentifiers, true);
+    return removeNonRequiredStages(template, pipelineJsonNode, stageIdentifiers, false);
+  }
+
+  public JsonNode createTemplateWithDefaultValuesFromPipelineForGivenStages(
+      JsonNode pipelineJsonNode, List<String> stageIdentifiers) {
+    JsonNode template = RuntimeInputFormHelper.createRuntimeInputFormWithDefaultValues(pipelineJsonNode);
+    if (isEmpty(template)) {
+      return null;
+    }
+    return removeNonRequiredStages(template, pipelineJsonNode, stageIdentifiers, true);
   }
 
   public String createTemplateWithDefaultValuesAndModifiedPropertiesFromPipelineForGivenStages(
@@ -69,9 +89,17 @@ public class InputSetTemplateHelper {
 
   public String removeNonRequiredStages(
       String template, String pipelineYaml, List<String> stageIdentifiers, boolean keepDefaultValues) {
-    YamlConfig pipelineYamlConfig = new YamlConfig(pipelineYaml);
-    YamlConfig templateConfig = new YamlConfig(template);
-    Map<FQN, Object> templateFQNMap = templateConfig.getFqnToValueMap();
+    JsonNode jsonNode = removeNonRequiredStages(YamlUtils.readAsJsonNode(template),
+        YamlUtils.readAsJsonNode(pipelineYaml), stageIdentifiers, keepDefaultValues);
+    if (isEmpty(jsonNode)) {
+      return null;
+    }
+    return YamlUtils.writeYamlString(jsonNode);
+  }
+
+  public JsonNode removeNonRequiredStages(
+      JsonNode template, JsonNode pipelineJsonNode, List<String> stageIdentifiers, boolean keepDefaultValues) {
+    Map<FQN, Object> templateFQNMap = FQNMapGenerator.generateFQNMap(template);
     Set<FQN> nonRuntimeInputFQNs = new HashSet<>();
     templateFQNMap.keySet().forEach(key -> {
       String value = templateFQNMap.get(key).toString().replace("\"", "");
@@ -86,7 +114,7 @@ public class InputSetTemplateHelper {
     if (EmptyPredicate.isNotEmpty(stageIdentifiers)) {
       FQNHelper.removeNonRequiredStages(templateFQNMap, stageIdentifiers);
     }
-    return new YamlConfig(templateFQNMap, pipelineYamlConfig.getYamlMap()).getYaml();
+    return YamlMapGenerator.generateYamlMap(templateFQNMap, pipelineJsonNode, false);
   }
 
   public String removePropertiesIfNotRequired(

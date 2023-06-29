@@ -324,6 +324,13 @@ public class GitSyncTestRule implements InjectorRuleMixin, MethodRule, MongoRule
       public boolean getSerializationForDelegate() {
         return false;
       }
+
+      @Provides
+      @Singleton
+      @Named("gitServiceConfiguration")
+      public GitServiceConfiguration getGitServiceConfiguration() {
+        return GitServiceConfiguration.builder().build();
+      }
     });
     modules.add(KryoModule.getInstance());
     modules.add(mongoTypeModule(annotations));

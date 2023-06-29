@@ -32,6 +32,7 @@ import io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStep;
 import io.harness.cdng.aws.sam.AwsSamBuildStep;
 import io.harness.cdng.aws.sam.AwsSamDeployStep;
 import io.harness.cdng.aws.sam.AwsSamRollbackStep;
+import io.harness.cdng.aws.sam.DownloadManifestsStep;
 import io.harness.cdng.azure.webapp.ApplicationSettingsStep;
 import io.harness.cdng.azure.webapp.AzureServiceSettingsStep;
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStep;
@@ -110,9 +111,13 @@ import io.harness.cdng.provision.cloudformation.CloudformationDeleteStackStep;
 import io.harness.cdng.provision.cloudformation.CloudformationRollbackStep;
 import io.harness.cdng.provision.shellscript.ShellScriptProvisionStep;
 import io.harness.cdng.provision.terraform.TerraformApplyStep;
+import io.harness.cdng.provision.terraform.TerraformApplyStepV2;
 import io.harness.cdng.provision.terraform.TerraformDestroyStep;
+import io.harness.cdng.provision.terraform.TerraformDestroyStepV2;
 import io.harness.cdng.provision.terraform.TerraformPlanStep;
+import io.harness.cdng.provision.terraform.TerraformPlanStepV2;
 import io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStep;
+import io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStepV2;
 import io.harness.cdng.provision.terraformcloud.steps.TerraformCloudRollbackStep;
 import io.harness.cdng.provision.terraformcloud.steps.TerraformCloudRunStep;
 import io.harness.cdng.provision.terragrunt.TerragruntApplyStep;
@@ -124,6 +129,9 @@ import io.harness.cdng.rollback.steps.InfrastructureProvisionerStep;
 import io.harness.cdng.rollback.steps.RollbackStepsStep;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStep;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStep;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2Step;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2Step;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaRollbackV2Step;
 import io.harness.cdng.service.steps.ServiceConfigStep;
 import io.harness.cdng.service.steps.ServiceDefinitionStep;
 import io.harness.cdng.service.steps.ServiceSectionStep;
@@ -303,12 +311,22 @@ public class NgStepRegistrar {
     engineSteps.put(AwsSamDeployStep.STEP_TYPE, AwsSamDeployStep.class);
     engineSteps.put(AwsSamBuildStep.STEP_TYPE, AwsSamBuildStep.class);
     engineSteps.put(AwsSamRollbackStep.STEP_TYPE, AwsSamRollbackStep.class);
+    engineSteps.put(DownloadManifestsStep.STEP_TYPE, DownloadManifestsStep.class);
 
     // Service Hooks
     engineSteps.put(ServiceHooksStep.STEP_TYPE, ServiceHooksStep.class);
 
     // Blue Green Stage Scale Down
     engineSteps.put(K8sBGStageScaleDownStep.STEP_TYPE, K8sBGStageScaleDownStep.class);
+
+    engineSteps.put(ServerlessAwsLambdaPrepareRollbackV2Step.STEP_TYPE, ServerlessAwsLambdaPrepareRollbackV2Step.class);
+    engineSteps.put(ServerlessAwsLambdaRollbackV2Step.STEP_TYPE, ServerlessAwsLambdaRollbackV2Step.class);
+    engineSteps.put(ServerlessAwsLambdaDeployV2Step.STEP_TYPE, ServerlessAwsLambdaDeployV2Step.class);
+
+    engineSteps.put(TerraformPlanStepV2.STEP_TYPE, TerraformPlanStepV2.class);
+    engineSteps.put(TerraformApplyStepV2.STEP_TYPE, TerraformApplyStepV2.class);
+    engineSteps.put(TerraformDestroyStepV2.STEP_TYPE, TerraformDestroyStepV2.class);
+    engineSteps.put(TerraformRollbackStepV2.STEP_TYPE, TerraformRollbackStepV2.class);
     return engineSteps;
   }
 }

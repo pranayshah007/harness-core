@@ -18,6 +18,7 @@ import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.app.beans.entities.CICreditsResult;
 import io.harness.app.beans.entities.CIUsageResult;
 import io.harness.app.beans.entities.DashboardBuildExecutionInfo;
 import io.harness.app.beans.entities.DashboardBuildRepositoryInfo;
@@ -158,4 +159,13 @@ public interface CIDashboardOverviewResource {
   ResponseDTO<CIUsageResult> getCIUsageData(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.TIMESTAMP) long timestamp);
+
+  @GET
+  @Path("/credits")
+  @ApiOperation(value = "Get build credits", nickname = "getCredits")
+  @NGAccessControlCheck(resourceType = "ACCOUNT", permission = "core_account_view")
+  ResponseDTO<CICreditsResult> getCredits(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval,
+      @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval);
 }

@@ -367,19 +367,19 @@ public class ScmManagerFacilitatorServiceImplTest extends GitSyncTestBase {
   public void testGetDecryptedScmConnector() {
     Map<ConnectorDetails, ScmConnector> decryptedConnectorMap = new HashMap<>();
     scmManagerFacilitatorService.getDecryptedScmConnector(decryptedConnectorMap,
-        getScope(accountIdentifier, orgIdentifier, projectIdentifier), "connectorRef-1", githubConnector);
+        getScope(accountIdentifier, orgIdentifier, projectIdentifier), "connectorRef-1", githubConnector, repoName);
     assertThat(decryptedConnectorMap.size()).isEqualTo(1);
-    scmManagerFacilitatorService.getDecryptedScmConnector(
-        decryptedConnectorMap, getScope(null, orgIdentifier, projectIdentifier), "connectorRef-1", githubConnector);
+    scmManagerFacilitatorService.getDecryptedScmConnector(decryptedConnectorMap,
+        getScope(null, orgIdentifier, projectIdentifier), "connectorRef-1", githubConnector, repoName);
     assertThat(decryptedConnectorMap.size()).isEqualTo(2);
     scmManagerFacilitatorService.getDecryptedScmConnector(
-        decryptedConnectorMap, getScope(null, null, projectIdentifier), "connectorRef-1", githubConnector);
+        decryptedConnectorMap, getScope(null, null, projectIdentifier), "connectorRef-1", githubConnector, repoName);
     assertThat(decryptedConnectorMap.size()).isEqualTo(3);
-    scmManagerFacilitatorService.getDecryptedScmConnector(
-        decryptedConnectorMap, getScope(null, orgIdentifier, projectIdentifier), "connectorRef-1", githubConnector);
+    scmManagerFacilitatorService.getDecryptedScmConnector(decryptedConnectorMap,
+        getScope(null, orgIdentifier, projectIdentifier), "connectorRef-1", githubConnector, repoName);
     assertThat(decryptedConnectorMap.size()).isEqualTo(3);
-    scmManagerFacilitatorService.getDecryptedScmConnector(
-        decryptedConnectorMap, getScope(null, orgIdentifier, projectIdentifier), "connectorRef-2", githubConnector);
+    scmManagerFacilitatorService.getDecryptedScmConnector(decryptedConnectorMap,
+        getScope(null, orgIdentifier, projectIdentifier), "connectorRef-2", githubConnector, repoName);
     assertThat(decryptedConnectorMap.size()).isEqualTo(4);
   }
 

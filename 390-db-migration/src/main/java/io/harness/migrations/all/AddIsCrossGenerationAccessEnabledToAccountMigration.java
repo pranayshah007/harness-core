@@ -9,14 +9,11 @@ package io.harness.migrations.all;
 
 import static software.wings.beans.Account.AccountKeys;
 
-import io.harness.beans.FeatureName;
 import io.harness.migrations.Migration;
-import io.harness.ng.core.account.DefaultExperience;
 import io.harness.persistence.HIterator;
 
 import software.wings.beans.Account;
 import software.wings.dl.WingsPersistence;
-import software.wings.service.intfc.AccountService;
 
 import com.google.inject.Inject;
 import dev.morphia.query.Query;
@@ -28,7 +25,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AddIsCrossGenerationAccessEnabledToAccountMigration implements Migration {
   @Inject private WingsPersistence wingsPersistence;
-  @Inject private AccountService accountService;
 
   private static final List<String> PROD_ACCOUNT_ID_LIST =
       Arrays.asList("WvvS1AaWR5Kuqeeb2jqGrw", "SNM_3IzhRa6SFPz6DIV7aA", "vpCkHKsDSxK9_KYfjCTMKA");
@@ -51,19 +47,8 @@ public class AddIsCrossGenerationAccessEnabledToAccountMigration implements Migr
         try {
           account = records.next();
           UpdateOperations<Account> updateOperations = wingsPersistence.createUpdateOperations(Account.class);
+          updateOperations.set(AccountKeys.isCrossGenerationAccessEnabled, Boolean.TRUE);
 
-          if (DefaultExperience.isNGExperience(account.getDefaultExperience())) {
-            updateOperations.set(AccountKeys.isCrossGenerationAccessEnabled, Boolean.TRUE);
-          } else {
-            boolean isFFEnabled =
-                accountService.isFeatureFlagEnabled(FeatureName.PL_HIDE_LAUNCH_NEXTGEN.name(), account.getUuid());
-
-            if (isFFEnabled) {
-              updateOperations.set(AccountKeys.isCrossGenerationAccessEnabled, Boolean.FALSE);
-            } else {
-              updateOperations.set(AccountKeys.isCrossGenerationAccessEnabled, Boolean.TRUE);
-            }
-          }
           wingsPersistence.update(account, updateOperations);
           log.info("isCrossGenerationAccessEnabled field is successfully added into account: {}", account.getUuid());
         } catch (Exception e) {

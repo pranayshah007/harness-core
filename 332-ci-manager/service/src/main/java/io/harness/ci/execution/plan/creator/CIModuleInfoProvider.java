@@ -528,7 +528,8 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
       connection.setConnectTimeout(5000);
       connection.connect();
       int code = connection.getResponseCode();
-      return !Response.Status.Family.familyOf(code).equals(Response.Status.Family.SUCCESSFUL);
+      return (!Response.Status.Family.familyOf(code).equals(Response.Status.Family.SUCCESSFUL))
+          || code == HttpURLConnection.HTTP_NOT_AUTHORITATIVE;
     } catch (Exception e) {
       log.warn("Failed to get repo info, assuming private. url", e);
       return true;

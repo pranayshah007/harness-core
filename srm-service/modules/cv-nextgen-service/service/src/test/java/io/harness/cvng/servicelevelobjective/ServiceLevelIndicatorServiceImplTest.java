@@ -476,7 +476,7 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
         serviceLevelIndicatorService
             .getServiceLevelIndicator(builderFactory.getProjectParams(), serviceLevelIndicatorIdentifiers.get(0))
             .getUuid();
-    createSLIRecords(sliId, sliStateList);
+    createSLIRecords(sliId, sliStateList, startTime);
     serviceLevelIndicatorService.update(projectParams, serviceLevelIndicatorDTOList, "sloId",
         Collections.singletonList(serviceLevelIndicatorDTO.getIdentifier()), monitoredServiceIdentifier,
         "healthSourceId",
@@ -556,17 +556,29 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
         serviceLevelIndicatorService
             .getServiceLevelIndicator(builderFactory.getProjectParams(), serviceLevelIndicatorIdentifiers.get(0))
             .getUuid();
-    createSLIRecords(sliId, sliStateList);
+    createSLIRecords(sliId, sliStateList, startTime.minus(2, ChronoUnit.DAYS));
     updateSLI(projectParams, serviceLevelIndicatorDTO, serviceLevelObjectiveIdentifier,
         serviceLevelIndicatorIdentifiers, healthSourceIdentifier);
     verify(orchestrationService, times(1))
-        .queueAnalysis(AnalysisInput.builder().verificationTaskId(sliId).startTime(startTime).endTime(endTime).build());
+        .queueAnalysis(AnalysisInput.builder()
+                           .verificationTaskId(sliId)
+                           .startTime(startTime.minus(2, ChronoUnit.DAYS))
+                           .endTime(startTime.minus(36, ChronoUnit.HOURS))
+                           .build());
+    verify(orchestrationService, times(1)).queueAnalysis(any());
+    verify(orchestrationService, times(4)).queueAnalysisWithoutEventPublish(any(), any());
     ((RatioSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec())
         .setEventType(RatioSLIMetricEventType.BAD);
     updateSLI(projectParams, serviceLevelIndicatorDTO, serviceLevelObjectiveIdentifier,
         serviceLevelIndicatorIdentifiers, healthSourceIdentifier);
     verify(orchestrationService, times(2))
-        .queueAnalysis(AnalysisInput.builder().verificationTaskId(sliId).startTime(startTime).endTime(endTime).build());
+        .queueAnalysis(AnalysisInput.builder()
+                           .verificationTaskId(sliId)
+                           .startTime(startTime.minus(2, ChronoUnit.DAYS))
+                           .endTime(startTime.minus(36, ChronoUnit.HOURS))
+                           .build());
+    verify(orchestrationService, times(2)).queueAnalysis(any());
+    verify(orchestrationService, times(8)).queueAnalysisWithoutEventPublish(any(), any());
   }
 
   private void updateSLI(ProjectParams projectParams, ServiceLevelIndicatorDTO serviceLevelIndicatorDTO,
@@ -672,10 +684,10 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
         .build();
   }
 
-  private List<SLIRecord> createSLIRecords(String sliId, List<SLIState> states) {
-    int index = 0;
+  private List<SLIRecord> createSLIRecords(String sliId, List<SLIState> states, Instant startTime) {
     List<SLIRecord> sliRecords = new ArrayList<>();
-    for (Instant instant = startTime; instant.isBefore(endTime); instant = instant.plus(1, ChronoUnit.MINUTES)) {
+    for (int index = 0; index < states.size(); index += 1) {
+      Instant instant = startTime.plus(index, ChronoUnit.MINUTES);
       SLIRecord sliRecord = SLIRecord.builder()
                                 .verificationTaskId(sliId)
                                 .sliId(sliId)

@@ -35,9 +35,9 @@ import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErro
 import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorMetadataDTO;
 import io.harness.gitaware.dto.FetchRemoteEntityRequest;
 import io.harness.gitaware.dto.GetFileGitContextRequestParams;
-import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.gitx.GitXTransientBranchGuard;
 import io.harness.logging.AutoLogContext;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
@@ -137,11 +137,13 @@ public class TemplateMergeServiceHelper {
       return templateCacheMap.get(templateUniqueIdentifier);
     }
 
-    GitAwareContextHelper.updateGitEntityContextWithBranch(branch);
-    Optional<TemplateEntity> templateEntity =
-        templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(templateIdentifierRef.getAccountIdentifier(),
-            templateIdentifierRef.getOrgIdentifier(), templateIdentifierRef.getProjectIdentifier(),
-            templateIdentifierRef.getIdentifier(), versionLabel, false, loadFromCache);
+    Optional<TemplateEntity> templateEntity;
+    try (GitXTransientBranchGuard ignore = new GitXTransientBranchGuard(branch)) {
+      templateEntity =
+          templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(templateIdentifierRef.getAccountIdentifier(),
+              templateIdentifierRef.getOrgIdentifier(), templateIdentifierRef.getProjectIdentifier(),
+              templateIdentifierRef.getIdentifier(), versionLabel, false, loadFromCache);
+    }
     if (!templateEntity.isPresent()) {
       throw new NGTemplateException(String.format(
           "The template identifier %s and version label %s does not exist. Could not replace this template",

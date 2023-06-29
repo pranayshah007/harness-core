@@ -67,10 +67,10 @@ public class AzureConfigHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetAzureAccountAttributes() throws Exception {
     when(mockNgConnectorHelper.getNextGenConnectors(ACCOUNT_ID, Arrays.asList(ConnectorType.CE_AZURE),
-             Arrays.asList(CEFeatures.VISIBILITY, CEFeatures.BILLING),
+             Arrays.asList(CEFeatures.VISIBILITY),
              Arrays.asList(ConnectivityStatus.SUCCESS, ConnectivityStatus.FAILURE, ConnectivityStatus.PARTIAL,
                  ConnectivityStatus.UNKNOWN)))
-        .thenReturn(getConnectorMockedResponse(Arrays.asList(CEFeatures.VISIBILITY, CEFeatures.BILLING)));
+        .thenReturn(getConnectorMockedResponse(Arrays.asList(CEFeatures.VISIBILITY)));
     final Map<String, AzureAccountAttributes> result = azureConfigHelperUnderTest.getAzureAccountAttributes(ACCOUNT_ID);
     assertThat(result).isEqualTo(expectedResult);
   }
@@ -78,48 +78,11 @@ public class AzureConfigHelperTest extends CategoryTest {
   @Test
   @Owner(developers = ANMOL)
   @Category(UnitTests.class)
-  public void testGetAzureAccountAttributes_WithJustVisibilityEnabled() throws Exception {
-    when(mockNgConnectorHelper.getNextGenConnectors(ACCOUNT_ID, Arrays.asList(ConnectorType.CE_AZURE),
-             Arrays.asList(CEFeatures.VISIBILITY, CEFeatures.BILLING),
-             Arrays.asList(ConnectivityStatus.SUCCESS, ConnectivityStatus.FAILURE, ConnectivityStatus.PARTIAL,
-                 ConnectivityStatus.UNKNOWN)))
-        .thenReturn(getConnectorMockedResponse(Arrays.asList(CEFeatures.VISIBILITY)));
-    final Map<String, AzureAccountAttributes> result = azureConfigHelperUnderTest.getAzureAccountAttributes(ACCOUNT_ID);
-    assertThat(result).isEqualTo(Collections.emptyMap());
-  }
-
-  @Test
-  @Owner(developers = ANMOL)
-  @Category(UnitTests.class)
-  public void testGetAzureAccountAttributes_WithJustBillingEnabled() throws Exception {
-    when(mockNgConnectorHelper.getNextGenConnectors(ACCOUNT_ID, Arrays.asList(ConnectorType.CE_AZURE),
-             Arrays.asList(CEFeatures.VISIBILITY, CEFeatures.BILLING),
-             Arrays.asList(ConnectivityStatus.SUCCESS, ConnectivityStatus.FAILURE, ConnectivityStatus.PARTIAL,
-                 ConnectivityStatus.UNKNOWN)))
-        .thenReturn(getConnectorMockedResponse(Arrays.asList(CEFeatures.BILLING)));
-    final Map<String, AzureAccountAttributes> result = azureConfigHelperUnderTest.getAzureAccountAttributes(ACCOUNT_ID);
-    assertThat(result).isEqualTo(Collections.emptyMap());
-  }
-
-  @Test
-  @Owner(developers = ANMOL)
-  @Category(UnitTests.class)
-  public void testGetAzureAccountAttributes_WithNoFeatureEnabled() throws Exception {
-    when(mockNgConnectorHelper.getNextGenConnectors(ACCOUNT_ID, Arrays.asList(ConnectorType.CE_AZURE),
-             Arrays.asList(CEFeatures.VISIBILITY, CEFeatures.BILLING),
-             Arrays.asList(ConnectivityStatus.SUCCESS, ConnectivityStatus.FAILURE, ConnectivityStatus.PARTIAL,
-                 ConnectivityStatus.UNKNOWN)))
-        .thenReturn(getConnectorMockedResponse(null));
-    final Map<String, AzureAccountAttributes> result = azureConfigHelperUnderTest.getAzureAccountAttributes(ACCOUNT_ID);
-    assertThat(result).isEqualTo(Collections.emptyMap());
-  }
-
-  @Test
-  @Owner(developers = ANMOL)
-  @Category(UnitTests.class)
   public void testGetAzureAccountAttributes_NGConnectorHelperReturnsNoItems() {
-    when(mockNgConnectorHelper.getNextGenConnectors(ACCOUNT_ID, List.of(ConnectorType.KUBERNETES_CLUSTER),
-             List.of(CEFeatures.BILLING), List.of(ConnectivityStatus.SUCCESS)))
+    when(mockNgConnectorHelper.getNextGenConnectors(ACCOUNT_ID, Arrays.asList(ConnectorType.CE_AZURE),
+             Arrays.asList(CEFeatures.VISIBILITY),
+             Arrays.asList(ConnectivityStatus.SUCCESS, ConnectivityStatus.FAILURE, ConnectivityStatus.PARTIAL,
+                 ConnectivityStatus.UNKNOWN)))
         .thenReturn(Collections.emptyList());
     final Map<String, AzureAccountAttributes> result = azureConfigHelperUnderTest.getAzureAccountAttributes(ACCOUNT_ID);
     assertThat(result).isEqualTo(Collections.emptyMap());

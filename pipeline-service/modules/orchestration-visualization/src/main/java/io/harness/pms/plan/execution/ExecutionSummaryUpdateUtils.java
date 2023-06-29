@@ -111,9 +111,7 @@ public class ExecutionSummaryUpdateUtils {
       update.set(String.format(LayoutNodeGraphConstants.FAILURE_INFO_DTO, stageUuid),
           FailureInfoDTOConverter.toFailureInfoDTO(nodeExecution.getFailureInfo()));
     }
-    if (nodeExecution.getSkipInfo() != null) {
-      update.set(String.format(LayoutNodeGraphConstants.SKIP_INFO, stageUuid), nodeExecution.getSkipInfo());
-    }
+
     update.set(String.format(LayoutNodeGraphConstants.EXECUTION_INPUT_CONFIGURED, stageUuid),
         nodeExecution.getExecutionInputConfigured());
     update.set(String.format(LayoutNodeGraphConstants.NODE_IDENTIFIER, stageUuid), nodeExecution.getIdentifier());

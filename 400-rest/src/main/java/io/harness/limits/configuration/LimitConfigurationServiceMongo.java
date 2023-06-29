@@ -69,6 +69,16 @@ public class LimitConfigurationServiceMongo implements LimitConfigurationService
   }
 
   @Override
+  @Nullable
+  public ConfiguredLimit getOrDefaultToGlobal(String accountId, String globalAccountId, ActionType actionType) {
+    ConfiguredLimit limit = get(accountId, actionType);
+    if (null == limit) {
+      limit = getOrDefault(globalAccountId, actionType);
+    }
+    return limit;
+  }
+
+  @Override
   @VisibleForTesting
   @Nullable
   public ConfiguredLimit get(String accountId, ActionType actionType) {

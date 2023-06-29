@@ -126,10 +126,8 @@ public class TestVerificationJob extends VerificationJob {
           verificationJobInstanceService.getLastSuccessfulTestVerificationJobExecutionId(serviceEnvironmentParams)
               .orElse(null);
     } else if (baselineVerificationJobInstanceId == null && Objects.equals(baselineType, BaselineType.PINNED)) {
-      baselineVerificationJobInstanceId =
-          verificationJobInstanceService.getPinnedBaselineVerificationJobInstance(serviceEnvironmentParams)
-              .orElse(null)
-              .getUuid();
+      verificationJobInstanceService.getPinnedBaselineVerificationJobInstance(serviceEnvironmentParams)
+          .ifPresent(verificationJobInstance -> baselineVerificationJobInstanceId = verificationJobInstance.getUuid());
     }
     return this;
   }

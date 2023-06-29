@@ -13,11 +13,6 @@ import io.harness.callback.DelegateCallbackToken;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
-import io.harness.delegate.beans.instancesync.info.AwsSamServerInstanceInfo;
-import io.harness.delegate.task.stepstatus.StepExecutionStatus;
-import io.harness.delegate.task.stepstatus.StepMapOutput;
-import io.harness.delegate.task.stepstatus.StepOutput;
-import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -30,11 +25,7 @@ import io.harness.product.ci.engine.proto.UnitStep;
 import io.harness.tasks.ResponseData;
 import io.harness.yaml.core.timeout.Timeout;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
-import java.util.Arrays;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -69,62 +60,37 @@ public class AwsSamDeployStep extends AbstractContainerStepV2<StepElementParamet
   @Override
   public UnitStep getSerialisedStep(Ambiance ambiance, StepElementParameters stepElementParameters, String accountId,
       String logKey, long timeout, String parkedTaskId) {
-    // Todo: Add entrypoint
     AwsSamDeployStepParameters awsSamDeployStepParameters =
         (AwsSamDeployStepParameters) stepElementParameters.getSpec();
 
     // Check if image exists
     awsSamStepHelper.verifyPluginImageIsProvider(awsSamDeployStepParameters.getImage());
 
+    Map<String, String> samDeployEnvironmentVariablesMap = new HashMap<>();
+
+    awsSamStepHelper.putK8sServiceAccountEnvVars(ambiance, samDeployEnvironmentVariablesMap);
+
     return ContainerUnitStepUtils.serializeStepWithStepParameters(
         getPort(ambiance, stepElementParameters.getIdentifier()), parkedTaskId, logKey,
         stepElementParameters.getIdentifier(), getTimeout(ambiance, stepElementParameters), accountId,
-        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, new HashMap<>(),
+        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, samDeployEnvironmentVariablesMap,
         awsSamDeployStepParameters.getImage().getValue(), Collections.EMPTY_LIST);
   }
 
   @Override
   public StepResponse.StepOutcome getAnyOutComeForStep(
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
-    String instances = null;
-
-    StepStatusTaskResponseData stepStatusTaskResponseData = null;
-
-    for (Map.Entry<String, ResponseData> entry : responseDataMap.entrySet()) {
-      ResponseData responseData = entry.getValue();
-      if (responseData instanceof StepStatusTaskResponseData) {
-        stepStatusTaskResponseData = (StepStatusTaskResponseData) responseData;
-      }
-    }
-
     StepResponse.StepOutcome stepOutcome = null;
 
-    if (stepStatusTaskResponseData != null
-        && stepStatusTaskResponseData.getStepStatus().getStepExecutionStatus() == StepExecutionStatus.SUCCESS) {
-      StepOutput stepOutput = stepStatusTaskResponseData.getStepStatus().getOutput();
+    List<ServerInstanceInfo> serverInstanceInfoList =
+        awsSamStepHelper.fetchServerInstanceInfoFromDelegateResponse(responseDataMap);
 
-      if (stepOutput instanceof StepMapOutput) {
-        StepMapOutput stepMapOutput = (StepMapOutput) stepOutput;
-        String instancesByte64 = stepMapOutput.getMap().get("instances");
-        instances = new String(Base64.getDecoder().decode(instancesByte64));
-      }
+    if (serverInstanceInfoList != null) {
+      InfrastructureOutcome infrastructureOutcome = awsSamStepHelper.getInfrastructureOutcome(ambiance);
 
-      ObjectMapper objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+      awsSamStepHelper.updateServerInstanceInfoList(serverInstanceInfoList, infrastructureOutcome);
 
-      List<ServerInstanceInfo> serverInstanceInfoList = null;
-      try {
-        serverInstanceInfoList = Arrays.asList(objectMapper.readValue(instances, AwsSamServerInstanceInfo[].class));
-      } catch (Exception e) {
-        log.error("Error while parsing AWS SAM instances", e);
-      }
-
-      if (serverInstanceInfoList != null) {
-        InfrastructureOutcome infrastructureOutcome = awsSamStepHelper.getInfrastructureOutcome(ambiance);
-
-        awsSamStepHelper.updateServerInstanceInfoList(serverInstanceInfoList, infrastructureOutcome);
-
-        stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
-      }
+      stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
     }
 
     return stepOutcome;

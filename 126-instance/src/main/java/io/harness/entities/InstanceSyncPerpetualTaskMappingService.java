@@ -19,6 +19,6 @@ public interface InstanceSyncPerpetualTaskMappingService {
   InstanceSyncPerpetualTaskMappingDTO save(InstanceSyncPerpetualTaskMappingDTO instanceSyncPerpetualTaskMapping);
   boolean delete(String accountId, String perpetualTaskId);
 
-  Optional<InstanceSyncPerpetualTaskMappingDTO> findByConnectorRef(
-      @NotEmpty String accountIdentifier, String orgIdentifier, String projectIdentifier, @NotEmpty String connectorId);
+  Optional<InstanceSyncPerpetualTaskMappingDTO> findByConnectorRefAndDeploymentType(@NotEmpty String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, @NotEmpty String connectorId, @NotEmpty String deploymentType);
 }

@@ -12,12 +12,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.validator.scmValidators.AbstractKubernetesConnectorValidator;
-import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.rancher.RancherConnectorDTO;
 import io.harness.delegate.beans.connector.rancher.RancherTaskParams;
 import io.harness.delegate.beans.connector.rancher.RancherTaskType;
-import io.harness.delegate.beans.connector.rancher.RancherTestConnectionTaskResponse;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -49,10 +47,9 @@ public class RancherConnectionValidator extends AbstractKubernetesConnectorValid
   @Override
   public ConnectorValidationResult validate(ConnectorConfigDTO connectorDTO, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String identifier) {
-    DelegateResponseData responseData =
+    var responseData =
         super.validateConnector(connectorDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
-    RancherTestConnectionTaskResponse taskResponse = (RancherTestConnectionTaskResponse) responseData;
-    return taskResponse.getConnectorValidationResult();
+    return responseData.getConnectorValidationResult();
   }
 
   @Override

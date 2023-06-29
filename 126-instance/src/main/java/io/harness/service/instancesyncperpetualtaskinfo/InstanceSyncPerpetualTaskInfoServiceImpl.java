@@ -92,28 +92,32 @@ public class InstanceSyncPerpetualTaskInfoServiceImpl implements InstanceSyncPer
   }
 
   @Override
-  public InstanceSyncPerpetualTaskInfoDTO updatePerpetualTaskIdV2(
+  public InstanceSyncPerpetualTaskInfoDTO updatePerpetualTaskIdV1OrV2(
       InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO) {
     Criteria criteria = Criteria.where(InstanceSyncPerpetualTaskInfoKeys.accountIdentifier)
                             .is(instanceSyncPerpetualTaskInfoDTO.getAccountIdentifier())
                             .and(InstanceSyncPerpetualTaskInfoKeys.id)
                             .is(instanceSyncPerpetualTaskInfoDTO.getId());
     Update update = new Update();
+
+    update.set(
+        InstanceSyncPerpetualTaskInfoKeys.perpetualTaskId, instanceSyncPerpetualTaskInfoDTO.getPerpetualTaskId());
     update.set(
         InstanceSyncPerpetualTaskInfoKeys.perpetualTaskIdV2, instanceSyncPerpetualTaskInfoDTO.getPerpetualTaskIdV2());
     return InstanceSyncPerpetualTaskInfoMapper.toDTO(instanceSyncPerpetualTaskInfoRepository.update(criteria, update));
   }
 
   @Override
-  public InstanceSyncPerpetualTaskInfoDTO updatePerpetualTaskIdV1(
+  public InstanceSyncPerpetualTaskInfoDTO updateLastSuccessfulRun(
       InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO) {
     Criteria criteria = Criteria.where(InstanceSyncPerpetualTaskInfoKeys.accountIdentifier)
                             .is(instanceSyncPerpetualTaskInfoDTO.getAccountIdentifier())
                             .and(InstanceSyncPerpetualTaskInfoKeys.id)
                             .is(instanceSyncPerpetualTaskInfoDTO.getId());
     Update update = new Update();
+
     update.set(
-        InstanceSyncPerpetualTaskInfoKeys.perpetualTaskId, instanceSyncPerpetualTaskInfoDTO.getPerpetualTaskId());
+        InstanceSyncPerpetualTaskInfoKeys.lastSuccessfulRun, instanceSyncPerpetualTaskInfoDTO.getLastSuccessfulRun());
     return InstanceSyncPerpetualTaskInfoMapper.toDTO(instanceSyncPerpetualTaskInfoRepository.update(criteria, update));
   }
 

@@ -10,6 +10,7 @@ package software.wings.service.impl;
 import static io.harness.beans.PageRequest.UNLIMITED;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 
 import static software.wings.common.VerificationConstants.ML_RECORDS_TTL_MONTHS;
 
@@ -71,6 +72,7 @@ public class WorkflowExecutionBaselineServiceImpl implements WorkflowExecutionBa
               .filter(WorkflowExecutionBaselineKeys.workflowId, workflowExecutionBaseline.getWorkflowId())
               .filter(WorkflowExecutionBaselineKeys.envId, workflowExecutionBaseline.getEnvId())
               .filter(WorkflowExecutionBaselineKeys.serviceId, workflowExecutionBaseline.getServiceId())
+              .limit(NO_LIMIT)
               .asList();
       log.info("existing baselines {}", existingBaselines);
       if (!isEmpty(existingBaselines)) {

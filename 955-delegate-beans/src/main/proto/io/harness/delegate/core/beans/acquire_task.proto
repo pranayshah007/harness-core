@@ -15,10 +15,10 @@ option java_multiple_files = true;
   Top level request object for acquiring tasks
  */
 message AcquireTasksResponse {
-  string id = 1;  // Id for the entire transaction
+  string executionInfraId = 1;  // Id for the entire transaction
   // There will be only one payload per request at current stage of implementation.
   // But it's always good to keep API definition plural for future extensibility.
-  repeated TaskPayload tasks = 2;
+  repeated TaskPayload task = 2;
 }
 
 /*
@@ -28,16 +28,20 @@ message TaskPayload {
   string id = 1;  // Id for the request.
 
   // specifies the resource and method delegate will take actions about
-  // With new architecture, we will bring two concepts as first class in delegate
-  // 1. initializing an execution infrastructure 2. executing steps
+  // With new architecture, we will bring 3 concepts as first class in delegate
+  // 1. set up an execution infrastructure 2. executing steps 3. clean up execution infrastructure
   // When delegate acquires a RequestPayload, based on the resourceUri and resourceMethod it will invoke corresponding
-  // handler to process the payload. For example, when delegate receives POST /executioninfrastructure/{runnerType},
-  // delegate will invoke the handler of creating an execution infra. When delegate receives POST /task/{runnerType},
+  // handler to process the payload.
+  // For example, when delegate receives POST /executioninfrastructure/{runnerType},
+  // delegate will invoke the handler of creating an execution infra.
+  // When delegate receives POST /execution/{runnerType},
   // delegate will invoke the handler of executing a task, in which it will call the corresponding runner's API to
   // execute the task.
   string resourceUri = 2;
   string resourceMethod = 3;
-  string callback_token = 6;  // Token for sending notify event to the service that initiated a task
-  InputData task_data = 7;    // binary data for tasks.
-  InputData infra_data = 8;   // binary data for runner.
+  string log_token =
+      6;  // Token for log stream. It's not in the payload data because log token is assigned when acquire
+  InputData task_data = 7;   // binary data for task inputs.
+  InputData infra_data = 8;  // binary data for infra config
+  // TODO: secrets + decryptableEntities
 }

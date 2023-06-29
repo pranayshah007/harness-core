@@ -363,23 +363,6 @@ paths:
         '200':
           $ref: '#/components/responses/ImportEntitiesResponse'
       x-internal: true
-  /v1/onboarding/manual-import:
-    post:
-      summary: Manually import entity to IDP
-      operationId: manual-import-entity
-      description: Manually import entity to IDP
-      security:
-        - x-api-key: []
-      parameters:
-        - $ref: '#/components/parameters/AccountHeader'
-      requestBody:
-        $ref: '#/components/requestBodies/ManualImportEntityRequest'
-      tags:
-        - OnboardingResource
-      responses:
-        '200':
-          $ref: '#/components/responses/ImportEntitiesResponse'
-      x-internal: true
   /v1/layout:
     get:
       summary: List Layouts
@@ -786,6 +769,23 @@ paths:
             schema:
               $ref: '#/components/schemas/AllowListRequest'
         description: Save backend url allow list
+  /v1/configuration-entities:
+    put:
+      summary: Updates entities present in the configuration screen
+      operationId: update-configuration-entities
+      responses:
+        '200':
+          $ref: '#/components/responses/ConfigurationEntitiesResponse'
+      description: Updates entities present in the configuration screen
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/ConfigurationEntitiesRequest'
+      x-internal: true
+      tags:
+        - MergedPluginsConfig
 components:
   schemas:
     BackstageEnvVariable:
@@ -1231,8 +1231,6 @@ components:
         id: ggn3lgk0pl7jx
       allOf:
         - $ref: '#/components/schemas/PluginDetails'
-          x-stoplight:
-            id: 8r3tc7aptshub
         - type: object
           properties:
             env_variables:
@@ -1241,34 +1239,19 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/BackstageEnvSecretVariable'
-                x-stoplight:
-                  id: v8fluu5h3dt3n
             saved:
               type: boolean
               x-stoplight:
                 id: b06clr6ww9ku0
+            proxy:
+              x-stoplight:
+                id: cxtlzxhi15ly8
+              type: array
+              items:
+                $ref: '#/components/schemas/ProxyHostDetail'
           required:
             - env_variables
             - saved
-    ManualImportEntityRequest:
-      title: ManualImportEntityRequest
-      x-stoplight:
-        id: ssbm06g65ld8t
-      type: object
-      description: Details of entity to import manually to IDP
-      properties:
-        yaml:
-          type: string
-          x-stoplight:
-            id: g8wygfate3kph
-          description: yaml in form on json
-        entity_name:
-          type: string
-          x-stoplight:
-            id: 2axpvz6rwf0ds
-      required:
-        - yaml
-        - entity_name
     LayoutRequest:
       title: LayoutRequest
       x-stoplight:
@@ -1458,11 +1441,16 @@ components:
             id: rvzbk4sw9nxvp
           items:
             $ref: '#/components/schemas/BackstageEnvSecretVariable'
-            x-stoplight:
-              id: lv3438bpnl1d1
+        proxy:
+          type: array
+          x-stoplight:
+            id: mwvxo7zsdc5zo
+          items:
+            $ref: '#/components/schemas/ProxyHostDetail'
       required:
         - config
         - env_variables
+        - proxy
     MergedPluginConfigResponse:
       title: MergedPluginConfigResponse
       x-stoplight:
@@ -1807,6 +1795,27 @@ components:
         - host
         - proxy
       description: Proxy Host Detail
+    ConfigurationEntities:
+      title: ConfigurationEntities
+      x-stoplight:
+        id: f0upqtv6bktce
+      type: object
+      properties:
+        env_variables:
+          type: array
+          x-stoplight:
+            id: evwoa6kfuf4zg
+          items:
+            $ref: '#/components/schemas/BackstageEnvVariable'
+        proxy:
+          type: array
+          x-stoplight:
+            id: fin6y5q4eggxu
+          items:
+            $ref: '#/components/schemas/ProxyHostDetail'
+      required:
+        - env_variables
+        - proxy
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -1978,13 +1987,6 @@ components:
             $ref: '#/components/schemas/ImportEntitiesBase'
           examples: {}
       description: Details of Harness Entities and Catalog Location info
-    ManualImportEntityRequest:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ManualImportEntityRequest'
-      description: Details of entity to import manually to IDP
     LayoutRequest:
       content:
         application/json:
@@ -2046,6 +2048,11 @@ components:
         application/yaml:
           schema:
             $ref: '#/components/schemas/AllowListRequest'
+    ConfigurationEntitiesRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConfigurationEntities'
   responses:
     BackstageEnvVariableResponse:
       description: Example response
@@ -2263,6 +2270,12 @@ components:
         application/yaml:
           schema:
             $ref: '#/components/schemas/AllowListResponse'
+    ConfigurationEntitiesResponse:
+      description: Response for configuration screen resources
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConfigurationEntities'
   securitySchemes:
     x-api-key:
       name: x-api-key

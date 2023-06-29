@@ -38,6 +38,7 @@ public class TerraformStepConfiguration {
   @JsonProperty("spec") TerraformExecutionData terraformExecutionData;
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) @YamlSchemaTypes({string}) ParameterField<Boolean> skipRefreshCommand;
   @VariableExpression(skipVariableExpression = true) List<TerraformCliOptionFlag> commandFlags;
+  TerraformEncryptOutput encryptOutput;
 
   public TerraformStepConfigurationParameters toStepParameters() {
     TerraformStepConfigurationParametersBuilder builder = TerraformStepConfigurationParameters.builder();
@@ -45,6 +46,7 @@ public class TerraformStepConfiguration {
     builder.type(terraformStepConfigurationType);
     builder.skipTerraformRefresh(skipRefreshCommand);
     builder.commandFlags(commandFlags);
+    builder.encryptOutput(encryptOutput);
 
     if (terraformExecutionData != null) {
       builder.spec(terraformExecutionData.toStepParameters());

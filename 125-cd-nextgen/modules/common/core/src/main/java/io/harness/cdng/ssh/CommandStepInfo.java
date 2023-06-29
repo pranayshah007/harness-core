@@ -72,7 +72,8 @@ public class CommandStepInfo extends CommandBaseStepInfo implements CDAbstractSt
         .onDelegate(getOnDelegate())
         .delegateSelectors(getDelegateSelectors())
         .environmentVariables(NGVariablesUtils.getMapOfVariables(environmentVariables, 0L))
-        .outputVariables(NGVariablesUtils.getMapOfVariables(outputVariables, 0L))
+        .outputVariables(NGVariablesUtils.getMapOfVariablesWithoutSecretExpression(outputVariables))
+        .secretOutputVariablesNames(NGVariablesUtils.getSetOfSecretVars(outputVariables))
         .commandUnits(getCommandUnits())
         .host(host)
         .build();

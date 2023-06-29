@@ -28,6 +28,7 @@ message NotificationRequest {
     Email email = 6;
     PagerDuty pagerDuty = 7;
     MSTeam msTeam = 8;
+    Webhook webhook = 9;
   }
 
   message Slack {
@@ -68,6 +69,16 @@ message NotificationRequest {
     string orgIdentifier = 10;
     string projectIdentifier = 11;
     int64 expressionFunctorToken = 12;
+    string templateId = 3;
+  }
+
+  message Webhook {
+    repeated string urls = 7;
+    repeated UserGroup userGroup = 8;
+    map<string, string> templateData = 4;
+    string orgIdentifier = 9;
+    string projectIdentifier = 10;
+    int64 expressionFunctorToken = 11;
     string templateId = 3;
   }
 

@@ -35,7 +35,7 @@ public class K8sSwapServiceSelectorsHandler extends K8sRequestHandler {
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
   @Inject private ContainerDeploymentDelegateBaseHelper containerDeploymentDelegateBaseHelper;
   @Inject private K8sSwapServiceSelectorsBaseHandler k8sSwapServiceSelectorsBaseHandler;
-
+  @Inject private K8sBGBaseHandler k8sBGBaseHandler;
   @Override
   protected K8sDeployResponse executeTaskInternal(K8sDeployRequest k8sDeployRequest,
       K8sDelegateTaskParams k8sDelegateTaskParams, ILogStreamingTaskClient logStreamingTaskClient,
@@ -57,14 +57,29 @@ public class K8sSwapServiceSelectorsHandler extends K8sRequestHandler {
     K8sReleaseHandler releaseHandler = k8sTaskHelperBase.getReleaseHandler(useDeclarativeRollback);
     IK8sReleaseHistory releaseHistory =
         releaseHandler.getReleaseHistory(kubernetesConfig, k8sSwapServiceSelectorsRequest.getReleaseName());
-    IK8sRelease release = releaseHistory.getLatestSuccessfulBlueGreenRelease();
-
+    String primaryColor = k8sSwapServiceSelectorsBaseHandler.getColorOfService(
+        kubernetesConfig, k8sSwapServiceSelectorsRequest.getService1());
+    String stageColor = k8sBGBaseHandler.getInverseColor(primaryColor);
+    IK8sRelease primaryRelease = releaseHistory.getLatestSuccessfulReleaseMatchingColor(primaryColor);
+    IK8sRelease stageRelease = releaseHistory.getLatestSuccessfulReleaseMatchingColor(stageColor);
     k8sSwapServiceSelectorsBaseHandler.swapServiceSelectors(kubernetesConfig,
         k8sSwapServiceSelectorsRequest.getService1(), k8sSwapServiceSelectorsRequest.getService2(), logCallback,
         isErrorFrameworkSupported());
-    k8sSwapServiceSelectorsBaseHandler.updateReleaseHistory(release);
-    k8sTaskHelperBase.saveRelease(useDeclarativeRollback, false, kubernetesConfig, release, releaseHistory,
-        k8sSwapServiceSelectorsRequest.getReleaseName());
+    k8sSwapServiceSelectorsBaseHandler.updateReleaseHistory(primaryRelease, stageRelease);
+    IK8sRelease release = (stageRelease != null) ? stageRelease : primaryRelease;
+    if (!useDeclarativeRollback) {
+      k8sTaskHelperBase.saveRelease(
+          false, false, kubernetesConfig, release, releaseHistory, k8sSwapServiceSelectorsRequest.getReleaseName());
+    } else {
+      if (stageRelease != null) {
+        k8sTaskHelperBase.saveRelease(true, false, kubernetesConfig, stageRelease, releaseHistory,
+            k8sSwapServiceSelectorsRequest.getReleaseName());
+      }
+      if (primaryRelease != null) {
+        k8sTaskHelperBase.saveRelease(true, false, kubernetesConfig, primaryRelease, releaseHistory,
+            k8sSwapServiceSelectorsRequest.getReleaseName());
+      }
+    }
     return K8sDeployResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
   }
 }

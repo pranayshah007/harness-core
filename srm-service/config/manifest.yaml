@@ -1,0 +1,3 @@
+DOCKER_FILE_PATH: /harness/harness-core/dist/cv-nextgen/Dockerfile-cie-jdk
+HELM_CHART_SOURCE_DIRECTORY: harness-core/srm-service/chart
+

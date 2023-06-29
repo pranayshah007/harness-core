@@ -58,7 +58,7 @@ public class AccessControlAdminServiceTest {
 
     blockedAccountCache = Caffeine.newBuilder()
                               .maximumSize(10000)
-                              .expireAfterWrite(30, TimeUnit.MINUTES)
+                              .expireAfterWrite(1, TimeUnit.MINUTES)
                               .build(accountId -> blockedEntityRepository.find(accountId).isPresent());
     blockedAccountCacheField = accessControlAdminService.getClass().getDeclaredField("blockedAccountCache");
     blockedAccountCacheField.setAccessible(true);

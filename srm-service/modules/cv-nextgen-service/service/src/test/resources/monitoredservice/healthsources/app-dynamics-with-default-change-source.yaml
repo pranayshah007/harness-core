@@ -1,0 +1,55 @@
+---
+orgIdentifier: $orgIdentifier
+projectIdentifier: $projectIdentifier
+serviceRef: appd
+environmentRef: qa3
+identifier: appd_qa3
+notificationRuleRefs: []
+name: appd_qa3
+description: ''
+tags: {}
+sources:
+  healthSources:
+    - name: appd
+      identifier: appd
+      type: AppDynamics
+      spec:
+        applicationName: cv-app
+        tierName: docker-tier
+        metricData:
+          Errors: true
+          Performance: true
+        metricDefinitions:
+          - identifier: appdMetric
+            metricName: appdMetric
+            completeMetricPath: Overall Application Performance|manager|Calls per Minute
+            completeServiceInstanceMetricPath: Overall Application Performance|manager|Individual Nodes|*|Calls per Minute
+            groupName: G1
+            sli:
+              enabled: false
+            analysis:
+              riskProfile:
+                category: Performance
+                metricType: RESP_TIME
+                thresholdTypes:
+                  - ACT_WHEN_LOWER
+              liveMonitoring:
+                enabled: true
+              deploymentVerification:
+                enabled: true
+        feature: Application Monitoring
+        connectorRef: account.appd
+        metricPacks:
+          - identifier: Errors
+            metricThresholds: []
+          - identifier: Performance
+            metricThresholds: []
+  changeSources:
+    - name: Harness CD Next Gen
+      identifier: harness_cd_next_gen
+      type: HarnessCDNextGen
+      enabled: true
+      category: Deployment
+      spec: {}
+dependencies: []
+type: Application

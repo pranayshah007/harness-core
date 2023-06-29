@@ -14,7 +14,6 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.provision.terraformcloud.TerraformCloudConstants;
@@ -32,8 +31,6 @@ import io.harness.delegate.task.terraformcloud.RollbackType;
 import io.harness.delegate.task.terraformcloud.TerraformCloudCommandUnit;
 import io.harness.delegate.task.terraformcloud.request.TerraformCloudRollbackTaskParams;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudRollbackTaskResponse;
-import io.harness.eraro.ErrorCode;
-import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -88,14 +85,7 @@ public class TerraformCloudRollbackStep extends CdTaskExecutable<TerraformCloudR
   }
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_TERRAFORM_CLOUD)) {
-      throw new AccessDeniedException(
-          format("Step is not enabled for account '%s'. Please contact harness customer care to enable FF '%s'.",
-              AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_TERRAFORM_CLOUD.name()),
-          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
-    }
-  }
+  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
 
   @Override
   public TaskRequest obtainTaskAfterRbac(

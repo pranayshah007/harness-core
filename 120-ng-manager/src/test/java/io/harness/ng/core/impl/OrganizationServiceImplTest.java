@@ -9,6 +9,7 @@ package io.harness.ng.core.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.core.remote.OrganizationMapper.toOrganization;
+import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.KARAN;
 import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.TEJAS;
@@ -18,9 +19,11 @@ import static io.harness.utils.PageTestUtils.getPage;
 
 import static java.util.Collections.emptyList;
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.AdditionalAnswers.returnsFirstArg;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -179,6 +182,62 @@ public class OrganizationServiceImplTest extends CategoryTest {
     Organization updatedOrganization = organizationService.update(accountIdentifier, identifier, organizationDTO);
 
     assertNull(updatedOrganization);
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void update_onlyIdentifierChanged_noop() {
+    String accountIdentifier = randomAlphabetic(10);
+    String identifier = "identifier";
+    OrganizationDTO organizationDTO = createOrganizationDTO(identifier);
+    Organization organization = toOrganization(organizationDTO);
+    organization.setAccountIdentifier(accountIdentifier);
+    organization.setIdentifier(identifier);
+
+    when(organizationService.get(accountIdentifier, identifier.toUpperCase())).thenReturn(Optional.of(organization));
+    when(transactionTemplate.execute(any())).thenReturn(organization);
+
+    organizationDTO.setIdentifier(identifier.toUpperCase());
+    Organization updatedOrganization =
+        organizationService.update(accountIdentifier, identifier.toUpperCase(), organizationDTO);
+
+    assertNotNull(updatedOrganization);
+    assertThat(updatedOrganization.getIdentifier()).isEqualTo(identifier);
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void update_identifierAndSomeOtherFieldChanged_onlyOtherFieldIsUpdated() {
+    String accountIdentifier = randomAlphabetic(10);
+    String identifier = "identifier";
+    Organization existingOrganization = Organization.builder()
+                                            .accountIdentifier(accountIdentifier)
+                                            .identifier(identifier)
+                                            .name("test")
+                                            .description("desc")
+                                            .build();
+
+    when(organizationService.get(accountIdentifier, identifier.toUpperCase()))
+        .thenReturn(Optional.of(existingOrganization));
+
+    OrganizationDTO updateDTO = OrganizationDTO.builder()
+                                    .name("updatedTest")
+                                    .description("updatedDesc")
+                                    .identifier(identifier.toUpperCase())
+                                    .build();
+    Organization expectedUpdatedOrg = existingOrganization;
+    expectedUpdatedOrg.setDescription("updatedDesc");
+    expectedUpdatedOrg.setName("updatedTest");
+    when(transactionTemplate.execute(any())).thenReturn(expectedUpdatedOrg);
+    Organization updatedOrganization =
+        organizationService.update(accountIdentifier, identifier.toUpperCase(), updateDTO);
+
+    assertNotNull(updatedOrganization);
+    assertThat(updatedOrganization.getIdentifier()).isEqualTo(identifier);
+    assertThat(updatedOrganization.getName()).isEqualTo(expectedUpdatedOrg.getName());
+    assertThat(updatedOrganization.getDescription()).isEqualTo(expectedUpdatedOrg.getDescription());
   }
 
   @Test

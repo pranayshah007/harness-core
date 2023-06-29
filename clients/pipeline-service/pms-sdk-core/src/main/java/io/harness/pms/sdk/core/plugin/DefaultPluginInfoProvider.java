@@ -7,6 +7,7 @@
 
 package io.harness.pms.sdk.core.plugin;
 
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
 import io.harness.pms.contracts.plan.PluginCreationResponse;
 import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
@@ -25,7 +26,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Singleton
 public class DefaultPluginInfoProvider implements PluginInfoProvider {
-  public PluginCreationResponseWrapper getPluginInfo(PluginCreationRequest request, Set<Integer> usedPorts) {
+  public PluginCreationResponseWrapper getPluginInfo(
+      PluginCreationRequest request, Set<Integer> usedPorts, Ambiance ambiance) {
     PluginStepV2 pluginStep;
     try {
       pluginStep = YamlUtils.read(request.getStepJsonNode(), PluginStepV2.class);

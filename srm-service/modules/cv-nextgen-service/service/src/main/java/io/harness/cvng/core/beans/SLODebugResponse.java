@@ -12,11 +12,13 @@ import static io.harness.annotations.dev.HarnessTeam.CV;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.entities.DataCollectionTask;
+import io.harness.cvng.core.entities.TimeSeriesRecord;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
+import io.harness.cvng.statemachine.entities.AnalysisOrchestrator;
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
 
 import java.util.List;
@@ -49,4 +51,8 @@ public class SLODebugResponse {
   Map<String, AnalysisStateMachine> sliIdentifierToAnalysisStateMachineMap;
 
   Map<String, List<SLIRecord>> sliIdentifierToSLIRecordMap;
+
+  Map<String, List<TimeSeriesRecord>> sliIdentifierToTimeSeriesRecords;
+
+  Map<String, AnalysisOrchestrator> sliIdentifierToAnalysisOrchestrator;
 }

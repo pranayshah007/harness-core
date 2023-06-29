@@ -15,6 +15,7 @@ java_library(
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/artifacts/mappers:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/artifacts/misc:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/common:module",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/utils:module",
         "//950-delegate-tasks-beans:module",
         "//954-connector-beans:module",
         "//960-api-services/src/main/java/io/harness/artifacts/comparator:module",

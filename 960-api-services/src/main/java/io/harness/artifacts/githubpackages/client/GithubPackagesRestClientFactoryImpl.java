@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
+import retrofit2.converter.jaxb.JaxbConverterFactory;
 
 @OwnedBy(CDC)
 @Singleton
@@ -48,19 +49,34 @@ public class GithubPackagesRestClientFactoryImpl implements GithubPackagesRestCl
   public DockerRegistryRestClient getGithubPackagesDockerRestClient(
       GithubPackagesInternalConfig githubPackagesInternalConfig) {
     String url = getDockerAPIUrl();
+    OkHttpClient okHttpClient = Http.getOkHttpClient(url, githubPackagesInternalConfig.isCertValidationRequired());
+    Retrofit retrofit = new Retrofit.Builder()
+                            .client(okHttpClient)
+                            .baseUrl(url)
+                            .addConverterFactory(JacksonConverterFactory.create())
+                            .build();
+    return retrofit.create(DockerRegistryRestClient.class);
+  }
+
+  public GithubPackagesMavenRestClient getGithubPackagesMavenRestClient(
+      GithubPackagesInternalConfig githubPackagesInternalConfig) {
+    String url = getMavenUrl();
 
     OkHttpClient okHttpClient = Http.getOkHttpClient(url, githubPackagesInternalConfig.isCertValidationRequired());
 
     Retrofit retrofit = new Retrofit.Builder()
                             .client(okHttpClient)
                             .baseUrl(url)
-                            .addConverterFactory(JacksonConverterFactory.create())
+                            .addConverterFactory(JaxbConverterFactory.create())
                             .build();
 
-    return retrofit.create(DockerRegistryRestClient.class);
+    return retrofit.create(GithubPackagesMavenRestClient.class);
   }
 
   private String getDockerAPIUrl() {
     return "https://ghcr.io";
+  }
+  private String getMavenUrl() {
+    return "https://maven.pkg.github.com";
   }
 }

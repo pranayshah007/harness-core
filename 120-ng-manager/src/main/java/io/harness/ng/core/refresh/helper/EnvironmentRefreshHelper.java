@@ -8,7 +8,6 @@
 package io.harness.ng.core.refresh.helper;
 
 import static io.harness.beans.FeatureName.CDS_SERVICE_OVERRIDES_2_0;
-import static io.harness.beans.FeatureName.NG_SETTINGS;
 
 import static java.lang.Boolean.parseBoolean;
 
@@ -38,7 +37,6 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlNodeUtils;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.remote.client.CGRestUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.scope.ScopeHelper;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
@@ -668,10 +666,6 @@ public class EnvironmentRefreshHelper {
     return node != null && node.isValueNode() && NGExpressionUtils.matchesInputSetPattern(node.asText());
   }
 
-  private boolean isNgSettingsFFEnabled(String accountIdentifier) {
-    return CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(NG_SETTINGS.name(), accountIdentifier));
-  }
-
   private boolean isOverridesV2Enabled(String accountId, String orgId, String projectId) {
     boolean isOverrideV2SettingEnabled = false;
 
@@ -697,6 +691,6 @@ public class EnvironmentRefreshHelper {
                   settingsClient.getSetting(SettingIdentifiers.SERVICE_OVERRIDE_V2_IDENTIFIER, accountId, null, null))
               .getValue());
     }
-    return isNgSettingsFFEnabled(accountId) && isOverrideV2FlagEnabled && isOverrideV2SettingEnabled;
+    return isOverrideV2FlagEnabled && isOverrideV2SettingEnabled;
   }
 }

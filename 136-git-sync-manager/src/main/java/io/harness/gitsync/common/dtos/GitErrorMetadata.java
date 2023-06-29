@@ -25,6 +25,7 @@ public class GitErrorMetadata implements ErrorMetadataDTO {
 
   String branch;
   String filepath;
+  String repo;
 
   @Override
   public String getType() {

@@ -355,6 +355,7 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
     when(v2Beta1NamespacedHpa.withName(anyString())).thenReturn(v2Beta1HorizontalPodAutoscalerResource);
 
     when(kubernetesHelperService.getApiClient(KUBERNETES_CONFIG)).thenReturn(k8sApiClient);
+    when(kubernetesHelperService.getApiClientWithReadTimeout(KUBERNETES_CONFIG)).thenReturn(k8sApiClient);
     when(k8sApiClient.buildCall(anyString(), anyString(), anyList(), anyList(), any(), anyMap(), anyMap(), anyMap(),
              any(String[].class), any()))
         .thenReturn(k8sApiCall);

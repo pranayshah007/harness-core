@@ -20,6 +20,7 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.GeneralException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.authenticationsettings.dtos.AuthenticationSettingsResponse;
 import io.harness.ng.authenticationsettings.dtos.mechanisms.LDAPSettings;
 import io.harness.ng.authenticationsettings.dtos.mechanisms.OAuthSettings;
@@ -318,8 +319,10 @@ public class AuthenticationSettingsResource {
           groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
           clientSecret, friendlySamlName, jitEnabled, jitValidationKey, jitValidationValue);
       return new RestResponse<>(response);
+    } catch (InvalidRequestException e) {
+      throw e;
     } catch (Exception e) {
-      throw new GeneralException("Error while creating new SAML Config", e);
+      throw new GeneralException("Invalid SAML configuration! Please upload a valid metadata file", e);
     }
   }
 
@@ -364,8 +367,10 @@ public class AuthenticationSettingsResource {
           groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
           clientSecret, jitEnabled, jitValidationKey, jitValidationValue);
       return new RestResponse<>(response);
+    } catch (InvalidRequestException e) {
+      throw e;
     } catch (Exception e) {
-      throw new GeneralException("Error while editing saml-config", e);
+      throw new GeneralException("Invalid SAML configuration! Please upload a valid metadata file", e);
     }
   }
 
@@ -414,6 +419,8 @@ public class AuthenticationSettingsResource {
           groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
           clientSecret, friendlySamlName, jitEnabled, jitValidationKey, jitValidationValue);
       return new RestResponse<>(response);
+    } catch (InvalidRequestException e) {
+      throw e;
     } catch (Exception e) {
       throw new GeneralException("Error while editing saml-config " + samlSSOId, e);
     }

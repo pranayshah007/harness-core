@@ -22,6 +22,7 @@ import static io.harness.ngtriggers.utils.WebhookTriggerFilterUtils.checkIfActio
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.SRIDHAR;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,7 +43,10 @@ import io.harness.ngtriggers.beans.source.webhook.v2.TriggerEventDataCondition;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerSpecV2;
 import io.harness.ngtriggers.beans.source.webhook.v2.github.GithubSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.github.action.GithubPRAction;
+import io.harness.ngtriggers.beans.source.webhook.v2.github.event.GithubIssueCommentSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.github.event.GithubPRSpec;
+import io.harness.ngtriggers.beans.source.webhook.v2.github.event.GithubPushSpec;
+import io.harness.ngtriggers.beans.source.webhook.v2.github.event.GithubReleaseSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.github.event.GithubTriggerEvent;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.GitlabSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.event.GitlabPRSpec;
@@ -52,6 +56,7 @@ import io.harness.rule.Owner;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -163,6 +168,44 @@ public class WebhookTriggerFilterUtilTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void checkIfEventTypeMatchesTest() {
+    WebhookTriggerSpecV2 webhookTriggerSpecPR =
+        GithubSpec.builder().type(GithubTriggerEvent.PULL_REQUEST).spec(GithubPRSpec.builder().build()).build();
+    WebhookTriggerSpecV2 webhookTriggerSpecPush =
+        GithubSpec.builder().type(GithubTriggerEvent.PUSH).spec(GithubPushSpec.builder().build()).build();
+    WebhookTriggerSpecV2 webhookTriggerSpecIssueComment = GithubSpec.builder()
+                                                              .type(GithubTriggerEvent.ISSUE_COMMENT)
+                                                              .spec(GithubIssueCommentSpec.builder().build())
+                                                              .build();
+    WebhookTriggerSpecV2 webhookTriggerSpecRelease =
+        GithubSpec.builder().type(GithubTriggerEvent.RELEASE).spec(GithubReleaseSpec.builder().build()).build();
+    assertThat(
+        WebhookTriggerFilterUtils.checkIfEventTypeMatches(io.harness.beans.WebhookEvent.Type.PR, webhookTriggerSpecPR))
+        .isTrue();
+    assertThat(WebhookTriggerFilterUtils.checkIfEventTypeMatches(
+                   io.harness.beans.WebhookEvent.Type.PR, webhookTriggerSpecPush))
+        .isFalse();
+    assertThat(WebhookTriggerFilterUtils.checkIfEventTypeMatches(
+                   io.harness.beans.WebhookEvent.Type.PUSH, webhookTriggerSpecPush))
+        .isTrue();
+    assertThat(WebhookTriggerFilterUtils.checkIfEventTypeMatches(
+                   io.harness.beans.WebhookEvent.Type.PUSH, webhookTriggerSpecIssueComment))
+        .isFalse();
+    assertThat(WebhookTriggerFilterUtils.checkIfEventTypeMatches(Type.ISSUE_COMMENT, webhookTriggerSpecIssueComment))
+        .isTrue();
+    assertThat(WebhookTriggerFilterUtils.checkIfEventTypeMatches(Type.ISSUE_COMMENT, webhookTriggerSpecRelease))
+        .isFalse();
+    assertThat(WebhookTriggerFilterUtils.checkIfEventTypeMatches(
+                   io.harness.beans.WebhookEvent.Type.RELEASE, webhookTriggerSpecRelease))
+        .isTrue();
+    assertThat(WebhookTriggerFilterUtils.checkIfEventTypeMatches(
+                   io.harness.beans.WebhookEvent.Type.RELEASE, webhookTriggerSpecPR))
+        .isFalse();
+  }
+
+  @Test
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void checkIfActionMatchesTest() {
@@ -226,6 +269,27 @@ public class WebhookTriggerFilterUtilTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void checkIfJexlConditionsMatchTest() {
+    WebhookTriggerSpecV2 webhookTriggerSpec = getGitLabTriggerSpec();
+
+    WebhookPayloadData webhookPayloadData =
+        WebhookPayloadData.builder()
+            .originalEvent(TriggerWebhookEvent.builder().payload(payload).build())
+            .webhookEvent(PRWebhookEvent.builder()
+                              .baseAttributes(WebhookBaseAttributes.builder().source("stage").target("master").build())
+                              .build())
+            .build();
+
+    assertThat(WebhookTriggerFilterUtils.checkIfEventTypeMatches(Type.PR, webhookTriggerSpec)).isTrue();
+    assertThat(checkIfActionMatches(webhookPayloadData, webhookTriggerSpec)).isTrue();
+    assertThat(WebhookTriggerFilterUtils.checkIfJexlConditionsMatch(webhookPayloadData.getParseWebhookResponse(),
+                   Collections.emptyList(), payload, webhookTriggerSpec.fetchPayloadAware().fetchJexlCondition()))
+        .isTrue();
+  }
+
+  @Test
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
   public void evaluateFilterConditionsDoesNotContainTest() {
@@ -270,43 +334,46 @@ public class WebhookTriggerFilterUtilTest extends CategoryTest {
   private WebhookTriggerSpecV2 getGitLabTriggerSpec() {
     return GitlabSpec.builder()
         .type(GitlabTriggerEvent.MERGE_REQUEST)
-        .spec(GitlabPRSpec.builder()
-                  .actions(emptyList())
-                  .payloadConditions(Arrays.asList(
-                      TriggerEventDataCondition.builder().key("sourceBranch").operator(EQUALS).value("stage").build(),
-                      TriggerEventDataCondition.builder().key("sourceBranch").operator(NOT_EQUALS).value("qa").build(),
-                      TriggerEventDataCondition.builder().key("targetBranch").operator(REGEX).value("^master$").build(),
-                      TriggerEventDataCondition.builder()
-                          .key("<+trigger.payload.event_type>")
-                          .operator(IN)
-                          .value("pull_request, merge_request")
-                          .build(),
-                      TriggerEventDataCondition.builder()
-                          .key("<+trigger.payload.object_kind>")
-                          .operator(NOT_IN)
-                          .value("push, package")
-                          .build(),
-                      TriggerEventDataCondition.builder()
-                          .key("<+trigger.payload.user.name>")
-                          .operator(STARTS_WITH)
-                          .value("charles")
-                          .build(),
-                      TriggerEventDataCondition.builder()
-                          .key("<+trigger.payload.user.username>")
-                          .operator(ENDS_WITH)
-                          .value("grant")
-                          .build(),
-                      TriggerEventDataCondition.builder()
-                          .key("<+trigger.payload.user.avatar_url>")
-                          .operator(CONTAINS)
-                          .value("secure.gravatar.com")
-                          .build(),
-                      TriggerEventDataCondition.builder()
-                          .key("<+trigger.payload.user.email>")
-                          .operator(DOES_NOT_CONTAIN)
-                          .value("secure.gravatar.com")
-                          .build()))
-                  .build())
+        .spec(
+            GitlabPRSpec.builder()
+                .actions(emptyList())
+                .payloadConditions(Arrays.asList(
+                    TriggerEventDataCondition.builder().key("sourceBranch").operator(EQUALS).value("stage").build(),
+                    TriggerEventDataCondition.builder().key("sourceBranch").operator(NOT_EQUALS).value("qa").build(),
+                    TriggerEventDataCondition.builder().key("targetBranch").operator(REGEX).value("^master$").build(),
+                    TriggerEventDataCondition.builder()
+                        .key("<+trigger.payload.event_type>")
+                        .operator(IN)
+                        .value("pull_request, merge_request")
+                        .build(),
+                    TriggerEventDataCondition.builder()
+                        .key("<+trigger.payload.object_kind>")
+                        .operator(NOT_IN)
+                        .value("push, package")
+                        .build(),
+                    TriggerEventDataCondition.builder()
+                        .key("<+trigger.payload.user.name>")
+                        .operator(STARTS_WITH)
+                        .value("charles")
+                        .build(),
+                    TriggerEventDataCondition.builder()
+                        .key("<+trigger.payload.user.username>")
+                        .operator(ENDS_WITH)
+                        .value("grant")
+                        .build(),
+                    TriggerEventDataCondition.builder()
+                        .key("<+trigger.payload.user.avatar_url>")
+                        .operator(CONTAINS)
+                        .value("secure.gravatar.com")
+                        .build(),
+                    TriggerEventDataCondition.builder()
+                        .key("<+trigger.payload.user.email>")
+                        .operator(DOES_NOT_CONTAIN)
+                        .value("secure.gravatar.com")
+                        .build()))
+                .jexlCondition(
+                    "<+trigger.payload.user.name> == \"charles grant\" && <+trigger.payload.user.email> != \"wrong_email\"")
+                .build())
         .build();
   }
 }

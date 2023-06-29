@@ -291,6 +291,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
       savedEntity = fetchRemoteEntity(accountId, orgIdentifier, projectIdentifier, savedEntity, branch, loadFromCache);
     } catch (WingsException ex) {
       String fallBackBranch = savedEntity.getFallBackBranch();
+      GitAwareContextHelper.setIsDefaultBranchInGitEntityInfoWithParameter(savedEntity.getFallBackBranch());
       if (shouldRetryWithFallBackBranch(TemplateUtils.getScmException(ex), branch, fallBackBranch)) {
         log.info(String.format(
             "Retrieving template [%s] from fall back branch [%s] ", savedEntity.getIdentifier(), fallBackBranch));

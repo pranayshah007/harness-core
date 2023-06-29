@@ -17,9 +17,9 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//commons/go/lib/filesystem",
-        "//product/ci/ti-service/types",
         "@cc_mvdan_sh_v3//syntax",
         "@com_github_cenkalti_backoff_v4//:backoff",
+        "@com_github_harness_ti_client//types",
         "@com_github_mattn_go_zglob//:go-zglob",
         "@com_github_pkg_errors//:errors",
         "@org_uber_go_zap//:zap",

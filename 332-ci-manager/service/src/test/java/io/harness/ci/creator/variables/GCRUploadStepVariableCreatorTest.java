@@ -91,7 +91,10 @@ public class GCRUploadStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.gcpBuildPush.spec.execution.steps.pushGCR.spec.projectID",
             "pipeline.stages.gcpBuildPush.spec.execution.steps.pushGCR.spec.context",
             "pipeline.stages.gcpBuildPush.spec.execution.steps.pushGCR.spec.remoteCacheImage",
-            "pipeline.stages.gcpBuildPush.spec.execution.steps.pushGCR.when");
+            "pipeline.stages.gcpBuildPush.spec.execution.steps.pushGCR.when",
+            "pipeline.stages.gcpBuildPush.spec.execution.steps.pushGCR.spec.cacheFrom",
+            "pipeline.stages.gcpBuildPush.spec.execution.steps.pushGCR.spec.cacheTo",
+            "pipeline.stages.gcpBuildPush.spec.execution.steps.pushGCR.spec.caching");
 
     // yaml extra properties
     List<String> fqnExtraPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()

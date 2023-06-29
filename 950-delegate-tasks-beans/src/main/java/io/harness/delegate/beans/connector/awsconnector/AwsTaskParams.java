@@ -33,6 +33,7 @@ public class AwsTaskParams extends ConnectorTaskParams implements TaskParameters
   String bucketName;
   String filePathRegex;
   String filePath;
+  boolean shouldFetchObjectMetadata;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

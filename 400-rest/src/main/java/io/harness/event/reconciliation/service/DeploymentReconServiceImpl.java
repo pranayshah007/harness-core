@@ -11,6 +11,7 @@ import static io.harness.event.reconciliation.service.DeploymentReconServiceHelp
 import static io.harness.event.reconciliation.service.DeploymentReconServiceHelper.getCompletedExecutionsFromTSDB;
 import static io.harness.event.reconciliation.service.DeploymentReconServiceHelper.isStatusMismatchedInMongoAndTSDB;
 import static io.harness.event.reconciliation.service.DeploymentReconServiceHelper.performReconciliationHelper;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import io.harness.beans.ExecutionStatus;
@@ -119,7 +120,7 @@ public class DeploymentReconServiceImpl implements DeploymentReconService {
                                          .hasAnyOf(tsdbRunningWFs.keySet())
                                          .project(WorkflowExecutionKeys.serviceExecutionSummaries, false);
 
-    try (HIterator<WorkflowExecution> iterator = new HIterator<>(query.fetch(options))) {
+    try (HIterator<WorkflowExecution> iterator = new HIterator<>(query.limit(NO_LIMIT).fetch(options))) {
       for (WorkflowExecution workflowExecution : iterator) {
         if (isStatusMismatchedInMongoAndTSDB(
                 tsdbRunningWFs, workflowExecution.getUuid(), workflowExecution.getStatus().toString())) {
@@ -159,7 +160,7 @@ public class DeploymentReconServiceImpl implements DeploymentReconService {
     // can fire update query for those executionIds.
 
     if (totalCompletedExecutionsInSecondary != totalCompletedExecutionsInPrimary) {
-      try (HIterator<WorkflowExecution> iterator = new HIterator<>(query.fetch(options))) {
+      try (HIterator<WorkflowExecution> iterator = new HIterator<>(query.limit(NO_LIMIT).fetch(options))) {
         for (WorkflowExecution workflowExecution : iterator) {
           updateTimeScaleDbStatuses(workflowExecution, timeScaleDBService);
         }
@@ -223,7 +224,7 @@ public class DeploymentReconServiceImpl implements DeploymentReconService {
 
     addTimeQuery(query, durationStartTs, durationEndTs, WorkflowExecutionKeys.startTs, WorkflowExecutionKeys.endTs);
 
-    try (HIterator<WorkflowExecution> iterator = new HIterator<>(query.fetch(options))) {
+    try (HIterator<WorkflowExecution> iterator = new HIterator<>(query.limit(NO_LIMIT).fetch(options))) {
       for (WorkflowExecution workflowExecution : iterator) {
         checkAndAddIfRequired(workflowExecution);
       }

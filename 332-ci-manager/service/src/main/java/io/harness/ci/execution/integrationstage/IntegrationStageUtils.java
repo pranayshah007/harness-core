@@ -999,4 +999,31 @@ public class IntegrationStageUtils {
     }
     return false;
   }
+
+  public static List<String> getStepIdentifiers(List<ExecutionWrapperConfig> executionWrapperConfigs) {
+    List<String> stepIdentifiers = new ArrayList<>();
+    executionWrapperConfigs.forEach(executionWrapper -> addStepIdentifier(executionWrapper, stepIdentifiers, ""));
+    return stepIdentifiers;
+  }
+
+  private static void addStepIdentifier(
+      ExecutionWrapperConfig executionWrapper, List<String> stepIdentifiers, String parentId) {
+    if (executionWrapper != null) {
+      if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
+        CIAbstractStepNode stepNode = getStepNode(executionWrapper);
+        stepIdentifiers.add(parentId + stepNode.getIdentifier());
+      } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
+        ParallelStepElementConfig parallelStepElementConfig = getParallelStepElementConfig(executionWrapper);
+        parallelStepElementConfig.getSections().forEach(
+            section -> addStepIdentifier(section, stepIdentifiers, parentId));
+      } else if (executionWrapper.getStepGroup() != null && !executionWrapper.getStepGroup().isNull()) {
+        StepGroupElementConfig stepGroupElementConfig = getStepGroupElementConfig(executionWrapper);
+        for (ExecutionWrapperConfig wrapper : stepGroupElementConfig.getSteps()) {
+          addStepIdentifier(wrapper, stepIdentifiers, parentId + stepGroupElementConfig.getIdentifier() + "_");
+        }
+      } else {
+        throw new InvalidRequestException("Only Parallel, StepElement and StepGroup are supported");
+      }
+    }
+  }
 }

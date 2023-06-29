@@ -17,6 +17,8 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -82,6 +84,110 @@ public class TriggerValidationHandlerTest extends CategoryTest {
                           .build();
 
     triggerDetails = TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).build();
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testApplyValidationsWebhook() {
+    NGTriggerEntity ngTriggerEntityWebhook = NGTriggerEntity.builder()
+                                                 .accountId("acc")
+                                                 .projectIdentifier("prj")
+                                                 .orgIdentifier("org")
+                                                 .targetIdentifier("pipeline")
+                                                 .type(NGTriggerType.WEBHOOK)
+                                                 .identifier("id")
+                                                 .name("name")
+                                                 .build();
+
+    TriggerDetails triggerDetailsWebhook = TriggerDetails.builder().ngTriggerEntity(ngTriggerEntityWebhook).build();
+    ValidationResult validationResult = ValidationResult.builder().success(true).build();
+    when(pipelineRefValidator.validate(any())).thenReturn(validationResult);
+    when(triggerIdentifierRefValidator.validate(any())).thenReturn(validationResult);
+    when(manifestTriggerValidator.validate(any())).thenReturn(validationResult);
+    when(artifactTriggerValidator.validate(any())).thenReturn(validationResult);
+
+    ValidationResult finalValidationResult = triggerValidationHandler.applyValidations(triggerDetailsWebhook);
+    assertThat(finalValidationResult).isEqualToComparingFieldByField(validationResult);
+    verify(pipelineRefValidator, times(1)).validate(triggerDetailsWebhook);
+    verify(triggerIdentifierRefValidator, times(1)).validate(triggerDetailsWebhook);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testApplyValidationsScheduled() {
+    NGTriggerEntity ngTriggerEntityScheduled = NGTriggerEntity.builder()
+                                                   .accountId("acc")
+                                                   .projectIdentifier("prj")
+                                                   .orgIdentifier("org")
+                                                   .targetIdentifier("pipeline")
+                                                   .type(NGTriggerType.SCHEDULED)
+                                                   .identifier("id")
+                                                   .name("name")
+                                                   .build();
+    TriggerDetails triggerDetailsScheduled = TriggerDetails.builder().ngTriggerEntity(ngTriggerEntityScheduled).build();
+    ValidationResult validationResult = ValidationResult.builder().success(true).build();
+    when(pipelineRefValidator.validate(any())).thenReturn(validationResult);
+    when(triggerIdentifierRefValidator.validate(any())).thenReturn(validationResult);
+    when(manifestTriggerValidator.validate(any())).thenReturn(validationResult);
+    when(artifactTriggerValidator.validate(any())).thenReturn(validationResult);
+    ValidationResult finalValidationResult = triggerValidationHandler.applyValidations(triggerDetailsScheduled);
+    assertThat(finalValidationResult).isEqualToComparingFieldByField(validationResult);
+    verify(pipelineRefValidator, times(1)).validate(triggerDetailsScheduled);
+    verify(triggerIdentifierRefValidator, times(1)).validate(triggerDetailsScheduled);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testApplyValidationsArtifact() {
+    NGTriggerEntity ngTriggerEntityArtifact = NGTriggerEntity.builder()
+                                                  .accountId("acc")
+                                                  .projectIdentifier("prj")
+                                                  .orgIdentifier("org")
+                                                  .targetIdentifier("pipeline")
+                                                  .type(NGTriggerType.ARTIFACT)
+                                                  .identifier("id")
+                                                  .name("name")
+                                                  .build();
+    TriggerDetails triggerDetailsArtifact = TriggerDetails.builder().ngTriggerEntity(ngTriggerEntityArtifact).build();
+    ValidationResult validationResult = ValidationResult.builder().success(true).build();
+    when(pipelineRefValidator.validate(any())).thenReturn(validationResult);
+    when(triggerIdentifierRefValidator.validate(any())).thenReturn(validationResult);
+    when(manifestTriggerValidator.validate(any())).thenReturn(validationResult);
+    when(artifactTriggerValidator.validate(any())).thenReturn(validationResult);
+    ValidationResult finalValidationResult = triggerValidationHandler.applyValidations(triggerDetailsArtifact);
+    assertThat(finalValidationResult).isEqualToComparingFieldByField(validationResult);
+    verify(pipelineRefValidator, times(1)).validate(triggerDetailsArtifact);
+    verify(triggerIdentifierRefValidator, times(1)).validate(triggerDetailsArtifact);
+    verify(artifactTriggerValidator, times(1)).validate(triggerDetailsArtifact);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testApplyValidationsManifest() {
+    NGTriggerEntity ngTriggerEntityManifest = NGTriggerEntity.builder()
+                                                  .accountId("acc")
+                                                  .projectIdentifier("prj")
+                                                  .orgIdentifier("org")
+                                                  .targetIdentifier("pipeline")
+                                                  .type(NGTriggerType.MANIFEST)
+                                                  .identifier("id")
+                                                  .name("name")
+                                                  .build();
+    TriggerDetails triggerDetailsManifest = TriggerDetails.builder().ngTriggerEntity(ngTriggerEntityManifest).build();
+    ValidationResult validationResult = ValidationResult.builder().success(true).build();
+    when(pipelineRefValidator.validate(any())).thenReturn(validationResult);
+    when(triggerIdentifierRefValidator.validate(any())).thenReturn(validationResult);
+    when(manifestTriggerValidator.validate(any())).thenReturn(validationResult);
+    when(artifactTriggerValidator.validate(any())).thenReturn(validationResult);
+    ValidationResult finalValidationResult = triggerValidationHandler.applyValidations(triggerDetailsManifest);
+    assertThat(finalValidationResult).isEqualToComparingFieldByField(validationResult);
+    verify(pipelineRefValidator, times(1)).validate(triggerDetailsManifest);
+    verify(triggerIdentifierRefValidator, times(1)).validate(triggerDetailsManifest);
+    verify(manifestTriggerValidator, times(1)).validate(triggerDetailsManifest);
   }
 
   @Test

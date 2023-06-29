@@ -8,8 +8,8 @@ package io.harness.idp.configmanager.repositories;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.configmanager.ConfigType;
 import io.harness.idp.configmanager.beans.entity.AppConfigEntity;
+import io.harness.idp.configmanager.utils.ConfigType;
 
 import java.util.List;
 

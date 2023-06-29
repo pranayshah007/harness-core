@@ -41,6 +41,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.executionplan.CIExecutionTestBase;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.serializer.BackgroundStepProtobufSerializer;
 import io.harness.ci.serializer.vm.VmStepSerializer;
 import io.harness.delegate.beans.ci.vm.steps.VmBackgroundStep;
@@ -60,6 +61,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.product.ci.engine.proto.UnitStep;
+import io.harness.repositories.CIStageOutputRepository;
 import io.harness.rule.Owner;
 
 import java.util.ArrayList;
@@ -87,6 +89,8 @@ public class BackgroundStepTest extends CIExecutionTestBase {
   @Mock private OutcomeService outcomeService;
   @Mock private ConnectorUtils connectorUtils;
   @Mock private VmStepSerializer vmStepSerializer;
+  @Mock protected CIFeatureFlagService featureFlagService;
+  @Mock protected CIStageOutputRepository ciStageOutputRepository;
   @InjectMocks BackgroundStep backgroundStep;
   private Ambiance ambiance;
   private BackgroundStepInfo stepInfo;

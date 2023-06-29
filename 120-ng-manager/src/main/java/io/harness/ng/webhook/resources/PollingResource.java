@@ -12,6 +12,7 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.polling.PollingDelegateResponse;
+import io.harness.dto.PollingInfoForTriggers;
 import io.harness.dto.PollingResponseDTO;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
@@ -31,6 +32,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -80,6 +82,14 @@ public class PollingResource {
         PollingResponseDTO.builder()
             .pollingResponse(kryoSerializer.asBytes(PollingDocument.newBuilder().setPollingDocId(pollingDocId).build()))
             .build());
+  }
+
+  @GET
+  @Path("polling-info-for-triggers")
+  @ApiOperation(hidden = true, value = "Get polling document.", nickname = "getPolling")
+  public ResponseDTO<PollingInfoForTriggers> getPollingDocmentForTriggers(
+      @QueryParam("accountId") @NotEmpty String accountId, @QueryParam("pollingDocId") @NotEmpty String pollingDocId) {
+    return ResponseDTO.newResponse(pollingService.getPollingInfoForTriggers(accountId, pollingDocId));
   }
 
   @POST

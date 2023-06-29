@@ -21,8 +21,10 @@ public class ScmErrorExplanations {
       + "1. The requested file path doesn't exist for given branch<BRANCH> and repo<REPO>\n"
       + "2. The given branch<BRANCH> or repo<REPO> is invalid";
   public static final String INVALID_CONNECTOR_CREDS =
-      "The credentials provided in the Gitlab connector<CONNECTOR> are invalid or have expired or are not configured with SSO.";
+      "The credentials provided in the Gitlab connector<CONNECTOR> are invalid or have expired or are not configured with SSO. ";
   public static final String REPO_NOT_FOUND = "Provided Gitlab repository<REPO> does not exist or has been deleted.";
 
   public static final String BRANCH_NOT_FOUND = "Provided Gitlab branch<BRANCH> does not exist or has been deleted.";
+  public static final String OAUTH_ACCESS_DENIED =
+      "If you are using OAUTH, access to Gitlab may have been revoked or token is invalid or expired.";
 }

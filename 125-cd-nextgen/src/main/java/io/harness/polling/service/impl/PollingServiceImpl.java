@@ -11,11 +11,16 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.dto.PollingInfoForTriggers;
 import io.harness.exception.InvalidRequestException;
 import io.harness.observer.Subject;
+import io.harness.polling.bean.ArtifactPolledResponse;
+import io.harness.polling.bean.GitPollingPolledResponse;
+import io.harness.polling.bean.ManifestPolledResponse;
 import io.harness.polling.bean.PolledResponse;
 import io.harness.polling.bean.PollingDocument;
 import io.harness.polling.bean.PollingDocument.PollingDocumentKeys;
+import io.harness.polling.bean.PollingType;
 import io.harness.polling.contracts.PollingItem;
 import io.harness.polling.mapper.PollingDocumentMapper;
 import io.harness.polling.service.intfc.PollingService;
@@ -47,6 +52,9 @@ public class PollingServiceImpl implements PollingService {
         pollingDocument.getPollingType(), pollingDocument.getPollingInfo(), pollingDocument.getSignatures());
     // savedPollingDoc will be null if we couldn't find polling doc with the same entries as pollingDocument.
     if (savedPollingDoc == null) {
+      // Setting uuid as null so that on saving database generates a new uuid and does not use the old one as some other
+      // trigger might still be consuming that polling document
+      pollingDocument.setUuid(null);
       savedPollingDoc = pollingRepository.save(pollingDocument);
       createPerpetualTask(savedPollingDoc);
     }
@@ -184,5 +192,31 @@ public class PollingServiceImpl implements PollingService {
     for (PollingDocument pollingDoc : pollingDocs) {
       resetPerpetualTask(pollingDoc);
     }
+  }
+
+  @Override
+  public PollingInfoForTriggers getPollingInfoForTriggers(String accountId, String pollingDocId) {
+    PollingDocument pollingDocument = get(accountId, pollingDocId);
+    io.harness.dto.PolledResponse polledResponse = io.harness.dto.PolledResponse.builder().build();
+    if (pollingDocument.getPollingType().equals(PollingType.ARTIFACT)) {
+      if (pollingDocument.getPolledResponse() != null) {
+        polledResponse.setAllPolledKeys(
+            ((ArtifactPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys());
+      }
+    } else if (pollingDocument.getPollingType().equals(PollingType.MANIFEST)) {
+      if (pollingDocument.getPolledResponse() != null) {
+        polledResponse.setAllPolledKeys(
+            ((ManifestPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys());
+      }
+    } else if (pollingDocument.getPollingType().equals(PollingType.WEBHOOK_POLLING)) {
+      if (pollingDocument.getPolledResponse() != null) {
+        polledResponse.setAllPolledKeys(
+            ((GitPollingPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys());
+      }
+    }
+    return PollingInfoForTriggers.builder()
+        .polledResponse(polledResponse)
+        .perpetualTaskId(pollingDocument.getPerpetualTaskId())
+        .build();
   }
 }

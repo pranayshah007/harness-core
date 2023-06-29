@@ -8,7 +8,7 @@
 package io.harness.yaml.core.failurestrategy;
 
 import static com.fasterxml.jackson.annotation.JsonSubTypes.Type;
-import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY;
+import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXISTING_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -19,6 +19,7 @@ import io.harness.yaml.core.failurestrategy.manualintervention.ManualInterventio
 import io.harness.yaml.core.failurestrategy.markFailure.MarkAsFailFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.marksuccess.MarkAsSuccessFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.retry.RetryFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.retry.RetrySGFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.rollback.PipelineRollbackFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.rollback.StageRollbackFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.rollback.StepGroupFailureActionConfig;
@@ -27,7 +28,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import javax.validation.constraints.NotNull;
 
-@JsonTypeInfo(use = NAME, property = "type", include = PROPERTY, visible = true)
+@JsonTypeInfo(use = NAME, property = "type", include = EXISTING_PROPERTY, visible = true)
 @JsonSubTypes({
   @Type(value = AbortFailureActionConfig.class, name = NGFailureActionTypeConstants.ABORT)
   , @Type(value = IgnoreFailureActionConfig.class, name = NGFailureActionTypeConstants.IGNORE),
@@ -41,6 +42,7 @@ import javax.validation.constraints.NotNull;
       @Type(value = ProceedWithDefaultValuesFailureActionConfig.class,
           name = NGFailureActionTypeConstants.PROCEED_WITH_DEFAULT_VALUES),
       @Type(value = MarkAsFailFailureActionConfig.class, name = NGFailureActionTypeConstants.MARK_AS_FAILURE),
+      @Type(value = RetrySGFailureActionConfig.class, name = NGFailureActionTypeConstants.RETRY_STEP_GROUP)
 })
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface FailureStrategyActionConfig {

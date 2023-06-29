@@ -20,6 +20,8 @@ import io.harness.cvng.servicelevelobjective.services.api.SLIRecordBucketService
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
+import com.mongodb.ReadPreference;
+import dev.morphia.query.FindOptions;
 import dev.morphia.query.Sort;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -162,6 +164,40 @@ public class SLIRecordBucketServiceImpl implements SLIRecordBucketService {
         .filter(SLIRecordBucketKeys.sliId, sliId)
         .field(SLIRecordBucketKeys.bucketStartTime)
         .greaterThanOrEq(startTimeStamp)
+        .field(SLIRecordBucketKeys.bucketStartTime)
+        .lessThan(endTimeStamp)
+        .order(Sort.ascending(SLIRecordBucketKeys.bucketStartTime))
+        .asList();
+  }
+
+  @Override
+  public SLIRecordBucket getFirstSLIRecord(String sliId, Instant timestampInclusive) {
+    return hPersistence.createQuery(SLIRecordBucket.class, excludeAuthorityCount)
+        .filter(SLIRecordBucketKeys.sliId, sliId)
+        .field(SLIRecordBucketKeys.bucketStartTime)
+        .greaterThanOrEq(timestampInclusive)
+        .order(Sort.ascending(SLIRecordBucketKeys.bucketStartTime))
+        .get();
+  }
+  @Override
+  public List<SLIRecordBucket> getSLIRecordsOfMinutes(String sliId, List<Instant> minutes) {
+    return hPersistence.createQuery(SLIRecordBucket.class, excludeAuthorityCount)
+        .filter(SLIRecordBucketKeys.sliId, sliId)
+        .field(SLIRecordBucketKeys.bucketStartTime)
+        .in(minutes)
+        .order(Sort.ascending(SLIRecordBucketKeys.bucketStartTime))
+        .asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
+  }
+
+  @Override
+  public List<SLIRecordBucket> getSLIRecordsWithSLIVersion(
+      String sliId, Instant startTimeStamp, Instant endTimeStamp, int sliVersion) {
+    return hPersistence.createQuery(SLIRecordBucket.class, excludeAuthorityCount)
+        .filter(SLIRecordBucketKeys.sliId, sliId)
+        .field(SLIRecordBucketKeys.bucketStartTime)
+        .greaterThanOrEq(startTimeStamp)
+        .field(SLIRecordBucketKeys.sliVersion)
+        .equal(sliVersion)
         .field(SLIRecordBucketKeys.bucketStartTime)
         .lessThan(endTimeStamp)
         .order(Sort.ascending(SLIRecordBucketKeys.bucketStartTime))

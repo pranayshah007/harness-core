@@ -37,6 +37,7 @@ public class NGTriggerEventHistoryDTO extends NGTriggerEventHistoryBaseDTO {
   String targetIdentifier;
   TargetExecutionSummary targetExecutionSummary;
   NGTriggerType type;
+  NGTriggerEventInfo ngTriggerEventInfo;
 
   public NGTriggerEventHistoryDTO(String accountId, String eventCorrelationId, String payload, Long eventCreatedAt,
       TriggerEventResponse.FinalStatus finalStatus, String message, Boolean exceptionOccurred, Long createdAt,

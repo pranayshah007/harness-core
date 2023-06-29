@@ -56,6 +56,7 @@ java_library(
         "//419-delegate-service-app/src/main/java/io/harness/dms/module",
         "//419-delegate-service-app/src/main/java/io/harness/dms/configuration:module",
         "//419-delegate-service-app/src/main/java/io/harness/dms/health:module",
+        "//419-delegate-service-app/src/main/java/io/harness/dms/resource:module",
     ],
 )
 

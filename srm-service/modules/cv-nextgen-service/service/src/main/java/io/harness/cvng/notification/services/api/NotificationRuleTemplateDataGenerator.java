@@ -10,9 +10,12 @@ package io.harness.cvng.notification.services.api;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.ACCOUNT_NAME;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.ANOMALOUS_METRIC;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.COLOR;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_IDENTIFIER;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_NAME;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.HEADER_MESSAGE;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.ORG_NAME;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.PROJECT_NAME;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_IDENTIFIER;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_NAME;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.START_DATE;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.START_TS_SECS;
@@ -53,9 +56,8 @@ public abstract class NotificationRuleTemplateDataGenerator<T extends Notificati
   @Inject @Named("portalUrl") String portalUrl;
   @Inject protected Clock clock;
 
-  public Map<String, String> getTemplateData(ProjectParams projectParams, String name, String identifier,
-      String serviceIdentifier, String monitoredServiceIdentifier, T condition,
-      Map<String, String> notificationDataMap) {
+  public Map<String, String> getTemplateData(ProjectParams projectParams, Map<String, Object> entityDetails,
+      T condition, Map<String, String> notificationDataMap) {
     Instant currentInstant = clock.instant();
     long startTime = currentInstant.getEpochSecond();
     long startTimeInMillis = startTime * 1000;
@@ -76,14 +78,16 @@ public abstract class NotificationRuleTemplateDataGenerator<T extends Notificati
       projectDTO = nextGenService.getProject(
           projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier());
     }
-    if (serviceIdentifier != null) {
-      serviceResponseDTO = nextGenService.getService(projectParams.getAccountIdentifier(),
-          projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), serviceIdentifier);
+    if (entityDetails.get(SERVICE_IDENTIFIER) != null) {
+      serviceResponseDTO =
+          nextGenService.getService(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+              projectParams.getProjectIdentifier(), entityDetails.get(SERVICE_IDENTIFIER).toString());
     }
+
     String serviceName = Objects.isNull(serviceResponseDTO) ? null : serviceResponseDTO.getName();
     String orgName = Objects.isNull(organizationDTO) ? null : organizationDTO.getName();
     String projectName = Objects.isNull(projectDTO) ? null : projectDTO.getName();
-    return new HashMap<String, String>() {
+    return new HashMap<>() {
       {
         put(COLOR, THEME_COLOR);
         put(SERVICE_NAME, serviceName);
@@ -92,18 +96,19 @@ public abstract class NotificationRuleTemplateDataGenerator<T extends Notificati
         put(PROJECT_NAME, projectName);
         put(START_TS_SECS, String.valueOf(startTime));
         put(START_DATE, startDate);
-        put(URL, getUrl(baseUrl, projectParams, identifier, condition.getType().getNotificationRuleType(), endTime));
-        put(getEntityName(), name);
+        put(URL, getUrl(baseUrl, projectParams, entityDetails.getOrDefault(ENTITY_IDENTIFIER, "").toString(), endTime));
+        put(getEntityName(), entityDetails.getOrDefault(ENTITY_NAME, "").toString());
         put(HEADER_MESSAGE, getHeaderMessage(notificationDataMap));
         put(TRIGGER_MESSAGE, getTriggerMessage(condition));
-        put(ANOMALOUS_METRIC, getAnomalousMetrics(projectParams, identifier, startTimeInMillis, condition));
+        put(ANOMALOUS_METRIC,
+            getAnomalousMetrics(projectParams, entityDetails.getOrDefault(ENTITY_IDENTIFIER, "").toString(),
+                startTimeInMillis, condition));
       }
     };
   }
 
   protected abstract String getEntityName();
-  protected abstract String getUrl(
-      String baseUrl, ProjectParams projectParams, String identifier, NotificationRuleType type, Long endTime);
+  protected abstract String getUrl(String baseUrl, ProjectParams projectParams, String identifier, Long endTime);
   protected abstract String getHeaderMessage(Map<String, String> notificationDataMap);
   protected abstract String getTriggerMessage(T condition);
   protected abstract String getAnomalousMetrics(

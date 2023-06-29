@@ -14,6 +14,7 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.SkipAutoEvaluation;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
@@ -35,6 +36,7 @@ public class PipelineStageStepParameters implements StepParameters {
 
   private String pipelineInputs;
   String stageNodeId;
+  JsonNode pipelineInputsJsonNode;
 
   @SkipAutoEvaluation private ParameterField<Map<String, ParameterField<String>>> outputs;
   private List<String> inputSetReferences;

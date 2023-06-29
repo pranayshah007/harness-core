@@ -8,6 +8,7 @@
 package io.harness.plugin.service;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveBooleanParameter;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveListParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BUILD_EVENT;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_BRANCH;
@@ -23,6 +24,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_STEP_
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_SSL_NO_VERIFY;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PATH_SEPARATOR;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.PLUGIN_ENV_PREFIX;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.PLUGIN_OUTPUT_FILE_PATHS_CONTENT;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_MOUNT_PATH;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
@@ -50,10 +52,12 @@ import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
 
 import com.google.inject.Inject;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.cxf.common.util.CollectionUtils;
 
 public class PluginServiceImpl implements PluginService {
   public static final String TAG_BUILD_EVENT = "tag";
@@ -114,6 +118,7 @@ public class PluginServiceImpl implements PluginService {
     map.putAll(getBuildEnvVars(ambiance, gitConnector, stepInfo));
     map.putAll(getCloneDirEnvVars(stepInfo.getCloneDirectory(), repoName, map.get(DRONE_REMOTE_URL), identifier));
     map.putAll(getPluginDepthEnvVars(stepInfo.getDepth()));
+    map.putAll(getPluginOutputFilePathsContent(stepInfo.getOutputFilePathsContent(), stepInfo.getIdentifier()));
 
     return map;
   }
@@ -257,6 +262,18 @@ public class PluginServiceImpl implements PluginService {
     if (depth != null && depth != 0) {
       String pluginDepthKey = PLUGIN_ENV_PREFIX + GIT_CLONE_DEPTH_ATTRIBUTE.toUpperCase(Locale.ROOT);
       map.put(pluginDepthKey, depth.toString());
+    }
+    return map;
+  }
+
+  static Map<String, String> getPluginOutputFilePathsContent(
+      ParameterField<List<String>> outputFilePathsContent, String stepIdentifier) {
+    Map<String, String> map = new HashMap<>();
+    List<String> outputFilePathsContentList =
+        resolveListParameter("outputFilePathsContent", "GitClone", stepIdentifier, outputFilePathsContent, false);
+
+    if (outputFilePathsContentList != null && !CollectionUtils.isEmpty(outputFilePathsContentList)) {
+      map.put(PLUGIN_OUTPUT_FILE_PATHS_CONTENT, String.join(",", outputFilePathsContentList));
     }
     return map;
   }

@@ -21,6 +21,7 @@ import lombok.Value;
 public class ConnectorDetails {
   Scope scope;
   String connectorRef;
+  String repo;
 
   @Override
   public boolean equals(Object o) {
@@ -31,11 +32,12 @@ public class ConnectorDetails {
       return false;
     }
     ConnectorDetails that = (ConnectorDetails) o;
-    return Objects.equals(getScope(), that.getScope()) && Objects.equals(getConnectorRef(), that.getConnectorRef());
+    return Objects.equals(getScope(), that.getScope()) && Objects.equals(getConnectorRef(), that.getConnectorRef())
+        && Objects.equals(getRepo(), that.getRepo());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getScope(), getConnectorRef());
+    return Objects.hash(getScope(), getConnectorRef(), getRepo());
   }
 }

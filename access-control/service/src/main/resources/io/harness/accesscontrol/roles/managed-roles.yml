@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 52
+version: 53
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -150,6 +150,7 @@ roles:
         - code_repo_edit
         - code_repo_delete
         - code_repo_push
+        - code_commitCheck_report
         - servicediscovery_networkmap_create
         - servicediscovery_networkmap_edit
         - servicediscovery_networkmap_delete
@@ -365,6 +366,7 @@ roles:
         - code_repo_edit
         - code_repo_delete
         - code_repo_push
+        - code_commitCheck_report
         - servicediscovery_networkmap_create
         - servicediscovery_networkmap_edit
         - servicediscovery_networkmap_delete
@@ -628,6 +630,7 @@ roles:
         - code_repo_edit
         - code_repo_delete
         - code_repo_push
+        - code_commitCheck_report
         - servicediscovery_networkmap_create
         - servicediscovery_networkmap_edit
         - servicediscovery_networkmap_delete
@@ -968,6 +971,7 @@ roles:
         - code_repo_edit
         - code_repo_delete
         - code_repo_push
+        - code_commitCheck_report
       managed: true
       allowedScopeLevels:
         - account

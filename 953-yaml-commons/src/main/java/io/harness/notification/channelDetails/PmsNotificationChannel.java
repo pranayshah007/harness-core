@@ -25,7 +25,8 @@ import java.util.Map;
   @JsonSubTypes.Type(value = PmsEmailChannel.class, name = NotificationChannelType.EMAIL)
   , @JsonSubTypes.Type(value = PmsSlackChannel.class, name = NotificationChannelType.SLACK),
       @JsonSubTypes.Type(value = PmsPagerDutyChannel.class, name = NotificationChannelType.PAGERDUTY),
-      @JsonSubTypes.Type(value = PmsMSTeamChannel.class, name = NotificationChannelType.MSTEAMS)
+      @JsonSubTypes.Type(value = PmsMSTeamChannel.class, name = NotificationChannelType.MSTEAMS),
+      @JsonSubTypes.Type(value = PmsWebhookChannel.class, name = NotificationChannelType.WEBHOOK)
 })
 // Move this class to a common module like 878. Also, rename it accordingly.
 public abstract class PmsNotificationChannel {

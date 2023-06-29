@@ -44,6 +44,7 @@ public class YamlPipelineUtils {
     mapper = new ObjectMapper(new YAMLFactory()
                                   .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
                                   .enable(YAMLGenerator.Feature.INDENT_ARRAYS_WITH_INDICATOR)
+                                  .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
                                   .enable(YAMLGenerator.Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS));
     mapper.registerModule(new EdgeCaseRegexModule());
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -87,13 +88,6 @@ public class YamlPipelineUtils {
     return mapper.readValue(yaml, cls);
   }
 
-  @Deprecated
-  // Use writeYamlString method instead
-  // It will replace "---\n" with "" and also handle JsonProcessingException
-  public String writeString(Object value) throws JsonProcessingException {
-    return mapper.writeValueAsString(value);
-  }
-
   public ObjectMapper getMapper() {
     return mapper;
   }
@@ -102,7 +96,7 @@ public class YamlPipelineUtils {
   // Use writeYamlString method instead
   // It will handle JsonProcessingException
   public String getYamlString(Object value) throws JsonProcessingException {
-    return mapper.writeValueAsString(value).replaceFirst("---\n", "");
+    return mapper.writeValueAsString(value);
   }
 
   /***
@@ -111,7 +105,7 @@ public class YamlPipelineUtils {
    */
   public String writeYamlString(Object value) {
     try {
-      return mapper.writeValueAsString(value).replaceFirst("---\n", "");
+      return mapper.writeValueAsString(value);
     } catch (JsonProcessingException e) {
       throw new InvalidRequestException("Couldn't convert object to Yaml");
     }

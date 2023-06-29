@@ -21,6 +21,7 @@ java_library(
         "@maven//:com_google_inject_guice",
         "@maven//:com_squareup_okhttp3_okhttp",
         "@maven//:com_squareup_retrofit2_converter_jackson",
+        "@maven//:com_squareup_retrofit2_converter_jaxb",
         "@maven//:com_squareup_retrofit2_retrofit",
     ],
 )

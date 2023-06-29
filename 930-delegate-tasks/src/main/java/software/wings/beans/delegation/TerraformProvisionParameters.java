@@ -124,6 +124,7 @@ public class TerraformProvisionParameters implements TaskParameters, ActivityAcc
   private List<EncryptedDataDetail> configFileAWSEncryptionDetails;
   private final TfVarS3Source remoteS3BackendConfig;
   private final TfConfigInspectVersion terraformConfigInspectVersion;
+  boolean encryptDecryptPlanForHarnessSMOnManager;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

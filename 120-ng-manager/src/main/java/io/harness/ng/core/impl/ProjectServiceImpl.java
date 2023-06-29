@@ -52,6 +52,9 @@ import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.favorites.ResourceType;
+import io.harness.favorites.entities.Favorite;
+import io.harness.favorites.services.FavoritesService;
 import io.harness.ff.FeatureFlagService;
 import io.harness.gitsync.common.service.YamlGitConfigService;
 import io.harness.logging.AutoLogContext;
@@ -88,6 +91,7 @@ import io.harness.security.dto.PrincipalType;
 import io.harness.telemetry.helpers.ProjectInstrumentationHelper;
 import io.harness.utils.PageUtils;
 import io.harness.utils.ScopeUtils;
+import io.harness.utils.UserHelperService;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -109,6 +113,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
@@ -139,13 +144,16 @@ public class ProjectServiceImpl implements ProjectService {
   private final YamlGitConfigService yamlGitConfigService;
   private final FeatureFlagService featureFlagService;
   private final DefaultUserGroupService defaultUserGroupService;
+  private final FavoritesService favoritesService;
+  private final UserHelperService userHelperService;
 
   @Inject
   public ProjectServiceImpl(ProjectRepository projectRepository, OrganizationService organizationService,
       @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, OutboxService outboxService,
       NgUserService ngUserService, AccessControlClient accessControlClient, ScopeAccessHelper scopeAccessHelper,
       ProjectInstrumentationHelper instrumentationHelper, YamlGitConfigService yamlGitConfigService,
-      FeatureFlagService featureFlagService, DefaultUserGroupService defaultUserGroupService) {
+      FeatureFlagService featureFlagService, DefaultUserGroupService defaultUserGroupService,
+      FavoritesService favoritesService, UserHelperService userHelperService) {
     this.projectRepository = projectRepository;
     this.organizationService = organizationService;
     this.transactionTemplate = transactionTemplate;
@@ -157,6 +165,8 @@ public class ProjectServiceImpl implements ProjectService {
     this.yamlGitConfigService = yamlGitConfigService;
     this.featureFlagService = featureFlagService;
     this.defaultUserGroupService = defaultUserGroupService;
+    this.favoritesService = favoritesService;
+    this.userHelperService = userHelperService;
   }
 
   @Override
@@ -291,6 +301,14 @@ public class ProjectServiceImpl implements ProjectService {
   }
 
   @Override
+  @DefaultOrganization
+  public Optional<Project> getConsideringCase(
+      String accountIdentifier, @OrgIdentifier String orgIdentifier, @ProjectIdentifier String projectIdentifier) {
+    return projectRepository.findByAccountIdentifierAndOrgIdentifierAndIdentifierAndDeletedNot(
+        accountIdentifier, orgIdentifier, projectIdentifier, true);
+  }
+
+  @Override
   public PageResponse<ProjectDTO> listProjectsForUser(String userId, String accountId, PageRequest pageRequest) {
     Criteria criteria = Criteria.where(UserMembershipKeys.userId)
                             .is(userId)
@@ -415,6 +433,7 @@ public class ProjectServiceImpl implements ProjectService {
       project.setAccountIdentifier(accountIdentifier);
       project.setOrgIdentifier(orgIdentifier);
       project.setId(existingProject.getId());
+      project.setIdentifier(existingProject.getIdentifier());
       project.setCreatedAt(existingProject.getCreatedAt() == null ? existingProject.getLastModifiedAt()
                                                                   : existingProject.getCreatedAt());
       if (project.getVersion() == null) {
@@ -450,12 +469,45 @@ public class ProjectServiceImpl implements ProjectService {
 
   @Override
   public Page<Project> listPermittedProjects(
-      String accountIdentifier, Pageable pageable, ProjectFilterDTO projectFilterDTO) {
+      String accountIdentifier, Pageable pageable, ProjectFilterDTO projectFilterDTO, Boolean onlyFavorites) {
+    if (BooleanUtils.isTrue(onlyFavorites)) {
+      updateFilterPropertiesFromFavorites(accountIdentifier, projectFilterDTO, userHelperService.getUserId());
+    }
     Criteria criteria = getCriteriaForPermittedProjects(accountIdentifier, projectFilterDTO);
     if (criteria == null) {
       return Page.empty();
     }
     return projectRepository.findAll(criteria, pageable);
+  }
+
+  @Override
+  public List<Favorite> getProjectFavorites(
+      String accountIdentifier, ProjectFilterDTO projectFilterDTO, String userId) {
+    List<Favorite> favorites = new ArrayList<>();
+    Set<String> orgIdentifiers;
+    if (projectFilterDTO != null && projectFilterDTO.getOrgIdentifiers().size() > 0) {
+      orgIdentifiers = projectFilterDTO.getOrgIdentifiers();
+    } else {
+      orgIdentifiers = organizationService.getPermittedOrganizations(accountIdentifier, null);
+    }
+    for (String orgIdentifier : orgIdentifiers) {
+      favorites.addAll(favoritesService.getFavorites(
+          accountIdentifier, orgIdentifier, null, userId, ResourceType.PROJECT.toString()));
+    }
+    return favorites;
+  }
+
+  private void updateFilterPropertiesFromFavorites(
+      String accountIdentifier, ProjectFilterDTO projectFilterDTO, String userId) {
+    List<Favorite> favorites = getProjectFavorites(accountIdentifier, projectFilterDTO, userId);
+    List<String> favoriteIds = favorites.stream().map(Favorite::getResourceIdentifier).collect(Collectors.toList());
+    if (favoriteIds.isEmpty()) {
+      favoriteIds.add("NO_MATCH");
+    }
+    List<String> filterProjectIdentifiers =
+        projectFilterDTO.getIdentifiers() != null ? projectFilterDTO.getIdentifiers() : new ArrayList<>();
+    filterProjectIdentifiers.addAll(favoriteIds);
+    projectFilterDTO.setIdentifiers(filterProjectIdentifiers);
   }
 
   @Override
@@ -585,7 +637,8 @@ public class ProjectServiceImpl implements ProjectService {
         outboxService.save(
             new ProjectDeleteEvent(deletedProject.getAccountIdentifier(), ProjectMapper.writeDTO(deletedProject)));
         instrumentationHelper.sendProjectDeleteEvent(deletedProject, accountIdentifier);
-
+        favoritesService.deleteFavorites(
+            accountIdentifier, orgIdentifier, null, ResourceType.PROJECT.toString(), projectIdentifier);
         return true;
       }));
     }
@@ -631,6 +684,12 @@ public class ProjectServiceImpl implements ProjectService {
   @Override
   public Long countProjects(String accountIdentifier) {
     return projectRepository.countByAccountIdentifierAndDeletedIsFalse(accountIdentifier);
+  }
+
+  @Override
+  public boolean isFavorite(Project project, String userId) {
+    return favoritesService.isFavorite(project.getAccountIdentifier(), project.getOrgIdentifier(), null, userId,
+        ResourceType.PROJECT.toString(), project.getIdentifier());
   }
 
   private void validateCreateProjectRequest(String accountIdentifier, String orgIdentifier, ProjectDTO project) {

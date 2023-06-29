@@ -61,12 +61,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecutor {
-  @VisibleForTesting protected Integer dataCollectionTimeoutInMilliSeconds = 180000;
+  @VisibleForTesting protected Integer dataCollectionTimeoutInMilliSeconds = 600_000;
   @Inject private CVNextGenServiceClient cvNextGenServiceClient;
   @Inject private SecretDecryptionService secretDecryptionService;
 
@@ -171,6 +172,7 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
               .commonHeaders(dataCollectionTask.getDataCollectionInfo().collectionHeaders(connectorConfigDTO))
               .commonOptions(dataCollectionTask.getDataCollectionInfo().collectionParams(connectorConfigDTO))
               .otherEnvVariables(dataCollectionInfo.getDslEnvVariables(connectorConfigDTO))
+              .hostNamesToCollect(dataCollectionInfo.getServiceInstances())
               .endTime(dataCollectionTask.getEndTime())
               .startTime(dataCollectionTask.getStartTime())
               .build();
@@ -180,6 +182,11 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
               dataCollectionInfo.getDataCollectionDsl(), runtimeParameters,
               new ThirdPartyCallHandler(dataCollectionTask.getAccountId(), dataCollectionTask.getVerificationTaskId(),
                   delegateLogService, dataCollectionTask.getStartTime(), dataCollectionTask.getEndTime()));
+          if (CollectionUtils.isNotEmpty(dataCollectionInfo.getServiceInstances())) {
+            timeSeriesRecords = timeSeriesRecords.stream()
+                                    .filter(tsr -> dataCollectionInfo.getServiceInstances().contains(tsr.getHostname()))
+                                    .collect(Collectors.toList());
+          }
           timeSeriesDataStoreService.saveTimeSeriesDataRecords(
               dataCollectionTask.getAccountId(), dataCollectionTask.getVerificationTaskId(), timeSeriesRecords);
 
@@ -190,6 +197,13 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
               dataCollectionInfo.getDataCollectionDsl(), runtimeParameters,
               new ThirdPartyCallHandler(dataCollectionTask.getAccountId(), dataCollectionTask.getVerificationTaskId(),
                   delegateLogService, dataCollectionTask.getStartTime(), dataCollectionTask.getEndTime()));
+          if (CollectionUtils.isNotEmpty(dataCollectionInfo.getServiceInstances())) {
+            logDataRecords =
+                logDataRecords.stream()
+                    .filter(
+                        logDataRecord -> dataCollectionInfo.getServiceInstances().contains(logDataRecord.getHostname()))
+                    .collect(Collectors.toList());
+          }
           if (logDataRecords.size() > LOG_RECORD_THRESHOLD) {
             logDataRecords = pickNRandomElements(logDataRecords);
             ExecutionLog delegateLogs =

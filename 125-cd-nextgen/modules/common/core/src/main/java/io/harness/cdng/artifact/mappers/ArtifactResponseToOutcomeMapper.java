@@ -314,6 +314,7 @@ public class ArtifactResponseToOutcomeMapper {
         .identifier(amazonS3ArtifactConfig.getIdentifier())
         .primaryArtifact(amazonS3ArtifactConfig.isPrimaryArtifact())
         .filePathRegex(amazonS3ArtifactConfig.getFilePathRegex().getValue())
+        .metadata(useDelegateResponse ? getMetadata(s3ArtifactDelegateResponse) : null)
         .build();
   }
 
@@ -404,6 +405,7 @@ public class ArtifactResponseToOutcomeMapper {
       EcrArtifactDelegateResponse ecrArtifactDelegateResponse, boolean useDelegateResponse) {
     checkSHAEquality(ecrArtifactDelegateResponse, ecrArtifactConfig.getDigest(), useDelegateResponse);
     return EcrArtifactOutcome.builder()
+        .registryId(getRegistryId(ecrArtifactDelegateResponse))
         .image(getImageValue(ecrArtifactDelegateResponse))
         .connectorRef(ecrArtifactConfig.getConnectorRef().getValue())
         .imagePath(ecrArtifactConfig.getImagePath().getValue())
@@ -690,6 +692,13 @@ public class ArtifactResponseToOutcomeMapper {
     return useDelegateResponse
         ? bambooArtifactDelegateResponse.getBuild()
         : (bambooArtifactConfig.getBuild() != null ? bambooArtifactConfig.getBuild().getValue() : null);
+  }
+
+  private String getRegistryId(EcrArtifactDelegateResponse artifactDelegateResponse) {
+    if (artifactDelegateResponse == null || StringUtils.isBlank(artifactDelegateResponse.getRegistryId())) {
+      return null;
+    }
+    return artifactDelegateResponse.getRegistryId();
   }
 
   private String getImageValue(ArtifactDelegateResponse artifactDelegateResponse) {

@@ -252,7 +252,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     executorService.submit(() -> { subscribePolling(ngTriggerEntity, isUpdate); });
   }
 
-  private void subscribePolling(NGTriggerEntity ngTriggerEntity, boolean isUpdate) {
+  public void subscribePolling(NGTriggerEntity ngTriggerEntity, boolean isUpdate) {
     PollingItem pollingItem = pollingSubscriptionHelper.generatePollingItem(ngTriggerEntity);
 
     try {
@@ -393,7 +393,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   }
 
   @Override
-  public NGTriggerEntity update(NGTriggerEntity ngTriggerEntity) {
+  public NGTriggerEntity update(NGTriggerEntity ngTriggerEntity, NGTriggerEntity oldNgTriggerEntity) {
     ngTriggerEntity.setYmlVersion(TRIGGER_CURRENT_YML_VERSION);
     if (pmsFeatureFlagService.isEnabled(
             ngTriggerEntity.getAccountId(), FeatureName.CDS_ENABLE_TRIGGER_YAML_VALIDATION)) {
@@ -403,7 +403,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     Criteria criteria = getTriggerEqualityCriteria(ngTriggerEntity, false);
     NGTriggerEntity updatedTriggerEntity = updateTriggerEntity(ngTriggerEntity, criteria);
     outboxService.save(new TriggerUpdateEvent(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
-        ngTriggerEntity.getProjectIdentifier(), updatedTriggerEntity, ngTriggerEntity));
+        ngTriggerEntity.getProjectIdentifier(), oldNgTriggerEntity, updatedTriggerEntity));
     try {
       List<EntityDetailProtoDTO> referredEntities = triggerReferenceHelper.getReferences(
           updatedTriggerEntity.getAccountId(), ngTriggerElementMapper.toTriggerConfigV2(updatedTriggerEntity));
@@ -472,14 +472,14 @@ public class NGTriggerServiceImpl implements NGTriggerService {
         log.info("Submitting unsubscribe request after delete for Trigger :"
             + TriggerHelper.getTriggerRef(foundTriggerEntity));
         submitUnsubscribeAsync(foundTriggerEntity);
-        try {
-          triggerSetupUsageHelper.deleteExistingSetupUsages(foundTriggerEntity);
-        } catch (Exception ex) {
-          log.error(
-              "Error while deleting the setup usages for the trigger with the identifier {} in project {} in org {}",
-              foundTriggerEntity.getIdentifier(), foundTriggerEntity.getProjectIdentifier(),
-              foundTriggerEntity.getOrgIdentifier(), ex);
-        }
+      }
+      try {
+        triggerSetupUsageHelper.deleteExistingSetupUsages(foundTriggerEntity);
+      } catch (Exception ex) {
+        log.error(
+            "Error while deleting the setup usages for the trigger with the identifier {} in project {} in org {}",
+            foundTriggerEntity.getIdentifier(), foundTriggerEntity.getProjectIdentifier(),
+            foundTriggerEntity.getOrgIdentifier(), ex);
       }
     }
     return true;
@@ -1155,7 +1155,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
         break;
       }
     }
-    if (!hasApiKey && pmsFeatureFlagService.isEnabled(accountIdentifier, FeatureName.NG_SETTINGS)) {
+    if (!hasApiKey) {
       String mandatoryAuth = NGRestUtils
                                  .getResponse(settingsClient.getSetting(MANDATE_CUSTOM_WEBHOOK_AUTHORIZATION,
                                      accountIdentifier, orgIdentifier, projectIdentifier))

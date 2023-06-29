@@ -35,4 +35,13 @@ public class ChartMuseumCapability implements ExecutionCapability {
   public Duration getPeriodUntilNextValidation() {
     return Duration.ofHours(4);
   }
+
+  /**
+   * Error message to show mostly in delegate selection log if none of the delegates passed the validation check
+   */
+  @Override
+  public String getCapabilityValidationError() {
+    // Make sure following delegate(s) have ChartMuseum installed : [h1,h2]
+    return "Make sure following delegate(s) have ChartMuseum installed";
+  }
 }

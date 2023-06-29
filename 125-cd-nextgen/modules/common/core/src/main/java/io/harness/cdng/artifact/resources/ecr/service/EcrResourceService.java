@@ -18,18 +18,18 @@ import io.harness.cdng.artifact.resources.ecr.dtos.EcrResponseDTO;
 
 @OwnedBy(PIPELINE)
 public interface EcrResourceService {
-  EcrResponseDTO getBuildDetails(
-      IdentifierRef ecrConnectorRef, String imagePath, String region, String orgIdentifier, String projectIdentifier);
+  EcrResponseDTO getBuildDetails(IdentifierRef ecrConnectorRef, String registryId, String imagePath, String region,
+      String orgIdentifier, String projectIdentifier);
 
-  EcrBuildDetailsDTO getSuccessfulBuild(IdentifierRef dockerConnectorRef, String imagePath,
+  EcrBuildDetailsDTO getSuccessfulBuild(IdentifierRef dockerConnectorRef, String registryId, String imagePath,
       EcrRequestDTO dockerRequestDTO, String orgIdentifier, String projectIdentifier);
 
-  boolean validateArtifactServer(
-      IdentifierRef ecrConnectorRef, String imagePath, String orgIdentifier, String projectIdentifier, String region);
+  boolean validateArtifactServer(IdentifierRef ecrConnectorRef, String registryId, String imagePath,
+      String orgIdentifier, String projectIdentifier, String region);
 
-  boolean validateArtifactSource(
-      String imagePath, IdentifierRef ecrConnectorRef, String region, String orgIdentifier, String projectIdentifier);
+  boolean validateArtifactSource(String registryId, String imagePath, IdentifierRef ecrConnectorRef, String region,
+      String orgIdentifier, String projectIdentifier);
 
   EcrListImagesDTO getImages(
-      IdentifierRef ecrConnectorRef, String region, String orgIdentifier, String projectIdentifier);
+      IdentifierRef ecrConnectorRef, String registryId, String region, String orgIdentifier, String projectIdentifier);
 }

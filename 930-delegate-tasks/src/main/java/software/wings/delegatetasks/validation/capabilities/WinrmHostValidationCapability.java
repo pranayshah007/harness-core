@@ -8,6 +8,7 @@
 package software.wings.delegatetasks.validation.capabilities;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -64,5 +65,19 @@ public class WinrmHostValidationCapability implements ExecutionCapability {
   @Override
   public Duration getPeriodUntilNextValidation() {
     return Duration.ofHours(4);
+  }
+
+  /**
+   * Error message to show mostly in delegate selection log if none of the delegates passed the validation check
+   */
+  @Override
+  public String getCapabilityValidationError() {
+    // Delegate(s) unable to connect to {criteria}, make sure to provide the connectivity with the
+    // following delegates : [h1,h2]
+    return isNotEmpty(fetchCapabilityBasis())
+        ? String.format(
+            "Delegate(s) unable to connect to %s, make sure the following delegates has connectivity with valid credentials",
+            fetchCapabilityBasis())
+        : ExecutionCapability.super.getCapabilityValidationError();
   }
 }

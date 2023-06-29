@@ -12,7 +12,8 @@ import re
 import requests
 from util import create_dataset, print_, if_tbl_exists, createTable, run_batch_query, COSTAGGREGATED, UNIFIED, \
     CEINTERNALDATASET, update_connector_data_sync_status, GCPCONNECTORINFOTABLE, CURRENCYCONVERSIONFACTORUSERINPUT, \
-    add_currency_preferences_columns_to_schema, CURRENCY_LIST, BACKUP_CURRENCY_FX_RATES, send_event
+    add_currency_preferences_columns_to_schema, CURRENCY_LIST, BACKUP_CURRENCY_FX_RATES, send_event, \
+    flatten_label_keys_in_table, LABELKEYSTOCOLUMNMAPPING, run_bq_query_with_retries
 from calendar import monthrange
 from google.cloud import bigquery
 from google.cloud import secretmanager
@@ -98,9 +99,9 @@ def main(event, context):
     if jsonData.get("dataSourceId") == "cross_region_copy":
         # Event is from BQ DT service. Ingest in gcp_cost_export, unified and preaggregated
         jsonData["datasetName"] = jsonData["destinationDatasetId"]
+        util.ACCOUNTID_LOG = jsonData["destinationDatasetId"].split("BillingReport_")[-1]
         get_preferred_currency(jsonData)
         fetch_acc_from_gcp_conn_info(jsonData)
-        util.ACCOUNTID_LOG = jsonData["destinationDatasetId"].split("BillingReport_")[-1]
 
         # obtain/set partition column from the gcp_billing_export table to be used for all subsequent queries
         gcp_billing_export_bq_table_name = "%s.%s.%s" % (PROJECTID, jsonData["datasetName"], jsonData["tableName"])
@@ -136,7 +137,7 @@ def main(event, context):
         ingest_into_preaggregated(jsonData)
         ingest_into_unified(jsonData)
         update_connector_data_sync_status(jsonData, PROJECTID, client)
-        ingest_data_to_costagg(jsonData)
+        # ingest_data_to_costagg(jsonData)
         send_event(publisher.topic_path(PROJECTID, COSTCATEGORIESUPDATETOPIC), {
             "eventType": "COST_CATEGORY_UPDATE",
             "message": {
@@ -162,6 +163,7 @@ def main(event, context):
     currencyConversionFactorUserInputTableRef = dataset.table(CURRENCYCONVERSIONFACTORUSERINPUT)
     currencyConversionFactorUserInputTableName = "%s.%s.%s" % (
         PROJECTID, jsonData["datasetName"], CURRENCYCONVERSIONFACTORUSERINPUT)
+    label_keys_to_column_mapping_table_ref = dataset.table(LABELKEYSTOCOLUMNMAPPING)
 
     if not if_tbl_exists(client, unifiedTableRef):
         print_("%s table does not exists, creating table..." % unifiedTableRef)
@@ -181,6 +183,12 @@ def main(event, context):
         createTable(client, currencyConversionFactorUserInputTableRef)
     else:
         print_("%s table exists" % currencyConversionFactorUserInputTableName)
+
+    if not if_tbl_exists(client, label_keys_to_column_mapping_table_ref):
+        print_("%s table does not exist, creating table..." % LABELKEYSTOCOLUMNMAPPING)
+        createTable(client, label_keys_to_column_mapping_table_ref)
+    else:
+        print_("%s table exists" % LABELKEYSTOCOLUMNMAPPING)
 
     ds = f"{PROJECTID}.{jsonData['datasetName']}"
     table_ids = ["%s.%s" % (ds, "unifiedTable"),
@@ -933,7 +941,7 @@ def syncDataset(jsonData):
     ingest_into_preaggregated(jsonData)
     ingest_into_unified(jsonData)
     update_connector_data_sync_status(jsonData, PROJECTID, client)
-    ingest_data_to_costagg(jsonData)
+    # ingest_data_to_costagg(jsonData)
 
 
 def doBQTransfer(jsonData):
@@ -1114,7 +1122,7 @@ def ingest_into_unified(jsonData):
                      %s as fxRateSrcToDest, %s as ccmPreferredCurrency, 
                      invoice.month as gcpInvoiceMonth, cost_type as gcpCostType
                 FROM `%s.%s`
-                WHERE DATE(%s) >= DATE_SUB(@run_date, INTERVAL %s DAY) AND DATE(usage_start_time) <= DATE_SUB(CAST(FORMAT_DATE('%%Y-%%m-%%d', @run_date) AS DATE), INTERVAL 1 DAY) AND
+                WHERE DATE(%s) >= DATE_SUB(@run_date, INTERVAL %s DAY) AND
                      DATE(usage_start_time) >= DATE_SUB(CAST(FORMAT_DATE('%%Y-%%m-%%d', @run_date) AS DATE), INTERVAL %s DAY) ;
         """ % (jsonData["datasetName"], jsonData["interval"], jsonData["billingAccountIds"], jsonData["datasetName"],
                fx_rate_multiplier_query, fx_rate_multiplier_query,
@@ -1133,15 +1141,19 @@ def ingest_into_unified(jsonData):
             )
         ]
     )
-    query_job = client.query(query, job_config=job_config)
-    print_(query)
     try:
-        print_(query_job.job_id)
-        query_job.result()
+        run_bq_query_with_retries(client, query, max_retry_count=3, job_config=job_config)
+        flatten_label_keys_in_table(client, jsonData.get("accountId"), PROJECTID, jsonData["datasetName"], UNIFIED,
+                                    "labels", fetch_ingestion_filters(jsonData))
     except Exception as e:
         print_(query)
         raise e
     print_("  Loaded into unifiedTable table.")
+
+
+def fetch_ingestion_filters(jsonData):
+    return """ DATE(startTime) >= DATE_SUB(CURRENT_DATE() , INTERVAL %s DAY) AND cloudProvider = "GCP" 
+                AND gcpBillingAccountId IN (%s) """ % (jsonData["interval"], jsonData["billingAccountIds"])
 
 
 def ingest_into_preaggregated(jsonData):
@@ -1156,7 +1168,7 @@ def ingest_into_preaggregated(jsonData):
              location.region AS region, location.zone AS zone, billing_account_id AS gcpBillingAccountId, "GCP" AS cloudProvider, SUM(IFNULL((SELECT SUM(c.amount %s) FROM UNNEST(credits) c), 0)) as discount,
              %s as fxRateSrcToDest, %s as ccmPreferredCurrency 
            FROM `%s.%s`
-           WHERE DATE(%s) >= DATE_SUB(@run_date, INTERVAL %s DAY) AND DATE(usage_start_time) <= DATE_SUB(CAST(FORMAT_DATE('%%Y-%%m-%%d', @run_date) AS DATE), INTERVAL 1 DAY) AND
+           WHERE DATE(%s) >= DATE_SUB(@run_date, INTERVAL %s DAY) AND
              DATE(usage_start_time) >= DATE_SUB(CAST(FORMAT_DATE('%%Y-%%m-%%d', @run_date) AS DATE), INTERVAL %s DAY)
            GROUP BY service.description, sku.id, sku.description, startTime, project.id, location.region, location.zone, billing_account_id;
         """ % (jsonData["datasetName"], jsonData["interval"], jsonData["billingAccountIds"], jsonData["datasetName"],

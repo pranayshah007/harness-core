@@ -16,6 +16,7 @@ import static io.harness.rule.OwnerRule.KARAN;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -27,6 +28,7 @@ import io.harness.accesscontrol.acl.persistence.ACLDAO;
 import io.harness.accesscontrol.permissions.Permission;
 import io.harness.accesscontrol.permissions.PermissionFilter;
 import io.harness.accesscontrol.permissions.PermissionService;
+import io.harness.accesscontrol.permissions.persistence.repositories.InMemoryPermissionRepository;
 import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -46,14 +48,18 @@ public class ACLServiceImplTest extends AccessControlCoreTestBase {
   private PermissionService permissionService;
   private ACLServiceImpl aclService;
   private MongoTemplate mongoTemplate;
+  private InMemoryPermissionRepository inMemoryPermissionRepository;
 
   @Before
   public void setup() {
     aclDAO = mock(ACLDAO.class);
     permissionService = mock(PermissionService.class);
     mongoTemplate = mock(MongoTemplate.class);
+
     ACLExpressionEvaluatorProvider aclExpressionEvaluatorProvider = mock(ACLExpressionEvaluatorProvider.class);
-    aclService = new ACLServiceImpl(aclDAO, permissionService, aclExpressionEvaluatorProvider, mongoTemplate);
+    inMemoryPermissionRepository = mock(InMemoryPermissionRepository.class);
+    aclService = new ACLServiceImpl(
+        aclDAO, permissionService, aclExpressionEvaluatorProvider, mongoTemplate, inMemoryPermissionRepository);
   }
 
   @Test
@@ -67,11 +73,15 @@ public class ACLServiceImplTest extends AccessControlCoreTestBase {
     when(permissionService.list(
              PermissionFilter.builder().statusFilter(Sets.newHashSet(INACTIVE, EXPERIMENTAL, STAGING)).build()))
         .thenReturn(disabledPermissions);
+    when(inMemoryPermissionRepository.getResourceTypeBy(any())).thenReturn("");
 
     Principal principal = Principal.of(PrincipalType.USER, randomAlphabetic(10));
     List<PermissionCheck> permissionChecks = new ArrayList<>();
     for (int i = 0; i < 10; i++) {
-      permissionChecks.add(PermissionCheck.builder().permission(disabledPermissions.get(0).getIdentifier()).build());
+      permissionChecks.add(PermissionCheck.builder()
+                               .resourceType("resource")
+                               .permission(disabledPermissions.get(0).getIdentifier())
+                               .build());
     }
     List<List<ACL>> aclResults = new ArrayList<>();
     for (int i = 0; i < 10; i++) {

@@ -11,6 +11,7 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.PUNEET;
+import static io.harness.rule.OwnerRule.TARUN_UBA;
 
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,6 +45,7 @@ import io.harness.k8s.exception.KubernetesExceptionExplanation;
 import io.harness.k8s.exception.KubernetesExceptionHints;
 import io.harness.k8s.exception.KubernetesExceptionMessages;
 import io.harness.k8s.model.HarnessLabelValues;
+import io.harness.k8s.model.HarnessLabels;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.releasehistory.IK8sRelease;
@@ -76,7 +78,7 @@ public class K8sSwapServiceSelectorsBaseHandlerTest extends CategoryTest {
   @Mock KubernetesConfig kubernetesConfig;
   @Mock ILogStreamingTaskClient logStreamingTaskClient;
   @Mock IK8sReleaseHistory releaseHistory;
-
+  @Mock K8sBGBaseHandler k8sBGBaseHandler;
   @Spy @InjectMocks private K8sSwapServiceSelectorsBaseHandler k8sSwapServiceSelectorsBaseHandler;
   @InjectMocks private K8sSwapServiceSelectorsHandler k8sSwapServiceSelectorsHandler;
 
@@ -248,8 +250,8 @@ public class K8sSwapServiceSelectorsBaseHandlerTest extends CategoryTest {
   @Owner(developers = PRATYUSH)
   @Category(UnitTests.class)
   public void shouldSwapBgEnvironmentLabel() throws Exception {
-    V1Service service1 = createService("service1", ImmutableMap.of("label", "A"));
-    V1Service service2 = createService("service2", ImmutableMap.of("label", "B"));
+    V1Service service1 = createService("service1", ImmutableMap.of(HarnessLabels.color, HarnessLabelValues.colorBlue));
+    V1Service service2 = createService("service2", ImmutableMap.of(HarnessLabels.color, HarnessLabelValues.colorGreen));
     final K8sSwapServiceSelectorsRequest k8sSwapServiceSelectorsRequest =
         K8sSwapServiceSelectorsRequest.builder()
             .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
@@ -263,8 +265,19 @@ public class K8sSwapServiceSelectorsBaseHandlerTest extends CategoryTest {
                                             .status(IK8sRelease.Status.Succeeded)
                                             .bgEnvironment(HarnessLabelValues.bgStageEnv)
                                             .build();
-    doReturn(k8sLegacyRelease).when(releaseHistory).getLatestSuccessfulBlueGreenRelease();
+    K8sLegacyRelease k8sLegacyReleasePrimary = K8sLegacyRelease.builder()
+                                                   .status(IK8sRelease.Status.Succeeded)
+                                                   .bgEnvironment(HarnessLabelValues.bgPrimaryEnv)
+                                                   .build();
 
+    doReturn(k8sLegacyReleasePrimary)
+        .when(releaseHistory)
+        .getLatestSuccessfulReleaseMatchingColor(HarnessLabelValues.colorGreen);
+    doReturn(k8sLegacyRelease)
+        .when(releaseHistory)
+        .getLatestSuccessfulReleaseMatchingColor(HarnessLabelValues.colorBlue);
+    doReturn(HarnessLabelValues.colorBlue).when(k8sBGBaseHandler).getInverseColor(HarnessLabelValues.colorGreen);
+    doReturn(HarnessLabelValues.colorGreen).when(k8sBGBaseHandler).getInverseColor(HarnessLabelValues.colorBlue);
     when(kubernetesContainerService.getService(any(), eq(service1.getMetadata().getName()))).thenReturn(service1);
     when(kubernetesContainerService.getService(any(), eq(service2.getMetadata().getName()))).thenReturn(service2);
     when(kubernetesContainerService.createOrReplaceService(any(), any()))
@@ -276,5 +289,52 @@ public class K8sSwapServiceSelectorsBaseHandlerTest extends CategoryTest {
     assertThat(response.getCommandExecutionStatus()).isEqualTo(SUCCESS);
     verify(k8sTaskHelperBase, times(1)).saveRelease(anyBoolean(), anyBoolean(), any(), any(), any(), eq("releaseName"));
     assertThat(k8sLegacyRelease.getBgEnvironment()).isEqualTo(HarnessLabelValues.bgPrimaryEnv);
+    assertThat(k8sLegacyReleasePrimary.getBgEnvironment()).isEqualTo(HarnessLabelValues.bgStageEnv);
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void shouldSwapBgEnvironmentLabelDeclarativeRollback() throws Exception {
+    V1Service service1 = createService("service1", ImmutableMap.of(HarnessLabels.color, HarnessLabelValues.colorBlue));
+    V1Service service2 = createService("service2", ImmutableMap.of(HarnessLabels.color, HarnessLabelValues.colorGreen));
+    final K8sSwapServiceSelectorsRequest k8sSwapServiceSelectorsRequest =
+        K8sSwapServiceSelectorsRequest.builder()
+            .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
+            .manifestDelegateConfig(KustomizeManifestDelegateConfig.builder().build())
+            .releaseName("releaseName")
+            .useDeclarativeRollback(true)
+            .service1(service1.getMetadata().getName())
+            .service2(service2.getMetadata().getName())
+            .build();
+    K8sLegacyRelease k8sLegacyRelease = K8sLegacyRelease.builder()
+                                            .status(IK8sRelease.Status.Succeeded)
+                                            .bgEnvironment(HarnessLabelValues.bgStageEnv)
+                                            .build();
+    K8sLegacyRelease k8sLegacyReleasePrimary = K8sLegacyRelease.builder()
+                                                   .status(IK8sRelease.Status.Succeeded)
+                                                   .bgEnvironment(HarnessLabelValues.bgPrimaryEnv)
+                                                   .build();
+
+    doReturn(k8sLegacyReleasePrimary)
+        .when(releaseHistory)
+        .getLatestSuccessfulReleaseMatchingColor(HarnessLabelValues.colorGreen);
+    doReturn(k8sLegacyRelease)
+        .when(releaseHistory)
+        .getLatestSuccessfulReleaseMatchingColor(HarnessLabelValues.colorBlue);
+    doReturn(HarnessLabelValues.colorBlue).when(k8sBGBaseHandler).getInverseColor(HarnessLabelValues.colorGreen);
+    doReturn(HarnessLabelValues.colorGreen).when(k8sBGBaseHandler).getInverseColor(HarnessLabelValues.colorBlue);
+    when(kubernetesContainerService.getService(any(), eq(service1.getMetadata().getName()))).thenReturn(service1);
+    when(kubernetesContainerService.getService(any(), eq(service2.getMetadata().getName()))).thenReturn(service2);
+    when(kubernetesContainerService.createOrReplaceService(any(), any()))
+        .thenAnswer(invocationOnMock -> invocationOnMock.getArguments()[1]);
+
+    K8sDeployResponse response = k8sSwapServiceSelectorsHandler.executeTaskInternal(
+        k8sSwapServiceSelectorsRequest, k8sDelegateTaskParams, logStreamingTaskClient, commandUnitsProgress);
+
+    assertThat(response.getCommandExecutionStatus()).isEqualTo(SUCCESS);
+    verify(k8sTaskHelperBase, times(2)).saveRelease(anyBoolean(), anyBoolean(), any(), any(), any(), eq("releaseName"));
+    assertThat(k8sLegacyRelease.getBgEnvironment()).isEqualTo(HarnessLabelValues.bgPrimaryEnv);
+    assertThat(k8sLegacyReleasePrimary.getBgEnvironment()).isEqualTo(HarnessLabelValues.bgStageEnv);
   }
 }

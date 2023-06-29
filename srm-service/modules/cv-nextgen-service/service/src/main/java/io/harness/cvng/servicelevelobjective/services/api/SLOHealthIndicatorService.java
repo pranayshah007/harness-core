@@ -24,8 +24,13 @@ public interface SLOHealthIndicatorService {
   List<SLOHealthIndicator> getBySLOIdentifiers(
       ProjectParams projectParams, List<String> serviceLevelObjectiveIdentifiers, boolean childResource);
   List<SLOHealthIndicator> getBySLOIdentifiers(String accountId, List<String> serviceLevelObjectiveIdentifiers);
+
+  List<SLOHealthIndicator> get(ProjectParams projectParams);
+
   void upsert(AbstractServiceLevelObjective serviceLevelObjective);
   void delete(ProjectParams projectParams, String serviceLevelObjectiveIdentifier);
+
+  void delete(ProjectParams projectParams, List<String> serviceLevelObjectiveIdentifiers);
   SLOGraphData getGraphData(
       ProjectParams projectParams, AbstractServiceLevelObjective serviceLevelObjective, TimeRangeParams filter);
 

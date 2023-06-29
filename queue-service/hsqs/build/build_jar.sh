@@ -32,6 +32,7 @@ go install github.com/bazelbuild/bazelisk@latest
 export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
 apt-get install build-essential -y
 apt-get install zlib1g-dev -y
+curl -s https://api.github.com/repos/qiniu/goc/releases/latest | grep "browser_download_url.*-linux-amd64.tar.gz" | cut -d : -f 2,3 | tr -d \" | xargs -n 1 curl -L | tar -zx && chmod +x goc && mv goc /usr/local/bin
 
 
 if [ "$APPD_ENABLED" == "true" ]; then
@@ -47,11 +48,24 @@ fi
 cd queue-service/hsqs
 
 go install appdynamics
-go build -tags=appdynamics -buildvcs=false
+
+if [ "$ENABLE_COVERAGE" == "true" ]; then
+  echo "coverage is enabled. Copying binaries"
+  goc version
+  goc build --agentport=:6300 --singleton=true --center="http://0.0.0.0:6300" --buildflags="-tags=appdynamics -buildvcs=false"
+else
+  go build -tags=appdynamics -buildvcs=false
+fi
 
 echo BUILD_NO=$BUILD  >> build.properties
 
 cp hsqs /root/.cache/bazel/hsqs
+
+cp /bin/tar /root/.cache/bazel/tar
 cp build.properties /root/.cache/bazel/build.properties
 
 cp $GOROOT/src/appdynamics/lib/libappdynamics.so /root/.cache/bazel/libappdynamics.so
+
+cp build/run_goc_server.sh /root/.cache/bazel/run_goc_server.sh
+
+cp /usr/local/bin/goc /root/.cache/bazel/goc

@@ -15,6 +15,7 @@ import io.harness.factory.ClosingFactory;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.licensing.services.LicenseService;
+import io.harness.lock.PersistentLocker;
 import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ngsettings.NgSettingsPersistenceTestModule;
@@ -81,6 +82,7 @@ public class NgSettingRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
             .annotatedWith(Names.named("OUTBOX_TRANSACTION_TEMPLATE"))
             .toInstance(mock(TransactionTemplate.class));
         bind(LicenseService.class).toInstance(mock(LicenseService.class));
+        bind(PersistentLocker.class).toInstance(mock(PersistentLocker.class));
         MapBinder.newMapBinder(binder(), String.class, SettingValidator.class);
         MapBinder.newMapBinder(binder(), String.class, SettingEnforcementValidator.class);
       }

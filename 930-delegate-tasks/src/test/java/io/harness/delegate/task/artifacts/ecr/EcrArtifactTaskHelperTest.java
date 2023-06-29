@@ -233,7 +233,7 @@ public class EcrArtifactTaskHelperTest extends CategoryTest {
     BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder().build();
 
     EcrArtifactDelegateResponse ecrArtifactDelegateResponse =
-        new EcrArtifactDelegateResponse(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal), null,
+        new EcrArtifactDelegateResponse(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal), null, null,
             "imagePath", "tag", "imageUrl", "authToken", null);
 
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
@@ -292,7 +292,7 @@ public class EcrArtifactTaskHelperTest extends CategoryTest {
     BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder().build();
 
     EcrArtifactDelegateResponse ecrArtifactDelegateResponse =
-        new EcrArtifactDelegateResponse(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal), null,
+        new EcrArtifactDelegateResponse(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal), null, null,
             "imagePath", "tag", "imageUrl", "authToken", null);
 
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
@@ -351,7 +351,7 @@ public class EcrArtifactTaskHelperTest extends CategoryTest {
     BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder().build();
 
     EcrArtifactDelegateResponse ecrArtifactDelegateResponse =
-        new EcrArtifactDelegateResponse(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal), null,
+        new EcrArtifactDelegateResponse(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal), null, null,
             "imagePath", "tag", "imageUrl", "authToken", null);
 
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
@@ -409,7 +409,7 @@ public class EcrArtifactTaskHelperTest extends CategoryTest {
     BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder().build();
 
     EcrArtifactDelegateResponse ecrArtifactDelegateResponse =
-        new EcrArtifactDelegateResponse(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal), null,
+        new EcrArtifactDelegateResponse(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal), null, null,
             "imagePath", "tag", "imageUrl", "authToken", null);
 
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse =

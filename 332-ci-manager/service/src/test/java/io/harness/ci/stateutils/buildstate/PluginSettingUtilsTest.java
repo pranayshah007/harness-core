@@ -981,6 +981,21 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
   @Test
   @Owner(developers = RUTVIJ_MEHTA)
   @Category(UnitTests.class)
+  public void testBuildxRequired() {
+    DockerStepInfo dockerStepInfo1 = DockerStepInfo.builder().caching(ParameterField.createValueField(true)).build();
+    DockerStepInfo dockerStepInfo2 =
+        DockerStepInfo.builder().cacheFrom(ParameterField.createValueField(asList("cacheFrom"))).build();
+    DockerStepInfo dockerStepInfo3 =
+        DockerStepInfo.builder().cacheTo(ParameterField.createValueField("cacheTo")).build();
+
+    assertThat(pluginSettingUtils.buildxRequired(dockerStepInfo1)).isTrue();
+    assertThat(pluginSettingUtils.buildxRequired(dockerStepInfo2)).isTrue();
+    assertThat(pluginSettingUtils.buildxRequired(dockerStepInfo3)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
   public void testDlcSetupRequiredEcr() {
     ECRStepInfo ecrStepInfo =
         ECRStepInfo.builder()
@@ -1076,6 +1091,20 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     pluginSettingUtils.setupDlcArgs(ecrStepInfo, "identifier", cacheFrom, cacheTo);
     assertThat(expectedCacheFrom).isEqualTo(ecrStepInfo.getCacheFrom());
     assertThat(expectedCacheTo).isEqualTo(ecrStepInfo.getCacheTo());
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testBuildxRequiredEcr() {
+    ECRStepInfo ecrStepInfo1 = ECRStepInfo.builder().caching(ParameterField.createValueField(true)).build();
+    ECRStepInfo ecrStepInfo2 =
+        ECRStepInfo.builder().cacheFrom(ParameterField.createValueField(asList("cacheFrom"))).build();
+    ECRStepInfo ecrStepInfo3 = ECRStepInfo.builder().cacheTo(ParameterField.createValueField("cacheTo")).build();
+
+    assertThat(pluginSettingUtils.buildxRequired(ecrStepInfo1)).isTrue();
+    assertThat(pluginSettingUtils.buildxRequired(ecrStepInfo2)).isTrue();
+    assertThat(pluginSettingUtils.buildxRequired(ecrStepInfo3)).isTrue();
   }
 
   @Test

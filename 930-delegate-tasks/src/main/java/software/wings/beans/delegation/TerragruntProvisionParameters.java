@@ -106,6 +106,7 @@ public class TerragruntProvisionParameters implements TaskParameters, ActivityAc
    */
   private boolean skipRefreshBeforeApplyingPlan;
   private boolean useAutoApproveFlag;
+  boolean encryptDecryptPlanForHarnessSMOnManager;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

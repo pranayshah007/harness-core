@@ -8,10 +8,16 @@
 package io.harness.engine.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.NAME;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.REQUIRED;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.VALUE;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.VARIABLES;
 import static io.harness.pms.yaml.validation.RuntimeInputValuesValidator.validateStaticValues;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
@@ -32,9 +38,12 @@ import io.harness.repositories.ExecutionInputRepository;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.serializer.utils.NGRuntimeInputUtils;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -61,7 +70,7 @@ public class ExecutionInputServiceImpl implements ExecutionInputService {
   public boolean continueExecution(String nodeExecutionId, String executionInputYaml) {
     ExecutionInputInstance executionInputInstance;
     try {
-      executionInputInstance = mergeUserInputInTemplate(nodeExecutionId, executionInputYaml);
+      executionInputInstance = mergeUserInputInTemplate(nodeExecutionId, executionInputYaml, false);
     } catch (NoSuchElementException ex) {
       log.error("User input could not be processed for nodeExecutionId {}", nodeExecutionId, ex);
       return false;
@@ -74,7 +83,7 @@ public class ExecutionInputServiceImpl implements ExecutionInputService {
   @Override
   public boolean continueWithDefault(String nodeExecutionId) {
     try {
-      mergeUserInputInTemplate(nodeExecutionId, "");
+      mergeUserInputInTemplate(nodeExecutionId, "", true);
     } catch (NoSuchElementException ex) {
       log.error("User input could not be processed for nodeExecutionId {}", nodeExecutionId, ex);
       return false;
@@ -112,14 +121,17 @@ public class ExecutionInputServiceImpl implements ExecutionInputService {
     return executionInputRepository.findByNodeExecutionIds(nodeExecutionIds);
   }
 
-  private ExecutionInputInstance mergeUserInputInTemplate(String nodeExecutionId, String executionInputYaml) {
+  private ExecutionInputInstance mergeUserInputInTemplate(
+      String nodeExecutionId, String executionInputYaml, boolean continueWithDefault) {
     Optional<ExecutionInputInstance> optional = executionInputRepository.findByNodeExecutionId(nodeExecutionId);
     if (optional.isPresent()) {
       ExecutionInputInstance executionInputInstance = optional.get();
-      if (EmptyPredicate.isEmpty(executionInputYaml)) {
+      if (isEmpty(executionInputYaml)) {
         executionInputYaml = executionInputInstance.getTemplate();
       }
       JsonNode userInputJsonNode = YamlUtils.readAsJsonNode(executionInputYaml);
+      checkValueForRequiredVariablesProvided(
+          executionInputInstance.getFieldYaml(), userInputJsonNode, continueWithDefault);
       Ambiance ambiance =
           nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.withAmbianceAndStatus)
               .getAmbiance();
@@ -128,7 +140,7 @@ public class ExecutionInputServiceImpl implements ExecutionInputService {
 
       JsonNode templateJsonNode = YamlUtils.readAsJsonNode(executionInputInstance.getTemplate());
       Map<FQN, String> invalidFQNsInInputSet = getInvalidFQNsInInputSet(templateJsonNode, userInputJsonNode);
-      if (!EmptyPredicate.isEmpty(invalidFQNsInInputSet)) {
+      if (!isEmpty(invalidFQNsInInputSet)) {
         throw new InvalidRequestException("Some fields are not valid: "
             + invalidFQNsInInputSet.keySet().stream().map(FQN::getExpressionFqn).collect(Collectors.toList()));
       }
@@ -144,13 +156,62 @@ public class ExecutionInputServiceImpl implements ExecutionInputService {
     }
   }
 
+  public void checkValueForRequiredVariablesProvided(
+      String fieldYaml, JsonNode executionInputNode, boolean continueWithDefault) {
+    Map<String, String> executionInputYamlVariables = new HashMap<>();
+    // Storing the variables present in execution input yaml at first level and storing them in a map as key value pair
+    // . Expressions are also present as string only since we dont want to throw error in case the expression is
+    // resolved to empty value
+    if (executionInputNode.fields() != null && executionInputNode.fields().hasNext()
+        && executionInputNode.fields().next().getValue().get(VARIABLES) != null) {
+      ArrayNode executionInputVariables = (ArrayNode) executionInputNode.fields().next().getValue().get(VARIABLES);
+      executionInputVariables.forEach(
+          jsonNode -> executionInputYamlVariables.put(jsonNode.get(NAME).asText(), jsonNode.get(VALUE).asText()));
+    }
+
+    // Fetching variables from the field yaml at first level
+    JsonNode fieldYamlNode = YamlUtils.readAsJsonNode(fieldYaml);
+    if (fieldYamlNode.fields() != null && fieldYamlNode.fields().hasNext()
+        && fieldYamlNode.fields().next().getValue().get(VARIABLES) != null) {
+      ArrayNode fieldYamlVariables = (ArrayNode) fieldYamlNode.fields().next().getValue().get(VARIABLES);
+      fieldYamlVariables.forEach(jsonNode -> {
+        // Checking if variable in field yaml is an execution input and required
+        if (NGExpressionUtils.matchesExecutionInputPattern(jsonNode.get(VALUE).asText())
+            && jsonNode.get(REQUIRED) != null && jsonNode.get(REQUIRED).asBoolean()) {
+          String variableName = jsonNode.get(NAME).asText();
+          // Throwing error if value of the variable in execution input yaml is empty
+          if (isEmpty(executionInputYamlVariables.get(variableName))) {
+            throw new InvalidRequestException(
+                String.format("%s is a required variable .Value or expression not provided for the variable : %s",
+                    variableName, variableName));
+          }
+
+          // Checking if value of required variable in execution input yaml is of form <+input>.executionInput().
+          if (NGExpressionUtils.matchesExecutionInputPattern(executionInputYamlVariables.get(variableName))) {
+            String defaultValue =
+                NGRuntimeInputUtils.extractParameters(executionInputYamlVariables.get(variableName), "default");
+            // This should happen only in case when we come to this flow via proceed with default values failure
+            // strategy where execution input yam is empty and we fetch it from the execution input instance in the db.
+            // In case execution input yaml is provided empty by the user we will throw an error. We will also throw an
+            // error if the default value of a required variable is empty in case of proceed with default values.
+            if (!continueWithDefault || isEmpty(defaultValue)) {
+              throw new InvalidRequestException(String.format(
+                  "%s is a required variable .Default value is empty or not provided for the variable : %s or the execution input yaml provided by user is empty",
+                  variableName, variableName));
+            }
+          }
+        }
+      });
+    }
+  }
+
   // Using duplicate method of InputSetErrorHelper in pipeline-service. Will refactor the method and use the bring
   // down to 870.
   public Map<FQN, String> getInvalidFQNsInInputSet(JsonNode templateJsonNode, JsonNode inputSetPipelineCompJsonNode) {
     Map<FQN, String> errorMap = new LinkedHashMap<>();
     Map<FQN, Object> inputSetFqnToValueMap = FQNMapGenerator.generateFQNMap(inputSetPipelineCompJsonNode);
     Set<FQN> inputSetFQNs = new LinkedHashSet<>(inputSetFqnToValueMap.keySet());
-    if (EmptyPredicate.isNull(templateJsonNode)) {
+    if (isEmpty(templateJsonNode)) {
       inputSetFQNs.forEach(fqn -> errorMap.put(fqn, "Pipeline no longer contains any runtime input"));
       return errorMap;
     }
@@ -184,7 +245,7 @@ public class ExecutionInputServiceImpl implements ExecutionInputService {
 
   @Override
   public void deleteExecutionInputInstanceForGivenNodeExecutionIds(Set<String> nodeExecutionIds) {
-    if (EmptyPredicate.isEmpty(nodeExecutionIds)) {
+    if (isEmpty(nodeExecutionIds)) {
       return;
     }
     Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {

@@ -20,6 +20,7 @@ java_library(
         "//980-commons/src/main/java/io/harness/exception:module",
         "//980-commons/src/main/java/io/harness/exception/runtime:module",
         "//980-commons/src/main/java/io/harness/exception/runtime/utils:module",
+        "//980-commons/src/main/java/io/harness/utils/system:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_google_code_gson_gson",
         "@maven//:com_google_guava_guava",

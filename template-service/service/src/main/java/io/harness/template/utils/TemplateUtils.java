@@ -9,7 +9,6 @@ package io.harness.template.utils;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNull;
 
 import static java.lang.String.format;
 
@@ -169,7 +168,7 @@ public class TemplateUtils {
   }
 
   public static YamlNode validateAndGetYamlNode(JsonNode entityJsonNode) {
-    if (isNull(entityJsonNode)) {
+    if (EmptyPredicate.isEmpty(entityJsonNode)) {
       throw new NGTemplateException("Yaml to applyTemplates cannot be empty.");
     }
     YamlNode yamlNode;

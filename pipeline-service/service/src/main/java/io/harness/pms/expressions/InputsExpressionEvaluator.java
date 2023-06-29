@@ -12,6 +12,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.pms.expressions.functors.InputsFunctor;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 /**
   This ExpressionEvaluator is used for resolving the inputs in the pipeline yaml V1.
   It will be used before starting the execution and will replace the input references with values in the pipeline yaml.
@@ -21,17 +23,17 @@ import io.harness.pms.expressions.functors.InputsFunctor;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class InputsExpressionEvaluator extends EngineExpressionEvaluator {
   // inputs in json format.
-  private final String inputSet;
-  private final String pipelineYamlV1;
-  public InputsExpressionEvaluator(String inputSet, String pipelineYamlV1) {
+  private final JsonNode inputSetJsonNode;
+  private final JsonNode pipelineJsonNodeV1;
+  public InputsExpressionEvaluator(JsonNode inputSetJsonNode, JsonNode pipelineJsonNodeV1) {
     super(null);
-    this.inputSet = inputSet;
-    this.pipelineYamlV1 = pipelineYamlV1;
+    this.inputSetJsonNode = inputSetJsonNode;
+    this.pipelineJsonNodeV1 = pipelineJsonNodeV1;
   }
 
   @Override
   protected void initialize() {
     super.initialize();
-    addToContext("inputs", new InputsFunctor(inputSet, pipelineYamlV1));
+    addToContext("inputs", new InputsFunctor(inputSetJsonNode, pipelineJsonNodeV1));
   }
 }

@@ -22,6 +22,7 @@ public class OutcomeExpressionConstants {
   public final String ARTIFACTS = "artifacts";
   public final String ARTIFACT = "artifact";
   public final String MANIFESTS = "manifests";
+  public final String UNRESOLVED_MANIFESTS = "_unresolved_manifests";
   public final String INFRASTRUCTURE_OUTCOME = "stage.spec.infrastructure.output";
   public final String INFRASTRUCTURE_GROUP = "infrastructureGroup";
   public final String K8S_ROLL_OUT = "rollingOutcome";
@@ -39,6 +40,8 @@ public class OutcomeExpressionConstants {
   public final String HELM_DEPLOY_OUTCOME = "helmDeployOutcome";
   public final String HELM_ROLLBACK_OUTCOME = "helmRollbackOutcome";
   public final String SERVERLESS_AWS_LAMBDA_ROLLBACK_DATA_OUTCOME = "serverlessAwsLambdaRollbackDataOutcome";
+  public final String SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_DATA_OUTCOME_V2 =
+      "serverlessAwsLambdaPrepareRollbackDataOutcomeV2";
   public final String SERVERLESS_FETCH_FILE_OUTCOME = "serverlessFetchFileOutcome";
   public final String SERVERLESS_AWS_LAMBDA_ROLLBACK_OUTCOME = "serverlessAwsLambdaRollbackOutcome";
   public final String CONFIG_FILES = "configFiles";
@@ -82,4 +85,7 @@ public class OutcomeExpressionConstants {
 
   public final String AWS_LAMBDA_FUNCTION_PREPARE_ROLLBACK_OUTCOME = "awsLambdaFunctionPrepareRollbackOutcome";
   public final String SSH_WINRM_PREPARE_ROLLBACK_DATA_OUTCOME = "sshWinRmPrepareRollbackDataOutcome";
+  public final String AWS_SAM_VALUES_YAML_DATA_OUTCOME = "AwsSamValuesYamlDataOutcome";
+  public final String SERVERLESS_VALUES_YAML_DATA_OUTCOME = "ServerlessValuesYamlDataOutcome";
+  public final String SERVICE_VARIABLES_OUTCOME = "serviceVariables";
 }

@@ -7,17 +7,16 @@
 
 package io.harness.ngsettings.remote;
 
+import static io.harness.ngsettings.SettingPermissions.ACCOUNT;
+import static io.harness.ngsettings.SettingPermissions.ACCOUNT_VIEW_PERMISSION;
 import static io.harness.ngsettings.SettingPermissions.SETTING_EDIT_PERMISSION;
 import static io.harness.ngsettings.SettingPermissions.SETTING_RESOURCE_TYPE;
-import static io.harness.ngsettings.SettingPermissions.SETTING_VIEW_PERMISSION;
 
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.clients.AccessControlClient;
-import io.harness.beans.FeatureName;
-import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.SettingCategory;
 import io.harness.ngsettings.dto.SettingRequestDTO;
@@ -38,7 +37,7 @@ public class SettingsResourceImpl implements SettingsResource {
   FeatureFlagHelper featureFlagHelper;
   private final AccessControlClient accessControlClient;
   @Override
-  @NGAccessControlCheck(resourceType = SETTING_RESOURCE_TYPE, permission = SETTING_VIEW_PERMISSION)
+  @NGAccessControlCheck(resourceType = ACCOUNT, permission = ACCOUNT_VIEW_PERMISSION)
   public ResponseDTO<SettingValueResponseDTO> get(String identifier, @AccountIdentifier String accountIdentifier,
       @OrgIdentifier String orgIdentifier, @ProjectIdentifier String projectIdentifier) {
     return ResponseDTO.newResponse(
@@ -46,12 +45,12 @@ public class SettingsResourceImpl implements SettingsResource {
   }
 
   @Override
-  @NGAccessControlCheck(resourceType = SETTING_RESOURCE_TYPE, permission = SETTING_VIEW_PERMISSION)
+  @NGAccessControlCheck(resourceType = ACCOUNT, permission = ACCOUNT_VIEW_PERMISSION)
   public ResponseDTO<List<SettingResponseDTO>> list(@AccountIdentifier String accountIdentifier,
       @OrgIdentifier String orgIdentifier, @ProjectIdentifier String projectIdentifier, SettingCategory category,
-      String groupIdentifier) {
-    return ResponseDTO.newResponse(
-        settingsService.list(accountIdentifier, orgIdentifier, projectIdentifier, category, groupIdentifier));
+      String groupIdentifier, Boolean includeParentScope) {
+    return ResponseDTO.newResponse(settingsService.list(
+        accountIdentifier, orgIdentifier, projectIdentifier, category, groupIdentifier, includeParentScope));
   }
 
   @Override
@@ -59,14 +58,7 @@ public class SettingsResourceImpl implements SettingsResource {
   public ResponseDTO<List<SettingUpdateResponseDTO>> update(@AccountIdentifier String accountIdentifier,
       @OrgIdentifier String orgIdentifier, @ProjectIdentifier String projectIdentifier,
       List<SettingRequestDTO> settingRequestDTOList) {
-    if (!isSettingsFeatureEnabled(accountIdentifier)) {
-      throw new InvalidRequestException(String.format(FEATURE_NOT_AVAILABLE, accountIdentifier));
-    }
     return ResponseDTO.newResponse(
         settingsService.update(accountIdentifier, orgIdentifier, projectIdentifier, settingRequestDTOList));
-  }
-
-  private boolean isSettingsFeatureEnabled(String accountIdentifier) {
-    return featureFlagHelper.isEnabled(accountIdentifier, FeatureName.NG_SETTINGS);
   }
 }

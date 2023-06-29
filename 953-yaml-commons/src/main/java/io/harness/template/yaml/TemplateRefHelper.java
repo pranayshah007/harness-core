@@ -37,7 +37,7 @@ public class TemplateRefHelper {
       projectIdentifier: project
       orgIdentifier: org
      */
-    JsonNode jsonNode = YamlUtils.readAsJsonNodeWithCheckDuplicate(yaml);
+    JsonNode jsonNode = YamlUtils.readAsJsonNode(yaml);
     return hasTemplateRef(jsonNode);
   }
 

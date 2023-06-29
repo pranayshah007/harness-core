@@ -10,7 +10,6 @@ package io.harness.cdng;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.data.structure.UUIDGenerator.convertBase64UuidToCanonicalForm;
 import static io.harness.filestore.utils.FileStoreNodeUtils.mapFileNodes;
 import static io.harness.k8s.manifest.ManifestHelper.getValuesYamlGitFilePath;
 import static io.harness.k8s.manifest.ManifestHelper.values_filename;
@@ -24,7 +23,6 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-import io.harness.beans.FeatureName;
 import io.harness.beans.FileReference;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -38,13 +36,12 @@ import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.HelmValuesFetchResponsePassThroughData;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.ManifestType;
+import io.harness.cdng.manifest.delegate.K8sManifestDelegateMapper;
 import io.harness.cdng.manifest.mappers.ManifestOutcomeMapper;
 import io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig;
-import io.harness.cdng.manifest.yaml.GcsStoreConfig;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
 import io.harness.cdng.manifest.yaml.HelmManifestCommandFlag;
-import io.harness.cdng.manifest.yaml.HttpStoreConfig;
 import io.harness.cdng.manifest.yaml.InheritFromManifestStoreConfig;
 import io.harness.cdng.manifest.yaml.InlineStoreConfig;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
@@ -52,10 +49,8 @@ import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome;
 import io.harness.cdng.manifest.yaml.KustomizePatchesManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
-import io.harness.cdng.manifest.yaml.OciHelmChartConfig;
 import io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome;
 import io.harness.cdng.manifest.yaml.OpenshiftParamManifestOutcome;
-import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.kinds.KustomizeManifestCommandFlag;
@@ -63,19 +58,10 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.beans.TaskData;
-import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
-import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
-import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
-import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig;
-import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
-import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
-import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
-import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
-import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfigType;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchRequest;
@@ -84,10 +70,7 @@ import io.harness.delegate.task.helm.HelmFetchFileConfig;
 import io.harness.delegate.task.helm.HelmFetchFileResult;
 import io.harness.delegate.task.helm.HelmValuesFetchRequest;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
-import io.harness.delegate.task.k8s.K8sManifestDelegateConfig;
-import io.harness.delegate.task.k8s.KustomizeManifestDelegateConfig;
 import io.harness.delegate.task.k8s.ManifestDelegateConfig;
-import io.harness.delegate.task.k8s.OpenshiftManifestDelegateConfig;
 import io.harness.delegate.task.localstore.LocalStoreFetchFilesResult;
 import io.harness.delegate.task.localstore.ManifestFiles;
 import io.harness.delegate.task.manifests.request.CustomManifestFetchConfig;
@@ -128,7 +111,6 @@ import software.wings.beans.LogWeight;
 import software.wings.beans.ServiceHookDelegateConfig;
 import software.wings.beans.TaskType;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -162,6 +144,8 @@ public class K8sHelmCommonStepHelper {
   @Inject @Named("referenceFalseKryoSerializer") protected KryoSerializer referenceFalseKryoSerializer;
   @Inject protected StepHelper stepHelper;
   @Inject protected CDStepHelper cdStepHelper;
+  @Inject protected K8sManifestDelegateMapper manifestDelegateMapper;
+
   @Inject private CDExpressionResolver cdExpressionResolver;
 
   public static final String MANIFEST_OUTCOME_INCOMPATIBLE_ERROR_MESSAGE =
@@ -558,90 +542,10 @@ public class K8sHelmCommonStepHelper {
     return HelmCommandFlag.builder().valueMap(commandsValueMap).build();
   }
   public ManifestDelegateConfig getManifestDelegateConfig(ManifestOutcome manifestOutcome, Ambiance ambiance) {
-    switch (manifestOutcome.getType()) {
-      case ManifestType.K8Manifest:
-        K8sManifestOutcome k8sManifestOutcome = (K8sManifestOutcome) manifestOutcome;
-        return K8sManifestDelegateConfig.builder()
-            .storeDelegateConfig(getStoreDelegateConfig(
-                k8sManifestOutcome.getStore(), ambiance, manifestOutcome, manifestOutcome.getType()))
-            .build();
-
-      case ManifestType.HelmChart:
-        HelmChartManifestOutcome helmChartManifestOutcome = (HelmChartManifestOutcome) manifestOutcome;
-        HelmVersion helmVersion =
-            getHelmVersionBasedOnFF(helmChartManifestOutcome.getHelmVersion(), AmbianceUtils.getAccountId(ambiance));
-        return HelmChartManifestDelegateConfig.builder()
-            .storeDelegateConfig(getStoreDelegateConfig(helmChartManifestOutcome.getStore(), ambiance, manifestOutcome,
-                manifestOutcome.getType() + " manifest"))
-            .chartName(getParameterFieldValue(helmChartManifestOutcome.getChartName()))
-            .chartVersion(getParameterFieldValue(helmChartManifestOutcome.getChartVersion()))
-            .helmVersion(helmVersion)
-            .helmCommandFlag(getDelegateHelmCommandFlag(helmChartManifestOutcome.getCommandFlags()))
-            .useCache(helmVersion != HelmVersion.V2
-                && !cdFeatureFlagHelper.isEnabled(
-                    AmbianceUtils.getAccountId(ambiance), FeatureName.DISABLE_HELM_REPO_YAML_CACHE))
-            .checkIncorrectChartVersion(true)
-            .useRepoFlags(helmVersion != HelmVersion.V2)
-            .deleteRepoCacheDir(helmVersion != HelmVersion.V2)
-            .skipApplyHelmDefaultValues(cdFeatureFlagHelper.isEnabled(
-                AmbianceUtils.getAccountId(ambiance), FeatureName.CDP_SKIP_DEFAULT_VALUES_YAML_NG))
-            .subChartPath(getParameterFieldValue(helmChartManifestOutcome.getSubChartPath()))
-            .ignoreResponseCode(cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance),
-                FeatureName.CDS_USE_HTTP_CHECK_IGNORE_RESPONSE_INSTEAD_OF_SOCKET_NG))
-            .build();
-
-      case ManifestType.Kustomize:
-        KustomizeManifestOutcome kustomizeManifestOutcome = (KustomizeManifestOutcome) manifestOutcome;
-        StoreConfig storeConfig = kustomizeManifestOutcome.getStore();
-        if (ManifestStoreType.HARNESS.equals(storeConfig.getKind())) {
-          LocalFileStoreDelegateConfig localFileStoreDelegateConfig =
-              (LocalFileStoreDelegateConfig) getStoreDelegateConfig(
-                  storeConfig, ambiance, kustomizeManifestOutcome, manifestOutcome.getType() + " manifest");
-          return KustomizeManifestDelegateConfig.builder()
-              .storeDelegateConfig(localFileStoreDelegateConfig)
-              .pluginPath(getParameterFieldValue(kustomizeManifestOutcome.getPluginPath()))
-              .kustomizeDirPath(".")
-              .kustomizeYamlFolderPath(kustomizeYamlFolderPathNotNullCheck(kustomizeManifestOutcome)
-                      ? getParameterFieldValue(
-                          getParameterFieldValue(kustomizeManifestOutcome.getOverlayConfiguration())
-                              .getKustomizeYamlFolderPath())
-                      : null)
-              .commandFlags(getKustomizeCmdFlags(kustomizeManifestOutcome.getCommandFlags()))
-              .build();
-        } else if (!ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
-          throw new UnsupportedOperationException(
-              format("Kustomize Manifest is not supported for store type: [%s]", storeConfig.getKind()));
-        }
-        GitStoreConfig gitStoreConfig = (GitStoreConfig) storeConfig;
-        return KustomizeManifestDelegateConfig.builder()
-            .storeDelegateConfig(getStoreDelegateConfig(kustomizeManifestOutcome.getStore(), ambiance, manifestOutcome,
-                manifestOutcome.getType() + " manifest"))
-            .kustomizeYamlFolderPath(kustomizeYamlFolderPathNotNullCheck(kustomizeManifestOutcome)
-                    ? getParameterFieldValue(getParameterFieldValue(kustomizeManifestOutcome.getOverlayConfiguration())
-                                                 .getKustomizeYamlFolderPath())
-                    : null)
-            .pluginPath(getParameterFieldValue(kustomizeManifestOutcome.getPluginPath()))
-            .kustomizeDirPath(getParameterFieldValue(gitStoreConfig.getFolderPath()))
-            .commandFlags(getKustomizeCmdFlags(kustomizeManifestOutcome.getCommandFlags()))
-            .build();
-
-      case ManifestType.OpenshiftTemplate:
-        OpenshiftManifestOutcome openshiftManifestOutcome = (OpenshiftManifestOutcome) manifestOutcome;
-        return OpenshiftManifestDelegateConfig.builder()
-            .storeDelegateConfig(getStoreDelegateConfig(openshiftManifestOutcome.getStore(), ambiance, manifestOutcome,
-                manifestOutcome.getType() + " manifest"))
-            .build();
-
-      default:
-        throw new UnsupportedOperationException(format("Unsupported Manifest type: [%s]", manifestOutcome.getType()));
-    }
+    return manifestDelegateMapper.getManifestDelegateConfig(manifestOutcome, ambiance);
   }
   public HelmVersion getHelmVersionBasedOnFF(HelmVersion helmVersion, String accountId) {
-    if (helmVersion == HelmVersion.V2) {
-      return helmVersion;
-    }
-    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.HELM_VERSION_3_8_0) == true ? HelmVersion.V380
-                                                                                            : HelmVersion.V3;
+    return manifestDelegateMapper.getHelmVersionBasedOnFF(helmVersion, accountId);
   }
 
   public boolean kustomizeYamlFolderPathNotNullCheck(KustomizeManifestOutcome kustomizeManifestOutcome) {
@@ -768,187 +672,8 @@ public class K8sHelmCommonStepHelper {
     return emptyList();
   }
 
-  public StoreDelegateConfig getStoreDelegateConfig(
-      StoreConfig storeConfig, Ambiance ambiance, ManifestOutcome manifestOutcome, String validationErrorMessage) {
-    if (ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
-      GitStoreConfig gitStoreConfig = (GitStoreConfig) storeConfig;
-      ConnectorInfoDTO connectorDTO =
-          cdStepHelper.getConnector(getParameterFieldValue(gitStoreConfig.getConnectorRef()), ambiance);
-      cdStepHelper.validateManifest(storeConfig.getKind(), connectorDTO, validationErrorMessage);
-      List<String> gitFilePaths;
-      if (manifestOutcome.getType().equals(ManifestType.Kustomize)) {
-        gitFilePaths = getKustomizeManifestBasePath(gitStoreConfig, manifestOutcome);
-      } else {
-        gitFilePaths = getPathsBasedOnManifest(gitStoreConfig, manifestOutcome.getType());
-      }
-
-      return cdStepHelper.getGitStoreDelegateConfig(
-          gitStoreConfig, connectorDTO, manifestOutcome, gitFilePaths, ambiance);
-    }
-
-    if (ManifestStoreType.HARNESS.equals(storeConfig.getKind())) {
-      HarnessStore harnessStore = (HarnessStore) storeConfig;
-      String scopedFilePath = harnessStore.getFiles().getValue().get(0);
-      NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-      FileReference fileReference = FileReference.of(scopedFilePath, ngAccess.getAccountIdentifier(),
-          ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
-      Optional<FileStoreNodeDTO> optionalFileStoreNodeDTO =
-          fileStoreService.getWithChildrenByPath(fileReference.getAccountIdentifier(), fileReference.getOrgIdentifier(),
-              fileReference.getProjectIdentifier(), fileReference.getPath(), false);
-      if (optionalFileStoreNodeDTO.isPresent()) {
-        FileStoreNodeDTO manifestFileDirectory = optionalFileStoreNodeDTO.get();
-        if (NGFileType.FOLDER.equals(manifestFileDirectory.getType())) {
-          return LocalFileStoreDelegateConfig.builder()
-              .folder(manifestFileDirectory.getName())
-              .filePaths(Arrays.asList(manifestFileDirectory.getPath().substring(1)))
-              .manifestType(manifestOutcome.getType())
-              .manifestIdentifier(manifestOutcome.getIdentifier())
-              .build();
-        }
-      }
-      return LocalFileStoreDelegateConfig.builder()
-          .filePaths(harnessStore.getFiles().getValue())
-          .manifestType(manifestOutcome.getType())
-          .manifestIdentifier(manifestOutcome.getIdentifier())
-          .build();
-    }
-
-    if (ManifestStoreType.CUSTOM_REMOTE.equals(storeConfig.getKind())) {
-      CustomRemoteStoreConfig customRemoteStoreConfig = (CustomRemoteStoreConfig) storeConfig;
-
-      return CustomRemoteStoreDelegateConfig.builder()
-          .customManifestSource(CustomManifestSource.builder()
-                                    .filePaths(Arrays.asList(customRemoteStoreConfig.getFilePath().getValue()))
-                                    .script(customRemoteStoreConfig.getExtractionScript().getValue())
-                                    .accountId(AmbianceUtils.getAccountId(ambiance))
-                                    .build())
-          .build();
-    }
-
-    if (ManifestStoreType.HTTP.equals(storeConfig.getKind())) {
-      HttpStoreConfig httpStoreConfig = (HttpStoreConfig) storeConfig;
-      ConnectorInfoDTO helmConnectorDTO =
-          cdStepHelper.getConnector(getParameterFieldValue(httpStoreConfig.getConnectorRef()), ambiance);
-      cdStepHelper.validateManifest(storeConfig.getKind(), helmConnectorDTO, validationErrorMessage);
-      Preconditions.checkArgument(
-          manifestOutcome instanceof HelmChartManifestOutcome, MANIFEST_OUTCOME_INCOMPATIBLE_ERROR_MESSAGE);
-
-      return HttpHelmStoreDelegateConfig.builder()
-          .repoName(getRepoName(ambiance, helmConnectorDTO.getIdentifier(), (HelmChartManifestOutcome) manifestOutcome))
-          .repoDisplayName(helmConnectorDTO.getName())
-          .httpHelmConnector((HttpHelmConnectorDTO) helmConnectorDTO.getConnectorConfig())
-          .encryptedDataDetails(
-              k8sEntityHelper.getEncryptionDataDetails(helmConnectorDTO, AmbianceUtils.getNgAccess(ambiance)))
-          .build();
-    }
-
-    if (ManifestStoreType.OCI.equals(storeConfig.getKind())) {
-      OciHelmChartConfig ociStoreConfig = (OciHelmChartConfig) storeConfig;
-      ConnectorInfoDTO helmConnectorDTO =
-          cdStepHelper.getConnector(getParameterFieldValue(ociStoreConfig.getConnectorReference()), ambiance);
-      cdStepHelper.validateManifest(storeConfig.getKind(), helmConnectorDTO, validationErrorMessage);
-      Preconditions.checkArgument(
-          manifestOutcome instanceof HelmChartManifestOutcome, MANIFEST_OUTCOME_INCOMPATIBLE_ERROR_MESSAGE);
-
-      return OciHelmStoreDelegateConfig.builder()
-          .repoName(getRepoName(ambiance, helmConnectorDTO.getIdentifier(), (HelmChartManifestOutcome) manifestOutcome))
-          .basePath(getParameterFieldValue(ociStoreConfig.getBasePath()))
-          .repoDisplayName(helmConnectorDTO.getName())
-          .ociHelmConnector((OciHelmConnectorDTO) helmConnectorDTO.getConnectorConfig())
-          .encryptedDataDetails(
-              k8sEntityHelper.getEncryptionDataDetails(helmConnectorDTO, AmbianceUtils.getNgAccess(ambiance)))
-          .helmOciEnabled(true)
-          .build();
-    }
-
-    if (ManifestStoreType.S3.equals(storeConfig.getKind())) {
-      S3StoreConfig s3StoreConfig = (S3StoreConfig) storeConfig;
-      ConnectorInfoDTO awsConnectorDTO =
-          cdStepHelper.getConnector(getParameterFieldValue(s3StoreConfig.getConnectorRef()), ambiance);
-      cdStepHelper.validateManifest(storeConfig.getKind(), awsConnectorDTO, validationErrorMessage);
-      Preconditions.checkArgument(
-          manifestOutcome instanceof HelmChartManifestOutcome, MANIFEST_OUTCOME_INCOMPATIBLE_ERROR_MESSAGE);
-
-      return S3HelmStoreDelegateConfig.builder()
-          .repoName(getRepoName(ambiance, awsConnectorDTO.getIdentifier(), (HelmChartManifestOutcome) manifestOutcome))
-          .repoDisplayName(awsConnectorDTO.getName())
-          .bucketName(getParameterFieldValue(s3StoreConfig.getBucketName()))
-          .region(getParameterFieldValue(s3StoreConfig.getRegion()))
-          .folderPath(getParameterFieldValue(s3StoreConfig.getFolderPath()))
-          .awsConnector((AwsConnectorDTO) awsConnectorDTO.getConnectorConfig())
-          .encryptedDataDetails(
-              k8sEntityHelper.getEncryptionDataDetails(awsConnectorDTO, AmbianceUtils.getNgAccess(ambiance)))
-          .useLatestChartMuseumVersion(cdFeatureFlagHelper.isEnabled(
-              AmbianceUtils.getAccountId(ambiance), FeatureName.USE_LATEST_CHARTMUSEUM_VERSION))
-          .build();
-    }
-
-    if (ManifestStoreType.GCS.equals(storeConfig.getKind())) {
-      GcsStoreConfig gcsStoreConfig = (GcsStoreConfig) storeConfig;
-      ConnectorInfoDTO gcpConnectorDTO =
-          cdStepHelper.getConnector(getParameterFieldValue(gcsStoreConfig.getConnectorRef()), ambiance);
-      cdStepHelper.validateManifest(storeConfig.getKind(), gcpConnectorDTO, validationErrorMessage);
-      Preconditions.checkArgument(
-          manifestOutcome instanceof HelmChartManifestOutcome, MANIFEST_OUTCOME_INCOMPATIBLE_ERROR_MESSAGE);
-
-      return GcsHelmStoreDelegateConfig.builder()
-          .repoName(getRepoName(ambiance, gcpConnectorDTO.getIdentifier(), (HelmChartManifestOutcome) manifestOutcome))
-          .repoDisplayName(gcpConnectorDTO.getName())
-          .bucketName(getParameterFieldValue(gcsStoreConfig.getBucketName()))
-          .folderPath(getParameterFieldValue(gcsStoreConfig.getFolderPath()))
-          .gcpConnector((GcpConnectorDTO) gcpConnectorDTO.getConnectorConfig())
-          .encryptedDataDetails(
-              k8sEntityHelper.getEncryptionDataDetails(gcpConnectorDTO, AmbianceUtils.getNgAccess(ambiance)))
-          .useLatestChartMuseumVersion(cdFeatureFlagHelper.isEnabled(
-              AmbianceUtils.getAccountId(ambiance), FeatureName.USE_LATEST_CHARTMUSEUM_VERSION))
-          .build();
-    }
-
-    throw new UnsupportedOperationException(format("Unsupported Store Config type: [%s]", storeConfig.getKind()));
-  }
-
-  public String getRepoName(Ambiance ambiance, String connectorId, HelmChartManifestOutcome manifestOutcome) {
-    /*
-      going forward, we will be creating default cache based on connectorId unless FF is enabled
-      in which case we will create based on executionId
-      details here: https://harness.atlassian.net/wiki/spaces/CDP/pages/21134344193/Helm+FFs+cleanup
-     */
-    boolean isNotHelmV2 = manifestOutcome != null && HelmVersion.V2 != manifestOutcome.getHelmVersion();
-    boolean useCache = isNotHelmV2
-        && !cdFeatureFlagHelper.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.DISABLE_HELM_REPO_YAML_CACHE);
-    String repoId = useCache ? connectorId : ambiance.getPlanExecutionId();
-
-    return convertBase64UuidToCanonicalForm(repoId);
-  }
-
   public List<String> getPathsBasedOnManifest(GitStoreConfig gitstoreConfig, String manifestType) {
-    List<String> paths = new ArrayList<>();
-    switch (manifestType) {
-      case ManifestType.HelmChart:
-        paths.add(getParameterFieldValue(gitstoreConfig.getFolderPath()));
-        break;
-      case ManifestType.Kustomize:
-        // Set as repository root
-        paths.add("/");
-        break;
-
-      default:
-        paths.addAll(getParameterFieldValue(gitstoreConfig.getPaths()));
-    }
-
-    return paths;
-  }
-
-  public List<String> getKustomizeManifestBasePath(GitStoreConfig gitStoreConfig, ManifestOutcome manifestOutcome) {
-    List<String> paths = new ArrayList<>();
-    KustomizeManifestOutcome kustomizeManifestOutcome = (KustomizeManifestOutcome) manifestOutcome;
-    if (kustomizeYamlFolderPathNotNullCheck(kustomizeManifestOutcome)) {
-      paths.add(getParameterFieldValue(gitStoreConfig.getFolderPath()));
-    } else {
-      paths.add("/");
-    }
-    return paths;
+    return manifestDelegateMapper.getPathsBasedOnManifest(gitstoreConfig, manifestType);
   }
 
   public List<String> getValuesFileContents(Ambiance ambiance, List<String> valuesFileContents) {

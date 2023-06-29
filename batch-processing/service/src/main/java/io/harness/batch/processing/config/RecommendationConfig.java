@@ -18,5 +18,6 @@ import lombok.experimental.FieldDefaults;
 public class RecommendationConfig {
   private int regionsLimit;
   private int accountLimit;
-  private boolean governanceRecommendationEnabled;
+  private boolean governanceRecommendationEnabledAws;
+  private boolean governanceRecommendationEnabledAzure;
 }

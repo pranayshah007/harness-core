@@ -39,6 +39,7 @@ import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.preflight.PreFlightCheckMetadata;
 import io.harness.rule.Owner;
+import io.harness.template.async.beans.SetupUsageParams;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.handler.TemplateYamlConversionHandler;
 import io.harness.template.handler.TemplateYamlConversionHandlerRegistry;
@@ -150,6 +151,7 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
                                         .yaml(readFile(filename))
                                         .templateEntityType(TemplateEntityType.STAGE_TEMPLATE)
                                         .build();
+    SetupUsageParams setupUsageParams = SetupUsageParams.builder().templateEntity(templateEntity).build();
 
     templateYamlConversionHandlerRegistry.register(STAGE, new TemplateYamlConversionHandler());
     when(templateCrudHelperFactory.getCrudHelperForTemplateType(TemplateEntityType.STAGE_TEMPLATE))
@@ -174,14 +176,67 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
                                     .build())
                 .build()));
 
-    templateReferenceHelper.populateTemplateReferences(templateEntity);
+    templateReferenceHelper.populateTemplateReferences(
+        SetupUsageParams.builder().templateEntity(templateEntity).build());
 
     ArgumentCaptor<List> referredEntitiesArgumentCapture = ArgumentCaptor.forClass(List.class);
     verify(templateSetupUsageHelper)
-        .publishSetupUsageEvent(eq(templateEntity), referredEntitiesArgumentCapture.capture(), any());
+        .publishSetupUsageEvent(eq(setupUsageParams), referredEntitiesArgumentCapture.capture(), any());
     List<EntityDetailProtoDTO> referredEntities = referredEntitiesArgumentCapture.getValue();
     assertThat(referredEntities).isNotNull().hasSize(4);
     assertThat(referredEntities).containsExactlyInAnyOrderElementsOf(getStageTemplateProtoReferences());
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testCalculateTemplateReferences() throws IOException {
+    String filename = "stage-template-with-references.yaml";
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(ACCOUNT_ID)
+                                        .orgIdentifier(ORG_ID)
+                                        .projectIdentifier(PROJECT_ID)
+                                        .versionLabel("v1")
+                                        .yaml(readFile(filename))
+                                        .templateEntityType(TemplateEntityType.STAGE_TEMPLATE)
+                                        .build();
+
+    SetupUsageParams setupUsageParams = SetupUsageParams.builder().templateEntity(templateEntity).build();
+
+    templateYamlConversionHandlerRegistry.register(STAGE, new TemplateYamlConversionHandler());
+    when(templateCrudHelperFactory.getCrudHelperForTemplateType(TemplateEntityType.STAGE_TEMPLATE))
+        .thenReturn(pipelineTemplateCrudHelper);
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put(PreFlightCheckMetadata.FQN, "templateInputs.spec.execution.steps.jiraApproval.spec.connectorRef");
+    when(pipelineTemplateCrudHelper.supportsReferences()).thenReturn(true);
+    when(pipelineTemplateCrudHelper.getReferences(any(TemplateEntity.class), anyString()))
+        .thenReturn(Collections.singletonList(TemplateReferenceTestHelper.generateIdentifierRefEntityDetailProto(
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, "jiraConnector", metadata, EntityTypeProtoEnum.CONNECTORS)));
+    Map<String, String> metadataMap = new HashMap<>();
+    metadataMap.put(PreFlightCheckMetadata.FQN, "templateInputs.spec.connectorRef");
+    metadataMap.put(PreFlightCheckMetadata.EXPRESSION, "<+input>");
+    when(templateSetupUsageHelper.getReferencesOfTemplate(
+             anyString(), anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(Collections.singletonList(
+            EntitySetupUsageDTO.builder()
+                .referredEntity(EntityDetail.builder()
+                                    .entityRef(generateIdentifierRefWithUnknownScope(
+                                        ACCOUNT_ID, ORG_ID, PROJECT_ID, "<+input>.allowedValues(a,b,c)", metadataMap))
+                                    .type(EntityType.CONNECTORS)
+                                    .build())
+                .build()));
+
+    List<EntityDetailProtoDTO> referredEntities = templateReferenceHelper.calculateTemplateReferences(templateEntity);
+    templateReferenceHelper.publishTemplateReferences(
+        SetupUsageParams.builder().templateEntity(templateEntity).build(), referredEntities);
+
+    ArgumentCaptor<List> referredEntitiesArgumentCapture = ArgumentCaptor.forClass(List.class);
+    verify(templateSetupUsageHelper)
+        .publishSetupUsageEvent(eq(setupUsageParams), referredEntitiesArgumentCapture.capture(), any());
+    List<EntityDetailProtoDTO> fetchedReferredEntities = referredEntitiesArgumentCapture.getValue();
+    assertThat(fetchedReferredEntities).isNotNull().hasSize(4);
+    assertThat(fetchedReferredEntities).isEqualTo(referredEntities);
+    assertThat(fetchedReferredEntities).containsExactlyInAnyOrderElementsOf(getStageTemplateProtoReferences());
   }
 
   private List<EntityDetailProtoDTO> getStageTemplateProtoReferences() {

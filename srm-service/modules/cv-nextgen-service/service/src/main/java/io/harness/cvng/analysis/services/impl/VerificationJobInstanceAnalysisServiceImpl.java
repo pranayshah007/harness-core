@@ -126,7 +126,11 @@ public class VerificationJobInstanceAnalysisServiceImpl implements VerificationJ
     Optional<TimeRange> preDeploymentTimeRange =
         verificationJobInstanceService.getPreDeploymentTimeRange(verificationJobInstance.getUuid());
     Set<String> oldHosts = new HashSet<>();
-    if (preDeploymentTimeRange.isPresent()) {
+    if (verificationJobInstance.getServiceInstanceDetailsFromCD() != null
+        && verificationJobInstance.getServiceInstanceDetailsFromCD().isValid()) {
+      oldHosts = new HashSet<>(
+          verificationJobInstance.getServiceInstanceDetailsFromCD().getServiceInstancesBeforeDeployment());
+    } else if (preDeploymentTimeRange.isPresent()) {
       Set<String> verificationTaskIds =
           verificationTaskService.maybeGetVerificationTaskIds(accountId, verificationJobInstance.getUuid());
       oldHosts = hostRecordService.get(

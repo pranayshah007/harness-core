@@ -8,8 +8,8 @@
 package io.harness.ngtriggers.featureflagfilter;
 
 import static io.harness.beans.FeatureName.BAMBOO_ARTIFACT_NG;
-import static io.harness.beans.FeatureName.CDS_GOOGLE_CLOUD_FUNCTION;
 import static io.harness.beans.FeatureName.CD_TRIGGER_V2;
+import static io.harness.beans.FeatureName.NG_SVC_ENV_REDESIGN;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.beans.FeatureName;
@@ -33,7 +33,7 @@ public class TriggerCatalogFilter {
     enumTypeFeatureFlagMap.put(CD_TRIGGER_V2,
         Sets.newHashSet(TriggerCatalogType.JENKINS, TriggerCatalogType.AZURE_ARTIFACTS, TriggerCatalogType.NEXUS3,
             TriggerCatalogType.NEXUS2, TriggerCatalogType.AMI));
-    enumTypeFeatureFlagMap.put(CDS_GOOGLE_CLOUD_FUNCTION, Sets.newHashSet(TriggerCatalogType.GOOGLE_CLOUD_STORAGE));
+    enumTypeFeatureFlagMap.put(NG_SVC_ENV_REDESIGN, Sets.newHashSet(TriggerCatalogType.GOOGLE_CLOUD_STORAGE));
     enumTypeFeatureFlagMap.put(BAMBOO_ARTIFACT_NG, Sets.newHashSet(TriggerCatalogType.BAMBOO));
   }
 

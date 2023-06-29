@@ -67,7 +67,8 @@ public class ContainerStepV2DefinitionCreator {
         containerDefinitionInfos.add(
             ContainerDefinitionInfo.builder()
                 .name(containerName)
-                .commands(StepContainerUtils.getCommand(os.getValue()))
+                .commands(StepContainerUtils.getCommand(
+                    os.getValue() != null ? OSType.getOSType(String.valueOf(os.getValue())) : null))
                 .args(StepContainerUtils.getArguments(pluginDetails.getPortUsed(0)))
                 .envVars(envMap)
                 .secretVariables(secretNGVariableMap)

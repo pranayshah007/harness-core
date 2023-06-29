@@ -35,7 +35,7 @@ public class RedisAcquiredLock implements AcquiredLock<RLock> {
         unlock();
       }
     } catch (Exception ex) {
-      log.error(" Received a exception while releasing Redis lock {} ", ex);
+      log.error(" Received a exception while releasing Redis lock ", ex);
     }
   }
 
@@ -48,7 +48,7 @@ public class RedisAcquiredLock implements AcquiredLock<RLock> {
   }
 
   private void unlock() {
-    if (lock != null && (lock.isLocked() || isLeaseInfinite)) {
+    if (lock != null && ((lock.isLocked() && lock.isHeldByCurrentThread()) || isLeaseInfinite)) {
       lock.unlock();
     }
   }

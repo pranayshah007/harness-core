@@ -34,3 +34,20 @@ message InputData {
     bytes binary_data = 2;               // for executions with any unstructured data formats including legacy kryo
   }
 }
+
+message SetupInfraResponse {
+  ResponseCode responseCode = 1;
+  string errorMessage = 2;
+  ExecutionInfrastructureLocation location = 3;
+}
+
+message ExecutionInfrastructureLocation {
+  string delegateName = 1;
+  string runnerType = 2;
+}
+
+enum ResponseCode {
+  RESPONSE_UNKNOWN = 0;
+  RESPONSE_OK = 1;
+  RESPONSE_FAILED = 2;
+}

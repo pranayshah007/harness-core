@@ -301,11 +301,9 @@ public class PerspectiveToAnomalyQueryHelper {
                               .idFilter(viewsQueryBuilder.mapConditionToFilter((ViewIdCondition) condition))
                               .build());
         }
-        log.info("ruleFilters: {}", ruleFilters);
         convertedRuleFilters.add(convertFilters(ruleFilters));
       }
     }
-    log.info("convertedRuleFilters: {}", convertedRuleFilters);
 
     return convertedRuleFilters;
   }

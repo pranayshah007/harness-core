@@ -46,6 +46,8 @@ import io.harness.ci.serializer.RunTestsStepProtobufSerializer;
 import io.harness.exception.exceptionmanager.exceptionhandler.CILiteEngineExceptionHandler;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.plugin.service.BasePluginCompatibleSerializer;
+import io.harness.plugin.service.K8InitializeServiceImpl;
+import io.harness.plugin.service.K8sInitializeService;
 import io.harness.plugin.service.PluginService;
 import io.harness.threading.ThreadPool;
 import io.harness.waiter.AbstractWaiterModule;
@@ -143,5 +145,6 @@ public class CIExecutionServiceModule extends AbstractModule {
 
     bind(PluginService.class).to(PluginSettingUtils.class);
     bind(BasePluginCompatibleSerializer.class).to(PluginCompatibleStepSerializer.class);
+    bind(K8sInitializeService.class).to(K8InitializeServiceImpl.class);
   }
 }

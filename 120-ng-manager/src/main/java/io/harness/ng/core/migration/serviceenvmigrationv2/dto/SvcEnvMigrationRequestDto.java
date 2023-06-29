@@ -35,4 +35,6 @@ public class SvcEnvMigrationRequestDto {
   Map<String, String> expressionMap;
   Map<String, RuntimeEntity> stageMap;
   @DefaultValue("false") boolean isNewBranch;
+  @DefaultValue("false") boolean populateServiceInputs;
+  @DefaultValue("false") boolean populateInfrastructureInputs;
 }

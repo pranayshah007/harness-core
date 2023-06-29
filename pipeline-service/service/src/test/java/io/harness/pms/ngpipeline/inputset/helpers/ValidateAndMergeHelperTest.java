@@ -427,11 +427,11 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
     String inputSetId4 = "inputSet4";
     String overlayId = "overlayId";
     String pipelineYaml = "stages:\n"
-        + "  - name: custom"
-        + "    spec:"
-        + "      type: Http:"
-        + "      spec:"
-        + "        url: google.com";
+        + "  - name: custom\n"
+        + "    spec:\n"
+        + "      type: Http\n"
+        + "      spec:\n"
+        + "        url: google.com\n";
 
     InputSetEntity inputSet1 = InputSetEntity.builder()
                                    .identifier(inputSetId1)
@@ -788,6 +788,33 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         + "        field1: lastRuntimeYaml\n"
         + "        field2: lastRuntimeYaml\n";
     assertThat(merged1).isEqualTo(expectedMerged1);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetMergedYamlFromInputSetReferencesAndRuntimeInputYamlWithNoInputSetIdentifiers() {
+    doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountId, orgId, projectId);
+    String base = "pipeline:\n"
+        + "  stages:\n"
+        + "  - stage:\n"
+        + "      identifier: s1\n"
+        + "      field1: lastRuntimeYaml\n"
+        + "      field2: lastRuntimeYaml\n"
+        + "  - stage:\n"
+        + "      identifier: s2\n"
+        + "      field1: lastRuntimeYaml\n"
+        + "      field2: lastRuntimeYaml\n"
+        + "  - stage:\n"
+        + "      identifier: s3\n"
+        + "      field1: lastRuntimeYaml\n"
+        + "      field2: lastRuntimeYaml\n";
+    doReturn(Optional.of(PipelineEntity.builder().yaml(base).build()))
+        .when(pmsPipelineService)
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false, false, true);
+    String merged1 = validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(
+        accountId, orgId, projectId, pipelineId, null, null, null, Collections.emptyList(), null, false, true);
+    assertThat(merged1).isEqualTo("{}\n");
   }
 
   @Test

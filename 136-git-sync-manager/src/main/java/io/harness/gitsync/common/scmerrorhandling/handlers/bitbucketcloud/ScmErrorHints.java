@@ -27,4 +27,6 @@ public class ScmErrorHints {
   public static final String RATE_LIMIT = "Please try these out: \n"
       + "1. Please try and rotate your tokens used for GIT operations.\n"
       + "2. Please check your rate limits with your BitBucket GIT provider";
+  public static final String OAUTH_ACCESS_FAILURE =
+      "In-case you are using OAUTH, please check your OAUTH configurations and access permissions from Bitbucket, or try reconfiguring OAUTH setup.";
 }

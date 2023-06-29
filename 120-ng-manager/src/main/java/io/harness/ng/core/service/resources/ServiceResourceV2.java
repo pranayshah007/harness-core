@@ -629,13 +629,15 @@ public class ServiceResourceV2 {
       @Parameter(
           description = "The version label of deployment template if infrastructure is of type custom deployment")
       @QueryParam("versionLabel") String versionLabel,
-      @QueryParam("deploymentMetadataYaml") String deploymentMetaDataYaml) {
+      @QueryParam("deploymentMetadataYaml") String deploymentMetaDataYaml,
+      @Parameter(description = "Specify true if all accessible Services are to be included") @QueryParam(
+          "includeAllServicesAccessibleAtScope") @DefaultValue("false") boolean includeAllServicesAccessibleAtScope) {
     accessControlClient.checkForAccessOrThrow(List.of(scopeAccessHelper.getPermissionCheckDtoForViewAccessForScope(
                                                   Scope.of(accountId, orgIdentifier, projectIdentifier))),
         "Unauthorized to list services");
 
-    Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
-        accountId, orgIdentifier, projectIdentifier, false, searchTerm, type, gitOpsEnabled, false);
+    Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, false,
+        searchTerm, type, gitOpsEnabled, includeAllServicesAccessibleAtScope);
     if (isNotEmpty(serviceIdentifiers)) {
       criteria.and(ServiceEntityKeys.identifier).in(serviceIdentifiers);
     }

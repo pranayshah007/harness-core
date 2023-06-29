@@ -15,7 +15,6 @@ import static io.harness.k8s.K8sCommandUnitConstants.Init;
 import static io.harness.k8s.K8sCommandUnitConstants.Scale;
 import static io.harness.k8s.K8sCommandUnitConstants.WaitForSteadyState;
 import static io.harness.k8s.K8sCommandUnitConstants.WrapUp;
-import static io.harness.k8s.model.KubernetesResourceId.createKubernetesResourceIdFromNamespaceKindName;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.validation.Validator.nullCheckForInvalidRequest;
@@ -174,7 +173,7 @@ public class K8sScaleRequestHandler extends K8sRequestHandler {
     }
 
     try {
-      resourceIdToScale = createKubernetesResourceIdFromNamespaceKindName(request.getWorkload());
+      resourceIdToScale = k8sTaskHelperBase.findScalableKubernetesResourceIdFromWorkload(request.getWorkload());
     } catch (WingsException e) {
       throw NestedExceptionUtils.hintWithExplanationException(
           format(

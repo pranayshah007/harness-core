@@ -1,0 +1,28 @@
+[
+  {
+    "id": 26689742,
+    "name": "0.0.3-SNAPSHOT",
+    "url": "https://api.github.com/users/username/packages/maven/package/versions/26689742",
+    "package_html_url": "https://github.com/username/newrepo/packages/1822589",
+    "created_at": "2023-03-25T06:10:56Z",
+    "updated_at": "2023-03-25T06:10:58Z",
+    "description": "Demo project for Spring Boot",
+    "html_url": "https://github.com/username/newrepo/packages/1822589?version=0.0.3-SNAPSHOT",
+    "metadata": {
+      "package_type": "maven"
+    }
+  },
+  {
+    "id": 26677917,
+    "name": "0.0.2-SNAPSHOT",
+    "url": "https://api.github.com/users/username/packages/maven/package/versions/26677917",
+    "package_html_url": "https://github.com/username/newrepo/packages/1822589",
+    "created_at": "2023-03-24T14:08:39Z",
+    "updated_at": "2023-03-24T14:08:40Z",
+    "description": "Demo project for Spring Boot",
+    "html_url": "https://github.com/username/newrepo/packages/1822589?version=0.0.2-SNAPSHOT",
+    "metadata": {
+      "package_type": "maven"
+    }
+  }
+]

@@ -32,8 +32,13 @@ import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent;
 import io.harness.ngtriggers.beans.response.TriggerEventResponse;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
 import io.harness.ngtriggers.helpers.WebhookEventMapperHelper;
+import io.harness.pms.contracts.triggers.ArtifactData;
+import io.harness.pms.contracts.triggers.ManifestData;
+import io.harness.pms.contracts.triggers.TriggerPayload;
+import io.harness.pms.contracts.triggers.Type;
 import io.harness.pms.triggers.TriggerExecutionHelper;
 import io.harness.polling.contracts.BuildInfo;
+import io.harness.polling.contracts.Metadata;
 import io.harness.polling.contracts.PollingResponse;
 import io.harness.product.ci.scm.proto.ParseWebhookResponse;
 import io.harness.repositories.spring.NGTriggerRepository;
@@ -43,7 +48,10 @@ import io.harness.utils.PmsFeatureFlagService;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -98,18 +106,53 @@ public class TriggerEventExecutionHelperTest extends CategoryTest {
   @Owner(developers = MEET)
   @Category(UnitTests.class)
   public void testTriggerEventPipelineExecution() {
+    String pollingDocId = "pollingDocId";
     PlanExecution planExecution = PlanExecution.builder().planId("planId").build();
+    Map<String, String> pollMap = new HashMap<>();
+    pollMap.put("key", "value");
     pollingResponse =
-        PollingResponse.newBuilder().setBuildInfo(BuildInfo.newBuilder().addVersions("v1").build()).build();
+        PollingResponse.newBuilder()
+            .setPollingDocId(pollingDocId)
+            .setBuildInfo(
+                BuildInfo.newBuilder()
+                    .addAllMetadata(Collections.singleton(Metadata.newBuilder().putAllMetadata(pollMap).build()))
+                    .addVersions("v1")
+                    .build())
+            .build();
     doReturn(planExecution)
         .when(triggerExecutionHelper)
         .resolveRuntimeInputAndSubmitExecutionReques(any(), any(), any());
+    Type buildType = Type.ARTIFACT;
+    TriggerPayload.Builder triggerPayloadBuilder = TriggerPayload.newBuilder().setType(buildType);
+    String build = pollingResponse.getBuildInfo().getVersions(0);
+    TriggerPayload triggerPayload =
+        triggerPayloadBuilder.setArtifactData(ArtifactData.newBuilder().setBuild(build).putAllMetadata(pollMap).build())
+            .build();
     TriggerEventResponse triggerEventResponse =
         triggerEventExecutionHelper.triggerEventPipelineExecution(triggerDetails, pollingResponse);
     assertThat(triggerEventResponse.getAccountId()).isEqualTo(accountId);
     assertThat(triggerEventResponse.getNgTriggerType()).isEqualTo(NGTriggerType.ARTIFACT);
     assertThat(triggerEventResponse.getOrgIdentifier()).isEqualTo(orgId);
     assertThat(triggerEventResponse.getProjectIdentifier()).isEqualTo(projectId);
+    assertThat(triggerEventResponse.getPayload()).isEqualTo(triggerPayload.toString());
+    assertThat(triggerEventResponse.getPollingDocId()).isEqualTo(pollingDocId);
+
+    // Manifest
+    NGTriggerEntity manifestTriggerEntity = triggerDetails.getNgTriggerEntity();
+    manifestTriggerEntity.setType(NGTriggerType.MANIFEST);
+    TriggerDetails manifestTriggerDetails = triggerDetails;
+    manifestTriggerDetails.setNgTriggerEntity(manifestTriggerEntity);
+    triggerPayload = triggerPayloadBuilder.setType(Type.MANIFEST)
+                         .setManifestData(ManifestData.newBuilder().setVersion("v1").build())
+                         .build();
+    triggerEventResponse =
+        triggerEventExecutionHelper.triggerEventPipelineExecution(manifestTriggerDetails, pollingResponse);
+    assertThat(triggerEventResponse.getAccountId()).isEqualTo(accountId);
+    assertThat(triggerEventResponse.getNgTriggerType()).isEqualTo(NGTriggerType.MANIFEST);
+    assertThat(triggerEventResponse.getOrgIdentifier()).isEqualTo(orgId);
+    assertThat(triggerEventResponse.getProjectIdentifier()).isEqualTo(projectId);
+    assertThat(triggerEventResponse.getPayload()).isEqualTo(triggerPayload.toString());
+    assertThat(triggerEventResponse.getPollingDocId()).isEqualTo(pollingDocId);
   }
 
   @Test

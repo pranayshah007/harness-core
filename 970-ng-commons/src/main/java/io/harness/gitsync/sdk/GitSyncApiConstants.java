@@ -70,4 +70,6 @@ public class GitSyncApiConstants {
   public static final String MOVE_CONFIG_KEY = "moveConfigType";
 
   public static final String GIT_CACHING_METADATA = "Gives us the Git caching metadata information.";
+  public static final String APPLY_GITX_REPO_ALLOW_LIST_FILTER_PARAM_MESSAGE =
+      "Filters repos based on allowed repos for Git Experience in default settings";
 }

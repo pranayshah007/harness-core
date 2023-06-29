@@ -19,10 +19,13 @@ import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.eventsframework.schemas.entity.EntityGitMetadata;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entitysetupusage.EntitySetupUsageCreateV2DTO;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.template.TemplateReferenceProtoUtils;
+import io.harness.template.async.beans.SetupUsageParams;
+import io.harness.template.async.beans.SetupUsagesGitMetadata;
 import io.harness.template.entity.TemplateEntity;
 
 import com.google.common.collect.ImmutableMap;
@@ -60,23 +63,16 @@ public class TemplateSetupUsageHelper {
   }
 
   public void publishSetupUsageEvent(
-      TemplateEntity templateEntity, List<EntityDetailProtoDTO> referredEntities, Map<String, String> metadata) {
+      SetupUsageParams setupUsageParams, List<EntityDetailProtoDTO> referredEntities, Map<String, String> metadata) {
     // Deleting all references so that any deleted entity is not still referred.
+    TemplateEntity templateEntity = setupUsageParams.getTemplateEntity();
     deleteExistingSetupUsages(templateEntity);
     if (EmptyPredicate.isEmpty(referredEntities)) {
       return;
     }
 
     String accountId = templateEntity.getAccountId();
-    EntityDetailProtoDTO referredEntity =
-        EntityDetailProtoDTO.newBuilder()
-            .setTemplateRef(
-                TemplateReferenceProtoUtils.createTemplateReferenceProto(accountId, templateEntity.getOrgIdentifier(),
-                    templateEntity.getProjectIdentifier(), templateEntity.getIdentifier(),
-                    templateEntity.getTemplateScope(), templateEntity.getVersionLabel(), metadata))
-            .setType(EntityTypeProtoEnum.TEMPLATE)
-            .setName(templateEntity.getName())
-            .build();
+    EntityDetailProtoDTO referredEntity = populateEntityDetailsProtoDTO(metadata, setupUsageParams, accountId);
 
     Map<String, List<EntityDetailProtoDTO>> referredEntityTypeToReferredEntities = new HashMap<>();
     for (EntityDetailProtoDTO entityDetailProtoDTO : referredEntities) {
@@ -102,6 +98,30 @@ public class TemplateSetupUsageHelper {
               .setData(entityReferenceDTO.toByteString())
               .build());
     }
+  }
+
+  private EntityDetailProtoDTO populateEntityDetailsProtoDTO(
+      Map<String, String> metadata, SetupUsageParams setupUsageParams, String accountId) {
+    TemplateEntity templateEntity = setupUsageParams.getTemplateEntity();
+    EntityDetailProtoDTO templateDetails =
+        EntityDetailProtoDTO.newBuilder()
+            .setTemplateRef(
+                TemplateReferenceProtoUtils.createTemplateReferenceProto(accountId, templateEntity.getOrgIdentifier(),
+                    templateEntity.getProjectIdentifier(), templateEntity.getIdentifier(),
+                    templateEntity.getTemplateScope(), templateEntity.getVersionLabel(), metadata))
+            .setType(EntityTypeProtoEnum.TEMPLATE)
+            .setName(templateEntity.getName())
+            .build();
+    SetupUsagesGitMetadata setupUsagesGitMetadata = setupUsageParams.getSetupUsagesGitMetadata();
+    if (setupUsagesGitMetadata != null) {
+      templateDetails = EntityDetailProtoDTO.newBuilder(templateDetails)
+                            .setEntityGitMetadata(EntityGitMetadata.newBuilder()
+                                                      .setBranch(setupUsagesGitMetadata.getBranch())
+                                                      .setRepo(setupUsagesGitMetadata.getRepo())
+                                                      .build())
+                            .build();
+    }
+    return templateDetails;
   }
 
   public void deleteExistingSetupUsages(TemplateEntity templateEntity) {

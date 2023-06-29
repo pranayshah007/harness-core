@@ -50,7 +50,8 @@ public class InputsExpressionEvaluatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testBindYaml() throws IOException {
     String inputsYaml = readFile("inputSet2V1.yaml");
-    EngineExpressionEvaluator evaluator = new InputsExpressionEvaluator(inputsYaml, pipelineYaml);
+    EngineExpressionEvaluator evaluator =
+        new InputsExpressionEvaluator(YamlUtils.readAsJsonNode(inputsYaml), YamlUtils.readAsJsonNode(pipelineYaml));
     String resolvedPipelineYaml =
         (String) evaluator.resolve(pipelineYaml, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
     YamlField stagesField = YamlUtils.readTree(resolvedPipelineYaml).getNode().getField("stages");

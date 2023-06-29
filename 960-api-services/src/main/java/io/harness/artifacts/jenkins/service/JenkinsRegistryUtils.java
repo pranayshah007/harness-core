@@ -77,6 +77,8 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -116,7 +118,6 @@ public class JenkinsRegistryUtils {
   @Inject private TimeLimiter timeLimiter;
   public Retry retry;
   public static final int RETRIES = 10; // TODO:: read from config
-  private static final int TIMEOUT = 60; // TODO:: read from config
 
   public JenkinsRegistryUtils() {
     final RetryConfig config = RetryConfig.custom()
@@ -397,7 +398,7 @@ public class JenkinsRegistryUtils {
           if (isFolderJob(job)) {
             futures.add(executorService.submit(() -> {
               try {
-                jobs.addAll(jenkinsServer.getJobs(new FolderJob(job.getName(), job.getUrl())).values());
+                jobs.addAll(getChildJobs(jenkinsInternalConfig, job));
               } catch (Exception e) {
                 log.error(String.format(
                               "Error in fetching jobs for job with name - %s & url - %s", job.getName(), job.getUrl()),
@@ -419,6 +420,34 @@ public class JenkinsRegistryUtils {
       log.error("Error in fetching job lists ", ex);
       return result;
     }
+  }
+
+  private Collection<Job> getChildJobs(JenkinsInternalConfig jenkinsInternalConfig, Job job) throws URISyntaxException {
+    JenkinsCustomServer jenkinsServer = JenkinsClient.getJenkinsServer(jenkinsInternalConfig);
+    try {
+      return jenkinsServer.getJobs(new FolderJob(job.getName(), job.getUrl())).values();
+    } catch (Exception e) {
+      log.warn(
+          String.format("Error in fetching jobs for job with name - %s & url - %s", job.getName(), job.getUrl()), e);
+      if (!job.getUrl().startsWith(jenkinsInternalConfig.getJenkinsRegistryUrl())) {
+        String jobUrl = useConnectorUrlForJob(job.getUrl(), jenkinsInternalConfig.getJenkinsUrl());
+        try {
+          return jenkinsServer.getJobs(new FolderJob(job.getName(), jobUrl)).values();
+        } catch (Exception e1) {
+          log.error("Error in fetching jobs using alternative endpoint for job with name - {} & url - {}",
+              job.getName(), jobUrl, e1);
+        }
+      }
+    }
+    return Collections.emptyList();
+  }
+
+  private String useConnectorUrlForJob(String jobUrl, String jenkinsUrl) {
+    if (jenkinsUrl.endsWith("/")) {
+      jenkinsUrl = jenkinsUrl.substring(0, jenkinsUrl.length() - 1);
+    }
+    String[] parts = jobUrl.split("/job/", 2);
+    return jenkinsUrl.concat("/job/").concat(parts[1]);
   }
 
   public JobDetails getJobWithParamters(String jobName, JenkinsInternalConfig jenkinsInternalConfig) {

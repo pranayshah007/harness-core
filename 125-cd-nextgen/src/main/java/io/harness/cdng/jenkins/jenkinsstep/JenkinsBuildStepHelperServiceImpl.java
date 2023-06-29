@@ -44,6 +44,7 @@ import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -103,7 +104,7 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
     Optional<ConnectorDTO> connectorDTOOptional = NGRestUtils.getResponse(
         connectorResourceClient.get(identifierRef.getIdentifier(), identifierRef.getAccountIdentifier(),
             identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier()));
-    if (!connectorDTOOptional.isPresent()) {
+    if (connectorDTOOptional.isEmpty()) {
       throw new InvalidRequestException(
           String.format("Connector not found for identifier: [%s]", connectorRef), WingsException.USER);
     }
@@ -233,10 +234,7 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
                             .build();
     return TaskRequestsUtils.prepareTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
         TaskCategory.DELEGATE_TASK_V2, Collections.singletonList(COMMAND_UNIT), true, jenkinsPollTaskName,
-        emptyIfNull(params.getDelegateSelectors())
-            .stream()
-            .map(s -> TaskSelector.newBuilder().setSelector(s).build())
-            .collect(Collectors.toList()),
+        TaskSelectorYaml.toTaskSelector(((JenkinsBuildSpecParameters) stepParameters.getSpec()).getDelegateSelectors()),
         Scope.PROJECT, EnvironmentType.ALL, false, Collections.emptyList(), false, null);
   }
 
@@ -247,7 +245,7 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
     Optional<ConnectorDTO> connectorDTOOptional = NGRestUtils.getResponse(
         connectorResourceClient.get(identifierRef.getIdentifier(), identifierRef.getAccountIdentifier(),
             identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier()));
-    if (!connectorDTOOptional.isPresent()) {
+    if (connectorDTOOptional.isEmpty()) {
       throw new InvalidRequestException(
           String.format("Connector not found for identifier: [%s]", connectorRef), WingsException.USER);
     }

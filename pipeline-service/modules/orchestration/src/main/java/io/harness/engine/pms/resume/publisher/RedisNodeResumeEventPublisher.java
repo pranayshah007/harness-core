@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.pms.commons.events.PmsEventSender;
 import io.harness.engine.pms.execution.strategy.identity.IdentityStep;
+import io.harness.pms.contracts.execution.AsyncChainExecutableResponse;
 import io.harness.pms.contracts.execution.ChildChainExecutableResponse;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.TaskChainExecutableResponse;
@@ -73,7 +74,7 @@ public class RedisNodeResumeEventPublisher implements NodeResumeEventPublisher {
   public ChainDetails buildChainDetails(ResumeMetadata resumeMetadata) {
     ExecutionMode mode = resumeMetadata.getMode();
 
-    if (mode == ExecutionMode.TASK_CHAIN || mode == ExecutionMode.CHILD_CHAIN) {
+    if (mode == ExecutionMode.TASK_CHAIN || mode == ExecutionMode.CHILD_CHAIN || mode == ExecutionMode.ASYNC_CHAIN) {
       switch (mode) {
         case TASK_CHAIN:
           TaskChainExecutableResponse lastLinkResponse =
@@ -91,6 +92,10 @@ public class RedisNodeResumeEventPublisher implements NodeResumeEventPublisher {
               .setIsEnd(chainEnd)
               .setPassThroughData(lastChildChainExecutableResponse.getPassThroughData())
               .build();
+        case ASYNC_CHAIN:
+          AsyncChainExecutableResponse asyncChainExecutableResponse =
+              Objects.requireNonNull(resumeMetadata.getLatestExecutableResponse()).getAsyncChain();
+          return ChainDetails.newBuilder().setIsEnd(asyncChainExecutableResponse.getChainEnd()).build();
         default:
           log.error("This Should Not Happen not a chain mode");
       }

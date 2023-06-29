@@ -191,11 +191,12 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
 
   @Override
   public List<StepInfo> getStepInfo() {
-    StepInfo runStepInfo = StepInfo.newBuilder()
-                               .setName("Run")
-                               .setType(StepSpecTypeConstants.RUN)
-                               .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
-                               .build();
+    StepInfo runStepInfo =
+        StepInfo.newBuilder()
+            .setName("Run")
+            .setType(StepSpecTypeConstants.RUN)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(PLUGIN).addFolderPaths("Build").build())
+            .build();
 
     StepInfo backgroundStepInfo =
         StepInfo.newBuilder()
@@ -211,11 +212,12 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
                                     .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
                                     .build();
 
-    StepInfo pluginStepInfo = StepInfo.newBuilder()
-                                  .setName("Plugin")
-                                  .setType(StepSpecTypeConstants.PLUGIN)
-                                  .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
-                                  .build();
+    StepInfo pluginStepInfo =
+        StepInfo.newBuilder()
+            .setName("Plugin")
+            .setType(StepSpecTypeConstants.PLUGIN)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(PLUGIN).addFolderPaths("Build").build())
+            .build();
 
     StepInfo gitCloneStepInfo =
         StepInfo.newBuilder()
@@ -255,11 +257,12 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
                                     .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Security").build())
                                     .build();
 
-    StepInfo actionStepInfo = StepInfo.newBuilder()
-                                  .setName("Github Action plugin")
-                                  .setType(StepSpecTypeConstants.ACTION)
-                                  .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
-                                  .build();
+    StepInfo actionStepInfo =
+        StepInfo.newBuilder()
+            .setName("Github Action plugin")
+            .setType(StepSpecTypeConstants.ACTION)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(PLUGIN).addFolderPaths("Build").build())
+            .build();
 
     StepInfo bitriseStepInfo = StepInfo.newBuilder()
                                    .setName("Bitrise plugin")

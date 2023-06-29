@@ -64,7 +64,7 @@ public class AwsEcrHelperServiceDelegateImplTest extends WingsBaseTest {
         .describeRepositories(any());
     doNothing().when(mockTracker).trackECRCall(anyString());
     on(awsEcrApiHelperServiceDelegate).set("tracker", tracker);
-    doCallRealMethod().when(awsEcrApiHelperServiceDelegate).getEcrImageUrl(any(), any(), any());
+    doCallRealMethod().when(awsEcrApiHelperServiceDelegate).getEcrImageUrl(any(), any(), any(), any());
     String uri = awsEcrHelperServiceDelegate.getEcrImageUrl(
         AwsConfig.builder().build(), Collections.emptyList(), "us-east-1", "imageName");
     assertThat(uri).isEqualTo("uri");

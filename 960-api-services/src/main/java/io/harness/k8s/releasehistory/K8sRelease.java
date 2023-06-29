@@ -15,6 +15,7 @@ import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_NUMBER_LABEL_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_PRUNING_ENABLED_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_RELEASE_BG_ENVIRONMENT_KEY;
+import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_RELEASE_MANIFEST_HASH_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_STATUS_LABEL_KEY;
 
 import static java.util.Collections.emptyList;
@@ -134,8 +135,18 @@ public class K8sRelease implements IK8sRelease {
   }
 
   @Override
+  public String getManifestHash() {
+    return K8sReleaseSecretHelper.getReleaseManifestHash(releaseSecret);
+  }
+
+  @Override
   public void setBgEnvironment(@NotNull String bgEnv) {
     K8sReleaseSecretHelper.putLabelsItem(releaseSecret, RELEASE_SECRET_RELEASE_BG_ENVIRONMENT_KEY, bgEnv);
+  }
+
+  @Override
+  public void setManifestHash(@NotNull String manifestHash) {
+    K8sReleaseSecretHelper.putLabelsItem(releaseSecret, RELEASE_SECRET_RELEASE_MANIFEST_HASH_KEY, manifestHash);
   }
 
   private byte[] getCompressedYaml(List<KubernetesResource> resources) throws IOException {

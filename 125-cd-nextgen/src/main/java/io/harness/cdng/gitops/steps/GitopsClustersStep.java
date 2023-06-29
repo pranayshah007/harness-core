@@ -26,6 +26,7 @@ import io.harness.beans.ScopeLevel;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.cdng.environment.helper.EnvironmentInfraFilterHelper;
 import io.harness.cdng.environment.helper.EnvironmentStepsUtils;
+import io.harness.cdng.gitops.mappers.ClusterEntityMapper;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -278,10 +279,11 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
                                                     .stream()
                                                     .filter(ref -> StringUtils.beginsWithIgnoreCase(ref, "account."))
                                                     .collect(Collectors.toSet());
-    final Set<String> orgLevelClustersIds = individualClusters.keySet()
-                                                .stream()
-                                                .filter(ref -> StringUtils.beginsWithIgnoreCase(ref, "organization."))
-                                                .collect(Collectors.toSet());
+    final Set<String> orgLevelClustersIds =
+        individualClusters.keySet()
+            .stream()
+            .filter(ref -> StringUtils.beginsWithIgnoreCase(ref, ClusterEntityMapper.ORG_PREFIX))
+            .collect(Collectors.toSet());
 
     final Map<String, List<IndividualClusterInternal>> accountLevelClusters = new HashMap<>();
     final Map<String, List<IndividualClusterInternal>> orgLevelClusters = new HashMap<>();

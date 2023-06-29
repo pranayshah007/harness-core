@@ -84,6 +84,13 @@ public class EntityUnavailabilityStatuses
                  .field(EntityUnavailabilityStatusesKeys.projectIdentifier)
                  .field(EntityUnavailabilityStatusesKeys.entityIdentifier)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("entityType_status_createNextTaskIteration_startTime_idx")
+                 .field(EntityUnavailabilityStatusesKeys.entityType)
+                 .field(EntityUnavailabilityStatusesKeys.status)
+                 .field(EntityUnavailabilityStatusesKeys.createNextTaskIteration)
+                 .field(EntityUnavailabilityStatusesKeys.startTime)
+                 .build())
         .build();
   }
 

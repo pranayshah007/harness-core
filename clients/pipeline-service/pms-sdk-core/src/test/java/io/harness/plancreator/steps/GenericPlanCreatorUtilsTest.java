@@ -280,6 +280,54 @@ public class GenericPlanCreatorUtilsTest extends CategoryTest {
 
     assertThat(GenericPlanCreatorUtils.checkIfStepIsInParallelSection(stepField)).isFalse();
 
+    YamlField parallelYamlField = pipelineYamlField.getNode()
+                                      .getField("stages")
+                                      .getNode()
+                                      .asArray()
+                                      .get(0)
+                                      .getField("stage")
+                                      .getNode()
+                                      .getField("spec")
+                                      .getNode()
+                                      .getField("execution")
+                                      .getNode()
+                                      .getField("steps")
+                                      .getNode()
+                                      .asArray()
+                                      .get(1)
+                                      .getField("parallel");
+
+    YamlField innerStepGroupYamlField = parallelYamlField.getNode()
+                                            .asArray()
+                                            .get(0)
+                                            .getField("stepGroup")
+                                            .getNode()
+                                            .getField("steps")
+                                            .getNode()
+                                            .asArray()
+                                            .get(0)
+                                            .getField("stepGroup");
+    assertThat(GenericPlanCreatorUtils.checkIfStepIsInParallelSection(innerStepGroupYamlField)).isFalse();
+
+    innerStepGroupYamlField = parallelYamlField.getNode()
+                                  .asArray()
+                                  .get(0)
+                                  .getField("stepGroup")
+                                  .getNode()
+                                  .getField("steps")
+                                  .getNode()
+                                  .asArray()
+                                  .get(1)
+                                  .getField("stepGroup");
+
+    assertThat(GenericPlanCreatorUtils.checkIfStepIsInParallelSection(innerStepGroupYamlField)).isFalse();
+
+    YamlField parentStepGroupYamlField = parallelYamlField.getNode().asArray().get(0).getField("stepGroup");
+    assertThat(GenericPlanCreatorUtils.checkIfStepIsInParallelSection(parentStepGroupYamlField)).isTrue();
+
+    parentStepGroupYamlField = parallelYamlField.getNode().asArray().get(1).getField("stepGroup");
+    assertThat(GenericPlanCreatorUtils.checkIfStepIsInParallelSection(parentStepGroupYamlField)).isTrue();
+
     testFile = classLoader.getResource("pipeline-with-step-parallel.yaml");
     assertThat(testFile).isNotNull();
     pipelineYaml = Resources.toString(testFile, Charsets.UTF_8);

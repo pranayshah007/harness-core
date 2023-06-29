@@ -11,7 +11,11 @@ import static io.harness.annotations.dev.HarnessTeam.DEL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheConfig;
+import io.harness.cf.CfClientConfig;
+import io.harness.ff.FeatureFlagConfig;
+import io.harness.lock.DistributedLockImplementation;
 import io.harness.mongo.MongoConfig;
+import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;
 import io.harness.threading.ThreadPoolConfig;
@@ -40,7 +44,12 @@ public class DelegateServiceConfiguration extends Configuration {
 
   @JsonProperty("cacheConfig") private CacheConfig cacheConfig;
   @JsonProperty("managerServiceSecret") @ConfigSecret private String managerConfigSecret;
+
   @JsonProperty("managerClientConfig") private ServiceHttpClientConfig managerClientConfig;
+  @JsonProperty("cfClientConfig") @ConfigSecret private CfClientConfig cfClientConfig;
+  @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
+  @JsonProperty("distributedLockImplementation") private DistributedLockImplementation distributedLockImplementation;
+  @JsonProperty("redisLockConfig") @ConfigSecret private RedisConfig redisLockConfig;
 
   public DelegateServiceConfiguration() {
     DefaultServerFactory defaultServerFactory = new DefaultServerFactory();

@@ -13,7 +13,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonValue;
 import org.springframework.data.annotation.TypeAlias;
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true, defaultImpl = VmPoolYaml.class)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true,
+    include = JsonTypeInfo.As.EXISTING_PROPERTY, defaultImpl = VmPoolYaml.class)
 @JsonSubTypes({ @JsonSubTypes.Type(value = VmPoolYaml.class, name = "Pool") })
 public interface VmInfraSpec {
   @TypeAlias("vm_infrastructure_type")

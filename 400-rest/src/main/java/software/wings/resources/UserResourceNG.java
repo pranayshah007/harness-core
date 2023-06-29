@@ -469,6 +469,9 @@ public class UserResourceNG {
   public RestResponse<Optional<UserInfo>>
   updateUser(@Body UserInfo userInfo) {
     User user = convertNgUserToUserWithNameUpdated(userInfo);
+    if (isNotEmpty(user.getName())) {
+      userService.validateName(user.getName());
+    }
     user = userService.update(user);
     return new RestResponse<>(Optional.ofNullable(convertUserToNgUser(user)));
   }

@@ -125,4 +125,6 @@ public interface NgUserService {
   UsersCountDTO getUsersCount(Scope scope, long startInterval, long endInterval);
 
   UserMetadata updateUserMetadataInternal(UserMetadataDTO user);
+
+  void cleanUsersFromAccountForNg(List<String> userIds, String accountIdentifier);
 }

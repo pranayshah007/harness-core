@@ -39,6 +39,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.exception.DelegateNotAvailableException;
 import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.HintException;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
 import io.harness.rule.Owner;
@@ -52,6 +53,7 @@ import io.harness.servicenow.ServiceNowFieldTypeNG;
 import io.harness.servicenow.ServiceNowStagingTable;
 import io.harness.servicenow.ServiceNowTemplate;
 import io.harness.servicenow.ServiceNowTicketTypeDTO;
+import io.harness.servicenow.ServiceNowTicketTypeNG;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -60,6 +62,7 @@ import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -332,6 +335,58 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
         .thenReturn(ServiceNowTaskNGResponse.builder().serviceNowTicketTypeList(serviceNowTicketTypeList).build());
     assertThat(serviceNowResourceService.getTicketTypesV2(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
         .isEqualTo(serviceNowTicketTypeList);
+    ArgumentCaptor<DelegateTaskRequest> requestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
+
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(requestArgumentCaptor.capture());
+    ServiceNowTaskNGParameters parameters =
+        (ServiceNowTaskNGParameters) requestArgumentCaptor.getValue().getTaskParameters();
+
+    assertThat(parameters.getAction()).isEqualTo(ServiceNowActionNG.GET_TICKET_TYPES);
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetTicketTypesV2WithUpdatedConnectorFlowWhenKryo() {
+    List<ServiceNowTicketTypeDTO> serviceNowStandardTicketTypeList =
+        Arrays.stream(ServiceNowTicketTypeNG.values())
+            .map(ticketType -> new ServiceNowTicketTypeDTO(ticketType.name(), ticketType.getDisplayName()))
+            .collect(Collectors.toList());
+
+    when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(getConnector(true)));
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenThrow(new InvalidArgumentsException("enum constant not available"));
+    List<ServiceNowTicketTypeDTO> serviceNowTicketTypeListResponse =
+        serviceNowResourceService.getTicketTypesV2(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    assertThat(serviceNowTicketTypeListResponse.size()).isEqualTo(4);
+    assertTrue(serviceNowTicketTypeListResponse.containsAll(serviceNowStandardTicketTypeList));
+    assertTrue(serviceNowStandardTicketTypeList.containsAll(serviceNowTicketTypeListResponse));
+    ArgumentCaptor<DelegateTaskRequest> requestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
+
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(requestArgumentCaptor.capture());
+    ServiceNowTaskNGParameters parameters =
+        (ServiceNowTaskNGParameters) requestArgumentCaptor.getValue().getTaskParameters();
+
+    assertThat(parameters.getAction()).isEqualTo(ServiceNowActionNG.GET_TICKET_TYPES);
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetTicketTypesV2WithUpdatedConnectorFlowWhenTaskExpired() {
+    List<ServiceNowTicketTypeDTO> serviceNowStandardTicketTypeList =
+        Arrays.stream(ServiceNowTicketTypeNG.values())
+            .map(ticketType -> new ServiceNowTicketTypeDTO(ticketType.name(), ticketType.getDisplayName()))
+            .collect(Collectors.toList());
+
+    when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(getConnector(true)));
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenThrow(new HintException("Task was expired", new DelegateNotAvailableException("Delegates not available")));
+    List<ServiceNowTicketTypeDTO> serviceNowTicketTypeListResponse =
+        serviceNowResourceService.getTicketTypesV2(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    assertThat(serviceNowTicketTypeListResponse.size()).isEqualTo(4);
+    assertTrue(serviceNowTicketTypeListResponse.containsAll(serviceNowStandardTicketTypeList));
+    assertTrue(serviceNowStandardTicketTypeList.containsAll(serviceNowTicketTypeListResponse));
     ArgumentCaptor<DelegateTaskRequest> requestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
 
     verify(delegateGrpcClientWrapper).executeSyncTaskV2(requestArgumentCaptor.capture());

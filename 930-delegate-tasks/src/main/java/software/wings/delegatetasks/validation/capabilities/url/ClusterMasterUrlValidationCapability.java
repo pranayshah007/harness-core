@@ -70,4 +70,15 @@ public class ClusterMasterUrlValidationCapability implements ExecutionCapability
     return isNotEmpty(fetchCapabilityBasis()) ? String.format("Cluster master URL,  %s ", fetchCapabilityBasis())
                                               : null;
   }
+  /**
+   * Error message to show mostly in delegate selection log if none of the delegates passed the validation check
+   */
+  @Override
+  public String getCapabilityValidationError() {
+    // Delegate(s) unable to connect to {url}, make sure to provide the connectivity with the
+    // following delegates : [h1,h2]
+    return isNotEmpty(fetchCapabilityBasis()) ? String.format(
+               "Delegate(s) unable to reach %s, make sure following delegates has connectivity", fetchCapabilityBasis())
+                                              : ExecutionCapability.super.getCapabilityValidationError();
+  }
 }

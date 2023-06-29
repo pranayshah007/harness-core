@@ -59,6 +59,9 @@ gitBranches {"name": "unique_accountIdentifier_repoURL_branchName_idx", "unique"
 gitCommitNG {"name": "accountIdentifier_repoURL_branchName_gitsyncdirection_createdAtSort", "background": true} {"accountIdentifier": 1, "repoURL": 1, "branchName": 1, "gitSyncDirection": 1, "createdAt": -1}
 gitCommitNG {"name": "status_1", "background": true} {"status": 1}
 gitCommitNG {"name": "unique_commitId_repoURL_gitSyncDirection_idx", "unique": true} {"commitId": 1, "repoURL": 1, "gitSyncDirection": 1}
+gitDefaultBranchCache {"name": "accountIdentifier_repoUrl_repo_idx", "unique": true} {"accountIdentifier": 1, "repoUrl": 1, "repo": 1}
+gitDefaultBranchCache {"name": "createdAt_1", "background": true} {"createdAt": 1}
+gitDefaultBranchCache {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 gitFileActivityNG {"name": "lastUpdatedAt_1", "background": true} {"lastUpdatedAt": 1}
 gitFileCache {"name": "accountIdentifier_gitProvider_repoName_ref_completeFilepath_isDefaultBranch_unique_idx", "unique": true} {"accountIdentifier": 1, "gitProvider": 1, "repoName": 1, "ref": 1, "completeFilepath": 1, "isDefaultBranch": 1}
 gitFileCache {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
@@ -98,8 +101,8 @@ instanceNG {"name": "accountId_organizationId_projectId_serviceId_instanceInfo.A
 instanceNG {"name": "accountId_organizationId_projectId_serviceId_isDeleted_createdAt_deletedAt_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "serviceIdentifier": 1, "isDeleted": 1, "createdAt": 1, "deletedAt": 1}
 instanceNG {"name": "accountIdentifier_1_deletedAt_1_createdAt_1", "background": true} {"accountIdentifier": 1, "deletedAt": 1, "createdAt": 1}
 instanceNG {"name": "unique_instanceKey_infrastructureMappingId_idx", "unique": true} {"instanceKey": 1, "infrastructureMappingId": 1}
-instanceSyncPerpetualTaskMapping {"name": "connectorIdentifier_accountId_orgId_projectId_idx", "background": true} {"accountId": 1, "orgId": 1, "projectId": 1, "connectorIdentifier": 1}
-instanceSyncPerpetualTaskMapping {"name": "unique_connectorIdentifier_accountId_orgId_projectId_perpetualTaskId_idx", "unique": true} {"accountId": 1, "orgId": 1, "projectId": 1, "connectorIdentifier": 1, "perpetualTaskId": 1}
+instanceSyncPerpetualTaskMapping {"name": "accountId_connectorIdentifier_deploymentType_orgId_projectId_idx", "background": true} {"accountId": 1, "deploymentType": 1, "connectorIdentifier": 1, "orgId": 1, "projectId": 1}
+instanceSyncPerpetualTaskMapping {"name": "unique_accountId_connectorIdentifier_perpetualTaskId_orgId_projectId_idx", "unique": true} {"accountId": 1, "connectorIdentifier": 1, "perpetualTaskId": 1, "orgId": 1, "projectId": 1}
 instanceSyncPerpetualTasksInfoNG {"name": "accountIdentifier_perpetualTaskIdV2_idx", "background": true} {"accountIdentifier": 1, "perpetualTaskIdV2": 1}
 instanceSyncPerpetualTasksInfoNG {"name": "infrastructureMappingId_1", "unique": true} {"infrastructureMappingId": 1}
 instanceSyncPerpetualTasksInfoNG {"name": "perpetualTaskId_1", "background": true} {"perpetualTaskId": 1}
@@ -147,7 +150,7 @@ projects {"name": "unique_accountIdentifier_organizationIdentifier_projectIdenti
 secrets {"name": "migratedFromManager_1", "background": true} {"migratedFromManager": 1}
 secrets {"name": "unique_identification", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
 serviceAccounts {"name": "list_accounts_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}
-serviceAccounts {"name": "unique_sa_idx", "unique": true, "collation": {"locale": "en", "strength": 1}} {"accountIdentifier": 1, "identifier": 1}
+serviceAccounts {"name": "serviceAccountsPrimaryKey", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
 serviceOverridesNG {"name": "unique_accountId_organizationIdentifier_projectIdentifier_identifier", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
 serviceSequence {"name": "unique_accountId_organizationIdentifier_projectIdentifier_serviceIdentifier", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "serviceIdentifier": 1}
 servicesNG {"name": "accountId_orgId_projectId_deleted_collation_en", "background": true, "collation": {"locale": "en", "strength": 1}} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "deleted": 1}
@@ -165,6 +168,7 @@ stageExecutionInfo {"name": "sorted_stage_execution_info_idx", "background": tru
 stageExecutionInfo {"name": "unique_stage_execution_info_deployment_identifier_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "envIdentifier": 1, "infraIdentifier": 1, "serviceIdentifier": 1, "deploymentIdentifier": 1, "stageExecutionId": 1}
 stageExecutionInfo {"name": "unique_stage_execution_info_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "envIdentifier": 1, "infraIdentifier": 1, "serviceIdentifier": 1, "stageExecutionId": 1}
 stageExecutionInfo {"name": "unique_stage_execution_info_using_stage_execution_id_idx", "background": true} {"accountIdentifier": 1, "stageExecutionId": 1, "orgIdentifier": 1, "projectIdentifier": 1}
+terraformApplyExecutionDetails {"name": "accountId_organizationId_projectId_pipelineExecutionId_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "pipelineExecutionId": 1}
 terraformCloudConfig {"name": "accountId_orgId_projectId_entityId_createdAt", "background": true} {"accountId": 1, "orgId": 1, "projectId": 1, "provisionerIdentifier": 1, "createdAt": -1}
 terraformCloudPlanExecutionDetails {"name": "accountId_organizationId_projectId_pipelineExecutionId_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "pipelineExecutionId": 1}
 terraformConfig {"name": "accountId_orgId_projectId_entityId_createdAt", "background": true} {"accountId": 1, "orgId": 1, "projectId": 1, "entityId": 1, "createdAt": -1}

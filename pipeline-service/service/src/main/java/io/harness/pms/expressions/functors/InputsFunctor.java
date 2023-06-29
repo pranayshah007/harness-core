@@ -11,18 +11,14 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.exception.InvalidRequestException;
 import io.harness.expression.LateBindingValue;
-import io.harness.pms.merger.helpers.InputSetYamlHelperV1;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
-import io.harness.pms.yaml.YamlUtils;
 import io.harness.yaml.utils.JsonPipelineUtils;
 import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,22 +33,17 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PIPELINE)
 @Slf4j
 public class InputsFunctor implements LateBindingValue {
-  private final String inputSet;
-  private final String pipelineYamlV1;
+  private final JsonNode inputSetJsonNode;
+  private final JsonNode pipelineJsonNodeV1;
 
-  public InputsFunctor(String inputSet, String pipelineYamlV1) {
-    this.inputSet = inputSet;
-    this.pipelineYamlV1 = pipelineYamlV1;
+  public InputsFunctor(JsonNode inputSetJsonNode, JsonNode pipelineJsonNodeV1) {
+    this.inputSetJsonNode = inputSetJsonNode;
+    this.pipelineJsonNodeV1 = pipelineJsonNodeV1;
   }
 
   @Override
   public Object bind() {
-    YamlNode pipelineNode;
-    try {
-      pipelineNode = YamlUtils.readTree(pipelineYamlV1).getNode();
-    } catch (IOException e) {
-      throw new InvalidRequestException("Invalid yaml");
-    }
+    YamlNode pipelineNode = new YamlNode(pipelineJsonNodeV1);
     JsonNode versionField = pipelineNode.getField("version").getNode().getCurrJsonNode();
     if (versionField == null || PipelineVersion.V0.equals(versionField.asText())) {
       log.warn("InputsFunctor is invoked for the PipelineYaml Version {}.", PipelineVersion.V0);
@@ -86,8 +77,8 @@ public class InputsFunctor implements LateBindingValue {
     // Generate the Map of default values from the inputsYamlNode of pipeline yaml.
     Map<String, Object> inputsMap = getDefaultValuesMap(inputsYamlNode);
     // Generate map for inputSet values provided by user in execute API.
-    Map<String, Object> inputSetMap = JsonPipelineUtils.jsonNodeToMap(
-        InputSetYamlHelperV1.getInputSetJsonNode(inputSet).get(YAMLFieldNameConstants.INPUTS));
+    Map<String, Object> inputSetMap =
+        JsonPipelineUtils.jsonNodeToMap(inputSetJsonNode.get(YAMLFieldNameConstants.INPUTS));
 
     if (!EmptyPredicate.isEmpty(inputSetMap)) {
       inputsMap.putAll(inputSetMap);

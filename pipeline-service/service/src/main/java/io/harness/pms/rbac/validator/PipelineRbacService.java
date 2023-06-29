@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.EntityDetail;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -22,6 +23,8 @@ public interface PipelineRbacService {
   void extractAndValidateStaticallyReferredEntities(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String pipelineId, String pipelineYaml);
 
-  void validateStaticallyReferredEntities(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String pipelineId, String pipelineYaml, List<EntityDetail> entityDetails);
+  void extractAndValidateStaticallyReferredEntities(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String pipelineId, JsonNode pipelineJsonNode);
+
+  void validateStaticallyReferredEntities(List<EntityDetail> entityDetails);
 }

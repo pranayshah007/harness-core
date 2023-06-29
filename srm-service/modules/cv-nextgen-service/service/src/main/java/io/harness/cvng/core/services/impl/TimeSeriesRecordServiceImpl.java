@@ -61,6 +61,7 @@ import com.mongodb.ReadPreference;
 import dev.morphia.UpdateOptions;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
 import java.io.IOException;
 import java.time.Instant;
@@ -69,6 +70,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -568,6 +570,22 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
   }
 
   @Override
+  public List<TimeSeriesRecord> getLatestTimeSeriesRecords(String verificationTaskId, int count) {
+    return hPersistence.createQuery(TimeSeriesRecord.class, excludeAuthority)
+        .filter(TimeSeriesRecordKeys.verificationTaskId, verificationTaskId)
+        .order(Sort.descending(TimeSeriesRecordKeys.bucketStartTime))
+        .asList(new FindOptions().limit(count));
+  }
+
+  @Override
+  public List<TimeSeriesRecordDTO> getTimeSeriesRecordsForVerificationTaskId(String verificationTaskId) {
+    return toTimeSeriesRecordDtos(hPersistence.createQuery(TimeSeriesRecord.class, new HashSet<>())
+                                      .useReadPreference(ReadPreference.secondaryPreferred())
+                                      .filter(TimeSeriesRecordKeys.verificationTaskId, verificationTaskId)
+                                      .asList());
+  }
+
+  @Override
   public List<TimeSeriesRecordDTO> getDeploymentMetricTimeSeriesRecordDTOs(
       String verificationTaskId, Instant startTime, Instant endTime, Set<String> hosts) {
     List<TimeSeriesRecord> timeSeriesRecords = getTimeSeriesRecords(verificationTaskId, startTime, endTime, hosts);
@@ -751,5 +769,27 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
           JsonUtils.asObject(riskTemplate, new TypeReference<ArrayList<Long>>() {}));
     }
     return metricToRiskScore;
+  }
+
+  private static List<TimeSeriesRecordDTO> toTimeSeriesRecordDtos(List<TimeSeriesRecord> timeSeriesRecords) {
+    if (Objects.isNull(timeSeriesRecords)) {
+      return null;
+    }
+    List<TimeSeriesRecordDTO> timeSeriesRecordDtos = new ArrayList<>();
+    for (TimeSeriesRecord timeSeriesRecord : timeSeriesRecords) {
+      for (TimeSeriesGroupValue groupValue : timeSeriesRecord.getTimeSeriesGroupValues()) {
+        timeSeriesRecordDtos.add(
+            TimeSeriesRecordDTO.builder()
+                .groupName(groupValue.getGroupName())
+                .host(timeSeriesRecord.getHost())
+                .metricName(timeSeriesRecord.getMetricName())
+                .metricIdentifier(timeSeriesRecord.getMetricIdentifier())
+                .epochMinute(TimeUnit.MILLISECONDS.toMinutes(groupValue.getTimeStamp().toEpochMilli()))
+                .verificationTaskId(timeSeriesRecord.getVerificationTaskId())
+                .metricValue(groupValue.getMetricValue())
+                .build());
+      }
+    }
+    return timeSeriesRecordDtos;
   }
 }

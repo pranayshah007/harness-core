@@ -9,14 +9,19 @@ package io.harness.exception;
 
 import static io.harness.eraro.ErrorCode.INVALID_REQUEST;
 
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
+import io.harness.eraro.ResponseMessage;
 import io.harness.exception.ngexception.ErrorMetadataDTO;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.List;
 
 public class InvalidRequestException extends WingsException {
   private static final String MESSAGE_ARG = "message";
+  private List<ResponseMessage> responseMessages = new ArrayList<>();
 
   public InvalidRequestException(String message, ErrorMetadataDTO metadata) {
     super(message, null, INVALID_REQUEST, Level.ERROR, null, null, metadata);
@@ -53,5 +58,19 @@ public class InvalidRequestException extends WingsException {
       String message, Throwable cause, ErrorCode errorCode, EnumSet<ReportTarget> reportTargets) {
     super(message, cause, errorCode, Level.ERROR, reportTargets, null);
     super.param(MESSAGE_ARG, message);
+  }
+
+  public InvalidRequestException(String message, ErrorMetadataDTO metadata, List<ResponseMessage> responseMessages) {
+    super(message, null, INVALID_REQUEST, Level.ERROR, null, null, metadata);
+    super.param(MESSAGE_ARG, message);
+    this.responseMessages = responseMessages;
+  }
+
+  @Override
+  public List<ResponseMessage> getResponseMessages() {
+    if (EmptyPredicate.isEmpty(responseMessages)) {
+      return new ArrayList<>(0);
+    }
+    return responseMessages;
   }
 }

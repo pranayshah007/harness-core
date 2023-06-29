@@ -33,6 +33,7 @@ import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.SideKickService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.models.VerificationType;
+import io.harness.cvng.verificationjob.entities.ServiceInstanceDetails;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJob.RuntimeParameter;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
@@ -143,6 +144,11 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
     if (Objects.nonNull(cvConfigs)) {
       cvConfigs = cvConfigs.stream()
                       .filter(cvConfig -> supportedDataTypesForVerification.contains(cvConfig.getVerificationType()))
+                      .peek(cvConfig -> {
+                        if (Objects.isNull(cvConfig.getDataSourceName())) {
+                          cvConfig.setDataSourceName(cvConfig.getType());
+                        }
+                      })
                       .collect(Collectors.toList());
     }
     if (CollectionUtils.isEmpty(cvConfigs)) {
@@ -186,6 +192,13 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
                 monitoredServiceTemplateIdentifier, monitoredServiceTemplateVersionLabel, cvConfigs);
         activity.fillInVerificationJobInstanceDetails(verificationJobInstanceBuilder);
         verificationJobInstanceBuilder.monitoredServiceType(monitoredServiceType);
+        if (stepParameters.getShouldUseCDNodes() != null && stepParameters.getShouldUseCDNodes().getValue() != null) {
+          verificationJobInstanceBuilder.serviceInstanceDetailsFromCD(
+              ServiceInstanceDetails.builder().valid(stepParameters.getShouldUseCDNodes().getValue()).build());
+        } else {
+          verificationJobInstanceBuilder.serviceInstanceDetailsFromCD(
+              ServiceInstanceDetails.builder().valid(false).build());
+        }
         verificationJobInstanceBuilder.nodeExecutionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
         verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstanceBuilder.build());
       }

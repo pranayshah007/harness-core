@@ -104,6 +104,8 @@ public abstract class AggregatorBaseSyncController implements Runnable {
   private static final String USER_GROUPS = "usergroups";
   private static final String UNKNOWN_PROPERTIES_IGNORED = "unknown.properties.ignored";
   private static final String MAX_STREAM_BATCH_SIZE = "max.batch.size";
+  private static final String MONGODB_CONNECTION_PROTOCOL = "mongodbConnectionProtocol";
+  private static final String MONGODB_CONNECTION_URL = "mongodbConnectionUrl";
 
   public enum AggregatorJobType {
     PRIMARY,
@@ -147,7 +149,6 @@ public abstract class AggregatorBaseSyncController implements Runnable {
     String offsetCollection = getOffsetStorageCollection();
     props.setProperty(CONNECTOR_NAME, debeziumConfig.getConnectorName());
     props.setProperty(OFFSET_STORAGE, MongoOffsetBackingStore.class.getName());
-    props.setProperty(OFFSET_STORAGE_FILE_FILENAME, debeziumConfig.getOffsetStorageFileName());
     props.setProperty(OFFSET_STORAGE_COLLECTION, offsetCollection);
     props.setProperty(KEY_CONVERTER_SCHEMAS_ENABLE, debeziumConfig.getKeyConverterSchemasEnable());
     props.setProperty(VALUE_CONVERTER_SCHEMAS_ENABLE, debeziumConfig.getValueConverterSchemasEnable());
@@ -177,6 +178,8 @@ public abstract class AggregatorBaseSyncController implements Runnable {
     props.setProperty(TRANSFORMS_UNWRAP_ADD_HEADERS, "op");
     props.setProperty(SNAPSHOT_FETCH_SIZE, debeziumConfig.getSnapshotFetchSize());
     props.setProperty(MAX_STREAM_BATCH_SIZE, debeziumConfig.getMaxStreamBatchSize());
+    props.setProperty(MONGODB_CONNECTION_PROTOCOL, debeziumConfig.getMongodbConnectionProtocol());
+    props.setProperty(MONGODB_CONNECTION_URL, debeziumConfig.getMongodbConnectionUrl());
 
     return DebeziumEngine.create(Json.class).using(props).notifying(changeConsumer).build();
   }

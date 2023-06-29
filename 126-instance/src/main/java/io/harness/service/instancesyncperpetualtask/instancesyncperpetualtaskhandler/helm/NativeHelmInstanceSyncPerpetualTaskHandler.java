@@ -7,8 +7,11 @@
 
 package io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.helm;
 
+import io.harness.account.AccountClient;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.k8s.K8sEntityHelper;
+import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.HelmInstallationCapability;
 import io.harness.delegate.task.helm.HelmInstanceSyncRequest;
@@ -19,10 +22,14 @@ import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.NativeHelmDeploymentInfoDTO;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.ng.core.BaseNGAccess;
+import io.harness.ng.core.NGAccess;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.instancesync.NativeHelmDeploymentRelease;
 import io.harness.perpetualtask.instancesync.NativeHelmInstanceSyncPerpetualTaskParams;
+import io.harness.perpetualtask.instancesync.NativeHelmInstanceSyncPerpetualTaskParamsV2;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.InstanceSyncPerpetualTaskHandler;
+import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.k8s.K8sInstanceSyncUtils;
 
 import com.google.inject.Inject;
 import com.google.protobuf.Any;
@@ -32,9 +39,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.jooq.tools.StringUtils;
 
 public class NativeHelmInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTaskHandler {
   @Inject private K8sEntityHelper k8sEntityHelper;
+  @Inject private AccountClient accountClient;
   private static final String HELM_INSTANCE_SYNC_COMMAND_NAME = "Instance Sync";
 
   @Override
@@ -51,6 +60,18 @@ public class NativeHelmInstanceSyncPerpetualTaskHandler extends InstanceSyncPerp
 
     return createPerpetualTaskExecutionBundle(perpetualTaskPack, executionCapabilities,
         infrastructure.getOrgIdentifier(), infrastructure.getProjectIdentifier());
+  }
+
+  @Override
+  public PerpetualTaskExecutionBundle getExecutionBundleForV2(
+      InfrastructureMappingDTO infrastructureMappingDTO, ConnectorInfoDTO connectorInfoDTO) {
+    Any perpetualTaskPack = packNativeHelmInstanceSyncPerpetualTaskV2Params(infrastructureMappingDTO, connectorInfoDTO);
+
+    List<ExecutionCapability> executionCapabilities =
+        getExecutionCapabilitiesV2(connectorInfoDTO, infrastructureMappingDTO);
+
+    return createPerpetualTaskExecutionBundle(perpetualTaskPack, executionCapabilities,
+        connectorInfoDTO.getOrgIdentifier(), connectorInfoDTO.getProjectIdentifier());
   }
 
   private List<NativeHelmDeploymentReleaseData> populateDeploymentReleaseList(
@@ -97,6 +118,28 @@ public class NativeHelmInstanceSyncPerpetualTaskHandler extends InstanceSyncPerp
         createNativeHelmInstanceSyncPerpetualTaskParams(accountIdentifier, deploymentReleaseData, helmVersion));
   }
 
+  private Any packNativeHelmInstanceSyncPerpetualTaskV2Params(
+      InfrastructureMappingDTO infrastructureMappingDTO, ConnectorInfoDTO connectorInfoDTO) {
+    return Any.pack(createNativeHelmInstanceSyncPerpetualTaskV2Params(infrastructureMappingDTO, connectorInfoDTO));
+  }
+
+  private NativeHelmInstanceSyncPerpetualTaskParamsV2 createNativeHelmInstanceSyncPerpetualTaskV2Params(
+      InfrastructureMappingDTO infrastructureMappingDTO, ConnectorInfoDTO connectorInfoDTO) {
+    NGAccess ngAccess = BaseNGAccess.builder()
+                            .accountIdentifier(infrastructureMappingDTO.getAccountIdentifier())
+                            .orgIdentifier(connectorInfoDTO.getOrgIdentifier())
+                            .projectIdentifier(connectorInfoDTO.getProjectIdentifier())
+                            .build();
+    return NativeHelmInstanceSyncPerpetualTaskParamsV2.newBuilder()
+        .setAccountId(infrastructureMappingDTO.getAccountIdentifier())
+        .setOrgId(StringUtils.defaultIfEmpty(connectorInfoDTO.getOrgIdentifier(), StringUtils.EMPTY))
+        .setProjectId(StringUtils.defaultIfEmpty(connectorInfoDTO.getProjectIdentifier(), StringUtils.EMPTY))
+        .setConnectorInfoDto(ByteString.copyFrom(kryoSerializer.asBytes(connectorInfoDTO)))
+        .setEncryptedData(ByteString.copyFrom(
+            kryoSerializer.asBytes(k8sEntityHelper.getEncryptionDataDetails(connectorInfoDTO, ngAccess))))
+        .build();
+  }
+
   private NativeHelmInstanceSyncPerpetualTaskParams createNativeHelmInstanceSyncPerpetualTaskParams(
       String accountIdentifier, List<NativeHelmDeploymentReleaseData> deploymentReleaseData, HelmVersion helmVersion) {
     return NativeHelmInstanceSyncPerpetualTaskParams.newBuilder()
@@ -135,6 +178,18 @@ public class NativeHelmInstanceSyncPerpetualTaskHandler extends InstanceSyncPerp
                          .build());
 
     return capabilities;
+  }
+
+  private List<ExecutionCapability> getExecutionCapabilitiesV2(
+      ConnectorInfoDTO connectorInfoDTO, InfrastructureMappingDTO infrastructureMappingDTO) {
+    if (connectorInfoDTO == null) {
+      return Collections.emptyList();
+    }
+
+    return K8sInstanceSyncUtils.fetchRequiredK8sExecutionCapabilities(infrastructureMappingDTO,
+        connectorInfoDTO.getConnectorConfig(), null,
+        CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(
+            FeatureName.CDS_K8S_SOCKET_CAPABILITY_CHECK_NG.name(), infrastructureMappingDTO.getAccountIdentifier())));
   }
 
   private HelmInstanceSyncRequest toNativeHelmInstanceSyncRequest(

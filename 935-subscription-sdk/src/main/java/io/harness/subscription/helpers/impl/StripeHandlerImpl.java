@@ -25,6 +25,7 @@ import com.stripe.model.PaymentMethodCollection;
 import com.stripe.model.Price;
 import com.stripe.model.PriceCollection;
 import com.stripe.model.PriceSearchResult;
+import com.stripe.model.SetupIntent;
 import com.stripe.model.Subscription;
 import com.stripe.model.SubscriptionSearchResult;
 import com.stripe.param.CustomerCreateParams;
@@ -279,5 +280,15 @@ public class StripeHandlerImpl {
     properties.put("module", module);
     telemetryReporter.sendTrackEvent(event, email, accountId, properties,
         ImmutableMap.<Destination, Boolean>builder().put(Destination.AMPLITUDE, true).build(), SUBSCRIPTION);
+  }
+
+  public SetupIntent retrieveSetupIntent(String customerId) {
+    try {
+      Map<String, Object> params = Map.of("customer", customerId);
+
+      return SetupIntent.create(params);
+    } catch (StripeException e) {
+      throw new InvalidRequestException("Unable to create setup intent", e);
+    }
   }
 }

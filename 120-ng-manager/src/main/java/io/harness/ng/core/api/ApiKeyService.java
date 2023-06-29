@@ -50,4 +50,6 @@ public interface ApiKeyService {
 
   void validateParentIdentifier(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       ApiKeyType apiKeyType, String parentIdentifier);
+
+  Long countApiKeys(String accountIdentifier);
 }

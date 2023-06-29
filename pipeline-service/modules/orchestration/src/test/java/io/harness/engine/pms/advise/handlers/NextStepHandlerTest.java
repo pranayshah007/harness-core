@@ -185,6 +185,12 @@ public class NextStepHandlerTest extends CategoryTest {
                  .build())
         .when(nodeExecutionService)
         .getWithFieldsIncluded(eq("originalNodeExecutionId"), any());
+
+    doReturn(
+        NodeExecution.builder().planNode(IdentityPlanNode.builder().build()).uuid("nextId").oldRetry(false).build())
+        .when(nodeExecutionService)
+        .getWithFieldsIncluded(eq("nextId"), any());
+
     // Since currentNode is of type planNode and parentNodeExecution.nodeType is identityPlanNode. So identityNode will
     // be created for current node.
     Node savedIdentityNode = nextStepHandler.createIdentityNodeIfRequired(planNode,

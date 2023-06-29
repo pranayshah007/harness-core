@@ -1,0 +1,34 @@
+Var dataQuery = "api/v1/query_range?"
+Var lengthOfItems = Env:queryList.length()
+Var index = 0
+Var one = 1
+Var returnList = []
+
+while Var:index !=  Var:lengthOfItems {
+    Var metricName = Env:metricNameList[Var:index]
+    Var query = Env:queryList[Var:index]
+    Var serviceInstanceField = Env:serviceInstanceFieldList[Var:index]
+    Var metricIdentifier =  Env:metricIdentifiers[Var:index]
+    Var fullQuery = concat(Env:baseUrl, Var:dataQuery, "start=", Env:startTimeSeconds, "&end=", Env:endTimeSeconds, "&step=60s&query=", Var:query)
+    print Var:fullQuery
+    Var result = sync-call(url=Var:fullQuery, header=Env:commonHeaders)
+    Var resultList = extract(Var:result, $.data.result)
+    Var host = null
+       foreach metric in Var:resultList {
+         Var data = extract(Var:metric,$.values)
+         if Env:collectHostData == "true" {
+         Var hostContainer = extract(Var:metric,$.metric)
+         Var hostKey = concat("$.", Var:serviceInstanceField)
+         host = extract(Var:hostContainer, Var:hostKey)
+         }
+         foreach metricData in Var:data {
+           Var val = extract(Var:metricData,$.[1])
+           Var timeStampVal = extract(Var:metricData,$.[0])
+           Var tsRecord = new TimeseriesRecord(txnName=Env:groupName, metricIdentifier=Var:metricIdentifier, metricName=Var:metricName, metricValue=Var:val, timestamp=Var:timeStampVal, host=Var:host)
+           Var:returnList.append(Var:tsRecord)
+         }
+      }
+    index = Var:index + Var:one
+}
+
+return Var:returnList

@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
+import io.harness.utils.YamlPipelineUtils;
 import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 import io.harness.yaml.utils.SchemaValidationUtils;
 
@@ -104,6 +105,16 @@ public class YamlSchemaValidator {
     JsonSchema schema = factory.getSchema(stringSchema);
     Set<ValidationMessage> validateMsg = schema.validate(jsonNode);
     return processAndHandleValidationMessage(jsonNode, validateMsg, yaml);
+  }
+
+  public Set<String> validate(JsonNode jsonNode, String stringSchema, boolean shouldValidateParallelStageCount,
+      int allowedParallelStages, String pathToJsonNode) throws IOException {
+    validateParallelStagesCount(jsonNode, shouldValidateParallelStageCount, allowedParallelStages, pathToJsonNode);
+    JsonSchemaFactory factory =
+        JsonSchemaFactory.builder(JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V7)).build();
+    JsonSchema schema = factory.getSchema(stringSchema);
+    Set<ValidationMessage> validateMsg = schema.validate(jsonNode);
+    return processAndHandleValidationMessage(jsonNode, validateMsg, YamlPipelineUtils.writeYamlString(jsonNode));
   }
 
   public Set<String> processAndHandleValidationMessage(

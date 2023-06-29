@@ -80,6 +80,12 @@ public class GithubPackagesArtifactDelegateRequest implements ArtifactSourceDele
    */
   String connectorRef;
 
+  String artifactId;
+  String repository;
+  String user;
+  String extension;
+  String groupId;
+
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> capabilities =

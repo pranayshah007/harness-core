@@ -14,7 +14,7 @@ import (
 
 	"github.com/harness/harness-core/commons/go/lib/exec"
 	"github.com/harness/harness-core/commons/go/lib/filesystem"
-	"github.com/harness/harness-core/product/ci/ti-service/types"
+	"github.com/harness/ti-client/types"
 	"go.uber.org/zap"
 )
 
@@ -65,22 +65,24 @@ func (g *gradleRunner) AutoDetectTests(ctx context.Context, testGlobs []string) 
 The following needs to be added to a build.gradle to make it compatible with test intelligence:
 // This adds HARNESS_JAVA_AGENT to the testing command if it's provided through the command line.
 // Local builds will still remain same as it only adds if the parameter is provided.
-tasks.withType(Test) {
-  if(System.getProperty("HARNESS_JAVA_AGENT")) {
-    jvmArgs += [System.getProperty("HARNESS_JAVA_AGENT")]
-  }
-}
+
+	tasks.withType(Test) {
+	  if(System.getProperty("HARNESS_JAVA_AGENT")) {
+	    jvmArgs += [System.getProperty("HARNESS_JAVA_AGENT")]
+	  }
+	}
 
 // This makes sure that any test tasks for subprojects don't fail in case the test filter does not match
 // with any tests. This is needed since we want to search for a filter in all subprojects without failing if
 // the filter does not match with any of the subprojects.
-gradle.projectsEvaluated {
-        tasks.withType(Test) {
-            filter {
-                setFailOnNoMatchingTests(false)
-            }
-        }
-}
+
+	gradle.projectsEvaluated {
+	        tasks.withType(Test) {
+	            filter {
+	                setFailOnNoMatchingTests(false)
+	            }
+	        }
+	}
 */
 func (g *gradleRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
 	// Check if gradlew exists. If not, fallback to gradle

@@ -28,6 +28,9 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.GITOPS)
 @UtilityClass
 public class ClusterEntityMapper {
+  public static final String ORG = "org";
+  public static final String ORG_PREFIX = "org.";
+
   public Cluster toEntity(String accountId, ClusterRequest request) {
     return Cluster.builder()
         .accountId(accountId)
@@ -99,6 +102,7 @@ public class ClusterEntityMapper {
                 clusterFromGitops.getOrDefault("project." + clusterRef, ClusterFromGitops.builder().build()).getTags())
             .orgIdentifier(cluster.getOrgIdentifier())
             .projectIdentifier(cluster.getProjectIdentifier())
+            .accountIdentifier(cluster.getAccountId())
             .agentIdentifier(cluster.getAgentIdentifier())
             .clusterRef(scopeFromClusterRef.getOriginalRef())
             .scope(scopeFromClusterRef.getScope())
@@ -143,9 +147,13 @@ public class ClusterEntityMapper {
         .build();
   }
   public String getScopedClusterRef(ScopeLevel scopeLevel, String ref) {
-    return scopeLevel != null && scopeLevel != ScopeLevel.PROJECT
-        ? String.format("%s.%s", scopeLevel.toString().toLowerCase(), ref)
-        : ref;
+    if (scopeLevel == ScopeLevel.ACCOUNT) {
+      return String.format("%s.%s", scopeLevel.toString().toLowerCase(), ref);
+    } else if (scopeLevel == ScopeLevel.ORGANIZATION) {
+      return String.format("%s.%s", ORG, ref);
+    } else {
+      return ref;
+    }
   }
 
   public ScopeAndRef getScopeFromClusterRef(String ref) {
@@ -158,7 +166,7 @@ public class ClusterEntityMapper {
       return new ScopeAndRef(ref, split[1], ScopeLevel.ACCOUNT);
     }
 
-    if (ScopeLevel.ORGANIZATION.toString().equalsIgnoreCase(split[0])) {
+    if (ORG.equalsIgnoreCase(split[0])) {
       return new ScopeAndRef(ref, split[1], ScopeLevel.ORGANIZATION);
     }
 

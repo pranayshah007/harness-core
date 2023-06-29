@@ -9,12 +9,16 @@ package io.harness.perpetualtask.instancesync;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.perpetualtask.instancesync.helm.NativeHelmDeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesync.k8s.K8sDeploymentReleaseDetails;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-@JsonSubTypes({ @JsonSubTypes.Type(value = K8sDeploymentReleaseDetails.class, name = "K8sDeploymentReleaseDetails") })
+@JsonSubTypes({
+  @JsonSubTypes.Type(value = K8sDeploymentReleaseDetails.class, name = "K8sDeploymentReleaseDetails")
+  , @JsonSubTypes.Type(value = NativeHelmDeploymentReleaseDetails.class, name = "NativeHelmDeploymentReleaseDetails")
+})
 @OwnedBy(HarnessTeam.CDP)
 public abstract class DeploymentDetails {}

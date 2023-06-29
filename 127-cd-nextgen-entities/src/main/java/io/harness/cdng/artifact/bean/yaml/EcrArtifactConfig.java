@@ -58,6 +58,10 @@ public class EcrArtifactConfig implements ArtifactConfig, Visitable, WithConnect
    */
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> connectorRef;
   /**
+   * ECR Registry ID
+   */
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> registryId;
+  /**
    * Region in which the artifact source is located.
    */
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> region;
@@ -108,6 +112,9 @@ public class EcrArtifactConfig implements ArtifactConfig, Visitable, WithConnect
     EcrArtifactConfig resultantConfig = this;
     if (!ParameterField.isNull(ecrArtifactSpecConfig.getConnectorRef())) {
       resultantConfig = resultantConfig.withConnectorRef(ecrArtifactSpecConfig.getConnectorRef());
+    }
+    if (!ParameterField.isNull(ecrArtifactSpecConfig.getRegistryId())) {
+      resultantConfig = resultantConfig.withRegistryId(ecrArtifactSpecConfig.getRegistryId());
     }
     if (!ParameterField.isNull(ecrArtifactSpecConfig.getImagePath())) {
       resultantConfig = resultantConfig.withImagePath(ecrArtifactSpecConfig.getImagePath());

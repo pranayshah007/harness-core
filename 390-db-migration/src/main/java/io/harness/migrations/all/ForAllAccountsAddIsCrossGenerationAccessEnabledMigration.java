@@ -12,14 +12,11 @@ import static io.harness.annotations.dev.HarnessTeam.GTM;
 import static software.wings.beans.Account.AccountKeys;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.migrations.Migration;
-import io.harness.ng.core.account.DefaultExperience;
 import io.harness.persistence.HIterator;
 
 import software.wings.beans.Account;
 import software.wings.dl.WingsPersistence;
-import software.wings.service.intfc.AccountService;
 
 import com.google.inject.Inject;
 import dev.morphia.query.Query;
@@ -32,7 +29,6 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(GTM)
 public class ForAllAccountsAddIsCrossGenerationAccessEnabledMigration implements Migration {
   @Inject private WingsPersistence wingsPersistence;
-  @Inject private AccountService accountService;
 
   @Override
   public void migrate() {
@@ -51,18 +47,7 @@ public class ForAllAccountsAddIsCrossGenerationAccessEnabledMigration implements
           accountsLeftForMigration.add(account.getUuid());
           UpdateOperations<Account> updateOperations = wingsPersistence.createUpdateOperations(Account.class);
 
-          if (DefaultExperience.isNGExperience(account.getDefaultExperience())) {
-            updateOperations.set(AccountKeys.isCrossGenerationAccessEnabled, Boolean.TRUE);
-          } else {
-            boolean isFFEnabled =
-                accountService.isFeatureFlagEnabled(FeatureName.PL_HIDE_LAUNCH_NEXTGEN.name(), account.getUuid());
-
-            if (isFFEnabled) {
-              updateOperations.set(AccountKeys.isCrossGenerationAccessEnabled, Boolean.FALSE);
-            } else {
-              updateOperations.set(AccountKeys.isCrossGenerationAccessEnabled, Boolean.TRUE);
-            }
-          }
+          updateOperations.set(AccountKeys.isCrossGenerationAccessEnabled, Boolean.TRUE);
 
           wingsPersistence.update(account, updateOperations);
           accountsLeftForMigration.remove(account.getUuid());

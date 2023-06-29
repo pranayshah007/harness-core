@@ -11,6 +11,8 @@ import static io.harness.idp.common.CommonUtils.readFileFromClassPath;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.UnexpectedException;
+import io.harness.idp.common.Constants;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,6 +24,8 @@ import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
@@ -70,6 +74,8 @@ public class ConfigManagerUtils {
   private static final String JIRA_PLUGIN_JSON_SCHEMA_PATH = "configs/json-schemas/jira-schema.json";
   private static final String FIREHYDRANT_PLUGIN_JSON_SCHEMA_PATH = "configs/json-schemas/firehydrant-schema.json";
   private static final String HARNESS_CI_CD_JSON_SCHEMA_PATH = "configs/json-schemas/harness-ci-cd-schema.json";
+
+  private static final String KUBERNETES_JSON_SCHEMA_PATH = "configs/json-schemas/kubernetes-schema.json";
   private static final String HARNESS_CI_CD_CONFIG_PATH = "configs/plugins/harness-ci-cd.yaml";
   private static final String HARNESS_CI_CD_CONFIG_PATH_COMPLIANCE = "configs/plugins/harness-ci-cd-compliance.yaml";
   private static final String HARNESS_CI_CD_CONFIG_PATH_PRE_QA = "configs/plugins/harness-ci-cd-preqa.yaml";
@@ -79,18 +85,31 @@ public class ConfigManagerUtils {
   private static final String GOOGLE_AUTH_CONFIG_FILE = "configs/auth/google-auth.yaml";
   private static final String GOOGLE_AUTH_JSON_SCHEMA_FILE = "configs/auth/json-schemas/google-auth-schema.json";
 
-  public String asYaml(String jsonString) throws IOException {
-    JsonNode jsonNodeTree = new ObjectMapper().readTree(jsonString);
-    String jsonAsYaml =
-        new YAMLMapper().configure(YAMLGenerator.Feature.MINIMIZE_QUOTES, true).writeValueAsString(jsonNodeTree);
+  public String asYaml(String jsonString) {
+    JsonNode jsonNodeTree = getJsonNodeForJsonString(jsonString);
+
+    String jsonAsYaml = null;
+    try {
+      jsonAsYaml =
+          new YAMLMapper().configure(YAMLGenerator.Feature.MINIMIZE_QUOTES, true).writeValueAsString(jsonNodeTree);
+    } catch (Exception e) {
+      log.error("Error in converting json to yaml. Error - {}", e.getMessage(), e);
+      throw new UnexpectedException(e.getMessage());
+    }
+
     return jsonAsYaml;
   }
 
-  public JsonNode asJsonNode(String yamlString) throws IOException {
+  public JsonNode asJsonNode(String yamlString) {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     JsonNode jsonNode = mapper.createObjectNode();
     if (yamlString != null) {
-      jsonNode = mapper.readTree(yamlString);
+      try {
+        jsonNode = mapper.readTree(yamlString);
+      } catch (Exception e) {
+        log.error("Error in reading the ymlString as json node. Error - {}", e.getMessage(), e);
+        throw new UnexpectedException(e.getMessage());
+      }
     }
     return jsonNode;
   }
@@ -126,9 +145,15 @@ public class ConfigManagerUtils {
     }
   }
 
-  public Set<String> validateSchemaForYaml(String yaml, JsonSchema schema) throws IOException {
+  public Set<String> validateSchemaForYaml(String yaml, JsonSchema schema) {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-    JsonNode jsonNode = mapper.readTree(yaml);
+    JsonNode jsonNode = null;
+    try {
+      jsonNode = mapper.readTree(yaml);
+    } catch (Exception e) {
+      log.error("Error in converting yaml to json node. Error - {}", e.getMessage(), e);
+      throw new UnexpectedException(e.getMessage());
+    }
     Set<ValidationMessage> validateMsg = schema.validate(jsonNode);
     return validateMsg.stream().map(ValidationMessage::getMessage).collect(Collectors.toSet());
   }
@@ -154,24 +179,10 @@ public class ConfigManagerUtils {
     }
   }
 
-  public Boolean isValidSchema(String yaml, String jsonSchema) throws Exception {
-    ObjectMapper objectMapper = new ObjectMapper();
-    JsonSchema schema = getJsonSchemaFromJsonNode(objectMapper.readTree(jsonSchema));
+  public Boolean isValidSchema(String yaml, String jsonSchema) {
+    JsonSchema schema = getJsonSchemaFromJsonNode(getJsonNodeForJsonString(jsonSchema));
     Set<String> invalidSchemaResponse = validateSchemaForYaml(yaml, schema);
     return (invalidSchemaResponse.size() <= 0);
-  }
-
-  public String getPluginConfig(String configId) {
-    switch (configId) {
-      case "kafka":
-        return readFileFromClassPath(KAFKA_PLUGIN_CONFIG_PATH);
-      case "pager-duty":
-        return readFileFromClassPath(PAGER_DUTY_PLUGIN_CONFIG);
-      case "snyk-security":
-        return readFileFromClassPath(SNYK_SECURITY_PLUGIN_CONFIG);
-      default:
-        return null;
-    }
   }
 
   public String getPluginConfigSchema(String configId) {
@@ -194,6 +205,8 @@ public class ConfigManagerUtils {
         return readFileFromClassPath(FIREHYDRANT_PLUGIN_JSON_SCHEMA_PATH);
       case "harness-ci-cd":
         return readFileFromClassPath(HARNESS_CI_CD_JSON_SCHEMA_PATH);
+      case "kubernetes":
+        return readFileFromClassPath(KUBERNETES_JSON_SCHEMA_PATH);
       default:
         return null;
     }
@@ -201,9 +214,9 @@ public class ConfigManagerUtils {
 
   public String getAuthConfig(String authId) {
     switch (authId) {
-      case "github-auth":
+      case Constants.GITHUB_AUTH:
         return readFileFromClassPath(GITHUB_AUTH_CONFIG_FILE);
-      case "google-auth":
+      case Constants.GOOGLE_AUTH:
         return readFileFromClassPath(GOOGLE_AUTH_CONFIG_FILE);
       default:
         return null;
@@ -212,9 +225,9 @@ public class ConfigManagerUtils {
 
   public String getAuthConfigSchema(String authId) {
     switch (authId) {
-      case "github-auth":
+      case Constants.GITHUB_AUTH:
         return readFileFromClassPath(GITHUB_AUTH_JSON_SCHEMA_FILE);
-      case "google-auth":
+      case Constants.GOOGLE_AUTH:
         return readFileFromClassPath(GOOGLE_AUTH_JSON_SCHEMA_FILE);
       default:
         return null;
@@ -232,5 +245,41 @@ public class ConfigManagerUtils {
       default:
         return readFileFromClassPath(HARNESS_CI_CD_CONFIG_PATH);
     }
+  }
+
+  public JsonNode getNodeByName(JsonNode node, String name) {
+    if (node.isObject()) {
+      Iterator<Map.Entry<String, JsonNode>> fieldsIterator = node.fields();
+      while (fieldsIterator.hasNext()) {
+        Map.Entry<String, JsonNode> entry = fieldsIterator.next();
+        if (entry.getKey().equals(name)) {
+          return entry.getValue();
+        } else {
+          JsonNode result = getNodeByName(entry.getValue(), name);
+          if (result != null) {
+            return result;
+          }
+        }
+      }
+    } else if (node.isArray()) {
+      for (JsonNode childNode : node) {
+        JsonNode result = getNodeByName(childNode, name);
+        if (result != null) {
+          return result;
+        }
+      }
+    }
+    return null;
+  }
+
+  private JsonNode getJsonNodeForJsonString(String jsonString) {
+    JsonNode jsonNodeTree = null;
+    try {
+      jsonNodeTree = new ObjectMapper().readTree(jsonString);
+    } catch (Exception e) {
+      log.error("Error in reading the ymlString as json node. Error - {}", e.getMessage(), e);
+      throw new UnexpectedException(e.getMessage());
+    }
+    return jsonNodeTree;
   }
 }

@@ -130,7 +130,16 @@ public class RecastReflectionUtils {
     // see if there is a className value
     Class<?> c = null;
     if (recasterMap.containsIdentifier()) {
-      final String documentIdentifier = (String) recasterMap.getIdentifier();
+      String identifier = (String) recasterMap.getIdentifier();
+
+      // This is hack introduced due to regression reported in CDS-71866. This will be introduced in 795xx
+      // IMPORTANT: To be removed in later releases when no pipeline executions are on waiting before 1686260520000
+      // To track ticket: https://harness.atlassian.net/browse/CDS-71873
+      if ("io.harness.cdng.service.steps.ServiceStepV3Parameters".equals(identifier)) {
+        identifier = "io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters";
+      }
+
+      final String documentIdentifier = identifier;
 
       // lets check alias registry first
       AliasRegistry aliasRegistry = AliasRegistry.getInstance();

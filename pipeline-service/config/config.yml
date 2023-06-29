@@ -313,8 +313,8 @@ orchestrationStepConfig:
     defaultInternalImageConnector: 'account.harnessImage'
     pvcDefaultStorageSize: 25600
     delegateServiceEndpointVariableValue: "delegate-service:8080"
-    addonImage: harness/ci-addon:1.14.19
-    liteEngineImage: harness/ci-lite-engine:1.14.22
+    addonImage: harness/ci-addon:1.16.8
+    liteEngineImage: harness/ci-lite-engine:1.16.8
     isLocal: false
     logStreamingContainerStepBaseUrl: ${LOG_STREAMING_CONTAINER_STEP_BASE_URL:-http://localhost:8079}
     pluginConfig:
@@ -326,6 +326,10 @@ orchestrationStepConfig:
         image: harness/ssca-plugin:latest
         entrypoint:
           - /bin/ssca-plugin
+    #Todo: Move to config Management Service
+    moduleToSupportedSteps:
+      cd: [ "DownloadManifests", "AwsSamBuild", "AwsSamDeploy", "ServerlessAwsLambdaPrepareRollbackV2", "ServerlessAwsLambdaDeployV2" ]
+      ci: [ "Background", "background", "GitClone", "Run", "Plugin", "Action"]
 
 
 shouldDeployWithGitSync: true
@@ -361,7 +365,7 @@ redisLockConfig:
   timeout: 6000
   subscriptionsPerConnection: 5
 
-distributedLockImplementation: MONGO
+distributedLockImplementation: REDIS
 
 enableDashboardTimescale: false
 
@@ -627,3 +631,5 @@ pipelineSetupUsageCreationExecutorServiceConfig:
 
 expandedJsonConfig:
   lockTimeOutInMinutes: 2
+
+staticSchemaFileURL: ${STATIC_SCHEMA_FILE_URL:-"https://raw.githubusercontent.com/harness/harness-schema/main/%s/%s"}

@@ -16,7 +16,7 @@ if [ ! -e start.sh ]; then
   exit 1
 fi
 
-JRE_DIR=jdk-11.0.14+9-jre
+JRE_DIR=jdk-11.0.19+7-jre
 JRE_BINARY=$JRE_DIR/bin/java
 case "$OSTYPE" in
   solaris*)
@@ -67,7 +67,7 @@ esac
 
 DELEGATE_STORAGE_URL=http://localhost:8888
 
-    JVM_URL=$DELEGATE_STORAGE_URL/jre/openjdk-11.0.14_9/OpenJDK11U-jre_${ARCH}_${OS}_hotspot_11.0.14_9.tar.gz
+    JVM_URL=$DELEGATE_STORAGE_URL/jre/openjdk-11.0.19_7/OpenJDK11U-jre_${ARCH}_${OS}_hotspot_11.0.19_7.tar.gz
 
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink

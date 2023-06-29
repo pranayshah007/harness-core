@@ -9,6 +9,7 @@ package io.harness.ngtriggers.service;
 
 import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.SRIDHAR;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -57,6 +58,25 @@ public class NGTriggerEventServiceImplTest {
 
   @Before
   public void setup() throws Exception {}
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testFormEventCriteria() {
+    Criteria criteria = ngTriggerEventService.formEventCriteria(
+        ACCOUNT_ID, "eventCorrelationId", Collections.singletonList(ExecutionStatus.ABORTED));
+    assertThat(criteria).isNotNull();
+    assertThat(criteria.toString())
+        .isEqualTo(new Criteria()
+                       .andOperator(new Criteria()
+                                        .and(TriggerEventHistoryKeys.accountId)
+                                        .is(ACCOUNT_ID)
+                                        .and(TriggerEventHistoryKeys.eventCorrelationId)
+                                        .is("eventCorrelationId")
+                                        .and(TriggerEventHistoryKeys.finalStatus)
+                                        .in(Collections.singletonList(ExecutionStatus.ABORTED)))
+                       .toString());
+  }
 
   @Test
   @Owner(developers = SRIDHAR)

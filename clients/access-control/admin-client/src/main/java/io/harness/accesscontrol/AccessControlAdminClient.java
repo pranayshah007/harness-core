@@ -11,6 +11,7 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentAggregateResponseDTO;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentCreateRequestDTO;
+import io.harness.accesscontrol.roleassignments.api.RoleAssignmentDeleteResponseDTO;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentFilterDTO;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentResponseDTO;
 import io.harness.accesscontrol.roles.api.RoleDTO;
@@ -21,6 +22,7 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 
 import java.util.List;
+import java.util.Set;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
@@ -71,6 +73,13 @@ public interface AccessControlAdminClient {
       @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @Query("managed") Boolean managed,
       @Body RoleAssignmentCreateRequestDTO roleAssignmentCreateRequestDTO);
+
+  @POST(ROLE_ASSIGNMENTS_API + "/delete/batch")
+  Call<ResponseDTO<RoleAssignmentDeleteResponseDTO>> bulkDelete(
+      @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Body Set<String> roleAssignmentIdentifiers);
 
   @PUT(ACL_PREFERENCES_API)
   Call<ResponseDTO<Boolean>> updateAccessControlPreference(

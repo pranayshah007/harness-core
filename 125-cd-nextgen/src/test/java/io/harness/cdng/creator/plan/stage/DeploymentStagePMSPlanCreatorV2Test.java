@@ -161,7 +161,7 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
   @Category(UnitTests.class)
   @Parameters(method = "getDeploymentStageConfig")
   @PrepareForTest(YamlUtils.class)
-  public void testCreatePlanForChildrenNodes_0(DeploymentStageNode node) throws IOException {
+  public void testCreatePlanForChildrenNodes(DeploymentStageNode node) {
     node.setFailureStrategies(
         ParameterField.createValueField(List.of(FailureStrategyConfig.builder()
                                                     .onFailure(OnFailureConfig.builder()
@@ -344,20 +344,20 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
             .environments(EnvironmentsYaml.builder()
                               .uuid("environments-uuid")
                               .values(ParameterField.createValueField(
-                                  asList(EnvironmentYamlV2.builder()
-                                             .uuid("envuuid")
-                                             .environmentRef(ParameterField.<String>builder().value(envId).build())
-                                             .deployToAll(ParameterField.createValueField(false))
-                                             .infrastructureDefinitions(ParameterField.createValueField(
-                                                 asList(InfraStructureDefinitionYaml.builder()
-                                                            .identifier(ParameterField.createValueField("infra"))
-                                                            .build())))
-                                             .build())))
+                                  List.of(EnvironmentYamlV2.builder()
+                                              .uuid("envuuid")
+                                              .environmentRef(ParameterField.<String>builder().value(envId).build())
+                                              .deployToAll(ParameterField.createValueField(false))
+                                              .infrastructureDefinitions(ParameterField.createValueField(
+                                                  asList(InfraStructureDefinitionYaml.builder()
+                                                             .identifier(ParameterField.createValueField("infra"))
+                                                             .build())))
+                                              .build())))
                               .filters(ParameterField.createValueField(
-                                  asList(FilterYaml.builder()
-                                             .type(FilterType.all)
-                                             .entities(Set.of(Entity.environments, Entity.infrastructures))
-                                             .build())))
+                                  List.of(FilterYaml.builder()
+                                              .type(FilterType.all)
+                                              .entities(Set.of(Entity.environments, Entity.infrastructures))
+                                              .build())))
                               .build())
             .deploymentType(KUBERNETES)
             .execution(ExecutionElementConfig.builder()
@@ -476,9 +476,6 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
   //  @Parameters(method = "getDeploymentStageConfigForMultiSvcMultiEvs")
   //  public void testCreatePlanForChildrenNodesWithFilters_0(DeploymentStageNode node) {
   //    when(environmentInfraFilterHelper.areFiltersPresent(any())).thenReturn(true);
-  //
-  //    doReturn(true).when(featureFlagHelperService).isEnabled("accountId",
-  //    FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
   //
   //    node.setFailureStrategies(List.of(FailureStrategyConfig.builder()
   //                                          .onFailure(OnFailureConfig.builder()

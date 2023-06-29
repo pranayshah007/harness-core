@@ -33,4 +33,5 @@ public enum WebhookEvent {
   public static final Set<WebhookEvent> gitlabEvents = EnumSet.of(PUSH, MERGE_REQUEST, MR_COMMENT);
   public static final Set<WebhookEvent> bitbucketEvents = EnumSet.of(PULL_REQUEST, PUSH, PR_COMMENT);
   public static final Set<WebhookEvent> awsCodeCommitEvents = EnumSet.of(PUSH);
+  public static final Set<WebhookEvent> harnessScmEvents = EnumSet.of(PUSH, PR_COMMENT, ISSUE_COMMENT);
 }

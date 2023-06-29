@@ -17,6 +17,7 @@ import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_REQ
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.pms.utils.NGPipelineSettingsConstant.DEFAULT_IMAGE_PULL_POLICY_ADD_ON_CONTANER;
 import static io.harness.steps.container.constants.ContainerStepExecutionConstants.CLEANUP_DETAILS;
 import static io.harness.steps.container.execution.ContainerDetailsSweepingOutput.INIT_POD;
 import static io.harness.steps.plugin.infrastructure.ContainerStepInfra.Type.KUBERNETES_DIRECT;
@@ -231,12 +232,15 @@ public class ContainerStepInitHelper {
         fetchCiExecutionImagesWithRetries(accountId, ContainerInfraMapper.toStageInfraType(infrastructure))
             .orElse(null);
 
-    CIK8ContainerParams setupAddOnContainerParams = getSetupAddOnContainerParams(
-        infrastructure, volumeToMountPath, os, ngAccess, harnessInternalImageConnector, overridenExecutionConfig);
+    String imagePullPolicy =
+        AmbianceUtils.getSettingValue(ambiance, DEFAULT_IMAGE_PULL_POLICY_ADD_ON_CONTANER.getName());
 
-    CIK8ContainerParams liteEngineContainerParams =
-        getLiteEngineContainerParams(k8PodDetails, infrastructure, ambiance, logPrefix, volumeToMountPath, logEnvVars,
-            harnessInternalImageConnector, stageCpuRequest, stageMemoryRequest, overridenExecutionConfig);
+    CIK8ContainerParams setupAddOnContainerParams = getSetupAddOnContainerParams(infrastructure, volumeToMountPath, os,
+        ngAccess, harnessInternalImageConnector, overridenExecutionConfig, imagePullPolicy);
+
+    CIK8ContainerParams liteEngineContainerParams = getLiteEngineContainerParams(k8PodDetails, infrastructure, ambiance,
+        logPrefix, volumeToMountPath, logEnvVars, harnessInternalImageConnector, stageCpuRequest, stageMemoryRequest,
+        overridenExecutionConfig, imagePullPolicy);
     List<ContainerDefinitionInfo> stepCtrDefinitions =
         getContainerDefinitionInfos(containerStepInfo, infrastructure, ambiance, logPrefix, volumeToMountPath, os,
             ngAccess, commonEnvVars, harnessInternalImageConnector, secretVariableDetails, containerParams);
@@ -317,18 +321,19 @@ public class ContainerStepInitHelper {
   private CIK8ContainerParams getLiteEngineContainerParams(ContainerDetailsSweepingOutput k8PodDetails,
       ContainerK8sInfra infrastructure, Ambiance ambiance, String logPrefix, Map<String, String> volumeToMountPath,
       Map<String, String> logEnvVars, ConnectorDetails harnessInternalImageConnector, Integer stageCpuRequest,
-      Integer stageMemoryRequest, CIExecutionImages ciExecutionImages) {
+      Integer stageMemoryRequest, CIExecutionImages ciExecutionImages, String imagePullPolicy) {
     return containerParamsProvider.getLiteEngineContainerParams(harnessInternalImageConnector, k8PodDetails,
         stageCpuRequest, stageMemoryRequest, logEnvVars, volumeToMountPath, k8sPodInitUtils.getWorkDir(),
-        k8sPodInitUtils.getCtrSecurityContext(infrastructure), logPrefix, ambiance, ciExecutionImages);
+        k8sPodInitUtils.getCtrSecurityContext(infrastructure), logPrefix, ambiance, ciExecutionImages, imagePullPolicy);
   }
 
   private CIK8ContainerParams getSetupAddOnContainerParams(ContainerK8sInfra infrastructure,
       Map<String, String> volumeToMountPath, OSType os, NGAccess ngAccess,
-      ConnectorDetails harnessInternalImageConnector, CIExecutionImages overridenExecutionImages) {
+      ConnectorDetails harnessInternalImageConnector, CIExecutionImages overridenExecutionImages,
+      String imagePullPolicy) {
     return containerParamsProvider.getSetupAddonContainerParams(harnessInternalImageConnector, volumeToMountPath,
         k8sPodInitUtils.getWorkDir(), k8sPodInitUtils.getCtrSecurityContext(infrastructure), os,
-        overridenExecutionImages);
+        overridenExecutionImages, imagePullPolicy);
   }
 
   private CIK8ContainerParams createCIK8ContainerParams(NGAccess ngAccess,

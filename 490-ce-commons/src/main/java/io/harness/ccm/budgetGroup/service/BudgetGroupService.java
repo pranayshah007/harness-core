@@ -12,6 +12,8 @@ import io.harness.ccm.budget.BudgetSummary;
 import io.harness.ccm.budget.ValueDataPoint;
 import io.harness.ccm.budgetGroup.BudgetGroup;
 import io.harness.ccm.budgetGroup.BudgetGroupChildEntityDTO;
+import io.harness.ccm.budgetGroup.BudgetGroupSortType;
+import io.harness.ccm.commons.entities.CCMSortOrder;
 import io.harness.ccm.commons.entities.budget.BudgetData;
 
 import java.util.List;
@@ -20,13 +22,15 @@ public interface BudgetGroupService {
   String save(BudgetGroup budgetGroup);
   void update(String uuid, String accountId, BudgetGroup budgetGroup);
   BudgetGroup get(String uuid, String accountId);
-  List<BudgetGroup> list(String accountId);
+  List<BudgetGroup> list(String accountId, BudgetGroupSortType budgetGroupSortType, CCMSortOrder ccmSortOrder);
   boolean delete(String uuid, String accountId);
   BudgetGroup updateProportionsOnDeletion(BudgetGroupChildEntityDTO deletedChildEntity, BudgetGroup parentBudgetGroup);
   List<ValueDataPoint> getAggregatedAmount(
       String accountId, boolean areChildEntitiesBudgets, List<String> childEntityIds);
-  List<BudgetSummary> listAllEntities(String accountId);
-  List<BudgetSummary> listBudgetsAndBudgetGroupsSummary(String accountId, String id);
+  List<BudgetSummary> listAllEntities(
+      String accountId, BudgetGroupSortType budgetGroupSortType, CCMSortOrder ccmSortOrder);
+  List<BudgetSummary> listBudgetsAndBudgetGroupsSummary(
+      String accountId, String id, BudgetGroupSortType budgetGroupSortType, CCMSortOrder ccmSortOrder);
   BudgetData getBudgetGroupTimeSeriesStats(BudgetGroup budgetGroup, BudgetBreakdown breakdown);
   void cascadeBudgetGroupAmount(BudgetGroup budgetGroup);
   void upwardCascadeBudgetGroupAmount(BudgetGroup budgetGroup, Boolean isMonthlyBreadownBudget, Double budgetAmountDiff,

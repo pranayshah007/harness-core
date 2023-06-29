@@ -9,14 +9,23 @@ package io.harness.repositories.serviceoverride.spring;
 
 import io.harness.annotation.HarnessRepo;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.repositories.serviceoverride.custom.ServiceOverrideRepositoryCustom;
 
 import java.util.Optional;
+import javax.validation.constraints.NotNull;
+import org.hibernate.validator.constraints.NotEmpty;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 @HarnessRepo
 public interface ServiceOverrideRepository
     extends PagingAndSortingRepository<NGServiceOverridesEntity, String>, ServiceOverrideRepositoryCustom {
-  Optional<NGServiceOverridesEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvironmentRefAndServiceRef(
-      String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, String serviceRef);
+  @Query(
+      value =
+          "{ 'accountId': ?0, 'orgIdentifier': ?1, 'projectIdentifier': ?2, 'environmentRef': ?3, 'serviceRef': ?4, 'type': ?5, 'yaml': { '$exists': true, '$ne': null } }")
+  Optional<NGServiceOverridesEntity>
+  findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvironmentRefAndServiceRefAndTypeAndYamlExistsAndYamlNotNull(
+      @NotEmpty String accountId, String orgIdentifier, String projectIdentifier, @NotNull String environmentRef,
+      String serviceRef, ServiceOverridesType type);
 }
