@@ -39,7 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
-//@NextGenManagerAuth
+@NextGenManagerAuth
 @Slf4j
 public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
   private IdpCommonService idpCommonService;
@@ -63,7 +63,7 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
   }
 
   @Override
-  //  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
+  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
   public Response createBackstageEnvVariables(
       @Valid BackstageEnvVariableBatchRequest body, @AccountIdentifier String harnessAccount) {
     List<BackstageEnvVariable> responseSecrets;
