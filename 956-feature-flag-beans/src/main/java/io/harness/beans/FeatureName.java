@@ -212,6 +212,7 @@ public enum FeatureName {
   CENG_ENABLED("Enable the CCM module on NG", HarnessTeam.CE),
   CET_ENABLED("Enable Continuous Error Tracking module in UI", HarnessTeam.CET),
   CET_EVENTS_CHART("Enable events chart in UI of Continuous Error Tracking module", HarnessTeam.CET),
+  CET_CD_INTEGRATION("Enable Continuous Error Tracking events list in CD pipeline execution tab", HarnessTeam.CET),
   CE_GCP_CUSTOM_PRICING("Use custom pricing data for k8s gcp from billing export", HarnessTeam.CE),
   CE_HARNESS_ENTITY_MAPPING("Internal FF to decide if harness entities mapping is needed", HarnessTeam.CE),
   CE_HARNESS_INSTANCE_QUERY("Internal FF to decide which table to use for querying mapping data", HarnessTeam.CE),
