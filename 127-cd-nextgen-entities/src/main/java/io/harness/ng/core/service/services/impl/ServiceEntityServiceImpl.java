@@ -787,9 +787,12 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       }
     }
 
+    // either reference in runtime input in service and provided as expression in pipeline
+    // or reference in expression in service
+    // we can't filter primary artifact source in this case, hence removing the sources block
     if (EngineExpressionEvaluator.hasExpressions(primaryArtifactRefValue)) {
-      throw new InvalidRequestException(
-          String.format("Primary artifact ref cannot be an expression inside the service %s", serviceIdentifier));
+      primaryArtifactObjectNode.remove(YamlTypes.ARTIFACT_SOURCES);
+      return;
     }
 
     ObjectMapper objectMapper = new ObjectMapper();
