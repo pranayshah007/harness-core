@@ -180,8 +180,37 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
       return adviserObtainments;
     }
 
-    addNextStepAdviser(currentField, adviserObtainments);
+    /*
+     * Adding OnSuccess adviser if stepGroup is inside rollback section else adding NextStep adviser for when condition
+     * to work.
+     */
+    if (currentField != null && currentField.getNode() != null) {
+      // Check if step is inside RollbackStep
+      if (YamlUtils.findParentNode(currentField.getNode(), ROLLBACK_STEPS) != null) {
+        addOnSuccessAdviser(currentField, adviserObtainments);
+      } else {
+        // Adding NextStep Adviser at last due to giving priority to Failure strategy more. DO NOT CHANGE.
+        addNextStepAdviser(currentField, adviserObtainments);
+      }
+    }
+
     return adviserObtainments;
+  }
+
+  private void addOnSuccessAdviser(YamlField currentField, List<AdviserObtainment> adviserObtainments) {
+    if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)) {
+      return;
+    }
+    YamlField siblingField = currentField.getNode().nextSiblingFromParentArray(
+        currentField.getName(), Arrays.asList(YAMLFieldNameConstants.STEP, PARALLEL, STEP_GROUP));
+    if (siblingField != null && siblingField.getNode().getUuid() != null) {
+      adviserObtainments.add(
+          AdviserObtainment.newBuilder()
+              .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
+              .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                  OnSuccessAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
+              .build());
+    }
   }
 
   private void addNextStepAdviser(YamlField currentField, List<AdviserObtainment> adviserObtainments) {
