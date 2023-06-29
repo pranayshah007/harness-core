@@ -73,6 +73,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.execution.invokers.StrategyHelper;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.AsyncExecutable;
@@ -137,6 +138,8 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
 
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
 
+  @Inject private StrategyHelper strategyHelper;
+
   private static final String OVERRIDE_PROJECT_SETTING_IDENTIFIER = "service_override_v2";
 
   @Override
@@ -147,11 +150,13 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
   @Override
   public AsyncExecutableResponse executeAsync(Ambiance ambiance, EmptyStepParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
-    Optional<ManifestsOutcome> manifestsOutcome = resolveManifestsOutcome(ambiance);
+    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
+    Optional<ManifestsOutcome> manifestsOutcome = resolveManifestsOutcome(ambiance, logCallback);
 
-    manifestsOutcome.ifPresent(manifests -> handleManifests(ambiance, manifests));
+    List<String> callbackIds = new ArrayList<>();
+    manifestsOutcome.ifPresent(manifests -> handleManifests(ambiance, manifests, callbackIds, logCallback));
 
-    return AsyncExecutableResponse.newBuilder().build();
+    return AsyncExecutableResponse.newBuilder().addAllCallbackIds(callbackIds).build();
   }
 
   @Override
@@ -180,7 +185,12 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
 
     ManifestsOutcome manifestsOutcome = unresolvedManifestsOutput.getManifestsOutcome();
     Map<String, String> taskIdMapping = unresolvedManifestsOutput.getTaskIdMapping();
-    manifestTaskService.handleTaskResponses(responseDataMap, manifestsOutcome, taskIdMapping);
+
+    try {
+      manifestTaskService.handleTaskResponses(responseDataMap, manifestsOutcome, taskIdMapping);
+    } catch (Exception e) {
+      return strategyHelper.handleException(e);
+    }
 
     sweepingOutputService.consume(
         ambiance, OutcomeExpressionConstants.MANIFESTS, manifestsOutcome, StepCategory.STAGE.name());
@@ -194,10 +204,12 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
     // nothing to do
   }
 
+  @Deprecated // Can be removed with next releases
   @Override
   public StepResponse executeSync(Ambiance ambiance, EmptyStepParameters stepParameters, StepInputPackage inputPackage,
       PassThroughData passThroughData) {
-    Optional<ManifestsOutcome> manifestsOutcome = resolveManifestsOutcome(ambiance);
+    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
+    Optional<ManifestsOutcome> manifestsOutcome = resolveManifestsOutcome(ambiance, logCallback);
 
     manifestsOutcome.ifPresent(outcome -> saveManifestsOutcome(ambiance, outcome, new HashMap<>()));
 
@@ -205,7 +217,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
         .orElseGet(() -> StepResponse.builder().status(Status.SKIPPED).build());
   }
 
-  private void handleManifests(Ambiance ambiance, ManifestsOutcome manifests) {
+  private void handleManifests(Ambiance ambiance, ManifestsOutcome manifests, List<String> callbackIds, NGLogCallback logCallback) {
     Map<String, String> taskIdMapping = new HashMap<>();
 
     manifests.forEach((identifier, manifest) -> {
@@ -213,7 +225,10 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
         Optional<TaskData> taskData = manifestTaskService.createTaskData(ambiance, manifest);
         taskData.ifPresent(task -> {
           String taskId = queueTask(ambiance, task);
+          logCallback.saveExecutionLog(
+                  LogHelper.color(String.format("Queued delegate task id: %s to fetch metadata for manifest: %s", taskId, manifest.getIdentifier()), LogColor.Cyan, LogWeight.Bold));
           taskIdMapping.put(taskId, identifier);
+          callbackIds.add(taskId);
         });
       }
     });
@@ -245,7 +260,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
     }
   }
 
-  private Optional<ManifestsOutcome> resolveManifestsOutcome(Ambiance ambiance) {
+  private Optional<ManifestsOutcome> resolveManifestsOutcome(Ambiance ambiance, NGLogCallback logCallback) {
     final NgManifestsMetadataSweepingOutput ngManifestsMetadataSweepingOutput =
         fetchManifestsMetadataFromSweepingOutput(ambiance);
 
@@ -256,7 +271,6 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
     Map<String, List<ManifestConfigWrapper>> finalSvcManifestsMapV1 = new HashMap<>();
     Map<ServiceOverridesType, List<ManifestConfigWrapper>> manifestsFromOverride = new HashMap<>();
     List<ManifestConfigWrapper> svcManifests = new ArrayList<>();
-    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
 
     if (isOverridesV2Enabled) {
       svcManifests = ngManifestsMetadataSweepingOutput.getSvcManifests();

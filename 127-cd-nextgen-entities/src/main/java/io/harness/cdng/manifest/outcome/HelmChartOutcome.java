@@ -24,6 +24,7 @@ public class HelmChartOutcome {
   String version;
   String apiVersion;
   String appVersion;
+  String kubeVersion;
   Map<String, String> metadata;
 
   public static HelmChartOutcome from(HelmChartManifest helmChartManifest) {
@@ -32,6 +33,8 @@ public class HelmChartOutcome {
         .description(helmChartManifest.getDescription())
         .apiVersion(helmChartManifest.getApiVersion())
         .appVersion(helmChartManifest.getAppVersion())
+            .version(helmChartManifest.getVersion())
+            .kubeVersion(helmChartManifest.getKubeVersion())
         .metadata(helmChartManifest.getMetadata())
         .build();
   }

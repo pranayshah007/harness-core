@@ -2,7 +2,9 @@ package io.harness.cdng.manifest.steps.task;
 
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
+import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.tasks.ResponseData;
 
@@ -44,6 +46,11 @@ public class ManifestTaskServiceImpl implements ManifestTaskService {
     if (!manifests.containsKey(manifestIdentifier)) {
       log.warn("Unable to find manifest by id {} for task id {}", manifestIdentifier, taskId);
       return;
+    }
+
+    if (response instanceof ErrorNotifyResponseData) {
+      ErrorNotifyResponseData errorResponseData = (ErrorNotifyResponseData) response;
+      throw errorResponseData.getException() != null ? errorResponseData.getException() : new InvalidRequestException(errorResponseData.getErrorMessage());
     }
 
     ManifestOutcome manifestOutcome = manifests.get(manifestIdentifier);

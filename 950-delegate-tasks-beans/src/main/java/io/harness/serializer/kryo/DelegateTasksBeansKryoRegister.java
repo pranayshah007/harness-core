@@ -771,6 +771,9 @@ import io.harness.delegate.task.helm.HelmReleaseHistoryCommandRequestNG;
 import io.harness.delegate.task.helm.HelmRollbackCommandRequestNG;
 import io.harness.delegate.task.helm.HelmValuesFetchRequest;
 import io.harness.delegate.task.helm.HelmValuesFetchResponse;
+import io.harness.delegate.task.helm.request.HelmFetchChartManifestTaskParameters;
+import io.harness.delegate.task.helm.response.HelmChartManifest;
+import io.harness.delegate.task.helm.response.HelmFetchChartManifestResponse;
 import io.harness.delegate.task.http.HttpStepResponse;
 import io.harness.delegate.task.http.HttpTaskParameters;
 import io.harness.delegate.task.http.HttpTaskParametersNg;
@@ -2525,5 +2528,9 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(RollbackConfiguration.class, 20000614);
     kryo.register(RollbackTrigger.class, 20000615);
     kryo.register(Tag.class, 20000616);
+
+    kryo.register(HelmFetchChartManifestTaskParameters.class, 20000617);
+    kryo.register(HelmFetchChartManifestResponse.class, 20000618);
+    kryo.register(HelmChartManifest.class, 20000619);
   }
 }

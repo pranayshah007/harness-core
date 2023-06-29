@@ -265,7 +265,7 @@ public class ServiceAllInOnePlanCreatorUtils {
             .stepParameters(new EmptyStepParameters())
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()
-                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())
                     .build())
             .skipExpressionChain(true)
             .skipGraphType(SkipType.SKIP_TREE)

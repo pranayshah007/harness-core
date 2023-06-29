@@ -20,12 +20,18 @@ import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.protobuf.ByteString;
 import io.harness.CategoryTest;
+import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
@@ -33,6 +39,8 @@ import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.steps.output.NgManifestsMetadataSweepingOutput;
+import io.harness.cdng.manifest.steps.output.UnresolvedManifestsOutput;
+import io.harness.cdng.manifest.steps.task.ManifestTaskService;
 import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.HttpStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
@@ -52,6 +60,8 @@ import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
+import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.task.TaskParameters;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.sdk.EntityValidityDetails;
@@ -70,16 +80,21 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.execution.invokers.StrategyHelper;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
+import io.harness.serializer.KryoSerializer;
+import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.EntityReferenceExtractorUtils;
+import io.harness.tasks.ResponseData;
 import io.harness.utils.NGFeatureFlagHelperService;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -115,6 +130,12 @@ public class ManifestsStepV2Test extends CategoryTest {
   @Mock NGFeatureFlagHelperService featureFlagHelperService;
   @Mock private NGSettingsClient ngSettingsClient;
   @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
+  @Mock private ManifestTaskService manifestTaskService;
+  @Mock private StrategyHelper strategyHelper;
+
+  @Mock private KryoSerializer referenceFalseKryoSerializer;
+
+  @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @InjectMocks private ManifestsStepV2 step = new ManifestsStepV2();
 
   private AutoCloseable mocks;
@@ -156,6 +177,53 @@ public class ManifestsStepV2Test extends CategoryTest {
     AsyncExecutableResponse asyncResponse =
         testExecute(() -> step.executeAsync(buildAmbiance(), new EmptyStepParameters(), null, null));
     assertThat(asyncResponse.getCallbackIdsList().asByteStringList()).isEmpty();
+  }
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void executeAsyncWithTasks() {
+    final TaskParameters taskParameters = mock(TaskParameters.class);
+    ManifestConfigWrapper file1 = sampleManifestFile("file1", ManifestConfigType.K8_MANIFEST);
+    final Map<String, List<ManifestConfigWrapper>> finalManifests = new HashMap<>();
+    finalManifests.put(SERVICE, Collections.singletonList(file1));
+
+    doReturn(OptionalSweepingOutput.builder()
+            .found(true)
+            .output(NgManifestsMetadataSweepingOutput.builder()
+                    .finalSvcManifestsMap(finalManifests)
+                    .serviceIdentifier(SVC_ID)
+                    .environmentIdentifier(ENV_ID)
+                    .serviceDefinitionType(ServiceDefinitionType.KUBERNETES)
+                    .build())
+            .build())
+            .when(sweepingOutputService)
+            .resolveOptional(any(Ambiance.class),
+                    eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
+
+    List<EntityDetail> listEntityDetail = new ArrayList<>();
+
+    listEntityDetail.add(EntityDetail.builder().name("ManifestSecret1").build());
+
+    Set<EntityDetailProtoDTO> setEntityDetail = new HashSet<>();
+
+    doReturn(setEntityDetail).when(entityReferenceExtractorUtils).extractReferredEntities(any(), any());
+
+    doReturn(listEntityDetail)
+            .when(entityDetailProtoToRestMapper)
+            .createEntityDetailsDTO(new ArrayList<>(emptyIfNull(setEntityDetail)));
+    doReturn(true).when(manifestTaskService).isSupported(any(Ambiance.class), any(ManifestOutcome.class));
+    doReturn(Optional.of(TaskData.builder().parameters(new Object[] {taskParameters}).taskType("TEST_TASK").build())).when(manifestTaskService).createTaskData(any(Ambiance.class), any(ManifestOutcome.class));
+    doReturn("taskId").when(delegateGrpcClientWrapper).submitAsyncTaskV2(nullable(DelegateTaskRequest.class), any(Duration.class));
+
+    AsyncExecutableResponse asyncResponse = step.executeAsync(buildAmbiance(), new EmptyStepParameters(), null, null);
+    assertThat(asyncResponse.getCallbackIdsList().asByteStringList()).containsExactlyInAnyOrder(ByteString.copyFromUtf8("taskId"));
+
+    ArgumentCaptor<UnresolvedManifestsOutput> captor = ArgumentCaptor.forClass(UnresolvedManifestsOutput.class);
+    verify(sweepingOutputService, times(1))
+            .consume(any(Ambiance.class), eq(OutcomeExpressionConstants.UNRESOLVED_MANIFESTS), captor.capture(), eq(""));
+    UnresolvedManifestsOutput unresolvedManifestsOutput = captor.getValue();
+    assertThat(unresolvedManifestsOutput.getTaskIdMapping()).isEqualTo(ImmutableMap.of("taskId", "file1"));
+    assertThat(unresolvedManifestsOutput.getManifestsOutcome().keySet()).containsExactlyInAnyOrder("file1");
   }
 
   private <T> T testExecute(Supplier<T> executeMethod) {
@@ -831,6 +899,53 @@ public class ManifestsStepV2Test extends CategoryTest {
 
     StepResponse stepResponse = step.handleAsyncResponse(buildAmbiance(), new EmptyStepParameters(), new HashMap<>());
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SKIPPED);
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void handleAsyncResponseWithResponse() {
+    final ManifestsOutcome manifestsOutcome = new ManifestsOutcome();
+    final Map<String, String> taskIdMapping = ImmutableMap.of("task1", "manifest1");
+    final UnresolvedManifestsOutput output = UnresolvedManifestsOutput.builder()
+            .taskIdMapping(taskIdMapping)
+            .manifestsOutcome(manifestsOutcome)
+            .build();
+    final OptionalSweepingOutput optionalSweepingOutput = OptionalSweepingOutput.builder().found(true).output(output).build();
+    final Map<String, ResponseData> responses = ImmutableMap.of("task1", mock(ResponseData.class));
+
+    doReturn(optionalSweepingOutput).when(sweepingOutputService)
+            .resolveOptional(any(Ambiance.class), eq(RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.UNRESOLVED_MANIFESTS)));
+
+    StepResponse stepResponse = step.handleAsyncResponse(buildAmbiance(), new EmptyStepParameters(), responses);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    verify(manifestTaskService).handleTaskResponses(responses, manifestsOutcome, taskIdMapping);
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void handleAsyncResponseWithErrorResponse() {
+    final ManifestsOutcome manifestsOutcome = new ManifestsOutcome();
+    final Map<String, String> taskIdMapping = ImmutableMap.of("task1", "manifest1");
+    final UnresolvedManifestsOutput output = UnresolvedManifestsOutput.builder()
+            .taskIdMapping(taskIdMapping)
+            .manifestsOutcome(manifestsOutcome)
+            .build();
+    final OptionalSweepingOutput optionalSweepingOutput = OptionalSweepingOutput.builder().found(true).output(output).build();
+    final Map<String, ResponseData> responses = ImmutableMap.of("task1", mock(ResponseData.class));
+    final StepResponse failedResponse = StepResponse.builder().status(Status.FAILED).build();
+    final Exception exception = new InvalidRequestException("Something went wrong");
+
+    doReturn(optionalSweepingOutput).when(sweepingOutputService)
+            .resolveOptional(any(Ambiance.class), eq(RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.UNRESOLVED_MANIFESTS)));
+    doThrow(exception)
+            .when(manifestTaskService).handleTaskResponses(responses, manifestsOutcome, taskIdMapping);
+    doReturn(failedResponse).when(strategyHelper).handleException(exception);
+
+    StepResponse stepResponse = step.handleAsyncResponse(buildAmbiance(), new EmptyStepParameters(), responses);
+    assertThat(stepResponse).isSameAs(failedResponse);
+    verify(manifestTaskService).handleTaskResponses(responses, manifestsOutcome, taskIdMapping);
   }
 
   private ManifestConfigWrapper sampleManifestFile(String identifier, ManifestConfigType type) {

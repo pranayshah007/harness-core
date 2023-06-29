@@ -32,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class HelmChartManifestTaskHandler implements ManifestTaskHandler {
-  private static final long DEFAULT_FETCH_TIMEOUT_MILLIS = Duration.ofMinutes(2).toMillis();
+  public static final long DEFAULT_FETCH_TIMEOUT_MILLIS = Duration.ofMinutes(5).toMillis();
 
   @Inject private K8sManifestDelegateMapper manifestDelegateMapper;
 
@@ -65,13 +65,18 @@ public class HelmChartManifestTaskHandler implements ManifestTaskHandler {
 
   @Override
   public Optional<TaskData> createTaskData(Ambiance ambiance, ManifestOutcome manifest) {
-    if ((manifest instanceof HelmChartManifestOutcome)) {
+    if (!(manifest instanceof HelmChartManifestOutcome)) {
+      log.warn("Incorrect type used: {}, expected: {}", manifest != null ? manifest.getClass().getSimpleName() : "<null>",
+              HelmChartManifestOutcome.class.getSimpleName());
       return Optional.empty();
     }
 
     ManifestDelegateConfig manifestDelegateConfig =
         manifestDelegateMapper.getManifestDelegateConfig(manifest, ambiance);
     if (!(manifestDelegateConfig instanceof HelmChartManifestDelegateConfig)) {
+      log.warn("Incorrect manifest delegate config type: {}, expected: {}",
+              manifestDelegateConfig != null ? manifestDelegateConfig.getClass().getSimpleName() : "<null>",
+              HelmChartManifestDelegateConfig.class.getSimpleName());
       return Optional.empty();
     }
 
@@ -101,6 +106,11 @@ public class HelmChartManifestTaskHandler implements ManifestTaskHandler {
 
     HelmFetchChartManifestResponse fetchResponse = (HelmFetchChartManifestResponse) response;
     HelmChartManifestOutcome helmChartManifestOutcome = (HelmChartManifestOutcome) manifestOutcome;
+
+    if (fetchResponse.getHelmChartManifest() == null) {
+      log.warn("Received null helm chart manifest from task response");
+      return Optional.empty();
+    }
 
     return Optional.of(
         helmChartManifestOutcome.toBuilder().helm(HelmChartOutcome.from(fetchResponse.getHelmChartManifest())).build());
