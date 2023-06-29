@@ -21,7 +21,9 @@ import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.budgetGroup.BudgetGroup;
 import io.harness.ccm.budgetGroup.dao.BudgetGroupDao;
 import io.harness.ccm.budgetGroup.service.BudgetGroupService;
+import io.harness.ccm.commons.entities.CCMSortOrder;
 import io.harness.ccm.commons.entities.billing.Budget;
+import io.harness.ccm.commons.entities.billing.BudgetSortType;
 import io.harness.ccm.commons.entities.budget.BudgetData;
 import io.harness.ccm.graphql.core.budget.BudgetCostService;
 import io.harness.ccm.graphql.core.budget.BudgetService;
@@ -39,7 +41,6 @@ import io.leangen.graphql.annotations.GraphQLQuery;
 import io.leangen.graphql.execution.ResolutionEnvironment;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -66,12 +67,7 @@ public class BudgetsQuery {
     try {
       Budget budget = null;
       if (perspectiveId != null) {
-        List<Budget> budgets = budgetDao.list(accountId);
-        List<Budget> perspectiveBudgets =
-            budgets.stream()
-                .filter(
-                    perspectiveBudget -> BudgetUtils.isBudgetBasedOnGivenPerspective(perspectiveBudget, perspectiveId))
-                .collect(Collectors.toList());
+        List<Budget> perspectiveBudgets = budgetService.list(accountId, perspectiveId);
         if (!perspectiveBudgets.isEmpty()) {
           // UI allows only one budget per perspective
           budget = perspectiveBudgets.get(0);
@@ -105,9 +101,11 @@ public class BudgetsQuery {
                                             defaultValue = "false") boolean fetchOnlyPerspectiveBudgets,
       @GraphQLArgument(name = "limit", defaultValue = "1000") Integer limit,
       @GraphQLArgument(name = "offset", defaultValue = "0") Integer offset,
-      @GraphQLEnvironment final ResolutionEnvironment env) {
+      @GraphQLEnvironment final ResolutionEnvironment env,
+      @GraphQLArgument(name = "sortOrder") CCMSortOrder ccmSortOrder,
+      @GraphQLArgument(name = "budgetSortType") BudgetSortType budgetSortType) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
-    List<Budget> budgets = budgetDao.list(accountId, limit, offset);
+    List<Budget> budgets = budgetDao.list(accountId, limit, offset, budgetSortType, ccmSortOrder);
     if (fetchOnlyPerspectiveBudgets) {
       budgets = budgets.stream().filter(BudgetUtils::isPerspectiveBudget).collect(Collectors.toList());
     }
@@ -137,7 +135,6 @@ public class BudgetsQuery {
       }
       return budgetSummaryList;
     }
-    allowedBudgets.sort(Comparator.comparing(Budget::getLastUpdatedAt).reversed());
     allowedBudgets.forEach(budget
         -> budgetSummaryList.add(buildBudgetSummary(
             budget, false, perspectiveIdAndFolderIds.get(BudgetUtils.getPerspectiveIdForBudget(budget)))));
@@ -173,7 +170,7 @@ public class BudgetsQuery {
     try {
       List<Budget> perspectiveBudgets = new ArrayList<>();
       if (perspectiveId != null) {
-        List<Budget> budgets = budgetDao.list(accountId);
+        List<Budget> budgets = budgetDao.list(accountId, Integer.MAX_VALUE - 1, 0, null, null);
         perspectiveBudgets =
             budgets.stream()
                 .filter(
