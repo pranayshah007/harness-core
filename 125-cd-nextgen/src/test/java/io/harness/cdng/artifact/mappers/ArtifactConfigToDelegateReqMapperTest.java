@@ -848,7 +848,6 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
             .extension(ParameterField.createValueField("jar"))
             .packageType(ParameterField.createValueField("maven"))
             .org(ParameterField.createValueField("org"))
-            .repository(ParameterField.createValueField("repository"))
             .build();
     GithubConnectorDTO connectorDTO = GithubConnectorDTO.builder().build();
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();

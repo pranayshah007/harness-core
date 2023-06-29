@@ -8000,9 +8000,6 @@
                 "container"
               ]
             },
-            "repository": {
-              "type": "string"
-            },
             "user": {
               "type": "string"
             },
