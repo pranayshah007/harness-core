@@ -51,6 +51,8 @@ public interface DelegateNgTokenService extends OwnedByAccount {
    */
   String getDelegateTokenValue(String accountId, String name);
 
+  String getBase64EncodedDelegateTokenValue(String accountId, String name);
+
   DelegateTokenDetails upsertDefaultToken(String accountIdentifier, DelegateEntityOwner owner, boolean skipIfExists);
 
   void deleteAllTokensOwnedByOrgAndProject(String accountId, DelegateEntityOwner owner);

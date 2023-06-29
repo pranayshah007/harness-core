@@ -1699,7 +1699,7 @@ public class DelegateServiceImpl implements DelegateService {
         if (Objects.isNull(tokenDetails) || tokenDetails.getStatus().equals(REVOKED)) {
           return null;
         }
-        return delegateNgTokenService.getDelegateTokenValue(inquiry.getAccountId(), inquiry.getDelegateTokenName());
+        return delegateNgTokenService.getBase64EncodedDelegateTokenValue(inquiry.getAccountId(), inquiry.getDelegateTokenName());
       } else {
         return delegateTokenService.getTokenValue(inquiry.getAccountId(), inquiry.getDelegateTokenName());
       }

@@ -23,7 +23,7 @@ public abstract class DelegateSecretManager {
 
   public String getDelegateTokenValue(DelegateToken delegateToken) {
     if (featureFlagService.isEnabled(FeatureName.READ_ENCRYPTED_DELEGATE_TOKEN, delegateToken.getAccountId())) {
-      return decodeBase64ToString(decrypt(delegateToken));
+      return decrypt(delegateToken);
     }
     return delegateToken.isNg() ? decodeBase64ToString(delegateToken.getValue()) : delegateToken.getValue();
   }

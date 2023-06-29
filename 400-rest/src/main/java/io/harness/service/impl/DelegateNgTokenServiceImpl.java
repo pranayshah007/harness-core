@@ -187,6 +187,16 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
   }
 
   @Override
+  public String getBase64EncodedDelegateTokenValue(String accountId, String name) {
+    DelegateToken delegateToken = matchNameTokenQuery(accountId, name).get();
+    if (delegateToken != null) {
+      return delegateSecretManager.decrypt(delegateToken);
+    }
+    log.warn("Not able to find delegate token {} for account {} . Please verify manually.", name, accountId);
+    return null;
+  }
+
+  @Override
   public DelegateTokenDetails upsertDefaultToken(String accountId, DelegateEntityOwner owner, boolean skipIfExists) {
     Query<DelegateToken> query = persistence.createQuery(DelegateToken.class)
                                      .filter(DelegateTokenKeys.accountId, accountId)
