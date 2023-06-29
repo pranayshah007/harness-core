@@ -31,4 +31,6 @@ public interface NGLdapService {
   void syncUserGroupsJob(@NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier);
   LdapResponse testLDAPLogin(@NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier,
       @NotNull String email, @NotNull String password);
+  void syncAUserGroupJob(@NotNull String userGroupIdentifier, @NotNull String accountIdentifier, String orgIdentifier,
+      String projectIdentifier);
 }
