@@ -90,11 +90,9 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
     }
     PlanNode initPlanNode = InitContainerStepPlanCreater.createPlanForField(
         initStepNodeId, stepParameters, advisorParametersInitStep, StepSpecTypeConstants.INIT_CONTAINER_STEP);
-    final boolean isStepInsideRollback =
-        YamlUtils.findParentNode(ctx.getCurrentField().getNode(), ROLLBACK_STEPS) != null;
     PlanNode stepPlanNode = createPlanForStep(stepNodeId, stepParameters,
         PmsStepPlanCreatorUtils.getAdviserObtainmentForFailureStrategy(
-            kryoSerializer, ctx.getCurrentField(), isStepInsideRollback, false));
+            kryoSerializer, ctx.getCurrentField(), isStepInsideRollback(ctx.getCurrentField()), false));
 
     planCreationResponseMap.put(initPlanNode.getUuid(), PlanCreationResponse.builder().planNode(initPlanNode).build());
     planCreationResponseMap.put(stepPlanNode.getUuid(), PlanCreationResponse.builder().planNode(stepPlanNode).build());
@@ -137,8 +135,9 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
                 .build())
         .adviserObtainments(getAdviserObtainmentFromMetaData(
             ctx.getCurrentField(), StrategyUtils.isWrappedUnderStrategy(ctx.getCurrentField())))
-        .whenCondition(isStepInsideRollback ? RunInfoUtils.getRunConditionForRollback(config.getWhen())
-                                            : RunInfoUtils.getRunConditionForStep(config.getWhen()))
+        .whenCondition(isStepInsideRollback(ctx.getCurrentField())
+                ? RunInfoUtils.getRunConditionForRollback(config.getWhen())
+                : RunInfoUtils.getRunConditionForStep(config.getWhen()))
         .timeoutObtainment(
             SdkTimeoutObtainment.builder()
                 .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
@@ -184,7 +183,7 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
      */
     if (currentField != null && currentField.getNode() != null) {
       // Check if step is inside RollbackStep
-      if (YamlUtils.findParentNode(currentField.getNode(), ROLLBACK_STEPS) != null) {
+      if (isStepInsideRollback(currentField)) {
         addOnSuccessAdviser(currentField, adviserObtainments);
       } else {
         // Adding NextStep Adviser at last due to giving priority to Failure strategy more. DO NOT CHANGE.
@@ -225,5 +224,9 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
                   NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
               .build());
     }
+  }
+
+  private boolean isStepInsideRollback(YamlField currentField) {
+    return YamlUtils.findParentNode(currentField.getNode(), ROLLBACK_STEPS) != null;
   }
 }
