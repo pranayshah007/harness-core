@@ -45,6 +45,7 @@ import io.harness.cdng.k8s.K8sEntityHelper;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.ManifestType;
+import io.harness.cdng.manifest.delegate.K8sManifestDelegateMapper;
 import io.harness.cdng.manifest.yaml.AzureRepoStore;
 import io.harness.cdng.manifest.yaml.BitbucketStore;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
@@ -148,6 +149,8 @@ public class CDStepHelperTest extends CategoryTest {
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Mock private ConnectorInfoDTO connectorInfoDTO;
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
+
+  @Spy @InjectMocks private K8sManifestDelegateMapper manifestDelegateMapper;
   @Spy @InjectMocks private K8sEntityHelper k8sEntityHelper;
   @Spy @InjectMocks private CDStepHelper cdStepHelper;
   @Spy @InjectMocks private K8sHelmCommonStepHelper k8sHelmCommonStepHelper;
