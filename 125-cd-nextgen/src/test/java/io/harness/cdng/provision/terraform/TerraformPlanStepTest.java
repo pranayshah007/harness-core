@@ -30,6 +30,7 @@ import io.harness.cdng.manifest.yaml.TerraformCommandFlagType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.provision.terraform.functor.TerraformHumanReadablePlanFunctor;
 import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
+import io.harness.cdng.provision.terraform.outcome.TerraformGitRevisionOutcome;
 import io.harness.cdng.provision.terraform.outcome.TerraformPlanOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
@@ -78,6 +79,7 @@ import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import org.junit.Rule;
 import org.junit.Test;
@@ -455,6 +457,7 @@ public class TerraformPlanStepTest extends CategoryTest {
         TerraformPlanStepParameters.infoBuilder()
             .provisionerIdentifier(ParameterField.createValueField("id"))
             .configuration(TerraformPlanExecutionDataParameters.builder()
+                               .varFiles(new LinkedHashMap<>())
                                .isTerraformCloudCli(ParameterField.createValueField(false))
                                .command(TerraformPlanCommand.APPLY)
                                .build())
@@ -472,11 +475,14 @@ public class TerraformPlanStepTest extends CategoryTest {
         ambiance, stepElementParameters, () -> terraformTaskNGResponse);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
-    assertThat(stepResponse.getStepOutcomes()).hasSize(1);
+    assertThat(stepResponse.getStepOutcomes()).hasSize(2);
     StepResponse.StepOutcome stepOutcome = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(0);
+    StepResponse.StepOutcome stepOutcome2 = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(1);
     assertThat(stepOutcome.getOutcome()).isInstanceOf(TerraformPlanOutcome.class);
     assertThat(((TerraformPlanOutcome) (stepOutcome.getOutcome())).getDetailedExitCode()).isEqualTo(2);
+    assertThat(stepOutcome2.getName()).isEqualTo(TerraformGitRevisionOutcome.OUTCOME_NAME);
 
+    verify(terraformStepHelper).getRevisionsMap(any(LinkedHashMap.class), any());
     verify(terraformStepHelper, times(1)).saveTerraformInheritOutput(any(), any(), any(), eq(null));
     verify(terraformStepHelper, times(1)).updateParentEntityIdAndVersion(any(), any());
     verify(terraformStepHelper)
@@ -572,7 +578,7 @@ public class TerraformPlanStepTest extends CategoryTest {
     verify(terraformStepHelper)
         .saveTerraformPlanExecutionDetails(eq(ambiance), eq(ngResponse), eq("provisioner1"), any());
 
-    assertThat(stepResponse.getStepOutcomes()).hasSize(1);
+    assertThat(stepResponse.getStepOutcomes()).hasSize(2);
     StepResponse.StepOutcome planOutcome = stepResponse.getStepOutcomes().iterator().next();
     assertThat(planOutcome.getName()).isEqualTo(TerraformPlanOutcome.OUTCOME_NAME);
     assertThat(planOutcome.getOutcome()).isInstanceOf(TerraformPlanOutcome.class);
@@ -615,7 +621,7 @@ public class TerraformPlanStepTest extends CategoryTest {
     verify(terraformStepHelper)
         .saveTerraformPlanExecutionDetails(eq(ambiance), eq(ngResponse), eq("provisioner1"), any());
 
-    assertThat(stepResponse.getStepOutcomes()).hasSize(1);
+    assertThat(stepResponse.getStepOutcomes()).hasSize(2);
     StepResponse.StepOutcome planOutcome = stepResponse.getStepOutcomes().iterator().next();
     assertThat(planOutcome.getName()).isEqualTo(TerraformPlanOutcome.OUTCOME_NAME);
     assertThat(planOutcome.getOutcome()).isInstanceOf(TerraformPlanOutcome.class);

@@ -189,6 +189,7 @@ io.harness.cdng.artifact.bean.yaml.PrimaryArtifact
 io.harness.cdng.tas.outcome.TasSetupVariablesOutcome
 io.harness.cdng.provision.terraform.TerraformBackendConfig
 io.harness.cdng.provision.terraform.outcome.TerraformPlanOutcome
+io.harness.cdng.provision.terraform.outcome.TerraformGitRevisionOutcome
 io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig
 io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml
 io.harness.cdng.provision.cloudformation.CloudformationCreateStackStepNode

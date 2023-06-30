@@ -16,6 +16,7 @@ import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
 import io.harness.cdng.provision.terraform.functor.TerraformHumanReadablePlanFunctor;
 import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
+import io.harness.cdng.provision.terraform.outcome.TerraformGitRevisionOutcome;
 import io.harness.cdng.provision.terraform.outcome.TerraformPlanOutcome;
 import io.harness.cdng.provision.terraform.outcome.TerraformPlanOutcome.TerraformPlanOutcomeBuilder;
 import io.harness.common.ParameterFieldHelper;
@@ -61,6 +62,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
@@ -86,9 +88,6 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    TerraformPlanStepParameters planStepParameters = (TerraformPlanStepParameters) stepParameters.getSpec();
-    boolean isTerraformCloudCli = planStepParameters.getConfiguration().getIsTerraformCloudCli().getValue();
-
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
@@ -293,10 +292,18 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
         }
       }
 
-      stepResponseBuilder.stepOutcome(StepResponse.StepOutcome.builder()
-                                          .name(TerraformPlanOutcome.OUTCOME_NAME)
-                                          .outcome(tfPlanOutcomeBuilder.build())
-                                          .build());
+      Map<String, String> outputKeys = helper.getRevisionsMap(
+          planStepParameters.getConfiguration().getVarFiles(), terraformTaskNGResponse.getCommitIdForConfigFilesMap());
+
+      stepResponseBuilder
+          .stepOutcome(StepResponse.StepOutcome.builder()
+                           .name(TerraformPlanOutcome.OUTCOME_NAME)
+                           .outcome(tfPlanOutcomeBuilder.build())
+                           .build())
+          .stepOutcome(StepResponse.StepOutcome.builder()
+                           .name(TerraformGitRevisionOutcome.OUTCOME_NAME)
+                           .outcome(TerraformGitRevisionOutcome.builder().revisions(outputKeys).build())
+                           .build());
     }
     return stepResponseBuilder.build();
   }

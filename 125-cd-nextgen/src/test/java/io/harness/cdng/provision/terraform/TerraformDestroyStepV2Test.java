@@ -10,10 +10,14 @@ package io.harness.cdng.provision.terraform;
 import static io.harness.cdng.provision.terraform.TerraformStepConfigurationType.INHERIT_FROM_APPLY;
 import static io.harness.cdng.provision.terraform.TerraformStepConfigurationType.INHERIT_FROM_PLAN;
 import static io.harness.cdng.provision.terraform.TerraformStepConfigurationType.INLINE;
+import static io.harness.cdng.provision.terraform.TerraformStepHelper.TF_BACKEND_CONFIG_FILE;
+import static io.harness.cdng.provision.terraform.TerraformStepHelper.TF_CONFIG_FILES;
+import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
@@ -31,6 +35,7 @@ import io.harness.cdng.manifest.yaml.GitStoreConfigDTO;
 import io.harness.cdng.manifest.yaml.GithubStoreDTO;
 import io.harness.cdng.manifest.yaml.TerraformCommandFlagType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
+import io.harness.cdng.provision.terraform.outcome.TerraformGitRevisionOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
@@ -74,6 +79,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -575,7 +581,7 @@ public class TerraformDestroyStepV2Test extends CategoryTest {
     List<TerraformVarFileInfo> varFileInfo = new ArrayList<>();
     varFileInfo.add(InlineTerraformVarFileInfo.builder().varFileContent("var-file-inline").build());
 
-    doReturn(varFileInfo).when(terraformStepHelper).prepareTerraformVarFileInfo(any(), any());
+    doReturn(varFileInfo).when(terraformStepHelper).prepareTerraformVarFileInfo(any(), any(), anyBoolean());
     doReturn(false).when(terraformStepHelper).hasGitVarFiles(any());
     doReturn(false).when(terraformStepHelper).hasS3VarFiles(any());
 
@@ -644,7 +650,7 @@ public class TerraformDestroyStepV2Test extends CategoryTest {
 
     doReturn(terraformConfig).when(terraformStepHelper).getLastSuccessfulApplyConfig(any(), any());
 
-    doReturn(varFileInfo).when(terraformStepHelper).prepareTerraformVarFileInfo(any(), any());
+    doReturn(varFileInfo).when(terraformStepHelper).prepareTerraformVarFileInfo(any(), any(), anyBoolean());
     doReturn(false).when(terraformStepHelper).hasGitVarFiles(any());
     doReturn(false).when(terraformStepHelper).hasS3VarFiles(any());
 
@@ -692,7 +698,11 @@ public class TerraformDestroyStepV2Test extends CategoryTest {
     doReturn("test-account/test-org/test-project/Id").when(terraformStepHelper).generateFullIdentifier(any(), any());
     List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
     UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
+    Map<String, String> commitIdForConfigFilesMap = new HashMap<>();
+    commitIdForConfigFilesMap.put(TF_CONFIG_FILES, "commitId_1");
+    commitIdForConfigFilesMap.put(TF_BACKEND_CONFIG_FILE, "commitId_2");
     TerraformTaskNGResponse terraformTaskNGResponse = TerraformTaskNGResponse.builder()
+                                                          .commitIdForConfigFilesMap(commitIdForConfigFilesMap)
                                                           .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                                                           .unitProgressData(unitProgressData)
                                                           .build();
@@ -702,6 +712,9 @@ public class TerraformDestroyStepV2Test extends CategoryTest {
 
     StepResponse stepResponse = terraformDestroyStepV2.finalizeExecutionWithSecurityContext(
         ambiance, stepElementParameters, terraformPassThroughData, () -> terraformTaskNGResponse);
+    StepResponse.StepOutcome stepOutcome2 = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(0);
+
+    assertThat(stepOutcome2.getName()).isEqualTo(TerraformGitRevisionOutcome.OUTCOME_NAME);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
     verify(terraformConfigDAL, times(1)).clearTerraformConfig(any(), any());
@@ -1109,5 +1122,83 @@ public class TerraformDestroyStepV2Test extends CategoryTest {
     assertThat(taskParameters.getConfigFile()).isNotNull();
     assertThat(((RemoteTerraformVarFileInfo) taskParameters.getVarFileInfos().get(0)).getFilestoreFetchFilesConfig())
         .isNotNull();
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testGetGitRevisionsOutputInlineConfigType() {
+    TerraformDestroyStepParameters terraformDestroyStepParameters =
+        TerraformDestroyStepParameters.infoBuilder()
+            .configuration(TerraformStepConfigurationParameters.builder().type(INLINE).build())
+            .build();
+
+    Map<String, String> commitIdForConfigFilesMap = new HashMap<>();
+    commitIdForConfigFilesMap.put(TF_CONFIG_FILES, "commitId_1");
+    commitIdForConfigFilesMap.put(TF_BACKEND_CONFIG_FILE, "commitId_2");
+    TerraformTaskNGResponse taskNGResponse =
+        TerraformTaskNGResponse.builder().commitIdForConfigFilesMap(commitIdForConfigFilesMap).build();
+
+    Map<String, String> fetchedCommitIdsMap = new HashMap<>();
+    fetchedCommitIdsMap.put("varFileId", "commitId_v1");
+    TerraformPassThroughData terraformPassThroughData =
+        TerraformPassThroughData.builder().fetchedCommitIdsMap(fetchedCommitIdsMap).build();
+
+    Map<String, String> gitRevisionsOutput = terraformDestroyStepV2.getGitRevisionsOutput(
+        terraformDestroyStepParameters, taskNGResponse, terraformPassThroughData);
+
+    assertThat(gitRevisionsOutput.size()).isEqualTo(3);
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testGetGitRevisionsOutputInheritFromApplyConfigType() {
+    TerraformDestroyStepParameters terraformDestroyStepParameters =
+        TerraformDestroyStepParameters.infoBuilder()
+            .configuration(TerraformStepConfigurationParameters.builder().type(INHERIT_FROM_APPLY).build())
+            .build();
+
+    Map<String, String> commitIdForConfigFilesMap = new HashMap<>();
+    commitIdForConfigFilesMap.put(TF_CONFIG_FILES, "commitId_1");
+    commitIdForConfigFilesMap.put(TF_BACKEND_CONFIG_FILE, "commitId_2");
+    TerraformTaskNGResponse taskNGResponse =
+        TerraformTaskNGResponse.builder().commitIdForConfigFilesMap(commitIdForConfigFilesMap).build();
+
+    Map<String, String> fetchedCommitIdsMap = new HashMap<>();
+    fetchedCommitIdsMap.put("varFileId", "commitId_v1");
+    TerraformPassThroughData terraformPassThroughData =
+        TerraformPassThroughData.builder().fetchedCommitIdsMap(fetchedCommitIdsMap).build();
+
+    Map<String, String> gitRevisionsOutput = terraformDestroyStepV2.getGitRevisionsOutput(
+        terraformDestroyStepParameters, taskNGResponse, terraformPassThroughData);
+
+    assertThat(gitRevisionsOutput.size()).isEqualTo(3);
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testGetGitRevisionsOutputInheritFromPlanConfigType() {
+    TerraformDestroyStepParameters terraformDestroyStepParameters =
+        TerraformDestroyStepParameters.infoBuilder()
+            .configuration(TerraformStepConfigurationParameters.builder().type(INHERIT_FROM_PLAN).build())
+            .build();
+
+    Map<String, String> commitIdForConfigFilesMap = new HashMap<>();
+    commitIdForConfigFilesMap.put(TF_CONFIG_FILES, "commitId_1");
+    commitIdForConfigFilesMap.put(TF_BACKEND_CONFIG_FILE, "commitId_2");
+    TerraformTaskNGResponse taskNGResponse =
+        TerraformTaskNGResponse.builder().commitIdForConfigFilesMap(commitIdForConfigFilesMap).build();
+
+    Map<String, String> fetchedCommitIdsMap = new HashMap<>();
+    fetchedCommitIdsMap.put("varFileId", "commitId_v1");
+    TerraformPassThroughData terraformPassThroughData =
+        TerraformPassThroughData.builder().fetchedCommitIdsMap(fetchedCommitIdsMap).build();
+
+    Map<String, String> gitRevisionsOutput = terraformDestroyStepV2.getGitRevisionsOutput(
+        terraformDestroyStepParameters, taskNGResponse, terraformPassThroughData);
+
+    assertThat(gitRevisionsOutput.size()).isEqualTo(2);
   }
 }

@@ -17,6 +17,7 @@ import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
 import io.harness.cdng.provision.terraform.functor.TerraformHumanReadablePlanFunctor;
 import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
+import io.harness.cdng.provision.terraform.outcome.TerraformGitRevisionOutcome;
 import io.harness.cdng.provision.terraform.outcome.TerraformPlanOutcome;
 import io.harness.cdng.provision.terraform.outcome.TerraformPlanOutcome.TerraformPlanOutcomeBuilder;
 import io.harness.common.ParameterFieldHelper;
@@ -62,6 +63,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
@@ -274,10 +276,17 @@ public class TerraformPlanStepV2 extends CdTaskChainExecutable {
         }
       }
 
-      stepResponseBuilder.stepOutcome(StepResponse.StepOutcome.builder()
-                                          .name(TerraformPlanOutcome.OUTCOME_NAME)
-                                          .outcome(tfPlanOutcomeBuilder.build())
-                                          .build());
+      Map<String, String> outputKeys = helper.getRevisionsMap(terraformPassThroughData, terraformTaskNGResponse);
+
+      stepResponseBuilder
+          .stepOutcome(StepResponse.StepOutcome.builder()
+                           .name(TerraformPlanOutcome.OUTCOME_NAME)
+                           .outcome(tfPlanOutcomeBuilder.build())
+                           .build())
+          .stepOutcome(StepResponse.StepOutcome.builder()
+                           .name(TerraformGitRevisionOutcome.OUTCOME_NAME)
+                           .outcome(TerraformGitRevisionOutcome.builder().revisions(outputKeys).build())
+                           .build());
     }
     return stepResponseBuilder.build();
   }
