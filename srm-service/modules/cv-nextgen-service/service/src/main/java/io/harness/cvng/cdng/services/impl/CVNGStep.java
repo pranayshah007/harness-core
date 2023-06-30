@@ -19,13 +19,13 @@ import io.harness.cvng.beans.job.Sensitivity;
 import io.harness.cvng.cdng.beans.CVNGStepParameter;
 import io.harness.cvng.cdng.beans.CVNGStepType;
 import io.harness.cvng.cdng.beans.MonitoredServiceNode;
-import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
+import io.harness.cvng.cdng.beans.MonitoredServiceSpecType;
 import io.harness.cvng.cdng.beans.ResolvedCVConfigInfo;
 import io.harness.cvng.cdng.beans.v2.BaselineType;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.cdng.entities.CVNGStepTask.CVNGStepTaskBuilder;
 import io.harness.cvng.cdng.services.api.CVNGStepTaskService;
-import io.harness.cvng.cdng.services.api.VerifyStepMonitoredServiceResolutionService;
+import io.harness.cvng.cdng.services.api.PipelineStepMonitoredServiceResolutionService;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.beans.sidekick.DemoActivitySideKickData;
 import io.harness.cvng.core.entities.CVConfig;
@@ -88,10 +88,8 @@ import org.springframework.data.annotation.TypeAlias;
 @Slf4j
 @OwnedBy(HarnessTeam.CV)
 public class CVNGStep extends AsyncExecutableWithCapabilities {
-  public static final StepType STEP_TYPE = StepType.newBuilder()
-                                               .setType(CVNGStepType.CVNG_VERIFY.getDisplayName())
-                                               .setStepCategory(StepCategory.STEP)
-                                               .build();
+  public static final StepType STEP_TYPE =
+      StepType.newBuilder().setType(CVNGStepType.CVNG_VERIFY.getType()).setStepCategory(StepCategory.STEP).build();
   @Inject private ActivityService activityService;
   @Inject private CVNGStepTaskService cvngStepTaskService;
   @Inject private Clock clock;
@@ -100,7 +98,7 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
   @Inject private SideKickService sideKickService;
   @Inject
-  private Map<MonitoredServiceSpecType, VerifyStepMonitoredServiceResolutionService> verifyStepCvConfigServiceMap;
+  private Map<MonitoredServiceSpecType, PipelineStepMonitoredServiceResolutionService> verifyStepCvConfigServiceMap;
 
   @Inject private OpaServiceClient opaServiceClient;
 

@@ -72,6 +72,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -324,6 +325,13 @@ public class K8sRecommendationDAO {
             TimescaleUtils.isAlive(NODE_POOL_AGGREGATED.STARTTIME, NODE_POOL_AGGREGATED.ENDTIME, toEpocMilli(startTime),
                 toEpocMilli(endTime)))
         .fetchOneInto(TotalResourceUsage.class);
+  }
+
+  @NonNull
+  public List<String> fetchDistinctInstanceFamilies(JobConstants jobConstants, NodePoolId nodePoolId) {
+    List<String> instanceFamilies = instanceDataDao.fetchDistinctInstanceFamilies(jobConstants.getAccountId(),
+        nodePoolId.getClusterid(), InstanceType.K8S_NODE, nodePoolId.getNodepoolname(), InstanceState.RUNNING);
+    return firstNonNull(instanceFamilies, Collections.emptyList());
   }
 
   @NonNull

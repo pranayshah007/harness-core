@@ -16,4 +16,6 @@ import lombok.experimental.SuperBuilder;
 @Data
 @SuperBuilder
 @OwnedBy(HarnessTeam.CDP)
-public class TerraformRemoteVarFileConfig extends TerraformRemoteFileConfig implements TerraformVarFileConfig {}
+public class TerraformRemoteVarFileConfig extends TerraformRemoteFileConfig implements TerraformVarFileConfig {
+  String identifier;
+}

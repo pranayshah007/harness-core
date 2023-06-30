@@ -61,6 +61,7 @@ public class ExecutionGraphMapper {
         .stepDetails(graphVertex.getOrchestrationMapStepDetails())
         .strategyMetadata(graphVertex.getStrategyMetadata())
         .executionInputConfigured(graphVertex.getExecutionInputConfigured())
+        .logBaseKey(graphVertex.getLogBaseKey())
         .build();
   }
 

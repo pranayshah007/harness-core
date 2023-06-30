@@ -318,7 +318,7 @@ public class TemplateServiceModule extends AbstractModule {
   @Named("lock")
   @Singleton
   RedisConfig redisConfig() {
-    return RedisConfig.builder().build();
+    return templateServiceConfiguration.getRedisLockConfig();
   }
 
   @Provides

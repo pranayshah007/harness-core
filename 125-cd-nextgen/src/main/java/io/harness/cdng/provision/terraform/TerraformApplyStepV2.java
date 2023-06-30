@@ -9,6 +9,9 @@ package io.harness.cdng.provision.terraform;
 
 import static io.harness.beans.FeatureName.CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
+import static io.harness.cdng.provision.terraform.TerraformStepHelper.TF_BACKEND_CONFIG_FILE;
+import static io.harness.cdng.provision.terraform.TerraformStepHelper.TF_CONFIG_FILES;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
@@ -18,6 +21,7 @@ import io.harness.cdng.executables.CdTaskChainExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.provision.ProvisionerOutputHelper;
+import io.harness.cdng.provision.terraform.outcome.TerraformGitRevisionOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.task.terraform.TFTaskType;
@@ -61,6 +65,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
@@ -317,7 +322,7 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
                 ? helper.prepareTerraformConfigFileInfo(inheritOutput.getFileStorageConfigDTO(), ambiance)
                 : helper.getFileStoreFetchFilesConfig(
                     inheritOutput.getFileStoreConfig(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
-        .varFileInfos(helper.prepareTerraformVarFileInfo(inheritOutput.getVarFileConfigs(), ambiance))
+        .varFileInfos(helper.prepareTerraformVarFileInfo(inheritOutput.getVarFileConfigs(), ambiance, true))
         .backendConfig(inheritOutput.getBackendConfig())
         .backendConfigFileInfo(
             helper.prepareTerraformBackendConfigFileInfo(inheritOutput.getBackendConfigurationFileConfig(), ambiance))
@@ -353,7 +358,15 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
               ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance),
           terraformTaskNGResponse.getStateFileId());
     }
-    return stepResponseBuilder.build();
+
+    Map<String, String> outputKeys = helper.getRevisionsMap(terraformPassThroughData, terraformTaskNGResponse);
+
+    return stepResponseBuilder
+        .stepOutcome(StepResponse.StepOutcome.builder()
+                         .name(TerraformGitRevisionOutcome.OUTCOME_NAME)
+                         .outcome(TerraformGitRevisionOutcome.builder().revisions(outputKeys).build())
+                         .build())
+        .build();
   }
 
   private StepResponse handleTaskResultApplyInherited(Ambiance ambiance,
@@ -373,7 +386,19 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
           terraformTaskNGResponse.getStateFileId());
     }
 
-    return stepResponseBuilder.build();
+    Map<String, String> outputKeys = new HashMap<>();
+    if (isNotEmpty(terraformTaskNGResponse.getCommitIdForConfigFilesMap())) {
+      outputKeys.put(TF_CONFIG_FILES, terraformTaskNGResponse.getCommitIdForConfigFilesMap().get(TF_CONFIG_FILES));
+      outputKeys.put(
+          TF_BACKEND_CONFIG_FILE, terraformTaskNGResponse.getCommitIdForConfigFilesMap().get(TF_BACKEND_CONFIG_FILE));
+    }
+
+    return stepResponseBuilder
+        .stepOutcome(StepResponse.StepOutcome.builder()
+                         .name(TerraformGitRevisionOutcome.OUTCOME_NAME)
+                         .outcome(TerraformGitRevisionOutcome.builder().revisions(outputKeys).build())
+                         .build())
+        .build();
   }
 
   private StepResponseBuilder createStepResponseBuilder(

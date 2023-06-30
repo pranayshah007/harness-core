@@ -10,6 +10,8 @@ package io.harness.service.instancesynchandler;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DIRECT;
 
+import static software.wings.beans.TaskType.INSTANCE_SYNC_V2_NG_SUPPORT;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -34,6 +36,7 @@ import io.harness.entities.InstanceType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.helper.K8sAndHelmInfrastructureUtility;
 import io.harness.helper.K8sCloudConfigMetadata;
+import io.harness.helper.KubernetesInfrastructureDTO;
 import io.harness.models.infrastructuredetails.InfrastructureDetails;
 import io.harness.models.infrastructuredetails.K8sInfrastructureDetails;
 import io.harness.ng.core.k8s.ServiceSpecType;
@@ -78,11 +81,10 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
     return KUBERNETES_DIRECT;
   }
 
-  // todo: add INSTANCE_SYNC_V2_NG_SUPPORT to TaskType INSTANCE_SYNC_V2_NG_SUPPORT
   public boolean isInstanceSyncV2EnabledAndSupported(String accountId) {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_K8S_HELM_INSTANCE_SYNC_V2_NG)
         && delegateGrpcClientWrapper.isTaskTypeSupported(AccountId.newBuilder().setId(accountId).build(),
-            TaskType.newBuilder().setType("INSTANCE_SYNC_V2_NG_SUPPORT").build());
+            TaskType.newBuilder().setType(INSTANCE_SYNC_V2_NG_SUPPORT.name()).build());
   }
 
   @Override
@@ -174,8 +176,17 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
   @Override
   public InfrastructureOutcome getInfrastructureOutcome(
       String infrastructureKind, DeploymentInfoDTO deploymentInfoDTO, String connectorRef) {
+    K8sDeploymentInfoDTO k8sDeploymentInfoDTO = (K8sDeploymentInfoDTO) deploymentInfoDTO;
+    KubernetesInfrastructureDTO kubernetesInfrastructureDTO =
+        KubernetesInfrastructureDTO.builder()
+            .namespaces(k8sDeploymentInfoDTO.getNamespaces())
+            .releaseName(k8sDeploymentInfoDTO.getReleaseName())
+            .cloudConfigMetadata(k8sDeploymentInfoDTO.getCloudConfigMetadata() == null
+                    ? null
+                    : k8sDeploymentInfoDTO.getCloudConfigMetadata())
+            .build();
     return K8sAndHelmInfrastructureUtility.getInfrastructureOutcome(
-        infrastructureKind, deploymentInfoDTO, connectorRef);
+        infrastructureKind, kubernetesInfrastructureDTO, connectorRef);
   }
 
   private LinkedHashSet<String> getNamespaces(@NotNull List<ServerInstanceInfo> serverInstanceInfoList) {

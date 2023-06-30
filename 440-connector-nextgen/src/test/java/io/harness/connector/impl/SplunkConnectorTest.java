@@ -26,6 +26,7 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.entities.embedded.splunkconnector.SplunkConnector;
 import io.harness.connector.mappers.ConnectorMapper;
 import io.harness.connector.validator.ConnectionValidator;
+import io.harness.delegate.beans.connector.splunkconnector.SplunkAuthType;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectorDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.gitsync.persistance.GitSyncSdkService;
@@ -61,39 +62,71 @@ public class SplunkConnectorTest extends CategoryTest {
 
   String userName = "userName";
   String password = "password";
+
+  String secretIdentifierToken = "token";
   String identifier = "identifier";
-  String secretIdentifier = "secretIdentifier";
+  String secretIdentifierPassword = "secretIdentifier";
   String name = "name";
   String splunkUrl = "https://xwz.com";
   ConnectorDTO connectorRequest;
   ConnectorResponseDTO connectorResponse;
-  SplunkConnector connector;
   String accountIdentifier = "accountIdentifier";
   @Rule public ExpectedException expectedEx = ExpectedException.none();
 
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
+    when(gitSyncSdkService.isGitSyncEnabled(accountIdentifier, null, null)).thenReturn(true);
+    doNothing().when(secretRefInputValidationHelper).validateTheSecretInput(any(), any());
+  }
 
-    connector = SplunkConnector.builder()
-                    .username(userName)
-                    .accountId(accountIdentifier)
-                    .splunkUrl(splunkUrl)
-                    .passwordRef(password)
-                    .build();
-
-    connector.setType(SPLUNK);
-    connector.setIdentifier(identifier);
-    connector.setName(name);
-
-    SecretRefData secretRefData = SecretRefData.builder().identifier(secretIdentifier).build();
+  private ConnectorResponseDTO createUsernamePasswordConnectorDTO(SplunkConnector connector) {
+    SecretRefData secretRefData = SecretRefData.builder().identifier(secretIdentifierPassword).build();
     SplunkConnectorDTO splunkConnectorDTO = SplunkConnectorDTO.builder()
                                                 .username(userName)
                                                 .accountId(accountIdentifier)
                                                 .splunkUrl(splunkUrl)
                                                 .passwordRef(secretRefData)
                                                 .build();
+    mockConnectorResponse(connector, splunkConnectorDTO);
+    return connectorService.create(connectorRequest, accountIdentifier);
+  }
 
+  private SplunkConnector createUsernamePasswordSplunkConnector() {
+    SplunkConnector connector = SplunkConnector.builder()
+                                    .username(userName)
+                                    .accountId(accountIdentifier)
+                                    .splunkUrl(splunkUrl)
+                                    .passwordRef(password)
+                                    .build();
+    connector.setType(SPLUNK);
+    connector.setIdentifier(identifier);
+    connector.setName(name);
+    return connector;
+  }
+
+  private ConnectorResponseDTO createBearerTokenConnectorDTO() {
+    SplunkConnector connector = SplunkConnector.builder()
+                                    .accountId(accountIdentifier)
+                                    .splunkUrl(splunkUrl)
+                                    .tokenRef(secretIdentifierToken)
+                                    .build();
+    connector.setType(SPLUNK);
+    connector.setIdentifier(identifier);
+    connector.setName(name);
+    SecretRefData secretRefData = SecretRefData.builder().identifier(secretIdentifierToken).build();
+    SplunkConnectorDTO splunkConnectorDTO = SplunkConnectorDTO.builder()
+                                                .username(userName)
+                                                .accountId(accountIdentifier)
+                                                .splunkUrl(splunkUrl)
+                                                .authType(SplunkAuthType.BEARER_TOKEN)
+                                                .tokenRef(secretRefData)
+                                                .build();
+    mockConnectorResponse(connector, splunkConnectorDTO);
+    return connectorService.create(connectorRequest, accountIdentifier);
+  }
+
+  private void mockConnectorResponse(SplunkConnector connector, SplunkConnectorDTO splunkConnectorDTO) {
     ConnectorInfoDTO connectorInfo = ConnectorInfoDTO.builder()
                                          .name(name)
                                          .identifier(identifier)
@@ -105,23 +138,27 @@ public class SplunkConnectorTest extends CategoryTest {
     when(connectorRepository.save(connector, connectorRequest, ADD, null)).thenReturn(connector);
     when(connectorMapper.writeDTO(connector)).thenReturn(connectorResponse);
     when(connectorMapper.toConnector(connectorRequest, accountIdentifier)).thenReturn(connector);
-    when(gitSyncSdkService.isGitSyncEnabled(accountIdentifier, null, null)).thenReturn(true);
-    doNothing().when(secretRefInputValidationHelper).validateTheSecretInput(any(), any());
-  }
-
-  private ConnectorResponseDTO createConnector() {
-    return connectorService.create(connectorRequest, accountIdentifier);
   }
 
   @Test
   @Owner(developers = OwnerRule.NEMANJA)
   @Category(UnitTests.class)
-  public void testCreateSplunkConnector() {
-    ConnectorResponseDTO connectorDTOOutput = createConnector();
-    ensureSplunkConnectorFieldsAreCorrect(connectorDTOOutput);
+  public void testCreateSplunkConnectorWithUsernamePassword() {
+    SplunkConnector connector = createUsernamePasswordSplunkConnector();
+    ConnectorResponseDTO connectorDTOOutput = createUsernamePasswordConnectorDTO(connector);
+    ensureSplunkConnectorFieldsAreCorrect(connectorDTOOutput, SplunkAuthType.USER_PASSWORD);
   }
 
-  private void ensureSplunkConnectorFieldsAreCorrect(ConnectorResponseDTO connectorResponse) {
+  @Test
+  @Owner(developers = OwnerRule.ANSUMAN)
+  @Category(UnitTests.class)
+  public void testCreateSplunkConnectorWithBearerToken() {
+    ConnectorResponseDTO connectorDTOOutput = createBearerTokenConnectorDTO();
+    ensureSplunkConnectorFieldsAreCorrect(connectorDTOOutput, SplunkAuthType.BEARER_TOKEN);
+  }
+
+  private void ensureSplunkConnectorFieldsAreCorrect(
+      ConnectorResponseDTO connectorResponse, SplunkAuthType splunkAuthType) {
     ConnectorInfoDTO connector = connectorResponse.getConnector();
     assertThat(connector).isNotNull();
     assertThat(connector.getName()).isEqualTo(name);
@@ -129,21 +166,27 @@ public class SplunkConnectorTest extends CategoryTest {
     assertThat(connector.getConnectorType()).isEqualTo(SPLUNK);
     SplunkConnectorDTO splunkConnectorDTO = (SplunkConnectorDTO) connector.getConnectorConfig();
     assertThat(splunkConnectorDTO).isNotNull();
-    assertThat(splunkConnectorDTO.getUsername()).isEqualTo(userName);
-    assertThat(splunkConnectorDTO.getPasswordRef()).isNotNull();
-    assertThat(splunkConnectorDTO.getPasswordRef().getIdentifier()).isEqualTo(secretIdentifier);
+    if (splunkAuthType == SplunkAuthType.USER_PASSWORD) {
+      assertThat(splunkConnectorDTO.getUsername()).isEqualTo(userName);
+      assertThat(splunkConnectorDTO.getPasswordRef()).isNotNull();
+      assertThat(splunkConnectorDTO.getPasswordRef().getIdentifier()).isEqualTo(secretIdentifierPassword);
+    } else if (splunkAuthType == SplunkAuthType.BEARER_TOKEN) {
+      assertThat(splunkConnectorDTO.getTokenRef()).isNotNull();
+      assertThat(splunkConnectorDTO.getTokenRef().getIdentifier()).isEqualTo(secretIdentifierToken);
+    }
     assertThat(splunkConnectorDTO.getSplunkUrl()).isEqualTo(splunkUrl + "/");
     assertThat(splunkConnectorDTO.getAccountId()).isEqualTo(accountIdentifier);
   }
 
   @Test
-  @Owner(developers = OwnerRule.NEMANJA)
+  @Owner(developers = OwnerRule.ANSUMAN)
   @Category(UnitTests.class)
   public void testGetSplunkConnector() {
-    createConnector();
+    SplunkConnector connector = createUsernamePasswordSplunkConnector();
+    ConnectorResponseDTO usernamePasswordConnector = createUsernamePasswordConnectorDTO(connector);
     when(connectorRepository.findByFullyQualifiedIdentifierAndDeletedNot(any(), any(), any(), any(), anyBoolean()))
         .thenReturn(Optional.of(connector));
     ConnectorResponseDTO connectorDTO = connectorService.get(accountIdentifier, null, null, identifier).get();
-    ensureSplunkConnectorFieldsAreCorrect(connectorDTO);
+    ensureSplunkConnectorFieldsAreCorrect(connectorDTO, SplunkAuthType.USER_PASSWORD);
   }
 }

@@ -148,7 +148,7 @@ public class MatrixConfigServiceHelper {
     }
     int maxConcurrency = jsonNodes.size();
     if (!ParameterField.isBlank(maxConcurrencyParameterField)) {
-      maxConcurrency = Double.valueOf(String.valueOf(maxConcurrencyParameterField.getValue())).intValue();
+      maxConcurrency = maxConcurrencyParameterField.getValue();
     }
     return StrategyInfo.builder().expandedJsonNodes(jsonNodes).maxConcurrency(maxConcurrency).build();
   }
@@ -185,7 +185,7 @@ public class MatrixConfigServiceHelper {
     }
     int maxConcurrency = jsonNodes.size();
     if (!ParameterField.isBlank(maxConcurrencyParameterField)) {
-      maxConcurrency = Double.valueOf(String.valueOf(maxConcurrencyParameterField.getValue())).intValue();
+      maxConcurrency = maxConcurrencyParameterField.getValue();
     }
     return StrategyInfo.builder().expandedJsonNodes(jsonNodes).maxConcurrency(maxConcurrency).build();
   }

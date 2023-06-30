@@ -16,9 +16,10 @@ import static org.mockito.Mockito.when;
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
+import io.harness.cvng.cdng.beans.CVNGStepInfo;
 import io.harness.cvng.cdng.beans.DefaultMonitoredServiceSpec;
 import io.harness.cvng.cdng.beans.MonitoredServiceNode;
-import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
+import io.harness.cvng.cdng.beans.MonitoredServiceSpecType;
 import io.harness.cvng.cdng.services.api.CDStageMetaDataService;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
@@ -44,9 +45,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
 
-public class DefaultVerifyStepMonitoredServiceResolutionServiceImplTest extends CvNextGenTestBase {
+public class DefaultPipelineStepMonitoredServiceResolutionServiceImplTest extends CvNextGenTestBase {
   @Inject private MonitoredServiceService monitoredServiceService;
-  @Inject private DefaultVerifyStepMonitoredServiceResolutionServiceImpl defaultService;
+  @Inject private DefaultPipelineStepMonitoredServiceResolutionServiceImpl defaultService;
   @Inject private MetricPackService metricPackService;
   @Mock private CDStageMetaDataService mockedCdStageMetaDataService;
   @Mock private MonitoredServiceService mockedMonitoredServiceService;
@@ -144,8 +145,8 @@ public class DefaultVerifyStepMonitoredServiceResolutionServiceImplTest extends 
     responseDTO.setData(CDStageMetaDataDTO.builder().build());
     when(mockedCdStageMetaDataService.getServiceAndEnvironmentRef(any())).thenReturn(responseDTO);
 
-    List<EntityDetailProtoDTO> referredEntities =
-        defaultService.getReferredEntities(filterCreationContext, null, builderFactory.getProjectParams());
+    List<EntityDetailProtoDTO> referredEntities = defaultService.getReferredEntities(
+        filterCreationContext, new CVNGStepInfo(), builderFactory.getProjectParams());
     assertThat(referredEntities).isEmpty();
   }
 
@@ -162,8 +163,8 @@ public class DefaultVerifyStepMonitoredServiceResolutionServiceImplTest extends 
             .build());
     when(mockedCdStageMetaDataService.getServiceAndEnvironmentRef(any())).thenReturn(responseDTO);
 
-    List<EntityDetailProtoDTO> referredEntities =
-        defaultService.getReferredEntities(filterCreationContext, null, builderFactory.getProjectParams());
+    List<EntityDetailProtoDTO> referredEntities = defaultService.getReferredEntities(
+        filterCreationContext, new CVNGStepInfo(), builderFactory.getProjectParams());
     assertThat(referredEntities).isEmpty();
   }
 
@@ -175,8 +176,8 @@ public class DefaultVerifyStepMonitoredServiceResolutionServiceImplTest extends 
     ResponseDTO<CDStageMetaDataDTO> responseDTO = ResponseDTO.newResponse();
     when(mockedCdStageMetaDataService.getServiceAndEnvironmentRef(any())).thenReturn(responseDTO);
 
-    List<EntityDetailProtoDTO> referredEntities =
-        defaultService.getReferredEntities(filterCreationContext, null, builderFactory.getProjectParams());
+    List<EntityDetailProtoDTO> referredEntities = defaultService.getReferredEntities(
+        filterCreationContext, new CVNGStepInfo(), builderFactory.getProjectParams());
     assertThat(referredEntities).isEmpty();
   }
 
@@ -192,8 +193,8 @@ public class DefaultVerifyStepMonitoredServiceResolutionServiceImplTest extends 
             .build());
     when(mockedCdStageMetaDataService.getServiceAndEnvironmentRef(any())).thenReturn(responseDTO);
 
-    List<EntityDetailProtoDTO> referredEntities =
-        defaultService.getReferredEntities(filterCreationContext, null, builderFactory.getProjectParams());
+    List<EntityDetailProtoDTO> referredEntities = defaultService.getReferredEntities(
+        filterCreationContext, new CVNGStepInfo(), builderFactory.getProjectParams());
     assertThat(referredEntities).hasSize(1);
   }
 

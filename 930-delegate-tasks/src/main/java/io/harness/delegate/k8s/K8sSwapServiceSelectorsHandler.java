@@ -59,12 +59,12 @@ public class K8sSwapServiceSelectorsHandler extends K8sRequestHandler {
         releaseHandler.getReleaseHistory(kubernetesConfig, k8sSwapServiceSelectorsRequest.getReleaseName());
     String primaryColor = k8sSwapServiceSelectorsBaseHandler.getColorOfService(
         kubernetesConfig, k8sSwapServiceSelectorsRequest.getService1());
-    String stageColor = k8sBGBaseHandler.getInverseColor(primaryColor);
-    IK8sRelease primaryRelease = releaseHistory.getLatestSuccessfulReleaseMatchingColor(primaryColor);
-    IK8sRelease stageRelease = releaseHistory.getLatestSuccessfulReleaseMatchingColor(stageColor);
     k8sSwapServiceSelectorsBaseHandler.swapServiceSelectors(kubernetesConfig,
         k8sSwapServiceSelectorsRequest.getService1(), k8sSwapServiceSelectorsRequest.getService2(), logCallback,
         isErrorFrameworkSupported());
+    String stageColor = k8sBGBaseHandler.getInverseColor(primaryColor);
+    IK8sRelease primaryRelease = releaseHistory.getLatestSuccessfulReleaseMatchingColor(primaryColor);
+    IK8sRelease stageRelease = releaseHistory.getLatestSuccessfulReleaseMatchingColor(stageColor);
     k8sSwapServiceSelectorsBaseHandler.updateReleaseHistory(primaryRelease, stageRelease);
     IK8sRelease release = (stageRelease != null) ? stageRelease : primaryRelease;
     if (!useDeclarativeRollback) {

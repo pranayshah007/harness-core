@@ -17,6 +17,7 @@ import io.harness.ff.FeatureFlagConfig;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.iterator.IteratorConfig;
+import io.harness.redis.RedisConfig;
 import io.harness.scheduler.SchedulerConfig;
 
 import software.wings.DataStorageMode;
@@ -72,6 +73,7 @@ public class VerificationServiceConfiguration extends Configuration implements A
   @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
   @JsonProperty("serviceGuardIteratorConfig") private IteratorConfig serviceGuardIteratorConfig;
   @JsonProperty("distributedLockImplementation") private DistributedLockImplementation distributedLockImplementation;
+  @JsonProperty("redisLockConfig") private RedisConfig redisLockConfig;
 
   /**
    * Instantiates a new Main configuration.

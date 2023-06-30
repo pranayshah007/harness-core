@@ -392,6 +392,7 @@ baseUrls:
   nextGenUiUrl: https://localhost:8181/ng/#/
   nextGenAuthUiUrl: http://localhost:8181/auth/#/
   webhookBaseUrl: http://localhost:7457/
+  ngManagerScmBaseUrl: ${HARNESS_SCM_BASE_URL:-http://localhost:7457/}
 
 ngAuthUIEnabled: false
 

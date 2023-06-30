@@ -15,7 +15,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.cvng.CVConstants;
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
-import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
+import io.harness.cvng.cdng.beans.MonitoredServiceSpecType;
 import io.harness.cvng.cdng.beans.v2.AppliedDeploymentAnalysisType;
 import io.harness.cvng.cdng.beans.v2.BaselineType;
 import io.harness.cvng.core.entities.CVConfig;

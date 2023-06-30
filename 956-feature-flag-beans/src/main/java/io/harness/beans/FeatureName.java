@@ -212,6 +212,7 @@ public enum FeatureName {
   CENG_ENABLED("Enable the CCM module on NG", HarnessTeam.CE),
   CET_ENABLED("Enable Continuous Error Tracking module in UI", HarnessTeam.CET),
   CET_EVENTS_CHART("Enable events chart in UI of Continuous Error Tracking module", HarnessTeam.CET),
+  CET_CD_INTEGRATION("Enable Continuous Error Tracking events list in CD pipeline execution tab", HarnessTeam.CET),
   CE_GCP_CUSTOM_PRICING("Use custom pricing data for k8s gcp from billing export", HarnessTeam.CE),
   CE_HARNESS_ENTITY_MAPPING("Internal FF to decide if harness entities mapping is needed", HarnessTeam.CE),
   CE_HARNESS_INSTANCE_QUERY("Internal FF to decide which table to use for querying mapping data", HarnessTeam.CE),
@@ -695,6 +696,7 @@ public enum FeatureName {
   SRM_COMMON_MONITORED_SERVICE(
       "Flag to be used in UI for controlling common monitored service listing", HarnessTeam.CV),
   SRM_CUSTOM_CHANGE_SOURCE("UI FF to enable Custom Change Source", HarnessTeam.CV),
+  SRM_DATADOG_METRICS_FORMULA_SUPPORT("Support datadog metric formulas in the query of health source", HarnessTeam.CV),
   SRM_DOWNTIME("Flag to start creating downtime", HarnessTeam.CV),
   SRM_ENABLE_AGGREGATION_USING_BY_IN_PROMETHEUS(
       "This is used make prometheus Health source run with promQL by clause", HarnessTeam.CV),
@@ -719,6 +721,7 @@ public enum FeatureName {
   SRM_SLO_TOGGLE,
   SRM_SPLUNK_SIGNALFX("Will enable SignalFX metric health source in SRM", HarnessTeam.CV),
   SRM_TELEMETRY("Will enable telemetry for verify step result", HarnessTeam.CV),
+  SRM_ENABLE_ANALYZE_DEPLOYMENT_STEP("This is used to enable analyze deployment step in the pipeline", HarnessTeam.CV),
   SSCA_ENABLED("FF to enable SSCA on Harness", HarnessTeam.SSCA),
   SSH_JSCH_LOGS,
   STALE_FLAGS_FFM_1510,
@@ -807,7 +810,10 @@ public enum FeatureName {
   WORKFLOW_EXECUTION_ZOMBIE_MONITOR,
   WORKFLOW_PIPELINE_PERMISSION_BY_ENTITY,
   YAML_APIS_GRANULAR_PERMISSION,
-  YAML_GIT_CONNECTOR_NAME;
+  YAML_GIT_CONNECTOR_NAME,
+  CDS_STEP_EXECUTION_DATA_SYNC(
+      "This flag controls if you want Step execution data saved in mongodb and eventually synced to timescale",
+      HarnessTeam.CDP);
   // keep-sorted end
 
   @Deprecated

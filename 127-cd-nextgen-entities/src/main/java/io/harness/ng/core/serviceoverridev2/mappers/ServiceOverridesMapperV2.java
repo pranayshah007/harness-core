@@ -23,7 +23,6 @@ public class ServiceOverridesMapperV2 {
   public NGServiceOverridesEntity toEntity(
       @NotNull String accountId, @NonNull ServiceOverrideRequestDTOV2 requestDTOV2) {
     return NGServiceOverridesEntity.builder()
-        .identifier(requestDTOV2.getIdentifier())
         .accountId(accountId)
         .orgIdentifier(requestDTOV2.getOrgIdentifier())
         .projectIdentifier(requestDTOV2.getProjectIdentifier())

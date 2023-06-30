@@ -24,6 +24,8 @@ public class AzureVmUtilisationDTO {
   String vmId;
   double averageCpu;
   double maxCpu;
+  double averageMemory;
+  double maxMemory;
   long startTime;
   long endTime;
 }
