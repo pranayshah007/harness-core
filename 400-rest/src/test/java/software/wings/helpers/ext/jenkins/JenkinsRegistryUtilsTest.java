@@ -8,6 +8,7 @@
 package software.wings.helpers.ext.jenkins;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 import static io.harness.rule.OwnerRule.RAFAEL;
 import static io.harness.rule.OwnerRule.SHIVAM;
@@ -22,8 +23,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -61,6 +64,7 @@ import com.offbytwo.jenkins.model.QueueReference;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -82,6 +86,15 @@ public class JenkinsRegistryUtilsTest extends WingsBaseTest {
   private static final String JENKINS_URL2 = "http://localhost:%s";
   private static final String USERNAME = "wingsbuild";
   private static String PASSWORD = "password";
+  private static final String NAME_1 = "name1";
+  private static final String NAME_2 = "name2";
+  private static final String NAME_4 = "name4";
+  private static final String NAME_5 = "name5";
+  private static final String TYPE_1 = "type1";
+  private static final String TYPE_2 = "type2";
+  private static final String TYPE_3 = "type3";
+  private static final String JOB = "job";
+
   @Inject ScmSecret scmSecret;
   @Rule
   public WireMockRule wireMockRule = new WireMockRule(WireMockConfiguration.wireMockConfig()
@@ -727,5 +740,51 @@ public class JenkinsRegistryUtilsTest extends WingsBaseTest {
     when(jenkinsServer.getJenkinsConsoleLogs(any(), any(), any())).thenReturn("test log");
     String consoleLogs = jenkinsRegistryUtils.getJenkinsConsoleLogs(jenkinsInternalConfigTest, "test", "1234");
     assertThat(consoleLogs).isNullOrEmpty();
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testJobWithParamters_RemoveDuplicates() {
+    JenkinsInternalConfig jenkinsInternalConfig = JenkinsInternalConfig.builder().build();
+
+    ParametersDefinitionProperty parametersDefinitionProperty1 =
+        ParametersDefinitionProperty.builder().name(NAME_1).type(TYPE_1).build();
+    ParametersDefinitionProperty parametersDefinitionProperty2 =
+        ParametersDefinitionProperty.builder().name(NAME_2).type(TYPE_2).build();
+    ParametersDefinitionProperty parametersDefinitionProperty3 =
+        ParametersDefinitionProperty.builder().name(NAME_1).type(TYPE_3).build();
+    ParametersDefinitionProperty parametersDefinitionProperty4 =
+        ParametersDefinitionProperty.builder().name(NAME_4).type(TYPE_1).build();
+    ParametersDefinitionProperty parametersDefinitionProperty5 =
+        ParametersDefinitionProperty.builder().name(NAME_5).type(TYPE_2).build();
+    ParametersDefinitionProperty parametersDefinitionProperty6 =
+        ParametersDefinitionProperty.builder().name(NAME_1).type(TYPE_3).build();
+
+    JobProperty jobProperty1 = JobProperty.builder()
+                                   .parameterDefinitions(Arrays.asList(parametersDefinitionProperty1,
+                                       parametersDefinitionProperty2, parametersDefinitionProperty3))
+                                   .build();
+    JobProperty jobProperty2 = JobProperty.builder()
+                                   .parameterDefinitions(Arrays.asList(parametersDefinitionProperty4,
+                                       parametersDefinitionProperty5, parametersDefinitionProperty6))
+                                   .build();
+
+    JenkinsRegistryUtils jenkinsRegistryUtilsSpy = spy(jenkinsRegistryUtils);
+
+    doReturn(JobWithExtendedDetails.builder().properties(Arrays.asList(jobProperty1, jobProperty2)).build())
+        .when(jenkinsRegistryUtilsSpy)
+        .getJobWithDetails(jenkinsInternalConfig, JOB);
+
+    JobDetails jobDetails = jenkinsRegistryUtilsSpy.getJobWithParamters(JOB, jenkinsInternalConfig);
+
+    List<JobDetails.JobParameter> jobParameterList = jobDetails.getParameters();
+    assertThat(jobParameterList.size()).isEqualTo(4);
+    assertThat(jobParameterList.get(0).getName()).isEqualTo(NAME_1);
+    assertThat(jobParameterList.get(1).getName()).isEqualTo(NAME_2);
+    assertThat(jobParameterList.get(2).getName()).isEqualTo(NAME_4);
+    assertThat(jobParameterList.get(3).getName()).isEqualTo(NAME_5);
+
+    verify(jenkinsRegistryUtilsSpy).getJobWithDetails(jenkinsInternalConfig, JOB);
   }
 }

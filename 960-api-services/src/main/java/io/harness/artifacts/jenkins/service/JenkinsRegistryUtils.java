@@ -80,12 +80,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Queue;
+import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
@@ -459,12 +461,18 @@ public class JenkinsRegistryUtils {
         JobWithExtendedDetails jobWithExtendedDetails = (JobWithExtendedDetails) jobWithDetails;
         List<JobProperty> properties = jobWithExtendedDetails.getProperties();
         if (properties != null) {
+          Set<String> parameterNames = new HashSet<>();
           properties.stream()
               .map(JobProperty::getParameterDefinitions)
               .filter(Objects::nonNull)
               .forEach((List<ParametersDefinitionProperty> pds) -> {
                 log.info("Job Properties definitions {}", pds.toArray());
-                pds.forEach((ParametersDefinitionProperty pdProperty) -> parameters.add(getJobParameter(pdProperty)));
+                pds.forEach((ParametersDefinitionProperty pdProperty) -> {
+                  if (!parameterNames.contains(pdProperty.getName())) {
+                    parameters.add(getJobParameter(pdProperty));
+                    parameterNames.add(pdProperty.getName());
+                  }
+                });
               });
         }
         log.info("Retrieving Job with details for Job: {} success", jobName);
