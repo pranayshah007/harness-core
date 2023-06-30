@@ -57,12 +57,14 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
 public class WebhookServiceImplTest extends CategoryTest {
-  @InjectMocks @Spy WebhookServiceImpl webhookService;
+  @InjectMocks @Spy DefaultWebhookServiceImpl webhookService;
   @Mock AccountOrgProjectHelper accountOrgProjectHelper;
   @Mock WebhookEventRepository webhookEventRepository;
   @Mock ConnectorService connectorService;
   @Mock ScmClientFacilitatorService scmClientFacilitatorService;
   @Mock ScmOrchestratorService scmOrchestratorService;
+
+  @InjectMocks WebhookServiceImpl webhookServiceImpl;
   private String accountId = "accountId";
   private String orgId = "orgId";
   private String projectId = "projectId";
@@ -92,10 +94,10 @@ public class WebhookServiceImplTest extends CategoryTest {
   public void testAddEventToQueue() {
     WebhookEvent webhookEvent = WebhookEvent.builder().build();
     when(webhookEventRepository.save(webhookEvent)).thenReturn(webhookEvent);
-    assertThat(webhookService.addEventToQueue(webhookEvent)).isEqualTo(webhookEvent);
+    assertThat(webhookServiceImpl.addEventToQueue(webhookEvent)).isEqualTo(webhookEvent);
 
     when(webhookEventRepository.save(webhookEvent)).thenThrow(new InvalidRequestException("message"));
-    assertThatThrownBy(() -> webhookService.addEventToQueue(webhookEvent))
+    assertThatThrownBy(() -> webhookServiceImpl.addEventToQueue(webhookEvent))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Webhook event could not be saved for processing");
   }

@@ -203,6 +203,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
               ngTriggerEntity.getAccountId(), FeatureName.SPG_DISABLE_CUSTOM_WEBHOOK_V3_URL)) {
         populateCustomWebhookTokenForCustomWebhookTriggers(ngTriggerEntity);
       }
+
+      checkForAccessForHarnessScm(ngTriggerEntity);
       NGTriggerEntity savedNgTriggerEntity = ngTriggerRepository.save(ngTriggerEntity);
       performPostUpsertFlow(savedNgTriggerEntity, false);
       outboxService.save(new TriggerCreateEvent(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
@@ -220,6 +222,24 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     } catch (DuplicateKeyException e) {
       throw new DuplicateFieldException(
           String.format(DUP_KEY_EXP_FORMAT_STRING, ngTriggerEntity.getIdentifier()), USER_SRE, e);
+    }
+  }
+
+  private void checkForAccessForHarnessScm(NGTriggerEntity ngTriggerEntity) {
+    if (ngTriggerEntity.getMetadata().getWebhook() != null
+        && ngTriggerEntity.getMetadata().getWebhook().getGit() != null
+        && Boolean.TRUE.equals(ngTriggerEntity.getMetadata().getWebhook().getGit().getIsHarnessScm())) {
+      // todo(abhinav): check what reponame is used
+      String repoName = ngTriggerEntity.getMetadata().getWebhook().getGit().getRepoName();
+      String repositoryAccessControlResourceName = "REPOSITORY";
+      String repositoryAccessControlPerms = "code_repo_edit";
+      accessControlClient.checkForAccessOrThrow(ResourceScope.builder()
+                                                    .accountIdentifier(ngTriggerEntity.getAccountId())
+                                                    .orgIdentifier(ngTriggerEntity.getOrgIdentifier())
+                                                    .projectIdentifier(ngTriggerEntity.getProjectIdentifier())
+                                                    .build(),
+          Resource.builder().resourceType(repositoryAccessControlResourceName).resourceIdentifier(repoName).build(),
+          repositoryAccessControlPerms);
     }
   }
 
@@ -401,6 +421,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
           ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getIdentifier());
     }
     Criteria criteria = getTriggerEqualityCriteria(ngTriggerEntity, false);
+    checkForAccessForHarnessScm(ngTriggerEntity);
     NGTriggerEntity updatedTriggerEntity = updateTriggerEntity(ngTriggerEntity, criteria);
     outboxService.save(new TriggerUpdateEvent(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
         ngTriggerEntity.getProjectIdentifier(), oldNgTriggerEntity, updatedTriggerEntity));

@@ -44,7 +44,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(PL)
-public class WebhookServiceImplTest extends CategoryTest {
+public class DefaultWebhookServiceImplTest extends CategoryTest {
   @Mock private NotificationSettingsService notificationSettingsService;
   @Mock private NotificationTemplateService notificationTemplateService;
   @Mock private WebhookSenderImpl webhookSender;
