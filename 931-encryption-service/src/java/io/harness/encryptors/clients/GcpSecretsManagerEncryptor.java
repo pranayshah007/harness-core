@@ -66,6 +66,7 @@ import org.threeten.bp.Duration;
 public class GcpSecretsManagerEncryptor implements VaultEncryptor {
   public static final int MAX_RETRY_ATTEMPTS = 3;
   public static final int TOTAL_TIMEOUT_IN_SECONDS = 30;
+  public static final String GCP_PROJECT = "GCP_PROJECT";
   private final TimeLimiter timeLimiter;
 
   @Inject
@@ -343,10 +344,15 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
     } else if (credentials instanceof UserCredentials) {
       return ((UserCredentials) credentials).getQuotaProjectId();
     } else {
-      throw new SecretManagementException(GCP_SECRET_OPERATION_ERROR,
-          "Not able to extract Project Id from provided "
-              + "credentials",
-          USER_SRE);
+      String projectId = System.getenv(GCP_PROJECT);
+      log.info("[GcpSecretsManagerEncryptor]: GCP_PROJECT ID :{}", projectId);
+      if (isEmpty(projectId)) {
+        throw new SecretManagementException(GCP_SECRET_OPERATION_ERROR,
+            "Not able to extract Project Id from provided "
+                + "credentials or ENV variable GCP_PROJECT",
+            USER_SRE);
+      }
+      return projectId;
     }
   }
 
