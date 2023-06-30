@@ -31,6 +31,7 @@ import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.data.PmsOutcome;
 import io.harness.pms.sdk.core.resolver.outcome.mapper.PmsOutcomeMapper;
+import io.harness.steps.StepUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -66,7 +67,9 @@ public class OrchestrationAdjacencyListGenerator {
     Map<String, EdgeListInternal> adjacencyList = adjacencyListInternal.getAdjacencyMap();
 
     String currentUuid = nodeExecution.getUuid();
-    graphVertexMap.put(currentUuid, graphVertexConverter.convertFrom(nodeExecution));
+    List<String> logBaseKeys = StepUtils.generateLogKeys(nodeExecution.getAmbiance(), null);
+
+    graphVertexMap.put(currentUuid, graphVertexConverter.convertFrom(nodeExecution, logBaseKeys));
 
     // compute adjList
     String parentId = null;
@@ -239,7 +242,9 @@ public class OrchestrationAdjacencyListGenerator {
           outcomes = new LinkedHashMap<>();
         }
         NodeExecutionsInfo stepDetails = pmsGraphStepDetailsService.getNodeExecutionsInfo(currentNodeId);
-        GraphVertex graphVertex = graphVertexConverter.convertFrom(nodeExecution, outcomes, stepDetails);
+        List<String> logBaseKeys = StepUtils.generateLogKeys(nodeExecution.getAmbiance(), null);
+
+        GraphVertex graphVertex = graphVertexConverter.convertFrom(nodeExecution, outcomes, stepDetails, logBaseKeys);
 
         if (graphVertexMap.containsKey(graphVertex.getUuid())) {
           continue;
