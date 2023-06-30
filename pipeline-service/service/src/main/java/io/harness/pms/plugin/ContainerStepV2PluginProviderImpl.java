@@ -143,7 +143,7 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
     if (initContainerV2StepInfo.getInfrastructure() instanceof ContainerK8sInfra) {
       ParameterField<String> harnessImageConnectorRef =
           ((ContainerK8sInfra) initContainerV2StepInfo.getInfrastructure()).getSpec().getHarnessImageConnectorRef();
-      if (harnessImageConnectorRef != null) {
+      if (!ParameterField.isBlank(harnessImageConnectorRef)) {
         return harnessImageConnectorRef.getValue();
       }
     }
