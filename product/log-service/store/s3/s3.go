@@ -13,6 +13,7 @@ import (
 	"io"
 	"net/http"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -40,7 +41,7 @@ type Store struct {
 
 // NewEnv returns a new S3 log store from the environment.
 func NewEnv(bucket, prefix, endpoint string, pathStyle bool, accessKeyID, accessSecretKey, region, acl string) *Store {
-	if endpoint != "" {
+	if endpoint != "" && !strings.HasPrefix(endpoint, "https://") {
 		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
 
@@ -107,12 +108,15 @@ func (s *Store) Download(ctx context.Context, key string) (io.ReadCloser, error)
 // download the logs to the S3 datastore.
 func (s *Store) DownloadLink(ctx context.Context, key string, expire time.Duration) (string, error) {
 	keyWithPrefix := path.Join("/", s.prefix, key)
-	req, _ := s.presignService.PresignGetObject(ctx, &s3.GetObjectInput{
+	req, err := s.presignService.PresignGetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(s.bucket),
 		Key:    aws.String(keyWithPrefix),
 	}, func(opts *s3.PresignOptions) {
 		opts.Expires = time.Duration(int64(expire.Seconds()) * int64(time.Second))
 	})
+	if err != nil {
+		return "", err
+	}
 
 	return req.URL, nil
 }
@@ -138,12 +142,15 @@ func (s *Store) Upload(ctx context.Context, key string, r io.Reader) error {
 // upload the logs to the S3 datastore.
 func (s *Store) UploadLink(ctx context.Context, key string, expire time.Duration) (string, error) {
 	keyWithPrefix := path.Join("/", s.prefix, key)
-	req, _ := s.presignService.PresignPutObject(ctx, &s3.PutObjectInput{
+	req, err := s.presignService.PresignPutObject(ctx, &s3.PutObjectInput{
 		Bucket: aws.String(s.bucket),
 		Key:    aws.String(keyWithPrefix),
 	}, func(opts *s3.PresignOptions) {
 		opts.Expires = time.Duration(int64(expire.Seconds()) * int64(time.Second))
 	})
+	if err != nil {
+		return "", err
+	}
 
 	return req.URL, nil
 }

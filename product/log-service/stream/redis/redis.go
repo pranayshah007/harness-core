@@ -122,6 +122,7 @@ func (r *Redis) Create(ctx context.Context, key string) error {
 		Stream: key,
 		ID:     "*",
 		MaxLen: maxStreamSize,
+		Approx: true,
 		Values: map[string]interface{}{entryKey: []byte{}},
 	}
 	resp := r.Client.XAdd(ctx, args)
@@ -162,6 +163,7 @@ func (r *Redis) Write(ctx context.Context, key string, lines ...*stream.Line) er
 			Stream: key,
 			Values: map[string]interface{}{entryKey: bytes},
 			MaxLen: maxStreamSize,
+			Approx: true,
 			ID:     "*",
 		}
 		resp := r.Client.XAdd(ctx, arg)
