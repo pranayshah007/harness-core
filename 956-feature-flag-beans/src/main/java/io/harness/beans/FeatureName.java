@@ -810,7 +810,10 @@ public enum FeatureName {
   WORKFLOW_EXECUTION_ZOMBIE_MONITOR,
   WORKFLOW_PIPELINE_PERMISSION_BY_ENTITY,
   YAML_APIS_GRANULAR_PERMISSION,
-  YAML_GIT_CONNECTOR_NAME;
+  YAML_GIT_CONNECTOR_NAME,
+  CDS_STEP_EXECUTION_DATA_SYNC(
+      "This flag controls if you want Step execution data saved in mongodb and eventually synced to timescale",
+      HarnessTeam.CDP);
   // keep-sorted end
 
   @Deprecated
