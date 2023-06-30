@@ -22,4 +22,7 @@ public class DocumentationConstants {
 
   public static final String serviceRequestDTO =
       "{\"name\":\"serviceName\",\"identifier\":\"serviceId\",\"tags\":{},\"projectIdentifier\":\"s\",\"orgIdentifier\":\"default\",\"yaml\":\"service:\\n  name: serviceName\\n  identifier: serviceId\\n  tags: {}\\n  serviceDefinition:\\n    spec:\\n      artifacts:\\n        primary:\\n          primaryArtifactRef: artifactName\\n          sources:\\n            - spec:\\n                connectorRef: connectorId\\n                imagePath: imagePath\\n                tag: tagId\\n              identifier: artifactName\\n              type: DockerRegistry\\n    type: Kubernetes\\n\"}";
+
+  public static final String SERVICE_OVERRIDE_V2_REQUEST_DTO =
+      "{\"orgIdentifier\":\"defaultOrgId\",\"projectIdentifier\":\"defaultProjId\",\"environmentRef\":\"defaultEnvRef\",\"serviceRef\":\"defaultServiceRef\",\"infraIdentifier\":\"defaultInfraId\",\"type\":\"ENV_SERVICE_OVERRIDE\",\"spec\":{\"variables\":[{\"name\":\"v1\",\"type\":\"String\",\"value\":\"val1\"}],\"manifests\":[{\"manifest\":{\"identifier\":\"manifest1\",\"type\":\"K8sManifest\",\"spec\":{\"store\":{\"type\":\"Github\",\"spec\":{\"connectorRef\":\"abcdConnector\",\"gitFetchType\":\"Branch\",\"paths\":[\"files1\"],\"repoName\":\"abcd\",\"branch\":\"master\"}},\"skipResourceVersioning\":false}}}],\"configFiles\":[{\"configFile\":{\"identifier\":\"configFile1\",\"spec\":{\"store\":{\"type\":\"Harness\",\"spec\":{\"files\":[\"/abcd\"]}}}}}]}}\n";
 }
