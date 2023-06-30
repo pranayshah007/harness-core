@@ -11,21 +11,18 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 
 import io.harness.annotations.dev.OwnedBy;
 
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Data;
-import lombok.experimental.FieldDefaults;
-
-@Data
-@Builder
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(CE)
-public class AzureVmUtilisationDTO {
-  String vmId;
-  double averageCpu;
-  double maxCpu;
-  double averageMemory;
-  double maxMemory;
-  long startTime;
-  long endTime;
+public enum AzureVmMetricType {
+  PERCENTAGE_CPU("Percentage CPU"),
+  PERCENTAGE_MEMORY("Percentage Memory");
+
+  private final String name;
+
+  AzureVmMetricType(final String name) {
+    this.name = name;
+  }
+
+  public String getName() {
+    return name;
+  }
 }

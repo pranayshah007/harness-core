@@ -17,9 +17,10 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.NGCommonEntityConstants;
 import io.harness.category.element.UnitTests;
+import io.harness.ccm.commons.beans.recommendation.AzureVmMetricType;
 import io.harness.ccm.commons.beans.recommendation.AzureVmUtilisationDTO;
 import io.harness.ccm.commons.beans.recommendation.EC2InstanceUtilizationData;
-import io.harness.ccm.graphql.core.recommendation.AzureCpuUtilisationService;
+import io.harness.ccm.graphql.core.recommendation.AzureMetricsUtilisationService;
 import io.harness.ccm.graphql.core.recommendation.EC2InstanceUtilizationService;
 import io.harness.ccm.graphql.utils.GraphQLUtils;
 import io.harness.rule.Owner;
@@ -50,7 +51,7 @@ public class UtilizationQueryTest extends CategoryTest {
   public void setUp() throws Exception {
     utilizationQueryUnderTest = new UtilizationQuery();
     utilizationQueryUnderTest.graphQLUtils = mock(GraphQLUtils.class);
-    utilizationQueryUnderTest.azureCpuUtilisationService = mock(AzureCpuUtilisationService.class);
+    utilizationQueryUnderTest.azureMetricsUtilisationService = mock(AzureMetricsUtilisationService.class);
     utilizationQueryUnderTest.ec2InstanceUtilizationService = mock(EC2InstanceUtilizationService.class);
     GraphQLContext graphQLContext =
         GraphQLContext.newContext().of(NGCommonEntityConstants.ACCOUNT_KEY, ACCOUNT_ID).build();
@@ -107,14 +108,16 @@ public class UtilizationQueryTest extends CategoryTest {
   @Test
   @Owner(developers = ANMOL)
   @Category(UnitTests.class)
-  public void testAzureVmUtilData() {
-    azureVmUtilisationDTOS = getAzureVmUtilisationDTOS();
+  public void testAzureVmUtilData_CpuUtilization() {
+    azureVmUtilisationDTOS = getAzureVmCpuUtilisationDTOS();
     when(utilizationQueryUnderTest.graphQLUtils.getAccountIdentifier(any(ResolutionEnvironment.class)))
         .thenReturn(ACCOUNT_ID);
-    when(utilizationQueryUnderTest.azureCpuUtilisationService.getAzureVmCpuUtilisationData(AZURE_VM_ID, ACCOUNT_ID, 0))
+    when(utilizationQueryUnderTest.azureMetricsUtilisationService.getAzureVmMetricUtilisationData(
+             AZURE_VM_ID, ACCOUNT_ID, 0, AzureVmMetricType.PERCENTAGE_CPU))
         .thenReturn(azureVmUtilisationDTOS);
 
-    final List<AzureVmUtilisationDTO> result = utilizationQueryUnderTest.azureVmUtilData(AZURE_VM_ID, 0, env);
+    final List<AzureVmUtilisationDTO> result =
+        utilizationQueryUnderTest.azureVmUtilData(AZURE_VM_ID, 0, env, AzureVmMetricType.PERCENTAGE_CPU);
 
     assertThat(result).isEqualTo(azureVmUtilisationDTOS);
   }
@@ -122,13 +125,48 @@ public class UtilizationQueryTest extends CategoryTest {
   @Test
   @Owner(developers = ANMOL)
   @Category(UnitTests.class)
-  public void testAzureVmUtilData_AzureCpuUtilisationServiceReturnsNoItems() {
+  public void testAzureVmUtilData_MemoryUtilization() {
+    azureVmUtilisationDTOS = getAzureVmMemoryUtilisationDTOS();
     when(utilizationQueryUnderTest.graphQLUtils.getAccountIdentifier(any(ResolutionEnvironment.class)))
         .thenReturn(ACCOUNT_ID);
-    when(utilizationQueryUnderTest.azureCpuUtilisationService.getAzureVmCpuUtilisationData(AZURE_VM_ID, ACCOUNT_ID, 0))
+    when(utilizationQueryUnderTest.azureMetricsUtilisationService.getAzureVmMetricUtilisationData(
+             AZURE_VM_ID, ACCOUNT_ID, 0, AzureVmMetricType.PERCENTAGE_MEMORY))
+        .thenReturn(azureVmUtilisationDTOS);
+
+    final List<AzureVmUtilisationDTO> result =
+        utilizationQueryUnderTest.azureVmUtilData(AZURE_VM_ID, 0, env, AzureVmMetricType.PERCENTAGE_MEMORY);
+
+    assertThat(result).isEqualTo(azureVmUtilisationDTOS);
+  }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testAzureVmUtilData_CpuUtilisation_AzureMetricsUtilisationServiceReturnsNoItems() {
+    when(utilizationQueryUnderTest.graphQLUtils.getAccountIdentifier(any(ResolutionEnvironment.class)))
+        .thenReturn(ACCOUNT_ID);
+    when(utilizationQueryUnderTest.azureMetricsUtilisationService.getAzureVmMetricUtilisationData(
+             AZURE_VM_ID, ACCOUNT_ID, 0, AzureVmMetricType.PERCENTAGE_CPU))
         .thenReturn(Collections.emptyList());
 
-    final List<AzureVmUtilisationDTO> result = utilizationQueryUnderTest.azureVmUtilData(AZURE_VM_ID, 0, env);
+    final List<AzureVmUtilisationDTO> result =
+        utilizationQueryUnderTest.azureVmUtilData(AZURE_VM_ID, 0, env, AzureVmMetricType.PERCENTAGE_CPU);
+
+    assertThat(result).isEqualTo(Collections.emptyList());
+  }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testAzureVmUtilData_MemoryUtilisation_AzureMetricsUtilisationServiceReturnsNoItems() {
+    when(utilizationQueryUnderTest.graphQLUtils.getAccountIdentifier(any(ResolutionEnvironment.class)))
+        .thenReturn(ACCOUNT_ID);
+    when(utilizationQueryUnderTest.azureMetricsUtilisationService.getAzureVmMetricUtilisationData(
+             AZURE_VM_ID, ACCOUNT_ID, 0, AzureVmMetricType.PERCENTAGE_MEMORY))
+        .thenReturn(Collections.emptyList());
+
+    final List<AzureVmUtilisationDTO> result =
+        utilizationQueryUnderTest.azureVmUtilData(AZURE_VM_ID, 0, env, AzureVmMetricType.PERCENTAGE_MEMORY);
 
     assertThat(result).isEqualTo(Collections.emptyList());
   }
@@ -144,11 +182,21 @@ public class UtilizationQueryTest extends CategoryTest {
                        .build());
   }
 
-  private List<AzureVmUtilisationDTO> getAzureVmUtilisationDTOS() {
+  private List<AzureVmUtilisationDTO> getAzureVmCpuUtilisationDTOS() {
     return List.of(AzureVmUtilisationDTO.builder()
                        .vmId(AZURE_VM_ID)
                        .averageCpu(9.7)
                        .maxCpu(18.7)
+                       .startTime(1684454400000L)
+                       .endTime(1684540800000L)
+                       .build());
+  }
+
+  private List<AzureVmUtilisationDTO> getAzureVmMemoryUtilisationDTOS() {
+    return List.of(AzureVmUtilisationDTO.builder()
+                       .vmId(AZURE_VM_ID)
+                       .averageMemory(9.7)
+                       .maxMemory(18.7)
                        .startTime(1684454400000L)
                        .endTime(1684540800000L)
                        .build());
