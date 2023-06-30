@@ -18,14 +18,16 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.GitClientHelper;
 import io.harness.gitsync.beans.GitRepositoryDTO;
+import io.harness.product.ci.scm.proto.Repository;
 
 import com.google.inject.Singleton;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
 @Slf4j
 @OwnedBy(PIPELINE)
-public class GitRepoUrlHelper {
+public class GitRepoHelper {
   public String getRepoUrl(ScmConnector scmConnector, String repoName) {
     String gitConnectionUrl = scmConnector.getGitConnectionUrl(GitRepositoryDTO.builder().name(repoName).build());
     switch (scmConnector.getConnectorType()) {
@@ -49,5 +51,16 @@ public class GitRepoUrlHelper {
         throw new InvalidRequestException(
             format("Connector of given type : %s isn't supported", scmConnector.getConnectorType()));
     }
+  }
+
+  public String getRepoNameWithNamespace(ScmConnector scmConnector, String repo) {
+    String url = getRepoUrl(scmConnector, repo);
+    List<String> segments = List.of(url.split("/"));
+    String namespace = segments.get(segments.size() - 2);
+    return namespace + "/" + repo;
+  }
+
+  public String getCompleteRepoName(Repository repo) {
+    return repo.getNamespace() + "/" + repo.getName();
   }
 }

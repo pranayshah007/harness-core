@@ -42,7 +42,7 @@ import org.mockito.MockitoAnnotations;
 public class GitDefaultBranchCacheHelperTest extends GitSyncTestBase {
   @InjectMocks GitDefaultBranchCacheHelper gitDefaultBranchCacheHelper;
   @Mock GitDefaultBranchCacheService gitDefaultBranchCacheService;
-  @Mock GitRepoUrlHelper gitRepoUrlHelper;
+  @Mock GitRepoHelper gitRepoHelper;
   @Mock NGFeatureFlagHelperService ngFeatureFlagHelperService;
   String accountIdentifier = "accountIdentifier";
   String repoName = "repoName";

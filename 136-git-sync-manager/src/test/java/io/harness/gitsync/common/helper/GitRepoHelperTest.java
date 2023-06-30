@@ -49,8 +49,8 @@ import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-public class GitRepoUrlHelperTest extends GitSyncTestBase {
-  @InjectMocks GitRepoUrlHelper gitRepoUrlHelper;
+public class GitRepoHelperTest extends GitSyncTestBase {
+  @InjectMocks GitRepoHelper gitRepoHelper;
   ConnectorInfoDTO connectorInfo;
   String accountIdentifier = "accountIdentifier";
   String projectIdentifier = "projectIdentifier";
@@ -84,7 +84,7 @@ public class GitRepoUrlHelperTest extends GitSyncTestBase {
     ConnectorInfoDTO connectorInfo = ConnectorInfoDTO.builder().connectorConfig(connectorDTO).build();
     ScmConnector scmConnector = (ScmConnector) connectorInfo.getConnectorConfig();
     when(GitClientHelper.isBitBucketSAAS(any())).thenReturn(false);
-    String responseUrl = gitRepoUrlHelper.getRepoUrl(scmConnector, repoName);
+    String responseUrl = gitRepoHelper.getRepoUrl(scmConnector, repoName);
 
     assertThat(responseUrl.equals(scmConnector.getGitConnectionUrl(GitRepositoryDTO.builder().name(repoName).build())))
         .isTrue();
@@ -102,7 +102,7 @@ public class GitRepoUrlHelperTest extends GitSyncTestBase {
     connectorInfo = ConnectorInfoDTO.builder().connectorConfig(githubConnector).build();
     ScmConnector scmConnector = (ScmConnector) connectorInfo.getConnectorConfig();
 
-    String responseUrl = gitRepoUrlHelper.getRepoUrl(scmConnector, repoName);
+    String responseUrl = gitRepoHelper.getRepoUrl(scmConnector, repoName);
 
     assertThat(responseUrl.equals(completeRepoUrl)).isTrue();
   }
@@ -119,7 +119,7 @@ public class GitRepoUrlHelperTest extends GitSyncTestBase {
     connectorInfo = ConnectorInfoDTO.builder().connectorConfig(connectorDTO).build();
     ScmConnector scmConnector = (ScmConnector) connectorInfo.getConnectorConfig();
 
-    String responseUrl = gitRepoUrlHelper.getRepoUrl(scmConnector, repoName);
+    String responseUrl = gitRepoHelper.getRepoUrl(scmConnector, repoName);
 
     assertThat(responseUrl.equals("https://bitbucket.org/harness/repoName")).isTrue();
   }
@@ -138,7 +138,7 @@ public class GitRepoUrlHelperTest extends GitSyncTestBase {
     connectorInfo = ConnectorInfoDTO.builder().connectorConfig(connectorDTO).build();
     ScmConnector scmConnector = (ScmConnector) connectorInfo.getConnectorConfig();
 
-    String responseUrl = gitRepoUrlHelper.getRepoUrl(scmConnector, repoName);
+    String responseUrl = gitRepoHelper.getRepoUrl(scmConnector, repoName);
 
     assertThat(responseUrl.equals("https://github.com/scm/harness/repoName")).isTrue();
   }
@@ -158,7 +158,7 @@ public class GitRepoUrlHelperTest extends GitSyncTestBase {
     connectorInfo = ConnectorInfoDTO.builder().connectorConfig(connectorDTO).build();
     ScmConnector scmConnector = (ScmConnector) connectorInfo.getConnectorConfig();
 
-    String responseUrl = gitRepoUrlHelper.getRepoUrl(scmConnector, repoName);
+    String responseUrl = gitRepoHelper.getRepoUrl(scmConnector, repoName);
 
     assertThat(responseUrl.equals("https://dev.azure.com/repoOrg/repoProject/_git/repoName")).isTrue();
   }
@@ -175,7 +175,7 @@ public class GitRepoUrlHelperTest extends GitSyncTestBase {
     connectorInfo = ConnectorInfoDTO.builder().connectorConfig(gitlabConnectorDTO).build();
     ScmConnector scmConnector = (ScmConnector) connectorInfo.getConnectorConfig();
 
-    String responseUrl = gitRepoUrlHelper.getRepoUrl(scmConnector, repoName);
+    String responseUrl = gitRepoHelper.getRepoUrl(scmConnector, repoName);
 
     assertThat(responseUrl.equals(completeRepoUrl)).isTrue();
   }
@@ -188,7 +188,7 @@ public class GitRepoUrlHelperTest extends GitSyncTestBase {
     ConnectorInfoDTO connectorInfo = ConnectorInfoDTO.builder().connectorConfig(connectorDTO).build();
     ScmConnector scmConnector = (ScmConnector) connectorInfo.getConnectorConfig();
 
-    assertThatThrownBy(() -> gitRepoUrlHelper.getRepoUrl(scmConnector, repoName))
+    assertThatThrownBy(() -> gitRepoHelper.getRepoUrl(scmConnector, repoName))
         .isInstanceOf(InvalidRequestException.class);
   }
 }
