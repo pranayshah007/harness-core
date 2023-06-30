@@ -70,7 +70,7 @@ public class SplunkConnectorDTO extends ConnectorConfigDTO implements Decryptabl
 
   @Override
   public void validate() {
-    SplunkAuthType authType = Optional.of(this.authType).orElse(SplunkAuthType.USER_PASSWORD);
+    SplunkAuthType authType = Optional.ofNullable(this.authType).orElse(SplunkAuthType.USER_PASSWORD);
     switch (authType) {
       case USER_PASSWORD:
         Preconditions.checkNotNull(this.username, "username cannot be empty");

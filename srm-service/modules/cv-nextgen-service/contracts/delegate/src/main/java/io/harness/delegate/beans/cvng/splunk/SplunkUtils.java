@@ -21,7 +21,8 @@ public class SplunkUtils {
 
   public static String getAuthorizationHeader(SplunkConnectorDTO splunkConnectorDTO) {
     String authHeader = null;
-    SplunkAuthType authType = Optional.of(splunkConnectorDTO.getAuthType()).orElse(SplunkAuthType.USER_PASSWORD);
+    SplunkAuthType authType =
+        Optional.ofNullable(splunkConnectorDTO.getAuthType()).orElse(SplunkAuthType.USER_PASSWORD);
     if (SplunkAuthType.USER_PASSWORD.equals(authType)) {
       String pair = splunkConnectorDTO.getUsername() + ":"
           + String.copyValueOf(splunkConnectorDTO.getPasswordRef().getDecryptedValue());
