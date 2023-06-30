@@ -206,7 +206,7 @@ if [[ "" != "$IDP_SERVICE_READ_TIMEOUT_IN_SECONDS" ]]; then
   export IDP_SERVICE_READ_TIMEOUT_IN_SECONDS; yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.idp.serviceHttpClientConfig.readTimeOutSeconds=env(IDP_SERVICE_READ_TIMEOUT_IN_SECONDS)' $CONFIG_FILE
 fi
 
-if [[ "" != "$IDP_SERVICE_SERVICE_SECRET" ]]; then
+if [[ "" != "$IDP_SERVICE_SECRET" ]]; then
   export IDP_SERVICE_SECRET; yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.idp.secret=env(IDP_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
