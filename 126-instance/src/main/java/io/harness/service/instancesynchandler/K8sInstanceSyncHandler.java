@@ -10,6 +10,8 @@ package io.harness.service.instancesynchandler;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DIRECT;
 
+import static software.wings.beans.TaskType.INSTANCE_SYNC_V2_NG_SUPPORT;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -79,11 +81,10 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
     return KUBERNETES_DIRECT;
   }
 
-  // todo: add INSTANCE_SYNC_V2_NG_SUPPORT to TaskType INSTANCE_SYNC_V2_NG_SUPPORT
   public boolean isInstanceSyncV2EnabledAndSupported(String accountId) {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_K8S_HELM_INSTANCE_SYNC_V2_NG)
         && delegateGrpcClientWrapper.isTaskTypeSupported(AccountId.newBuilder().setId(accountId).build(),
-            TaskType.newBuilder().setType("INSTANCE_SYNC_V2_NG_SUPPORT").build());
+            TaskType.newBuilder().setType(INSTANCE_SYNC_V2_NG_SUPPORT.name()).build());
   }
 
   @Override

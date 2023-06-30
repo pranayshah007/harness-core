@@ -9,6 +9,8 @@ package io.harness.service.instancesynchandler;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import static software.wings.beans.TaskType.INSTANCE_SYNC_V2_NG_SUPPORT;
+
 import io.harness.beans.FeatureName;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -74,11 +76,10 @@ public class NativeHelmInstanceSyncHandler extends AbstractInstanceSyncHandler {
     return InfrastructureKind.KUBERNETES_DIRECT;
   } // design issue, not actually used anymore
 
-  // todo: add INSTANCE_SYNC_V2_NG_SUPPORT to TaskType INSTANCE_SYNC_V2_NG_SUPPORT
   public boolean isInstanceSyncV2EnabledAndSupported(String accountId) {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_K8S_HELM_INSTANCE_SYNC_V2_NG)
         && delegateGrpcClientWrapper.isTaskTypeSupported(AccountId.newBuilder().setId(accountId).build(),
-            TaskType.newBuilder().setType("INSTANCE_SYNC_V2_NG_SUPPORT").build());
+            TaskType.newBuilder().setType(INSTANCE_SYNC_V2_NG_SUPPORT.name()).build());
   }
 
   @Override
