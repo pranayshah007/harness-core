@@ -1,0 +1,25 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+FROM us.gcr.io/platform-205701/cie-agent-harness-core-jdk11:latest as builder
+
+RUN mkdir -p /app
+
+COPY . /app
+
+WORKDIR /app
+
+RUN chmod +x /app/platform-service/build/feature_build.sh
+RUN chmod +x /app/platform-service/build/build_jar.sh
+RUN chmod +x /app/platform-service/build/build_dist.sh
+RUN chmod +x /app/scripts/bazel/testDistribute.sh
+RUN chmod +x /app/scripts/bazel/generate_credentials.sh
+
+RUN /app/scripts/bazel/generate_credentials.sh
+RUN bazel version
+RUN bazel clean
+RUN /app/platform-service/build/feature_build.sh
+RUN /app/platform-service/build/build_jar.sh
+RUN /app/platform-service/build/build_dist.sh
