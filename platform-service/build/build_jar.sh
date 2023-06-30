@@ -12,5 +12,5 @@ if [ "${PLATFORM}" == "jenkins" ]; then
 fi
 BAZEL_DIRS=${HOME}/.bazel-dirs
 BAZEL_ARGUMENTS="--show_timestamps --announce_rc --experimental_convenience_symlinks=normal --remote_download_outputs=all --symlink_prefix=${BAZEL_DIRS}/"
-PLATFORM_SERVICE_MODULE="//platform-service/service:module //platform-service/service:module_deploy.jar"
+PLATFORM_SERVICE_MODULE="//platform-service/service:module_deploy.jar"
 bazel ${bazelrc} build $PLATFORM_SERVICE_MODULE ${BAZEL_ARGUMENTS}
