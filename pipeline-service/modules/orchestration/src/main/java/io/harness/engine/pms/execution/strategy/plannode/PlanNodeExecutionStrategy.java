@@ -152,13 +152,12 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
     if (AmbianceUtils.shouldUseExpressionEngineV2(ambiance)) {
       enabledFeatureFlags.add(EngineExpressionEvaluator.PIE_EXECUTION_JSON_SUPPORT);
     }
-    if (AmbianceUtils.isFFEnabled(ambiance, FeatureName.PIE_EXPRESSION_CONCATENATION.name())
-        || pmsFeatureFlagService.isEnabled(
+    // will be removed in the next release
+    if (pmsFeatureFlagService.isEnabled(
             AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXPRESSION_CONCATENATION)) {
       enabledFeatureFlags.add(FeatureName.PIE_EXPRESSION_CONCATENATION.name());
     }
-    if (AmbianceUtils.isFFEnabled(ambiance, FeatureName.PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT.name())
-        || pmsFeatureFlagService.isEnabled(
+    if (pmsFeatureFlagService.isEnabled(
             AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT)) {
       enabledFeatureFlags.add(FeatureName.PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT.name());
     }
