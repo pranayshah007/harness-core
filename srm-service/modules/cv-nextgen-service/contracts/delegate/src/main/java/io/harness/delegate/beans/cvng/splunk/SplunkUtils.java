@@ -7,17 +7,29 @@
 
 package io.harness.delegate.beans.cvng.splunk;
 
+import static io.harness.data.encoding.EncodingUtils.encodeBase64;
+
+import io.harness.delegate.beans.connector.splunkconnector.SplunkAuthType;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectorDTO;
 
-import java.nio.charset.Charset;
-import java.util.Base64;
-
+import java.util.Optional;
+import lombok.experimental.UtilityClass;
+@UtilityClass
 public class SplunkUtils {
-  private SplunkUtils() {}
+  private static final String HEADER_PREFIX_BASIC_AUTH = "Basic ";
+  private static final String HEADER_PREFIX_BEARER_TOKEN = "Bearer ";
 
   public static String getAuthorizationHeader(SplunkConnectorDTO splunkConnectorDTO) {
-    String decryptedPassword = new String(splunkConnectorDTO.getPasswordRef().getDecryptedValue());
-    String usernameColonPassword = splunkConnectorDTO.getUsername().concat(":").concat(decryptedPassword);
-    return "Basic " + Base64.getEncoder().encodeToString(usernameColonPassword.getBytes(Charset.forName("UTF-8")));
+    String authHeader = null;
+    SplunkAuthType authType = Optional.of(splunkConnectorDTO.getAuthType()).orElse(SplunkAuthType.USER_PASSWORD);
+    if (SplunkAuthType.USER_PASSWORD.equals(authType)) {
+      String pair = splunkConnectorDTO.getUsername() + ":"
+          + String.copyValueOf(splunkConnectorDTO.getPasswordRef().getDecryptedValue());
+      authHeader = HEADER_PREFIX_BASIC_AUTH + encodeBase64(pair);
+    } else if (SplunkAuthType.BEARER_TOKEN.equals(authType)) {
+      authHeader =
+          HEADER_PREFIX_BEARER_TOKEN + String.copyValueOf(splunkConnectorDTO.getTokenRef().getDecryptedValue());
+    }
+    return authHeader;
   }
 }

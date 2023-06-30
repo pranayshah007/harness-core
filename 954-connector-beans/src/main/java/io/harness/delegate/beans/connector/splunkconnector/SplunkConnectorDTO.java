@@ -7,17 +7,24 @@
 
 package io.harness.delegate.beans.connector.splunkconnector;
 
+import static io.harness.eraro.ErrorCode.INVALID_REQUEST;
+import static io.harness.exception.WingsException.USER;
+
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.InvalidRequestException;
 import io.harness.secret.SecretReference;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Preconditions;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -44,17 +51,38 @@ public class SplunkConnectorDTO extends ConnectorConfigDTO implements Decryptabl
   @NotNull String accountId;
   Set<String> delegateSelectors;
 
+  @Builder.Default @JsonProperty("type") SplunkAuthType authType = SplunkAuthType.USER_PASSWORD;
+
+  @ApiModelProperty(dataType = "string") @SecretReference SecretRefData passwordRef;
+
+  @ApiModelProperty(dataType = "string") @SecretReference SecretRefData tokenRef;
+
   public String getSplunkUrl() {
     if (splunkUrl.endsWith("/")) {
       return splunkUrl;
     }
     return splunkUrl + "/";
   }
-
-  @ApiModelProperty(dataType = "string") @NotNull @SecretReference SecretRefData passwordRef;
-
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {
     return Collections.singletonList(this);
+  }
+
+  @Override
+  public void validate() {
+    SplunkAuthType authType = Optional.of(this.authType).orElse(SplunkAuthType.USER_PASSWORD);
+    switch (authType) {
+      case USER_PASSWORD:
+        Preconditions.checkNotNull(this.username, "username cannot be empty");
+        Preconditions.checkNotNull(this.passwordRef, "passwordRef cannot be empty");
+        break;
+      case BEARER_TOKEN:
+        Preconditions.checkNotNull(this.tokenRef, "tokenRef cannot be empty");
+        break;
+      case ANONYMOUS:
+        break;
+      default:
+        throw new InvalidRequestException("Invalid Credential type.", INVALID_REQUEST, USER);
+    }
   }
 }
