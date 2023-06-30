@@ -119,7 +119,6 @@ import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.model.time.ExecutionTime;
 import com.cronutils.parser.CronParser;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.annotations.VisibleForTesting;
@@ -866,9 +865,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       if (innerMap == null) {
         throw new InvalidRequestException("Invalid Trigger Yaml.");
       }
-      ObjectMapper objectMapper = ngTriggerElementMapper.getObjectMapper();
       innerMap.set(INPUT_YAML, new TextNode(pipelineComponent));
-      return objectMapper.writeValueAsString(node);
+      return YamlUtils.writeYamlString(node);
     } catch (IOException e) {
       throw new InvalidYamlException("Invalid Trigger Yaml", e);
     }

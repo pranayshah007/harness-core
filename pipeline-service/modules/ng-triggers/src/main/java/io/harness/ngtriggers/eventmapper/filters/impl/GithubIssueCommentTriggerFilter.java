@@ -50,9 +50,9 @@ import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ErrorResponseData;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.ConnectorUtils;
+import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
@@ -135,7 +135,7 @@ public class GithubIssueCommentTriggerFilter implements TriggerFilter {
   }
 
   private PullRequest generateProtoFromJson(String prJson) throws Exception {
-    JsonNode productNode = new ObjectMapper().readTree(prJson);
+    JsonNode productNode = JsonPipelineUtils.readTree(prJson);
     Builder builder = PullRequest.newBuilder();
     long prNum = productNode.get("number").longValue();
     builder.setNumber(prNum);
