@@ -31,6 +31,7 @@ import io.harness.entities.InstanceType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.helper.K8sAndHelmInfrastructureUtility;
 import io.harness.helper.K8sCloudConfigMetadata;
+import io.harness.helper.KubernetesInfrastructureDTO;
 import io.harness.models.infrastructuredetails.InfrastructureDetails;
 import io.harness.models.infrastructuredetails.K8sInfrastructureDetails;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
@@ -78,6 +79,22 @@ public class NativeHelmInstanceSyncHandler extends AbstractInstanceSyncHandler {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_K8S_HELM_INSTANCE_SYNC_V2_NG)
         && delegateGrpcClientWrapper.isTaskTypeSupported(AccountId.newBuilder().setId(accountId).build(),
             TaskType.newBuilder().setType("INSTANCE_SYNC_V2_NG_SUPPORT").build());
+  }
+
+  @Override
+  public InfrastructureOutcome getInfrastructureOutcome(
+      String infrastructureKind, DeploymentInfoDTO deploymentInfoDTO, String connectorRef) {
+    NativeHelmDeploymentInfoDTO nativeHelmDeploymentInfoDTO = (NativeHelmDeploymentInfoDTO) deploymentInfoDTO;
+    KubernetesInfrastructureDTO kubernetesInfrastructureDTO =
+        KubernetesInfrastructureDTO.builder()
+            .namespaces(nativeHelmDeploymentInfoDTO.getNamespaces())
+            .releaseName(nativeHelmDeploymentInfoDTO.getReleaseName())
+            .cloudConfigMetadata(nativeHelmDeploymentInfoDTO.getCloudConfigMetadata() == null
+                    ? null
+                    : nativeHelmDeploymentInfoDTO.getCloudConfigMetadata())
+            .build();
+    return K8sAndHelmInfrastructureUtility.getInfrastructureOutcome(
+        infrastructureKind, kubernetesInfrastructureDTO, connectorRef);
   }
 
   @Override

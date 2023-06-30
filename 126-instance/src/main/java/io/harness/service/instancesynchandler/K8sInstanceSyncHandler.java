@@ -34,6 +34,7 @@ import io.harness.entities.InstanceType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.helper.K8sAndHelmInfrastructureUtility;
 import io.harness.helper.K8sCloudConfigMetadata;
+import io.harness.helper.KubernetesInfrastructureDTO;
 import io.harness.models.infrastructuredetails.InfrastructureDetails;
 import io.harness.models.infrastructuredetails.K8sInfrastructureDetails;
 import io.harness.ng.core.k8s.ServiceSpecType;
@@ -174,8 +175,17 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
   @Override
   public InfrastructureOutcome getInfrastructureOutcome(
       String infrastructureKind, DeploymentInfoDTO deploymentInfoDTO, String connectorRef) {
+    K8sDeploymentInfoDTO k8sDeploymentInfoDTO = (K8sDeploymentInfoDTO) deploymentInfoDTO;
+    KubernetesInfrastructureDTO kubernetesInfrastructureDTO =
+        KubernetesInfrastructureDTO.builder()
+            .namespaces(k8sDeploymentInfoDTO.getNamespaces())
+            .releaseName(k8sDeploymentInfoDTO.getReleaseName())
+            .cloudConfigMetadata(k8sDeploymentInfoDTO.getCloudConfigMetadata() == null
+                    ? null
+                    : k8sDeploymentInfoDTO.getCloudConfigMetadata())
+            .build();
     return K8sAndHelmInfrastructureUtility.getInfrastructureOutcome(
-        infrastructureKind, deploymentInfoDTO, connectorRef);
+        infrastructureKind, kubernetesInfrastructureDTO, connectorRef);
   }
 
   private LinkedHashSet<String> getNamespaces(@NotNull List<ServerInstanceInfo> serverInstanceInfoList) {
