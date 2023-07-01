@@ -7,9 +7,7 @@
 
 package io.harness.delegate.service.core.litek8s;
 
-import io.harness.delegate.core.beans.ResourceRequirements;
-import io.harness.delegate.core.beans.SecurityContext;
-import io.harness.delegate.core.beans.StepRuntime;
+import io.harness.delegate.core.beans.*;
 import io.harness.delegate.service.core.k8s.K8SEnvVar;
 import io.harness.delegate.service.core.util.K8SResourceHelper;
 
@@ -50,23 +48,41 @@ public class ContainerFactory {
   private static final String DELEGATE_SERVICE_ENDPOINT_VARIABLE = "DELEGATE_SERVICE_ENDPOINT";
   private static final String DELEGATE_SERVICE_ID_VARIABLE = "DELEGATE_SERVICE_ID";
   private static final String HARNESS_ACCOUNT_ID_VARIABLE = "HARNESS_ACCOUNT_ID";
+  private static final String HARNESS_LOG_PREFIX = "HARNESS_LOG_PREFIX";
+  private static final String HARNESS_LOG_SERVICE_ENDPOINT = "HARNESS_LOG_SERVICE_ENDPOINT";
+  private static final String HARNESS_LOG_SERVICE_TOKEN = "HARNESS_LOG_SERVICE_TOKEN";
+  private static final String TASK_DATA_PATH = "TASK_DATA_PATH";
+  private static final String DELEGATE_TOKEN = "DELEGATE_TOKEN";
+  private static final String TASK_ID = "TASK_ID";
 
   private static final String WORKING_DIR = "/harness";
   private static final String ADDON_RUN_COMMAND = "/addon/bin/ci-addon";
-  private static final String ADDON_RUN_ARGS_FORMAT = "--port %s";
+  private static final String ADDON_RUN_ARGS_FORMAT = "--port";
   public static final int RESERVED_LE_PORT = 20001;
 
   private final K8SRunnerConfig config;
 
-  public V1ContainerBuilder createContainer(final String taskId, final StepRuntime containerRuntime, final int port) {
+  public V1ContainerBuilder createContainer(final K8SInfra k8SInfra, final K8SStep step, final int port) {
+    String taskId = step.getId();
+    StepRuntime containerRuntime = step.getRuntime();
+    final var envVars = ImmutableMap.<String, String>builder();
+    envVars.putAll(containerRuntime.getEnvMap());
+    envVars.put(HARNESS_ACCOUNT_ID_VARIABLE, config.getAccountId());
+    envVars.put(HARNESS_LOG_PREFIX, k8SInfra.getLogPrefix());
+    envVars.put(HARNESS_LOG_SERVICE_ENDPOINT, config.getLogServiceUrl());
+    envVars.put(HARNESS_LOG_SERVICE_TOKEN, k8SInfra.getLogToken());
+    envVars.put(DELEGATE_TOKEN, config.getDelegateToken());
+    envVars.put(TASK_DATA_PATH, config.getDelegateTaskParamsFile());
+    envVars.put(TASK_ID, taskId);
     final V1ContainerBuilder containerBuilder = new V1ContainerBuilder()
                                                     .withName(K8SResourceHelper.getContainerName(taskId))
-                                                    .withImage(containerRuntime.getUses())
+                                                    .withImage(containerRuntime.getImage())
                                                     .withCommand(ADDON_RUN_COMMAND)
-                                                    .withArgs(String.format(ADDON_RUN_ARGS_FORMAT, port))
+                                                    .withArgs(List.of(ADDON_RUN_ARGS_FORMAT, String.valueOf(port)))
                                                     .withPorts(getPort(port))
-                                                    .withEnv(K8SEnvVar.fromMap(containerRuntime.getEnvMap()))
-                                                    .withResources(getResources("100m", "100Mi"))
+                                                    .withEnv(K8SEnvVar.fromMap(envVars.build()))
+                                                    .withResources(getResources(containerRuntime.getResource().getCpu(),
+                                                        containerRuntime.getResource().getMemory()))
                                                     .withImagePullPolicy("Always");
 
     if (containerRuntime.hasResource()) {
@@ -75,7 +91,7 @@ public class ContainerFactory {
     }
 
     if (containerRuntime.hasSecurityContext()) {
-      final boolean isPrivilegedImage = isPrivilegedImage(containerRuntime.getUses());
+      final boolean isPrivilegedImage = isPrivilegedImage(containerRuntime.getImage());
       containerBuilder.withSecurityContext(
           getSecurityContext(containerRuntime.getSecurityContext(), isPrivilegedImage));
     }
@@ -87,26 +103,33 @@ public class ContainerFactory {
     return containerBuilder;
   }
 
-  public V1ContainerBuilder createAddonInitContainer() {
+  public V1ContainerBuilder createAddonInitContainer(K8SInfra k8SInfra) {
+    ContainerSpec containerSpec = k8SInfra.getAddonContainer();
+    final var envVars = ImmutableMap.<String, String>builder();
+    envVars.put(HARNESS_ACCOUNT_ID_VARIABLE, config.getAccountId());
+    envVars.put(HARNESS_LOG_PREFIX, k8SInfra.getLogPrefix());
+    envVars.put(HARNESS_LOG_SERVICE_ENDPOINT, config.getLogServiceUrl());
+    envVars.put(HARNESS_LOG_SERVICE_TOKEN, k8SInfra.getLogToken());
     return new V1ContainerBuilder()
         .withName(SETUP_ADDON_CONTAINER_NAME)
-        .withImage(getAddonImage())
-        .withCommand(getAddonCmd()) // TODO: Why defining here, should be part of image
-        .withArgs(getAddonArgs()) // TODO: Why defining here, should be part of image
-        .withEnv(new V1EnvVar().name(HARNESS_WORKSPACE).value(WORKING_DIR))
+        .withImage(containerSpec.getImage())
+        .withEnv(K8SEnvVar.fromMap(envVars.build()))
+        .withCommand(containerSpec.getCommandList())
+        .withArgs(containerSpec.getArgsList())
         .withImagePullPolicy("Always")
-        .withResources(getResources("100m", "100Mi"));
+        .withResources(getResources("100m", "100Mi"))
+        .withWorkingDir(containerSpec.getWorkingDir());
   }
 
-  public V1ContainerBuilder createLEContainer(final ResourceRequirements resource) {
+  public V1ContainerBuilder createLEContainer(final K8SInfra k8SInfra) {
     return new V1ContainerBuilder()
         .withName(LE_CONTAINER_NAME)
-        .withImage(getLeImage())
+        .withImage(k8SInfra.getLeContainer().getImage())
         .withEnv(K8SEnvVar.fromMap(getLeEnvVars()))
         .withImagePullPolicy("Always")
-        .withPorts(getPort(RESERVED_LE_PORT))
-        .withResources(getResources(resource.getCpu(), resource.getMemory()))
-        .withWorkingDir(WORKING_DIR);
+        .withPorts(getPort(k8SInfra.getLeContainer().getPort()))
+        .withResources(getResources(k8SInfra.getResource().getCpu(), k8SInfra.getResource().getMemory()))
+        .withWorkingDir(k8SInfra.getLeContainer().getWorkingDir());
   }
 
   private Map<String, String> getLeEnvVars() {
@@ -125,27 +148,6 @@ public class ContainerFactory {
     //    envVars.put(HARNESS_STAGE_ID_VARIABLE, stageID);
     //    envVars.put(HARNESS_EXECUTION_ID_VARIABLE, executionID);
     return envVars.build();
-  }
-
-  @NonNull
-  private List<String> getAddonCmd() {
-    return List.of("sh", "-c", "--");
-  }
-
-  @NonNull
-  private List<String> getAddonArgs() {
-    return List.of(
-        "mkdir -p /addon/bin; mkdir -p /addon/tmp; chmod -R 776 /addon/tmp; if [ -e /usr/local/bin/ci-addon-linux-amd64 ];then cp /usr/local/bin/ci-addon-linux-amd64 /addon/bin/ci-addon;else cp /usr/local/bin/ci-addon-linux /addon/bin/ci-addon;fi; chmod +x /addon/bin/ci-addon; cp /usr/local/bin/tmate /addon/bin/tmate; chmod +x /addon/bin/tmate; cp /usr/local/bin/java-agent.jar /addon/bin/java-agent.jar; chmod +x /addon/bin/java-agent.jar; if [ -e /usr/local/bin/split_tests ];then cp /usr/local/bin/split_tests /addon/bin/split_tests; chmod +x /addon/bin/split_tests; export PATH=$PATH:/addon/bin; fi;");
-  }
-
-  @NonNull
-  private String getAddonImage() {
-    return config.getCiAddonImage();
-  }
-
-  @NonNull
-  private String getLeImage() {
-    return config.getLeImage();
   }
 
   @NonNull

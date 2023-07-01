@@ -25,14 +25,18 @@ public class K8SService extends V1Service {
     final V1ServicePort portSpec = new V1ServicePort().port(port);
     final V1ServiceSpec clusterIpSpec =
         new V1ServiceSpec().type("ClusterIP").ports(List.of(portSpec)).selector(Map.of(HARNESS_NAME_LABEL, selector));
-    return (K8SService) new K8SService(taskGroupId + "-service", namespace).spec(clusterIpSpec);
+    return (K8SService) new K8SService(taskGroupId, namespace).spec(clusterIpSpec);
+  }
+
+  public static String normalizeName(String taskGroupId) {
+    String name = taskGroupId + "-service";
+    return name.replaceAll("[._]", "").replaceAll("^[\\d\\-]+", "").replaceAll("$-+", "").toLowerCase();
   }
 
   // Service name must be lower case alphanumeric characters or '-', start with an alphabetic character, and end with an
   // alphanumeric character Validation regex for service name is [a-z]([-a-z0-9]*[a-z0-9])?
-  private K8SService(final String name, final String namespace) {
-    final var normalizedName =
-        name.replaceAll("[._]", "").replaceAll("^[\\d\\-]+", "").replaceAll("$-+", "").toLowerCase();
+  private K8SService(final String taskGroupId, final String namespace) {
+    final var normalizedName = normalizeName(taskGroupId);
     metadata(new V1ObjectMeta().name(normalizedName).namespace(namespace)).apiVersion("v1").kind("Service");
   }
 
