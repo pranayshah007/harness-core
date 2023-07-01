@@ -15,6 +15,14 @@ import "955-delegate-beans/src/main/proto/io/harness/delegate/core/beans/secret.
 
 option java_multiple_files = true;
 
+message ContainerSpec {
+  string image = 1;             // Container image
+  int32 port = 2;               // Container port to be exposed
+  string working_dir = 3;       // Container working dir
+  repeated string command = 4;  // Container command
+  repeated string args = 5;     // Container args
+}
+
 message K8SInfra {
   repeated K8SStep steps = 1;
   repeated Secret infra_secrets = 2;     // Secret needed to setup execution environment (e.g. imagePullSecrets)
@@ -24,6 +32,10 @@ message K8SInfra {
   string working_dir = 6;                // Working dir that all tasks have read/write access to
   repeated Resource resources = 7;       // Any global resources like shared volumes
   string logPrefix = 8;
+  string logToken = 9;                 // Token for sending logs to logging service
+  string logServiceEndpoint = 10;      // Log service endpoint
+  ContainerSpec le_container = 11;     // Light-engine container spec
+  ContainerSpec addon_container = 12;  // Addon container spec
 }
 
 message K8SStep {
@@ -34,8 +46,7 @@ message K8SStep {
   ExecutionType execution_type = 4;  // Type of the step
   StepRuntime runtime = 5;           // Environment in which the task should run
   repeated Secret input_secrets =
-      6;                     // Task specific secrets. One instance can contain multiple secrets from same provider
-  string logging_token = 7;  // Token for sending logs to logging service
+      6;  // Task specific secrets. One instance can contain multiple secrets from same provider
 }
 
 /*
@@ -45,7 +56,7 @@ message StepRuntime {
   string type = 1;  // Type of the plugin, can be anything from enum TaskType or any additional 3rd party plugins. It
   // can be left out if plugin can execute a single type of task
   PluginSource source = 2;
-  string uses = 3;  // source dependant location of the plugin (e.g. docker image tag, git repo etc...)
+  string image = 3;  // source dependant location of the plugin (e.g. docker image tag, git repo etc...)
   ResourceRequirements resource = 6;  // Resource requirements for infra types that need it (e.g. K8S CPU/Mem)
   PluginInit init = 7;                // Any kind of init that needs to happen for the plugin (e.g. init script)
   map<string, string> env = 8;

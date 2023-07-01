@@ -8,6 +8,8 @@
 package io.harness.grpc;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.DelegateRunnerConstants.RunnerExecEndpoint;
+import static io.harness.delegate.beans.DelegateRunnerConstants.RunnerInfraEndpoint;
 
 import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessModule;
@@ -58,6 +60,15 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
+import io.harness.delegate.core.beans.ContainerSpec;
+import io.harness.delegate.core.beans.EmptyDirVolume;
+import io.harness.delegate.core.beans.K8SInfra;
+import io.harness.delegate.core.beans.K8SStep;
+import io.harness.delegate.core.beans.Resource;
+import io.harness.delegate.core.beans.ResourceRequirements;
+import io.harness.delegate.core.beans.ResourceType;
+import io.harness.delegate.core.beans.SecurityContext;
+import io.harness.delegate.core.beans.StepRuntime;
 import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
@@ -80,6 +91,7 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.util.Durations;
 import com.google.protobuf.util.Timestamps;
@@ -95,6 +107,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.StringUtils;
 
 @Singleton
 @Slf4j
@@ -113,6 +126,10 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
   private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   private TaskClient taskClient;
   private ExecutionInfrastructureService executionInfrastructureService;
+
+  private final static String K8sRunnerType = "K8sRunnerType";
+  private final static String VmRunnerType = "VmRunnerType";
+  private final static String DockerRunnerType = "DockerRunnerType";
 
   @Inject
   public DelegateServiceGrpcImpl(DelegateCallbackRegistry delegateCallbackRegistry,
@@ -134,13 +151,14 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
   }
 
   // Helper function that will persist a delegate grpc request to task.
-  private void sheduleTaskInternal(SchedulingConfig schedulingConfig, byte[] taskData, byte[] infraData,
+  private void scheduleTaskInternal(SchedulingConfig schedulingConfig, byte[] taskData, byte[] infraData,
       SchedulingTaskEvent.Method method, String requestUri, Optional<String> executionInfraRef,
       StreamObserver<SubmitTaskResponse> responseObserver) {
     try {
       String taskId = delegateTaskMigrationHelper.generateDelegateTaskUUID();
       Map<String, String> setupAbstractions = schedulingConfig.getSetupAbstractions().getValuesMap();
 
+      // Only selector capabilities
       List<ExecutionCapability> capabilities = new ArrayList<>();
 
       // only selector capabilities are kept
@@ -151,19 +169,22 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
                            .map(this::toSelectorCapability)
                            .collect(Collectors.toList());
       }
-      // Read execution infrastructure location information
+      capabilities.add(SelectorCapability.builder().selectors(Set.of(schedulingConfig.getRunnerType())).build());
+      // Read execution infrastructure location information.
       if (executionInfraRef.isPresent()) {
-        String locationId = executionInfraRef.get();
-        ExecutionInfraLocation locationInfo = executionInfrastructureService.getExecutionInfrastructure(locationId);
-        capabilities.add(SelectorCapability.builder()
-                             .selectors(Set.of(locationInfo.getRunnerType(), locationInfo.getDelegateGroupName()))
-                             .build());
+        // Enter here only when executing a task with given executionInfraRef
+        ExecutionInfraLocation locationInfo =
+            executionInfrastructureService.getExecutionInfrastructure(executionInfraRef.get());
+        capabilities.add(SelectorCapability.builder().selectors(Set.of(locationInfo.getDelegateGroupName())).build());
       }
 
       DelegateTaskBuilder taskBuilder =
           DelegateTask.builder()
               .uuid(taskId)
+              .requestMethod(method.name())
+              .requestUri(requestUri)
               .runnerType(schedulingConfig.getRunnerType())
+              .infraId(executionInfraRef.orElse(taskId))
               .driverId(schedulingConfig.hasCallbackToken() ? schedulingConfig.getCallbackToken().getToken() : null)
               .waitId(taskId)
               .accountId(schedulingConfig.getAccountId())
@@ -182,7 +203,7 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
               .forceExecute(false);
 
       DelegateTask task = taskBuilder.build();
-      taskClient.sendTask(task, method, requestUri);
+      taskClient.sendTask(task);
       responseObserver.onNext(SubmitTaskResponse.newBuilder()
                                   .setTaskId(TaskId.newBuilder().setId(taskId).build())
                                   .setTotalExpiry(Timestamps.fromMillis(task.getExpiry() + task.getExecutionTimeout()))
@@ -378,6 +399,38 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
     }
   }
 
+  /**
+   * Method to submit a InitTask to delegate to setup
+   * the necessary infra before executing the task.
+   * @param setupExecutionInfrastructureRequest
+   * @param responseObserver
+   */
+  public void InitTask(SetupExecutionInfrastructureRequest setupExecutionInfrastructureRequest,
+      StreamObserver<SubmitTaskResponse> responseObserver) {
+    SchedulingConfig schedulingConfig = setupExecutionInfrastructureRequest.getConfig();
+    Optional<String> executionInfraRef = Optional.empty();
+    if (schedulingConfig.getRunnerType() == K8sRunnerType) {
+      K8SInfra k8SInfra = buildK8sInfra(setupExecutionInfrastructureRequest);
+      scheduleTaskInternal(setupExecutionInfrastructureRequest.getConfig(), null, k8SInfra.toByteArray(),
+          SchedulingTaskEvent.Method.POST, RunnerInfraEndpoint, executionInfraRef, responseObserver);
+
+    } else {
+      // TODO - Add for other Runners
+    }
+  }
+
+  public void ExecuteTask(
+      ScheduleTaskRequest scheduleTaskRequest, StreamObserver<SubmitTaskResponse> responseObserver) {
+    Execution execution = scheduleTaskRequest.getExecution();
+    if (StringUtils.isEmpty(execution.getInfraRefId())) {
+      return;
+    }
+
+    Optional<String> executionInfraRef = Optional.of(execution.getInfraRefId());
+    scheduleTaskInternal(scheduleTaskRequest.getConfig(), execution.getInput().getData().toByteArray(), null,
+        SchedulingTaskEvent.Method.POST, RunnerExecEndpoint, executionInfraRef, responseObserver);
+  }
+
   private TaskData createTaskData(TaskDetails taskDetails) {
     Object[] parameters = null;
     byte[] data;
@@ -403,6 +456,89 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
         .expressionFunctorToken((int) taskDetails.getExpressionFunctorToken())
         .serializationFormat(serializationFormat)
         .build();
+  }
+
+  private K8SInfra buildK8sInfra(SetupExecutionInfrastructureRequest setupExecutionInfrastructureRequest) {
+    K8SInfra.Builder k8SInfraBuilder = K8SInfra.newBuilder();
+    LogConfig logConfig = setupExecutionInfrastructureRequest.getInfra().getLogConfig();
+    K8sInfraSpec k8sInfraSpec = setupExecutionInfrastructureRequest.getInfra().getK8Infraspec();
+
+    for (var task : k8sInfraSpec.getTasksList()) {
+      ResourceRequirements resourceRequirements = ResourceRequirements.newBuilder()
+                                                      .setCpu(task.getResource().getCpu())
+                                                      .setMemory(task.getResource().getMemory())
+                                                      .build();
+      var securityContext = task.getSecurityContext();
+      var securityContextCopy = SecurityContext.newBuilder()
+                                    .setAllowPrivilegeEscalation(securityContext.getAllowPrivilegeEscalation())
+                                    .setPrivileged(securityContext.getPrivileged())
+                                    .setProcMount(securityContext.getProcMount())
+                                    .setReadOnlyRootFilesystem(securityContext.getReadOnlyRootFilesystem())
+                                    .setRunAsNonRoot(securityContext.getRunAsNonRoot())
+                                    .setRunAsGroup(securityContext.getRunAsGroup())
+                                    .setRunAsUser(securityContext.getRunAsUser())
+                                    .addAllAddCapability(securityContext.getAddCapabilityList())
+                                    .addAllDropCapability(securityContext.getDropCapabilityList())
+                                    .build();
+      StepRuntime stepRuntime = StepRuntime.newBuilder()
+                                    .setResource(resourceRequirements)
+                                    .setImage(task.getImage())
+                                    .addAllCommand(task.getCommandList())
+                                    .addAllArg(task.getArgsList())
+                                    .setSecurityContext(securityContextCopy)
+                                    .build();
+
+      K8SStep k8SStep = K8SStep.newBuilder().setRuntime(stepRuntime).build();
+      k8SInfraBuilder.addSteps(k8SStep);
+    }
+
+    ContainerSpec leContainerSpec = ContainerSpec.newBuilder()
+                                        .setImage("harness/ci-lite-engine:1.16.7")
+                                        .setPort(20001)
+                                        .setWorkingDir("/opt/harness")
+                                        .build();
+    // TODO - Get from Config
+    List<String> addonCommand = List.of("sh", "-c", "--");
+    List<String> addonArgs = List.of(
+        "mkdir -p /addon/bin; mkdir -p /addon/tmp; chmod -R 776 /addon/tmp; if [ -e /usr/local/bin/ci-addon-linux-amd64 ];then cp /usr/local/bin/ci-addon-linux-amd64 /addon/bin/ci-addon;else cp /usr/local/bin/ci-addon-linux /addon/bin/ci-addon;fi; chmod +x /addon/bin/ci-addon; cp /usr/local/bin/tmate /addon/bin/tmate; chmod +x /addon/bin/tmate; cp /usr/local/bin/java-agent.jar /addon/bin/java-agent.jar; chmod +x /addon/bin/java-agent.jar; if [ -e /usr/local/bin/split_tests ];then cp /usr/local/bin/split_tests /addon/bin/split_tests; chmod +x /addon/bin/split_tests; export PATH=$PATH:/addon/bin; fi;");
+    ContainerSpec addonContainerSpec = ContainerSpec.newBuilder()
+                                           .setImage("harness/ci-addon:1.16.7")
+                                           .setPort(20002)
+                                           .setWorkingDir("/opt/harness")
+                                           .addAllCommand(addonCommand)
+                                           .addAllArgs(addonArgs)
+                                           .build();
+    ResourceRequirements resourceRequirements = ResourceRequirements.newBuilder()
+                                                    .setCpu(k8sInfraSpec.getComputeResource().getCpu())
+                                                    .setMemory(k8sInfraSpec.getComputeResource().getMemory())
+                                                    .build();
+
+    for (var resource : k8sInfraSpec.getResourcesList()) {
+      ResourceType resourceType = ResourceType.RES_UNKNOWN;
+      if (resource.getType().getNumber() == 1) {
+        resourceType = ResourceType.RES_VOLUME;
+      }
+      EmptyDirVolume emptyDirVolume = EmptyDirVolume.newBuilder()
+                                          .setName(resource.getEmptyDir().getName())
+                                          .setPath(resource.getEmptyDir().getPath())
+                                          .setSize(resource.getEmptyDir().getSize())
+                                          .setMedium(resource.getEmptyDir().getMedium())
+                                          .build();
+      Any value = Any.pack(emptyDirVolume);
+      Resource resourceCopy = Resource.newBuilder().setSpec(value).setType(resourceType).build();
+      k8SInfraBuilder.addResources(resourceCopy);
+    }
+
+    K8SInfra k8SInfra = k8SInfraBuilder.setResource(resourceRequirements)
+                            .setWorkingDir("")
+                            .setLogPrefix(logConfig.getLogKey())
+                            .setLogToken(logConfig.getToken())
+                            .setLogServiceEndpoint("https://qa.harness.io/log-service/") // TODO - Get from config
+                            .setLeContainer(leContainerSpec)
+                            .setAddonContainer(addonContainerSpec)
+                            .build();
+
+    return k8SInfra;
   }
 
   private TaskDataV2 createTaskDataV2(TaskDetails taskDetails) {

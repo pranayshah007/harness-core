@@ -50,6 +50,9 @@ service DelegateService {
   rpc ObtainDocument(ObtainDocumentRequest) returns (ObtainDocumentResponse);
 
   rpc isTaskTypeSupported(SupportedTaskTypeRequest) returns (SupportedTaskTypeResponse);
+
+  rpc InitTask(SetupExecutionInfrastructureRequest) returns (SubmitTaskResponse);
+  rpc ExecuteTask(ScheduleTaskRequest) returns (SubmitTaskResponse);
 }
 
 // Next ID: 11
