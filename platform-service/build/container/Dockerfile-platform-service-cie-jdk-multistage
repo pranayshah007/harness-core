@@ -13,7 +13,6 @@ WORKDIR /app
 
 ENV BUILD_PURPOSE=DEVELOPMENT
 ENV PLATFORM=jenkins
-ENV PLATFORM=jenkins
 ENV JDK=jdk11
 ENV BUILD_PURPOSE=FEATURE
 ENV USE_BAZEL_DELEGATE=true
@@ -25,8 +24,6 @@ RUN chmod +x /app/scripts/bazel/testDistribute.sh
 RUN chmod +x /app/scripts/bazel/generate_credentials.sh
 
 RUN /app/scripts/bazel/generate_credentials.sh
-RUN bazel version
-RUN bazel clean
 RUN /app/platform-service/build/feature_build.sh
 RUN /app/platform-service/build/build_jar.sh
 RUN /app/platform-service/build/build_dist.sh
