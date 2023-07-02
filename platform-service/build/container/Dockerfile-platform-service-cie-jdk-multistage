@@ -19,6 +19,7 @@ RUN chmod +x /app/platform-service/build/build_dist.sh
 RUN chmod +x /app/scripts/bazel/testDistribute.sh
 RUN chmod +x /app/scripts/bazel/generate_credentials.sh
 RUN chmod +x /app/bazelrc.remote
+RUN chmod +x /app/bazelrc.common
 
 RUN /app/scripts/bazel/generate_credentials.sh
 RUN /app/platform-service/build/feature_build.sh
