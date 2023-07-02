@@ -25,7 +25,8 @@ RUN chmod +x /app/platform-service/build/feature_build.sh \
     && /app/platform-service/build/feature_build.sh \
     && /app/platform-service/build/build_jar.sh \
     && /app/platform-service/build/build_dist.sh
-RUN chmod +x /app/bazelrc.local
+RUN ls -la /app
+RUN ls -la /app/bazelrc.local
 
 FROM us.gcr.io/platform-205701/ubi/ubi-java:8.8 as base
 
