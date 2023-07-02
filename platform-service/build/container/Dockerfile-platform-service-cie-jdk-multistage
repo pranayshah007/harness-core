@@ -12,7 +12,11 @@ COPY . /app
 WORKDIR /app
 
 ENV BUILD_PURPOSE=DEVELOPMENT
-ENV LC_CTYPE=C.UTF-8
+ENV PLATFORM=jenkins
+ENV PLATFORM=jenkins
+ENV JDK=jdk11
+ENV BUILD_PURPOSE=FEATURE
+ENV USE_BAZEL_DELEGATE=true
 
 RUN chmod +x /app/platform-service/build/feature_build.sh
 RUN chmod +x /app/platform-service/build/build_jar.sh
