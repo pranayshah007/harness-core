@@ -13,18 +13,17 @@ WORKDIR /app
 
 ENV BUILD_PURPOSE=DEVELOPMENT
 
-RUN chmod +x /app/platform-service/build/feature_build.sh
-RUN chmod +x /app/platform-service/build/build_jar.sh
-RUN chmod +x /app/platform-service/build/build_dist.sh
-RUN chmod +x /app/scripts/bazel/testDistribute.sh
-RUN chmod +x /app/scripts/bazel/generate_credentials.sh
-RUN chmod +x /app/bazelrc.remote
-RUN chmod +x /app/bazelrc.common
-
-RUN /app/scripts/bazel/generate_credentials.sh
-RUN /app/platform-service/build/feature_build.sh
-RUN /app/platform-service/build/build_jar.sh
-RUN /app/platform-service/build/build_dist.sh
+RUN chmod +x /app/platform-service/build/feature_build.sh \
+    && chmod +x /app/platform-service/build/build_jar.sh \
+    && chmod +x /app/platform-service/build/build_dist.sh \
+    && chmod +x /app/scripts/bazel/testDistribute.sh \
+    && chmod +x /app/scripts/bazel/generate_credentials.sh \
+    && chmod +x /app/bazelrc.remote \
+    && chmod +x /app/bazelrc.common \
+    && /app/scripts/bazel/generate_credentials.sh \
+    && /app/platform-service/build/feature_build.sh \
+    && /app/platform-service/build/build_jar.sh \
+    && /app/platform-service/build/build_dist.sh
 
 FROM us.gcr.io/platform-205701/ubi/ubi-java:8.8 as base
 
