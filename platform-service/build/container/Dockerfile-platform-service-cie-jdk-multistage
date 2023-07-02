@@ -22,14 +22,11 @@ RUN chmod +x /app/platform-service/build/feature_build.sh \
     && chmod +x /app/bazelrc.remote \
     && chmod +x /app/bazelrc.common
 
-RUN startup --output_base=/tmp && \
-    startup --max_idle_secs 5 && \
-    build --announce_rc && \
-    build --remote_cache=https://storage.googleapis.com/harness-bazel-cache && \
-    build --experimental_inmemory_dotd_files && \
-    build --experimental_inmemory_jdeps_files && \
-    build --nobuild_runfile_links && \
-    test --flaky_test_attempts=1
+RUN bazel build --announce_rc && \
+    bazel build --remote_cache=https://storage.googleapis.com/harness-bazel-cache && \
+    bazel build --experimental_inmemory_dotd_files && \
+    bazel build --experimental_inmemory_jdeps_files && \
+    bazel build --nobuild_runfile_links
 
 RUN /app/scripts/bazel/generate_credentials.sh \
     && /app/platform-service/build/feature_build.sh \
