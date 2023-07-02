@@ -12,7 +12,6 @@ COPY . /app
 WORKDIR /app
 
 ENV BUILD_PURPOSE=DEVELOPMENT
-ENV PLATFORM=jenkins
 
 RUN chmod +x /app/platform-service/build/feature_build.sh \
     && chmod +x /app/platform-service/build/build_jar.sh \
@@ -21,11 +20,8 @@ RUN chmod +x /app/platform-service/build/feature_build.sh \
     && chmod +x /app/scripts/bazel/generate_credentials.sh \
     && chmod +x /app/bazelrc.remote \
     && chmod +x /app/bazelrc.common \
-    && chmod +x /app/bazelrc.local
-
-RUN ls -la /app
-RUN ls -la /app/bazelrc.local
-RUN /app/scripts/bazel/generate_credentials.sh \
+    && chmod +x /app/bazelrc.local \
+    $$ /app/scripts/bazel/generate_credentials.sh \
     && /app/platform-service/build/feature_build.sh \
     && /app/platform-service/build/build_jar.sh \
     && /app/platform-service/build/build_dist.sh
