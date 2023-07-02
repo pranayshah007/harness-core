@@ -22,12 +22,13 @@ RUN chmod +x /app/platform-service/build/feature_build.sh \
     && chmod +x /app/bazelrc.remote \
     && chmod +x /app/bazelrc.common \
     && chmod +x /app/bazelrc.local \
-    && /app/scripts/bazel/generate_credentials.sh \
+
+RUN ls -la /app
+RUN ls -la /app/bazelrc.local
+RUN /app/scripts/bazel/generate_credentials.sh \
     && /app/platform-service/build/feature_build.sh \
     && /app/platform-service/build/build_jar.sh \
     && /app/platform-service/build/build_dist.sh
-
-RUN ls -la /app
 
 FROM us.gcr.io/platform-205701/ubi/ubi-java:8.8 as base
 
