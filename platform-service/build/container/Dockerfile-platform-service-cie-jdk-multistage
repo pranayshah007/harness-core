@@ -21,7 +21,7 @@ RUN chmod +x /app/platform-service/build/feature_build.sh \
     && chmod +x /app/bazelrc.remote \
     && chmod +x /app/bazelrc.common \
     && chmod +x /app/bazelrc.local \
-    $$ /app/scripts/bazel/generate_credentials.sh \
+    && /app/scripts/bazel/generate_credentials.sh \
     && /app/platform-service/build/feature_build.sh \
     && /app/platform-service/build/build_jar.sh \
     && /app/platform-service/build/build_dist.sh
