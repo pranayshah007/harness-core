@@ -28,14 +28,3 @@ echo build --google_credentials=/tmp/storage_secret.json >> bazelrc.remote
 cat bazelrc.remote
 
 yum install zlib-devel -y
-
-#chmod +x scripts/bazel/UpdateVersionInfoyaml.sh
-#chmod +x platform-service/build/build_jar.sh
-#chmod +x platform-service/build/build_dist.sh
-
-#scripts/bazel/UpdateVersionInfoyaml.sh $BUILD platform-service/build.properties
-#platform-service/build/build_jar.sh
-#platform-service/build/build_dist.sh || true
-
-#echo "INFO: list the jars built"
-#find . -name "*.jar"
