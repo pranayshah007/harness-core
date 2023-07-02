@@ -11,6 +11,9 @@ COPY . /app
 
 WORKDIR /app
 
+RUN pwd
+RUN ls /app
+
 ENV BUILD_PURPOSE=DEVELOPMENT
 ENV PLATFORM=jenkins
 ENV JDK=jdk11
