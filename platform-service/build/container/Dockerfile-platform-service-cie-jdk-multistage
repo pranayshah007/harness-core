@@ -15,16 +15,13 @@ RUN pwd
 RUN ls /app
 
 ENV BUILD_PURPOSE=DEVELOPMENT
-ENV PLATFORM=jenkins
-ENV JDK=jdk11
-ENV BUILD_PURPOSE=FEATURE
-ENV USE_BAZEL_DELEGATE=true
 
 RUN chmod +x /app/platform-service/build/feature_build.sh
 RUN chmod +x /app/platform-service/build/build_jar.sh
 RUN chmod +x /app/platform-service/build/build_dist.sh
 RUN chmod +x /app/scripts/bazel/testDistribute.sh
 RUN chmod +x /app/scripts/bazel/generate_credentials.sh
+RUN chmod +x /app/bazelrc.remote
 
 RUN /app/scripts/bazel/generate_credentials.sh
 RUN /app/platform-service/build/feature_build.sh
