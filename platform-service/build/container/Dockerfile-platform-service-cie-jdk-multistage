@@ -12,6 +12,7 @@ COPY . /app
 WORKDIR /app
 
 ENV BUILD_PURPOSE=DEVELOPMENT
+ENV PLATFORM=jenkins
 
 RUN chmod +x /app/platform-service/build/feature_build.sh \
     && chmod +x /app/platform-service/build/build_jar.sh \
