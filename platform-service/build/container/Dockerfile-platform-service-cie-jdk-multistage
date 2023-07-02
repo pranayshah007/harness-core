@@ -20,8 +20,9 @@ RUN chmod +x /app/platform-service/build/feature_build.sh \
     && chmod +x /app/scripts/bazel/testDistribute.sh \
     && chmod +x /app/scripts/bazel/generate_credentials.sh \
     && chmod +x /app/bazelrc.remote \
-    && chmod +x /app/bazelrc.common \
-    && /app/scripts/bazel/generate_credentials.sh \
+    && chmod +x /app/bazelrc.common
+RUN ls -la /app/bazelrc.remote
+RUN /app/scripts/bazel/generate_credentials.sh \
     && /app/platform-service/build/feature_build.sh \
     && /app/platform-service/build/build_jar.sh \
     && /app/platform-service/build/build_dist.sh
