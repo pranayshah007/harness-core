@@ -27,7 +27,6 @@ public enum FeatureName {
   // Sorted using https://github.com/google/keep-sorted/blob/main/README.md
   // keep-sorted start
   ACCOUNT_BASIC_ROLE,
-  ACCOUNT_BASIC_ROLE_ONLY,
   ACTIVE_MIGRATION_FROM_LOCAL_TO_GCP_KMS,
   ACTIVITY_ID_BASED_TF_BASE_DIR,
   ADD_MANIFEST_COLLECTION_STEP,
