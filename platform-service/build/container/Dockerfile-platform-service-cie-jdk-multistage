@@ -11,9 +11,6 @@ COPY . /app
 
 WORKDIR /app
 
-RUN pwd
-RUN ls /app
-
 ENV BUILD_PURPOSE=DEVELOPMENT
 
 RUN chmod +x /app/platform-service/build/feature_build.sh
