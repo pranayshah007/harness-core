@@ -21,7 +21,16 @@ RUN chmod +x /app/platform-service/build/feature_build.sh \
     && chmod +x /app/scripts/bazel/generate_credentials.sh \
     && chmod +x /app/bazelrc.remote \
     && chmod +x /app/bazelrc.common
-RUN ls -la /app/bazelrc.remote
+
+RUN startup --output_base=/tmp && \
+    startup --max_idle_secs 5 && \
+    build --announce_rc && \
+    build --remote_cache=https://storage.googleapis.com/harness-bazel-cache && \
+    build --experimental_inmemory_dotd_files && \
+    build --experimental_inmemory_jdeps_files && \
+    build --nobuild_runfile_links && \
+    test --flaky_test_attempts=1
+
 RUN /app/scripts/bazel/generate_credentials.sh \
     && /app/platform-service/build/feature_build.sh \
     && /app/platform-service/build/build_jar.sh \
