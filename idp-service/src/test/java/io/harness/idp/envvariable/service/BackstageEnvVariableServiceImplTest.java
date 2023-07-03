@@ -43,7 +43,6 @@ import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.UserPrincipal;
-import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.BackstageEnvConfigVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
@@ -471,7 +470,7 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
     MockedStatic<CGRestUtils> mockRestUtils = mockStatic(CGRestUtils.class);
     mockRestUtils.when(() -> CGRestUtils.getResponse(any())).thenReturn(false);
 
-    backstageEnvVariableService.sync(Collections.singletonList(envVariable1), TEST_ACCOUNT_IDENTIFIER);
+    backstageEnvVariableService.sync(Collections.singletonList(envVariable1), TEST_ACCOUNT_IDENTIFIER, false);
 
     verify(k8sClient).updateSecretData(eq(TEST_NAMESPACE), eq(BACKSTAGE_SECRET), anyMap(), eq(false));
     mockRestUtils.close();
@@ -515,11 +514,11 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
     mockRestUtils.when(() -> CGRestUtils.getResponse(any())).thenReturn(false);
 
     backstageEnvVariableService.findAndSync(TEST_ACCOUNT_IDENTIFIER);
-    verify(k8sClient, times(0)).updateSecretData(eq(TEST_NAMESPACE), eq(BACKSTAGE_SECRET), anyMap(), eq(false));
+    verify(k8sClient, times(0)).updateSecretData(eq(TEST_NAMESPACE), eq(BACKSTAGE_SECRET), anyMap(), eq(true));
 
     mockRestUtils.when(() -> CGRestUtils.getResponse(any())).thenReturn(false);
     backstageEnvVariableService.findAndSync(TEST_ACCOUNT_IDENTIFIER);
-    verify(k8sClient).updateSecretData(eq(TEST_NAMESPACE), eq(BACKSTAGE_SECRET), secretDataCaptor.capture(), eq(false));
+    verify(k8sClient).updateSecretData(eq(TEST_NAMESPACE), eq(BACKSTAGE_SECRET), secretDataCaptor.capture(), eq(true));
     assertTrue(secretDataCaptor.getValue().containsKey(HARNESS_GITHUB_APP_PRIVATE_KEY_REF));
     assertTrue(secretDataCaptor.getValue().containsKey(TEST_ENV_NAME));
     mockRestUtils.close();
@@ -539,7 +538,7 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
     MockedStatic<CGRestUtils> mockRestUtils = mockStatic(CGRestUtils.class);
     mockRestUtils.when(() -> CGRestUtils.getResponse(any())).thenReturn(true);
 
-    backstageEnvVariableService.sync(Collections.singletonList(secret), TEST_ACCOUNT_IDENTIFIER);
+    backstageEnvVariableService.sync(Collections.singletonList(secret), TEST_ACCOUNT_IDENTIFIER, false);
     verify(k8sClient).updateSecretData(eq(TEST_NAMESPACE), eq(BACKSTAGE_SECRET), secretDataCaptor.capture(), eq(false));
     assertEquals(1, secretDataCaptor.getValue().size());
     assertTrue(secretDataCaptor.getValue().containsKey(LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES));

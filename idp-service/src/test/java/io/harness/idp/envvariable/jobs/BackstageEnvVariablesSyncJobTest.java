@@ -12,21 +12,17 @@ import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
-import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.envvariable.service.BackstageEnvVariableService;
 import io.harness.idp.namespace.service.NamespaceService;
-import io.harness.remote.client.CGRestUtils;
 import io.harness.rule.Owner;
 
 import java.util.Arrays;
@@ -51,7 +47,6 @@ public class BackstageEnvVariablesSyncJobTest extends CategoryTest {
   @Mock private BackstageEnvVariableService backstageEnvVariableService;
   @Mock private NamespaceService namespaceService;
   @Mock private ScheduledExecutorService executorService;
-  @Mock private AccountClient accountClient;
   @InjectMocks private BackstageEnvVariablesSyncJob job;
   AutoCloseable openMocks;
 
@@ -66,15 +61,9 @@ public class BackstageEnvVariablesSyncJobTest extends CategoryTest {
   public void testEnvSecretSync() {
     List<String> accountIds = Arrays.asList(TEST_ACCOUNT1, TEST_ACCOUNT2);
     when(namespaceService.getAccountIds()).thenReturn(accountIds);
-    MockedStatic<CGRestUtils> mockRestUtils = mockStatic(CGRestUtils.class);
-    mockRestUtils.when(() -> CGRestUtils.getResponse(any())).thenReturn(false);
-
     job.run();
-
     verify(backstageEnvVariableService).findAndSync(TEST_ACCOUNT1);
     verify(backstageEnvVariableService).findAndSync(TEST_ACCOUNT2);
-    verify(accountClient, times(2)).isFeatureFlagEnabled(eq(FeatureName.IDP_DYNAMIC_SECRET_RESOLUTION.name()), any());
-    mockRestUtils.close();
   }
 
   @Test
@@ -86,22 +75,16 @@ public class BackstageEnvVariablesSyncJobTest extends CategoryTest {
     doThrow(new InvalidRequestException("Failed to replace secret. Code: 403"))
         .when(backstageEnvVariableService)
         .findAndSync(TEST_ACCOUNT1);
-    MockedStatic<CGRestUtils> mockRestUtils = mockStatic(CGRestUtils.class);
-    mockRestUtils.when(() -> CGRestUtils.getResponse(any())).thenReturn(false);
-
     job.run();
-
     // Sync should happen for 2nd account even if there is an error in 1st account sync.
     verify(backstageEnvVariableService).findAndSync(TEST_ACCOUNT2);
-    mockRestUtils.close();
   }
 
   @Test
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testStart() throws Exception {
-    try (MockedStatic<Executors> ignored = Mockito.mockStatic(Executors.class);
-         MockedStatic<CGRestUtils> ignored1 = mockStatic(CGRestUtils.class)) {
+    try (MockedStatic<Executors> ignored = Mockito.mockStatic(Executors.class)) {
       when(Executors.newSingleThreadScheduledExecutor(any())).thenReturn(executorService);
       when(executorService.scheduleWithFixedDelay(
                any(Runnable.class), eq(0L), eq(TimeUnit.HOURS.toMinutes(24)), eq(TimeUnit.MINUTES)))
@@ -127,22 +110,6 @@ public class BackstageEnvVariablesSyncJobTest extends CategoryTest {
     job.stop();
     verify(executorService).shutdownNow();
     verify(executorService).awaitTermination(30, TimeUnit.SECONDS);
-  }
-
-  @Test
-  @Owner(developers = VIKYATH_HAREKAL)
-  @Category(UnitTests.class)
-  public void testEnvSecretSyncWhenFFIsEnabled() {
-    List<String> accountIds = Arrays.asList(TEST_ACCOUNT1, TEST_ACCOUNT2);
-    when(namespaceService.getAccountIds()).thenReturn(accountIds);
-    MockedStatic<CGRestUtils> mockRestUtils = mockStatic(CGRestUtils.class);
-    mockRestUtils.when(() -> CGRestUtils.getResponse(any())).thenReturn(true);
-
-    job.run();
-
-    verify(backstageEnvVariableService, times(0)).findAndSync(TEST_ACCOUNT1);
-    verify(accountClient, times(2)).isFeatureFlagEnabled(eq(FeatureName.IDP_DYNAMIC_SECRET_RESOLUTION.name()), any());
-    mockRestUtils.close();
   }
 
   @After
