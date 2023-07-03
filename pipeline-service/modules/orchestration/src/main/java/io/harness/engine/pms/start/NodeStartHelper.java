@@ -13,6 +13,7 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.node.NodeExecutionTimeoutCallback;
@@ -47,6 +48,7 @@ import io.harness.timeout.TimeoutEngine;
 import io.harness.timeout.TimeoutInstance;
 import io.harness.timeout.TimeoutParameters;
 import io.harness.timeout.contracts.TimeoutObtainment;
+import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -74,6 +76,7 @@ public class NodeStartHelper {
   @Inject private TransactionHelper transactionHelper;
   @Inject private PmsGraphStepDetailsService pmsGraphStepDetailsService;
   @Getter private final Subject<NodeExecutionStartObserver> nodeExecutionStartSubject = new Subject<>();
+  @Inject PmsFeatureFlagService pmsFeatureFlagService;
 
   public void startNode(Ambiance ambiance, FacilitatorResponseProto facilitatorResponse) {
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
@@ -164,6 +167,10 @@ public class NodeStartHelper {
       List<String> enabledFeatureFlags = new LinkedList<>();
       if (AmbianceUtils.shouldUseExpressionEngineV2(ambiance)) {
         enabledFeatureFlags.add(EngineExpressionEvaluator.PIE_EXECUTION_JSON_SUPPORT);
+      }
+      if (pmsFeatureFlagService.isEnabled(
+              AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXPRESSION_CONCATENATION)) {
+        enabledFeatureFlags.add(EngineExpressionEvaluator.PIE_EXPRESSION_CONCATENATION);
       }
       Object resolvedInputs = pmsEngineExpressionService.resolve(
           ambiance, planNode.getStepInputs(), planNode.getExpressionMode(), enabledFeatureFlags);
