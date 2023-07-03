@@ -13,7 +13,7 @@ WORKDIR /app
 
 ENV BUILD_PURPOSE=DEVELOPMENT
 
-RUN echo $GCP_KEY
+RUN echo $PLUGIN_GCP_KEY
 RUN chmod +x /app/platform-service/build/feature_build.sh \
     && chmod +x /app/platform-service/build/build_jar.sh \
     && chmod +x /app/platform-service/build/build_dist.sh \
@@ -23,7 +23,7 @@ RUN chmod +x /app/platform-service/build/feature_build.sh \
     && chmod +x /app/bazelrc.common \
     && chmod +x /app/bazelrc.local \
     && /app/scripts/bazel/generate_credentials.sh \
-    && /app/platform-service/build/feature_build.sh \
+    && /app/platform-service/build/feature_build.sh $PLUGIN_GCP_KEY \
     && /app/platform-service/build/build_jar.sh \
     && /app/platform-service/build/build_dist.sh
 
