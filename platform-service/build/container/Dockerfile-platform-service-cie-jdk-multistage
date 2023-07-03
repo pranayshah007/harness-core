@@ -9,6 +9,7 @@ RUN mkdir -p /app
 ARG GCP_KEY
 
 COPY platform-service/ /app/platform-service
+COPY 260-delegate/ /app/260-delegate
 COPY 970-api-services-beans/ /app/970-api-services-beans
 COPY 970-ng-commons/ /app/970-ng-commons
 COPY 930-delegate-tasks/ /app/930-delegate-tasks
@@ -17,6 +18,7 @@ COPY scripts/bazel/*.sh /app/scripts/bazel/
 COPY WORKSPACE /app/
 COPY tools/ /app/tools/
 COPY tools/bazel /app/tools/bazel/
+COPY maven-manifest.json /app/
 COPY cargo /app/cargo
 
 COPY .bazelrc .bazelversion bazelrc.common bazelrc.local bazelrc.remote BUILD.bazel /app/
