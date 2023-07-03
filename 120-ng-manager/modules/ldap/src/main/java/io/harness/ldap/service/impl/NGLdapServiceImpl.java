@@ -272,26 +272,30 @@ public class NGLdapServiceImpl implements NGLdapService {
 
     if (isNotEmpty(userGroupsToSync)) {
       for (UserGroup userGroup : userGroupsToSync) {
-        NGLdapGroupSearchTaskParameters parameters =
-            NGLdapGroupSearchTaskParameters.builder()
-                .ldapSettings(settingsWithEncryptedDataDetail.getLdapSettings())
-                .encryptedDataDetail(settingsWithEncryptedDataDetail.getEncryptedDataDetail())
-                .name(userGroup.getSsoGroupId())
-                .build();
+        try {
+          NGLdapGroupSearchTaskParameters parameters =
+              NGLdapGroupSearchTaskParameters.builder()
+                  .ldapSettings(settingsWithEncryptedDataDetail.getLdapSettings())
+                  .encryptedDataDetail(settingsWithEncryptedDataDetail.getEncryptedDataDetail())
+                  .name(userGroup.getSsoGroupId())
+                  .build();
 
-        DelegateResponseData delegateResponseData = getDelegateResponseData(userGroup.getAccountIdentifier(),
-            userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier(), parameters, NG_LDAP_GROUPS_SYNC);
+          DelegateResponseData delegateResponseData = getDelegateResponseData(userGroup.getAccountIdentifier(),
+              userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier(), parameters, NG_LDAP_GROUPS_SYNC);
 
-        NGLdapGroupSyncTaskResponse groupSearchResponse = (NGLdapGroupSyncTaskResponse) delegateResponseData;
-        log.info("NGLDAP: Received delegate response for syncLdapGroupByDn in NG LDAP for group {} in account: {}",
-            userGroup.getIdentifier(), accountIdentifier);
+          NGLdapGroupSyncTaskResponse groupSearchResponse = (NGLdapGroupSyncTaskResponse) delegateResponseData;
+          log.info("NGLDAP: Received delegate response for syncLdapGroupByDn in NG LDAP for group {} in account: {}",
+              userGroup.getIdentifier(), accountIdentifier);
 
-        if (null != groupSearchResponse.getLdapGroupsResponse()) {
-          userGroupsToLdapGroupMap.put(userGroup, groupSearchResponse.getLdapGroupsResponse());
-        } else {
-          log.error(
-              "NGLDAP: No LDAP group response received in delegate response. Points to some error in delegate task execution for group: {} in account: {}",
-              userGroup, accountIdentifier);
+          if (null != groupSearchResponse.getLdapGroupsResponse()) {
+            userGroupsToLdapGroupMap.put(userGroup, groupSearchResponse.getLdapGroupsResponse());
+          } else {
+            log.error(
+                "NGLDAP: No LDAP group response received in delegate response. Points to some error in delegate task execution for group: {} in account: {}",
+                userGroup, accountIdentifier);
+          }
+        } catch (Exception e) {
+          log.error("NGLDAP: Sync error for group {} and accountId {}", userGroup.getName(), accountIdentifier, e);
         }
       }
 
