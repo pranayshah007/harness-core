@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static software.wings.service.impl.DelegateTaskServiceClassicImpl.TASK_SELECTORS;
+
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -18,6 +20,7 @@ import io.harness.beans.SecretText;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
+import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.delegate.task.mixin.SocketConnectivityCapabilityGenerator;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.iterator.PersistentCronIterable;
@@ -32,6 +35,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import dev.morphia.annotations.Transient;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -154,8 +158,16 @@ public class LdapSettings extends SSOSettings implements ExecutionCapabilityDema
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-    return Collections.singletonList(SocketConnectivityCapabilityGenerator.buildSocketConnectivityCapability(
-        connectionSettings.getHost(), Integer.toString(connectionSettings.getPort())));
+    List<ExecutionCapability> executionCapabilities =
+        Arrays.asList(SocketConnectivityCapabilityGenerator.buildSocketConnectivityCapability(
+            connectionSettings.getHost(), Integer.toString(connectionSettings.getPort())));
+    if (connectionSettings != null && isNotEmpty(connectionSettings.getDelegateSelectors())) {
+      executionCapabilities.add(SelectorCapability.builder()
+                                    .selectors(connectionSettings.getDelegateSelectors())
+                                    .selectorOrigin(TASK_SELECTORS)
+                                    .build());
+    }
+    return executionCapabilities;
   }
 
   @Override
