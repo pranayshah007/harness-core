@@ -35,7 +35,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import dev.morphia.annotations.Transient;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -158,9 +157,9 @@ public class LdapSettings extends SSOSettings implements ExecutionCapabilityDema
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-    List<ExecutionCapability> executionCapabilities =
-        Arrays.asList(SocketConnectivityCapabilityGenerator.buildSocketConnectivityCapability(
-            connectionSettings.getHost(), Integer.toString(connectionSettings.getPort())));
+    List<ExecutionCapability> executionCapabilities = new ArrayList<>();
+    executionCapabilities.add(SocketConnectivityCapabilityGenerator.buildSocketConnectivityCapability(
+        connectionSettings.getHost(), Integer.toString(connectionSettings.getPort())));
     if (connectionSettings != null && isNotEmpty(connectionSettings.getDelegateSelectors())) {
       executionCapabilities.add(SelectorCapability.builder()
                                     .selectors(connectionSettings.getDelegateSelectors())
