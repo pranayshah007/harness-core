@@ -9,14 +9,14 @@ RUN mkdir -p /app
 ARG GCP_KEY
 
 COPY platform-service/ /app/platform-service \
-    && 970-api-services-beans/ /app/970-api-services-beans
-    && 970-ng-commons/ /app/970-ng-commons
+    && 970-api-services-beans/ /app/970-api-services-beans \
+    && 970-ng-commons/ /app/970-ng-commons \
     && 930-delegate-tasks/ /app/930-delegate-tasks
-    && dockerization/ /app/dockerization
-    && scripts/bazel/*.sh /app/scripts/bazel/
-    && WORKSPACE /app/
-    && tools/ /app/tools/
-    && cargo /app/cargo
+COPY dockerization/ /app/dockerization
+COPY scripts/bazel/*.sh /app/scripts/bazel/
+COPY WORKSPACE /app/
+COPY tools/ /app/tools/
+COPY cargo /app/cargo
 
 COPY .bazelrc .bazelversion bazelrc.common bazelrc.local bazelrc.remote BUILD.bazel /app/
 
