@@ -12,7 +12,7 @@ import lombok.Getter;
 
 public enum IACMStepInfoType {
   IACM_TERRAFORM_PLUGIN(IACMStepExecEnvironment.CI_LITE_ENGINE, "IACMTerraformPlugin"),
-  IACM_TEMPLATE(IACMStepExecEnvironment.CI_LITE_ENGINE, "IACMTemplate");
+  IACM_APPROVAL(IACMStepExecEnvironment.CI_LITE_ENGINE, "IACMApproval");
 
   @Getter private final IACMStepExecEnvironment ciStepExecEnvironment;
   private final String displayName;

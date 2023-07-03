@@ -94,10 +94,10 @@ public class ObserverEventConsumer implements Runnable {
   }
 
   private boolean processMessage(final Message message) {
-    final AtomicBoolean success = new AtomicBoolean(true);
+    final AtomicBoolean success = new AtomicBoolean(false);
     messageListeners.forEach(messageListener -> {
-      if (!messageListener.handleMessage(message)) {
-        success.set(false);
+      if (messageListener.handleMessage(message)) {
+        success.set(true);
       }
     });
     return success.get();

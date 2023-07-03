@@ -107,6 +107,7 @@ import io.harness.configuration.DeployVariant;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.service.git.NGGitServiceImpl;
+import io.harness.credit.remote.admin.AdminCreditHttpClientModule;
 import io.harness.cv.CVCommonsServiceModule;
 import io.harness.cvng.CVNextGenCommonsServiceModule;
 import io.harness.cvng.perpetualtask.CVDataCollectionTaskService;
@@ -1563,6 +1564,9 @@ public class WingsModule extends AbstractModule implements ServersModule {
 
     // admin ng-license dependencies
     install(new AdminLicenseHttpClientModule(configuration.getNgManagerServiceHttpClientConfig(),
+        configuration.getPortal().getJwtNextGenManagerSecret(), MANAGER.getServiceId()));
+
+    install(new AdminCreditHttpClientModule(configuration.getNgManagerServiceHttpClientConfig(),
         configuration.getPortal().getJwtNextGenManagerSecret(), MANAGER.getServiceId()));
 
     install(CgOrchestrationModule.getInstance());

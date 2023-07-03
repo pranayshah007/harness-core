@@ -42,6 +42,8 @@ import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity.InfrastructureEntityKeys;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.service.services.impl.InputSetMergeUtility;
+import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
+import io.harness.ng.core.utils.ServiceOverrideV2ValidationHelper;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
@@ -72,6 +74,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -103,6 +106,8 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
   @Inject private InfrastructureEntitySetupUsageHelper infrastructureEntitySetupUsageHelper;
 
   @Inject private HPersistence hPersistence;
+  @Inject private ServiceOverridesServiceV2 serviceOverridesServiceV2;
+  @Inject private ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_PROJECT =
       "Infrastructure [%s] under Environment [%s] Project[%s], Organization [%s] in Account [%s] already exists";
@@ -353,28 +358,33 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
       if (infraEntityOptional.get().getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {
         customDeploymentEntitySetupHelper.deleteReferencesInEntitySetupUsage(infraEntityOptional.get());
       }
-      return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-        DeleteResult deleteResult = infrastructureRepository.delete(criteria);
-        if (!deleteResult.wasAcknowledged() || deleteResult.getDeletedCount() != 1) {
-          throw new InvalidRequestException(String.format(
-              "Infrastructure [%s] under Environment [%s], Project[%s], Organization [%s] couldn't be deleted.",
-              infraIdentifier, envRef, projectIdentifier, orgIdentifier));
-        }
+      boolean infraDeleteResult =
+          Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+            DeleteResult deleteResult = infrastructureRepository.delete(criteria);
+            if (!deleteResult.wasAcknowledged() || deleteResult.getDeletedCount() != 1) {
+              throw new InvalidRequestException(String.format(
+                  "Infrastructure [%s] under Environment [%s], Project[%s], Organization [%s] couldn't be deleted.",
+                  infraIdentifier, envRef, projectIdentifier, orgIdentifier));
+            }
 
-        infraEntityOptional.ifPresent(
-            infrastructureEntity -> infrastructureEntitySetupUsageHelper.deleteSetupUsages(infrastructureEntity));
+            infraEntityOptional.ifPresent(
+                infrastructureEntity -> infrastructureEntitySetupUsageHelper.deleteSetupUsages(infrastructureEntity));
 
-        outboxService.save(EnvironmentUpdatedEvent.builder()
-                               .accountIdentifier(accountId)
-                               .orgIdentifier(orgIdentifier)
-                               .projectIdentifier(projectIdentifier)
-                               .oldInfrastructureEntity(infraEntityOptional.get())
-                               .status(forceDelete ? EnvironmentUpdatedEvent.Status.FORCE_DELETED
-                                                   : EnvironmentUpdatedEvent.Status.DELETED)
-                               .resourceType(EnvironmentUpdatedEvent.ResourceType.INFRASTRUCTURE)
-                               .build());
-        return true;
-      }));
+            outboxService.save(EnvironmentUpdatedEvent.builder()
+                                   .accountIdentifier(accountId)
+                                   .orgIdentifier(orgIdentifier)
+                                   .projectIdentifier(projectIdentifier)
+                                   .oldInfrastructureEntity(infraEntityOptional.get())
+                                   .status(forceDelete ? EnvironmentUpdatedEvent.Status.FORCE_DELETED
+                                                       : EnvironmentUpdatedEvent.Status.DELETED)
+                                   .resourceType(EnvironmentUpdatedEvent.ResourceType.INFRASTRUCTURE)
+                                   .build());
+            return true;
+          }));
+      if (overrideV2ValidationHelper.isOverridesV2Enabled(accountId, orgIdentifier, projectIdentifier)) {
+        processDownstreamDeletions(accountId, orgIdentifier, projectIdentifier, envRef, infraIdentifier);
+      }
+      return infraDeleteResult;
     } else {
       throw new InvalidRequestException(
           String.format("Infrastructure [%s] under Environment [%s], Project[%s], Organization [%s] doesn't exist.",
@@ -935,5 +945,21 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
     } catch (IOException e) {
       throw new InvalidRequestException("Error occurred while creating Infrastructure inputs ", e);
     }
+  }
+
+  private void processDownstreamDeletions(
+      String accountId, String orgIdentifier, String projectIdentifier, String envRef, String infraIdentifier) {
+    processQuietly(()
+                       -> serviceOverridesServiceV2.deleteAllForInfra(
+                           accountId, orgIdentifier, projectIdentifier, envRef, infraIdentifier));
+  }
+
+  boolean processQuietly(BooleanSupplier b) {
+    try {
+      return b.getAsBoolean();
+    } catch (Exception ex) {
+      // ignore this
+    }
+    return false;
   }
 }

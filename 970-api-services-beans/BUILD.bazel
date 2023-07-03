@@ -69,6 +69,7 @@ java_library(
         "//970-api-services-beans/src/main/java/io/harness/serializer/morphia:module",
         "//970-api-services-beans/src/main/java/io/harness/serverless/model:module",
         "//970-api-services-beans/src/main/java/io/harness/servicenow:module",
+        "//970-api-services-beans/src/main/java/io/harness/servicenow/auth/refreshtoken:module",
         "//970-api-services-beans/src/main/java/io/harness/shell:module",
         "//970-api-services-beans/src/main/java/io/harness/spotinst/model:module",
         "//970-api-services-beans/src/main/java/io/harness/ssh:module",

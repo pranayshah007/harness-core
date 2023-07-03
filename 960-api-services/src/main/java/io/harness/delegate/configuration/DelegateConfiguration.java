@@ -24,6 +24,7 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(DEL)
 public class DelegateConfiguration {
   private String accountId;
+  private String delegateName;
   @ToString.Exclude private String accountSecret;
   @ToString.Exclude private String delegateToken;
   private String managerUrl;

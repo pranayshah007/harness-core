@@ -1,0 +1,9 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: queue-service
+  description: A Generic queue implementation to process data democratically across multiple queues
+spec:
+  type: service
+  owner: CD
+  lifecycle: production

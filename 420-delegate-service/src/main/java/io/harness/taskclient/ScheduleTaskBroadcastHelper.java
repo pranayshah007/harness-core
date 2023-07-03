@@ -30,8 +30,7 @@ public class ScheduleTaskBroadcastHelper {
   public static final String STREAM_DELEGATE_PATH = "/stream/delegate/";
   @Inject private BroadcasterFactory broadcasterFactory;
 
-  public void broadcastRequestEvent(
-      @NotNull final DelegateTask delegateTask, SchedulingTaskEvent.Method method, String uri) {
+  public void broadcastRequestEvent(@NotNull final DelegateTask delegateTask, String method, String uri) {
     ScheduleTaskBroadcast delegateTaskBroadcast =
         ScheduleTaskBroadcast.builder()
             .delegateIdsToBroadcast(delegateTask.getBroadcastToDelegateIds())
@@ -41,7 +40,7 @@ public class ScheduleTaskBroadcastHelper {
                                           .accountId(delegateTask.getAccountId())
                                           .taskId(delegateTask.getUuid())
                                           .uri(uri)
-                                          .method(method.name())
+                                          .method(method)
                                           .build()))
             .build();
     Broadcaster broadcaster = broadcasterFactory.lookup(STREAM_DELEGATE_PATH + delegateTask.getAccountId(), true);

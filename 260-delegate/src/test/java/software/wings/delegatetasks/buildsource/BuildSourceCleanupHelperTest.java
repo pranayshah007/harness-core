@@ -29,6 +29,7 @@ import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -290,6 +291,7 @@ public class BuildSourceCleanupHelperTest extends WingsBaseTest {
   public void withDockerDeleteArtifacts() {
     when(artifactService.prepareArtifactWithMetadataQuery(any(), anyBoolean())).thenReturn(query);
     when(artifactService.prepareCleanupQuery(any())).thenReturn(query);
+    when(query.limit(anyInt())).thenReturn(query);
     when(query.fetch()).thenReturn(artifactIterator);
 
     when(artifactIterator.hasNext()).thenReturn(true).thenReturn(false);

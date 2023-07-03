@@ -49,7 +49,7 @@ import io.harness.cvng.beans.DataCollectionTaskDTO;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.job.Sensitivity;
 import io.harness.cvng.beans.job.VerificationJobType;
-import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
+import io.harness.cvng.cdng.beans.MonitoredServiceSpecType;
 import io.harness.cvng.cdng.beans.v2.Baseline;
 import io.harness.cvng.cdng.beans.v2.VerifyStepPathParams;
 import io.harness.cvng.client.NextGenService;
@@ -67,6 +67,7 @@ import io.harness.cvng.core.services.api.DataCollectionTaskService;
 import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
+import io.harness.cvng.verificationjob.entities.ServiceInstanceDetails;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJob.RuntimeParameter;
@@ -288,6 +289,70 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
     assertThat(dataCollectionTask.getEndTime()).isEqualTo(Instant.parse("2020-07-27T10:51:00Z"));
     assertThat(dataCollectionTask.getValidAfter())
         .isEqualTo(Instant.parse("2020-07-27T10:51:00Z").plus(Duration.ofMinutes(5)));
+  }
+
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
+  public void createDataCollectionTasks_validateDataCollectionTasksForCanaryWithNodesFromCD() {
+    VerificationJob job = builderFactory.canaryVerificationJobBuilder()
+                              .monitoringSources(Collections.singletonList(monitoringSourceIdentifier))
+                              .duration(RuntimeParameter.builder().isRuntimeParam(false).value("60m").build())
+                              .build();
+    job.setAccountId(accountId);
+    job.setIdentifier(verificationJobIdentifier);
+    cvConfigService.save(newCVConfig());
+    String verificationJobInstanceId =
+        verificationJobInstanceService.create(newVerificationJobInstance(Duration.ofMinutes(60)));
+    VerificationJobInstance verificationJobInstance =
+        verificationJobInstanceService.getVerificationJobInstance(verificationJobInstanceId);
+    verificationJobInstance.setResolvedJob(job);
+    verificationJobInstance.setServiceInstanceDetailsFromCD(
+        ServiceInstanceDetails.builder()
+            .valid(true)
+            .deployedServiceInstances(Arrays.asList("c1", "c2"))
+            .serviceInstancesBeforeDeployment(Arrays.asList("p1", "p2", "p3"))
+            .serviceInstancesAfterDeployment(Arrays.asList("p1", "p2", "c1", "c2"))
+            .build());
+    verificationJobInstanceService.createDataCollectionTasks(verificationJobInstance);
+    String workerId = getDataCollectionWorkerId(connectorId);
+    DataCollectionTask dataCollectionTask = dataCollectionTaskService.getNextTask(accountId, workerId).get();
+    assertThat(dataCollectionTask).isNotNull();
+    assertThat(dataCollectionTask.getStartTime()).isEqualTo(Instant.parse("2020-07-27T10:46:00Z"));
+    assertThat(dataCollectionTask.getEndTime()).isEqualTo(Instant.parse("2020-07-27T10:51:00Z"));
+  }
+
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
+  public void createDataCollectionTasks_validateDataCollectionTasksForRollingWithNodesFromCD() {
+    VerificationJob job = builderFactory.blueGreenVerificationJobBuilder()
+                              .monitoringSources(Collections.singletonList(monitoringSourceIdentifier))
+                              .duration(RuntimeParameter.builder().isRuntimeParam(false).value("60m").build())
+                              .build();
+    job.setAccountId(accountId);
+    job.setIdentifier(verificationJobIdentifier);
+    cvConfigService.save(newCVConfig());
+    String verificationJobInstanceId =
+        verificationJobInstanceService.create(newVerificationJobInstance(Duration.ofMinutes(60)));
+    VerificationJobInstance verificationJobInstance =
+        verificationJobInstanceService.getVerificationJobInstance(verificationJobInstanceId);
+    verificationJobInstance.setResolvedJob(job);
+    verificationJobInstance.setServiceInstanceDetailsFromCD(
+        ServiceInstanceDetails.builder()
+            .valid(true)
+            .deployedServiceInstances(Arrays.asList("c1", "c2"))
+            .serviceInstancesBeforeDeployment(Arrays.asList("p1", "p2", "p3"))
+            .serviceInstancesAfterDeployment(Arrays.asList("c1", "c2"))
+            .build());
+    verificationJobInstanceService.createDataCollectionTasks(verificationJobInstance);
+    String workerId = getDataCollectionWorkerId(connectorId);
+    DataCollectionTask dataCollectionTask = dataCollectionTaskService.getNextTask(accountId, workerId).get();
+    assertThat(dataCollectionTask).isNotNull();
+    assertThat(dataCollectionTask.getStartTime()).isEqualTo(Instant.parse("2020-07-27T09:44:00Z"));
+    assertThat(dataCollectionTask.getEndTime()).isEqualTo(Instant.parse("2020-07-27T09:49:00Z"));
+    assertThat(dataCollectionTask.getValidAfter())
+        .isEqualTo(Instant.parse("2020-07-27T09:49:00Z").plus(Duration.ofMinutes(5)));
   }
 
   @Test
@@ -694,6 +759,33 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
     additionalInfo.setPrimaryInstancesLabel("after");
   }
 
+  @Test
+  @Owner(developers = KAMAL)
+  @Category(UnitTests.class)
+  public void testGetDeploymentVerificationJobInstanceSummary_abortedVerificationJobInstance() {
+    VerificationJobInstance devVerificationJobInstance =
+        createVerificationJobInstance("dev", ExecutionStatus.ABORTED, CANARY);
+    devVerificationJobInstance.setExecutionStatus(ExecutionStatus.ABORTED);
+    DeploymentActivityResultDTO.DeploymentVerificationJobInstanceSummary deploymentVerificationJobInstanceSummary =
+        verificationJobInstanceService.getDeploymentVerificationJobInstanceSummary(
+            Lists.newArrayList(devVerificationJobInstance.getUuid()));
+    assertThat(deploymentVerificationJobInstanceSummary.getEnvironmentName()).isEqualTo("Harness dev");
+    assertThat(deploymentVerificationJobInstanceSummary.getVerificationJobInstanceId())
+        .isEqualTo(devVerificationJobInstance.getUuid());
+    assertThat(deploymentVerificationJobInstanceSummary.getActivityId()).isNull();
+    assertThat(deploymentVerificationJobInstanceSummary.getActivityStartTime()).isZero();
+    assertThat(deploymentVerificationJobInstanceSummary.getJobName())
+        .isEqualTo(devVerificationJobInstance.getResolvedJob().getJobName());
+    assertThat(deploymentVerificationJobInstanceSummary.getProgressPercentage()).isEqualTo(0);
+    assertThat(deploymentVerificationJobInstanceSummary.getRisk()).isNull();
+    assertThat(deploymentVerificationJobInstanceSummary.getStatus()).isEqualTo(ActivityVerificationStatus.ERROR);
+    CanaryAdditionalInfo additionalInfo = new CanaryAdditionalInfo();
+    additionalInfo.setCanary(new HashSet<>());
+    additionalInfo.setPrimary(new HashSet<>());
+    additionalInfo.setPrimaryInstancesLabel("before");
+    additionalInfo.setPrimaryInstancesLabel("after");
+  }
+
   private String getDataCollectionWorkerId(String connectorId) {
     return monitoringSourcePerpetualTaskService.getDeploymentWorkerId(
         accountId, orgIdentifier, projectIdentifier, connectorId, monitoringSourceIdentifier);
@@ -766,6 +858,7 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
               .executionStatus(ExecutionStatus.QUEUED)
               .planExecutionId("planExecutionId")
               .nodeExecutionId("nodeExecutionId")
+              .serviceInstanceDetailsFromCD(ServiceInstanceDetails.builder().valid(false).build())
               .stageStepId("stageStepId")
               .monitoredServiceType(MonitoredServiceSpecType.DEFAULT)
               .planExecutionId("")

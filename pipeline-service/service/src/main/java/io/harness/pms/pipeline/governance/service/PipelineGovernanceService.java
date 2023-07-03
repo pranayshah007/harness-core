@@ -11,11 +11,11 @@ import io.harness.governance.GovernanceMetadata;
 import io.harness.pms.pipeline.PipelineEntity;
 
 public interface PipelineGovernanceService {
-  GovernanceMetadata validateGovernanceRules(
-      String accountId, String orgIdentifier, String projectIdentifier, String yamlWithResolvedTemplates);
+  GovernanceMetadata validateGovernanceRules(String accountId, String orgIdentifier, String projectIdentifier,
+      String branch, PipelineEntity pipelineEntity, String yamlWithResolvedTemplates);
 
-  GovernanceMetadata validateGovernanceRulesAndThrowExceptionIfDenied(
-      String accountId, String orgIdentifier, String projectIdentifier, String yamlWithResolvedTemplates);
+  GovernanceMetadata validateGovernanceRulesAndThrowExceptionIfDenied(String accountId, String orgIdentifier,
+      String projectIdentifier, String branch, PipelineEntity pipelineEntity, String yamlWithResolvedTemplates);
 
   String fetchExpandedPipelineJSONFromYaml(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineYaml, String action);

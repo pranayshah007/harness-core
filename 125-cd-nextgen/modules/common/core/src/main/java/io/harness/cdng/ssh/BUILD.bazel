@@ -12,7 +12,6 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/beans/common:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/configfile/steps:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/executables:module",
@@ -27,6 +26,7 @@ java_library(
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/ssh/output:module",
         "//127-cd-nextgen-entities:module",
         "//878-ng-common-utilities:module",
+        "//878-ng-common-utilities/src/main/java/io/harness/beans/common:module",
         "//880-pipeline-cd-commons:module",
         "//884-pms-commons:module",
         "//890-sm-core:module",

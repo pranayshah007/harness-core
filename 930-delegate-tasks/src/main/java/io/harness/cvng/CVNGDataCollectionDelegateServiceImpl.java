@@ -22,6 +22,7 @@ import io.harness.cvng.beans.cvnglog.ApiCallLogDTO;
 import io.harness.cvng.beans.cvnglog.ApiCallLogDTO.ApiCallLogDTOField;
 import io.harness.cvng.beans.cvnglog.TraceableType;
 import io.harness.datacollection.DataCollectionDSLService;
+import io.harness.datacollection.entity.CallDetails;
 import io.harness.datacollection.entity.RuntimeParameters;
 import io.harness.perpetualtask.datacollection.DataCollectionLogContext;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -34,6 +35,9 @@ import software.wings.service.intfc.cvng.CVNGDataCollectionDelegateService;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
@@ -103,10 +107,11 @@ public class CVNGDataCollectionDelegateServiceImpl implements CVNGDataCollection
                                                  .requestTime(callDetails.getRequestTime().toEpochMilli())
                                                  .responseTime(callDetails.getResponseTime().toEpochMilli())
                                                  .build();
+            String encodedURL = callDetails.getRequest().request().url().toString();
             cvngLogDTO.addFieldToRequest(ApiCallLogDTOField.builder()
                                              .name(REQUEST_URL)
                                              .type(ApiCallLogDTO.FieldType.URL)
-                                             .value(callDetails.getRequest().request().url().toString())
+                                             .value(URLDecoder.decode(encodedURL, StandardCharsets.UTF_8))
                                              .build());
             String method = callDetails.getRequest().request().method();
             cvngLogDTO.addFieldToRequest(ApiCallLogDTOField.builder()
@@ -125,10 +130,7 @@ public class CVNGDataCollectionDelegateServiceImpl implements CVNGDataCollection
             if (callDetails.getRequest().request().body() != null) {
               cvngLogDTO.addCallDetailsBodyFieldToRequest(callDetails.getRequest().request());
             }
-            Object responseObj = (callDetails.getResponse() != null && callDetails.getResponse().body() != null)
-                ? callDetails.getResponse().body()
-                : callDetails.getResponse();
-            cvngLogDTO.addFieldToResponse(callDetails.getResponse().code(), responseObj, ApiCallLogDTO.FieldType.JSON);
+            setApiCallLogDTOWithResponse(callDetails, cvngLogDTO);
             delegateLogService.save(accountId, cvngLogDTO);
           }
         }));
@@ -140,6 +142,21 @@ public class CVNGDataCollectionDelegateServiceImpl implements CVNGDataCollection
         throw new DataCollectionException(errorMessage);
       }
     }
+  }
+
+  private static void setApiCallLogDTOWithResponse(CallDetails callDetails, ApiCallLogDTO cvngLogDTO) {
+    Object responseObj = null;
+    if (callDetails.getResponse() != null && callDetails.getResponse().body() != null) {
+      responseObj = callDetails.getResponse().body();
+    } else if (callDetails.getResponse() != null && callDetails.getResponse().errorBody() != null) {
+      try {
+        responseObj = callDetails.getResponse().errorBody().string();
+      } catch (IOException ignored) {
+      }
+    } else {
+      responseObj = callDetails.getResponse();
+    }
+    cvngLogDTO.addFieldToResponse(callDetails.getResponse().code(), responseObj, ApiCallLogDTO.FieldType.JSON);
   }
 
   private String parseDSLExceptionMessage(String message) {

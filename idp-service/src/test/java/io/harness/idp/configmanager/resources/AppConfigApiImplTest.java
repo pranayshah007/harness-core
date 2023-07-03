@@ -18,9 +18,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.eraro.ResponseMessage;
 import io.harness.exception.InvalidRequestException;
-import io.harness.idp.configmanager.ConfigType;
 import io.harness.idp.configmanager.resource.AppConfigApiImpl;
 import io.harness.idp.configmanager.service.ConfigManagerService;
+import io.harness.idp.configmanager.utils.ConfigType;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.AppConfigRequest;
@@ -68,7 +68,7 @@ public class AppConfigApiImplTest extends CategoryTest {
     AppConfigRequest appConfigRequest = new AppConfigRequest();
     AppConfig appConfig = new AppConfig();
     appConfigRequest.setAppConfig(appConfig);
-    when(configManagerService.saveOrUpdateConfigForAccount(appConfig, TEST_ACCOUNT_IDENTIFIER, TEST_PLUGIN_TYPE))
+    when(configManagerService.saveUpdateAndMergeConfigForAccount(appConfig, TEST_ACCOUNT_IDENTIFIER, TEST_PLUGIN_TYPE))
         .thenReturn(appConfig);
     Response response = appConfigApiImpl.saveOrUpdatePluginAppConfig(appConfigRequest, TEST_ACCOUNT_IDENTIFIER);
     assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
@@ -82,7 +82,7 @@ public class AppConfigApiImplTest extends CategoryTest {
     AppConfigRequest appConfigRequest = new AppConfigRequest();
     AppConfig appConfig = new AppConfig();
     appConfigRequest.setAppConfig(appConfig);
-    when(configManagerService.saveOrUpdateConfigForAccount(appConfig, TEST_ACCOUNT_IDENTIFIER, TEST_PLUGIN_TYPE))
+    when(configManagerService.saveUpdateAndMergeConfigForAccount(appConfig, TEST_ACCOUNT_IDENTIFIER, TEST_PLUGIN_TYPE))
         .thenThrow(new InvalidRequestException(ERROR_MESSAGE_SAVE_OR_UPDATE));
     Response response = appConfigApiImpl.saveOrUpdatePluginAppConfig(appConfigRequest, TEST_ACCOUNT_IDENTIFIER);
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());

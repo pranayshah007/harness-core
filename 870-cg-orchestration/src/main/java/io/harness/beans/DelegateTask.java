@@ -110,6 +110,7 @@ public class DelegateTask implements PersistentEntity, UuidAware, CreatedAtAware
   private byte[] runnerData;
   private String requestUri;
   private String requestMethod;
+  private String infraId;
   // moved from TaskData to here
   private long executionTimeout;
   // TODO: remove this async

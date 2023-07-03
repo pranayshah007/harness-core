@@ -10,6 +10,7 @@ package io.harness.delegate.task.artifacts;
 import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
 
+import java.util.Map;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -26,13 +27,16 @@ public class S3ArtifactDelegateResponse extends ArtifactDelegateResponse {
   /** filePathRegex refers to tag regex */
   String filePathRegex;
 
+  Map<String, String> metadata;
+
   @Builder
   public S3ArtifactDelegateResponse(ArtifactBuildDetailsNG buildDetails, ArtifactSourceType sourceType,
-      String bucketName, String filePath, String filePathRegex) {
+      String bucketName, String filePath, String filePathRegex, Map<String, String> metadata) {
     super(buildDetails, sourceType);
 
     this.bucketName = bucketName;
     this.filePath = filePath;
     this.filePathRegex = filePathRegex;
+    this.metadata = metadata;
   }
 }

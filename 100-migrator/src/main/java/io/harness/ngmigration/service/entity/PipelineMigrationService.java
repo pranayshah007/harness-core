@@ -56,6 +56,8 @@ import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
+import io.harness.plancreator.flowcontrol.FlowControlConfig;
+import io.harness.plancreator.flowcontrol.barriers.BarrierInfoConfig;
 import io.harness.plancreator.pipeline.PipelineConfig;
 import io.harness.plancreator.pipeline.PipelineInfoConfig;
 import io.harness.plancreator.stages.StageElementWrapperConfig;
@@ -294,6 +296,7 @@ public class PipelineMigrationService extends NgMigrationService {
     Map<String, String> serviceToStageMap = new HashMap<>();
     Map<String, String> envToStageMap = new HashMap<>();
     Map<String, String> infraToStageMap = new HashMap<>();
+    List<String> barrierNames = new ArrayList<>();
     for (int i = 0; i < pipeline.getPipelineStages().size(); ++i) {
       PipelineStage pipelineStage = pipeline.getPipelineStages().get(i);
       switch (getStageType(pipeline.getPipelineStages(), i)) {
@@ -331,8 +334,8 @@ public class PipelineMigrationService extends NgMigrationService {
             if (skipDetail != null) {
               return YamlGenerationDetails.builder().skipDetails(Collections.singletonList(skipDetail)).build();
             }
-            stage = buildWorkflowStage(
-                migrationContext, stageElement, serviceToStageMap, envToStageMap, infraToStageMap, allFunctors);
+            stage = buildWorkflowStage(migrationContext, stageElement, serviceToStageMap, envToStageMap,
+                infraToStageMap, allFunctors, barrierNames);
           }
         } else {
           stage = buildApprovalStage(migrationContext, stageElement, stageIdentifier, allFunctors);
@@ -373,17 +376,29 @@ public class PipelineMigrationService extends NgMigrationService {
             .type(PIPELINE)
             .filename("pipelines/" + name + ".yaml")
             .yaml(PipelineConfig.builder()
-                      .pipelineInfoConfig(PipelineInfoConfig.builder()
-                                              .identifier(identifier)
-                                              .name(name)
-                                              .description(ParameterField.createValueField(description))
-                                              .projectIdentifier(projectIdentifier)
-                                              .orgIdentifier(orgIdentifier)
-                                              .stages(ngStages)
-                                              .allowStageExecutions(true)
-                                              .variables(pipelineVariables)
-                                              .tags(MigratorUtility.getTags(pipeline.getTagLinks()))
-                                              .build())
+                      .pipelineInfoConfig(
+                          PipelineInfoConfig.builder()
+                              .identifier(identifier)
+                              .name(name)
+                              .description(ParameterField.createValueField(description))
+                              .projectIdentifier(projectIdentifier)
+                              .orgIdentifier(orgIdentifier)
+                              .stages(ngStages)
+                              .allowStageExecutions(true)
+                              .variables(pipelineVariables)
+                              .tags(MigratorUtility.getTags(pipeline.getTagLinks()))
+                              .flowControl(
+                                  FlowControlConfig.builder()
+                                      .barriers(barrierNames.stream()
+                                                    .map(barrierName
+                                                        -> BarrierInfoConfig.builder()
+                                                               .name(barrierName)
+                                                               .identifier(MigratorUtility.generateIdentifier(
+                                                                   barrierName, inputDTO.getIdentifierCaseFormat()))
+                                                               .build())
+                                                    .collect(Collectors.toList()))
+                                      .build())
+                              .build())
                       .build())
             .ngEntityDetail(NgEntityDetail.builder()
                                 .entityType(PIPELINE)
@@ -571,7 +586,7 @@ public class PipelineMigrationService extends NgMigrationService {
 
   private StageElementWrapperConfig buildWorkflowStage(MigrationContext migrationContext,
       PipelineStageElement stageElement, Map<String, String> serviceToStageMap, Map<String, String> envToStageMap,
-      Map<String, String> infraToStageMap, List<StepExpressionFunctor> allExpFunctors) {
+      Map<String, String> infraToStageMap, List<StepExpressionFunctor> allExpFunctors, List<String> allBarriers) {
     CaseFormat caseFormat = migrationContext.getInputDTO().getIdentifierCaseFormat();
     String stageIdentifier = MigratorUtility.generateIdentifier(stageElement.getName(), caseFormat);
     Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
@@ -595,6 +610,10 @@ public class PipelineMigrationService extends NgMigrationService {
         getStageContextOutputs(migrationContext, stageIdentifier, allExpFunctors, allExpressions);
     allExpFunctors.addAll(getStepFunctors(migrationContext, workflow, stageIdentifier));
 
+    // Get Barrier Identifiers and add them to the set
+    WorkflowHandler workflowHandler = workflowHandlerFactory.getWorkflowHandler(workflow);
+    allBarriers.addAll(workflowHandler.getBarriers(workflow));
+
     // Case where CG workflow is being migrated as Pipeline in NG. Chained Pipeline scenario
     if (migratedWorkflow.getYaml() instanceof PipelineConfig) {
       return getChainedPipeline(migrationContext, stageElement, migratedWorkflow, stageIdentifier, allExpFunctors);
@@ -608,8 +627,8 @@ public class PipelineMigrationService extends NgMigrationService {
       if (migratedEntities.containsKey(serviceEntityId)) {
         NgEntityDetail serviceDetails = migratedEntities.get(serviceEntityId).getNgEntityDetail();
         stageServiceRef = MigratorUtility.getIdentifierWithScope(serviceDetails);
-        serviceInputs = migrationTemplateUtils.getServiceInput(
-            serviceDetails, migrationContext.getInputDTO().getDestinationAccountIdentifier());
+        serviceInputs = migrationTemplateUtils.getServiceInput(migrationContext.getInputDTO(), serviceDetails,
+            migrationContext.getInputDTO().getDestinationAccountIdentifier());
         if (serviceInputs != null) {
           serviceInputs = serviceInputs.get(SERVICE_INPUTS);
         }
@@ -633,7 +652,7 @@ public class PipelineMigrationService extends NgMigrationService {
       if (migratedEntities.containsKey(infraEntityId)) {
         NgEntityDetail infraDetails = migratedEntities.get(infraEntityId).getNgEntityDetail();
         stageInfraRef = MigratorUtility.getIdentifierWithScope(migratedEntities.get(infraEntityId).getNgEntityDetail());
-        infraInputs = migrationTemplateUtils.getInfraInput(
+        infraInputs = migrationTemplateUtils.getInfraInput(migrationContext.getInputDTO(),
             migrationContext.getInputDTO().getDestinationAccountIdentifier(), stageEnvRef, infraDetails);
         if (infraInputs != null) {
           infraInputs = infraInputs.get(INFRASTRUCTURE_DEFINITIONS);
@@ -647,7 +666,7 @@ public class PipelineMigrationService extends NgMigrationService {
       return null;
     }
 
-    JsonNode templateInputs = migrationTemplateUtils.getTemplateInputs(
+    JsonNode templateInputs = migrationTemplateUtils.getTemplateInputs(migrationContext.getInputDTO(),
         migratedWorkflow.getNgEntityDetail(), migrationContext.getInputDTO().getDestinationAccountIdentifier());
 
     Map<String, String> workflowVariables = stageElement.getWorkflowVariables();

@@ -61,4 +61,5 @@ public interface VerificationTaskService {
   List<String> getAllVerificationJobInstanceIdsForCVConfig(String cvConfigId);
   List<String> maybeGetVerificationTaskIds(List<String> verificationJobInstanceIds);
   void deleteVerificationTask(String taskId);
+  List<VerificationTask> getVerificationTasksForGivenIds(Set<String> verificationTaskIds);
 }

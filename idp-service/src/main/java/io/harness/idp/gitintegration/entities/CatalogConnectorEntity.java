@@ -81,6 +81,12 @@ public class CatalogConnectorEntity
                  .field(CatalogConnectorKeys.connectorIdentifier)
                  .unique(true)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("unique_account_connectorProviderType")
+                 .field(CatalogConnectorKeys.accountIdentifier)
+                 .field(CatalogConnectorKeys.connectorProviderType)
+                 .unique(true)
+                 .build())
         .build();
   }
 }

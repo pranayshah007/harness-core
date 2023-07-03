@@ -718,6 +718,17 @@ public class PipelineServiceModule extends AbstractModule {
 
   @Provides
   @Singleton
+  @Named("DashboardExecutorService")
+  public ExecutorService dashboardExecutorService() {
+    return ThreadPool.create(configuration.getDashboardExecutorServiceConfig().getCorePoolSize(),
+        configuration.getDashboardExecutorServiceConfig().getMaxPoolSize(),
+        configuration.getDashboardExecutorServiceConfig().getIdleTime(),
+        configuration.getDashboardExecutorServiceConfig().getTimeUnit(),
+        new ThreadFactoryBuilder().setNameFormat("DashboardExecutorService-%d").build());
+  }
+
+  @Provides
+  @Singleton
   @Named("PlanCreatorMergeExecutorService")
   public Executor planCreatorMergeExecutorService() {
     return ThreadPool.create(configuration.getPlanCreatorMergeServicePoolConfig().getCorePoolSize(),
@@ -811,7 +822,17 @@ public class PipelineServiceModule extends AbstractModule {
   public Cache<SchemaCacheKey, YamlSchemaDetailsWrapperValue> schemaDetailsCache(
       HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
     return harnessCacheManager.getCache("schemaDetailsCache", SchemaCacheKey.class, YamlSchemaDetailsWrapperValue.class,
-        CreatedExpiryPolicy.factoryOf(new Duration(TimeUnit.HOURS, 1)),
+        CreatedExpiryPolicy.factoryOf(new Duration(TimeUnit.HOURS, 7)),
+        versionInfoManager.getVersionInfo().getBuildNo());
+  }
+
+  @Provides
+  @Singleton
+  @Named("staticSchemaCache")
+  public Cache<SchemaCacheKey, String> staticSchemaCache(
+      HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
+    return harnessCacheManager.getCache("staticSchemaCache", SchemaCacheKey.class, String.class,
+        CreatedExpiryPolicy.factoryOf(new Duration(TimeUnit.DAYS, 7)),
         versionInfoManager.getVersionInfo().getBuildNo());
   }
 

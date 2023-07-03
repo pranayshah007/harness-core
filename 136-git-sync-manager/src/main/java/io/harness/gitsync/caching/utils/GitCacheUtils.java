@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(PIPELINE)
 public class GitCacheUtils {
-  public Date getValidUntilTime(long currentTime, long maxCacheDuration) {
-    return Date.from(Instant.ofEpochMilli(currentTime + maxCacheDuration));
+  public Date getValidUntilTime(long currentTimeInMilliseconds, long maxCacheDurationInMilliseconds) {
+    return Date.from(Instant.ofEpochMilli(currentTimeInMilliseconds + maxCacheDurationInMilliseconds));
   }
 }

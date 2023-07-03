@@ -37,19 +37,20 @@ public class InstanceSyncPerpetualTaskMapping {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
                  .unique(true)
-                 .name("unique_connectorIdentifier_accountId_orgId_projectId_perpetualTaskId_idx")
+                 .name("unique_accountId_connectorIdentifier_perpetualTaskId_orgId_projectId_idx")
                  .field(InstanceSyncPerpetualTaskMappingKey.accountId)
-                 .field(InstanceSyncPerpetualTaskMappingKey.orgId)
-                 .field(InstanceSyncPerpetualTaskMappingKey.projectId)
                  .field(InstanceSyncPerpetualTaskMappingKey.connectorIdentifier)
                  .field(InstanceSyncPerpetualTaskMappingKey.perpetualTaskId)
-                 .build())
-        .add(CompoundMongoIndex.builder()
-                 .name("connectorIdentifier_accountId_orgId_projectId_idx")
-                 .field(InstanceSyncPerpetualTaskMappingKey.accountId)
                  .field(InstanceSyncPerpetualTaskMappingKey.orgId)
                  .field(InstanceSyncPerpetualTaskMappingKey.projectId)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_connectorIdentifier_deploymentType_orgId_projectId_idx")
+                 .field(InstanceSyncPerpetualTaskMappingKey.accountId)
+                 .field(InstanceSyncPerpetualTaskMappingKey.deploymentType)
                  .field(InstanceSyncPerpetualTaskMappingKey.connectorIdentifier)
+                 .field(InstanceSyncPerpetualTaskMappingKey.orgId)
+                 .field(InstanceSyncPerpetualTaskMappingKey.projectId)
                  .build())
         .build();
   }
@@ -60,4 +61,5 @@ public class InstanceSyncPerpetualTaskMapping {
   String orgId;
   String connectorIdentifier;
   String perpetualTaskId;
+  String deploymentType;
 }

@@ -98,7 +98,7 @@ public class FailDelegateTaskIteratorHelper {
   public void markNotAcquiredAfterMultipleBroadcastAsFailed(
       DelegateTask delegateTask, boolean isDelegateTaskMigrationEnabled) {
     long now = clock.millis();
-    if (delegateTask.getStatus().equals(QUEUED) && delegateTask.getBroadcastRound() <= MAX_BROADCAST_ROUND
+    if (delegateTask.getStatus().equals(QUEUED) && delegateTask.getBroadcastRound() >= MAX_BROADCAST_ROUND
         && delegateTask.getNextBroadcast() < (now + TimeUnit.MINUTES.toMillis(1))) {
       log.info("Marking non acquired task after multiple broadcast attempts, as failed [{}]", delegateTask.getUuid());
       endTasks(asList(delegateTask.getUuid()), isDelegateTaskMigrationEnabled);

@@ -63,8 +63,8 @@ public interface DelegateNgManagerCgManagerClient {
   Call<RestResponse<List<DelegateTokenDetails>>> getTokens(@Query("tokenName") String tokenName,
       @Query(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
       @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @Query("status") DelegateTokenStatus status);
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @Query("status") DelegateTokenStatus status,
+      @Query("includeValue") boolean includeValue);
 
   @GET(DELEGATE_TOKEN_NG_API + "/delegate-groups")
   Call<RestResponse<DelegateGroupListing>> getDelegateGroupsUsingToken(

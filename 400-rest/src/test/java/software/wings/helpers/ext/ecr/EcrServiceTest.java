@@ -10,10 +10,12 @@ package software.wings.helpers.ext.ecr;
 import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 import static io.harness.rule.OwnerRule.RAFAEL;
+import static io.harness.rule.OwnerRule.SARTHAK_KASAT;
 
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -241,6 +243,73 @@ public class EcrServiceTest extends WingsBaseTest {
     assertThat(buildDetailsInternal.getMetadata().get(TAG)).isEqualTo(LATEST);
     assertThat(buildDetailsInternal.getUiDisplayName()).isEqualTo("Tag# latest");
     assertThat(buildDetailsInternal.getImagePushedAt()).isEqualTo(date);
+  }
+
+  @Test
+  @Owner(developers = SARTHAK_KASAT)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuildFromOriginalRegex() throws ParseException {
+    String region = Regions.US_EAST_1.getName();
+    when(ecrServiceDelegate.getEcrImageUrl(awsConfig, null, region, IMAGE_NAME)).thenReturn("imageUrl");
+    DescribeImagesResult imagesResult = new DescribeImagesResult();
+    imagesResult.setNextToken(null);
+    imagesResult.setImageDetails(
+        Lists.newArrayList(buildImageDetails(List.of(LATEST), "2023-02-02T16:48:55-08:00").withImageDigest(SHA),
+            buildImageDetails(List.of("stable-perl"), "022-11-22T23:03:17-08:00").withImageDigest(SHA),
+            buildImageDetails(List.of("stable"), "2022-11-22T04:18:35-08:00").withImageDigest(SHA),
+            buildImageDetails(Arrays.asList("v1", "v2", "v3"), "2023-02-02T16:45:50-08:00").withImageDigest(SHA)));
+
+    when(awsApiHelperService.describeEcrImages(
+             any(AwsInternalConfig.class), eq(region), any(DescribeImagesRequest.class)))
+        .thenReturn(imagesResult);
+    String tagRegex = "stable.*";
+    BuildDetailsInternal buildDetailsInternal = ecrService.getLastSuccessfulBuildFromRegex(
+        AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), REGISTRY_ID, null, region, IMAGE_NAME, tagRegex);
+    assertThat(buildDetailsInternal.getNumber()).isEqualTo("stable-perl");
+  }
+  @Test
+  @Owner(developers = SARTHAK_KASAT)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuildFromModifiedRegexMatchingOriginalRegex() throws ParseException {
+    String region = Regions.US_EAST_1.getName();
+    when(ecrServiceDelegate.getEcrImageUrl(awsConfig, null, region, IMAGE_NAME)).thenReturn("imageUrl");
+    DescribeImagesResult imagesResult = new DescribeImagesResult();
+    imagesResult.setNextToken(null);
+    imagesResult.setImageDetails(
+        Lists.newArrayList(buildImageDetails(List.of(LATEST), "2023-02-02T16:48:55-08:00").withImageDigest(SHA),
+            buildImageDetails(List.of("stable-perl"), "022-11-22T23:03:17-08:00").withImageDigest(SHA),
+            buildImageDetails(List.of("stable.123"), "2022-11-22T04:18:35-08:00").withImageDigest(SHA),
+            buildImageDetails(Arrays.asList("v1", "v2", "v3"), "2023-02-02T16:45:50-08:00").withImageDigest(SHA)));
+
+    when(awsApiHelperService.describeEcrImages(
+             any(AwsInternalConfig.class), eq(region), any(DescribeImagesRequest.class)))
+        .thenReturn(imagesResult);
+    String tagRegex = "stable.*";
+    BuildDetailsInternal buildDetailsInternal = ecrService.getLastSuccessfulBuildFromRegex(
+        AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), REGISTRY_ID, null, region, IMAGE_NAME, tagRegex);
+    assertThat(buildDetailsInternal.getNumber()).isEqualTo("stable.123");
+  }
+
+  @Test
+  @Owner(developers = SARTHAK_KASAT)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuildFromModifiedRegexNotMatchingOriginalRegex() throws ParseException {
+    String region = Regions.US_EAST_1.getName();
+    when(ecrServiceDelegate.getEcrImageUrl(awsConfig, null, region, IMAGE_NAME)).thenReturn("imageUrl");
+    DescribeImagesResult imagesResult = new DescribeImagesResult();
+    imagesResult.setNextToken(null);
+    imagesResult.setImageDetails(
+        Lists.newArrayList(buildImageDetails(List.of(LATEST), "2023-02-02T16:48:55-08:00").withImageDigest(SHA),
+            buildImageDetails(List.of("sta\\.ble"), "2022-11-22T04:18:35-08:00").withImageDigest(SHA),
+            buildImageDetails(Arrays.asList("v1", "v2", "v3"), "2023-02-02T16:45:50-08:00").withImageDigest(SHA)));
+
+    when(awsApiHelperService.describeEcrImages(
+             any(AwsInternalConfig.class), eq(region), any(DescribeImagesRequest.class)))
+        .thenReturn(imagesResult);
+    String tagRegex = "sta\\.ble";
+    BuildDetailsInternal buildDetailsInternal = ecrService.getLastSuccessfulBuildFromRegex(
+        AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), REGISTRY_ID, null, region, IMAGE_NAME, tagRegex);
+    assertThat(buildDetailsInternal.getNumber()).isEqualTo("sta\\.ble");
   }
 
   @Test

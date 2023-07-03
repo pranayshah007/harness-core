@@ -92,3 +92,33 @@ Helper function for pullSecrets at chart level or global level.
 {{- end }}
 {{- end }}
 
+
+{{/* Generates Mongo Connection string
+{{ include "access-control.mongoConnectionUrl" (dict "database" "foo" "context" $) }}
+*/}}
+{{- define "access-control.mongoConnectionUrl" }}
+{{- $type := "mongo" }}
+{{- $hosts := (pluck $type .context.Values.global.database | first ).hosts }}
+{{- $dbType := $type | upper}}
+{{- $installed := (pluck $type .context.Values.global.database | first ).installed }}
+{{- $protocol := (pluck $type .context.Values.global.database | first ).protocol }}
+{{- $extraArgs:= (pluck $type .context.Values.global.database | first ).extraArgs }}
+{{- $userVariableName := default (printf "%s_USER" $dbType) .userVariableName -}}
+{{- $passwordVariableName := default (printf "%s_PASSWORD" $dbType) .passwordVariableName -}}
+{{- if $installed }}
+  {{- $namespace := .context.Release.Namespace }}
+  {{- if .context.Values.global.ha -}}
+{{- printf "'mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-1.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-2.mongodb-replicaset-chart.%s.svc:27017/%s?replicaSet=rs0&authSource=admin'" $namespace $namespace $namespace .database -}}
+  {{- else }}
+{{- printf "'mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc/%s?authSource=admin'" $namespace .database -}}
+  {{- end }}
+{{- else }}
+{{- $args := (printf "/%s?%s" .database $extraArgs )}}
+{{- $finalhost := (index $hosts  0) -}}
+{{- range $host := (rest $hosts ) -}}
+    {{- $finalhost = printf "%s,%s" $finalhost $host -}}
+{{- end -}}
+{{- $connectionString := (printf "%s%s" $finalhost $args) -}}
+{{- printf "%s" $connectionString }}
+{{- end }}
+{{- end }}

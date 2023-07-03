@@ -33,7 +33,9 @@ import io.harness.ccm.audittrails.events.BudgetDeleteEvent;
 import io.harness.ccm.audittrails.events.BudgetUpdateEvent;
 import io.harness.ccm.budget.BudgetBreakdown;
 import io.harness.ccm.budget.utils.BudgetUtils;
+import io.harness.ccm.commons.entities.CCMSortOrder;
 import io.harness.ccm.commons.entities.billing.Budget;
+import io.harness.ccm.commons.entities.billing.BudgetSortType;
 import io.harness.ccm.commons.entities.budget.BudgetData;
 import io.harness.ccm.graphql.core.budget.BudgetService;
 import io.harness.ccm.rbac.CCMRbacHelper;
@@ -211,8 +213,10 @@ public class BudgetResource {
       })
   public ResponseDTO<List<Budget>>
   list(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
-      NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
-    List<Budget> allBudgets = budgetService.list(accountId);
+           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @Parameter(description = "Budget List Sort Type") @QueryParam("budgetSortType") BudgetSortType budgetSortType,
+      @Parameter(description = "Budget List Sort Order") @QueryParam("sortOrder") CCMSortOrder ccmSortOrder) {
+    List<Budget> allBudgets = budgetService.list(accountId, budgetSortType, ccmSortOrder);
     List<String> perspectiveIds = allBudgets.stream()
                                       .filter(BudgetUtils::isPerspectiveBudget)
                                       .map(BudgetUtils::getPerspectiveIdForBudget)

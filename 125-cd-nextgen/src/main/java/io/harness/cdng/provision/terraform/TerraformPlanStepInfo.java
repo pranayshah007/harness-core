@@ -68,13 +68,13 @@ public class TerraformPlanStepInfo extends TerraformPlanBaseStepInfo implements 
   @Override
   @JsonIgnore
   public StepType getStepType() {
-    return TerraformPlanStep.STEP_TYPE;
+    return TerraformPlanStepV2.STEP_TYPE;
   }
 
   @Override
   @JsonIgnore
   public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
+    return OrchestrationFacilitatorType.TASK_CHAIN;
   }
 
   @Override

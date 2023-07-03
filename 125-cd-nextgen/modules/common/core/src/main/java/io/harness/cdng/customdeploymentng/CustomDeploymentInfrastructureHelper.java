@@ -198,7 +198,7 @@ public class CustomDeploymentInfrastructureHelper {
   public String getTemplateYaml(
       String accRef, String orgRef, String projectRef, String templateRef, String versionLabel) {
     TemplateResponseDTO response;
-    if (versionLabel.equals(STABLE_VERSION)) {
+    if (STABLE_VERSION.equals(versionLabel)) {
       versionLabel = null;
     }
     SecurityContextBuilder.setContext(new ServicePrincipal(TEMPLATE_SERVICE.getServiceId()));

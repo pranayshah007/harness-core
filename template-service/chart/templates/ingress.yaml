@@ -20,7 +20,7 @@ spec:
                 name: {{ include "template-service.name" $ }}
                 port:
                   number: {{ $.Values.service.port }}
-            path: /template-service(/|$)(.*)
+            path: /template(/|$)(.*)
             pathType: ImplementationSpecific
     {{- end }}
   {{- if .Values.global.ingress.tls.enabled }}

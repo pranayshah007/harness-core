@@ -19,7 +19,7 @@ import (
 	"github.com/harness/harness-core/product/ci/common/external"
 	"github.com/harness/harness-core/product/ci/engine/output"
 	pb "github.com/harness/harness-core/product/ci/engine/proto"
-	"github.com/harness/harness-core/product/ci/ti-service/types"
+	"github.com/harness/ti-client/types"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )

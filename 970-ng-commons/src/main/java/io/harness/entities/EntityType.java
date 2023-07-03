@@ -454,9 +454,10 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.IACM)
   IACM_TERRAFORM_PLUGIN(ModuleType.IACM, EntityTypeConstants.IACM_TERRAFORM_PLUGIN, IdentifierRef.class,
       EntityYamlRootNames.IACM_TERRAFORM_PLUGIN),
+
   @JsonProperty(EntityTypeConstants.IACM)
-  IACM_TEMPLATE(
-      ModuleType.IACM, EntityTypeConstants.IACM_TEMPLATE, IdentifierRef.class, EntityYamlRootNames.IACM_TEMPLATE),
+  IACM_APPROVAL(
+      ModuleType.IACM, EntityTypeConstants.IACM_APPROVAL, IdentifierRef.class, EntityYamlRootNames.IACM_APPROVAL),
   @JsonProperty(EntityTypeConstants.ELASTIGROUP_BG_STAGE_SETUP)
   ELASTIGROUP_BG_STAGE_SETUP_STEP(ModuleType.CD, EntityTypeConstants.ELASTIGROUP_BG_STAGE_SETUP, IdentifierRef.class,
       EntityYamlRootNames.ELASTIGROUP_BG_STAGE_SETUP),
@@ -608,7 +609,13 @@ public enum EntityType {
   SERVERLESS_AWS_LAMBDA_ROLLBACK_V2(ModuleType.CD, EntityTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2,
       IdentifierRef.class, EntityYamlRootNames.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2),
   @JsonProperty(EntityTypeConstants.COVERITY)
-  COVERITY(ModuleType.STO, EntityTypeConstants.COVERITY, IdentifierRef.class, EntityYamlRootNames.COVERITY);
+  COVERITY(ModuleType.STO, EntityTypeConstants.COVERITY, IdentifierRef.class, EntityYamlRootNames.COVERITY),
+  @JsonProperty(EntityTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2)
+  SERVERLESS_AWS_LAMBDA_DEPLOY_V2(ModuleType.CD, EntityTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2,
+      IdentifierRef.class, EntityYamlRootNames.SERVERLESS_AWS_LAMBDA_DEPLOY_V2),
+  @JsonProperty(EntityTypeConstants.ANALYZE_DEPLOYMENT_IMPACT)
+  ANALYZE_DEPLOYMENT_IMPACT_STEP(ModuleType.CV, EntityTypeConstants.ANALYZE_DEPLOYMENT_IMPACT, IdentifierRef.class,
+      EntityYamlRootNames.ANALYZE_DEPLOYMENT_IMPACT);
 
   private final ModuleType moduleType;
   String yamlName;

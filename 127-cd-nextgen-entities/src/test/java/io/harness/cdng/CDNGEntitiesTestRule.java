@@ -237,6 +237,7 @@ public class CDNGEntitiesTestRule implements InjectorRuleMixin, MethodRule, Mong
         bind(ServiceOverridesServiceV2.class).to(DummyServiceOverridesServiceV2Impl.class);
         bind(ServiceEntityService.class).to(ServiceEntityServiceImpl.class);
         bind(AccountService.class).toInstance(mock(AccountService.class));
+        bind(AccountClient.class).annotatedWith(Names.named("PRIVILEGED")).toInstance(mock(AccountClient.class));
         bind(OrganizationService.class).toInstance(mock(OrganizationService.class));
         bind(ProjectService.class).toInstance(mock(ProjectService.class));
       }

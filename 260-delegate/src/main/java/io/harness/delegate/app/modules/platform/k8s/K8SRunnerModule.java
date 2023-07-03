@@ -7,18 +7,26 @@
 
 package io.harness.delegate.app.modules.platform.k8s;
 
-import io.harness.decryption.delegate.module.DelegateDecryptionModule;
 import io.harness.delegate.service.core.litek8s.K8SLiteRunner;
-import io.harness.delegate.service.core.runner.TaskRunner;
+import io.harness.delegate.service.core.litek8s.K8SRunnerConfig;
+import io.harness.delegate.service.runners.itfc.Runner;
 
 import com.google.inject.AbstractModule;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 public class K8SRunnerModule extends AbstractModule {
+  private final K8SRunnerConfig config;
+
   @Override
   protected void configure() {
-    install(new DelegateDecryptionModule());
+    /**
+     * We don't need to re-install this module in immutable delegate
+     install(new DelegateDecryptionModule());
+     */
     install(new ApiClientModule());
 
-    bind(TaskRunner.class).to(K8SLiteRunner.class);
+    bind(K8SRunnerConfig.class).toInstance(config);
+    bind(Runner.class).to(K8SLiteRunner.class);
   }
 }

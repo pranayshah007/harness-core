@@ -13,6 +13,7 @@ import io.harness.metrics.service.api.MetricsPublisher;
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
@@ -36,15 +37,15 @@ public class AccessControlMetricsPublisherImpl implements MetricsPublisher {
   private static final Pattern METRIC_NAME_RE = Pattern.compile("[^a-zA-Z0-9:_]");
   private static final String NAMESPACE = System.getenv("NAMESPACE");
   private static final String CONTAINER_NAME = System.getenv("CONTAINER_NAME");
+  private static final MetricFilter meterMetricFilter =
+      MetricFilter.startsWith("io.dropwizard.jetty.MutableServletContextHandler");
 
   @Override
   public void recordMetrics() {
     Set<Map.Entry<String, Gauge>> gaugeSet = metricRegistry.getGauges().entrySet();
     gaugeSet.forEach(entry -> recordGauge(sanitizeMetricName(entry.getKey()), entry.getValue()));
-    /* To Record Meters, not required as of now.
-    Set<Map.Entry<String, Meter>> meterSet = metricRegistry.getMeters().entrySet();
+    Set<Map.Entry<String, Meter>> meterSet = metricRegistry.getMeters(meterMetricFilter).entrySet();
     meterSet.forEach(entry -> recordMeter(sanitizeMetricName(entry.getKey()), entry.getValue()));
-    */
     Set<Map.Entry<String, Timer>> timerSet = metricRegistry.getTimers().entrySet();
     timerSet.forEach(entry -> recordTimer(sanitizeMetricName(entry.getKey()), entry.getValue()));
     Set<Map.Entry<String, Counter>> counterSet = metricRegistry.getCounters().entrySet();

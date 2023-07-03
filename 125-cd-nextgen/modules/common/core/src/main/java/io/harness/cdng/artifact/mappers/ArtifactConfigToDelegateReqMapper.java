@@ -224,7 +224,7 @@ public class ArtifactConfigToDelegateReqMapper {
       return ArtifactDelegateRequestUtils.getGithubPackagesDelegateRequest(artifactConfig.getPackageName().getValue(),
           artifactConfig.getPackageType().getValue(), version, versionRegex, org, connectorRef, connectorDTO,
           encryptedDataDetails, ArtifactSourceType.GITHUB_PACKAGES, artifactConfig.getArtifactId().getValue(),
-          artifactConfig.getRepository().getValue(), user,
+          "repository", user,
           ParameterField.isNotNull(artifactConfig.getExtension()) ? artifactConfig.getExtension().getValue() : "",
           artifactConfig.getGroupId().getValue());
     }
@@ -239,9 +239,6 @@ public class ArtifactConfigToDelegateReqMapper {
 
     if (ParameterField.isBlank(artifactConfig.getGroupId())) {
       throw new InvalidRequestException("GroupId field cannot be blank");
-    }
-    if (ParameterField.isBlank(artifactConfig.getRepository())) {
-      throw new InvalidRequestException("Repository field cannot be blank");
     }
   }
   public AzureArtifactsDelegateRequest getAzureArtifactsDelegateRequest(AzureArtifactsConfig artifactConfig,
@@ -742,12 +739,12 @@ public class ArtifactConfigToDelegateReqMapper {
         : artifactConfig.getArtifactDirectory().getValue();
 
     if (isLastPublishedExpression(artifactPath)) {
-      artifactPathFilter = artifactPath.equals(ACCEPT_ALL_REGEX) ? "*" : artifactPath;
+      artifactPathFilter = "*";
     }
 
     if (ParameterField.isNotNull(artifactConfig.getArtifactPath())
         && tagHasInputValidator(artifactConfig.getArtifactPath().getInputSetValidator(), artifactPath)) {
-      artifactPathFilter = artifactConfig.getTag().getInputSetValidator().getParameters();
+      artifactPathFilter = artifactConfig.getArtifactPath().getInputSetValidator().getParameters();
     }
 
     return ArtifactDelegateRequestUtils.getArtifactoryGenericArtifactDelegateRequest(
@@ -791,7 +788,19 @@ public class ArtifactConfigToDelegateReqMapper {
     if (StringUtils.isBlank(bucket)) {
       throw new InvalidRequestException("Please input bucket name.");
     }
+
+    String artifactPathRegex = null;
+    if (isLastPublishedExpression(artifactPath)) {
+      if (ParameterField.isNotNull(artifactConfig.getArtifactPath())
+          && tagHasInputValidator(artifactConfig.getArtifactPath().getInputSetValidator(), artifactPath)) {
+        artifactPathRegex = artifactConfig.getArtifactPath().getInputSetValidator().getParameters();
+      } else {
+        artifactPathRegex = getTagRegex(artifactPath);
+      }
+      artifactPath = "";
+    }
     return ArtifactDelegateRequestUtils.getGoogleCloudStorageArtifactDelegateRequest(bucket, project, artifactPath,
-        gcpConnectorDTO, connectorRef, encryptedDataDetails, ArtifactSourceType.GOOGLE_CLOUD_STORAGE_ARTIFACT);
+        artifactPathRegex, gcpConnectorDTO, connectorRef, encryptedDataDetails,
+        ArtifactSourceType.GOOGLE_CLOUD_STORAGE_ARTIFACT);
   }
 }

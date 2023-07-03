@@ -12,6 +12,8 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import java.util.ArrayList;
+import java.util.List;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 
@@ -39,5 +41,12 @@ public class HarnessStringUtils {
       return str.substring(1, str.length() - 1);
     }
     return str;
+  }
+  public List<String> removeLeadingAndTrailingSpacesInListOfStrings(List<String> list) {
+    List<String> sanitisedList = new ArrayList<>();
+    for (String elem : list) {
+      sanitisedList.add(elem.trim());
+    }
+    return sanitisedList;
   }
 }

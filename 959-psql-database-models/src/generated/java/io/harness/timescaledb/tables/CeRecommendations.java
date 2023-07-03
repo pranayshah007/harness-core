@@ -21,7 +21,7 @@ import org.jooq.Field;
 import org.jooq.ForeignKey;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row15;
+import org.jooq.Row17;
 import org.jooq.Schema;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -143,6 +143,18 @@ public class CeRecommendations extends TableImpl<CeRecommendationsRecord> {
   public final TableField<CeRecommendationsRecord, String> RECOMMENDATIONSTATE =
       createField(DSL.name("recommendationstate"), SQLDataType.CLOB, this, "");
 
+  /**
+   * The column <code>public.ce_recommendations.governanceruleid</code>.
+   */
+  public final TableField<CeRecommendationsRecord, String> GOVERNANCERULEID =
+      createField(DSL.name("governanceruleid"), SQLDataType.CLOB, this, "");
+
+  /**
+   * The column <code>public.ce_recommendations.cloudprovider</code>.
+   */
+  public final TableField<CeRecommendationsRecord, String> CLOUDPROVIDER =
+      createField(DSL.name("cloudprovider"), SQLDataType.CLOB, this, "");
+
   private CeRecommendations(Name alias, Table<CeRecommendationsRecord> aliased) {
     this(alias, aliased, null);
   }
@@ -222,9 +234,9 @@ public class CeRecommendations extends TableImpl<CeRecommendationsRecord> {
   // -------------------------------------------------------------------------
 
   @Override
-  public Row15<String, String, String, Double, Double, String, String, String, Boolean, OffsetDateTime, OffsetDateTime,
-      String, String, String, String>
+  public Row17<String, String, String, Double, Double, String, String, String, Boolean, OffsetDateTime, OffsetDateTime,
+      String, String, String, String, String, String>
   fieldsRow() {
-    return (Row15) super.fieldsRow();
+    return (Row17) super.fieldsRow();
   }
 }

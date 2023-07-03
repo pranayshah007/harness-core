@@ -130,7 +130,10 @@ java_library(
     name = "tests",
     testonly = True,
     srcs = glob(["src/test/**/*.java"]),
-    resources = ["//pipeline-service/service/src/test/resources:resource"],
+    resources = [
+        "//pipeline-service/service/src/main/resources:static_resource",
+        "//pipeline-service/service/src/test/resources:resource",
+    ],
     visibility = ["//visibility:public"],
     deps = [
         ":module",

@@ -135,9 +135,8 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
                                        .build())
             .adviserObtainments(adviserObtainmentFromMetaData)
             .skipCondition(SkipInfoUtils.getSkipCondition(stepElement.getSkipCondition()))
-            .whenCondition(isStepInsideRollback
-                    ? RunInfoUtils.getRunConditionForRollback(stepElement.getWhen(), executionMode)
-                    : RunInfoUtils.getRunConditionForStep(stepElement.getWhen()))
+            .whenCondition(isStepInsideRollback ? RunInfoUtils.getRunConditionForRollback(stepElement.getWhen())
+                                                : RunInfoUtils.getRunConditionForStep(stepElement.getWhen()))
             .timeoutObtainment(
                 SdkTimeoutObtainment.builder()
                     .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)

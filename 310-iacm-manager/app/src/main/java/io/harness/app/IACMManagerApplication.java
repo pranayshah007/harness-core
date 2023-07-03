@@ -27,6 +27,7 @@ import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
 import io.harness.exception.GeneralException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.govern.ProviderModule;
 import io.harness.health.HealthService;
 import io.harness.iacm.GenerateOpenApiSpecCommand;
@@ -97,6 +98,7 @@ import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import com.google.inject.util.Providers;
 import dev.morphia.converters.TypeConverter;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
@@ -250,6 +252,13 @@ public class IACMManagerApplication extends Application<IACMManagerConfiguration
             return false;
           }
         });
+      }
+    });
+
+    modules.add(new AbstractModule() {
+      @Override
+      protected void configure() {
+        bind(FeatureFlagService.class).toProvider(Providers.of(null));
       }
     });
 

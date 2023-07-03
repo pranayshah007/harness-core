@@ -195,7 +195,7 @@ public class EntityTypeTest extends CategoryTest {
     entityTypeOrdinalMapping.put(161, "IACM");
     entityTypeOrdinalMapping.put(162, "CONTAINER_STEP");
     entityTypeOrdinalMapping.put(163, "IACM_TERRAFORM_PLUGIN");
-    entityTypeOrdinalMapping.put(164, "IACM_TEMPLATE");
+    entityTypeOrdinalMapping.put(164, "IACM_APPROVAL");
     entityTypeOrdinalMapping.put(165, "ELASTIGROUP_BG_STAGE_SETUP_STEP");
     entityTypeOrdinalMapping.put(166, "ELASTIGROUP_SWAP_ROUTE_STEP");
     entityTypeOrdinalMapping.put(167, "ASG_CANARY_DEPLOY_STEP");
@@ -250,6 +250,8 @@ public class EntityTypeTest extends CategoryTest {
     entityTypeOrdinalMapping.put(216, "SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2");
     entityTypeOrdinalMapping.put(217, "SERVERLESS_AWS_LAMBDA_ROLLBACK_V2");
     entityTypeOrdinalMapping.put(218, "COVERITY");
+    entityTypeOrdinalMapping.put(219, "SERVERLESS_AWS_LAMBDA_DEPLOY_V2");
+    entityTypeOrdinalMapping.put(220, "ANALYZE_DEPLOYMENT_IMPACT_STEP");
 
     entityTypeConstantMapping =
         entityTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

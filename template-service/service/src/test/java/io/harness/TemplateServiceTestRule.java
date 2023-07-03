@@ -21,6 +21,7 @@ import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
 import io.harness.callback.DelegateCallbackToken;
+import io.harness.customDeployment.remote.CustomDeploymentResourceClient;
 import io.harness.delegate.DelegateServiceGrpc;
 import io.harness.factory.ClosingFactory;
 import io.harness.filter.FiltersModule;
@@ -51,6 +52,7 @@ import io.harness.serializer.jackson.TemplateServiceJacksonModule;
 import io.harness.service.intfc.DelegateAsyncService;
 import io.harness.service.intfc.DelegateSyncService;
 import io.harness.springdata.HTransactionTemplate;
+import io.harness.telemetry.TelemetryReporter;
 import io.harness.template.services.NoOpTemplateGitXServiceImpl;
 import io.harness.template.services.TemplateGitXService;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
@@ -196,9 +198,11 @@ public class TemplateServiceTestRule implements InjectorRuleMixin, MethodRule, M
         bind(GitAwarePersistence.class).to(NoOpGitAwarePersistenceImpl.class);
         bind(GitSyncSdkService.class).to(NoOpGitSyncSdkServiceImpl.class);
         bind(TemplateGitXService.class).to(NoOpTemplateGitXServiceImpl.class);
+        bind(TelemetryReporter.class).toInstance(mock(TelemetryReporter.class));
         bind(HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceBlockingStub.class)
             .toInstance(Mockito.mock(HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceBlockingStub.class));
         bind(AccountClient.class).toInstance(mock(AccountClient.class));
+        bind(CustomDeploymentResourceClient.class).toInstance(mock(CustomDeploymentResourceClient.class));
         bind(NGTemplateFeatureFlagHelperService.class).toInstance(mock(NGTemplateFeatureFlagHelperService.class));
       }
     });

@@ -16,9 +16,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.common.CommonUtils;
 import io.harness.idp.common.YamlUtils;
-import io.harness.idp.configmanager.ConfigType;
 import io.harness.idp.configmanager.service.ConfigManagerService;
 import io.harness.idp.configmanager.utils.ConfigManagerUtils;
+import io.harness.idp.configmanager.utils.ConfigType;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.HostInfo;
 
@@ -44,6 +44,7 @@ public class AllowListServiceImpl implements AllowListService {
   private static final String ALLOW_LIST = "allow-list";
   private static final String READING_PROPERTY = "reading";
   private static final String ALLOW_PROPERTY = "allow";
+  private static final String PATHS_PROPERTY = "paths";
 
   @Override
   public List<HostInfo> getAllowList(String harnessAccount) throws Exception {
@@ -59,6 +60,7 @@ public class AllowListServiceImpl implements AllowListService {
   @Override
   public List<HostInfo> saveAllowList(List<HostInfo> hostInfoList, String harnessAccount) throws Exception {
     JsonNode allowListNode = asJsonNode(YamlUtils.writeObjectAsYaml(hostInfoList));
+    removePathsNodeIfEmpty(allowListNode);
     String yamlString = CommonUtils.readFileFromClassPath(ALLOW_LIST_CONFIG_FILE);
     JsonNode rootNode = asJsonNode(yamlString);
     JsonNode readingNode = ConfigManagerUtils.getNodeByName(rootNode, READING_PROPERTY);
@@ -66,6 +68,15 @@ public class AllowListServiceImpl implements AllowListService {
     String config = asYaml(rootNode.toString());
     createOrUpdateAllowListAppConfig(config, harnessAccount);
     return hostInfoList;
+  }
+
+  private void removePathsNodeIfEmpty(JsonNode jsonNode) {
+    for (JsonNode allowNode : jsonNode) {
+      JsonNode pathsNode = allowNode.get(PATHS_PROPERTY);
+      if (pathsNode.isArray() && pathsNode.isEmpty()) {
+        ((ObjectNode) allowNode).remove(PATHS_PROPERTY);
+      }
+    }
   }
 
   private void createOrUpdateAllowListAppConfig(String config, String accountIdentifier) throws Exception {
@@ -78,8 +89,7 @@ public class AllowListServiceImpl implements AllowListService {
     appConfig.setConfigs(config);
     appConfig.setEnabled(true);
 
-    configManagerService.saveOrUpdateConfigForAccount(appConfig, accountIdentifier, ConfigType.BACKEND);
-    configManagerService.mergeAndSaveAppConfig(accountIdentifier);
+    configManagerService.saveUpdateAndMergeConfigForAccount(appConfig, accountIdentifier, ConfigType.BACKEND);
 
     log.info("Merging for allow list config completed for accountId - {}", accountIdentifier);
   }

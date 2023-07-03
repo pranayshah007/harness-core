@@ -15,7 +15,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.cvng.CVConstants;
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
-import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
+import io.harness.cvng.cdng.beans.MonitoredServiceSpecType;
 import io.harness.cvng.cdng.beans.v2.AppliedDeploymentAnalysisType;
 import io.harness.cvng.cdng.beans.v2.BaselineType;
 import io.harness.cvng.core.entities.CVConfig;
@@ -119,8 +119,9 @@ public final class VerificationJobInstance
   // this stuff is only required for deployment verification
   @Setter(AccessLevel.NONE) private Duration dataCollectionDelay;
 
-  private Set<String> oldVersionHosts;
-  private Set<String> newVersionHosts;
+  private ServiceInstanceDetails serviceInstanceDetailsFromCD;
+  @Deprecated private Set<String> oldVersionHosts;
+  @Deprecated private Set<String> newVersionHosts;
   private Integer newHostsTrafficSplitPercentage;
   private ActivityVerificationStatus verificationStatus;
 
@@ -282,7 +283,7 @@ public final class VerificationJobInstance
       return Lists.newArrayList(QUEUED, RUNNING);
     }
     public static List<ExecutionStatus> noAnalysisStatuses() {
-      return Lists.newArrayList(QUEUED, TIMEOUT);
+      return Lists.newArrayList(QUEUED, TIMEOUT, ABORTED);
     }
     public static List<ExecutionStatus> finalStatuses() {
       return Lists.newArrayList(SUCCESS, FAILED, TIMEOUT);

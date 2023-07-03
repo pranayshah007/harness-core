@@ -104,7 +104,9 @@ public interface SettingsResource {
       @Parameter(description = SettingConstants.CATEGORY) @NotNull @QueryParam(
           SettingConstants.CATEGORY_KEY) SettingCategory category,
       @Parameter(description = SettingConstants.GROUP_ID) @QueryParam(
-          SettingConstants.GROUP_KEY) String groupIdentifier);
+          SettingConstants.GROUP_KEY) String groupIdentifier,
+      @Parameter(description = SettingConstants.INCLUDES_PARENT_SCOPE) @QueryParam(
+          SettingConstants.INCLUDES_PARENT_SCOPE_KEY) Boolean includeParentScope);
 
   @PUT
   @ApiOperation(value = "Updates the settings", nickname = "updateSettingValue")

@@ -119,7 +119,6 @@ import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.model.time.ExecutionTime;
 import com.cronutils.parser.CronParser;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.annotations.VisibleForTesting;
@@ -203,6 +202,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
               ngTriggerEntity.getAccountId(), FeatureName.SPG_DISABLE_CUSTOM_WEBHOOK_V3_URL)) {
         populateCustomWebhookTokenForCustomWebhookTriggers(ngTriggerEntity);
       }
+
+      checkForAccessForHarnessScm(ngTriggerEntity);
       NGTriggerEntity savedNgTriggerEntity = ngTriggerRepository.save(ngTriggerEntity);
       performPostUpsertFlow(savedNgTriggerEntity, false);
       outboxService.save(new TriggerCreateEvent(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
@@ -220,6 +221,24 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     } catch (DuplicateKeyException e) {
       throw new DuplicateFieldException(
           String.format(DUP_KEY_EXP_FORMAT_STRING, ngTriggerEntity.getIdentifier()), USER_SRE, e);
+    }
+  }
+
+  private void checkForAccessForHarnessScm(NGTriggerEntity ngTriggerEntity) {
+    if (ngTriggerEntity.getMetadata().getWebhook() != null
+        && ngTriggerEntity.getMetadata().getWebhook().getGit() != null
+        && Boolean.TRUE.equals(ngTriggerEntity.getMetadata().getWebhook().getGit().getIsHarnessScm())) {
+      // todo(abhinav): check what reponame is used
+      String repoName = ngTriggerEntity.getMetadata().getWebhook().getGit().getRepoName();
+      String repositoryAccessControlResourceName = "REPOSITORY";
+      String repositoryAccessControlPerms = "code_repo_edit";
+      accessControlClient.checkForAccessOrThrow(ResourceScope.builder()
+                                                    .accountIdentifier(ngTriggerEntity.getAccountId())
+                                                    .orgIdentifier(ngTriggerEntity.getOrgIdentifier())
+                                                    .projectIdentifier(ngTriggerEntity.getProjectIdentifier())
+                                                    .build(),
+          Resource.builder().resourceType(repositoryAccessControlResourceName).resourceIdentifier(repoName).build(),
+          repositoryAccessControlPerms);
     }
   }
 
@@ -252,7 +271,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     executorService.submit(() -> { subscribePolling(ngTriggerEntity, isUpdate); });
   }
 
-  private void subscribePolling(NGTriggerEntity ngTriggerEntity, boolean isUpdate) {
+  public void subscribePolling(NGTriggerEntity ngTriggerEntity, boolean isUpdate) {
     PollingItem pollingItem = pollingSubscriptionHelper.generatePollingItem(ngTriggerEntity);
 
     try {
@@ -401,6 +420,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
           ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getIdentifier());
     }
     Criteria criteria = getTriggerEqualityCriteria(ngTriggerEntity, false);
+    checkForAccessForHarnessScm(ngTriggerEntity);
     NGTriggerEntity updatedTriggerEntity = updateTriggerEntity(ngTriggerEntity, criteria);
     outboxService.save(new TriggerUpdateEvent(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
         ngTriggerEntity.getProjectIdentifier(), oldNgTriggerEntity, updatedTriggerEntity));
@@ -845,9 +865,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       if (innerMap == null) {
         throw new InvalidRequestException("Invalid Trigger Yaml.");
       }
-      ObjectMapper objectMapper = ngTriggerElementMapper.getObjectMapper();
       innerMap.set(INPUT_YAML, new TextNode(pipelineComponent));
-      return objectMapper.writeValueAsString(node);
+      return YamlUtils.writeYamlString(node);
     } catch (IOException e) {
       throw new InvalidYamlException("Invalid Trigger Yaml", e);
     }

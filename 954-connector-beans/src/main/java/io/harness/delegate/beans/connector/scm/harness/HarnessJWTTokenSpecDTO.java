@@ -28,5 +28,7 @@ import lombok.experimental.FieldDefaults;
 @Schema(name = "HarnessJWTTokenSpec",
     description = "This contains details of the information such as references of token needed for Harness API access")
 public class HarnessJWTTokenSpecDTO implements HarnessApiAccessSpecDTO {
+  // this should have been pure string but since we are using it at multiple places keeping it same and setting value in
+  // decryptedValue
   @ApiModelProperty(dataType = "string") @NotNull @SecretReference SecretRefData tokenRef;
 }

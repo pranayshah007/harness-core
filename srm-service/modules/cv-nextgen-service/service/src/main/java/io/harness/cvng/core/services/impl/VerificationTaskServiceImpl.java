@@ -347,6 +347,14 @@ public class VerificationTaskServiceImpl implements VerificationTaskService {
     hPersistence.delete(VerificationTask.class, taskId);
   }
 
+  @Override
+  public List<VerificationTask> getVerificationTasksForGivenIds(Set<String> verificationTaskIds) {
+    return hPersistence.createQuery(VerificationTask.class, new HashSet<>())
+        .field(VerificationTaskKeys.uuid)
+        .in(verificationTaskIds)
+        .asList();
+  }
+
   private VerificationTask getDeploymentTask(String accountId, String cvConfigId, String verificationJobInstanceId) {
     return createQueryForDeploymentTasks(accountId, cvConfigId, verificationJobInstanceId).get();
   }

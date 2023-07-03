@@ -10,6 +10,7 @@ package io.harness.cdng.k8s;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ANSHUL;
+import static io.harness.rule.OwnerRule.TARUN_UBA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -176,6 +177,38 @@ public class K8sBlueGreenStepTest extends AbstractK8sStepExecutorTestBase {
     assertThat(response).isEqualTo(stepResponse);
 
     verify(k8sStepHelper, times(1)).handleTaskException(ambiance, executionPassThroughData, thrownException);
+  }
+
+  @SneakyThrows
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testOutcomesInResponseWhenStageDeploymentSkipped() {
+    K8sBlueGreenStepParameters stepParameters = new K8sBlueGreenStepParameters();
+    final StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
+
+    K8sDeployResponse k8sDeployResponse =
+        K8sDeployResponse.builder()
+            .k8sNGTaskResponse(K8sBGDeployResponse.builder().stageDeploymentSkipped(true).build())
+            .commandUnitsProgress(UnitProgressData.builder().build())
+            .commandExecutionStatus(SUCCESS)
+            .build();
+
+    StepResponse response = k8sBlueGreenStep.finalizeExecutionWithSecurityContext(
+        ambiance, stepElementParameters, K8sExecutionPassThroughData.builder().build(), () -> k8sDeployResponse);
+    assertThat(response.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(response.getStepOutcomes()).hasSize(1);
+
+    StepOutcome outcome = response.getStepOutcomes().stream().collect(Collectors.toList()).get(0);
+    assertThat(outcome.getOutcome()).isInstanceOf(K8sBlueGreenOutcome.class);
+    assertThat(outcome.getName()).isEqualTo(OutcomeExpressionConstants.OUTPUT);
+    assertThat(outcome.getGroup()).isNull();
+
+    ArgumentCaptor<K8sBlueGreenOutcome> argumentCaptor = ArgumentCaptor.forClass(K8sBlueGreenOutcome.class);
+    verify(executionSweepingOutputService, times(1))
+        .consume(eq(ambiance), eq(OutcomeExpressionConstants.K8S_BLUE_GREEN_OUTCOME), argumentCaptor.capture(),
+            eq(StepOutcomeGroup.STEP.name()));
+    assertThat(argumentCaptor.getValue().getStageDeploymentSkipped()).isEqualTo(true);
   }
 
   @Override

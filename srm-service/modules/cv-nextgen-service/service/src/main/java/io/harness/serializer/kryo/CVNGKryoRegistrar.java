@@ -10,6 +10,7 @@ package io.harness.serializer.kryo;
 import static io.harness.annotations.dev.HarnessTeam.CV;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cvng.cdng.beans.CVNGDeploymentImpactStepParameter;
 import io.harness.cvng.cdng.beans.CVNGStepParameter;
 import io.harness.cvng.cdng.services.impl.CVNGStep;
 import io.harness.cvng.core.entities.SRMTelemetrySentStatus;
@@ -25,5 +26,6 @@ public class CVNGKryoRegistrar implements KryoRegistrar {
     kryo.register(CVNGStep.CVNGResponseData.class, 30000);
     kryo.register(CVNGStepParameter.class, 30001);
     kryo.register(SRMTelemetrySentStatus.class, 30002);
+    kryo.register(CVNGDeploymentImpactStepParameter.class, 30003);
   }
 }

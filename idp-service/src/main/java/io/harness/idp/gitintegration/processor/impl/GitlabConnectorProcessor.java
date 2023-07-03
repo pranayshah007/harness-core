@@ -23,6 +23,7 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernameTokenDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.outcome.GitlabHttpCredentialsOutcomeDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.common.Constants;
+import io.harness.idp.configmanager.utils.ConfigManagerUtils;
 import io.harness.idp.gitintegration.processor.base.ConnectorProcessor;
 import io.harness.idp.gitintegration.utils.GitIntegrationConstants;
 import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
@@ -46,6 +47,7 @@ public class GitlabConnectorProcessor extends ConnectorProcessor {
   public Map<String, BackstageEnvVariable> getConnectorAndSecretsInfo(
       String accountIdentifier, ConnectorInfoDTO connectorInfoDTO) {
     String connectorIdentifier = connectorInfoDTO.getIdentifier();
+    String connectorTypeAsString = connectorInfoDTO.getConnectorType().toString();
     if (!connectorInfoDTO.getConnectorType().toString().equals(GitIntegrationConstants.GITLAB_CONNECTOR_TYPE)) {
       throw new InvalidRequestException(
           String.format("Connector with id - [%s] is not gitlab connector for accountId: [%s]", connectorIdentifier,
@@ -72,6 +74,8 @@ public class GitlabConnectorProcessor extends ConnectorProcessor {
 
     secrets.put(Constants.GITLAB_TOKEN,
         GitIntegrationUtils.getBackstageEnvSecretVariable(tokenSecretIdentifier, Constants.GITLAB_TOKEN));
+    configManagerService.createOrUpdateAppConfigForGitIntegrations(accountIdentifier, connectorInfoDTO,
+        ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(connectorTypeAsString), connectorTypeAsString);
     return secrets;
   }
 

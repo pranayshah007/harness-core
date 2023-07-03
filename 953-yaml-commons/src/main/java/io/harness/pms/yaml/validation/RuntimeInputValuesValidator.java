@@ -151,11 +151,20 @@ public class RuntimeInputValuesValidator {
       try {
         ParameterField<?> sourceField = YamlUtils.read(sourceValue, ParameterField.class);
         if (NGExpressionUtils.matchesInputSetPattern(objectToValidateFieldValue)) {
+          // RECONCILIATION LOGIC
           if (sourceField.getInputSetValidator() != null) {
-            // if both are runtime inputs with input set validator, they should match exactly else return false
-            return sourceField.getInputSetValidator().equals(inputSetField.getInputSetValidator());
+            if (sourceField.getDefaultValue() != null) {
+              return sourceField.getInputSetValidator().equals(inputSetField.getInputSetValidator())
+                  && sourceField.getDefaultValue().equals(inputSetField.getDefaultValue());
+            } else {
+              return sourceField.getInputSetValidator().equals(inputSetField.getInputSetValidator());
+            }
+          } else {
+            if (sourceField.getDefaultValue() != null) {
+              return sourceField.getDefaultValue().equals(inputSetField.getDefaultValue());
+            }
+            return true;
           }
-          return true;
         } else if (EngineExpressionEvaluator.hasExpressions(objectToValidateFieldValue)) {
           // if linked input is expression, return true.
           return true;

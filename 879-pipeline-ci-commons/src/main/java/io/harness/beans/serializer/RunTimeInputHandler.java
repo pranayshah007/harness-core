@@ -355,7 +355,7 @@ public class RunTimeInputHandler extends BaseRunTimeInputHandler {
   }
 
   public static Map<String, String> resolveMapParameterV2(String fieldName, String stepType, String stepIdentifier,
-      ParameterField<Map<String, ParameterField<String>>> fields, boolean isMandatory, boolean ffEnabled) {
+      ParameterField<Map<String, ParameterField<String>>> fields, boolean isMandatory) {
     if (ParameterField.isNull(fields) || fields.isExpression()) {
       if (isMandatory) {
         throw new CIStageExecutionUserException(
@@ -367,26 +367,24 @@ public class RunTimeInputHandler extends BaseRunTimeInputHandler {
 
     Map<String, String> finalMap = new HashMap<>();
 
-    if (ffEnabled) {
-      try {
-        Map value = fields.getValue();
-        for (Object key : value.keySet()) {
-          Object val = value.get(key);
-          if (val instanceof String) {
-            finalMap.put((String) key, (String) val);
-          } else {
-            break;
-          }
+    try {
+      Map value = fields.getValue();
+      for (Object key : value.keySet()) {
+        Object val = value.get(key);
+        if (val instanceof String) {
+          finalMap.put((String) key, (String) val);
+        } else {
+          break;
         }
-
-        if (finalMap.size() > 0) {
-          return finalMap;
-        }
-      } catch (Exception e) {
-        log.warn(format("Failed to resolve map v2 field %s in step type %s with identifier %s", fieldName, stepType,
-                     stepIdentifier),
-            e);
       }
+
+      if (finalMap.size() > 0) {
+        return finalMap;
+      }
+    } catch (Exception e) {
+      log.warn(format("Failed to resolve map v2 field %s in step type %s with identifier %s", fieldName, stepType,
+                   stepIdentifier),
+          e);
     }
 
     Map<String, ParameterField<String>> resolvedFields = fields.getValue();

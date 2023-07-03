@@ -13,7 +13,7 @@ import io.harness.NgAutoLogContextForMethod;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.logging.AutoLogContext;
-import io.harness.ng.core.refresh.helper.InputsValidationHelper;
+import io.harness.ng.core.refresh.helper.CDInputsValidationHelper;
 import io.harness.ng.core.refresh.helper.RefreshInputsHelper;
 import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
 
@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class EntityRefreshServiceImpl implements EntityRefreshService {
-  @Inject InputsValidationHelper inputsValidationHelper;
+  @Inject CDInputsValidationHelper CDInputsValidationHelper;
   @Inject RefreshInputsHelper refreshInputsHelper;
 
   @Override
@@ -33,7 +33,7 @@ public class EntityRefreshServiceImpl implements EntityRefreshService {
     try (AutoLogContext ignore1 =
              new NgAutoLogContextForMethod(projectId, orgId, accountId, "validateInputsForYaml", OVERRIDE_NESTS);) {
       log.info("[NGManager] Starting validateInputsForYaml to yaml");
-      return inputsValidationHelper.validateInputsForYaml(accountId, orgId, projectId, yaml, resolvedTemplatesYaml);
+      return CDInputsValidationHelper.validateInputsForYaml(accountId, orgId, projectId, yaml, resolvedTemplatesYaml);
     } finally {
       log.info("[NGManager] validateInputsForYaml took {}ms ", System.currentTimeMillis() - start);
     }

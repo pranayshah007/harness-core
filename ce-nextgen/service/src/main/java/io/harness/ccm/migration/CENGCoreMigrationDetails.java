@@ -47,7 +47,8 @@ public class CENGCoreMigrationDetails implements MigrationDetails {
         .add(Pair.of(13, BusinessMappingHistoryMigration.class))
         .add(Pair.of(14, DefaultCEViewsMigration.class))
         .add(Pair.of(15, CEViewCloudProviderDataSourcesMigration.class))
-        .add(Pair.of(16, CEViewPreferencesMigration.class))
+        .add(Pair.of(16, CEViewCloudProviderDataSourcesMigration.class))
+        .add(Pair.of(17, CEViewPreferencesMigration.class))
         .build();
   }
 }

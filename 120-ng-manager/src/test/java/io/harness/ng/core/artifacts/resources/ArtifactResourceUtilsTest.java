@@ -47,6 +47,8 @@ import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusConstant;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig;
+import io.harness.cdng.artifact.resources.acr.dtos.AcrRegistriesDTO;
+import io.harness.cdng.artifact.resources.acr.dtos.AcrRepositoriesDTO;
 import io.harness.cdng.artifact.resources.acr.dtos.AcrRequestDTO;
 import io.harness.cdng.artifact.resources.acr.service.AcrResourceService;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryDockerBuildDetailsDTO;
@@ -70,7 +72,10 @@ import io.harness.cdng.artifact.resources.googleartifactregistry.service.GARReso
 import io.harness.cdng.artifact.resources.nexus.dtos.NexusBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.nexus.dtos.NexusRequestDTO;
 import io.harness.cdng.artifact.resources.nexus.service.NexusResourceService;
+import io.harness.cdng.k8s.resources.azure.dtos.AzureSubscriptionsDTO;
+import io.harness.cdng.k8s.resources.azure.service.AzureResourceService;
 import io.harness.delegate.beans.azure.AcrBuildDetailsDTO;
+import io.harness.delegate.beans.azure.AcrResponseDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.artifacts.resources.custom.CustomScriptInfo;
@@ -127,6 +132,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   @Mock GcrResourceService gcrResourceService;
   @Mock EcrResourceService ecrResourceService;
   @Mock AcrResourceService acrResourceService;
+  @Mock AzureResourceService azureResourceService;
   @Mock NexusResourceService nexusResourceService;
   @Mock ArtifactoryResourceService artifactoryResourceService;
   @Mock AccessControlClient accessControlClient;
@@ -162,6 +168,8 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   private static final String PKG_2 = "pkg2";
   private static final String PROJECT_2 = "project2";
   private static final String REPO_NAME_2 = "repoName2";
+  private static final String REGISTRY_2 = "registry2";
+  private static final String SUBSCRIPTION_2 = "subscription2";
   private static final String pipelineYamlWithoutTemplates = "pipeline:\n"
       + "    name: image expression test\n"
       + "    identifier: image_expression_test\n"
@@ -309,6 +317,10 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   private static final GcrBuildDetailsDTO GCR_BUILD_DETAILS_DTO = GcrBuildDetailsDTO.builder().build();
   private static final EcrBuildDetailsDTO ECR_BUILD_DETAILS_DTO = EcrBuildDetailsDTO.builder().build();
   private static final AcrBuildDetailsDTO ACR_BUILD_DETAILS_DTO = AcrBuildDetailsDTO.builder().build();
+  private static final AcrResponseDTO ACR_RESPONSE_DTO = AcrResponseDTO.builder().build();
+  private static final AcrRepositoriesDTO ACR_REPOSITORIES_DTO = AcrRepositoriesDTO.builder().build();
+  private static final AcrRegistriesDTO ACR_REGISTRIES_DTO = AcrRegistriesDTO.builder().build();
+  private static final AzureSubscriptionsDTO AZURE_SUBSCRIPTIONS_DTO = AzureSubscriptionsDTO.builder().build();
   private static final NexusBuildDetailsDTO NEXUS_BUILD_DETAILS_DTO = NexusBuildDetailsDTO.builder().build();
   private static final ArtifactoryDockerBuildDetailsDTO ARTIFACTORY_DOCKER_BUILD_DETAILS_DTO =
       ArtifactoryDockerBuildDetailsDTO.builder().build();
@@ -1451,6 +1463,25 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
                    PROJECT_ID, FQN, SERVICE_REF, PIPELINE_ID, GIT_ENTITY_FIND_INFO_DTO,
                    AcrRequestDTO.builder().runtimeInputYaml(pipelineYamlWithoutTemplates).build()))
         .isSameAs(ACR_BUILD_DETAILS_DTO);
+
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGISTRY, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, SUBSCRIPTION,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION_REGEX,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
   }
 
   @Test
@@ -1478,6 +1509,574 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         spyartifactResourceUtils.getLastSuccessfulBuildV2ACR(SUBSCRIPTION, REGISTRY, REPO_NAME, CONNECTOR_REF,
             ACCOUNT_ID, ORG_ID, PROJECT_ID, FQN, SERVICE_REF, PIPELINE_ID, GIT_ENTITY_FIND_INFO_DTO, ACR_REQUEST_DTO))
         .isSameAs(ACR_BUILD_DETAILS_DTO);
+
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGISTRY, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, SUBSCRIPTION,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION_REGEX,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuildV2ACR_ValuesFromResolvedExpressions() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    AcrArtifactConfig acrArtifactConfig = AcrArtifactConfig.builder().build();
+
+    doReturn(acrArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doNothing()
+        .when(spyartifactResourceUtils)
+        .resolveParameterFieldValues(eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(PIPELINE_ID),
+            eq(pipelineYamlWithoutTemplates), any(), eq(FQN), eq(GIT_ENTITY_FIND_INFO_DTO), eq(SERVICE_REF));
+
+    doReturn(ACR_BUILD_DETAILS_DTO)
+        .when(acrResourceService)
+        .getLastSuccessfulBuild(IDENTIFIER_REF, SUBSCRIPTION, REGISTRY, REPO_NAME, ORG_ID, PROJECT_ID, ACR_REQUEST_DTO);
+
+    doReturn(REGISTRY)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGISTRY_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(SUBSCRIPTION)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            SUBSCRIPTION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(REPO_NAME)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(VERSION)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(VERSION_REGEX)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_REGEX_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(CONNECTOR_REF)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+
+    assertThat(
+        spyartifactResourceUtils.getLastSuccessfulBuildV2ACR(SUBSCRIPTION_2, REGISTRY_2, REPO_NAME_2, CONNECTOR_REF_2,
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, FQN, SERVICE_REF, PIPELINE_ID, GIT_ENTITY_FIND_INFO_DTO,
+            AcrRequestDTO.builder()
+                .tag(TAG_2)
+                .tagRegex(TAG_REGEX_2)
+                .runtimeInputYaml(pipelineYamlWithoutTemplates)
+                .build()))
+        .isSameAs(ACR_BUILD_DETAILS_DTO);
+
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGISTRY_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            SUBSCRIPTION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_REGEX_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testBuildDetailsV2ACR_ValuesFromConfig() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    AcrArtifactConfig acrArtifactConfig =
+        AcrArtifactConfig.builder()
+            .connectorRef(ParameterField.<String>builder().value(CONNECTOR_REF).build())
+            .subscriptionId(ParameterField.createValueField(SUBSCRIPTION))
+            .registry(ParameterField.createValueField(REGISTRY))
+            .repository(ParameterField.createValueField(REPO_NAME))
+            .build();
+
+    doReturn(acrArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doNothing()
+        .when(spyartifactResourceUtils)
+        .resolveParameterFieldValues(eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(PIPELINE_ID),
+            eq(pipelineYamlWithoutTemplates), any(), eq(FQN), eq(GIT_ENTITY_FIND_INFO_DTO), eq(SERVICE_REF));
+
+    doReturn(ACR_RESPONSE_DTO)
+        .when(acrResourceService)
+        .getBuildDetails(IDENTIFIER_REF, SUBSCRIPTION, REGISTRY, REPO_NAME, ORG_ID, PROJECT_ID);
+
+    assertThat(spyartifactResourceUtils.getBuildDetailsV2ACR(null, null, null, null, ACCOUNT_ID, ORG_ID, PROJECT_ID,
+                   PIPELINE_ID, FQN, GIT_ENTITY_FIND_INFO_DTO, pipelineYamlWithoutTemplates, SERVICE_REF))
+        .isSameAs(ACR_RESPONSE_DTO);
+
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGISTRY, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, SUBSCRIPTION,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testBuildDetailsV2ACR_ValuesFromParams() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    AcrArtifactConfig acrArtifactConfig = AcrArtifactConfig.builder().build();
+
+    doReturn(acrArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doNothing()
+        .when(spyartifactResourceUtils)
+        .resolveParameterFieldValues(eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(PIPELINE_ID),
+            eq(pipelineYamlWithoutTemplates), any(), eq(FQN), eq(GIT_ENTITY_FIND_INFO_DTO), eq(SERVICE_REF));
+
+    doReturn(ACR_RESPONSE_DTO)
+        .when(acrResourceService)
+        .getBuildDetails(IDENTIFIER_REF, SUBSCRIPTION, REGISTRY, REPO_NAME, ORG_ID, PROJECT_ID);
+
+    assertThat(
+        spyartifactResourceUtils.getBuildDetailsV2ACR(SUBSCRIPTION, REGISTRY, REPO_NAME, CONNECTOR_REF, ACCOUNT_ID,
+            ORG_ID, PROJECT_ID, PIPELINE_ID, FQN, GIT_ENTITY_FIND_INFO_DTO, pipelineYamlWithoutTemplates, SERVICE_REF))
+        .isSameAs(ACR_RESPONSE_DTO);
+
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGISTRY, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, SUBSCRIPTION,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testBuildDetailsV2ACR_ValuesFromResolvedExpressions() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    AcrArtifactConfig acrArtifactConfig = AcrArtifactConfig.builder().build();
+
+    doReturn(acrArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doNothing()
+        .when(spyartifactResourceUtils)
+        .resolveParameterFieldValues(eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(PIPELINE_ID),
+            eq(pipelineYamlWithoutTemplates), any(), eq(FQN), eq(GIT_ENTITY_FIND_INFO_DTO), eq(SERVICE_REF));
+
+    doReturn(ACR_RESPONSE_DTO)
+        .when(acrResourceService)
+        .getBuildDetails(IDENTIFIER_REF, SUBSCRIPTION, REGISTRY, REPO_NAME, ORG_ID, PROJECT_ID);
+
+    doReturn(REGISTRY)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGISTRY_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(SUBSCRIPTION)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            SUBSCRIPTION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(REPO_NAME)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(CONNECTOR_REF)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+
+    assertThat(spyartifactResourceUtils.getBuildDetailsV2ACR(SUBSCRIPTION_2, REGISTRY_2, REPO_NAME_2, CONNECTOR_REF_2,
+                   ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, FQN, GIT_ENTITY_FIND_INFO_DTO,
+                   pipelineYamlWithoutTemplates, SERVICE_REF))
+        .isSameAs(ACR_RESPONSE_DTO);
+
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGISTRY_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            SUBSCRIPTION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testAzureRepositoriesV3ACR_ValuesFromConfig() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    AcrArtifactConfig acrArtifactConfig =
+        AcrArtifactConfig.builder()
+            .connectorRef(ParameterField.<String>builder().value(CONNECTOR_REF).build())
+            .subscriptionId(ParameterField.createValueField(SUBSCRIPTION))
+            .registry(ParameterField.createValueField(REGISTRY))
+            .build();
+
+    doReturn(acrArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doNothing()
+        .when(spyartifactResourceUtils)
+        .resolveParameterFieldValues(eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(PIPELINE_ID),
+            eq(pipelineYamlWithoutTemplates), any(), eq(FQN), eq(GIT_ENTITY_FIND_INFO_DTO), eq(SERVICE_REF));
+
+    doReturn(ACR_REPOSITORIES_DTO)
+        .when(acrResourceService)
+        .getRepositories(IDENTIFIER_REF, ORG_ID, PROJECT_ID, SUBSCRIPTION, REGISTRY);
+
+    assertThat(spyartifactResourceUtils.getAzureRepositoriesV3(null, ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, null,
+                   null, FQN, GIT_ENTITY_FIND_INFO_DTO, pipelineYamlWithoutTemplates, SERVICE_REF))
+        .isSameAs(ACR_REPOSITORIES_DTO);
+
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGISTRY, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, SUBSCRIPTION,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testAzureRepositoriesV3ACR_ValuesFromParams() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    AcrArtifactConfig acrArtifactConfig = AcrArtifactConfig.builder().build();
+
+    doReturn(acrArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doNothing()
+        .when(spyartifactResourceUtils)
+        .resolveParameterFieldValues(eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(PIPELINE_ID),
+            eq(pipelineYamlWithoutTemplates), any(), eq(FQN), eq(GIT_ENTITY_FIND_INFO_DTO), eq(SERVICE_REF));
+
+    doReturn(ACR_REPOSITORIES_DTO)
+        .when(acrResourceService)
+        .getRepositories(IDENTIFIER_REF, ORG_ID, PROJECT_ID, SUBSCRIPTION, REGISTRY);
+
+    assertThat(
+        spyartifactResourceUtils.getAzureRepositoriesV3(CONNECTOR_REF, ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            SUBSCRIPTION, REGISTRY, FQN, GIT_ENTITY_FIND_INFO_DTO, pipelineYamlWithoutTemplates, SERVICE_REF))
+        .isSameAs(ACR_REPOSITORIES_DTO);
+
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGISTRY, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, SUBSCRIPTION,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testAzureRepositoriesV3ACR_ValuesFromResolvedExpressions() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    AcrArtifactConfig acrArtifactConfig = AcrArtifactConfig.builder().build();
+
+    doReturn(acrArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doNothing()
+        .when(spyartifactResourceUtils)
+        .resolveParameterFieldValues(eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(PIPELINE_ID),
+            eq(pipelineYamlWithoutTemplates), any(), eq(FQN), eq(GIT_ENTITY_FIND_INFO_DTO), eq(SERVICE_REF));
+
+    doReturn(ACR_REPOSITORIES_DTO)
+        .when(acrResourceService)
+        .getRepositories(IDENTIFIER_REF, ORG_ID, PROJECT_ID, SUBSCRIPTION, REGISTRY);
+
+    doReturn(REGISTRY)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGISTRY_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(SUBSCRIPTION)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            SUBSCRIPTION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(CONNECTOR_REF)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+
+    assertThat(
+        spyartifactResourceUtils.getAzureRepositoriesV3(CONNECTOR_REF_2, ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            SUBSCRIPTION_2, REGISTRY_2, FQN, GIT_ENTITY_FIND_INFO_DTO, pipelineYamlWithoutTemplates, SERVICE_REF))
+        .isSameAs(ACR_REPOSITORIES_DTO);
+
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGISTRY_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            SUBSCRIPTION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testAzureContainerRegisteriesV3ACR_ValuesFromConfig() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    AcrArtifactConfig acrArtifactConfig =
+        AcrArtifactConfig.builder()
+            .connectorRef(ParameterField.<String>builder().value(CONNECTOR_REF).build())
+            .subscriptionId(ParameterField.createValueField(SUBSCRIPTION))
+            .build();
+
+    doReturn(acrArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doNothing()
+        .when(spyartifactResourceUtils)
+        .resolveParameterFieldValues(eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(PIPELINE_ID),
+            eq(pipelineYamlWithoutTemplates), any(), eq(FQN), eq(GIT_ENTITY_FIND_INFO_DTO), eq(SERVICE_REF));
+
+    doReturn(ACR_REGISTRIES_DTO)
+        .when(acrResourceService)
+        .getRegistries(IDENTIFIER_REF, ORG_ID, PROJECT_ID, SUBSCRIPTION);
+
+    assertThat(spyartifactResourceUtils.getAzureContainerRegisteriesV3(null, ACCOUNT_ID, ORG_ID, PROJECT_ID,
+                   PIPELINE_ID, null, FQN, GIT_ENTITY_FIND_INFO_DTO, pipelineYamlWithoutTemplates, SERVICE_REF))
+        .isSameAs(ACR_REGISTRIES_DTO);
+
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, SUBSCRIPTION,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testAzureContainerRegisteriesV3ACR_ValuesFromParams() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    AcrArtifactConfig acrArtifactConfig = AcrArtifactConfig.builder().build();
+
+    doReturn(acrArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doNothing()
+        .when(spyartifactResourceUtils)
+        .resolveParameterFieldValues(eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(PIPELINE_ID),
+            eq(pipelineYamlWithoutTemplates), any(), eq(FQN), eq(GIT_ENTITY_FIND_INFO_DTO), eq(SERVICE_REF));
+
+    doReturn(ACR_REGISTRIES_DTO)
+        .when(acrResourceService)
+        .getRegistries(IDENTIFIER_REF, ORG_ID, PROJECT_ID, SUBSCRIPTION);
+
+    assertThat(spyartifactResourceUtils.getAzureContainerRegisteriesV3(CONNECTOR_REF, ACCOUNT_ID, ORG_ID, PROJECT_ID,
+                   PIPELINE_ID, SUBSCRIPTION, FQN, GIT_ENTITY_FIND_INFO_DTO, pipelineYamlWithoutTemplates, SERVICE_REF))
+        .isSameAs(ACR_REGISTRIES_DTO);
+
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, SUBSCRIPTION,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testAzureContainerRegisteriesV3ACR_ValuesFromResolvedExpressions() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    AcrArtifactConfig acrArtifactConfig = AcrArtifactConfig.builder().build();
+
+    doReturn(acrArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doNothing()
+        .when(spyartifactResourceUtils)
+        .resolveParameterFieldValues(eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(PIPELINE_ID),
+            eq(pipelineYamlWithoutTemplates), any(), eq(FQN), eq(GIT_ENTITY_FIND_INFO_DTO), eq(SERVICE_REF));
+
+    doReturn(ACR_REGISTRIES_DTO)
+        .when(acrResourceService)
+        .getRegistries(IDENTIFIER_REF, ORG_ID, PROJECT_ID, SUBSCRIPTION);
+
+    doReturn(SUBSCRIPTION)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            SUBSCRIPTION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(CONNECTOR_REF)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+
+    assertThat(
+        spyartifactResourceUtils.getAzureContainerRegisteriesV3(CONNECTOR_REF_2, ACCOUNT_ID, ORG_ID, PROJECT_ID,
+            PIPELINE_ID, SUBSCRIPTION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, pipelineYamlWithoutTemplates, SERVICE_REF))
+        .isSameAs(ACR_REGISTRIES_DTO);
+
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            SUBSCRIPTION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testAzureSubscriptionV2ACR_ValuesFromConfig() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    AcrArtifactConfig acrArtifactConfig =
+        AcrArtifactConfig.builder().connectorRef(ParameterField.<String>builder().value(CONNECTOR_REF).build()).build();
+
+    doReturn(acrArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doNothing()
+        .when(spyartifactResourceUtils)
+        .resolveParameterFieldValues(eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(PIPELINE_ID),
+            eq(pipelineYamlWithoutTemplates), any(), eq(FQN), eq(GIT_ENTITY_FIND_INFO_DTO), eq(SERVICE_REF));
+
+    doReturn(AZURE_SUBSCRIPTIONS_DTO).when(azureResourceService).getSubscriptions(IDENTIFIER_REF, ORG_ID, PROJECT_ID);
+
+    assertThat(spyartifactResourceUtils.getAzureSubscriptionV2(null, ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, FQN,
+                   GIT_ENTITY_FIND_INFO_DTO, pipelineYamlWithoutTemplates, SERVICE_REF))
+        .isSameAs(AZURE_SUBSCRIPTIONS_DTO);
+
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testAzureSubscriptionV2ACR_ValuesFromParams() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    AcrArtifactConfig acrArtifactConfig = AcrArtifactConfig.builder().build();
+
+    doReturn(acrArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doNothing()
+        .when(spyartifactResourceUtils)
+        .resolveParameterFieldValues(eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(PIPELINE_ID),
+            eq(pipelineYamlWithoutTemplates), any(), eq(FQN), eq(GIT_ENTITY_FIND_INFO_DTO), eq(SERVICE_REF));
+
+    doReturn(AZURE_SUBSCRIPTIONS_DTO).when(azureResourceService).getSubscriptions(IDENTIFIER_REF, ORG_ID, PROJECT_ID);
+
+    assertThat(spyartifactResourceUtils.getAzureSubscriptionV2(CONNECTOR_REF, ACCOUNT_ID, ORG_ID, PROJECT_ID,
+                   PIPELINE_ID, FQN, GIT_ENTITY_FIND_INFO_DTO, pipelineYamlWithoutTemplates, SERVICE_REF))
+        .isSameAs(AZURE_SUBSCRIPTIONS_DTO);
+
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testAzureSubscriptionV2ACR_ValuesFromResolvedExpressions() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    AcrArtifactConfig acrArtifactConfig = AcrArtifactConfig.builder().build();
+
+    doReturn(acrArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doNothing()
+        .when(spyartifactResourceUtils)
+        .resolveParameterFieldValues(eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(PIPELINE_ID),
+            eq(pipelineYamlWithoutTemplates), any(), eq(FQN), eq(GIT_ENTITY_FIND_INFO_DTO), eq(SERVICE_REF));
+
+    doReturn(AZURE_SUBSCRIPTIONS_DTO).when(azureResourceService).getSubscriptions(IDENTIFIER_REF, ORG_ID, PROJECT_ID);
+
+    doReturn(CONNECTOR_REF)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+
+    assertThat(spyartifactResourceUtils.getAzureSubscriptionV2(CONNECTOR_REF_2, ACCOUNT_ID, ORG_ID, PROJECT_ID,
+                   PIPELINE_ID, FQN, GIT_ENTITY_FIND_INFO_DTO, pipelineYamlWithoutTemplates, SERVICE_REF))
+        .isSameAs(AZURE_SUBSCRIPTIONS_DTO);
+
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
   }
 
   @Test

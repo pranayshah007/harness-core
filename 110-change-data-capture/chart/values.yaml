@@ -186,10 +186,10 @@ containerSecurityContext:
 livenessProbe:
   enabled: true
   initialDelaySeconds: 60
-  periodSeconds: 2
+  periodSeconds: 10
   timeoutSeconds: 10
   successThreshold: 1
-  failureThreshold: 5
+  failureThreshold: 10
 ## Configure extra options for readiness probe
 ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#configure-probes
 # -- readinessProbe.enabled Enable readinessProbe
@@ -202,10 +202,10 @@ livenessProbe:
 readinessProbe:
   enabled: true
   initialDelaySeconds: 60
-  periodSeconds: 2
+  periodSeconds: 10
   timeoutSeconds: 10
   successThreshold: 1
-  failureThreshold: 5
+  failureThreshold: 2
 ## Configure extra options for startupProbe probe
 ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#configure-probes
 # -- startupProbe.enabled Enable startupProbe
@@ -218,10 +218,10 @@ readinessProbe:
 startupProbe:
   enabled: true
   initialDelaySeconds: 0
-  periodSeconds: 2
+  periodSeconds: 10
   timeoutSeconds: 10
   successThreshold: 1
-  failureThreshold: 5
+  failureThreshold: 90
 
 #-- Service properties
 ##

@@ -87,6 +87,7 @@ public class HarnessApprovalStepTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock ApprovalInstanceService approvalInstanceService;
   @Mock ExecutorService executorService;
+  @Mock ExecutorService dashboardExecutorService;
   @Mock ApprovalNotificationHandler approvalNotificationHandler;
   @Mock LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Mock ExecutionSweepingOutputService sweepingOutputService;
@@ -224,7 +225,7 @@ public class HarnessApprovalStepTest {
     parameters.setSpec(specParameters);
 
     Call userCall = mock(Call.class);
-    when(userClient.getUserById(any(), anyBoolean())).thenReturn(userCall);
+    when(userClient.getUserById(any())).thenReturn(userCall);
     when(userCall.execute()).thenReturn(Response.success(new RestResponse(Optional.of(UserInfo.builder().build()))));
 
     AsyncTimeoutResponseData responseData = AsyncTimeoutResponseData.builder().build();

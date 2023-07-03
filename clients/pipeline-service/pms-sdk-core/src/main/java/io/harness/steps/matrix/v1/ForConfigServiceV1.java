@@ -17,7 +17,6 @@ import io.harness.plancreator.strategy.v1.StrategyConfigV1;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.serializer.JsonUtils;
 import io.harness.steps.matrix.StrategyInfo;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
@@ -70,8 +69,8 @@ public class ForConfigServiceV1 implements StrategyConfigServiceV1 {
         }
       }
       for (int i = 0; i < forConfig.getIterations().getValue(); i++) {
-        JsonNode clonedNode = JsonPipelineUtils.asTree(JsonUtils.asMap(StrategyUtils.replaceExpressions(
-            jsonNode.deepCopy().toString(), new HashMap<>(), i, forConfig.getIterations().getValue(), null)));
+        JsonNode clonedNode = StrategyUtils.replaceExpressions(
+            JsonPipelineUtils.asTree(jsonNode), new HashMap<>(), i, forConfig.getIterations().getValue(), null);
         StrategyUtils.modifyJsonNode(clonedNode, Lists.newArrayList(String.valueOf(i)));
         jsonNodes.add(clonedNode);
       }

@@ -58,7 +58,7 @@ instanceData {"name": "accountId_clusterId_instanceId_instanceState", "backgroun
 instanceData {"name": "accountId_clusterId_instanceName_usageStartTime", "background": true} {"accountId": 1, "clusterId": 1, "instanceName": 1, "usageStartTime": -1}
 instanceData {"name": "accountId_clusterId_instanceState_usageStartTime", "background": true} {"accountId": 1, "clusterId": 1, "instanceState": 1, "usageStartTime": 1}
 instanceData {"name": "accountId_clusterId_instanceState_usageStartTime_instanceId_usageStopTime", "background": true} {"accountId": 1, "clusterId": 1, "instanceState": 1, "usageStartTime": 1, "instanceId": 1, "usageStopTime": 1}
-instanceData {"name": "accountId_clusterId_instanceType_nodePoolName", "background": true} {"accountId": 1, "clusterId": 1, "instanceType": 1, "metaData.node_pool_name": 1}
+instanceData {"name": "accountId_clusterId_instanceType_nodePoolName_instanceState_instanceFamily", "background": true} {"accountId": 1, "clusterId": 1, "instanceType": 1, "metaData.node_pool_name": 1, "instanceState": 1, "metaData.instance_family": 1}
 instanceData {"name": "accountId_instanceId", "background": true} {"accountId": 1, "instanceId": 1}
 instanceData {"name": "accountId_instancetype_usageStartTime_usageStopTime", "background": true} {"accountId": 1, "instanceType": 1, "usageStartTime": 1, "usageStopTime": 1}
 instanceData {"name": "accountId_usageStartTime_usageStopTime", "background": true} {"accountId": 1, "usageStartTime": 1, "usageStopTime": 1}

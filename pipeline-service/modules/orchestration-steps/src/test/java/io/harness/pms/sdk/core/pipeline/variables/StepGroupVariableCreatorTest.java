@@ -18,6 +18,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.pms.contracts.plan.YamlExtraProperties;
 import io.harness.pms.contracts.plan.YamlProperties;
+import io.harness.pms.sdk.core.variables.VariableCreatorHelper;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationContext;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationResponse;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -102,7 +103,8 @@ public class StepGroupVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.stage1.spec.execution.steps.sg1.stepGroupInfra",
             "pipeline.stages.stage1.spec.execution.steps.sg1.identifier",
             "pipeline.stages.stage1.spec.execution.steps.sg1.startTs",
-            "pipeline.stages.stage1.spec.execution.steps.sg1.endTs");
+            "pipeline.stages.stage1.spec.execution.steps.sg1.endTs",
+            "pipeline.stages.stage1.spec.execution.steps.sg1.variables");
 
     // check for childrenVariableCreator
     LinkedHashMap<String, VariableCreationResponse> variablesForChildrenNodesV2 =
@@ -203,7 +205,7 @@ public class StepGroupVariableCreatorTest extends CategoryTest {
                                    .asArray()
                                    .get(1)
                                    .getField("stepGroup");
-    List<YamlField> yamlFields = stepGroupVariableCreator.getStepYamlFields(stepGroupField);
+    List<YamlField> yamlFields = VariableCreatorHelper.getStepYamlFields(stepGroupField);
     assertEquals(yamlFields.size(), 1);
     assertThat(yamlFields.contains(stepGroupField.getNode()
                                        .getField(YAMLFieldNameConstants.STEPS)

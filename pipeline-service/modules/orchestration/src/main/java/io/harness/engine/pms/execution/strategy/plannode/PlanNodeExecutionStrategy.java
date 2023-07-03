@@ -13,7 +13,6 @@ import static io.harness.pms.contracts.execution.Status.RUNNING;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.ExecutionCheck;
 import io.harness.engine.OrchestrationEngine;
@@ -108,9 +107,9 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
 
   @Inject @Named("EngineExecutorService") ExecutorService executorService;
   @Inject WaitForExecutionInputHelper waitForExecutionInputHelper;
-  @Inject PmsFeatureFlagService pmsFeatureFlagService;
   @Inject PlanExecutionService planExecutionService;
   @Inject TransactionHelper transactionHelper;
+  @Inject PmsFeatureFlagService pmsFeatureFlagService;
 
   @Override
   public NodeExecution createNodeExecution(@NotNull Ambiance ambiance, @NotNull PlanNode node,
@@ -151,10 +150,6 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
     List<String> enabledFeatureFlags = new LinkedList<>();
     if (AmbianceUtils.shouldUseExpressionEngineV2(ambiance)) {
       enabledFeatureFlags.add(EngineExpressionEvaluator.PIE_EXECUTION_JSON_SUPPORT);
-    }
-    if (pmsFeatureFlagService.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXPRESSION_CONCATENATION)) {
-      enabledFeatureFlags.add(FeatureName.PIE_EXPRESSION_CONCATENATION.name());
     }
 
     resolvedStepParameters =

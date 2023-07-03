@@ -48,9 +48,9 @@ public class SettingsResourceImpl implements SettingsResource {
   @NGAccessControlCheck(resourceType = ACCOUNT, permission = ACCOUNT_VIEW_PERMISSION)
   public ResponseDTO<List<SettingResponseDTO>> list(@AccountIdentifier String accountIdentifier,
       @OrgIdentifier String orgIdentifier, @ProjectIdentifier String projectIdentifier, SettingCategory category,
-      String groupIdentifier) {
-    return ResponseDTO.newResponse(
-        settingsService.list(accountIdentifier, orgIdentifier, projectIdentifier, category, groupIdentifier));
+      String groupIdentifier, Boolean includeParentScope) {
+    return ResponseDTO.newResponse(settingsService.list(
+        accountIdentifier, orgIdentifier, projectIdentifier, category, groupIdentifier, includeParentScope));
   }
 
   @Override

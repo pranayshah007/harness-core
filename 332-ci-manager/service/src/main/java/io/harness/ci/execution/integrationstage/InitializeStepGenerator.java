@@ -9,7 +9,6 @@ package io.harness.ci.integrationstage;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IntegrationStageNode;
@@ -18,7 +17,6 @@ import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.plancreator.execution.ExecutionElementConfig;
-import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 
 import com.google.inject.Inject;
@@ -35,14 +33,6 @@ public class InitializeStepGenerator {
       IntegrationStageNode stageNode, CIExecutionArgs ciExecutionArgs, Infrastructure infrastructure,
       String accountId) {
     IntegrationStageConfig integrationStageConfig = IntegrationStageUtils.getIntegrationStageConfig(stageNode);
-
-    // only inject TI env variables at plan creation is FF is disabled.
-    // TODO: remove injection from here
-    if (!featureFlagService.isEnabled(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, accountId)) {
-      for (ExecutionWrapperConfig config : executionElement.getSteps()) {
-        IntegrationStageUtils.injectLoopEnvVariables(config);
-      }
-    }
 
     boolean gitClone = RunTimeInputHandler.resolveGitClone(integrationStageConfig.getCloneCodebase());
     return InitializeStepInfo.builder()

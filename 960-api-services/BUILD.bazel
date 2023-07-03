@@ -122,6 +122,7 @@ java_library(
         "//960-api-services/src/main/java/io/harness/serializer:module",
         "//960-api-services/src/main/java/io/harness/serverless:module",
         "//960-api-services/src/main/java/io/harness/serverless/model:module",
+        "//960-api-services/src/main/java/io/harness/servicenow/auth/refreshtoken:module",
         "//960-api-services/src/main/java/io/harness/shell:module",
         "//960-api-services/src/main/java/io/harness/spotinst:module",
         "//960-api-services/src/main/java/io/harness/ssh:module",

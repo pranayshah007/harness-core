@@ -8,6 +8,7 @@
 package io.harness.template.services;
 
 import static io.harness.rule.OwnerRule.ADITHYA;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static junit.framework.TestCase.assertTrue;
@@ -16,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
 import static org.powermock.api.mockito.PowerMockito.when;
@@ -85,6 +87,25 @@ public class TemplateGitXServiceImplTest {
       + "        type: Inline\n"
       + "        spec:\n"
       + "          script: echo \"import Template v2\"\n"
+      + "      environmentVariables: []\n"
+      + "      outputVariables: []\n";
+
+  private static final String ACC_LEVEL_IMPORTED_YAML = "template:\n"
+      + "  name: import12\n"
+      + "  identifier: import12\n"
+      + "  versionLabel: \"1\"\n"
+      + "  type: Step\n"
+      + "  tags: {}\n"
+      + "  spec:\n"
+      + "    timeout: 10m\n"
+      + "    type: ShellScript\n"
+      + "    spec:\n"
+      + "      shell: Bash\n"
+      + "      onDelegate: true\n"
+      + "      source:\n"
+      + "        type: Inline\n"
+      + "        spec:\n"
+      + "          script: echo hey\n"
       + "      environmentVariables: []\n"
       + "      outputVariables: []\n";
 
@@ -171,6 +192,26 @@ public class TemplateGitXServiceImplTest {
 
     templateGitXService.performImportFlowYamlValidations(
         "default", "GitX_Remote", "importT7", templateImportRequestDTO, IMPORTED_YAML);
+
+    TemplateImportRequestDTO templateImportRequestDTO2 = TemplateImportRequestDTO.builder()
+                                                             .templateName("abcd")
+                                                             .templateVersion("xyz")
+                                                             .templateDescription("foobar")
+                                                             .build();
+
+    assertThatThrownBy(()
+                           -> templateGitXService.performImportFlowYamlValidations(
+                               null, null, "importT7", templateImportRequestDTO2, IMPORTED_YAML))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "Requested metadata params do not match the values found in the YAML on Git for these fields: [versionLabel, orgIdentifier, name, projectIdentifier]");
+
+    assertThatThrownBy(()
+                           -> templateGitXService.performImportFlowYamlValidations("default", "GitX_Remote", "importT7",
+                               templateImportRequestDTO2, ACC_LEVEL_IMPORTED_YAML))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "Requested metadata params do not match the values found in the YAML on Git for these fields: [identifier, versionLabel, orgIdentifier, name, projectIdentifier]");
   }
 
   @Test
@@ -192,5 +233,13 @@ public class TemplateGitXServiceImplTest {
     assertThat(templateGitXService.checkForFileUniquenessAndGetRepoURL(
                    ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, TEMPLATE_ID, true))
         .isEqualTo(repoUrl);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testImportTemplateFromRemoteFunction() {
+    doReturn("yaml").when(gitAwareEntityHelper).fetchYAMLFromRemote(anyString(), anyString(), anyString());
+    templateGitXService.importTemplateFromRemote(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
   }
 }

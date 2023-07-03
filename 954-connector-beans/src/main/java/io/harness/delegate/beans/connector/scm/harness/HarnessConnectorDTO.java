@@ -55,7 +55,7 @@ public class HarnessConnectorDTO extends ConnectorConfigDTO implements ScmConnec
   String validationRepo;
   @Valid @NotNull HarnessAuthenticationDTO authentication;
   @Valid HarnessApiAccessDTO apiAccess;
-  Boolean executeOnDelegate;
+  Boolean executeOnDelegate = Boolean.FALSE;
   String gitConnectionUrl;
 
   @Builder

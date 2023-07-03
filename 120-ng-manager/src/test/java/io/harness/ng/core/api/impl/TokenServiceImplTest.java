@@ -19,11 +19,14 @@ import static io.harness.rule.OwnerRule.SOWMYA;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -31,21 +34,30 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder.BCryptVersion.$2A;
 
 import io.harness.NgManagerTestBase;
+import io.harness.accesscontrol.NGAccessDeniedException;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.UnauthorizedException;
+import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.AccountOrgProjectValidator;
 import io.harness.ng.core.account.ServiceAccountConfig;
 import io.harness.ng.core.api.ApiKeyService;
 import io.harness.ng.core.api.TokenService;
 import io.harness.ng.core.common.beans.ApiKeyType;
 import io.harness.ng.core.dto.AccountDTO;
+import io.harness.ng.core.dto.GatewayAccountRequestDTO;
+import io.harness.ng.core.dto.TokenAggregateDTO;
 import io.harness.ng.core.dto.TokenDTO;
+import io.harness.ng.core.dto.TokenFilterDTO;
 import io.harness.ng.core.entities.ApiKey;
 import io.harness.ng.core.entities.Token;
 import io.harness.ng.core.mapper.TokenDTOMapper;
+import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.service.NgUserService;
 import io.harness.ng.serviceaccounts.service.api.ServiceAccountService;
 import io.harness.outbox.api.OutboxService;
@@ -64,12 +76,16 @@ import com.google.inject.Inject;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Optional;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -93,6 +109,7 @@ public class TokenServiceImplTest extends NgManagerTestBase {
   private Token token;
   private AccountService accountService;
   private TokenValidationHelper tokenValidationHelper;
+  private AccessControlClient accessControlClient;
   @Inject private ApiKeyTokenPasswordCacheHelper apiKeyTokenPasswordCacheHelper;
   private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   Instant nextDay = Instant.now().plusSeconds(86400);
@@ -118,6 +135,7 @@ public class TokenServiceImplTest extends NgManagerTestBase {
     tokenValidationHelper = new TokenValidationHelper();
     ngFeatureFlagHelperService = mock(NGFeatureFlagHelperService.class);
     apiKeyTokenPasswordCacheHelper = new ApiKeyTokenPasswordCacheHelper();
+    accessControlClient = mock(AccessControlClient.class);
 
     tokenDTO = TokenDTO.builder()
                    .accountIdentifier(accountIdentifier)
@@ -164,6 +182,7 @@ public class TokenServiceImplTest extends NgManagerTestBase {
     FieldUtils.writeField(tokenService, "ngFeatureFlagHelperService", ngFeatureFlagHelperService, true);
     FieldUtils.writeField(tokenServiceImpl, "accountOrgProjectValidator", accountOrgProjectValidator, true);
     FieldUtils.writeField(tokenServiceImpl, "apiKeyService", apiKeyService, true);
+    FieldUtils.writeField(tokenService, "accessControlClient", accessControlClient, true);
   }
 
   @Test
@@ -233,7 +252,7 @@ public class TokenServiceImplTest extends NgManagerTestBase {
                                            .parentIdentifier(parentIdentifier)
                                            .apiKeyIdentifier(randomAlphabetic(10))
                                            .apiKeyType(SERVICE_ACCOUNT)
-                                           .validTo(Instant.now().toEpochMilli())
+                                           .validTo(Instant.now().toEpochMilli() - 1)
                                            .description("")
                                            .tags(new HashMap<>())
                                            .build();
@@ -372,6 +391,142 @@ public class TokenServiceImplTest extends NgManagerTestBase {
     assertThat(resultTokenDTO.getEncodedPassword()).isNull();
     assertThat(resultTokenDTO.getEmail()).isEqualTo(email);
     assertThat(apiKeyTokenPasswordCacheHelper.get(identifier)).isEqualTo(rawPassword);
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testListAllTokenForAccount_PAT() {
+    token.setApiKeyType(USER);
+
+    Token token1 = Token.builder()
+                       .scheduledExpireTime(Instant.now().plusSeconds(86500))
+                       .validTo(Instant.now().plusSeconds(86500))
+                       .validFrom(Instant.now())
+                       .accountIdentifier(accountIdentifier)
+                       .orgIdentifier(orgIdentifier)
+                       .name(randomAlphabetic(10))
+                       .projectIdentifier(projectIdentifier)
+                       .identifier("id1")
+                       .parentIdentifier("parent1")
+                       .apiKeyIdentifier(randomAlphabetic(10))
+                       .apiKeyType(USER)
+                       .description("")
+                       .tags(new ArrayList<>())
+                       .build();
+    Principal principal = new UserPrincipal(tokenDTO.getParentIdentifier(), "", "", tokenDTO.getAccountIdentifier());
+    SecurityContextBuilder.setContext(principal);
+    SourcePrincipalContextBuilder.setSourcePrincipal(principal);
+
+    Page<Token> result = new PageImpl(Arrays.asList(token, token1), Pageable.unpaged(), 2);
+    when(tokenRepository.findAll(any(), any())).thenReturn(result);
+
+    TokenFilterDTO tokenFilterDTO = TokenFilterDTO.builder()
+                                        .accountIdentifier(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .apiKeyType(USER)
+                                        .build();
+    PageResponse<TokenAggregateDTO> resultTokenDTO =
+        tokenService.listAggregateTokens(accountIdentifier, Pageable.unpaged(), tokenFilterDTO);
+
+    assertThat(resultTokenDTO).isNotNull();
+    assertThat(resultTokenDTO.getContent().size()).isEqualTo(2);
+    assertThat(resultTokenDTO.getContent().get(0).getToken().getApiKeyType()).isEqualTo(USER);
+    assertThat(resultTokenDTO.getContent().get(1).getToken().getApiKeyIdentifier())
+        .isEqualTo(token1.getApiKeyIdentifier());
+    assertThat(resultTokenDTO.getContent().get(1).getToken().getParentIdentifier())
+        .isEqualTo(token1.getParentIdentifier());
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testValidateListTokenPermission_whenUserIsLoggedInUser_PAT() {
+    TokenFilterDTO tokenFilterDTO = TokenFilterDTO.builder()
+                                        .parentIdentifier(parentIdentifier)
+                                        .apiKeyType(USER)
+                                        .accountIdentifier(accountIdentifier)
+                                        .build();
+    Principal principal = new UserPrincipal(tokenDTO.getParentIdentifier(), "", "", tokenDTO.getAccountIdentifier());
+    SecurityContextBuilder.setContext(principal);
+    SourcePrincipalContextBuilder.setSourcePrincipal(principal);
+    doThrow(NGAccessDeniedException.class).when(accessControlClient).checkForAccessOrThrow(any(), any(), any());
+    Optional<UserInfo> userInfo =
+        Optional.of(UserInfo.builder()
+                        .uuid(parentIdentifier)
+                        .accounts(Arrays.asList(GatewayAccountRequestDTO.builder().uuid(accountIdentifier).build()))
+                        .build());
+    when(ngUserService.getUserById(anyString())).thenReturn(userInfo);
+    assertThatCode(() -> tokenService.validateTokenListPermissions(tokenFilterDTO)).doesNotThrowAnyException();
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testValidateListTokenPermission_whenUserDoesNotHaveUserManagementPermissionAndIsNotPartOfAccount_PAT() {
+    TokenFilterDTO tokenFilterDTO = TokenFilterDTO.builder()
+                                        .parentIdentifier(parentIdentifier)
+                                        .apiKeyType(USER)
+                                        .accountIdentifier(accountIdentifier)
+                                        .build();
+    Principal principal = new UserPrincipal(parentIdentifier, "", "", tokenDTO.getAccountIdentifier());
+    SecurityContextBuilder.setContext(principal);
+    SourcePrincipalContextBuilder.setSourcePrincipal(principal);
+    doThrow(NGAccessDeniedException.class).when(accessControlClient).checkForAccessOrThrow(any(), any(), any());
+    when(ngUserService.getUserById(anyString())).thenReturn(Optional.of(UserInfo.builder().build()));
+
+    assertThatThrownBy(() -> tokenService.validateTokenListPermissions(tokenFilterDTO))
+        .isInstanceOf(UnauthorizedException.class);
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testValidateListTokenPermission_whenUserDoesNotHaveUserManagementPermissionAndIsNotLoggedInUser_PAT() {
+    TokenFilterDTO tokenFilterDTO =
+        TokenFilterDTO.builder().parentIdentifier("test").apiKeyType(USER).accountIdentifier(accountIdentifier).build();
+    Principal principal = new UserPrincipal(parentIdentifier, "", "", tokenDTO.getAccountIdentifier());
+    SecurityContextBuilder.setContext(principal);
+    SourcePrincipalContextBuilder.setSourcePrincipal(principal);
+    doThrow(NGAccessDeniedException.class).when(accessControlClient).checkForAccessOrThrow(any(), any(), any());
+    Optional<UserInfo> userInfo =
+        Optional.of(UserInfo.builder()
+                        .uuid(parentIdentifier)
+                        .accounts(Arrays.asList(GatewayAccountRequestDTO.builder().uuid(accountIdentifier).build()))
+                        .build());
+    when(ngUserService.getUserById(anyString())).thenReturn(userInfo);
+
+    assertThatThrownBy(() -> tokenService.validateTokenListPermissions(tokenFilterDTO))
+        .isInstanceOf(InvalidArgumentsException.class);
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testValidateListTokenPermission_whenUserDoesNotHaveUserManagementPermission_PAT() {
+    TokenFilterDTO tokenFilterDTO =
+        TokenFilterDTO.builder().apiKeyType(USER).accountIdentifier(accountIdentifier).build();
+    Principal principal = new UserPrincipal(tokenDTO.getParentIdentifier(), "", "", tokenDTO.getAccountIdentifier());
+    SecurityContextBuilder.setContext(principal);
+    SourcePrincipalContextBuilder.setSourcePrincipal(principal);
+    doThrow(NGAccessDeniedException.class).when(accessControlClient).checkForAccessOrThrow(any(), any(), any());
+    assertThatThrownBy(() -> tokenService.validateTokenListPermissions(tokenFilterDTO))
+        .isInstanceOf(NGAccessDeniedException.class);
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testValidateListTokenPermission_whenUserDoesNotHaveServiceAccountManagementPermission_SAT() {
+    TokenFilterDTO tokenFilterDTO =
+        TokenFilterDTO.builder().apiKeyType(SERVICE_ACCOUNT).accountIdentifier(accountIdentifier).build();
+    Principal principal = new UserPrincipal(tokenDTO.getParentIdentifier(), "", "", tokenDTO.getAccountIdentifier());
+    SecurityContextBuilder.setContext(principal);
+    SourcePrincipalContextBuilder.setSourcePrincipal(principal);
+    doThrow(NGAccessDeniedException.class).when(accessControlClient).checkForAccessOrThrow(any(), any(), any());
+    assertThatThrownBy(() -> tokenService.validateTokenListPermissions(tokenFilterDTO))
+        .isInstanceOf(NGAccessDeniedException.class);
   }
 
   @Test

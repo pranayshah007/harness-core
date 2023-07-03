@@ -7,14 +7,11 @@
 
 package io.harness.cdng.provision.terraform.steps.rolllback;
 
-import static io.harness.beans.FeatureName.CDS_TERRAFORM_CLI_OPTIONS_NG;
-
 import static java.lang.String.format;
 
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -22,6 +19,7 @@ import io.harness.cdng.provision.terraform.TerraformConfig;
 import io.harness.cdng.provision.terraform.TerraformConfigDAL;
 import io.harness.cdng.provision.terraform.TerraformConfigHelper;
 import io.harness.cdng.provision.terraform.TerraformStepHelper;
+import io.harness.cdng.provision.terraform.outcome.TerraformGitRevisionOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.TaskData;
@@ -65,6 +63,7 @@ import com.google.inject.name.Named;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -149,7 +148,7 @@ public class TerraformRollbackStep extends CdTaskExecutable<TerraformTaskNGRespo
               .entityId(entityId)
               .workspace(rollbackConfig.getWorkspace())
               .varFileInfos(
-                  terraformStepHelper.prepareTerraformVarFileInfo(rollbackConfig.getVarFileConfigs(), ambiance))
+                  terraformStepHelper.prepareTerraformVarFileInfo(rollbackConfig.getVarFileConfigs(), ambiance, false))
               .backendConfigFileInfo(terraformStepHelper.prepareTerraformBackendConfigFileInfo(
                   rollbackConfig.getBackendConfigFileConfig(), ambiance));
 
@@ -163,13 +162,9 @@ public class TerraformRollbackStep extends CdTaskExecutable<TerraformTaskNGRespo
             terraformStepHelper.prepareTerraformConfigFileInfo(rollbackConfig.getFileStoreConfig(), ambiance));
       }
 
-      if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CD_TERRAFORM_CLOUD_CLI_NG)) {
-        builder.isTerraformCloudCli(rollbackConfig.isTerraformCloudCli());
-      }
+      builder.isTerraformCloudCli(rollbackConfig.isTerraformCloudCli());
 
-      if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), CDS_TERRAFORM_CLI_OPTIONS_NG)) {
-        builder.terraformCommandFlags(terraformStepHelper.getTerraformCliFlags(stepParametersSpec.getCommandFlags()));
-      }
+      builder.terraformCommandFlags(terraformStepHelper.getTerraformCliFlags(stepParametersSpec.getCommandFlags()));
 
       builder.backendConfig(rollbackConfig.getBackendConfig())
           .targets(rollbackConfig.getTargets())
@@ -258,7 +253,15 @@ public class TerraformRollbackStep extends CdTaskExecutable<TerraformTaskNGRespo
       }
     }
 
-    return stepResponseBuilder.build();
+    Map<String, String> outputKeys = terraformStepHelper.getRevisionsMap(
+        rollbackConfig.getVarFileConfigs(), taskResponse.getCommitIdForConfigFilesMap());
+
+    return stepResponseBuilder
+        .stepOutcome(StepResponse.StepOutcome.builder()
+                         .name(TerraformGitRevisionOutcome.OUTCOME_NAME)
+                         .outcome(TerraformGitRevisionOutcome.builder().revisions(outputKeys).build())
+                         .build())
+        .build();
   }
 
   @Override

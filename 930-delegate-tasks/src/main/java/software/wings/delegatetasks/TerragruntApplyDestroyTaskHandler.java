@@ -235,7 +235,7 @@ public class TerragruntApplyDestroyTaskHandler {
 
     if (parameters.isEncryptDecryptPlanForHarnessSMOnManager()) {
       decryptedTerraformPlan = harnessSMEncryptionDecryptionHandler.getDecryptedContent(
-          parameters.getSecretManagerConfig(), parameters.getEncryptedTfPlan(), false);
+          parameters.getSecretManagerConfig(), parameters.getEncryptedTfPlan());
     } else {
       decryptedTerraformPlan = encryptDecryptHelper.getDecryptedContent(
           parameters.getSecretManagerConfig(), parameters.getEncryptedTfPlan());

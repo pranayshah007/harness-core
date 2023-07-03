@@ -51,8 +51,10 @@ public class CommandTaskDataFactory {
     } else if (artifactDelegateConfig != null
         && SshWinRmArtifactType.AZURE.equals(artifactDelegateConfig.getArtifactType())) {
       return TaskType.COMMAND_TASK_NG_WITH_AZURE_ARTIFACT;
+    } else if (artifactDelegateConfig != null
+        && SshWinRmArtifactType.GITHUB_PACKAGE.equals(artifactDelegateConfig.getArtifactType())) {
+      return TaskType.COMMAND_TASK_NG_WITH_GITHUB_PACKAGE_ARTIFACT;
     }
-
     return TaskType.COMMAND_TASK_NG;
   }
 

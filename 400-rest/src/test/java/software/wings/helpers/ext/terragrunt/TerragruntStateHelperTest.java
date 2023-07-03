@@ -9,9 +9,11 @@ package software.wings.helpers.ext.terragrunt;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.SweepingOutputInstance.builder;
+import static io.harness.expression.SecretString.SECRET_MASK;
 import static io.harness.provision.TerraformConstants.ENCRYPTED_BACKEND_CONFIGS_KEY;
 import static io.harness.provision.TerraformConstants.ENCRYPTED_VARIABLES_KEY;
 import static io.harness.provision.TerraformConstants.VARIABLES_KEY;
+import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 
 import static software.wings.beans.delegation.TerragruntProvisionParameters.TerragruntCommand.APPLY;
@@ -31,12 +33,14 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
@@ -59,6 +63,7 @@ import software.wings.api.terragrunt.TerragruntExecutionData;
 import software.wings.api.terragrunt.TerragruntOutputVariables;
 import software.wings.app.MainConfiguration;
 import software.wings.app.PortalConfig;
+import software.wings.beans.GcpKmsConfig;
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitFileConfig;
 import software.wings.beans.NameValuePair;
@@ -129,6 +134,7 @@ public class TerragruntStateHelperTest extends CategoryTest {
   private static final String PROVISIONER_ID = "PROVISIONER_ID";
   private static final String PATH_TO_MODULE = "aws-module";
   private static final String ENTITY_ID = "ENTITY_ID";
+  private static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
 
   private final Answer<String> answer = invocation -> invocation.getArgument(0, String.class) + "-rendered";
 
@@ -482,5 +488,18 @@ public class TerragruntStateHelperTest extends CategoryTest {
     assertThatThrownBy(() -> validateTerragruntVariables(variablesNameContainingExp, backendConfig, envVar))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("The following characters are not allowed in terragrunt");
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testGetSecretManagerContainingTfPlan() {
+    doReturn(true).when(featureFlagService).isEnabled(any(), any());
+    when(secretManagerConfigService.getSecretManager(any(), any(), anyBoolean()))
+        .thenReturn(
+            GcpKmsConfig.builder().accountId(GLOBAL_ACCOUNT_ID).credentials("credential".toCharArray()).build());
+    GcpKmsConfig secretManagerConfig =
+        (GcpKmsConfig) terragruntStateHelper.getSecretManagerContainingTfPlan("smId", ACCOUNT_ID);
+    assertThat(secretManagerConfig.getCredentials()).isEqualTo(SECRET_MASK.toCharArray());
   }
 }

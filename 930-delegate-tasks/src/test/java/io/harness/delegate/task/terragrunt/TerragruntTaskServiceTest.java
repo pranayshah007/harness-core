@@ -15,6 +15,7 @@ import static io.harness.delegate.task.terragrunt.TerragruntTestUtils.TG_SCRIPT_
 import static io.harness.delegate.task.terragrunt.TerragruntTestUtils.TG_TEST_BASE_DIR;
 import static io.harness.delegate.task.terragrunt.TerragruntTestUtils.TG_WORKING_DIR;
 import static io.harness.logging.LogLevel.INFO;
+import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,6 +37,7 @@ import io.harness.delegate.beans.terragrunt.request.AbstractTerragruntTaskParame
 import io.harness.delegate.beans.terragrunt.request.TerragruntRunConfiguration;
 import io.harness.delegate.beans.terragrunt.request.TerragruntTaskRunType;
 import io.harness.delegate.task.terraform.TerraformBaseHelper;
+import io.harness.delegate.task.terraform.handlers.HarnessSMEncryptionDecryptionHandlerNG;
 import io.harness.delegate.task.terragrunt.files.DownloadResult;
 import io.harness.delegate.task.terragrunt.files.FetchFilesResult;
 import io.harness.delegate.task.terragrunt.files.TerragruntDownloadService;
@@ -54,6 +56,7 @@ import software.wings.delegatetasks.DelegateFileManager;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.junit.Rule;
@@ -80,6 +83,7 @@ public class TerragruntTaskServiceTest extends CategoryTest {
   @Mock private LogCallback executionCommandLogCallback;
   @Mock private CliHelper cliHelper;
   @Mock private TerraformBaseHelper terraformBaseHelper;
+  @Mock private HarnessSMEncryptionDecryptionHandlerNG harnessSMEncryptionDecryptionHandlerNG;
 
   @InjectMocks private TerragruntTaskService taskService = new TerragruntTaskService();
 
@@ -250,5 +254,21 @@ public class TerragruntTaskServiceTest extends CategoryTest {
         EncryptedRecordData.builder().build(), VaultConfig.builder().build(), TG_TEST_BASE_DIR, logCallback);
 
     verify(logCallback).saveExecutionLog("Done cleaning up directories.", INFO, CommandExecutionStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testSaveTerraformPlanContentToFile() throws IOException {
+    byte[] decryptedTerraformPlan = "Tfplan".getBytes(StandardCharsets.UTF_8);
+
+    when(harnessSMEncryptionDecryptionHandlerNG.getDecryptedContent(any(), any(), any()))
+        .thenReturn(decryptedTerraformPlan);
+
+    taskService.saveTerraformPlanContentToFile(VaultConfig.builder().build(), EncryptedRecordData.builder().build(),
+        "Script", ACCOUNT_ID, TG_TEST_BASE_DIR, true);
+
+    verify(harnessSMEncryptionDecryptionHandlerNG, times(1)).getDecryptedContent(any(), any(), any());
+    FileIo.deleteDirectoryAndItsContentIfExists(TG_TEST_BASE_DIR);
   }
 }

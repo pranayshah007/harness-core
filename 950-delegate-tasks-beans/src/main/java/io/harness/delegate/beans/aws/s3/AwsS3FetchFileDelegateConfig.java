@@ -13,6 +13,7 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -27,4 +28,5 @@ public class AwsS3FetchFileDelegateConfig {
   String region;
   List<EncryptedDataDetail> encryptionDetails;
   List<S3FileDetailRequest> fileDetails;
+  Map<String, String> versions;
 }

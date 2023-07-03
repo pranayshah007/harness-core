@@ -54,7 +54,6 @@ import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
-import io.harness.utils.NGFeatureFlagHelperService;
 
 import io.fabric8.utils.Lists;
 import java.util.ArrayList;
@@ -73,7 +72,6 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
 public class MultiDeploymentSpawnerStepTest extends CategoryTest {
-  @Mock private NGFeatureFlagHelperService featureFlagHelperService;
   @Mock private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
   @Mock private EnvironmentGroupService environmentGroupService;
   @Mock private AccessControlClient accessControlClient;
@@ -525,7 +523,7 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                            -> multiDeploymentSpawnerStep.obtainChildrenAfterRbac(
                                prepareAmbience(), multiDeploymentStepParameters, null))
         .isInstanceOf(InvalidYamlException.class)
-        .hasMessageContaining("No infrastructure definition provided. Please provide atleast one value");
+        .hasMessageContaining("No infrastructure definition provided. Please provide at least one value");
   }
 
   private Ambiance prepareAmbience() {

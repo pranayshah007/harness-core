@@ -1,7 +1,7 @@
 dummy:
   stages:
     - stage:
-        name: cs
+        name: cs---
         identifier: cs
         description: ""
         type: Custom
@@ -18,7 +18,9 @@ dummy:
                     source:
                       type: Inline
                       spec:
-                        script: echo <+pipeline.variables.var1>
+                        script: |-
+                          echo <+pipeline.variables.var1> ---
+                           echo <+pipeline.variables.var2>
                     environmentVariables: []
                     outputVariables: []
                   timeout: 10m

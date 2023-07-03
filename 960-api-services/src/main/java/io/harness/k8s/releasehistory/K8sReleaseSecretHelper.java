@@ -20,6 +20,7 @@ import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_L
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_NAME_PREFIX;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_RELEASE_BG_ENVIRONMENT_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_RELEASE_COLOR_KEY;
+import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_RELEASE_MANIFEST_HASH_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_STATUS_LABEL_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.SECRET_LABEL_DELIMITER;
 
@@ -121,5 +122,9 @@ public class K8sReleaseSecretHelper {
 
   public String getReleaseBGEnvironment(@NotNull V1Secret releaseSecret) {
     return getReleaseLabelValue(releaseSecret, RELEASE_SECRET_RELEASE_BG_ENVIRONMENT_KEY);
+  }
+
+  public String getReleaseManifestHash(@NotNull V1Secret releaseSecret) {
+    return getReleaseLabelValue(releaseSecret, RELEASE_SECRET_RELEASE_MANIFEST_HASH_KEY);
   }
 }

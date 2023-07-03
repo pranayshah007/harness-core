@@ -25,6 +25,7 @@ import lombok.experimental.FieldDefaults;
 @JsonTypeName(ErrorMetadataConstants.GIT_ERROR)
 public class GitErrorMetadataDTO implements ErrorMetadataDTO {
   String branch;
+  String repo;
 
   @Override
   public String getType() {

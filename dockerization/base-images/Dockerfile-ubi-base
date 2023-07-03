@@ -13,7 +13,7 @@
 #     -t <tag> \
 #     .
 
-FROM redhat/ubi8-minimal:8.7
+FROM redhat/ubi8-minimal:8.8
 CMD ["/bin/sh"]
 RUN microdnf install curl libstdc++.i686 make bash unzip hostname tar gzip procps
 

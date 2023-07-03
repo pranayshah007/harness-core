@@ -18,7 +18,10 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//990-commons-test:module",
-        "//idp-service/src/main/java/io/harness/idp/proxy:module",
+        "//idp-service/src/main/java/io/harness/idp/proxy/delegate:module",
+        "//idp-service/src/main/java/io/harness/idp/proxy/envvariable:module",
+        "//idp-service/src/main/java/io/harness/idp/proxy/layout:module",
+        "//idp-service/src/main/java/io/harness/idp/proxy/ngmanager:module",
         "@maven//:org_mockito_mockito_inline",
     ],
 )

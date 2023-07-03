@@ -30,6 +30,7 @@ public class CDNGComponentTest extends CDNGTestBase {
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
   @HarnessAlwaysRun
+
   public void componentCDNGTests() {
     for (Map.Entry<String, TestExecution> test : tests.entrySet()) {
       assertThatCode(() -> test.getValue().run()).as(test.getKey()).doesNotThrowAnyException();

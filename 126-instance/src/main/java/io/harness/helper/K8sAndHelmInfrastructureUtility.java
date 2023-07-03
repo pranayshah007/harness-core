@@ -11,6 +11,7 @@ import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AW
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AZURE;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DIRECT;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_GCP;
+import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_RANCHER;
 
 import static io.fabric8.kubernetes.api.KubernetesHelper.DEFAULT_NAMESPACE;
 import static java.lang.String.format;
@@ -22,6 +23,7 @@ import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
+import io.harness.cdng.infra.beans.K8sRancherInfrastructureOutcome;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.K8sDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.NativeHelmDeploymentInfoDTO;
@@ -94,42 +96,48 @@ public class K8sAndHelmInfrastructureUtility {
   }
 
   public InfrastructureOutcome getInfrastructureOutcome(
-      String infrastructureKind, DeploymentInfoDTO deploymentInfoDTO, String connectorRef) {
-    K8sDeploymentInfoDTO k8sDeploymentInfoDTO = (K8sDeploymentInfoDTO) deploymentInfoDTO;
-    String namespace = k8sDeploymentInfoDTO.getNamespaces().stream().findAny().isPresent()
-        ? k8sDeploymentInfoDTO.getNamespaces().stream().findAny().get()
+      String infrastructureKind, KubernetesInfrastructureDTO kubernetesInfrastructureDTO, String connectorRef) {
+    String namespace = kubernetesInfrastructureDTO.getNamespaces().stream().findAny().isPresent()
+        ? kubernetesInfrastructureDTO.getNamespaces().stream().findAny().get()
         : DEFAULT_NAMESPACE;
     switch (infrastructureKind) {
       case KUBERNETES_DIRECT:
         return K8sDirectInfrastructureOutcome.builder()
-            .releaseName(k8sDeploymentInfoDTO.getReleaseName())
+            .releaseName(kubernetesInfrastructureDTO.getReleaseName())
             .connectorRef(connectorRef)
             .namespace(namespace)
             .build();
       case KUBERNETES_GCP:
         return K8sGcpInfrastructureOutcome.builder()
-            .releaseName(k8sDeploymentInfoDTO.getReleaseName())
+            .releaseName(kubernetesInfrastructureDTO.getReleaseName())
             .connectorRef(connectorRef)
-            .cluster(k8sDeploymentInfoDTO.getCloudConfigMetadata().getClusterName())
+            .cluster(kubernetesInfrastructureDTO.getCloudConfigMetadata().getClusterName())
             .namespace(namespace)
             .build();
       case KUBERNETES_AZURE:
         K8sAzureCloudConfigMetadata azureCloudConfigMetadata =
-            (K8sAzureCloudConfigMetadata) k8sDeploymentInfoDTO.getCloudConfigMetadata();
+            (K8sAzureCloudConfigMetadata) kubernetesInfrastructureDTO.getCloudConfigMetadata();
         return K8sAzureInfrastructureOutcome.builder()
-            .releaseName(k8sDeploymentInfoDTO.getReleaseName())
+            .releaseName(kubernetesInfrastructureDTO.getReleaseName())
             .connectorRef(connectorRef)
             .resourceGroup(azureCloudConfigMetadata.getResourceGroup())
             .subscription(azureCloudConfigMetadata.getSubscription())
             .useClusterAdminCredentials(azureCloudConfigMetadata.isUseClusterAdminCredentials())
-            .cluster(k8sDeploymentInfoDTO.getCloudConfigMetadata().getClusterName())
+            .cluster(kubernetesInfrastructureDTO.getCloudConfigMetadata().getClusterName())
             .namespace(namespace)
             .build();
       case KUBERNETES_AWS:
         return K8sAwsInfrastructureOutcome.builder()
-            .releaseName(k8sDeploymentInfoDTO.getReleaseName())
+            .releaseName(kubernetesInfrastructureDTO.getReleaseName())
             .connectorRef(connectorRef)
-            .cluster(k8sDeploymentInfoDTO.getCloudConfigMetadata().getClusterName())
+            .cluster(kubernetesInfrastructureDTO.getCloudConfigMetadata().getClusterName())
+            .namespace(namespace)
+            .build();
+      case KUBERNETES_RANCHER:
+        return K8sRancherInfrastructureOutcome.builder()
+            .releaseName(kubernetesInfrastructureDTO.getReleaseName())
+            .connectorRef(connectorRef)
+            .clusterName(kubernetesInfrastructureDTO.getCloudConfigMetadata().getClusterName())
             .namespace(namespace)
             .build();
       default:

@@ -124,6 +124,7 @@ public class TriggerImportService implements ImportService {
     Map<CgEntityId, NGYamlFile> yamlFileMap = summaryDTO.getNgYamlFiles()
                                                   .stream()
                                                   .filter(ngYamlFile -> ngYamlFile.getCgBasicInfo() != null)
+                                                  .distinct()
                                                   .collect(Collectors.toMap(yamlFile
                                                       -> CgEntityId.builder()
                                                              .id(yamlFile.getCgBasicInfo().getId())
@@ -197,8 +198,8 @@ public class TriggerImportService implements ImportService {
             .enabled(false)
             .pipelineIdentifier(pipelineDetail.getIdentifier())
             .source(getSourceInfo(discoveryResult, trigger, yamlFileMap))
-            .inputYaml(
-                migrationTemplateUtils.getPipelineInput(pipelineDetail, inputDTO.getDestinationAccountIdentifier()))
+            .inputYaml(migrationTemplateUtils.getPipelineInput(
+                inputDTO, pipelineDetail, inputDTO.getDestinationAccountIdentifier()))
             .build();
 
     return NgTriggerConfigSchemaWrapper.builder().trigger(triggerConfig).build();

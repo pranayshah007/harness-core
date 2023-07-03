@@ -253,13 +253,15 @@ public class VerificationServiceApplication extends Application<VerificationServ
       @Named("lock")
       @Singleton
       RedisConfig redisConfig() {
-        return RedisConfig.builder().build();
+        return configuration.getRedisLockConfig();
       }
 
       @Provides
       @Singleton
       DistributedLockImplementation distributedLockImplementation() {
-        return MONGO;
+        return configuration.getDistributedLockImplementation() == null
+            ? MONGO
+            : configuration.getDistributedLockImplementation();
       }
     });
     modules.add(MetricsInstrumentationModule.builder()

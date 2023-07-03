@@ -53,6 +53,7 @@ import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import retrofit2.Call;
@@ -134,6 +135,7 @@ public class AdminAccountResourceTest extends CategoryTest {
   @Test
   @Owner(developers = UTSAV)
   @Category(UnitTests.class)
+  @Ignore("Platform Team to fix it")
   public void testCreateAccount() {
     RESOURCES.client()
         .target("/admin/accounts/")

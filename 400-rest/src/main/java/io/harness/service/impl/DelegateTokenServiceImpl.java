@@ -7,6 +7,9 @@
 
 package io.harness.service.impl;
 
+import static io.harness.delegate.message.ManagerMessageConstants.SELF_DESTRUCT;
+import static io.harness.delegate.utils.DelegateServiceConstants.STREAM_DELEGATE;
+
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -15,6 +18,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.authenticator.DelegateSecretManager;
+import io.harness.delegate.beans.Delegate;
+import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.delegate.beans.DelegateToken;
 import io.harness.delegate.beans.DelegateToken.DelegateTokenKeys;
 import io.harness.delegate.beans.DelegateTokenDetails;
@@ -40,15 +45,18 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.atmosphere.cpr.BroadcasterFactory;
 
 @OwnedBy(HarnessTeam.DEL)
+@Slf4j
 @TargetModule(HarnessModule._420_DELEGATE_SERVICE)
 public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCrudObserver, OwnedByAccount {
   @Inject private HPersistence persistence;
   @Inject private AuditServiceHelper auditServiceHelper;
   @Inject private DelegateSecretManager delegateSecretManager;
-
+  @Inject private BroadcasterFactory broadcasterFactory;
   private static final String DEFAULT_TOKEN_NAME = "default";
 
   @Override
@@ -117,6 +125,14 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
         persistence.findAndModify(filterQuery, updateOperations, new FindAndModifyOptions());
     auditServiceHelper.reportForAuditingUsingAccountId(
         accountId, originalDelegateToken, updatedDelegateToken, Event.Type.UPDATE);
+    List<Delegate> delegates = persistence.createQuery(Delegate.class)
+                                   .filter(DelegateKeys.accountId, accountId)
+                                   .filter(DelegateKeys.delegateTokenName, tokenName)
+                                   .asList();
+    delegates.forEach(delegate -> {
+      broadcasterFactory.lookup(STREAM_DELEGATE + accountId, true).broadcast(SELF_DESTRUCT + delegate.getUuid());
+      log.warn("Sent self destruct command to delegate {} due to revoked token", delegate.getUuid());
+    });
   }
 
   @Override

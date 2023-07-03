@@ -8,6 +8,7 @@
 package io.harness.cdng.serviceoverridesv2.services;
 
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
+import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
@@ -42,6 +43,7 @@ import io.harness.yaml.core.variables.StringNGVariable;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -70,6 +72,7 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
 
   private static final String IDENTIFIER = "identifierA";
   private static final String ENVIRONMENT_REF = "envA";
+  private static final String INFRA_IDENTIFIER = "infraA";
 
   private static final String SERVICE_REF = "serviceA";
 
@@ -123,7 +126,7 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
   @Test
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
-  public void testUpdate() {
+  public void testUpdate() throws IOException {
     NGServiceOverridesEntity ngServiceOverridesEntity = serviceOverridesServiceV2.create(basicOverrideEntity);
     ngServiceOverridesEntity.setSpec(
         ServiceOverridesSpec.builder()
@@ -273,16 +276,22 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
   }
 
   private void createDbTestDataForListCall() {
-    NGServiceOverridesEntity entity0 = NGServiceOverridesEntity.builder()
-                                           .identifier("id0")
-                                           .accountId(ACCOUNT_IDENTIFIER)
-                                           .orgIdentifier(ORG_IDENTIFIER)
-                                           .projectIdentifier(PROJECT_IDENTIFIER)
-                                           .type(ServiceOverridesType.ENV_SERVICE_OVERRIDE)
-                                           .environmentRef(ENVIRONMENT_REF)
-                                           .serviceRef(SERVICE_REF)
-                                           .spec(ServiceOverridesSpec.builder().build())
-                                           .build();
+    NGServiceOverridesEntity entity0 =
+        NGServiceOverridesEntity.builder()
+            .identifier("id0")
+            .accountId(ACCOUNT_IDENTIFIER)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .projectIdentifier(PROJECT_IDENTIFIER)
+            .type(ServiceOverridesType.ENV_SERVICE_OVERRIDE)
+            .environmentRef(ENVIRONMENT_REF)
+            .serviceRef(SERVICE_REF)
+            .spec(
+                ServiceOverridesSpec.builder()
+                    .variables(List.of(
+                        StringNGVariable.builder().name("varA").value(ParameterField.createValueField("valA")).build(),
+                        StringNGVariable.builder().name("varB").value(ParameterField.createValueField("valB")).build()))
+                    .build())
+            .build();
 
     NGServiceOverridesEntity entity1 =
         NGServiceOverridesEntity.builder()
@@ -340,7 +349,7 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
   @Test
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
-  public void testUpsertForCreate() {
+  public void testUpsertForCreate() throws IOException {
     Pair<NGServiceOverridesEntity, Boolean> upsertResult = serviceOverridesServiceV2.upsert(basicOverrideEntity);
     assertThat(upsertResult).isNotNull();
     assertThat(upsertResult.getRight()).isTrue();
@@ -350,7 +359,7 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
   @Test
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
-  public void testUpsertForUpdate() {
+  public void testUpsertForUpdate() throws IOException {
     NGServiceOverridesEntity overridesEntity = serviceOverridesServiceV2.create(basicOverrideEntity);
 
     overridesEntity.setSpec(
@@ -626,5 +635,342 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
                    .map(StringNGVariable::getValue)
                    .collect(Collectors.toList()))
         .containsExactlyInAnyOrder(ParameterField.createValueField("valA"), ParameterField.createValueField("valB"));
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testDeleteAllInOrg() throws IOException {
+    NGServiceOverridesEntity e1 =
+        NGServiceOverridesEntity.builder()
+            .identifier("e1")
+            .accountId(ACCOUNT_IDENTIFIER)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .projectIdentifier(PROJECT_IDENTIFIER)
+            .type(ServiceOverridesType.ENV_SERVICE_OVERRIDE)
+            .environmentRef(ENVIRONMENT_REF)
+            .serviceRef(SERVICE_REF)
+            .spec(
+                ServiceOverridesSpec.builder()
+                    .variables(List.of(
+                        StringNGVariable.builder().name("varA").value(ParameterField.createValueField("valA")).build(),
+                        StringNGVariable.builder().name("varB").value(ParameterField.createValueField("valB")).build()))
+                    .build())
+            .build();
+    NGServiceOverridesEntity e2 =
+        NGServiceOverridesEntity.builder()
+            .identifier("e2")
+            .accountId(ACCOUNT_IDENTIFIER)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .type(ServiceOverridesType.ENV_GLOBAL_OVERRIDE)
+            .environmentRef(ENVIRONMENT_REF)
+            .serviceRef(null)
+            .spec(
+                ServiceOverridesSpec.builder()
+                    .variables(List.of(
+                        StringNGVariable.builder().name("varA").value(ParameterField.createValueField("valA")).build(),
+                        StringNGVariable.builder().name("varB").value(ParameterField.createValueField("valB")).build()))
+                    .build())
+            .build();
+
+    NGServiceOverridesEntity e3 =
+        NGServiceOverridesEntity.builder()
+            .identifier("e3")
+            .accountId(ACCOUNT_IDENTIFIER)
+            .orgIdentifier(ORG_IDENTIFIER + "abcd")
+            .projectIdentifier(PROJECT_IDENTIFIER)
+            .type(ServiceOverridesType.ENV_GLOBAL_OVERRIDE)
+            .environmentRef(ENVIRONMENT_REF + "abcd")
+            .serviceRef(null)
+            .spec(
+                ServiceOverridesSpec.builder()
+                    .variables(List.of(
+                        StringNGVariable.builder().name("varA").value(ParameterField.createValueField("valA")).build(),
+                        StringNGVariable.builder().name("varB").value(ParameterField.createValueField("valB")).build()))
+                    .build())
+            .build();
+
+    serviceOverridesServiceV2.upsert(e1);
+    serviceOverridesServiceV2.upsert(e2);
+    serviceOverridesServiceV2.upsert(e3);
+
+    assertThat(serviceOverridesServiceV2.deleteAllInOrg(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER)).isTrue();
+
+    assertThat(serviceOverridesServiceV2.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "e1"))
+        .isNotPresent();
+    assertThat(serviceOverridesServiceV2.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, null, "e2")).isNotPresent();
+    assertThat(serviceOverridesServiceV2.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER + "abcd", PROJECT_IDENTIFIER, "e3"))
+        .isPresent();
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testDeleteAllInProject() throws IOException {
+    NGServiceOverridesEntity e1 =
+        NGServiceOverridesEntity.builder()
+            .identifier("e1")
+            .accountId(ACCOUNT_IDENTIFIER)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .projectIdentifier(PROJECT_IDENTIFIER)
+            .type(ServiceOverridesType.ENV_SERVICE_OVERRIDE)
+            .environmentRef(ENVIRONMENT_REF)
+            .serviceRef(SERVICE_REF)
+            .spec(
+                ServiceOverridesSpec.builder()
+                    .variables(List.of(
+                        StringNGVariable.builder().name("varA").value(ParameterField.createValueField("valA")).build(),
+                        StringNGVariable.builder().name("varB").value(ParameterField.createValueField("valB")).build()))
+                    .build())
+            .build();
+    NGServiceOverridesEntity e2 =
+        NGServiceOverridesEntity.builder()
+            .identifier("e2")
+            .accountId(ACCOUNT_IDENTIFIER)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .projectIdentifier(PROJECT_IDENTIFIER)
+            .type(ServiceOverridesType.ENV_GLOBAL_OVERRIDE)
+            .environmentRef(ENVIRONMENT_REF)
+            .serviceRef(null)
+            .spec(
+                ServiceOverridesSpec.builder()
+                    .variables(List.of(
+                        StringNGVariable.builder().name("varA").value(ParameterField.createValueField("valA")).build(),
+                        StringNGVariable.builder().name("varB").value(ParameterField.createValueField("valB")).build()))
+                    .build())
+            .build();
+
+    NGServiceOverridesEntity e3 =
+        NGServiceOverridesEntity.builder()
+            .identifier("e3")
+            .accountId(ACCOUNT_IDENTIFIER)
+            .orgIdentifier(ORG_IDENTIFIER + "abcd")
+            .projectIdentifier(PROJECT_IDENTIFIER)
+            .type(ServiceOverridesType.ENV_GLOBAL_OVERRIDE)
+            .environmentRef(ENVIRONMENT_REF + "abcd")
+            .serviceRef(null)
+            .spec(
+                ServiceOverridesSpec.builder()
+                    .variables(List.of(
+                        StringNGVariable.builder().name("varA").value(ParameterField.createValueField("valA")).build(),
+                        StringNGVariable.builder().name("varB").value(ParameterField.createValueField("valB")).build()))
+                    .build())
+            .build();
+
+    serviceOverridesServiceV2.upsert(e1);
+    serviceOverridesServiceV2.upsert(e2);
+    serviceOverridesServiceV2.upsert(e3);
+
+    assertThat(serviceOverridesServiceV2.deleteAllInProject(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isTrue();
+
+    assertThat(serviceOverridesServiceV2.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "e1"))
+        .isNotPresent();
+    assertThat(serviceOverridesServiceV2.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "e2"))
+        .isNotPresent();
+    assertThat(serviceOverridesServiceV2.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER + "abcd", PROJECT_IDENTIFIER, "e3"))
+        .isPresent();
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testDeleteAllInEnv() throws IOException {
+    NGServiceOverridesEntity e1 =
+        NGServiceOverridesEntity.builder()
+            .identifier("e1")
+            .accountId(ACCOUNT_IDENTIFIER)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .projectIdentifier(PROJECT_IDENTIFIER)
+            .type(ServiceOverridesType.ENV_SERVICE_OVERRIDE)
+            .environmentRef(ENVIRONMENT_REF)
+            .serviceRef(SERVICE_REF)
+            .spec(
+                ServiceOverridesSpec.builder()
+                    .variables(List.of(
+                        StringNGVariable.builder().name("varA").value(ParameterField.createValueField("valA")).build(),
+                        StringNGVariable.builder().name("varB").value(ParameterField.createValueField("valB")).build()))
+                    .build())
+            .build();
+    NGServiceOverridesEntity e2 =
+        NGServiceOverridesEntity.builder()
+            .identifier("e2")
+            .accountId(ACCOUNT_IDENTIFIER)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .type(ServiceOverridesType.ENV_GLOBAL_OVERRIDE)
+            .environmentRef("org." + ENVIRONMENT_REF)
+            .serviceRef(null)
+            .spec(
+                ServiceOverridesSpec.builder()
+                    .variables(List.of(
+                        StringNGVariable.builder().name("varA").value(ParameterField.createValueField("valA")).build(),
+                        StringNGVariable.builder().name("varB").value(ParameterField.createValueField("valB")).build()))
+                    .build())
+            .build();
+
+    NGServiceOverridesEntity e3 =
+        NGServiceOverridesEntity.builder()
+            .identifier("e3")
+            .accountId(ACCOUNT_IDENTIFIER)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .projectIdentifier(PROJECT_IDENTIFIER)
+            .type(ServiceOverridesType.ENV_GLOBAL_OVERRIDE)
+            .environmentRef(ENVIRONMENT_REF + "abcd")
+            .serviceRef(null)
+            .spec(
+                ServiceOverridesSpec.builder()
+                    .variables(List.of(
+                        StringNGVariable.builder().name("varA").value(ParameterField.createValueField("valA")).build(),
+                        StringNGVariable.builder().name("varB").value(ParameterField.createValueField("valB")).build()))
+                    .build())
+            .build();
+
+    serviceOverridesServiceV2.upsert(e1);
+    serviceOverridesServiceV2.upsert(e2);
+    serviceOverridesServiceV2.upsert(e3);
+
+    assertThat(serviceOverridesServiceV2.deleteAllForEnv(
+                   ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ENVIRONMENT_REF))
+        .isTrue();
+
+    assertThat(serviceOverridesServiceV2.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "e1"))
+        .isNotPresent();
+    assertThat(serviceOverridesServiceV2.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, null, "e2")).isPresent();
+    assertThat(serviceOverridesServiceV2.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "e3")).isPresent();
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testDeleteAllInInfra() throws IOException {
+    NGServiceOverridesEntity e1 =
+        NGServiceOverridesEntity.builder()
+            .identifier("e1")
+            .accountId(ACCOUNT_IDENTIFIER)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .projectIdentifier(PROJECT_IDENTIFIER)
+            .type(ServiceOverridesType.INFRA_SERVICE_OVERRIDE)
+            .environmentRef(ENVIRONMENT_REF)
+            .serviceRef(SERVICE_REF)
+            .infraIdentifier(INFRA_IDENTIFIER)
+            .spec(
+                ServiceOverridesSpec.builder()
+                    .variables(List.of(
+                        StringNGVariable.builder().name("varA").value(ParameterField.createValueField("valA")).build(),
+                        StringNGVariable.builder().name("varB").value(ParameterField.createValueField("valB")).build()))
+                    .build())
+            .build();
+    NGServiceOverridesEntity e2 =
+        NGServiceOverridesEntity.builder()
+            .identifier("e2")
+            .accountId(ACCOUNT_IDENTIFIER)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .type(ServiceOverridesType.INFRA_GLOBAL_OVERRIDE)
+            .environmentRef("org." + ENVIRONMENT_REF)
+            .serviceRef(null)
+            .infraIdentifier(INFRA_IDENTIFIER)
+            .spec(
+                ServiceOverridesSpec.builder()
+                    .variables(List.of(
+                        StringNGVariable.builder().name("varA").value(ParameterField.createValueField("valA")).build(),
+                        StringNGVariable.builder().name("varB").value(ParameterField.createValueField("valB")).build()))
+                    .build())
+            .build();
+
+    NGServiceOverridesEntity e3 =
+        NGServiceOverridesEntity.builder()
+            .identifier("e3")
+            .accountId(ACCOUNT_IDENTIFIER)
+            .type(ServiceOverridesType.INFRA_GLOBAL_OVERRIDE)
+            .environmentRef("account." + ENVIRONMENT_REF + "abcd")
+            .serviceRef(null)
+            .infraIdentifier(INFRA_IDENTIFIER)
+            .spec(
+                ServiceOverridesSpec.builder()
+                    .variables(List.of(
+                        StringNGVariable.builder().name("varA").value(ParameterField.createValueField("valA")).build(),
+                        StringNGVariable.builder().name("varB").value(ParameterField.createValueField("valB")).build()))
+                    .build())
+            .build();
+
+    serviceOverridesServiceV2.upsert(e1);
+    serviceOverridesServiceV2.upsert(e2);
+    serviceOverridesServiceV2.upsert(e3);
+
+    assertThat(serviceOverridesServiceV2.deleteAllForInfra(
+                   ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ENVIRONMENT_REF, INFRA_IDENTIFIER))
+        .isTrue();
+
+    assertThat(serviceOverridesServiceV2.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "e1"))
+        .isNotPresent();
+    assertThat(serviceOverridesServiceV2.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, null, "e2")).isPresent();
+    assertThat(serviceOverridesServiceV2.get(ACCOUNT_IDENTIFIER, null, null, "e3")).isPresent();
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testDeleteAllOfService() throws IOException {
+    NGServiceOverridesEntity e1 =
+        NGServiceOverridesEntity.builder()
+            .identifier("e1")
+            .accountId(ACCOUNT_IDENTIFIER)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .projectIdentifier(PROJECT_IDENTIFIER)
+            .type(ServiceOverridesType.INFRA_SERVICE_OVERRIDE)
+            .environmentRef(ENVIRONMENT_REF)
+            .serviceRef("account." + SERVICE_REF)
+            .infraIdentifier(INFRA_IDENTIFIER)
+            .spec(
+                ServiceOverridesSpec.builder()
+                    .variables(List.of(
+                        StringNGVariable.builder().name("varA").value(ParameterField.createValueField("valA")).build(),
+                        StringNGVariable.builder().name("varB").value(ParameterField.createValueField("valB")).build()))
+                    .build())
+            .build();
+    NGServiceOverridesEntity e2 =
+        NGServiceOverridesEntity.builder()
+            .identifier("e2")
+            .accountId(ACCOUNT_IDENTIFIER)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .projectIdentifier(PROJECT_IDENTIFIER)
+            .type(ServiceOverridesType.ENV_SERVICE_OVERRIDE)
+            .environmentRef(ENVIRONMENT_REF)
+            .serviceRef("account." + SERVICE_REF)
+            .spec(
+                ServiceOverridesSpec.builder()
+                    .variables(List.of(
+                        StringNGVariable.builder().name("varA").value(ParameterField.createValueField("valA")).build(),
+                        StringNGVariable.builder().name("varB").value(ParameterField.createValueField("valB")).build()))
+                    .build())
+            .build();
+
+    NGServiceOverridesEntity e3 =
+        NGServiceOverridesEntity.builder()
+            .identifier("e3")
+            .accountId(ACCOUNT_IDENTIFIER)
+            .type(ServiceOverridesType.ENV_SERVICE_OVERRIDE)
+            .environmentRef("account." + ENVIRONMENT_REF)
+            .serviceRef("account." + SERVICE_REF)
+            .spec(
+                ServiceOverridesSpec.builder()
+                    .variables(List.of(
+                        StringNGVariable.builder().name("varA").value(ParameterField.createValueField("valA")).build(),
+                        StringNGVariable.builder().name("varB").value(ParameterField.createValueField("valB")).build()))
+                    .build())
+            .build();
+
+    serviceOverridesServiceV2.upsert(e1);
+    serviceOverridesServiceV2.upsert(e2);
+    serviceOverridesServiceV2.upsert(e3);
+
+    assertThat(serviceOverridesServiceV2.deleteAllOfService(ACCOUNT_IDENTIFIER, null, null, "account." + SERVICE_REF))
+        .isTrue();
+
+    assertThat(serviceOverridesServiceV2.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "e1"))
+        .isNotPresent();
+    assertThat(serviceOverridesServiceV2.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, null, "e2")).isNotPresent();
+    assertThat(serviceOverridesServiceV2.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "e3"))
+        .isNotPresent();
   }
 }

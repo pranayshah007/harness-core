@@ -10,13 +10,15 @@ package io.harness.delegatetasks;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultCapabilityHelper;
+import io.harness.delegate.beans.connector.ConnectorCapabilityBaseHelper;
 import io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultConnectorDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
 import io.harness.expression.ExpressionEvaluator;
 
+import java.util.ArrayList;
 import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
@@ -26,10 +28,16 @@ import lombok.Getter;
 @Builder
 public class NGAzureKeyVaultFetchEngineTaskParameters implements TaskParameters, ExecutionCapabilityDemander {
   private final AzureKeyVaultConnectorDTO azureKeyVaultConnectorDTO;
+  private final String SUBSCRIPTION_REACHABLE_URL = "https://management.azure.com/subscriptions?api-version=2019-06-01";
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-    return AzureKeyVaultCapabilityHelper.fetchRequiredExecutionCapabilities(
-        azureKeyVaultConnectorDTO, maskingEvaluator);
+    List<ExecutionCapability> executionCapabilities = new ArrayList<>();
+    executionCapabilities.add(
+        HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(SUBSCRIPTION_REACHABLE_URL,
+            HttpConnectionExecutionCapabilityGenerator.HttpCapabilityDetailsLevel.QUERY, maskingEvaluator));
+    ConnectorCapabilityBaseHelper.populateDelegateSelectorCapability(
+        executionCapabilities, azureKeyVaultConnectorDTO.getDelegateSelectors());
+    return executionCapabilities;
   }
 }

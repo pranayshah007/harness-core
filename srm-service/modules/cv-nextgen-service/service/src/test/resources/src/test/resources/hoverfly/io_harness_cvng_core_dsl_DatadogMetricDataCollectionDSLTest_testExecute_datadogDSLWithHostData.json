@@ -124,6 +124,54 @@
           "X-Ratelimit-Reset" : [ "1374" ]
         }
       }
+    },{
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/api/v1/query"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "app.datadoghq.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "from" : [ {
+            "matcher" : "exact",
+            "value" : "1644833760"
+          } ],
+          "query" : [ {
+            "matcher" : "exact",
+            "value" : "docker.cpu.usage{cluster-null:null}.rollup(avg, 60)"
+          } ],
+          "to" : [ {
+            "matcher" : "exact",
+            "value" : "1644834060"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "{\"status\":\"ok\",\"resp_version\":1.0,\"series\":[{\"end\":1.644834059E12,\"attributes\":{},\"metric\":\"kubernetes.memory.usage\",\"interval\":60.0,\"tag_set\":[],\"start\":1.64483376E12,\"length\":5.0,\"query_index\":0.0,\"aggr\":null,\"scope\":\"cluster-name:chi-play\",\"pointlist\":[[1.64483376E12,null],[1.64483382E12,4.0],[1.64483388E12,null],[1.64483394E12,4.495570338616352E8],[1.644834E12,4.496674068930818E8]],\"expression\":\"kubernetes.memory.usage{cluster-name:chi-play}.rollup(avg, 60)\",\"unit\":[{\"family\":\"bytes\",\"scale_factor\":1.0,\"name\":\"byte\",\"short_name\":\"B\",\"plural\":\"bytes\",\"id\":2.0},null],\"display_name\":\"kubernetes.memory.usage\"}],\"to_date\":1.64483406E12,\"query\":\"kubernetes.memory.usage{cluster-name:chi-play}.rollup(avg, 60)\",\"message\":\"\",\"res_type\":\"time_series\",\"times\":[],\"from_date\":1.64483376E12,\"group_by\":[],\"values\":[]}",
+        "encodedBody" : false,
+        "templated" : false,
+        "headers" : {
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Thu, 17 Mar 2022 11:37:06 GMT" ],
+          "Hoverfly" : [ "Was-Here" ]
+        }
+      }
     } ],
     "globalActions" : {
       "delays" : [ ]

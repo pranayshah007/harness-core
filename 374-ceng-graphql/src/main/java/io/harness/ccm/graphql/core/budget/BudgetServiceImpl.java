@@ -21,7 +21,9 @@ import io.harness.ccm.budgetGroup.BudgetGroupChildEntityDTO;
 import io.harness.ccm.budgetGroup.dao.BudgetGroupDao;
 import io.harness.ccm.budgetGroup.service.BudgetGroupService;
 import io.harness.ccm.budgetGroup.utils.BudgetGroupUtils;
+import io.harness.ccm.commons.entities.CCMSortOrder;
 import io.harness.ccm.commons.entities.billing.Budget;
+import io.harness.ccm.commons.entities.billing.BudgetSortType;
 import io.harness.ccm.commons.entities.budget.BudgetData;
 import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.graphql.core.perspectives.PerspectiveTimeSeriesHelper;
@@ -126,13 +128,14 @@ public class BudgetServiceImpl implements BudgetService {
   }
 
   @Override
-  public List<Budget> list(String accountId) {
-    return budgetDao.list(accountId, Integer.MAX_VALUE - 1, 0);
+  public List<Budget> list(String accountId, BudgetSortType budgetSortType, CCMSortOrder ccmSortOrder) {
+    return budgetDao.list(accountId, Integer.MAX_VALUE - 1, 0, budgetSortType, ccmSortOrder);
   }
 
   @Override
   public List<Budget> list(String accountId, String perspectiveId) {
-    List<Budget> budgets = budgetDao.list(accountId, Integer.MAX_VALUE - 1, 0);
+    List<Budget> budgets =
+        budgetDao.list(accountId, Integer.MAX_VALUE - 1, 0, BudgetSortType.NAME, CCMSortOrder.ASCENDING);
     return budgets.stream()
         .filter(budget -> isBudgetBasedOnGivenPerspective(budget, perspectiveId))
         .collect(Collectors.toList());

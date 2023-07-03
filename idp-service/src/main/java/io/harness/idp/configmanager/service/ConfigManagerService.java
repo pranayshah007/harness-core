@@ -7,9 +7,10 @@
 package io.harness.idp.configmanager.service;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.configmanager.ConfigType;
+import io.harness.connector.ConnectorInfoDTO;
 import io.harness.idp.configmanager.beans.entity.AppConfigEntity;
 import io.harness.idp.configmanager.beans.entity.MergedAppConfigEntity;
+import io.harness.idp.configmanager.utils.ConfigType;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.MergedPluginConfigs;
 
@@ -45,4 +46,9 @@ public interface ConfigManagerService {
   void validateSchemaForPlugin(String config, String configId) throws Exception;
 
   Boolean isPluginWithNoConfig(String accountIdentifier, String configId);
+
+  void createOrUpdateAppConfigForGitIntegrations(
+      String accountIdentifier, ConnectorInfoDTO connectorInfoDTO, String integrationConfigs, String connectorType);
+
+  AppConfig saveUpdateAndMergeConfigForAccount(AppConfig appConfig, String accountIdentifier, ConfigType configType);
 }

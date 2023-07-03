@@ -175,8 +175,8 @@ def ingest_data_from_avro(jsonData):
         print_("Total: {} rows in table {}".format(table.num_rows, jsonData["tableId"]))
         blob_to_delete.delete()
         print_("Deleted blob : %s" % blob_to_delete.name)
-        # flatten_label_keys_in_table(client, jsonData.get("accountId"), PROJECTID, jsonData["datasetName"],
-        #                             jsonData["tableName"], "labels", fetch_cluster_table_ingestion_filters(jsonData))
+        flatten_label_keys_in_table(client, jsonData.get("accountId"), PROJECTID, jsonData["datasetName"],
+                                    jsonData["tableName"], "labels", fetch_cluster_table_ingestion_filters(jsonData))
     except Exception as e:
         print_(e, "WARN")
         return False
@@ -280,8 +280,8 @@ def ingest_data_in_unified(jsonData):
     )
     try:
         run_bq_query_with_retries(client, query, max_retry_count=3, job_config=job_config)
-        # flatten_label_keys_in_table(client, jsonData.get("accountId"), PROJECTID, jsonData["datasetName"], UNIFIED,
-        #                             "labels", fetch_unifiedTable_ingestion_filters(jsonData))
+        flatten_label_keys_in_table(client, jsonData.get("accountId"), PROJECTID, jsonData["datasetName"], UNIFIED,
+                                    "labels", fetch_unifiedTable_ingestion_filters(jsonData))
     except Exception as e:
         print_(query)
         raise e
@@ -389,13 +389,13 @@ def ingest_aggregated_data(jsonData):
         print_(PREAGG_QUERY_ID, "ERROR")
         print_(e)
 
-    # try:
-    #     flatten_label_keys_in_table(client, jsonData.get("accountId"), PROJECTID, jsonData["datasetName"],
-    #                                 jsonData["tableNameAggregated"], "labels",
-    #                                 fetch_cluster_table_aggregated_ingestion_filters(jsonData))
-    # except Exception as e:
-    #     print_(e, "ERROR")
-    #     raise e
+    try:
+        flatten_label_keys_in_table(client, jsonData.get("accountId"), PROJECTID, jsonData["datasetName"],
+                                    jsonData["tableNameAggregated"], "labels",
+                                    fetch_cluster_table_aggregated_ingestion_filters(jsonData))
+    except Exception as e:
+        print_(e, "ERROR")
+        raise e
 
 
 def alterTableAggregated(jsonData):

@@ -28,6 +28,7 @@ import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.Service
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.ServiceOverrideValidatorService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.beans.DocumentationConstants;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -54,8 +55,11 @@ import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.io.IOException;
 import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.Max;
@@ -82,10 +86,9 @@ import org.springframework.data.mongodb.core.query.Criteria;
 
 @NextGenManagerAuth
 @Api("/serviceOverrides")
-@Hidden
 @Path("/serviceOverrides")
-@Produces({"application/json", "application/yaml"})
-@Consumes({"application/json", "application/yaml"})
+@Produces({"application/json"})
+@Consumes({"application/json"})
 @ApiResponses(value =
     {
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
@@ -179,8 +182,11 @@ public class ServiceOverridesResource {
   public ResponseDTO<ServiceOverridesResponseDTOV2>
   create(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @Parameter(description = "Details of the ServiceOverride to be created") @NonNull
-      @Valid ServiceOverrideRequestDTOV2 requestDTOV2) {
+      @RequestBody(required = true, description = "Details of the Service Override to be updated", content = {
+        @Content(examples = @ExampleObject(name = "Create", summary = "Sample Service Override update request",
+                     value = DocumentationConstants.SERVICE_OVERRIDE_V2_REQUEST_DTO,
+                     description = "Sample Service Override Request"))
+      }) @Valid ServiceOverrideRequestDTOV2 requestDTOV2) {
     overrideValidatorService.validateRequestOrThrow(requestDTOV2, accountId);
 
     NGServiceOverridesEntity serviceOverride = ServiceOverridesMapperV2.toEntity(accountId, requestDTOV2);
@@ -199,8 +205,11 @@ public class ServiceOverridesResource {
   public ResponseDTO<ServiceOverridesResponseDTOV2>
   update(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @Parameter(description = "Details of the ServiceOverride to be updated")
-      @Valid ServiceOverrideRequestDTOV2 requestDTOV2) {
+      @RequestBody(required = true, description = "Details of the Service Override to be updated", content = {
+        @Content(examples = @ExampleObject(name = "Update", summary = "Sample Service Override update request",
+                     value = DocumentationConstants.SERVICE_OVERRIDE_V2_REQUEST_DTO,
+                     description = "Sample Service Override Request"))
+      }) @Valid ServiceOverrideRequestDTOV2 requestDTOV2) throws IOException {
     overrideValidatorService.validateRequestOrThrow(requestDTOV2, accountId);
 
     NGServiceOverridesEntity requestedServiceOverride = ServiceOverridesMapperV2.toEntity(accountId, requestDTOV2);
@@ -210,6 +219,7 @@ public class ServiceOverridesResource {
 
   @POST
   @Path("/upsert")
+  @Hidden
   @ApiOperation(value = "Upsert an ServiceOverride Entity", nickname = "upsertServiceOverrideV2")
   @Operation(operationId = "upsertServiceOverrideV2", summary = "Upsert an ServiceOverride Entity",
       responses =
@@ -221,7 +231,7 @@ public class ServiceOverridesResource {
   upsert(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @Parameter(description = "Details of the ServiceOverride to be updated")
-      @Valid ServiceOverrideRequestDTOV2 requestDTOV2) {
+      @Valid ServiceOverrideRequestDTOV2 requestDTOV2) throws IOException {
     overrideValidatorService.validateRequestOrThrow(requestDTOV2, accountId);
 
     NGServiceOverridesEntity requestedServiceOverride = ServiceOverridesMapperV2.toEntity(accountId, requestDTOV2);

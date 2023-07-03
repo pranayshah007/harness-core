@@ -48,6 +48,7 @@ import org.apache.commons.lang3.StringUtils;
 public class WorkflowExecutionZombieHandler implements MongoPersistenceIterator.Handler<WorkflowExecution> {
   private static final Set<String> ZOMBIE_STATE_TYPES = Sets.newHashSet(StateType.REPEAT.name(), StateType.FORK.name(),
       StateType.PHASE_STEP.name(), StateType.PHASE.name(), StateType.SUB_WORKFLOW.name());
+  private final Set<ExecutionStatus> zombieStatus;
   /** Minutes past the creation time */
   private static final long CREATED_THRESHOLD = 45;
   private static final long ENDED_THRESHOLD = 45;
@@ -55,6 +56,11 @@ public class WorkflowExecutionZombieHandler implements MongoPersistenceIterator.
   @Inject private WingsPersistence wingsPersistence;
   @Inject private WorkflowExecutionService workflowExecutionService;
   @Inject private FeatureFlagService featureFlagService;
+
+  public WorkflowExecutionZombieHandler() {
+    this.zombieStatus = ExecutionStatus.flowingStatuses();
+    this.zombieStatus.remove(ExecutionStatus.PAUSED);
+  }
 
   @Override
   public void handle(WorkflowExecution wfExecution) {
@@ -117,10 +123,10 @@ public class WorkflowExecutionZombieHandler implements MongoPersistenceIterator.
   // WE MUST ABORT THE EXECUTION WHEN ALL CONDITIONS MATCH:
   // -- THE ELEMENT HAS A ZOMBIE STATE TYPE
   // -- HIT THE CREATED THRESHOLD
-  // -- IS AT RUNNING STATE
+  // -- IS AT FLOWING STATUSES, EXCEPT PAUSE STATUS
   private boolean isZombie(StateExecutionInstance seInstance) {
     return isZombieState(seInstance) && hitCreatedThreshold(seInstance)
-        && ExecutionStatus.flowingStatuses().contains(seInstance.getStatus());
+        && zombieStatus.contains(seInstance.getStatus());
   }
 
   // A SUCCESS ZOMBIE IS DETECTED WHEN

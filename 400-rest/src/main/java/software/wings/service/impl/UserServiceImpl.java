@@ -146,6 +146,7 @@ import io.harness.signup.dto.SignupInviteDTO;
 import io.harness.telemetry.Destination;
 import io.harness.telemetry.TelemetryReporter;
 import io.harness.usermembership.remote.UserMembershipClient;
+import io.harness.utils.UserUtils;
 import io.harness.version.VersionInfoManager;
 
 import software.wings.app.MainConfiguration;
@@ -157,6 +158,7 @@ import software.wings.beans.AccountType;
 import software.wings.beans.Application;
 import software.wings.beans.ApplicationRole;
 import software.wings.beans.Base.BaseKeys;
+import software.wings.beans.CannySsoLoginResponse;
 import software.wings.beans.EmailVerificationToken;
 import software.wings.beans.EmailVerificationToken.EmailVerificationTokenKeys;
 import software.wings.beans.EntityType;
@@ -262,11 +264,14 @@ import com.nimbusds.jose.Payload;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jwt.JWTClaimsSet;
 import dev.morphia.FindAndModifyOptions;
+import dev.morphia.query.Criteria;
 import dev.morphia.query.CriteriaContainer;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -291,8 +296,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.cache.Cache;
@@ -303,6 +306,7 @@ import javax.validation.executable.ValidateOnExecution;
 import javax.ws.rs.core.UriInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.NameValuePair;
@@ -345,7 +349,6 @@ public class UserServiceImpl implements UserService {
   private static final String SETUP_ACCOUNT_FROM_MARKETPLACE = "Account Setup from Marketplace";
   private static final String NG_AUTH_UI_PATH_PREFIX = "auth/";
   private static final String USER_INVITE = "user_invite";
-  private static final Pattern NAME_PATTERN = Pattern.compile("^[^:<>()=\\/]*$");
   private static final String CD = "CD";
   private static final String CI = "CI";
   private static final String FF = "FF";
@@ -1462,8 +1465,7 @@ public class UserServiceImpl implements UserService {
         log.error("No account found for accountId={}", accountId);
         return;
       }
-      Query<User> query = getListUserQuery(accountId, true);
-      query.criteria(UserKeys.disabled).notEqual(true);
+      Query<User> query = getListUserQuery(accountId, true, false);
       List<User> existingUsersAndInvites = query.asList();
       userServiceLimitChecker.limitCheck(accountId, existingUsersAndInvites, new HashSet<>(Arrays.asList(email)));
     } catch (WingsException e) {
@@ -3241,14 +3243,7 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public void validateName(String name) {
-    if (isBlank(name)) {
-      throw new InvalidRequestException("Name cannot be empty", USER);
-    }
-
-    Matcher matcher = NAME_PATTERN.matcher(name);
-    if (!matcher.matches()) {
-      throw new InvalidRequestException("Name is not valid. It should not contain :, <, >, (, ), =, /", USER);
-    }
+    UserUtils.validateUserName(name);
   }
 
   private void deleteUser(User user) {
@@ -3311,11 +3306,6 @@ public class UserServiceImpl implements UserService {
    */
   @Override
   public User get(String userId) {
-    return get(userId, false);
-  }
-
-  @Override
-  public User get(String userId, boolean includeSupportAccounts) {
     User user = wingsPersistence.get(User.class, userId);
     if (user == null) {
       throw new UnauthorizedException(EXC_MSG_USER_DOESNT_EXIST, USER);
@@ -3324,9 +3314,6 @@ public class UserServiceImpl implements UserService {
     List<Account> accounts = user.getAccounts();
     if (isNotEmpty(accounts)) {
       accounts.forEach(account -> software.wings.service.impl.LicenseUtils.decryptLicenseInfo(account, false));
-    }
-    if (includeSupportAccounts) {
-      loadSupportAccounts(user);
     }
 
     return user;
@@ -3599,6 +3586,52 @@ public class UserServiceImpl implements UserService {
       redirectUrl += "&return_to=" + returnToUrl;
     }
     return ZendeskSsoLoginResponse.builder().redirectUrl(redirectUrl).userId(user.getUuid()).build();
+  }
+
+  @Override
+  public CannySsoLoginResponse generateCannySsoJwt(String returnToUrl, String companyID) {
+    User user = UserThreadLocal.get();
+    String jwtToken = createCannyToken(user);
+
+    String redirectUrl =
+        String.format("%s?companyID=%s&ssoToken=%s", configuration.getPortal().getCannyBaseUrl(), companyID, jwtToken);
+
+    if (StringUtils.isNotEmpty(returnToUrl)) {
+      redirectUrl += "&redirect=" + returnToUrl;
+    }
+    log.info("Canny login: successfully created jwt token and redirect URL for user {}", user.getUuid());
+    return CannySsoLoginResponse.builder().redirectUrl(redirectUrl).userId(user.getUuid()).build();
+  }
+
+  private String createCannyToken(User user) {
+    String jwtCannySecret = configuration.getPortal().getJwtCannySecret();
+
+    if (StringUtils.isEmpty(jwtCannySecret)) {
+      String errorMessage = "Canny secret is either null or empty.";
+      log.error(errorMessage);
+      throw new InvalidRequestException(errorMessage);
+    }
+
+    HashMap<String, Object> userData = new HashMap<>();
+    userData.put(UserKeys.email, user.getEmail());
+    userData.put("id", user.getUuid());
+    userData.put(UserKeys.name, user.getName());
+    userData.put(UserKeys.companyName, user.getCompanyName());
+
+    byte[] jwtCannySecretBytes;
+    try {
+      jwtCannySecretBytes = jwtCannySecret.getBytes("UTF-8");
+    } catch (UnsupportedEncodingException ex) {
+      String errorMessage = "Error while encoding the canny secret to bytes";
+      log.error(errorMessage, ex);
+      throw new InvalidRequestException(errorMessage, ex);
+    }
+
+    return Jwts.builder()
+        .setIssuedAt(new Date())
+        .setClaims(userData)
+        .signWith(SignatureAlgorithm.HS256, jwtCannySecretBytes)
+        .compact();
   }
 
   private Role ensureRolePresent(String roleId) {
@@ -4146,13 +4179,11 @@ public class UserServiceImpl implements UserService {
       boolean filterForGeneration) {
     Query<User> query;
     if (isNotEmpty(searchTerm)) {
-      query = getSearchUserQuery(accountId, searchTerm, includeUsersPendingInviteAcceptance);
+      query = getSearchUserQuery(accountId, searchTerm, includeUsersPendingInviteAcceptance, includeDisabled);
     } else {
-      query = getListUserQuery(accountId, includeUsersPendingInviteAcceptance);
+      query = getListUserQuery(accountId, includeUsersPendingInviteAcceptance, includeDisabled);
     }
-    if (!includeDisabled) {
-      query.criteria(UserKeys.disabled).notEqual(true);
-    }
+
     applySortFilter(pageRequest, query);
     FindOptions findOptions = new FindOptions().skip(offset).limit(pageSize);
     List<User> userList = query.asList(findOptions);
@@ -4184,17 +4215,15 @@ public class UserServiceImpl implements UserService {
 
   public long getTotalUserCount(String accountId, boolean includeUsersPendingInviteAcceptance, boolean excludeDisabled,
       boolean filterForGeneration) {
-    Query<User> query = getListUserQuery(accountId, includeUsersPendingInviteAcceptance);
-    if (excludeDisabled) {
-      query.criteria(UserKeys.disabled).notEqual(true);
-    }
+    Query<User> query = getListUserQuery(accountId, includeUsersPendingInviteAcceptance, !excludeDisabled);
     if (filterForGeneration) {
       queryFilterOnlyCGUsers(accountId, query);
     }
     return query.count();
   }
 
-  private Query<User> getListUserQuery(String accountId, boolean includeUsersPendingInviteAcceptance) {
+  private Query<User> getListUserQuery(
+      String accountId, boolean includeUsersPendingInviteAcceptance, boolean includeDisabled) {
     Query<User> listUserQuery = wingsPersistence.createQuery(User.class, excludeAuthority);
 
     if (includeUsersPendingInviteAcceptance) {
@@ -4204,29 +4233,51 @@ public class UserServiceImpl implements UserService {
       listUserQuery.criteria(UserKeys.accounts).hasThisOne(accountId);
     }
     listUserQuery.order(Sort.descending("lastUpdatedAt"));
+
+    if (!includeDisabled) {
+      listUserQuery.criteria(UserKeys.disabled).notEqual(true);
+    }
     return listUserQuery;
   }
 
   @VisibleForTesting
-  Query<User> getSearchUserQuery(String accountId, String searchTerm, boolean includeUsersPendingInviteAcceptance) {
+  Query<User> getSearchUserQuery(
+      String accountId, String searchTerm, boolean includeUsersPendingInviteAcceptance, boolean includeDisabled) {
     Query<User> query = wingsPersistence.createQuery(User.class, excludeAuthority);
 
-    CriteriaContainer nameCriterion = query.and(
-        getSearchCriterion(query, UserKeys.name, searchTerm), query.criteria(UserKeys.accounts).hasThisOne(accountId));
-
-    CriteriaContainer emailCriterion = query.and(
-        getSearchCriterion(query, UserKeys.email, searchTerm), query.criteria(UserKeys.accounts).hasThisOne(accountId));
-
-    if (!includeUsersPendingInviteAcceptance) {
-      query.or(nameCriterion, emailCriterion);
-      return query;
+    if (includeUsersPendingInviteAcceptance) {
+      query.or(buildAccountsCriterion(query, accountId, searchTerm, includeDisabled),
+          buildPendingAccountsCriterion(query, accountId, searchTerm, includeDisabled));
+    } else {
+      buildAccountsCriterion(query, accountId, searchTerm, includeDisabled);
     }
-
-    CriteriaContainer emailCriterionForPendingUsers = query.and(getSearchCriterion(query, UserKeys.email, searchTerm),
-        query.criteria(UserKeys.pendingAccounts).hasThisOne(accountId));
-
-    query.or(nameCriterion, emailCriterion, emailCriterionForPendingUsers);
     return query;
+  }
+
+  private Criteria buildPendingAccountsCriterion(
+      Query<User> query, String accountId, String searchTerm, boolean includeDisabled) {
+    if (includeDisabled) {
+      return query.and(query.criteria(UserKeys.pendingAccounts).equal(accountId),
+          query.criteria(UserKeys.email).containsIgnoreCase(searchTerm));
+    } else {
+      return query.and(query.criteria(UserKeys.pendingAccounts).equal(accountId),
+          query.criteria(UserKeys.email).containsIgnoreCase(searchTerm),
+          query.criteria(UserKeys.disabled).notEqual(true));
+    }
+  }
+
+  private Criteria buildAccountsCriterion(
+      Query<User> query, String accountId, String searchTerm, boolean includeDisabled) {
+    if (includeDisabled) {
+      return query.and(query.criteria(UserKeys.accounts).equal(accountId),
+          query.or(query.criteria(UserKeys.name).containsIgnoreCase(searchTerm),
+              query.criteria(UserKeys.email).containsIgnoreCase(searchTerm)));
+    } else {
+      return query.and(query.criteria(UserKeys.accounts).equal(accountId),
+          query.or(query.criteria(UserKeys.name).containsIgnoreCase(searchTerm),
+              query.criteria(UserKeys.email).containsIgnoreCase(searchTerm)),
+          query.criteria(UserKeys.disabled).notEqual(true));
+    }
   }
 
   private CriteriaContainer getSearchCriterion(Query<?> query, String fieldName, String searchTerm) {

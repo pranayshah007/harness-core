@@ -94,6 +94,7 @@ public class CVNGStepInfo implements CVStepInfoBase {
         .envIdentifier(createExpressionField(ENV_IDENTIFIER_EXPRESSION))
         .deploymentTag(spec.getDeploymentTag())
         .failOnNoAnalysis(spec.getFailOnNoAnalysis())
+        .shouldUseCDNodes(spec.getShouldUseCDNodes())
         .sensitivity(spec.getSensitivity())
         .baseline(spec.getBaseline())
         .spec(spec)

@@ -3096,30 +3096,6 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "DelegateInfra": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepGroupInfra"
-        },
-        {
-          "type": "object",
-          "required": [
-            "type"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "KubernetesDirect",
-                "Delegate",
-                "Noop"
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "DependencyElement": {
       "type": "object",
       "required": [
@@ -4721,6 +4697,32 @@
                 "VM",
                 "KubernetesHosted"
               ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "IACMApprovalInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "env": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringString"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "image": {
+              "type": "string"
             }
           }
         }
@@ -10689,6 +10691,9 @@
             "policy": {
               "$ref": "#/definitions/EnforcementPolicy"
             },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
             "source": {
               "$ref": "#/definitions/SbomSource"
             },
@@ -10715,6 +10720,9 @@
           "properties": {
             "attestation": {
               "$ref": "#/definitions/Attestation"
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
             },
             "source": {
               "$ref": "#/definitions/SbomSource"
@@ -11301,6 +11309,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/IACMStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "IACMApproval"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/IACMApprovalInfo"
               }
             }
           }
@@ -12010,9 +12034,6 @@
         "stepGroupInfra": {
           "oneOf": [
             {
-              "$ref": "#/definitions/DelegateInfra"
-            },
-            {
               "$ref": "#/definitions/K8sDirectInfra"
             }
           ]
@@ -12039,6 +12060,22 @@
         },
         "template": {
           "$ref": "#/definitions/TemplateLinkConfig"
+        },
+        "variables": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/NumberNGVariable"
+              },
+              {
+                "$ref": "#/definitions/SecretNGVariable"
+              },
+              {
+                "$ref": "#/definitions/StringNGVariable"
+              }
+            ]
+          }
         },
         "when": {
           "oneOf": [
@@ -12247,7 +12284,8 @@
             "format": {
               "type": "string",
               "enum": [
-                "spdx-json"
+                "spdx-json",
+                "cyclonedx-json"
               ]
             }
           }

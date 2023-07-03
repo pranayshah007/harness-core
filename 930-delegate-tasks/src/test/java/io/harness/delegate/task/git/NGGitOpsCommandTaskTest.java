@@ -9,6 +9,7 @@ package io.harness.delegate.task.git;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.MANKRIT;
+import static io.harness.rule.OwnerRule.MEENA;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -19,16 +20,20 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
 import io.harness.rule.Owner;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.jooq.tools.json.JSONArray;
 import org.jooq.tools.json.JSONObject;
+import org.jooq.tools.json.ParseException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -202,5 +207,15 @@ public class NGGitOpsCommandTaskTest extends CategoryTest {
   public void testResolvePRTitleCustom() {
     String result = ngGitOpsCommandTask.resolvePRTitle(NGGitOpsTaskParams.builder().prTitle(CUSTOM_PR_TITLE).build());
     assertThat(result).isEqualTo(CUSTOM_PR_TITLE);
+  }
+
+  @Test(expected = InvalidArgumentsException.class)
+  @Owner(developers = MEENA)
+  @Category(UnitTests.class)
+  public void testUpdateJSONFileInvalidType() throws ParseException, JsonProcessingException {
+    Map<Object, Object> values = new HashMap<>();
+    values.put("a", List.of("val1"));
+    JSONArray fileContent = new JSONArray(List.of(values));
+    ngGitOpsCommandTask.updateJSONFile(fileContent.toString(), new HashMap<>());
   }
 }

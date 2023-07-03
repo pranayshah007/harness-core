@@ -51,6 +51,7 @@ import io.harness.cvng.core.entities.VerificationTask.TaskType;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.DataCollectionInfoMapper;
 import io.harness.cvng.core.services.api.DataCollectionTaskService;
+import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
@@ -65,6 +66,7 @@ import io.harness.cvng.verificationjob.entities.VerificationJobInstance.Executio
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.ProgressLog;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.VerificationJobInstanceKeys;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
+import io.harness.cvng.verificationjob.utils.VerificationJobInstanceDataCollectionUtils;
 import io.harness.metrics.AutoMetricContext;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
@@ -101,6 +103,8 @@ import org.springframework.web.server.ResponseStatusException;
 @Slf4j
 public class VerificationJobInstanceServiceImpl implements VerificationJobInstanceService {
   @Inject private HPersistence hPersistence;
+
+  @Inject private FeatureFlagService featureFlagService;
   @Inject private CVConfigService cvConfigService;
   @Inject private DataCollectionTaskService dataCollectionTaskService;
   @Inject private Map<DataSourceType, DataCollectionInfoMapper> dataSourceTypeDataCollectionInfoMapperMap;
@@ -716,39 +720,46 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
         });
         return;
       }
-      List<TimeRange> preDeploymentDataCollectionTimeRanges =
-          verificationJobInstance.getResolvedJob().getPreActivityDataCollectionTimeRanges(
-              verificationJobInstance.getDeploymentStartTime());
-      if (CollectionUtils.isNotEmpty(preDeploymentDataCollectionTimeRanges)) {
-        DataCollectionInfo preDeploymentDataCollectionInfo =
-            dataCollectionInfoMapper.toDataCollectionInfo(cvConfig, TaskType.DEPLOYMENT);
-        preDeploymentDataCollectionInfo.setDataCollectionDsl(cvConfig.getDataCollectionDsl());
-        preDeploymentDataCollectionInfo.setCollectHostData(verificationJob.collectHostData());
-        preDeploymentDataCollectionTimeRanges.forEach(timeRange -> {
-          dataCollectionTasks.add(
-              DeploymentDataCollectionTask.builder()
-                  .verificationTaskId(verificationTaskId)
-                  .dataCollectionWorkerId(getDataCollectionWorkerId(
-                      verificationJobInstance, cvConfig.getIdentifier(), cvConfig.getConnectorIdentifier()))
-                  .startTime(timeRange.getStartTime())
-                  .endTime(timeRange.getEndTime())
-                  .validAfter(timeRange.getEndTime().plus(verificationJobInstance.getDataCollectionDelay()))
-                  .accountId(verificationJob.getAccountId())
-                  .type(Type.DEPLOYMENT)
-                  .status(QUEUED)
-                  .dataCollectionInfo(preDeploymentDataCollectionInfo)
-                  .queueAnalysis(cvConfig.queueAnalysisForPreDeploymentTask())
-                  .build());
-        });
+
+      if (VerificationJobInstanceDataCollectionUtils.shouldCollectPreDeploymentData(verificationJobInstance)) {
+        List<TimeRange> preDeploymentDataCollectionTimeRanges =
+            verificationJobInstance.getResolvedJob().getPreActivityDataCollectionTimeRanges(
+                verificationJobInstance.getDeploymentStartTime());
+        if (CollectionUtils.isNotEmpty(preDeploymentDataCollectionTimeRanges)) {
+          DataCollectionInfo preDeploymentDataCollectionInfo =
+              dataCollectionInfoMapper.toDeploymentDataCollectionInfo(cvConfig,
+                  VerificationJobInstanceDataCollectionUtils.getPreDeploymentNodesToCollect(verificationJobInstance));
+          preDeploymentDataCollectionInfo.setDataCollectionDsl(cvConfig.getDataCollectionDsl());
+          preDeploymentDataCollectionInfo.setCollectHostData(verificationJob.collectHostData());
+          dataCollectionInfoMapper.postProcessDataCollectionInfo(
+              preDeploymentDataCollectionInfo, cvConfig, TaskType.DEPLOYMENT);
+          preDeploymentDataCollectionTimeRanges.forEach(timeRange -> {
+            dataCollectionTasks.add(
+                DeploymentDataCollectionTask.builder()
+                    .verificationTaskId(verificationTaskId)
+                    .dataCollectionWorkerId(getDataCollectionWorkerId(
+                        verificationJobInstance, cvConfig.getIdentifier(), cvConfig.getConnectorIdentifier()))
+                    .startTime(timeRange.getStartTime())
+                    .endTime(timeRange.getEndTime())
+                    .validAfter(timeRange.getEndTime().plus(verificationJobInstance.getDataCollectionDelay()))
+                    .accountId(verificationJob.getAccountId())
+                    .type(Type.DEPLOYMENT)
+                    .status(QUEUED)
+                    .dataCollectionInfo(preDeploymentDataCollectionInfo)
+                    .queueAnalysis(cvConfig.queueAnalysisForPreDeploymentTask())
+                    .build());
+          });
+        }
       }
 
+      DataCollectionInfo dataCollectionInfo = dataCollectionInfoMapper.toDeploymentDataCollectionInfo(cvConfig,
+          VerificationJobInstanceDataCollectionUtils.getPostDeploymentNodesToCollect(verificationJobInstance));
       timeRanges.forEach(timeRange -> {
-        DataCollectionInfo dataCollectionInfo =
-            dataCollectionInfoMapper.toDataCollectionInfo(cvConfig, TaskType.DEPLOYMENT);
         // TODO: For Now the DSL is same for both. We need to see how this evolves when implementation other provider.
         // Keeping this simple for now.
         dataCollectionInfo.setDataCollectionDsl(cvConfig.getDataCollectionDsl());
         dataCollectionInfo.setCollectHostData(verificationJob.collectHostData());
+        dataCollectionInfoMapper.postProcessDataCollectionInfo(dataCollectionInfo, cvConfig, TaskType.DEPLOYMENT);
         dataCollectionTasks.add(
             DeploymentDataCollectionTask.builder()
                 .type(Type.DEPLOYMENT)

@@ -34,7 +34,6 @@ import lombok.experimental.FieldDefaults;
 @Schema(
     name = "ServiceOverrideRequestV2", description = "This is the Service Override Request entity defined in Harness")
 public class ServiceOverrideRequestDTOV2 {
-  @Schema(description = NGCommonEntityConstants.IDENTIFIER_PARAM_MESSAGE) String identifier;
   @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) String orgIdentifier;
   @Schema(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier;
   @Schema(description = NGCommonEntityConstants.ENV_REF_PARAM_MESSAGE) @NotNull String environmentRef;

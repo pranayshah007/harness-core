@@ -17,11 +17,19 @@ import io.harness.annotations.dev.OwnedBy;
  */
 @OwnedBy(HarnessTeam.PIPELINE)
 public class SystemWrapper {
+  private static final String DEPLOY_MODE = System.getenv("DEPLOY_MODE");
+  private static final String DEPLOY_VERSION = System.getenv("DEPLOY_VERSION");
+
   public static long currentTimeMillis() {
     return System.currentTimeMillis();
   }
 
   public static String getenv(String name) {
     return System.getenv(name);
+  }
+
+  public static boolean checkIfEnvOnPremOrCommunity() {
+    return (DEPLOY_MODE != null && (DEPLOY_MODE.equals("ONPREM") || DEPLOY_MODE.equals("KUBERNETES_ONPREM")))
+        || (DEPLOY_VERSION != null && DEPLOY_VERSION.equals("COMMUNITY"));
   }
 }

@@ -166,6 +166,45 @@ public class CDPMSCommandStepFilterJsonCreatorTest extends CDNGTestBase {
             "Number output variables are not supported as Bash/PowerShell variable names. Please use String or Secret output variables instead.");
   }
 
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testValidateStrategyWithRunOnDelegate() {
+    FilterCreationContext context = getFilterCreationContext();
+    String commandStepName = "Command_1";
+
+    CommandStepInfo commandStepInfoRunOnDelegate =
+        CommandStepInfo.infoBuilder().onDelegate(ParameterField.createValueField(true)).build();
+    ParameterField<StrategyConfig> strategy = ParameterField.createValueField(
+        StrategyConfig.builder()
+            .repeat(HarnessForConfig.builder().items(ParameterField.createValueField(List.of("host1"))).build())
+            .build());
+    CommandStepNode commandStepNode = new CommandStepNode();
+    commandStepNode.setName(commandStepName);
+    commandStepNode.setCommandStepInfo(commandStepInfoRunOnDelegate);
+    commandStepNode.setStrategy(strategy);
+
+    assertThatThrownBy(() -> cdpmsCommandStepFilterJsonCreator.handleNode(context, commandStepNode))
+        .isInstanceOf(InvalidYamlException.class)
+        .hasMessage(format(
+            "Command Step %s contains a combination of looping strategy and run on delegate options enabled, please select only one.",
+            commandStepName));
+
+    CommandStepInfo commandStepInfo = CommandStepInfo.infoBuilder()
+                                          .commandUnits(Collections.singletonList(CommandUnitWrapper.builder().build()))
+                                          .onDelegate(ParameterField.createValueField(false))
+                                          .build();
+    commandStepNode.setCommandStepInfo(commandStepInfo);
+    cdpmsCommandStepFilterJsonCreator.handleNode(context, commandStepNode);
+
+    CommandStepInfo commandStepInfoWithoutRunOnDelegate =
+        CommandStepInfo.infoBuilder()
+            .commandUnits(Collections.singletonList(CommandUnitWrapper.builder().build()))
+            .build();
+    commandStepNode.setCommandStepInfo(commandStepInfoWithoutRunOnDelegate);
+    cdpmsCommandStepFilterJsonCreator.handleNode(context, commandStepNode);
+  }
+
   @NotNull
   private FilterCreationContext getFilterCreationContext() {
     FilterCreationContext context =

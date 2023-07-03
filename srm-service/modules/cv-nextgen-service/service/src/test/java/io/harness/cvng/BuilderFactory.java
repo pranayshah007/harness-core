@@ -62,6 +62,8 @@ import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.ExecutionLogDTOBuilder;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
 import io.harness.cvng.beans.cvnglog.TraceableType;
 import io.harness.cvng.beans.job.Sensitivity;
+import io.harness.cvng.cdng.beans.CVNGDeploymentStepInfo;
+import io.harness.cvng.cdng.beans.CVNGDeploymentStepInfo.CVNGDeploymentStepInfoBuilder;
 import io.harness.cvng.cdng.beans.CVNGStepInfo;
 import io.harness.cvng.cdng.beans.CVNGStepInfo.CVNGStepInfoBuilder;
 import io.harness.cvng.cdng.beans.ConfiguredMonitoredServiceSpec;
@@ -507,6 +509,10 @@ public class BuilderFactory {
                   .deploymentTag(ParameterField.createValueField("build#1"))
                   .sensitivity(ParameterField.createValueField("Low"))
                   .build());
+  }
+
+  public CVNGDeploymentStepInfoBuilder cvngDeploymentStepInfoBuilder() {
+    return CVNGDeploymentStepInfo.builder().duration(ParameterField.createValueField("12H"));
   }
 
   public AppDynamicsCVConfigBuilder appDynamicsCVConfigBuilder() {
@@ -2107,6 +2113,7 @@ public class BuilderFactory {
                          .externalLinkToEntity("externalLink")
                          .description("desc")
                          .name("name")
+                         .webhookUrl("webhookUrl")
                          .build());
   }
 }

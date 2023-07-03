@@ -30,14 +30,14 @@ import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.beans.activity.ActivityStatusDTO;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.cdng.beans.CVNGStepParameter;
-import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
+import io.harness.cvng.cdng.beans.MonitoredServiceSpecType;
 import io.harness.cvng.cdng.beans.SimpleVerificationJobSpec;
 import io.harness.cvng.cdng.beans.TestVerificationJobSpec;
 import io.harness.cvng.cdng.beans.VerificationJobSpec;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.cdng.entities.CVNGStepTask.CVNGStepTaskKeys;
 import io.harness.cvng.cdng.services.api.CVNGStepTaskService;
-import io.harness.cvng.cdng.services.api.VerifyStepMonitoredServiceResolutionService;
+import io.harness.cvng.cdng.services.api.PipelineStepMonitoredServiceResolutionService;
 import io.harness.cvng.cdng.services.impl.CVNGStep.VerifyStepOutcome;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.services.api.FeatureFlagService;
@@ -95,10 +95,10 @@ public class CVNGStepTest extends CvNextGenTestBase {
   @Inject private CVNGStepTaskService cvngStepTaskService;
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
   @Inject
-  private DefaultVerifyStepMonitoredServiceResolutionServiceImpl defaultVerifyStepMonitoredServiceResolutionService;
+  private DefaultPipelineStepMonitoredServiceResolutionServiceImpl defaultVerifyStepMonitoredServiceResolutionService;
 
-  private Map<MonitoredServiceSpecType, VerifyStepMonitoredServiceResolutionService> verifyStepCvConfigServiceMap;
-  private DefaultVerifyStepMonitoredServiceResolutionServiceImpl
+  private Map<MonitoredServiceSpecType, PipelineStepMonitoredServiceResolutionService> verifyStepCvConfigServiceMap;
+  private DefaultPipelineStepMonitoredServiceResolutionServiceImpl
       spiedDefaultVerifyStepMonitoredServiceResolutionService;
   private BuilderFactory builderFactory;
   private String accountId;

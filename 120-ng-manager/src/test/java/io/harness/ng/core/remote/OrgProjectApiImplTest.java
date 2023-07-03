@@ -169,7 +169,7 @@ public class OrgProjectApiImplTest extends CategoryTest {
     project.setVersion((long) 0);
     ArgumentCaptor<ProjectFilterDTO> argumentCaptor = ArgumentCaptor.forClass(ProjectFilterDTO.class);
 
-    when(projectService.listPermittedProjects(eq(account), any(), any()))
+    when(projectService.listPermittedProjects(eq(account), any(), any(), any()))
         .thenReturn(getPage(Collections.singletonList(project), 1));
 
     when(accessControlClient.checkForAccess(anyList()))
@@ -183,9 +183,10 @@ public class OrgProjectApiImplTest extends CategoryTest {
                 .build());
 
     Response response = orgProjectApi.getOrgScopedProjects(org, Collections.singletonList(identifier), true,
-        io.harness.spec.server.ng.v1.model.ModuleType.CD.name(), searchTerm, page, limit, account, null, null);
+        io.harness.spec.server.ng.v1.model.ModuleType.CD.name(), Boolean.FALSE, searchTerm, page, limit, account, null,
+        null);
 
-    verify(projectService, times(1)).listPermittedProjects(eq(account), any(), argumentCaptor.capture());
+    verify(projectService, times(1)).listPermittedProjects(eq(account), any(), argumentCaptor.capture(), any());
     ProjectFilterDTO projectFilterDTO = argumentCaptor.getValue();
 
     List<ProjectResponse> entity = (List<ProjectResponse>) response.getEntity();

@@ -174,7 +174,8 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
     } while (instanceBillingDataList.size() == batchSize);
 
     final String gcsObjectName = String.format(gcsObjectNameFormat, jobConstants.getAccountId(), billingDataFileName);
-    googleCloudStorageService.uploadObject(gcsObjectName, defaultParentWorkingDirectory + gcsObjectName);
+    googleCloudStorageService.uploadObject(
+        gcsObjectName, defaultParentWorkingDirectory + gcsObjectName, jobConstants.getAccountId());
 
     // Delete file once upload is complete
     File workingDirectory = new File(defaultParentWorkingDirectory + jobConstants.getAccountId());

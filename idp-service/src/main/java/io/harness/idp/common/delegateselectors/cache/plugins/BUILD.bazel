@@ -13,7 +13,8 @@ java_library(
     deps = [
         "//:lombok",
         "//idp-service/src/main/java/io/harness/idp/common/delegateselectors/cache:module",
-        "//idp-service/src/main/java/io/harness/idp/configmanager:module",
+        "//idp-service/src/main/java/io/harness/idp/configmanager/beans/entity:module",
+        "//idp-service/src/main/java/io/harness/idp/configmanager/repositories:module",
         "@maven//:com_google_inject_guice",
     ],
 )

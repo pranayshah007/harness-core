@@ -36,3 +36,7 @@ mongo:
 
 allowedOrigins:
   - "*"
+
+hostname: ${HOSTNAME:-localhost}
+
+basePathPrefix: ${BASE_PATH_PREFIX:-""}

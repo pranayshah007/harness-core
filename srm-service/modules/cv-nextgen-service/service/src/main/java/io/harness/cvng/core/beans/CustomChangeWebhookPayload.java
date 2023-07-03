@@ -32,5 +32,6 @@ public class CustomChangeWebhookPayload {
     String externalLinkToEntity;
     @NotNull @NotEmpty String name;
     String channelUrl;
+    String webhookUrl;
   }
 }

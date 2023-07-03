@@ -27,12 +27,14 @@ import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.entities.ActivityBucket;
+import io.harness.cvng.activity.entities.CustomChangeActivity;
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeSourceType;
 import io.harness.cvng.beans.change.ChangeSummaryDTO;
+import io.harness.cvng.beans.change.CustomChangeEventMetadata;
 import io.harness.cvng.beans.change.DeepLink;
 import io.harness.cvng.beans.change.InternalChangeEvent;
 import io.harness.cvng.beans.change.InternalChangeEventMetaData;
@@ -273,6 +275,21 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
 
     Activity changeEventFromDb = hPersistence.createQuery(Activity.class).get();
     Assertions.assertThat(changeEventFromDb).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testRegisterWithHealthReport() {
+    ChangeEventDTO changeEventDTO =
+        builderFactory.getCustomChangeEventBuilder(ChangeSourceType.CUSTOM_INCIDENT).build();
+    ((CustomChangeEventMetadata) changeEventDTO.getMetadata()).getCustomChangeEvent().setWebhookUrl("webhookurl");
+    changeEventService.registerWithHealthReport(
+        changeEventDTO, builderFactory.getContext().getMonitoredServiceIdentifier());
+
+    Activity activityFromDb = hPersistence.createQuery(Activity.class).get();
+    assertThat(activityFromDb).isNotNull();
+    assertThat(((CustomChangeActivity) activityFromDb).getCustomChangeEvent().getMsHealthReport()).isNotNull();
   }
 
   @Test

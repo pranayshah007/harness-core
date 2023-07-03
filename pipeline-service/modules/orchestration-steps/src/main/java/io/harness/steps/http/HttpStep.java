@@ -8,7 +8,7 @@
 package io.harness.steps.http;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.beans.FeatureName.CDS_ENCODE_HTTP_STEP_URL;
+import static io.harness.beans.constants.JsonConstants.RESOLVE_OBJECTS_VIA_JSON_SELECT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -116,11 +116,10 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
     HttpStepParameters httpStepParameters = (HttpStepParameters) stepParameters.getSpec();
 
     String url = (String) httpStepParameters.getUrl().fetchFinalValue();
-    if (pmsFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), CDS_ENCODE_HTTP_STEP_URL)) {
-      NGLogCallback logCallback =
-          getNGLogCallback(logStreamingStepClientFactory, ambiance, HttpTaskNG.COMMAND_UNIT, false);
-      url = encodeURL(url, logCallback);
-    }
+
+    NGLogCallback logCallback =
+        getNGLogCallback(logStreamingStepClientFactory, ambiance, HttpTaskNG.COMMAND_UNIT, false);
+    url = encodeURL(url, logCallback);
 
     HttpTaskParametersNgBuilder httpTaskParametersNgBuilder = HttpTaskParametersNg.builder()
                                                                   .url(url)
@@ -141,6 +140,10 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
     boolean shouldAvoidCapabilityUsingHeaders =
         pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_NOT_USE_HEADERS_FOR_HTTP_CAPABILITY);
     httpTaskParametersNgBuilder.shouldAvoidHeadersInCapability(shouldAvoidCapabilityUsingHeaders);
+
+    boolean isIgnoreResponseCode =
+        pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_USE_HTTP_CHECK_IGNORE_RESPONSE_INSTEAD_OF_SOCKET_NG);
+    httpTaskParametersNgBuilder.isIgnoreResponseCode(isIgnoreResponseCode);
 
     httpTaskParametersNgBuilder.isCertValidationRequired(
         pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.ENABLE_CERT_VALIDATION));
@@ -274,8 +277,10 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
   public Map<String, String> evaluateOutputVariables(
       Map<String, Object> outputVariables, HttpStepResponse httpStepResponse, Ambiance ambiance) {
     Map<String, String> outputVariablesEvaluated = new LinkedHashMap<>();
+    final boolean resolveObjectsViaJSONSelect = pmsFeatureFlagHelper.isEnabled(
+        AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_RESOLVE_OBJECTS_VIA_JSON_SELECT);
     if (outputVariables != null) {
-      Map<String, String> contextMap = buildContextMapFromResponse(httpStepResponse);
+      Map<String, String> contextMap = buildContextMapFromResponse(httpStepResponse, resolveObjectsViaJSONSelect);
       outputVariables.keySet().forEach(name -> {
         Object expression = outputVariables.get(name);
         if (expression instanceof ParameterField) {
@@ -316,10 +321,14 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
     return url.matches(URL_ENCODED_CHAR_REGEX);
   }
 
-  private Map<String, String> buildContextMapFromResponse(HttpStepResponse httpStepResponse) {
+  private Map<String, String> buildContextMapFromResponse(
+      HttpStepResponse httpStepResponse, boolean resolveObjectsViaJSONSelect) {
     Map<String, String> contextMap = new HashMap<>();
     contextMap.put("httpResponseBody", httpStepResponse.getHttpResponseBody());
     contextMap.put("httpResponseCode", String.valueOf(httpStepResponse.getHttpResponseCode()));
+    if (resolveObjectsViaJSONSelect) {
+      contextMap.put(RESOLVE_OBJECTS_VIA_JSON_SELECT, "true");
+    }
     return contextMap;
   }
 

@@ -173,7 +173,6 @@ public class AzureAsyncTaskHelper {
   public AzureSubscriptionsResponse listSubscriptions(AzureConfigContext azureConfigContext) throws IOException {
     log.info(format("Fetching Azure subscriptions for %s user type",
         azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType().getDisplayName()));
-    log.trace(format("User: \n%s", azureConfigContext.getAzureConnector().toString()));
 
     AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(
         azureConfigContext.getAzureConnector().getCredential(), azureConfigContext.getEncryptedDataDetails(),
@@ -202,8 +201,6 @@ public class AzureAsyncTaskHelper {
         azureConfigContext.getSubscriptionId(),
         azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType().getDisplayName()));
 
-    log.trace(format("User: \n%s", azureConfigContext.getAzureConnector().toString()));
-
     AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(
         azureConfigContext.getAzureConnector().getCredential(), azureConfigContext.getEncryptedDataDetails(),
         azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType(),
@@ -226,8 +223,6 @@ public class AzureAsyncTaskHelper {
     log.info(format("Fetching Azure image galleries for subscription %s for %s user type",
         azureConfigContext.getSubscriptionId(),
         azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType().getDisplayName()));
-
-    log.trace(format("User: \n%s", azureConfigContext.getAzureConnector().toString()));
     AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(
         azureConfigContext.getAzureConnector().getCredential(), azureConfigContext.getEncryptedDataDetails(),
         azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType(),
@@ -306,8 +301,6 @@ public class AzureAsyncTaskHelper {
         azureConfigContext.getSubscriptionId(),
         azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType().getDisplayName()));
 
-    log.trace(format("User: \n%s", azureConfigContext.getAzureConnector().toString()));
-
     AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(
         azureConfigContext.getAzureConnector().getCredential(), azureConfigContext.getEncryptedDataDetails(),
         azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType(),
@@ -340,8 +333,6 @@ public class AzureAsyncTaskHelper {
     log.info(format("Fetching Azure Kubernetes Clusters for subscription %s, for resource group %s, for %s user type",
         azureConfigContext.getSubscriptionId(), azureConfigContext.getResourceGroup(),
         azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType().getDisplayName()));
-
-    log.trace(format("User: \n%s", azureConfigContext.getAzureConnector().toString()));
 
     AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(
         azureConfigContext.getAzureConnector().getCredential(), azureConfigContext.getEncryptedDataDetails(),
@@ -431,8 +422,6 @@ public class AzureAsyncTaskHelper {
         format("Fetching Azure Container Registry repositories for subscription %s, for registry %s, for %s user type",
             azureConfigContext.getSubscriptionId(), azureConfigContext.getContainerRegistry(),
             azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType().getDisplayName()));
-
-    log.trace(format("User: \n%s", azureConfigContext.getAzureConnector().toString()));
 
     AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(
         azureConfigContext.getAzureConnector().getCredential(), azureConfigContext.getEncryptedDataDetails(),
@@ -632,8 +621,6 @@ public class AzureAsyncTaskHelper {
 
       String kubeConfigContent = getKubeConfigContent(azureConfig, subscriptionId, resourceGroup, cluster,
           shouldGetAdminCredentials, getAzureKubeconfigFormat(logCallback));
-
-      log.trace(format("Cluster credentials: \n %s", kubeConfigContent));
 
       AzureKubeConfig azureKubeConfig = getAzureKubeConfig(kubeConfigContent);
       verifyAzureKubeConfig(azureKubeConfig);

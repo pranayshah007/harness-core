@@ -10,11 +10,16 @@ package io.harness.cdng.creator.plan.steps;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.provision.terraform.TerraformPlanStep;
 import io.harness.cdng.provision.terraform.TerraformPlanStepNode;
 import io.harness.cdng.provision.terraform.TerraformPlanStepParameters;
+import io.harness.cdng.provision.terraform.TerraformPlanStepV2;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
@@ -53,5 +58,25 @@ public class TerraformPlanStepPlanCreator extends CDPMSStepPlanCreatorV2<Terrafo
     terraformPlanStepParameters.setStepFqn(stepFqn);
 
     return stepParameters;
+  }
+
+  @Override
+  public StepType getStepSpecType(PlanCreationContext ctx, TerraformPlanStepNode stepElement) {
+    if (featureFlagService.isEnabled(ctx.getMetadata().getAccountIdentifier(),
+            FeatureName.CDS_SUPPORT_EXPRESSION_REMOTE_TERRAFORM_VAR_FILES_NG)) {
+      return TerraformPlanStepV2.STEP_TYPE;
+    } else {
+      return TerraformPlanStep.STEP_TYPE;
+    }
+  }
+
+  @Override
+  public String getFacilitatorType(PlanCreationContext ctx, TerraformPlanStepNode stepElement) {
+    if (featureFlagService.isEnabled(ctx.getMetadata().getAccountIdentifier(),
+            FeatureName.CDS_SUPPORT_EXPRESSION_REMOTE_TERRAFORM_VAR_FILES_NG)) {
+      return OrchestrationFacilitatorType.TASK_CHAIN;
+    } else {
+      return OrchestrationFacilitatorType.TASK;
+    }
   }
 }

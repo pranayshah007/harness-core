@@ -110,6 +110,7 @@ import io.harness.connector.entities.embedded.prometheusconnector.PrometheusConn
 import io.harness.connector.entities.embedded.rancherconnector.RancherConfig;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowADFSAuthentication;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowConnector;
+import io.harness.connector.entities.embedded.servicenow.ServiceNowRefreshTokenAuthentication;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowUserNamePasswordAuthentication;
 import io.harness.connector.entities.embedded.signalfxconnector.SignalFXConnector;
 import io.harness.connector.entities.embedded.splunkconnector.SplunkConnector;
@@ -249,6 +250,8 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     h.put("connector.entities.embedded.servicenow.ServiceNowUserNamePasswordAuthentication",
         ServiceNowUserNamePasswordAuthentication.class);
     h.put("connector.entities.embedded.servicenow.ServiceNowADFSAuthentication", ServiceNowADFSAuthentication.class);
+    h.put("connector.entities.embedded.servicenow.ServiceNowRefreshTokenAuthentication",
+        ServiceNowRefreshTokenAuthentication.class);
     h.put("connector.entities.embedded.jira.JiraUserNamePasswordAuthentication",
         JiraUserNamePasswordAuthentication.class);
     h.put("connector.entities.embedded.jira.JiraPATAuthentication", JiraPATAuthentication.class);

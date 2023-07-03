@@ -39,6 +39,19 @@ public interface FavoritesService {
    * @param orgIdentifier
    * @param projectIdentifier
    * @param userId
+   * @param resourceType
+   * @param resourceId
+   * @return a boolean whether the resource is a favorite
+   */
+  boolean isFavorite(String accountIdentifier, String orgIdentifier, String projectIdentifier, String userId,
+      String resourceType, String resourceId);
+
+  /**
+   *
+   * @param accountIdentifier
+   * @param orgIdentifier
+   * @param projectIdentifier
+   * @param userId
    * @return a list of favorites present in the scope for the user
    */
 
@@ -56,4 +69,15 @@ public interface FavoritesService {
 
   void deleteFavorite(String accountIdentifier, String orgIdentifier, String projectIdentifier, String userId,
       String resourceType, String resourceId);
+
+  /**
+   *
+   * @param accountIdentifier
+   * @param orgIdentifier
+   * @param projectIdentifier
+   * @param resourceType
+   * @param resourceId
+   */
+  void deleteFavorites(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String resourceType, String resourceId);
 }

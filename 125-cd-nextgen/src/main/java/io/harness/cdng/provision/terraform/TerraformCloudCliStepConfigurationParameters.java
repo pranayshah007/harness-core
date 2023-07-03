@@ -27,6 +27,7 @@ public class TerraformCloudCliStepConfigurationParameters implements TerraformSt
 
   TerraformExecutionDataParameters spec;
   List<TerraformCliOptionFlag> commandFlags;
+  TerraformEncryptOutput encryptOutput;
 
   @Override
   public TerraformCloudCliStepConfigurationType getType() {
@@ -57,5 +58,15 @@ public class TerraformCloudCliStepConfigurationParameters implements TerraformSt
   @Override
   public void setCliOptions(List<TerraformCliOptionFlag> cliOptionFlags) {
     this.commandFlags = cliOptionFlags;
+  }
+
+  @Override
+  public void setEncryptOutputSecretManager(TerraformEncryptOutput terraformEncryptOutput) {
+    this.encryptOutput = terraformEncryptOutput;
+  }
+
+  @Override
+  public TerraformEncryptOutput getEncryptOutputSecretManager() {
+    return encryptOutput;
   }
 }

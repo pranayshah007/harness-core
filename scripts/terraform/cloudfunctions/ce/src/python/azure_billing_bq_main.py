@@ -31,7 +31,8 @@ Event format:
 	"path": "kmpySmUISimoRrJL6NL73w/JUKVZIGKQzCVKXYbDhmM_g/20210101-20210131/cereportnikunj_0e8fa366-608d-4aa8-8fb7-dc8fef9fe717.csv",
 	"accountId": "kmpysmuisimorrjl6nl73w",
 	"triggerHistoricalCostUpdateInPreferredCurrency": True,
-    "disableHistoricalUpdateForMonths": ['2022-12-01', '2022-11-01']
+    "disableHistoricalUpdateForMonths": ['2022-12-01', '2022-11-01'],
+    "skipRawCSVIngestion": False
 }
 """
 
@@ -667,6 +668,8 @@ def is_valid_month_folder(folderstr):
     return True
 
 def ingest_data_from_csv(jsonData):
+    if jsonData.get('skipRawCSVIngestion', False):
+        return True
     csvtoingest = None
     # Determine either 'sub folder' of highest size in this month folder or max size csv
     blobs = storage_client.list_blobs(
@@ -1024,8 +1027,8 @@ def ingest_data_into_unified(jsonData, azure_column_mapping):
     )
     try:
         run_bq_query_with_retries(client, query, max_retry_count=3, job_config=job_config)
-        # flatten_label_keys_in_table(client, jsonData.get("accountId"), PROJECTID, jsonData["datasetName"], UNIFIED,
-        #                             "labels", fetch_ingestion_filters(jsonData))
+        flatten_label_keys_in_table(client, jsonData.get("accountId"), PROJECTID, jsonData["datasetName"], UNIFIED,
+                                    "labels", fetch_ingestion_filters(jsonData))
     except Exception as e:
         print_(e, "ERROR")
         raise e

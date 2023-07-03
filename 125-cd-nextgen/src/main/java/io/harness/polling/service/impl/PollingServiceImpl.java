@@ -52,6 +52,9 @@ public class PollingServiceImpl implements PollingService {
         pollingDocument.getPollingType(), pollingDocument.getPollingInfo(), pollingDocument.getSignatures());
     // savedPollingDoc will be null if we couldn't find polling doc with the same entries as pollingDocument.
     if (savedPollingDoc == null) {
+      // Setting uuid as null so that on saving database generates a new uuid and does not use the old one as some other
+      // trigger might still be consuming that polling document
+      pollingDocument.setUuid(null);
       savedPollingDoc = pollingRepository.save(pollingDocument);
       createPerpetualTask(savedPollingDoc);
     }

@@ -1,0 +1,226 @@
+openapi: 3.0.0
+x-stoplight:
+  id: 10b13m9ois913
+info:
+  title: Harness NextGen Software Delivery Platform API Reference
+  version: '1.0'
+  description: This is the Open Api Spec 3 for the SSCA Service. This is under active development. Beware of the breaking change with respect to the generated code stub.
+  contact:
+    email: contact@harness.io
+servers:
+  - url: 'https://app.harness.io'
+    description: Harness host URL.
+paths:
+  '/v1/org/{org}/project/{project}/sbom/process':
+    parameters:
+      - $ref: '#/components/parameters/OrgParam'
+      - $ref: '#/components/parameters/ProjectParam'
+    post:
+      summary: 'process raw SBOM into harness usable normalized form'
+      operationId: process-sbom
+      responses:
+        '200':
+          $ref: '#/components/responses/SbomProcessResponseBody'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+        '500':
+          description: Internal Server Error
+        '502':
+          description: Bad Gateway
+      description: process & inject sbom
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/SbomProcessRequestBody'
+      tags:
+        - sbomProcessor
+components:
+  schemas:
+    Artifact:
+      title: Artifact
+      x-stoplight:
+        id: fqe8lmbnl4wc2
+      type: object
+      x-examples: {}
+      properties:
+        id:
+          type: string
+          description: id of the artifact
+          example: 089855ea-f90e-4bea-a5c9-b5ddf85d3180
+        type:
+          type: string
+          description: type of the artifact
+          example: repo/image
+        name:
+          type: string
+          description: name of the artifact
+          example: harness/image
+        tag:
+          type: string
+          description: tag of the artifact
+          default: latest
+          example: latest
+        registry_url:
+          type: string
+          description: url of the artifact
+          example: 'https://console.cloud.google.com/gcr/images/imageName'
+      required:
+        - name
+        - registry_url
+    SbomProcess:
+      title: SbomProcess
+      x-stoplight:
+        id: esexulw5knsro
+      type: object
+      properties:
+        name:
+          type: string
+          description: name of the sbom
+          example: SBOM_Name
+        data:
+          type: string
+          format: byte
+          description: serialised sbom data
+        format:
+          type: string
+          description: format of the SBOM
+          example: spdx-json
+        url:
+          type: string
+          description: URL of the sbom
+          example: 'https://console.google.com/storage'
+      required:
+        - name
+        - format
+    Attestation:
+      title: Attestation
+      x-stoplight:
+        id: hd4vm6rbwq0ko
+      type: object
+      properties:
+        is_attested:
+          type: boolean
+          default: false
+          description: is the sbom attested or not
+        url:
+          type: string
+          description: url of the attested file
+          example: 'https://storage.googleapis.com/sbom_store_public/kmpySmUISimoRrJL6NL73w/default/SSCS_CI_Plugin_Demo/CKO_SSCA_Pipeline/Build/39/q940CvjoQj-GEInJQfWiwg/sbom'
+    SbomMetadata:
+      title: SbomMetadata
+      x-stoplight:
+        id: zgyi72n8vcd2j
+      type: object
+      properties:
+        format:
+          type: string
+          description: stage name where sbom is generated
+          minLength: 3
+          example: spdx-json
+        tool:
+          type: string
+          description: name of the package
+          minLength: 3
+          example: synk
+        pipeline_execution_id:
+          type: string
+          description: name of the package
+          example: z940CvjoQj-GEInJQfWiwq
+          minLength: 3
+        sequence_id:
+          type: string
+          description: name of the package
+          example: '1'
+        pipeline_identifier:
+          type: string
+          description: name of the package
+          example: SSCA_Pipeline
+          minLength: 3
+        stage_identifier:
+          type: string
+          description: name of the Stage
+          example: Build
+        step_identifier:
+          type: string
+          description: id of the step
+          example: Orchestrate
+        build_url:
+          type: string
+          description: BuildURL
+          example: 'https://app.harness.io/ng/#/account/acc/ci/orgs/org/projects/dummyProject/pipelines/CKO_SSCA_Pipeline/executions/q940CvjoQj-GEInJQfWiwg/pipeline?storeType=INLINE'
+        step_execution_id:
+          type: string
+          description: StepExecutionId
+          example: betatest1
+    SbomProcessRequestBody:
+      title: SbomProcessRequestBody
+      x-stoplight:
+        id: afu4qmuw8kkzv
+      type: object
+      properties:
+        artifact:
+          $ref: '#/components/schemas/Artifact'
+        sbom_process:
+          $ref: '#/components/schemas/SbomProcess'
+        attestation:
+          $ref: '#/components/schemas/Attestation'
+        sbom_metadata:
+          $ref: '#/components/schemas/SbomMetadata'
+    SbomProcessResponseBody:
+      title: SbomProcessResponseBody
+      x-stoplight:
+        id: 0t1bvoejl6lw4
+      type: object
+      properties:
+        artifact_id:
+          type: string
+          description: Id of created artifact
+  parameters:
+    OrgParam:
+      name: org
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Harness Organization Id
+    ProjectParam:
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Harness Project Id
+      name: project
+    AccountHeader:
+      name: Harness-Account
+      in: header
+      required: false
+      schema:
+        type: string
+      description: 'Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
+  requestBodies:
+    SbomProcessRequestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SbomProcessRequestBody'
+  securitySchemes:
+    x-api-key:
+      name: x-api-key
+      type: apiKey
+      in: header
+      description: API key1 is a token provided while making the API calls. This is used to authenticate the client at the exposed endpoint.
+  responses:
+    SbomProcessResponseBody:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SbomProcessResponseBody'
+tags:
+  - name: sbomProcessor

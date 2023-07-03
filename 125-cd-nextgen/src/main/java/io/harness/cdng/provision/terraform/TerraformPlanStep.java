@@ -7,18 +7,16 @@
 
 package io.harness.cdng.provision.terraform;
 
-import static io.harness.beans.FeatureName.CDS_TERRAFORM_CLI_OPTIONS_NG;
-
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
 import io.harness.cdng.provision.terraform.functor.TerraformHumanReadablePlanFunctor;
 import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
+import io.harness.cdng.provision.terraform.outcome.TerraformGitRevisionOutcome;
 import io.harness.cdng.provision.terraform.outcome.TerraformPlanOutcome;
 import io.harness.cdng.provision.terraform.outcome.TerraformPlanOutcome.TerraformPlanOutcomeBuilder;
 import io.harness.common.ParameterFieldHelper;
@@ -49,6 +47,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.provision.TerraformConstants;
+import io.harness.security.encryption.EncryptionConfig;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
@@ -63,6 +62,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
@@ -88,16 +88,9 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    TerraformPlanStepParameters planStepParameters = (TerraformPlanStepParameters) stepParameters.getSpec();
-    boolean isTerraformCloudCli = planStepParameters.getConfiguration().getIsTerraformCloudCli().getValue();
-
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
-
-    if (isTerraformCloudCli) {
-      helper.checkIfTerraformCloudCliIsEnabled(FeatureName.CD_TERRAFORM_CLOUD_CLI_NG, true, ambiance);
-    }
 
     List<EntityDetail> entityDetailList = new ArrayList<>();
 
@@ -155,22 +148,23 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
     boolean isTerraformCloudCli = planStepParameters.getConfiguration().getIsTerraformCloudCli().getValue();
 
     if (!isTerraformCloudCli) {
+      EncryptionConfig secretManagerEncryptionConfig = helper.getEncryptionConfig(ambiance, planStepParameters);
       exportTfPlanJsonField = planStepParameters.getConfiguration().getExportTerraformPlanJson();
       exportTfHumanReadablePlanField = planStepParameters.getConfiguration().getExportTerraformHumanReadablePlan();
       builder.saveTerraformStateJson(!ParameterField.isNull(exportTfPlanJsonField) && exportTfPlanJsonField.getValue());
       builder.saveTerraformHumanReadablePlan(
           !ParameterField.isNull(exportTfHumanReadablePlanField) && exportTfHumanReadablePlanField.getValue());
-      builder.encryptionConfig(helper.getEncryptionConfig(ambiance, planStepParameters));
+      builder.encryptionConfig(secretManagerEncryptionConfig);
       builder.workspace(ParameterFieldHelper.getParameterFieldValue(configuration.getWorkspace()));
+      builder.encryptDecryptPlanForHarnessSMOnManager(
+          helper.tfPlanEncryptionOnManager(accountId, secretManagerEncryptionConfig));
     }
     ParameterField<Boolean> skipTerraformRefreshCommand =
         planStepParameters.getConfiguration().getSkipTerraformRefresh();
     builder.skipTerraformRefresh(ParameterFieldHelper.getBooleanParameterFieldValue(skipTerraformRefreshCommand));
 
-    if (featureFlagHelper.isEnabled(accountId, CDS_TERRAFORM_CLI_OPTIONS_NG)) {
-      builder.terraformCommandFlags(
-          helper.getTerraformCliFlags(planStepParameters.getConfiguration().getCliOptionFlags()));
-    }
+    builder.terraformCommandFlags(
+        helper.getTerraformCliFlags(planStepParameters.getConfiguration().getCliOptionFlags()));
 
     TerraformTaskNGParameters terraformTaskNGParameters =
         builder.taskType(TFTaskType.PLAN)
@@ -258,7 +252,7 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
       if (!planStepParameters.getConfiguration().getIsTerraformCloudCli().getValue()) {
         String provisionerIdentifier =
             ParameterFieldHelper.getParameterFieldValue(planStepParameters.getProvisionerIdentifier());
-        helper.saveTerraformInheritOutput(planStepParameters, terraformTaskNGResponse, ambiance);
+        helper.saveTerraformInheritOutput(planStepParameters, terraformTaskNGResponse, ambiance, null);
 
         ParameterField<Boolean> exportTfPlanJsonField =
             planStepParameters.getConfiguration().getExportTerraformPlanJson();
@@ -298,10 +292,18 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
         }
       }
 
-      stepResponseBuilder.stepOutcome(StepResponse.StepOutcome.builder()
-                                          .name(TerraformPlanOutcome.OUTCOME_NAME)
-                                          .outcome(tfPlanOutcomeBuilder.build())
-                                          .build());
+      Map<String, String> outputKeys = helper.getRevisionsMap(
+          planStepParameters.getConfiguration().getVarFiles(), terraformTaskNGResponse.getCommitIdForConfigFilesMap());
+
+      stepResponseBuilder
+          .stepOutcome(StepResponse.StepOutcome.builder()
+                           .name(TerraformPlanOutcome.OUTCOME_NAME)
+                           .outcome(tfPlanOutcomeBuilder.build())
+                           .build())
+          .stepOutcome(StepResponse.StepOutcome.builder()
+                           .name(TerraformGitRevisionOutcome.OUTCOME_NAME)
+                           .outcome(TerraformGitRevisionOutcome.builder().revisions(outputKeys).build())
+                           .build());
     }
     return stepResponseBuilder.build();
   }

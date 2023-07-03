@@ -112,7 +112,7 @@ public class RuntimeInputsValidator {
       Object value = entry.getValue();
       if (nodeToValidateFqnToValueMap.containsKey(key)) {
         Object linkedValue = nodeToValidateFqnToValueMap.get(key);
-        if (key.isType() || key.isIdentifierOrVariableName()) {
+        if (key.isType() || key.isIdentifierOrVariableName() || key.isDefault()) {
           // if key is type/variable/identifier and value does not match return false.
           if (!linkedValue.toString().equals(value.toString())) {
             return false;

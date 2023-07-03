@@ -55,7 +55,6 @@ import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-import java.util.Arrays;
 import java.util.Collections;
 
 @OwnedBy(HarnessTeam.CI)
@@ -135,10 +134,13 @@ public class CiBeansRegistrars {
                    .entityType(EntityType.RUN_STEP)
                    .availableAtProjectLevel(true)
                    .availableAtOrgLevel(false)
-                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
-                                           .modulesSupported(Collections.singletonList(ModuleType.CI))
-                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
-                                           .build())
+                   .yamlSchemaMetadata(
+                       YamlSchemaMetadata.builder()
+                           .modulesSupported(Lists.newArrayList(ModuleType.CI, ModuleType.CD, ModuleType.PMS))
+                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                           .namespace(SchemaNamespaceConstants.CI)
+
+                           .build())
                    .availableAtAccountLevel(false)
                    .clazz(RunStepNode.class)
                    .build())
@@ -247,10 +249,13 @@ public class CiBeansRegistrars {
                    .entityType(EntityType.PLUGIN)
                    .availableAtProjectLevel(true)
                    .availableAtOrgLevel(false)
-                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
-                                           .modulesSupported(Arrays.asList(ModuleType.CI))
-                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
-                                           .build())
+                   .yamlSchemaMetadata(
+                       YamlSchemaMetadata.builder()
+                           .modulesSupported(Lists.newArrayList(ModuleType.CI, ModuleType.CD, ModuleType.PMS))
+                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                           .namespace(SchemaNamespaceConstants.CI)
+
+                           .build())
                    .availableAtAccountLevel(false)
                    .clazz(PluginStepNode.class)
                    .build())
@@ -327,10 +332,13 @@ public class CiBeansRegistrars {
                    .entityType(EntityType.ACTION_STEP)
                    .availableAtProjectLevel(true)
                    .availableAtOrgLevel(false)
-                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
-                                           .modulesSupported(Collections.singletonList(ModuleType.CI))
-                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
-                                           .build())
+                   .yamlSchemaMetadata(
+                       YamlSchemaMetadata.builder()
+                           .modulesSupported(Lists.newArrayList(ModuleType.CI, ModuleType.CD, ModuleType.PMS))
+                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                           .namespace(SchemaNamespaceConstants.CI)
+
+                           .build())
                    .availableAtAccountLevel(false)
                    .clazz(ActionStepNode.class)
                    .build())
