@@ -16,6 +16,7 @@ COPY dockerization/ /app/dockerization
 COPY scripts/bazel/*.sh /app/scripts/bazel/
 COPY WORKSPACE /app/
 COPY tools/ /app/tools/
+COPY tools/bazel /app/tools/bazel/
 COPY cargo /app/cargo
 
 COPY .bazelrc .bazelversion bazelrc.common bazelrc.local bazelrc.remote BUILD.bazel /app/
