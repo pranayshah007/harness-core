@@ -73,6 +73,8 @@ import io.harness.security.dto.Principal;
 import io.harness.serializer.JsonUtils;
 import io.harness.serializer.ProtoUtils;
 import io.harness.service.GraphGenerationService;
+import io.harness.yaml.core.NGLabel;
+import io.harness.yaml.core.NGLabel.NGLabelKeys;
 
 import com.amazonaws.services.secretsmanager.model.ResourceNotFoundException;
 import com.google.inject.Inject;
@@ -184,6 +186,10 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
                 .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
             where(PlanExecutionSummaryKeys.tags + "." + NGTagKeys.value)
                 .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
+        where(PlanExecutionSummaryKeys.labels + "." + NGLabelKeys.key)
+            .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS);
+        where(PlanExecutionSummaryKeys.labels + "." + NGLabelKeys.value)
+            .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS);
       } catch (PatternSyntaxException pex) {
         throw new InvalidRequestException(pex.getMessage() + " Use \\\\ for special character", pex);
       }
@@ -385,6 +391,9 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     if (EmptyPredicate.isNotEmpty(pipelineFilter.getPipelineTags())) {
       addPipelineTagsCriteria(criteria, pipelineFilter.getPipelineTags());
     }
+    if (EmptyPredicate.isNotEmpty(pipelineFilter.getPipelineLabels())) {
+      addPipelineLabelsCriteria(criteria, pipelineFilter.getPipelineLabels());
+    }
 
     if (pipelineFilter.getModuleProperties() != null) {
       if (operatorOnModules.name().equals(ModuleInfoOperators.Operators.OR)) {
@@ -417,6 +426,19 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     tagsCriteria.orOperator(
         where(PlanExecutionSummaryKeys.tagsKey).in(tags), where(PlanExecutionSummaryKeys.tagsValue).in(tags));
     criteria.andOperator(tagsCriteria);
+  }
+
+  private void addPipelineLabelsCriteria(Criteria criteria, List<NGLabel> pipelineLabels) {
+    List<String> labelKeys = new ArrayList<>();
+    List<String> labelValues = new ArrayList<>();
+    pipelineLabels.forEach(o -> {
+      labelKeys.add(o.getKey());
+      labelValues.add(o.getValue());
+    });
+    Criteria labelsCriteria = new Criteria();
+    labelsCriteria.orOperator(where(PlanExecutionSummaryKeys.labelsKey).in(labelKeys),
+        where(PlanExecutionSummaryKeys.labelsValue).in(labelValues));
+    criteria.andOperator(labelsCriteria);
   }
 
   @Override

@@ -7,7 +7,6 @@ syntax = "proto3";
 
 package io.harness.delegate.core.beans;
 
-import "google/protobuf/any.proto";
 import "google/protobuf/duration.proto";
 import "955-delegate-beans/src/main/proto/io/harness/delegate/core/beans/plugin.proto";
 import "955-delegate-beans/src/main/proto/io/harness/delegate/core/beans/resource.proto";

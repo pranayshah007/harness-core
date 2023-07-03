@@ -67,7 +67,7 @@ func NewSCMServer(port uint, unixSocket string, log *zap.SugaredLogger) (SCMServ
 	}
 	server.grpcServer = grpc.NewServer(
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-			grpc_recovery.UnaryServerInterceptor(),
+			grpc_recovery.UnaryServerInterceptor(), LogContextInterceptor(&server),
 		)),
 	)
 	server.listener = listener
@@ -80,7 +80,7 @@ func (s *scmServer) Start() {
 	healthServer.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
 
 	healthpb.RegisterHealthServer(s.grpcServer, healthServer)
-	pb.RegisterSCMServer(s.grpcServer, NewSCMHandler(s.stopCh, s.log))
+	pb.RegisterSCMServer(s.grpcServer, NewSCMHandler(s.stopCh))
 	err := s.grpcServer.Serve(s.listener)
 	if err != nil {
 		s.log.Fatalw("error starting gRPC server", zap.Error(err))

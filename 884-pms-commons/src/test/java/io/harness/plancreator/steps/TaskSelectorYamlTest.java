@@ -9,22 +9,33 @@ package io.harness.plancreator.steps;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.SHALINI;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.TaskSelector;
+import io.harness.exception.InvalidRequestException;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @OwnedBy(PIPELINE)
+@RunWith(MockitoJUnitRunner.class)
 public class TaskSelectorYamlTest extends CategoryTest {
+  @Mock ParameterField parameterField;
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
@@ -49,5 +60,20 @@ public class TaskSelectorYamlTest extends CategoryTest {
     for (int i = 0; i < 4; i++) {
       assertThat(taskSelectors.get(i).getSelector()).isEqualTo("selectMe" + i);
     }
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testToSelector() {
+    doReturn("abc").when(parameterField).getValue();
+    assertThatThrownBy(() -> TaskSelectorYaml.toTaskSelector(parameterField))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("The resolved value of Delegate Selectors abc is not a list");
+    doReturn(List.of("abc")).when(parameterField).getValue();
+    List<TaskSelector> taskSelectors = TaskSelectorYaml.toTaskSelector(parameterField);
+    assertEquals(taskSelectors.size(), 1);
+    assertEquals(taskSelectors.get(0).getSelector(), "abc");
+    assertEquals(taskSelectors.get(0).getOrigin(), "default");
   }
 }

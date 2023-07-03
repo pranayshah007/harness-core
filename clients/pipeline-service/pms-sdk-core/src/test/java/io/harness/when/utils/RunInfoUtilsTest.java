@@ -85,21 +85,19 @@ public class RunInfoUtilsTest extends CategoryTest {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void shouldTestGetStepRollbackRunCondition() {
-    String defaultRunConditionForRollback = RunInfoUtils.getRunConditionForRollback(null, ExecutionMode.NORMAL);
+    String defaultRunConditionForRollback = RunInfoUtils.getRunConditionForRollback(null);
     assertThat(defaultRunConditionForRollback).isEqualTo("<+OnRollbackModeExecution> || <+OnStageFailure>");
 
-    assertThatThrownBy(
-        ()
-            -> RunInfoUtils.getRunConditionForRollback(
-                ParameterField.createValueField(StepWhenCondition.builder().build()), ExecutionMode.NORMAL))
+    assertThatThrownBy(()
+                           -> RunInfoUtils.getRunConditionForRollback(
+                               ParameterField.createValueField(StepWhenCondition.builder().build())))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Stage Status in step when condition cannot be empty.");
     String successRunCondition = RunInfoUtils.getRunConditionForRollback(
         ParameterField.createValueField(StepWhenCondition.builder()
                                             .stageStatus(WhenConditionStatus.SUCCESS)
                                             .condition(ParameterField.createValueField("<+stage.name> == \"dev\""))
-                                            .build()),
-        ExecutionMode.NORMAL);
+                                            .build()));
     assertThat(successRunCondition).isNotEmpty();
     assertThat(successRunCondition).isEqualTo("<+OnStageSuccess> && (<+stage.name> == \"dev\")");
 

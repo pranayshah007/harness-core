@@ -124,6 +124,7 @@ public class TriggerImportService implements ImportService {
     Map<CgEntityId, NGYamlFile> yamlFileMap = summaryDTO.getNgYamlFiles()
                                                   .stream()
                                                   .filter(ngYamlFile -> ngYamlFile.getCgBasicInfo() != null)
+                                                  .distinct()
                                                   .collect(Collectors.toMap(yamlFile
                                                       -> CgEntityId.builder()
                                                              .id(yamlFile.getCgBasicInfo().getId())

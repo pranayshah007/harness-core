@@ -12,6 +12,8 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.data.structure.HarnessStringUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
@@ -24,6 +26,8 @@ import io.harness.remote.client.NGRestUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Collections;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 /***
@@ -34,8 +38,6 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 public class GitXSettingsHelper {
   @Inject private NGSettingsClient ngSettingsClient;
-
-  public static final String COULD_NOT_FETCH_SETTING = "Could not fetch setting: %s";
 
   public void enforceGitExperienceIfApplicable(
       String accountIdentifier, String orgIdentifier, String projectIdentifier) {
@@ -115,5 +117,21 @@ public class GitXSettingsHelper {
             .getValue();
 
     return GitSyncConstants.TRUE_VALUE.equals(isGitExperienceEnforced);
+  }
+
+  public List<String> getGitRepoAllowlist(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    String repoAllowlist =
+        NGRestUtils
+            .getResponse(ngSettingsClient.getSetting(GitSyncConstants.REPO_ALLOWLIST_FOR_GIT_EXPERIENCE,
+                accountIdentifier, orgIdentifier, projectIdentifier))
+            .getValue();
+
+    // Empty list indicates that setting is not being used.
+    if (EmptyPredicate.isEmpty(repoAllowlist)) {
+      return Collections.EMPTY_LIST;
+    }
+
+    List<String> listOfRepos = List.of(repoAllowlist.split(","));
+    return HarnessStringUtils.removeLeadingAndTrailingSpacesInListOfStrings(listOfRepos);
   }
 }

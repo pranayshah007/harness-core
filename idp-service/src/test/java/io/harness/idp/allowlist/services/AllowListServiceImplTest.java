@@ -89,13 +89,12 @@ public class AllowListServiceImplTest {
     when(YamlUtils.writeObjectAsYaml(any())).thenReturn(allowListString);
     when(CommonUtils.readFileFromClassPath(any())).thenReturn(yamlString).thenReturn(schema);
 
-    when(configManagerService.saveOrUpdateConfigForAccount(any(), any(), any())).thenReturn(new AppConfig());
-    when(configManagerService.mergeAndSaveAppConfig(any())).thenReturn(MergedAppConfigEntity.builder().build());
+    when(configManagerService.saveUpdateAndMergeConfigForAccount(any(), any(), any())).thenReturn(new AppConfig());
     allowListServiceImpl.saveAllowList(hostInfoList, ACCOUNT_ID);
 
     String expectedConfig =
         "---\nbackend:\n  reading:\n    allow:\n    - host: stress.harness.io\n    - host: qa.harness.io\n      paths:\n      - /v1/secrets\n";
-    verify(configManagerService).saveOrUpdateConfigForAccount(appConfigCaptor.capture(), any(), any());
+    verify(configManagerService).saveUpdateAndMergeConfigForAccount(appConfigCaptor.capture(), any(), any());
     assertEquals(expectedConfig, appConfigCaptor.getValue().getConfigs());
     yamlUtilsMockedStatic.close();
     commonUtilsMockedStatic.close();

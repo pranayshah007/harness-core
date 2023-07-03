@@ -60,7 +60,7 @@ public class VmIACMStepSerializer {
             .timeoutSecs(timeout)
             .imageConnector(harnessInternalImageConnector);
 
-    vmPluginStepBuilder.connector(iacmStepsUtils.retrieveIACMConnectorDetails(ambiance, stepInfo));
+    vmPluginStepBuilder.connector(iacmStepsUtils.retrieveIACMConnectorDetails(ambiance, stepInfo.getWorkspace()));
 
     return vmPluginStepBuilder.build();
   }

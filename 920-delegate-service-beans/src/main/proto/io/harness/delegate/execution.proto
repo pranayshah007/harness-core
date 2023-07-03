@@ -1,0 +1,19 @@
+// Copyright 2021 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Shield 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+
+syntax = "proto3";
+
+package io.harness.delegate;
+
+option java_multiple_files = true;
+option go_package = "920_delegate_service_beans";
+
+message Execution {
+  ExecutionInput input = 1;  // Input data to tasks
+  string infraRefId = 2;     // execution infra id created by calling SetupExecutionInfrastructureRequest
+}
+message ExecutionInput {
+  bytes data = 1;  // binary task data input. The same data will be directly passed to task container
+}

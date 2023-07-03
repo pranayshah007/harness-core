@@ -9,10 +9,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/harness/harness-core/product/ci/engine/consts"
 	grpcclient "github.com/harness/harness-core/product/ci/engine/grpc/client"
 	pb "github.com/harness/harness-core/product/ci/engine/proto"
-	"github.com/harness/harness-core/product/ci/ti-service/types"
+	"github.com/harness/ti-client/types"
 	"go.uber.org/zap"
 )
 

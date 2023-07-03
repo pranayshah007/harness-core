@@ -17,6 +17,8 @@ import io.harness.git.model.CommitAndPushResult;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.ListRemoteRequest;
 import io.harness.git.model.ListRemoteResult;
+import io.harness.git.model.RevertAndPushRequest;
+import io.harness.git.model.RevertAndPushResult;
 import io.harness.shell.SshSessionConfig;
 
 import java.io.IOException;
@@ -43,4 +45,7 @@ public interface NGGitService {
       SshSessionConfig sshSessionConfig, GitConfigDTO gitConfigDTO) throws IOException;
 
   AuthRequest getAuthRequest(GitConfigDTO gitConfig, SshSessionConfig sshSessionConfig);
+
+  RevertAndPushResult revertCommitAndPush(GitConfigDTO gitConfig, RevertAndPushRequest commitAndPushRequest,
+      String accountId, SshSessionConfig sshSessionConfig, boolean overrideFromGitConfig);
 }

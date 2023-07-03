@@ -23,7 +23,9 @@ import io.harness.ccm.budget.BudgetBreakdown;
 import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.budget.BudgetType;
 import io.harness.ccm.budget.PerspectiveBudgetScope;
+import io.harness.ccm.commons.entities.CCMSortOrder;
 import io.harness.ccm.commons.entities.billing.Budget;
+import io.harness.ccm.commons.entities.billing.BudgetSortType;
 import io.harness.ccm.commons.entities.budget.BudgetCostData;
 import io.harness.ccm.commons.entities.budget.BudgetData;
 import io.harness.ccm.graphql.core.budget.BudgetService;
@@ -131,7 +133,7 @@ public class BudgetResourceTest extends CategoryTest {
   @Owner(developers = ANMOL)
   @Category(UnitTests.class)
   public void testList() {
-    when(mockBudgetService.list(ACCOUNT_ID)).thenReturn(List.of(budget));
+    when(mockBudgetService.list(ACCOUNT_ID, BudgetSortType.NAME, CCMSortOrder.ASCENDING)).thenReturn(List.of(budget));
     when(mockCeViewService.getPerspectiveFolderIds(ACCOUNT_ID, List.of(PERSPECTIVE_UUID)))
         .thenReturn(Set.of(FOLDER_ID));
     final HashMap<String, String> perspectiveAndFolderUuid =
@@ -142,7 +144,8 @@ public class BudgetResourceTest extends CategoryTest {
     when(mockRbacHelper.checkFolderIdsGivenPermission(ACCOUNT_ID, null, null, Set.of(FOLDER_ID), BUDGET_VIEW))
         .thenReturn(Set.of(FOLDER_ID));
 
-    final ResponseDTO<List<Budget>> result = budgetResourceUnderTest.list(ACCOUNT_ID);
+    final ResponseDTO<List<Budget>> result =
+        budgetResourceUnderTest.list(ACCOUNT_ID, BudgetSortType.NAME, CCMSortOrder.ASCENDING);
 
     assertThat(result.getData()).isEqualTo(List.of(budget));
   }
@@ -151,7 +154,7 @@ public class BudgetResourceTest extends CategoryTest {
   @Owner(developers = ANMOL)
   @Category(UnitTests.class)
   public void testList_NoFolderAllowed() {
-    when(mockBudgetService.list(ACCOUNT_ID)).thenReturn(List.of(budget));
+    when(mockBudgetService.list(ACCOUNT_ID, BudgetSortType.NAME, CCMSortOrder.ASCENDING)).thenReturn(List.of(budget));
     when(mockCeViewService.getPerspectiveFolderIds(ACCOUNT_ID, List.of(PERSPECTIVE_UUID)))
         .thenReturn(Set.of(FOLDER_ID));
     final HashMap<String, String> perspectiveAndFolderUuid =
@@ -162,7 +165,7 @@ public class BudgetResourceTest extends CategoryTest {
     when(mockRbacHelper.checkFolderIdsGivenPermission(ACCOUNT_ID, null, null, Set.of(FOLDER_ID), BUDGET_VIEW))
         .thenReturn(Set.of());
 
-    budgetResourceUnderTest.list(ACCOUNT_ID);
+    budgetResourceUnderTest.list(ACCOUNT_ID, BudgetSortType.NAME, CCMSortOrder.ASCENDING);
   }
 
   @Test

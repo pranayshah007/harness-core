@@ -10,6 +10,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"path/filepath"
+	"runtime"
+	"time"
+
 	"github.com/ghodss/yaml"
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/harness/harness-core/commons/go/lib/filesystem"
@@ -21,16 +29,9 @@ import (
 	grpcclient "github.com/harness/harness-core/product/ci/engine/grpc/client"
 	pb "github.com/harness/harness-core/product/ci/engine/proto"
 	stutils "github.com/harness/harness-core/product/ci/split_tests/utils"
-	"github.com/harness/harness-core/product/ci/ti-service/types"
+	"github.com/harness/ti-client/types"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"path/filepath"
-	"runtime"
-	"time"
 )
 
 var (
@@ -318,12 +319,15 @@ func installAgents(ctx context.Context, path, language, framework, frameworkVers
 /*
 Downloads url to path with specified fs.
 Args:
-  ctx (context.Context): context of the current thread
-  path (string): local path where it downloads to
-  url (url): remote file url
-  fs (filesystem.FileSystem): file system used to create directory and save file
+
+	ctx (context.Context): context of the current thread
+	path (string): local path where it downloads to
+	url (url): remote file url
+	fs (filesystem.FileSystem): file system used to create directory and save file
+
 Returns:
-  err (error): Error if there's one, nil otherwise.
+
+	err (error): Error if there's one, nil otherwise.
 */
 func downloadFile(ctx context.Context, path, url string, fs filesystem.FileSystem) error {
 	// Create the nested directory if it doesn't exist

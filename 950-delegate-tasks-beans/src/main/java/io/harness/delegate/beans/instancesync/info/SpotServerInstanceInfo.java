@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.instancesync.info;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
@@ -19,6 +20,7 @@ import lombok.Data;
 @Data
 @Builder
 @OwnedBy(HarnessTeam.CDP)
+@RecasterAlias("io.harness.delegate.beans.instancesync.info.SpotServerInstanceInfo")
 public class SpotServerInstanceInfo extends ServerInstanceInfo {
   private String infrastructureKey;
   private String ec2InstanceId;

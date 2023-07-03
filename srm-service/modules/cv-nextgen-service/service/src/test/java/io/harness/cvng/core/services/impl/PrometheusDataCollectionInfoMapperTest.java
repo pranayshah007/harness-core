@@ -103,6 +103,64 @@ public class PrometheusDataCollectionInfoMapperTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
+  public void testToDataConnectionInfo_WithServiceInstances() {
+    MetricPack metricPack = MetricPack.builder().dataCollectionDsl("metric-pack-dsl").build();
+    PrometheusCVConfig cvConfig = builderFactory.prometheusCVConfigBuilder().groupName("mygroupName").build();
+
+    cvConfig.setMetricPack(metricPack);
+
+    PrometheusCVConfig.MetricInfo metricInfo = PrometheusCVConfig.MetricInfo.builder()
+                                                   .metricName("myMetric")
+                                                   .identifier("metricIdentifier")
+                                                   .metricType(TimeSeriesMetricType.RESP_TIME)
+                                                   .query("avg(metric_name({}))")
+                                                   .serviceInstanceFieldName("pod_name")
+                                                   .isManualQuery(true)
+                                                   .build();
+
+    cvConfig.setMetricInfoList(Arrays.asList(metricInfo));
+    PrometheusDataCollectionInfo dataCollectionInfo =
+        mapper.toDeploymentDataCollectionInfo(cvConfig, Arrays.asList("n1", "n2"));
+
+    List<MetricCollectionInfo> metricCollectionInfoList = dataCollectionInfo.getMetricCollectionInfoList();
+    metricCollectionInfoList.forEach(metricCollectionInfo -> {
+      assertThat(metricCollectionInfo.getQuery()).isEqualTo("avg(metric_name({pod_name=~\"n1|n2\"}))");
+      assertThat(metricCollectionInfo.getFilters()).isEqualTo("pod_name=~\"n1|n2\"");
+    });
+  }
+
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
+  public void testToDataConnectionInfo_WithServiceInstancesAndFilters() {
+    MetricPack metricPack = MetricPack.builder().dataCollectionDsl("metric-pack-dsl").build();
+    PrometheusCVConfig cvConfig = builderFactory.prometheusCVConfigBuilder().groupName("mygroupName").build();
+
+    cvConfig.setMetricPack(metricPack);
+
+    PrometheusCVConfig.MetricInfo metricInfo = PrometheusCVConfig.MetricInfo.builder()
+                                                   .metricName("myMetric")
+                                                   .identifier("metricIdentifier")
+                                                   .metricType(TimeSeriesMetricType.RESP_TIME)
+                                                   .query("avg(metric_name({service=\"cvng\"}))")
+                                                   .serviceInstanceFieldName("pod_name")
+                                                   .isManualQuery(true)
+                                                   .build();
+
+    cvConfig.setMetricInfoList(Arrays.asList(metricInfo));
+    PrometheusDataCollectionInfo dataCollectionInfo =
+        mapper.toDeploymentDataCollectionInfo(cvConfig, Arrays.asList("n1", "n2"));
+
+    List<MetricCollectionInfo> metricCollectionInfoList = dataCollectionInfo.getMetricCollectionInfoList();
+    metricCollectionInfoList.forEach(metricCollectionInfo -> {
+      assertThat(metricCollectionInfo.getQuery()).isEqualTo("avg(metric_name({service=\"cvng\",pod_name=~\"n1|n2\"}))");
+      assertThat(metricCollectionInfo.getFilters()).isEqualTo("service=\"cvng\",pod_name=~\"n1|n2\"");
+    });
+  }
+
+  @Test
   @Owner(developers = DEEPAK_CHHIKARA)
   @Category(UnitTests.class)
   public void testToDataCollectionInfoForSLI() {

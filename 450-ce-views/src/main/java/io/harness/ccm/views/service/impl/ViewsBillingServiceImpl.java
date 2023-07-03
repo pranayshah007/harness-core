@@ -798,7 +798,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
               .collect(Collectors.toList());
     }
 
-    boolean includeOthersCost = !addSharedCostFromGroupBy || businessMappingFromGroupBy == null
+    boolean includeOthersCost = businessMappingFromGroupBy == null
         || businessMappingFromGroupBy.getUnallocatedCost() == null
         || businessMappingFromGroupBy.getUnallocatedCost().getStrategy() != HIDE;
 

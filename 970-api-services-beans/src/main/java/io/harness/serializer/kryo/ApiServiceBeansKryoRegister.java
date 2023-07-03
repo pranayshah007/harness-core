@@ -236,6 +236,7 @@ import com.google.api.services.monitoring.v3.model.TimeSeries;
 import com.google.api.services.monitoring.v3.model.TypedValue;
 import com.sumologic.client.SumoServerException;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import java.nio.file.NoSuchFileException;
 import javax.ws.rs.core.MultivaluedHashMap;
 import org.json.JSONException;
 
@@ -469,6 +470,7 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(KustomizeConfig.class, 7323);
     kryo.register(AzureKubernetesCluster.class, 5538);
     kryo.register(SecretManagementDelegateException.class, 5585);
+    kryo.register(NoSuchFileException.class, 5586);
     kryo.register(ServiceNowTemplate.class, 97113);
     kryo.register(FileSourceType.class, 97115);
     kryo.register(DockerRegistryProviderType.class, 19434);

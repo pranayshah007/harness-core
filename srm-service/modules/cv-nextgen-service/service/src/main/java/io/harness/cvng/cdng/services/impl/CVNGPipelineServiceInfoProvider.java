@@ -14,6 +14,7 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cvng.cdng.beans.CVNGStepType;
 import io.harness.filters.EmptyAnyFilterJsonCreator;
 import io.harness.pms.contracts.steps.StepInfo;
@@ -39,7 +40,7 @@ public class CVNGPipelineServiceInfoProvider implements PipelineServiceInfoProvi
   public List<PartialPlanCreator<?>> getPlanCreators() {
     List<PartialPlanCreator<?>> planCreators = new LinkedList<>();
     planCreators.add(new CVNGPlanCreatorV2());
-
+    planCreators.add(new CVNGAnalyzeDeploymentPlanCreator());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -48,6 +49,7 @@ public class CVNGPipelineServiceInfoProvider implements PipelineServiceInfoProvi
   public List<FilterJsonCreator> getFilterJsonCreators() {
     List<FilterJsonCreator> filterJsonCreators = new ArrayList<>();
     filterJsonCreators.add(new CVNGStepFilterJsonCreator());
+    filterJsonCreators.add(new CVNGAnalyzeDeploymentStepFilterJsonCreator());
     filterJsonCreators.add(new EmptyAnyFilterJsonCreator(Set.of(STEPS, SPEC, STRATEGY))); // ??
     injectorUtils.injectMembers(filterJsonCreators);
     return filterJsonCreators;
@@ -57,6 +59,7 @@ public class CVNGPipelineServiceInfoProvider implements PipelineServiceInfoProvi
   public List<VariableCreator> getVariableCreators() {
     List<VariableCreator> variableCreators = new ArrayList<>();
     variableCreators.add(new CVNGStepVariableCreator());
+    variableCreators.add(new CVNGAnalyzeDeploymentStepVariableCreator());
     variableCreators.add(
         new EmptyAnyVariableCreator(Set.of(YAMLFieldNameConstants.PARALLEL, STEPS, SPEC, STEP_GROUP))); // ??
     return variableCreators;
@@ -67,13 +70,24 @@ public class CVNGPipelineServiceInfoProvider implements PipelineServiceInfoProvi
     ArrayList<StepInfo> stepInfos = new ArrayList<>();
     StepInfo verification = StepInfo.newBuilder()
                                 .setName(CVNGStepType.CVNG_VERIFY.getDisplayName())
-                                .setType(CVNGStepType.CVNG_VERIFY.getDisplayName())
+                                .setType(CVNGStepType.CVNG_VERIFY.getType())
                                 .setStepMetaData(StepMetaData.newBuilder()
                                                      .addCategory(CVNGStepType.CVNG_VERIFY.getFolderPath())
                                                      .addFolderPaths(CVNGStepType.CVNG_VERIFY.getFolderPath())
                                                      .build())
                                 .build();
+    StepInfo analyzeDeployment =
+        StepInfo.newBuilder()
+            .setName(CVNGStepType.CVNG_ANALYZE_DEPLOYMENT.getDisplayName())
+            .setType(CVNGStepType.CVNG_ANALYZE_DEPLOYMENT.getType())
+            .setFeatureFlag(FeatureName.SRM_ENABLE_ANALYZE_DEPLOYMENT_STEP.name())
+            .setStepMetaData(StepMetaData.newBuilder()
+                                 .addCategory(CVNGStepType.CVNG_ANALYZE_DEPLOYMENT.getFolderPath())
+                                 .addFolderPaths(CVNGStepType.CVNG_ANALYZE_DEPLOYMENT.getFolderPath())
+                                 .build())
+            .build();
     stepInfos.add(verification);
+    stepInfos.add(analyzeDeployment);
     return stepInfos;
   }
 }

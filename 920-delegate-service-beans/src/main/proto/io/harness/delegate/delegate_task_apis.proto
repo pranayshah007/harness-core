@@ -8,21 +8,22 @@ syntax = "proto3";
 package io.harness.delegate;
 
 import "google/protobuf/duration.proto";
-import "920-delegate-service-beans/src/main/proto/io/harness/delegate/task.proto";
 import "920-delegate-service-beans/src/main/proto/io/harness/callback/callback.proto";
+import "920-delegate-service-beans/src/main/proto/io/harness/delegate/task.proto";
+import "920-delegate-service-beans/src/main/proto/io/harness/delegate/execution_infra.proto";
+import "920-delegate-service-beans/src/main/proto/io/harness/delegate/execution.proto";
 
 option java_multiple_files = true;
 option go_package = "920_delegate_service_beans";
 
 // Setup An Execution Infrastructure
 message SetupExecutionInfrastructureRequest {
-  //    ExecutionInfrastructure infra = 1;
-  SchedulingConfig config = 1;
+  ExecutionInfrastructure infra = 1;
+  SchedulingConfig config = 2;
 }
 
 message ScheduleTaskRequest {
-  //    ExecutionRequest execution = 1;
-  string infraRef = 1;
+  Execution execution = 1;
   SchedulingConfig config = 2;
 }
 

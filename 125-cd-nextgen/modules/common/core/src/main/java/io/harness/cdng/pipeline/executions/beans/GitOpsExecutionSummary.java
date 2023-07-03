@@ -7,6 +7,7 @@
 
 package io.harness.cdng.pipeline.executions.beans;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -26,6 +27,7 @@ import lombok.Value;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@RecasterAlias("io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary")
 public class GitOpsExecutionSummary {
   Set<Environment> environments = new HashSet<>();
   List<Cluster> clusters = new ArrayList<>();
@@ -47,6 +49,7 @@ public class GitOpsExecutionSummary {
 
   @Data
   @Builder
+  @RecasterAlias("io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary$Environment")
   public static class Environment {
     String name;
     String type;
@@ -57,6 +60,7 @@ public class GitOpsExecutionSummary {
 
   @Value
   @Builder
+  @RecasterAlias("io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary$Cluster")
   public static class Cluster {
     String envGroupId;
     String envGroupName;

@@ -1,0 +1,24 @@
+avg:kubernetes.runtime.memory.rss{*}.rollup(avg, 60)
+query1
+[avg:kubernetes.runtime.memory.rss{*}by{pod_name}.rollup(avg, 60)]
+avg:kubernetes.runtime.memory.rss{*}by{pod_name}.rollup(avg, 60)
+query1
+[avg:kubernetes.runtime.memory.rss{*}by{pod_name}.rollup(avg, 60)]
+avg:kubernetes.runtime.memory.rss{*}by{pod_name}
+query1
+[avg:kubernetes.runtime.memory.rss{*}by{pod_name}.rollup(avg, 60)]
+avg:kubernetes.runtime.memory.rss{*}
+query1
+[avg:kubernetes.runtime.memory.rss{*}by{pod_name}.rollup(avg, 60)]
+avg:kubernetes.runtime.memory.rss{*}.rollup(avg, 60);avg:kubernetes.runtime.cpu.rss{*}.rollup(avg, 60);a/b * 100
+query1/query2 * 100
+[avg:kubernetes.runtime.memory.rss{*}by{pod_name}.rollup(avg, 60), avg:kubernetes.runtime.cpu.rss{*}by{pod_name}.rollup(avg, 60)]
+     avg:kubernetes.runtime.memory.rss{*}.rollup(avg, 60) ;   avg:kubernetes.runtime.cpu.rss{*}.rollup(avg, 60);    a/b * 100
+query1/query2 * 100
+[avg:kubernetes.runtime.memory.rss{*}by{pod_name}.rollup(avg, 60), avg:kubernetes.runtime.cpu.rss{*}by{pod_name}.rollup(avg, 60)]
+     avg:kubernetes.runtime.memory.rss{*}.rollup(avg, 60) ;   avg:kubernetes.runtime.cpu.rss{*}.rollup(avg, 60);    query1/query2 * 100
+query1/query2 * 100
+[avg:kubernetes.runtime.memory.rss{*}by{pod_name}.rollup(avg, 60), avg:kubernetes.runtime.cpu.rss{*}by{pod_name}.rollup(avg, 60)]
+     avg:kubernetes.runtime.memory.rss{*}.rollup(avg, 60) ;   avg:kubernetes.runtime.cpu.rss{*}.rollup(avg, 60);    ((a + b)/(a -b)/c) * 100
+((query1 + query2)/(query1 -query2)/query3) * 100
+[avg:kubernetes.runtime.memory.rss{*}by{pod_name}.rollup(avg, 60), avg:kubernetes.runtime.cpu.rss{*}by{pod_name}.rollup(avg, 60)]

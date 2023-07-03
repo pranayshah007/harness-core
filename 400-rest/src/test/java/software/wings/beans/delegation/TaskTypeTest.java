@@ -491,6 +491,7 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(451, "HELM_COMMAND_TASK_NG_RANCHER");
     taskTypeOrdinalMapping.put(452, "HELM_FETCH_CHART_MANIFEST_TASK");
     taskTypeOrdinalMapping.put(453, "COMMAND_TASK_NG_WITH_GITHUB_PACKAGE_ARTIFACT");
+    taskTypeOrdinalMapping.put(454, "INSTANCE_SYNC_V2_NG_SUPPORT");
 
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

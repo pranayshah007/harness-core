@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.aws;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
@@ -33,6 +34,7 @@ import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
+import io.harness.exception.WingsException;
 import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -90,10 +92,11 @@ public class S3FetchFilesTaskNG extends AbstractDelegateRunnableTask {
     try {
       executionLogCallback.saveExecutionLog(color(format("%nStarting S3 Fetch Files"), LogColor.White, LogWeight.Bold));
 
+      Map<String, Map<String, String>> keyVersionMap = new HashMap<>();
       Map<String, List<S3FileDetailResponse>> s3filesDetails = new HashMap<>();
       for (AwsS3FetchFileDelegateConfig awsS3FetchFileDelegateConfig : params.getFetchFileDelegateConfigs()) {
         s3filesDetails.put(awsS3FetchFileDelegateConfig.getIdentifier(),
-            getContentFromFromS3Bucket(awsS3FetchFileDelegateConfig, executionLogCallback));
+            getContentFromFromS3Bucket(awsS3FetchFileDelegateConfig, executionLogCallback, keyVersionMap));
       }
 
       if (params.isCloseLogStream()) {
@@ -104,6 +107,7 @@ public class S3FetchFilesTaskNG extends AbstractDelegateRunnableTask {
           .s3filesDetails(s3filesDetails)
           .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
           .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+          .keyVersionMap(keyVersionMap)
           .build();
     } catch (Exception e) {
       throw new TaskNGDataException(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), e);
@@ -111,11 +115,16 @@ public class S3FetchFilesTaskNG extends AbstractDelegateRunnableTask {
   }
 
   private List<S3FileDetailResponse> getContentFromFromS3Bucket(
-      AwsS3FetchFileDelegateConfig awsS3FetchFileDelegateConfig, LogCallback executionLogCallback) throws IOException {
+      AwsS3FetchFileDelegateConfig awsS3FetchFileDelegateConfig, LogCallback executionLogCallback,
+      Map<String, Map<String, String>> keyVersionMap) throws IOException {
     awsS3DelegateTaskHelper.decryptRequestDTOs(
         awsS3FetchFileDelegateConfig.getAwsConnector(), awsS3FetchFileDelegateConfig.getEncryptionDetails());
     AwsInternalConfig awsInternalConfig = getAwsInternalConfig(awsS3FetchFileDelegateConfig);
     List<S3FileDetailResponse> s3FileDetailResponses = new ArrayList<>();
+
+    Map<String, String> versionMap = keyVersionMap.get(awsS3FetchFileDelegateConfig.getIdentifier()) == null
+        ? new HashMap<>()
+        : keyVersionMap.get(awsS3FetchFileDelegateConfig.getIdentifier());
 
     for (S3FileDetailRequest s3FileDetailRequest : awsS3FetchFileDelegateConfig.getFileDetails()) {
       String fileKey = s3FileDetailRequest.getFileKey();
@@ -123,8 +132,23 @@ public class S3FetchFilesTaskNG extends AbstractDelegateRunnableTask {
 
       executionLogCallback.saveExecutionLog(format("%nFetching %s file from s3 bucket: %s", fileKey, bucketName));
       try {
-        S3Object s3Object = awsApiHelperService.getObjectFromS3(
-            awsInternalConfig, awsS3FetchFileDelegateConfig.getRegion(), bucketName, fileKey);
+        boolean versioningEnabled = awsApiHelperService.isVersioningEnabledForBucket(
+            awsInternalConfig, bucketName, awsS3FetchFileDelegateConfig.getRegion());
+
+        String version = isEmpty(awsS3FetchFileDelegateConfig.getVersions())
+            ? null
+            : awsS3FetchFileDelegateConfig.getVersions().get(fileKey);
+
+        S3Object s3Object = version != null && versioningEnabled
+            ? awsApiHelperService.getVersionedObjectFromS3(awsInternalConfig, awsS3FetchFileDelegateConfig.getRegion(),
+                bucketName, fileKey, awsS3FetchFileDelegateConfig.getVersions().get(fileKey))
+            : awsApiHelperService.getObjectFromS3(
+                awsInternalConfig, awsS3FetchFileDelegateConfig.getRegion(), bucketName, fileKey);
+
+        if (versioningEnabled) {
+          versionMap.put(fileKey, s3Object.getObjectMetadata().getVersionId());
+        }
+
         InputStream is = s3Object.getObjectContent();
         S3FileDetailResponse s3FileDetailResponse =
             S3FileDetailResponse.builder()
@@ -137,12 +161,22 @@ public class S3FetchFilesTaskNG extends AbstractDelegateRunnableTask {
         executionLogCallback.saveExecutionLog(
             format("%nSuccessfully fetched %s file from s3 bucket: %s", fileKey, bucketName));
       } catch (Exception e) {
-        String errorMsg = format("Failed to fetch %s from s3 bucket: %s : %s", fileKey, bucketName, e.getMessage());
+        String exceptionMessage = "";
+        if (e instanceof WingsException) {
+          WingsException wingsException = (WingsException) e;
+          if (wingsException.getParams() != null && wingsException.getParams().get("message") != null) {
+            exceptionMessage = wingsException.getParams().get("message").toString();
+          }
+        }
+
+        String errorMsg = format("Failed to fetch %s from s3 bucket: %s : %s", fileKey, bucketName,
+            exceptionMessage.isEmpty() ? e.getMessage() : exceptionMessage);
         log.error(errorMsg, e.getMessage());
         executionLogCallback.saveExecutionLog(errorMsg, ERROR, CommandExecutionStatus.FAILURE);
         throw e;
       }
     }
+    keyVersionMap.put(awsS3FetchFileDelegateConfig.getIdentifier(), versionMap);
     return s3FileDetailResponses;
   }
 

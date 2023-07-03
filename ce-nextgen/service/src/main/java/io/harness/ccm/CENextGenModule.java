@@ -557,7 +557,7 @@ public class CENextGenModule extends AbstractModule {
   @Named("lock")
   @Singleton
   RedisConfig redisConfig() {
-    return RedisConfig.builder().build();
+    return configuration.getRedisLockConfig();
   }
 
   private ValidatorFactory getValidatorFactory() {

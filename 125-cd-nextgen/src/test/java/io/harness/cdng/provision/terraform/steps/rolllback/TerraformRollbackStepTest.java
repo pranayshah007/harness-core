@@ -15,6 +15,8 @@ import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -37,6 +39,7 @@ import io.harness.cdng.provision.terraform.TerraformConfig;
 import io.harness.cdng.provision.terraform.TerraformConfigDAL;
 import io.harness.cdng.provision.terraform.TerraformConfigHelper;
 import io.harness.cdng.provision.terraform.TerraformStepHelper;
+import io.harness.cdng.provision.terraform.outcome.TerraformGitRevisionOutcome;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
@@ -64,6 +67,7 @@ import io.harness.steps.StepUtils;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.telemetry.TelemetryReporter;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -148,7 +152,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     doReturn("fileId").when(terraformStepHelper).getLatestFileId("fullId");
     GitFetchFilesConfig gitFetchFilesConfig = GitFetchFilesConfig.builder().build();
     doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
-    doReturn(null).when(terraformStepHelper).prepareTerraformVarFileInfo(any(), any());
+    doReturn(null).when(terraformStepHelper).prepareTerraformVarFileInfo(any(), any(), anyBoolean());
     Mockito.mockStatic(TaskRequestsUtils.class);
     PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
@@ -203,7 +207,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     doReturn("fileId").when(terraformStepHelper).getLatestFileId("fullId");
     GitFetchFilesConfig gitFetchFilesConfig = GitFetchFilesConfig.builder().build();
     doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
-    doReturn(null).when(terraformStepHelper).prepareTerraformVarFileInfo(any(), any());
+    doReturn(null).when(terraformStepHelper).prepareTerraformVarFileInfo(any(), any(), anyBoolean());
     doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
     doReturn(new HashMap<String, String>() {
       { put("APPLY", "-lock-timeout=0s"); }
@@ -257,7 +261,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     doReturn("fileId").when(terraformStepHelper).getLatestFileId("fullId");
     GitFetchFilesConfig gitFetchFilesConfig = GitFetchFilesConfig.builder().build();
     doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
-    doReturn(null).when(terraformStepHelper).prepareTerraformVarFileInfo(any(), any());
+    doReturn(null).when(terraformStepHelper).prepareTerraformVarFileInfo(any(), any(), anyBoolean());
     Mockito.mockStatic(TaskRequestsUtils.class);
     PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
@@ -305,7 +309,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     doReturn("fileId").when(terraformStepHelper).getLatestFileId("fullId");
     ArtifactoryStoreDelegateConfig artifactoryStoreDelegateConfig = ArtifactoryStoreDelegateConfig.builder().build();
     doReturn(artifactoryStoreDelegateConfig).when(terraformStepHelper).prepareTerraformConfigFileInfo(any(), any());
-    doReturn(null).when(terraformStepHelper).prepareTerraformVarFileInfo(any(), any());
+    doReturn(null).when(terraformStepHelper).prepareTerraformVarFileInfo(any(), any(), anyBoolean());
     Mockito.mockStatic(TaskRequestsUtils.class);
     PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
@@ -341,12 +345,13 @@ public class TerraformRollbackStepTest extends CategoryTest {
                                                           .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                                                           .unitProgressData(unitProgressData)
                                                           .build();
-    TerraformConfig terraformConfig = TerraformConfig.builder().build();
+    TerraformConfig terraformConfig = TerraformConfig.builder().varFileConfigs(new ArrayList<>()).build();
     TerraformConfigSweepingOutput terraformConfigSweepingOutput =
         TerraformConfigSweepingOutput.builder().terraformConfig(terraformConfig).tfTaskType(TFTaskType.APPLY).build();
     OptionalSweepingOutput optionalSweepingOutput =
         OptionalSweepingOutput.builder().output(terraformConfigSweepingOutput).build();
     doReturn(optionalSweepingOutput).when(executionSweepingOutputService).resolveOptional(any(), any());
+    doReturn(new HashMap<>()).when(terraformStepHelper).getRevisionsMap(anyList(), any());
     doNothing().when(terraformStepHelper).saveTerraformConfig(terraformConfig, ambiance);
 
     AccountDTO accountDTO = AccountDTO.builder().name("TestAccountName").build();
@@ -358,8 +363,14 @@ public class TerraformRollbackStepTest extends CategoryTest {
     assertThat(stepResponse).isNotNull();
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getUnitProgressList()).isEqualTo(unitProgresses);
+    assertThat(stepResponse.getStepOutcomes()).isNotNull();
+    StepResponse.StepOutcome stepOutcome = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(0);
+    assertThat(stepOutcome.getName()).isEqualTo(TerraformGitRevisionOutcome.OUTCOME_NAME);
+
     verify(terraformStepHelper, times(1)).saveTerraformConfig(terraformConfig, ambiance);
     verify(stepHelper, times(1)).sendRollbackTelemetryEvent(any(), any(), any());
+    verify(terraformStepHelper, times(1)).saveTerraformConfig(any(), any());
+    verify(terraformStepHelper, times(1)).getRevisionsMap(anyList(), any());
   }
 
   @Test

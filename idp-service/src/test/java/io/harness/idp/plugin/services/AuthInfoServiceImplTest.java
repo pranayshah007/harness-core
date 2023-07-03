@@ -91,12 +91,11 @@ public class AuthInfoServiceImplTest {
     when(ConfigManagerUtils.asJsonNode(any())).thenReturn(rootNode);
     when(ConfigManagerUtils.getAuthConfigSchema(any())).thenReturn("");
     when(ConfigManagerUtils.isValidSchema(any(), any())).thenReturn(true);
-    when(configManagerService.saveOrUpdateConfigForAccount(any(), any(), any())).thenReturn(new AppConfig());
-    when(configManagerService.mergeAndSaveAppConfig(any())).thenReturn(MergedAppConfigEntity.builder().build());
+    when(configManagerService.saveUpdateAndMergeConfigForAccount(any(), any(), any())).thenReturn(new AppConfig());
     List<BackstageEnvVariable> backstageEnvVariables =
         authInfoServiceImpl.saveAuthEnvVariables(GOOGLE_AUTH, buildGoogleAuthEnvVariables(), ACCOUNT_ID);
     assertEquals(backstageEnvVariables.size(), 2);
-    verify(configManagerService, times(1)).saveOrUpdateConfigForAccount(any(), any(), any());
+    verify(configManagerService, times(1)).saveUpdateAndMergeConfigForAccount(any(), any(), any());
     mockStatic.close();
   }
 
@@ -118,12 +117,12 @@ public class AuthInfoServiceImplTest {
     when(ConfigManagerUtils.getAuthConfigSchema(any())).thenReturn("");
     when(ConfigManagerUtils.isValidSchema(any(), any())).thenReturn(true);
     when(ConfigManagerUtils.getNodeByName(any(), any())).thenReturn(developmentNode);
-    when(configManagerService.saveOrUpdateConfigForAccount(any(), any(), any())).thenReturn(new AppConfig());
+    when(configManagerService.saveUpdateAndMergeConfigForAccount(any(), any(), any())).thenReturn(new AppConfig());
     when(configManagerService.mergeAndSaveAppConfig(any())).thenReturn(MergedAppConfigEntity.builder().build());
     List<BackstageEnvVariable> backstageEnvVariables =
         authInfoServiceImpl.saveAuthEnvVariables(GITHUB_AUTH, buildGithubAuthEnvVariables(), ACCOUNT_ID);
     assertEquals(backstageEnvVariables.size(), 3);
-    verify(configManagerService, times(1)).saveOrUpdateConfigForAccount(any(), any(), any());
+    verify(configManagerService, times(1)).saveUpdateAndMergeConfigForAccount(any(), any(), any());
     mockStatic.close();
   }
 

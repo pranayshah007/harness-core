@@ -11,18 +11,25 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
+import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
+import io.harness.eraro.ErrorCode;
+import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ScmException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.beans.StoreType;
@@ -60,7 +67,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(PL)
-public class NGTemplateRepositoryCustomImplTest {
+public class NGTemplateRepositoryCustomImplTest extends CategoryTest {
   NGTemplateRepositoryCustomImpl ngTemplateRepositoryCustom;
   @InjectMocks NGTemplateServiceHelper templateServiceHelper;
   @Mock GitAwarePersistence gitAwarePersistence;
@@ -190,6 +197,12 @@ public class NGTemplateRepositoryCustomImplTest {
     ngTemplateRepositoryCustom.deleteAllTemplatesInAProject(accountIdentifier, orgIdentifier, projectIdentifier);
     verify(mongoTemplate, times(1)).findAllAndRemove(any(), (Class<TemplateEntity>) any());
     verify(outboxService, times(1)).save(any());
+
+    // exception cases
+    doThrow(new NullPointerException("npe")).when(mongoTemplate).findAllAndRemove(any(), (Class<TemplateEntity>) any());
+    boolean deleted =
+        ngTemplateRepositoryCustom.deleteAllTemplatesInAProject(accountIdentifier, orgIdentifier, projectIdentifier);
+    assertFalse(deleted);
   }
 
   @Test
@@ -208,6 +221,19 @@ public class NGTemplateRepositoryCustomImplTest {
     ngTemplateRepositoryCustom.deleteAllOrgLevelTemplates(accountIdentifier, orgIdentifier);
     verify(mongoTemplate, times(1)).findAllAndRemove(any(), (Class<TemplateEntity>) any());
     verify(outboxService, times(1)).save(any());
+
+    // exception cases
+    doThrow(new NullPointerException("npe")).when(mongoTemplate).findAllAndRemove(any(), (Class<TemplateEntity>) any());
+    boolean deleted = ngTemplateRepositoryCustom.deleteAllOrgLevelTemplates(accountIdentifier, orgIdentifier);
+    assertFalse(deleted);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testCountInstances() {
+    Long occurance = ngTemplateRepositoryCustom.countFileInstances(accountIdentifier, "repoUrl", "filePath");
+    assertThat(occurance.toString().equals("0"));
   }
 
   @Test
@@ -231,6 +257,141 @@ public class NGTemplateRepositoryCustomImplTest {
 
     boolean isNewGitXEnabled = templateGitXService.isNewGitXEnabledAndIsRemoteEntity(templateToSave, branchInfo);
     assertFalse(isNewGitXEnabled);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testIsNewGitXEnabledNotEnabled() {
+    TemplateEntity templateToSave = TemplateEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .identifier(templateId)
+                                        .yaml(pipelineYaml)
+                                        .storeType(StoreType.REMOTE)
+                                        .build();
+
+    GitEntityInfo branchInfo = GitEntityInfo.builder()
+                                   .storeType(StoreType.REMOTE)
+                                   .connectorRef(connectorRef)
+                                   .repoName(repoName)
+                                   .branch(branch)
+                                   .filePath(filePath)
+                                   .build();
+
+    setupGitContext(branchInfo);
+
+    when(templateGitXService.isNewGitXEnabledAndIsRemoteEntity(any(), any())).thenReturn(false);
+    assertThatThrownBy(() -> ngTemplateRepositoryCustom.save(templateToSave, ""))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "Remote git simplification or feature flag was not enabled for Organisation [org] or Account [acc]");
+
+    assertThatThrownBy(() -> ngTemplateRepositoryCustom.save(templateToSave.withProjectIdentifier("proj"), ""))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "Remote git simplification was not enabled for Project [proj] in Organisation [org] in Account [acc]");
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void
+  testFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNotForOldGitSync() {
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .identifier(templateId)
+                                        .yaml(pipelineYaml)
+                                        .versionLabel(templateVersion)
+                                        .build();
+    ngTemplateRepositoryCustom
+        .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNotForOldGitSync(
+            accountIdentifier, orgIdentifier, projectIdentifier, templateId, templateVersion, true);
+    verify(gitAwarePersistence, times(1)).findOne(any(), any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void
+  testFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNotForOldGitSync() {
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .identifier(templateId)
+                                        .yaml(pipelineYaml)
+                                        .versionLabel(templateVersion)
+                                        .build();
+    ngTemplateRepositoryCustom
+        .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNotForOldGitSync(
+            accountIdentifier, orgIdentifier, projectIdentifier, templateId, true);
+    verify(gitAwarePersistence, times(1)).findOne(any(), any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testFetchRemoteEntityWithFallBackBranch() {
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .identifier(templateId)
+                                        .yaml(pipelineYaml)
+                                        .versionLabel(templateVersion)
+                                        .branch("main")
+                                        .fallBackBranch("fallback")
+                                        .build();
+    doThrow(new ScmException("error", ErrorCode.SCM_BAD_REQUEST))
+        .when(gitAwareEntityHelper)
+        .fetchEntityFromRemote(any(), any(), any(), any());
+    assertThatThrownBy(()
+                           -> ngTemplateRepositoryCustom.fetchRemoteEntityWithFallBackBranch(
+                               accountIdentifier, orgIdentifier, projectIdentifier, templateEntity, "main", false))
+        .isInstanceOf(ScmException.class);
+
+    doReturn(templateEntity).when(gitAwareEntityHelper).fetchEntityFromRemote(any(), any(), any(), any());
+    TemplateEntity entity = ngTemplateRepositoryCustom.fetchRemoteEntityWithFallBackBranch(
+        accountIdentifier, orgIdentifier, projectIdentifier, templateEntity, "main", false);
+    assertEquals(entity, templateEntity);
+
+    doThrow(new InvalidRequestException("error"))
+        .when(gitAwareEntityHelper)
+        .fetchEntityFromRemote(any(), any(), any(), any());
+    assertThatThrownBy(()
+                           -> ngTemplateRepositoryCustom.fetchRemoteEntityWithFallBackBranch(
+                               accountIdentifier, orgIdentifier, projectIdentifier, templateEntity, "main", false))
+        .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testUpdateTemplateYamlWithGitXWhenTemplateDoesNotExist() {
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .identifier(templateId)
+                                        .yaml(pipelineYaml)
+                                        .versionLabel(templateVersion)
+                                        .storeType(StoreType.REMOTE)
+                                        .build();
+    GitEntityInfo branchInfo = GitEntityInfo.builder()
+                                   .storeType(StoreType.REMOTE)
+                                   .connectorRef(connectorRef)
+                                   .repoName(repoName)
+                                   .branch(branch)
+                                   .filePath(filePath)
+                                   .build();
+    setupGitContext(branchInfo);
+    when(templateGitXService.isNewGitXEnabledAndIsRemoteEntity(any(), any())).thenReturn(false);
+    assertThatThrownBy(()
+                           -> ngTemplateRepositoryCustom.updateTemplateYaml(templateEntity, templateEntity,
+                               ChangeType.UPDATE_V2, "", TemplateUpdateEventType.OTHERS_EVENT, false))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "Template with identifier [template] and versionLabel [v1], under Project[null], Organization [org] could not be updated.");
   }
 
   @Test
@@ -319,14 +480,25 @@ public class NGTemplateRepositoryCustomImplTest {
 
     doReturn(templateEntity).when(mongoTemplate).findOne(any(), any());
     doReturn(templateEntity).when(gitAwareEntityHelper).fetchEntityFromRemote(any(), any(), any(), any());
-    Optional<TemplateEntity> optionalPipelineEntity =
+    Optional<TemplateEntity> optionalTemplateEntity =
         ngTemplateRepositoryCustom
             .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
                 accountIdentifier, orgIdentifier, projectIdentifier, templateId, templateVersion, true, false, false,
                 false);
-    assertThat(optionalPipelineEntity.isPresent()).isTrue();
-    assertThat(optionalPipelineEntity.get()).isEqualTo(templateEntity);
+    assertThat(optionalTemplateEntity.isPresent()).isTrue();
+    assertThat(optionalTemplateEntity.get()).isEqualTo(templateEntity);
     verify(gitAwareEntityHelper, times(1)).fetchEntityFromRemote(any(), any(), any(), any());
+
+    // load from fallback branch
+    doReturn(templateEntity).when(gitAwareEntityHelper).fetchEntityFromRemote(any(), any(), any(), any());
+    optionalTemplateEntity =
+        ngTemplateRepositoryCustom
+            .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
+                accountIdentifier, orgIdentifier, projectIdentifier, templateId, templateVersion, true, false, false,
+                true);
+    assertThat(optionalTemplateEntity.isPresent()).isTrue();
+    assertThat(optionalTemplateEntity.get()).isEqualTo(templateEntity);
+    verify(gitAwareEntityHelper, times(2)).fetchEntityFromRemote(any(), any(), any(), any());
   }
 
   @Test

@@ -171,7 +171,7 @@ public class RecommendationsOverviewQueryV2 {
     Condition condition = null;
 
     // Check access across all the perspectives
-    boolean accessToAllPerspectives = rbacHelper.hasPerspectiveViewOnAllResources(accountId, null, null);
+    boolean accessToAllPerspectives = rbacHelper.hasPerspectiveViewOnResources(accountId, null, null, null);
     if (accessToAllPerspectives) {
       List<QLCEView> defaultPerspectives =
           ceViewService.getAllViews(accountId, ceViewService.getSampleFolderId(accountId), true, null);
@@ -223,6 +223,8 @@ public class RecommendationsOverviewQueryV2 {
                            .jiraConnectorRef(item.getJiraConnectorRef())
                            .jiraIssueKey(item.getJiraIssueKey())
                            .jiraStatus(item.getJiraStatus())
+                           .cloudProvider(item.getCloudProvider())
+                           .governanceRuleId(item.getGovernanceRuleId())
                            .recommendationDetails(item.getRecommendationDetails() != null
                                    ? item.getRecommendationDetails()
                                    : getRecommendationDetails(item, env))
@@ -244,7 +246,7 @@ public class RecommendationsOverviewQueryV2 {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
     Condition condition = null;
 
-    if (!rbacHelper.hasPerspectiveViewOnAllResources(accountId, null, null)) {
+    if (!rbacHelper.hasPerspectiveViewOnResources(accountId, null, null, null)) {
       K8sRecommendationFilterDTO appliedAllowedPerspectiveFilter =
           applyAllowedPerspectiveFilter(accountId, filter, listAllowedRecommendationsIdAndPerspectives(accountId));
       if (Lists.isNullOrEmpty(appliedAllowedPerspectiveFilter.getIds())) {
@@ -271,11 +273,12 @@ public class RecommendationsOverviewQueryV2 {
     return genericCountQuery(env);
   }
 
-  @GraphQLQuery(name = "markRecommendationAsApplied", description = "Mark a recommendation as applied")
-  public void markRecommendationAsApplied(@GraphQLArgument(name = "recommendationId") String recommendationId,
+  @GraphQLQuery(name = "changeRecommendationState", description = "Mark a recommendation as applied/open")
+  public void changeState(@GraphQLArgument(name = "recommendationId") String recommendationId,
+      @GraphQLArgument(name = "newState") RecommendationState newState,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
-    if (!rbacHelper.hasPerspectiveViewOnAllResources(accountId, null, null)) {
+    if (!rbacHelper.hasPerspectiveViewOnResources(accountId, null, null, null)) {
       HashMap<String, CEViewShortHand> allowedRecommendationsIdAndPerspectives =
           listAllowedRecommendationsIdAndPerspectives(accountId);
       if (!allowedRecommendationsIdAndPerspectives.containsKey(recommendationId)) {
@@ -283,7 +286,10 @@ public class RecommendationsOverviewQueryV2 {
             String.format(PERMISSION_MISSING_MESSAGE, PERSPECTIVE_VIEW, RESOURCE_FOLDER), WingsException.USER, null);
       }
     }
-    recommendationService.updateRecommendationState(recommendationId, RecommendationState.APPLIED);
+    if (!ImmutableSet.of(RecommendationState.OPEN, RecommendationState.APPLIED).contains(newState)) {
+      throw new InvalidRequestException("Recommendation State should either be OPEN or APPLIED");
+    }
+    recommendationService.updateRecommendationState(recommendationId, newState);
   }
 
   private int genericCountQuery(@NotNull final ResolutionEnvironment env) {
@@ -291,7 +297,7 @@ public class RecommendationsOverviewQueryV2 {
     K8sRecommendationFilterDTO filter = extractRecommendationFilter(env);
     Condition condition = null;
 
-    if (!rbacHelper.hasPerspectiveViewOnAllResources(accountId, null, null)) {
+    if (!rbacHelper.hasPerspectiveViewOnResources(accountId, null, null, null)) {
       K8sRecommendationFilterDTO appliedAllowedPerspectiveFilter =
           applyAllowedPerspectiveFilter(accountId, filter, listAllowedRecommendationsIdAndPerspectives(accountId));
       if (Lists.isNullOrEmpty(appliedAllowedPerspectiveFilter.getIds())) {
@@ -319,7 +325,7 @@ public class RecommendationsOverviewQueryV2 {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
     Condition condition = null;
 
-    if (!rbacHelper.hasPerspectiveViewOnAllResources(accountId, null, null)) {
+    if (!rbacHelper.hasPerspectiveViewOnResources(accountId, null, null, null)) {
       K8sRecommendationFilterDTO appliedAllowedPerspectiveFilter =
           applyAllowedPerspectiveFilter(accountId, filter, listAllowedRecommendationsIdAndPerspectives(accountId));
       if (Lists.isNullOrEmpty(appliedAllowedPerspectiveFilter.getIds())) {

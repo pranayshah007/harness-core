@@ -61,6 +61,9 @@ public class BackstageEnvVariableRepositoryCustomImpl implements BackstageEnvVar
     return Optional.ofNullable(mongoTemplate.findOne(query, BackstageEnvVariableEntity.class));
   }
 
+  // TODO: Projection isn't working with inheritance in the entity. Have to debug further later.
+  // query.fields().include(BackstageEnvVariableKeys.envName);
+  // query.fields().exclude(BackstageEnvVariableKeys.id);
   @Override
   public List<BackstageEnvVariableEntity> findAllByAccountIdentifierAndMultipleEnvNames(
       String accountIdentifier, List<String> envNames) {
@@ -69,20 +72,6 @@ public class BackstageEnvVariableRepositoryCustomImpl implements BackstageEnvVar
                             .and(BackstageEnvVariableKeys.envName)
                             .in(envNames);
     Query query = new Query(criteria);
-    return mongoTemplate.find(query, BackstageEnvVariableEntity.class);
-  }
-
-  @Override
-  public List<BackstageEnvVariableEntity> findIfEnvsExistByAccountIdentifier(
-      String accountIdentifier, List<String> envNames) {
-    Criteria criteria = Criteria.where(BackstageEnvVariableKeys.accountIdentifier)
-                            .is(accountIdentifier)
-                            .and(BackstageEnvVariableKeys.envName)
-                            .in(envNames);
-    Query query = new Query(criteria);
-    // TODO: Projection isn't working with inheritence in the entity. Have to debug further later.
-    // query.fields().include(BackstageEnvVariableKeys.envName);
-    // query.fields().exclude(BackstageEnvVariableKeys.id);
     return mongoTemplate.find(query, BackstageEnvVariableEntity.class);
   }
 

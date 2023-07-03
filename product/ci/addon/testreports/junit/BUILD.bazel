@@ -14,7 +14,7 @@ go_library(
         "//commons/go/lib/filesystem",
         "//product/ci/addon/gojunit",
         "//product/ci/addon/testreports",
-        "//product/ci/ti-service/types",
+        "@com_github_harness_ti_client//types",
         "@com_github_mattn_go_zglob//:go-zglob",
         "@org_uber_go_zap//:zap",
     ],
@@ -26,7 +26,7 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":junit"],
     deps = [
-        "//product/ci/ti-service/types",
+        "@com_github_harness_ti_client//types",
         "@com_github_stretchr_testify//assert",
         "@org_uber_go_zap//:zap",
     ],

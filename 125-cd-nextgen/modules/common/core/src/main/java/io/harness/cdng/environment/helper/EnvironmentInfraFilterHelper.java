@@ -45,7 +45,6 @@ import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.utils.IdentifierRefHelper;
-import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.RetryUtils;
 import io.harness.utils.ScopeWiseIds;
 
@@ -87,9 +86,7 @@ public class EnvironmentInfraFilterHelper {
   @Inject private ClusterService clusterService;
   @Inject private EnvironmentService environmentService;
   @Inject private EnvironmentFilterHelper environmentFilterHelper;
-
   @Inject private InfrastructureEntityService infrastructureEntityService;
-  @Inject private NGFeatureFlagHelperService featureFlagHelperService;
   @Inject private EnvironmentGroupService environmentGroupService;
 
   private static final RetryPolicy<Object> retryPolicyForGitopsClustersFetch = RetryUtils.getRetryPolicy(

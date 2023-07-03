@@ -13,11 +13,9 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 public interface PluginsProxyInfoService {
-  List<ProxyHostDetail> insertProxyHostDetailsForPlugin(AppConfig appConfig, String accountIdentifier)
-      throws ExecutionException;
+  List<ProxyHostDetail> insertProxyHostDetailsForPlugin(AppConfig appConfig, String accountIdentifier);
 
-  List<ProxyHostDetail> updateProxyHostDetailsForPlugin(AppConfig appConfig, String accountIdentifier)
-      throws ExecutionException;
+  List<ProxyHostDetail> updateProxyHostDetailsForPlugin(AppConfig appConfig, String accountIdentifier);
 
   void deleteProxyHostDetailsForPlugin(String accountIdentifier, String pluginId) throws ExecutionException;
 

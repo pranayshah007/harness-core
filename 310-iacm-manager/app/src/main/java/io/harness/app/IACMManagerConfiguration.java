@@ -21,7 +21,9 @@ import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.grpc.server.GrpcServerConfig;
+import io.harness.lock.DistributedLockImplementation;
 import io.harness.mongo.MongoConfig;
+import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;
 import io.harness.ssca.beans.entities.SSCAServiceConfig;
@@ -84,10 +86,12 @@ public class IACMManagerConfiguration extends Configuration implements AssetsBun
   @JsonProperty("asyncDelegateResponseConsumption") private ThreadPoolConfig asyncDelegateResponseConsumption;
   @JsonProperty("segmentConfiguration") @ConfigSecret private SegmentConfiguration segmentConfiguration;
   @JsonProperty("enforcementClientConfiguration") EnforcementClientConfiguration enforcementClientConfiguration;
+  @JsonProperty("distributedLockImplementation") DistributedLockImplementation distributedLockImplementation;
 
   private ScmConnectionConfig scmConnectionConfig;
 
   @JsonProperty("pmsSdkExecutionPoolConfig") private ThreadPoolConfig pmsSdkExecutionPoolConfig;
+  @JsonProperty("redisLockConfig") @ConfigSecret private RedisConfig redisLockConfig;
   private String ngManagerServiceSecret;
   private LogServiceConfig logServiceConfig;
   private TIServiceConfig tiServiceConfig;

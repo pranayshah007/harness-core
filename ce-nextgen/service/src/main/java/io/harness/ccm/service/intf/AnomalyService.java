@@ -15,6 +15,7 @@ import io.harness.ccm.commons.entities.anomaly.AnomalySummary;
 import io.harness.ccm.commons.entities.anomaly.AnomalyWidgetData;
 import io.harness.ccm.commons.entities.anomaly.PerspectiveAnomalyData;
 import io.harness.ccm.graphql.dto.recommendation.FilterStatsDTO;
+import io.harness.ccm.views.dto.DefaultViewIdDto;
 import io.harness.ccm.views.dto.PerspectiveQueryDTO;
 import io.harness.ccm.views.entities.CEView;
 
@@ -32,14 +33,14 @@ public interface AnomalyService {
   List<PerspectiveAnomalyData> listPerspectiveAnomalies(
       @NonNull String accountIdentifier, @NonNull CEView perspective, PerspectiveQueryDTO perspectiveQuery);
   Boolean updateAnomalyFeedback(@NonNull String accountIdentifier, String anomalyId, AnomalyFeedbackDTO feedback);
-  List<AnomalySummary> getAnomalySummary(
-      @NonNull String accountIdentifier, AnomalyQueryDTO anomalyQuery, Set<String> allowedAnomaliesIds);
-  List<AnomalyWidgetData> getAnomalyWidgetData(
-      @NonNull String accountIdentifier, AnomalyQueryDTO anomalyQuery, Set<String> allowedAnomaliesIds);
+  List<AnomalySummary> getAnomalySummary(@NonNull String accountIdentifier, AnomalyQueryDTO anomalyQuery,
+      Set<String> allowedAnomaliesIds, boolean alwaysAllowed);
+  List<AnomalyWidgetData> getAnomalyWidgetData(@NonNull String accountIdentifier, AnomalyQueryDTO anomalyQuery,
+      Set<String> allowedAnomaliesIds, boolean alwaysAllowed);
   Set<String> listAllowedAnomaliesIds(
       @NonNull String accountIdentifier, Set<String> allowedFolderIds, List<CEView> perspectives);
   HashMap<String, CEView> listAllowedAnomaliesIdAndPerspectives(
       @NonNull String accountIdentifier, Set<String> allowedFolderIds, List<CEView> perspectives);
-  List<AnomalyData> addPerspectiveInfo(
-      List<AnomalyData> anomalyData, HashMap<String, CEView> allowedAnomaliesIdAndPerspectives);
+  List<AnomalyData> addPerspectiveInfo(List<AnomalyData> anomalyData,
+      HashMap<String, CEView> allowedAnomaliesIdAndPerspectives, DefaultViewIdDto defaultViewIdDto);
 }
