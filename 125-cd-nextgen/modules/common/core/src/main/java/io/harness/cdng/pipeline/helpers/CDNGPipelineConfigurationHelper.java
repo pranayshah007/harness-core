@@ -63,8 +63,8 @@ public class CDNGPipelineConfigurationHelper {
   }
 
   public String getExecutionStrategyYaml(ServiceDefinitionType serviceDefinitionType,
-      ExecutionStrategyType executionStrategyType, boolean includeVerify, String deploymentMetaDataYaml)
-      throws IOException {
+      ExecutionStrategyType executionStrategyType, boolean includeVerify, String deploymentMetaDataYaml,
+      String accountIdentifier) throws IOException {
     // Note: Additional condition for GitOps is added because we do not want to show the GitOps Strategy in
     // the UI but also provide the support to UI for default yaml
     ClassLoader classLoader = this.getClass().getClassLoader();
@@ -74,6 +74,11 @@ public class CDNGPipelineConfigurationHelper {
       if (ServiceDefinitionType.GOOGLE_CLOUD_FUNCTIONS.equals(serviceDefinitionType)) {
         executionStrategyTypeValue = deploymentMetadataServiceHelper.filterStrategyTypeOnDeploymentMetadata(
             serviceDefinitionType, deploymentMetaDataYaml, executionStrategyType);
+      }
+      if (ServiceDefinitionType.SERVERLESS_AWS_LAMBDA.equals(serviceDefinitionType)
+          && ExecutionStrategyType.BASIC.equals(executionStrategyType)
+          && featureFlagHelper.isEnabled(accountIdentifier, FeatureName.CDS_SERVERLESS_V2)) {
+        executionStrategyTypeValue = "basic-plugin";
       }
       return Resources.toString(
           Objects.requireNonNull(classLoader.getResource(
@@ -111,7 +116,8 @@ public class CDNGPipelineConfigurationHelper {
       return cdngPipelineExecutionStrategyHelperV2.generateBasicYaml(
           accountIdentifier, serviceDefinitionType, includeVerify, strategyParameters);
     } else {
-      return getExecutionStrategyYaml(serviceDefinitionType, executionStrategyType, includeVerify, null);
+      return getExecutionStrategyYaml(
+          serviceDefinitionType, executionStrategyType, includeVerify, null, accountIdentifier);
     }
   }
 

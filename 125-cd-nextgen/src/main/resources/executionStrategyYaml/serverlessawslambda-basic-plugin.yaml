@@ -1,0 +1,71 @@
+failureStrategies:
+  - onFailure:
+      errors:
+        - AllErrors
+      action:
+        type: StageRollback
+spec:
+  execution:
+    steps:
+      - stepGroup:
+          steps:
+            - step:
+                type: DownloadManifests
+                name: DownloadManifests
+                identifier: DownloadManifests
+                spec: {}
+                failureStrategies: []
+            - step:
+                identifier: Serverless_Aws_Lambda_Prepare_Rollback
+                type: ServerlessAwsLambdaPrepareRollbackV2
+                name: Serverless Aws Lambda Prepare Rollback
+                timeout: 10m
+                spec:
+                  connectorRef: account.harnessImage
+                  image: harnessdev/serverless-prepareRollback:1.82.0-latest
+                  imagePullPolicy: Always
+            - step:
+                identifier: Serverless_Aws_Lambda_Package
+                type: ServerlessAwsLambdaPackageV2
+                name: Serverless Aws Lambda Package
+                timeout: 10m
+                spec:
+                  connectorRef: account.harnessImage
+                  image: harnessdev/serverless-package:1.82.0-latest
+                  resources:
+                    limits:
+                      memory: 1G
+                  imagePullPolicy: Always
+                when:
+                  stageStatus: Success
+                failureStrategies: []
+            - step:
+                identifier: Serverless_Aws_Lambda_Deploy
+                type: ServerlessAwsLambdaDeployV2
+                name: Serverless Aws Lambda Deploy
+                spec:
+                  connectorRef: account.harnessImage
+                  image: harnessdev/serverless-deploy:1.82.0-latest
+                  imagePullPolicy: Always
+                  resources:
+                    limits:
+                      memory: 1G
+                timeout: 10m
+                when:
+                  stageStatus: Success
+                failureStrategies: []
+          name: Serverless Step Group
+          identifier: serverless_step_group
+          sharedPaths: []
+          stepGroupInfra:
+            type: KubernetesDirect
+            spec:
+              namespace: "default"
+    rollbackSteps:
+      - step:
+          identifier: Serverless_Aws_Lambda_Rollback
+          type: ServerlessAwsLambdaRollbackV2
+          name: Serverless Aws Lambda Rollback
+          timeout: 10m
+          spec:
+            delegateSelectors: []
