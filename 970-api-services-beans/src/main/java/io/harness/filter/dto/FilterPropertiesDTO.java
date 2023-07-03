@@ -26,6 +26,7 @@ import lombok.Data;
 @Schema(name = "FilterProperties", description = "Properties of the Filter entity defined in Harness.")
 public abstract class FilterPropertiesDTO {
   @Schema(description = "Filter tags as a key-value pair.") Map<String, String> tags;
+  @Schema(description = "Filter tags as a key-value pair.", hidden = true) Map<String, String> labels;
   @Schema(description = "This specifies the corresponding Entity of the filter.", required = true)
   FilterType filterType;
 }

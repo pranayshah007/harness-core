@@ -31,6 +31,8 @@ import io.harness.git.model.GitRepositoryType;
 import io.harness.git.model.JgitSshAuthRequest;
 import io.harness.git.model.ListRemoteRequest;
 import io.harness.git.model.ListRemoteResult;
+import io.harness.git.model.RevertAndPushRequest;
+import io.harness.git.model.RevertAndPushResult;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.ssh.SshFactory;
 import io.harness.shell.ssh.client.jsch.JschConnection;
@@ -129,6 +131,13 @@ public class NGGitServiceImpl implements NGGitService {
       String accountId, SshSessionConfig sshSessionConfig, boolean overrideFromGitConfig) {
     setGitBaseRequest(gitConfig, accountId, commitAndPushRequest, YAML, sshSessionConfig, overrideFromGitConfig);
     return gitClientV2.commitAndPush(commitAndPushRequest);
+  }
+
+  @Override
+  public RevertAndPushResult revertCommitAndPush(GitConfigDTO gitConfig, RevertAndPushRequest commitAndPushRequest,
+      String accountId, SshSessionConfig sshSessionConfig, boolean overrideFromGitConfig) {
+    setGitBaseRequest(gitConfig, accountId, commitAndPushRequest, YAML, sshSessionConfig, overrideFromGitConfig);
+    return gitClientV2.revertAndPush(commitAndPushRequest);
   }
 
   @Override

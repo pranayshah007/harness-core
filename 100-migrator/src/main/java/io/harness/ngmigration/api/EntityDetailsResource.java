@@ -34,6 +34,8 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.SettingAttribute.SettingAttributeKeys;
 import software.wings.beans.Workflow;
 import software.wings.beans.Workflow.WorkflowKeys;
+import software.wings.beans.template.Template;
+import software.wings.beans.template.Template.TemplateKeys;
 import software.wings.beans.trigger.Trigger;
 import software.wings.beans.trigger.Trigger.TriggerKeys;
 import software.wings.security.PermissionAttribute.ResourceType;
@@ -43,6 +45,7 @@ import software.wings.security.annotations.Scope;
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -52,6 +55,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(CDC)
 @Slf4j
@@ -238,6 +242,28 @@ public class EntityDetailsResource {
 
     if (EmptyPredicate.isNotEmpty(secrets)) {
       entities = secrets.stream()
+                     .map(entity -> BaseEntityDetailsDTO.builder().id(entity.getUuid()).name(entity.getName()).build())
+                     .collect(Collectors.toList());
+    }
+    return new RestResponse<>(entities);
+  }
+
+  @GET
+  @Path("/templates")
+  @Timed
+  @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
+  public RestResponse<List<BaseEntityDetailsDTO>> listTemplates(
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId, @QueryParam("appId") String appId) {
+    List<BaseEntityDetailsDTO> entities = new ArrayList<>();
+    Query<Template> query = hPersistence.createQuery(Template.class).filter(TemplateKeys.accountId, accountId);
+    if (StringUtils.isNotBlank(appId)) {
+      query = query.filter(TemplateKeys.appId, appId);
+    }
+    List<Template> templates = query.project(TemplateKeys.uuid, true).project(TemplateKeys.name, true).asList();
+
+    if (EmptyPredicate.isNotEmpty(templates)) {
+      entities = templates.stream()
                      .map(entity -> BaseEntityDetailsDTO.builder().id(entity.getUuid()).name(entity.getName()).build())
                      .collect(Collectors.toList());
     }

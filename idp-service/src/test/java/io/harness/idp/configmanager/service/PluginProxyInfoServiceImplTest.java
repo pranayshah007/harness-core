@@ -17,12 +17,15 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCache;
 import io.harness.idp.configmanager.beans.entity.PluginsProxyInfoEntity;
 import io.harness.idp.configmanager.repositories.PluginsProxyInfoRepository;
+import io.harness.idp.proxy.envvariable.ProxyEnvVariableUtils;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.ProxyHostDetail;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
@@ -37,6 +40,8 @@ import org.mockito.Spy;
 public class PluginProxyInfoServiceImplTest extends CategoryTest {
   AutoCloseable openMocks;
   @Mock PluginsProxyInfoRepository pluginsProxyInfoRepository;
+  @Mock DelegateSelectorsCache delegateSelectorsCache;
+  @Mock ProxyEnvVariableUtils proxyEnvVariableUtils;
 
   @Spy @InjectMocks PluginsProxyInfoServiceImpl pluginsProxyInfoServiceImpl;
 
@@ -71,6 +76,11 @@ public class PluginProxyInfoServiceImplTest extends CategoryTest {
     AppConfig appConfig = getTestAppConfig();
     when(pluginsProxyInfoServiceImpl.getPluginProxyInfoEntities(appConfig, TEST_ACCOUNT_IDENTIFIER))
         .thenReturn(Collections.emptyList());
+    when(pluginsProxyInfoRepository.findAllByAccountIdentifierAndPluginId(any(), any()))
+        .thenReturn(Collections.singletonList(getTestPluginProxyInfoEntity()));
+    doNothing().when(delegateSelectorsCache).remove(any(), any());
+    doNothing().when(proxyEnvVariableUtils).removeFromHostProxyEnvVariable(any(), any());
+    doNothing().when(pluginsProxyInfoRepository).deleteAllByAccountIdentifierAndPluginId(any(), any());
     doNothing().when(pluginsProxyInfoServiceImpl).updateHostProxyEnvVariable(any(), any());
     doNothing().when(pluginsProxyInfoServiceImpl).updateDelegateSelectorsCache(any(), any());
     assertEquals(
@@ -109,6 +119,14 @@ public class PluginProxyInfoServiceImplTest extends CategoryTest {
     AppConfig appConfig = getTestAppConfig();
     doNothing().when(pluginsProxyInfoServiceImpl).updateHostProxyEnvVariable(any(), any());
     doNothing().when(pluginsProxyInfoServiceImpl).updateDelegateSelectorsCache(any(), any());
+    when(pluginsProxyInfoRepository.findAllByAccountIdentifierAndPluginId(any(), any()))
+        .thenReturn(Collections.singletonList(getTestPluginProxyInfoEntity()));
+    doNothing().when(delegateSelectorsCache).remove(any(), any());
+    doNothing().when(proxyEnvVariableUtils).removeFromHostProxyEnvVariable(any(), any());
+    doNothing().when(pluginsProxyInfoRepository).deleteAllByAccountIdentifierAndPluginId(any(), any());
+    when(pluginsProxyInfoServiceImpl.getPluginProxyInfoEntities(appConfig, TEST_ACCOUNT_IDENTIFIER))
+        .thenReturn(Collections.emptyList());
+    pluginsProxyInfoServiceImpl.updateProxyHostDetailsForPlugin(appConfig, TEST_ACCOUNT_IDENTIFIER);
 
     when(pluginsProxyInfoServiceImpl.getPluginProxyInfoEntities(appConfig, TEST_ACCOUNT_IDENTIFIER))
         .thenReturn(Collections.singletonList(pluginsProxyInfoEntity));
@@ -214,6 +232,28 @@ public class PluginProxyInfoServiceImplTest extends CategoryTest {
     assertEquals(TEST_HOST_VALUE, pluginsProxyInfoEntityList.get(0).getHost());
     assertEquals(TEST_PROXY_VALUE, pluginsProxyInfoEntityList.get(0).getProxy());
     assertEquals(TEST_DELEGATE_SELECTOR_NAME, pluginsProxyInfoEntityList.get(0).getDelegateSelectors().get(0));
+
+    // test if proxy details are not present
+    appConfig.setProxy(null);
+    assertEquals(0, pluginsProxyInfoServiceImpl.getPluginProxyInfoEntities(appConfig, TEST_ACCOUNT_IDENTIFIER).size());
+  }
+
+  @Test
+  @Owner(developers = DEVESH)
+  @Category(UnitTests.class)
+  public void testUpdateDelegateSelectorsCache() {
+    pluginsProxyInfoServiceImpl.updateDelegateSelectorsCache(
+        TEST_ACCOUNT_IDENTIFIER, Collections.singletonList(getTestPluginProxyInfoEntity()));
+    verify(delegateSelectorsCache, times(1)).put(any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = DEVESH)
+  @Category(UnitTests.class)
+  public void testUpdateHostProxyEnvVariable() {
+    pluginsProxyInfoServiceImpl.updateHostProxyEnvVariable(
+        TEST_ACCOUNT_IDENTIFIER, Collections.singletonList(getTestPluginProxyInfoEntity()));
+    verify(proxyEnvVariableUtils).createOrUpdateHostProxyEnvVariable(any(), any());
   }
 
   private PluginsProxyInfoEntity getTestPluginProxyInfoEntity() {

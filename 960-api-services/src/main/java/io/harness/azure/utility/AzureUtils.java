@@ -25,7 +25,7 @@ import com.azure.core.credential.TokenRequestContext;
 import com.azure.core.http.HttpClient;
 import com.azure.core.http.HttpPipeline;
 import com.azure.core.http.ProxyOptions;
-import com.azure.core.http.okhttp.OkHttpAsyncClientProvider;
+import com.azure.core.http.okhttp.OkHttpAsyncHttpClientBuilder;
 import com.azure.core.http.okhttp.implementation.ProxyAuthenticator;
 import com.azure.core.http.policy.FixedDelayOptions;
 import com.azure.core.http.policy.HttpLogDetailLevel;
@@ -64,6 +64,8 @@ import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.FailsafeException;
 import okhttp3.Authenticator;
+import okhttp3.ConnectionPool;
+import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.ResponseBody;
 import org.apache.commons.codec.binary.Base64;
@@ -326,12 +328,32 @@ public class AzureUtils {
     }
 
     if (useExtendedReadTimeout) {
-      cachedAzureHttpClientForLogStreaming = new OkHttpAsyncClientProvider().createInstance(httpClientOptions);
+      cachedAzureHttpClientForLogStreaming = createOkHttpAsyncClientInstance(httpClientOptions);
       return cachedAzureHttpClientForLogStreaming;
     } else {
-      cachedAzureHttpClient = new OkHttpAsyncClientProvider().createInstance(httpClientOptions);
+      cachedAzureHttpClient = createOkHttpAsyncClientInstance(httpClientOptions);
       return cachedAzureHttpClient;
     }
+  }
+
+  private HttpClient createOkHttpAsyncClientInstance(HttpClientOptions clientOptions) {
+    OkHttpAsyncHttpClientBuilder builder = new OkHttpAsyncHttpClientBuilder();
+    builder.addNetworkInterceptor(createAzureNetworkInterceptor());
+    builder = builder.proxy(clientOptions.getProxyOptions())
+                  .configuration(clientOptions.getConfiguration())
+                  .writeTimeout(clientOptions.getWriteTimeout())
+                  .readTimeout(clientOptions.getReadTimeout());
+    Integer poolSize = clientOptions.getMaximumConnectionPoolSize();
+    int maximumConnectionPoolSize =
+        poolSize != null && poolSize > 0 ? poolSize : AzureConstants.SDK_CONNECTION_POOL_SIZE;
+    ConnectionPool connectionPool = new ConnectionPool(
+        maximumConnectionPoolSize, clientOptions.getConnectionIdleTimeout().toMillis(), TimeUnit.MILLISECONDS);
+    builder = builder.connectionPool(connectionPool);
+    return builder.build();
+  }
+
+  private Interceptor createAzureNetworkInterceptor() {
+    return new LoggingInterceptor();
   }
 
   public HttpClient getAzureHttpClient() {

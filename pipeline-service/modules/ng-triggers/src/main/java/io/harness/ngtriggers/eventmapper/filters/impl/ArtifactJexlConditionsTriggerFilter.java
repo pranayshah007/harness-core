@@ -29,9 +29,8 @@ import io.harness.ngtriggers.expressions.TriggerExpressionEvaluator;
 import io.harness.ngtriggers.helpers.TriggerEventResponseHelper;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.pms.contracts.triggers.ArtifactData;
+import io.harness.yaml.utils.JsonPipelineUtils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
@@ -110,11 +109,7 @@ public class ArtifactJexlConditionsTriggerFilter implements TriggerFilter {
     String build = filterRequestData.getPollingResponse().getBuildInfo().getVersions(0);
     ArtifactData artifactData = ArtifactData.newBuilder().putAllMetadata(metadata).setBuild(build).build();
     String jsonMetadata = "";
-    try {
-      jsonMetadata = new ObjectMapper().writeValueAsString(metadata);
-    } catch (JsonProcessingException e) {
-      log.error("Unable to convert metadata to json", e);
-    }
+    jsonMetadata = JsonPipelineUtils.getJsonString(metadata);
     return checkIfJexlConditionsMatch(artifactData, jsonMetadata, triggerJexlCondition);
   }
 

@@ -141,6 +141,7 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
       String taskId = delegateTaskMigrationHelper.generateDelegateTaskUUID();
       Map<String, String> setupAbstractions = schedulingConfig.getSetupAbstractions().getValuesMap();
 
+      // Only selector capabilities
       List<ExecutionCapability> capabilities = new ArrayList<>();
 
       // only selector capabilities are kept
@@ -151,19 +152,22 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
                            .map(this::toSelectorCapability)
                            .collect(Collectors.toList());
       }
-      // Read execution infrastructure location information
+      capabilities.add(SelectorCapability.builder().selectors(Set.of(schedulingConfig.getRunnerType())).build());
+      // Read execution infrastructure location information.
       if (executionInfraRef.isPresent()) {
-        String locationId = executionInfraRef.get();
-        ExecutionInfraLocation locationInfo = executionInfrastructureService.getExecutionInfrastructure(locationId);
-        capabilities.add(SelectorCapability.builder()
-                             .selectors(Set.of(locationInfo.getRunnerType(), locationInfo.getDelegateGroupName()))
-                             .build());
+        // Enter here only when executing a task with given executionInfraRef
+        ExecutionInfraLocation locationInfo =
+            executionInfrastructureService.getExecutionInfrastructure(executionInfraRef.get());
+        capabilities.add(SelectorCapability.builder().selectors(Set.of(locationInfo.getDelegateGroupName())).build());
       }
 
       DelegateTaskBuilder taskBuilder =
           DelegateTask.builder()
               .uuid(taskId)
+              .requestMethod(method.name())
+              .requestUri(requestUri)
               .runnerType(schedulingConfig.getRunnerType())
+              .infraId(executionInfraRef.orElse(taskId))
               .driverId(schedulingConfig.hasCallbackToken() ? schedulingConfig.getCallbackToken().getToken() : null)
               .waitId(taskId)
               .accountId(schedulingConfig.getAccountId())
@@ -182,7 +186,7 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
               .forceExecute(false);
 
       DelegateTask task = taskBuilder.build();
-      taskClient.sendTask(task, method, requestUri);
+      taskClient.sendTask(task);
       responseObserver.onNext(SubmitTaskResponse.newBuilder()
                                   .setTaskId(TaskId.newBuilder().setId(taskId).build())
                                   .setTotalExpiry(Timestamps.fromMillis(task.getExpiry() + task.getExecutionTimeout()))

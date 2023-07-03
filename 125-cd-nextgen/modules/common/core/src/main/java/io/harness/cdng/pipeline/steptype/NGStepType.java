@@ -28,10 +28,6 @@ import java.util.List;
 @OwnedBy(CDP)
 public enum NGStepType {
   // gitops steps
-  @JsonProperty(StepSpecTypeConstants.GITOPS_CREATE_PR)
-  GITOPS_CREATE_PR("Create PR", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes",
-      StepSpecTypeConstants.GITOPS_CREATE_PR),
-
   @JsonProperty(StepSpecTypeConstants.GITOPS_MERGE_PR)
   GITOPS_MERGE_PR(
       "Merge PR", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes", StepSpecTypeConstants.GITOPS_MERGE_PR),
@@ -318,7 +314,11 @@ public enum NGStepType {
   @JsonProperty(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2)
   SERVERLESS_AWS_LAMBDA_ROLLBACK_V2("Serverless Aws Lambda Rollback V2",
       Collections.singletonList(ServiceDefinitionType.SERVERLESS_AWS_LAMBDA), "Serverless Aws Lambda",
-      StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2);
+      StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2),
+  @JsonProperty(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2)
+  SERVERLESS_AWS_LAMBDA_DEPLOY_V2("Serverless Aws Lambda Deploy V2",
+      Collections.singletonList(ServiceDefinitionType.SERVERLESS_AWS_LAMBDA), "Serverless Aws Lambda",
+      StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

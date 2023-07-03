@@ -1,0 +1,2993 @@
+{
+  "type" : "object",
+  "required" : [ "identifier" ],
+  "properties" : {
+    "description" : {
+      "type" : "string"
+    },
+    "enabled" : {
+      "type" : "boolean"
+    },
+    "encryptedWebhookSecretIdentifier" : {
+      "type" : "string"
+    },
+    "identifier" : {
+      "type" : "string",
+      "pattern" : "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
+    },
+    "inputSetRefs" : {
+      "type" : "array",
+      "items" : {
+        "type" : "string"
+      }
+    },
+    "inputYaml" : {
+      "type" : "string"
+    },
+    "name" : {
+      "type" : "string",
+      "pattern" : "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
+    },
+    "orgIdentifier" : {
+      "type" : "string"
+    },
+    "pipelineBranchName" : {
+      "type" : "string"
+    },
+    "pipelineIdentifier" : {
+      "type" : "string"
+    },
+    "projectIdentifier" : {
+      "type" : "string"
+    },
+    "source" : {
+      "$ref" : "#/definitions/NGTriggerSourceV2"
+    },
+    "stagesToExecute" : {
+      "type" : "array",
+      "items" : {
+        "type" : "string"
+      }
+    },
+    "tags" : {
+      "type" : "object",
+      "additionalProperties" : {
+        "type" : "string"
+      }
+    }
+  },
+  "$schema" : "http://json-schema.org/draft-07/schema#",
+  "definitions" : {
+    "AMIFilter" : {
+      "type" : "object",
+      "properties" : {
+        "name" : {
+          "type" : "string"
+        },
+        "value" : {
+          "type" : "string"
+        }
+      },
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "AMIRegistrySpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/ArtifactTypeSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "eventConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "filters" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/AMIFilter"
+            }
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "metaDataConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "region" : {
+            "type" : "string"
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/AMITag"
+            }
+          },
+          "version" : {
+            "type" : "string"
+          },
+          "versionRegex" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "AMITag" : {
+      "type" : "object",
+      "properties" : {
+        "name" : {
+          "type" : "string"
+        },
+        "value" : {
+          "type" : "string"
+        }
+      },
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "AcrSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/ArtifactTypeSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "eventConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "metaDataConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "registry" : {
+            "type" : "string"
+          },
+          "repository" : {
+            "type" : "string"
+          },
+          "subscriptionId" : {
+            "type" : "string"
+          },
+          "tag" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "AmazonS3RegistrySpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/ArtifactTypeSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "bucketName" : {
+            "type" : "string"
+          },
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "eventConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "filePathRegex" : {
+            "type" : "string"
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "metaDataConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "region" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "ArtifactTriggerConfig" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/NGTriggerSpecV2"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "artifactRef" : {
+            "type" : "string"
+          },
+          "stageIdentifier" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string",
+            "enum" : [ "Gcr", "Ecr", "DockerRegistry", "Nexus3Registry", "Nexus2Registry", "ArtifactoryRegistry", "Acr", "AmazonS3", "Jenkins", "CustomArtifact", "GoogleArtifactRegistry", "GithubPackageRegistry", "AzureArtifacts", "AmazonMachineImage", "GoogleCloudStorage", "Bamboo" ]
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Acr"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/AcrSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "AmazonMachineImage"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/AMIRegistrySpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "AmazonS3"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/AmazonS3RegistrySpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "ArtifactoryRegistry"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/ArtifactoryRegistrySpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "AzureArtifacts"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/AzureArtifactsRegistrySpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Bamboo"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/BambooRegistrySpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "CustomArtifact"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/CustomArtifactSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "DockerRegistry"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/DockerRegistrySpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Ecr"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/EcrSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Gcr"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/GcrSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "GithubPackageRegistry"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/GithubPackagesSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "GoogleArtifactRegistry"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/GarSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "GoogleCloudStorage"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/GoolgeCloudStorageRegistrySpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Jenkins"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/JenkinsRegistrySpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Nexus2Registry"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/Nexus2RegistrySpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Nexus3Registry"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/NexusRegistrySpec"
+            }
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "ArtifactTypeSpec" : {
+      "type" : "object",
+      "discriminator" : "type",
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "ArtifactTypeSpecWrapper" : {
+      "type" : "object",
+      "properties" : { },
+      "$schema" : "http://json-schema.org/draft-07/schema#",
+      "allOf" : [ {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Acr"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/AcrSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "AmazonMachineImage"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/AMIRegistrySpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "AmazonS3"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/AmazonS3RegistrySpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "ArtifactoryRegistry"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/ArtifactoryRegistrySpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "AzureArtifacts"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/AzureArtifactsRegistrySpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Bamboo"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/BambooRegistrySpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "CustomArtifact"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/CustomArtifactSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "DockerRegistry"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/DockerRegistrySpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Ecr"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/EcrSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Gcr"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/GcrSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "GithubPackageRegistry"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/GithubPackagesSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "GoogleArtifactRegistry"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/GarSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "GoogleCloudStorage"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/GoolgeCloudStorageRegistrySpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Jenkins"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/JenkinsRegistrySpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Nexus2Registry"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/Nexus2RegistrySpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Nexus3Registry"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/NexusRegistrySpec"
+            }
+          }
+        }
+      } ]
+    },
+    "ArtifactoryRegistrySpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/ArtifactTypeSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "artifactDirectory" : {
+            "type" : "string"
+          },
+          "artifactPath" : {
+            "type" : "string"
+          },
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "eventConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "metaDataConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "repository" : {
+            "type" : "string"
+          },
+          "repositoryFormat" : {
+            "type" : "string"
+          },
+          "repositoryUrl" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "AwsCodeCommitEventSpec" : {
+      "type" : "object",
+      "discriminator" : "type",
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "AwsCodeCommitPushSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/AwsCodeCommitEventSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "payloadConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "repoName" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "AwsCodeCommitSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/WebhookTriggerSpecV2"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "type" : "string",
+            "enum" : [ "Push" ]
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Push"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/AwsCodeCommitPushSpec"
+            }
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureArtifactsRegistrySpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/ArtifactTypeSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "eventConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "feed" : {
+            "type" : "string"
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "metaDataConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "packageName" : {
+            "type" : "string"
+          },
+          "packageType" : {
+            "type" : "string"
+          },
+          "project" : {
+            "type" : "string"
+          },
+          "version" : {
+            "type" : "string"
+          },
+          "versionRegex" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureRepoEventSpec" : {
+      "type" : "object",
+      "discriminator" : "type",
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureRepoIssueCommentSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/AzureRepoEventSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "actions" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "enum" : [ "Create", "Edit", "Delete" ]
+            }
+          },
+          "autoAbortPreviousExecutions" : {
+            "type" : "boolean"
+          },
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "headerConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "payloadConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "repoName" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureRepoPRSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/AzureRepoEventSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "actions" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "enum" : [ "Create", "Update", "Merge" ]
+            }
+          },
+          "autoAbortPreviousExecutions" : {
+            "type" : "boolean"
+          },
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "headerConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "payloadConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "repoName" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureRepoPushSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/AzureRepoEventSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "autoAbortPreviousExecutions" : {
+            "type" : "boolean"
+          },
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "headerConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "payloadConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "repoName" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureRepoSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/WebhookTriggerSpecV2"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "type" : "string",
+            "enum" : [ "PullRequest", "Push", "IssueComment" ]
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "IssueComment"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/AzureRepoIssueCommentSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "PullRequest"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/AzureRepoPRSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Push"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/AzureRepoPushSpec"
+            }
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "BambooRegistrySpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/ArtifactTypeSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "artifactPaths" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "build" : {
+            "type" : "string"
+          },
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "eventConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "metaDataConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "planKey" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "BitbucketEventSpec" : {
+      "type" : "object",
+      "discriminator" : "type",
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "BitbucketPRCommentSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/BitbucketEventSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "actions" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "enum" : [ "Create", "Edit", "Delete" ]
+            }
+          },
+          "autoAbortPreviousExecutions" : {
+            "type" : "boolean"
+          },
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "headerConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "payloadConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "repoName" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "BitbucketPRSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/BitbucketEventSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "actions" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "enum" : [ "Create", "Update", "Merge", "Decline" ]
+            }
+          },
+          "autoAbortPreviousExecutions" : {
+            "type" : "boolean"
+          },
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "headerConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "payloadConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "repoName" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "BitbucketPushSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/BitbucketEventSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "autoAbortPreviousExecutions" : {
+            "type" : "boolean"
+          },
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "headerConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "payloadConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "repoName" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "BitbucketSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/WebhookTriggerSpecV2"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "type" : "string",
+            "enum" : [ "PullRequest", "Push", "PRComment" ]
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "PRComment"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/BitbucketPRCommentSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "PullRequest"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/BitbucketPRSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Push"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/BitbucketPushSpec"
+            }
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "BuildStore" : {
+      "type" : "object",
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "enum" : [ "Http", "S3", "Gcs" ]
+        }
+      },
+      "$schema" : "http://json-schema.org/draft-07/schema#",
+      "allOf" : [ {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Gcs"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/GcsBuildStoreTypeSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Http"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/HttpBuildStoreTypeSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "S3"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/S3BuildStoreTypeSpec"
+            }
+          }
+        }
+      } ]
+    },
+    "BuildStoreTypeSpec" : {
+      "type" : "object",
+      "discriminator" : "type",
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "CronTriggerSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/ScheduledTriggerSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "expression" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "CustomArtifactSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/ArtifactTypeSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "artifactsArrayPath" : {
+            "type" : "string"
+          },
+          "eventConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "inputs" : {
+            "type" : "array",
+            "items" : {
+              "oneOf" : [ {
+                "$ref" : "#/definitions/NumberNGVariable"
+              }, {
+                "$ref" : "#/definitions/SecretNGVariable"
+              }, {
+                "$ref" : "#/definitions/StringNGVariable"
+              } ]
+            }
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "metaDataConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "metadata" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            }
+          },
+          "script" : {
+            "type" : "string"
+          },
+          "version" : {
+            "type" : "string"
+          },
+          "versionPath" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "CustomTriggerSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/WebhookTriggerSpecV2"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "headerConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "payloadConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "DockerRegistrySpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/ArtifactTypeSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "eventConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "imagePath" : {
+            "type" : "string"
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "metaDataConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "tag" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "EcrSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/ArtifactTypeSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "eventConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "imagePath" : {
+            "type" : "string"
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "metaDataConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "region" : {
+            "type" : "string"
+          },
+          "tag" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "GarSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/ArtifactTypeSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "eventConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "metaDataConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "pkg" : {
+            "type" : "string"
+          },
+          "project" : {
+            "type" : "string"
+          },
+          "region" : {
+            "type" : "string"
+          },
+          "repositoryName" : {
+            "type" : "string"
+          },
+          "version" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "GcrSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/ArtifactTypeSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "eventConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "imagePath" : {
+            "type" : "string"
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "metaDataConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "registryHostname" : {
+            "type" : "string"
+          },
+          "tag" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "GcsBuildStoreTypeSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/BuildStoreTypeSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "bucketName" : {
+            "type" : "string"
+          },
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "folderPath" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "GithubEventSpec" : {
+      "type" : "object",
+      "discriminator" : "type",
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "GithubIssueCommentSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/GithubEventSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "actions" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "enum" : [ "Create", "Edit", "Delete" ]
+            }
+          },
+          "autoAbortPreviousExecutions" : {
+            "type" : "boolean"
+          },
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "headerConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "payloadConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "repoName" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "GithubPRSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/GithubEventSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "actions" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "enum" : [ "Close", "Edit", "Open", "Reopen", "Label", "Unlabel", "Synchronize" ]
+            }
+          },
+          "autoAbortPreviousExecutions" : {
+            "type" : "boolean"
+          },
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "headerConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "payloadConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "repoName" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "GithubPackagesSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/ArtifactTypeSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "eventConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "metaDataConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "org" : {
+            "type" : "string"
+          },
+          "packageName" : {
+            "type" : "string"
+          },
+          "packageType" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "GithubPushSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/GithubEventSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "autoAbortPreviousExecutions" : {
+            "type" : "boolean"
+          },
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "headerConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "payloadConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "repoName" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "GithubReleaseSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/GithubEventSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "actions" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "enum" : [ "Create", "Edit", "Delete", "Prerelease", "Publish", "Release", "Unpublish" ]
+            }
+          },
+          "autoAbortPreviousExecutions" : {
+            "type" : "boolean"
+          },
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "headerConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "payloadConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "repoName" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "GithubSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/WebhookTriggerSpecV2"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "type" : "string",
+            "enum" : [ "PullRequest", "Push", "IssueComment", "Release" ]
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "IssueComment"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/GithubIssueCommentSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "PullRequest"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/GithubPRSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Push"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/GithubPushSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Release"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/GithubReleaseSpec"
+            }
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "GitlabEventSpec" : {
+      "type" : "object",
+      "discriminator" : "type",
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "GitlabMRCommentSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/GitlabEventSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "actions" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "enum" : [ "Create" ]
+            }
+          },
+          "autoAbortPreviousExecutions" : {
+            "type" : "boolean"
+          },
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "headerConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "payloadConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "repoName" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "GitlabPRSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/GitlabEventSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "actions" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "enum" : [ "Open", "Close", "Reopen", "Merge", "Update", "Sync" ]
+            }
+          },
+          "autoAbortPreviousExecutions" : {
+            "type" : "boolean"
+          },
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "headerConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "payloadConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "repoName" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "GitlabPushSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/GitlabEventSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "autoAbortPreviousExecutions" : {
+            "type" : "boolean"
+          },
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "headerConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "payloadConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "repoName" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "GitlabSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/WebhookTriggerSpecV2"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "type" : "string",
+            "enum" : [ "MergeRequest", "Push", "MRComment" ]
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "MRComment"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/GitlabMRCommentSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "MergeRequest"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/GitlabPRSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Push"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/GitlabPushSpec"
+            }
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "GoolgeCloudStorageRegistrySpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/ArtifactTypeSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "artifactPath" : {
+            "type" : "string"
+          },
+          "bucket" : {
+            "type" : "string"
+          },
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "eventConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "metaDataConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "project" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "HarnessEventSpec" : {
+      "type" : "object",
+      "discriminator" : "type",
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "HarnessIssueCommentSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/HarnessEventSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "actions" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "enum" : [ "Create", "Edit", "Delete" ]
+            }
+          },
+          "autoAbortPreviousExecutions" : {
+            "type" : "boolean"
+          },
+          "headerConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "payloadConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "repoName" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "HarnessPRSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/HarnessEventSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "actions" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "enum" : [ "Close", "Edit", "Open", "Reopen", "Label", "Unlabel", "Synchronize" ]
+            }
+          },
+          "autoAbortPreviousExecutions" : {
+            "type" : "boolean"
+          },
+          "headerConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "payloadConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "repoName" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "HarnessPushSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/HarnessEventSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "autoAbortPreviousExecutions" : {
+            "type" : "boolean"
+          },
+          "headerConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "payloadConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "repoName" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "HarnessSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/WebhookTriggerSpecV2"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "type" : "string",
+            "enum" : [ "PullRequest", "Push", "IssueComment" ]
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "IssueComment"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/HarnessIssueCommentSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "PullRequest"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/HarnessPRSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Push"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/HarnessPushSpec"
+            }
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "HelmManifestSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/ManifestTypeSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "chartName" : {
+            "type" : "string"
+          },
+          "chartVersion" : {
+            "type" : "string"
+          },
+          "eventConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "helmVersion" : {
+            "type" : "string",
+            "enum" : [ "V2", "V3", "V380" ]
+          },
+          "store" : {
+            "$ref" : "#/definitions/BuildStore"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "HttpBuildStoreTypeSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/BuildStoreTypeSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "connectorRef" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "JenkinsRegistrySpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/ArtifactTypeSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "artifactPath" : {
+            "type" : "string"
+          },
+          "build" : {
+            "type" : "string"
+          },
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "eventConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "jobName" : {
+            "type" : "string"
+          },
+          "metaDataConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "ManifestTriggerConfig" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/NGTriggerSpecV2"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "manifestRef" : {
+            "type" : "string"
+          },
+          "stageIdentifier" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string",
+            "enum" : [ "HelmChart" ]
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "HelmChart"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/HelmManifestSpec"
+            }
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "ManifestTypeSpec" : {
+      "type" : "object",
+      "discriminator" : "type",
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "MultiRegionArtifactTriggerConfig" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/NGTriggerSpecV2"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "artifactRef" : {
+            "type" : "string"
+          },
+          "eventConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "metaDataConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "sources" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/ArtifactTypeSpecWrapper"
+            }
+          },
+          "stageIdentifier" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string",
+            "enum" : [ "Gcr", "Ecr", "DockerRegistry", "Nexus3Registry", "Nexus2Registry", "ArtifactoryRegistry", "Acr", "AmazonS3", "Jenkins", "CustomArtifact", "GoogleArtifactRegistry", "GithubPackageRegistry", "AzureArtifacts", "AmazonMachineImage", "GoogleCloudStorage", "Bamboo" ]
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "NGTriggerConfigV2" : {
+      "type" : "object",
+      "required" : [ "identifier" ],
+      "properties" : {
+        "description" : {
+          "type" : "string"
+        },
+        "enabled" : {
+          "type" : "boolean"
+        },
+        "encryptedWebhookSecretIdentifier" : {
+          "type" : "string"
+        },
+        "identifier" : {
+          "type" : "string",
+          "pattern" : "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
+        },
+        "inputSetRefs" : {
+          "type" : "array",
+          "items" : {
+            "type" : "string"
+          }
+        },
+        "inputYaml" : {
+          "type" : "string"
+        },
+        "name" : {
+          "type" : "string",
+          "pattern" : "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
+        },
+        "orgIdentifier" : {
+          "type" : "string"
+        },
+        "pipelineBranchName" : {
+          "type" : "string"
+        },
+        "pipelineIdentifier" : {
+          "type" : "string"
+        },
+        "projectIdentifier" : {
+          "type" : "string"
+        },
+        "source" : {
+          "$ref" : "#/definitions/NGTriggerSourceV2"
+        },
+        "stagesToExecute" : {
+          "type" : "array",
+          "items" : {
+            "type" : "string"
+          }
+        },
+        "tags" : {
+          "type" : "object",
+          "additionalProperties" : {
+            "type" : "string"
+          }
+        }
+      },
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "NGTriggerSourceV2" : {
+      "type" : "object",
+      "properties" : {
+        "pollInterval" : {
+          "type" : "string",
+          "pattern" : "(((([1-9])+\\d*[mh])+(\\s/?\\d+[mh])*)|(^$)|(0))$"
+        },
+        "type" : {
+          "type" : "string",
+          "enum" : [ "Webhook", "Artifact", "Manifest", "Scheduled", "MultiRegionArtifact" ]
+        },
+        "webhookId" : {
+          "type" : "string"
+        }
+      },
+      "$schema" : "http://json-schema.org/draft-07/schema#",
+      "allOf" : [ {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Artifact"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/ArtifactTriggerConfig"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Manifest"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/ManifestTriggerConfig"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "MultiRegionArtifact"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/MultiRegionArtifactTriggerConfig"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Scheduled"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/ScheduledTriggerConfig"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Webhook"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/WebhookTriggerConfigV2"
+            }
+          }
+        }
+      } ]
+    },
+    "NGTriggerSpecV2" : {
+      "type" : "object",
+      "discriminator" : "type",
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "NGVariable" : {
+      "type" : "object",
+      "discriminator" : "type",
+      "properties" : {
+        "description" : {
+          "type" : "string"
+        },
+        "metadata" : {
+          "type" : "string"
+        },
+        "name" : {
+          "type" : "string"
+        },
+        "required" : {
+          "type" : "boolean"
+        },
+        "type" : {
+          "type" : "string",
+          "enum" : [ "String", "Number", "Secret" ]
+        }
+      },
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "Nexus2RegistrySpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/ArtifactTypeSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "artifactId" : {
+            "type" : "string"
+          },
+          "classifier" : {
+            "type" : "string"
+          },
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "eventConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "extension" : {
+            "type" : "string"
+          },
+          "groupId" : {
+            "type" : "string"
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "metaDataConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "packageName" : {
+            "type" : "string"
+          },
+          "repositoryFormat" : {
+            "type" : "string"
+          },
+          "repositoryName" : {
+            "type" : "string"
+          },
+          "repositoryUrl" : {
+            "type" : "string"
+          },
+          "tag" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "NexusRegistrySpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/ArtifactTypeSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "artifactId" : {
+            "type" : "string"
+          },
+          "classifier" : {
+            "type" : "string"
+          },
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "eventConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "extension" : {
+            "type" : "string"
+          },
+          "group" : {
+            "type" : "string"
+          },
+          "groupId" : {
+            "type" : "string"
+          },
+          "imagePath" : {
+            "type" : "string"
+          },
+          "jexlCondition" : {
+            "type" : "string"
+          },
+          "metaDataConditions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/TriggerEventDataCondition"
+            }
+          },
+          "packageName" : {
+            "type" : "string"
+          },
+          "repository" : {
+            "type" : "string"
+          },
+          "repositoryFormat" : {
+            "type" : "string"
+          },
+          "repositoryUrl" : {
+            "type" : "string"
+          },
+          "tag" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "NumberNGVariable" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/NGVariable"
+      }, {
+        "type" : "object",
+        "required" : [ "value" ],
+        "properties" : {
+          "default" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "name" : {
+            "type" : "string",
+            "pattern" : "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$"
+          },
+          "type" : {
+            "type" : "string",
+            "enum" : [ "Number" ]
+          },
+          "value" : {
+            "oneOf" : [ {
+              "type" : "number",
+              "format" : "double"
+            }, {
+              "type" : "string",
+              "pattern" : "((^[+-]?[0-9]*\\.?[0-9]+$)|(<\\+.+>.*))"
+            } ]
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "S3BuildStoreTypeSpec" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/BuildStoreTypeSpec"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "bucketName" : {
+            "type" : "string"
+          },
+          "connectorRef" : {
+            "type" : "string"
+          },
+          "folderPath" : {
+            "type" : "string"
+          },
+          "region" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "ScheduledTriggerConfig" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/NGTriggerSpecV2"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "type" : "string"
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Cron"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/CronTriggerSpec"
+            }
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "ScheduledTriggerSpec" : {
+      "type" : "object",
+      "discriminator" : "type",
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "SecretNGVariable" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/NGVariable"
+      }, {
+        "type" : "object",
+        "required" : [ "value" ],
+        "properties" : {
+          "default" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string",
+            "pattern" : "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$"
+          },
+          "type" : {
+            "type" : "string",
+            "enum" : [ "Secret" ]
+          },
+          "value" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "StringNGVariable" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/NGVariable"
+      }, {
+        "type" : "object",
+        "required" : [ "value" ],
+        "properties" : {
+          "default" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string",
+            "pattern" : "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$"
+          },
+          "type" : {
+            "type" : "string",
+            "enum" : [ "String" ]
+          },
+          "value" : {
+            "type" : "string"
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "TriggerEventDataCondition" : {
+      "type" : "object",
+      "properties" : {
+        "key" : {
+          "type" : "string"
+        },
+        "operator" : {
+          "type" : "string",
+          "enum" : [ "In", "Equals", "NotEquals", "NotIn", "Regex", "EndsWith", "StartsWith", "Contains", "DoesNotContain" ]
+        },
+        "value" : {
+          "type" : "string"
+        }
+      },
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "WebhookTriggerConfigV2" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/NGTriggerSpecV2"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "type" : "string",
+            "enum" : [ "AzureRepo", "Github", "Gitlab", "Bitbucket", "Custom", "AwsCodeCommit", "Harness" ]
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "AwsCodeCommit"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/AwsCodeCommitSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "AzureRepo"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/AzureRepoSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Bitbucket"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/BitbucketSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Custom"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/CustomTriggerSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Github"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/GithubSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Gitlab"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/GitlabSpec"
+            }
+          }
+        }
+      }, {
+        "if" : {
+          "properties" : {
+            "type" : {
+              "const" : "Harness"
+            }
+          }
+        },
+        "then" : {
+          "properties" : {
+            "spec" : {
+              "$ref" : "#/definitions/HarnessSpec"
+            }
+          }
+        }
+      } ],
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    },
+    "WebhookTriggerSpecV2" : {
+      "type" : "object",
+      "discriminator" : "type",
+      "$schema" : "http://json-schema.org/draft-07/schema#"
+    }
+  }
+}

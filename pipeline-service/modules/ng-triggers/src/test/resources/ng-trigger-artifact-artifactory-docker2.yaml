@@ -1,0 +1,42 @@
+trigger:
+  name: first trigger
+  identifier: first_trigger
+  enabled: true
+  tags: {}
+  orgIdentifier: org
+  projectIdentifier: proj
+  pipelineIdentifier: pipeline
+  source:
+    type: Artifact
+    spec:
+      stageIdentifier: dev
+      artifactRef: primary
+      type: ArtifactoryRegistry
+      spec:
+        connectorRef: account.conn
+        repository: automation-repo-do-not-delete
+        repositoryFormat: docker
+        artifactPath: path
+        tag: <+trigger.artifact.build>
+        eventConditions:
+          - key: build
+            operator: Regex
+            value: release.*
+        repositoryUrl: http://url-automation-repo-do-not-delete.com
+  inputYaml: |
+    pipeline:
+        identifier: pipeline
+        stages:
+            - stage:
+                  identifier: dev
+                  type: Deployment
+                  spec:
+                      serviceConfig:
+                          serviceDefinition:
+                              type: Kubernetes
+                              spec:
+                                  artifacts:
+                                      primary:
+                                          type: ArtifactoryRegistry
+                                          spec:
+                                              tag: <+trigger.artifact.build>

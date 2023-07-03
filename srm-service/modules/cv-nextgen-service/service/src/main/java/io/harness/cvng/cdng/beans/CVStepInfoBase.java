@@ -20,7 +20,7 @@ import io.harness.yaml.core.StepSpecType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
 
-@ApiModel(subTypes = {CVNGStepInfo.class})
+@ApiModel(subTypes = {CVNGStepInfo.class, CVNGDeploymentStepInfo.class})
 @OwnedBy(HarnessTeam.CV)
 public interface CVStepInfoBase extends StepParameters, WithStepElementParameters, StepSpecType {
   default StepParameters getStepParameters(

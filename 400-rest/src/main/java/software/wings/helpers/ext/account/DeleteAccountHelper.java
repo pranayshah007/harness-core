@@ -8,6 +8,7 @@
 package software.wings.helpers.ext.account;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.beans.FeatureName.CDS_QUERY_OPTIMIZATION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
@@ -52,7 +53,9 @@ import software.wings.service.intfc.ownership.OwnedByAccount;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.mongodb.ReadPreference;
 import dev.morphia.Morphia;
+import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
@@ -173,8 +176,14 @@ public class DeleteAccountHelper {
   }
 
   private boolean deleteAppLevelDocuments(String accountId, Class<? extends PersistentEntity> entry) {
-    try (HIterator<Application> applicationsInAccount = new HIterator<>(
-             hPersistence.createQuery(Application.class).filter(ApplicationKeys.accountId, accountId).fetch())) {
+    FindOptions findOptions = new FindOptions();
+    if (featureFlagService.isEnabled(CDS_QUERY_OPTIMIZATION, accountId)) {
+      findOptions.readPreference(ReadPreference.secondaryPreferred());
+    }
+    try (
+        HIterator<Application> applicationsInAccount = new HIterator<>(hPersistence.createQuery(Application.class)
+                                                                           .filter(ApplicationKeys.accountId, accountId)
+                                                                           .fetch(findOptions))) {
       while (applicationsInAccount.hasNext()) {
         Application application = applicationsInAccount.next();
         hPersistence.delete(hPersistence.createQuery(entry).filter(APP_ID, application.getUuid()));

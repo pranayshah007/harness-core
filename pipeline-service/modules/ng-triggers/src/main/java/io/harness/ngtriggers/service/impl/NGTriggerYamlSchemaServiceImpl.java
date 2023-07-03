@@ -23,7 +23,6 @@ import io.harness.yaml.validator.InvalidYamlException;
 import io.harness.yaml.validator.YamlSchemaValidator;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.networknt.schema.JsonSchema;
@@ -41,7 +40,7 @@ import lombok.extern.slf4j.Slf4j;
 public class NGTriggerYamlSchemaServiceImpl implements NGTriggerYamlSchemaService {
   private final YamlSchemaProvider yamlSchemaProvider;
   private final YamlSchemaValidator yamlSchemaValidator;
-  ObjectMapper mapper;
+
   @Override
   public JsonNode getTriggerYamlSchema(String projectIdentifier, String orgIdentifier, String identifier, Scope scope) {
     JsonNode schema = yamlSchemaProvider.getYamlSchema(EntityType.TRIGGERS, orgIdentifier, projectIdentifier, scope);

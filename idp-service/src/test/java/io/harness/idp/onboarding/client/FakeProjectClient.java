@@ -51,7 +51,7 @@ public class FakeProjectClient implements ProjectClient {
     return new Call<>() {
       @Override
       public Response<ResponseDTO<PageResponse<ProjectResponse>>> execute() {
-        if (Objects.equals(accountIdentifier, ACCOUNT_IDENTIFIER)) {
+        if (Objects.equals(accountIdentifier, ACCOUNT_IDENTIFIER) && page < 1) {
           return Response.success(ResponseDTO.newResponse(
               PageResponse.<ProjectResponse>builder()
                   .content(Collections.singletonList(ProjectResponse.builder()
@@ -111,7 +111,7 @@ public class FakeProjectClient implements ProjectClient {
     return new Call<>() {
       @Override
       public Response<ResponseDTO<PageResponse<ProjectResponse>>> execute() {
-        if (Objects.equals(accountIdentifier, ACCOUNT_IDENTIFIER)) {
+        if (Objects.equals(accountIdentifier, ACCOUNT_IDENTIFIER) && page < 1) {
           return Response.success(ResponseDTO.newResponse(
               PageResponse.<ProjectResponse>builder()
                   .content(Collections.singletonList(ProjectResponse.builder()

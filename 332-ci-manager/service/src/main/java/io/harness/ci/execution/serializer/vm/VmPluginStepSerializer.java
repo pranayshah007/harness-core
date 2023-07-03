@@ -29,6 +29,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_JSON_KEY
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_SECRET_KEY;
 import static io.harness.ci.commonconstants.CIExecutionConstants.RESTORE_CACHE_STEP_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.SAVE_CACHE_STEP_ID;
+import static io.harness.ci.commonconstants.CIExecutionConstants.WORKSPACE_ID;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -173,7 +174,8 @@ public class VmPluginStepSerializer {
         }
       }
       if (iacmStepsUtils.isIACMStep(pluginStepInfo)) {
-        ConnectorDetails iacmConnector = iacmStepsUtils.retrieveIACMConnectorDetails(ambiance, pluginStepInfo);
+        String workspaceId = pluginStepInfo.getEnvVariables().getValue().get(WORKSPACE_ID).getValue();
+        ConnectorDetails iacmConnector = iacmStepsUtils.retrieveIACMConnectorDetails(ambiance, workspaceId);
         return convertContainerStep(ambiance, identifier, image, connectorIdentifier, envVars, timeout,
             stageInfraDetails, pluginStepInfo, iacmConnector);
       }

@@ -64,7 +64,7 @@ public class GraphVertexConverterTest extends OrchestrationVisualizationTestBase
                                       .executionInputConfigured(true)
                                       .mode(ExecutionMode.SYNC)
                                       .build();
-    GraphVertex graphVertex = graphVertexConverter.convertFrom(nodeExecution);
+    GraphVertex graphVertex = graphVertexConverter.convertFrom(nodeExecution, null);
     assertThat(graphVertex).isNotNull();
     assertThat(graphVertex.getUuid()).isEqualTo(nodeExecution.getUuid());
     assertThat(graphVertex.getAmbiance()).isEqualTo(ambiance);

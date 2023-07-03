@@ -90,6 +90,15 @@ public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
                 String.format("Could not find an artifact with artifactPath '%s'", artifactPath)));
       }
     }
+
+    if (EmptyPredicate.isEmpty(artifactPathFilter)) {
+      List<BuildDetails> buildDetailsFiltered =
+          buildDetails.stream().filter(bd -> bd.getArtifactPath().endsWith(artifactPath)).collect(toList());
+      if (!buildDetailsFiltered.isEmpty()) {
+        return buildDetailsFiltered.get(0);
+      }
+    }
+
     return buildDetails.get(0);
   }
 

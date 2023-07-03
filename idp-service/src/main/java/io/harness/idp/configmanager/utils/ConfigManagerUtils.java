@@ -185,19 +185,6 @@ public class ConfigManagerUtils {
     return (invalidSchemaResponse.size() <= 0);
   }
 
-  public String getPluginConfig(String configId) {
-    switch (configId) {
-      case "kafka":
-        return readFileFromClassPath(KAFKA_PLUGIN_CONFIG_PATH);
-      case "pager-duty":
-        return readFileFromClassPath(PAGER_DUTY_PLUGIN_CONFIG);
-      case "snyk-security":
-        return readFileFromClassPath(SNYK_SECURITY_PLUGIN_CONFIG);
-      default:
-        return null;
-    }
-  }
-
   public String getPluginConfigSchema(String configId) {
     switch (configId) {
       case "kafka":

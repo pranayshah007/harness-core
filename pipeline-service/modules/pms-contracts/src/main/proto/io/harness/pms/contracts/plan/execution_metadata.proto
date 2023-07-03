@@ -34,6 +34,8 @@ message ExecutionMetadata {
   string originalPlanExecutionIdForRollbackMode = 22;
   // storing details for all the PMS settings used as per need in execution flow
   map<string, string> settingToValueMap = 23;
+  // storing featureFlags to value map used as per need in execution flow
+  map<string, bool> featureFlagToValueMap = 24;
 }
 
 message RetryExecutionInfo {

@@ -129,6 +129,10 @@ public class FailureStrategiesUtils {
     if (!validateActionAfterRetryFailure(actionUnderRetry)) {
       throw new InvalidRequestException("Retry action cannot have post retry failure action as Retry");
     }
+    if (actionUnderRetry.getType().equals(NGFailureActionType.PROCEED_WITH_DEFAULT_VALUES)) {
+      throw new InvalidRequestException(
+          "Retry action cannot have post retry failure action as ProceedWithDefaultValues");
+    }
     // validating Retry -> Manual Intervention -> Retry
     if (actionUnderRetry.getType().equals(NGFailureActionType.MANUAL_INTERVENTION)) {
       if (validateRetryActionUnderManualAction(
@@ -164,6 +168,10 @@ public class FailureStrategiesUtils {
     if (actionUnderManualIntervention.getType().equals(NGFailureActionType.RETRY)) {
       throw new InvalidRequestException(
           "Retry is not allowed as post timeout action in Manual intervention as it can lead to an infinite loop");
+    }
+    if (actionUnderManualIntervention.getType().equals(NGFailureActionType.PROCEED_WITH_DEFAULT_VALUES)) {
+      throw new InvalidRequestException(
+          "ProceedWithDefaultValues is not allowed as post timeout action in Manual intervention");
     }
   }
 

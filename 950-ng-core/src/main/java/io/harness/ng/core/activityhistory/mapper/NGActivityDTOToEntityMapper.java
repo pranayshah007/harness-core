@@ -70,6 +70,7 @@ public class NGActivityDTOToEntityMapper {
                                     .referredByEntityFQN(referredByEntity.getEntityRef().getFullyQualifiedName())
                                     .referredByEntityType(String.valueOf(referredByEntity.getType()))
                                     .referredByEntity(referredByEntity)
+                                    .usageDetail(entityUsageDTO.getUsageDetail())
                                     .activityStatusMessage(entityUsageDTO.getActivityStatusMessage())
                                     .errors(entityUsageDTO.getErrors())
                                     .errorSummary(entityUsageDTO.getErrorSummary())

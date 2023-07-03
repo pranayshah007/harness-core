@@ -63,12 +63,12 @@ public class TerraformRollbackStepInfo implements CDAbstractStepInfo {
 
   @Override
   public StepType getStepType() {
-    return TerraformRollbackStep.STEP_TYPE;
+    return TerraformRollbackStepV2.STEP_TYPE;
   }
 
   @Override
   public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
+    return OrchestrationFacilitatorType.TASK_CHAIN;
   }
 
   @Override

@@ -7,12 +7,14 @@
 
 package io.harness.idp.onboarding.mappers;
 
+import static io.harness.idp.onboarding.utils.Constants.BACKSTAGE_HARNESS_ANNOTATION_PROJECT_URL;
 import static io.harness.idp.onboarding.utils.Constants.ENTITY_UNKNOWN_LIFECYCLE;
 import static io.harness.idp.onboarding.utils.Constants.ENTITY_UNKNOWN_OWNER;
 import static io.harness.rule.OwnerRule.SATHISH;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNull;
+import static junit.framework.TestCase.assertTrue;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
@@ -72,6 +74,7 @@ public class HarnessEntityToBackstageEntityMapperTest extends CategoryTest {
   @InjectMocks HarnessOrgToBackstageDomain harnessOrgToBackstageDomain;
   @InjectMocks HarnessProjectToBackstageSystem harnessProjectToBackstageSystem;
   HarnessServiceToBackstageComponent harnessServiceToBackstageComponent;
+  HarnessServiceToBackstageComponent harnessServiceToBackstageComponentStressEnv;
   OrganizationDTO organizationDTO;
   ProjectDTO projectDTO;
   ServiceResponseDTO serviceResponseDTO;
@@ -85,6 +88,8 @@ public class HarnessEntityToBackstageEntityMapperTest extends CategoryTest {
   public void setup() {
     openMocks = MockitoAnnotations.openMocks(this);
     harnessServiceToBackstageComponent = new HarnessServiceToBackstageComponent(onboardingModuleConfig, "local");
+    harnessServiceToBackstageComponentStressEnv =
+        new HarnessServiceToBackstageComponent(onboardingModuleConfig, "stress");
 
     organizationDTO = OrganizationDTO.builder()
                           .identifier(TEST_ORG_IDENTIFIER)
@@ -174,6 +179,21 @@ public class HarnessEntityToBackstageEntityMapperTest extends CategoryTest {
     assertEquals(organizationDTO.getIdentifier(), backstageCatalogDomainEntity.getMetadata().getIdentifier());
     assertEquals(organizationDTO.getIdentifier(), backstageCatalogDomainEntity.getMetadata().getAbsoluteIdentifier());
     assertEquals(TEST_ORG_IDENTIFIER_BIG_TRUNCATED, backstageCatalogDomainEntity.getMetadata().getName());
+  }
+
+  @Test
+  @Owner(developers = SATHISH)
+  @Category(UnitTests.class)
+  public void testHarnessOrgToBackstageDomainMapperForEntityNameCollision() {
+    BackstageCatalogDomainEntity backstageCatalogDomainEntity = harnessOrgToBackstageDomain.map(organizationDTO);
+    assertEquals(organizationDTO.getIdentifier(), backstageCatalogDomainEntity.getMetadata().getIdentifier());
+    assertEquals(organizationDTO.getIdentifier(), backstageCatalogDomainEntity.getMetadata().getAbsoluteIdentifier());
+    assertEquals(organizationDTO.getIdentifier(), backstageCatalogDomainEntity.getMetadata().getName());
+
+    backstageCatalogDomainEntity = harnessOrgToBackstageDomain.map(organizationDTO);
+    assertEquals(organizationDTO.getIdentifier(), backstageCatalogDomainEntity.getMetadata().getIdentifier());
+    assertEquals(organizationDTO.getIdentifier(), backstageCatalogDomainEntity.getMetadata().getAbsoluteIdentifier());
+    assertEquals(organizationDTO.getIdentifier(), backstageCatalogDomainEntity.getMetadata().getName());
   }
 
   @Test
@@ -394,6 +414,33 @@ public class HarnessEntityToBackstageEntityMapperTest extends CategoryTest {
             + serviceResponseDTO.getIdentifier(),
         backstageCatalogComponentEntity.getMetadata().getAbsoluteIdentifier());
     assertEquals(TEST_SERVICE_IDENTIFIER_BIG_TRUNCATED, backstageCatalogComponentEntity.getMetadata().getName());
+  }
+
+  @Test
+  @Owner(developers = SATHISH)
+  @Category(UnitTests.class)
+  public void testHarnessServiceToBackstageComponentMapperForAccountLevelService() {
+    serviceResponseDTO.setOrgIdentifier(null);
+    serviceResponseDTO.setProjectIdentifier(null);
+
+    BackstageCatalogComponentEntity backstageCatalogComponentEntity =
+        harnessServiceToBackstageComponent.map(serviceResponseDTO);
+    assertEquals(serviceResponseDTO.getIdentifier(), backstageCatalogComponentEntity.getMetadata().getIdentifier());
+    assertEquals(0, backstageCatalogComponentEntity.getMetadata().getAnnotations().size());
+  }
+
+  @Test
+  @Owner(developers = SATHISH)
+  @Category(UnitTests.class)
+  public void testHarnessServiceToBackstageComponentMapperForEnvBasedHarnessCiCdAnnotations() {
+    BackstageCatalogComponentEntity backstageCatalogComponentEntity =
+        harnessServiceToBackstageComponentStressEnv.map(serviceResponseDTO);
+    assertEquals(2, backstageCatalogComponentEntity.getMetadata().getAnnotations().size());
+    assertTrue(backstageCatalogComponentEntity.getMetadata().getAnnotations().containsKey(
+                   BACKSTAGE_HARNESS_ANNOTATION_PROJECT_URL + "-stress")
+        && backstageCatalogComponentEntity.getMetadata().getAnnotations().get(
+               BACKSTAGE_HARNESS_ANNOTATION_PROJECT_URL + "-stress")
+            != null);
   }
 
   @After

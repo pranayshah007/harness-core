@@ -9,6 +9,7 @@ package io.harness.ngmigration.service.workflow;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ngmigration.utils.MigratorUtility.ELASTIC_GROUP_ACCOUNT_IDS;
 import static io.harness.ngmigration.utils.MigratorUtility.RUNTIME_INPUT;
 import static io.harness.ngmigration.utils.MigratorUtility.getRollbackPhases;
 import static io.harness.when.beans.WhenConditionStatus.SUCCESS;
@@ -589,6 +590,10 @@ public abstract class WorkflowHandler {
     if (deploymentType != null) {
       ServiceDefinitionType serviceDefinitionType = ServiceV2Factory.mapDeploymentTypeToServiceDefType(deploymentType);
       if (serviceDefinitionType != null) {
+        if (ServiceDefinitionType.ASG.equals(serviceDefinitionType)
+            && ELASTIC_GROUP_ACCOUNT_IDS.contains(context.getWorkflow().getAccountId())) {
+          return ServiceDefinitionType.ELASTIGROUP;
+        }
         return serviceDefinitionType;
       }
     }

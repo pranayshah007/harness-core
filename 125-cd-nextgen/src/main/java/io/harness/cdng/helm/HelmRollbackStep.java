@@ -200,8 +200,12 @@ public class HelmRollbackStep extends CdTaskExecutable<HelmCmdExecResponseNG> {
             AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_STEADY_STATE_CHECK_1_16_V2_NG))
         .skipSteadyStateCheck(skipSteadyStateCheck);
 
+    HelmRollbackCommandRequestNG helmCommandRequest = rollbackCommandRequestNGBuilder.build();
+
+    helmCommandRequest.setTimeoutInMillis(CDStepHelper.getTimeoutInMillis(stepParameters));
+
     return nativeHelmStepHelper
-        .queueNativeHelmTask(stepParameters, rollbackCommandRequestNGBuilder.build(), ambiance,
+        .queueNativeHelmTask(stepParameters, helmCommandRequest, ambiance,
             NativeHelmExecutionPassThroughData.builder().infrastructure(infrastructure).build())
         .getTaskRequest();
   }

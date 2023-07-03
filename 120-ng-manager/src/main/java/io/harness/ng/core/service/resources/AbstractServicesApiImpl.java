@@ -205,4 +205,21 @@ public abstract class AbstractServicesApiImpl {
     }
     return filteredAccessControlDtoList;
   }
+
+  public Response getPrimaryManifestList(String service, String org, String project, String harnessAccount) {
+    Optional<ServiceEntity> serviceEntityOptional =
+        serviceEntityService.get(harnessAccount, org, project, service, false);
+
+    if (!serviceEntityOptional.isPresent()) {
+      throw new NotFoundException(
+          format("Service with identifier [%s] in project [%s], org [%s] not found", service, project, org));
+    }
+    if (EmptyPredicate.isEmpty(serviceEntityOptional.get().getYaml())) {
+      throw new InvalidRequestException(
+          format("Service %s is not configured with a Service definition. Service Yaml is empty", service));
+    }
+    return Response.ok()
+        .entity(serviceEntityService.getManifestIdentifiers(serviceEntityOptional.get().getYaml(), service))
+        .build();
+  }
 }

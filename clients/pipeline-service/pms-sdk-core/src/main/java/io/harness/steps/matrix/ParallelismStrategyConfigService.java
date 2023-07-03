@@ -27,7 +27,7 @@ public class ParallelismStrategyConfigService implements StrategyConfigService {
   public List<ChildrenExecutableResponse.Child> fetchChildren(StrategyConfig strategyConfig, String childNodeId) {
     Integer parallelism = 0;
     if (!ParameterField.isBlank(strategyConfig.getParallelism())) {
-      parallelism = Double.valueOf(String.valueOf(strategyConfig.getParallelism().getValue())).intValue();
+      parallelism = strategyConfig.getParallelism().getValue();
     }
     List<ChildrenExecutableResponse.Child> children = new ArrayList<>();
     for (int i = 0; i < parallelism; i++) {
@@ -45,7 +45,7 @@ public class ParallelismStrategyConfigService implements StrategyConfigService {
       StrategyConfig strategyConfig, JsonNode jsonNode, Optional<Integer> maxExpansionLimit) {
     Integer parallelism = 0;
     if (!ParameterField.isBlank(strategyConfig.getParallelism())) {
-      parallelism = Double.valueOf(String.valueOf(strategyConfig.getParallelism().getValue())).intValue();
+      parallelism = strategyConfig.getParallelism().getValue();
       if (maxExpansionLimit.isPresent()) {
         if (parallelism > maxExpansionLimit.get()) {
           throw new InvalidYamlException(

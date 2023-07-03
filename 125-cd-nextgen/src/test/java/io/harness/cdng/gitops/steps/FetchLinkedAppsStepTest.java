@@ -293,9 +293,13 @@ public class FetchLinkedAppsStepTest extends CategoryTest {
         GitopsClustersOutcome.ClusterData.builder().clusterId("cid2").scope("account").build();
     GitopsClustersOutcome.ClusterData cluster3 =
         GitopsClustersOutcome.ClusterData.builder().clusterId("cid3").scope("ACCOUNT").build();
+    GitopsClustersOutcome.ClusterData cluster4 =
+        GitopsClustersOutcome.ClusterData.builder().clusterId("cid4").scope("ORGANIZATION").build();
+    GitopsClustersOutcome.ClusterData cluster5 =
+        GitopsClustersOutcome.ClusterData.builder().clusterId("cid5").scope("ORG").build();
 
-    assertThat(
-        fetchLinkedAppsStep.getScopedClusterIds(new GitopsClustersOutcome(Arrays.asList(cluster1, cluster2, cluster3))))
-        .isEqualTo(Arrays.asList("cid1", "account.cid2", "account.cid3"));
+    assertThat(fetchLinkedAppsStep.getScopedClusterIds(
+                   new GitopsClustersOutcome(Arrays.asList(cluster1, cluster2, cluster3, cluster4, cluster5))))
+        .isEqualTo(Arrays.asList("cid1", "account.cid2", "account.cid3", "org.cid4", "org.cid5"));
   }
 }

@@ -27,7 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PIPELINE)
 public class GitDefaultBranchCacheHelper {
   @Inject GitDefaultBranchCacheService gitDefaultBranchCacheService;
-  @Inject GitRepoUrlHelper gitRepoUrlHelper;
+  @Inject GitRepoHelper gitRepoHelper;
   @Inject NGFeatureFlagHelperService ngFeatureFlagHelperService;
   public static final String GIT_DEFAULT_BRANCH_CACHE = "GIT_DEFAULT_BRANCH_CACHE";
 
@@ -65,7 +65,7 @@ public class GitDefaultBranchCacheHelper {
     return gitDefaultBranchCacheResponse.getDefaultBranch();
   }
 
-  public String setDefaultBranchIfInputBranchEmpty(
+  public String getDefaultBranchIfInputBranchEmpty(
       String accountIdentifier, ScmConnector scmConnector, String repoName, String inputBranch) {
     if (isEmpty(inputBranch)
         && ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PIE_GIT_DEFAULT_BRANCH_CACHE)) {
@@ -76,15 +76,15 @@ public class GitDefaultBranchCacheHelper {
   }
 
   public void cacheDefaultBranchResponse(String accountIdentifier, ScmConnector scmConnector, String repoName,
-      String requestBranch, String resolvedBranch, String responseBranch) {
-    if (isEmpty(requestBranch) && isEmpty(resolvedBranch)) {
-      upsertDefaultBranch(accountIdentifier, repoName, responseBranch, scmConnector);
+      String workingBranch, String defaultBranchToSet) {
+    if (isEmpty(workingBranch)) {
+      upsertDefaultBranch(accountIdentifier, repoName, defaultBranchToSet, scmConnector);
     }
   }
 
   private GitDefaultBranchCacheKey buildGitDefaultBranchCacheKey(
       String accountIdentifier, String repoName, ScmConnector scmConnector) {
-    String repoUrl = gitRepoUrlHelper.getRepoUrl(scmConnector, repoName);
+    String repoUrl = gitRepoHelper.getRepoUrl(scmConnector, repoName);
     return new GitDefaultBranchCacheKey(accountIdentifier, repoUrl, repoName);
   }
 }

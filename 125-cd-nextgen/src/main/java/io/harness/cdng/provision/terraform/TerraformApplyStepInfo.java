@@ -72,13 +72,13 @@ public class TerraformApplyStepInfo
   @Override
   @JsonIgnore
   public StepType getStepType() {
-    return TerraformApplyStep.STEP_TYPE;
+    return TerraformApplyStepV2.STEP_TYPE;
   }
 
   @Override
   @JsonIgnore
   public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
+    return OrchestrationFacilitatorType.TASK_CHAIN;
   }
 
   @Override

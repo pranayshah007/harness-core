@@ -306,7 +306,7 @@ public class ValidateAndMergeHelper {
             ? createTemplateFromPipeline(pipelineJsonNode)
             : createTemplateFromPipelineForGivenStages(pipelineJsonNode, stageIdentifiers);
       }
-      if (EmptyPredicate.isEmpty(pipelineTemplate)) {
+      if (EmptyPredicate.isEmpty(pipelineTemplate) && EmptyPredicate.isNotEmpty(inputSetReferences)) {
         throw new InvalidRequestException(
             "Pipeline " + pipelineIdentifier + " does not have any runtime input. All existing input sets are invalid");
       }

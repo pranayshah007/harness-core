@@ -7,7 +7,6 @@
 
 package io.harness.pms.sdk.core.pipeline.variables;
 
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.pms.contracts.plan.YamlExtraProperties;
 import io.harness.pms.contracts.plan.YamlProperties;
@@ -25,24 +24,19 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class StepGroupVariableCreator extends ChildrenVariableCreator<StepGroupElementConfig> {
   @Override
   public LinkedHashMap<String, VariableCreationResponse> createVariablesForChildrenNodes(
       VariableCreationContext ctx, YamlField config) {
     LinkedHashMap<String, VariableCreationResponse> responseMap = new LinkedHashMap<>();
-    List<YamlField> stepYamlFields = getStepYamlFields(config);
+    List<YamlField> stepYamlFields = VariableCreatorHelper.getStepYamlFields(config);
     for (YamlField stepYamlField : stepYamlFields) {
       Map<String, YamlField> stepYamlFieldMap = new HashMap<>();
       stepYamlFieldMap.put(stepYamlField.getNode().getUuid(), stepYamlField);
@@ -94,33 +88,6 @@ public class StepGroupVariableCreator extends ChildrenVariableCreator<StepGroupE
   public Map<String, Set<String>> getSupportedTypes() {
     return Collections.singletonMap(
         YAMLFieldNameConstants.STEP_GROUP, Collections.singleton(PlanCreatorUtils.ANY_TYPE));
-  }
-
-  @VisibleForTesting
-  List<YamlField> getStepYamlFields(YamlField config) {
-    List<YamlField> childYamlFields = new LinkedList<>();
-    List<YamlNode> yamlNodes =
-        Optional
-            .of(Preconditions.checkNotNull(config.getNode().getField(YAMLFieldNameConstants.STEPS)).getNode().asArray())
-            .orElse(Collections.emptyList());
-    yamlNodes.forEach(yamlNode -> {
-      YamlField stepField = yamlNode.getField(YAMLFieldNameConstants.STEP);
-      YamlField parallelStepField = yamlNode.getField(YAMLFieldNameConstants.PARALLEL);
-      if (stepField != null) {
-        childYamlFields.add(stepField);
-      } else if (parallelStepField != null) {
-        List<YamlField> childStepYamlFields = Optional.of(parallelStepField.getNode().asArray())
-                                                  .orElse(Collections.emptyList())
-                                                  .stream()
-                                                  .map(el -> el.getField(YAMLFieldNameConstants.STEP))
-                                                  .filter(Objects::nonNull)
-                                                  .collect(Collectors.toList());
-        if (EmptyPredicate.isNotEmpty(childStepYamlFields)) {
-          childYamlFields.addAll(childStepYamlFields);
-        }
-      }
-    });
-    return childYamlFields;
   }
 
   @Override

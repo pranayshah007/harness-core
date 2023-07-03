@@ -16,13 +16,16 @@ import io.harness.rest.RestResponse;
 import io.harness.security.annotations.DelegateAuth;
 import io.harness.security.encryption.EncryptedRecordData;
 
+import software.wings.DelegateFileEncryptedRecordDataPackage;
 import software.wings.beans.DecryptedRecord;
+import software.wings.beans.DelegateFileEncryptedDataPackage;
 import software.wings.beans.EncryptedRecord;
 import software.wings.beans.EncryptedSMData;
 import software.wings.service.impl.DelegateManagerEncryptionDecryptionHarnessSMServiceNGImpl;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
+import java.io.IOException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -47,7 +50,25 @@ public class DelegateManagerEncryptionDecryptionHarnessSMResourceNG {
     try {
       return new RestResponse<>(encryptionDecryptionService.encryptDataNG(accountId, encryptedRecord.getContent()));
     } catch (Exception e) {
-      log.error(format("Unable to encrypt the content for harness secret manager for account %s", accountId), e);
+      log.error(format(
+          "Unable to encrypt the content for harness secret manager for account %s : %s", accountId, e.getMessage()));
+      throw e;
+    }
+  }
+
+  @DelegateAuth
+  @POST
+  @Path("/encrypt-harness-sm-secret-upload")
+  public RestResponse<DelegateFileEncryptedRecordDataPackage> encryptHarnessSMSecretNGWithFileUpload(
+      @NotNull @QueryParam("accountId") String accountId,
+      @NotNull DelegateFileEncryptedDataPackage delegateFileEncryptedDataPackage) throws IOException {
+    try {
+      return new RestResponse<>(encryptionDecryptionService.encryptDataNGWithFileUpload(accountId,
+          delegateFileEncryptedDataPackage.getEncryptData().getContent(),
+          delegateFileEncryptedDataPackage.getDelegateFile()));
+    } catch (Exception e) {
+      log.error(format(
+          "Unable to encrypt the content for harness secret manager for account %s : %s", accountId, e.getMessage()));
       throw e;
     }
   }
@@ -61,7 +82,8 @@ public class DelegateManagerEncryptionDecryptionHarnessSMResourceNG {
       return new RestResponse<>(
           encryptionDecryptionService.decryptDataNG(accountId, encryptedSMData.toEncryptedRecordData()));
     } catch (Exception e) {
-      log.error(format("Unable to decrypt the content for harness secret manager for account %s", accountId), e);
+      log.error(format(
+          "Unable to decrypt the content for harness secret manager for account %s : %s", accountId, e.getMessage()));
       throw e;
     }
   }

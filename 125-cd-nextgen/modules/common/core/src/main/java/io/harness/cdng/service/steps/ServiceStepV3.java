@@ -86,7 +86,7 @@ import io.harness.ng.core.serviceoverridev2.beans.NGServiceOverrideConfigV2;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec.ServiceOverridesSpecBuilder;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
-import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ng.core.utils.ServiceOverrideV2ValidationHelper;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
@@ -109,7 +109,6 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rbac.CDNGRbacUtility;
-import io.harness.remote.client.NGRestUtils;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.SdkCoreStepUtils;
 import io.harness.steps.StepUtils;
@@ -173,7 +172,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   @Inject private EnvironmentEntityYamlSchemaHelper environmentEntityYamlSchemaHelper;
 
   @Inject private ServiceOverrideUtilityFacade serviceOverrideUtilityFacade;
-  @Inject private NGSettingsClient ngSettingsClient;
+  @Inject private ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
 
   private static final Pattern serviceVariablePattern = Pattern.compile(SERVICE_VARIABLES_PATTERN_REGEX);
   private static final Pattern envVariablePattern = Pattern.compile(ENV_VARIABLES_PATTERN_REGEX);
@@ -488,7 +487,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> mergedOverrideV2Configs =
           new EnumMap<>(ServiceOverridesType.class);
 
-      boolean isOverridesV2enabled = isOverridesV2Enabled(accountId, orgIdentifier, projectIdentifier);
+      boolean isOverridesV2enabled =
+          overrideV2ValidationHelper.isOverridesV2Enabled(accountId, orgIdentifier, projectIdentifier);
 
       if (isOverridesV2enabled) {
         if (!ParameterField.isNull(parameters.getInfraId()) && parameters.getInfraId().isExpression()) {
@@ -674,8 +674,11 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       outputObj = new VariablesSweepingOutput();
     }
 
-    sweepingOutputService.consume(ambiance, YAMLFieldNameConstants.SERVICE_VARIABLES,
-        (VariablesSweepingOutput) outputObj, StepCategory.STAGE.name());
+    // Passing empty string as groupName, As for group of step level, pipeline service handles it as empty string
+    // Also as level traversal goes from child to parent, first match is Service V3 step
+    // Reference :  io.harness.engine.pms.data.Resolver.consume
+    sweepingOutputService.consume(
+        ambiance, YAMLFieldNameConstants.SERVICE_VARIABLES, (VariablesSweepingOutput) outputObj, "");
 
     saveExecutionLog(logCallback, "Processed service variables");
   }
@@ -725,6 +728,20 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
                              ngServiceV2InfoConfig.getGitOpsEnabled()))
                          .group(StepCategory.STAGE.name())
                          .build());
+
+    final OptionalSweepingOutput optionalSvcVarsSweepingOutput = sweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(YAMLFieldNameConstants.SERVICE_VARIABLES));
+
+    if (optionalSvcVarsSweepingOutput.isFound()) {
+      VariablesSweepingOutput serviceVariablesOutcome =
+          (VariablesSweepingOutput) optionalSvcVarsSweepingOutput.getOutput();
+
+      stepOutcomes.add(StepResponse.StepOutcome.builder()
+                           .name(OutcomeExpressionConstants.SERVICE_VARIABLES_OUTCOME)
+                           .outcome(serviceVariablesOutcome)
+                           .group(StepCategory.STAGE.name())
+                           .build());
+    }
 
     final OptionalSweepingOutput manifestsOutput = sweepingOutputService.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.MANIFESTS));
@@ -1104,18 +1121,6 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
   private String generateEnvGlobalOverrideV2Identifier(String envRef) {
     return String.join("_", envRef).replace(".", "_");
-  }
-
-  private boolean isOverridesV2Enabled(String accountId, String orgId, String projectId) {
-    return ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.CDS_SERVICE_OVERRIDES_2_0)
-        && isOverridesV2SettingEnabled(accountId, orgId, projectId);
-  }
-
-  private boolean isOverridesV2SettingEnabled(String accountId, String orgId, String projectId) {
-    return NGRestUtils
-        .getResponse(ngSettingsClient.getSetting(OVERRIDE_PROJECT_SETTING_IDENTIFIER, accountId, orgId, projectId))
-        .getValue()
-        .equals("true");
   }
 
   @Data

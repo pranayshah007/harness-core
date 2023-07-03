@@ -86,6 +86,10 @@ public class CatalogConnectorRepositoryCustomImpl implements CatalogConnectorRep
     update.set(CatalogConnectorEntity.CatalogConnectorKeys.host, catalogConnectorEntity.getHost());
     update.set(
         CatalogConnectorEntity.CatalogConnectorKeys.delegateSelectors, catalogConnectorEntity.getDelegateSelectors());
+    if (catalogConnectorEntity.getCatalogRepositoryDetails() != null) {
+      update.set(CatalogConnectorEntity.CatalogConnectorKeys.catalogRepositoryDetails,
+          catalogConnectorEntity.getCatalogRepositoryDetails());
+    }
     return update;
   }
 }

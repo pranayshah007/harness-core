@@ -74,7 +74,7 @@ import lombok.experimental.UtilityClass;
 @TargetModule(HarnessModule._957_CG_BEANS)
 public class Workflow
     extends Base implements KeywordsAware, NameAccess, TagAware, AccountAccess, ApplicationAccess, NGMigrationEntity {
-  public static String RBAC_INDEX = "rbac_index";
+  public static String RBAC_INDEX_2 = "rbac_index_2";
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(SortCompoundMongoIndex.builder()
@@ -98,9 +98,9 @@ public class Workflow
                  .ascSortField(WorkflowKeys.name)
                  .build())
         .add(CompoundMongoIndex.builder()
-                 .name(RBAC_INDEX)
+                 .name(RBAC_INDEX_2)
                  .field(WorkflowKeys.accountId)
-                 .field(WorkflowKeys.uuid)
+                 .field("_id")
                  .field(WorkflowKeys.appId)
                  .field(WorkflowKeys.envId)
                  .field(WorkflowKeys.templatized)

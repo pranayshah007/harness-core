@@ -17,6 +17,7 @@ import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -33,6 +34,7 @@ import io.harness.cdng.manifest.yaml.GitStoreConfigDTO;
 import io.harness.cdng.manifest.yaml.GithubStoreDTO;
 import io.harness.cdng.manifest.yaml.TerraformCommandFlagType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
+import io.harness.cdng.provision.terraform.outcome.TerraformGitRevisionOutcome;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
@@ -64,8 +66,10 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.TaskRequestsUtils;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import org.junit.Rule;
 import org.junit.Test;
@@ -577,13 +581,93 @@ public class TerraformDestroyStepTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN_TALAYCHA)
   @Category(UnitTests.class)
-  public void testHandleTaskResultWithSecurityContext() throws Exception {
+  public void testHandleTaskResultWithSecurityContextInheritFromPlan() throws Exception {
     Ambiance ambiance = getAmbiance();
     TerraformDestroyStepParameters destroyStepParameters =
         TerraformDestroyStepParameters.infoBuilder()
             .provisionerIdentifier(ParameterField.createValueField("Id"))
             .configuration(TerraformStepConfigurationParameters.builder()
                                .type(TerraformStepConfigurationType.INHERIT_FROM_PLAN)
+                               .build())
+            .build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder().spec(destroyStepParameters).build();
+    doReturn("test-account/test-org/test-project/Id").when(terraformStepHelper).generateFullIdentifier(any(), any());
+    TerraformInheritOutput inheritOutput = TerraformInheritOutput.builder()
+                                               .varFileConfigs(new ArrayList<>())
+                                               .backendConfig("back-content")
+                                               .workspace("w1")
+                                               .planName("plan")
+                                               .build();
+    doReturn(inheritOutput).when(terraformStepHelper).getSavedInheritOutput(any(), any(), any());
+    List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
+    UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
+    TerraformTaskNGResponse terraformTaskNGResponse = TerraformTaskNGResponse.builder()
+                                                          .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                                          .unitProgressData(unitProgressData)
+                                                          .build();
+    StepResponse stepResponse = terraformDestroyStep.handleTaskResultWithSecurityContext(
+        ambiance, stepElementParameters, () -> terraformTaskNGResponse);
+
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(stepResponse.getStepOutcomes()).isNotNull();
+    StepResponse.StepOutcome stepOutcome = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(0);
+    assertThat(stepOutcome.getName()).isEqualTo(TerraformGitRevisionOutcome.OUTCOME_NAME);
+
+    verify(terraformConfigDAL, times(1)).clearTerraformConfig(any(), any());
+    verify(terraformStepHelper, times(1)).updateParentEntityIdAndVersion(any(), any());
+    verify(terraformStepHelper).getRevisionsMap(anyList(), any());
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testHandleTaskResultWithSecurityContextInheritFromApply() throws Exception {
+    Ambiance ambiance = getAmbiance();
+    TerraformDestroyStepParameters destroyStepParameters =
+        TerraformDestroyStepParameters.infoBuilder()
+            .provisionerIdentifier(ParameterField.createValueField("Id"))
+            .configuration(TerraformStepConfigurationParameters.builder().type(INHERIT_FROM_APPLY).build())
+            .build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder().spec(destroyStepParameters).build();
+    doReturn("test-account/test-org/test-project/Id").when(terraformStepHelper).generateFullIdentifier(any(), any());
+    TerraformConfig terraformConfig = TerraformConfig.builder()
+                                          .backendConfig("back-content")
+                                          .workspace("w1")
+                                          .varFileConfigs(new ArrayList<>())
+                                          .configFiles(GithubStoreDTO.builder().build())
+                                          .build();
+    doReturn(terraformConfig).when(terraformStepHelper).getLastSuccessfulApplyConfig(any(), any());
+    List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
+    UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
+    TerraformTaskNGResponse terraformTaskNGResponse = TerraformTaskNGResponse.builder()
+                                                          .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                                          .unitProgressData(unitProgressData)
+                                                          .build();
+    StepResponse stepResponse = terraformDestroyStep.handleTaskResultWithSecurityContext(
+        ambiance, stepElementParameters, () -> terraformTaskNGResponse);
+
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(stepResponse.getStepOutcomes()).isNotNull();
+    StepResponse.StepOutcome stepOutcome = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(0);
+    assertThat(stepOutcome.getName()).isEqualTo(TerraformGitRevisionOutcome.OUTCOME_NAME);
+
+    verify(terraformConfigDAL, times(1)).clearTerraformConfig(any(), any());
+    verify(terraformStepHelper, times(1)).updateParentEntityIdAndVersion(any(), any());
+    verify(terraformStepHelper).getLastSuccessfulApplyConfig(any(), any());
+    verify(terraformStepHelper).getRevisionsMap(anyList(), any());
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testHandleTaskResultWithSecurityContextInline() throws Exception {
+    Ambiance ambiance = getAmbiance();
+    TerraformDestroyStepParameters destroyStepParameters =
+        TerraformDestroyStepParameters.infoBuilder()
+            .provisionerIdentifier(ParameterField.createValueField("Id"))
+            .configuration(TerraformStepConfigurationParameters.builder()
+                               .spec(TerraformExecutionDataParameters.builder().varFiles(new LinkedHashMap<>()).build())
+                               .type(INLINE)
                                .build())
             .build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(destroyStepParameters).build();
@@ -596,10 +680,15 @@ public class TerraformDestroyStepTest extends CategoryTest {
                                                           .build();
     StepResponse stepResponse = terraformDestroyStep.handleTaskResultWithSecurityContext(
         ambiance, stepElementParameters, () -> terraformTaskNGResponse);
+
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
+    StepResponse.StepOutcome stepOutcome = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(0);
+    assertThat(stepOutcome.getName()).isEqualTo(TerraformGitRevisionOutcome.OUTCOME_NAME);
+
     verify(terraformConfigDAL, times(1)).clearTerraformConfig(any(), any());
     verify(terraformStepHelper, times(1)).updateParentEntityIdAndVersion(any(), any());
+    verify(terraformStepHelper).getRevisionsMap(any(LinkedHashMap.class), any());
   }
 
   @Test
@@ -623,6 +712,13 @@ public class TerraformDestroyStepTest extends CategoryTest {
             .build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(destroyStepParameters).build();
     doReturn("test-account/test-org/test-project/Id").when(terraformStepHelper).generateFullIdentifier(any(), any());
+    TerraformInheritOutput inheritOutput = TerraformInheritOutput.builder()
+                                               .varFileConfigs(new ArrayList<>())
+                                               .backendConfig("back-content")
+                                               .workspace("w1")
+                                               .planName("plan")
+                                               .build();
+    doReturn(inheritOutput).when(terraformStepHelper).getSavedInheritOutput(any(), any(), any());
     List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
     UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
     TerraformTaskNGResponse terraformTaskNGResponseFailure = TerraformTaskNGResponse.builder()

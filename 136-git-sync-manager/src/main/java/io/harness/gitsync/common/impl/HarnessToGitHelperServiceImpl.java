@@ -793,6 +793,9 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
     if (gitErrorMetadata.getFilepath() != null) {
       gitMetaDataOrBuilder.setFilePath(gitErrorMetadata.getFilepath());
     }
+    if (gitErrorMetadata.getRepo() != null) {
+      gitMetaDataOrBuilder.setRepoName(gitErrorMetadata.getRepo());
+    }
     return gitMetaDataOrBuilder.build();
   }
 

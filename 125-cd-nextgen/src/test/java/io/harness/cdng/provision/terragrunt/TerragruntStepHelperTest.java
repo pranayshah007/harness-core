@@ -8,6 +8,7 @@
 package io.harness.cdng.provision.terragrunt;
 
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
+import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VLICA;
 
@@ -73,6 +74,8 @@ import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
 import io.harness.security.encryption.EncryptionType;
 
+import software.wings.beans.GcpKmsConfig;
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -115,6 +118,7 @@ public class TerragruntStepHelperTest extends CategoryTest {
   @Mock private HPersistence persistence;
 
   @InjectMocks private TerragruntStepHelper helper;
+  public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
 
   private Ambiance getAmbiance() {
     return Ambiance.newBuilder()
@@ -754,5 +758,16 @@ public class TerragruntStepHelperTest extends CategoryTest {
     assertThat(terraformPlanExecutionDetails.getOrgIdentifier()).isEqualTo("test-org");
     assertThat(terraformPlanExecutionDetails.getProjectIdentifier()).isEqualTo("test-project");
     assertThat(terraformPlanExecutionDetails.getPipelineExecutionId()).isEqualTo("exec_id");
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testTfPlanEncryptionOnManager() {
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
+
+    boolean flag = helper.tfPlanEncryptionOnManager(
+        "accountIdentifier", GcpKmsConfig.builder().accountId(GLOBAL_ACCOUNT_ID).build());
+    assertThat(flag).isTrue();
   }
 }

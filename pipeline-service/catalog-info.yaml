@@ -1,0 +1,9 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: pipeline-service
+  description: Pipeline Service enables user to create, update and execute pipeline on Harness
+spec:
+  type: service
+  owner: CD
+  lifecycle: production

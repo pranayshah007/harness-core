@@ -71,7 +71,9 @@ public enum WebhookAction {
   public String getValue() {
     return value;
   }
-  private static class EventActionHolder { static Map<String, WebhookAction> map = new HashMap<>(); }
+  private static class EventActionHolder {
+    static Map<String, WebhookAction> map = new HashMap<>();
+  }
 
   public static WebhookAction find(String val) {
     WebhookAction action = EventActionHolder.map.get(val);
@@ -135,12 +137,15 @@ public enum WebhookAction {
   }
 
   public static Set<WebhookAction> getHarnessScmActionForEvent(WebhookEvent event) {
-    // TODO(abhinav): implement
     switch (event) {
-      case BRANCH:
-        // todo(abhinav): implement
+      case PULL_REQUEST:
+        return EnumSet.of(OPENED, REOPENED, UPDATED);
+      case PUSH:
+        return emptySet();
+      case ISSUE_COMMENT:
+        return EnumSet.of(CREATED, EDITED, DELETED);
       default:
-        throw new InvalidRequestException("Event " + event.name() + " not an AWS code commit event");
+        throw new InvalidRequestException("Event " + event.name() + " not a harness scm event");
     }
   }
 }

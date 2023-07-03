@@ -16,6 +16,7 @@ import static io.harness.git.model.ChangeType.RENAME;
 import static io.harness.git.model.PushResultGit.pushResultBuilder;
 import static io.harness.rule.OwnerRule.ABHINAV;
 import static io.harness.rule.OwnerRule.ARVIND;
+import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.SATHISH;
 import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.rule.OwnerRule.YOGESH;
@@ -55,7 +56,11 @@ import io.harness.git.model.GitBaseRequest;
 import io.harness.git.model.GitFileChange;
 import io.harness.git.model.ListRemoteRequest;
 import io.harness.git.model.ListRemoteResult;
+import io.harness.git.model.PushRequest;
 import io.harness.git.model.PushResultGit;
+import io.harness.git.model.RevertAndPushRequest;
+import io.harness.git.model.RevertAndPushResult;
+import io.harness.git.model.RevertRequest;
 import io.harness.rule.Owner;
 
 import software.wings.misc.CustomUserGitConfigSystemReader;
@@ -711,6 +716,109 @@ public class GitClientV2ImplTest extends CategoryTest {
 
   private String buildFileName(int i) {
     return i + ".txt";
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testRevert() throws GitAPIException, IOException {
+    File newFile = new File(repoPath, "file1.txt");
+    FileUtils.writeStringToFile(newFile, "Line 1\r\n", "UTF-8", true);
+    git.add().addFilepattern("file1.txt").call();
+    git.commit().setAuthor("test", "test@test.com").setMessage("Commit Log 1").call();
+
+    // commit some changes
+    FileUtils.writeStringToFile(newFile, "Line 2\r\n", "UTF-8", true);
+    git.add().addFilepattern("file1.txt").call();
+    RevCommit rev2 = git.commit().setAll(true).setAuthor("test", "test@test.com").setMessage("Commit Log 2").call();
+
+    final RevertAndPushRequest revertAndPushRequest =
+        RevertAndPushRequest.builder().commitId(rev2.getId().getName()).build();
+
+    doNothing().when(gitClient).ensureRepoLocallyClonedAndUpdated(any());
+    doReturn(repoPath).when(gitClientHelper).getRepoDirectory(any());
+
+    final CommitResult commit = gitClient.revert(RevertRequest.mapFromRevertAndPushRequest(revertAndPushRequest));
+    git.rm();
+
+    assertThat(commit).isNotNull();
+    assertThat(commit.getCommitId()).isNotNull();
+    assertThat(commit.getCommitMessage()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testRevert_shouldFailWithNoParentsCommit() throws IOException, GitAPIException {
+    File newFile = new File(repoPath, "file1.txt");
+    FileUtils.writeStringToFile(newFile, "Line 1\r\n", "UTF-8", true);
+    git.add().addFilepattern("file1.txt").call();
+    RevCommit rev1 = git.commit().setAuthor("test", "test@test.com").setMessage("Commit Log 1").call();
+
+    final RevertAndPushRequest revertAndPushRequest =
+        RevertAndPushRequest.builder().commitId(rev1.getId().getName()).build();
+
+    doNothing().when(gitClient).ensureRepoLocallyClonedAndUpdated(any());
+    doReturn(repoPath).when(gitClientHelper).getRepoDirectory(any());
+
+    git.rm();
+    assertThatThrownBy(() -> gitClient.revert(RevertRequest.mapFromRevertAndPushRequest(revertAndPushRequest)))
+        .isInstanceOf(YamlException.class);
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testRevert_shouldFailWithInvalidCommit() throws IOException, GitAPIException {
+    File newFile = new File(repoPath, "file1.txt");
+    FileUtils.writeStringToFile(newFile, "Line 1\r\n", "UTF-8", true);
+    git.add().addFilepattern("file1.txt").call();
+    git.commit().setAuthor("test", "test@test.com").setMessage("Commit Log 1").call();
+
+    // commit some changes
+    FileUtils.writeStringToFile(newFile, "Line 2\r\n", "UTF-8", true);
+    git.add().addFilepattern("file1.txt").call();
+    git.commit().setAll(true).setAuthor("test", "test@test.com").setMessage("Commit Log 2").call();
+
+    final RevertAndPushRequest revertAndPushRequest =
+        RevertAndPushRequest.builder().commitId("invalid-commit-id").build();
+
+    doNothing().when(gitClient).ensureRepoLocallyClonedAndUpdated(any());
+    doReturn(repoPath).when(gitClientHelper).getRepoDirectory(any());
+
+    git.rm();
+    assertThatThrownBy(() -> gitClient.revert(RevertRequest.mapFromRevertAndPushRequest(revertAndPushRequest)))
+        .isInstanceOf(YamlException.class);
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testPushRevert() throws IOException, GitAPIException {
+    File newFile = new File(repoPath, "file1.txt");
+    FileUtils.writeStringToFile(newFile, "Line 1\r\n", "UTF-8", true);
+    git.add().addFilepattern("file1.txt").call();
+    git.commit().setAuthor("test", "test@test.com").setMessage("Commit Log 1").call();
+
+    // commit some changes
+    FileUtils.writeStringToFile(newFile, "Line 2\r\n", "UTF-8", true);
+    git.add().addFilepattern("file1.txt").call();
+    RevCommit rev2 = git.commit().setAll(true).setAuthor("test", "test@test.com").setMessage("Commit Log 2").call();
+
+    doNothing().when(gitClient).updateRemoteOriginInConfig(any(), any(), any());
+    RevertAndPushRequest request = RevertAndPushRequest.builder().commitId(rev2.getId().getName()).build();
+
+    PushResultGit toBeReturned = pushResultBuilder().refUpdate(PushResultGit.RefUpdate.builder().build()).build();
+    addRemote(repoPath);
+
+    doNothing().when(gitClient).ensureRepoLocallyClonedAndUpdated(any());
+    doReturn(repoPath).when(gitClientHelper).getRepoDirectory(any());
+
+    doReturn(toBeReturned).when(gitClient).push(PushRequest.mapFromRevertAndPushRequest(request));
+    git.rm();
+    final RevertAndPushResult revertAndPushResult = gitClient.revertAndPush(request);
+    assertThat(revertAndPushResult).isNotNull();
+    assertThat(revertAndPushResult.getGitCommitResult()).isNotNull();
   }
 
   @Test

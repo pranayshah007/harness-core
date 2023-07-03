@@ -87,6 +87,7 @@ public class HarnessApprovalStepTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock ApprovalInstanceService approvalInstanceService;
   @Mock ExecutorService executorService;
+  @Mock ExecutorService dashboardExecutorService;
   @Mock ApprovalNotificationHandler approvalNotificationHandler;
   @Mock LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Mock ExecutionSweepingOutputService sweepingOutputService;

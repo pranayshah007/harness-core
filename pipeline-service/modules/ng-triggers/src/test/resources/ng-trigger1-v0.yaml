@@ -1,0 +1,28 @@
+trigger:
+  name: first trigger
+  identifier: first_trigger
+  enabled: true
+  target:
+    targetIdentifier: pipeline
+    type: Pipeline
+    spec:
+      runtimeInputYaml: |
+        pipeline:
+          identifier: secrethttp1
+          stages:
+            - stage:
+                identifier: qaStage
+                spec:
+                  infrastructure:
+                    infrastructureDefinition:
+                      spec:
+                        releaseName: releaseName1
+  source:
+    type: Webhook
+    spec:
+      type: AWS_CODECOMMIT
+      spec:
+        gitRepoSpec:
+          identifier: conn
+          repoName: myrepo
+        event: Push

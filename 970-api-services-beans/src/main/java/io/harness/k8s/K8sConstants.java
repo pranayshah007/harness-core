@@ -217,4 +217,6 @@ public interface K8sConstants {
       + "\n"
       + "// Verify the binary\n"
       + "aws-iam-authenticator version";
+  String RELEASE_NAME_CONFLICTS_WITH_SECRETS_OR_CONFIG_MAPS =
+      "\nRelease Name conflicts with a Secret/ConfigMap resource. Please make sure that such conflicts are resolved for proper deployments";
 }
