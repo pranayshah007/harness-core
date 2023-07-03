@@ -1467,6 +1467,7 @@ public class UserServiceImpl implements UserService {
       }
       Query<User> query = getListUserQuery(accountId, true, false);
       List<User> existingUsersAndInvites = query.asList();
+      filterListForGeneration(accountId, existingUsersAndInvites, CG);
       userServiceLimitChecker.limitCheck(accountId, existingUsersAndInvites, new HashSet<>(Arrays.asList(email)));
     } catch (WingsException e) {
       log.error("The user limit has been reached for account {} and email {}", accountId, email);
@@ -2086,7 +2087,7 @@ public class UserServiceImpl implements UserService {
   public void completeNGInvite(
       UserInviteDTO userInvite, boolean isScimInvite, boolean shouldSendTwoFactorAuthResetEmail) {
     String accountId = userInvite.getAccountId();
-    limitCheck(accountId, userInvite.getEmail());
+    //    limitCheck(accountId, userInvite.getEmail());
     Account account = accountService.get(accountId);
     User user = getUserByEmail(userInvite.getEmail());
     if (user == null) {

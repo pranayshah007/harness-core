@@ -601,7 +601,7 @@ public class InviteServiceImpl implements InviteService {
   }
 
   private InviteOperationResponse newInvite(Invite invite, boolean[] scimLdapArray) {
-    checkUserLimit(invite.getAccountIdentifier(), invite.getEmail());
+    //    checkUserLimit(invite.getAccountIdentifier(), invite.getEmail());
     if (isNotEmpty(invite.getName())) {
       UserUtils.validateUserName(invite.getName());
     }
