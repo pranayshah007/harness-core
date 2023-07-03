@@ -80,6 +80,23 @@ if [ -e proxy.config ]; then
     PROXY_SYS_PROPS=$PROXY_SYS_PROPS" -Dhttp.nonProxyHosts=*$SYSTEM_PROPERTY_NO_PROXY"
   fi
 fi
+CURRENT_DELEGATE_VERSION=$2
+CURRENT_DELEGATE_VERSION=$(echo "$CURRENT_DELEGATE_VERSION" | cut -d "-" -f 1 | cut -d "." -f 3)
+
+if [[ $CURRENT_DELEGATE_VERSION > 79510 ]]; then
+  echo "Upgrading jre to 11.0.19_7"
+  JRE_DIR=jdk-11.0.19+7-jre
+  JRE_BINARY=$JRE_DIR/bin/java
+  <#if useCdn == "true">
+    <#noparse>
+      JVM_URL=$DELEGATE_STORAGE_URL/public/shared/jre/openjdk-11.0.19_7/OpenJDK11U-jre_${ARCH}_${OS}_hotspot_11.0.19_7.tar.gz
+    </#noparse>
+  <#else>
+    <#noparse>
+      JVM_URL=$DELEGATE_STORAGE_URL/jre/openjdk-11.0.19_7/OpenJDK11U-jre_${ARCH}_${OS}_hotspot_11.0.19_7.tar.gz
+    </#noparse>
+  </#if>
+fi
 
 if [ ! -d $JRE_DIR -o ! -e $JRE_BINARY ]; then
   echo "Downloading JRE packages..."
