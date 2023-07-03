@@ -7,6 +7,7 @@
 
 package io.harness.idp.envvariable.service;
 
+import static io.harness.idp.common.Constants.LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES;
 import static io.harness.idp.k8s.constants.K8sConstants.BACKSTAGE_SECRET;
 import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
@@ -47,6 +48,7 @@ import io.harness.spec.server.idp.v1.model.BackstageEnvConfigVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 import io.harness.spec.server.idp.v1.model.NamespaceInfo;
+import io.harness.spec.server.idp.v1.model.ResolvedEnvVariable;
 
 import com.google.inject.Inject;
 import com.google.protobuf.StringValue;
@@ -80,6 +82,7 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
   static final String TEST_SECRET_IDENTIFIER1 = "harnessKey";
   static final String TEST_ACCOUNT_IDENTIFIER = "accountId";
   static final String TEST_NAMESPACE = "namespace";
+  static final String TEST_NAMESPACE1 = "namespace1";
   static final String HARNESS_GITHUB_APP_PRIVATE_KEY_REF = "HARNESS_GITHUB_APP_PRIVATE_KEY_REF";
   AutoCloseable openMocks;
   @Mock private BackstageEnvVariableRepository backstageEnvVariableRepository;
@@ -525,6 +528,27 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
+  public void testSyncWithFFEnabled() {
+    checkUserAuth();
+    mockAccountNamespaceMapping();
+    BackstageEnvSecretVariable secret = new BackstageEnvSecretVariable();
+    secret.envName(HARNESS_GITHUB_APP_PRIVATE_KEY_REF);
+    secret.setHarnessSecretIdentifier(TEST_SECRET_IDENTIFIER);
+    secret.type(BackstageEnvVariable.TypeEnum.SECRET);
+
+    MockedStatic<CGRestUtils> mockRestUtils = mockStatic(CGRestUtils.class);
+    mockRestUtils.when(() -> CGRestUtils.getResponse(any())).thenReturn(true);
+
+    backstageEnvVariableService.sync(Collections.singletonList(secret), TEST_ACCOUNT_IDENTIFIER);
+    verify(k8sClient).updateSecretData(eq(TEST_NAMESPACE), eq(BACKSTAGE_SECRET), secretDataCaptor.capture(), eq(false));
+    assertEquals(1, secretDataCaptor.getValue().size());
+    assertTrue(secretDataCaptor.getValue().containsKey(LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES));
+    mockRestUtils.close();
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
   public void testDeleteMultiUsingEnvNames() {
     List<String> envNames = Collections.singletonList(TEST_ENV_NAME);
     NamespaceInfo namespaceInfo = new NamespaceInfo();
@@ -535,27 +559,6 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
 
     verify(k8sClient).removeSecretData(TEST_NAMESPACE, BACKSTAGE_SECRET, envNames);
     verify(backstageEnvVariableRepository).deleteAllByAccountIdentifierAndEnvNames(TEST_ACCOUNT_IDENTIFIER, envNames);
-  }
-
-  @Test
-  @Owner(developers = VIKYATH_HAREKAL)
-  @Category(UnitTests.class)
-  public void testGetAllSecretIdentifierForMultipleEnvVariablesInAccount() {
-    List<String> envNames = Collections.singletonList(TEST_ENV_NAME);
-    BackstageEnvSecretVariableEntity secretEntity =
-        BackstageEnvSecretVariableEntity.builder().harnessSecretIdentifier(TEST_SECRET_IDENTIFIER).build();
-    secretEntity.setHarnessSecretIdentifier(TEST_ACCOUNT_IDENTIFIER);
-    secretEntity.setEnvName(TEST_ENV_NAME);
-    List<BackstageEnvVariableEntity> secretEntities = Collections.singletonList(secretEntity);
-    when(
-        backstageEnvVariableRepository.findAllByAccountIdentifierAndMultipleEnvNames(TEST_ACCOUNT_IDENTIFIER, envNames))
-        .thenReturn(secretEntities);
-
-    List<BackstageEnvSecretVariable> secrets =
-        backstageEnvVariableService.getAllSecretIdentifierForMultipleEnvVariablesInAccount(
-            TEST_ACCOUNT_IDENTIFIER, envNames);
-    assertEquals(1, secrets.size());
-    assertEquals(TEST_ENV_NAME, secrets.get(0).getEnvName());
   }
 
   @Test
@@ -579,9 +582,72 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
     assertEquals(TEST_ENV_NAME, secrets.get(0).getEnvName());
   }
 
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testGetAllSecretIdentifierForMultipleEnvVariablesInAccount() {
+    List<String> envNames = Collections.singletonList(TEST_ENV_NAME);
+    BackstageEnvSecretVariableEntity secretEntity =
+        BackstageEnvSecretVariableEntity.builder().harnessSecretIdentifier(TEST_SECRET_IDENTIFIER).build();
+    secretEntity.setHarnessSecretIdentifier(TEST_ACCOUNT_IDENTIFIER);
+    secretEntity.setEnvName(TEST_ENV_NAME);
+    List<BackstageEnvVariableEntity> secretEntities = Collections.singletonList(secretEntity);
+    when(
+        backstageEnvVariableRepository.findAllByAccountIdentifierAndMultipleEnvNames(TEST_ACCOUNT_IDENTIFIER, envNames))
+        .thenReturn(secretEntities);
+
+    List<BackstageEnvSecretVariable> secrets =
+        backstageEnvVariableService.getAllSecretIdentifierForMultipleEnvVariablesInAccount(
+            TEST_ACCOUNT_IDENTIFIER, envNames);
+    assertEquals(1, secrets.size());
+    assertEquals(TEST_ENV_NAME, secrets.get(0).getEnvName());
+  }
+
   @After
   public void tearDown() throws Exception {
     openMocks.close();
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testResolveSecrets() {
+    mockAccountNamespaceMapping();
+    BackstageEnvConfigVariable config = new BackstageEnvConfigVariable();
+    config.envName(TEST_ENV_NAME);
+    config.setValue(TEST_DECRYPTED_VALUE);
+    config.type(BackstageEnvVariable.TypeEnum.CONFIG);
+    BackstageEnvVariableEntity configEntity =
+        mapBinder.get(BackstageEnvVariableType.CONFIG).fromDto(config, TEST_ACCOUNT_IDENTIFIER);
+
+    BackstageEnvSecretVariable secret = new BackstageEnvSecretVariable();
+    secret.envName(TEST_ENV_NAME2);
+    secret.setHarnessSecretIdentifier(TEST_SECRET_IDENTIFIER);
+    secret.type(BackstageEnvVariable.TypeEnum.SECRET);
+    BackstageEnvVariableEntity secretEntity =
+        mapBinder.get(BackstageEnvVariableType.SECRET).fromDto(secret, TEST_ACCOUNT_IDENTIFIER);
+
+    DecryptedSecretValue decryptedSecretValue = DecryptedSecretValue.builder().build();
+    decryptedSecretValue.setDecryptedValue(TEST_DECRYPTED_VALUE);
+    when(ngSecretService.getDecryptedSecretValue(TEST_ACCOUNT_IDENTIFIER, null, null, TEST_SECRET_IDENTIFIER))
+        .thenReturn(decryptedSecretValue);
+    when(backstageEnvVariableRepository.findByAccountIdentifier(TEST_ACCOUNT_IDENTIFIER))
+        .thenReturn(Arrays.asList(configEntity, secretEntity));
+
+    List<ResolvedEnvVariable> resolvedEnvs =
+        backstageEnvVariableService.resolveSecrets(TEST_ACCOUNT_IDENTIFIER, TEST_NAMESPACE);
+
+    assertEquals(1, resolvedEnvs.size());
+    assertEquals(secret.getEnvName(), resolvedEnvs.get(0).getEnvName());
+    assertEquals(TEST_DECRYPTED_VALUE, resolvedEnvs.get(0).getDecryptedValue());
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testResolveSecretsInvalidNamespace() {
+    mockAccountNamespaceMapping();
+    backstageEnvVariableService.resolveSecrets(TEST_ACCOUNT_IDENTIFIER, TEST_NAMESPACE1);
   }
 
   private void checkUserAuth() {

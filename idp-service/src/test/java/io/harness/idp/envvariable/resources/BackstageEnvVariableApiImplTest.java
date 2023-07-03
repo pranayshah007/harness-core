@@ -27,6 +27,7 @@ import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.*;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import javax.ws.rs.core.Response;
@@ -48,9 +49,12 @@ public class BackstageEnvVariableApiImplTest extends CategoryTest {
   @Mock BackstageEnvVariableService backstageEnvVariableService;
   @Mock private IdpCommonService idpCommonService;
   @InjectMocks BackstageEnvVariableApiImpl backstageEnvVariableApiImpl;
+  static final String TEST_ENV_NAME = "env";
   static final String TEST_ACCOUNT_IDENTIFIER = "accountId";
   static final String TEST_SECRET_IDENTIFIER = "secretId";
   static final String TEST_SECRET_IDENTIFIER1 = "secretId1";
+  static final String TEST_NAMESPACE = "namespace";
+  static final String TEST_DECRYPTED_VALUE = "abc123";
 
   @Before
   public void setUp() {
@@ -316,6 +320,26 @@ public class BackstageEnvVariableApiImplTest extends CategoryTest {
     Response response = backstageEnvVariableApiImpl.updateBackstageEnvVariables(batchRequest, TEST_ACCOUNT_IDENTIFIER);
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
     assertEquals(ERROR_MESSAGE, ((ResponseMessage) response.getEntity()).getMessage());
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testResolveBackstageEnvVariables() {
+    doNothing().when(idpCommonService).checkUserAuthorization();
+    ResolvedEnvVariable resolvedEnvVariable = new ResolvedEnvVariable();
+    resolvedEnvVariable.setEnvName(TEST_ENV_NAME);
+    resolvedEnvVariable.setDecryptedValue(TEST_DECRYPTED_VALUE);
+    when(backstageEnvVariableService.resolveSecrets(TEST_ACCOUNT_IDENTIFIER, TEST_NAMESPACE))
+        .thenReturn(Collections.singletonList(resolvedEnvVariable));
+
+    Response response =
+        backstageEnvVariableApiImpl.resolveBackstageEnvVariables(TEST_ACCOUNT_IDENTIFIER, TEST_NAMESPACE);
+
+    assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+    List<ResolvedEnvVariableResponse> responseList = (List<ResolvedEnvVariableResponse>) response.getEntity();
+    assertEquals(1, responseList.size());
+    assertEquals(resolvedEnvVariable, responseList.get(0).getResolvedEnvVariable());
   }
 
   @After

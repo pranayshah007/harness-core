@@ -129,6 +129,22 @@ public class BackstageEnvVariablesSyncJobTest extends CategoryTest {
     verify(executorService).awaitTermination(30, TimeUnit.SECONDS);
   }
 
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testEnvSecretSyncWhenFFIsEnabled() {
+    List<String> accountIds = Arrays.asList(TEST_ACCOUNT1, TEST_ACCOUNT2);
+    when(namespaceService.getAccountIds()).thenReturn(accountIds);
+    MockedStatic<CGRestUtils> mockRestUtils = mockStatic(CGRestUtils.class);
+    mockRestUtils.when(() -> CGRestUtils.getResponse(any())).thenReturn(true);
+
+    job.run();
+
+    verify(backstageEnvVariableService, times(0)).findAndSync(TEST_ACCOUNT1);
+    verify(accountClient, times(2)).isFeatureFlagEnabled(eq(FeatureName.IDP_DYNAMIC_SECRET_RESOLUTION.name()), any());
+    mockRestUtils.close();
+  }
+
   @After
   public void tearDown() throws Exception {
     openMocks.close();
