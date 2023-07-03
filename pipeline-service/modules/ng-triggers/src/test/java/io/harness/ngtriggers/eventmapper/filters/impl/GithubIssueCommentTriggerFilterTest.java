@@ -7,18 +7,12 @@
 
 package io.harness.ngtriggers.eventmapper.filters.impl;
 
-import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.FAILED_TO_FETCH_PR_DETAILS;
-import static io.harness.rule.OwnerRule.MEET;
-import static io.harness.rule.OwnerRule.SHIVAM;
-
-import static java.util.Arrays.asList;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
-
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import com.google.common.base.Charsets;
+import com.google.common.io.Resources;
+import com.google.inject.Inject;
 import io.harness.CategoryTest;
 import io.harness.beans.IssueCommentWebhookEvent;
 import io.harness.beans.Repository;
@@ -55,13 +49,13 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.service.WebhookParserSCMService;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.utils.ConnectorUtils;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.slf4j.LoggerFactory;
 
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
-import com.google.common.base.Charsets;
-import com.google.common.io.Resources;
-import com.google.inject.Inject;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -69,12 +63,17 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.slf4j.LoggerFactory;
+
+import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.FAILED_TO_FETCH_PR_DETAILS;
+import static io.harness.rule.OwnerRule.MEET;
+import static io.harness.rule.OwnerRule.SHIVAM;
+import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
+import static org.mockito.MockitoAnnotations.initMocks;
 
 public class GithubIssueCommentTriggerFilterTest extends CategoryTest {
   private Logger logger;
