@@ -14,6 +14,7 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.beans.InputSetValidatorType;
 import io.harness.cdng.artifact.NGArtifactConstants;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
@@ -25,12 +26,15 @@ import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryRequestDTO
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryResponseDTO;
 import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceService;
 import io.harness.common.NGExpressionUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidIdentifierRefException;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.validation.RuntimeInputValuesValidator;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
@@ -88,7 +92,7 @@ public class ArtifactoryArtifactResource {
     IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
         artifactoryConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     ArtifactoryResponseDTO buildDetails = artifactoryResourceService.getBuildDetails(connectorRef, repository,
-        artifactPath, repositoryFormat, artifactRepositoryUrl, orgIdentifier, projectIdentifier);
+        artifactPath, repositoryFormat, artifactRepositoryUrl, orgIdentifier, projectIdentifier, null);
     return ResponseDTO.newResponse(buildDetails);
   }
 
@@ -110,8 +114,9 @@ public class ArtifactoryArtifactResource {
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
-      @NotNull @QueryParam("fqnPath") String fqnPath, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
-      @NotNull String runtimeInputYaml, @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
+      @QueryParam("tagRegex") String tagRegex, @NotNull @QueryParam("fqnPath") String fqnPath,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @NotNull String runtimeInputYaml,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
     if (isNotEmpty(serviceRef)) {
       final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
           accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
@@ -141,6 +146,21 @@ public class ArtifactoryArtifactResource {
       if (isEmpty(artifactoryConnectorIdentifier)) {
         artifactoryConnectorIdentifier = (String) artifactoryRegistryArtifactConfig.getConnectorRef().fetchFinalValue();
       }
+
+      if (EmptyPredicate.isNotEmpty(tagRegex)) {
+        final ParameterField<String> tagRegexParameterField =
+            RuntimeInputValuesValidator.getInputSetParameterField(tagRegex);
+        if (tagRegexParameterField != null && artifactResourceUtils.checkValidRegexType(tagRegexParameterField)) {
+          tagRegex = tagRegexParameterField.getInputSetValidator().getParameters();
+        } else {
+          tagRegex = null;
+        }
+      }
+
+      if (EmptyPredicate.isEmpty(tagRegex)
+          && artifactResourceUtils.checkValidRegexType(artifactoryRegistryArtifactConfig.getArtifactPath())) {
+        tagRegex = artifactoryRegistryArtifactConfig.getArtifactPath().getInputSetValidator().getParameters();
+      }
     }
 
     artifactoryConnectorIdentifier =
@@ -160,7 +180,7 @@ public class ArtifactoryArtifactResource {
         pipelineIdentifier, runtimeInputYaml, artifactRepositoryUrl, fqnPath, gitEntityBasicInfo, serviceRef);
 
     ArtifactoryResponseDTO buildDetails = artifactoryResourceService.getBuildDetails(connectorRef, repository,
-        artifactPath, repositoryFormat, artifactRepositoryUrl, orgIdentifier, projectIdentifier);
+        artifactPath, repositoryFormat, artifactRepositoryUrl, orgIdentifier, projectIdentifier, tagRegex);
     return ResponseDTO.newResponse(buildDetails);
   }
 

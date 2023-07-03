@@ -22,6 +22,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.ResourceTypeConstants;
 import io.harness.beans.IdentifierRef;
+import io.harness.beans.InputSetValidatorType;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
@@ -183,6 +184,11 @@ public class ArtifactResourceUtils {
         gitEntityBasicInfo.getYamlGitConfigId(), gitEntityBasicInfo.getDefaultFromOtherRepo(), BOOLEAN_FALSE_VALUE,
         TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).build(), false));
     return response.getMergedPipelineYaml();
+  }
+
+  public boolean checkValidRegexType(ParameterField<String> artifactConfig) {
+    return artifactConfig.getExpressionValue() != null && artifactConfig.getInputSetValidator() != null
+        && artifactConfig.getInputSetValidator().getValidatorType() == InputSetValidatorType.REGEX;
   }
 
   @Nullable

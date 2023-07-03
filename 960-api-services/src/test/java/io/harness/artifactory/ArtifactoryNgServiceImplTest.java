@@ -113,7 +113,7 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
     doReturn(buildDetails).when(artifactoryClient).getArtifactList(any(), any(), any(), anyInt());
 
     List<BuildDetails> result =
-        artifactoryNgService.getArtifactList(artifactoryConfigRequest, "repoName", "artifactPath", 10);
+        artifactoryNgService.getArtifactList(artifactoryConfigRequest, "repoName", "artifactPath", 10, null, null);
 
     verify(artifactoryClient, times(1)).getArtifactList(any(), any(), any(), anyInt());
     assertThat(result).isEqualTo(buildDetails);

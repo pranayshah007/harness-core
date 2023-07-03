@@ -319,8 +319,8 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
                     ArtifactTaskExecutionResponse.builder().artifactDelegateResponses(new ArrayList<>()).build())
                 .build());
 
-    ArtifactoryResponseDTO artifactoryResponseDTO = artifactoryResourceService.getBuildDetails(
-        identifierRef, REPO_NAME, IMAGE_PATH, RepositoryFormat.docker.name(), null, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    ArtifactoryResponseDTO artifactoryResponseDTO = artifactoryResourceService.getBuildDetails(identifierRef, REPO_NAME,
+        IMAGE_PATH, RepositoryFormat.docker.name(), null, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null);
     assertThat(artifactoryResponseDTO).isNotNull();
 
     ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);

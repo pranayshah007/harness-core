@@ -229,14 +229,14 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
   @Override
   public ArtifactoryResponseDTO getBuildDetails(IdentifierRef artifactoryConnectorRef, String repositoryName,
       String artifactPath, String repositoryFormat, String artifactRepositoryUrl, String orgIdentifier,
-      String projectIdentifier) {
+      String projectIdentifier, String tagRegex) {
     ArtifactoryConnectorDTO connector = getConnector(artifactoryConnectorRef);
     BaseNGAccess baseNGAccess =
         getBaseNGAccess(artifactoryConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
     List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
     ArtifactSourceDelegateRequest artifactoryRequest =
         ArtifactDelegateRequestUtils.getArtifactoryArtifactDelegateRequest(repositoryName, artifactPath,
-            repositoryFormat, artifactRepositoryUrl, null, null, null, connector, encryptionDetails,
+            repositoryFormat, artifactRepositoryUrl, null, tagRegex, null, connector, encryptionDetails,
             ArtifactSourceType.ARTIFACTORY_REGISTRY);
     try {
       ArtifactTaskExecutionResponse artifactTaskExecutionResponse = executeSyncTask(artifactoryRequest,

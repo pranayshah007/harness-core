@@ -52,8 +52,12 @@ public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
   }
 
   @Override
-  public List<BuildDetails> getArtifactList(
-      ArtifactoryConfigRequest artifactoryConfig, String repositoryName, String artifactPath, int maxVersions) {
+  public List<BuildDetails> getArtifactList(ArtifactoryConfigRequest artifactoryConfig, String repositoryName,
+      String artifactPath, int maxVersions, String artifactPathFilter, String artifactDirectory) {
+    if (EmptyPredicate.isNotEmpty(artifactPathFilter)) {
+      return getLatestArtifactForArtifactPathFilter(
+          artifactoryConfig, repositoryName, artifactDirectory, artifactPathFilter, maxVersions);
+    }
     return artifactoryClient.getArtifactList(artifactoryConfig, repositoryName, artifactPath, maxVersions);
   }
 

@@ -274,8 +274,8 @@ public class ArtifactoryArtifactTaskHandlerTest extends CategoryTest {
 
     doReturn(Lists.newArrayList(buildDetailsInternal))
         .when(artifactoryNgService)
-        .getArtifactList(
-            artifactoryInternalConfig, sourceAttributes.getRepositoryName(), filePath, MAX_NO_OF_TAGS_PER_ARTIFACT);
+        .getArtifactList(artifactoryInternalConfig, sourceAttributes.getRepositoryName(), filePath,
+            MAX_NO_OF_TAGS_PER_ARTIFACT, null, null);
 
     ArtifactTaskExecutionResponse lastSuccessfulBuild = artifactoryArtifactService.getBuilds(sourceAttributes);
     assertThat(lastSuccessfulBuild).isNotNull();
