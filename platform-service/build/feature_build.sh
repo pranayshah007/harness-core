@@ -5,10 +5,10 @@
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 set -ex
-
 # GCP_KEY, HARNESS_WILD_CERT, KEYSTORE_PASS, JDK, VERSION, PURPOSE, BUILD are externally provided
 # to this script through environment variables.
 
+echo $GCP_KEY
 echo $GCP_KEY | base64 -d > /tmp/storage_secret.json
 export GCP_KEY="/tmp/storage_secret.json"
 

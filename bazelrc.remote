@@ -2,7 +2,7 @@ import bazelrc.common
 
 # Add properties that are specific for ci build system
 
-startup --output_base=/tmp
+#startup --output_base=/tmp
 startup --max_idle_secs 5
 
 build --announce_rc
@@ -15,4 +15,4 @@ build --nobuild_runfile_links
 
 test --flaky_test_attempts=1
 
---sandbox_base=/run/shm
+#--sandbox_base=/run/shm
