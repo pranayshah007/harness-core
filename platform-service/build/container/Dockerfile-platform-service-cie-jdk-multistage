@@ -16,7 +16,6 @@ ENV BUILD_PURPOSE=DEVELOPMENT
 RUN chmod +x /app/platform-service/build/feature_build.sh \
     && chmod +x /app/platform-service/build/build_jar.sh \
     && chmod +x /app/platform-service/build/build_dist.sh \
-    && chmod +x /app/scripts/bazel/testDistribute.sh \
     && chmod +x /app/scripts/bazel/generate_credentials.sh \
     && /app/scripts/bazel/generate_credentials.sh \
     && /app/platform-service/build/feature_build.sh $GCP_KEY \
