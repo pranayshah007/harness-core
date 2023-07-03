@@ -20,6 +20,7 @@ import io.harness.cdng.pipeline.StepCategory;
 import io.harness.cdng.pipeline.StepData;
 import io.harness.cdng.pipeline.steptype.NGStepType;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.steps.matrix.StrategyParameters;
@@ -76,7 +77,7 @@ public class CDNGPipelineConfigurationHelper {
             serviceDefinitionType, deploymentMetaDataYaml, executionStrategyType);
       }
       if (ServiceDefinitionType.SERVERLESS_AWS_LAMBDA.equals(serviceDefinitionType)
-          && ExecutionStrategyType.BASIC.equals(executionStrategyType)
+          && ExecutionStrategyType.BASIC.equals(executionStrategyType) && EmptyPredicate.isNotEmpty(accountIdentifier)
           && featureFlagHelper.isEnabled(accountIdentifier, FeatureName.CDS_SERVERLESS_V2)) {
         executionStrategyTypeValue = "basic-plugin";
       }
