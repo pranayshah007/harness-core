@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.logstreaming;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.delegate.beans.DelegateProgressData;
 import io.harness.logging.UnitProgress;
 
@@ -16,6 +17,7 @@ import lombok.Value;
 
 @Value
 @Builder
+@RecasterAlias("io.harness.delegate.beans.logstreaming.UnitProgressData")
 public class UnitProgressData implements DelegateProgressData {
   List<UnitProgress> unitProgresses;
 }

@@ -31,6 +31,7 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.federecio.dropwizard.swagger.SwaggerBundle;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
+import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -43,7 +44,7 @@ import org.glassfish.jersey.server.model.Resource;
 
 @Slf4j
 @OwnedBy(SSCA)
-public class SSCAManagerApplication extends Application<SSCAManagerConfiguration> {
+public class SSCAManagerApplication extends Application<io.harness.SSCAManagerConfiguration> {
   private static final String APPLICATION_NAME = "SSCA Manager Application";
 
   public static void main(String[] args) throws Exception {
@@ -61,27 +62,28 @@ public class SSCAManagerApplication extends Application<SSCAManagerConfiguration
   }
 
   @Override
-  public void initialize(Bootstrap<SSCAManagerConfiguration> bootstrap) {
+  public void initialize(Bootstrap<io.harness.SSCAManagerConfiguration> bootstrap) {
     initializeLogging();
 
     // bootstrap.addCommand(new InspectCommand<>(this));
-    bootstrap.addBundle(new SwaggerBundle<SSCAManagerConfiguration>() {
+    bootstrap.addBundle(new SwaggerBundle<io.harness.SSCAManagerConfiguration>() {
       @Override
       protected SwaggerBundleConfiguration getSwaggerBundleConfiguration(
-          SSCAManagerConfiguration sscaManagerConfiguration) {
+          io.harness.SSCAManagerConfiguration sscaManagerConfiguration) {
         return sscaManagerConfiguration.getSwaggerBundleConfiguration();
       }
     });
   }
 
   @Override
-  public void run(SSCAManagerConfiguration sscaManagerConfiguration, Environment environment) throws Exception {
+  public void run(io.harness.SSCAManagerConfiguration sscaManagerConfiguration, Environment environment)
+      throws Exception {
     log.info("Starting SSCA Manager Application ...");
     List<Module> modules = new ArrayList<>();
     modules.add(new ProviderModule() {
       @Provides
       @Singleton
-      SSCAManagerConfiguration configuration() {
+      io.harness.SSCAManagerConfiguration configuration() {
         return sscaManagerConfiguration;
       }
 
@@ -93,15 +95,22 @@ public class SSCAManagerApplication extends Application<SSCAManagerConfiguration
       }
     });
 
-    modules.add(SSCAManagerModule.getInstance(sscaManagerConfiguration));
+    modules.add(io.harness.SSCAManagerModule.getInstance(sscaManagerConfiguration));
     MaintenanceController.forceMaintenance(true);
     Injector injector = Guice.createInjector(modules);
     injector.getInstance(HPersistence.class);
     registerJerseyProviders(environment, injector);
     registerResources(environment, injector);
+    registerOasResource(sscaManagerConfiguration, environment, injector);
     registerCorsFilter(sscaManagerConfiguration, environment);
-
     MaintenanceController.forceMaintenance(false);
+  }
+
+  private void registerOasResource(
+      SSCAManagerConfiguration sscaManagerConfiguration, Environment environment, Injector injector) {
+    OpenApiResource openApiResource = injector.getInstance(OpenApiResource.class);
+    openApiResource.setOpenApiConfiguration(sscaManagerConfiguration.getOasConfig());
+    environment.jersey().register(openApiResource);
   }
 
   private void registerResources(Environment environment, Injector injector) {
@@ -112,7 +121,7 @@ public class SSCAManagerApplication extends Application<SSCAManagerConfiguration
     }
   }
 
-  private void registerCorsFilter(SSCAManagerConfiguration appConfig, Environment environment) {
+  private void registerCorsFilter(io.harness.SSCAManagerConfiguration appConfig, Environment environment) {
     FilterRegistration.Dynamic cors = environment.servlets().addFilter("CORS", CrossOriginFilter.class);
     String allowedOrigins = String.join(",", appConfig.getAllowedOrigins());
     cors.setInitParameters(of("allowedOrigins", allowedOrigins, "allowedHeaders",

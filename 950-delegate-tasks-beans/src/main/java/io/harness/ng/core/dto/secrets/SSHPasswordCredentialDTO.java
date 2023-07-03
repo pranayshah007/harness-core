@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.dto.secrets;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.beans.DecryptableEntity;
 import io.harness.encryption.SecretRefData;
 import io.harness.ng.core.models.SSHCredentialSpec;
@@ -26,6 +27,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName("Password")
 @JsonIgnoreProperties(ignoreUnknown = true)
+@RecasterAlias("io.harness.ng.core.dto.secrets.SSHPasswordCredentialDTO")
 public class SSHPasswordCredentialDTO extends SSHCredentialSpecDTO implements DecryptableEntity {
   @NotNull private String userName;
   @ApiModelProperty(dataType = "string") @NotNull @SecretReference private SecretRefData password;

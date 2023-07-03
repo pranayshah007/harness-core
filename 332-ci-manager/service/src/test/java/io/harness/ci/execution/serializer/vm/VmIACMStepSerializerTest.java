@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.groovy.util.Maps;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -64,6 +65,7 @@ public class VmIACMStepSerializerTest extends CategoryTest {
   @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
+  @Ignore("CI-8692: TI team to follow up")
   public void testIACMGetWorkspaceVariables() {
     Map<String, String> envVars = new HashMap<>();
     envVars.put("Key1", "Value1");

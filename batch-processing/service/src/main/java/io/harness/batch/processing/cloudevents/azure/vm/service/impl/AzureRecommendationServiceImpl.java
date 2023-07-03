@@ -150,7 +150,10 @@ public class AzureRecommendationServiceImpl implements AzureRecommendationServic
     }
     String regionName = REGION_ID_TO_REGION.get(extendedProperties.get(REGION_ID));
     if (regionName == null) {
+      // Since if regionName is null we won't be able to move forward
+      // And create a recommendation over it, we can return null
       log.info("regionName null for region id: {}", extendedProperties.get(REGION_ID));
+      return null;
     }
     String currentSku = extendedProperties.get(CURRENT_SKU);
     double currentSkuMonthlySavings = Double.parseDouble(extendedProperties.get(SAVINGS_AMOUNT));

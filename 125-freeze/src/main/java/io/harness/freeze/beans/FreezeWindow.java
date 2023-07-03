@@ -7,6 +7,7 @@
 
 package io.harness.freeze.beans;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.validation.OneOfField;
 
 import javax.validation.constraints.NotNull;
@@ -14,6 +15,7 @@ import lombok.Data;
 
 @Data
 @OneOfField(fields = {"duration", "endTime"})
+@RecasterAlias("io.harness.freeze.beans.FreezeWindow")
 public class FreezeWindow {
   @NotNull String timeZone;
   @NotNull String startTime;

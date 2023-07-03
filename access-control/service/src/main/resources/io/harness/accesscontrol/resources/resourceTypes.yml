@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: resourceTypeConfiguration
-version: 30
+version: 29
 resourceTypes:
   - identifier: ACCOUNT
     permissionKey: account
@@ -134,3 +134,5 @@ resourceTypes:
     permissionKey: commitCheck
   - identifier: NETWORK_MAP
     permissionKey: networkmap
+  - identifier: CHAOS_SECURITY_GOVERNANCE
+    permissionKey: chaossecuritygovernance

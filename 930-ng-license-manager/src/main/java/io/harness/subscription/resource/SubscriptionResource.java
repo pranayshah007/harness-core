@@ -282,7 +282,7 @@ public class SubscriptionResource {
   }
 
   @PUT
-  @Path("/customers/{customerId}")
+  @Path("/customer")
   @ApiOperation(value = "Updates the customer", nickname = "updateCustomer")
   @Operation(operationId = "updateCustomer", summary = "Update the customer",
       responses =
@@ -294,13 +294,10 @@ public class SubscriptionResource {
   public ResponseDTO<CustomerDetailDTO>
   updateCustomer(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                      NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @Parameter(required = true, description = "Customer Identifier for the Entity") @NotNull @PathParam(
-          CUSTOMER_ID) String customerId,
       @io.swagger.v3.oas.annotations.parameters.RequestBody(
           required = true, description = "This is the information of the Stripe Customer Request.") @NotNull
       @Valid CustomerDTO customerDTO) {
-    return ResponseDTO.newResponse(
-        subscriptionService.updateStripeCustomer(accountIdentifier, customerId, customerDTO));
+    return ResponseDTO.newResponse(subscriptionService.updateStripeCustomer(accountIdentifier, customerDTO));
   }
 
   @PUT
@@ -368,7 +365,7 @@ public class SubscriptionResource {
   createClientSecret(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @Parameter(required = true, description = "Billing email for transaction correspondence") @NotNull @QueryParam(
-          "billingEmail") @AccountIdentifier String billingEmail) {
+          "billingEmail") String billingEmail) {
     return ResponseDTO.newResponse(subscriptionService.createClientSecret(accountIdentifier, billingEmail));
   }
 

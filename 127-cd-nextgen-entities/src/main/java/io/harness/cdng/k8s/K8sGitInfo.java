@@ -9,6 +9,7 @@ package io.harness.cdng.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -24,6 +25,7 @@ import lombok.Data;
 @JsonTypeName("K8sGitConfigMapInfo")
 @OwnedBy(CDP)
 @TargetModule(HarnessModule._957_CG_BEANS)
+@RecasterAlias("io.harness.cdng.k8s.K8sGitInfo")
 public class K8sGitInfo {
   private String commitId;
 }
