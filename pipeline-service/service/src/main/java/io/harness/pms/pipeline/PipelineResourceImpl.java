@@ -306,7 +306,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
         accountId, orgId, projectId, pipelineId, isNumeric(ifMatch) ? parseLong(ifMatch) : null));
   }
 
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_LIST_VIEW)
   public ResponseDTO<Page<PMSPipelineSummaryResponseDTO>> getListOfPipelines(
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgId,
       @NotNull @ProjectIdentifier String projectId, int page, int size, List<String> sort,
