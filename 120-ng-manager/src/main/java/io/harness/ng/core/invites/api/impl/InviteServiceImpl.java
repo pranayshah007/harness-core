@@ -975,8 +975,23 @@ public class InviteServiceImpl implements InviteService {
           accountIdentifier, searchTerm, org.springframework.data.domain.PageRequest.of(0, DEFAULT_PAGE_SIZE));
       List<String> emailIds = userInfos.stream().map(UserInfo::getEmail).collect(toList());
       Criteria searchTermCriteria = new Criteria();
-      searchTermCriteria.orOperator(Criteria.where(InviteKeys.email).regex(Pattern.quote(searchTerm)),
-          Criteria.where(InviteKeys.email).in(emailIds));
+      if (searchTerm.startsWith("*") && searchTerm.endsWith("*")) {
+        // Wildcard search: *searchTerm*
+        String escapedSearchTerm =
+            Pattern.quote(searchTerm.substring(1, searchTerm.length() - 1)); // Remove leading and trailing '*'
+        criteria.and(InviteKeys.email).regex(escapedSearchTerm, "i");
+      } else if (searchTerm.startsWith("*")) {
+        String escapedSearchTerm = Pattern.quote(searchTerm.substring(1)); // Remove leading '*'
+        criteria.and(InviteKeys.email).regex("^.*" + escapedSearchTerm, "i");
+      } else if (searchTerm.endsWith("*")) {
+        String escapedSearchTerm =
+            Pattern.quote(searchTerm.substring(0, searchTerm.length() - 1)); // Remove trailing '*'
+        criteria.and(InviteKeys.email).regex(escapedSearchTerm + ".*", "i");
+      } else {
+        criteria.and(InviteKeys.email).in(searchTerm);
+      }
+
+      Criteria.where(InviteKeys.email).in(emailIds);
       criteria = new Criteria().andOperator(criteria, searchTermCriteria);
     }
     return getInvites(criteria, pageRequest);

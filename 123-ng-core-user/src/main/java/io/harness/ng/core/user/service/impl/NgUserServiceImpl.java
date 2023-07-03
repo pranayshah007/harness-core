@@ -238,9 +238,32 @@ public class NgUserServiceImpl implements NgUserService {
     Criteria userMetadataCriteria = new Criteria();
     if (userFilter != null) {
       if (isNotBlank(userFilter.getSearchTerm())) {
-        String escapedSearchTerm = Pattern.quote(userFilter.getSearchTerm()); // Escape special characters
-        userMetadataCriteria.orOperator(Criteria.where(UserMetadataKeys.name).regex(escapedSearchTerm, "i"),
-            Criteria.where(UserMetadataKeys.email).regex(escapedSearchTerm, "i"));
+        String searchTerm = userFilter.getSearchTerm();
+        if (searchTerm.startsWith("*")) {
+          searchTerm = searchTerm.substring(1); // Remove leading '*'
+        }
+        if (searchTerm.endsWith("*")) {
+          searchTerm = searchTerm.substring(0, searchTerm.length() - 1); // Remove trailing '*'
+        }
+        String escapedSearchTerm = Pattern.quote(searchTerm); // Escape special characters
+        if (userFilter.getSearchTerm().startsWith("*") && userFilter.getSearchTerm().endsWith("*")) {
+          // Wildcard search: *searchTerm*
+          userMetadataCriteria.orOperator(
+              Criteria.where(UserMetadataKeys.name).regex(".*" + escapedSearchTerm + ".*", "i"),
+              Criteria.where(UserMetadataKeys.email).regex(".*" + escapedSearchTerm + ".*", "i"));
+        } else if (userFilter.getSearchTerm().startsWith("*")) {
+          // Wildcard search: *searchTerm
+          userMetadataCriteria.orOperator(Criteria.where(UserMetadataKeys.name).regex(".*" + escapedSearchTerm, "i"),
+              Criteria.where(UserMetadataKeys.email).regex(".*" + escapedSearchTerm, "i"));
+        } else if (userFilter.getSearchTerm().endsWith("*")) {
+          // Wildcard search: searchTerm*
+          userMetadataCriteria.orOperator(Criteria.where(UserMetadataKeys.name).regex(escapedSearchTerm + ".*", "i"),
+              Criteria.where(UserMetadataKeys.email).regex(escapedSearchTerm + ".*", "i"));
+        } else {
+          // Exact search: searchTerm
+          userMetadataCriteria.orOperator(Criteria.where(UserMetadataKeys.name).is(searchTerm),
+              Criteria.where(UserMetadataKeys.email).is(searchTerm));
+        }
       }
       if (userFilter.getIdentifiers() != null || userFilter.getEmails() != null) {
         List<String> userIds = new ArrayList<>();
