@@ -77,4 +77,3 @@ test-util.bzl
 .tool-versions
 .build-cleaner-index
 product/ci/scm/.idea
-/project/bazelproject-pl.bazelproject
