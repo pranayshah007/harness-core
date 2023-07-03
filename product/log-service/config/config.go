@@ -25,7 +25,7 @@ type Config struct {
 	}
 
 	Server struct {
-		Bind  string `envconfig:"LOG_SERVICE_HTTP_BIND" default:"localhost:8079"`
+		Bind  string `envconfig:"LOG_SERVICE_HTTP_BIND" default:":8079"`
 		Proto string `envconfig:"LOG_SERVICE_HTTP_PROTO"`
 		Host  string `envconfig:"LOG_SERVICE_HTTP_HOST"`
 		Acme  bool   `envconfig:"LOG_SERVICE_HTTP_ACME"`
