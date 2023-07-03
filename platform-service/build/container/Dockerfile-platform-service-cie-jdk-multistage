@@ -14,6 +14,7 @@ COPY 970-ng-commons/ /app/970-ng-commons
 COPY 930-delegate-tasks/ /app/930-delegate-tasks
 COPY dockerization/ /app/dockerization
 COPY scripts/bazel/*.sh /app/scripts/bazel/
+COPY WORKSPACE /app/
 
 COPY .bazelrc .bazelversion bazelrc.common bazelrc.local bazelrc.remote BUILD.bazel /app/
 
