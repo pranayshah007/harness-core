@@ -194,23 +194,6 @@ if [[ "" != "$CV_MANAGER_SERVICE_SECRET" ]]; then
   export CV_MANAGER_SERVICE_SECRET; yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.srm.secret=env(CV_MANAGER_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
-if [[ "" != "$IDP_SERVICE_BASE_URL" ]]; then
-  export IDP_SERVICE_BASE_URL; yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.idp.serviceHttpClientConfig.baseUrl=env(IDP_SERVICE_BASE_URL)' $CONFIG_FILE
-fi
-
-if [[ "" != "$IDP_SERVICE_CONNECT_TIMEOUT_IN_SECONDS" ]]; then
-  export IDP_SERVICE_CONNECT_TIMEOUT_IN_SECONDS; yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.idp.serviceHttpClientConfig.connectTimeOutSeconds=env(IDP_SERVICE_CONNECT_TIMEOUT_IN_SECONDS)' $CONFIG_FILE
-fi
-
-if [[ "" != "$IDP_SERVICE_READ_TIMEOUT_IN_SECONDS" ]]; then
-  export IDP_SERVICE_READ_TIMEOUT_IN_SECONDS; yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.idp.serviceHttpClientConfig.readTimeOutSeconds=env(IDP_SERVICE_READ_TIMEOUT_IN_SECONDS)' $CONFIG_FILE
-fi
-
-if [[ "" != "$IDP_SERVICE_SECRET" ]]; then
-  export IDP_SERVICE_SECRET; yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.idp.secret=env(IDP_SERVICE_SECRET)' $CONFIG_FILE
-fi
-
-
 if [[ "" != "$NG_MANAGER_TARGET" ]]; then
   export NG_MANAGER_TARGET; yq -i '.grpcClientConfigs.cd.target=env(NG_MANAGER_TARGET)' $CONFIG_FILE
 fi
