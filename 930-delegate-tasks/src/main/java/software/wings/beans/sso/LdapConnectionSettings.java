@@ -33,6 +33,8 @@ import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.Set;
+
 /**
  * Class denotes Connection settings for Ldap.
  */
@@ -58,6 +60,7 @@ public class LdapConnectionSettings implements LdapConnectionConfig, Encryptable
   int connectTimeout = LdapConstants.DEFAULT_CONNECT_TIMEOUT;
   int responseTimeout = LdapConstants.DEFAULT_RESPONSE_TIMEOUT;
   Boolean useRecursiveGroupMembershipSearch;
+  private Set<String> delegateSelectors;
 
   @AssertTrue(message = "Bind password/Secret can't be empty if Bind DN is provided.")
   private boolean isNonEmptyCredentials() {
