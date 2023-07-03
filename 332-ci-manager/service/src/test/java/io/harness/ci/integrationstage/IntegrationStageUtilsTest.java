@@ -19,8 +19,10 @@ import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml.HostedVmInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sHostedInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.platform.ArchType;
 import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.category.element.UnitTests;
@@ -241,6 +243,20 @@ public class IntegrationStageUtilsTest {
             .build();
     buildTimeMultiplier = IntegrationStageUtils.getBuildTimeMultiplierForHostedInfra(hostedVmInfraYaml);
     assertThat(buildTimeMultiplier).isEqualTo(1.0);
+
+    hostedVmInfraYaml.setSpec(HostedVmInfraSpec.builder()
+                                  .platform(ParameterField.createValueField(
+                                      Platform.builder().os(ParameterField.createValueField(OSType.MacOS)).build()))
+                                  .build());
+    buildTimeMultiplier = IntegrationStageUtils.getBuildTimeMultiplierForHostedInfra(hostedVmInfraYaml);
+    assertThat(buildTimeMultiplier).isEqualTo(10.0);
+
+    hostedVmInfraYaml.setSpec(HostedVmInfraSpec.builder()
+                                  .platform(ParameterField.createValueField(
+                                      Platform.builder().os(ParameterField.createValueField(OSType.Windows)).build()))
+                                  .build());
+    buildTimeMultiplier = IntegrationStageUtils.getBuildTimeMultiplierForHostedInfra(hostedVmInfraYaml);
+    assertThat(buildTimeMultiplier).isEqualTo(2.0);
   }
 
   @Test
