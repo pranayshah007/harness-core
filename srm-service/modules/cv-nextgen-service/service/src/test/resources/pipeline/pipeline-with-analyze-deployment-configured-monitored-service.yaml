@@ -1,0 +1,75 @@
+pipeline:
+  name: testNewYAML
+  identifier: testNewYAML
+  projectIdentifier: raghu_p
+  orgIdentifier: harness_test
+  tags: {}
+  stages:
+    - stage:
+        name: stage1
+        identifier: stage1
+        description: ""
+        type: Deployment
+        spec:
+          serviceConfig:
+            serviceDefinition:
+              type: Kubernetes
+              spec:
+                manifestOverrideSets: []
+                manifests: []
+                artifacts:
+                  sidecars: []
+                variables: []
+            serviceRef: $serviceRef
+          infrastructure:
+            environmentRef: $environmentRef
+            infrastructureDefinition:
+              type: KubernetesDirect
+              spec:
+                connectorRef: playground
+                namespace: default
+                releaseName: release
+            allowSimultaneousDeployments: false
+            infrastructureKey: key
+          execution:
+            steps:
+              - step:
+                  type: AnalyzeDeploymentImpact
+                  name: Analyze Deployment
+                  identifier: AnalyzeDeployment
+                  timeout: 2h
+                  spec:
+                    duration: 3D
+                    monitoredService:
+                      type: Configured
+                      spec:
+                        monitoredServiceRef: $monitoredServiceRef
+                  failureStrategies:
+                    - onFailure:
+                        errors:
+                          - Verification
+                        action:
+                          type: ManualIntervention
+                          spec:
+                            timeout: 2h
+                            onTimeout:
+                              action:
+                                type: StageRollback
+                    - onFailure:
+                        errors:
+                          - Unknown
+                        action:
+                          type: ManualIntervention
+                          spec:
+                            timeout: 2h
+                            onTimeout:
+                              action:
+                                type: Ignore
+            rollbackSteps: []
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback

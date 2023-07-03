@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.ssh;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
@@ -20,6 +21,7 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)
+@RecasterAlias("io.harness.delegate.task.ssh.EmptyHostDelegateConfig")
 public class EmptyHostDelegateConfig implements SshInfraDelegateConfig {
   Set<String> hosts;
   List<EncryptedDataDetail> encryptionDataDetails;

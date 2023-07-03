@@ -152,7 +152,8 @@ public class BarrierState extends State {
       return null;
     }
 
-    log.info("Barrier {} reached for workflow execution {}", getIdentifier(), context.getWorkflowExecutionId());
+    log.info("Barrier {} reached for workflow execution {} [barrierId={}]", getIdentifier(),
+        context.getWorkflowExecutionId(), barrierId);
 
     return barrierService.update(context.getAppId(), barrierId);
   }

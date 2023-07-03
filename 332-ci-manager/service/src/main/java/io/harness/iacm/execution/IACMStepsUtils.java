@@ -8,6 +8,7 @@
 package io.harness.iacm.execution;
 
 import static io.harness.ci.commonconstants.CIExecutionConstants.WORKSPACE_ID;
+import static io.harness.pms.contracts.plan.ExpressionMode.RETURN_NULL_IF_UNRESOLVED;
 
 import io.harness.beans.entities.Workspace;
 import io.harness.beans.entities.WorkspaceVariables;
@@ -22,6 +23,7 @@ import io.harness.iacmserviceclient.IACMServiceUtils;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.expression.EngineExpressionService;
 
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.inject.Inject;
@@ -32,6 +34,8 @@ import java.util.Objects;
 public class IACMStepsUtils {
   @Inject ConnectorUtils connectorUtils;
   @Inject IACMServiceUtils iacmServiceUtils;
+
+  @Inject private EngineExpressionService engineExpressionService;
 
   private Workspace getIACMWorkspaceInfo(String org, String projectId, String accountId, String workspaceID) {
     Workspace workspaceInfo = iacmServiceUtils.getIACMWorkspaceInfo(org, projectId, accountId, workspaceID);
@@ -167,5 +171,17 @@ public class IACMStepsUtils {
     }
     sb.append('}');
     return sb.toString();
+  }
+
+  public Map<String, String> replaceHarnessVariables(Ambiance ambiance, Map<String, String> map) {
+    for (Map.Entry<String, String> entry : map.entrySet()) {
+      String key = entry.getKey();
+      String value = entry.getValue();
+      var renderedValue = engineExpressionService.renderExpression(ambiance, value, RETURN_NULL_IF_UNRESOLVED);
+      if (renderedValue != null) {
+        map.put(key, renderedValue);
+      }
+    }
+    return map;
   }
 }

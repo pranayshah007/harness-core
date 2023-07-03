@@ -153,7 +153,7 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver, N
       }
 
       // StageEndEvent for audit
-      if (StatusUtils.finalStatuses().contains(status)) {
+      if (!Status.SKIPPED.equals(status) && StatusUtils.finalStatuses().contains(status)) {
         nodeExecutionEvent = NodeExecutionEventUtils.mapNodeOutboxInfoToStageEndEvent(nodeOutboxInfo);
       }
 

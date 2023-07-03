@@ -38,10 +38,10 @@ message InputData {
 message SetupInfraResponse {
   ResponseCode responseCode = 1;
   string errorMessage = 2;
-  ExecutionInfrastructureLocation location = 3;
+  ExecutionInfraInfo location = 3;
 }
 
-message ExecutionInfrastructureLocation {
+message ExecutionInfraInfo {
   string delegateName = 1;
   string runnerType = 2;
 }

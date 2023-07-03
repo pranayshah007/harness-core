@@ -14,9 +14,10 @@ import io.harness.batch.processing.cloudevents.aws.ecs.service.support.intfc.Aws
 import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.ng.NGConnectorHelper;
 import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.shard.AccountShardService;
+import io.harness.ccm.governance.entities.AwsRecommendationAdhocDTO;
+import io.harness.ccm.governance.entities.RecommendationAdhocDTO;
 import io.harness.ccm.views.dao.RuleDAO;
 import io.harness.ccm.views.dto.GovernanceJobEnqueueDTO;
-import io.harness.ccm.views.entities.RecommendationAdhocDTO;
 import io.harness.ccm.views.entities.Rule;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.graphql.QLCESortOrder;
@@ -121,7 +122,7 @@ public class GovernanceRecommendationService {
       ConnectorInfoDTO connectorInfoDTO = connector.getConnector();
       CEAwsConnectorDTO ceAwsConnectorDTO = (CEAwsConnectorDTO) connectorInfoDTO.getConnectorConfig();
       awsIdentifiers.add(ceAwsConnectorDTO.getAwsAccountId());
-      recommendationAdhocDTOList.add(RecommendationAdhocDTO.builder()
+      recommendationAdhocDTOList.add(AwsRecommendationAdhocDTO.builder()
                                          .targetAccountId(ceAwsConnectorDTO.getAwsAccountId())
                                          .roleArn(ceAwsConnectorDTO.getCrossAccountAccess().getCrossAccountRoleArn())
                                          .externalId(ceAwsConnectorDTO.getCrossAccountAccess().getExternalId())
@@ -137,7 +138,7 @@ public class GovernanceRecommendationService {
       List<String> awsIdentifiersFinal = new ArrayList<>();
       for (QLCEViewEntityStatsDataPoint accountData : accountNames) {
         recommendationAdhocDTOListFinal.add(recommendationAdhocDTOList.stream()
-                                                .filter(e -> e.getTargetAccountId().matches(accountData.getId()))
+                                                .filter(e -> e.getTargetInfo().matches(accountData.getId()))
                                                 .findFirst()
                                                 .get());
         awsIdentifiersFinal.add(accountData.getName());
@@ -163,24 +164,21 @@ public class GovernanceRecommendationService {
     for (RecommendationAdhocDTO recommendationAdhoc : recommendationAdhocDTOListFinal) {
       if (Lists.isNullOrEmpty(regions)) {
         regions = awsEC2HelperService.listRegions(AwsCrossAccountAttributes.builder()
-                                                      .crossAccountRoleArn(recommendationAdhoc.getRoleArn())
-                                                      .externalId(recommendationAdhoc.getExternalId())
+                                                      .crossAccountRoleArn(recommendationAdhoc.getRoleInfo())
+                                                      .externalId(recommendationAdhoc.getRoleId())
                                                       .build());
       }
       for (Rule rule : ruleList) {
         for (String region : regions) {
-          GovernanceJobEnqueueDTO governanceJobEnqueueDTO =
-              GovernanceJobEnqueueDTO.builder()
-                  .executionType(RuleExecutionType.INTERNAL)
-                  .ruleId(rule.getUuid())
-                  .isDryRun(true)
-                  .policy(rule.getRulesYaml())
-                  .ruleCloudProviderType(RuleCloudProviderType.AWS)
-                  .targetAccountId(recommendationAdhoc.getTargetAccountId())
-                  .externalId(recommendationAdhoc.getExternalId())
-                  .roleArn(recommendationAdhoc.getRoleArn())
-                  .targetRegion(region)
-                  .build();
+          GovernanceJobEnqueueDTO governanceJobEnqueueDTO = GovernanceJobEnqueueDTO.builder()
+                                                                .executionType(RuleExecutionType.INTERNAL)
+                                                                .ruleId(rule.getUuid())
+                                                                .isDryRun(true)
+                                                                .policy(rule.getRulesYaml())
+                                                                .ruleCloudProviderType(RuleCloudProviderType.AWS)
+                                                                .targetAccountDetails(recommendationAdhoc)
+                                                                .targetRegion(region)
+                                                                .build();
           log.info("enqueued: {}", governanceJobEnqueueDTO);
           try {
             governanceRuleService.enqueueAdhoc(accountId, governanceJobEnqueueDTO);

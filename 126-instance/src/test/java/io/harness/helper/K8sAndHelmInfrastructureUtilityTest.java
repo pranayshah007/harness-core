@@ -7,6 +7,8 @@
 
 package io.harness.helper;
 
+import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AZURE;
+import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DIRECT;
 import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 
@@ -19,6 +21,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
+import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sRancherInfrastructureOutcome;
 import io.harness.delegate.task.helm.HelmChartInfo;
@@ -98,6 +101,58 @@ public class K8sAndHelmInfrastructureUtilityTest extends InstancesTestBase {
     assertThat(helmDeploymentReleaseDetails.getK8sCloudClusterConfig().getResourceGroup()).isEqualTo("resourceGroup");
     assertThat(helmDeploymentReleaseDetails.getK8sCloudClusterConfig().getSubscriptionId()).isEqualTo("subscriptionId");
     assertThat(helmDeploymentReleaseDetails.getK8sCloudClusterConfig().isUseClusterAdminCredentials()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testGetInfrastructureOutcomeForK8sAzure() {
+    LinkedHashSet<String> namespaces = new LinkedHashSet<>();
+    namespaces.add(NAMESPACE);
+
+    KubernetesInfrastructureDTO kubernetesInfrastructureDTO =
+        KubernetesInfrastructureDTO.builder()
+            .namespaces(namespaces)
+            .releaseName(RELEASE_NAME)
+            .cloudConfigMetadata(K8sAzureCloudConfigMetadata.builder()
+                                     .clusterName("clusterName")
+                                     .subscription("subscriptionId")
+                                     .resourceGroup("resourceGroup")
+                                     .useClusterAdminCredentials(true)
+                                     .build())
+            .build();
+
+    InfrastructureOutcome infrastructureOutcome = K8sAndHelmInfrastructureUtility.getInfrastructureOutcome(
+        KUBERNETES_AZURE, kubernetesInfrastructureDTO, "connectorRef");
+    assertThat(infrastructureOutcome).isNotNull();
+    assertThat(infrastructureOutcome).isInstanceOf(K8sAzureInfrastructureOutcome.class);
+    K8sAzureInfrastructureOutcome k8sAzureInfrastructureOutcome = (K8sAzureInfrastructureOutcome) infrastructureOutcome;
+    assertThat(k8sAzureInfrastructureOutcome.getCluster()).contains("clusterName");
+    assertThat(k8sAzureInfrastructureOutcome.getResourceGroup()).isEqualTo("resourceGroup");
+    assertThat(k8sAzureInfrastructureOutcome.getSubscription()).isEqualTo("subscriptionId");
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testGetInfrastructureOutcomeForK8Direct() {
+    LinkedHashSet<String> namespaces = new LinkedHashSet<>();
+    namespaces.add(NAMESPACE);
+
+    KubernetesInfrastructureDTO kubernetesInfrastructureDTO = KubernetesInfrastructureDTO.builder()
+                                                                  .namespaces(namespaces)
+                                                                  .releaseName(RELEASE_NAME)
+                                                                  .cloudConfigMetadata(null)
+                                                                  .build();
+
+    InfrastructureOutcome infrastructureOutcome = K8sAndHelmInfrastructureUtility.getInfrastructureOutcome(
+        KUBERNETES_DIRECT, kubernetesInfrastructureDTO, "connectorRef");
+    assertThat(infrastructureOutcome).isNotNull();
+    assertThat(infrastructureOutcome).isInstanceOf(K8sDirectInfrastructureOutcome.class);
+    K8sDirectInfrastructureOutcome k8sDirectInfrastructureOutcome =
+        (K8sDirectInfrastructureOutcome) infrastructureOutcome;
+    assertThat(k8sDirectInfrastructureOutcome.getNamespace()).contains(NAMESPACE);
+    assertThat(k8sDirectInfrastructureOutcome.getReleaseName()).isEqualTo(RELEASE_NAME);
   }
 
   @Test

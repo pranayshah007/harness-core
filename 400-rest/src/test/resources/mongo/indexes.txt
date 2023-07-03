@@ -915,7 +915,7 @@ workflows {"name": "appId_name", "background": true} {"appId": 1, "name": 1}
 workflows {"name": "createdAt_1", "background": true} {"createdAt": 1}
 workflows {"name": "linkedArtifactStreamIds_1", "background": true} {"linkedArtifactStreamIds": 1}
 workflows {"name": "linkedTemplateUuids_1", "background": true} {"linkedTemplateUuids": 1}
-workflows {"name": "rbac_index", "background": true} {"accountId": 1, "uuid": 1, "appId": 1, "envId": 1, "templatized": 1, "templateExpressions": 1}
+workflows {"name": "rbac_index_2", "background": true} {"accountId": 1, "_id": 1, "appId": 1, "envId": 1, "templatized": 1, "templateExpressions": 1}
 yamlChangeSet {"name": "accountId_createdAt_index", "background": true} {"accountId": 1, "createdAt": -1}
 yamlChangeSet {"name": "accountId_queuekey_status_createdAt_index", "background": true} {"accountId": 1, "queueKey": 1, "status": 1, "createdAt": -1}
 yamlChangeSet {"name": "accountId_status_gitToHarness_createdAt_index", "background": true} {"accountId": 1, "status": 1, "gitToHarness": 1, "createdAt": 1}

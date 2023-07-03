@@ -10,6 +10,7 @@ package io.harness.ci.execution.utils;
 import static io.harness.annotations.dev.HarnessTeam.IACM;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ACCESS_KEY;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_SECRET_KEY;
+import static io.harness.pms.contracts.plan.ExpressionMode.RETURN_NULL_IF_UNRESOLVED;
 import static io.harness.rule.OwnerRule.NGONZALEZ;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,6 +35,7 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.iacm.execution.IACMStepsUtils;
 import io.harness.iacmserviceclient.IACMServiceUtils;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
@@ -58,6 +60,7 @@ public class IACMStepUtilTest extends CategoryTest {
   @Mock ConnectorUtils connectorUtils;
   @Mock HarnessImageUtils harnessImageUtils;
   @Mock IACMServiceUtils iacmServiceUtils;
+  @Mock EngineExpressionService engineExpressionService;
   @InjectMocks private IACMStepsUtils iacmStepsUtils;
   private final Ambiance ambiance = Ambiance.newBuilder()
                                         .putAllSetupAbstractions(Maps.of("accountId", "accountId", "projectIdentifier",
@@ -312,5 +315,23 @@ public class IACMStepUtilTest extends CategoryTest {
 
     PluginStepInfo stepInfo2 = PluginStepInfo.builder().settings(ParameterField.createValueField(setting)).build();
     assertThat(iacmStepsUtils.isIACMStep(stepInfo2)).isFalse();
+  }
+
+  @Test
+  @Owner(developers = NGONZALEZ)
+  @Category(UnitTests.class)
+  public void testReplaceHarnessVariables() {
+    Map<String, String> map = new HashMap<>();
+    map.put("key1", "<+pipeline.foo>");
+    map.put("key2", "<+pipeline.bar>");
+
+    when(engineExpressionService.renderExpression(ambiance, "<+pipeline.foo>", RETURN_NULL_IF_UNRESOLVED))
+        .thenReturn("fooResolved");
+    when(engineExpressionService.renderExpression(ambiance, "<+pipeline.bar>", RETURN_NULL_IF_UNRESOLVED))
+        .thenReturn("barResolved");
+
+    map = iacmStepsUtils.replaceHarnessVariables(ambiance, map);
+    assertThat(map.get("key1")).isEqualTo("fooResolved");
+    assertThat(map.get("key2")).isEqualTo("barResolved");
   }
 }

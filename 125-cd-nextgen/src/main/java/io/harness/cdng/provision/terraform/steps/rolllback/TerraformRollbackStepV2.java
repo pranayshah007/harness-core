@@ -21,6 +21,7 @@ import io.harness.cdng.provision.terraform.TerraformConfigDAL;
 import io.harness.cdng.provision.terraform.TerraformConfigHelper;
 import io.harness.cdng.provision.terraform.TerraformPassThroughData;
 import io.harness.cdng.provision.terraform.TerraformStepHelper;
+import io.harness.cdng.provision.terraform.outcome.TerraformGitRevisionOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.task.terraform.TFTaskType;
@@ -65,6 +66,7 @@ import com.google.inject.name.Named;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -142,7 +144,7 @@ public class TerraformRollbackStepV2 extends CdTaskChainExecutable {
           StepOutcomeGroup.STEP.name());
 
       List<TerraformVarFileInfo> varFilesInfo =
-          terraformStepHelper.prepareTerraformVarFileInfo(rollbackConfig.getVarFileConfigs(), ambiance);
+          terraformStepHelper.prepareTerraformVarFileInfo(rollbackConfig.getVarFileConfigs(), ambiance, true);
 
       boolean hasGitVarFiles = terraformStepHelper.hasGitVarFiles(varFilesInfo);
       boolean hasS3VarFiles = terraformStepHelper.hasS3VarFiles(varFilesInfo);
@@ -177,7 +179,8 @@ public class TerraformRollbackStepV2 extends CdTaskChainExecutable {
             .terraformCommandUnit(TerraformCommandUnit.Rollback)
             .entityId(entityId)
             .workspace(rollbackConfig.getWorkspace())
-            .varFileInfos(terraformStepHelper.prepareTerraformVarFileInfo(rollbackConfig.getVarFileConfigs(), ambiance))
+            .varFileInfos(
+                terraformStepHelper.prepareTerraformVarFileInfo(rollbackConfig.getVarFileConfigs(), ambiance, true))
             .backendConfigFileInfo(terraformStepHelper.prepareTerraformBackendConfigFileInfo(
                 rollbackConfig.getBackendConfigFileConfig(), ambiance));
 
@@ -302,7 +305,14 @@ public class TerraformRollbackStepV2 extends CdTaskChainExecutable {
       }
     }
 
-    return stepResponseBuilder.build();
+    Map<String, String> outputKeys = terraformStepHelper.getRevisionsMap(terraformPassThroughData, taskResponse);
+
+    return stepResponseBuilder
+        .stepOutcome(StepResponse.StepOutcome.builder()
+                         .name(TerraformGitRevisionOutcome.OUTCOME_NAME)
+                         .outcome(TerraformGitRevisionOutcome.builder().revisions(outputKeys).build())
+                         .build())
+        .build();
   }
 
   private String prepareExecutionUrl(String pipelineExecutionId, Ambiance ambiance) {

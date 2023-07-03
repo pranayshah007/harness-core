@@ -575,6 +575,13 @@ public class NextGenModule extends AbstractModule {
     return this.appConfig.getGitServiceConfiguration();
   }
 
+  @Provides
+  @Singleton
+  @Named("ngServiceSecret")
+  public String getNgManagerServiceSecret() {
+    return this.appConfig.getNextGenConfig().getNgManagerServiceSecret();
+  }
+
   @Override
   protected void configure() {
     install(VersionModule.getInstance());

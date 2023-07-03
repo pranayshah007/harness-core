@@ -9,6 +9,7 @@ package io.harness.delegate.task.shell.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.task.shell.ssh.CommandHandler.RESOLVED_ENV_VARIABLES_KEY;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_AND_DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_GITHUB_PACKAGE_ARTIFACT_HINT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.FAILED_TO_COPY_ARTIFACT_HINT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.FAILED_TO_COPY_SSH_CONFIG_FILE_HINT;
 import static io.harness.rule.OwnerRule.ACASIAN;
@@ -43,6 +44,7 @@ import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryDockerArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.GithubPackagesArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
 import io.harness.delegate.task.ssh.config.FileDelegateConfig;
@@ -386,6 +388,24 @@ public class SshCopyCommandHandlerTest extends CategoryTest {
                                             copyCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext)
                                         .getStatus();
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testShouldSkipCopyArtifactFromGithubPackageContainer() {
+    doReturn(fileBasedSshScriptExecutorNG).when(sshScriptExecutorFactory).getFileBasedExecutor(any());
+    when(fileBasedSshScriptExecutorNG.copyFiles(any())).thenReturn(CommandExecutionStatus.SUCCESS);
+
+    SshWinRmArtifactDelegateConfig artifactDelegateConfig =
+        GithubPackagesArtifactDelegateConfig.builder().packageType("container").build();
+
+    assertThatThrownBy(
+        ()
+            -> sshCopyCommandHandler.handle(getParameters(false, artifactDelegateConfig, getFileDelegateConfig()),
+                copyCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext))
+        .isInstanceOf(HintException.class)
+        .hasMessage(COPY_AND_DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_GITHUB_PACKAGE_ARTIFACT_HINT);
   }
 
   @Test

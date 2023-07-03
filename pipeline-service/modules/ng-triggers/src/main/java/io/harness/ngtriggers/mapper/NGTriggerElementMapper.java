@@ -33,7 +33,6 @@ import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITHUB;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITLAB;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.HARNESS;
 
-import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.USE_NATIVE_TYPE_ID;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -108,12 +107,8 @@ import io.harness.utils.YamlPipelineUtils;
 import io.harness.webhook.WebhookConfigProvider;
 import io.harness.webhook.WebhookHelper;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -176,17 +171,11 @@ public class NGTriggerElementMapper {
   }
 
   public String generateNgTriggerConfigV2Yaml(NGTriggerConfigV2 ngTriggerConfigV2) {
-    ObjectMapper objectMapper = getObjectMapper();
     try {
-      return objectMapper.writeValueAsString(ngTriggerConfigV2);
+      return YamlUtils.writeYamlString(ngTriggerConfigV2);
     } catch (Exception e) {
       throw new TriggerException("Failed while converting trigger yaml with version V0" + e, USER_SRE);
     }
-  }
-
-  public String generateNgTriggerConfigYaml(NGTriggerConfig ngTriggerConfig) throws Exception {
-    ObjectMapper objectMapper = getObjectMapper();
-    return objectMapper.writeValueAsString(ngTriggerConfig);
   }
 
   public NGTriggerConfigV2 toTriggerConfigV2(NGTriggerEntity ngTriggerEntity) {
@@ -804,14 +793,5 @@ public class NGTriggerElementMapper {
                     .append(TriggerHelper.getTriggerRef(ngTriggerEntity))
                     .toString());
     }
-  }
-
-  public ObjectMapper getObjectMapper() {
-    ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory()
-                                                     .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
-                                                     .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
-                                                     .disable(USE_NATIVE_TYPE_ID));
-    objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-    return objectMapper;
   }
 }

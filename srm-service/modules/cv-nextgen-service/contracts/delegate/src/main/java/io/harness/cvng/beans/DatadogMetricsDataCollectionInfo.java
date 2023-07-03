@@ -36,6 +36,14 @@ public class DatadogMetricsDataCollectionInfo extends TimeSeriesDataCollectionIn
   @Override
   public Map<String, Object> getDslEnvVariables(DatadogConnectorDTO connectorConfigDTO) {
     Map<String, Object> dslEnvVariables = new HashMap<>();
+    List<String> formulaList =
+        getMetricDefinitions().stream().map(MetricCollectionInfo::getFormula).collect(Collectors.toList());
+    List<List<String>> formulaQueriesList =
+        getMetricDefinitions().stream().map(MetricCollectionInfo::getFormulaQueries).collect(Collectors.toList());
+    List<String> serviceInstanceIdentifierTagList = getMetricDefinitions()
+                                                        .stream()
+                                                        .map(MetricCollectionInfo::getServiceInstanceIdentifierTag)
+                                                        .collect(Collectors.toList());
     List<String> queries = CollectionUtils.emptyIfNull(
         getMetricDefinitions()
             .stream()
@@ -49,7 +57,11 @@ public class DatadogMetricsDataCollectionInfo extends TimeSeriesDataCollectionIn
             .collect(Collectors.toList()));
     List<String> metricIdentifiers = CollectionUtils.emptyIfNull(
         getMetricDefinitions().stream().map(MetricCollectionInfo::getMetricIdentifier).collect(Collectors.toList()));
+    dslEnvVariables.put("formulaList", formulaList);
+    dslEnvVariables.put("formulaQueriesList", formulaQueriesList);
     dslEnvVariables.put("queries", queries);
+    dslEnvVariables.put("serviceInstanceIdentifierTagList", serviceInstanceIdentifierTagList);
+    dslEnvVariables.put("collectHostData", Boolean.toString(this.isCollectHostData()));
     dslEnvVariables.put("groupName", groupName);
     dslEnvVariables.put("metricIdentifiers", metricIdentifiers);
     return dslEnvVariables;
@@ -74,6 +86,8 @@ public class DatadogMetricsDataCollectionInfo extends TimeSeriesDataCollectionIn
   @Builder
   public static class MetricCollectionInfo {
     private String query;
+    private List<String> formulaQueries;
+    private String formula;
     private String groupingQuery;
     private String metricName;
     private String metricIdentifier;

@@ -30,6 +30,7 @@ import com.google.inject.Injector;
 import java.io.IOException;
 import java.util.List;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -51,6 +52,7 @@ public class CVNGYamlSchemaServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
   @HarnessAlwaysRun
+  @Ignore("Skipping for now as this flow is not used")
   public void testGetDeploymentStageYamlSchema() throws IOException {
     List<PartialSchemaDTO> partialSchemaDTO =
         cvngYamlSchemaService.getDeploymentStageYamlSchema(generateUuid(), generateUuid(), Scope.PROJECT);

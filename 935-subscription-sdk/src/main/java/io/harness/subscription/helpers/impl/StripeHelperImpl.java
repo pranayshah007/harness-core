@@ -39,7 +39,6 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.stripe.model.Address;
-import com.stripe.model.Card;
 import com.stripe.model.Customer;
 import com.stripe.model.Invoice;
 import com.stripe.model.InvoiceLineItem;
@@ -140,6 +139,12 @@ public class StripeHelperImpl implements StripeHelper {
                                    .setPostalCode(addressDto.getPostalCode())
                                    .setCountry(addressDto.getCountry())
                                    .build());
+    }
+
+    if (customerParams.getDefaultPaymentMethod() != null) {
+      paramsBuilder.setInvoiceSettings(CustomerUpdateParams.InvoiceSettings.builder()
+                                           .setDefaultPaymentMethod(customerParams.getDefaultPaymentMethod())
+                                           .build());
     }
 
     Customer customer = stripeHandler.updateCustomer(customerParams.getCustomerId(), paramsBuilder.build());
@@ -418,8 +423,8 @@ public class StripeHelperImpl implements StripeHelper {
   }
 
   @Override
-  public Card deleteCard(String customerIdentifier, String creditCardIdentifier) {
-    return stripeHandler.deleteCard(customerIdentifier, creditCardIdentifier);
+  public void deleteCard(String customerIdentifier, String creditCardIdentifier) {
+    stripeHandler.deleteCard(customerIdentifier, creditCardIdentifier);
   }
 
   @Override
@@ -427,13 +432,8 @@ public class StripeHelperImpl implements StripeHelper {
     PaymentMethodCollection paymentMethodCollection = stripeHandler.retrievePaymentMethodsUnderCustomer(customerId);
     PaymentMethodCollectionDTO paymentMethodCollectionDTO = toPaymentMethodCollectionDTO(paymentMethodCollection);
     String defaultPaymentMethodId = getCustomer(customerId).getDefaultSource();
-    Optional<CardDTO> cardDTO = paymentMethodCollectionDTO.getPaymentMethods()
-                                    .stream()
-                                    .filter((CardDTO card) -> card.getId().equals(defaultPaymentMethodId))
-                                    .findFirst();
-    if (cardDTO.isPresent()) {
-      cardDTO.get().setIsDefaultCard(true);
-    }
+    paymentMethodCollectionDTO.getPaymentMethods().forEach(
+        (CardDTO cardDTO) -> cardDTO.setIsDefaultCard(cardDTO.getId().equals(defaultPaymentMethodId)));
 
     return paymentMethodCollectionDTO;
   }
@@ -523,7 +523,8 @@ public class StripeHelperImpl implements StripeHelper {
         .address(address)
         .billingEmail(customer.getEmail())
         .companyName(customer.getName())
-        .defaultSource(customer.getDefaultSource());
+        .defaultSource(customer.getDefaultSource() != null ? customer.getDefaultSource()
+                                                           : customer.getInvoiceSettings().getDefaultPaymentMethod());
 
     return builder.build();
   }
@@ -538,6 +539,7 @@ public class StripeHelperImpl implements StripeHelper {
                           .id(paymentMethod.getId())
                           .last4(card.getLast4())
                           .funding(card.getFunding())
+                          .fingerPrint(card.getFingerprint())
                           .build();
 
     if (paymentMethod.getBillingDetails() != null) {
@@ -598,12 +600,11 @@ public class StripeHelperImpl implements StripeHelper {
 
   private List<ItemDTO> toItemDTOList(SubscriptionItemCollection subscriptionItemCollection) {
     List<ItemDTO> itemDTOList = new LinkedList<>();
-    subscriptionItemCollection.getData().forEach(subscriptionItem -> {
-      itemDTOList.add(ItemDTO.builder()
-                          .quantity(subscriptionItem.getQuantity())
-                          .price(toPriceDTO(subscriptionItem.getPrice()))
-                          .build());
-    });
+    subscriptionItemCollection.getData().forEach(subscriptionItem
+        -> itemDTOList.add(ItemDTO.builder()
+                               .quantity(subscriptionItem.getQuantity())
+                               .price(toPriceDTO(subscriptionItem.getPrice()))
+                               .build()));
     return itemDTOList;
   }
 

@@ -28,6 +28,8 @@ import (
 const (
 	keysParam            = "keys"
 	maxLogLineSize       = 500
+	defaultBufSize       = 64 * 1024        // 64KiB
+	maxBufSize           = 10 * 1024 * 1024 // 10MiB
 	debugLogChars        = 200
 	genAIPlainTextPrompt = `
 Provide error message, root cause and remediation from the below logs preserving the markdown format.
@@ -380,6 +382,8 @@ func fetchKeyLogs(ctx context.Context, store store.Store, key string) (
 	var logs string
 
 	scanner := bufio.NewScanner(out)
+	buf := make([]byte, 0, defaultBufSize)
+	scanner.Buffer(buf, maxBufSize)
 	for scanner.Scan() {
 		l := stream.Line{}
 		if err := json.Unmarshal([]byte(scanner.Text()), &l); err != nil {

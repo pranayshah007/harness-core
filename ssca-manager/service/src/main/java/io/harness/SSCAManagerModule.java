@@ -19,6 +19,12 @@ import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.SSCAManagerModuleRegistrars;
+import io.harness.spec.server.ssca.v1.SbomProcessorApi;
+import io.harness.ssca.api.SbomProcessorApiImpl;
+import io.harness.ssca.services.ArtifactService;
+import io.harness.ssca.services.ArtifactServiceImpl;
+import io.harness.ssca.services.SbomProcessorService;
+import io.harness.ssca.services.SbomProcessorServiceImpl;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -37,10 +43,10 @@ import org.springframework.core.convert.converter.Converter;
 @Slf4j
 @OwnedBy(SSCA)
 public class SSCAManagerModule extends AbstractModule {
-  private final SSCAManagerConfiguration configuration;
+  private final io.harness.SSCAManagerConfiguration configuration;
 
   private static SSCAManagerModule sscaManagerModule;
-  private SSCAManagerModule(SSCAManagerConfiguration configuration) {
+  private SSCAManagerModule(io.harness.SSCAManagerConfiguration configuration) {
     this.configuration = configuration;
   }
 
@@ -52,8 +58,11 @@ public class SSCAManagerModule extends AbstractModule {
         return new NoopUserProvider();
       }
     });
-    install(new SSCAManagerModulePersistence());
+    install(new io.harness.SSCAManagerModulePersistence());
     bind(HPersistence.class).to(MongoPersistence.class);
+    bind(SbomProcessorApi.class).to(SbomProcessorApiImpl.class);
+    bind(ArtifactService.class).to(ArtifactServiceImpl.class);
+    bind(SbomProcessorService.class).to(SbomProcessorServiceImpl.class);
   }
 
   @Provides
@@ -101,7 +110,7 @@ public class SSCAManagerModule extends AbstractModule {
     return Collections.emptyMap();
   }
 
-  public static SSCAManagerModule getInstance(SSCAManagerConfiguration sscaManagerConfiguration) {
+  public static SSCAManagerModule getInstance(io.harness.SSCAManagerConfiguration sscaManagerConfiguration) {
     if (sscaManagerModule == null) {
       return new SSCAManagerModule(sscaManagerConfiguration);
     }

@@ -20,7 +20,6 @@ import static io.harness.rule.OwnerRule.SRIDHAR;
 import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
-import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.USE_NATIVE_TYPE_ID;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -137,13 +136,9 @@ import com.cronutils.model.CronType;
 import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.model.time.ExecutionTime;
 import com.cronutils.parser.CronParser;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.google.common.io.Resources;
 import com.mongodb.client.result.DeleteResult;
 import java.io.IOException;
@@ -1660,12 +1655,6 @@ public class NGTriggerServiceImplTest extends CategoryTest {
     String pipelineYaml =
         Resources.toString(Objects.requireNonNull(classLoader.getResource(filenamePipeline)), StandardCharsets.UTF_8);
     when(validationHelper.fetchPipelineYamlForTrigger(any())).thenReturn(Optional.ofNullable(pipelineYaml));
-    ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory()
-                                                     .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
-                                                     .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
-                                                     .disable(USE_NATIVE_TYPE_ID));
-    objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-    when(ngTriggerElementMapper.getObjectMapper()).thenReturn(objectMapper);
     TriggerYamlDiffDTO yamlDiffResponse = ngTriggerServiceImpl.getTriggerYamlDiff(triggerDetails);
     assertThat(yamlDiffResponse.getNewYAML().replace("<+input>", "1")).isEqualTo(newTriggerYaml);
   }

@@ -224,7 +224,7 @@ public class ArtifactConfigToDelegateReqMapper {
       return ArtifactDelegateRequestUtils.getGithubPackagesDelegateRequest(artifactConfig.getPackageName().getValue(),
           artifactConfig.getPackageType().getValue(), version, versionRegex, org, connectorRef, connectorDTO,
           encryptedDataDetails, ArtifactSourceType.GITHUB_PACKAGES, artifactConfig.getArtifactId().getValue(),
-          artifactConfig.getRepository().getValue(), user,
+          "repository", user,
           ParameterField.isNotNull(artifactConfig.getExtension()) ? artifactConfig.getExtension().getValue() : "",
           artifactConfig.getGroupId().getValue());
     }
@@ -239,9 +239,6 @@ public class ArtifactConfigToDelegateReqMapper {
 
     if (ParameterField.isBlank(artifactConfig.getGroupId())) {
       throw new InvalidRequestException("GroupId field cannot be blank");
-    }
-    if (ParameterField.isBlank(artifactConfig.getRepository())) {
-      throw new InvalidRequestException("Repository field cannot be blank");
     }
   }
   public AzureArtifactsDelegateRequest getAzureArtifactsDelegateRequest(AzureArtifactsConfig artifactConfig,

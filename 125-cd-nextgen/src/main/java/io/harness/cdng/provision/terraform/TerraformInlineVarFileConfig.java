@@ -17,5 +17,6 @@ import lombok.Data;
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 public class TerraformInlineVarFileConfig implements TerraformVarFileConfig {
+  String identifier;
   String varFileContent;
 }

@@ -9,6 +9,8 @@ package io.harness.cdng.provision.terraform;
 
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.DESTROY;
+import static io.harness.cdng.provision.terraform.TerraformStepHelper.TF_BACKEND_CONFIG_FILE;
+import static io.harness.cdng.provision.terraform.TerraformStepHelper.TF_CONFIG_FILES;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.delegate.task.terraform.TerraformTaskNGParameters.TerraformTaskNGParametersBuilder;
 import static io.harness.rule.OwnerRule.ABOSII;
@@ -244,10 +246,9 @@ public class TerraformStepHelperTest extends CategoryTest {
             .build();
     TerraformPlanStepParameters planStepParameters = TerraformStepDataGenerator.generateStepPlanWithVarFiles(
         StoreConfigType.GITHUB, null, gitStoreConfigFiles, null, true);
-    TerraformTaskNGResponse response =
-        TerraformTaskNGResponse.builder()
-            .commitIdForConfigFilesMap(ImmutableMap.of(TerraformStepHelper.TF_CONFIG_FILES, "commit-1"))
-            .build();
+    TerraformTaskNGResponse response = TerraformTaskNGResponse.builder()
+                                           .commitIdForConfigFilesMap(ImmutableMap.of(TF_CONFIG_FILES, "commit-1"))
+                                           .build();
     doReturn(LocalConfigDTO.builder().encryptionType(EncryptionType.LOCAL).build())
         .when(mockSecretManagerClientService)
         .getSecretManager(anyString(), anyString(), anyString(), anyString(), anyBoolean());
@@ -294,10 +295,9 @@ public class TerraformStepHelperTest extends CategoryTest {
             .build();
     TerraformPlanStepParameters planStepParameters = TerraformStepDataGenerator.generateStepPlanWithRemoteBackendConfig(
         StoreConfigType.GITHUB, StoreConfigType.GITHUB, gitStoreConfigFiles, gitStoreConfigFilesBackendConfig);
-    TerraformTaskNGResponse response =
-        TerraformTaskNGResponse.builder()
-            .commitIdForConfigFilesMap(ImmutableMap.of(TerraformStepHelper.TF_CONFIG_FILES, "commit-1"))
-            .build();
+    TerraformTaskNGResponse response = TerraformTaskNGResponse.builder()
+                                           .commitIdForConfigFilesMap(ImmutableMap.of(TF_CONFIG_FILES, "commit-1"))
+                                           .build();
     doReturn(LocalConfigDTO.builder().encryptionType(EncryptionType.LOCAL).build())
         .when(mockSecretManagerClientService)
         .getSecretManager(anyString(), anyString(), anyString(), anyString(), anyBoolean());
@@ -339,10 +339,9 @@ public class TerraformStepHelperTest extends CategoryTest {
 
     TerraformPlanStepParameters planStepParameters = TerraformStepDataGenerator.generateStepPlanWithVarFiles(
         StoreConfigType.GITHUB, null, gitStoreConfigFiles, null, true);
-    TerraformTaskNGResponse response =
-        TerraformTaskNGResponse.builder()
-            .commitIdForConfigFilesMap(ImmutableMap.of(TerraformStepHelper.TF_CONFIG_FILES, "commit-1"))
-            .build();
+    TerraformTaskNGResponse response = TerraformTaskNGResponse.builder()
+                                           .commitIdForConfigFilesMap(ImmutableMap.of(TF_CONFIG_FILES, "commit-1"))
+                                           .build();
     doReturn(LocalConfigDTO.builder().encryptionType(EncryptionType.LOCAL).build())
         .when(mockSecretManagerClientService)
         .getSecretManager(anyString(), anyString(), anyString(), anyString(), anyBoolean());
@@ -385,10 +384,9 @@ public class TerraformStepHelperTest extends CategoryTest {
     TerraformPlanStepParameters planStepParameters =
         TerraformStepDataGenerator.generateStepPlanWithVarFiles(StoreConfigType.ARTIFACTORY,
             StoreConfigType.ARTIFACTORY, artifactoryStoreConfigFiles, artifactoryStoreVarFiles, true);
-    TerraformTaskNGResponse response =
-        TerraformTaskNGResponse.builder()
-            .commitIdForConfigFilesMap(ImmutableMap.of(TerraformStepHelper.TF_CONFIG_FILES, "commit-1"))
-            .build();
+    TerraformTaskNGResponse response = TerraformTaskNGResponse.builder()
+                                           .commitIdForConfigFilesMap(ImmutableMap.of(TF_CONFIG_FILES, "commit-1"))
+                                           .build();
     doReturn(LocalConfigDTO.builder().encryptionType(EncryptionType.LOCAL).build())
         .when(mockSecretManagerClientService)
         .getSecretManager(anyString(), anyString(), anyString(), anyString(), anyBoolean());
@@ -452,11 +450,10 @@ public class TerraformStepHelperTest extends CategoryTest {
                                          .build())
                                .build())
             .build();
-    TerraformTaskNGResponse response =
-        TerraformTaskNGResponse.builder()
-            .commitIdForConfigFilesMap(ImmutableMap.of(TerraformStepHelper.TF_CONFIG_FILES, "commit-1",
-                String.format(TerraformStepHelper.TF_VAR_FILES, 1), "commit-2"))
-            .build();
+    TerraformTaskNGResponse response = TerraformTaskNGResponse.builder()
+                                           .commitIdForConfigFilesMap(ImmutableMap.of(TF_CONFIG_FILES, "commit-1",
+                                               String.format(TerraformStepHelper.TF_VAR_FILES, 1), "commit-2"))
+                                           .build();
     helper.saveRollbackDestroyConfigInline(parameters, response, ambiance, null);
     ArgumentCaptor<TerraformConfig> captor = ArgumentCaptor.forClass(TerraformConfig.class);
     verify(terraformConfigDAL).saveTerraformConfig(captor.capture());
@@ -762,7 +759,8 @@ public class TerraformStepHelperTest extends CategoryTest {
     varFileConfigs.add(inlineFileConfig);
     varFileConfigs.add(remoteFileConfig);
 
-    List<TerraformVarFileInfo> terraformVarFileInfos = helper.prepareTerraformVarFileInfo(varFileConfigs, ambiance);
+    List<TerraformVarFileInfo> terraformVarFileInfos =
+        helper.prepareTerraformVarFileInfo(varFileConfigs, ambiance, false);
     verify(cdStepHelper, times(1)).validateGitStoreConfig(any());
     assertThat(terraformVarFileInfos.size()).isEqualTo(2);
     for (TerraformVarFileInfo terraformVarFileInfo : terraformVarFileInfos) {
@@ -860,9 +858,7 @@ public class TerraformStepHelperTest extends CategoryTest {
     doReturn(TerraformStepDataGenerator.getConnectorInfoDTO()).when(cdStepHelper).getConnector(any(), any());
     doNothing().when(cdStepHelper).validateManifest(any(), any(), any());
     doReturn(null).when(mockSecretManagerClientService).getEncryptionDetails(any(), any());
-    assertThatThrownBy(()
-                           -> helper.getFileStoreFetchFilesConfig(
-                               artifactoryStoreConfig, ambiance, TerraformStepHelper.TF_CONFIG_FILES))
+    assertThatThrownBy(() -> helper.getFileStoreFetchFilesConfig(artifactoryStoreConfig, ambiance, TF_CONFIG_FILES))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Config file should not contain more than one file path");
   }
@@ -929,7 +925,8 @@ public class TerraformStepHelperTest extends CategoryTest {
   public void testPrepareTerraformVarFileInfoEmpty() {
     Ambiance ambiance = getAmbiance();
     List<TerraformVarFileConfig> varFileConfigs = new LinkedList<>();
-    List<TerraformVarFileInfo> terraformVarFileInfos = helper.prepareTerraformVarFileInfo(varFileConfigs, ambiance);
+    List<TerraformVarFileInfo> terraformVarFileInfos =
+        helper.prepareTerraformVarFileInfo(varFileConfigs, ambiance, false);
     assertThat(terraformVarFileInfos).isEmpty();
   }
 
@@ -950,7 +947,7 @@ public class TerraformStepHelperTest extends CategoryTest {
     Map<String, TerraformVarFile> varFilesMap = new HashMap<>();
     TerraformTaskNGResponse terraformTaskNGResponse = TerraformTaskNGResponse.builder().build();
     List<TerraformVarFileConfig> terraformVarFileConfig =
-        helper.toTerraformVarFileConfig(varFilesMap, terraformTaskNGResponse, ambiance);
+        helper.toTerraformVarFileConfig(varFilesMap, terraformTaskNGResponse);
     assertThat(terraformVarFileConfig).isEmpty();
   }
 
@@ -1429,11 +1426,10 @@ public class TerraformStepHelperTest extends CategoryTest {
                                          .build())
                                .build())
             .build();
-    TerraformTaskNGResponse response =
-        TerraformTaskNGResponse.builder()
-            .commitIdForConfigFilesMap(ImmutableMap.of(TerraformStepHelper.TF_CONFIG_FILES, "commit-1",
-                String.format(TerraformStepHelper.TF_VAR_FILES, 1), "commit-2"))
-            .build();
+    TerraformTaskNGResponse response = TerraformTaskNGResponse.builder()
+                                           .commitIdForConfigFilesMap(ImmutableMap.of(TF_CONFIG_FILES, "commit-1",
+                                               String.format(TerraformStepHelper.TF_VAR_FILES, 1), "commit-2"))
+                                           .build();
     helper.saveRollbackDestroyConfigInline(parameters, response, ambiance, null);
     ArgumentCaptor<TerraformConfig> captor = ArgumentCaptor.forClass(TerraformConfig.class);
     verify(terraformConfigDAL).saveTerraformConfig(captor.capture());
@@ -1805,7 +1801,7 @@ public class TerraformStepHelperTest extends CategoryTest {
     doReturn(null).when(mockSecretManagerClientService).getEncryptionDetails(any(), any());
 
     FileStoreFetchFilesConfig fileStoreFetchFilesConfig =
-        helper.getFileStoreFetchFilesConfig(s3StoreConfig, ambiance, TerraformStepHelper.TF_CONFIG_FILES);
+        helper.getFileStoreFetchFilesConfig(s3StoreConfig, ambiance, TF_CONFIG_FILES);
 
     assertThat(fileStoreFetchFilesConfig).isInstanceOf(S3StoreTFDelegateConfig.class);
     S3StoreTFDelegateConfig s3Store = (S3StoreTFDelegateConfig) fileStoreFetchFilesConfig;
@@ -1814,7 +1810,7 @@ public class TerraformStepHelperTest extends CategoryTest {
     assertThat(s3Store.getPaths().get(0)).isEqualTo("terraform");
     assertThat(s3Store.getVersions()).isNull();
     assertThat(s3Store.getConnectorDTO().getConnectorConfig()).isInstanceOf(AwsConnectorDTO.class);
-    assertThat(s3Store.getIdentifier()).isEqualTo(TerraformStepHelper.TF_CONFIG_FILES);
+    assertThat(s3Store.getIdentifier()).isEqualTo(TF_CONFIG_FILES);
     assertThat(s3Store.getManifestStoreType()).isEqualTo(ManifestStoreType.S3);
   }
 
@@ -1836,7 +1832,7 @@ public class TerraformStepHelperTest extends CategoryTest {
     doReturn(null).when(mockSecretManagerClientService).getEncryptionDetails(any(), any());
 
     FileStoreFetchFilesConfig fileStoreFetchFilesConfig =
-        helper.getFileStoreFetchFilesConfig(s3StoreConfig, ambiance, TerraformStepHelper.TF_BACKEND_CONFIG_FILE);
+        helper.getFileStoreFetchFilesConfig(s3StoreConfig, ambiance, TF_BACKEND_CONFIG_FILE);
 
     assertThat(fileStoreFetchFilesConfig).isInstanceOf(S3StoreTFDelegateConfig.class);
     S3StoreTFDelegateConfig s3Store = (S3StoreTFDelegateConfig) fileStoreFetchFilesConfig;
@@ -1845,7 +1841,7 @@ public class TerraformStepHelperTest extends CategoryTest {
     assertThat(s3Store.getPaths().get(0)).isEqualTo("terraform-be/backend.tf");
     assertThat(s3Store.getVersions()).isNull();
     assertThat(s3Store.getConnectorDTO().getConnectorConfig()).isInstanceOf(AwsConnectorDTO.class);
-    assertThat(s3Store.getIdentifier()).isEqualTo(TerraformStepHelper.TF_BACKEND_CONFIG_FILE);
+    assertThat(s3Store.getIdentifier()).isEqualTo(TF_BACKEND_CONFIG_FILE);
     assertThat(s3Store.getManifestStoreType()).isEqualTo(ManifestStoreType.S3);
   }
 
@@ -2651,5 +2647,93 @@ public class TerraformStepHelperTest extends CategoryTest {
         .isEqualTo("var-file-inline-1");
     assertThat(((InlineTerraformVarFileInfo) terraformTaskNGParameters.getVarFileInfos().get(1)).getVarFileContent())
         .isEqualTo("resolved-var-file-content-1");
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testGetRevisionsMapFromTerraformVarFile() {
+    Map<String, String> commitIdForConfigFilesMap = new HashMap<>();
+    commitIdForConfigFilesMap.put(TF_CONFIG_FILES, "commit_1");
+    commitIdForConfigFilesMap.put(TF_BACKEND_CONFIG_FILE, "commit_2");
+    commitIdForConfigFilesMap.put("TF_VAR_FILES_1", "commit_v1");
+    commitIdForConfigFilesMap.put("TF_VAR_FILES_2", "commit_v2");
+
+    LinkedHashMap<String, TerraformVarFile> varFiles = new LinkedHashMap<>();
+    TerraformVarFile terraformVarFile0 = new TerraformVarFile();
+    RemoteTerraformVarFileSpec remoteTerraformVarFileSpec0 = new RemoteTerraformVarFileSpec();
+    remoteTerraformVarFileSpec0.setStore(StoreConfigWrapper.builder().spec(GithubStore.builder().build()).build());
+    terraformVarFile0.setSpec(remoteTerraformVarFileSpec0);
+
+    TerraformVarFile terraformVarFile1 = new TerraformVarFile();
+    terraformVarFile1.setSpec(new InlineTerraformVarFileSpec());
+
+    TerraformVarFile terraformVarFile2 = new TerraformVarFile();
+    RemoteTerraformVarFileSpec remoteTerraformVarFileSpec2 = new RemoteTerraformVarFileSpec();
+    remoteTerraformVarFileSpec2.setStore(StoreConfigWrapper.builder().spec(GithubStore.builder().build()).build());
+    terraformVarFile2.setSpec(remoteTerraformVarFileSpec2);
+
+    varFiles.put("identifier0", terraformVarFile0);
+    varFiles.put("identifier1", terraformVarFile1);
+    varFiles.put("identifier2", terraformVarFile2);
+
+    Map<String, String> outputs = helper.getRevisionsMap(varFiles, commitIdForConfigFilesMap);
+
+    assertThat(outputs.get("identifier0")).isEqualTo("commit_v1");
+    assertThat(outputs.get("identifier2")).isEqualTo("commit_v2");
+    assertThat(outputs.get(TF_CONFIG_FILES)).isEqualTo("commit_1");
+    assertThat(outputs.get(TF_BACKEND_CONFIG_FILE)).isEqualTo("commit_2");
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testGetRevisionsMapFromTerraformVarFileConfig() {
+    Map<String, String> commitIdForConfigFilesMap = new HashMap<>();
+    commitIdForConfigFilesMap.put(TF_CONFIG_FILES, "commit_1");
+    commitIdForConfigFilesMap.put(TF_BACKEND_CONFIG_FILE, "commit_2");
+    commitIdForConfigFilesMap.put("TF_VAR_FILES_1", "commit_v1");
+    commitIdForConfigFilesMap.put("TF_VAR_FILES_2", "commit_v2");
+
+    List<TerraformVarFileConfig> varFileConfigs = new ArrayList<>();
+    TerraformVarFileConfig terraformVarFile0 = TerraformRemoteVarFileConfig.builder()
+                                                   .identifier("identifier0")
+                                                   .gitStoreConfigDTO(GithubStoreDTO.builder().build())
+                                                   .build();
+    TerraformVarFileConfig terraformVarFile1 = TerraformInlineVarFileConfig.builder().identifier("identifier1").build();
+    TerraformVarFileConfig terraformVarFile2 = TerraformRemoteVarFileConfig.builder()
+                                                   .identifier("identifier2")
+                                                   .gitStoreConfigDTO(GithubStoreDTO.builder().build())
+                                                   .build();
+    varFileConfigs.add(terraformVarFile0);
+    varFileConfigs.add(terraformVarFile1);
+    varFileConfigs.add(terraformVarFile2);
+
+    Map<String, String> outputs = helper.getRevisionsMap(varFileConfigs, commitIdForConfigFilesMap);
+
+    assertThat(outputs.get("identifier0")).isEqualTo("commit_v1");
+    assertThat(outputs.get("identifier2")).isEqualTo("commit_v2");
+    assertThat(outputs.get(TF_CONFIG_FILES)).isEqualTo("commit_1");
+    assertThat(outputs.get(TF_BACKEND_CONFIG_FILE)).isEqualTo("commit_2");
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testGetRevisions() {
+    Map<String, String> commitIdForConfigFilesMap = new HashMap<>();
+    commitIdForConfigFilesMap.put(TF_CONFIG_FILES, "commitId_1");
+    commitIdForConfigFilesMap.put(TF_BACKEND_CONFIG_FILE, "commitId_2");
+    TerraformTaskNGResponse taskNGResponse =
+        TerraformTaskNGResponse.builder().commitIdForConfigFilesMap(commitIdForConfigFilesMap).build();
+
+    Map<String, String> fetchedCommitIdsMap = new HashMap<>();
+    fetchedCommitIdsMap.put("varFileId", "commitId_v1");
+    TerraformPassThroughData terraformPassThroughData =
+        TerraformPassThroughData.builder().fetchedCommitIdsMap(fetchedCommitIdsMap).build();
+
+    Map<String, String> getRevisionsMap = helper.getRevisionsMap(terraformPassThroughData, taskNGResponse);
+
+    assertThat(getRevisionsMap.size()).isEqualTo(3);
   }
 }

@@ -932,14 +932,18 @@ public class IntegrationStageUtils {
     switch (infrastructure.getType()) {
       case KUBERNETES_HOSTED:
       case HOSTED_VM:
-        switch (ciInfraDetails.getInfraOSType()) {
-          case "MacOs":
-            return MACOS_BUILD_MULTIPLIER;
-          case "Windows":
-            return WINDOWS_BUILD_MULTIPLIER;
-          default:
-            return DEFAULT_BUILD_MULTIPLIER;
+        if (isNotEmpty(ciInfraDetails.getInfraOSType())) {
+          OSType osType = OSType.fromString(ciInfraDetails.getInfraOSType());
+          switch (osType) {
+            case MacOS:
+              return MACOS_BUILD_MULTIPLIER;
+            case Windows:
+              return WINDOWS_BUILD_MULTIPLIER;
+            default:
+              return DEFAULT_BUILD_MULTIPLIER;
+          }
         }
+        break;
       default:
     }
     return DEFAULT_BUILD_MULTIPLIER;
