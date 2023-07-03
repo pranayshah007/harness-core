@@ -9,6 +9,9 @@ RUN mkdir -p /app
 ARG GCP_KEY
 COPY . /app
 
+COPY platform-service/ 970-api-services-beans/ 970-ng-commons/ 930-delegate-tasks/ dockerization/base-image/ /app/
+COPY .bazelrc .bazelversion bazelrc.common bazelrc.local bazelrc.remote BUILD.bazel /app/
+
 WORKDIR /app
 
 ENV BUILD_PURPOSE=DEVELOPMENT
