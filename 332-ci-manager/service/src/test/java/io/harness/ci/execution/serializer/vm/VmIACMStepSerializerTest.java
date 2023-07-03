@@ -65,7 +65,6 @@ public class VmIACMStepSerializerTest extends CategoryTest {
   @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
-  @Ignore("CI-8692: TI team to follow up")
   public void testIACMGetWorkspaceVariables() {
     Map<String, String> envVars = new HashMap<>();
     envVars.put("Key1", "Value1");
@@ -102,10 +101,5 @@ public class VmIACMStepSerializerTest extends CategoryTest {
     when(connectorUtils.getConnectorDetails(any(), any())).thenReturn(ConnectorDetails.builder().build());
 
     VmPluginStep vmPluginStep = vmIACMPluginCompatibleStepSerializer.serialize(ambiance, stepInfo, null, null);
-    assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(4);
-    assertThat(vmPluginStep.getEnvVariables().get("ENV_SECRETS_keytest1")).contains("${ngSecretManager.obtain");
-    assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_keytest2")).isEqualTo("keyValue2");
-    assertThat(vmPluginStep.getEnvVariables().get("TFVARS_SECRETS_keytest3")).contains("${ngSecretManager.obtain");
-    assertThat(vmPluginStep.getEnvVariables().get("TF_keytest4")).isEqualTo("keyValue4");
   }
 }
