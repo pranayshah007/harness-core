@@ -8,7 +8,12 @@ FROM us.gcr.io/platform-205701/cie-agent-harness-core-jdk11:latest as builder
 RUN mkdir -p /app
 ARG GCP_KEY
 
-COPY platform-service/ 970-api-services-beans/ 970-ng-commons/ 930-delegate-tasks/ dockerization/ /app/
+COPY platform-service/ /app/platform-service
+COPY 970-api-services-beans/ /app/970-api-services-beans
+COPY 970-ng-commons/ /app/970-ng-commons
+COPY 930-delegate-tasks/ /app/930-delegate-tasks
+COPY dockerization/ /app/dockerization
+
 COPY .bazelrc .bazelversion bazelrc.common bazelrc.local bazelrc.remote BUILD.bazel /app/
 
 WORKDIR /app
