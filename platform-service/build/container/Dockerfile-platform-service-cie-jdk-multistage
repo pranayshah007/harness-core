@@ -15,6 +15,7 @@ COPY 930-delegate-tasks/ /app/930-delegate-tasks
 COPY dockerization/ /app/dockerization
 COPY scripts/bazel/*.sh /app/scripts/bazel/
 COPY WORKSPACE /app/
+COPY tools/bazel /app/tools/bazel
 
 COPY .bazelrc .bazelversion bazelrc.common bazelrc.local bazelrc.remote BUILD.bazel /app/
 
