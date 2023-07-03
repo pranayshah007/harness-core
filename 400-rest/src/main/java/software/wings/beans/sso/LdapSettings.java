@@ -10,6 +10,7 @@ package software.wings.beans.sso;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import static software.wings.service.impl.DelegateTaskServiceClassicImpl.TASK_SELECTORS;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -157,10 +158,14 @@ public class LdapSettings extends SSOSettings implements ExecutionCapabilityDema
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-    List<ExecutionCapability> executionCapabilities = Collections.singletonList(SocketConnectivityCapabilityGenerator.buildSocketConnectivityCapability(
+    List<ExecutionCapability> executionCapabilities =
+        Collections.singletonList(SocketConnectivityCapabilityGenerator.buildSocketConnectivityCapability(
             connectionSettings.getHost(), Integer.toString(connectionSettings.getPort())));
-    if(connectionSettings!=null && isNotEmpty(connectionSettings.getDelegateSelectors())){
-      executionCapabilities.add(SelectorCapability.builder().selectors(connectionSettings.getDelegateSelectors()).selectorOrigin(TASK_SELECTORS).build())
+    if (connectionSettings != null && isNotEmpty(connectionSettings.getDelegateSelectors())) {
+      executionCapabilities.add(SelectorCapability.builder()
+                                    .selectors(connectionSettings.getDelegateSelectors())
+                                    .selectorOrigin(TASK_SELECTORS)
+                                    .build());
     }
     return executionCapabilities;
   }
