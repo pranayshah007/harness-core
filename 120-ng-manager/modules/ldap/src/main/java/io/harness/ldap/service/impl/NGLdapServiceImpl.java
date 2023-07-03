@@ -88,6 +88,7 @@ public class NGLdapServiceImpl implements NGLdapService {
   public static final String ISSUE_WITH_USER_QUERY_SETTINGS_PROVIDED = "Issue with User Query Settings provided";
   public static final String ISSUE_WITH_GROUP_QUERY_SETTINGS_PROVIDED = "Issue with Group Query Settings provided";
   public static final String ISSUE_WITH_LDAP_TEST_AUTHENTICATION = "Issue with Ldap Test Authentication";
+  public static final int LDAP_TASK_DEFAULT_TIMEOUT = 5;
   private final AuthSettingsManagerClient managerClient;
   private final DelegateGrpcClientWrapper delegateService;
   private final TaskSetupAbstractionHelper taskSetupAbstractionHelper;
@@ -360,7 +361,7 @@ public class NGLdapServiceImpl implements NGLdapService {
         DelegateTaskRequest.builder()
             .taskType(taskType.name())
             .taskParameters(parameters)
-            .executionTimeout(Duration.ofMillis(TaskData.DEFAULT_SYNC_CALL_TIMEOUT))
+            .executionTimeout(Duration.ofMinutes(LDAP_TASK_DEFAULT_TIMEOUT))
             .accountId(accountIdentifier)
             .taskSetupAbstractions(buildAbstractions(accountIdentifier, orgIdentifier, projectIdentifier))
             .build();
