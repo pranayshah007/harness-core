@@ -177,6 +177,23 @@ public class KubernetesCliRuntimeExceptionHandlerTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void handleNoObjectToApplyInDryRunException() {
+    KubernetesCliTaskRuntimeException exception = new KubernetesCliTaskRuntimeException(
+        createProcessResponse(CliErrorMessages.KUBECTL_COMMAND_NO_OBJECT_TO_APPLY_MESSAGE), DRY_RUN);
+    exception.setKubectlVersion("");
+    exception.setResourcesNotApplied("");
+    WingsException handledException = exceptionHandler.handleException(exception);
+    assertThat(handledException).isInstanceOf(HintException.class);
+    assertThat(handledException.getMessage()).isEqualTo(KubernetesExceptionHints.NO_OBJECT_PASSED);
+    assertThat(handledException.getCause()).isInstanceOf(ExplanationException.class);
+    assertThat(handledException.getCause().getCause().getMessage())
+        .contains(CliErrorMessages.KUBECTL_COMMAND_NO_OBJECT_TO_APPLY_MESSAGE);
+    assertThat(handledException.getCause().getCause()).isInstanceOf(KubernetesTaskException.class);
+  }
+
+  @Test
   @Owner(developers = ABHINAV2)
   @Category(UnitTests.class)
   public void handleDryRunException() {
@@ -478,5 +495,7 @@ public class KubernetesCliRuntimeExceptionHandlerTest extends CategoryTest {
         "Error from server (Forbidden): error when retrieving current configuration of:Resource: \"/v1, Resource=services\", GroupVersionKind: \"/v1, Kind=Service\"Name: \"latest\", Namespace: \"dev\"Object: &{map[\"metadata\":map[\"labels\":map[\"app\":\"latest\"] \"name\":\"latest\" \"namespace\":\"dev\" \"annotations\":map[\"kubernetes.io/change-cause\":\"kubectl apply --kubeconfig=config --filename=manifests.yaml --record=true\" \"kubectl.kubernetes.io/last-applied-configuration\":\"\"]] \"spec\":map[\"ports\":[map[\"port\":'\\u1f90']] \"selector\":map[\"harness.io/name\":\"latest\"] \"type\":\"ClusterIP\"] \"apiVersion\":\"v1\" \"kind\":\"Service\"]}from server for: \"manifests.yaml\": services \"np-latest\" is forbidden: User \"system:serviceaccount:hrns\" cannot get resource \"services\" in API group \"\" in the namespace \"standard\"Error from server (Forbidden): error when retrieving current configuration of:Resource: \"apps/v1, Resource=statefulsets\", GroupVersionKind: \"apps/v1, Kind=StatefulSet\"Name: \"np-latest\", Namespace: \"standard\"Object: &{map[\"apiVersion\":\"apps/v1\" \"kind\":\"StatefulSet\" \"metadata\":map[\"labels\":map[\"harness.io/name\":\"np-latest\"] \"name\":\"np-latest\" \"namespace\":\"standard\" \"annotations\":map[\"kubernetes.io/change-cause\":\"kubectl apply --kubeconfig=config --filename=manifests.yaml --record=true\" \"kubectl.kubernetes.io/last-applied-configuration\":\"\"]] \"spec\":map[\"replicas\":'\\x01' \"selector\":map[\"matchLabels\":map[\"harness.io/name\":\"tkgi-tepmr22-k8s-np-latest\"]] \"serviceName\":\"\" \"template\":map[\"metadata\":map[\"labels\":map[\"harness.io/name\":\"np-latest\" \"harness.io/release-name\":\"81eeaa34dc\"]] \"spec\":map[\"containers\":[map[\"resources\":map[\"limits\":map[\"cpu\":\"500m\" \"memory\":\"2Gi\"] \"requests\":map[\"cpu\":\"500m\" \"memory\":\"2Gi\"]] \"volumeMounts\":[map[\"mountPath\":\"/var/certs\" \"name\":\"cert\" \"readOnly\":%!q(bool=false)]] \"image\":\"w/hrns:0.0.1\" \"lifecycle\":map[\"postStart\":map[\"exec\":map[\"command\":[\"/bin/bash\" \"-c\" \"cp /var/certs/cacerts jdk8u242-b08-jre/lib/security/cacerts\\n\"]]]] \"livenessProbe\":map[\"exec\":map[\"command\":[\"bash\" \"-c\" \"[[ -e /watcher-data && $(($(date +%s000) - $(grep heartbeat /opt/harness-delegate/msg/data/watcher-data | cut -d \\\":\\\" -f 2 | cut -d \\\",\\\" -f 1))) -lt 300000 ]]\"]] \"failureThreshold\":'\\x02' \"initialDelaySeconds\":'\\u00f0' \"periodSeconds\":'\\n' \"successThreshold\":'\\x01' \"timeoutSeconds\":'\\n'] \"ports\":[map[\"containerPort\":'\\u1f90']] \"imagePullPolicy\":\"Always\" \"name\":\"delegate\" \"readinessProbe\":map[\"exec\":map[\"command\":[\"test\" \"-s\" \"delegate.log\"]] \"initialDelaySeconds\":'\\x14' \"periodSeconds\":'\\n']]] \"imagePullSecrets\":[map[\"name\":\"hrns-cred\"]] \"serviceAccountName\":\"hrns-sa\" \"volumes\":[map[\"configMap\":map[\"name\":\"ca-bundle-1\"] \"name\":\"cert\"]]]] \"podManagementPolicy\":\"Parallel\"]]}from server for: \"manifests.yaml\": statefulsets.apps \"latest\" is forbidden: User \"system:serviceaccount:test\" cannot get resource \"statefulsets\" in API group \"apps\" in the namespace \"abc\"";
     static final String KUBECTL_COMMAND_TIMEOUT_MESSAGE =
         "Unable to connect to the server: dial tcp X.X.X.X:443: i/o timeout";
+
+    static final String KUBECTL_COMMAND_NO_OBJECT_TO_APPLY_MESSAGE = "error: no objects passed to apply";
   }
 }

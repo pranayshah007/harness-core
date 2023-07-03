@@ -15,6 +15,7 @@ import io.harness.ccm.commons.beans.InstanceState;
 import io.harness.ccm.commons.beans.InstanceType;
 import io.harness.ccm.commons.beans.Resource;
 import io.harness.ccm.commons.beans.StorageResource;
+import io.harness.ccm.commons.constants.InstanceMetaDataConstants;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
@@ -47,6 +48,7 @@ import lombok.experimental.FieldNameConstants;
 @FieldNameConstants(innerTypeName = "InstanceDataKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public final class InstanceData implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess {
+  private static final String SUB_FIELD_FORMAT = "%s.%s";
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -84,11 +86,15 @@ public final class InstanceData implements PersistentEntity, UuidAware, CreatedA
                  .field(InstanceDataKeys.instanceState)
                  .build())
         .add(CompoundMongoIndex.builder()
-                 .name("accountId_clusterId_instanceType_nodePoolName")
+                 .name("accountId_clusterId_instanceType_nodePoolName_instanceState_instanceFamily")
                  .field(InstanceDataKeys.accountId)
                  .field(InstanceDataKeys.clusterId)
                  .field(InstanceDataKeys.instanceType)
-                 .field(InstanceDataKeys.NODE_POOL_NAME)
+                 .field(String.format(
+                     SUB_FIELD_FORMAT, InstanceDataKeys.metaData, InstanceMetaDataConstants.NODE_POOL_NAME))
+                 .field(InstanceDataKeys.instanceState)
+                 .field(String.format(
+                     SUB_FIELD_FORMAT, InstanceDataKeys.metaData, InstanceMetaDataConstants.INSTANCE_FAMILY))
                  .build())
         .add(CompoundMongoIndex.builder()
                  .name("accountId_activeInstanceIterator_usageStartTime_instanceType")
@@ -155,10 +161,4 @@ public final class InstanceData implements PersistentEntity, UuidAware, CreatedA
   HarnessServiceInfoNG harnessServiceInfoNG;
 
   @FdTtlIndex private Date ttl;
-
-  public static final class InstanceDataKeys {
-    private InstanceDataKeys() {}
-    public static final String CLOUD_PROVIDER = "metaData.cloud_provider";
-    public static final String NODE_POOL_NAME = "metaData.node_pool_name";
-  }
 }

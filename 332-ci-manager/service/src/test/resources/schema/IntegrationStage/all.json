@@ -10730,6 +10730,9 @@
             "policy": {
               "$ref": "#/definitions/EnforcementPolicy"
             },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
             "source": {
               "$ref": "#/definitions/SbomSource"
             },
@@ -10756,6 +10759,9 @@
           "properties": {
             "attestation": {
               "$ref": "#/definitions/Attestation"
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
             },
             "source": {
               "$ref": "#/definitions/SbomSource"

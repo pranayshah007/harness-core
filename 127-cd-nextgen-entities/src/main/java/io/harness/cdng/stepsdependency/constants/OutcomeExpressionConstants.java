@@ -16,7 +16,6 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(CDP)
 @UtilityClass
 public class OutcomeExpressionConstants {
-  public final String CREATE_PR_OUTCOME = "createPROutcome";
   public final String MERGE_PR_OUTCOME = "mergePROutcome";
   public final String SERVICE = "service";
   public final String ARTIFACTS = "artifacts";

@@ -330,7 +330,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
       createStripeCustomer(accountIdentifier, subscriptionRequest.getCustomer());
       stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
     } else {
-      updateStripeCustomer(accountIdentifier, stripeCustomer.getCustomerId(), subscriptionRequest.getCustomer());
+      updateStripeCustomer(accountIdentifier, subscriptionRequest.getCustomer());
     }
 
     List<SubscriptionDetail> subscriptionDetailList =
@@ -526,13 +526,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
 
   @Override
-  public CustomerDetailDTO updateStripeCustomer(String accountIdentifier, String customerId, CustomerDTO customerDTO) {
+  public CustomerDetailDTO updateStripeCustomer(String accountIdentifier, CustomerDTO customerDTO) {
     isSelfServiceEnable();
 
-    StripeCustomer stripeCustomer =
-        stripeCustomerRepository.findByAccountIdentifierAndCustomerId(accountIdentifier, customerId);
+    StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
     if (stripeCustomer == null) {
-      String errorMessage = String.format("Customer %s doesn't exists", customerId);
+      String errorMessage = String.format("Customer for account ID %s doesn't exists", accountIdentifier);
       log.error(errorMessage);
       throw new InvalidRequestException(errorMessage);
     }
@@ -549,6 +548,10 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     if (customerDTO.getAddress() != null) {
       builder.address(customerDTO.getAddress());
+    }
+
+    if (customerDTO.getDefaultPaymentMethod() != null) {
+      builder.defaultPaymentMethod(customerDTO.getDefaultPaymentMethod());
     }
 
     CustomerDetailDTO customerDetailDTO = stripeHelper.updateCustomer(builder.build());

@@ -17,6 +17,7 @@ import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
 import io.harness.cdng.provision.terraform.functor.TerraformHumanReadablePlanFunctor;
 import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
+import io.harness.cdng.provision.terraform.outcome.TerraformGitRevisionOutcome;
 import io.harness.cdng.provision.terraform.outcome.TerraformPlanOutcome;
 import io.harness.cdng.provision.terraform.outcome.TerraformPlanOutcome.TerraformPlanOutcomeBuilder;
 import io.harness.common.ParameterFieldHelper;
@@ -62,6 +63,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
@@ -274,10 +276,17 @@ public class TerraformPlanStepV2 extends CdTaskChainExecutable {
         }
       }
 
-      stepResponseBuilder.stepOutcome(StepResponse.StepOutcome.builder()
-                                          .name(TerraformPlanOutcome.OUTCOME_NAME)
-                                          .outcome(tfPlanOutcomeBuilder.build())
-                                          .build());
+      Map<String, String> outputKeys = helper.getRevisionsMap(terraformPassThroughData, terraformTaskNGResponse);
+
+      stepResponseBuilder
+          .stepOutcome(StepResponse.StepOutcome.builder()
+                           .name(TerraformPlanOutcome.OUTCOME_NAME)
+                           .outcome(tfPlanOutcomeBuilder.build())
+                           .build())
+          .stepOutcome(StepResponse.StepOutcome.builder()
+                           .name(TerraformGitRevisionOutcome.OUTCOME_NAME)
+                           .outcome(TerraformGitRevisionOutcome.builder().revisions(outputKeys).build())
+                           .build());
     }
     return stepResponseBuilder.build();
   }
@@ -299,9 +308,8 @@ public class TerraformPlanStepV2 extends CdTaskChainExecutable {
 
     boolean isTerraformCloudCli = planStepParameters.getConfiguration().getIsTerraformCloudCli().getValue();
 
-    EncryptionConfig secretManagerEncryptionConfig = helper.getEncryptionConfig(ambiance, planStepParameters);
-
     if (!isTerraformCloudCli) {
+      EncryptionConfig secretManagerEncryptionConfig = helper.getEncryptionConfig(ambiance, planStepParameters);
       exportTfPlanJsonField = planStepParameters.getConfiguration().getExportTerraformPlanJson();
       exportTfHumanReadablePlanField = planStepParameters.getConfiguration().getExportTerraformHumanReadablePlan();
       builder.saveTerraformStateJson(!ParameterField.isNull(exportTfPlanJsonField) && exportTfPlanJsonField.getValue());
@@ -309,6 +317,8 @@ public class TerraformPlanStepV2 extends CdTaskChainExecutable {
           !ParameterField.isNull(exportTfHumanReadablePlanField) && exportTfHumanReadablePlanField.getValue());
       builder.encryptionConfig(secretManagerEncryptionConfig);
       builder.workspace(ParameterFieldHelper.getParameterFieldValue(configuration.getWorkspace()));
+      builder.encryptDecryptPlanForHarnessSMOnManager(
+          helper.tfPlanEncryptionOnManager(accountId, secretManagerEncryptionConfig));
     }
     ParameterField<Boolean> skipTerraformRefreshCommand =
         planStepParameters.getConfiguration().getSkipTerraformRefresh();
@@ -342,8 +352,6 @@ public class TerraformPlanStepV2 extends CdTaskChainExecutable {
         .timeoutInMillis(
             StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
         .useOptimizedTfPlan(true)
-        .encryptDecryptPlanForHarnessSMOnManager(
-            helper.tfPlanEncryptionOnManager(accountId, secretManagerEncryptionConfig))
         .isTerraformCloudCli(isTerraformCloudCli);
 
     return builder;

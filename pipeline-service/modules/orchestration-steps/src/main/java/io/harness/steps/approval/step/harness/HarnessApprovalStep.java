@@ -18,7 +18,9 @@ import io.harness.beans.FeatureName;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.shell.ShellScriptTaskNG;
+import io.harness.engine.executions.step.StepExecutionEntityService;
 import io.harness.exception.InvalidRequestException;
+import io.harness.execution.step.approval.harness.HarnessApprovalStepExecutionDetails;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
@@ -43,8 +45,11 @@ import io.harness.steps.approval.ApprovalNotificationHandler;
 import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.ApprovalUserGroupDTO;
+import io.harness.steps.approval.step.harness.beans.ApproverInput;
 import io.harness.steps.approval.step.harness.beans.AutoApprovalParams;
+import io.harness.steps.approval.step.harness.beans.EmbeddedUserDTO;
 import io.harness.steps.approval.step.harness.beans.HarnessApprovalAction;
+import io.harness.steps.approval.step.harness.beans.HarnessApprovalActivityDTO;
 import io.harness.steps.approval.step.harness.beans.HarnessApprovalActivityRequestDTO;
 import io.harness.steps.approval.step.harness.beans.ScheduledDeadline;
 import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
@@ -56,6 +61,7 @@ import io.harness.utils.TimeStampUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -74,8 +80,10 @@ public class HarnessApprovalStep extends PipelineAsyncExecutable {
   @Inject private ApprovalInstanceService approvalInstanceService;
   @Inject private ApprovalNotificationHandler approvalNotificationHandler;
   @Inject @Named("PipelineExecutorService") ExecutorService executorService;
+  @Inject @Named("DashboardExecutorService") ExecutorService dashboardExecutorService;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private PmsFeatureFlagHelper pmsFeatureFlagHelper;
+  @Inject private StepExecutionEntityService stepExecutionEntityService;
 
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
@@ -138,10 +146,12 @@ public class HarnessApprovalStep extends PipelineAsyncExecutable {
             ambiance, RefObjectUtils.getSweepingOutputRefObject(HARNESS_APPROVAL_STEP_OUTCOME));
         if (!outputOptional.isFound()) {
           log.error(HARNESS_APPROVAL_STEP_OUTCOME + " sweeping output not found. unable to perform auto approval");
-          return StepResponse.builder()
-              .status(Status.FAILED)
-              .failureInfo(FailureInfo.newBuilder().setErrorMessage("Step timeout occurred").build())
-              .build();
+          FailureInfo failureInfo = FailureInfo.newBuilder().setErrorMessage("Step timeout occurred").build();
+          dashboardExecutorService.submit(
+              ()
+                  -> stepExecutionEntityService.updateStepExecutionEntity(
+                      ambiance, failureInfo, null, stepParameters.getName(), Status.APPROVAL_WAITING));
+          return StepResponse.builder().status(Status.FAILED).failureInfo(failureInfo).build();
         }
         NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, COMMAND_UNIT, false);
         logCallback.saveExecutionLog(
@@ -154,10 +164,15 @@ public class HarnessApprovalStep extends PipelineAsyncExecutable {
         executorService.submit(() -> approvalNotificationHandler.sendNotification(instance, ambiance));
 
         logCallback.saveExecutionLog("Step auto approved.");
+        HarnessApprovalOutcome outcome = instance.toHarnessApprovalOutcome();
+        dashboardExecutorService.submit(
+            ()
+                -> stepExecutionEntityService.updateStepExecutionEntity(ambiance, null,
+                    createHarnessApprovalStepExecutionDetailsFromHarnessApprovalOutcome(outcome),
+                    stepParameters.getName(), Status.APPROVAL_WAITING));
         return StepResponse.builder()
             .status(Status.SUCCEEDED)
-            .stepOutcome(
-                StepResponse.StepOutcome.builder().name("output").outcome(instance.toHarnessApprovalOutcome()).build())
+            .stepOutcome(StepResponse.StepOutcome.builder().name("output").outcome(outcome).build())
             .build();
       }
       HarnessApprovalResponseData responseData =
@@ -169,15 +184,44 @@ public class HarnessApprovalStep extends PipelineAsyncExecutable {
           || ApprovalStatus.REJECTED.equals(instance.getStatus())) {
         executorService.submit(() -> approvalNotificationHandler.sendNotification(instance, ambiance));
       }
+      HarnessApprovalOutcome outcome = instance.toHarnessApprovalOutcome();
+      dashboardExecutorService.submit(
+          ()
+              -> stepExecutionEntityService.updateStepExecutionEntity(ambiance, instance.getFailureInfo(),
+                  createHarnessApprovalStepExecutionDetailsFromHarnessApprovalOutcome(outcome),
+                  stepParameters.getName(), Status.APPROVAL_WAITING));
       return StepResponse.builder()
           .status(instance.getStatus().toFinalExecutionStatus())
           .failureInfo(instance.getFailureInfo())
-          .stepOutcome(
-              StepResponse.StepOutcome.builder().name("output").outcome(instance.toHarnessApprovalOutcome()).build())
+          .stepOutcome(StepResponse.StepOutcome.builder().name("output").outcome(outcome).build())
           .build();
     } finally {
       closeLogStream(ambiance);
     }
+  }
+
+  private HarnessApprovalStepExecutionDetails createHarnessApprovalStepExecutionDetailsFromHarnessApprovalOutcome(
+      HarnessApprovalOutcome outcome) {
+    List<HarnessApprovalStepExecutionDetails.HarnessApprovalActivity> approvalActivities = new ArrayList<>();
+    if (outcome != null && outcome.getApprovalActivities() != null) {
+      for (HarnessApprovalActivityDTO harnessApprovalActivityDTO : outcome.getApprovalActivities()) {
+        String action = harnessApprovalActivityDTO.getAction().toString();
+        Map<String, String> approverInputs = Collections.emptyMap();
+        if (EmptyPredicate.isNotEmpty(harnessApprovalActivityDTO.getApproverInputs())) {
+          approverInputs = harnessApprovalActivityDTO.getApproverInputs().stream().collect(
+              Collectors.toMap(ApproverInput::getName, ApproverInput::getValue));
+        }
+        approvalActivities.add(HarnessApprovalStepExecutionDetails.HarnessApprovalActivity.builder()
+                                   .user(EmbeddedUserDTO.toEmbeddedUser(harnessApprovalActivityDTO.getUser()))
+                                   .approvalAction(action)
+                                   .approverInputs(approverInputs)
+                                   .comments(harnessApprovalActivityDTO.getComments())
+                                   .approvedAt(harnessApprovalActivityDTO.getApprovedAt())
+                                   .build());
+      }
+      return HarnessApprovalStepExecutionDetails.builder().approvalActivities(approvalActivities).build();
+    }
+    return null;
   }
 
   private HarnessApprovalInstance handleAutoApprovalForStep(

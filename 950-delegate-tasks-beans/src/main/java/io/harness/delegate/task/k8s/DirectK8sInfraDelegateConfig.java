@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.k8s;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -16,6 +17,7 @@ import lombok.Value;
 
 @Value
 @Builder
+@RecasterAlias("io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig")
 public class DirectK8sInfraDelegateConfig implements K8sInfraDelegateConfig {
   String namespace;
   KubernetesClusterConfigDTO kubernetesClusterConfigDTO;

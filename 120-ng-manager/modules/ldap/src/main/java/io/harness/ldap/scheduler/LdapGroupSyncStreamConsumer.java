@@ -73,14 +73,12 @@ public class LdapGroupSyncStreamConsumer extends RedisTraceConsumer {
   private void pollAndProcessMessages() {
     List<Message> messages;
     String messageId;
-    boolean messageProcessed;
     messages = redisConsumer.read(Duration.ofSeconds(10));
     for (Message message : messages) {
       messageId = message.getId();
-      messageProcessed = handleMessage(message);
-      if (messageProcessed) {
-        redisConsumer.acknowledge(messageId);
-      }
+      redisConsumer.acknowledge(messageId);
+      log.info("EVENT_LDAP_GROUP_SYNC: acknowledged and processing message with id: {}", messageId);
+      handleMessage(message);
     }
   }
 

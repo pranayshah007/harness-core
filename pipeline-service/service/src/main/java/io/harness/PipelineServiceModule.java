@@ -718,6 +718,17 @@ public class PipelineServiceModule extends AbstractModule {
 
   @Provides
   @Singleton
+  @Named("DashboardExecutorService")
+  public ExecutorService dashboardExecutorService() {
+    return ThreadPool.create(configuration.getDashboardExecutorServiceConfig().getCorePoolSize(),
+        configuration.getDashboardExecutorServiceConfig().getMaxPoolSize(),
+        configuration.getDashboardExecutorServiceConfig().getIdleTime(),
+        configuration.getDashboardExecutorServiceConfig().getTimeUnit(),
+        new ThreadFactoryBuilder().setNameFormat("DashboardExecutorService-%d").build());
+  }
+
+  @Provides
+  @Singleton
   @Named("PlanCreatorMergeExecutorService")
   public Executor planCreatorMergeExecutorService() {
     return ThreadPool.create(configuration.getPlanCreatorMergeServicePoolConfig().getCorePoolSize(),

@@ -9,6 +9,7 @@ package io.harness.pms.sdk.core.steps.io;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.data.StepOutcomeRef;
@@ -23,6 +24,7 @@ import lombok.Value;
 @OwnedBy(CDC)
 @Value
 @Builder
+@RecasterAlias("io.harness.pms.sdk.core.steps.io.StepResponseNotifyData")
 public class StepResponseNotifyData implements ResponseData {
   String identifier;
   String nodeUuid;

@@ -23,10 +23,10 @@ import io.harness.cvng.cdng.beans.CVNGStepInfo;
 import io.harness.cvng.cdng.beans.CVNGStepType;
 import io.harness.cvng.cdng.beans.ConfiguredMonitoredServiceSpec;
 import io.harness.cvng.cdng.beans.MonitoredServiceNode;
-import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
+import io.harness.cvng.cdng.beans.MonitoredServiceSpecType;
 import io.harness.cvng.cdng.beans.TestVerificationJobSpec;
 import io.harness.cvng.cdng.services.api.CDStageMetaDataService;
-import io.harness.cvng.cdng.services.api.VerifyStepMonitoredServiceResolutionService;
+import io.harness.cvng.cdng.services.api.PipelineStepMonitoredServiceResolutionService;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.monitoredService.ChangeSourceService;
@@ -75,7 +75,7 @@ public class CVNGStepFilterJsonCreatorTest extends CvNextGenTestBase {
   @Mock private CDStageMetaDataService cdStageMetaDataService;
 
   @Inject
-  private Map<MonitoredServiceSpecType, VerifyStepMonitoredServiceResolutionService> verifyStepCvConfigServiceMap;
+  private Map<MonitoredServiceSpecType, PipelineStepMonitoredServiceResolutionService> verifyStepCvConfigServiceMap;
   private BuilderFactory builderFactory;
   private String accountId;
   private String projectIdentifier;

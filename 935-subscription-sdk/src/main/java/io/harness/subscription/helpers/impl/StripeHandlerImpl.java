@@ -22,6 +22,7 @@ import com.stripe.model.Invoice;
 import com.stripe.model.PaymentIntent;
 import com.stripe.model.PaymentMethod;
 import com.stripe.model.PaymentMethodCollection;
+import com.stripe.model.PaymentSourceCollection;
 import com.stripe.model.Price;
 import com.stripe.model.PriceCollection;
 import com.stripe.model.PriceSearchResult;
@@ -259,7 +260,7 @@ public class StripeHandlerImpl {
     }
   }
 
-  public Card deleteCard(String customerIdentifier, String cardIdentifier) {
+  public void deleteCard(String customerIdentifier, String cardIdentifier) {
     try {
       Map<String, Object> retrieveParams = new HashMap<>();
       List<String> expandList = new ArrayList<>();
@@ -267,9 +268,15 @@ public class StripeHandlerImpl {
       retrieveParams.put("expand", expandList);
       Customer customer = Customer.retrieve(customerIdentifier, retrieveParams, null);
 
-      Card card = (Card) customer.getSources().retrieve(cardIdentifier);
+      PaymentSourceCollection paymentSourceCollection = customer.getSources();
 
-      return card.delete();
+      if (paymentSourceCollection.getData().isEmpty()) {
+        PaymentMethod paymentMethod = PaymentMethod.retrieve(cardIdentifier);
+        paymentMethod.detach();
+        return;
+      }
+
+      ((Card) paymentSourceCollection.retrieve(cardIdentifier)).delete();
     } catch (StripeException e) {
       throw new InvalidRequestException("Unable to delete card", e);
     }

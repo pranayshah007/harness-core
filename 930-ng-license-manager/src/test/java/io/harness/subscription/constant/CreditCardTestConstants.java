@@ -33,8 +33,10 @@ public class CreditCardTestConstants {
   public static final StripeCustomer DEFAULT_CUSTOMER =
       StripeCustomer.builder().accountIdentifier(DEFAULT_ACCOUNT_ID).customerId(DEFAULT_CUSTOMER_ID).build();
 
-  public static final CardDTO DEFAULT_CARD_DTO = CardDTO.builder().expireMonth(1L).expireYear(3000L).build();
-  public static final CardDTO EXPIRED_CARD_DTO = CardDTO.builder().expireMonth(1L).expireYear(2000L).build();
+  public static final CardDTO DEFAULT_CARD_DTO =
+      CardDTO.builder().expireMonth(1L).expireYear(3000L).isDefaultCard(true).build();
+  public static final CardDTO EXPIRED_CARD_DTO =
+      CardDTO.builder().expireMonth(1L).expireYear(2000L).isDefaultCard(false).build();
 
   public static final PaymentMethodCollectionDTO DEFAULT_PAYMENT_METHODS =
       PaymentMethodCollectionDTO.builder().paymentMethods(Arrays.asList(DEFAULT_CARD_DTO, EXPIRED_CARD_DTO)).build();

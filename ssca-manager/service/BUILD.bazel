@@ -16,6 +16,7 @@ shared_dependencies = [
     "//960-persistence:module",
     "//980-commons:module",
     "//999-annotations:module",
+    "//ssca-manager/contracts/openapi/v1:ssca-manager-server-spec-module",
     "@maven//:com_fasterxml_jackson_core_jackson_annotations",
     "@maven//:com_google_inject_guice",
     "@maven//:com_smoketurner_dropwizard_swagger",
@@ -35,6 +36,12 @@ shared_dependencies = [
     "@maven//:org_slf4j_slf4j_api",
     "@maven//:org_springframework_data_spring_data_mongodb",
     "@maven//:org_springframework_spring_context",
+    "@maven//:io_swagger_core_v3_swagger_jaxrs2",
+    "@maven//:io_swagger_core_v3_swagger_jaxrs2_servlet_initializer_v2",
+    "@maven//:io_swagger_core_v3_swagger_core",
+    "@maven//:io_swagger_core_v3_swagger_annotations",
+    "@maven//:io_swagger_core_v3_swagger_models",
+    "@maven//:io_swagger_core_v3_swagger_integration",
 ]
 
 java_binary(
@@ -70,5 +77,7 @@ java_library(
         "@maven//:org_powermock_powermock_api_mockito2",
     ],
 )
+
+run_tests()
 
 run_analysis()

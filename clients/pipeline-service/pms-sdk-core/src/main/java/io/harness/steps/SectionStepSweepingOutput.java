@@ -7,6 +7,7 @@
 
 package io.harness.steps;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
@@ -19,6 +20,7 @@ import lombok.Singular;
 @Data
 @Builder
 @OwnedBy(HarnessTeam.PIPELINE)
+@RecasterAlias("io.harness.steps.SectionStepSweepingOutput")
 public class SectionStepSweepingOutput implements ExecutionSweepingOutput {
   @Singular List<String> failedNodeIds;
 }

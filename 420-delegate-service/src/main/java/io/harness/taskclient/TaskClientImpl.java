@@ -11,7 +11,6 @@ import static io.harness.beans.DelegateTask.Status.QUEUED;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.beans.DelegateTask;
-import io.harness.delegate.beans.SchedulingTaskEvent;
 import io.harness.delegate.task.tasklogging.ExecutionLogContext;
 import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.logging.AutoLogContext;
@@ -32,16 +31,18 @@ public class TaskClientImpl implements TaskClient {
   private final DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @Override
-  public void sendTask(DelegateTask task, SchedulingTaskEvent.Method method, String uri) {
+  public void sendTask(DelegateTask task) {
     if (task.getUuid() == null) {
       task.setUuid(delegateTaskMigrationHelper.generateDelegateTaskUUID());
     }
-    try (AutoLogContext ignore1 = new ExecutionLogContext(task.getUuid(), uri, method.name(), OVERRIDE_ERROR)) {
-      log.info("Queueing websocket api - id {}, method {}, uri {}", task.getUuid(), method.name(), uri);
+    try (AutoLogContext ignore1 =
+             new ExecutionLogContext(task.getUuid(), task.getRequestUri(), task.getRequestMethod(), OVERRIDE_ERROR)) {
+      log.info("Going to broadcast task - id {}, method {}, uri {}", task.getUuid(), task.getRequestMethod(),
+          task.getRequestUri());
       // Handles routing the reqest to the right delegate instance
       delegateTaskServiceClassic.processScheduleTaskRequest(task, QUEUED);
       // Send out request via websocket
-      broadcastHelper.broadcastRequestEvent(task, method, uri);
+      broadcastHelper.broadcastRequestEvent(task, task.getRequestMethod(), task.getRequestUri());
     }
   }
 }

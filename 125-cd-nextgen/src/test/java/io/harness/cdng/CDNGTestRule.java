@@ -280,6 +280,7 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
         bind(EntitySetupUsageClient.class).toInstance(mock(EntitySetupUsageClient.class));
         bind(EnforcementClientService.class).toInstance(mock(EnforcementClientService.class));
         bind(AccountClient.class).toInstance(mock(AccountClient.class));
+        bind(AccountClient.class).annotatedWith(Names.named("PRIVILEGED")).toInstance(mock(AccountClient.class));
         bind(EngineExpressionService.class).toInstance(mock(NoopEngineExpressionServiceImpl.class));
         bind(new TypeLiteral<Supplier<DelegateCallbackToken>>() {
         }).toInstance(Suppliers.ofInstance(DelegateCallbackToken.newBuilder().build()));

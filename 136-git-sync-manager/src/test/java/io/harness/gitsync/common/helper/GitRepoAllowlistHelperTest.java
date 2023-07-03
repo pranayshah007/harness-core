@@ -102,10 +102,9 @@ public class GitRepoAllowlistHelperTest {
   public void testValidateRepoWithInvalidRepo() {
     List<String> repoAllowlist = new ArrayList<>();
     repoAllowlist.add("test-repo");
-    doReturn(repoAllowlist).when(gitXSettingsHelper).getGitRepoAllowlist(any(), any(), any());
-
-    assertThatThrownBy(
-        () -> gitRepoAllowlistHelper.validateRepo(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJ_IDENTIFIER, "invalidRepo"))
+    assertThatThrownBy(()
+                           -> gitRepoAllowlistHelper.validateRepo(
+                               ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJ_IDENTIFIER, repoAllowlist, "invalidRepo"))
         .isInstanceOf(HintException.class);
   }
 
@@ -113,10 +112,9 @@ public class GitRepoAllowlistHelperTest {
   @Owner(developers = VIVEK_DIXIT)
   @Category(UnitTests.class)
   public void testValidateRepoWithValidRepo() {
-    doReturn(Collections.EMPTY_LIST).when(gitXSettingsHelper).getGitRepoAllowlist(any(), any(), any());
-
-    assertThatCode(
-        () -> gitRepoAllowlistHelper.validateRepo(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJ_IDENTIFIER, "validRepo"))
+    assertThatCode(()
+                       -> gitRepoAllowlistHelper.validateRepo(
+                           ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJ_IDENTIFIER, Collections.EMPTY_LIST, "validRepo"))
         .doesNotThrowAnyException();
   }
 }

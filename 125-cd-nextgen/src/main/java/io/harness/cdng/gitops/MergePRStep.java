@@ -129,8 +129,6 @@ public class MergePRStep extends CdTaskExecutable<NGGitOpsResponse> {
     ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
 
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.CREATE_PR_OUTCOME));
-    OptionalSweepingOutput optionalSweepingOutputUpdateReleaseRepo = executionSweepingOutputService.resolveOptional(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.UPDATE_RELEASE_REPO_OUTCOME));
 
     int prNumber;
@@ -138,14 +136,7 @@ public class MergePRStep extends CdTaskExecutable<NGGitOpsResponse> {
     String sha;
     String ref;
     if (optionalSweepingOutput != null && optionalSweepingOutput.isFound()) {
-      CreatePROutcome createPROutcome = (CreatePROutcome) optionalSweepingOutput.getOutput();
-      prNumber = createPROutcome.getPrNumber();
-      prLink = createPROutcome.getPrlink();
-      sha = createPROutcome.getCommitId();
-      ref = createPROutcome.getRef();
-    } else if (optionalSweepingOutputUpdateReleaseRepo != null && optionalSweepingOutputUpdateReleaseRepo.isFound()) {
-      UpdateReleaseRepoOutcome updateReleaseRepoOutcome =
-          (UpdateReleaseRepoOutcome) optionalSweepingOutputUpdateReleaseRepo.getOutput();
+      UpdateReleaseRepoOutcome updateReleaseRepoOutcome = (UpdateReleaseRepoOutcome) optionalSweepingOutput.getOutput();
       prNumber = updateReleaseRepoOutcome.getPrNumber();
       prLink = updateReleaseRepoOutcome.getPrlink();
       sha = updateReleaseRepoOutcome.getCommitId();

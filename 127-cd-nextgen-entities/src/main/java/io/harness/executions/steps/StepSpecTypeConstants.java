@@ -13,7 +13,6 @@ import io.harness.annotations.dev.OwnedBy;
 
 @OwnedBy(CDP)
 public interface StepSpecTypeConstants {
-  String GITOPS_CREATE_PR = "CreatePR";
   String GITOPS_MERGE_PR = "MergePR";
   String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
   String GITOPS_SYNC = "GitOpsSync";

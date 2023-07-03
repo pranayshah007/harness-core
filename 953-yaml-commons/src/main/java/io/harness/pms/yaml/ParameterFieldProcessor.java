@@ -18,7 +18,10 @@ import io.harness.pms.yaml.validation.RuntimeValidator;
 import io.harness.pms.yaml.validation.RuntimeValidatorResponse;
 
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ClassUtils;
 
+@Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ParameterFieldProcessor {
   private final EngineExpressionEvaluator engineExpressionEvaluator;
@@ -68,6 +71,7 @@ public class ParameterFieldProcessor {
     if (valueField != null) {
       Object finalValue = engineExpressionEvaluator.resolve(valueField, expressionMode);
       if (finalValue != null) {
+        finalValue = getCastedFinalValueForPrimitiveTypesAndWrappers(finalValue, field);
         field.updateWithValue(finalValue);
         ProcessorResult processorResult = validateUsingValidator(finalValue, inputSetValidator);
         if (processorResult.isError()) {
@@ -97,5 +101,31 @@ public class ParameterFieldProcessor {
           .build();
     }
     return ProcessorResult.builder().build();
+  }
+
+  // Handling primitive types and wrappers when value class of document field doesn't match the class of finalValue
+  private Object getCastedFinalValueForPrimitiveTypesAndWrappers(Object finalValue, ParameterDocumentField field) {
+    try {
+      Class<?> fieldClass = Class.forName(field.getValueClass());
+      if (ClassUtils.isPrimitiveOrWrapper(fieldClass) && !fieldClass.isAssignableFrom(finalValue.getClass())) {
+        if (fieldClass.equals(Integer.class)) {
+          if (finalValue.getClass().equals(String.class)) {
+            finalValue = Integer.parseInt(finalValue.toString());
+          } else if (finalValue.getClass().equals(Double.class)) {
+            finalValue = ((Double) finalValue).intValue();
+          }
+        } else if (fieldClass.equals(Double.class)) {
+          if (finalValue.getClass().equals(String.class)) {
+            finalValue = Double.valueOf((String) finalValue);
+          } else if (finalValue.getClass().equals(Integer.class)) {
+            finalValue = new Double((Integer) finalValue);
+          }
+        }
+      }
+    } catch (Exception ex) {
+      log.error(String.format("Exception in casting newValue of type %s into parameter field of type %s",
+          finalValue.getClass().toString(), field.getValueClass()));
+    }
+    return finalValue;
   }
 }

@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.VLICA;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -37,6 +38,7 @@ import io.harness.cdng.provision.terraform.TerraformConfigDAL;
 import io.harness.cdng.provision.terraform.TerraformConfigHelper;
 import io.harness.cdng.provision.terraform.TerraformPassThroughData;
 import io.harness.cdng.provision.terraform.TerraformStepHelper;
+import io.harness.cdng.provision.terraform.outcome.TerraformGitRevisionOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
@@ -163,7 +165,7 @@ public class TerraformRollbackStepV2Test extends CategoryTest {
     doReturn("fileId").when(terraformStepHelper).getLatestFileId("fullId");
     GitFetchFilesConfig gitFetchFilesConfig = GitFetchFilesConfig.builder().build();
     doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
-    doReturn(varFileInfo).when(terraformStepHelper).prepareTerraformVarFileInfo(any(), any());
+    doReturn(varFileInfo).when(terraformStepHelper).prepareTerraformVarFileInfo(any(), any(), anyBoolean());
 
     doReturn(TaskChainResponse.builder().chainEnd(true).taskRequest(TaskRequest.newBuilder().build()).build())
         .when(terraformStepHelper)
@@ -231,7 +233,7 @@ public class TerraformRollbackStepV2Test extends CategoryTest {
     doReturn("fileId").when(terraformStepHelper).getLatestFileId("fullId");
     GitFetchFilesConfig gitFetchFilesConfig = GitFetchFilesConfig.builder().build();
     doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
-    doReturn(varFileInfo).when(terraformStepHelper).prepareTerraformVarFileInfo(any(), any());
+    doReturn(varFileInfo).when(terraformStepHelper).prepareTerraformVarFileInfo(any(), any(), anyBoolean());
 
     doReturn(varFileInfo).when(terraformStepHelper).toTerraformVarFileInfoWithIdentifierAndManifest(any(), any());
     doReturn(true).when(terraformStepHelper).hasGitVarFiles(any());
@@ -306,7 +308,7 @@ public class TerraformRollbackStepV2Test extends CategoryTest {
     doReturn("fileId").when(terraformStepHelper).getLatestFileId("fullId");
     GitFetchFilesConfig gitFetchFilesConfig = GitFetchFilesConfig.builder().build();
     doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
-    doReturn(varFileInfo).when(terraformStepHelper).prepareTerraformVarFileInfo(any(), any());
+    doReturn(varFileInfo).when(terraformStepHelper).prepareTerraformVarFileInfo(any(), any(), anyBoolean());
     doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
     doReturn(new HashMap<String, String>() {
       { put("APPLY", "-lock-timeout=0s"); }
@@ -369,7 +371,7 @@ public class TerraformRollbackStepV2Test extends CategoryTest {
     doReturn("fileId").when(terraformStepHelper).getLatestFileId("fullId");
     ArtifactoryStoreDelegateConfig artifactoryStoreDelegateConfig = ArtifactoryStoreDelegateConfig.builder().build();
     doReturn(artifactoryStoreDelegateConfig).when(terraformStepHelper).prepareTerraformConfigFileInfo(any(), any());
-    doReturn(null).when(terraformStepHelper).prepareTerraformVarFileInfo(any(), any());
+    doReturn(null).when(terraformStepHelper).prepareTerraformVarFileInfo(any(), any(), anyBoolean());
     doReturn(new ArrayList<>()).when(terraformStepHelper).getRemoteVarFilesInfo(any(), any());
     doReturn(false).when(terraformStepHelper).hasGitVarFiles(any());
     doReturn(false).when(terraformStepHelper).hasS3VarFiles(any());
@@ -425,11 +427,15 @@ public class TerraformRollbackStepV2Test extends CategoryTest {
     StepResponse stepResponse = terraformRollbackStepV2.finalizeExecutionWithSecurityContext(
         ambiance, stepElementParameters, terraformPassThroughData, () -> terraformTaskNGResponse);
 
+    StepResponse.StepOutcome stepOutcome = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(0);
+
+    assertThat(stepOutcome.getName()).isEqualTo(TerraformGitRevisionOutcome.OUTCOME_NAME);
     assertThat(stepResponse).isNotNull();
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getUnitProgressList()).isEqualTo(unitProgresses);
     verify(terraformStepHelper, times(1)).saveTerraformConfig(terraformConfig, ambiance);
     verify(stepHelper, times(1)).sendRollbackTelemetryEvent(any(), any(), any());
+    verify(terraformStepHelper, times(1)).getRevisionsMap(any(TerraformPassThroughData.class), any());
   }
 
   @Test
@@ -477,11 +483,15 @@ public class TerraformRollbackStepV2Test extends CategoryTest {
     StepResponse stepResponse = terraformRollbackStepV2.finalizeExecutionWithSecurityContext(
         ambiance, stepElementParameters, terraformPassThroughData, () -> terraformTaskNGResponse);
 
+    StepResponse.StepOutcome stepOutcome = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(0);
+
+    assertThat(stepOutcome.getName()).isEqualTo(TerraformGitRevisionOutcome.OUTCOME_NAME);
     assertThat(stepResponse.getUnitProgressList().size()).isEqualTo(2);
     assertThat(stepResponse).isNotNull();
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     verify(terraformStepHelper, times(1)).saveTerraformConfig(terraformConfig, ambiance);
     verify(stepHelper, times(1)).sendRollbackTelemetryEvent(any(), any(), any());
+    verify(terraformStepHelper, times(1)).getRevisionsMap(any(TerraformPassThroughData.class), any());
   }
 
   @Test
@@ -542,9 +552,13 @@ public class TerraformRollbackStepV2Test extends CategoryTest {
     StepResponse stepResponse = terraformRollbackStepV2.finalizeExecutionWithSecurityContext(
         ambiance, stepElementParameters, terraformPassThroughData, () -> terraformTaskNGResponse);
 
+    StepResponse.StepOutcome stepOutcome = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(0);
+
+    assertThat(stepOutcome.getName()).isEqualTo(TerraformGitRevisionOutcome.OUTCOME_NAME);
     assertThat(stepResponse).isNotNull();
     assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
     verify(stepHelper, times(1)).sendRollbackTelemetryEvent(any(), any(), any());
+    verify(terraformStepHelper, times(1)).getRevisionsMap(any(TerraformPassThroughData.class), any());
   }
 
   @Test

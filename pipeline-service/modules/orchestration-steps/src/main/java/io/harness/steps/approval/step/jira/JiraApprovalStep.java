@@ -8,16 +8,23 @@
 package io.harness.steps.approval.step.jira;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.eraro.ErrorCode.APPROVAL_STEP_NG_ERROR;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.task.shell.ShellScriptTaskNG;
+import io.harness.engine.executions.step.StepExecutionEntityService;
+import io.harness.eraro.Level;
 import io.harness.exception.ApprovalStepNGException;
+import io.harness.execution.step.approval.jira.JiraApprovalStepExecutionDetails;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
+import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureData;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
@@ -32,15 +39,21 @@ import io.harness.steps.executables.PipelineAsyncExecutable;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDC)
+@Slf4j
 public class JiraApprovalStep extends PipelineAsyncExecutable {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.JIRA_APPROVAL_STEP_TYPE;
 
   @Inject private ApprovalInstanceService approvalInstanceService;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Inject private StepExecutionEntityService stepExecutionEntityService;
+  @Inject @Named("DashboardExecutorService") ExecutorService dashboardExecutorService;
 
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
@@ -65,9 +78,25 @@ public class JiraApprovalStep extends PipelineAsyncExecutable {
       JiraApprovalInstance instance =
           (JiraApprovalInstance) approvalInstanceService.get(jiraApprovalResponseData.getInstanceId());
       if (instance.getStatus() == ApprovalStatus.FAILED) {
-        throw new ApprovalStepNGException(
-            instance.getErrorMessage() != null ? instance.getErrorMessage() : "Unknown error polling jira issue");
+        String errorMsg =
+            instance.getErrorMessage() != null ? instance.getErrorMessage() : "Unknown error polling jira issue";
+        FailureInfo failureInfo = FailureInfo.newBuilder()
+                                      .addFailureData(FailureData.newBuilder()
+                                                          .setLevel(Level.ERROR.name())
+                                                          .setCode(APPROVAL_STEP_NG_ERROR.name())
+                                                          .setMessage(errorMsg)
+                                                          .build())
+                                      .build();
+        dashboardExecutorService.submit(()
+                                            -> stepExecutionEntityService.updateStepExecutionEntity(ambiance,
+                                                failureInfo, null, stepParameters.getName(), Status.APPROVAL_WAITING));
+        throw new ApprovalStepNGException(errorMsg);
       }
+      dashboardExecutorService.submit(
+          ()
+              -> stepExecutionEntityService.updateStepExecutionEntity(ambiance, instance.getFailureInfo(),
+                  createJiraApprovalStepExecutionDetailsFromJiraApprovalInstance(instance), stepParameters.getName(),
+                  Status.APPROVAL_WAITING));
       return StepResponse.builder()
           .status(instance.getStatus().toFinalExecutionStatus())
           .failureInfo(instance.getFailureInfo())
@@ -77,6 +106,18 @@ public class JiraApprovalStep extends PipelineAsyncExecutable {
     } finally {
       closeLogStream(ambiance);
     }
+  }
+
+  private JiraApprovalStepExecutionDetails createJiraApprovalStepExecutionDetailsFromJiraApprovalInstance(
+      JiraApprovalInstance jiraApprovalInstance) {
+    if (jiraApprovalInstance != null) {
+      return JiraApprovalStepExecutionDetails.builder()
+          .issueKey(jiraApprovalInstance.getIssueKey())
+          .issueType(jiraApprovalInstance.getIssueType())
+          .projectKey(jiraApprovalInstance.getProjectKey())
+          .build();
+    }
+    return null;
   }
 
   @Override

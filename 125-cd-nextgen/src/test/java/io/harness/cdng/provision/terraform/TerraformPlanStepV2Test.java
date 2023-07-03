@@ -30,6 +30,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.provision.terraform.functor.TerraformHumanReadablePlanFunctor;
 import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
+import io.harness.cdng.provision.terraform.outcome.TerraformGitRevisionOutcome;
 import io.harness.cdng.provision.terraform.outcome.TerraformPlanOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -78,6 +79,8 @@ import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.TaskRequestsUtils;
+
+import software.wings.beans.GcpKmsConfig;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
@@ -238,6 +241,8 @@ public class TerraformPlanStepV2Test extends CategoryTest {
     doReturn(false).when(terraformStepHelper).hasGitVarFiles(any());
     doReturn(false).when(terraformStepHelper).hasS3VarFiles(any());
     doReturn(EnvironmentType.NON_PROD).when(stepHelper).getEnvironmentType(any());
+    doReturn(GcpKmsConfig.builder().build()).when(terraformStepHelper).getEncryptionConfig(any(), any());
+    doReturn(true).when(terraformStepHelper).tfPlanEncryptionOnManager(any(), any());
     doReturn("back-content").when(terraformStepHelper).getBackendConfig(any());
     doReturn(ImmutableMap.of("KEY", ParameterField.createValueField("VAL")))
         .when(terraformStepHelper)
@@ -284,6 +289,8 @@ public class TerraformPlanStepV2Test extends CategoryTest {
     assertThat(terraformPassThroughData.hasS3Files).isFalse();
     assertThat(terraformPassThroughData.getUnitProgresses()).isEmpty();
     verify(terraformStepHelper, times(0)).fetchRemoteVarFiles(any(), any(), any(), any(), any(), any());
+    verify(terraformStepHelper, times(1)).getEncryptionConfig(any(), any());
+    assertThat(taskParameters.isEncryptDecryptPlanForHarnessSMOnManager()).isTrue();
   }
 
   @Test
@@ -557,6 +564,8 @@ public class TerraformPlanStepV2Test extends CategoryTest {
     doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
     doReturn(varFileInfo).when(terraformStepHelper).toTerraformVarFileInfoWithIdentifierAndManifest(any(), any());
     doReturn(EnvironmentType.NON_PROD).when(stepHelper).getEnvironmentType(any());
+    doReturn(GcpKmsConfig.builder().build()).when(terraformStepHelper).getEncryptionConfig(any(), any());
+    doReturn(true).when(terraformStepHelper).tfPlanEncryptionOnManager(any(), any());
     doReturn("back-content").when(terraformStepHelper).getBackendConfig(any());
     doReturn(ImmutableMap.of("KEY", ParameterField.createValueField("VAL")))
         .when(terraformStepHelper)
@@ -606,6 +615,8 @@ public class TerraformPlanStepV2Test extends CategoryTest {
     assertThat(terraformPassThroughData.hasS3Files).isFalse();
     assertThat(terraformPassThroughData.getUnitProgresses()).isEmpty();
     verify(terraformStepHelper, times(0)).fetchRemoteVarFiles(any(), any(), any(), any(), any(), any());
+    verify(terraformStepHelper, times(0)).getEncryptionConfig(any(), any());
+    assertThat(taskParameters.isEncryptDecryptPlanForHarnessSMOnManager()).isFalse();
   }
 
   @Test
@@ -745,15 +756,19 @@ public class TerraformPlanStepV2Test extends CategoryTest {
 
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
-    assertThat(stepResponse.getStepOutcomes()).hasSize(1);
+    assertThat(stepResponse.getStepOutcomes()).hasSize(2);
     StepResponse.StepOutcome stepOutcome = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(0);
     assertThat(stepOutcome.getOutcome()).isInstanceOf(TerraformPlanOutcome.class);
     assertThat(((TerraformPlanOutcome) (stepOutcome.getOutcome())).getDetailedExitCode()).isEqualTo(2);
+
+    StepResponse.StepOutcome stepOutcome2 = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(1);
+    assertThat(stepOutcome2.getName()).isEqualTo(TerraformGitRevisionOutcome.OUTCOME_NAME);
 
     verify(terraformStepHelper, times(1)).saveTerraformInheritOutput(any(), any(), any(), any());
     verify(terraformStepHelper, times(1)).updateParentEntityIdAndVersion(any(), any());
     verify(terraformStepHelper)
         .saveTerraformPlanExecutionDetails(eq(ambiance), eq(terraformTaskNGResponse), eq("id"), any());
+    verify(terraformStepHelper, times(1)).getRevisionsMap(any(TerraformPassThroughData.class), any());
   }
 
   @Test
@@ -850,15 +865,19 @@ public class TerraformPlanStepV2Test extends CategoryTest {
     assertThat(stepResponse.getUnitProgressList().size()).isEqualTo(2);
 
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
-    assertThat(stepResponse.getStepOutcomes()).hasSize(1);
+    assertThat(stepResponse.getStepOutcomes()).hasSize(2);
     StepResponse.StepOutcome stepOutcome = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(0);
     assertThat(stepOutcome.getOutcome()).isInstanceOf(TerraformPlanOutcome.class);
     assertThat(((TerraformPlanOutcome) (stepOutcome.getOutcome())).getDetailedExitCode()).isEqualTo(2);
+
+    StepResponse.StepOutcome stepOutcome2 = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(1);
+    assertThat(stepOutcome2.getName()).isEqualTo(TerraformGitRevisionOutcome.OUTCOME_NAME);
 
     verify(terraformStepHelper, times(1)).saveTerraformInheritOutput(any(), any(), any(), any());
     verify(terraformStepHelper, times(1)).updateParentEntityIdAndVersion(any(), any());
     verify(terraformStepHelper)
         .saveTerraformPlanExecutionDetails(eq(ambiance), eq(terraformTaskNGResponse), eq("id"), any());
+    verify(terraformStepHelper, times(1)).getRevisionsMap(any(TerraformPassThroughData.class), any());
   }
 
   @Test
@@ -956,14 +975,18 @@ public class TerraformPlanStepV2Test extends CategoryTest {
     verify(terraformStepHelper).saveTerraformPlanJsonOutput(ambiance, ngResponse, "provisioner1");
     verify(terraformStepHelper)
         .saveTerraformPlanExecutionDetails(eq(ambiance), eq(ngResponse), eq("provisioner1"), any());
+    verify(terraformStepHelper, times(1)).getRevisionsMap(any(TerraformPassThroughData.class), any());
 
-    assertThat(stepResponse.getStepOutcomes()).hasSize(1);
+    assertThat(stepResponse.getStepOutcomes()).hasSize(2);
     StepResponse.StepOutcome planOutcome = stepResponse.getStepOutcomes().iterator().next();
     assertThat(planOutcome.getName()).isEqualTo(TerraformPlanOutcome.OUTCOME_NAME);
     assertThat(planOutcome.getOutcome()).isInstanceOf(TerraformPlanOutcome.class);
     TerraformPlanOutcome terraformPlanOutcome = (TerraformPlanOutcome) planOutcome.getOutcome();
     assertThat(terraformPlanOutcome.getJsonFilePath())
         .isEqualTo(TerraformPlanJsonFunctor.getExpression("step1", "outputPlanJson"));
+
+    StepResponse.StepOutcome stepOutcome2 = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(1);
+    assertThat(stepOutcome2.getName()).isEqualTo(TerraformGitRevisionOutcome.OUTCOME_NAME);
   }
 
   @Test
@@ -1003,13 +1026,16 @@ public class TerraformPlanStepV2Test extends CategoryTest {
     verify(terraformStepHelper)
         .saveTerraformPlanExecutionDetails(eq(ambiance), eq(ngResponse), eq("provisioner1"), any());
 
-    assertThat(stepResponse.getStepOutcomes()).hasSize(1);
+    assertThat(stepResponse.getStepOutcomes()).hasSize(2);
     StepResponse.StepOutcome planOutcome = stepResponse.getStepOutcomes().iterator().next();
     assertThat(planOutcome.getName()).isEqualTo(TerraformPlanOutcome.OUTCOME_NAME);
     assertThat(planOutcome.getOutcome()).isInstanceOf(TerraformPlanOutcome.class);
     TerraformPlanOutcome terraformPlanOutcome = (TerraformPlanOutcome) planOutcome.getOutcome();
     assertThat(terraformPlanOutcome.getHumanReadableFilePath())
         .isEqualTo(TerraformHumanReadablePlanFunctor.getExpression("step1", "humanReadablePlan"));
+
+    StepResponse.StepOutcome stepOutcome2 = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(1);
+    assertThat(stepOutcome2.getName()).isEqualTo(TerraformGitRevisionOutcome.OUTCOME_NAME);
   }
 
   @Test

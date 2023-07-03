@@ -1,3 +1,3 @@
 {
-    "eventData" : "${WEBHOOK_EVENT_DATA}"
+    "eventData" : ${WEBHOOK_EVENT_DATA}
 }

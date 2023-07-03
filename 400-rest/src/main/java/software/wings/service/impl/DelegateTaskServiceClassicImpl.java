@@ -1231,20 +1231,21 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
         // TODO: add metrics for new APIs
         // delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_ACQUIRE);
-        return Optional.of(
-            AcquireTasksResponse.newBuilder()
-                .addTask(TaskPayload.newBuilder()
-                             .setId(taskId)
-                             .setInfraData(InputData.newBuilder()
-                                               .setBinaryData(ByteString.copyFrom(delegateTask.getRunnerData()))
-                                               .build())
-                             .setTaskData(InputData.newBuilder()
-                                              .setBinaryData(ByteString.copyFrom(delegateTask.getTaskData()))
-                                              .build())
-                             .setResourceUri(delegateTask.getRequestUri())
-                             .setResourceMethod(delegateTask.getRequestMethod())
-                             .build())
-                .build());
+        var builder = TaskPayload.newBuilder()
+                          .setId(taskId)
+                          .setExecutionInfraId(delegateTask.getInfraId())
+                          .setResourceUri(delegateTask.getRequestUri())
+                          .setResourceMethod(delegateTask.getRequestMethod());
+        if (Objects.nonNull(delegateTask.getRunnerData())) {
+          builder.setInfraData(
+              InputData.newBuilder().setBinaryData(ByteString.copyFrom(delegateTask.getRunnerData())).build());
+        }
+        if (Objects.nonNull(delegateTask.getTaskData())) {
+          builder.setTaskData(
+              InputData.newBuilder().setBinaryData(ByteString.copyFrom(delegateTask.getTaskData())).build());
+        }
+
+        return Optional.of(AcquireTasksResponse.newBuilder().addTask(builder.build()).build());
       }
     } finally {
       log.debug("Done with acquire delegate task{} ", taskId);

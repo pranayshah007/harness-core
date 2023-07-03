@@ -148,6 +148,7 @@ public interface EntityTypeConstants {
   String CUSTOM_APPROVAL = "CustomApproval";
   String BARRIER = "Barrier";
   String Verify = "Verify";
+  String ANALYZE_DEPLOYMENT_IMPACT = "AnalyzeDeploymentImpact";
   String FlagConfiguration = "FlagConfiguration";
   String OPAPOLICIES = "GovernancePolicies";
   String POLICY_STEP = "Policy";

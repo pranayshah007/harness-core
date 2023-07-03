@@ -46,7 +46,7 @@ public class NGGitOpsTaskParams implements TaskParameters, ExecutionCapabilityDe
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> capabilities = new ArrayList<>();
-    if (GitOpsTaskType.CREATE_PR.equals(gitOpsTaskType) || GitOpsTaskType.UPDATE_RELEASE_REPO.equals(gitOpsTaskType)) {
+    if (GitOpsTaskType.UPDATE_RELEASE_REPO.equals(gitOpsTaskType)) {
       GitStoreDelegateConfig gitStoreDelegateConfig = gitFetchFilesConfig.getGitStoreDelegateConfig();
       capabilities.addAll(GitCapabilityHelper.fetchRequiredExecutionCapabilities(
           ScmConnectorMapper.toGitConfigDTO(gitFetchFilesConfig.getGitStoreDelegateConfig().getGitConfigDTO()),

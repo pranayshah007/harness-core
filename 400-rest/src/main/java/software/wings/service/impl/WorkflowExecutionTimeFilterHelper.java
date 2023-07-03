@@ -64,10 +64,17 @@ public class WorkflowExecutionTimeFilterHelper {
             .filter(searchFilter -> searchFilter.getFieldName().equals(WorkflowExecutionKeys.createdAt))
             .collect(Collectors.toList());
 
-    if (isEmpty(searchFiltersForTime) && appIdFilterOpt.isPresent()) {
-      log.info("Automatically adding search filter of 3 months");
-      Object[] threeMonthsOldTime = new Object[] {System.currentTimeMillis() - MAXIMUM_DURATION_WITH_APPID.toMillis()};
-      pageRequest.addFilter(WorkflowExecutionKeys.createdAt, Operator.GE, threeMonthsOldTime);
+    if (isEmpty(searchFiltersForTime)) {
+      if (appIdFilterOpt.isPresent()) {
+        log.info("Automatically adding search filter of 3 months");
+        Object[] threeMonthsOldTime =
+            new Object[] {System.currentTimeMillis() - MAXIMUM_DURATION_WITH_APPID.toMillis()};
+        pageRequest.addFilter(WorkflowExecutionKeys.createdAt, Operator.GE, threeMonthsOldTime);
+        return;
+      }
+      log.info("Automatically adding search filter of 1 month");
+      Object[] oneMonthOldTime = new Object[] {System.currentTimeMillis() - MAXIMUM_DURATION_WITHOUT_APPID.toMillis()};
+      pageRequest.addFilter(WorkflowExecutionKeys.createdAt, Operator.GE, oneMonthOldTime);
       return;
     }
 

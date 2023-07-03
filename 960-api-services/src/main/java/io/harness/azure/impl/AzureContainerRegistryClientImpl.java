@@ -230,7 +230,6 @@ public class AzureContainerRegistryClientImpl extends AzureClient implements Azu
     WingsException we;
     try {
       log.info(format("Fetching ACR refresh token for registry %s", registryUrl));
-      log.trace(format("Using access token %s", azureAccessToken));
 
       AzureContainerRegistryRestClient acrRestClient =
           getAzureRestClient(buildRepositoryHostUrl(registryUrl), AzureContainerRegistryRestClient.class);
@@ -238,7 +237,6 @@ public class AzureContainerRegistryClientImpl extends AzureClient implements Azu
           acrRestClient.getRefreshToken(AzureConstants.ACCESS_TOKEN, azureAccessToken, registryUrl).execute();
       if (response.isSuccessful()) {
         String refreshToken = response.body().getRefreshToken();
-        log.trace(format("Retrieved Refresh token: %s", refreshToken));
 
         return refreshToken;
       } else {
@@ -260,7 +258,6 @@ public class AzureContainerRegistryClientImpl extends AzureClient implements Azu
     String errMsg;
     try {
       log.info(format("Fetching ACR access token for registry %s and scope %s", registryUrl, scope));
-      log.trace(format("Using access token %s", azureAccessToken));
 
       AzureContainerRegistryRestClient acrRestClient =
           getAzureRestClient(buildRepositoryHostUrl(registryUrl), AzureContainerRegistryRestClient.class);
@@ -271,7 +268,6 @@ public class AzureContainerRegistryClientImpl extends AzureClient implements Azu
 
       if (response.isSuccessful()) {
         String acrAccessToken = response.body().getAccessToken();
-        log.trace(format("Retrieved ACR access token: %s", acrAccessToken));
 
         return acrAccessToken;
       } else {

@@ -101,3 +101,18 @@ serviceGuardIteratorConfig:
   threadPoolCount: 3
   enabled: true
   targetIntervalInSeconds: 60
+
+redisLockConfig:
+  sentinel: false
+  masterName: "test"
+  redisUrl: "redis://localhost:6379"
+  sentinelUrls:
+    - "redis://redis1:26379"
+    - "redis://redis2:26379"
+    - "redis://redis3:26379"
+  envNamespace: ""
+  readMode: MASTER
+  nettyThreads: 16
+  useScriptCache: true
+  userName: ""
+  password: ""

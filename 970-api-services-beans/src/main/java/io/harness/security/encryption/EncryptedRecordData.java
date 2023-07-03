@@ -9,6 +9,7 @@ package io.harness.security.encryption;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -28,6 +29,7 @@ import lombok.ToString;
 @Builder
 @ToString(exclude = {"encryptionKey", "encryptedValue", "backupEncryptionKey", "backupEncryptedValue"})
 @TargetModule(HarnessModule._980_COMMONS)
+@RecasterAlias("io.harness.security.encryption.EncryptedRecordData")
 public class EncryptedRecordData implements EncryptedRecord {
   private String uuid;
   private String name;

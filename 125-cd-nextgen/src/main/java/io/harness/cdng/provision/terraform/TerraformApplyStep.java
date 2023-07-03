@@ -17,6 +17,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.provision.ProvisionerOutputHelper;
+import io.harness.cdng.provision.terraform.outcome.TerraformGitRevisionOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.TaskData;
@@ -60,6 +61,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
@@ -247,7 +249,7 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
                     ? helper.prepareTerraformConfigFileInfo(inheritOutput.getFileStorageConfigDTO(), ambiance)
                     : helper.getFileStoreFetchFilesConfig(
                         inheritOutput.getFileStoreConfig(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
-            .varFileInfos(helper.prepareTerraformVarFileInfo(inheritOutput.getVarFileConfigs(), ambiance))
+            .varFileInfos(helper.prepareTerraformVarFileInfo(inheritOutput.getVarFileConfigs(), ambiance, false))
             .backendConfig(inheritOutput.getBackendConfig())
             .backendConfigFileInfo(helper.prepareTerraformBackendConfigFileInfo(
                 inheritOutput.getBackendConfigurationFileConfig(), ambiance))
@@ -355,7 +357,16 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
               ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance),
           terraformTaskNGResponse.getStateFileId());
     }
-    return stepResponseBuilder.build();
+
+    Map<String, String> outputKeys = helper.getRevisionsMap(stepParameters.getConfiguration().getSpec().getVarFiles(),
+        terraformTaskNGResponse.getCommitIdForConfigFilesMap());
+
+    return stepResponseBuilder
+        .stepOutcome(StepResponse.StepOutcome.builder()
+                         .name(TerraformGitRevisionOutcome.OUTCOME_NAME)
+                         .outcome(TerraformGitRevisionOutcome.builder().revisions(outputKeys).build())
+                         .build())
+        .build();
   }
 
   private StepResponse handleTaskResultInherited(Ambiance ambiance, TerraformApplyStepParameters stepParameters,
@@ -375,7 +386,16 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
               ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance),
           terraformTaskNGResponse.getStateFileId());
     }
-    return stepResponseBuilder.build();
+
+    Map<String, String> outputKeys =
+        helper.getRevisionsMap(Collections.emptyList(), terraformTaskNGResponse.getCommitIdForConfigFilesMap());
+
+    return stepResponseBuilder
+        .stepOutcome(StepResponse.StepOutcome.builder()
+                         .name(TerraformGitRevisionOutcome.OUTCOME_NAME)
+                         .outcome(TerraformGitRevisionOutcome.builder().revisions(outputKeys).build())
+                         .build())
+        .build();
   }
 
   private void addStepOutcome(Ambiance ambiance, StepResponseBuilder stepResponseBuilder, String outputs,

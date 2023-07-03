@@ -547,8 +547,6 @@ public class ImagePullSecretUtils {
 
     String token = format("\"%s\"", accessTokenResponse.getToken());
 
-    log.trace(format("Fetched token: %s", token));
-
     imageDetailsBuilder.username(ACR_DUMMY_DOCKER_USERNAME);
     imageDetailsBuilder.password(token);
   }

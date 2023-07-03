@@ -108,8 +108,8 @@ git push origin release/${PURPOSE}/${VERSION}xx
 
 
 #creating the fix version
-chmod +x 332-ci-manager/release/release-branch-create-cie-versions.sh
-332-ci-manager/release/release-branch-create-cie-versions.sh
+chmod +x 332-ci-manager/release/release-branch-create-cie-version.sh
+332-ci-manager/release/release-branch-create-cie-version.sh
 
 chmod +x 332-ci-manager/release/release-branch-update-jiras.sh
 332-ci-manager/release/release-branch-update-jiras.sh
