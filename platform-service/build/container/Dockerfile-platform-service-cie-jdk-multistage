@@ -6,14 +6,14 @@
 FROM us.gcr.io/platform-205701/cie-agent-harness-core-jdk11:latest as builder
 
 RUN mkdir -p /app
-
+ARG GCP_KEY
 COPY . /app
 
 WORKDIR /app
 
 ENV BUILD_PURPOSE=DEVELOPMENT
 
-RUN echo $PLUGIN_GCP_KEY
+RUN echo $GCP_KEY
 RUN chmod +x /app/platform-service/build/feature_build.sh \
     && chmod +x /app/platform-service/build/build_jar.sh \
     && chmod +x /app/platform-service/build/build_dist.sh \
@@ -23,7 +23,7 @@ RUN chmod +x /app/platform-service/build/feature_build.sh \
     && chmod +x /app/bazelrc.common \
     && chmod +x /app/bazelrc.local \
     && /app/scripts/bazel/generate_credentials.sh \
-    && /app/platform-service/build/feature_build.sh $PLUGIN_GCP_KEY \
+    && /app/platform-service/build/feature_build.sh $GCP_KEY \
     && /app/platform-service/build/build_jar.sh \
     && /app/platform-service/build/build_dist.sh
 
