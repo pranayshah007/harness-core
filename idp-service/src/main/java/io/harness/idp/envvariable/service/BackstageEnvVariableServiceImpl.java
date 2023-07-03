@@ -383,11 +383,33 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
   }
 
   private String getDecryptedValue(String envName, String secretIdentifier, String accountIdentifier) {
-    DecryptedSecretValue decryptedValue =
-        ngSecretService.getDecryptedSecretValue(accountIdentifier, null, null, secretIdentifier);
-    if (envName.equals(GITHUB_APP_PRIVATE_KEY_REF)) {
-      decryptedValue.setDecryptedValue(new String(Base64.getDecoder().decode(decryptedValue.getDecryptedValue())));
+    int maxRetries = 3;
+    int baseDelayMillis = 1000;
+    int retryAttempts = 0;
+
+    while (retryAttempts < maxRetries) {
+      try {
+        DecryptedSecretValue decryptedValue =
+            ngSecretService.getDecryptedSecretValue(accountIdentifier, null, null, secretIdentifier);
+        if (envName.equals(GITHUB_APP_PRIVATE_KEY_REF)) {
+          decryptedValue.setDecryptedValue(new String(Base64.getDecoder().decode(decryptedValue.getDecryptedValue())));
+        }
+        return decryptedValue.getDecryptedValue();
+      } catch (Exception e) {
+        log.warn("Error while decrypting secret {} for account {}", secretIdentifier, accountIdentifier, e);
+
+        int delayMillis = (int) (baseDelayMillis * Math.pow(2, retryAttempts));
+
+        try {
+          Thread.sleep(delayMillis);
+        } catch (InterruptedException ignored) {
+          Thread.currentThread().interrupt();
+        }
+
+        retryAttempts++;
+      }
     }
-    return decryptedValue.getDecryptedValue();
+
+    throw new RuntimeException("Failed to retrieve decrypted value after multiple retries.");
   }
 }

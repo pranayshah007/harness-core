@@ -36,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
-@NextGenManagerAuth
+//@NextGenManagerAuth
 @Slf4j
 public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
   private IdpCommonService idpCommonService;
