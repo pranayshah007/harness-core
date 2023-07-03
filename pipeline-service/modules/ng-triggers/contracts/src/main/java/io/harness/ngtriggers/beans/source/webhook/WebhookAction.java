@@ -97,7 +97,7 @@ public enum WebhookAction {
     switch (event) {
       case PULL_REQUEST:
         return EnumSet.of(
-            BT_PULL_REQUEST_CREATED, BT_PULL_REQUEST_UPDATED, BT_PULL_REQUEST_MERGED, BT_PULL_REQUEST_DECLINED);
+                BT_PULL_REQUEST_CREATED, BT_PULL_REQUEST_UPDATED, BT_PULL_REQUEST_MERGED, BT_PULL_REQUEST_DECLINED);
       case PUSH:
         return emptySet();
       case PR_COMMENT:

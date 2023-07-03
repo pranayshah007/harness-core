@@ -87,67 +87,67 @@ public class GithubIssueCommentTriggerFilterTest extends CategoryTest {
   @Mock WebhookParserSCMService webhookParserSCMService;
   @Mock PayloadConditionsTriggerFilter payloadConditionsTriggerFilter;
   private static Repository repository1 = Repository.builder()
-                                              .httpURL("https://github.com/owner1/repo1.git")
-                                              .sshURL("git@github.com:owner1/repo1.git")
-                                              .link("https://github.com/owner1/repo1/b")
-                                              .build();
+          .httpURL("https://github.com/owner1/repo1.git")
+          .sshURL("git@github.com:owner1/repo1.git")
+          .link("https://github.com/owner1/repo1/b")
+          .build();
 
   String pushPayload = "{\"commits\": [\n"
-      + "  {\n"
-      + "    \"id\": \"3a45ee02a55a29d696a2a1b0b923efa81523bb6c\",\n"
-      + "    \"tree_id\": \"cc8524297287b55f07e38c56ecd43625f935252f\",\n"
-      + "    \"distinct\": true,\n"
-      + "    \"message\": \"nn\",\n"
-      + "    \"timestamp\": \"2021-06-25T14:52:49-07:00\",\n"
-      + "    \"url\": \"https://github.com/wings-software/cicddemo/commit/3a45ee02a55a29d696a2a1b0b923efa81523bb6c\",\n"
-      + "    \"author\": {\n"
-      + "      \"name\": \"Adwait Bhandare\",\n"
-      + "      \"email\": \"adwait.bhandare@harness.io\",\n"
-      + "      \"username\": \"adwaitabhandare\"\n"
-      + "    },\n"
-      + "    \"committer\": {\n"
-      + "      \"name\": \"GitHub\",\n"
-      + "      \"email\": \"noreply@github.com\",\n"
-      + "      \"username\": \"web-flow\"\n"
-      + "    },\n"
-      + "    \"added\": [\n"
-      + "      \"spec/manifest1.yml\"\n"
-      + "    ],\n"
-      + "    \"removed\": [\n"
-      + "      \"File1_Removed.txt\"\n"
-      + "    ],\n"
-      + "    \"modified\": [\n"
-      + "      \"values/value1.yml\"\n"
-      + "    ]\n"
-      + "  }, \n"
-      + "  {\n"
-      + "    \"id\": \"3a45ee02a55a29d696a2a1b0b923efa81523bb6c\",\n"
-      + "    \"tree_id\": \"cc8524297287b55f07e38c56ecd43625f935252f\",\n"
-      + "    \"distinct\": true,\n"
-      + "    \"message\": \"nn\",\n"
-      + "    \"timestamp\": \"2021-06-25T14:52:49-07:00\",\n"
-      + "    \"url\": \"https://github.com/wings-software/cicddemo/commit/3a45ee02a55a29d696a2a1b0b923efa81523bb6c\",\n"
-      + "    \"author\": {\n"
-      + "      \"name\": \"Adwait Bhandare\",\n"
-      + "      \"email\": \"adwait.bhandare@harness.io\",\n"
-      + "      \"username\": \"adwaitabhandare\"\n"
-      + "    },\n"
-      + "    \"committer\": {\n"
-      + "      \"name\": \"GitHub\",\n"
-      + "      \"email\": \"noreply@github.com\",\n"
-      + "      \"username\": \"web-flow\"\n"
-      + "    },\n"
-      + "    \"added\": [\n"
-      + "      \"spec/manifest2.yml\"\n"
-      + "    ],\n"
-      + "    \"removed\": [\n"
-      + "      \"File2_Removed.txt\"\n"
-      + "    ],\n"
-      + "    \"modified\": [\n"
-      + "      \"values/value2.yml\"\n"
-      + "    ]\n"
-      + "  }\n"
-      + "]}";
+          + "  {\n"
+          + "    \"id\": \"3a45ee02a55a29d696a2a1b0b923efa81523bb6c\",\n"
+          + "    \"tree_id\": \"cc8524297287b55f07e38c56ecd43625f935252f\",\n"
+          + "    \"distinct\": true,\n"
+          + "    \"message\": \"nn\",\n"
+          + "    \"timestamp\": \"2021-06-25T14:52:49-07:00\",\n"
+          + "    \"url\": \"https://github.com/wings-software/cicddemo/commit/3a45ee02a55a29d696a2a1b0b923efa81523bb6c\",\n"
+          + "    \"author\": {\n"
+          + "      \"name\": \"Adwait Bhandare\",\n"
+          + "      \"email\": \"adwait.bhandare@harness.io\",\n"
+          + "      \"username\": \"adwaitabhandare\"\n"
+          + "    },\n"
+          + "    \"committer\": {\n"
+          + "      \"name\": \"GitHub\",\n"
+          + "      \"email\": \"noreply@github.com\",\n"
+          + "      \"username\": \"web-flow\"\n"
+          + "    },\n"
+          + "    \"added\": [\n"
+          + "      \"spec/manifest1.yml\"\n"
+          + "    ],\n"
+          + "    \"removed\": [\n"
+          + "      \"File1_Removed.txt\"\n"
+          + "    ],\n"
+          + "    \"modified\": [\n"
+          + "      \"values/value1.yml\"\n"
+          + "    ]\n"
+          + "  }, \n"
+          + "  {\n"
+          + "    \"id\": \"3a45ee02a55a29d696a2a1b0b923efa81523bb6c\",\n"
+          + "    \"tree_id\": \"cc8524297287b55f07e38c56ecd43625f935252f\",\n"
+          + "    \"distinct\": true,\n"
+          + "    \"message\": \"nn\",\n"
+          + "    \"timestamp\": \"2021-06-25T14:52:49-07:00\",\n"
+          + "    \"url\": \"https://github.com/wings-software/cicddemo/commit/3a45ee02a55a29d696a2a1b0b923efa81523bb6c\",\n"
+          + "    \"author\": {\n"
+          + "      \"name\": \"Adwait Bhandare\",\n"
+          + "      \"email\": \"adwait.bhandare@harness.io\",\n"
+          + "      \"username\": \"adwaitabhandare\"\n"
+          + "    },\n"
+          + "    \"committer\": {\n"
+          + "      \"name\": \"GitHub\",\n"
+          + "      \"email\": \"noreply@github.com\",\n"
+          + "      \"username\": \"web-flow\"\n"
+          + "    },\n"
+          + "    \"added\": [\n"
+          + "      \"spec/manifest2.yml\"\n"
+          + "    ],\n"
+          + "    \"removed\": [\n"
+          + "      \"File2_Removed.txt\"\n"
+          + "    ],\n"
+          + "    \"modified\": [\n"
+          + "      \"values/value2.yml\"\n"
+          + "    ]\n"
+          + "  }\n"
+          + "]}";
 
   @Before
   public void setUp() throws IOException, IllegalAccessException {
@@ -169,75 +169,75 @@ public class GithubIssueCommentTriggerFilterTest extends CategoryTest {
     Long creatAt = 12L;
     ClassLoader classLoader = getClass().getClassLoader();
     String ngTriggerYaml_github_pr =
-        Resources.toString(Objects.requireNonNull(classLoader.getResource("ng-trigger-github-filePath-pr-v2.yaml")),
-            StandardCharsets.UTF_8);
+            Resources.toString(Objects.requireNonNull(classLoader.getResource("ng-trigger-github-filePath-pr-v2.yaml")),
+                    StandardCharsets.UTF_8);
     NGTriggerConfigV2 ngTriggerConfigV2 = ngTriggerElementMapper.toTriggerConfigV2(ngTriggerYaml_github_pr);
     ParseWebhookResponse parseWebhookResponse =
-        ParseWebhookResponse.newBuilder()
-            .setPr(PullRequestHook.newBuilder().setPr(PullRequest.newBuilder().setNumber(2).build()).build())
-            .setComment(IssueCommentHook.newBuilder()
+            ParseWebhookResponse.newBuilder()
+                    .setPr(PullRequestHook.newBuilder().setPr(PullRequest.newBuilder().setNumber(2).build()).build())
+                    .setComment(IssueCommentHook.newBuilder()
                             .setIssue(Issue.newBuilder().setPr(PullRequest.newBuilder().build()).build())
                             .build())
-            .setPush(PushHook.newBuilder().addCommits(Commit.newBuilder().build()).build())
-            .build();
+                    .setPush(PushHook.newBuilder().addCommits(Commit.newBuilder().build()).build())
+                    .build();
     TriggerDetails details1 =
-        TriggerDetails.builder()
-            .ngTriggerEntity(
-                NGTriggerEntity.builder()
-                    .accountId("acc")
-                    .orgIdentifier("org")
-                    .projectIdentifier("proj")
-                    .metadata(NGTriggerMetadata.builder()
-                                  .webhook(WebhookMetadata.builder()
-                                               .type("GITHUB")
-                                               .git(GitMetadata.builder().connectorIdentifier("account.con1").build())
-                                               .build())
-                                  .build())
-                    .build())
-            .ngTriggerConfigV2(ngTriggerConfigV2)
-            .build();
+            TriggerDetails.builder()
+                    .ngTriggerEntity(
+                            NGTriggerEntity.builder()
+                                    .accountId("acc")
+                                    .orgIdentifier("org")
+                                    .projectIdentifier("proj")
+                                    .metadata(NGTriggerMetadata.builder()
+                                            .webhook(WebhookMetadata.builder()
+                                                    .type("GITHUB")
+                                                    .git(GitMetadata.builder().connectorIdentifier("account.con1").build())
+                                                    .build())
+                                            .build())
+                                    .build())
+                    .ngTriggerConfigV2(ngTriggerConfigV2)
+                    .build();
 
     TriggerWebhookEvent triggerWebhookEvent =
-        TriggerWebhookEvent.builder().payload(pushPayload).sourceRepoType("Github").createdAt(creatAt).build();
+            TriggerWebhookEvent.builder().payload(pushPayload).sourceRepoType("Github").createdAt(creatAt).build();
 
     FilterRequestData filterRequestData =
-        FilterRequestData.builder()
-            .accountId("p")
-            .webhookPayloadData(
-                WebhookPayloadData.builder()
-                    .originalEvent(TriggerWebhookEvent.builder().accountId("acc").sourceRepoType("GITHUB").build())
-                    .webhookEvent(IssueCommentWebhookEvent.builder().pullRequestNum("20").build())
-                    .originalEvent(triggerWebhookEvent)
-                    .parseWebhookResponse(parseWebhookResponse)
-                    .repository(repository1)
-                    .build())
-            .pollingResponse(PollingResponse.newBuilder()
-                                 .setBuildInfo(BuildInfo.newBuilder()
-                                                   .addAllVersions(Collections.singletonList("release.1234"))
-                                                   .addAllMetadata(Collections.singletonList(
-                                                       Metadata.newBuilder().putAllMetadata(metadata).build()))
-                                                   .build())
-                                 .build())
-            .details(asList(details1))
-            .build();
+            FilterRequestData.builder()
+                    .accountId("p")
+                    .webhookPayloadData(
+                            WebhookPayloadData.builder()
+                                    .originalEvent(TriggerWebhookEvent.builder().accountId("acc").sourceRepoType("GITHUB").build())
+                                    .webhookEvent(IssueCommentWebhookEvent.builder().pullRequestNum("20").build())
+                                    .originalEvent(triggerWebhookEvent)
+                                    .parseWebhookResponse(parseWebhookResponse)
+                                    .repository(repository1)
+                                    .build())
+                    .pollingResponse(PollingResponse.newBuilder()
+                            .setBuildInfo(BuildInfo.newBuilder()
+                                    .addAllVersions(Collections.singletonList("release.1234"))
+                                    .addAllMetadata(Collections.singletonList(
+                                            Metadata.newBuilder().putAllMetadata(metadata).build()))
+                                    .build())
+                            .build())
+                    .details(asList(details1))
+                    .build();
     byte[] data = new byte[0];
     final URL testFile = classLoader.getResource("github_PR.json");
     String prJson = Resources.toString(testFile, Charsets.UTF_8);
     doReturn(BinaryResponseData.builder().data(data).build()).when(taskExecutionUtils).executeSyncTask(any());
     doReturn(GitApiTaskResponse.builder()
-                 .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-                 .gitApiResult(GitApiFindPRTaskResponse.builder().prJson(prJson).build())
-                 .build())
-        .when(kryoSerializer)
-        .asInflatedObject(any());
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .gitApiResult(GitApiFindPRTaskResponse.builder().prJson(prJson).build())
+            .build())
+            .when(kryoSerializer)
+            .asInflatedObject(any());
     doReturn(WebhookEventMappingResponse.builder()
-                 .webhookEventResponse(TriggerEventResponse.builder().payload(pushPayload).build())
-                 .failedToFindTrigger(false)
-                 .build())
-        .when(payloadConditionsTriggerFilter)
-        .applyFilter(filterRequestData);
+            .webhookEventResponse(TriggerEventResponse.builder().payload(pushPayload).build())
+            .failedToFindTrigger(false)
+            .build())
+            .when(payloadConditionsTriggerFilter)
+            .applyFilter(filterRequestData);
     WebhookEventMappingResponse webhookEventMappingResponse =
-        githubIssueCommentTriggerFilter.applyFilter(filterRequestData);
+            githubIssueCommentTriggerFilter.applyFilter(filterRequestData);
     assertThat(webhookEventMappingResponse).isNotNull();
     assertThat(webhookEventMappingResponse.isFailedToFindTrigger()).isFalse();
   }
@@ -252,76 +252,76 @@ public class GithubIssueCommentTriggerFilterTest extends CategoryTest {
     Long creatAt = 12L;
     ClassLoader classLoader = getClass().getClassLoader();
     String ngTriggerYaml_github_pr =
-        Resources.toString(Objects.requireNonNull(classLoader.getResource("ng-trigger-github-filePath-pr-v2.yaml")),
-            StandardCharsets.UTF_8);
+            Resources.toString(Objects.requireNonNull(classLoader.getResource("ng-trigger-github-filePath-pr-v2.yaml")),
+                    StandardCharsets.UTF_8);
     NGTriggerConfigV2 ngTriggerConfigV2 = ngTriggerElementMapper.toTriggerConfigV2(ngTriggerYaml_github_pr);
     ParseWebhookResponse parseWebhookResponse =
-        ParseWebhookResponse.newBuilder()
-            .setPr(PullRequestHook.newBuilder().setPr(PullRequest.newBuilder().setNumber(2).build()).build())
-            .setComment(IssueCommentHook.newBuilder()
+            ParseWebhookResponse.newBuilder()
+                    .setPr(PullRequestHook.newBuilder().setPr(PullRequest.newBuilder().setNumber(2).build()).build())
+                    .setComment(IssueCommentHook.newBuilder()
                             .setIssue(Issue.newBuilder().setPr(PullRequest.newBuilder().build()).build())
                             .build())
-            .setPush(PushHook.newBuilder().addCommits(Commit.newBuilder().build()).build())
-            .build();
+                    .setPush(PushHook.newBuilder().addCommits(Commit.newBuilder().build()).build())
+                    .build();
     TriggerDetails details1 =
-        TriggerDetails.builder()
-            .ngTriggerEntity(
-                NGTriggerEntity.builder()
-                    .accountId("acc")
-                    .orgIdentifier("org")
-                    .projectIdentifier("proj")
-                    .metadata(NGTriggerMetadata.builder()
-                                  .webhook(WebhookMetadata.builder()
-                                               .type("GITHUB")
-                                               .git(GitMetadata.builder().connectorIdentifier("account.con1").build())
-                                               .build())
-                                  .build())
-                    .build())
-            .ngTriggerConfigV2(ngTriggerConfigV2)
-            .build();
+            TriggerDetails.builder()
+                    .ngTriggerEntity(
+                            NGTriggerEntity.builder()
+                                    .accountId("acc")
+                                    .orgIdentifier("org")
+                                    .projectIdentifier("proj")
+                                    .metadata(NGTriggerMetadata.builder()
+                                            .webhook(WebhookMetadata.builder()
+                                                    .type("GITHUB")
+                                                    .git(GitMetadata.builder().connectorIdentifier("account.con1").build())
+                                                    .build())
+                                            .build())
+                                    .build())
+                    .ngTriggerConfigV2(ngTriggerConfigV2)
+                    .build();
 
     TriggerWebhookEvent triggerWebhookEvent =
-        TriggerWebhookEvent.builder().payload(pushPayload).sourceRepoType("Github").createdAt(creatAt).build();
+            TriggerWebhookEvent.builder().payload(pushPayload).sourceRepoType("Github").createdAt(creatAt).build();
 
     FilterRequestData filterRequestData =
-        FilterRequestData.builder()
-            .accountId("p")
-            .webhookPayloadData(
-                WebhookPayloadData.builder()
-                    .originalEvent(TriggerWebhookEvent.builder().accountId("acc").sourceRepoType("GITHUB").build())
-                    .webhookEvent(IssueCommentWebhookEvent.builder().pullRequestNum("20").build())
-                    .originalEvent(triggerWebhookEvent)
-                    .parseWebhookResponse(parseWebhookResponse)
-                    .repository(repository1)
-                    .build())
-            .pollingResponse(PollingResponse.newBuilder()
-                                 .setBuildInfo(BuildInfo.newBuilder()
-                                                   .addAllVersions(Collections.singletonList("release.1234"))
-                                                   .addAllMetadata(Collections.singletonList(
-                                                       Metadata.newBuilder().putAllMetadata(metadata).build()))
-                                                   .build())
-                                 .build())
-            .details(asList(details1))
-            .build();
+            FilterRequestData.builder()
+                    .accountId("p")
+                    .webhookPayloadData(
+                            WebhookPayloadData.builder()
+                                    .originalEvent(TriggerWebhookEvent.builder().accountId("acc").sourceRepoType("GITHUB").build())
+                                    .webhookEvent(IssueCommentWebhookEvent.builder().pullRequestNum("20").build())
+                                    .originalEvent(triggerWebhookEvent)
+                                    .parseWebhookResponse(parseWebhookResponse)
+                                    .repository(repository1)
+                                    .build())
+                    .pollingResponse(PollingResponse.newBuilder()
+                            .setBuildInfo(BuildInfo.newBuilder()
+                                    .addAllVersions(Collections.singletonList("release.1234"))
+                                    .addAllMetadata(Collections.singletonList(
+                                            Metadata.newBuilder().putAllMetadata(metadata).build()))
+                                    .build())
+                            .build())
+                    .details(asList(details1))
+                    .build();
     byte[] data = new byte[0];
     doReturn(BinaryResponseData.builder().data(data).build()).when(taskExecutionUtils).executeSyncTask(any());
     doReturn(GitApiTaskResponse.builder()
-                 .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-                 .gitApiResult(GitApiFindPRTaskResponse.builder().prJson("").build())
-                 .build())
-        .when(kryoSerializer)
-        .asInflatedObject(any());
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .gitApiResult(GitApiFindPRTaskResponse.builder().prJson("").build())
+            .build())
+            .when(kryoSerializer)
+            .asInflatedObject(any());
     doReturn(WebhookEventMappingResponse.builder()
-                 .webhookEventResponse(TriggerEventResponse.builder().payload(pushPayload).build())
-                 .failedToFindTrigger(false)
-                 .build())
-        .when(payloadConditionsTriggerFilter)
-        .applyFilter(filterRequestData);
+            .webhookEventResponse(TriggerEventResponse.builder().payload(pushPayload).build())
+            .failedToFindTrigger(false)
+            .build())
+            .when(payloadConditionsTriggerFilter)
+            .applyFilter(filterRequestData);
     WebhookEventMappingResponse webhookEventMappingResponse =
-        githubIssueCommentTriggerFilter.applyFilter(filterRequestData);
+            githubIssueCommentTriggerFilter.applyFilter(filterRequestData);
     assertThat(webhookEventMappingResponse).isNotNull();
     assertThat(webhookEventMappingResponse.getWebhookEventResponse().getMessage())
-        .isEqualTo("Failed to fetch PR Details");
+            .isEqualTo("Failed to fetch PR Details");
     assertThat(webhookEventMappingResponse.getWebhookEventResponse().getPayload()).isEqualTo(pushPayload);
     assertThat(webhookEventMappingResponse.isFailedToFindTrigger()).isTrue();
   }
@@ -336,79 +336,79 @@ public class GithubIssueCommentTriggerFilterTest extends CategoryTest {
     Long creatAt = 12L;
     ClassLoader classLoader = getClass().getClassLoader();
     String ngTriggerYaml_github_pr =
-        Resources.toString(Objects.requireNonNull(classLoader.getResource("ng-trigger-github-filePath-pr-v2.yaml")),
-            StandardCharsets.UTF_8);
+            Resources.toString(Objects.requireNonNull(classLoader.getResource("ng-trigger-github-filePath-pr-v2.yaml")),
+                    StandardCharsets.UTF_8);
     NGTriggerConfigV2 ngTriggerConfigV2 = ngTriggerElementMapper.toTriggerConfigV2(ngTriggerYaml_github_pr);
     ParseWebhookResponse parseWebhookResponse =
-        ParseWebhookResponse.newBuilder()
-            .setPr(PullRequestHook.newBuilder().setPr(PullRequest.newBuilder().setNumber(2).build()).build())
-            .setComment(IssueCommentHook.newBuilder()
+            ParseWebhookResponse.newBuilder()
+                    .setPr(PullRequestHook.newBuilder().setPr(PullRequest.newBuilder().setNumber(2).build()).build())
+                    .setComment(IssueCommentHook.newBuilder()
                             .setIssue(Issue.newBuilder().setPr(PullRequest.newBuilder().build()).build())
                             .build())
-            .setPush(PushHook.newBuilder().addCommits(Commit.newBuilder().build()).build())
-            .build();
+                    .setPush(PushHook.newBuilder().addCommits(Commit.newBuilder().build()).build())
+                    .build();
     TriggerDetails details1 =
-        TriggerDetails.builder()
-            .ngTriggerEntity(
-                NGTriggerEntity.builder()
-                    .accountId("acc")
-                    .orgIdentifier("org")
-                    .projectIdentifier("proj")
-                    .metadata(NGTriggerMetadata.builder()
-                                  .webhook(WebhookMetadata.builder()
-                                               .type("GITHUB")
-                                               .git(GitMetadata.builder().connectorIdentifier("account.con1").build())
-                                               .build())
-                                  .build())
-                    .build())
-            .ngTriggerConfigV2(ngTriggerConfigV2)
-            .build();
+            TriggerDetails.builder()
+                    .ngTriggerEntity(
+                            NGTriggerEntity.builder()
+                                    .accountId("acc")
+                                    .orgIdentifier("org")
+                                    .projectIdentifier("proj")
+                                    .metadata(NGTriggerMetadata.builder()
+                                            .webhook(WebhookMetadata.builder()
+                                                    .type("GITHUB")
+                                                    .git(GitMetadata.builder().connectorIdentifier("account.con1").build())
+                                                    .build())
+                                            .build())
+                                    .build())
+                    .ngTriggerConfigV2(ngTriggerConfigV2)
+                    .build();
 
     TriggerWebhookEvent triggerWebhookEvent =
-        TriggerWebhookEvent.builder().payload(pushPayload).sourceRepoType("Github").createdAt(creatAt).build();
+            TriggerWebhookEvent.builder().payload(pushPayload).sourceRepoType("Github").createdAt(creatAt).build();
 
     FilterRequestData filterRequestData =
-        FilterRequestData.builder()
-            .accountId("p")
-            .webhookPayloadData(
-                WebhookPayloadData.builder()
-                    .originalEvent(TriggerWebhookEvent.builder().accountId("acc").sourceRepoType("GITHUB").build())
-                    .webhookEvent(IssueCommentWebhookEvent.builder().pullRequestNum("20").build())
-                    .originalEvent(triggerWebhookEvent)
-                    .parseWebhookResponse(parseWebhookResponse)
-                    .repository(repository1)
-                    .build())
-            .pollingResponse(PollingResponse.newBuilder()
-                                 .setBuildInfo(BuildInfo.newBuilder()
-                                                   .addAllVersions(Collections.singletonList("release.1234"))
-                                                   .addAllMetadata(Collections.singletonList(
-                                                       Metadata.newBuilder().putAllMetadata(metadata).build()))
-                                                   .build())
-                                 .build())
-            .details(asList(details1))
-            .build();
+            FilterRequestData.builder()
+                    .accountId("p")
+                    .webhookPayloadData(
+                            WebhookPayloadData.builder()
+                                    .originalEvent(TriggerWebhookEvent.builder().accountId("acc").sourceRepoType("GITHUB").build())
+                                    .webhookEvent(IssueCommentWebhookEvent.builder().pullRequestNum("20").build())
+                                    .originalEvent(triggerWebhookEvent)
+                                    .parseWebhookResponse(parseWebhookResponse)
+                                    .repository(repository1)
+                                    .build())
+                    .pollingResponse(PollingResponse.newBuilder()
+                            .setBuildInfo(BuildInfo.newBuilder()
+                                    .addAllVersions(Collections.singletonList("release.1234"))
+                                    .addAllMetadata(Collections.singletonList(
+                                            Metadata.newBuilder().putAllMetadata(metadata).build()))
+                                    .build())
+                            .build())
+                    .details(asList(details1))
+                    .build();
     byte[] data = new byte[0];
     final URL testFile = classLoader.getResource("github_PR.json");
     String prJson = Resources.toString(testFile, Charsets.UTF_8);
     doReturn(BinaryResponseData.builder().data(data).build()).when(taskExecutionUtils).executeSyncTask(any());
     doThrow(NullPointerException.class).when(webhookParserSCMService).convertPRWebhookEvent(any());
     doReturn(GitApiTaskResponse.builder()
-                 .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-                 .gitApiResult(GitApiFindPRTaskResponse.builder().prJson(prJson).build())
-                 .build())
-        .when(kryoSerializer)
-        .asInflatedObject(any());
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .gitApiResult(GitApiFindPRTaskResponse.builder().prJson(prJson).build())
+            .build())
+            .when(kryoSerializer)
+            .asInflatedObject(any());
     doReturn(WebhookEventMappingResponse.builder()
-                 .webhookEventResponse(TriggerEventResponse.builder().payload(pushPayload).build())
-                 .failedToFindTrigger(false)
-                 .build())
-        .when(payloadConditionsTriggerFilter)
-        .applyFilter(filterRequestData);
+            .webhookEventResponse(TriggerEventResponse.builder().payload(pushPayload).build())
+            .failedToFindTrigger(false)
+            .build())
+            .when(payloadConditionsTriggerFilter)
+            .applyFilter(filterRequestData);
     WebhookEventMappingResponse webhookEventMappingResponse =
-        githubIssueCommentTriggerFilter.applyFilter(filterRequestData);
+            githubIssueCommentTriggerFilter.applyFilter(filterRequestData);
     assertThat(webhookEventMappingResponse).isNotNull();
     assertThat(webhookEventMappingResponse.getWebhookEventResponse().getMessage())
-        .isEqualTo("Failed to fetch PR Details: java.lang.NullPointerException");
+            .isEqualTo("Failed to fetch PR Details: java.lang.NullPointerException");
     assertThat(webhookEventMappingResponse.getWebhookEventResponse().getPayload()).isEqualTo(pushPayload);
     assertThat(webhookEventMappingResponse.isFailedToFindTrigger()).isTrue();
   }
@@ -418,27 +418,27 @@ public class GithubIssueCommentTriggerFilterTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testFailedToFetchPr() {
     FilterRequestData filterRequestData1 =
-        FilterRequestData.builder()
-            .isCustomTrigger(false)
-            .webhookPayloadData(
-                WebhookPayloadData.builder()
-                    .originalEvent(TriggerWebhookEvent.builder().createdAt(1L).build())
-                    .webhookEvent(IssueCommentWebhookEvent.builder().pullRequestNum("pullRequestNum").build())
-                    .repository(Repository.builder().branch("branch").name("name").build())
-                    .build())
-            .details(Collections.singletonList(
-                TriggerDetails.builder()
-                    .ngTriggerEntity(NGTriggerEntity.builder()
-                                         .metadata(NGTriggerMetadata.builder()
-                                                       .webhook(WebhookMetadata.builder()
-                                                                    .git(GitMetadata.builder()
-                                                                             .connectorIdentifier("connectorIdentifier")
-                                                                             .build())
+            FilterRequestData.builder()
+                    .isCustomTrigger(false)
+                    .webhookPayloadData(
+                            WebhookPayloadData.builder()
+                                    .originalEvent(TriggerWebhookEvent.builder().createdAt(1L).build())
+                                    .webhookEvent(IssueCommentWebhookEvent.builder().pullRequestNum("pullRequestNum").build())
+                                    .repository(Repository.builder().branch("branch").name("name").build())
+                                    .build())
+                    .details(Collections.singletonList(
+                            TriggerDetails.builder()
+                                    .ngTriggerEntity(NGTriggerEntity.builder()
+                                            .metadata(NGTriggerMetadata.builder()
+                                                    .webhook(WebhookMetadata.builder()
+                                                            .git(GitMetadata.builder()
+                                                                    .connectorIdentifier("connectorIdentifier")
                                                                     .build())
-                                                       .build())
-                                         .build())
-                    .build()))
-            .build();
+                                                            .build())
+                                                    .build())
+                                            .build())
+                                    .build()))
+                    .build();
     ConnectorDetails connectorDetails = ConnectorDetails.builder().build();
     when(connectorUtils.getConnectorDetails(any(), any())).thenReturn(connectorDetails);
     BinaryResponseData binaryResponseData = BinaryResponseData.builder().build();
@@ -446,9 +446,9 @@ public class GithubIssueCommentTriggerFilterTest extends CategoryTest {
     GitApiTaskResponse gitApiTaskResponse = GitApiTaskResponse.builder().errorMessage("errorMessage").build();
     when(kryoSerializer.asInflatedObject(any())).thenReturn(gitApiTaskResponse);
     WebhookEventMappingResponse webhookEventMappingResponse1 =
-        githubIssueCommentTriggerFilter.applyFilter(filterRequestData1);
+            githubIssueCommentTriggerFilter.applyFilter(filterRequestData1);
     assertThat(webhookEventMappingResponse1.isFailedToFindTrigger()).isEqualTo(true);
     assertThat(webhookEventMappingResponse1.getWebhookEventResponse().getFinalStatus())
-        .isEqualTo(FAILED_TO_FETCH_PR_DETAILS);
+            .isEqualTo(FAILED_TO_FETCH_PR_DETAILS);
   }
 }
