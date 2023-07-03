@@ -15,7 +15,7 @@ import lombok.Value;
 import lombok.extern.jackson.Jacksonized;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "eventType", include = As.PROPERTY)
-@JsonTypeName("DelegateRequestEvent")
+@JsonTypeName("SchedulingTaskEvent")
 @Jacksonized
 @Value
 @Builder
