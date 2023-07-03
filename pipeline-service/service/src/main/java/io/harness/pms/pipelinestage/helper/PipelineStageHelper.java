@@ -86,8 +86,8 @@ public class PipelineStageHelper {
       validateNestedChainedPipeline(pipelineEntity);
     } catch (Exception e) {
       log.error("Error during nested chaining validation ", e);
-      throw NestedExceptionUtils.hintWithExplanationException(String.format(NESTED_ERROR_EXCEPTION_HINT, stageName),
-          String.format(NESTED_ERROR_EXCEPTION, stageName), null);
+      throw NestedExceptionUtils.hintWithExplanationException(
+          String.format(NESTED_ERROR_EXCEPTION_HINT, stageName), e.getMessage(), null);
     }
   }
 
@@ -155,7 +155,8 @@ public class PipelineStageHelper {
     if (yamlNode.getField(YAMLFieldNameConstants.STAGE) != null
         && yamlNode.getField(YAMLFieldNameConstants.STAGE).getNode() != null
         && yamlNode.getField(YAMLFieldNameConstants.STAGE).getNode().getType().equals("Pipeline")) {
-      throw new InvalidRequestException("Nested pipeline is not supported");
+      throw new InvalidRequestException(
+          String.format(NESTED_ERROR_EXCEPTION, yamlNode.getField(YAMLFieldNameConstants.STAGE).getNode().getName()));
     }
   }
 
