@@ -13,7 +13,6 @@ WORKDIR /app
 
 ENV BUILD_PURPOSE=DEVELOPMENT
 
-RUN echo $GCP_KEY
 RUN chmod +x /app/platform-service/build/feature_build.sh \
     && chmod +x /app/platform-service/build/build_jar.sh \
     && chmod +x /app/platform-service/build/build_dist.sh \

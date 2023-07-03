@@ -9,7 +9,6 @@ export GCP_KEY="$1"
 # GCP_KEY, HARNESS_WILD_CERT, KEYSTORE_PASS, JDK, VERSION, PURPOSE, BUILD are externally provided
 # to this script through environment variables.
 
-echo $GCP_KEY
 echo $GCP_KEY | base64 -d > /tmp/storage_secret.json
 export GCP_KEY="/tmp/storage_secret.json"
 

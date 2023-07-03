@@ -14,4 +14,4 @@ BAZEL_DIRS=${HOME}/.bazel-dirs
 BAZEL_ARGUMENTS="--show_timestamps --announce_rc --experimental_convenience_symlinks=normal --remote_download_outputs=all --symlink_prefix=${BAZEL_DIRS}/"
 PLATFORM_SERVICE_MODULE="//platform-service/service:module_deploy.jar"
 #bazel ${bazelrc} build $PLATFORM_SERVICE_MODULE ${BAZEL_ARGUMENTS}
-bazel build --remote_cache=https://storage.googleapis.com/harness-bazel-cache $PLATFORM_SERVICE_MODULE ${BAZEL_ARGUMENTS}
+bazel build --remote_cache=https://storage.googleapis.com/harness-bazel-cache --google_credentials=/tmp/storage_secret.json $PLATFORM_SERVICE_MODULE ${BAZEL_ARGUMENTS}
