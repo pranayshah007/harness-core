@@ -4000,6 +4000,57 @@ public class DelegateServiceTest extends WingsBaseTest {
     return delegateTask;
   }
 
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testDelegateNameUniquenessWithinSameScope() {
+    String accountId = generateUuid();
+    DelegateEntityOwner owner = DelegateEntityOwner.builder().identifier("orgId/projectId").build();
+    DelegateGroup delegateGroup = DelegateGroup.builder()
+                                      .name("grp1")
+                                      .accountId(accountId)
+                                      .ng(true)
+                                      .delegateType(KUBERNETES)
+                                      .description("description")
+                                      .build();
+    persistence.save(delegateGroup);
+    Delegate delegate1 = createDelegateBuilder().build();
+    delegate1.setDelegateName("Name1");
+    delegate1.setDelegateGroupId(delegateGroup.getUuid());
+    delegate1.setAccountId(accountId);
+    delegate1.setNg(true);
+    delegate1.setOwner(owner);
+    persistence.save(delegate1);
+    assertThatThrownBy(() -> delegateService.checkUniquenessOfDelegateName(accountId, "Name1", true, owner))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Delegate with same name exists. Delegate name must be unique across account.");
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testDelegateNameUniqueness() {
+    String accountId = generateUuid();
+    DelegateEntityOwner owner = DelegateEntityOwner.builder().identifier("orgId/projectId").build();
+    DelegateGroup delegateGroup = DelegateGroup.builder()
+                                      .name("grp1")
+                                      .accountId(accountId)
+                                      .ng(true)
+                                      .delegateType(KUBERNETES)
+                                      .description("description")
+                                      .build();
+    persistence.save(delegateGroup);
+    Delegate delegate1 = createDelegateBuilder().build();
+    delegate1.setDelegateName("Name1");
+    delegate1.setDelegateGroupId(delegateGroup.getUuid());
+    delegate1.setAccountId(accountId);
+    delegate1.setNg(true);
+    delegate1.setOwner(owner);
+    persistence.save(delegate1);
+    DelegateEntityOwner owner2 = DelegateEntityOwner.builder().identifier("orgId2/projectId2").build();
+    assertDoesNotThrow(() -> delegateService.checkUniquenessOfDelegateName(accountId, "Name1", true, owner2));
+  }
+
   private DelegateBuilder createDelegateBuilder() {
     return Delegate.builder()
         .accountId(ACCOUNT_ID)
