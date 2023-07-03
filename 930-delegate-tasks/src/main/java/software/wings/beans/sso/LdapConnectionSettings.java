@@ -7,31 +7,32 @@
 
 package software.wings.beans.sso;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonView;
-import com.github.reinert.jjschema.Attributes;
-import com.github.reinert.jjschema.SchemaIgnore;
+import static io.harness.annotations.dev.HarnessModule._950_NG_AUTHENTICATION_SERVICE;
+import static io.harness.annotations.dev.HarnessTeam.PL;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.encryption.Encrypted;
-import lombok.AccessLevel;
-import lombok.Data;
-import lombok.experimental.FieldDefaults;
-import org.apache.commons.lang3.StringUtils;
+
 import software.wings.annotation.EncryptableSetting;
 import software.wings.helpers.ext.ldap.LdapConnectionConfig;
 import software.wings.helpers.ext.ldap.LdapConstants;
 import software.wings.jersey.JsonViews;
 import software.wings.settings.SettingVariableTypes;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonView;
+import com.github.reinert.jjschema.Attributes;
+import com.github.reinert.jjschema.SchemaIgnore;
+import java.util.Set;
 import javax.validation.constraints.AssertTrue;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
-import java.util.Set;
-
-import static io.harness.annotations.dev.HarnessModule._950_NG_AUTHENTICATION_SERVICE;
-import static io.harness.annotations.dev.HarnessTeam.PL;
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.experimental.FieldDefaults;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Class denotes Connection settings for Ldap.

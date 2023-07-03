@@ -7,11 +7,12 @@
 
 package software.wings.beans.sso;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeName;
-import dev.morphia.annotations.Transient;
+import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
+import static software.wings.service.impl.DelegateTaskServiceClassicImpl.TASK_SELECTORS;
+
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -24,6 +25,22 @@ import io.harness.delegate.task.mixin.SocketConnectivityCapabilityGenerator;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.iterator.PersistentCronIterable;
 import io.harness.security.encryption.EncryptedDataDetail;
+
+import software.wings.helpers.ext.ldap.LdapConstants;
+import software.wings.service.intfc.security.SecretManager;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import dev.morphia.annotations.Transient;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -32,21 +49,6 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotBlank;
-import software.wings.helpers.ext.ldap.LdapConstants;
-import software.wings.service.intfc.security.SecretManager;
-
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
-
-import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static software.wings.service.impl.DelegateTaskServiceClassicImpl.TASK_SELECTORS;
 
 /**
  * Bean to store all the ldap sso provider configuration details
@@ -156,15 +158,16 @@ public class LdapSettings extends SSOSettings implements ExecutionCapabilityDema
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> executionCapabilities =
-            Collections.singletonList(SocketConnectivityCapabilityGenerator.buildSocketConnectivityCapability(
-                    connectionSettings.getHost(), Integer.toString(connectionSettings.getPort())));
+        Collections.singletonList(SocketConnectivityCapabilityGenerator.buildSocketConnectivityCapability(
+            connectionSettings.getHost(), Integer.toString(connectionSettings.getPort())));
     if (connectionSettings != null && isNotEmpty(connectionSettings.getDelegateSelectors())) {
       executionCapabilities.add(SelectorCapability.builder()
-              .selectors(connectionSettings.getDelegateSelectors())
-              .selectorOrigin(TASK_SELECTORS)
-              .build());
+                                    .selectors(connectionSettings.getDelegateSelectors())
+                                    .selectorOrigin(TASK_SELECTORS)
+                                    .build());
     }
-    return executionCapabilities;  }
+    return executionCapabilities;
+  }
 
   @Override
   public List<Long> recalculateNextIterations(String fieldName, boolean skipMissed, long throttled) {
