@@ -1185,10 +1185,9 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   @Override
   public List<Delegate> fetchActiveDelegates(DelegateTask delegateTask) {
     List<Delegate> accountDelegates = getAccountDelegates(delegateTask.getAccountId());
-    List<Delegate> nonConnectedDelegates =
-        accountDelegates.stream()
-            .filter(delegate -> !delegateDao.isDelegateHeartBeatUpToDate(delegate, MAX_DELEGATE_LONG_LAST_HEARTBEAT))
-            .collect(Collectors.toList());
+    List<Delegate> nonConnectedDelegates = accountDelegates.stream()
+                                               .filter(delegate -> !delegateDao.isDelegateHeartBeatUpToDate(delegate))
+                                               .collect(Collectors.toList());
     List<String> nonConnectedDelegatesIds =
         nonConnectedDelegates.stream().map(Delegate::getHostName).collect(Collectors.toList());
     if (isNotEmpty(nonConnectedDelegatesIds)) {
@@ -1198,7 +1197,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     return accountDelegates.stream()
         .filter(delegate
             -> delegate.getStatus() == DelegateInstanceStatus.ENABLED
-                && delegateDao.isDelegateHeartBeatUpToDate(delegate, MAX_DELEGATE_LONG_LAST_HEARTBEAT))
+                && delegateDao.isDelegateHeartBeatUpToDate(delegate))
         .collect(toList());
   }
 
@@ -1318,7 +1317,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     Map<DelegateActivity, List<Delegate>> delegatesMap =
         accountDelegates.stream().collect(Collectors.groupingBy(delegate -> {
           if (DelegateInstanceStatus.ENABLED == delegate.getStatus()) {
-            if (delegateDao.isDelegateHeartBeatUpToDate(delegate, MAX_DELEGATE_LONG_LAST_HEARTBEAT)) {
+            if (delegateDao.isDelegateHeartBeatUpToDate(delegate)) {
               return DelegateActivity.ACTIVE;
             } else {
               return DelegateActivity.DISCONNECTED;

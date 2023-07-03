@@ -9,6 +9,7 @@ package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.utils.DelegateServiceConstants.HEARTBEAT_EXPIRY_TIME_FIVE_MINS;
 import static io.harness.persistence.HPersistence.upToOne;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
@@ -62,7 +63,7 @@ public class DelegateDao {
       query.filter(DelegateKeys.version, version);
     }
     if (enableRedisForDelegateService) {
-      return isDelegateHeartBeatUpToDate(delegateCache.get(accountId, delegateId), EXPIRY_TIME.toMillis());
+      return isDelegateHeartBeatUpToDate(delegateCache.get(accountId, delegateId));
     }
     return query.field(DelegateKeys.lastHeartBeat)
                .greaterThan(currentTimeMillis() - EXPIRY_TIME.toMillis())
@@ -85,7 +86,7 @@ public class DelegateDao {
 
   public boolean checkDelegateLiveness(String accountId, String delegateId) {
     if (enableRedisForDelegateService) {
-      return isDelegateHeartBeatUpToDate(delegateCache.get(accountId, delegateId), EXPIRY_TIME.toMillis());
+      return isDelegateHeartBeatUpToDate(delegateCache.get(accountId, delegateId));
     }
 
     Query<Delegate> query = persistence.createQuery(Delegate.class)
@@ -162,7 +163,7 @@ public class DelegateDao {
     return delegateFromCache.getLastHeartBeat() >= (currentTimeMillis() - maxExpiry);
   }
 
-  public boolean isDelegateHeartBeatUpToDate(Delegate delegate, long maxExpiry) {
+  public boolean isDelegateHeartBeatUpToDate(Delegate delegate) {
     long delegateHeartBeat = delegate.getLastHeartBeat();
     if (enableRedisForDelegateService) {
       Delegate delegateFromCache = delegateCache.get(delegate.getAccountId(), delegate.getUuid());
@@ -171,7 +172,7 @@ public class DelegateDao {
       }
       delegateHeartBeat = delegateFromCache.getLastHeartBeat();
     }
-    return delegateHeartBeat >= (currentTimeMillis() - maxExpiry);
+    return delegateHeartBeat >= (currentTimeMillis() - HEARTBEAT_EXPIRY_TIME_FIVE_MINS.toMillis());
   }
 
   private Query<Delegate> createQueryForAllActiveDelegates(String version) {

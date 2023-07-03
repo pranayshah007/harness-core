@@ -51,7 +51,7 @@ public class DelegateDisconnectAlertHelper implements DelegateObserver {
                                 .hostName(delegate.getHostName())
                                 .obfuscatedIpAddress(obfuscate(delegate.getIp()))
                                 .build();
-      if (delegateDao.isDelegateHeartBeatUpToDate(delegate, MAX_HB_TIMEOUT)) {
+      if (delegateDao.isDelegateHeartBeatUpToDate(delegate)) {
         alertService.closeAlert(accountId, GLOBAL_APP_ID, AlertType.DelegatesDown, alertData);
       } else {
         alertService.openAlert(accountId, GLOBAL_APP_ID, AlertType.DelegatesDown, alertData);
@@ -71,7 +71,7 @@ public class DelegateDisconnectAlertHelper implements DelegateObserver {
         continue;
       }
       allScalingGroups.add(delegate.getDelegateGroupName());
-      if (delegateDao.isDelegateHeartBeatUpToDate(delegate, MAX_HB_TIMEOUT)) {
+      if (delegateDao.isDelegateHeartBeatUpToDate(delegate)) {
         connectedScalingGroups.add(delegate.getDelegateGroupName());
       }
     }

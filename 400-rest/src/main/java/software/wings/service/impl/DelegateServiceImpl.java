@@ -609,7 +609,8 @@ public class DelegateServiceImpl implements DelegateService {
 
   private boolean isDelegateConnected(Delegate delegate) {
     // for active delegate connection check, use DELEGATE_CACHE directly as it has latest HB updated
-    return delegateDao.isDelegateHeartBeatUpToDate(delegate, HEARTBEAT_EXPIRY_TIME.toMillis());
+    Delegate delegateFromCache = delegateCache.get(delegate.getAccountId(), delegate.getUuid(), false);
+    return delegateFromCache.getLastHeartBeat() > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME.toMillis();
   }
 
   @Override
@@ -913,7 +914,7 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   private boolean isDelegateAlive(Delegate delegate) {
-    return delegateDao.isDelegateHeartBeatUpToDate(delegate, ofMinutes(1).toMillis());
+    return delegate.getLastHeartBeat() > System.currentTimeMillis() - ofMinutes(1).toMillis();
   }
 
   private List<DelegateConnectionDetails> getDelegateConnectionDetails(Delegate delegate) {
