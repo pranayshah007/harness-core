@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 import lombok.NonNull;
 import org.apache.commons.lang3.tuple.Pair;
+import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -100,5 +101,34 @@ public class DummyServiceOverridesServiceV2Impl implements ServiceOverridesServi
   public Optional<NGServiceOverrideConfigV2> mergeOverridesGroupedByType(
       @NonNull List<NGServiceOverridesEntity> overridesEntities) {
     return Optional.empty();
+  }
+
+  @Override
+  public boolean deleteAllInOrg(@NotEmpty String accountId, @NotEmpty String orgIdentifier) {
+    return false;
+  }
+
+  @Override
+  public boolean deleteAllInProject(
+      @NotEmpty String accountId, @NotEmpty String orgIdentifier, @NotEmpty String projectIdentifier) {
+    return false;
+  }
+
+  @Override
+  public boolean deleteAllForEnv(@NotEmpty String accountId, @NotEmpty String orgIdentifier,
+      @NotEmpty String projectIdentifier, @NotEmpty String environmentRef) {
+    return false;
+  }
+
+  @Override
+  public boolean deleteAllForInfra(@NotEmpty String accountId, @NotEmpty String orgIdentifier,
+      @NotEmpty String projectIdentifier, @NotEmpty String environmentRef, @NotEmpty String infraIdentifier) {
+    return false;
+  }
+
+  @Override
+  public boolean deleteAllOfService(@NotEmpty String accountId, @NotEmpty String orgIdentifier,
+      @NotEmpty String projectIdentifier, @NotEmpty String serviceRef) {
+    return false;
   }
 }

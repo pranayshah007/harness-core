@@ -363,23 +363,6 @@ paths:
         '200':
           $ref: '#/components/responses/ImportEntitiesResponse'
       x-internal: true
-  /v1/onboarding/manual-import:
-    post:
-      summary: Manually import entity to IDP
-      operationId: manual-import-entity
-      description: Manually import entity to IDP
-      security:
-        - x-api-key: []
-      parameters:
-        - $ref: '#/components/parameters/AccountHeader'
-      requestBody:
-        $ref: '#/components/requestBodies/ManualImportEntityRequest'
-      tags:
-        - OnboardingResource
-      responses:
-        '200':
-          $ref: '#/components/responses/ImportEntitiesResponse'
-      x-internal: true
   /v1/layout:
     get:
       summary: List Layouts
@@ -1269,25 +1252,6 @@ components:
           required:
             - env_variables
             - saved
-    ManualImportEntityRequest:
-      title: ManualImportEntityRequest
-      x-stoplight:
-        id: ssbm06g65ld8t
-      type: object
-      description: Details of entity to import manually to IDP
-      properties:
-        yaml:
-          type: string
-          x-stoplight:
-            id: g8wygfate3kph
-          description: yaml in form on json
-        entity_name:
-          type: string
-          x-stoplight:
-            id: 2axpvz6rwf0ds
-      required:
-        - yaml
-        - entity_name
     LayoutRequest:
       title: LayoutRequest
       x-stoplight:
@@ -2023,13 +1987,6 @@ components:
             $ref: '#/components/schemas/ImportEntitiesBase'
           examples: {}
       description: Details of Harness Entities and Catalog Location info
-    ManualImportEntityRequest:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ManualImportEntityRequest'
-      description: Details of entity to import manually to IDP
     LayoutRequest:
       content:
         application/json:

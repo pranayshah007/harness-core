@@ -12,21 +12,22 @@ import static io.harness.rule.OwnerRule.DEVESH;
 import static junit.framework.TestCase.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import io.harness.CategoryTest;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.connector.ConnectorInfoDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.configmanager.beans.entity.AppConfigEntity;
 import io.harness.idp.configmanager.beans.entity.MergedAppConfigEntity;
 import io.harness.idp.configmanager.repositories.AppConfigRepository;
 import io.harness.idp.configmanager.repositories.MergedAppConfigRepository;
-import io.harness.idp.configmanager.service.ConfigEnvVariablesService;
-import io.harness.idp.configmanager.service.ConfigManagerServiceImpl;
-import io.harness.idp.configmanager.service.PluginsProxyInfoService;
 import io.harness.idp.configmanager.utils.ConfigType;
 import io.harness.idp.envvariable.service.BackstageEnvVariableService;
+import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
 import io.harness.idp.k8s.client.K8sClient;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.rule.Owner;
@@ -37,10 +38,9 @@ import java.util.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.*;
 
+@OwnedBy(HarnessTeam.IDP)
 public class ConfigManagerServiceImplTest extends CategoryTest {
   AutoCloseable openMocks;
 
@@ -57,7 +57,7 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
   @Mock private PluginsProxyInfoService pluginsProxyInfoService;
   @Mock private TransactionHelper transactionHelper;
   String env = "prod";
-  @InjectMocks ConfigManagerServiceImpl configManagerServiceImpl;
+  ConfigManagerServiceImpl configManagerServiceImpl;
 
   @Before
   public void setUp() {
@@ -76,6 +76,9 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
   static final String TEST_HARNESS_CI_CD_PLUGIN_NAME = "Harness CI/CD";
   static final String TEST_CONFIG_VALUE =
       "kafka:\n  clientId: backstage\n  clusters:\n    - name: cluster\n      dashboardUrl: https://akhq.io/\n      brokers:\n        - localhost:9092";
+
+  static final String TEST_INVALID_CONFIG_VALUE =
+      "kafk2da:\n  clie23dntId: backstage\n  clusters:\n    - name: cluster\n      dashboardUrl: https://akhq.io/\n      brokers:\n        - localhost:9092";
   static final String TEST_HARNESS_CI_CD_PLUGIN_CONFIG =
       "proxy:\n  '/harness/prod':\n    target: 'https://app.harness.io/'\n    pathRewrite:\n      '/api2/proxy/harness/prod/?': '/'\n    allowedHeaders:\n      - authorization\n";
   static final Boolean TEST_ENABLED = true;
@@ -100,6 +103,15 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
       + "    dashboardUrl: https://akhq.io/\n"
       + "    brokers:\n"
       + "    - localhost:9092\n";
+
+  static final String TEST_INVALID_MERGED_APP_CONFIG = "---\n"
+      + "proxerhehy:\n"
+      + "  /harness/prod:\n"
+      + "    target: https://app.harness.io/\n"
+      + "    pathRewrite:\n"
+      + "      /api/proxy/harness/prod/?: /\n"
+      + "    allowedHeaders:\n"
+      + "    - authorization\n";
   static final String TEST_NAMESPACE_FOR_ACCOUNT = "test-namespace";
 
   static final String TEST_EXPECTED_CONFIG_VALUE_AFTER_MERGE = "---\n"
@@ -114,8 +126,26 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
   static final String TEST_PROXY_HOST_VALUE = "TEST_PROXY_HOST_VALUE";
   static final Boolean TEST_PROXY_BOOLEAN_VALUE = true;
   static final String TEST_PROXY_DELEGATE_SELECTOR_DELEGATE = "TEST_DELEGATE_SELECTOR";
+
+  static final String TEST_INVALID_CONFIG_ID = "test-invalid-config-id";
+  private final String TEST_ERROR_READING_SCHEMA =
+      "Error in reading schema - Invalid config id provided - test-invalid-config-id";
+  private final String TEST_ERROR_FOR_INVALID_CONFIG = "Invalid config provided for Plugin id - kafka";
   static final List<String> TEST_PROXY_DELEGATE_SELECTOR =
       Collections.singletonList(TEST_PROXY_DELEGATE_SELECTOR_DELEGATE);
+  static final String TEST_HOST_VALUE = "test_host_value";
+
+  static final String TEST_VALID_INTEGRATION_CONFIG = "integrations:\n"
+      + "  github:\n"
+      + "    - host: HOST_VALUE\n"
+      + "      apiBaseUrl: API_BASE_URL\n"
+      + "      token: ${HARNESS_GITHUB_TOKEN}";
+
+  static final String TEST_INVALID_INTEGRATION_CONFIG = "inwetegrations:\n"
+      + "  gawfwqeithub:\n"
+      + "    - host: HOST_VALUE\n"
+      + "      apiBaseUrl: API_BASE_URL\n"
+      + "      token: ${HARNESS_GITHUB_TOKEN}";
 
   @Test
   @Owner(developers = DEVESH)
@@ -297,6 +327,19 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
     MergedAppConfigEntity mergedAppConfigEntity =
         configManagerServiceImpl.mergeAndSaveAppConfig(TEST_ACCOUNT_IDENTIFIER);
     assertEquals(mergedAppConfigEntity.getConfig(), TEST_VALID_MERGED_APP_CONFIG);
+
+    // invalid merged yaml case
+    appConfigEntity.setConfigs(TEST_INVALID_CONFIG_VALUE);
+    when(appConfigRepository.findAllByAccountIdentifierAndEnabled(TEST_ACCOUNT_IDENTIFIER, TEST_ENABLED))
+        .thenReturn(Arrays.asList(appConfigEntity));
+
+    Exception exception = null;
+    try {
+      configManagerServiceImpl.mergeAndSaveAppConfig(TEST_ACCOUNT_IDENTIFIER);
+    } catch (Exception e) {
+      exception = e;
+    }
+    assertNotNull(exception);
   }
 
   @Test
@@ -306,7 +349,7 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
     AppConfigEntity appConfigEntity = getTestAppConfigEntity();
     when(appConfigRepository.findAllByAccountIdentifierAndConfigTypeAndEnabled(
              TEST_ACCOUNT_IDENTIFIER, TEST_PLUGIN_CONFIG_TYPE, TEST_ENABLED))
-        .thenReturn(Arrays.asList(appConfigEntity));
+        .thenReturn(Arrays.asList(appConfigEntity, appConfigEntity));
     when(configEnvVariablesService.getAllEnvVariablesForAccountIdentifierAndMultiplePluginIds(
              TEST_ACCOUNT_IDENTIFIER, Arrays.asList(TEST_CONFIG_ID)))
         .thenReturn(Arrays.asList(TEST_SECRET_ENV_NAME));
@@ -347,6 +390,77 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
     mergedPluginConfigs = configManagerServiceImpl.mergeEnabledPluginConfigsForAccount(TEST_ACCOUNT_IDENTIFIER);
     assertNull(mergedPluginConfigs.getConfig());
     assertEquals(mergedPluginConfigs.getEnvVariables().size(), 0);
+  }
+
+  @Test
+  @Owner(developers = DEVESH)
+  @Category(UnitTests.class)
+  public void testSaveUpdateAndMergeConfigForAccount() {
+    AppConfig appConfig = new AppConfig();
+    appConfig.setConfigName(TEST_CONFIG_NAME);
+    appConfig.setConfigId(TEST_CONFIG_ID);
+    appConfig.setConfigs(TEST_CONFIG_VALUE);
+    when(transactionHelper.performTransaction(any())).thenReturn(appConfig);
+    AppConfig returnedConfig = configManagerServiceImpl.saveUpdateAndMergeConfigForAccount(
+        appConfig, TEST_ACCOUNT_IDENTIFIER, ConfigType.PLUGIN);
+    assertNotNull(returnedConfig);
+  }
+
+  @Test
+  @Owner(developers = DEVESH)
+  @Category(UnitTests.class)
+  public void testDeleteDisabledPluginsConfigsDisabledMoreThanAWeekAgo() {
+    when(appConfigRepository.deleteDisabledPluginsConfigBasedOnTimestampsForEnabledDisabledTime(any(Long.class)))
+        .thenReturn(Collections.singletonList(getTestAppConfigEntity()));
+    List<AppConfigEntity> appConfigEntities =
+        configManagerServiceImpl.deleteDisabledPluginsConfigsDisabledMoreThanAWeekAgo();
+    assertEquals(appConfigEntities.get(0).getConfigId(), TEST_CONFIG_ID);
+    assertEquals(appConfigEntities.get(0).getConfigName(), TEST_CONFIG_NAME);
+  }
+
+  @Test
+  @Owner(developers = DEVESH)
+  @Category(UnitTests.class)
+  public void testValidateSchemaForPlugin() {
+    Exception exception = null;
+    try {
+      configManagerServiceImpl.validateSchemaForPlugin(TEST_CONFIG_VALUE, TEST_INVALID_CONFIG_ID);
+    } catch (Exception e) {
+      exception = e;
+    }
+    assertEquals(TEST_ERROR_READING_SCHEMA, exception.getMessage());
+
+    try {
+      configManagerServiceImpl.validateSchemaForPlugin(TEST_INVALID_CONFIG_VALUE, TEST_CONFIG_ID);
+    } catch (Exception e) {
+      exception = e;
+    }
+    assertEquals(TEST_ERROR_FOR_INVALID_CONFIG, exception.getMessage());
+  }
+
+  @Test
+  @Owner(developers = DEVESH)
+  @Category(UnitTests.class)
+  public void testCreateOrUpdateTimeStampEnvVariable() {
+    configManagerServiceImpl.createOrUpdateTimeStampEnvVariable(TEST_ACCOUNT_IDENTIFIER);
+    verify(backstageEnvVariableService, times(1)).createOrUpdate(any(), any());
+  }
+
+  @Test
+  @Owner(developers = DEVESH)
+  @Category(UnitTests.class)
+  public void testSaveAndMergeAppConfigForGitIntegrations() throws Exception {
+    ConnectorInfoDTO connectorInfoDTO = new ConnectorInfoDTO();
+    connectorInfoDTO.setConnectorType(ConnectorType.GITHUB);
+    MockedStatic<GitIntegrationUtils> mockRestStatic = Mockito.mockStatic(GitIntegrationUtils.class);
+    mockRestStatic.when(() -> GitIntegrationUtils.getHostForConnector(any())).thenReturn(TEST_HOST_VALUE);
+    when(transactionHelper.performTransaction(any())).thenReturn(new AppConfig());
+    configManagerServiceImpl.saveAndMergeAppConfigForGitIntegrations(
+        TEST_ACCOUNT_IDENTIFIER, connectorInfoDTO, TEST_VALID_INTEGRATION_CONFIG, ConnectorType.GITHUB.toString());
+
+    // for invalid case
+    configManagerServiceImpl.saveAndMergeAppConfigForGitIntegrations(
+        TEST_ACCOUNT_IDENTIFIER, connectorInfoDTO, TEST_INVALID_INTEGRATION_CONFIG, ConnectorType.GITHUB.toString());
   }
 
   @Test

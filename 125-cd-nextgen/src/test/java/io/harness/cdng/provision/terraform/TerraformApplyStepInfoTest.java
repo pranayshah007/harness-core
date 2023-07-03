@@ -232,7 +232,7 @@ public class TerraformApplyStepInfoTest extends CategoryTest {
   public void testGetFacilitatorType() {
     TerraformApplyStepInfo terraformApplyStepInfo = new TerraformApplyStepInfo();
     String response = terraformApplyStepInfo.getFacilitatorType();
-    assertThat(response).isEqualTo("TASK");
+    assertThat(response).isEqualTo("TASK_CHAIN");
   }
 
   @Test
@@ -242,6 +242,6 @@ public class TerraformApplyStepInfoTest extends CategoryTest {
     TerraformApplyStepInfo terraformApplyStepInfo = new TerraformApplyStepInfo();
     StepType response = terraformApplyStepInfo.getStepType();
     assertThat(response).isNotNull();
-    assertThat(response.getType()).isEqualTo("TerraformApply");
+    assertThat(response.getType()).isEqualTo("TERRAFORM_APPLY_V2");
   }
 }

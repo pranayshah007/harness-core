@@ -28,6 +28,7 @@ import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.mappers.ManifestOutcomeMapper;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.steps.output.NgManifestsMetadataSweepingOutput;
+import io.harness.cdng.manifest.steps.output.UnresolvedManifestsOutput;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
@@ -57,6 +58,7 @@ import io.harness.ng.core.environment.validator.SvcEnvV2ManifestValidator;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
@@ -65,6 +67,7 @@ import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.sdk.core.steps.executables.AsyncExecutable;
 import io.harness.pms.sdk.core.steps.executables.SyncExecutable;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
@@ -72,6 +75,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.steps.EntityReferenceExtractorUtils;
+import io.harness.tasks.ResponseData;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
 
@@ -96,7 +100,7 @@ import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
-public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
+public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, AsyncExecutable<EmptyStepParameters> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.MANIFESTS_V2.getName())
                                                .setStepCategory(StepCategory.STEP)
@@ -121,15 +125,83 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
   }
 
   @Override
+  public AsyncExecutableResponse executeAsync(Ambiance ambiance, EmptyStepParameters stepParameters,
+      StepInputPackage inputPackage, PassThroughData passThroughData) {
+    Optional<ManifestsOutcome> manifestsOutcome = resolveManifestsOutcome(ambiance);
+
+    manifestsOutcome.ifPresent(outcome -> saveManifestsOutcome(ambiance, outcome, new HashMap<>()));
+
+    return AsyncExecutableResponse.newBuilder().build();
+  }
+
+  @Override
+  public StepResponse handleAsyncResponse(
+      Ambiance ambiance, EmptyStepParameters stepParameters, Map<String, ResponseData> responseDataMap) {
+    if (isEmpty(responseDataMap)) {
+      OptionalSweepingOutput manifestsOutcomeOutput = sweepingOutputService.resolveOptional(
+          ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.MANIFESTS));
+
+      if (!manifestsOutcomeOutput.isFound()) {
+        return StepResponse.builder().status(Status.SKIPPED).build();
+      }
+
+      return StepResponse.builder().status(Status.SUCCEEDED).build();
+    }
+
+    OptionalSweepingOutput unresolvedManifestsOutcomeOutput = sweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.UNRESOLVED_MANIFESTS));
+
+    if (!unresolvedManifestsOutcomeOutput.isFound()) {
+      return StepResponse.builder().status(Status.SKIPPED).build();
+    }
+
+    UnresolvedManifestsOutput unresolvedManifestsOutput =
+        (UnresolvedManifestsOutput) unresolvedManifestsOutcomeOutput.getOutput();
+
+    sweepingOutputService.consume(ambiance, OutcomeExpressionConstants.MANIFESTS,
+        unresolvedManifestsOutput.getManifestsOutcome(), StepCategory.STAGE.name());
+
+    return StepResponse.builder().status(Status.SUCCEEDED).build();
+  }
+
+  @Override
+  public void handleAbort(
+      Ambiance ambiance, EmptyStepParameters stepParameters, AsyncExecutableResponse executableResponse) {
+    // nothing to do
+  }
+
+  @Override
   public StepResponse executeSync(Ambiance ambiance, EmptyStepParameters stepParameters, StepInputPackage inputPackage,
       PassThroughData passThroughData) {
+    Optional<ManifestsOutcome> manifestsOutcome = resolveManifestsOutcome(ambiance);
+
+    manifestsOutcome.ifPresent(outcome -> saveManifestsOutcome(ambiance, outcome, new HashMap<>()));
+
+    return manifestsOutcome.map(ignored -> StepResponse.builder().status(Status.SUCCEEDED).build())
+        .orElseGet(() -> StepResponse.builder().status(Status.SKIPPED).build());
+  }
+
+  private void saveManifestsOutcome(
+      Ambiance ambiance, ManifestsOutcome manifestsOutcome, Map<String, String> taskIdMapping) {
+    if (isEmpty(taskIdMapping)) {
+      sweepingOutputService.consume(
+          ambiance, OutcomeExpressionConstants.MANIFESTS, manifestsOutcome, StepCategory.STAGE.name());
+    } else {
+      UnresolvedManifestsOutput unresolvedManifestsOutput =
+          UnresolvedManifestsOutput.builder().manifestsOutcome(manifestsOutcome).taskIdMapping(taskIdMapping).build();
+      sweepingOutputService.consume(
+          ambiance, OutcomeExpressionConstants.UNRESOLVED_MANIFESTS, unresolvedManifestsOutput, "");
+    }
+  }
+
+  private Optional<ManifestsOutcome> resolveManifestsOutcome(Ambiance ambiance) {
     final NgManifestsMetadataSweepingOutput ngManifestsMetadataSweepingOutput =
         fetchManifestsMetadataFromSweepingOutput(ambiance);
 
     boolean isOverridesV2Enabled = isOverridesV2(AmbianceUtils.getAccountId(ambiance),
         AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
 
-    List<ManifestConfigWrapper> manifests = new ArrayList<>();
+    List<ManifestConfigWrapper> manifests;
     Map<String, List<ManifestConfigWrapper>> finalSvcManifestsMapV1 = new HashMap<>();
     Map<ServiceOverridesType, List<ManifestConfigWrapper>> manifestsFromOverride = new HashMap<>();
     List<ManifestConfigWrapper> svcManifests = new ArrayList<>();
@@ -143,7 +215,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
         logCallback.saveExecutionLog(
             "No manifests configured in the service. manifest expressions will not work", LogLevel.WARN);
 
-        return StepResponse.builder().status(Status.SKIPPED).build();
+        return Optional.empty();
       }
       manifests = aggregateManifestsFromAllLocationsV2(svcManifests, manifestsFromOverride, logCallback);
 
@@ -154,7 +226,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
         logCallback.saveExecutionLog(
             "No manifests configured in the service. manifest expressions will not work", LogLevel.WARN);
 
-        return StepResponse.builder().status(Status.SKIPPED).build();
+        return Optional.empty();
       }
       manifests = aggregateManifestsFromAllLocations(finalSvcManifestsMapV1);
     }
@@ -197,10 +269,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
       manifestsOutcome.put(manifestOutcome.getIdentifier(), manifestOutcome);
     }
 
-    sweepingOutputService.consume(
-        ambiance, OutcomeExpressionConstants.MANIFESTS, manifestsOutcome, StepCategory.STAGE.name());
-
-    return StepResponse.builder().status(Status.SUCCEEDED).build();
+    return Optional.of(manifestsOutcome);
   }
 
   private static boolean isNoManifestConfiguredV2(List<ManifestConfigWrapper> svcManifests,

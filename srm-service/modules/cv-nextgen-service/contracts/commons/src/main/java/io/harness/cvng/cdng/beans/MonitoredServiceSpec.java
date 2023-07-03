@@ -17,7 +17,6 @@ import io.harness.pms.yaml.YamlNode;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.annotations.ApiModelProperty;
-import java.util.Arrays;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -37,26 +36,4 @@ public abstract class MonitoredServiceSpec {
   private String uuid;
 
   public abstract String getType();
-
-  public enum MonitoredServiceSpecType {
-    DEFAULT("Default"),
-    CONFIGURED("Configured"),
-    TEMPLATE("Template");
-
-    @Getter public final String name;
-    MonitoredServiceSpecType(String name) {
-      this.name = name;
-    }
-
-    public static MonitoredServiceSpecType getByName(String name) {
-      return Arrays.stream(values())
-          .filter(spec -> spec.name.equals(name))
-          .findFirst()
-          .orElseThrow(
-              ()
-                  -> new IllegalArgumentException(
-                      "No enum constant of type io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType for name "
-                      + name));
-    }
-  }
 }

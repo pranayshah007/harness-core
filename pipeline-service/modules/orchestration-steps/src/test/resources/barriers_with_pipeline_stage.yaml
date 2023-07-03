@@ -1,0 +1,34 @@
+pipeline:
+  name: test
+  identifier: test
+  projectIdentifier: SvcEnv
+  orgIdentifier: default
+  tags: {}
+  stages:
+    - stage:
+        name: rwar
+        identifier: rwar
+        description: ""
+        type: Pipeline
+        spec:
+          org: default
+          pipeline: child_pipeline
+          project: SvcEnv
+          inputs:
+            identifier: child_pipeline
+            stages:
+              - stage:
+                  identifier: step12
+                  type: Custom
+                  spec:
+                    execution:
+                      steps:
+                        - step:
+                            identifier: Barrier_1
+                            type: Barrier
+                            spec:
+                              barrierRef: <+input>
+  flowControl:
+    barriers:
+      - name: somebarrier1
+        identifier: somebarrier1

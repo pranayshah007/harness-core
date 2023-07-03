@@ -500,8 +500,10 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
         }
       }
 
-      // Merging definitions fetched from different modules with stage schema
-      JsonNodeUtils.merge(jsonNode.get(DEFINITIONS_NODE), mergedDefinition);
+      if (mergedDefinition != null) {
+        // Merging definitions fetched from different modules with stage schema
+        JsonNodeUtils.merge(jsonNode.get(DEFINITIONS_NODE), mergedDefinition);
+      }
       for (Map.Entry<String, JsonNode> entry : finalNameSpaceToDefinitionMap.entrySet()) {
         if (!stepNameSpace.equals(entry.getKey())) {
           // Adding definitions to individual namespace and the root definition

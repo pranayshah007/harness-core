@@ -95,6 +95,13 @@ public class NGLdapResourceImpl implements NGLdapResource {
         ngLdapService.testLDAPLogin(accountId, orgIdentifier, projectIdentifier, email, password));
   }
 
+  @Override
+  public RestResponse<Void> syncUserGroupLinkedToLDAP(
+      String userGroupId, String accountId, String orgIdentifier, String projectIdentifier) {
+    ngLdapService.syncAUserGroupJob(userGroupId, accountId, orgIdentifier, projectIdentifier);
+    return new RestResponse<>(null);
+  }
+
   public void validateLdapSettings(LdapSettings ldapSettings) {
     if (isEmpty(ldapSettings.getAccountId())) {
       throw new InvalidRequestException("accountId cannot be empty for ldap settings");

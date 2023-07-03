@@ -11,15 +11,19 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.HintException;
 import io.harness.gitx.GitXSettingsHelper;
 import io.harness.rule.Owner;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -90,5 +94,27 @@ public class GitRepoAllowlistHelperTest {
     Set<String> filteredResponse =
         gitRepoAllowlistHelper.filterRepoList(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJ_IDENTIFIER, responseRepoList);
     assertThat(filteredResponse.contains("account/org/test-repo")).isTrue();
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testValidateRepoWithInvalidRepo() {
+    List<String> repoAllowlist = new ArrayList<>();
+    repoAllowlist.add("test-repo");
+    assertThatThrownBy(()
+                           -> gitRepoAllowlistHelper.validateRepo(
+                               ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJ_IDENTIFIER, repoAllowlist, "invalidRepo"))
+        .isInstanceOf(HintException.class);
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testValidateRepoWithValidRepo() {
+    assertThatCode(()
+                       -> gitRepoAllowlistHelper.validateRepo(
+                           ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJ_IDENTIFIER, Collections.EMPTY_LIST, "validRepo"))
+        .doesNotThrowAnyException();
   }
 }

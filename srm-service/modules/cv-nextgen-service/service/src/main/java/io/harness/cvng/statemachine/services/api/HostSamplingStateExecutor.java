@@ -48,11 +48,20 @@ public abstract class HostSamplingStateExecutor<T extends HostSamplingState> ext
         analysisState.getInputs().getVerificationJobInstanceId());
     VerificationJob verificationJob = verificationJobInstance.getResolvedJob();
 
-    Set<String> preDeploymentHosts =
-        getPreDeploymentHosts(verificationJobInstance, analysisState.getInputs().getVerificationTaskId());
-    Set<String> postDeploymentHosts = getPostDeploymentHosts(verificationJobInstance, analysisState.getInputs());
-    Set<String> newHosts = new HashSet<>(postDeploymentHosts);
-    Set<String> commonHosts = new HashSet<>(preDeploymentHosts);
+    Set<String> preDeploymentHosts, postDeploymentHosts, newHosts, commonHosts;
+    if (verificationJobInstance.getServiceInstanceDetailsFromCD() != null
+        && verificationJobInstance.getServiceInstanceDetailsFromCD().isValid()) {
+      preDeploymentHosts = new HashSet<>(
+          verificationJobInstance.getServiceInstanceDetailsFromCD().getServiceInstancesBeforeDeployment());
+      postDeploymentHosts =
+          new HashSet<>(verificationJobInstance.getServiceInstanceDetailsFromCD().getServiceInstancesAfterDeployment());
+    } else {
+      preDeploymentHosts =
+          getPreDeploymentHosts(verificationJobInstance, analysisState.getInputs().getVerificationTaskId());
+      postDeploymentHosts = getPostDeploymentHosts(verificationJobInstance, analysisState.getInputs());
+    }
+    newHosts = new HashSet<>(postDeploymentHosts);
+    commonHosts = new HashSet<>(preDeploymentHosts);
     commonHosts.retainAll(postDeploymentHosts);
     newHosts.removeAll(commonHosts);
     AnalysisInputBuilder analysisInputBuilder = AnalysisInput.builder();

@@ -57,6 +57,7 @@ public class GraphVertexDTO {
   ExecutionMode mode;
   private Boolean executionInputConfigured;
 
+  private String logBaseKey;
   List<GraphDelegateSelectionLogParams> graphDelegateSelectionLogParams;
   List<ExecutableResponse> executableResponses;
   List<InterruptEffect> interruptHistories;

@@ -625,9 +625,13 @@ public class GovernanceRuleResource {
   public List<ConnectorResponseDTO>
   listV2(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-      @Parameter(description = "View governance connector list") @QueryParam("view") boolean view) {
+      @Parameter(description = "View governance connector list") @QueryParam("view") boolean view,
+      @QueryParam("connectorType") ConnectorType connectorType) {
+    if (connectorType == null) {
+      connectorType = ConnectorType.CE_AWS;
+    }
     List<ConnectorResponseDTO> nextGenConnectorResponses = connectorDetailsService.listNgConnectors(
-        accountId, Arrays.asList(ConnectorType.CE_AWS), Arrays.asList(CEFeatures.GOVERNANCE), null);
+        accountId, Arrays.asList(connectorType), Arrays.asList(CEFeatures.GOVERNANCE), null);
     Set<String> allowedAccountIds = null;
     List<ConnectorResponseDTO> connectorResponse = new ArrayList<>();
     if (nextGenConnectorResponses != null) {

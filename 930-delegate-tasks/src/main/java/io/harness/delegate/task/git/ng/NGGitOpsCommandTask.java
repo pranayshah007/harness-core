@@ -49,6 +49,7 @@ import io.harness.delegate.task.gitapi.client.impl.BitbucketApiClient;
 import io.harness.delegate.task.gitapi.client.impl.GithubApiClient;
 import io.harness.delegate.task.gitapi.client.impl.GitlabApiClient;
 import io.harness.delegate.task.gitops.GitOpsTaskHelper;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.helper.BitbucketHelper;
 import io.harness.git.model.CommitAndPushRequest;
@@ -144,9 +145,8 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     switch (gitOpsTaskParams.getGitOpsTaskType()) {
       case MERGE_PR:
         return handleMergePR(gitOpsTaskParams);
-      case CREATE_PR:
       case UPDATE_RELEASE_REPO:
-        return handleCreatePR(gitOpsTaskParams);
+        return handleUpdateReleaseRepo(gitOpsTaskParams);
       default:
         return NGGitOpsResponse.builder()
             .taskStatus(TaskStatus.FAILURE)
@@ -276,7 +276,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     fetchFilesResult.setFiles(updatedGitFiles);
   }
 
-  public DelegateResponseData handleCreatePR(NGGitOpsTaskParams gitOpsTaskParams) {
+  public DelegateResponseData handleUpdateReleaseRepo(NGGitOpsTaskParams gitOpsTaskParams) {
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
     try {
       log.info("Running Create PR Task for activityId {}", gitOpsTaskParams.getActivityId());
@@ -518,7 +518,12 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     JSONObject existingFile = new JSONObject();
     if (!StringUtils.isEmpty(fileContent)) {
       JSONParser parser = new JSONParser();
-      existingFile = (JSONObject) parser.parse(fileContent);
+      try {
+        existingFile = (JSONObject) parser.parse(fileContent);
+      } catch (ClassCastException exception) {
+        throw new InvalidArgumentsException(
+            format("Failed to read existing file content, error: %s", exception.getMessage()));
+      }
     }
 
     for (String key : stringObjectMap.keySet()) {

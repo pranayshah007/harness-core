@@ -27,7 +27,6 @@ public enum FeatureName {
   // Sorted using https://github.com/google/keep-sorted/blob/main/README.md
   // keep-sorted start
   ACCOUNT_BASIC_ROLE,
-  ACCOUNT_BASIC_ROLE_ONLY,
   ACTIVE_MIGRATION_FROM_LOCAL_TO_GCP_KMS,
   ACTIVITY_ID_BASED_TF_BASE_DIR,
   ADD_MANIFEST_COLLECTION_STEP,
@@ -108,8 +107,6 @@ public enum FeatureName {
   CDS_ENCODE_HTTP_STEP_URL("Enables the encoding of HTTP Step URL if it is not already encoded", HarnessTeam.CDP),
   CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT(
       "FF for providing the terraform apply json output as a secret", HarnessTeam.CDP),
-  CDS_ENTITY_REFRESH_DO_NOT_QUOTE_STRINGS(
-      "Do not add quotes to strings when a user reconciles a template, pipeline", HarnessTeam.CDC, Scope.GLOBAL),
   CDS_GIT_CONFIG_FILES("Enable config files from GIT repositories", HarnessTeam.CDP),
   CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG(
       "Enables multiple manifest support. We will be able to define multiple manifest and set only one as a primary. Epic: https://harness.atlassian.net/browse/CDS-58036",
@@ -171,6 +168,8 @@ public enum FeatureName {
   CDS_STAGE_EXECUTION_DATA_SYNC(
       "This flag controls if you want CD Stage execution data saved in cd service and eventually synced to timescale",
       HarnessTeam.CDC),
+  CDS_SUPPORT_EXPRESSION_REMOTE_TERRAFORM_VAR_FILES_NG(
+      "FF to support expressions in remote terraform var files", HarnessTeam.CDP),
   CDS_SUPPORT_HPA_AND_PDB_NG(
       "Enabling support for HPA and PDB kind resources in k8s deployments in NG", HarnessTeam.CDP),
   CDS_SUPPORT_SKIPPING_BG_DEPLOYMENT_NG(
@@ -212,6 +211,7 @@ public enum FeatureName {
   CENG_ENABLED("Enable the CCM module on NG", HarnessTeam.CE),
   CET_ENABLED("Enable Continuous Error Tracking module in UI", HarnessTeam.CET),
   CET_EVENTS_CHART("Enable events chart in UI of Continuous Error Tracking module", HarnessTeam.CET),
+  CET_CD_INTEGRATION("Enable Continuous Error Tracking events list in CD pipeline execution tab", HarnessTeam.CET),
   CE_GCP_CUSTOM_PRICING("Use custom pricing data for k8s gcp from billing export", HarnessTeam.CE),
   CE_HARNESS_ENTITY_MAPPING("Internal FF to decide if harness entities mapping is needed", HarnessTeam.CE),
   CE_HARNESS_INSTANCE_QUERY("Internal FF to decide which table to use for querying mapping data", HarnessTeam.CE),
@@ -235,6 +235,7 @@ public enum FeatureName {
   CHANGE_INSTANCE_QUERY_OPERATOR_TO_NE("Change instance service query operator from $exists to $ne", HarnessTeam.SPG),
   CHAOS_DASHBOARD_ENABLED("Enables chaos dashboards in CHAOS module", HarnessTeam.CHAOS),
   CHAOS_GAMEDAY_ENABLED("Enable gameday feature in CHAOS", HarnessTeam.CHAOS),
+  CHAOS_IMAGE_REGISTRY_DEV("Enable image registry configuration in CHAOS", HarnessTeam.CHAOS),
   CHAOS_LINUX_ENABLED("Enable linux experiment and infrastructure integration in CHAOS", HarnessTeam.CHAOS),
   CHAOS_PROBE_ENABLED("Enable new probe ui and flow in CHAOS", HarnessTeam.CHAOS),
   CHAOS_SRM_EVENT(
@@ -466,7 +467,6 @@ public enum FeatureName {
   NG_GIT_EXPERIENCE,
   NG_INLINE_MANIFEST,
   NG_LICENSES_ENABLED,
-  NG_SETTINGS("Enable Settings at various scopes in NG", HarnessTeam.PL),
   NG_SVC_ENV_REDESIGN,
   NODE_RECOMMENDATION_AGGREGATE("K8S Node recommendation Feature in CCM", HarnessTeam.CE),
   NOTIFY_GIT_SYNC_ERRORS_PER_APP(
@@ -592,7 +592,6 @@ public enum FeatureName {
   SERVICE_ID_FILTER_FOR_TRIGGERS(
       "Filter last deployed artifacts for triggers using serviceId as well", HarnessTeam.SPG),
   SETTINGS_OPTIMIZATION,
-  SETTING_ATTRIBUTES_SERVICE_ACCOUNT_TOKEN_MIGRATION("Migrate erroneous service account tokens", HarnessTeam.PL),
   SINGLE_MANIFEST_SUPPORT,
   SKIP_ADDING_TRACK_LABEL_SELECTOR_IN_ROLLING,
   SKIP_BASED_ON_STACK_STATUSES,
@@ -667,11 +666,7 @@ public enum FeatureName {
   SPG_NEW_DEPLOYMENT_FREEZE_EXCLUSIONS(
       "Flag to support deployment freeze exclusions. Depends on NEW_DEPLOYMENT_FREEZE", HarnessTeam.SPG),
   SPG_OPTIMIZE_PIPELINE_QUERY_ON_AUTH("Optimizes auth on pipelines making the query more efficient.", HarnessTeam.SPG),
-  SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING(
-      "Make the workflowExecutions listing better providing appId for children ids", HarnessTeam.SPG),
   SPG_PIPELINE_ROLLBACK("Enables pipeline rollback on failure option", HarnessTeam.SPG),
-  SPG_REDUCE_KEYWORDS_PERSISTENCE_ON_EXECUTIONS(
-      "Gradually reducing the amount of keywords being stored on workflow executions", HarnessTeam.SPG),
   SPG_REMOVE_REDUNDANT_UPDATE_IN_AUDIT("It removes a redudant update on the audit", HarnessTeam.SPG),
   SPG_REMOVE_RESTRICTION_APPS_UNNECESSARY_CALLS(
       "Unnecessary restriction apps calls are not called from UI", HarnessTeam.SPG),
@@ -701,6 +696,7 @@ public enum FeatureName {
   SRM_COMMON_MONITORED_SERVICE(
       "Flag to be used in UI for controlling common monitored service listing", HarnessTeam.CV),
   SRM_CUSTOM_CHANGE_SOURCE("UI FF to enable Custom Change Source", HarnessTeam.CV),
+  SRM_DATADOG_METRICS_FORMULA_SUPPORT("Support datadog metric formulas in the query of health source", HarnessTeam.CV),
   SRM_DOWNTIME("Flag to start creating downtime", HarnessTeam.CV),
   SRM_ENABLE_AGGREGATION_USING_BY_IN_PROMETHEUS(
       "This is used make prometheus Health source run with promQL by clause", HarnessTeam.CV),
@@ -725,6 +721,7 @@ public enum FeatureName {
   SRM_SLO_TOGGLE,
   SRM_SPLUNK_SIGNALFX("Will enable SignalFX metric health source in SRM", HarnessTeam.CV),
   SRM_TELEMETRY("Will enable telemetry for verify step result", HarnessTeam.CV),
+  SRM_ENABLE_ANALYZE_DEPLOYMENT_STEP("This is used to enable analyze deployment step in the pipeline", HarnessTeam.CV),
   SSCA_ENABLED("FF to enable SSCA on Harness", HarnessTeam.SSCA),
   SSH_JSCH_LOGS,
   STALE_FLAGS_FFM_1510,
@@ -807,12 +804,16 @@ public enum FeatureName {
   WINRM_SCRIPT_COMMAND_SPLIT_NG(
       "Enables the new way of how to copy powershell/winrm script commands content to file on remote. (Copy is done in chunks of 6KB) ",
       HarnessTeam.CDP),
+  PLG_CD_CLI_WIZARD_ENABLED("Enables new cd onboarding wizard with harness-cli", HarnessTeam.GTM),
   WORKFLOW_DATA_COLLECTION_ITERATOR,
   WORKFLOW_EXECUTION_REFRESH_STATUS,
   WORKFLOW_EXECUTION_ZOMBIE_MONITOR,
   WORKFLOW_PIPELINE_PERMISSION_BY_ENTITY,
   YAML_APIS_GRANULAR_PERMISSION,
-  YAML_GIT_CONNECTOR_NAME;
+  YAML_GIT_CONNECTOR_NAME,
+  CDS_STEP_EXECUTION_DATA_SYNC(
+      "This flag controls if you want Step execution data saved in mongodb and eventually synced to timescale",
+      HarnessTeam.CDP);
   // keep-sorted end
 
   @Deprecated

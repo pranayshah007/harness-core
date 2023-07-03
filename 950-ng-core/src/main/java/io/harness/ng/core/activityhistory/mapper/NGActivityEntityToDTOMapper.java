@@ -45,6 +45,7 @@ public class NGActivityEntityToDTOMapper {
         EntityDetail referredByEntity = entityUsageActivity.getReferredByEntity();
         return EntityUsageActivityDetailDTO.builder()
             .referredByEntity(referredByEntity)
+            .usageDetail(entityUsageActivity.getUsageDetail())
             .activityStatusMessage(((EntityUsageActivityDetail) activity).getActivityStatusMessage())
             .errors(entityUsageActivity.getErrors())
             .errorSummary(entityUsageActivity.getErrorSummary())

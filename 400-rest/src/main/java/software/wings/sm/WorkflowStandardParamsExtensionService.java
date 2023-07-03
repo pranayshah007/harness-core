@@ -31,10 +31,12 @@ import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * The Class that extends the functionality of WorflowStandardParams.
  */
+@Slf4j
 @OwnedBy(CDC)
 public class WorkflowStandardParamsExtensionService {
   private final AppService appService;
@@ -149,6 +151,7 @@ public class WorkflowStandardParamsExtensionService {
     if (workflowStandardParams.getAppId() != null) {
       String accountId = appService.getAccountIdByAppId(workflowStandardParams.getAppId());
       if (featureFlagService.isEnabled(FeatureName.SORT_ARTIFACTS_IN_UPDATED_ORDER, accountId)) {
+        log.info("Sorting collected artifacts by lastUpdatedAt");
         list.sort(Comparator.comparing(Artifact::getLastUpdatedAt).reversed());
       }
     }

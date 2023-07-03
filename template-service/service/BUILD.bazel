@@ -20,7 +20,6 @@ shared_dependencies = [
     "//940-primary-version-manager:module",
     "//942-enforcement-sdk:module",
     "//950-ng-core:module",
-    "//950-telemetry:module",
     "//953-events-api:module",
     "//953-yaml-commons:module",
     "//955-filters-sdk:module",

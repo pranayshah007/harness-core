@@ -30,6 +30,7 @@ import io.harness.lock.DistributedLockImplementation;
 import io.harness.mongo.MongoConfig;
 import io.harness.notification.NotificationClientConfiguration;
 import io.harness.outbox.OutboxPollConfiguration;
+import io.harness.redis.RedisConfig;
 import io.harness.remote.CEAzureSetupConfig;
 import io.harness.remote.CEGcpSetupConfig;
 import io.harness.remote.GovernanceConfig;
@@ -147,6 +148,7 @@ public class CENextGenConfiguration extends Configuration {
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
   @JsonProperty(value = "currencyPreferences") private CurrencyPreferencesConfig currencyPreferencesConfig;
   @JsonProperty("aiEngineConfig") private AiEngineConfig aiEngineConfig;
+  @JsonProperty("redisLockConfig") @ConfigSecret private RedisConfig redisLockConfig;
 
   public SwaggerBundleConfiguration getSwaggerBundleConfiguration() {
     SwaggerBundleConfiguration defaultSwaggerConf = new SwaggerBundleConfiguration();

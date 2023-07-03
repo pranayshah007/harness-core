@@ -14,7 +14,7 @@ import com.google.common.collect.Sets;
 import java.util.Set;
 
 public class CVNGPlanCreatorV2 extends CVNGAbstractPlanCreatorV2<CVVerifyStepNode> {
-  public static final Set<String> CVNG_SUPPORTED_TYPES = Sets.newHashSet(CVNGStepType.CVNG_VERIFY.getDisplayName());
+  public static final Set<String> CVNG_SUPPORTED_TYPES = Sets.newHashSet(CVNGStepType.CVNG_VERIFY.getType());
 
   @Override
   public Set<String> getSupportedStepTypes() {

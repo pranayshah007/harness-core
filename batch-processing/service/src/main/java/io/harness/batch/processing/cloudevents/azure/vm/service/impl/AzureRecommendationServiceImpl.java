@@ -34,11 +34,12 @@ import io.harness.batch.processing.tasklet.util.CurrencyPreferenceHelper;
 import io.harness.ccm.azurevmpricing.AzureVmItemDTO;
 import io.harness.ccm.azurevmpricing.AzureVmPricingClient;
 import io.harness.ccm.azurevmpricing.AzureVmPricingResponseDTO;
+import io.harness.ccm.commons.beans.recommendation.AzureVmMetricType;
 import io.harness.ccm.commons.entities.azure.AzureRecommendation;
 import io.harness.ccm.commons.entities.azure.AzureRecommendation.AzureRecommendationBuilder;
 import io.harness.ccm.commons.entities.azure.AzureVmDetails;
 import io.harness.ccm.currency.Currency;
-import io.harness.ccm.graphql.core.recommendation.AzureCpuUtilisationService;
+import io.harness.ccm.graphql.core.recommendation.AzureMetricsUtilisationService;
 import io.harness.ccm.graphql.dto.common.CloudServiceProvider;
 
 import software.wings.beans.AzureAccountAttributes;
@@ -73,7 +74,7 @@ import retrofit2.Response;
 public class AzureRecommendationServiceImpl implements AzureRecommendationService {
   @Autowired BatchMainConfig configuration;
   @Autowired AzureVmPricingClient azureVmPricingClient;
-  @Autowired AzureCpuUtilisationService azureCpuUtilisationService;
+  @Autowired AzureMetricsUtilisationService azureMetricsUtilisationService;
   @Autowired CurrencyPreferenceHelper currencyPreferenceHelper;
 
   @Override
@@ -198,19 +199,31 @@ public class AzureRecommendationServiceImpl implements AzureRecommendationServic
     AzureVmDetails targetVmDetails = getVirtualMachineDetails(
         targetSku, virtualMachineSizeInners, currentSkuCost - currentSkuMonthlySavings, conversionFactor);
 
-    Double currentSkuAvgCpuUtilisation =
-        azureCpuUtilisationService.getAverageAzureVmCpuUtilisationData(vmId, accountId, Integer.parseInt(duration));
-    Double currentSkuMaxCpuUtilisation =
-        azureCpuUtilisationService.getMaximumAzureVmCpuUtilisationData(vmId, accountId, Integer.parseInt(duration));
+    Double currentSkuAvgCpuUtilisation = azureMetricsUtilisationService.getAverageAzureVmMetricUtilisationData(
+        vmId, accountId, Integer.parseInt(duration), AzureVmMetricType.PERCENTAGE_CPU);
+    Double currentSkuMaxCpuUtilisation = azureMetricsUtilisationService.getMaximumAzureVmMetricUtilisationData(
+        vmId, accountId, Integer.parseInt(duration), AzureVmMetricType.PERCENTAGE_CPU);
+    Double currentSkuAvgMemoryUtilisation = azureMetricsUtilisationService.getAverageAzureVmMetricUtilisationData(
+        vmId, accountId, Integer.parseInt(duration), AzureVmMetricType.PERCENTAGE_MEMORY);
+    Double currentSkuMaxMemoryUtilisation = azureMetricsUtilisationService.getMaximumAzureVmMetricUtilisationData(
+        vmId, accountId, Integer.parseInt(duration), AzureVmMetricType.PERCENTAGE_MEMORY);
     currentVmDetails.setAvgCpuUtilisation(currentSkuAvgCpuUtilisation);
     currentVmDetails.setMaxCpuUtilisation(currentSkuMaxCpuUtilisation);
+    currentVmDetails.setAvgMemoryUtilisation(currentSkuAvgMemoryUtilisation);
+    currentVmDetails.setMaxMemoryUtilisation(currentSkuMaxMemoryUtilisation);
 
-    Double targetSkuAvgCpuUtilisation = getTargetAverageAzureVmCpuUtilisation(
+    Double targetSkuAvgCpuUtilisation = getTargetAverageAzureVmMetricUtilisation(
         currentVmDetails.getNumberOfCores(), targetVmDetails.getNumberOfCores(), currentSkuAvgCpuUtilisation);
-    Double targetSkuMaxCpuUtilisation = getTargetAverageAzureVmCpuUtilisation(
+    Double targetSkuMaxCpuUtilisation = getTargetAverageAzureVmMetricUtilisation(
         currentVmDetails.getNumberOfCores(), targetVmDetails.getNumberOfCores(), currentSkuMaxCpuUtilisation);
+    Double targetSkuAvgMemoryUtilisation = getTargetAverageAzureVmMetricUtilisation(
+        currentVmDetails.getMemoryInMB(), targetVmDetails.getMemoryInMB(), currentSkuAvgMemoryUtilisation);
+    Double targetSkuMaxMemoryUtilisation = getTargetAverageAzureVmMetricUtilisation(
+        currentVmDetails.getMemoryInMB(), targetVmDetails.getMemoryInMB(), currentSkuMaxMemoryUtilisation);
     targetVmDetails.setAvgCpuUtilisation(targetSkuAvgCpuUtilisation);
     targetVmDetails.setMaxCpuUtilisation(targetSkuMaxCpuUtilisation);
+    targetVmDetails.setAvgMemoryUtilisation(targetSkuAvgMemoryUtilisation);
+    targetVmDetails.setMaxMemoryUtilisation(targetSkuMaxMemoryUtilisation);
 
     azureRecommendationBuilder.currentVmDetails(currentVmDetails);
     azureRecommendationBuilder.targetVmDetails(targetVmDetails);
@@ -284,15 +297,14 @@ public class AzureRecommendationServiceImpl implements AzureRecommendationServic
     return price;
   }
 
-  private Double getTargetAverageAzureVmCpuUtilisation(
-      int currentNumberOfCores, int targetNumberOfCores, Double currentSkuAvgCpuUtilisation) {
-    if (currentSkuAvgCpuUtilisation == null) {
+  private Double getTargetAverageAzureVmMetricUtilisation(int current, int target, Double currentSkuMetricUtilisation) {
+    if (currentSkuMetricUtilisation == null) {
       return null;
     }
-    if (targetNumberOfCores == 0) {
+    if (target == 0) {
       return 0.0;
     }
-    return (currentSkuAvgCpuUtilisation * currentNumberOfCores) / targetNumberOfCores;
+    return (currentSkuMetricUtilisation * current) / target;
   }
 
   private String getAzureVmId(String resourceId) {

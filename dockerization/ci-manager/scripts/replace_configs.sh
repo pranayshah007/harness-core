@@ -103,6 +103,22 @@ if [[ "" != "$S3_CACHE_IMAGE" ]]; then
   export S3_CACHE_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.cacheS3Config.image=env(S3_CACHE_IMAGE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$SSCA_ORCHESTRATION_IMAGE" ]]; then
+  export SSCA_ORCHESTRATION_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.sscaOrchestrationConfig.image=env(SSCA_ORCHESTRATION_IMAGE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SSCA_ENFORCEMENT_IMAGE" ]]; then
+  export SSCA_ENFORCEMENT_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.sscaEnforcementConfig.image=env(SSCA_ENFORCEMENT_IMAGE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$VM_SSCA_ORCHESTRATION_IMAGE" ]]; then
+  export VM_SSCA_ORCHESTRATION_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.sscaOrchestration=env(VM_SSCA_ORCHESTRATION_IMAGE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$VM_SSCA_ENFORCEMENT_IMAGE" ]]; then
+  export VM_SSCA_ENFORCEMENT_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.sscaEnforcement=env(VM_SSCA_ENFORCEMENT_IMAGE)' $CONFIG_FILE
+fi
+
 if [[ "" != "$VM_GIT_CLONE_IMAGE" ]]; then
   export VM_GIT_CLONE_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.gitClone=env(VM_GIT_CLONE_IMAGE)' $CONFIG_FILE
 fi

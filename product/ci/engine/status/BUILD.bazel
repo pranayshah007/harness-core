@@ -17,6 +17,7 @@ go_library(
         "//955-delegate-beans/src/main/proto/io/harness/delegate",
         "//commons/go/lib/delegate-task-grpc-service/grpc",
         "//commons/go/lib/utils",
+        "//product/ci/common/external",
         "//product/ci/engine/output",
         "//product/ci/engine/proto",
         "//product/ci/engine/status/payloads",

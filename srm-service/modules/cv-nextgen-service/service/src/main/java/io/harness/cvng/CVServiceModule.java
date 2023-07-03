@@ -65,19 +65,19 @@ import io.harness.cvng.analysis.services.impl.VerificationJobInstanceAnalysisSer
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.ChangeSourceType;
-import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
+import io.harness.cvng.cdng.beans.MonitoredServiceSpecType;
 import io.harness.cvng.cdng.resources.VerifyStepResourceImpl;
 import io.harness.cvng.cdng.services.api.CDStageMetaDataService;
 import io.harness.cvng.cdng.services.api.CVNGStepService;
 import io.harness.cvng.cdng.services.api.CVNGStepTaskService;
+import io.harness.cvng.cdng.services.api.PipelineStepMonitoredServiceResolutionService;
 import io.harness.cvng.cdng.services.api.VerifyStepDemoService;
-import io.harness.cvng.cdng.services.api.VerifyStepMonitoredServiceResolutionService;
 import io.harness.cvng.cdng.services.impl.CDStageMetaDataServiceImpl;
 import io.harness.cvng.cdng.services.impl.CVNGStepServiceImpl;
 import io.harness.cvng.cdng.services.impl.CVNGStepTaskServiceImpl;
-import io.harness.cvng.cdng.services.impl.ConfiguredVerifyStepMonitoredServiceResolutionServiceImpl;
-import io.harness.cvng.cdng.services.impl.DefaultVerifyStepMonitoredServiceResolutionServiceImpl;
-import io.harness.cvng.cdng.services.impl.TemplateVerifyStepMonitoredServiceResolutionServiceImpl;
+import io.harness.cvng.cdng.services.impl.ConfiguredPipelineStepMonitoredServiceResolutionServiceImpl;
+import io.harness.cvng.cdng.services.impl.DefaultPipelineStepMonitoredServiceResolutionServiceImpl;
+import io.harness.cvng.cdng.services.impl.TemplatePipelineStepMonitoredServiceResolutionServiceImpl;
 import io.harness.cvng.cdng.services.impl.VerifyStepDemoServiceImpl;
 import io.harness.cvng.client.ErrorTrackingService;
 import io.harness.cvng.client.ErrorTrackingServiceImpl;
@@ -764,17 +764,17 @@ public class CVServiceModule extends AbstractModule {
     dataSourceTypeDataCollectionInfoMapperMapBinder.addBinding(DataSourceType.GRAFANA_LOKI_LOGS)
         .to(GrafanaLokiLogDataCollectionInfoMapper.class)
         .in(Scopes.SINGLETON);
-    MapBinder<MonitoredServiceSpecType, VerifyStepMonitoredServiceResolutionService>
+    MapBinder<MonitoredServiceSpecType, PipelineStepMonitoredServiceResolutionService>
         verifyStepCvConfigServiceMapBinder = MapBinder.newMapBinder(
-            binder(), MonitoredServiceSpecType.class, VerifyStepMonitoredServiceResolutionService.class);
+            binder(), MonitoredServiceSpecType.class, PipelineStepMonitoredServiceResolutionService.class);
     verifyStepCvConfigServiceMapBinder.addBinding(MonitoredServiceSpecType.CONFIGURED)
-        .to(ConfiguredVerifyStepMonitoredServiceResolutionServiceImpl.class)
+        .to(ConfiguredPipelineStepMonitoredServiceResolutionServiceImpl.class)
         .in(Scopes.SINGLETON);
     verifyStepCvConfigServiceMapBinder.addBinding(MonitoredServiceSpecType.DEFAULT)
-        .to(DefaultVerifyStepMonitoredServiceResolutionServiceImpl.class)
+        .to(DefaultPipelineStepMonitoredServiceResolutionServiceImpl.class)
         .in(Scopes.SINGLETON);
     verifyStepCvConfigServiceMapBinder.addBinding(MonitoredServiceSpecType.TEMPLATE)
-        .to(TemplateVerifyStepMonitoredServiceResolutionServiceImpl.class)
+        .to(TemplatePipelineStepMonitoredServiceResolutionServiceImpl.class)
         .in(Scopes.SINGLETON);
 
     bind(VerifyStepResource.class).to(VerifyStepResourceImpl.class);

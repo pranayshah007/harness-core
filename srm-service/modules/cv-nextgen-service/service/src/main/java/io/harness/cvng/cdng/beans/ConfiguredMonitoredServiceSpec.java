@@ -10,6 +10,7 @@ package io.harness.cvng.cdng.beans;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
+import io.harness.cvng.cdng.beans.v2.DefaultAndConfiguredMonitoredServiceSpec;
 import io.harness.pms.yaml.ParameterField;
 
 import io.swagger.annotations.ApiModelProperty;
@@ -26,7 +27,7 @@ import lombok.experimental.SuperBuilder;
 //@JsonTypeName("Configured")
 @OwnedBy(HarnessTeam.CV)
 @SuperBuilder
-public class ConfiguredMonitoredServiceSpec extends MonitoredServiceSpec {
+public class ConfiguredMonitoredServiceSpec extends DefaultAndConfiguredMonitoredServiceSpec {
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> monitoredServiceRef;
 
   @Override

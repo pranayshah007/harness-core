@@ -19,6 +19,7 @@ import static io.harness.ng.core.invites.dto.InviteOperationResponse.FAIL;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.INVITE_EXPIRED;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.INVITE_INVALID;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_ALREADY_ADDED;
+import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.HEN;
@@ -28,6 +29,7 @@ import static io.harness.rule.OwnerRule.NANDAN;
 import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.RAFAEL;
 import static io.harness.rule.OwnerRule.RAJ;
+import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.rule.OwnerRule.VOJIN;
 
@@ -45,6 +47,7 @@ import static software.wings.utils.WingsTestConstants.UUID;
 
 import static java.util.Arrays.asList;
 import static junit.framework.TestCase.assertNotNull;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -85,6 +88,7 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.Account;
 import software.wings.beans.Base.BaseKeys;
 import software.wings.beans.User;
+import software.wings.beans.User.UserKeys;
 import software.wings.beans.UserInvite;
 import software.wings.beans.UserInvite.UserInviteKeys;
 import software.wings.beans.security.AccessRequest;
@@ -104,6 +108,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import dev.morphia.query.Query;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Arrays;
@@ -1085,5 +1090,52 @@ public class UserServiceImplTest extends WingsBaseTest {
             AccessedExpiryPolicy.factoryOf(Duration.THIRTY_MINUTES));
     verify(eventProducer, times(1)).send(any(Message.class));
     verify(auditServiceHelper, times(1)).reportDeleteForAuditingUsingAccountId("ACCOUNT_ID", user1);
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void test_getSearchUserQuery() {
+    String accountId = randomAlphabetic(10);
+    String searchTerm = randomAlphabetic(10);
+
+    // Case 1: includeUsersPendingInviteAcceptance = true; includeDisabled = true;
+    Query<User> resultantQuery = userServiceImpl.getSearchUserQuery(accountId, searchTerm, true, true);
+    Query<User> expectedQuery = wingsPersistence.createQuery(User.class, excludeAuthority);
+    expectedQuery.or(expectedQuery.and(expectedQuery.criteria(UserKeys.accounts).equal(accountId),
+                         expectedQuery.or(expectedQuery.criteria(UserKeys.name).containsIgnoreCase(searchTerm),
+                             expectedQuery.criteria(UserKeys.email).containsIgnoreCase(searchTerm))),
+        expectedQuery.and(expectedQuery.criteria(UserKeys.pendingAccounts).equal(accountId),
+            expectedQuery.criteria(UserKeys.email).containsIgnoreCase(searchTerm)));
+    assertThat(expectedQuery).isEqualTo(resultantQuery);
+
+    // Case 2: includeUsersPendingInviteAcceptance = true; includeDisabled = false;
+    resultantQuery = userServiceImpl.getSearchUserQuery(accountId, searchTerm, true, false);
+    expectedQuery = wingsPersistence.createQuery(User.class, excludeAuthority);
+    expectedQuery.or(expectedQuery.and(expectedQuery.criteria(UserKeys.accounts).equal(accountId),
+                         expectedQuery.or(expectedQuery.criteria(UserKeys.name).containsIgnoreCase(searchTerm),
+                             expectedQuery.criteria(UserKeys.email).containsIgnoreCase(searchTerm)),
+                         expectedQuery.criteria(UserKeys.disabled).notEqual(true)),
+        expectedQuery.and(expectedQuery.criteria(UserKeys.pendingAccounts).equal(accountId),
+            expectedQuery.criteria(UserKeys.email).containsIgnoreCase(searchTerm),
+            expectedQuery.criteria(UserKeys.disabled).notEqual(true)));
+    assertThat(expectedQuery).isEqualTo(resultantQuery);
+
+    // Case 3: includeUsersPendingInviteAcceptance = false; includeDisabled = true;
+    resultantQuery = userServiceImpl.getSearchUserQuery(accountId, searchTerm, false, true);
+    expectedQuery = wingsPersistence.createQuery(User.class, excludeAuthority);
+    expectedQuery.and(expectedQuery.criteria(UserKeys.accounts).equal(accountId),
+        expectedQuery.or(expectedQuery.criteria(UserKeys.name).containsIgnoreCase(searchTerm),
+            expectedQuery.criteria(UserKeys.email).containsIgnoreCase(searchTerm)));
+    assertThat(expectedQuery).isEqualTo(resultantQuery);
+
+    // Case 4: includeUsersPendingInviteAcceptance = false; includeDisabled = false;
+    resultantQuery = userServiceImpl.getSearchUserQuery(accountId, searchTerm, false, false);
+    expectedQuery = wingsPersistence.createQuery(User.class, excludeAuthority);
+    expectedQuery.and(expectedQuery.criteria(UserKeys.accounts).equal(accountId),
+        expectedQuery.or(expectedQuery.criteria(UserKeys.name).containsIgnoreCase(searchTerm),
+            expectedQuery.criteria(UserKeys.email).containsIgnoreCase(searchTerm)),
+        expectedQuery.criteria(UserKeys.disabled).notEqual(true));
+    assertThat(expectedQuery).isEqualTo(resultantQuery);
   }
 }

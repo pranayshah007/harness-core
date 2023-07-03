@@ -12,6 +12,7 @@ import static io.harness.common.NGExpressionUtils.GENERIC_EXPRESSIONS_PATTERN;
 import static io.harness.common.NGExpressionUtils.GENERIC_EXPRESSIONS_PATTERN_FOR_MATRIX;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.SHALINI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -74,6 +75,19 @@ public class NGExpressionUtilsTest extends CategoryTest {
     assertThat(matchesPattern).isTrue();
     matchesPattern = NGExpressionUtils.matchesPattern(Pattern.compile(pattern2), expression);
     assertThat(matchesPattern).isFalse();
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testIsStrictlyExpressionField() {
+    String expression1 = "<+input>.allowedValues(abc)";
+    String expression2 = "<+randomExpression>";
+    String expression3 = "randomFixedValue";
+
+    assertThat(NGExpressionUtils.isStrictlyExpressionField(expression1)).isFalse();
+    assertThat(NGExpressionUtils.isStrictlyExpressionField(expression2)).isTrue();
+    assertThat(NGExpressionUtils.isStrictlyExpressionField(expression3)).isFalse();
   }
 
   @Test

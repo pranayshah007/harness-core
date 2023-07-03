@@ -139,8 +139,8 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
                                           .currentProdInfo(null)
                                           .build();
         logCallback.saveExecutionLog(
-            "\n ----------  This is first rolling deployment hence skipping rollback", INFO, SUCCESS);
-        logCallback.saveExecutionLog("\n ----------  PCF Rolling Rollback completed successfully", INFO, SUCCESS);
+            "\n ---------  This is first rolling deployment hence skipping rollback", INFO, SUCCESS);
+        logCallback.saveExecutionLog("\n ---------  PCF Rolling Rollback completed successfully", INFO, SUCCESS);
         return cfRollingRollbackResponseNG;
       }
 

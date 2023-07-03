@@ -42,7 +42,6 @@ import io.harness.ng.core.template.TemplateListType;
 import io.harness.persistence.gitaware.GitAware;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.rule.Owner;
-import io.harness.telemetry.TelemetryReporter;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.gitsync.TemplateGitSyncBranchContextGuard;
@@ -50,13 +49,11 @@ import io.harness.template.resources.beans.TemplateFilterProperties;
 import io.harness.template.resources.beans.TemplateFilterPropertiesDTO;
 import io.harness.template.resources.beans.UpdateGitDetailsParams;
 
-import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
 import java.util.regex.Pattern;
 import org.bson.Document;
 import org.junit.Before;
@@ -80,10 +77,6 @@ public class NGTemplateServiceHelperTest extends CategoryTest {
 
   @Mock GitAwareEntityHelper gitAwareEntityHelper;
 
-  @Mock TelemetryReporter telemetryReporter;
-
-  @Inject private ExecutorService executorService;
-
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
   private final String PROJ_IDENTIFIER = "projId";
@@ -95,8 +88,8 @@ public class NGTemplateServiceHelperTest extends CategoryTest {
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    templateServiceHelper = new NGTemplateServiceHelper(filterService, templateRepository, gitSyncSdkService,
-        templateGitXService, gitAwareEntityHelper, telemetryReporter, executorService);
+    templateServiceHelper = new NGTemplateServiceHelper(
+        filterService, templateRepository, gitSyncSdkService, templateGitXService, gitAwareEntityHelper);
   }
 
   @Test

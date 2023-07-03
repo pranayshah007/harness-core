@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngtriggers.mapper;
+
 import static io.harness.constants.Constants.AMZ_SUBSCRIPTION_CONFIRMATION_TYPE;
 import static io.harness.constants.Constants.X_AMZ_SNS_MESSAGE_TYPE;
 import static io.harness.constants.Constants.X_BIT_BUCKET_EVENT;
@@ -41,7 +42,6 @@ import static io.harness.rule.OwnerRule.SRIDHAR;
 import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
-import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.USE_NATIVE_TYPE_ID;
 import static java.util.Arrays.asList;
 import static junit.framework.TestCase.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -144,10 +144,6 @@ import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.webhook.WebhookConfigProvider;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -512,28 +508,30 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
     String ngCustomTriggerYaml2 =
         Resources.toString(Objects.requireNonNull(classLoader.getResource(fileName2)), StandardCharsets.UTF_8);
 
-    NGTriggerEntity ngTriggerEntity =
-        NGTriggerEntity.builder()
-            .accountId("account")
-            .orgIdentifier("org")
-            .projectIdentifier("project")
-            .targetIdentifier("pipeline")
-            .name("first trigger")
-            .identifier("first_trigger")
-            .targetType(TargetType.PIPELINE)
-            .withServiceV2(true)
-            .pollInterval("")
-            .metadata(
-                NGTriggerMetadata.builder()
-                    .webhook(WebhookMetadata.builder()
-                                 .type("AWS_CODECOMMIT")
-                                 .git(GitMetadata.builder().connectorIdentifier("conn").repoName("myrepo").build())
-                                 .build())
-                    .build())
-            .yaml(ngCustomTriggerYaml2)
-            .enabled(true)
-            .type(WEBHOOK)
-            .build();
+    NGTriggerEntity ngTriggerEntity = NGTriggerEntity.builder()
+                                          .accountId("account")
+                                          .orgIdentifier("org")
+                                          .projectIdentifier("project")
+                                          .targetIdentifier("pipeline")
+                                          .name("first trigger")
+                                          .identifier("first_trigger")
+                                          .targetType(TargetType.PIPELINE)
+                                          .withServiceV2(true)
+                                          .pollInterval("")
+                                          .metadata(NGTriggerMetadata.builder()
+                                                        .webhook(WebhookMetadata.builder()
+                                                                     .type("AWS_CODECOMMIT")
+                                                                     .git(GitMetadata.builder()
+                                                                              .connectorIdentifier("conn")
+                                                                              .repoName("myrepo")
+                                                                              .isHarnessScm(false)
+                                                                              .build())
+                                                                     .build())
+                                                        .build())
+                                          .yaml(ngCustomTriggerYaml2)
+                                          .enabled(true)
+                                          .type(WEBHOOK)
+                                          .build();
     NGTriggerConfigV2 ngTriggerConfigV2 =
         NGTriggerConfigV2.builder()
             .pipelineIdentifier("pipeline")
@@ -1377,13 +1375,7 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
                                                                                        .ymlVersion(null)
                                                                                        .yaml(yamlV0)
                                                                                        .build());
-
-    ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory()
-                                                     .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
-                                                     .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
-                                                     .disable(USE_NATIVE_TYPE_ID));
-    objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-    String s = objectMapper.writeValueAsString(ngTriggerConfigV2);
+    String s = YamlUtils.writeYamlString(ngTriggerConfigV2);
 
     NGTriggerConfigV2 ngTriggerConfigV3 = ngTriggerElementMapper.toTriggerConfigV2(s);
     int i = 0;

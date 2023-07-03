@@ -224,6 +224,7 @@ public class RecommendationsOverviewQueryV2 {
                            .jiraIssueKey(item.getJiraIssueKey())
                            .jiraStatus(item.getJiraStatus())
                            .cloudProvider(item.getCloudProvider())
+                           .governanceRuleId(item.getGovernanceRuleId())
                            .recommendationDetails(item.getRecommendationDetails() != null
                                    ? item.getRecommendationDetails()
                                    : getRecommendationDetails(item, env))
