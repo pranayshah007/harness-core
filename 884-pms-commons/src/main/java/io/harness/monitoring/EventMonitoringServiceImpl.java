@@ -30,7 +30,7 @@ public class EventMonitoringServiceImpl implements EventMonitoringService {
     try {
       String metricValue = String.format(metricName, monitoringInfo.getMetricPrefix());
       long newCount = countMap.compute(metricValue, (k, v) -> v == null ? 1 : ((v + 1) % SAMPLE_SIZE));
-      if (newCount == 1 || (monitoringInfo.getReadTs() - monitoringInfo.getCreatedAt() > 5000)) {
+      if (newCount == 1 || (monitoringInfo.getReadTs() - monitoringInfo.getCreatedAt() > 1000)) {
         log.debug(
             String.format("Sampled the metric [%s]", String.format(metricName, monitoringInfo.getMetricPrefix())));
         metricService.recordMetric(metricValue, monitoringInfo.getReadTs() - monitoringInfo.getCreatedAt());
