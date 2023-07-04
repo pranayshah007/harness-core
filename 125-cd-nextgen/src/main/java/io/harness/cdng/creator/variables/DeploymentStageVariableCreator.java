@@ -45,6 +45,7 @@ import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
+import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.service.entity.ServiceEntity;
@@ -334,7 +335,12 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     List<NGVariable> ngVariableList = new ArrayList<>();
     if (isNotEmpty(serviceOverride)) {
       List<NGServiceOverridesEntity> serviceOverridesEntities = new ArrayList<>(serviceOverride.values());
-      serviceOverridesEntities.forEach(entity -> ngVariableList.addAll(entity.getSpec().getVariables()));
+      serviceOverridesEntities.forEach(entity -> {
+        List<NGVariable> ngVariables = entity.getSpec().getVariables();
+        if (isNotEmpty(ngVariables)) {
+          ngVariableList.addAll(ngVariables);
+        }
+      });
     }
     return ngVariableList;
   }
@@ -500,7 +506,13 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
               EnvironmentMapper.toNGEnvironmentConfig(optionalEnvironment.get());
           // all env.variables also accessed by serviceVariables
           if (ngEnvironmentConfig != null) {
-            envVariables.addAll(ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables());
+            NGEnvironmentInfoConfig ngEnvironmentInfoConfig = ngEnvironmentConfig.getNgEnvironmentInfoConfig();
+            if (ngEnvironmentInfoConfig != null) {
+              List<NGVariable> ngVariables = ngEnvironmentInfoConfig.getVariables();
+              if (isNotEmpty(ngVariables)) {
+                envVariables.addAll(ngVariables);
+              }
+            }
           }
         }
         outputProperties.addAll(handleEnvironmentOutcome(specField, envVariables));
