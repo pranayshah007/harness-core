@@ -24,7 +24,7 @@ import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.serverless.ServerlessEntityHelper;
-import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepInfo;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPackageV2StepInfo;
 import io.harness.connector.services.ConnectorService;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -54,7 +54,7 @@ import org.mockito.junit.MockitoRule;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class ServerlessPrepareRollbackPluginInfoProviderTest extends CategoryTest {
+public class ServerlessAwsLambdaPackageV2PluginInfoProviderTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
   @Mock private OutcomeService outcomeService;
@@ -64,14 +64,15 @@ public class ServerlessPrepareRollbackPluginInfoProviderTest extends CategoryTes
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Mock private CDStepHelper cdStepHelper;
   @Mock private ServerlessEntityHelper serverlessEntityHelper;
+
+  @Mock private PluginInfoProviderUtils pluginInfoProviderUtils;
   @Mock ExecutionSweepingOutputService executionSweepingOutputService;
 
-  @Mock PluginInfoProviderUtils pluginInfoProviderUtils;
-
   @Mock ServerlessV2PluginInfoProviderHelper serverlessV2PluginInfoProviderHelper;
-
   @Named(DEFAULT_CONNECTOR_SERVICE) @Mock private ConnectorService connectorService;
-  @InjectMocks @Spy private ServerlessPrepareRollbackPluginInfoProvider serverlessPrepareRollbackPluginInfoProvider;
+  @InjectMocks
+  @Spy
+  private ServerlessAwsLambdaPackageV2PluginInfoProvider serverlessAwsLambdaPackageV2PluginInfoProvider;
 
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
@@ -87,28 +88,28 @@ public class ServerlessPrepareRollbackPluginInfoProviderTest extends CategoryTes
     doReturn("name").when(cdAbstractStepNode).getName();
     doReturn("uuid").when(cdAbstractStepNode).getUuid();
 
-    ServerlessAwsLambdaPrepareRollbackV2StepInfo serverlessAwsLambdaPrepareRollbackContainerStepInfo =
-        ServerlessAwsLambdaPrepareRollbackV2StepInfo.infoBuilder()
+    ServerlessAwsLambdaPackageV2StepInfo serverlessAwsLambdaPackageV2StepInfo =
+        ServerlessAwsLambdaPackageV2StepInfo.infoBuilder()
             .resources(ContainerResource.builder().build())
             .runAsUser(ParameterField.<Integer>builder().value(1).build())
             .connectorRef(ParameterField.<String>builder().value("connectorRef").build())
             .build();
-    doReturn(serverlessAwsLambdaPrepareRollbackContainerStepInfo).when(cdAbstractStepNode).getStepSpecType();
+    doReturn(serverlessAwsLambdaPackageV2StepInfo).when(cdAbstractStepNode).getStepSpecType();
     doReturn(Collections.emptyMap()).when(serverlessV2PluginInfoProviderHelper).getEnvironmentVariables(any(), any());
     PluginCreationResponseWrapper pluginCreationResponseWrapper = mock(PluginCreationResponseWrapper.class);
     doReturn(pluginCreationResponseWrapper)
-        .when(serverlessPrepareRollbackPluginInfoProvider)
+        .when(serverlessAwsLambdaPackageV2PluginInfoProvider)
         .getPluginCreationResponseWrapper(any(), any());
 
-    doReturn(mock(ImageDetails.class)).when(serverlessPrepareRollbackPluginInfoProvider).getImageDetails(any());
+    doReturn(mock(ImageDetails.class)).when(serverlessAwsLambdaPackageV2PluginInfoProvider).getImageDetails(any());
 
     PluginDetails.Builder pluginBuilder = PluginDetails.newBuilder();
     doReturn(pluginBuilder)
-        .when(serverlessPrepareRollbackPluginInfoProvider)
+        .when(serverlessAwsLambdaPackageV2PluginInfoProvider)
         .getPluginDetailsBuilder(any(), any(), any());
-    doReturn(cdAbstractStepNode).when(serverlessPrepareRollbackPluginInfoProvider).getRead(jsonNode);
+    doReturn(cdAbstractStepNode).when(serverlessAwsLambdaPackageV2PluginInfoProvider).getRead(jsonNode);
 
-    assertThat(serverlessPrepareRollbackPluginInfoProvider.getPluginInfo(
+    assertThat(serverlessAwsLambdaPackageV2PluginInfoProvider.getPluginInfo(
                    pluginCreationRequest, Collections.emptySet(), ambiance))
         .isEqualTo(pluginCreationResponseWrapper);
   }

@@ -29,20 +29,20 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@TypeAlias("ServerlessAwsLambdaDeployV2StepParameters")
-@RecasterAlias("io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2StepParameters")
-public class ServerlessAwsLambdaDeployV2StepParameters
+@TypeAlias("serverlessAwsLambdaPackageV2StepParameters")
+@RecasterAlias("io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPackageV2StepParameters")
+public class ServerlessAwsLambdaPackageV2StepParameters
     extends ServerlessAwsLambdaV2BaseStepInfo implements ServerlessSpecParameters, StepParameters {
-  ParameterField<List<String>> deployCommandOptions;
+  ParameterField<List<String>> packageCommandOptions;
 
   @Builder(builderMethodName = "infoBuilder")
-  public ServerlessAwsLambdaDeployV2StepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+  public ServerlessAwsLambdaPackageV2StepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<String> image, ParameterField<String> connectorRef, ContainerResource resources,
       ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
       ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
-      ParameterField<String> serverlessVersion, ParameterField<List<String>> deployCommandOptions) {
+      ParameterField<String> serverlessVersion, ParameterField<List<String>> packageCommandOptions) {
     super(delegateSelectors, image, connectorRef, resources, envVariables, privileged, runAsUser, imagePullPolicy,
         serverlessVersion);
-    this.deployCommandOptions = deployCommandOptions;
+    this.packageCommandOptions = packageCommandOptions;
   }
 }

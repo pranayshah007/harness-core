@@ -13,14 +13,14 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.pipeline.executions.CDPluginInfoProvider;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
-import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepInfo;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPackageV2StepInfo;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaV2BaseStepInfo;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ImageDetails;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
 import io.harness.pms.contracts.plan.PluginCreationResponse;
 import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
-import io.harness.pms.contracts.plan.PluginDetails;
 import io.harness.pms.contracts.plan.PluginDetails.Builder;
 import io.harness.pms.contracts.plan.StepInfoProto;
 import io.harness.pms.sdk.core.plugin.ContainerPluginParseException;
@@ -34,7 +34,7 @@ import java.io.IOException;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
-public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfoProvider {
+public class ServerlessAwsLambdaPackageV2PluginInfoProvider implements CDPluginInfoProvider {
   @Inject private ServerlessV2PluginInfoProviderHelper serverlessV2PluginInfoProviderHelper;
 
   @Inject PluginExecutionConfig pluginExecutionConfig;
@@ -52,28 +52,27 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
           String.format("Error in parsing CD step for step type [%s]", request.getType()), e);
     }
 
-    ServerlessAwsLambdaPrepareRollbackV2StepInfo serverlessAwsLambdaPrepareRollbackV2StepInfo =
-        (ServerlessAwsLambdaPrepareRollbackV2StepInfo) cdAbstractStepNode.getStepSpecType();
+    ServerlessAwsLambdaPackageV2StepInfo serverlessAwsLambdaPackageV2StepInfo =
+        (ServerlessAwsLambdaPackageV2StepInfo) cdAbstractStepNode.getStepSpecType();
 
-    PluginDetails.Builder pluginDetailsBuilder =
-        getPluginDetailsBuilder(serverlessAwsLambdaPrepareRollbackV2StepInfo.getResources(),
-            serverlessAwsLambdaPrepareRollbackV2StepInfo.getRunAsUser(), usedPorts);
+    Builder pluginDetailsBuilder = getPluginDetailsBuilder(serverlessAwsLambdaPackageV2StepInfo.getResources(),
+        serverlessAwsLambdaPackageV2StepInfo.getRunAsUser(), usedPorts);
 
     ImageDetails imageDetails = null;
 
-    if (ParameterField.isNotNull(serverlessAwsLambdaPrepareRollbackV2StepInfo.getConnectorRef())
-        || isNotEmpty(serverlessAwsLambdaPrepareRollbackV2StepInfo.getConnectorRef().getValue())) {
-      imageDetails = getImageDetails(serverlessAwsLambdaPrepareRollbackV2StepInfo);
+    if (ParameterField.isNotNull(serverlessAwsLambdaPackageV2StepInfo.getConnectorRef())
+        || isNotEmpty(serverlessAwsLambdaPackageV2StepInfo.getConnectorRef().getValue())) {
+      imageDetails = getImageDetails(serverlessAwsLambdaPackageV2StepInfo);
 
     } else {
       // todo: If image is not provided by user, default to an harness provided image
-      StepImageConfig stepImageConfig = pluginExecutionConfig.getServerlessPrepareRollbackV2StepImageConfig();
+      StepImageConfig stepImageConfig = pluginExecutionConfig.getServerlessAwsLambdaPackageV2StepImageConfig();
     }
 
     pluginDetailsBuilder.setImageDetails(imageDetails);
 
-    pluginDetailsBuilder.putAllEnvVariables(serverlessV2PluginInfoProviderHelper.getEnvironmentVariables(
-        ambiance, serverlessAwsLambdaPrepareRollbackV2StepInfo));
+    pluginDetailsBuilder.putAllEnvVariables(
+        serverlessV2PluginInfoProviderHelper.getEnvironmentVariables(ambiance, serverlessAwsLambdaPackageV2StepInfo));
     PluginCreationResponse response = getPluginCreationResponse(pluginDetailsBuilder);
     StepInfoProto stepInfoProto = StepInfoProto.newBuilder()
                                       .setIdentifier(cdAbstractStepNode.getIdentifier())
@@ -92,14 +91,12 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
     return PluginCreationResponse.newBuilder().setPluginDetails(pluginDetailsBuilder.build()).build();
   }
 
-  public ImageDetails getImageDetails(
-      ServerlessAwsLambdaPrepareRollbackV2StepInfo serverlessAwsLambdaPrepareRollbackV2StepInfo) {
-    return PluginInfoProviderHelper.getImageDetails(serverlessAwsLambdaPrepareRollbackV2StepInfo.getConnectorRef(),
-        serverlessAwsLambdaPrepareRollbackV2StepInfo.getImage(),
-        serverlessAwsLambdaPrepareRollbackV2StepInfo.getImagePullPolicy());
+  public ImageDetails getImageDetails(ServerlessAwsLambdaV2BaseStepInfo serverlessAwsLambdaV2BaseStepInfo) {
+    return PluginInfoProviderHelper.getImageDetails(serverlessAwsLambdaV2BaseStepInfo.getConnectorRef(),
+        serverlessAwsLambdaV2BaseStepInfo.getImage(), serverlessAwsLambdaV2BaseStepInfo.getImagePullPolicy());
   }
 
-  public PluginDetails.Builder getPluginDetailsBuilder(
+  public Builder getPluginDetailsBuilder(
       ContainerResource resources, ParameterField<Integer> runAsUser, Set<Integer> usedPorts) {
     return PluginInfoProviderHelper.buildPluginDetails(resources, runAsUser, usedPorts);
   }
@@ -110,7 +107,7 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
 
   @Override
   public boolean isSupported(String stepType) {
-    if (stepType.equals(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2)) {
+    if (stepType.equals(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PACKAGE_V2)) {
       return true;
     }
     return false;
