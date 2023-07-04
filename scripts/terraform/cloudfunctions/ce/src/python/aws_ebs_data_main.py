@@ -17,6 +17,8 @@ import util
 from util import create_dataset, if_tbl_exists, createTable, print_, TABLE_NAME_FORMAT
 from aws_util import assumed_role_session, STATIC_REGION
 
+PROJECTID_SECONDARY = os.environ.get('GCP_PROJECT_SECONDARY', 'ccm-play')
+
 def getEbsVolumesData(jsonData):
     my_config = Config(
         region_name='us-west-2',  # initial region to call aws api first time
@@ -232,16 +234,14 @@ def main(event, context):
 
     # This is available only in runtime python 3.7, go 1.11
     jsonData["projectName"] = os.environ.get('GCP_PROJECT', 'ccm-play')
-
-    client = bigquery.Client(jsonData["projectName"])
-
+    client = bigquery.Client(PROJECTID_SECONDARY)
+    
     # Set the accountId for GCP logging
     util.ACCOUNTID_LOG = jsonData.get("accountIdOrig")
 
     jsonData["accountIdBQ"] = re.sub('[^0-9a-z]', '_', jsonData.get("accountId").lower())
     jsonData["datasetName"] = "BillingReport_%s" % jsonData["accountIdBQ"]
-    create_dataset(client, jsonData["datasetName"])
-    dataset = client.dataset(jsonData["datasetName"])
+    dataset = create_dataset(client, jsonData["datasetName"])
 
     # Getting linked accountId
     jsonData["linkedAccountId"] = jsonData["roleArn"].split(":")[4]

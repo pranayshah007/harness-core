@@ -27,7 +27,8 @@ from aws_util import assumed_role_session, STATIC_REGION
 """
 
 PROJECTID = os.environ.get('GCP_PROJECT', 'ccm-play')
-client = bigquery.Client(PROJECTID)
+PROJECTID_SECONDARY = os.environ.get('GCP_PROJECT_SECONDARY', 'ccm-play')
+client = bigquery.Client(PROJECTID_SECONDARY)
 
 
 def main(event, context):
@@ -44,8 +45,7 @@ def main(event, context):
     util.ACCOUNTID_LOG = jsonData.get("accountId")
     jsonData["accountIdBQ"] = re.sub('[^0-9a-z]', '_', jsonData.get("accountId").lower())
     jsonData["datasetName"] = "BillingReport_%s" % jsonData["accountIdBQ"]
-    create_dataset(client, jsonData["datasetName"])
-    dataset = client.dataset(jsonData["datasetName"])
+    dataset = create_dataset(client, jsonData["datasetName"])
     jsonData["linkedAccountId"] = jsonData["roleArn"].split(":")[4]
     awsEc2InventoryTableRef = dataset.table("awsEc2Inventory")
     awsEc2InventoryTableRefTemp = dataset.table("awsEc2Inventory_%s" % jsonData.get("linkedAccountId"))

@@ -13,6 +13,10 @@ variable "projectId" {
   type = string
 }
 
+variable "projectIdSecondary" {
+  type = string
+}
+
 variable "region" {
   type = string
 }

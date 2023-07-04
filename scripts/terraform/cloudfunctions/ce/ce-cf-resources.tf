@@ -1035,6 +1035,7 @@ resource "google_cloudfunctions_function" "ce-clusterdata-function" {
       disabled = "false"
       disable_for_accounts = ""
       GCP_PROJECT = "${var.projectId}"
+      GCP_PROJECT_SECONDARY = "${var.projectIdSecondary}"
     }
     event_trigger {
       event_type = "google.storage.object.finalize"
@@ -1066,6 +1067,7 @@ resource "google_cloudfunctions_function" "ce-gcp-billing-bq-function" {
     disabled = "false"
     enable_for_accounts = ""
     GCP_PROJECT = "${var.projectId}"
+    GCP_PROJECT_SECONDARY = "${var.projectIdSecondary}"
     GCPCFTOPIC = "${google_pubsub_topic.ce-gcp-billing-cf-topic.name}"
     COSTCATEGORIESUPDATETOPIC = "${google_pubsub_topic.ccm-bigquery-batch-update-topic.name}"
   }
@@ -1100,10 +1102,11 @@ resource "google_cloudfunctions2_function" "ce-aws-billing-bq-function" {
     available_memory   = "256M"
     timeout_seconds    = 3600
     environment_variables = {
-        disabled = "false"
-        enable_for_accounts = ""
-        GCP_PROJECT = "${var.projectId}"
-        COSTCATEGORIESUPDATETOPIC = "${google_pubsub_topic.ccm-bigquery-batch-update-topic.name}"
+      disabled = "false"
+      enable_for_accounts = ""
+      GCP_PROJECT = "${var.projectId}"
+      GCP_PROJECT_SECONDARY = "${var.projectIdSecondary}"
+      COSTCATEGORIESUPDATETOPIC = "${google_pubsub_topic.ccm-bigquery-batch-update-topic.name}"
     }
     service_account_email = data.google_app_engine_default_service_account.default.email
   }
@@ -1126,6 +1129,7 @@ resource "google_cloudfunctions_function" "ce-aws-billing-gcs-function" {
     disabled = "false"
     enable_for_accounts = ""
     GCP_PROJECT = "${var.projectId}"
+    GCP_PROJECT_SECONDARY = "${var.projectIdSecondary}"
     AWSCFTOPIC = "${google_pubsub_topic.ce-aws-billing-cf-topic.name}"
   }
   event_trigger {
@@ -1162,6 +1166,7 @@ resource "google_cloudfunctions2_function" "ce-azure-billing-bq-function" {
       disabled = "false"
       enable_for_accounts = ""
       GCP_PROJECT = "${var.projectId}"
+      GCP_PROJECT_SECONDARY = "${var.projectIdSecondary}"
       AZURESCHEMATOPIC = "${google_pubsub_topic.ce-azure-billing-schema-topic.name}"
       AZURECOSTCFTOPIC = "${google_pubsub_topic.ce-azure-billing-cost-cf-topic.name}"
       COSTCATEGORIESUPDATETOPIC = "${google_pubsub_topic.ccm-bigquery-batch-update-topic.name}"
@@ -1187,6 +1192,7 @@ resource "google_cloudfunctions_function" "ce-azure-billing-cost-bq-function" {
     disabled = "false"
     enable_for_accounts = ""
     GCP_PROJECT = "${var.projectId}"
+    GCP_PROJECT_SECONDARY = "${var.projectIdSecondary}"
   }
   event_trigger {
     event_type = "google.pubsub.topic.publish"
@@ -1214,6 +1220,7 @@ resource "google_cloudfunctions_function" "ce-azure-billing-gcs-function" {
     disabled = "false"
     enable_for_accounts = ""
     GCP_PROJECT = "${var.projectId}"
+    GCP_PROJECT_SECONDARY = "${var.projectIdSecondary}"
     AZURECFTOPIC = "${google_pubsub_topic.ce-azure-billing-cf-topic.name}"
   }
 
@@ -1243,6 +1250,7 @@ resource "google_cloudfunctions_function" "ce-azure-billing-schema-function" {
     disabled = "false"
     enable_for_accounts = ""
     GCP_PROJECT = "${var.projectId}"
+    GCP_PROJECT_SECONDARY = "${var.projectIdSecondary}"
   }
   event_trigger {
     event_type = "google.pubsub.topic.publish"
@@ -1270,6 +1278,7 @@ resource "google_cloudfunctions_function" "ce-awsdata-ec2-function" {
     disabled = "false"
     enable_for_accounts = ""
     GCP_PROJECT = "${var.projectId}"
+    GCP_PROJECT_SECONDARY = "${var.projectIdSecondary}"
   }
 
   event_trigger {
@@ -1298,6 +1307,7 @@ resource "google_cloudfunctions_function" "ce-awsdata-ec2-load-function" {
     disabled = "false"
     enable_for_accounts = ""
     GCP_PROJECT = "${var.projectId}"
+    GCP_PROJECT_SECONDARY = "${var.projectIdSecondary}"
   }
 
   event_trigger {
@@ -1326,6 +1336,7 @@ resource "google_cloudfunctions_function" "ce-awsdata-ec2-metric-function" {
     disabled = "false"
     enable_for_accounts = ""
     GCP_PROJECT = "${var.projectId}"
+    GCP_PROJECT_SECONDARY = "${var.projectIdSecondary}"
   }
 
   event_trigger {
@@ -1354,6 +1365,7 @@ resource "google_cloudfunctions_function" "ce-awsdata-ebs-function" {
     disabled = "false"
     enable_for_accounts = ""
     GCP_PROJECT = "${var.projectId}"
+    GCP_PROJECT_SECONDARY = "${var.projectIdSecondary}"
   }
 
   event_trigger {
@@ -1382,6 +1394,7 @@ resource "google_cloudfunctions_function" "ce-awsdata-ebs-load-function" {
     disabled = "false"
     enable_for_accounts = ""
     GCP_PROJECT = "${var.projectId}"
+    GCP_PROJECT_SECONDARY = "${var.projectIdSecondary}"
   }
 
   event_trigger {
@@ -1410,6 +1423,7 @@ resource "google_cloudfunctions_function" "ce-awsdata-ebs-metrics-function" {
     disabled = "false"
     enable_for_accounts = ""
     GCP_PROJECT = "${var.projectId}"
+    GCP_PROJECT_SECONDARY = "${var.projectIdSecondary}"
   }
 
   event_trigger {
@@ -1438,6 +1452,7 @@ resource "google_cloudfunctions_function" "ce-awsdata-rds-function" {
     disabled = "false"
     enable_for_accounts = ""
     GCP_PROJECT = "${var.projectId}"
+    GCP_PROJECT_SECONDARY = "${var.projectIdSecondary}"
   }
 
   event_trigger {
@@ -1466,6 +1481,7 @@ resource "google_cloudfunctions_function" "ce-awsdata-rds-load-function" {
     disabled = "false"
     enable_for_accounts = ""
     GCP_PROJECT = "${var.projectId}"
+    GCP_PROJECT_SECONDARY = "${var.projectIdSecondary}"
   }
 
   event_trigger {
@@ -1494,6 +1510,7 @@ resource "google_cloudfunctions_function" "ce-aws-inventory-init-function" {
     disabled = "false"
     enable_for_accounts = ""
     GCP_PROJECT = "${var.projectId}"
+    GCP_PROJECT_SECONDARY = "${var.projectIdSecondary}"
   }
 
   event_trigger {
@@ -1522,6 +1539,7 @@ resource "google_cloudfunctions_function" "ce-gcp-inventory-init-function" {
     disabled = "false"
     enable_for_accounts = ""
     GCP_PROJECT = "${var.projectId}"
+    GCP_PROJECT_SECONDARY = "${var.projectIdSecondary}"
   }
 
   event_trigger {
@@ -1550,6 +1568,7 @@ resource "google_cloudfunctions_function" "ce-azure-inventory-init-function" {
     disabled = "false"
     enable_for_accounts = ""
     GCP_PROJECT = "${var.projectId}"
+    GCP_PROJECT_SECONDARY = "${var.projectIdSecondary}"
   }
 
   event_trigger {
@@ -1578,6 +1597,7 @@ resource "google_cloudfunctions_function" "ce-gcp-instance-inventory-data-functi
     disabled = "false"
     enable_for_accounts = ""
     GCP_PROJECT = "${var.projectId}"
+    GCP_PROJECT_SECONDARY = "${var.projectIdSecondary}"
   }
 
   event_trigger {
@@ -1606,6 +1626,7 @@ resource "google_cloudfunctions_function" "ce-gcp-instance-inventory-data-load-f
     disabled = "false"
     enable_for_accounts = ""
     GCP_PROJECT = "${var.projectId}"
+    GCP_PROJECT_SECONDARY = "${var.projectIdSecondary}"
   }
 
   event_trigger {
@@ -1634,6 +1655,7 @@ resource "google_cloudfunctions_function" "ce-gcp-disk-inventory-data-function" 
     disabled = "false"
     enable_for_accounts = ""
     GCP_PROJECT = "${var.projectId}"
+    GCP_PROJECT_SECONDARY = "${var.projectIdSecondary}"
   }
 
   event_trigger {
@@ -1662,6 +1684,7 @@ resource "google_cloudfunctions_function" "ce-gcp-disk-inventory-data-load-funct
     disabled = "false"
     enable_for_accounts = ""
     GCP_PROJECT = "${var.projectId}"
+    GCP_PROJECT_SECONDARY = "${var.projectIdSecondary}"
   }
 
   event_trigger {
@@ -1701,6 +1724,7 @@ resource "google_cloudfunctions2_function" "ce-aws-historical-currency-update-bq
         disabled = "false"
         enable_for_accounts = ""
         GCP_PROJECT = "${var.projectId}"
+        GCP_PROJECT_SECONDARY = "${var.projectIdSecondary}"
     }
     service_account_email = data.google_app_engine_default_service_account.default.email
   }
@@ -1731,6 +1755,7 @@ resource "google_cloudfunctions2_function" "ce-azure-historical-currency-update-
         disabled = "false"
         enable_for_accounts = ""
         GCP_PROJECT = "${var.projectId}"
+        GCP_PROJECT_SECONDARY = "${var.projectIdSecondary}"
     }
     service_account_email = data.google_app_engine_default_service_account.default.email
   }
@@ -1761,6 +1786,7 @@ resource "google_cloudfunctions2_function" "ce-gcp-historical-currency-update-bq
         disabled = "false"
         enable_for_accounts = ""
         GCP_PROJECT = "${var.projectId}"
+        GCP_PROJECT_SECONDARY = "${var.projectIdSecondary}"
     }
     service_account_email = data.google_app_engine_default_service_account.default.email
   }
@@ -1791,6 +1817,7 @@ resource "google_cloudfunctions2_function" "ce-azure-vm-inventory-data-function"
         disabled = "false"
         enable_for_accounts = ""
         GCP_PROJECT = "${var.projectId}"
+        GCP_PROJECT_SECONDARY = "${var.projectIdSecondary}"
     }
     service_account_email = data.google_app_engine_default_service_account.default.email
   }
@@ -1813,6 +1840,7 @@ resource "google_cloudfunctions_function" "ce-azure-vm-inventory-data-load-funct
     disabled = "false"
     enable_for_accounts = ""
     GCP_PROJECT = "${var.projectId}"
+    GCP_PROJECT_SECONDARY = "${var.projectIdSecondary}"
   }
 
   event_trigger {
@@ -1841,6 +1869,7 @@ resource "google_cloudfunctions_function" "ce-azure-vm-inventory-metric-data-fun
     disabled = "false"
     enable_for_accounts = ""
     GCP_PROJECT = "${var.projectId}"
+    GCP_PROJECT_SECONDARY = "${var.projectIdSecondary}"
   }
 
   event_trigger {

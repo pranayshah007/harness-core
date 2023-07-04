@@ -10,12 +10,14 @@ import re
 import datetime
 import hashlib
 import requests
+import os
 
 from google.cloud import bigquery
 from google.cloud import functions_v2
 from google.cloud import pubsub_v1
 from google.cloud.exceptions import NotFound
 
+PROJECTID = os.environ.get('GCP_PROJECT', 'ccm-play')
 publisher = pubsub_v1.PublisherClient()
 ACCOUNTID_LOG = ""
 CF_EXECUTION_ID = ""
@@ -93,7 +95,7 @@ def print_(message, severity="INFO"):
         print(message)
 
 def create_dataset(client, datasetName, accountid=""):
-    dataset_id = "{}.{}".format(client.project, datasetName)
+    dataset_id = "{}.{}".format(os.environ.get('GCP_PROJECT', 'ccm-play'), datasetName)
     dataset = bigquery.Dataset(dataset_id)
     dataset.location = "US"
     # Do not change this format for description
@@ -114,7 +116,7 @@ def create_dataset(client, datasetName, accountid=""):
                 client.update_dataset(dataset, ["description"])
             except:
                 pass
-
+    return dataset
 
 def if_tbl_exists(client, table_ref):
     try:

@@ -28,6 +28,7 @@ from azure_util import get_secret_key
 """
 
 UNASSIGNED_ATTRIBUTE = "UNASSIGNED_ATTRIBUTE"
+PROJECTID_SECONDARY = os.environ.get('GCP_PROJECT_SECONDARY', 'ccm-play')
 
 
 def get_tags(vm):
@@ -178,15 +179,14 @@ def main(request):
     print(jsonData)
 
     jsonData["projectName"] = os.environ.get('GCP_PROJECT', 'ccm-play')
-    client = bigquery.Client(jsonData["projectName"])
+    client = bigquery.Client(PROJECTID_SECONDARY)
 
     # Set the accountId for GCP logging
     util.ACCOUNTID_LOG = jsonData.get("accountId")
 
     jsonData["accountIdBQ"] = re.sub('[^0-9a-z]', '_', jsonData.get("accountId").lower())
     jsonData["datasetName"] = "BillingReport_%s" % jsonData["accountIdBQ"]
-    create_dataset(client, jsonData["datasetName"])
-    dataset = client.dataset(jsonData["datasetName"])
+    dataset = create_dataset(client, jsonData["datasetName"])
 
     # Setting table names for main and temp tables
     azure_vm_inventory_table_ref = dataset.table("azureVMInventory")
