@@ -415,7 +415,7 @@ public class CEViewServiceImpl implements CEViewService {
       QLCEViewTrendInfo trendData =
           viewsBillingService
               .getTrendStatsDataNg(filters, Collections.emptyList(), totalCostAggregationFunction,
-                  viewsQueryHelper.buildQueryParams(ceView.getAccountId(), false))
+                  ceView.getViewPreferences(), viewsQueryHelper.buildQueryParams(ceView.getAccountId(), false))
               .getTotalCost();
       double totalCost = trendData.getValue().doubleValue();
       log.info("Total cost of view {}", totalCost);

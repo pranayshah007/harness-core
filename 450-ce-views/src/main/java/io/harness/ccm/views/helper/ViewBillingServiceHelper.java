@@ -20,6 +20,7 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.CLUSTER_TABLE_AGGREGRA
 import static io.harness.ccm.views.utils.ClusterTableKeys.CLUSTER_TABLE_HOURLY;
 import static io.harness.ccm.views.utils.ClusterTableKeys.CLUSTER_TABLE_HOURLY_AGGREGRATED;
 
+import static com.google.common.base.MoreObjects.firstNonNull;
 import static java.lang.String.format;
 
 import io.harness.ccm.commons.dao.CEMetadataRecordDao;
@@ -32,6 +33,7 @@ import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ClusterData;
 import io.harness.ccm.views.entities.ViewField;
+import io.harness.ccm.views.entities.ViewPreferences;
 import io.harness.ccm.views.entities.ViewQueryParams;
 import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.entities.ViewTimeGranularity;
@@ -176,7 +178,7 @@ public class ViewBillingServiceHelper {
       final String cloudProviderTableName, final ViewQueryParams queryParams,
       final BusinessMapping sharedCostBusinessMapping, final Map<String, Double> entityCosts, final double totalCost,
       final Set<String> selectedCostTargets, final boolean isClusterPerspective,
-      final Map<String, String> labelsKeyAndColumnMapping) {
+      final Map<String, String> labelsKeyAndColumnMapping, final ViewPreferences viewPreferences) {
     final UnionQuery unionQuery = new UnionQuery(SetOperationQuery.Type.UNION_ALL);
     List<QLCEViewAggregation> modifiedAggregateFunction = aggregateFunction;
     List<QLCEViewGroupBy> modifiedGroupBy = groupBy;
@@ -200,7 +202,7 @@ public class ViewBillingServiceHelper {
             if (Objects.nonNull(selectQuery)) {
               final SelectQuery subQuery = getQuery(filters, groupBy, Collections.emptyList(), aggregateFunction,
                   Collections.emptyList(), cloudProviderTableName, queryParams, businessMapping,
-                  Collections.emptyList(), labelsKeyAndColumnMapping);
+                  Collections.emptyList(), labelsKeyAndColumnMapping, viewPreferences);
               selectQuery.addCustomFromTable(String.format("(%s)", subQuery.toString()));
               unionQuery.addQueries(String.format("(%s)", selectQuery));
             }
@@ -521,16 +523,16 @@ public class ViewBillingServiceHelper {
       boolean isTimeTruncGroupByRequired) {
     return getQuery(filters, groupBy, aggregateFunction, sort, cloudProviderTableName,
         viewsQueryHelper.buildQueryParams(null, isTimeTruncGroupByRequired, false, false, false),
-        Collections.emptyList(), Collections.emptyMap());
+        Collections.emptyList(), Collections.emptyMap(), null);
   }
 
   // Next-gen
   public SelectQuery getQuery(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
       List<QLCEViewAggregation> aggregateFunction, List<QLCEViewSortCriteria> sort, String cloudProviderTableName,
       ViewQueryParams queryParams, List<BusinessMapping> sharedCostBusinessMappings,
-      Map<String, String> labelsKeyAndColumnMapping) {
+      Map<String, String> labelsKeyAndColumnMapping, ViewPreferences viewPreferences) {
     return getQuery(filters, groupBy, Collections.emptyList(), aggregateFunction, sort, cloudProviderTableName,
-        queryParams, null, sharedCostBusinessMappings, labelsKeyAndColumnMapping);
+        queryParams, null, sharedCostBusinessMappings, labelsKeyAndColumnMapping, viewPreferences);
   }
 
   // Next-gen
@@ -538,7 +540,7 @@ public class ViewBillingServiceHelper {
       List<QLCEViewGroupBy> sharedCostGroupBy, List<QLCEViewAggregation> aggregateFunction,
       List<QLCEViewSortCriteria> sort, String cloudProviderTableName, ViewQueryParams queryParams,
       BusinessMapping sharedCostBusinessMapping, List<BusinessMapping> sharedCostBusinessMappings,
-      Map<String, String> labelsKeyAndColumnMapping) {
+      Map<String, String> labelsKeyAndColumnMapping, ViewPreferences viewPreferences) {
     List<ViewRule> viewRuleList = new ArrayList<>();
 
     // Removing group by none if present
@@ -566,7 +568,8 @@ public class ViewBillingServiceHelper {
       final String viewId = metadataFilter.getViewId();
       if (!metadataFilter.isPreview()) {
         CEView ceView = viewService.get(viewId);
-        viewPreferenceAggregations = ceViewPreferenceUtils.getViewPreferenceAggregations(ceView);
+        viewPreferenceAggregations = ceViewPreferenceUtils.getViewPreferenceAggregations(
+            ceView, firstNonNull(viewPreferences, ceView.getViewPreferences()));
         viewRuleList = ceView.getViewRules();
         if (ceView.getViewVisualization() != null) {
           ViewVisualization viewVisualization = ceView.getViewVisualization();
@@ -611,8 +614,8 @@ public class ViewBillingServiceHelper {
     }
     return viewsQueryBuilder.getQuery(viewRuleList, idFilters, timeFilters,
         viewParametersHelper.getInExpressionFilters(filters), modifiedGroupBy, sharedCostGroupBy, aggregateFunction,
-        sort, cloudProviderTableName, queryParams, sharedCostBusinessMapping, sharedCostBusinessMappings,
-        labelsKeyAndColumnMapping);
+        viewPreferenceAggregations, sort, cloudProviderTableName, queryParams, sharedCostBusinessMapping,
+        sharedCostBusinessMappings, labelsKeyAndColumnMapping);
   }
 
   // ----------------------------------------------------------------------------------------------------------------

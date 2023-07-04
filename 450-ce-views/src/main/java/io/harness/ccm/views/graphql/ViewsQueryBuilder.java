@@ -90,6 +90,7 @@ import com.healthmarketscience.sqlbuilder.FunctionCall;
 import com.healthmarketscience.sqlbuilder.InCondition;
 import com.healthmarketscience.sqlbuilder.OrderObject;
 import com.healthmarketscience.sqlbuilder.SelectQuery;
+import com.healthmarketscience.sqlbuilder.SqlObject;
 import com.healthmarketscience.sqlbuilder.UnaryCondition;
 import com.healthmarketscience.sqlbuilder.UnionQuery;
 import com.healthmarketscience.sqlbuilder.custom.postgresql.PgLimitClause;
@@ -169,8 +170,8 @@ public class ViewsQueryBuilder {
       List<QLCEViewSortCriteria> sortCriteriaList, String cloudProviderTableName, ViewQueryParams queryParams,
       List<BusinessMapping> sharedCostBusinessMappings) {
     return getQuery(rules, filters, timeFilters, Collections.emptyList(), groupByList, Collections.emptyList(),
-        aggregations, sortCriteriaList, cloudProviderTableName, queryParams, null, sharedCostBusinessMappings,
-        Collections.emptyMap());
+        aggregations, Collections.emptyList(), sortCriteriaList, cloudProviderTableName, queryParams, null,
+        sharedCostBusinessMappings, Collections.emptyMap());
   }
 
   /**
@@ -182,6 +183,7 @@ public class ViewsQueryBuilder {
    * @param groupByList groupBys applied
    * @param sharedCostGroupBy shared bucket business mapping groupBy, used only for decoration
    * @param aggregations aggregations applied
+   * @param viewPreferenceAggregations viewPreferenceAggregations applied, used for perspective preferences
    * @param sortCriteriaList sort criteria applied
    * @param cloudProviderTableName cloud provider table name
    * @param queryParams query parameters
@@ -193,9 +195,9 @@ public class ViewsQueryBuilder {
   public SelectQuery getQuery(List<ViewRule> rules, List<QLCEViewFilter> filters, List<QLCEViewTimeFilter> timeFilters,
       List<QLCEInExpressionFilter> inExpressionFilters, List<QLCEViewGroupBy> groupByList,
       List<QLCEViewGroupBy> sharedCostGroupBy, List<QLCEViewAggregation> aggregations,
-      List<QLCEViewSortCriteria> sortCriteriaList, String cloudProviderTableName, ViewQueryParams queryParams,
-      BusinessMapping sharedCostBusinessMapping, List<BusinessMapping> sharedCostBusinessMappings,
-      Map<String, String> labelsKeyAndColumnMapping) {
+      List<QLCEViewPreferenceAggregation> viewPreferenceAggregations, List<QLCEViewSortCriteria> sortCriteriaList,
+      String cloudProviderTableName, ViewQueryParams queryParams, BusinessMapping sharedCostBusinessMapping,
+      List<BusinessMapping> sharedCostBusinessMappings, Map<String, String> labelsKeyAndColumnMapping) {
     SelectQuery selectQuery = new SelectQuery();
     selectQuery.addCustomFromTable(cloudProviderTableName);
     List<QLCEViewFieldInput> groupByEntity = getGroupByEntity(groupByList);
@@ -259,7 +261,10 @@ public class ViewsQueryBuilder {
       }
     }
 
-    if (!aggregations.isEmpty()) {
+    if (!Lists.isNullOrEmpty(viewPreferenceAggregations)) {
+      decorateQueryWithViewPreferenceAggregations(
+          selectQuery, viewPreferenceAggregations, tableIdentifier, viewLabelsFlattened);
+    } else if (!aggregations.isEmpty()) {
       decorateQueryWithAggregations(selectQuery, aggregations, tableIdentifier, false);
     }
 
@@ -1350,6 +1355,56 @@ public class ViewsQueryBuilder {
     for (QLCEViewAggregation aggregation : aggregations) {
       decorateQueryWithAggregation(selectQuery, aggregation, tableIdentifier, isSharedCostQuery);
     }
+  }
+
+  private void decorateQueryWithViewPreferenceAggregations(SelectQuery selectQuery,
+      List<QLCEViewPreferenceAggregation> aggregations, String tableIdentifier,
+      ViewLabelsFlattened viewLabelsFlattened) {
+    StringBuilder viewPreferenceAggregations = new StringBuilder();
+    boolean isFirstAggregation = true;
+    for (QLCEViewPreferenceAggregation aggregation : aggregations) {
+      SqlObject sqlObject = getViewPreferenceAggregation(aggregation, tableIdentifier, viewLabelsFlattened);
+      // Added check on first aggregation to support query in clickhouse
+      if (isFirstAggregation && aggregation.getArithmeticOperationType() == QLCEViewAggregateArithmeticOperation.ADD) {
+        viewPreferenceAggregations.append(sqlObject);
+      } else {
+        viewPreferenceAggregations.append(
+            String.format("%s%s", aggregation.getArithmeticOperationType().getSymbol(), sqlObject));
+      }
+      isFirstAggregation = false;
+    }
+    selectQuery.addCustomColumns(Converter.toCustomColumnSqlObject(new CustomSql(viewPreferenceAggregations), "cost"));
+  }
+
+  private SqlObject getViewPreferenceAggregation(
+      QLCEViewPreferenceAggregation aggregation, String tableIdentifier, ViewLabelsFlattened viewLabelsFlattened) {
+    FunctionCall functionCall = getFunctionCallType(aggregation.getOperationType());
+    CustomSql customSql;
+    if (isClickHouseQuery()) {
+      customSql = getSQLCaseStatementForViewPreferenceClickHouse(aggregation, tableIdentifier, viewLabelsFlattened);
+    } else {
+      customSql = getSQLCaseStatementForViewPreferenceBigQuery(aggregation, tableIdentifier, viewLabelsFlattened);
+    }
+    return Converter.toCustomColumnSqlObject(Objects.requireNonNull(functionCall).addCustomParams(customSql));
+  }
+
+  private CustomSql getSQLCaseStatementForViewPreferenceBigQuery(
+      QLCEViewPreferenceAggregation aggregation, String tableIdentifier, ViewLabelsFlattened viewLabelsFlattened) {
+    CaseStatement caseStatement = new CaseStatement();
+    String columnName = getColumnNameForField(tableIdentifier, aggregation.getColumnName());
+    Condition condition = getCondition(aggregation.getFilter(), tableIdentifier, viewLabelsFlattened);
+    caseStatement.addWhen(condition, new CustomSql(columnName));
+    caseStatement.addElse(0);
+    return new CustomSql(caseStatement);
+  }
+
+  private CustomSql getSQLCaseStatementForViewPreferenceClickHouse(
+      QLCEViewPreferenceAggregation aggregation, String tableIdentifier, ViewLabelsFlattened viewLabelsFlattened) {
+    StringBuilder multiIfStatement = new StringBuilder(MULTI_IF_STATEMENT_OPENING);
+    Condition condition = getCondition(aggregation.getFilter(), tableIdentifier, viewLabelsFlattened);
+    String columnName = getColumnNameForField(tableIdentifier, aggregation.getColumnName());
+    multiIfStatement.append(condition).append(String.format(", %s, 0)", new CustomSql(columnName)));
+    return new CustomSql(multiIfStatement);
   }
 
   private void decorateQueryWithAggregation(
