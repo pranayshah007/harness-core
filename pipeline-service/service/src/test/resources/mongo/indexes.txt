@@ -3,7 +3,7 @@
 !!!custom_delegateSyncTaskResponses {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 !!!custom_delegateTaskProgressResponses {"name": "processAfter_1", "background": true} {"processAfter": 1}
 !!!custom_delegateTaskProgressResponses {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-approvalInstances {"name": "accountId_orgIdentifier_projectIdentifier_pipelineIdentifier_approvalKey_status_isAutoRejectEnabled", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "pipelineIdentifier": 1, "approvalKey": 1, "status": 1, "isAutoRejectEnabled": 1}
+approvalInstances {"name": "accountId_orgIdentifier_projectIdentifier_pipelineIdentifier_approvalKey_status_isAutoRejectEnabled_createdAt", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "pipelineIdentifier": 1, "approvalKey": 1, "status": 1, "isAutoRejectEnabled": 1, "createdAt": 1}
 approvalInstances {"name": "nodeExecutionId_1", "background": true} {"nodeExecutionId": 1}
 approvalInstances {"name": "planExecutionId_status_type_nodeExecutionId", "background": true} {"planExecutionId": 1, "status": 1, "type": 1, "nodeExecutionId": 1}
 approvalInstances {"name": "status_deadline", "background": true} {"status": 1, "deadline": 1}
