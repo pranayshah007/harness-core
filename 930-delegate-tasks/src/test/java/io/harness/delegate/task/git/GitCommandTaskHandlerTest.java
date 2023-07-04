@@ -13,6 +13,7 @@ import static io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAcce
 import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.MANKRIT;
+import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.TARUN_UBA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -51,10 +52,15 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernameTokenApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.connector.scm.genericgitconnector.GitHTTPAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
+import io.harness.delegate.beans.connector.scm.github.GithubAppDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAppSpecDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
@@ -115,11 +121,11 @@ public class GitCommandTaskHandlerTest extends CategoryTest {
     when(response.getConnectorValidationResult().getTestedAt()).thenReturn(SIMULATED_REQUEST_TIME_MILLIS);
     doReturn(response)
         .when(gitCommandTaskHandler)
-        .handleValidateTask(
-            any(GitConfigDTO.class), any(ScmConnector.class), any(String.class), nullable(SshSessionConfig.class));
+        .handleValidateTask(any(GitConfigDTO.class), any(ScmConnector.class), any(String.class),
+            nullable(SshSessionConfig.class), false);
 
     ConnectorValidationResult validationResult =
-        gitCommandTaskHandler.validateGitCredentials(gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig);
+        gitCommandTaskHandler.validateGitCredentials(gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig, false);
     assertThat(validationResult.getStatus()).isEqualTo(ConnectivityStatus.SUCCESS);
     assertThat(validationResult.getTestedAt()).isEqualTo(SIMULATED_REQUEST_TIME_MILLIS);
   }
@@ -132,10 +138,10 @@ public class GitCommandTaskHandlerTest extends CategoryTest {
     ScmConnector connector = GitlabConnectorDTO.builder().build();
     doThrow(new JGitRuntimeException(SIMULATED_EXCEPTION_MESSAGE))
         .when(gitCommandTaskHandler)
-        .handleValidateTask(
-            any(GitConfigDTO.class), any(ScmConnector.class), any(String.class), nullable(SshSessionConfig.class));
+        .handleValidateTask(any(GitConfigDTO.class), any(ScmConnector.class), any(String.class),
+            nullable(SshSessionConfig.class), false);
 
-    gitCommandTaskHandler.validateGitCredentials(gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig);
+    gitCommandTaskHandler.validateGitCredentials(gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig, false);
   }
 
   @Test
@@ -161,7 +167,7 @@ public class GitCommandTaskHandlerTest extends CategoryTest {
     doReturn(TEST_STRING_INPUT).when(gitHubService).getToken(any(GithubAppConfig.class));
 
     GitCommandExecutionResponse response = (GitCommandExecutionResponse) gitCommandTaskHandler.handleValidateTask(
-        gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig);
+        gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig, false);
     assertThat(response.getGitCommandStatus()).isEqualTo(GitCommandExecutionResponse.GitCommandStatus.SUCCESS);
   }
 
@@ -185,8 +191,9 @@ public class GitCommandTaskHandlerTest extends CategoryTest {
     doThrow(new RuntimeException(SIMULATED_EXCEPTION_MESSAGE, new SCMRuntimeException(SIMULATED_EXCEPTION_MESSAGE)))
         .when(gitHubService)
         .getToken(any(GithubAppConfig.class));
-    assertThatThrownBy(
-        () -> gitCommandTaskHandler.handleValidateTask(gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig))
+    assertThatThrownBy(()
+                           -> gitCommandTaskHandler.handleValidateTask(
+                               gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig, false))
         .isInstanceOf(SCMRuntimeException.class);
   }
 
@@ -228,8 +235,9 @@ public class GitCommandTaskHandlerTest extends CategoryTest {
     ScmConnector connector = azureRepoConnectorDTO;
     GetUserReposResponse userReposResponse = GetUserReposResponse.newBuilder().setStatus(203).build();
     doReturn(userReposResponse).when(scmDelegateClient).processScmRequest(any());
-    assertThatThrownBy(
-        () -> gitCommandTaskHandler.handleValidateTask(gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig))
+    assertThatThrownBy(()
+                           -> gitCommandTaskHandler.handleValidateTask(
+                               gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig, false))
         .isInstanceOf(ExplanationException.class)
         .hasMessage("Invalid API Access Token");
   }
@@ -243,7 +251,7 @@ public class GitCommandTaskHandlerTest extends CategoryTest {
     ScmConnector connector = GithubConnectorDTO.builder().build();
 
     GitCommandExecutionResponse response = (GitCommandExecutionResponse) gitCommandTaskHandler.handleValidateTask(
-        gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig);
+        gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig, false);
     assertThat(response.getGitCommandStatus()).isEqualTo(GitCommandExecutionResponse.GitCommandStatus.SUCCESS);
   }
 
@@ -260,7 +268,7 @@ public class GitCommandTaskHandlerTest extends CategoryTest {
     doReturn(userReposResponse).when(scmDelegateClient).processScmRequest(any());
 
     GitCommandExecutionResponse response = (GitCommandExecutionResponse) gitCommandTaskHandler.handleValidateTask(
-        gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig);
+        gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig, false);
     assertThat(response.getGitCommandStatus()).isEqualTo(GitCommandExecutionResponse.GitCommandStatus.SUCCESS);
   }
 
@@ -274,8 +282,9 @@ public class GitCommandTaskHandlerTest extends CategoryTest {
             .apiAccess(GitlabApiAccessDTO.builder().spec(GitlabTokenSpecDTO.builder().build()).build())
             .build();
     doThrow(new SCMRuntimeException(SIMULATED_EXCEPTION_MESSAGE)).when(scmDelegateClient).processScmRequest(any());
-    assertThatThrownBy(
-        () -> gitCommandTaskHandler.handleValidateTask(gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig))
+    assertThatThrownBy(()
+                           -> gitCommandTaskHandler.handleValidateTask(
+                               gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig, false))
         .isInstanceOf(SCMRuntimeException.class);
   }
 
@@ -291,8 +300,9 @@ public class GitCommandTaskHandlerTest extends CategoryTest {
     GetUserReposResponse userReposResponse = GetUserReposResponse.newBuilder().setStatus(400).build();
     doReturn(userReposResponse).when(scmDelegateClient).processScmRequest(any());
 
-    assertThatThrownBy(
-        () -> gitCommandTaskHandler.handleValidateTask(gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig))
+    assertThatThrownBy(()
+                           -> gitCommandTaskHandler.handleValidateTask(
+                               gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig, false))
         .isInstanceOf(SCMRuntimeException.class);
   }
 
@@ -307,7 +317,7 @@ public class GitCommandTaskHandlerTest extends CategoryTest {
             .build();
     doThrow(new InvalidRequestException(SIMULATED_EXCEPTION_MESSAGE)).when(scmDelegateClient).processScmRequest(any());
     try {
-      gitCommandTaskHandler.handleValidateTask(gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig);
+      gitCommandTaskHandler.handleValidateTask(gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig, false);
     } catch (Exception e) {
       assertThat(e instanceof SCMRuntimeException).isTrue();
       assertThat(e.getMessage().equals(SIMULATED_EXCEPTION_MESSAGE)).isTrue();
@@ -327,7 +337,7 @@ public class GitCommandTaskHandlerTest extends CategoryTest {
     doReturn(userReposResponse).when(scmDelegateClient).processScmRequest(any());
 
     GitCommandExecutionResponse response = (GitCommandExecutionResponse) gitCommandTaskHandler.handleValidateTask(
-        gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig);
+        gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig, false);
     assertThat(response.getGitCommandStatus()).isEqualTo(GitCommandExecutionResponse.GitCommandStatus.SUCCESS);
   }
   @Test
@@ -341,8 +351,9 @@ public class GitCommandTaskHandlerTest extends CategoryTest {
                 BitbucketApiAccessDTO.builder().spec(BitbucketUsernameTokenApiAccessDTO.builder().build()).build())
             .build();
     doThrow(new SCMRuntimeException(SIMULATED_EXCEPTION_MESSAGE)).when(scmDelegateClient).processScmRequest(any());
-    assertThatThrownBy(
-        () -> gitCommandTaskHandler.handleValidateTask(gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig))
+    assertThatThrownBy(()
+                           -> gitCommandTaskHandler.handleValidateTask(
+                               gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig, false))
         .isInstanceOf(SCMRuntimeException.class);
   }
 
@@ -359,8 +370,9 @@ public class GitCommandTaskHandlerTest extends CategoryTest {
     GetUserReposResponse userReposResponse = GetUserReposResponse.newBuilder().setStatus(400).build();
     doReturn(userReposResponse).when(scmDelegateClient).processScmRequest(any());
 
-    assertThatThrownBy(
-        () -> gitCommandTaskHandler.handleValidateTask(gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig))
+    assertThatThrownBy(()
+                           -> gitCommandTaskHandler.handleValidateTask(
+                               gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig, false))
         .isInstanceOf(SCMRuntimeException.class);
   }
 
@@ -376,10 +388,85 @@ public class GitCommandTaskHandlerTest extends CategoryTest {
             .build();
     doThrow(new InvalidRequestException(SIMULATED_EXCEPTION_MESSAGE)).when(scmDelegateClient).processScmRequest(any());
     try {
-      gitCommandTaskHandler.handleValidateTask(gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig);
+      gitCommandTaskHandler.handleValidateTask(gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig, false);
     } catch (Exception e) {
       assertThat(e instanceof SCMRuntimeException).isTrue();
       assertThat(e.getMessage().equals(SIMULATED_EXCEPTION_MESSAGE)).isTrue();
     }
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testGitCredentialsForGitHubApp() {
+    String url = "https://github.com/git-app";
+    GitConfigDTO gitConfig =
+        GitConfigDTO.builder().gitAuth(GitHTTPAuthenticationDTO.builder().build()).gitAuthType(HTTP).build();
+
+    GithubAuthenticationDTO githubAuthenticationDTO =
+        GithubAuthenticationDTO.builder()
+            .authType(HTTP)
+            .credentials(
+                GithubHttpCredentialsDTO.builder()
+                    .type(GithubHttpAuthenticationType.USERNAME_AND_TOKEN)
+                    .httpCredentialsSpec(
+                        GithubAppDTO.builder()
+                            .applicationId("app")
+                            .installationId("install")
+                            .privateKeyRef(
+                                SecretRefData.builder().identifier("id").decryptedValue("key".toCharArray()).build())
+                            .build())
+                    .build())
+            .build();
+    ScmConnector connector = GithubConnectorDTO.builder()
+                                 .url(url)
+                                 .connectionType(GitConnectionType.REPO)
+                                 .authentication(githubAuthenticationDTO)
+                                 .build();
+
+    doNothing()
+        .when(gitService)
+        .validateOrThrow(any(GitConfigDTO.class), any(String.class), any(SshSessionConfig.class));
+    doReturn(TEST_STRING_INPUT).when(gitHubService).getToken(any(GithubAppConfig.class));
+
+    ConnectorValidationResult validationResult =
+        gitCommandTaskHandler.validateGitCredentials(gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig, true);
+    assertThat(validationResult.getStatus()).isEqualTo(ConnectivityStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testGitCredentialsForGitHubAppForFailure() {
+    String url = "https://github.com/git-app";
+    GitConfigDTO gitConfig =
+        GitConfigDTO.builder().gitAuth(GitHTTPAuthenticationDTO.builder().build()).gitAuthType(HTTP).build();
+
+    GithubAuthenticationDTO githubAuthenticationDTO =
+        GithubAuthenticationDTO.builder()
+            .authType(HTTP)
+            .credentials(GithubHttpCredentialsDTO.builder()
+                             .type(GithubHttpAuthenticationType.USERNAME_AND_TOKEN)
+                             .httpCredentialsSpec(GithubAppDTO.builder()
+                                                      .applicationId("app")
+                                                      .installationId("install")
+                                                      .privateKeyRef(SecretRefData.builder().identifier("id").build())
+                                                      .build())
+                             .build())
+            .build();
+    ScmConnector connector = GithubConnectorDTO.builder()
+                                 .url(url)
+                                 .connectionType(GitConnectionType.REPO)
+                                 .authentication(githubAuthenticationDTO)
+                                 .build();
+
+    doNothing()
+        .when(gitService)
+        .validateOrThrow(any(GitConfigDTO.class), any(String.class), any(SshSessionConfig.class));
+    doReturn(TEST_STRING_INPUT).when(gitHubService).getToken(any(GithubAppConfig.class));
+
+    assertThatThrownBy(()
+                           -> gitCommandTaskHandler.validateGitCredentials(
+                               gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig, true));
   }
 }

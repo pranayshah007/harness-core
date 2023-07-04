@@ -95,7 +95,7 @@ public class BitbucketConnectorValidatorTest extends CategoryTest {
     ConnectorValidationResult connectorValidationResult =
         ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build();
 
-    when(gitCommandTaskHandler.validateGitCredentials(any(), any(), any(), any()))
+    when(gitCommandTaskHandler.validateGitCredentials(any(), any(), any(), any(), false))
         .thenReturn(connectorValidationResult);
     ScmConnectorValidationParamsProvider scmConnectorValidationParamsProvider =
         new ScmConnectorValidationParamsProvider();

@@ -94,7 +94,7 @@ public class AzureRepoConnectorValidatorTest extends CategoryTest {
     ConnectorValidationResult connectorValidationResult =
         ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build();
 
-    when(gitCommandTaskHandler.validateGitCredentials(any(), any(), any(), any()))
+    when(gitCommandTaskHandler.validateGitCredentials(any(), any(), any(), any(), false))
         .thenReturn(connectorValidationResult);
 
     ScmConnectorValidationParamsProvider scmConnectorValidationParamsProvider =

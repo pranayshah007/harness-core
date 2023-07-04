@@ -8,11 +8,13 @@
 package io.harness.delegate.task.git;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.delegate.beans.connector.scm.GitAuthType.HTTP;
 import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.DEEPAK;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -36,8 +38,12 @@ import io.harness.delegate.beans.connector.scm.ScmValidationParams;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitHTTPAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubAppDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAppSpecDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.rule.Owner;
 import io.harness.shell.SshSessionConfig;
@@ -65,6 +71,7 @@ public class GitValidationHandlerTest extends CategoryTest {
     doNothing().when(gitDecryptionHelper).decryptGitConfig(any(GitConfigDTO.class), any());
     doReturn(sshSessionConfig).when(gitDecryptionHelper).getSSHSessionConfig(any(), any());
     doReturn(decryptableEntity).when(decryptionHelper).decrypt(any(DecryptableEntity.class), anyList());
+    doReturn(decryptableEntity).when(gitDecryptionHelper).decryptGitHubAppAuthenticationConfig(any(), any());
   }
 
   @Test
@@ -74,7 +81,7 @@ public class GitValidationHandlerTest extends CategoryTest {
     ConnectorValidationResult result = ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build();
     doReturn(result)
         .when(gitCommandTaskHandler)
-        .validateGitCredentials(any(GitConfigDTO.class), any(ScmConnector.class), any(String.class), any());
+        .validateGitCredentials(any(GitConfigDTO.class), any(ScmConnector.class), any(String.class), any(), false);
 
     GitConfigDTO gitconfigDTO = GitConfigDTO.builder()
                                     .gitConnectionType(GitConnectionType.ACCOUNT)
@@ -100,7 +107,7 @@ public class GitValidationHandlerTest extends CategoryTest {
     ConnectorValidationResult result = ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build();
     doReturn(result)
         .when(gitCommandTaskHandler)
-        .validateGitCredentials(any(GitConfigDTO.class), any(ScmConnector.class), any(String.class), any());
+        .validateGitCredentials(any(GitConfigDTO.class), any(ScmConnector.class), any(String.class), any(), false);
 
     ScmValidationParams gitValidationParameters =
         ScmValidationParams.builder()
@@ -109,6 +116,51 @@ public class GitValidationHandlerTest extends CategoryTest {
                               .apiAccess(GithubApiAccessDTO.builder().spec(GithubAppSpecDTO.builder().build()).build())
                               .build())
             .build();
+    ConnectorValidationResult validationResult =
+        gitValidationHandler.validate(gitValidationParameters, "accountIdentifier");
+
+    assertThat(validationResult.getStatus()).isEqualTo(ConnectivityStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testValidationForGitHubAppConnector() {
+    ConnectorValidationResult result = ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build();
+    doReturn(result).when(gitCommandTaskHandler).validateGitCredentials(any(), any(), any(), any(), anyBoolean());
+
+    GitConfigDTO gitconfigDTO = GitConfigDTO.builder()
+                                    .gitConnectionType(GitConnectionType.ACCOUNT)
+                                    .gitAuth(GitHTTPAuthenticationDTO.builder()
+                                                 .username("username")
+                                                 .passwordRef(SecretRefData.builder().identifier("passwordRef").build())
+                                                 .build())
+                                    .gitAuthType(GitAuthType.HTTP)
+                                    .build();
+
+    GithubAuthenticationDTO githubAuthenticationDTO =
+        GithubAuthenticationDTO.builder()
+            .authType(HTTP)
+            .credentials(GithubHttpCredentialsDTO.builder()
+                             .type(GithubHttpAuthenticationType.USERNAME_AND_TOKEN)
+                             .httpCredentialsSpec(GithubAppDTO.builder()
+                                                      .applicationId("app")
+                                                      .installationId("install")
+                                                      .privateKeyRef(SecretRefData.builder().identifier("id").build())
+                                                      .build())
+                             .build())
+            .build();
+    ScmConnector connector = GithubConnectorDTO.builder()
+                                 .url("url")
+                                 .connectionType(GitConnectionType.REPO)
+                                 .authentication(githubAuthenticationDTO)
+                                 .build();
+
+    ScmValidationParams gitValidationParameters = ScmValidationParams.builder()
+                                                      .gitConfigDTO(gitconfigDTO)
+                                                      .scmConnector(connector)
+                                                      .githubAppAuthentication(true)
+                                                      .build();
     ConnectorValidationResult validationResult =
         gitValidationHandler.validate(gitValidationParameters, "accountIdentifier");
 

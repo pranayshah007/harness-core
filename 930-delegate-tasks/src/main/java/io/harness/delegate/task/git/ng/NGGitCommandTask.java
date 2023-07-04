@@ -11,6 +11,7 @@ import static io.harness.git.Constants.GIT_YAML_LOG_PREFIX;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.connector.helper.GitAuthenticationDecryptionHelper;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitCommandTaskHandler;
 import io.harness.connector.task.git.GitDecryptionHelper;
@@ -21,6 +22,7 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.git.GitCommandExecutionResponse;
 import io.harness.delegate.beans.git.GitCommandExecutionResponse.GitCommandStatus;
 import io.harness.delegate.beans.git.GitCommandParams;
@@ -70,11 +72,17 @@ public class NGGitCommandTask extends AbstractDelegateRunnableTask {
     ScmConnector scmConnector = gitCommandParams.getScmConnector();
     gitDecryptionHelper.decryptApiAccessConfig(scmConnector, gitCommandParams.getEncryptionDetails());
 
+    if (gitCommandParams.isGithubAppAuthentication()) {
+      GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) gitCommandParams.getScmConnector();
+      githubConnectorDTO.getAuthentication().setCredentials(gitDecryptionHelper.decryptGitHubAppAuthenticationConfig(
+          githubConnectorDTO, gitCommandParams.getEncryptionDetails()));
+    }
+
     switch (gitCommandType) {
       case VALIDATE:
         GitCommandExecutionResponse delegateResponseData =
-            (GitCommandExecutionResponse) gitCommandTaskHandler.handleValidateTask(
-                gitConfig, scmConnector, getAccountId(), sshSessionConfig);
+            (GitCommandExecutionResponse) gitCommandTaskHandler.handleValidateTask(gitConfig, scmConnector,
+                getAccountId(), sshSessionConfig, gitCommandParams.isGithubAppAuthentication());
         delegateResponseData.setDelegateMetaInfo(DelegateMetaInfo.builder().id(getDelegateId()).build());
         return delegateResponseData;
       case LIST_REMOTE:
