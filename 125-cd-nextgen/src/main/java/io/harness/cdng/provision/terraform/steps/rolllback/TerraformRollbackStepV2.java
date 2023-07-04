@@ -152,11 +152,13 @@ public class TerraformRollbackStepV2 extends CdTaskChainExecutable {
       TerraformTaskNGParametersBuilder builder =
           getTerraformTaskNgBuilder(ambiance, rollbackConfig, tfTaskType, entityId, stepParametersSpec, stepParameters);
 
-      TerraformPassThroughData terraformPassThroughData = TerraformPassThroughData.builder()
-                                                              .hasGitFiles(hasGitVarFiles)
-                                                              .hasS3Files(hasS3VarFiles)
-                                                              .terraformTaskNGParametersBuilder(builder)
-                                                              .build();
+      TerraformPassThroughData terraformPassThroughData =
+          TerraformPassThroughData.builder()
+              .hasGitFiles(hasGitVarFiles)
+              .hasS3Files(hasS3VarFiles)
+              .terraformTaskNGParametersBuilder(builder)
+              .originalVarFileConfigs(rollbackConfig.getVarFileConfigs())
+              .build();
 
       if (hasGitVarFiles || hasS3VarFiles) {
         return terraformStepHelper.fetchRemoteVarFiles(terraformPassThroughData, varFilesInfo, ambiance, stepParameters,

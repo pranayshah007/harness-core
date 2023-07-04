@@ -134,6 +134,7 @@ public class TerraformDestroyStepV2 extends CdTaskChainExecutable {
     TerraformTaskNGParametersBuilder builder =
         getTerraformTaskNGParametersBuilderInline(ambiance, stepParameters, stepElementParameters);
     terraformPassThroughData.setTerraformTaskNGParametersBuilder(builder);
+    terraformPassThroughData.setOriginalStepVarFiles(spec.getVarFiles());
 
     if (hasGitVarFiles || hasS3VarFiles) {
       return helper.fetchRemoteVarFiles(terraformPassThroughData, varFilesInfo, ambiance, stepElementParameters,
@@ -172,6 +173,7 @@ public class TerraformDestroyStepV2 extends CdTaskChainExecutable {
     TerraformTaskNGParametersBuilder builder =
         getTerraformTaskNGParametersBuilderInheritFromApply(ambiance, stepParameters, stepElementParameters);
     terraformPassThroughData.setTerraformTaskNGParametersBuilder(builder);
+    terraformPassThroughData.setOriginalVarFileConfigs(terraformConfig.getVarFileConfigs());
 
     if (hasGitVarFiles || hasS3VarFiles) {
       return helper.fetchRemoteVarFiles(terraformPassThroughData, varFilesInfo, ambiance, stepElementParameters,

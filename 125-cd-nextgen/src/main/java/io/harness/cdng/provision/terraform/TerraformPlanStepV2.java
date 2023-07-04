@@ -148,6 +148,7 @@ public class TerraformPlanStepV2 extends CdTaskChainExecutable {
     TerraformTaskNGParametersBuilder tfParametersBuilder =
         getTerraformTaskNGParametersBuilder(ambiance, stepElementParameters);
     terraformPassThroughData.setTerraformTaskNGParametersBuilder(tfParametersBuilder);
+    terraformPassThroughData.setOriginalStepVarFiles(configuration.getVarFiles());
 
     if (hasGitVarFiles || hasS3VarFiles) {
       return helper.fetchRemoteVarFiles(terraformPassThroughData, varFilesInfo, ambiance, stepElementParameters,
