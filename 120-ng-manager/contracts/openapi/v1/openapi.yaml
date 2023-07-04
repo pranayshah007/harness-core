@@ -1492,7 +1492,6 @@ components:
         account:
           type: string
           description: Account Identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_]{0,127}$'
           minLength: 1
           maxLength: 128
         identifier:
