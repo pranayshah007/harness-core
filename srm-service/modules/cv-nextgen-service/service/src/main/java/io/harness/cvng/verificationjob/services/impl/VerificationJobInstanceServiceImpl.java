@@ -55,6 +55,7 @@ import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.core.utils.CVNGTaskMetadataUtils;
 import io.harness.cvng.metrics.CVNGMetricsUtils;
 import io.harness.cvng.metrics.beans.VerifyStepMetricContext;
 import io.harness.cvng.metrics.services.impl.MetricContextBuilder;
@@ -715,6 +716,7 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
           DataCollectionTaskDTO.DataCollectionTaskResult dataCollectionTaskResult =
               DataCollectionTaskDTO.DataCollectionTaskResult.builder()
                   .dataCollectionTaskId(dataCollectionTask.getUuid())
+                  .dataCollectionMetadata(dataCollectionTask.getDataCollectionMetadata())
                   .status(DataCollectionExecutionStatus.ABORTED)
                   .exception(
                       "DeploymentTimeSeriesAnalysis from LE is FailFast, so terminating DataCollectionTask with ID: "
@@ -738,17 +740,21 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
           dataCollectionInfoMapper.postProcessDataCollectionInfo(
               preDeploymentDataCollectionInfo, cvConfig, TaskType.DEPLOYMENT);
           preDeploymentDataCollectionTimeRanges.forEach(timeRange -> {
+            String dataCollectionWorkerId = getDataCollectionWorkerId(
+                verificationJobInstance, cvConfig.getIdentifier(), cvConfig.getConnectorIdentifier());
+            Map<String, String> dataCollectionMetadata = CVNGTaskMetadataUtils.getDataCollectionInfoMetadata(
+                cvConfig, verificationJobInstance, verificationTaskId);
             dataCollectionTasks.add(
                 DeploymentDataCollectionTask.builder()
                     .verificationTaskId(verificationTaskId)
-                    .dataCollectionWorkerId(getDataCollectionWorkerId(
-                        verificationJobInstance, cvConfig.getIdentifier(), cvConfig.getConnectorIdentifier()))
+                    .dataCollectionWorkerId(dataCollectionWorkerId)
                     .startTime(timeRange.getStartTime())
                     .endTime(timeRange.getEndTime())
                     .validAfter(timeRange.getEndTime().plus(verificationJobInstance.getDataCollectionDelay()))
                     .accountId(verificationJob.getAccountId())
                     .type(Type.DEPLOYMENT)
                     .status(QUEUED)
+                    .dataCollectionMetadata(dataCollectionMetadata)
                     .dataCollectionInfo(preDeploymentDataCollectionInfo)
                     .queueAnalysis(cvConfig.queueAnalysisForPreDeploymentTask())
                     .build());
@@ -764,6 +770,8 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
         dataCollectionInfo.setDataCollectionDsl(cvConfig.getDataCollectionDsl());
         dataCollectionInfo.setCollectHostData(verificationJob.collectHostData());
         dataCollectionInfoMapper.postProcessDataCollectionInfo(dataCollectionInfo, cvConfig, TaskType.DEPLOYMENT);
+        Map<String, String> dataCollectionMetadata =
+            CVNGTaskMetadataUtils.getDataCollectionInfoMetadata(cvConfig, verificationJobInstance, verificationTaskId);
         dataCollectionTasks.add(
             DeploymentDataCollectionTask.builder()
                 .type(Type.DEPLOYMENT)
@@ -776,12 +784,14 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
                 .accountId(verificationJob.getAccountId())
                 .type(Type.DEPLOYMENT)
                 .status(QUEUED)
+                .dataCollectionMetadata(dataCollectionMetadata)
                 .dataCollectionInfo(dataCollectionInfo)
                 .build());
       });
       dataCollectionTaskService.createSeqTasks(dataCollectionTasks);
     });
   }
+
   private void populateMetricPack(CVConfig cvConfig) {
     if (cvConfig instanceof MetricCVConfig) {
       // TODO: get rid of this. Adding it to unblock. We need to redesign how are we setting DSL.
