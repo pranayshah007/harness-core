@@ -466,6 +466,7 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
     return VerificationJobInstance.builder()
         .accountId(accountId)
         .executionStatus(ExecutionStatus.QUEUED)
+        .verificationStatus(ActivityVerificationStatus.NOT_STARTED)
         .deploymentStartTime(deploymentStartTime)
         .startTime(verficationStartTime)
         .baselineType(baselineType)
