@@ -80,6 +80,10 @@ import org.apache.logging.log4j.util.Strings;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(PIPELINE)
 public class BuildTriggerHelper {
+  public static final String STAGE_IDENTIFIER = "stageIdentifier";
+  public static final String IMAGE_PATH = "imagePath";
+  public static final String CHART_NAME = "ChartName";
+  public static final String HELM_VERSION = "helmVersion";
   private PipelineServiceClient pipelineServiceClient;
   public static final String REPOSITORY_NAME = "repository";
   public static final String REPOSITORY_FORMAT = "repositoryFormat";
@@ -154,7 +158,7 @@ public class BuildTriggerHelper {
           "Type filed is not present in Trigger Spec. Its needed for Artifact/Manifest Triggers");
     }
 
-    if (buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity().getWithServiceV2() == false
+    if (!buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity().getWithServiceV2()
         && !typeFromPipeline.asText().equals(typeFromTrigger.asText())) {
       throw new InvalidRequestException(new StringBuilder(128)
                                             .append("Artifact/Manifest Type in Trigger: ")
@@ -182,8 +186,8 @@ public class BuildTriggerHelper {
 
     Map<String, Object> pipelineBuildSpecMap = new HashMap<>();
 
-    if (triggerManifestSpecMap.containsKey("stageIdentifier") && triggerManifestSpecMap.containsKey("manifestRef")) {
-      String stageRef = triggerManifestSpecMap.get("stageIdentifier").asText();
+    if (triggerManifestSpecMap.containsKey(STAGE_IDENTIFIER) && triggerManifestSpecMap.containsKey("manifestRef")) {
+      String stageRef = triggerManifestSpecMap.get(STAGE_IDENTIFIER).asText();
       String buildRef = triggerManifestSpecMap.get("manifestRef").asText();
       List<String> keys = Arrays.asList(
           "pipeline.stages.stage[identifier:STAGE_REF].spec.serviceConfig.serviceDefinition.spec.manifests.manifest[identifier:BUILD_REF]",
@@ -208,8 +212,8 @@ public class BuildTriggerHelper {
 
     Map<String, Object> pipelineBuildSpecMap = new HashMap<>();
 
-    if (triggerArtifactSpecMap.containsKey("stageIdentifier") && triggerArtifactSpecMap.containsKey("artifactRef")) {
-      String stageRef = triggerArtifactSpecMap.get("stageIdentifier").asText();
+    if (triggerArtifactSpecMap.containsKey(STAGE_IDENTIFIER) && triggerArtifactSpecMap.containsKey("artifactRef")) {
+      String stageRef = triggerArtifactSpecMap.get(STAGE_IDENTIFIER).asText();
       String buildRef = triggerArtifactSpecMap.get("artifactRef").asText();
 
       List<String> keys = new ArrayList<>();
@@ -407,7 +411,7 @@ public class BuildTriggerHelper {
 
   private void validatePollingItemForGcr(PollingItem pollingItem) {
     GcrPayload gcrPayload = pollingItem.getPollingPayloadData().getGcrPayload();
-    String error = checkFiledValueError("imagePath", gcrPayload.getImagePath());
+    String error = checkFiledValueError(IMAGE_PATH, gcrPayload.getImagePath());
     if (isNotBlank(error)) {
       throw new InvalidRequestException(error);
     }
@@ -420,7 +424,7 @@ public class BuildTriggerHelper {
 
   private void validatePollingItemForDockerRegistry(PollingItem pollingItem) {
     DockerHubPayload dockerHubPayload = pollingItem.getPollingPayloadData().getDockerHubPayload();
-    String error = checkFiledValueError("imagePath", dockerHubPayload.getImagePath());
+    String error = checkFiledValueError(IMAGE_PATH, dockerHubPayload.getImagePath());
     if (isNotBlank(error)) {
       throw new InvalidRequestException(error);
     }
@@ -515,7 +519,7 @@ public class BuildTriggerHelper {
       throw new InvalidRequestException(error);
     }
 
-    error = checkFiledValueError("imagePath", ecrPayload.getImagePath());
+    error = checkFiledValueError(IMAGE_PATH, ecrPayload.getImagePath());
     if (isNotBlank(error)) {
       throw new InvalidRequestException(error);
     }
@@ -534,7 +538,7 @@ public class BuildTriggerHelper {
       throw new InvalidRequestException(error);
     }
 
-    error = checkFiledValueError("repository", acrPayload.getRepository());
+    error = checkFiledValueError(REPOSITORY_NAME, acrPayload.getRepository());
     if (isNotBlank(error)) {
       throw new InvalidRequestException(error);
     }
@@ -547,36 +551,35 @@ public class BuildTriggerHelper {
     }
 
     if (pollingItem.getPollingPayloadData().hasHttpHelmPayload()) {
-      error =
-          checkFiledValueError("ChartName", pollingItem.getPollingPayloadData().getHttpHelmPayload().getChartName());
+      error = checkFiledValueError(CHART_NAME, pollingItem.getPollingPayloadData().getHttpHelmPayload().getChartName());
       if (isNotBlank(error)) {
         throw new InvalidRequestException(error);
       }
 
       error = checkFiledValueError(
-          "helmVersion", pollingItem.getPollingPayloadData().getHttpHelmPayload().getHelmVersion().name());
+          HELM_VERSION, pollingItem.getPollingPayloadData().getHttpHelmPayload().getHelmVersion().name());
       if (isNotBlank(error)) {
         throw new InvalidRequestException(error);
       }
     } else if (pollingItem.getPollingPayloadData().hasS3HelmPayload()) {
-      error = checkFiledValueError("ChartName", pollingItem.getPollingPayloadData().getS3HelmPayload().getChartName());
+      error = checkFiledValueError(CHART_NAME, pollingItem.getPollingPayloadData().getS3HelmPayload().getChartName());
       if (isNotBlank(error)) {
         throw new InvalidRequestException(error);
       }
 
       error = checkFiledValueError(
-          "helmVersion", pollingItem.getPollingPayloadData().getS3HelmPayload().getHelmVersion().name());
+          HELM_VERSION, pollingItem.getPollingPayloadData().getS3HelmPayload().getHelmVersion().name());
       if (isNotBlank(error)) {
         throw new InvalidRequestException(error);
       }
     } else if (pollingItem.getPollingPayloadData().hasGcsHelmPayload()) {
-      error = checkFiledValueError("ChartName", pollingItem.getPollingPayloadData().getGcsHelmPayload().getChartName());
+      error = checkFiledValueError(CHART_NAME, pollingItem.getPollingPayloadData().getGcsHelmPayload().getChartName());
       if (isNotBlank(error)) {
         throw new InvalidRequestException(error);
       }
 
       error = checkFiledValueError(
-          "helmVersion", pollingItem.getPollingPayloadData().getGcsHelmPayload().getHelmVersion().name());
+          HELM_VERSION, pollingItem.getPollingPayloadData().getGcsHelmPayload().getHelmVersion().name());
       if (isNotBlank(error)) {
         throw new InvalidRequestException(error);
       }
