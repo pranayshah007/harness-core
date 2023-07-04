@@ -87,6 +87,7 @@ import io.harness.steps.jira.JiraStepVariableCreator;
 import io.harness.steps.jira.JiraUpdateStepVariableCreator;
 import io.harness.steps.jira.create.JiraCreateStepPlanCreator;
 import io.harness.steps.jira.update.JiraUpdateStepPlanCreator;
+import io.harness.steps.pipelinestage.PipelineStageOutputsVariableCreator;
 import io.harness.steps.pipelinestage.PipelineStageVariableCreator;
 import io.harness.steps.policy.step.PolicyStepPlanCreator;
 import io.harness.steps.policy.variables.PolicyStepVariableCreator;
@@ -205,6 +206,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     variableCreators.add(new QueueStepVariableCreator());
     variableCreators.add(new CustomApprovalStepVariableCreator());
     variableCreators.add(new PipelineStageVariableCreator());
+    variableCreators.add(new PipelineStageOutputsVariableCreator());
     variableCreators.add(new WaitStepVariableCreator());
     variableCreators.add(
         new EmptyVariableCreator(STAGE, ImmutableSet.of(FEATURE_FLAG_SUPPORTED_TYPE, PIPELINE_ROLLBACK_STAGE)));
