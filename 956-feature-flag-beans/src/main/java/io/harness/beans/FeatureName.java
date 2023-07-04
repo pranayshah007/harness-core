@@ -102,6 +102,9 @@ public enum FeatureName {
       "Enables Blue Green Scale Down Stage Scale Down Step. This will help bring down the stage environment in Blue Green Deployment. Epic: https://harness.atlassian.net/browse/CDS-55822",
       HarnessTeam.CDP),
   CDS_CONTAINER_STEP_GROUP("Support for container step group in CD", HarnessTeam.CDP),
+  CDS_CUSTOM_STAGE_EXECUTION_DATA_SYNC(
+      "This flag controls if you want Custom Stage execution data saved in mongodb and eventually synced to timescale",
+      HarnessTeam.CDP),
   CDS_DEBEZIUM_ENABLED_CG("This flag is enable sync using debezium in cg", HarnessTeam.CDC, Scope.GLOBAL),
   CDS_ENABLE_TRIGGER_YAML_VALIDATION("Enables trigger yaml validation", HarnessTeam.SPG),
   CDS_ENCODE_HTTP_STEP_URL("Enables the encoding of HTTP Step URL if it is not already encoded", HarnessTeam.CDP),

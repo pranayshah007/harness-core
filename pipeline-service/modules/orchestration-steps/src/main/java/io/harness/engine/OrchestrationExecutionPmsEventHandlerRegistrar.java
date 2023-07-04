@@ -13,6 +13,7 @@ import static io.harness.pms.contracts.execution.events.OrchestrationEventType.O
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.engine.events.PipelineStageExecutionUpdateEventHandler;
 import io.harness.engine.events.PipelineStepExecutionUpdateEventHandler;
 import io.harness.engine.expressions.usages.ExpressionUsagesEventHandler;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;
@@ -28,7 +29,8 @@ public class OrchestrationExecutionPmsEventHandlerRegistrar {
   public static Map<OrchestrationEventType, Set<Class<? extends OrchestrationEventHandler>>> getEngineEventHandlers() {
     Map<OrchestrationEventType, Set<Class<? extends OrchestrationEventHandler>>> handlerMap = new HashMap<>();
     handlerMap.put(ORCHESTRATION_END, Sets.newHashSet(ExpressionUsagesEventHandler.class));
-    handlerMap.put(NODE_EXECUTION_STATUS_UPDATE, Sets.newHashSet(PipelineStepExecutionUpdateEventHandler.class));
+    handlerMap.put(NODE_EXECUTION_STATUS_UPDATE,
+        Sets.newHashSet(PipelineStageExecutionUpdateEventHandler.class, PipelineStepExecutionUpdateEventHandler.class));
     handlerMap.put(NODE_EXECUTION_START, Sets.newHashSet(PipelineStepExecutionUpdateEventHandler.class));
 
     return handlerMap;
