@@ -31,6 +31,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.plugin.ContainerStepExecutionResponseHelper;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -51,6 +52,8 @@ import org.apache.commons.lang3.StringUtils;
 public class AwsSamStepHelper {
   @Inject protected OutcomeService outcomeService;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
+
+  @Inject private ContainerStepExecutionResponseHelper containerStepExecutionResponseHelper;
 
   ObjectMapper objectMapper = NG_DEFAULT_OBJECT_MAPPER;
 
@@ -101,16 +104,18 @@ public class AwsSamStepHelper {
       Map<String, ResponseData> responseDataMap) {
     String instances = null;
 
-    StepStatusTaskResponseData stepStatusTaskResponseData = null;
-
-    for (Map.Entry<String, ResponseData> entry : responseDataMap.entrySet()) {
-      ResponseData responseData = entry.getValue();
-      if (responseData instanceof StepStatusTaskResponseData) {
-        stepStatusTaskResponseData = (StepStatusTaskResponseData) responseData;
-      }
-    }
+    StepStatusTaskResponseData stepStatusTaskResponseData =
+        containerStepExecutionResponseHelper.filterK8StepResponse(responseDataMap);
 
     List<ServerInstanceInfo> serverInstanceInfoList = null;
+
+    if (stepStatusTaskResponseData == null) {
+      log.info("Aws Sam Deploy :  Received stepStatusTaskResponseData as null");
+      return serverInstanceInfoList;
+    } else {
+      log.info(String.format("Aws Sam Deploy :  Received stepStatusTaskResponseData with status %s",
+          stepStatusTaskResponseData.getStepStatus().getStepExecutionStatus()));
+    }
 
     if (stepStatusTaskResponseData != null
         && stepStatusTaskResponseData.getStepStatus().getStepExecutionStatus() == StepExecutionStatus.SUCCESS) {
@@ -119,13 +124,16 @@ public class AwsSamStepHelper {
       if (stepOutput instanceof StepMapOutput) {
         StepMapOutput stepMapOutput = (StepMapOutput) stepOutput;
         String instancesByte64 = stepMapOutput.getMap().get("instances");
+        log.info(String.format("AWS SAM Deploy instances byte64 %s", instancesByte64));
         instances = new String(Base64.getDecoder().decode(instancesByte64));
+        log.info(String.format("AWS SAM Deploy instances %s", instances));
       }
 
       try {
+        log.info(String.format("AWS SAM Deploy: Parsing instances from JSON %s", instances));
         serverInstanceInfoList = Arrays.asList(objectMapper.readValue(instances, AwsSamServerInstanceInfo[].class));
       } catch (Exception e) {
-        log.error("Error while parsing AWS SAM instances", e);
+        log.error(String.format("Error while parsing AWS SAM instances %s", instances), e);
       }
     }
 
