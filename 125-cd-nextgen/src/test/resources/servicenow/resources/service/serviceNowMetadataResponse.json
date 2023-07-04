@@ -1,6 +1,4 @@
 {
-  "result": {
-    "columns": {
       "parent": {
         "filterable": true,
         "reference_display_field": "number",
@@ -234,6 +232,4 @@
         "cansort": true,
         "max_length": 40
       }
-    }
-  }
 }

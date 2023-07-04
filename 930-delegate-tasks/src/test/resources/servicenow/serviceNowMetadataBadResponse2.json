@@ -1,6 +1,6 @@
 {
   "result": {
-    "columns": {
+    "not_columns": {
       "parent": {
         "filterable": true,
         "reference_display_field": "number",

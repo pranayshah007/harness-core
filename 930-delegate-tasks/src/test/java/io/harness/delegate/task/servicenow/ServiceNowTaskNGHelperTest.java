@@ -60,6 +60,7 @@ import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -307,15 +308,12 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetMetadataWithChoicesWithRetry() throws Exception {
     ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
-
     Call mockCall = Mockito.mock(Call.class);
     when(serviceNowRestClient.getMetadata(anyString(), anyString())).thenReturn(mockCall);
-
     ClassLoader classLoader = this.getClass().getClassLoader();
     final URL jsonFile = classLoader.getResource("servicenow/serviceNowMetadataResponse.json");
     ObjectMapper mapper = new ObjectMapper();
     JsonNode responseNode = mapper.readTree(jsonFile);
-
     Response<JsonNode> jsonNodeResponse = Response.success(responseNode);
     when(mockCall.clone()).thenReturn(mockCall);
     doThrow(new SocketTimeoutException()).doReturn(jsonNodeResponse).when(mockCall).execute();
@@ -331,7 +329,7 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
               logStreamingTaskClient);
 
       assertThat(response.getDelegateMetaInfo()).isNull();
-      assertThat(response.getServiceNowFieldNGList()).hasSize(2);
+      assertThat(response.getServiceNowFieldNGList()).hasSize(8);
       assertThat(response.getServiceNowFieldNGList().get(0).getKey()).isEqualTo("parent");
       assertThat(response.getServiceNowFieldNGList().get(0).getName()).isEqualTo("Parent");
 
@@ -343,8 +341,75 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
 
       assertThat(response.getTicket()).isNull();
       verify(secretDecryptionService).decrypt(any(), any());
-
       verify(serviceNowRestClient).getMetadata(anyString(), eq("incident"));
+    }
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetMetadataV2WithChoicesWithRetry() throws Exception {
+    ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
+
+    Call mockCall = Mockito.mock(Call.class);
+    when(serviceNowRestClient.getMetadata(anyString(), anyString())).thenReturn(mockCall);
+
+    ClassLoader classLoader = this.getClass().getClassLoader();
+
+    when(mockCall.clone()).thenReturn(mockCall);
+    doThrow(new SocketTimeoutException())
+        .doReturn(getJsonNodeResponseFromJsonFile("servicenow/serviceNowMetadataResponse.json", classLoader))
+        .when(mockCall)
+        .execute();
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+      ServiceNowTaskNGResponse response =
+          serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                           .action(ServiceNowActionNG.GET_METADATA_V2)
+                                                           .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                           .ticketType("incident")
+                                                           .build(),
+              logStreamingTaskClient);
+
+      assertThat(response.getDelegateMetaInfo()).isNull();
+      assertThat(response.getServiceNowFieldNGList()).isNull();
+      assertThat(response.getTicket()).isNull();
+      assertThat(response.getServiceNowFieldJsonNGListAsString()).isNotBlank();
+
+      String serviceNowFieldJsonNGList = response.getServiceNowFieldJsonNGListAsString();
+      ObjectMapper objectMapper = new ObjectMapper();
+      JsonNode jsonNodeList = objectMapper.readTree(serviceNowFieldJsonNGList);
+      List<JsonNode> jsonNodeParsed = new ArrayList<>();
+      for (JsonNode jsonNode : jsonNodeList) {
+        jsonNodeParsed.add(jsonNode);
+      }
+      assertThat(jsonNodeParsed.size()).isEqualTo(8);
+      when(mockCall.execute())
+          .thenReturn(getJsonNodeResponseFromJsonFile("servicenow/serviceNowMetadataBadResponse1.json", classLoader));
+      assertThatThrownBy(
+          ()
+              -> serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                                  .action(ServiceNowActionNG.GET_METADATA_V2)
+                                                                  .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                                  .ticketType("incident")
+                                                                  .build(),
+                  logStreamingTaskClient))
+          .isInstanceOf(ServiceNowException.class);
+      when(mockCall.execute())
+          .thenReturn(getJsonNodeResponseFromJsonFile("servicenow/serviceNowMetadataBadResponse2.json", classLoader));
+      assertThatThrownBy(
+          ()
+              -> serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                                  .action(ServiceNowActionNG.GET_METADATA_V2)
+                                                                  .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                                  .ticketType("incident")
+                                                                  .build(),
+                  logStreamingTaskClient))
+          .isInstanceOf(ServiceNowException.class);
+      verify(secretDecryptionService, times(3)).decrypt(any(), any());
+
+      verify(serviceNowRestClient, times(3)).getMetadata(anyString(), eq("incident"));
     }
   }
 

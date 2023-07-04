@@ -126,6 +126,8 @@ public class ServiceNowTaskNgHelper {
         return getStagingTableList(serviceNowTaskNGParameters);
       case GET_TICKET_TYPES:
         return getTicketTypes(serviceNowTaskNGParameters);
+      case GET_METADATA_V2:
+        return getMetadataV2(serviceNowTaskNGParameters);
       default:
         throw new InvalidRequestException(
             String.format("Invalid servicenow task action: %s", serviceNowTaskNGParameters.getAction()));
@@ -598,6 +600,44 @@ public class ServiceNowTaskNgHelper {
           fields.add(fieldBuilder.build());
         }
         return ServiceNowTaskNGResponse.builder().serviceNowFieldNGList(fields).build();
+      } else {
+        throw new ServiceNowException("Failed to fetch fields for ticket type "
+                + serviceNowTaskNGParameters.getTicketType() + " response: " + response,
+            SERVICENOW_ERROR, USER);
+      }
+    } catch (ServiceNowException e) {
+      log.error("Failed to get ServiceNow fields: {}", ExceptionUtils.getMessage(e), e);
+      throw e;
+    } catch (Exception ex) {
+      log.error("Failed to get ServiceNow fields: {}", ExceptionUtils.getMessage(ex), ex);
+      throw new ServiceNowException(
+          String.format("Error occurred while getting serviceNow fields: %s", ExceptionUtils.getMessage(ex)),
+          SERVICENOW_ERROR, USER, ex);
+    }
+  }
+
+  private ServiceNowTaskNGResponse getMetadataV2(ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
+    ServiceNowConnectorDTO serviceNowConnectorDTO = serviceNowTaskNGParameters.getServiceNowConnectorDTO();
+    ServiceNowRestClient serviceNowRestClient = getServiceNowRestClient(serviceNowConnectorDTO.getServiceNowUrl());
+
+    final Call<JsonNode> request =
+        serviceNowRestClient.getMetadata(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO),
+            serviceNowTaskNGParameters.getTicketType().toLowerCase());
+    Response<JsonNode> response = null;
+    try {
+      response = Retry.decorateCallable(retry, () -> request.clone().execute()).call();
+      log.info("Response received from serviceNow for GET_METADATA_V2: {}", response);
+      handleResponse(response, "Failed to get serviceNow fields");
+      JsonNode responseObj = response.body().get("result");
+      if (responseObj != null && responseObj.get("columns") != null) {
+        JsonNode columns = responseObj.get("columns");
+        if (!isNull(columns)) {
+          return ServiceNowTaskNGResponse.builder().serviceNowFieldJsonNGListAsString(columns.toString()).build();
+        } else {
+          throw new ServiceNowException("Failed to fetch fields for ticket type "
+                  + serviceNowTaskNGParameters.getTicketType() + " response: " + response,
+              SERVICENOW_ERROR, USER);
+        }
       } else {
         throw new ServiceNowException("Failed to fetch fields for ticket type "
                 + serviceNowTaskNGParameters.getTicketType() + " response: " + response,
