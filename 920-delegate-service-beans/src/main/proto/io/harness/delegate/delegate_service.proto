@@ -15,6 +15,8 @@ import "955-delegate-beans/src/main/proto/io/harness/delegate/capability.proto";
 import "955-delegate-beans/src/main/proto/io/harness/perpetualtask/perpetual_task.proto";
 
 import "920-delegate-service-beans/src/main/proto/io/harness/delegate/task.proto";
+import "920-delegate-service-beans/src/main/proto/io/harness/delegate/delegate_task_apis.proto";
+
 import "920-delegate-service-beans/src/main/proto/io/harness/delegate/progress.proto";
 import "920-delegate-service-beans/src/main/proto/io/harness/callback/callback.proto";
 import "920-delegate-service-beans/src/main/proto/io/harness/perpetualtask/perpetual_task_client.proto";
@@ -50,6 +52,25 @@ service DelegateService {
   rpc ObtainDocument(ObtainDocumentRequest) returns (ObtainDocumentResponse);
 
   rpc isTaskTypeSupported(SupportedTaskTypeRequest) returns (SupportedTaskTypeResponse);
+
+  rpc CreateWebsocketAPIRequest(WebsocketAPIRequest) returns (SubmitTaskResponse);
+}
+
+message WebsocketAPIRequest {
+  SchedulingConfig taskNetworkMetadata = 1;
+  bytes data = 2;
+  // TODO: We can remove any expression evaluation related information once we move it out of manager.
+  // Below all are expression evaluation related fields
+  enum SERIALIZATION_METHOD {
+    KRYO = 0;
+    JSON = 1;
+    PROTO = 2;
+  }
+  SERIALIZATION_METHOD serialization = 3;
+  // string json_taskType = 4;
+  // The delegate system offers JIT secret decryption. This token allows for making sure that the expressions for
+  // obtaining secrets are system generated, and not a hack from customers input.
+  int64 expression_functor_token = 4;
 }
 
 // Next ID: 11

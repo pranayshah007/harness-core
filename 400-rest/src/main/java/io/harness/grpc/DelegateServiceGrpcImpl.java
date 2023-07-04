@@ -49,6 +49,7 @@ import io.harness.delegate.TaskProgressResponse;
 import io.harness.delegate.TaskProgressUpdatesRequest;
 import io.harness.delegate.TaskProgressUpdatesResponse;
 import io.harness.delegate.TaskSelector;
+import io.harness.delegate.WebsocketAPIRequest;
 import io.harness.delegate.beans.DelegateProgressData;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskResponse;
@@ -123,7 +124,7 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
       DelegateTaskService delegateTaskService, KryoSerializer kryoSerializer,
       @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer,
       DelegateTaskServiceClassic delegateTaskServiceClassic, DelegateTaskMigrationHelper delegateTaskMigrationHelper,
-      TaskClient delegateAPIClient, ExecutionInfrastructureService executionInfrastructureService) {
+      TaskClient taskClient, ExecutionInfrastructureService executionInfrastructureService) {
     this.delegateCallbackRegistry = delegateCallbackRegistry;
     this.perpetualTaskService = perpetualTaskService;
     this.delegateService = delegateService;
@@ -134,6 +135,26 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
     this.delegateTaskMigrationHelper = delegateTaskMigrationHelper;
     this.taskClient = taskClient;
     this.executionInfrastructureService = executionInfrastructureService;
+  }
+
+  @Override
+  public void createWebsocketAPIRequest(
+      WebsocketAPIRequest request, StreamObserver<SubmitTaskResponse> responseObserver) {
+    try {
+      String taskId = delegateTaskMigrationHelper.generateDelegateTaskUUID();
+      final SchedulingConfig networkMetadata = request.getTaskNetworkMetadata();
+      sheduleTaskInternal(networkMetadata, request.getData().toByteArray(), null, SchedulingTaskEvent.Method.POST,
+          "/execution/k8s", Optional.empty(), responseObserver);
+
+    } catch (Exception ex) {
+      if (ex instanceof NoDelegatesException) {
+        log.warn("No delegate exception found while processing submit task request. reason {}",
+            ExceptionUtils.getMessage(ex));
+      } else {
+        log.error("Unexpected error occurred while processing submit task request.", ex);
+      }
+      responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
+    }
   }
 
   // Helper function that will persist a delegate grpc request to task.
@@ -181,6 +202,8 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
               .taskData(taskData)
               .runnerData(infraData)
               .executionTimeout(Durations.toMillis(schedulingConfig.getExecutionTimeout()))
+              .requestUri(requestUri)
+              .requestMethod(method.name())
               // TODO: we keep these configs internal until we realize use cases to expose
               //  them through APIs
               .executeOnHarnessHostedDelegates(false)
