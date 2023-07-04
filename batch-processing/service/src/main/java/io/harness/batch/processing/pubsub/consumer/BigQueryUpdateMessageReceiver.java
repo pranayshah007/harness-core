@@ -26,6 +26,7 @@ import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingHistoryS
 import io.harness.ccm.views.entities.ViewLabelsFlattened;
 import io.harness.ccm.views.graphql.ViewsQueryBuilder;
 import io.harness.ccm.views.service.LabelFlattenedService;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 
 import com.google.cloud.pubsub.v1.AckReplyConsumer;
@@ -39,12 +40,12 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.YearMonth;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -53,6 +54,7 @@ import org.apache.commons.lang3.StringUtils;
 @Singleton
 public class BigQueryUpdateMessageReceiver implements MessageReceiver {
   private static final String COST_CATEGORY_FORMAT = "STRUCT('%s' as costCategoryName, %s as costBucketName)";
+  private static final long BQ_QUERY_LIMIT = 10485760;
 
   private final Gson gson = new Gson();
   private final BigQueryHelper bigQueryHelper;
@@ -145,14 +147,7 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
         currentMonth = currentMonth.plusMonths(1);
         continue;
       }
-      boolean shouldUseFlattenedLabelsColumn =
-          featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, message.getAccountId());
-      if (shouldUseFlattenedLabelsColumn) {
-        insertCostCategoriesToBigQueryUsingFlattenedLabels(
-            message, tableName, queryStartTime, queryEndTime, businessMappingHistories);
-      } else {
-        insertCostCategoriesToBigQuery(message, tableName, queryStartTime, queryEndTime, businessMappingHistories);
-      }
+      insertCostCategoriesToBigQuery(message, tableName, queryStartTime, queryEndTime, businessMappingHistories);
 
       currentMonth = currentMonth.plusMonths(1);
 
@@ -163,35 +158,40 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
 
   private void insertCostCategoriesToBigQuery(BigQueryUpdateMessage.Message message, String tableName,
       Instant queryStartTime, Instant queryEndTime, List<BusinessMappingHistory> businessMappingHistories) {
+    // Check if a single BQ update query will suffice
     ViewLabelsFlattened viewLabelsFlattened =
         ViewLabelsFlattened.builder().shouldUseFlattenedLabelsColumn(false).build();
-    List<String> sqlCaseStatements =
-        businessMappingHistories.stream()
-            .map(businessMappingHistory
-                -> String.format(COST_CATEGORY_FORMAT, businessMappingHistory.getName(),
-                    viewsQueryBuilder.getSQLCaseStatementBusinessMapping(
-                        null, BusinessMapping.fromHistory(businessMappingHistory), UNIFIED_TABLE, viewLabelsFlattened)))
-            .collect(Collectors.toList());
+    if (featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, message.getAccountId())) {
+      Map<String, String> labelsKeyAndColumnMapping =
+          labelFlattenedService.getLabelsKeyAndColumnMapping(message.getAccountId());
+      viewLabelsFlattened =
+          viewsQueryBuilder.getViewLabelsFlattened(labelsKeyAndColumnMapping, message.getAccountId(), UNIFIED_TABLE);
+    }
+
+    List<String> sqlCaseStatements = new ArrayList<>();
+    for (BusinessMappingHistory businessMappingHistory : businessMappingHistories) {
+      String sqlCaseStatement = String.format(COST_CATEGORY_FORMAT, businessMappingHistory.getName(),
+          viewsQueryBuilder.getSQLCaseStatementBusinessMapping(
+              null, BusinessMapping.fromHistory(businessMappingHistory), UNIFIED_TABLE, viewLabelsFlattened));
+      sqlCaseStatements.add(sqlCaseStatement);
+    }
     String costCategoriesStatement = "[" + String.join(", ", sqlCaseStatements) + "]";
 
-    bigQueryHelperService.insertCostCategories(tableName, costCategoriesStatement,
-        formattedTime(Date.from(queryStartTime)), formattedTime(Date.from(queryEndTime)), message.getCloudProvider(),
-        message.getCloudProviderAccountIds());
-  }
+    try {
+      bigQueryHelperService.insertCostCategories(tableName, costCategoriesStatement,
+          formattedTime(Date.from(queryStartTime)), formattedTime(Date.from(queryEndTime)), message.getCloudProvider(),
+          message.getCloudProviderAccountIds());
+      return;
+    } catch (InvalidRequestException e) {
+      log.error("BigQuery insert cost categories in a single update failed, trying individually", e);
+    }
 
-  private void insertCostCategoriesToBigQueryUsingFlattenedLabels(BigQueryUpdateMessage.Message message,
-      String tableName, Instant queryStartTime, Instant queryEndTime,
-      List<BusinessMappingHistory> businessMappingHistories) {
-    Map<String, String> labelsKeyAndColumnMapping =
-        labelFlattenedService.getLabelsKeyAndColumnMapping(message.getAccountId());
-    ViewLabelsFlattened viewLabelsFlattened =
-        viewsQueryBuilder.getViewLabelsFlattened(labelsKeyAndColumnMapping, message.getAccountId(), UNIFIED_TABLE);
-    // Accounts for which a single update query for all cost categories is too much to handle
+    // Accounts for which a single update query for all cost categories wasn't processed
     bigQueryHelperService.removeAllCostCategories(tableName, formattedTime(Date.from(queryStartTime)),
         formattedTime(Date.from(queryEndTime)), message.getCloudProvider(), message.getCloudProviderAccountIds());
     for (BusinessMappingHistory businessMappingHistory : businessMappingHistories) {
       try {
-        String costCategoriesStatement = "["
+        costCategoriesStatement = "["
             + String.format(COST_CATEGORY_FORMAT, businessMappingHistory.getName(),
                 viewsQueryBuilder.getSQLCaseStatementBusinessMapping(
                     null, BusinessMapping.fromHistory(businessMappingHistory), UNIFIED_TABLE, viewLabelsFlattened))
