@@ -148,6 +148,7 @@ export SONAR_REGISTRAR_EXCLUSIONS=$(get_info_from_file $PR_REGISTRAR_EXCLUSION_F
 && echo "sonar.projectKey=harness-core-sonar-pr" > ${SONAR_CONFIG_FILE} \
 && echo "sonar.log.level=DEBUG" >> ${SONAR_CONFIG_FILE}
 
+echo "sonar.scm.revision=$COMMIT_SHA" >> ${SONAR_CONFIG_FILE}
 echo "sonar.sources=$SONAR_SRCS" >> ${SONAR_CONFIG_FILE}
 echo "sonar.tests=$SONAR_SRCS" >> ${SONAR_CONFIG_FILE}
 echo "sonar.test.inclusions=$SONAR_TEST_INCLUSIONS" >> ${SONAR_CONFIG_FILE}
