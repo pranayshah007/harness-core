@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 52
+version: 53
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -968,6 +968,51 @@ roles:
         - code_repo_edit
         - code_repo_delete
         - code_repo_push
+      managed: true
+      allowedScopeLevels:
+        - account
+        - organization
+        - project
+    - identifier: _sei_admin
+      name: SEI Admin
+      description: Can create, edit, and view SEI resources
+      permissions:
+        - sei_seiconfigurationsettings_view
+        - sei_seiconfigurationsettings_edit
+        - sei_seiconfigurationsettings_delete
+        - sei_seipivotpointsetup_create
+        - sei_seipivotpointsetup_view
+        - sei_seipivotpointsetup_edit
+        - sei_seipivotpointsetup_delete
+        - sei_seiinsights_create
+        - sei_seiinsights_view
+        - sei_seiinsights_edit
+        - sei_seiinsights_delete
+        - sei_seitrellisscore_view
+        - sei_seitrellisscore_edit
+      managed: true
+      allowedScopeLevels:
+        - account
+    - identifier: _sei_viewer
+      name: SEI Viewer
+      description: Can view SEI resources
+      permissions:
+        - sei_seipivotpointsetup_view
+        - sei_seiinsights_view
+        - sei_seitrellisscore_view
+      managed: true
+      allowedScopeLevels:
+        - account
+        - organization
+        - project
+    - identifier: _sei_org_admin
+      name: SEI Org Admin
+      description: Can create, edit, and view SEI Teams
+      permissions:
+        - sei_seipivotpointsetup_view
+        - sei_seipivotpointsetup_edit
+        - sei_seiinsights_view
+        - sei_seitrellisscore_view
       managed: true
       allowedScopeLevels:
         - account

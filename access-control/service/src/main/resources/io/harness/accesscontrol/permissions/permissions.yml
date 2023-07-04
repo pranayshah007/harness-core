@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 52
+version: 53
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -1502,3 +1502,91 @@ permissions:
       - account
       - organization
       - project
+  - identifier: sei_seiconfigurationsettings_view
+    name: SEI view global settings
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: sei_seiconfigurationsettings_edit
+    name: SEI edit global settings
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: sei_seiconfigurationsettings_delete
+    name: SEI delete global settings
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: sei_seipivotpointsetup_create
+    name: SEI create teams
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sei_seipivotpointsetup_view
+    name: SEI view teams
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sei_seipivotpointsetup_edit
+    name: SEI edit teams
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sei_seipivotpointsetup_delete
+    name: SEI delete teams
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: sei_seiinsights_create
+    name: SEI create dashboards
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: sei_seiinsights_view
+    name: SEI view dashboards
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sei_seiinsights_edit
+    name: SEI edit dashboards
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: sei_seiinsights_delete
+    name: SEI delete dashboards
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: sei_seitrellisscore_view
+    name: SEI view trellis
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sei_seitrellisscore_edit
+    name: SEI edit trellis
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account

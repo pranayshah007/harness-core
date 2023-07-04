@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: resourceTypeConfiguration
-version: 29
+version: 31
 resourceTypes:
   - identifier: ACCOUNT
     permissionKey: account
@@ -132,3 +132,11 @@ resourceTypes:
     permissionKey: repo
   - identifier: NETWORK_MAP
     permissionKey: networkmap
+  - identifier: SEI_CONFIGURATION_SETTINGS
+    permissionKey: seiconfigurationsettings
+  - identifier: SEI_PIVOT_POINT_SETUP
+    permissionKey: seipivotpointsetup
+  - identifier: SEI_INSIGHTS
+    permissionKey: seiinsights
+  - identifier: SEI_TRELLIS_SCORE
+    permissionKey: seitrellisscore

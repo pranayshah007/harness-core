@@ -80,6 +80,7 @@ public class PermissionsManagementJob {
                                              .filter(p -> !addedIdentifiers.contains(p.getIdentifier()))
                                              .collect(Collectors.toSet());
 
+    System.out.println("here permissionService "+permissionService.getClass());
     addedPermissions.forEach(permissionService::create);
     updatedPermissions.forEach(permissionService::update);
     removedIdentifiers.forEach(permissionService::delete);

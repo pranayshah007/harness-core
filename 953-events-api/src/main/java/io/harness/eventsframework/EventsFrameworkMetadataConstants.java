@@ -101,4 +101,9 @@ public final class EventsFrameworkMetadataConstants {
 
   // IDP
   public static final String ASYNC_CATALOG_IMPORT_ENTITY = "asyncCatalogImport";
+
+  public static final String CONFIGURATION_SETTINGS = "seiconfigurationsettings";
+  public static final String PIVOT_POINT_SETUP = "seipivotpointsetup";
+  public static final String INSIGHTS = "seiinsights";
+  public static final String TRELLIS_SCORE = "seitrellisscore";
 }
