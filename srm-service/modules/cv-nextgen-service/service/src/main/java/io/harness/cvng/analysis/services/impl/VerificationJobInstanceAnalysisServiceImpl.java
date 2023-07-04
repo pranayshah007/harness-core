@@ -28,6 +28,7 @@ import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.HostRecordDTO;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.job.VerificationJobType;
+import io.harness.cvng.cdng.beans.v2.AppliedDeploymentAnalysisType;
 import io.harness.cvng.core.beans.LoadTestAdditionalInfo;
 import io.harness.cvng.core.beans.LoadTestAdditionalInfo.LoadTestAdditionalInfoBuilder;
 import io.harness.cvng.core.beans.SimpleVerificationAdditionalInfo;
@@ -51,6 +52,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -138,9 +140,7 @@ public class VerificationJobInstanceAnalysisServiceImpl implements VerificationJ
     }
 
     CanaryBlueGreenAdditionalInfo canaryBlueGreenAdditionalInfo =
-        verificationJobInstance.getResolvedJob().getType() == VerificationJobType.CANARY
-        ? new CanaryAdditionalInfo()
-        : new BlueGreenAdditionalInfo();
+        getCanaryBlueGreenAdditionalInfo(verificationJobInstance);
 
     updateDeploymentVerificationHostInfoFromAnalyses(
         deploymentTimeSeriesAnalysis, deploymentLogAnalysis, oldHosts, canaryBlueGreenAdditionalInfo);
@@ -151,6 +151,50 @@ public class VerificationJobInstanceAnalysisServiceImpl implements VerificationJ
     canaryBlueGreenAdditionalInfo.setFieldNames();
 
     return canaryBlueGreenAdditionalInfo;
+  }
+
+  private CanaryBlueGreenAdditionalInfo getCanaryBlueGreenAdditionalInfo(
+      VerificationJobInstance verificationJobInstance) {
+    VerificationJobType verificationJobType = verificationJobInstance.getResolvedJob().getType();
+    switch (verificationJobType) {
+      case CANARY:
+        return new CanaryAdditionalInfo();
+      case BLUE_GREEN:
+      case ROLLING:
+        return new BlueGreenAdditionalInfo();
+      case AUTO: {
+        return getBlueGreenAdditionalInfoForAutoVerificationType(verificationJobInstance);
+      }
+      default:
+        throw new IllegalStateException("Unsupported verificationJobType " + verificationJobType.name());
+    }
+  }
+
+  private static CanaryBlueGreenAdditionalInfo getBlueGreenAdditionalInfoForAutoVerificationType(
+      VerificationJobInstance verificationJobInstance) {
+    Map<String, AppliedDeploymentAnalysisType> appliedDeploymentAnalysisTypeMap =
+        verificationJobInstance.getAppliedDeploymentAnalysisTypeMap();
+    if (Objects.nonNull(appliedDeploymentAnalysisTypeMap) && appliedDeploymentAnalysisTypeMap.size() > 0) {
+      int numberOfCanaryAnalyses = getNumberOfCanaryAnalyses(appliedDeploymentAnalysisTypeMap);
+      if (numberOfCanaryAnalyses > appliedDeploymentAnalysisTypeMap.size() / 2) {
+        return new CanaryAdditionalInfo();
+      } else {
+        return new BlueGreenAdditionalInfo();
+      }
+    } else {
+      return new BlueGreenAdditionalInfo();
+    }
+  }
+
+  private static int getNumberOfCanaryAnalyses(
+      Map<String, AppliedDeploymentAnalysisType> appliedDeploymentAnalysisTypeMap) {
+    int numberOfCanaryAnalyses = 0;
+    for (AppliedDeploymentAnalysisType appliedDeploymentAnalysisType : appliedDeploymentAnalysisTypeMap.values()) {
+      if (appliedDeploymentAnalysisType == AppliedDeploymentAnalysisType.CANARY) {
+        numberOfCanaryAnalyses++;
+      }
+    }
+    return numberOfCanaryAnalyses;
   }
 
   @Override

@@ -170,7 +170,7 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
             verifyStepPathParams.getAccountIdentifier(), verifyStepPathParams.getVerifyStepExecutionId()))
         .baselineOverview(getBaselineOverview(verificationSpec, verifyStepPathParams, appliedDeploymentAnalysisType,
             verificationJobInstance, deploymentVerificationJobInstanceSummary))
-        .controlDataStartTimestamp(getControlDataStartTimestamp(verificationJobInstance))
+        .controlDataStartTimestamp(getControlDataStartTimestamp(verificationJobInstance, appliedDeploymentAnalysisType))
         .testDataStartTimestamp(getTestDataStartTimestamp(verificationJobInstance))
         .build();
   }
@@ -219,7 +219,9 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
 
   private static AppliedDeploymentAnalysisType getAppliedDeploymentAnalysisType(
       DeploymentVerificationJobInstanceSummary summary) {
-    if (summary.getRisk() == Risk.NO_DATA || summary.getRisk() == Risk.NO_ANALYSIS) {
+    if (summary.getRisk() == Risk.NO_DATA
+        || (summary.getRisk() == Risk.NO_ANALYSIS
+            && summary.getAdditionalInfo().getType() != VerificationJobType.SIMPLE)) {
       return AppliedDeploymentAnalysisType.NO_ANALYSIS;
     } else {
       return AppliedDeploymentAnalysisType.fromVerificationJobType(summary.getAdditionalInfo().getType());
@@ -505,13 +507,12 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
     return testDataStartTimestamp;
   }
 
-  private Long getControlDataStartTimestamp(VerificationJobInstance verificationJobInstance) {
+  private Long getControlDataStartTimestamp(
+      VerificationJobInstance verificationJobInstance, AppliedDeploymentAnalysisType appliedDeploymentAnalysisType) {
     Long controlDataStartTimestamp = null;
     TimeRange controlDataStartTimerange =
         deploymentTimeSeriesAnalysisService
-            .getControlDataTimeRange(AppliedDeploymentAnalysisType.fromVerificationJobType(
-                                         verificationJobInstance.getResolvedJob().getType()),
-                verificationJobInstance, null)
+            .getControlDataTimeRange(appliedDeploymentAnalysisType, verificationJobInstance, null)
             .orElse(null);
     if (Objects.nonNull(controlDataStartTimerange)) {
       controlDataStartTimestamp = controlDataStartTimerange.getStartTime().toEpochMilli();
