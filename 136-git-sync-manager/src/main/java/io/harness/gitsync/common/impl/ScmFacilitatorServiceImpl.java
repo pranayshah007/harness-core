@@ -394,7 +394,10 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
 
     gitDefaultBranchCacheHelper.cacheDefaultBranchResponse(scope.getAccountIdentifier(), scmConnector,
         scmGetFileByBranchRequestDTO.getRepoName(), workingBranch, gitFileResponse.getBranch());
-    return getScmGetFileResponseDTO(gitFileResponse);
+    return getScmGetFileResponseDTO(gitFileResponse,
+        gitDefaultBranchCacheHelper.isGitDefaultBranch(scope.getAccountIdentifier(), scmConnector,
+            scmGetFileByBranchRequestDTO.getRepoName(), scmGetFileByBranchRequestDTO.getBranchName(),
+            gitFileResponse.getBranch()));
   }
 
   @Override
@@ -1060,7 +1063,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
           gitDefaultBranchCacheHelper.cacheDefaultBranchResponse(accountIdentifier, gitFileRequest.getScmConnector(),
               gitFileRequest.getRepo(), gitFileRequest.getBranch(), gitFileResponse.getBranch());
         }
-        finalResponseMap.put(identifier, getScmGetFileResponseDTO(gitFileResponse).toScmGetFileResponseV2DTO());
+        finalResponseMap.put(identifier, getScmGetFileResponseDTO(gitFileResponse, false).toScmGetFileResponseV2DTO());
       } catch (Exception exception) {
         finalResponseMap.put(identifier, prepareScmGetFileResponseV2FromException(exception));
       }
@@ -1126,7 +1129,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     }
   }
 
-  private ScmGetFileResponseDTO getScmGetFileResponseDTO(GitFileResponse gitFileResponse) {
+  private ScmGetFileResponseDTO getScmGetFileResponseDTO(GitFileResponse gitFileResponse, boolean isGitDefaultBranch) {
     String branch = isEmpty(gitFileResponse.getBranch()) ? "" : gitFileResponse.getBranch();
 
     return ScmGetFileResponseDTO.builder()
@@ -1134,6 +1137,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
         .blobId(gitFileResponse.getObjectId())
         .commitId(gitFileResponse.getCommitId())
         .branchName(branch)
+        .isGitDefaultBranch(isGitDefaultBranch)
         .build();
   }
 
