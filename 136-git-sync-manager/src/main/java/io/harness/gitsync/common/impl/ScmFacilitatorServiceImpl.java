@@ -785,8 +785,13 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
               -> GitRepositoryResponseDTO.builder().name(gitRepoHelper.getCompleteRepoName(repository)).build())
           .collect(Collectors.toList());
     }
+
     if (isNotEmpty(gitRepository.getName())) {
-      return Collections.singletonList(GitRepositoryResponseDTO.builder().name(gitRepository.getName()).build());
+      String absoluteRepoName = gitRepository.getName();
+      if (gitRepoHelper.isRepoPresent(response.getReposList(), absoluteRepoName)) {
+        return Collections.singletonList(GitRepositoryResponseDTO.builder().name(absoluteRepoName).build());
+      }
+      return Collections.singletonList(GitRepositoryResponseDTO.builder().build());
     } else if (isNotEmpty(gitRepository.getOrg()) && isNamespaceNotEmpty(response)) {
       return prepareListRepoResponseWithNamespace(scmConnector, response, gitRepository);
     } else {

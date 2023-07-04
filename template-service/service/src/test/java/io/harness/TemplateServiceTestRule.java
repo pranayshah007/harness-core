@@ -21,6 +21,7 @@ import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
 import io.harness.callback.DelegateCallbackToken;
+import io.harness.customDeployment.remote.CustomDeploymentResourceClient;
 import io.harness.delegate.DelegateServiceGrpc;
 import io.harness.factory.ClosingFactory;
 import io.harness.filter.FiltersModule;
@@ -201,6 +202,7 @@ public class TemplateServiceTestRule implements InjectorRuleMixin, MethodRule, M
         bind(HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceBlockingStub.class)
             .toInstance(Mockito.mock(HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceBlockingStub.class));
         bind(AccountClient.class).toInstance(mock(AccountClient.class));
+        bind(CustomDeploymentResourceClient.class).toInstance(mock(CustomDeploymentResourceClient.class));
         bind(NGTemplateFeatureFlagHelperService.class).toInstance(mock(NGTemplateFeatureFlagHelperService.class));
       }
     });

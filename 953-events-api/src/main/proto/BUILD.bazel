@@ -29,6 +29,7 @@ harness_grpc_library(
         "//953-events-api/src/main/proto/io/harness/eventsframework/schemas/usermembership:953_events_api_proto",
         "//953-events-api/src/main/proto/io/harness/eventsframework/schemas/webhookpayloads:953_events_api_proto",
         "//970-ng-commons/src/main/proto/io/harness/eventsframework/schemas/entity:970_ng_commons_proto",
+        "//980-commons/src/main/proto/io/harness/security:980_commons_security_proto",
         "//product/ci/scm/proto:ciscmpb_proto",
     ],
 )

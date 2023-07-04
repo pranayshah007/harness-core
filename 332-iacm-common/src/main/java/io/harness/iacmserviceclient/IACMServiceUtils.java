@@ -33,6 +33,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Random;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -115,7 +116,7 @@ public class IACMServiceUtils {
 
   @NotNull
   public String getIACMServiceToken(String accountID) {
-    log.info("Initiating token request to IACM service: {}", this.iacmServiceConfig.getBaseUrl());
+    log.info("Initiating token request to IACM service: " + this.iacmServiceConfig.getBaseUrl());
     Response<JsonObject> response;
     RetryPolicy<Response<JsonObject>> retryPolicy =
         getRetryPolicyJsonObject(format("[Retrying failed call to retrieve token from the IAC Server info: {}"),
@@ -287,22 +288,48 @@ public class IACMServiceUtils {
 
   private RetryPolicy<Response<JsonObject>> getRetryPolicyJsonObject(
       String failedAttemptMessage, String failureMessage) {
+    Random random = new Random();
     return new RetryPolicy<Response<JsonObject>>()
-        .handleResultIf(event -> !event.isSuccessful())
-        .onRetry(event -> log.info("Retrying again"))
-        .withDelay(retrySleepDuration)
+        .handleResultIf(event -> !event.isSuccessful() && event.code() != 409)
+        .onRetry(event -> {
+          log.warn("Retrying again");
+          long minDelay = 3000; // Minimum delay in milliseconds (3 seconds)
+          long maxDelay = 10000; // Maximum delay in milliseconds (10 seconds)
+          long delay = minDelay + random.nextInt((int) (maxDelay - minDelay + 1));
+          try {
+            Thread.sleep(delay);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+          }
+        })
         .withMaxAttempts(maxAttempts)
-        .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
+        .onFailedAttempt(event -> {
+          log.warn(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure());
+          log.warn("Error code: {}", event.getLastResult().code());
+        })
         .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
   }
 
   private RetryPolicy<Response<JsonArray>> getRetryPolicyJsonArray(String failedAttemptMessage, String failureMessage) {
+    Random random = new Random();
     return new RetryPolicy<Response<JsonArray>>()
-        .handleResultIf(event -> !event.isSuccessful())
-        .onRetry(event -> log.info("Retrying again"))
-        .withDelay(retrySleepDuration)
+        .handleResultIf(event -> !event.isSuccessful() && event.code() != 409)
+        .onRetry(event -> {
+          log.info("Retrying again");
+          long minDelay = 3000; // Minimum delay in milliseconds (3 seconds)
+          long maxDelay = 10000; // Maximum delay in milliseconds (10 seconds)
+          long delay = minDelay + random.nextInt((int) (maxDelay - minDelay + 1));
+          try {
+            Thread.sleep(delay);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+          }
+        })
         .withMaxAttempts(maxAttempts)
-        .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
+        .onFailedAttempt(event -> {
+          log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure());
+          log.info("Error code: {}", event.getLastResult().code());
+        })
         .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
   }
 }

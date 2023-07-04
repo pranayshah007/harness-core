@@ -9,6 +9,7 @@ package io.harness.cdng.provision.terraform;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
@@ -21,6 +22,7 @@ import lombok.NoArgsConstructor;
 @OwnedBy(CDP)
 @Data
 @NoArgsConstructor
+@RecasterAlias("io.harness.cdng.provision.terraform.InlineTerraformVarFileSpec")
 public class InlineTerraformVarFileSpec implements TerraformVarFileSpec {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String uuid;
 

@@ -16,19 +16,25 @@ import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
+import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
 import io.harness.ngtriggers.beans.source.artifact.ArtifactTriggerConfig;
 import io.harness.ngtriggers.beans.source.artifact.ArtifactType;
@@ -36,13 +42,16 @@ import io.harness.ngtriggers.beans.source.artifact.EcrSpec;
 import io.harness.ngtriggers.beans.source.artifact.HelmManifestSpec;
 import io.harness.ngtriggers.beans.source.artifact.ManifestTriggerConfig;
 import io.harness.ngtriggers.buildtriggers.helpers.BuildTriggerHelper;
+import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.inputset.InputSetErrorDTOPMS;
 import io.harness.pms.inputset.InputSetErrorResponseDTOPMS;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
+import io.harness.pms.pipeline.PMSPipelineResponseDTO;
 import io.harness.polling.contracts.AcrPayload;
 import io.harness.polling.contracts.ArtifactPathList;
 import io.harness.polling.contracts.ArtifactoryRegistryPayload;
 import io.harness.polling.contracts.BambooPayload;
+import io.harness.polling.contracts.BuildInfo;
 import io.harness.polling.contracts.DockerHubPayload;
 import io.harness.polling.contracts.EcrPayload;
 import io.harness.polling.contracts.GcrPayload;
@@ -52,6 +61,7 @@ import io.harness.polling.contracts.Nexus2RegistryPayload;
 import io.harness.polling.contracts.Nexus3RegistryPayload;
 import io.harness.polling.contracts.PollingItem;
 import io.harness.polling.contracts.PollingPayloadData;
+import io.harness.polling.contracts.PollingResponse;
 import io.harness.polling.contracts.Qualifier;
 import io.harness.polling.contracts.S3HelmPayload;
 import io.harness.rule.Owner;
@@ -68,11 +78,15 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import retrofit2.Call;
+import retrofit2.Response;
 
 @OwnedBy(PIPELINE)
 public class BuildTriggerHelperTest extends CategoryTest {
   @InjectMocks BuildTriggerHelper buildTriggerHelper;
+  @Mock private PipelineServiceClient pipelineServiceClient;
 
   @Before
   public void setUp() throws IOException {
@@ -952,6 +966,43 @@ public class BuildTriggerHelperTest extends CategoryTest {
     assertThatThrownBy(() -> buildTriggerHelper.validatePollingItemForArtifact(pollingItem2))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("planKey can not be blank. Needs to have concrete value");
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testGeneratePollingDescriptor() {
+    PollingResponse pollingResponse =
+        PollingResponse.newBuilder()
+            .setAccountId("AccountId")
+            .addSignatures("Signature")
+            .setBuildInfo(BuildInfo.newBuilder().setName("buildName").addAllVersions(Arrays.asList("v1", "v2")).build())
+            .build();
+
+    String pollingDescriptor = buildTriggerHelper.generatePollingDescriptor(pollingResponse);
+
+    assertThat(pollingDescriptor).isNotEmpty();
+    assertThat(pollingDescriptor.equals(
+                   "AccountId: AccountId, Signatures: [Signature  ], , BuildInfo Name: buildName, Version: [v1  v2  ]"))
+        .isTrue();
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testFetchPipelineYamlForTrigger() throws IOException {
+    Call pipelineCall = mock(Call.class);
+    when(pipelineServiceClient.getPipelineByIdentifier(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(pipelineCall);
+    when(pipelineCall.execute())
+        .thenReturn(Response.success(ResponseDTO.newResponse(PMSPipelineResponseDTO.builder().build())));
+
+    PMSPipelineResponseDTO pmsPipelineResponseDTO =
+        buildTriggerHelper.fetchPipelineForTrigger(TriggerDetails.builder()
+                                                       .ngTriggerEntity(NGTriggerEntity.builder().build())
+                                                       .ngTriggerConfigV2(NGTriggerConfigV2.builder().build())
+                                                       .build());
+    assertThat(pmsPipelineResponseDTO).isNotNull();
   }
 
   private void validatePollingItemForArtifact(PollingItem pollingItem) {

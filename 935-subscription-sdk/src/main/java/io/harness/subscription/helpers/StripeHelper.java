@@ -19,7 +19,6 @@ import io.harness.subscription.params.StripeSubscriptionRequest;
 import io.harness.subscription.params.SubscriptionItemRequest;
 import io.harness.subscription.params.SubscriptionRequest;
 
-import com.stripe.model.Card;
 import com.stripe.model.Price;
 import java.util.List;
 import java.util.Optional;
@@ -46,7 +45,7 @@ public interface StripeHelper {
   InvoiceDetailDTO getUpcomingInvoice(String invoiceParams);
   InvoiceDetailDTO previewInvoice(StripeSubscriptionRequest stripeSubscriptionRequest);
   void payInvoice(String invoiceId, String accountIdentifier);
-  Card deleteCard(String customerIdentifier, String creditCardIdentifier);
+  void deleteCard(String customerIdentifier, String creditCardIdentifier);
 
   PaymentMethodCollectionDTO listPaymentMethods(String customerId);
   InvoiceDetailDTO finalizeInvoice(String invoiceId);

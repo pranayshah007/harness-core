@@ -140,12 +140,16 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.spring.TriggerEventHistoryRepository;
 import io.harness.rule.Owner;
+import io.harness.security.Principal;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.UserPrincipal;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.webhook.WebhookConfigProvider;
 
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
+import com.google.protobuf.StringValue;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
@@ -391,6 +395,9 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
   @Owner(developers = MEET)
   @Category(UnitTests.class)
   public void testToNGTriggerWebhookEventForCustom() {
+    io.harness.security.dto.UserPrincipal principal =
+        new io.harness.security.dto.UserPrincipal("name", "email", "username", "accountId");
+    SecurityContextBuilder.setContext(principal);
     List<HeaderConfig> headerConfigs = new ArrayList<>();
     HeaderConfig headerConfig =
         HeaderConfig.builder().key(X_HARNESS_TRIGGER_ID).values(Collections.singletonList("custom")).build();
@@ -400,6 +407,7 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
                                                       "pipeline", "identifier", "payload", headerConfigs)
                                                   .build();
     assertThat(triggerWebhookEvent.getSourceRepoType()).isEqualTo("CUSTOM");
+    assertThat(triggerWebhookEvent.getPrincipal()).isEqualToComparingFieldByField(principal);
   }
 
   @Test
@@ -412,7 +420,8 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
     headerConfigs.add(headerConfig);
     when(webhookEventPayloadParser.containsHeaderKey(any(), eq(X_GIT_HUB_EVENT))).thenReturn(true);
     TriggerWebhookEvent actualTriggerWebhookEvent =
-        ngTriggerElementMapper.toNGTriggerWebhookEvent("account", "org", "project", "payload", headerConfigs).build();
+        ngTriggerElementMapper.toNGTriggerWebhookEvent("account", "org", "project", "payload", headerConfigs, null)
+            .build();
     assertThat(actualTriggerWebhookEvent.getSourceRepoType()).isEqualTo(String.valueOf(WebhookTriggerType.GITHUB));
 
     when(webhookEventPayloadParser.containsHeaderKey(any(), eq(X_GIT_HUB_EVENT))).thenReturn(false);
@@ -421,7 +430,8 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
     headerConfig = HeaderConfig.builder().key("X-Gitlab-Event").values(Collections.singletonList("gitlab")).build();
     headerConfigs.add(headerConfig);
     actualTriggerWebhookEvent =
-        ngTriggerElementMapper.toNGTriggerWebhookEvent("account", "org", "project", "payload", headerConfigs).build();
+        ngTriggerElementMapper.toNGTriggerWebhookEvent("account", "org", "project", "payload", headerConfigs, null)
+            .build();
     assertThat(actualTriggerWebhookEvent.getSourceRepoType()).isEqualTo(String.valueOf(WebhookTriggerType.GITLAB));
 
     when(webhookEventPayloadParser.containsHeaderKey(any(), eq(X_BIT_BUCKET_EVENT))).thenReturn(true);
@@ -431,7 +441,8 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
         HeaderConfig.builder().key("X-Bit-Bucket-Event").values(Collections.singletonList("bitbucket")).build();
     headerConfigs.add(headerConfig);
     actualTriggerWebhookEvent =
-        ngTriggerElementMapper.toNGTriggerWebhookEvent("account", "org", "project", "payload", headerConfigs).build();
+        ngTriggerElementMapper.toNGTriggerWebhookEvent("account", "org", "project", "payload", headerConfigs, null)
+            .build();
     assertThat(actualTriggerWebhookEvent.getSourceRepoType()).isEqualTo(String.valueOf(WebhookTriggerType.BITBUCKET));
 
     when(webhookEventPayloadParser.containsHeaderKey(any(), eq(X_AMZ_SNS_MESSAGE_TYPE))).thenReturn(true);
@@ -447,7 +458,8 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
     when(webhookEventPayloadParser.getHeaderValue(any(), eq(X_AMZ_SNS_MESSAGE_TYPE)))
         .thenReturn(Collections.singletonList(AMZ_SUBSCRIPTION_CONFIRMATION_TYPE));
     actualTriggerWebhookEvent =
-        ngTriggerElementMapper.toNGTriggerWebhookEvent("account", "org", "project", "payload", headerConfigs).build();
+        ngTriggerElementMapper.toNGTriggerWebhookEvent("account", "org", "project", "payload", headerConfigs, null)
+            .build();
     assertThat(actualTriggerWebhookEvent.getSourceRepoType())
         .isEqualTo(String.valueOf(WebhookTriggerType.AWS_CODECOMMIT));
     assertThat(actualTriggerWebhookEvent.isSubscriptionConfirmation()).isEqualTo(true);
@@ -459,7 +471,8 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
     headerConfig = HeaderConfig.builder().key(X_VSS_HEADER).values(Collections.singletonList("azure")).build();
     headerConfigs.add(headerConfig);
     actualTriggerWebhookEvent =
-        ngTriggerElementMapper.toNGTriggerWebhookEvent("account", "org", "project", "payload", headerConfigs).build();
+        ngTriggerElementMapper.toNGTriggerWebhookEvent("account", "org", "project", "payload", headerConfigs, null)
+            .build();
     assertThat(actualTriggerWebhookEvent.getSourceRepoType()).isEqualTo("AZURE_REPO");
 
     when(webhookEventPayloadParser.containsHeaderKey(any(), eq(X_VSS_HEADER))).thenReturn(false);
@@ -468,20 +481,32 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
     headerConfig = HeaderConfig.builder().key(X_HARNESS_TRIGGER).values(Collections.singletonList("harness")).build();
     headerConfigs.add(headerConfig);
     actualTriggerWebhookEvent =
-        ngTriggerElementMapper.toNGTriggerWebhookEvent("account", "org", "project", "payload", headerConfigs).build();
+        ngTriggerElementMapper.toNGTriggerWebhookEvent("account", "org", "project", "payload", headerConfigs, null)
+            .build();
     assertThat(actualTriggerWebhookEvent.getSourceRepoType()).isEqualTo("HARNESS");
 
     when(webhookEventPayloadParser.containsHeaderKey(any(), eq(X_HARNESS_TRIGGER))).thenReturn(false);
     headerConfigs.remove(0);
     headerConfig = HeaderConfig.builder().key(X_HARNESS_TRIGGER_ID).values(Collections.singletonList("custom")).build();
     headerConfigs.add(headerConfig);
+    Principal principal = Principal.newBuilder()
+                              .setUserPrincipal(UserPrincipal.newBuilder()
+                                                    .setUserId(StringValue.of("userId"))
+                                                    .setUserName(StringValue.of("name"))
+                                                    .setEmail(StringValue.of("mail"))
+                                                    .build())
+                              .build();
+    io.harness.security.dto.UserPrincipal principalDTO =
+        new io.harness.security.dto.UserPrincipal("userId", "mail", "name", "account");
     actualTriggerWebhookEvent =
-        ngTriggerElementMapper.toNGTriggerWebhookEvent("account", "org", "project", "payload", headerConfigs).build();
+        ngTriggerElementMapper.toNGTriggerWebhookEvent("account", "org", "project", "payload", headerConfigs, principal)
+            .build();
     assertThat(actualTriggerWebhookEvent.getSourceRepoType()).isEqualTo("CUSTOM");
     assertThat(actualTriggerWebhookEvent.getTriggerIdentifier()).isEqualTo("custom");
+    assertThat(actualTriggerWebhookEvent.getPrincipal()).isEqualToComparingFieldByField(principalDTO);
 
     assertThatThrownBy(
-        () -> ngTriggerElementMapper.toNGTriggerWebhookEvent("account", "org", "", "payload", headerConfigs))
+        () -> ngTriggerElementMapper.toNGTriggerWebhookEvent("account", "org", "", "payload", headerConfigs, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
             "AccountIdentifier, OrgIdentifier, ProjectIdentifier can not be null for custom webhook executions");

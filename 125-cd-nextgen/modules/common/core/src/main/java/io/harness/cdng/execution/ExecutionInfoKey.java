@@ -9,6 +9,7 @@ package io.harness.cdng.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 
@@ -20,6 +21,7 @@ import lombok.Value;
 @OwnedBy(CDP)
 @Value
 @Builder
+@RecasterAlias("io.harness.cdng.execution.ExecutionInfoKey")
 public class ExecutionInfoKey {
   @NotNull Scope scope;
   @NotNull String envIdentifier;

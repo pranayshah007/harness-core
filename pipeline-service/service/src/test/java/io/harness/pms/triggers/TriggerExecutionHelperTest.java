@@ -34,6 +34,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.beans.FeatureName;
 import io.harness.beans.HeaderConfig;
 import io.harness.category.element.UnitTests;
@@ -93,6 +94,11 @@ import io.harness.product.ci.scm.proto.ReleaseHook;
 import io.harness.product.ci.scm.proto.Repository;
 import io.harness.product.ci.scm.proto.User;
 import io.harness.rule.Owner;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.SourcePrincipalContextBuilder;
+import io.harness.security.dto.Principal;
+import io.harness.security.dto.ServicePrincipal;
+import io.harness.security.dto.UserPrincipal;
 import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.google.common.io.Resources;
@@ -556,8 +562,8 @@ public class TriggerExecutionHelperTest extends CategoryTest {
              execArgs.getPlanExecutionMetadata(), false, null, null, null))
         .thenReturn(PlanExecution.builder().ambiance(ambiance).build());
 
-    triggerExecutionHelper.createPlanExecutionV2(
-        triggerDetails, null, null, null, null, null, triggerDetails.getNgTriggerConfigV2().getInputYaml());
+    triggerExecutionHelper.createPlanExecutionV2(triggerDetails, null, null, null, null,
+        TriggerWebhookEvent.builder().build(), triggerDetails.getNgTriggerConfigV2().getInputYaml());
     ArgumentCaptor<String> capturedRuntimeInputYaml = ArgumentCaptor.forClass(String.class);
     verify(executionHelper, times(1))
         .buildExecutionArgs(eq(pipelineEntity), eq(null), capturedRuntimeInputYaml.capture(),
@@ -604,8 +610,8 @@ public class TriggerExecutionHelperTest extends CategoryTest {
              execArgs.getPlanExecutionMetadata(), false, null, null, null))
         .thenReturn(PlanExecution.builder().ambiance(ambiance).build());
 
-    triggerExecutionHelper.createPlanExecutionV2(
-        triggerDetails, null, null, null, null, null, triggerDetails.getNgTriggerConfigV2().getInputYaml());
+    triggerExecutionHelper.createPlanExecutionV2(triggerDetails, null, null, null, null,
+        TriggerWebhookEvent.builder().build(), triggerDetails.getNgTriggerConfigV2().getInputYaml());
     verify(pmsPipelineService, times(1)).getPipeline("acc", "default", "test", "myPipeline", false, false);
     assertThat(GitAwareContextHelper.getGitRequestParamsInfo())
         .isEqualToComparingFieldByField(GitEntityInfo.builder().build());
@@ -655,12 +661,32 @@ public class TriggerExecutionHelperTest extends CategoryTest {
              execArgs.getPlanExecutionMetadata(), false, null, null, null))
         .thenReturn(PlanExecution.builder().ambiance(ambiance).build());
 
-    triggerExecutionHelper.createPlanExecutionV2(
-        triggerDetails, null, null, null, null, null, triggerDetails.getNgTriggerConfigV2().getInputYaml());
+    triggerExecutionHelper.createPlanExecutionV2(triggerDetails, null, null, null, null,
+        TriggerWebhookEvent.builder().build(), triggerDetails.getNgTriggerConfigV2().getInputYaml());
     verify(pmsPipelineService, times(1)).getPipeline("acc", "default", "test", "myPipeline", false, false);
     assertThat(GitAwareContextHelper.getGitRequestParamsInfo())
         .isEqualToComparingFieldByField(GitEntityInfo.builder().build());
     assertThat(GitAwareContextHelper.getScmGitMetaData())
         .isEqualToComparingFieldByField(ScmGitMetaData.builder().build());
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testSetPrincipal() {
+    // Check service-principal case
+    Principal servicePrincipal = new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId());
+    TriggerWebhookEvent triggerWebhookEventWithoutPrincipal = TriggerWebhookEvent.builder().principal(null).build();
+    triggerExecutionHelper.setPrincipal(triggerWebhookEventWithoutPrincipal);
+    assertThat(SecurityContextBuilder.getPrincipal()).isEqualToComparingFieldByField(servicePrincipal);
+    assertThat(SourcePrincipalContextBuilder.getSourcePrincipal()).isEqualToComparingFieldByField(servicePrincipal);
+
+    // Check user-principal case
+    Principal userPrincipal = new UserPrincipal("user", "mail", "username", "account");
+    TriggerWebhookEvent triggerWebhookEventWithPrincipal =
+        TriggerWebhookEvent.builder().principal(userPrincipal).build();
+    triggerExecutionHelper.setPrincipal(triggerWebhookEventWithPrincipal);
+    assertThat(SecurityContextBuilder.getPrincipal()).isEqualToComparingFieldByField(userPrincipal);
+    assertThat(SourcePrincipalContextBuilder.getSourcePrincipal()).isEqualToComparingFieldByField(userPrincipal);
   }
 }

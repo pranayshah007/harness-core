@@ -5,16 +5,30 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ccm.views.entities;
+package io.harness.ssca.beans;
 
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
-public class RecommendationAdhocDTO {
-  String roleArn;
-  String externalId;
-  String identifier;
-  String targetAccountId;
+public class SettingsDTO {
+  String orchestrationID;
+  String pipelineIdentifier;
+  String projectIdentifier;
+  String orgIdentifier;
+  String sequenceID;
+  String accountID;
+  String artifactID;
+  Tool tool;
+  String format;
+  String artifactURL;
+
+  @Data
+  @Builder
+  public static class Tool {
+    String version;
+    String name;
+    String vendor;
+  }
 }

@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.instancesync.info;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
@@ -21,6 +22,7 @@ import lombok.EqualsAndHashCode;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(HarnessTeam.CDP)
+@RecasterAlias("io.harness.delegate.beans.instancesync.info.CustomDeploymentServerInstanceInfo")
 public class CustomDeploymentServerInstanceInfo extends ServerInstanceInfo {
   private String instanceId;
   private String instanceName;

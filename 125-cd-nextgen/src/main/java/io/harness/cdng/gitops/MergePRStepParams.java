@@ -7,6 +7,7 @@
 
 package io.harness.cdng.gitops;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 
@@ -16,6 +17,7 @@ import java.util.Map;
 import lombok.Builder;
 import lombok.Getter;
 
+@RecasterAlias("io.harness.cdng.gitops.MergePRStepParams")
 public class MergePRStepParams extends MergePRBaseStepInfo implements GitOpsSpecParameters {
   @Getter Map<String, Object> variables;
   @Builder(builderMethodName = "infoBuilder")

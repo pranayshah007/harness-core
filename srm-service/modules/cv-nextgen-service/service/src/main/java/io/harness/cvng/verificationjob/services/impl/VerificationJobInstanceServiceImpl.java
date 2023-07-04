@@ -731,6 +731,8 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
                   VerificationJobInstanceDataCollectionUtils.getPreDeploymentNodesToCollect(verificationJobInstance));
           preDeploymentDataCollectionInfo.setDataCollectionDsl(cvConfig.getDataCollectionDsl());
           preDeploymentDataCollectionInfo.setCollectHostData(verificationJob.collectHostData());
+          dataCollectionInfoMapper.postProcessDataCollectionInfo(
+              preDeploymentDataCollectionInfo, cvConfig, TaskType.DEPLOYMENT);
           preDeploymentDataCollectionTimeRanges.forEach(timeRange -> {
             dataCollectionTasks.add(
                 DeploymentDataCollectionTask.builder()

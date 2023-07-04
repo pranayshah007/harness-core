@@ -32,6 +32,7 @@ import static io.harness.ngtriggers.beans.source.WebhookTriggerType.CUSTOM;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITHUB;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITLAB;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.HARNESS;
+import static io.harness.security.PrincipalProtoMapper.toPrincipalDTO;
 
 import static java.time.temporal.ChronoUnit.DAYS;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -101,6 +102,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.spring.TriggerEventHistoryRepository;
+import io.harness.security.SecurityContextBuilder;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.utils.YamlPipelineUtils;
@@ -464,7 +466,8 @@ public class NGTriggerElementMapper {
   }
 
   public TriggerWebhookEventBuilder toNGTriggerWebhookEvent(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String payload, List<HeaderConfig> headerConfigs) {
+      String projectIdentifier, String payload, List<HeaderConfig> headerConfigs,
+      io.harness.security.Principal principal) {
     WebhookTriggerType webhookTriggerType;
     Map<String, List<String>> headers =
         headerConfigs.stream().collect(Collectors.toMap(HeaderConfig::getKey, HeaderConfig::getValues));
@@ -502,6 +505,9 @@ public class NGTriggerElementMapper {
             .headers(headerConfigs)
             .payload(payload)
             .isSubscriptionConfirmation(isConfirmationMessage);
+    if (principal != null) {
+      triggerWebhookEventBuilder.principal(toPrincipalDTO(accountIdentifier, principal));
+    }
 
     HeaderConfig customTriggerIdentifier = headerConfigs.stream()
                                                .filter(header -> header.getKey().equalsIgnoreCase(X_HARNESS_TRIGGER_ID))
@@ -528,7 +534,8 @@ public class NGTriggerElementMapper {
         .pipelineIdentifier(pipelineIdentifier)
         .sourceRepoType(webhookTriggerType.getEntityMetadataName())
         .headers(headerConfigs)
-        .payload(payload);
+        .payload(payload)
+        .principal(SecurityContextBuilder.getPrincipal());
   }
 
   public NGTriggerDetailsResponseDTO toNGTriggerDetailsResponseDTO(NGTriggerEntity ngTriggerEntity, boolean includeYaml,

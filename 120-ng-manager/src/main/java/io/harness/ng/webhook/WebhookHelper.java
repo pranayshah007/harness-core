@@ -34,6 +34,7 @@ import static io.harness.eventsframework.webhookpayloads.webhookdata.WebhookEven
 import static io.harness.eventsframework.webhookpayloads.webhookdata.WebhookEventType.RELEASE;
 import static io.harness.eventsframework.webhookpayloads.webhookdata.WebhookTriggerType.CUSTOM;
 import static io.harness.eventsframework.webhookpayloads.webhookdata.WebhookTriggerType.GIT;
+import static io.harness.security.PrincipalProtoMapper.toPrincipalProto;
 
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -99,6 +100,9 @@ public class WebhookHelper {
                                      .setAccountId(event.getAccountId())
                                      .setEventId(event.getUuid())
                                      .setTime(event.getCreatedAt());
+    if (event.getPrincipal() != null) {
+      builder.setPrincipal(toPrincipalProto(event.getPrincipal()));
+    }
 
     if (parseWebhookResponse == null) {
       builder.setWebhookTriggerType(CUSTOM);

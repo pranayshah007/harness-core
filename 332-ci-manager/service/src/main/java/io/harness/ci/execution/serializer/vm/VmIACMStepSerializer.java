@@ -9,6 +9,7 @@ package io.harness.ci.serializer.vm;
 
 import io.harness.beans.steps.stepinfo.IACMTerraformPluginInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
+import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.execution.CIExecutionConfigService;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.utils.HarnessImageUtils;
@@ -32,6 +33,7 @@ public class VmIACMStepSerializer {
   @Inject private CIExecutionConfigService ciExecutionConfigService;
   @Inject private HarnessImageUtils harnessImageUtils;
   @Inject private IACMStepsUtils iacmStepsUtils;
+  @Inject private ConnectorUtils connectorUtils;
 
   public VmPluginStep serialize(Ambiance ambiance, IACMTerraformPluginInfo stepInfo,
       StageInfraDetails stageInfraDetails, ParameterField<Timeout> parameterFieldTimeout) {
@@ -42,6 +44,7 @@ public class VmIACMStepSerializer {
     String command = stepInfo.getCommand().getValue();
     Map<String, String> envVars = iacmStepsUtils.getIACMEnvVariables(ambiance, workspaceId, command);
 
+    envVars = iacmStepsUtils.replaceHarnessVariables(ambiance, envVars);
     String image;
     if (stepInfo.getImage().getValue() != null) {
       image = stepInfo.getImage().getValue();
