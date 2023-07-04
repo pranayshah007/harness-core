@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static junit.framework.TestCase.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -22,6 +23,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ExecutionStatus;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildOutcome;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildSpecParameters;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperServiceImpl;
 import io.harness.common.NGTimeConversionHelper;
@@ -180,19 +182,41 @@ public class JenkinsBuildStepHelperServiceImplTest extends CategoryTest {
                    .artifactTaskExecutionResponse(
                        ArtifactTaskExecutionResponse.builder()
                            .jenkinsBuildTaskNGResponse(
-                               JenkinsBuildTaskNGResponse.builder().executionStatus(ExecutionStatus.FAILED).build())
+                               JenkinsBuildTaskNGResponse.builder()
+                                   .jobUrl("https://jenkins.dev.harness.io/job/Automation QA/3578/")
+                                   .queuedBuildUrl("https://jenkins.dev.harness.io/job/Automation QA/3578/")
+                                   .executionStatus(ExecutionStatus.FAILED)
+                                   .build())
                            .build())
                    .build());
     assertEquals(stepResponse.getStatus(), Status.FAILED);
+    assertEquals(stepResponse.getStepOutcomes().size(), 1);
+    assertThat(stepResponse.getStepOutcomes().stream().findAny().get().getOutcome())
+        .isInstanceOf(JenkinsBuildOutcome.class);
+    JenkinsBuildOutcome outcome =
+        (JenkinsBuildOutcome) stepResponse.getStepOutcomes().stream().findAny().get().getOutcome();
+    assertEquals(outcome.getJobUrl(), "https://jenkins.dev.harness.io/job/Automation%20QA/3578/");
+    assertEquals(outcome.getQueuedBuildUrl(), "https://jenkins.dev.harness.io/job/Automation%20QA/3578/");
+
     stepResponse = jenkinsBuildStepHelperService.prepareStepResponse(
         ()
             -> ArtifactTaskResponse.builder()
                    .artifactTaskExecutionResponse(
                        ArtifactTaskExecutionResponse.builder()
                            .jenkinsBuildTaskNGResponse(
-                               JenkinsBuildTaskNGResponse.builder().executionStatus(ExecutionStatus.SUCCESS).build())
+                               JenkinsBuildTaskNGResponse.builder()
+                                   .jobUrl("https://jenkins.dev.harness.io/job/AutomationQA/3578/")
+                                   .queuedBuildUrl("https://jenkins.dev.harness.io/job/AutomationQA/3578/")
+                                   .executionStatus(ExecutionStatus.SUCCESS)
+                                   .build())
                            .build())
                    .build());
     assertEquals(stepResponse.getStatus(), Status.SUCCEEDED);
+    assertEquals(stepResponse.getStepOutcomes().size(), 1);
+    assertThat(stepResponse.getStepOutcomes().stream().findAny().get().getOutcome())
+        .isInstanceOf(JenkinsBuildOutcome.class);
+    outcome = (JenkinsBuildOutcome) stepResponse.getStepOutcomes().stream().findAny().get().getOutcome();
+    assertEquals(outcome.getJobUrl(), "https://jenkins.dev.harness.io/job/AutomationQA/3578/");
+    assertEquals(outcome.getQueuedBuildUrl(), "https://jenkins.dev.harness.io/job/AutomationQA/3578/");
   }
 }
