@@ -26,6 +26,8 @@ import io.harness.serializer.YamlUtils;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 
+import software.wings.jersey.KryoFeature;
+
 import ch.qos.logback.classic.LoggerContext;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -46,7 +48,6 @@ import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
-import software.wings.jersey.KryoFeature;
 
 @Slf4j
 public class DelegateAgentApplication extends Application<DelegateAgentConfig> {

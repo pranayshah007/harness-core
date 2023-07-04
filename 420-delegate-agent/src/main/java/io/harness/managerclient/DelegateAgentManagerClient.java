@@ -270,14 +270,12 @@ public interface DelegateAgentManagerClient {
 
   @Consumes({"application/x-protobuf"})
   @GET("executions/payload/{executionId}")
-  Call<AcquireTasksResponse> acquireTaskPayload(@Path("executionId") String uuid, @Query("delegateId") String delegateId,
-                                                @Query("accountId") String accountId, @Query("delegateInstanceId") String delegateInstanceId);
+  Call<AcquireTasksResponse> acquireTaskPayload(@Path("executionId") String uuid,
+      @Query("delegateId") String delegateId, @Query("accountId") String accountId,
+      @Query("delegateInstanceId") String delegateInstanceId);
 
   @Consumes({"application/x-protobuf"})
   @POST("executions/response/{executionId}/executionInfra")
-  Call<ResponseBody> sendSetupInfraResponse(
-      @Path("executionId") String uuid,
-      @Query("delegateId") String delegateId,
-      @Query("accountId") String accountId,
-      @Body SetupInfraResponse response);
+  Call<ResponseBody> sendSetupInfraResponse(@Path("executionId") String uuid, @Query("delegateId") String delegateId,
+      @Query("accountId") String accountId, @Body SetupInfraResponse response);
 }

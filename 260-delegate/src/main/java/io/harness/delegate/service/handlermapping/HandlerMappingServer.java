@@ -45,8 +45,6 @@ public class HandlerMappingServer {
     this.context = context;
   }
 
-  // TODO: delegate id and instance id should be injected
-  // TODO: add delegate agent lifecycle observer implementation to abstract frozen, self-destruct etc.
   public void serve(AcquireTasksResponse acquired) {
     var taskPayload = acquired.getTask(0);
     var routed =

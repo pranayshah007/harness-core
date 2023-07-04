@@ -966,8 +966,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         }
         handlerMappingServer.serve(acquired);
       } catch (IOException e) {
-        log.error("Acquire task failed for accountIdd: {}. taskIdd{}",
-            taskEvent.getAccountId(), taskEvent.getTaskId(), e);
+        log.error(
+            "Acquire task failed for accountIdd: {}. taskIdd{}", taskEvent.getAccountId(), taskEvent.getTaskId(), e);
       }
     });
   }

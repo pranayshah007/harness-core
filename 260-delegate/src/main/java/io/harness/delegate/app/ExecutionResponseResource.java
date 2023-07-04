@@ -52,7 +52,6 @@ public class ExecutionResponseResource {
       try {
         ManagerCallHelper.executeCallWithRetryableException(call, "sending execution request failed");
       } catch (IOException e) {
-        // TODO: define exception (?? extends WingsException)
         log.error("Fail to send response.");
         return false;
       }

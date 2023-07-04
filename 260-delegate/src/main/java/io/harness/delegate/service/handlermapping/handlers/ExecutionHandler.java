@@ -15,7 +15,6 @@ import io.harness.delegate.service.runners.itfc.Runner;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Map;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -29,8 +28,6 @@ public class ExecutionHandler implements Handler {
   public void handle(Map<String, String> urlParams, TaskPayload taskPayload, Context context) {
     String runnerType = urlParams.get("runnerType");
     Runner runner = runnersFactory.get(runnerType);
-    // TODO: define task response interface. Also, move this to VM/Docker runner, as some tasks directly sends response
-    // to delegate agent.
     runner.execute(taskPayload.getExecutionInfraId(), taskPayload.getTaskData(), context);
   }
 }
