@@ -63,6 +63,7 @@ import io.harness.cdng.provision.terraform.executions.TerraformApplyExecutionDet
 import io.harness.cdng.provision.terraform.executions.TerraformApplyExecutionDetailsService;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExecutionDetails;
+import io.harness.cdng.provision.terraform.outcome.TerraformGitRevisionOutcome;
 import io.harness.cdng.provision.terraform.output.TerraformHumanReadablePlanOutput;
 import io.harness.cdng.provision.terraform.output.TerraformPlanJsonOutput;
 import io.harness.connector.ConnectorInfoDTO;
@@ -139,6 +140,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.provision.TerraformConstants;
 import io.harness.remote.client.CGRestUtils;
@@ -555,6 +557,16 @@ public class TerraformStepHelper {
       }
     }
     return outputKeys;
+  }
+
+  public void addTerraformRevisionOutcomeIfRequired(
+      StepResponseBuilder stepResponseBuilder, Map<String, String> outputKeys) {
+    if (isNotEmpty(outputKeys)) {
+      stepResponseBuilder.stepOutcome(StepResponse.StepOutcome.builder()
+                                          .name(TerraformGitRevisionOutcome.OUTCOME_NAME)
+                                          .outcome(TerraformGitRevisionOutcome.builder().revisions(outputKeys).build())
+                                          .build());
+    }
   }
 
   @NotNull

@@ -74,6 +74,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.moduleSource.ModuleSource;
 import io.harness.cdng.provision.terraform.executions.TFPlanExecutionDetailsKey;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExecutionDetails;
+import io.harness.cdng.provision.terraform.outcome.TerraformGitRevisionOutcome;
 import io.harness.cdng.provision.terraform.output.TerraformHumanReadablePlanOutput;
 import io.harness.cdng.provision.terraform.output.TerraformPlanJsonOutput;
 import io.harness.common.ParameterFieldHelper;
@@ -131,6 +132,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionMode;
@@ -140,6 +142,8 @@ import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
@@ -3134,5 +3138,18 @@ public class TerraformStepHelperTest extends CategoryTest {
         .isEqualTo("s3-test-file-content");
     assertThat(((InlineTerraformVarFileInfo) terraformVarFileInfos.get(4)).getVarFileContent())
         .isEqualTo("inline-var-content-5");
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testAddTerraformRevisionOutcomeIfRequired() {
+    StepResponseBuilder stepResponseBuilder = StepResponse.builder().status(Status.SUCCEEDED);
+    helper.addTerraformRevisionOutcomeIfRequired(stepResponseBuilder, Collections.singletonMap("key", "commitId"));
+
+    StepResponse.StepOutcome outcome =
+        ((List<StepResponse.StepOutcome>) stepResponseBuilder.build().getStepOutcomes()).get(0);
+
+    assertThat(outcome.getName()).isEqualTo(TerraformGitRevisionOutcome.OUTCOME_NAME);
   }
 }

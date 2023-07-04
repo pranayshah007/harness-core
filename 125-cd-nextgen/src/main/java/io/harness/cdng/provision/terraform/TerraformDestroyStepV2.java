@@ -19,7 +19,6 @@ import io.harness.beans.IdentifierRef;
 import io.harness.cdng.executables.CdTaskChainExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
-import io.harness.cdng.provision.terraform.outcome.TerraformGitRevisionOutcome;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.task.terraform.TFTaskType;
 import io.harness.delegate.task.terraform.TerraformCommand;
@@ -280,12 +279,9 @@ public class TerraformDestroyStepV2 extends CdTaskChainExecutable {
               ParameterFieldHelper.getParameterFieldValue(parameters.getProvisionerIdentifier()), ambiance),
           terraformTaskNGResponse.getStateFileId());
     }
-    return stepResponseBuilder
-        .stepOutcome(StepResponse.StepOutcome.builder()
-                         .name(TerraformGitRevisionOutcome.OUTCOME_NAME)
-                         .outcome(TerraformGitRevisionOutcome.builder().revisions(outputKeys).build())
-                         .build())
-        .build();
+    helper.addTerraformRevisionOutcomeIfRequired(stepResponseBuilder, outputKeys);
+
+    return stepResponseBuilder.build();
   }
 
   private TerraformTaskNGParametersBuilder getTerraformTaskNGParametersBuilderInline(
