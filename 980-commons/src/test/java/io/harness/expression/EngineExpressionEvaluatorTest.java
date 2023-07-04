@@ -414,6 +414,14 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     assertThat(evaluator.resolve("<+variables.v3>", true)).isEqualTo("abcdefharness");
     assertThat(evaluator.evaluateExpression("<+variables.v3>")).isEqualTo("abcdefharness");
 
+    // OR operators
+    assertThat(
+        evaluator.evaluateExpression("<+c2.status> == \"SUCCEEDED1\" || <+c2.anotherStatus> == \"IGNORE_FAILED\""))
+        .isEqualTo(true);
+    // AND operator
+    assertThat(evaluator.evaluateExpression("<+c2.status> == \"RUNNING\" && <+c2.anotherStatus> == \"IGNORE_FAILED\""))
+        .isEqualTo(true);
+
     // Complex double nesting with concatenate expressions with prefix combinations
     assertThat(evaluator.resolve("<+c1.<+var3>>", true)).isEqualTo("harness");
 
@@ -582,6 +590,14 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     assertThat(evaluator.resolve("<+ <+a>==5?<+<+f>+'harness'>:<+<+g>+'def'> >", true)).isEqualTo("abcharness");
     assertThat(evaluator.resolve("<+ <+a>==<+a>?<+<+f>+'harness'>:<+<+g>+'def'> >", true)).isEqualTo("abcharness");
     assertThat(evaluator.resolve("<+ <+a>==<+b>?<+<+f>+'harness'>:<+<+g>+'def'> >", true)).isEqualTo("defdef");
+
+    // OR operators
+    assertThat(
+        evaluator.evaluateExpression("<+c2.status> == \"SUCCEEDED1\" || <+c2.anotherStatus> == \"IGNORE_FAILED\""))
+        .isEqualTo(true);
+    // AND operator
+    assertThat(evaluator.evaluateExpression("<+c2.status> == \"RUNNING\" && <+c2.anotherStatus> == \"IGNORE_FAILED\""))
+        .isEqualTo(true);
 
     // Complex double nesting with concatenate expressions with prefix combinations
     assertThat(evaluator.resolve("<+c1.<+var3>>", true)).isEqualTo("harness");
@@ -816,6 +832,11 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
       addToContext("nestedConcatenate",
           new ImmutableMap.Builder<String, Object>()
               .put("c1", new ImmutableMap.Builder<String, Object>().put("concatenate1", "harness").build())
+              .put("c2",
+                  new ImmutableMap.Builder<String, Object>()
+                      .put("status", "RUNNING")
+                      .put("anotherStatus", "IGNORE_FAILED")
+                      .build())
               .build());
     }
 
