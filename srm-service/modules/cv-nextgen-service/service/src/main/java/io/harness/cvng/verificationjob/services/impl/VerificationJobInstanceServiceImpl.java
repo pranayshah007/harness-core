@@ -183,7 +183,8 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
       metricService.incCounter(CVNGMetricsUtils.getVerificationJobInstanceStatusMetricName(ExecutionStatus.TIMEOUT));
       UpdateOperations<VerificationJobInstance> updateOperations =
           hPersistence.createUpdateOperations(VerificationJobInstance.class)
-              .set(VerificationJobInstanceKeys.executionStatus, ExecutionStatus.TIMEOUT);
+              .set(VerificationJobInstanceKeys.executionStatus, ExecutionStatus.TIMEOUT)
+              .set(VerificationJobInstanceKeys.verificationStatus, ActivityVerificationStatus.ERROR);
       Query<VerificationJobInstance> query =
           hPersistence.createQuery(VerificationJobInstance.class)
               .filter(VerificationJobInstanceKeys.uuid, verificationJobInstance.getUuid())
@@ -224,7 +225,8 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
       if (progressLog.shouldUpdateJobStatus()) {
         ExecutionStatus executionStatus = progressLog.getVerificationJobExecutionStatus();
         metricService.incCounter(CVNGMetricsUtils.getVerificationJobInstanceStatusMetricName(executionStatus));
-        verificationJobInstanceUpdateOperations.set(VerificationJobInstanceKeys.executionStatus, executionStatus);
+        verificationJobInstanceUpdateOperations.set(VerificationJobInstanceKeys.executionStatus, executionStatus)
+            .set(VerificationJobInstanceKeys.verificationStatus, ActivityVerificationStatus.ERROR);
       }
       UpdateOptions options = new UpdateOptions();
       options.upsert(true);
@@ -296,7 +298,8 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
   public void abort(List<String> verificationJobInstanceIds) {
     UpdateOperations<VerificationJobInstance> abortUpdateOperation =
         hPersistence.createUpdateOperations(VerificationJobInstance.class)
-            .set(VerificationJobInstanceKeys.executionStatus, ExecutionStatus.ABORTED);
+            .set(VerificationJobInstanceKeys.executionStatus, ExecutionStatus.ABORTED)
+            .set(VerificationJobInstanceKeys.verificationStatus, ActivityVerificationStatus.ABORTED);
     Query<VerificationJobInstance> query = hPersistence.createQuery(VerificationJobInstance.class)
                                                .field(VerificationJobInstanceKeys.uuid)
                                                .in(verificationJobInstanceIds)
@@ -522,8 +525,9 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
         return ActivityVerificationStatus.NOT_STARTED;
       case FAILED:
       case TIMEOUT:
-      case ABORTED:
         return ActivityVerificationStatus.ERROR;
+      case ABORTED:
+        return ActivityVerificationStatus.ABORTED;
       case RUNNING:
         return ActivityVerificationStatus.IN_PROGRESS;
       case SUCCESS:
@@ -788,6 +792,7 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
     UpdateOperations<VerificationJobInstance> updateOperations =
         hPersistence.createUpdateOperations(VerificationJobInstance.class)
             .set(VerificationJobInstanceKeys.executionStatus, ExecutionStatus.RUNNING)
+            .set(VerificationJobInstanceKeys.verificationStatus, ActivityVerificationStatus.IN_PROGRESS)
             .set(VerificationJobInstanceKeys.cvConfigMap, cvConfigMap);
     Query<VerificationJobInstance> query = hPersistence.createQuery(VerificationJobInstance.class)
                                                .filter(VerificationJobInstanceKeys.uuid, verificationJobInstanceId);
