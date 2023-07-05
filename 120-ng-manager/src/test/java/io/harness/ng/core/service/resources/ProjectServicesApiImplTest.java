@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_CREATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_UPDATE_PERMISSION;
 import static io.harness.rule.OwnerRule.HINGER;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
@@ -44,7 +45,7 @@ import io.harness.rule.Owner;
 import io.harness.spec.server.ng.v1.model.Service;
 import io.harness.spec.server.ng.v1.model.ServiceRequest;
 import io.harness.spec.server.ng.v1.model.ServiceResponse;
-import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -129,6 +130,8 @@ public class ProjectServicesApiImplTest extends CategoryTest {
     when(featureFlagHelperService.isEnabled(account, FeatureName.DISABLE_CDS_SERVICE_ENV_SCHEMA_VALIDATION))
         .thenReturn(false);
     when(featureFlagHelperService.isEnabled(account, FeatureName.NG_SVC_ENV_REDESIGN)).thenReturn(true);
+    when(featureFlagHelperService.isEnabled(account, FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG))
+        .thenReturn(true);
 
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(org, project, account))
         .thenReturn(true);
@@ -149,6 +152,32 @@ public class ProjectServicesApiImplTest extends CategoryTest {
   @Owner(developers = TARUN_UBA)
   @Category(UnitTests.class)
   public void testGetService() {
+    when(featureFlagHelperService.isEnabled(account, FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG))
+        .thenReturn(false);
+    when(serviceEntityService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(entity));
+    Service service = new Service();
+    service.setAccount(account);
+    service.setIdentifier(identifier);
+    service.setOrg(org);
+    service.setProject(project);
+    service.setName(name);
+    service.setDescription(description);
+    ServiceResponse serviceResponse = new ServiceResponse();
+    serviceResponse.setCreated(987654321L);
+    serviceResponse.setUpdated(123456789L);
+    serviceResponse.setService(service);
+    Response response = projectServicesApiImpl.getServiceEntity(org, project, identifier, account);
+    ServiceResponse entityCurr = (ServiceResponse) response.getEntity();
+
+    assertEquals(identifier, entityCurr.getService().getIdentifier());
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetServiceWithMultipleManifestSupportEnabled() {
+    when(featureFlagHelperService.isEnabled(account, FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG))
+        .thenReturn(true);
     when(serviceEntityService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(entity));
     Service service = new Service();
     service.setAccount(account);
@@ -189,6 +218,8 @@ public class ProjectServicesApiImplTest extends CategoryTest {
   @Owner(developers = TARUN_UBA)
   @Category(UnitTests.class)
   public void testUpdateService() throws IOException {
+    when(featureFlagHelperService.isEnabled(account, FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG))
+        .thenReturn(false);
     when(featureFlagHelperService.isEnabled(account, FeatureName.DISABLE_CDS_SERVICE_ENV_SCHEMA_VALIDATION))
         .thenReturn(false);
     when(featureFlagHelperService.isEnabled(account, FeatureName.NG_SVC_ENV_REDESIGN)).thenReturn(true);
@@ -210,6 +241,8 @@ public class ProjectServicesApiImplTest extends CategoryTest {
   @Owner(developers = UTKARSH_CHOUBEY)
   @Category(UnitTests.class)
   public void testUpdateServiceWithSchemaValidationFlagOn() throws IOException {
+    when(featureFlagHelperService.isEnabled(account, FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG))
+        .thenReturn(true);
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(org, project, account))
         .thenReturn(true);
     when(serviceEntityService.update(any())).thenReturn(entity);
@@ -283,6 +316,8 @@ public class ProjectServicesApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   @Parameters(method = "getTestData")
   public void testCreateServicesSuccessfullyForDifferentScopes(TestData testData) throws IOException {
+    when(featureFlagHelperService.isEnabled(account, FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG))
+        .thenReturn(false);
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(any(), any(), any())).thenReturn(true);
     when(serviceEntityService.create(any()))
         .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, ServiceEntity.class));

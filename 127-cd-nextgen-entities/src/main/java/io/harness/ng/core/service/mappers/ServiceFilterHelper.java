@@ -10,6 +10,7 @@ package io.harness.ng.core.service.mappers;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
@@ -22,8 +23,10 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.UnsupportedOperationException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
+import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.pms.yaml.YamlField;
@@ -35,7 +38,6 @@ import com.google.common.collect.Iterables;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -306,9 +308,16 @@ public class ServiceFilterHelper {
     }
   }
 
-  public YamlField getManifestsNodeFromServiceDefinitionYaml(YamlField serviceDefinitionField) {
+  public YamlField getManifestsNodeFromServiceYaml(YamlField serviceYamlField) {
+    YamlField serviceDefinitionField = serviceYamlField.getNode().getField(YamlTypes.SERVICE_DEFINITION);
     if (serviceDefinitionField == null) {
       return null;
+    }
+
+    String serviceDefinitionType = serviceDefinitionField.getType();
+    if (!(ServiceSpecType.NATIVE_HELM.equals(serviceDefinitionType)
+            || ServiceSpecType.KUBERNETES.equals(serviceDefinitionType))) {
+      throw new UnsupportedOperationException(format("Service Spec Type %s is not supported", serviceDefinitionType));
     }
 
     YamlField serviceSpecField = serviceDefinitionField.getNode().getField(YamlTypes.SERVICE_SPEC);
@@ -319,16 +328,15 @@ public class ServiceFilterHelper {
     return serviceSpecField.getNode().getField(YamlTypes.MANIFEST_LIST_CONFIG);
   }
 
-  public List<String> getManifestIdentifiersFilteredOnServiceType(YamlField manifestsField, String serviceType) {
+  public List<String> getManifestIdentifiersFilteredOnServiceType(YamlField manifestsField) {
     List<String> manifestIdentifierList = new ArrayList<>();
     List<YamlNode> manifests = manifestsField.getNode().asArray();
-    Set<String> supportedManifestTypes = ManifestType.getSupportedManifestTypes(serviceType);
     for (YamlNode manifestConfig : manifests) {
       if (manifestConfig == null) {
         continue;
       }
       YamlNode manifest = manifestConfig.getField(YamlTypes.MANIFEST_CONFIG).getNode();
-      if (manifest != null && supportedManifestTypes.contains(manifest.getType())) {
+      if (manifest != null && ManifestType.HelmChart.equals(manifest.getType())) {
         String manifestIdentifier = manifest.getIdentifier();
         manifestIdentifierList.add(manifestIdentifier);
       }

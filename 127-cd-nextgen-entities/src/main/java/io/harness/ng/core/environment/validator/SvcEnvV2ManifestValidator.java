@@ -17,6 +17,7 @@ import static java.lang.String.format;
 import io.harness.cdng.configfile.ConfigFile;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.ManifestConfigType;
+import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
@@ -94,44 +95,56 @@ public class SvcEnvV2ManifestValidator {
     }
   }
 
-  public void validateManifestList(ServiceDefinitionType serviceDefinitionType, List<ManifestAttributes> manifestList) {
+  public void validateManifestList(ServiceDefinitionType serviceDefinitionType, List<ManifestAttributes> manifestList,
+      boolean isHelmMultipleManifestSupportEnabled) {
     if (serviceDefinitionType == null || isEmpty(manifestList)) {
       return;
     }
 
     switch (serviceDefinitionType) {
       case KUBERNETES:
-        validateMultipleManifests(
-            manifestList, K8S_SUPPORTED_MANIFEST_TYPES, ServiceDefinitionType.KUBERNETES.getYamlName());
+        validateMultipleManifests(manifestList, K8S_SUPPORTED_MANIFEST_TYPES,
+            ServiceDefinitionType.KUBERNETES.getYamlName(), isHelmMultipleManifestSupportEnabled);
         break;
       case NATIVE_HELM:
-        validateMultipleManifests(
-            manifestList, HELM_SUPPORTED_MANIFEST_TYPES, ServiceDefinitionType.NATIVE_HELM.getYamlName());
+        validateMultipleManifests(manifestList, HELM_SUPPORTED_MANIFEST_TYPES,
+            ServiceDefinitionType.NATIVE_HELM.getYamlName(), isHelmMultipleManifestSupportEnabled);
         break;
       default:
     }
   }
 
-  private static void validateMultipleManifests(
-      List<ManifestAttributes> manifestList, Set<String> supported, String deploymentType) {
+  private static void validateMultipleManifests(List<ManifestAttributes> manifestList, Set<String> supported,
+      String deploymentType, boolean isHelmMultipleManifestSupportEnabled) {
     final Map<String, String> manifestIdTypeMap =
         manifestList.stream()
             .filter(m -> supported.contains(m.getKind()))
             .collect(Collectors.toMap(ManifestAttributes::getIdentifier, ManifestAttributes::getKind));
 
-    throwMultipleManifestsExceptionIfApplicable(manifestIdTypeMap, deploymentType, supported);
+    throwMultipleManifestsExceptionIfApplicable(
+        manifestIdTypeMap, deploymentType, supported, isHelmMultipleManifestSupportEnabled);
   }
 
-  public static void throwMultipleManifestsExceptionIfApplicable(
-      Map<String, String> manifestIdToManifestTypeMap, String deploymentType, Set<String> supported) {
+  public static void throwMultipleManifestsExceptionIfApplicable(Map<String, String> manifestIdToManifestTypeMap,
+      String deploymentType, Set<String> supported, boolean isHelmMultipleManifestSupportEnabled) {
     if (manifestIdToManifestTypeMap.values().size() > 1) {
-      String manifestIdType = manifestIdToManifestTypeMap.entrySet()
-                                  .stream()
-                                  .map(entry -> String.format("%s : %s", entry.getKey(), entry.getValue()))
-                                  .collect(Collectors.joining(", "));
-      throw new InvalidRequestException(String.format(
-          "Multiple manifests found [%s]. %s deployment support only one manifest of one of types: %s. Remove all unused manifests",
-          manifestIdType, deploymentType, String.join(", ", supported)));
+      String manifestIdType =
+          manifestIdToManifestTypeMap.entrySet()
+              .stream()
+              .filter(
+                  entry -> !(isHelmMultipleManifestSupportEnabled && ManifestType.HelmChart.equals(entry.getValue())))
+              .map(entry -> String.format("%s : %s", entry.getKey(), entry.getValue()))
+              .collect(Collectors.joining(", "));
+      if (isHelmMultipleManifestSupportEnabled && isNotEmpty(manifestIdType)) {
+        throw new InvalidRequestException(String.format(
+            "Multiple manifests found [%s]. %s deployment support only Helm Chart for multiple manifest feature. Remove all unused manifests",
+            manifestIdType, deploymentType));
+      }
+      if (!isHelmMultipleManifestSupportEnabled) {
+        throw new InvalidRequestException(String.format(
+            "Multiple manifests found [%s]. %s deployment support only one manifest of one of types: %s. Remove all unused manifests",
+            manifestIdType, deploymentType, String.join(", ", supported)));
+      }
     }
   }
 

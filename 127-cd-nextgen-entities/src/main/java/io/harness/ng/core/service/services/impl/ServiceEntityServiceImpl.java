@@ -1084,15 +1084,14 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
         throw new YamlException(
             String.format("Yaml provided for service %s does not have service root field.", serviceIdentifier));
       }
-
-      YamlField serviceDefinitionField = serviceYamlField.getNode().getField(YamlTypes.SERVICE_DEFINITION);
-      YamlField manifestsField = ServiceFilterHelper.getManifestsNodeFromServiceDefinitionYaml(serviceDefinitionField);
+      YamlField manifestsField = ServiceFilterHelper.getManifestsNodeFromServiceYaml(serviceYamlField);
       if (manifestsField == null) {
-        return new ManifestsResponseDTO();
+        throw new YamlException(
+            String.format("Yaml provided for service %s does not have manifests field.", serviceIdentifier));
       }
 
-      return new ManifestsResponseDTO().identifiers(ServiceFilterHelper.getManifestIdentifiersFilteredOnServiceType(
-          manifestsField, serviceDefinitionField.getType()));
+      return new ManifestsResponseDTO().identifiers(
+          ServiceFilterHelper.getManifestIdentifiersFilteredOnServiceType(manifestsField));
     } catch (IOException e) {
       throw new InvalidRequestException(
           String.format("Error occurred while fetching list of manifests for service %s", serviceIdentifier), e);

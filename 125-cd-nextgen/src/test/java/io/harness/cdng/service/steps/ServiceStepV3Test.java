@@ -35,6 +35,7 @@ import io.harness.cdng.freeze.FreezeOutcome;
 import io.harness.cdng.gitops.steps.GitOpsEnvOutCome;
 import io.harness.cdng.helpers.NgExpressionHelper;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
+import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
 import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
@@ -115,6 +116,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.assertj.core.api.Assertions;
+import org.joor.Reflect;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -513,8 +515,6 @@ public class ServiceStepV3Test extends CategoryTest {
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
   public void executeSyncWithServiceInputs() throws IOException {
-    final ServiceEntity serviceEntity = testServiceEntityWithInputs();
-    final Environment environment = testEnvEntity();
     String inputYaml = "  serviceDefinition:\n"
         + "    type: \"Kubernetes\"\n"
         + "    spec:\n"
@@ -531,7 +531,40 @@ public class ServiceStepV3Test extends CategoryTest {
         + "            valuesPaths:\n"
         + "               - v1.yaml\n"
         + "               - v2.yaml";
+    executeWithServiceInputs(testServiceEntityWithInputs(), inputYaml, false);
+  }
 
+  @Test
+  @Owner(developers = OwnerRule.PRATYUSH)
+  @Category(UnitTests.class)
+  public void executeSyncWithServiceInputsForMultipleHelmManifest() throws IOException {
+    String inputYaml = "  serviceDefinition:\n"
+        + "    type: \"Kubernetes\"\n"
+        + "    spec:\n"
+        + "      artifacts:\n"
+        + "        primary:\n"
+        + "          spec:\n"
+        + "            tag: develop-1\n"
+        + "          type: DockerRegistry\n"
+        + "      manifestConfigurations:\n"
+        + "        primaryManifestRef: m1\n"
+        + "      manifests:\n"
+        + "      - manifest:\n"
+        + "          identifier: \"m1\"\n"
+        + "          type: \"HelmChart\"\n"
+        + "          spec:\n"
+        + "            valuesPaths:\n"
+        + "               - v1.yaml\n"
+        + "               - v2.yaml";
+    Reflect.on(serviceStepOverrideHelper).set("sweepingOutputService", sweepingOutputService);
+    Reflect.on(serviceStepOverrideHelper).set("featureFlagHelperService", ngFeatureFlagHelperService);
+    doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
+    executeWithServiceInputs(testServiceEntityWithManifestConfigurationsInputs(), inputYaml, true);
+  }
+
+  private void executeWithServiceInputs(
+      ServiceEntity serviceEntity, String inputYaml, boolean isHelmMultipleManifestSupportEnabled) throws IOException {
+    final Environment environment = testEnvEntity();
     mockService(serviceEntity);
     mockEnv(environment);
 
@@ -566,10 +599,17 @@ public class ServiceStepV3Test extends CategoryTest {
         YamlUtils.read(serviceSweepingOutput.getFinalServiceYaml(), NGServiceConfig.class).getNgServiceV2InfoConfig();
 
     KubernetesServiceSpec spec = (KubernetesServiceSpec) serviceConfig.getServiceDefinition().getServiceSpec();
-    assertThat(((K8sManifest) spec.getManifests().get(0).getManifest().getSpec()).getValuesPaths().getValue())
-        .containsExactly("v1.yaml", "v2.yaml");
     assertThat(((DockerHubArtifactConfig) spec.getArtifacts().getPrimary().getSpec()).getTag().getValue())
         .isEqualTo("develop-1");
+    if (isHelmMultipleManifestSupportEnabled) {
+      assertThat(spec.getManifestConfigurations().getPrimaryManifestRef().getValue()).isEqualTo("m1");
+      assertThat(((HelmChartManifest) spec.getManifests().get(0).getManifest().getSpec()).getValuesPaths().getValue())
+          .containsExactly("v1.yaml", "v2.yaml");
+    } else {
+      assertThat(spec.getManifestConfigurations()).isNull();
+      assertThat(((K8sManifest) spec.getManifests().get(0).getManifest().getSpec()).getValuesPaths().getValue())
+          .containsExactly("v1.yaml", "v2.yaml");
+    }
     assertThat(serviceSweepingOutput.getFinalServiceYaml().contains("<+input>")).isFalse();
   }
 
@@ -1190,6 +1230,40 @@ public class ServiceStepV3Test extends CategoryTest {
         + "      - manifest:\n"
         + "          identifier: m1\n"
         + "          type: K8sManifest\n"
+        + "          spec:\n"
+        + "            store: {}\n"
+        + "            valuesPaths: <+input>";
+    return ServiceEntity.builder()
+        .accountId("accountId")
+        .orgIdentifier("orgId")
+        .projectIdentifier("projectId")
+        .identifier("service-id")
+        .name("service-name")
+        .type(ServiceDefinitionType.KUBERNETES)
+        .yaml(serviceYaml)
+        .build();
+  }
+
+  private ServiceEntity testServiceEntityWithManifestConfigurationsInputs() {
+    String serviceYaml = "service:\n"
+        + "  name: service-name\n"
+        + "  identifier: service-id\n"
+        + "  serviceDefinition:\n"
+        + "    type: Kubernetes\n"
+        + "    spec:\n"
+        + "      artifacts:\n"
+        + "        primary:\n"
+        + "          spec:\n"
+        + "            connectorRef: account.docker\n"
+        + "            imagePath: library/nginx\n"
+        + "            tag: <+input>.regex(develop.*)\n"
+        + "          type: DockerRegistry\n"
+        + "      manifestConfigurations:\n"
+        + "        primaryManifestRef: m1\n"
+        + "      manifests:\n"
+        + "      - manifest:\n"
+        + "          identifier: m1\n"
+        + "          type: HelmChart\n"
         + "          spec:\n"
         + "            store: {}\n"
         + "            valuesPaths: <+input>";

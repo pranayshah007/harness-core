@@ -1,0 +1,45 @@
+- manifest:
+    identifier: manifest1
+    spec:
+      store:
+        type: Git
+        spec:
+          connectorRef: org.GitConnectorForAutomationTest
+          gitFetchType: Branch
+          repoName: https://github.com/wings-software/sample-k8s-manifests.git
+          folderPath: ng-automation/k8s/templates/
+          branch: master
+    type: HelmChart
+- manifest:
+    identifier: manifest2
+    spec:
+      store:
+        type: Git
+        spec:
+          connectorRef: org.GitConnectorForAutomationTest
+          gitFetchType: Branch
+          repoName: https://github.com/wings-software/sample-k8s-manifests.git
+          paths:
+            - ng-automation/k8s/templates/
+          branch: master
+    type: HelmChart
+- manifest:
+    identifier: manifest3
+    spec:
+      store:
+        type: Git
+        spec:
+          connectorRef: org.GitConnectorForAutomationTest
+          gitFetchType: Branch
+          repoName: https://github.com/wings-software/sample-k8s-manifests.git
+          paths:
+            - ng-automation/k8s/valuesWithClusterTypeService.yaml
+          branch: master
+    type: Values
+
+
+
+
+
+
+

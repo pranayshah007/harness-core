@@ -25,6 +25,7 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.ManifestConfigType;
+import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.mappers.ManifestOutcomeMapper;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.steps.output.NgManifestsMetadataSweepingOutput;
@@ -36,10 +37,12 @@ import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
 import io.harness.cdng.manifest.yaml.kinds.HelmRepoOverrideManifest;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.cdng.manifestConfigs.ManifestConfigurations;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorModule;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -256,8 +259,10 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
       }
     });
 
-    SvcEnvV2ManifestValidator.validateManifestList(
-        ngManifestsMetadataSweepingOutput.getServiceDefinitionType(), manifestAttributes);
+    ManifestConfigurations manifestConfigurations = ngManifestsMetadataSweepingOutput.getManifestConfigurations();
+    boolean isMultipleManifestSupportEnabled = manifestConfigurations != null;
+    SvcEnvV2ManifestValidator.validateManifestList(ngManifestsMetadataSweepingOutput.getServiceDefinitionType(),
+        manifestAttributes, isMultipleManifestSupportEnabled);
     validateConnectors(ambiance, manifestAttributes);
 
     checkForAccessOrThrow(ambiance, manifestAttributes);
@@ -266,6 +271,11 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
     for (int i = 0; i < manifestAttributes.size(); i++) {
       checkAndWarnIfDoesNotFollowIdentifierRegex(manifestAttributes.get(i).getIdentifier(), logCallback);
       ManifestOutcome manifestOutcome = ManifestOutcomeMapper.toManifestOutcome(manifestAttributes.get(i), i);
+      if (isMultipleManifestSupportEnabled && ManifestType.HelmChart.equals(manifestOutcome.getType())
+          && !manifestOutcome.getIdentifier().equals(
+              ParameterFieldHelper.getParameterFieldValue(manifestConfigurations.getPrimaryManifestRef()))) {
+        continue;
+      }
       manifestsOutcome.put(manifestOutcome.getIdentifier(), manifestOutcome);
     }
 

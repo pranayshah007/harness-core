@@ -98,6 +98,7 @@ public interface YamlTypes {
   String GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK = StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK;
   String TERRAFORM_CLOUD_RUN = StepSpecTypeConstants.TERRAFORM_CLOUD_RUN;
   String TERRAFORM_CLOUD_ROLLBACK = StepSpecTypeConstants.TERRAFORM_CLOUD_ROLLBACK;
+  String PRIMARY_MANIFEST_REF = "primaryManifestRef";
   String MANIFEST_LIST_CONFIG = "manifests";
   String MANIFEST_CONFIG = "manifest";
   String K8S_MANIFEST = ManifestType.K8Manifest;

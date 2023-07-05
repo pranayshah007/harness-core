@@ -20,6 +20,7 @@ import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
@@ -36,6 +37,7 @@ import io.harness.pms.rbac.NGResourceType;
 import io.harness.spec.server.ng.v1.model.ServiceRequest;
 import io.harness.spec.server.ng.v1.model.ServiceResponse;
 import io.harness.utils.ApiUtils;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.PageUtils;
 
 import software.wings.beans.Service.ServiceKeys;
@@ -64,13 +66,17 @@ public abstract class AbstractServicesApiImpl {
   @Inject private final OrgAndProjectValidationHelper orgAndProjectValidationHelper;
   @Inject private final ServiceResourceApiUtils serviceResourceApiUtils;
   @Inject private final ServiceEntityYamlSchemaHelper serviceSchemaHelper;
+  @Inject private final NGFeatureFlagHelperService featureFlagHelperService;
 
   public Response createServiceEntity(ServiceRequest serviceRequest, String org, String project, String account) {
     throwExceptionForNoRequestDTO(serviceRequest);
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(account, org, project), Resource.of(NGResourceType.SERVICE, null), SERVICE_CREATE_PERMISSION);
     serviceSchemaHelper.validateSchema(account, serviceRequest.getYaml());
-    ServiceEntity serviceEntity = serviceResourceApiUtils.mapToServiceEntity(serviceRequest, org, project, account);
+    boolean isHelmMultipleManifestSupportEnabled =
+        featureFlagHelperService.isEnabled(account, FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG);
+    ServiceEntity serviceEntity = serviceResourceApiUtils.mapToServiceEntity(
+        serviceRequest, org, project, account, isHelmMultipleManifestSupportEnabled);
     if (isEmpty(serviceRequest.getYaml())) {
       serviceSchemaHelper.validateSchema(account, serviceEntity.getYaml());
     }
@@ -102,7 +108,10 @@ public abstract class AbstractServicesApiImpl {
     }
     ServiceEntity optionalServiceEntity = serviceEntity.get();
     if (EmptyPredicate.isEmpty(serviceEntity.get().getYaml())) {
-      NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(optionalServiceEntity);
+      boolean isHelmMultipleManifestSupportEnabled =
+          featureFlagHelperService.isEnabled(account, FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG);
+      NGServiceConfig ngServiceConfig =
+          NGServiceEntityMapper.toNGServiceConfig(optionalServiceEntity, isHelmMultipleManifestSupportEnabled);
       serviceEntity.get().setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
     }
     return Response.ok().entity(serviceResourceApiUtils.mapToServiceResponse(optionalServiceEntity)).build();
@@ -147,7 +156,10 @@ public abstract class AbstractServicesApiImpl {
       Page<ServiceEntity> serviceEntities = serviceEntityService.list(criteria, pageRequest);
       serviceEntities.forEach(serviceEntity -> {
         if (EmptyPredicate.isEmpty(serviceEntity.getYaml())) {
-          NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity);
+          boolean isHelmMultipleManifestSupportEnabled =
+              featureFlagHelperService.isEnabled(account, FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG);
+          NGServiceConfig ngServiceConfig =
+              NGServiceEntityMapper.toNGServiceConfig(serviceEntity, isHelmMultipleManifestSupportEnabled);
           serviceEntity.setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
         }
       });
@@ -174,7 +186,10 @@ public abstract class AbstractServicesApiImpl {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(account, org, project),
         Resource.of(NGResourceType.SERVICE, serviceRequest.getIdentifier()), SERVICE_UPDATE_PERMISSION);
     serviceSchemaHelper.validateSchema(account, serviceRequest.getYaml());
-    ServiceEntity requestService = serviceResourceApiUtils.mapToServiceEntity(serviceRequest, org, project, account);
+    boolean isHelmMultipleManifestSupportEnabled =
+        featureFlagHelperService.isEnabled(account, FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG);
+    ServiceEntity requestService = serviceResourceApiUtils.mapToServiceEntity(
+        serviceRequest, org, project, account, isHelmMultipleManifestSupportEnabled);
     if (isEmpty(serviceRequest.getYaml())) {
       serviceSchemaHelper.validateSchema(account, requestService.getYaml());
     }

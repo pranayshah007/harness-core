@@ -20,6 +20,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
@@ -59,6 +60,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -83,6 +85,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
   @Inject private ServiceEntityService serviceEntityService;
   @Inject private EnvironmentService environmentService;
   @Inject private InfrastructureEntityService infraService;
+  @Inject private NGFeatureFlagHelperService featureFlagHelperService;
 
   @Override
   public Set<String> getSupportedStageTypes() {
@@ -409,8 +412,11 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
       Optional<ServiceEntity> serviceEntityOptional = serviceEntityService.get(
           filterCreationContext.getSetupMetadata().getAccountId(), filterCreationContext.getSetupMetadata().getOrgId(),
           filterCreationContext.getSetupMetadata().getProjectId(), serviceEntityRef.getValue(), false);
+      boolean isHelmMultipleManifestSupportEnabled = featureFlagHelperService.isEnabled(
+          filterCreationContext.getSetupMetadata().getAccountId(), FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG);
       serviceEntityOptional.ifPresent(se -> {
-        NGServiceV2InfoConfig config = NGServiceEntityMapper.toNGServiceConfig(se).getNgServiceV2InfoConfig();
+        NGServiceV2InfoConfig config = NGServiceEntityMapper.toNGServiceConfig(se, isHelmMultipleManifestSupportEnabled)
+                                           .getNgServiceV2InfoConfig();
         filterBuilder.serviceName(se.getName());
         if (config.getServiceDefinition() == null) {
           throw new InvalidYamlRuntimeException(

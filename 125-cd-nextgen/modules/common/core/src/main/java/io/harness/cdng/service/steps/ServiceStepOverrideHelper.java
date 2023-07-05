@@ -23,6 +23,7 @@ import static java.util.Collections.emptyMap;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.azure.config.yaml.ApplicationSettingsConfiguration;
 import io.harness.cdng.azure.config.yaml.ConnectionStringsConfiguration;
 import io.harness.cdng.azure.webapp.steps.NgAppSettingsSweepingOutput;
@@ -36,6 +37,7 @@ import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.steps.output.NgManifestsMetadataSweepingOutput;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
+import io.harness.cdng.manifestConfigs.ManifestConfigurations;
 import io.harness.cdng.service.ServiceSpec;
 import io.harness.cdng.service.WebAppSpec;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
@@ -51,7 +53,9 @@ import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -75,6 +79,7 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 public class ServiceStepOverrideHelper {
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
+  @Inject private NGFeatureFlagHelperService featureFlagHelperService;
 
   public void prepareAndSaveFinalManifestMetadataToSweepingOutput(@NonNull NGServiceConfig serviceV2Config,
       NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentConfig ngEnvironmentConfig, Ambiance ambiance,
@@ -104,6 +109,10 @@ public class ServiceStepOverrideHelper {
                 ngEnvironmentConfig == null || ngEnvironmentConfig.getNgEnvironmentInfoConfig() == null
                     ? StringUtils.EMPTY
                     : ngEnvironmentConfig.getNgEnvironmentInfoConfig().getIdentifier())
+            .manifestConfigurations(featureFlagHelperService.isEnabled(AmbianceUtils.getAccountId(ambiance),
+                                        FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG)
+                    ? getManifestConfigurations(ngServiceV2InfoConfig)
+                    : null)
             .build();
     sweepingOutputService.consume(
         ambiance, manifestsSweepingOutputName, manifestSweepingOutput, StepCategory.STAGE.name());
@@ -133,6 +142,10 @@ public class ServiceStepOverrideHelper {
             .environmentIdentifier(environmentRef)
             .svcManifests(svcManifests)
             .manifestsFromOverride(manifestsFromOverride)
+            .manifestConfigurations(featureFlagHelperService.isEnabled(AmbianceUtils.getAccountId(ambiance),
+                                        FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG)
+                    ? getManifestConfigurations(ngServiceV2InfoConfig)
+                    : null)
             .build();
     sweepingOutputService.consume(
         ambiance, manifestsSweepingOutputName, manifestSweepingOutput, StepCategory.STAGE.name());
@@ -674,5 +687,20 @@ public class ServiceStepOverrideHelper {
         || environmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride() == null
         || environmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride().getConnectionStrings()
         == null;
+  }
+
+  private ManifestConfigurations getManifestConfigurations(NGServiceV2InfoConfig ngServiceV2InfoConfig) {
+    if (ngServiceV2InfoConfig.getServiceDefinition() == null
+        || ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec() == null) {
+      return null;
+    }
+    ServiceSpec spec = ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec();
+    if (spec instanceof KubernetesServiceSpec && ((KubernetesServiceSpec) spec).getManifestConfigurations() != null) {
+      return ((KubernetesServiceSpec) spec).getManifestConfigurations();
+    }
+    if (spec instanceof NativeHelmServiceSpec && ((NativeHelmServiceSpec) spec).getManifestConfigurations() != null) {
+      return ((NativeHelmServiceSpec) spec).getManifestConfigurations();
+    }
+    return null;
   }
 }

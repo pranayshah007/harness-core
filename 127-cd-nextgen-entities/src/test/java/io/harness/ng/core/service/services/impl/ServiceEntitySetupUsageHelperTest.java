@@ -9,6 +9,8 @@ package io.harness.ng.core.service.services.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -32,6 +34,7 @@ import io.harness.ng.core.template.TemplateReferenceRequestDTO;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.template.remote.TemplateResourceClient;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.walktree.visitor.SimpleVisitorFactory;
 
 import com.google.common.io.Resources;
@@ -62,6 +65,7 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
   @Inject private IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
   @Inject private SetupUsageHelper setupUsageHelper;
   @Inject private TemplateResourceClient templateResourceClient;
+  @Mock private NGFeatureFlagHelperService featureFlagHelperService;
   @Mock private Producer producer;
   @InjectMocks private ServiceEntitySetupUsageHelper entitySetupUsageHelper;
 
@@ -72,6 +76,7 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
     Reflect.on(entitySetupUsageHelper).set("setupUsageHelper", setupUsageHelper);
     Reflect.on(entitySetupUsageHelper).set("templateResourceClient", templateResourceClient);
     Reflect.on(setupUsageHelper).set("producer", producer);
+    Mockito.doReturn(true).when(featureFlagHelperService).isEnabled(anyString(), any());
   }
 
   @Test

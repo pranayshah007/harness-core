@@ -15,9 +15,12 @@ import static io.harness.rule.OwnerRule.YOGESH;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
@@ -54,6 +57,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.rule.Owner;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -81,6 +85,7 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
   @Mock private EnvironmentService environmentService;
 
   @Mock private InfrastructureEntityService infraService;
+  @Mock private NGFeatureFlagHelperService featureFlagHelperService;
   @InjectMocks private DeploymentStageFilterJsonCreatorV2 filterCreator;
 
   private final ClassLoader classLoader = this.getClass().getClassLoader();
@@ -144,6 +149,9 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
         .when(infraService)
         .getAllInfrastructureFromIdentifierList(
             "accountId", "orgId", "projectId", "env-id", Lists.newArrayList("infra-id"));
+    doReturn(true)
+        .when(featureFlagHelperService)
+        .isEnabled(anyString(), eq(FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG));
   }
 
   @Test

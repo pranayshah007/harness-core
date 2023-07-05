@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.ng.core.service.entity.ServiceEntity;
@@ -22,6 +23,7 @@ import io.harness.ng.core.setupusage.SetupUsageOwnerEntity;
 import io.harness.ng.core.template.TemplateReferenceRequestDTO;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.template.remote.TemplateResourceClient;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.walktree.visitor.SimpleVisitorFactory;
 import io.harness.walktree.visitor.entityreference.EntityReferenceExtractorVisitor;
 
@@ -37,6 +39,7 @@ public class ServiceEntitySetupUsageHelper {
   @Inject private SimpleVisitorFactory simpleVisitorFactory;
   @Inject private SetupUsageHelper setupUsageHelper;
   @Inject private TemplateResourceClient templateResourceClient;
+  @Inject private NGFeatureFlagHelperService featureFlagHelperService;
 
   /**
    * Update setup usages for the current service entity
@@ -102,7 +105,9 @@ public class ServiceEntitySetupUsageHelper {
     List<String> qualifiedNameList = List.of(rootName);
     EntityReferenceExtractorVisitor visitor = simpleVisitorFactory.obtainEntityReferenceExtractorVisitor(
         entity.getAccountId(), entity.getOrgIdentifier(), entity.getProjectIdentifier(), qualifiedNameList);
-    NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(entity);
+    boolean isHelmMultipleManifestSupport =
+        featureFlagHelperService.isEnabled(entity.getAccountId(), FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG);
+    NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(entity, isHelmMultipleManifestSupport);
     visitor.walkElementTree(ngServiceConfig.getNgServiceV2InfoConfig());
     Set<EntityDetailProtoDTO> entityReferences = visitor.getEntityReferenceSet();
     if (entity.hasTemplateReferences()) {

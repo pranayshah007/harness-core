@@ -13,24 +13,31 @@ import static io.harness.cdng.manifest.ManifestType.K8S_SUPPORTED_MANIFEST_TYPES
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.ManifestsListConfigWrapper;
 import io.harness.cdng.manifest.steps.ManifestStepParameters;
 import io.harness.cdng.manifest.steps.ManifestsStep;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
+import io.harness.cdng.manifestConfigs.ManifestConfigurations;
 import io.harness.cdng.service.ServiceSpec;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.NativeHelmServiceSpec;
@@ -47,6 +54,7 @@ import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -73,10 +81,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ManifestPlanCreatorTest extends CDNGTestBase {
   @Inject private KryoSerializer kryoSerializer;
+  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject @InjectMocks ManifestsPlanCreator manifestsPlanCreator;
 
   private static final String ACCOUNT_ID = "account_id";
@@ -167,9 +177,11 @@ public class ManifestPlanCreatorTest extends CDNGTestBase {
 
     PlanCreationContext ctx =
         PlanCreationContext.builder().currentField(manifestsYamlField).dependency(dependency).build();
-
     List<String> expectedListrOfIdentifier = Arrays.asList("m1", "m2", "m3", "m4", "m5", "m6");
     List<String> actualListOfIdentifier = new ArrayList<>();
+    doReturn(false)
+        .when(cdFeatureFlagHelper)
+        .isEnabled(anyString(), eq(FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG));
     LinkedHashMap<String, PlanCreationResponse> response = manifestsPlanCreator.createPlanForChildrenNodes(ctx, null);
     assertThat(response.size()).isEqualTo(6);
     for (Map.Entry<String, PlanCreationResponse> entry : response.entrySet()) {
@@ -296,6 +308,15 @@ public class ManifestPlanCreatorTest extends CDNGTestBase {
 
     testCreatePlanForChildrenNodesDuplicateDeploymentsManifests(
         ServiceDefinitionType.KUBERNETES, serviceSpec, K8S_SUPPORTED_MANIFEST_TYPES);
+    serviceSpec = NativeHelmServiceSpec.builder()
+                      .manifestConfigurations(ManifestConfigurations.builder()
+                                                  .primaryManifestRef(ParameterField.createValueField("manifest1"))
+                                                  .build())
+                      .manifests(Arrays.asList(manifestWith("manifest1", ManifestConfigType.K8_MANIFEST),
+                          manifestWith("manifest2", ManifestConfigType.KUSTOMIZE)))
+                      .build();
+    testCreatePlanForChildrenNodesDuplicateDeploymentsManifestsWithHelmMultipleSupportEnabled(
+        ServiceDefinitionType.KUBERNETES, serviceSpec);
   }
 
   @Test
@@ -306,7 +327,6 @@ public class ManifestPlanCreatorTest extends CDNGTestBase {
                                   .manifests(Arrays.asList(manifestWith("manifest1", ManifestConfigType.HELM_CHART),
                                       manifestWith("manifest2", ManifestConfigType.HELM_CHART)))
                                   .build();
-
     testCreatePlanForChildrenNodesDuplicateDeploymentsManifests(
         ServiceDefinitionType.NATIVE_HELM, serviceSpec, HELM_SUPPORTED_MANIFEST_TYPES);
   }
@@ -315,6 +335,9 @@ public class ManifestPlanCreatorTest extends CDNGTestBase {
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
   public void testCreatePlanForChildrenNodesWithServiceEntity() throws IOException {
+    doReturn(false)
+        .when(cdFeatureFlagHelper)
+        .isEnabled(anyString(), eq(FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG));
     final ManifestConfigWrapper valuesManifest1 =
         ManifestConfigWrapper.builder()
             .manifest(ManifestConfig.builder().identifier("values_test1").type(ManifestConfigType.VALUES).build())
@@ -354,8 +377,59 @@ public class ManifestPlanCreatorTest extends CDNGTestBase {
     assertThat(expectedListOfIdentifier).isEqualTo(actualListOfIdentifier);
   }
 
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testCreatePlanForChildrenNodesWithServiceEntityWithMultipleHelmCharts() throws IOException {
+    doReturn(true)
+        .when(cdFeatureFlagHelper)
+        .isEnabled(anyString(), eq(FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG));
+    final ManifestConfigWrapper valuesManifest1 =
+        ManifestConfigWrapper.builder()
+            .manifest(ManifestConfig.builder().identifier("values_test1").type(ManifestConfigType.VALUES).build())
+            .build();
+    final ManifestConfigWrapper valuesManifest2 =
+        ManifestConfigWrapper.builder()
+            .manifest(ManifestConfig.builder().identifier("values_test2").type(ManifestConfigType.VALUES).build())
+            .build();
+    Map<String, ByteString> metadataDependency = new HashMap<>();
+    metadataDependency.put(SERVICE_ENTITY_DEFINITION_TYPE_KEY,
+        ByteString.copyFrom(kryoSerializer.asDeflatedBytes(ServiceDefinitionType.KUBERNETES)));
+    metadataDependency.put(YamlTypes.MANIFEST_LIST_CONFIG,
+        ByteString.copyFrom(kryoSerializer.asDeflatedBytes(Arrays.asList(valuesManifest1, valuesManifest2))));
+    metadataDependency.put(YamlTypes.PRIMARY_MANIFEST_REF,
+        ByteString.copyFrom(kryoSerializer.asDeflatedBytes(ParameterField.createValueField("manifest1"))));
+
+    Dependency dependency = Dependency.newBuilder().putAllMetadata(metadataDependency).build();
+    YamlField manifestsYamlField = getYamlFieldFromGivenFileName("cdng/plan/manifests/multipleHelmCharts.yml");
+
+    Map<String, PlanCreationContextValue> globalContext = new HashMap<>();
+    globalContext.put("metadata",
+        PlanCreationContextValue.newBuilder()
+            .setAccountIdentifier(ACCOUNT_ID)
+            .setOrgIdentifier(ORG_IDENTIFIER)
+            .setProjectIdentifier(PROJ_IDENTIFIER)
+            .build());
+    PlanCreationContext ctx = PlanCreationContext.builder()
+                                  .currentField(manifestsYamlField)
+                                  .globalContext(globalContext)
+                                  .dependency(dependency)
+                                  .build();
+    List<String> expectedListOfIdentifier = Arrays.asList("values_test1", "values_test2");
+    List<String> actualListOfIdentifier = new ArrayList<>();
+    LinkedHashMap<String, PlanCreationResponse> response = manifestsPlanCreator.createPlanForChildrenNodes(ctx, null);
+    assertThat(response.size()).isEqualTo(2);
+    for (Map.Entry<String, PlanCreationResponse> entry : response.entrySet()) {
+      actualListOfIdentifier.add(fetchManifestIdentifier(entry.getKey(), entry.getValue()));
+    }
+    assertThat(expectedListOfIdentifier).isEqualTo(actualListOfIdentifier);
+  }
+
   private void testCreatePlanForChildrenNodesDuplicateDeploymentsManifests(
       ServiceDefinitionType type, ServiceSpec serviceSpec, Set<String> expectedSupport) throws IOException {
+    doReturn(false)
+        .when(cdFeatureFlagHelper)
+        .isEnabled(anyString(), eq(FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG));
     ServiceConfig serviceConfig =
         ServiceConfig.builder()
             .serviceDefinition(ServiceDefinition.builder().type(type).serviceSpec(serviceSpec).build())
@@ -364,9 +438,40 @@ public class ManifestPlanCreatorTest extends CDNGTestBase {
     Map<String, ByteString> metadataDependency = new HashMap<>();
     metadataDependency.put(
         YamlTypes.SERVICE_CONFIG, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(serviceConfig)));
+    String expectedMessage =
+        String.format("%s deployment support only one manifest of one of types: %s. Remove all unused manifests",
+            type.getYamlName(), String.join(", ", expectedSupport));
+    testCreatePlanForChildrenNodesDuplicateDeploymentsManifestsHelper(
+        metadataDependency, "cdng/plan/manifests/manifests.yml", serviceSpec, expectedMessage);
+  }
 
+  private void testCreatePlanForChildrenNodesDuplicateDeploymentsManifestsWithHelmMultipleSupportEnabled(
+      ServiceDefinitionType type, ServiceSpec serviceSpec) throws IOException {
+    doReturn(true)
+        .when(cdFeatureFlagHelper)
+        .isEnabled(anyString(), eq(FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG));
+    ServiceConfig serviceConfig =
+        ServiceConfig.builder()
+            .serviceDefinition(ServiceDefinition.builder().type(type).serviceSpec(serviceSpec).build())
+            .build();
+
+    Map<String, ByteString> metadataDependency = new HashMap<>();
+    metadataDependency.put(
+        YamlTypes.SERVICE_CONFIG, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(serviceConfig)));
+    metadataDependency.put(YamlTypes.PRIMARY_MANIFEST_REF,
+        ByteString.copyFrom(kryoSerializer.asDeflatedBytes(ParameterField.createValueField("manifest1"))));
+    String expectedMessage = String.format(
+        "%s deployment support only Helm Chart for multiple manifest feature. Remove all unused manifests",
+        type.getYamlName());
+    testCreatePlanForChildrenNodesDuplicateDeploymentsManifestsHelper(
+        metadataDependency, "cdng/plan/manifests/multipleHelmCharts.yml", serviceSpec, expectedMessage);
+  }
+
+  private void testCreatePlanForChildrenNodesDuplicateDeploymentsManifestsHelper(
+      Map<String, ByteString> metadataDependency, String manifestPath, ServiceSpec serviceSpec, String expectedErrorMsg)
+      throws IOException {
     Dependency dependency = Dependency.newBuilder().putAllMetadata(metadataDependency).build();
-    YamlField manifestsYamlField = getYamlFieldFromGivenFileName("cdng/plan/manifests/manifests.yml");
+    YamlField manifestsYamlField = getYamlFieldFromGivenFileName(manifestPath);
 
     PlanCreationContext ctx =
         PlanCreationContext.builder().currentField(manifestsYamlField).dependency(dependency).build();
@@ -374,10 +479,7 @@ public class ManifestPlanCreatorTest extends CDNGTestBase {
         .isInstanceOf(InvalidRequestException.class)
         .matches(exception -> {
           String message = exception.getMessage();
-          String expectedMessage =
-              String.format("%s deployment support only one manifest of one of types: %s. Remove all unused manifests",
-                  type.getYamlName(), String.join(", ", expectedSupport));
-          assertThat(message).endsWith(expectedMessage);
+          assertThat(message).endsWith(expectedErrorMsg);
           serviceSpec.getManifests()
               .stream()
               .map(manifest

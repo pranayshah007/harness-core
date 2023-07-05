@@ -39,7 +39,7 @@ service:
               skipResourceVersioning: false
         - manifest:
             identifier: mani_i2
-            type: K8sManifest
+            type: HelmChart
             spec:
               store:
                 type: Harness

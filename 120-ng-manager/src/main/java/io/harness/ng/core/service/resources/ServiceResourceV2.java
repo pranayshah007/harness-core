@@ -230,7 +230,10 @@ public class ServiceResourceV2 {
         serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, deleted);
     if (serviceEntity.isPresent()) {
       if (EmptyPredicate.isEmpty(serviceEntity.get().getYaml())) {
-        NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity.get());
+        boolean isHelmMultipleManifestSupportEnabled =
+            featureFlagService.isEnabled(accountId, FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG);
+        NGServiceConfig ngServiceConfig =
+            NGServiceEntityMapper.toNGServiceConfig(serviceEntity.get(), isHelmMultipleManifestSupportEnabled);
         serviceEntity.get().setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
       }
     } else {
@@ -276,7 +279,10 @@ public class ServiceResourceV2 {
         ResourceScope.of(accountId, serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier()),
         Resource.of(NGResourceType.SERVICE, null), SERVICE_CREATE_PERMISSION);
     serviceSchemaHelper.validateSchema(accountId, serviceRequestDTO.getYaml());
-    ServiceEntity serviceEntity = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
+    boolean isHelmMultipleManifestSupportEnabled =
+        featureFlagService.isEnabled(accountId, FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG);
+    ServiceEntity serviceEntity =
+        ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO, isHelmMultipleManifestSupportEnabled);
     if (isEmpty(serviceRequestDTO.getYaml())) {
       serviceSchemaHelper.validateSchema(accountId, serviceEntity.getYaml());
     }
@@ -309,10 +315,13 @@ public class ServiceResourceV2 {
     }
     serviceRequestDTOs.forEach(
         serviceRequestDTO -> serviceSchemaHelper.validateSchema(accountId, serviceRequestDTO.getYaml()));
-    List<ServiceEntity> serviceEntities =
-        serviceRequestDTOs.stream()
-            .map(serviceRequestDTO -> ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO))
-            .collect(Collectors.toList());
+    boolean isHelmMultipleManifestSupportEnabled =
+        featureFlagService.isEnabled(accountId, FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG);
+    List<ServiceEntity> serviceEntities = serviceRequestDTOs.stream()
+                                              .map(serviceRequestDTO
+                                                  -> ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO,
+                                                      isHelmMultipleManifestSupportEnabled))
+                                              .collect(Collectors.toList());
 
     for (int i = 0; i < serviceRequestDTOs.size(); i++) {
       if (isEmpty(serviceRequestDTOs.get(i).getYaml())) {
@@ -366,7 +375,10 @@ public class ServiceResourceV2 {
         ResourceScope.of(accountId, serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier()),
         Resource.of(NGResourceType.SERVICE, serviceRequestDTO.getIdentifier()), SERVICE_UPDATE_PERMISSION);
     serviceSchemaHelper.validateSchema(accountId, serviceRequestDTO.getYaml());
-    ServiceEntity requestService = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
+    boolean isHelmMultipleManifestSupportEnabled =
+        featureFlagService.isEnabled(accountId, FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG);
+    ServiceEntity requestService =
+        ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO, isHelmMultipleManifestSupportEnabled);
     if (isEmpty(serviceRequestDTO.getYaml())) {
       serviceSchemaHelper.validateSchema(accountId, requestService.getYaml());
     }
@@ -393,7 +405,10 @@ public class ServiceResourceV2 {
         ResourceScope.of(accountId, serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier()),
         Resource.of(NGResourceType.SERVICE, serviceRequestDTO.getIdentifier()), SERVICE_UPDATE_PERMISSION);
     serviceSchemaHelper.validateSchema(accountId, serviceRequestDTO.getYaml());
-    ServiceEntity requestService = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
+    boolean isHelmMultipleManifestSupportEnabled =
+        featureFlagService.isEnabled(accountId, FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG);
+    ServiceEntity requestService =
+        ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO, isHelmMultipleManifestSupportEnabled);
     if (isEmpty(serviceRequestDTO.getYaml())) {
       serviceSchemaHelper.validateSchema(accountId, requestService.getYaml());
     }
@@ -543,7 +558,10 @@ public class ServiceResourceV2 {
 
     serviceEntities.forEach(serviceEntity -> {
       if (EmptyPredicate.isEmpty(serviceEntity.getYaml())) {
-        NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity);
+        boolean isHelmMultipleManifestSupportEnabled =
+            featureFlagService.isEnabled(accountId, FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG);
+        NGServiceConfig ngServiceConfig =
+            NGServiceEntityMapper.toNGServiceConfig(serviceEntity, isHelmMultipleManifestSupportEnabled);
         serviceEntity.setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
       }
     });

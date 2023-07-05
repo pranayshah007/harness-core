@@ -27,6 +27,11 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class ServiceElementMapper {
   public ServiceEntity toServiceEntity(String accountId, ServiceRequestDTO serviceRequestDTO) {
+    return toServiceEntity(accountId, serviceRequestDTO, false);
+  }
+
+  public ServiceEntity toServiceEntity(
+      String accountId, ServiceRequestDTO serviceRequestDTO, boolean isHelmMultipleManifestSupport) {
     ServiceEntity serviceEntity = ServiceEntity.builder()
                                       .identifier(serviceRequestDTO.getIdentifier())
                                       .accountId(accountId)
@@ -38,7 +43,8 @@ public class ServiceElementMapper {
                                       .yaml(serviceRequestDTO.getYaml())
                                       .build();
     // This also validates the service yaml
-    final NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity);
+    final NGServiceConfig ngServiceConfig =
+        NGServiceEntityMapper.toNGServiceConfig(serviceEntity, isHelmMultipleManifestSupport);
     final NGServiceV2InfoConfig ngServiceV2InfoConfig = ngServiceConfig.getNgServiceV2InfoConfig();
     if (isEmpty(serviceEntity.getYaml())) {
       serviceEntity.setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));

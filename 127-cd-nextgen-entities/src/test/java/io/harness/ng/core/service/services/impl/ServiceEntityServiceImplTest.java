@@ -1270,8 +1270,9 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   public void testGetEmptyManifestIdentifiersListServiceV2() {
     String filename = "service/service-with-no-manifests.yaml";
     String yaml = readFile(filename);
-    ManifestsResponseDTO responseDTO = serviceEntityService.getManifestIdentifiers(yaml, SERVICE_ID);
-    assertThat(responseDTO).isEqualTo(new ManifestsResponseDTO());
+    assertThatThrownBy(() -> serviceEntityService.getManifestIdentifiers(yaml, SERVICE_ID))
+        .isInstanceOf(YamlException.class)
+        .hasMessage("Yaml provided for service " + SERVICE_ID + " does not have manifests field.");
   }
 
   private String readFile(String filename) {

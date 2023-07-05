@@ -9,10 +9,13 @@ package io.harness.cdng.creator.plan.manifest;
 
 import static io.harness.cdng.manifest.ManifestType.HELM_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.cdng.manifest.ManifestType.K8S_SUPPORTED_MANIFEST_TYPES;
+import static io.harness.cdng.visitor.YamlTypes.PRIMARY_MANIFEST_REF;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.manifest.ManifestsListConfigWrapper;
 import io.harness.cdng.manifest.steps.ManifestStepParameters;
 import io.harness.cdng.manifest.steps.ManifestStepParameters.ManifestStepParametersBuilder;
@@ -65,6 +68,7 @@ import lombok.experimental.FieldDefaults;
 @OwnedBy(HarnessTeam.CDC)
 public class ManifestsPlanCreator extends ChildrenPlanCreator<ManifestsListConfigWrapper> {
   @Inject KryoSerializer kryoSerializer;
+  @Inject CDFeatureFlagHelper cdFeatureFlagHelper;
 
   public static final String SERVICE_ENTITY_DEFINITION_TYPE_KEY = "SERVICE_ENTITY_DEFINITION_TYPE_KEY";
 
@@ -112,7 +116,10 @@ public class ManifestsPlanCreator extends ChildrenPlanCreator<ManifestsListConfi
       return planCreationResponseMap;
     }
 
-    validateManifestList(serviceDefinitionType, manifestList);
+    boolean isHelmMultipleManifestSupportEnabled =
+        cdFeatureFlagHelper.isEnabled(ctx.getAccountIdentifier(), FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG)
+        && ctx.getDependency().getMetadataMap().containsKey(PRIMARY_MANIFEST_REF);
+    validateManifestList(serviceDefinitionType, manifestList, isHelmMultipleManifestSupportEnabled);
     YamlField manifestsYamlField = ctx.getCurrentField();
 
     List<YamlNode> yamlNodes = Optional.of(manifestsYamlField.getNode().asArray()).orElse(Collections.emptyList());
@@ -195,25 +202,27 @@ public class ManifestsPlanCreator extends ChildrenPlanCreator<ManifestsListConfi
     return Collections.singletonMap(YamlTypes.MANIFEST_LIST_CONFIG, Collections.singleton(PlanCreatorUtils.ANY_TYPE));
   }
 
-  private void validateManifestList(ServiceDefinitionType serviceDefinitionType, ManifestList manifestList) {
+  private void validateManifestList(ServiceDefinitionType serviceDefinitionType, ManifestList manifestList,
+      boolean isHelmMultipleManifestSupportEnabled) {
     if (serviceDefinitionType == null) {
       return;
     }
 
     switch (serviceDefinitionType) {
       case KUBERNETES:
-        validateDuplicateManifests(
-            manifestList, K8S_SUPPORTED_MANIFEST_TYPES, ServiceDefinitionType.KUBERNETES.getYamlName());
+        validateDuplicateManifests(manifestList, K8S_SUPPORTED_MANIFEST_TYPES,
+            ServiceDefinitionType.KUBERNETES.getYamlName(), isHelmMultipleManifestSupportEnabled);
         break;
       case NATIVE_HELM:
-        validateDuplicateManifests(
-            manifestList, HELM_SUPPORTED_MANIFEST_TYPES, ServiceDefinitionType.NATIVE_HELM.getYamlName());
+        validateDuplicateManifests(manifestList, HELM_SUPPORTED_MANIFEST_TYPES,
+            ServiceDefinitionType.NATIVE_HELM.getYamlName(), isHelmMultipleManifestSupportEnabled);
         break;
       default:
     }
   }
 
-  private void validateDuplicateManifests(ManifestList manifestList, Set<String> supported, String deploymentType) {
+  private void validateDuplicateManifests(ManifestList manifestList, Set<String> supported, String deploymentType,
+      boolean isHelmMultipleManifestSupportEnabled) {
     Map<String, String> manifestIdTypeMap =
         manifestList.getManifests()
             .entrySet()
@@ -221,7 +230,8 @@ public class ManifestsPlanCreator extends ChildrenPlanCreator<ManifestsListConfi
             .filter(entry -> supported.contains(entry.getValue().getParams().getType()))
             .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getParams().getType()));
 
-    SvcEnvV2ManifestValidator.throwMultipleManifestsExceptionIfApplicable(manifestIdTypeMap, deploymentType, supported);
+    SvcEnvV2ManifestValidator.throwMultipleManifestsExceptionIfApplicable(
+        manifestIdTypeMap, deploymentType, supported, isHelmMultipleManifestSupportEnabled);
   }
 
   @Value

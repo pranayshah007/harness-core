@@ -87,8 +87,8 @@ public class ServiceResourceApiUtils {
     return serviceResponse;
   }
 
-  public ServiceEntity mapToServiceEntity(
-      ServiceRequest sharedRequestBody, String org, String project, String account) {
+  public ServiceEntity mapToServiceEntity(ServiceRequest sharedRequestBody, String org, String project, String account,
+      boolean isHelmMultipleManifestSupportEnabled) {
     ServiceEntity serviceEntity = ServiceEntity.builder()
                                       .identifier(sharedRequestBody.getIdentifier())
                                       .accountId(account)
@@ -100,7 +100,8 @@ public class ServiceResourceApiUtils {
                                       .yaml(sharedRequestBody.getYaml())
                                       .build();
     // This also validates the service yaml
-    final NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity);
+    final NGServiceConfig ngServiceConfig =
+        NGServiceEntityMapper.toNGServiceConfig(serviceEntity, isHelmMultipleManifestSupportEnabled);
     final NGServiceV2InfoConfig ngServiceV2InfoConfig = ngServiceConfig.getNgServiceV2InfoConfig();
     if (isEmpty(serviceEntity.getYaml())) {
       serviceEntity.setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));

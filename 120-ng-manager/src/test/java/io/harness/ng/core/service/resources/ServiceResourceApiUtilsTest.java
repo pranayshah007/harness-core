@@ -64,7 +64,8 @@ public class ServiceResourceApiUtilsTest extends CategoryTest {
     serviceRequest.setName(name);
     serviceRequest.description(description);
     serviceRequest.setTags(null);
-    ServiceEntity serviceEntity = serviceResourceApiUtils.mapToServiceEntity(serviceRequest, org, project, account);
+    ServiceEntity serviceEntity =
+        serviceResourceApiUtils.mapToServiceEntity(serviceRequest, org, project, account, false);
     Set<ConstraintViolation<Object>> violations = validator.validate(serviceEntity);
     assertThat(violations.isEmpty()).as(violations.toString()).isTrue();
 

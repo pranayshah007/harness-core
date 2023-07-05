@@ -15,6 +15,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
+import io.harness.cdng.service.ServiceSpec;
+import io.harness.cdng.service.beans.KubernetesServiceSpec;
+import io.harness.cdng.service.beans.NativeHelmServiceSpec;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.validator.SvcEnvV2ManifestValidator;
@@ -42,12 +45,16 @@ public class NGServiceEntityMapper {
   }
 
   public NGServiceConfig toNGServiceConfig(ServiceEntity serviceEntity) {
+    return toNGServiceConfig(serviceEntity, false);
+  }
+
+  public NGServiceConfig toNGServiceConfig(ServiceEntity serviceEntity, boolean isHelmMultipleManifestSupportEnabled) {
     ServiceDefinition sDef = null;
     Boolean gitOpsEnabled = null;
     if (isNotEmpty(serviceEntity.getYaml())) {
       try {
         final NGServiceConfig config = YamlPipelineUtils.read(serviceEntity.getYaml(), NGServiceConfig.class);
-        validateFieldsOrThrow(config.getNgServiceV2InfoConfig(), serviceEntity);
+        validateFieldsOrThrow(config.getNgServiceV2InfoConfig(), serviceEntity, isHelmMultipleManifestSupportEnabled);
         sDef = config.getNgServiceV2InfoConfig().getServiceDefinition();
         gitOpsEnabled = config.getNgServiceV2InfoConfig().getGitOpsEnabled();
       } catch (IOException e) {
@@ -66,7 +73,8 @@ public class NGServiceEntityMapper {
         .build();
   }
 
-  private void validateFieldsOrThrow(NGServiceV2InfoConfig fromYaml, ServiceEntity requestedService) {
+  private void validateFieldsOrThrow(
+      NGServiceV2InfoConfig fromYaml, ServiceEntity requestedService, boolean isHelmMultipleManifestSupportEnabled) {
     if (StringUtils.compare(requestedService.getIdentifier(), fromYaml.getIdentifier()) != 0) {
       throw new InvalidRequestException(
           String.format("Service Identifier : %s in service request doesn't match with identifier : %s given in yaml",
@@ -83,11 +91,14 @@ public class NGServiceEntityMapper {
 
     ServiceDefinition serviceDefinition = fromYaml.getServiceDefinition();
     if (serviceDefinition != null) {
-      validateManifests(serviceDefinition);
+      validateManifests(serviceDefinition,
+          isHelmMultipleManifestSupportEnabled(
+              serviceDefinition.getServiceSpec(), isHelmMultipleManifestSupportEnabled));
     }
   }
 
-  private static void validateManifests(ServiceDefinition serviceDefinition) {
+  private static void validateManifests(
+      ServiceDefinition serviceDefinition, boolean isHelmMultipleManifestSupportEnabled) {
     List<ManifestConfigWrapper> manifests = serviceDefinition.getServiceSpec().getManifests();
 
     if (isNotEmpty(manifests)) {
@@ -97,7 +108,21 @@ public class NGServiceEntityMapper {
                                                   .map(ManifestConfig::getSpec)
                                                   .filter(Objects::nonNull)
                                                   .collect(Collectors.toList());
-      SvcEnvV2ManifestValidator.validateManifestList(serviceDefinition.getType(), manifestList);
+      SvcEnvV2ManifestValidator.validateManifestList(
+          serviceDefinition.getType(), manifestList, isHelmMultipleManifestSupportEnabled);
     }
+  }
+
+  private boolean isHelmMultipleManifestSupportEnabled(ServiceSpec spec, boolean isHelmMultipleManifestSupportEnabled) {
+    if (spec == null) {
+      return false;
+    }
+    if (spec instanceof KubernetesServiceSpec && ((KubernetesServiceSpec) spec).getManifestConfigurations() != null) {
+      return isHelmMultipleManifestSupportEnabled;
+    }
+    if (spec instanceof NativeHelmServiceSpec && ((NativeHelmServiceSpec) spec).getManifestConfigurations() != null) {
+      return isHelmMultipleManifestSupportEnabled;
+    }
+    return false;
   }
 }
