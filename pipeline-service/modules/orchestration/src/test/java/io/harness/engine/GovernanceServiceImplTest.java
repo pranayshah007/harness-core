@@ -22,6 +22,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.governance.GovernanceMetadata;
+import io.harness.governance.PolicySetMetadata;
 import io.harness.network.SafeHttpCall;
 import io.harness.opaclient.OpaServiceClient;
 import io.harness.opaclient.model.OpaConstants;
@@ -186,13 +187,19 @@ public class GovernanceServiceImplTest extends CategoryTest {
     OpaEvaluationResponseHolder response = OpaEvaluationResponseHolder.builder().id("id").build();
     when(SafeHttpCall.executeWithExceptions(request)).thenReturn(response);
 
-    GovernanceMetadata expectedResponse = GovernanceMetadata.newBuilder().setDeny(false).setId("someID").build();
+    GovernanceMetadata expectedResponse = GovernanceMetadata.newBuilder()
+                                              .setDeny(false)
+                                              .setId("someID")
+                                              .addAllDetails(Collections.singletonList(
+                                                  PolicySetMetadata.newBuilder().setDescription("description").build()))
+                                              .build();
     when(GovernanceServiceHelper.mapResponseToMetadata(response)).thenReturn(expectedResponse);
 
     GovernanceMetadata governanceMetadata = governanceService.evaluateGovernancePoliciesForTemplate(
         expandedJSON, accountId, orgId, projectId, action, OpaConstants.OPA_EVALUATION_TYPE_TEMPLATE);
     assertThat(governanceMetadata.getDeny()).isFalse();
     assertThat(governanceMetadata.getId()).isEqualTo("someID");
+    assertThat(governanceMetadata.getDetails(0).getDescription()).isEqualTo("description");
     mockSettings.close();
     mockSettings1.close();
   }
