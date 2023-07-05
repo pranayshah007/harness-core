@@ -7,6 +7,8 @@
 
 package io.harness.repositories.polling;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.polling.bean.PollingDocument;
@@ -18,6 +20,7 @@ import com.google.inject.Inject;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import java.util.List;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -31,16 +34,28 @@ public class PollingRepositoryCustomImpl implements PollingRepositoryCustom {
 
   @Override
   public PollingDocument addSubscribersToExistingPollingDoc(String accountId, String orgId, String projectId,
-      PollingType pollingType, PollingInfo pollingInfo, List<String> signatures) {
+      PollingType pollingType, PollingInfo pollingInfo, List<String> signatures,
+      Map<String, List<String>> signaturesLock) {
     Query query = getQuery(accountId, orgId, projectId, pollingType, pollingInfo);
     Update update = new Update().addToSet(PollingDocumentKeys.signatures).each(signatures);
+    if (isNotEmpty(signaturesLock)) {
+      for (Map.Entry<String, List<String>> signatureLock : signaturesLock.entrySet()) {
+        update.set(PollingDocumentKeys.signaturesLock + "." + signatureLock.getKey(), signatureLock.getValue());
+      }
+    }
     return mongoTemplate.findAndModify(query, update, PollingDocument.class);
   }
 
   @Override
-  public PollingDocument addSubscribersToExistingPollingDoc(String accountId, String uuid, List<String> signatures) {
+  public PollingDocument addSubscribersToExistingPollingDoc(
+      String accountId, String uuid, List<String> signatures, Map<String, List<String>> signaturesLock) {
     Query query = getQuery(accountId, uuid);
     Update update = new Update().addToSet(PollingDocumentKeys.signatures).each(signatures);
+    if (isNotEmpty(signaturesLock)) {
+      for (Map.Entry<String, List<String>> signatureLock : signaturesLock.entrySet()) {
+        update.set(PollingDocumentKeys.signaturesLock + "." + signatureLock.getKey(), signatureLock.getValue());
+      }
+    }
     return mongoTemplate.findAndModify(query, update, PollingDocument.class);
   }
 
@@ -86,13 +101,17 @@ public class PollingRepositoryCustomImpl implements PollingRepositoryCustom {
   @Override
   public PollingDocument removeDocumentIfOnlySubscriber(
       String accountId, String pollingDocId, List<String> signatures) {
-    Query query = new Query().addCriteria(new Criteria()
-                                              .and(PollingDocumentKeys.accountId)
-                                              .is(accountId)
-                                              .and(PollingDocumentKeys.uuid)
-                                              .is(pollingDocId)
-                                              .and(PollingDocumentKeys.signatures)
-                                              .is(signatures));
+    Criteria criteria = new Criteria()
+                            .and(PollingDocumentKeys.accountId)
+                            .is(accountId)
+                            .and(PollingDocumentKeys.signatures)
+                            .is(signatures);
+    if (pollingDocId != null) {
+      /* pollingDocId may be empty in the case of unsubscription for MultiRegionArtifact triggers.
+       So we add pollingDocId to the query only if it is not null. */
+      criteria.and(PollingDocumentKeys.uuid).is(pollingDocId);
+    }
+    Query query = new Query().addCriteria(criteria);
     return mongoTemplate.findAndRemove(query, PollingDocument.class);
   }
 
@@ -102,6 +121,9 @@ public class PollingRepositoryCustomImpl implements PollingRepositoryCustom {
     Object[] signatureList = signatures.toArray();
     Query query = getQuery(accountId, orgId, projectId, pollingType, pollingInfo);
     Update update = new Update().pullAll(PollingDocumentKeys.signatures, signatureList);
+    for (String signature : signatures) {
+      update.unset(PollingDocumentKeys.signaturesLock + "." + signature);
+    }
     return mongoTemplate.findAndModify(query, update, PollingDocument.class);
   }
 
@@ -109,8 +131,23 @@ public class PollingRepositoryCustomImpl implements PollingRepositoryCustom {
   public PollingDocument removeSubscribersFromExistingPollingDoc(
       String accountId, String uuId, List<String> signatures) {
     Object[] signatureList = signatures.toArray();
-    Query query = getQuery(accountId, uuId);
+    Query query;
+    if (uuId == null) {
+      /* If uuId is null, we remove based on accountId and signatures only.
+      This case happens for MultiRegionArtifact triggers. */
+      Criteria criteria = new Criteria()
+                              .and(PollingDocumentKeys.accountId)
+                              .is(accountId)
+                              .and(PollingDocumentKeys.signatures)
+                              .all(signatures);
+      query = new Query().addCriteria(criteria);
+    } else {
+      query = getQuery(accountId, uuId);
+    }
     Update update = new Update().pullAll(PollingDocumentKeys.signatures, signatureList);
+    for (String signature : signatures) {
+      update.unset(PollingDocumentKeys.signaturesLock + "." + signature);
+    }
     return mongoTemplate.findAndModify(query, update, PollingDocument.class);
   }
 
@@ -141,5 +178,25 @@ public class PollingRepositoryCustomImpl implements PollingRepositoryCustom {
   public DeleteResult deleteAll(Criteria criteria) {
     Query query = new Query(criteria);
     return mongoTemplate.remove(query, PollingDocument.class);
+  }
+
+  @Override
+  public List<PollingDocument> findManyByUuidsAndAccountId(List<String> pollingDocIds, String accountId) {
+    Query query = new Query().addCriteria(new Criteria()
+                                              .and(PollingDocumentKeys.accountId)
+                                              .is(accountId)
+                                              .and(PollingDocumentKeys.uuid)
+                                              .in(pollingDocIds));
+    return mongoTemplate.find(query, PollingDocument.class);
+  }
+
+  @Override
+  public List<PollingDocument> findUuidsBySignaturesAndAccountId(List<String> signatures, String accountId) {
+    Query query = new Query().addCriteria(new Criteria()
+                                              .and(PollingDocumentKeys.accountId)
+                                              .is(accountId)
+                                              .and(PollingDocumentKeys.signatures)
+                                              .in(signatures));
+    return mongoTemplate.find(query, PollingDocument.class);
   }
 }

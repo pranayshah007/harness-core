@@ -136,6 +136,7 @@ triggerEventHistory {"name": "las", "background": true} {"accountId": 1, "orgIde
 triggerEventHistory {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 triggerWebhookEvents {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 triggersNG {"name": "accId_signature_index", "background": true} {"accountId": 1, "metadata.buildMetadata.pollingConfig.signature": 1}
+triggersNG {"name": "accId_signature_index_for_multibuildmetadata", "background": true} {"accountId": 1, "metadata.multiBuildMetadata.pollingConfig.signature": 1}
 triggersNG {"name": "accId_sourcerepo_index", "background": true} {"accountId": 1, "metadata.webhook.type": 1}
 triggersNG {"name": "nextIterations_1", "background": true} {"nextIterations": 1}
 triggersNG {"name": "type_repoUrl", "background": true} {"type": 1, "metadata.webhook.git.connectorIdentifier": 1, "accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1}

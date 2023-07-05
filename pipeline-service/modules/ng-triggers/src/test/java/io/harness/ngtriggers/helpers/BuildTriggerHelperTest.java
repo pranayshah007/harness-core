@@ -18,6 +18,7 @@ import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.SHIVAM;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -28,6 +29,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -42,6 +44,8 @@ import io.harness.ngtriggers.beans.source.artifact.EcrSpec;
 import io.harness.ngtriggers.beans.source.artifact.HelmManifestSpec;
 import io.harness.ngtriggers.beans.source.artifact.ManifestTriggerConfig;
 import io.harness.ngtriggers.buildtriggers.helpers.BuildTriggerHelper;
+import io.harness.ngtriggers.buildtriggers.helpers.dtos.BuildTriggerOpsData;
+import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.inputset.InputSetErrorDTOPMS;
 import io.harness.pms.inputset.InputSetErrorResponseDTOPMS;
@@ -65,14 +69,18 @@ import io.harness.polling.contracts.PollingResponse;
 import io.harness.polling.contracts.Qualifier;
 import io.harness.polling.contracts.S3HelmPayload;
 import io.harness.rule.Owner;
+import io.harness.utils.PmsFeatureFlagHelper;
 
+import com.google.common.io.Resources;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.apache.logging.log4j.util.Strings;
 import org.junit.Before;
 import org.junit.Test;
@@ -85,6 +93,8 @@ import retrofit2.Response;
 
 @OwnedBy(PIPELINE)
 public class BuildTriggerHelperTest extends CategoryTest {
+  @Mock PmsFeatureFlagHelper pmsFeatureFlagHelper;
+  @InjectMocks NGTriggerElementMapper ngTriggerElementMapper;
   @InjectMocks BuildTriggerHelper buildTriggerHelper;
   @Mock private PipelineServiceClient pipelineServiceClient;
 
@@ -966,6 +976,61 @@ public class BuildTriggerHelperTest extends CategoryTest {
     assertThatThrownBy(() -> buildTriggerHelper.validatePollingItemForArtifact(pollingItem2))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("planKey can not be blank. Needs to have concrete value");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGenerateBuildTriggerOpsDataForMultiRegionArtifact() throws Exception {
+    when(pmsFeatureFlagHelper.isEnabled("account", FeatureName.CDS_NG_TRIGGER_MULTI_ARTIFACTS)).thenReturn(true);
+    ClassLoader classLoader = getClass().getClassLoader();
+    String multiRegionArtifactTriggerYaml =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource("ng-trigger-multi-region-artifact.yaml")),
+            StandardCharsets.UTF_8);
+    TriggerDetails triggerDetails =
+        ngTriggerElementMapper.toTriggerDetails("account", "org", "proj", multiRegionArtifactTriggerYaml, true);
+    List<BuildTriggerOpsData> buildTriggerOpsData =
+        buildTriggerHelper.generateBuildTriggerOpsDataForMultiArtifact(triggerDetails);
+    assertThat(buildTriggerOpsData.size()).isEqualTo(2);
+    // assertions for first item of polling data
+    assertThat(buildTriggerOpsData.get(0).getPipelineBuildSpecMap().isEmpty()).isTrue();
+    assertThat(buildTriggerOpsData.get(0).getTriggerDetails()).isEqualToComparingFieldByField(triggerDetails);
+    assertThat(buildTriggerOpsData.get(0).getBuildMetadata())
+        .isEqualToComparingFieldByField(
+            triggerDetails.getNgTriggerEntity().getMetadata().getMultiBuildMetadata().get(0));
+    assertThat(buildTriggerOpsData.get(0).getSignaturesToLock().size()).isEqualTo(1);
+    assertThat(buildTriggerOpsData.get(0).getSignaturesToLock().contains(triggerDetails.getNgTriggerEntity()
+                                                                             .getMetadata()
+                                                                             .getMultiBuildMetadata()
+                                                                             .get(1)
+                                                                             .getPollingConfig()
+                                                                             .getSignature()))
+        .isTrue();
+    assertThat(buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData.get(0), "type"))
+        .isEqualTo("DockerRegistry");
+    assertThat(buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData.get(0), "spec.connectorRef"))
+        .isEqualTo("DockerConnectorUs");
+    assertThat(buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData.get(0), "spec.imagePath"))
+        .isEqualTo("v2/hello-world-us");
+    // assertions for second item of polling data
+    assertThat(buildTriggerOpsData.get(1).getPipelineBuildSpecMap().isEmpty()).isTrue();
+    assertThat(buildTriggerOpsData.get(1).getTriggerDetails()).isEqualToComparingFieldByField(triggerDetails);
+    assertThat(buildTriggerOpsData.get(1).getBuildMetadata())
+        .isEqualToComparingFieldByField(
+            triggerDetails.getNgTriggerEntity().getMetadata().getMultiBuildMetadata().get(1));
+    assertThat(buildTriggerOpsData.get(1).getSignaturesToLock().size()).isEqualTo(1);
+    assertThat(buildTriggerOpsData.get(1).getSignaturesToLock().contains(triggerDetails.getNgTriggerEntity()
+                                                                             .getMetadata()
+                                                                             .getMultiBuildMetadata()
+                                                                             .get(0)
+                                                                             .getPollingConfig()
+                                                                             .getSignature()));
+    assertThat(buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData.get(1), "type"))
+        .isEqualTo("DockerRegistry");
+    assertThat(buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData.get(1), "spec.connectorRef"))
+        .isEqualTo("DockerConnectorApac");
+    assertThat(buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData.get(1), "spec.imagePath"))
+        .isEqualTo("v2/hello-world-apac");
   }
 
   @Test
