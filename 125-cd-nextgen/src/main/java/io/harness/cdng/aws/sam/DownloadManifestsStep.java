@@ -12,7 +12,6 @@ import io.harness.cdng.aws.sam.beans.AwsSamValuesYamlDataOutcome;
 import io.harness.cdng.aws.sam.beans.AwsSamValuesYamlDataOutcome.AwsSamValuesYamlDataOutcomeBuilder;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.AwsSamDirectoryManifestOutcome;
-import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.task.stepstatus.StepExecutionStatus;
@@ -117,11 +116,6 @@ public class DownloadManifestsStep implements AsyncExecutableWithRbac<StepElemen
         .build();
   }
 
-  public String getValuesPathFromValuesManifestOutcome(ValuesManifestOutcome valuesManifestOutcome) {
-    GitStoreConfig gitStoreConfig = (GitStoreConfig) valuesManifestOutcome.getStore();
-    return "/harness/" + valuesManifestOutcome.getIdentifier() + "/" + gitStoreConfig.getPaths().getValue().get(0);
-  }
-
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
     return StepElementParameters.class;
@@ -153,7 +147,8 @@ public class DownloadManifestsStep implements AsyncExecutableWithRbac<StepElemen
             StepOutput stepOutput = stepStatusTaskResponseData.getStepStatus().getOutput();
 
             if (stepOutput instanceof StepMapOutput) {
-              String valuesYamlPath = getValuesPathFromValuesManifestOutcome(valuesManifestOutcome);
+              String valuesYamlPath =
+                  downloadManifestsStepHelper.getValuesPathFromValuesManifestOutcome(valuesManifestOutcome);
 
               StepMapOutput stepMapOutput = (StepMapOutput) stepOutput;
               if (stepMapOutput.getMap() != null && stepMapOutput.getMap().size() > 0) {

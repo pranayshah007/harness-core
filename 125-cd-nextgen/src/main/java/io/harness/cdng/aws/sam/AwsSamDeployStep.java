@@ -89,8 +89,10 @@ public class AwsSamDeployStep extends AbstractContainerStepV2<StepElementParamet
       InfrastructureOutcome infrastructureOutcome = awsSamStepHelper.getInfrastructureOutcome(ambiance);
 
       awsSamStepHelper.updateServerInstanceInfoList(serverInstanceInfoList, infrastructureOutcome);
-
+      log.info("Saving AWS SAM server instances into sweeping output");
       stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
+    } else {
+      log.info("No instances were received in SAM Deploy Response");
     }
 
     return stepOutcome;
