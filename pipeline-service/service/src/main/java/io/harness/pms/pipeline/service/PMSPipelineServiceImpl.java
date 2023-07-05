@@ -958,17 +958,16 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
 
   private void setupGitContext(MoveConfigOperationDTO moveConfigDTO) {
-    GitAwareContextHelper.populateGitDetails(
-        GitEntityInfo.builder()
-            .branch(moveConfigDTO.getBranch())
-            .filePath(moveConfigDTO.getFilePath())
-            .commitMsg(moveConfigDTO.getCommitMessage())
-            .isNewBranch(isNotEmpty(moveConfigDTO.getBranch()) && isNotEmpty(moveConfigDTO.getBaseBranch()))
-            .baseBranch(moveConfigDTO.getBaseBranch())
-            .connectorRef(moveConfigDTO.getConnectorRef())
-            .storeType(StoreType.REMOTE)
-            .repoName(moveConfigDTO.getRepoName())
-            .build());
+    GitAwareContextHelper.populateGitDetails(GitEntityInfo.builder()
+                                                 .branch(moveConfigDTO.getBranch())
+                                                 .filePath(moveConfigDTO.getFilePath())
+                                                 .commitMsg(moveConfigDTO.getCommitMessage())
+                                                 .isNewBranch(moveConfigDTO.isNewBranch())
+                                                 .baseBranch(moveConfigDTO.getBaseBranch())
+                                                 .connectorRef(moveConfigDTO.getConnectorRef())
+                                                 .storeType(StoreType.REMOTE)
+                                                 .repoName(moveConfigDTO.getRepoName())
+                                                 .build());
   }
 
   private void checkProjectExists(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
