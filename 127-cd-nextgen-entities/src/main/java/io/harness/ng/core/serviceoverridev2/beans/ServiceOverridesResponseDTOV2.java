@@ -27,7 +27,7 @@ import lombok.experimental.FieldDefaults;
     name = "ServiceOverrideResponseV2", description = "This is the Service Override Response entity defined in Harness")
 
 public class ServiceOverridesResponseDTOV2 {
-  String identifier;
+  @NonNull String identifier;
   String accountId;
   String orgIdentifier;
   String projectIdentifier;
@@ -38,4 +38,5 @@ public class ServiceOverridesResponseDTOV2 {
   @NonNull ServiceOverridesType type;
   @NonNull ServiceOverridesSpec spec;
   boolean isNewlyCreated;
+  String yamlInternal;
 }

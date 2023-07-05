@@ -13,7 +13,6 @@ import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.serializer.JsonUtils;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -28,7 +27,7 @@ public class ParallelismStrategyConfigService implements StrategyConfigService {
   public List<ChildrenExecutableResponse.Child> fetchChildren(StrategyConfig strategyConfig, String childNodeId) {
     Integer parallelism = 0;
     if (!ParameterField.isBlank(strategyConfig.getParallelism())) {
-      parallelism = Double.valueOf(String.valueOf(strategyConfig.getParallelism().getValue())).intValue();
+      parallelism = strategyConfig.getParallelism().getValue();
     }
     List<ChildrenExecutableResponse.Child> children = new ArrayList<>();
     for (int i = 0; i < parallelism; i++) {
@@ -46,7 +45,7 @@ public class ParallelismStrategyConfigService implements StrategyConfigService {
       StrategyConfig strategyConfig, JsonNode jsonNode, Optional<Integer> maxExpansionLimit) {
     Integer parallelism = 0;
     if (!ParameterField.isBlank(strategyConfig.getParallelism())) {
-      parallelism = Double.valueOf(String.valueOf(strategyConfig.getParallelism().getValue())).intValue();
+      parallelism = strategyConfig.getParallelism().getValue();
       if (maxExpansionLimit.isPresent()) {
         if (parallelism > maxExpansionLimit.get()) {
           throw new InvalidYamlException(
@@ -56,8 +55,8 @@ public class ParallelismStrategyConfigService implements StrategyConfigService {
     }
     List<JsonNode> jsonNodes = new ArrayList<>();
     for (int i = 0; i < parallelism; i++) {
-      JsonNode clonedJsonNode = JsonPipelineUtils.asTree(JsonUtils.asMap(
-          StrategyUtils.replaceExpressions(jsonNode.deepCopy().toString(), new HashMap<>(), i, parallelism, null)));
+      JsonNode clonedJsonNode =
+          StrategyUtils.replaceExpressions(JsonPipelineUtils.asTree(jsonNode), new HashMap<>(), i, parallelism, null);
       StrategyUtils.modifyJsonNode(clonedJsonNode, Lists.newArrayList(String.valueOf(i)));
       jsonNodes.add(clonedJsonNode);
     }

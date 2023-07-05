@@ -66,6 +66,7 @@ import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import io.serializer.HObjectMapper;
 import java.io.IOException;
@@ -105,6 +106,10 @@ public class MigratorUtility {
   public static final Pattern ngPattern = Pattern.compile("<\\+[\\w-.\"()]+>");
 
   private static final String[] schemes = {"https", "http"};
+
+  // Choice, GumGum
+  public static final List<String> ELASTIC_GROUP_ACCOUNT_IDS =
+      Lists.newArrayList("R7OsqSbNQS69mq74kMNceQ", "EBGrtCo0RE6i_E9yNDdCOg");
 
   private MigratorUtility() {}
 
@@ -385,7 +390,7 @@ public class MigratorUtility {
   }
 
   public static NGVariable getNGVariable(MigrationContext migrationContext, ServiceVariable serviceVariable) {
-    if (serviceVariable.getType().equals(ServiceVariableType.ENCRYPTED_TEXT)) {
+    if (ServiceVariableType.ENCRYPTED_TEXT.equals(serviceVariable.getType())) {
       return SecretNGVariable.builder()
           .type(NGVariableType.SECRET)
           .value(ParameterField.createValueField(MigratorUtility.getSecretRef(

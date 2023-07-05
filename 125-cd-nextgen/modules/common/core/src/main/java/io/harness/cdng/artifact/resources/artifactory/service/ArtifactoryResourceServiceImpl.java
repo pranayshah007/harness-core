@@ -230,6 +230,8 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
   public ArtifactoryResponseDTO getBuildDetails(IdentifierRef artifactoryConnectorRef, String repositoryName,
       String artifactPath, String repositoryFormat, String artifactRepositoryUrl, String orgIdentifier,
       String projectIdentifier) {
+    ArtifactUtils.validateIfAllValuesAssigned(MutablePair.of(NGArtifactConstants.REPOSITORY, repositoryName),
+        MutablePair.of(NGArtifactConstants.ARTIFACT_PATH, artifactPath));
     ArtifactoryConnectorDTO connector = getConnector(artifactoryConnectorRef);
     BaseNGAccess baseNGAccess =
         getBaseNGAccess(artifactoryConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
@@ -297,6 +299,8 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
   @Override
   public ArtifactoryImagePathsDTO getImagePaths(@NonNull String repositoryType, @NonNull IdentifierRef connectorRef,
       String orgIdentifier, String projectIdentifier, @NotNull String repository) {
+    ArtifactUtils.validateIfAllValuesAssigned(MutablePair.of(NGArtifactConstants.REPOSITORY, repository));
+
     Optional<ConnectorResponseDTO> connectorDTO = connectorService.get(connectorRef.getAccountIdentifier(),
         connectorRef.getOrgIdentifier(), connectorRef.getProjectIdentifier(), connectorRef.getIdentifier());
     if (!connectorDTO.isPresent()

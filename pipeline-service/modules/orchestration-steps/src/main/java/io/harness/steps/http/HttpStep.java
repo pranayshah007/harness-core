@@ -8,7 +8,6 @@
 package io.harness.steps.http;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.beans.FeatureName.CDS_ENCODE_HTTP_STEP_URL;
 import static io.harness.beans.constants.JsonConstants.RESOLVE_OBJECTS_VIA_JSON_SELECT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -117,11 +116,10 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
     HttpStepParameters httpStepParameters = (HttpStepParameters) stepParameters.getSpec();
 
     String url = (String) httpStepParameters.getUrl().fetchFinalValue();
-    if (pmsFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), CDS_ENCODE_HTTP_STEP_URL)) {
-      NGLogCallback logCallback =
-          getNGLogCallback(logStreamingStepClientFactory, ambiance, HttpTaskNG.COMMAND_UNIT, false);
-      url = encodeURL(url, logCallback);
-    }
+
+    NGLogCallback logCallback =
+        getNGLogCallback(logStreamingStepClientFactory, ambiance, HttpTaskNG.COMMAND_UNIT, false);
+    url = encodeURL(url, logCallback);
 
     HttpTaskParametersNgBuilder httpTaskParametersNgBuilder = HttpTaskParametersNg.builder()
                                                                   .url(url)

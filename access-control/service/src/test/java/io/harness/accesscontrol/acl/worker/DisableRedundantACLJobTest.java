@@ -20,6 +20,7 @@ import io.harness.accesscontrol.acl.persistence.ACLOptimizationMigrationOffset;
 import io.harness.accesscontrol.acl.persistence.repositories.ACLRepository;
 import io.harness.accesscontrol.permissions.persistence.PermissionDBO;
 import io.harness.accesscontrol.permissions.persistence.repositories.InMemoryPermissionRepository;
+import io.harness.accesscontrol.resources.resourcetypes.persistence.ResourceTypeDBO;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.lock.PersistentLocker;
@@ -39,6 +40,23 @@ import org.springframework.data.mongodb.core.query.Query;
 
 @OwnedBy(PL)
 public class DisableRedundantACLJobTest extends AccessControlTestBase {
+  public static final String CORE_USERGROUP_MANAGE_PERMISSION = "core_usergroup_manage";
+  public static final String USERGROUP_RESOURCE_NAME = "usergroup";
+  public static final String USERGROUP_RESOURCE_IDENTIFIER = "USERGROUP";
+
+  public static final String CORE_RESOURCEGROUP_MANAGE_PERMISSION = "core_resourcegroup_manage";
+  public static final String CORE_RESOURCEGROUP_VIEW_PERMISSION = "core_resourcegroup_view";
+  public static final String RESOURCEGROUP_RESOURCE_NAME = "resourcegroup";
+  public static final String RESOURCEGROUP_RESOURCE_IDENTIFIER = "RESOURCEGROUP";
+
+  public static final String CORE_USER_VIEW_PERMISSION = "core_user_view";
+  public static final String USER_RESOURCE_NAME = "user";
+  public static final String USER_RESOURCE_IDENTIFIER = "USER";
+
+  public static final String CORE_SERVICE_VIEW_PERMISSION = "core_service_view";
+  public static final String SERVICE_RESOURCE_NAME = "service";
+  public static final String SERVICE_RESOURCE_IDENTIFIER = "SERVICE";
+
   @Inject private MongoTemplate mongoTemplate;
   @Inject @Named(ACL.PRIMARY_COLLECTION) private ACLRepository aclRepository;
   @Mock private PersistentLocker persistentLocker;
@@ -47,11 +65,24 @@ public class DisableRedundantACLJobTest extends AccessControlTestBase {
 
   @Before
   public void setup() {
-    mongoTemplate.save(PermissionDBO.builder().identifier("core_usergroup_manage").build());
-    mongoTemplate.save(PermissionDBO.builder().identifier("core_resourcegroup_manage").build());
-    mongoTemplate.save(PermissionDBO.builder().identifier("core_user_view").build());
-    mongoTemplate.save(PermissionDBO.builder().identifier("core_resourcegroup_view").build());
-    mongoTemplate.save(PermissionDBO.builder().identifier("core_service_view").build());
+    mongoTemplate.save(PermissionDBO.builder().identifier(CORE_USERGROUP_MANAGE_PERMISSION).build());
+    mongoTemplate.save(PermissionDBO.builder().identifier(CORE_RESOURCEGROUP_MANAGE_PERMISSION).build());
+    mongoTemplate.save(PermissionDBO.builder().identifier(CORE_USER_VIEW_PERMISSION).build());
+    mongoTemplate.save(PermissionDBO.builder().identifier(CORE_RESOURCEGROUP_VIEW_PERMISSION).build());
+    mongoTemplate.save(PermissionDBO.builder().identifier(CORE_SERVICE_VIEW_PERMISSION).build());
+
+    mongoTemplate.save(ResourceTypeDBO.builder()
+                           .identifier(USERGROUP_RESOURCE_IDENTIFIER)
+                           .permissionKey(USERGROUP_RESOURCE_NAME)
+                           .build());
+    mongoTemplate.save(ResourceTypeDBO.builder()
+                           .identifier(RESOURCEGROUP_RESOURCE_IDENTIFIER)
+                           .permissionKey(RESOURCEGROUP_RESOURCE_NAME)
+                           .build());
+    mongoTemplate.save(
+        ResourceTypeDBO.builder().identifier(USER_RESOURCE_IDENTIFIER).permissionKey(USER_RESOURCE_NAME).build());
+    mongoTemplate.save(
+        ResourceTypeDBO.builder().identifier(SERVICE_RESOURCE_IDENTIFIER).permissionKey(SERVICE_RESOURCE_NAME).build());
 
     inMemoryPermissionRepository = new InMemoryPermissionRepository(mongoTemplate);
     disableRedundantACLJob = new DisableRedundantACLJob(mongoTemplate, persistentLocker, inMemoryPermissionRepository);
@@ -122,7 +153,7 @@ public class DisableRedundantACLJobTest extends AccessControlTestBase {
     List<ACL> acls = new ArrayList<>();
     acls.add(ACL.builder()
                  .id("000000080000000000000000")
-                 .permissionIdentifier("core_user_manage")
+                 .permissionIdentifier(CORE_USER_VIEW_PERMISSION)
                  .resourceSelector("/*/*")
                  .enabled(true)
                  .build());
@@ -155,25 +186,25 @@ public class DisableRedundantACLJobTest extends AccessControlTestBase {
     // These are valid ACLs
     acls.add(ACL.builder()
                  .id("000000010000000000000000")
-                 .permissionIdentifier("core_usergroup_manage")
+                 .permissionIdentifier(CORE_USERGROUP_MANAGE_PERMISSION)
                  .resourceSelector("/*/*")
                  .enabled(true)
                  .build());
     acls.add(ACL.builder()
                  .id("000000020000000000000000")
-                 .permissionIdentifier("core_resourcegroup_manage")
+                 .permissionIdentifier(CORE_RESOURCEGROUP_MANAGE_PERMISSION)
                  .resourceSelector("/*/*")
                  .enabled(true)
                  .build());
     acls.add(ACL.builder()
                  .id("000000030000000000000000")
-                 .permissionIdentifier("core_usergroup_manage")
+                 .permissionIdentifier(CORE_USERGROUP_MANAGE_PERMISSION)
                  .resourceSelector("/ACCOUNT/account-id$/USERGROUP/*")
                  .enabled(true)
                  .build());
     acls.add(ACL.builder()
                  .id("000000040000000000000000")
-                 .permissionIdentifier("core_user_view")
+                 .permissionIdentifier(CORE_USER_VIEW_PERMISSION)
                  .resourceSelector("/ACCOUNT/account-id$/USER/*")
                  .enabled(true)
                  .build());
@@ -181,19 +212,19 @@ public class DisableRedundantACLJobTest extends AccessControlTestBase {
     // These are redundant ACLs
     acls.add(ACL.builder()
                  .id("000000050000000000000000")
-                 .permissionIdentifier("core_resourcegroup_manage")
+                 .permissionIdentifier(CORE_RESOURCEGROUP_MANAGE_PERMISSION)
                  .resourceSelector("/ACCOUNT/account-id$/USERGROUP/*")
                  .enabled(true)
                  .build());
     acls.add(ACL.builder()
                  .id("000000060000000000000000")
-                 .permissionIdentifier("core_resourcegroup_view")
+                 .permissionIdentifier(CORE_RESOURCEGROUP_VIEW_PERMISSION)
                  .resourceSelector("/ACCOUNT/account-id$/SERVICE/*")
                  .enabled(true)
                  .build());
     acls.add(ACL.builder()
                  .id("000000070000000000000000")
-                 .permissionIdentifier("core_service_view")
+                 .permissionIdentifier(CORE_SERVICE_VIEW_PERMISSION)
                  .resourceSelector("/ACCOUNT/account-id$/RESOURCEGROUP/*")
                  .enabled(true)
                  .build());

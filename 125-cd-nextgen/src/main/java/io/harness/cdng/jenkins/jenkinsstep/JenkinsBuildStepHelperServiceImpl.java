@@ -71,6 +71,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 
 public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelperService {
   private final ConnectorResourceClient connectorResourceClient;
@@ -277,8 +278,8 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
             .buildFullDisplayName(jenkinsBuildTaskNGResponse.getBuildFullDisplayName())
             .buildNumber(jenkinsBuildTaskNGResponse.getBuildNumber())
             .envVars(jenkinsBuildTaskNGResponse.getEnvVars())
-            .jobUrl(jenkinsBuildTaskNGResponse.getJobUrl())
-            .queuedBuildUrl(jenkinsBuildTaskNGResponse.getQueuedBuildUrl())
+            .jobUrl(sanitizeUrl(jenkinsBuildTaskNGResponse.getJobUrl()))
+            .queuedBuildUrl(sanitizeUrl(jenkinsBuildTaskNGResponse.getQueuedBuildUrl()))
             .executionStatus(jenkinsBuildTaskNGResponse.getExecutionStatus())
             .description(jenkinsBuildTaskNGResponse.getDescription());
     Status status = Status.SUCCEEDED;
@@ -289,6 +290,13 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
         .status(status)
         .stepOutcome(StepOutcome.builder().name("build").outcome(jenkinsBuildOutcomeBuilder.build()).build())
         .build();
+  }
+
+  private static String sanitizeUrl(String strUrl) {
+    if (StringUtils.isBlank(strUrl)) {
+      return strUrl;
+    }
+    return strUrl.replace(" ", "%20");
   }
 
   public ArtifactTaskExecutionResponse executeSyncTask(JenkinsArtifactDelegateRequest jenkinsRequest,

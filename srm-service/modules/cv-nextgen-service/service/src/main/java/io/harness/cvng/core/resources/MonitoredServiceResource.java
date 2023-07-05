@@ -45,6 +45,8 @@ import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.LiveMonitoringLogsFilter;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.cvng.notification.beans.NotificationRuleCondition;
+import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.utils.NGAccessControlClientCheck;
 import io.harness.ng.beans.PageResponse;
@@ -584,6 +586,30 @@ public class MonitoredServiceResource {
       @BeanParam PageParams pageParams) {
     return ResponseDTO.newResponse(monitoredServiceService.getNotificationRules(
         projectParams.getProjectParams(), monitoredServiceIdentifier, pageParams));
+  }
+
+  @GET
+  @Timed
+  @ExceptionMetered
+  @Path("{identifier}/notification-rule-conditions")
+  @ApiOperation(value = "get notification rule conditions for MonitoredService",
+      nickname = "getNotificationRuleConditionsForMonitoredService")
+  @Operation(operationId = "getNotificationRuleConditionsForMonitoredService",
+      summary = "Get notification rule conditions for MonitoredService",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Get notification rule conditions for MonitoredService")
+      })
+  @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
+  public ResponseDTO<PageResponse<NotificationRuleCondition>>
+  getNotificationRuleConditionsForMonitoredService(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
+      @Parameter(description = NGCommonEntityConstants.IDENTIFIER_PARAM_MESSAGE) @ApiParam(
+          required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String monitoredServiceIdentifier,
+      @NotNull @QueryParam("types") @ResourceIdentifier List<NotificationRuleConditionType> types,
+      @BeanParam PageParams pageParams) {
+    return ResponseDTO.newResponse(monitoredServiceService.getNotificationRuleConditions(
+        projectParams.getProjectParams(), monitoredServiceIdentifier, pageParams, types));
   }
 
   @POST

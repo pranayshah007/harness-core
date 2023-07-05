@@ -100,6 +100,7 @@ import io.harness.cvng.events.monitoredservice.MonitoredServiceCreateEvent;
 import io.harness.cvng.events.monitoredservice.MonitoredServiceDeleteEvent;
 import io.harness.cvng.events.monitoredservice.MonitoredServiceToggleEvent;
 import io.harness.cvng.events.monitoredservice.MonitoredServiceUpdateEvent;
+import io.harness.cvng.notification.beans.NotificationRuleCondition;
 import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleRef;
 import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
@@ -1977,19 +1978,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   @Override
   public PageResponse<NotificationRuleResponse> getNotificationRules(
       ProjectParams projectParams, String monitoredServiceIdentifier, PageParams pageParams) {
-    MonitoredService monitoredService =
-        getMonitoredService(MonitoredServiceParams.builderWithProjectParams(projectParams)
-                                .monitoredServiceIdentifier(monitoredServiceIdentifier)
-                                .build());
-    if (monitoredService == null) {
-      throw new InvalidRequestException(String.format(
-          "Monitored Service  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
-          monitoredServiceIdentifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
-          projectParams.getProjectIdentifier()));
-    }
-    List<NotificationRuleRef> notificationRuleRefList = monitoredService.getNotificationRuleRefs();
     List<NotificationRuleResponse> notificationRuleResponseList =
-        notificationRuleService.getNotificationRuleResponse(projectParams, notificationRuleRefList);
+        getNotificationRuleResponses(projectParams, monitoredServiceIdentifier);
     PageResponse<NotificationRuleResponse> notificationRulePageResponse =
         PageUtils.offsetAndLimit(notificationRuleResponseList, pageParams.getPage(), pageParams.getSize());
 
@@ -2001,6 +1991,48 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         .pageItemCount(notificationRulePageResponse.getPageItemCount())
         .content(notificationRulePageResponse.getContent())
         .build();
+  }
+
+  @Override
+  public PageResponse<NotificationRuleCondition> getNotificationRuleConditions(ProjectParams projectParams,
+      String monitoredServiceIdentifier, PageParams pageParams, List<NotificationRuleConditionType> conditionTypes) {
+    List<NotificationRuleResponse> notificationRules =
+        getNotificationRuleResponses(projectParams, monitoredServiceIdentifier);
+    List<NotificationRuleCondition> notificationRuleConditions =
+        notificationRules.stream()
+            .flatMap(
+                notificationRuleResponse -> notificationRuleResponse.getNotificationRule().getConditions().stream())
+            .collect(Collectors.toList());
+    notificationRuleConditions =
+        notificationRuleConditions.stream()
+            .filter(notificationRuleCondition -> conditionTypes.contains(notificationRuleCondition.getType()))
+            .collect(Collectors.toList());
+    PageResponse<NotificationRuleCondition> notificationRulePageResponse =
+        PageUtils.offsetAndLimit(notificationRuleConditions, pageParams.getPage(), pageParams.getSize());
+    return PageResponse.<NotificationRuleCondition>builder()
+        .pageSize(pageParams.getSize())
+        .pageIndex(pageParams.getPage())
+        .totalPages(notificationRulePageResponse.getTotalPages())
+        .totalItems(notificationRulePageResponse.getTotalItems())
+        .pageItemCount(notificationRulePageResponse.getPageItemCount())
+        .content(notificationRulePageResponse.getContent())
+        .build();
+  }
+
+  private List<NotificationRuleResponse> getNotificationRuleResponses(
+      ProjectParams projectParams, String monitoredServiceIdentifier) {
+    MonitoredService monitoredService =
+        getMonitoredService(MonitoredServiceParams.builderWithProjectParams(projectParams)
+                                .monitoredServiceIdentifier(monitoredServiceIdentifier)
+                                .build());
+    if (monitoredService == null) {
+      throw new InvalidRequestException(String.format(
+          "Monitored Service  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
+          monitoredServiceIdentifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+          projectParams.getProjectIdentifier()));
+    }
+    List<NotificationRuleRef> notificationRuleRefList = monitoredService.getNotificationRuleRefs();
+    return notificationRuleService.getNotificationRuleResponse(projectParams, notificationRuleRefList);
   }
 
   @Override

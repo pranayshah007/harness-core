@@ -71,6 +71,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.validator.routines.EmailValidator;
+import org.jooq.tools.StringUtils;
 
 @Slf4j
 @Singleton
@@ -252,6 +253,16 @@ public class SubscriptionServiceImpl implements SubscriptionService {
       throw new InvalidArgumentsException(errorMessage);
     }
 
+    String maxString = price.get().getMetadata().get("max");
+    long max = StringUtils.isEmpty(maxString) ? Long.MAX_VALUE : Long.parseLong(maxString);
+
+    if (subscriptionItemRequest.getQuantity() > max) {
+      String errorMessage = String.format("Quantity of %s is greater than allowed quantity for %s",
+          subscriptionItemRequest.getQuantity(), subscriptionItemRequest.getType());
+      log.error(errorMessage);
+      throw new InvalidArgumentsException(errorMessage);
+    }
+
     StripeItemRequest stripeItemRequest;
     if (subscriptionItemRequest.isQuantityIncludedInPrice()) {
       stripeItemRequest =
@@ -317,7 +328,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     List<ModuleLicense> moduleLicenses =
         licenseRepository.findByAccountIdentifierAndModuleType(accountIdentifier, subscriptionRequest.getModuleType());
-    if (moduleLicenses.stream().anyMatch(moduleLicense
+    if (moduleLicenses != null
+        && moduleLicenses.stream().anyMatch(moduleLicense
             -> moduleLicense.isActive() && moduleLicense.getLicenseType() != null
                 && moduleLicense.getLicenseType().equals(LicenseType.PAID))) {
       String errorMessage = "Cannot create a new subscription, since there is an active one.";
@@ -330,7 +342,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
       createStripeCustomer(accountIdentifier, subscriptionRequest.getCustomer());
       stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
     } else {
-      updateStripeCustomer(accountIdentifier, stripeCustomer.getCustomerId(), subscriptionRequest.getCustomer());
+      updateStripeCustomer(accountIdentifier, subscriptionRequest.getCustomer());
     }
 
     List<SubscriptionDetail> subscriptionDetailList =
@@ -526,13 +538,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
 
   @Override
-  public CustomerDetailDTO updateStripeCustomer(String accountIdentifier, String customerId, CustomerDTO customerDTO) {
+  public CustomerDetailDTO updateStripeCustomer(String accountIdentifier, CustomerDTO customerDTO) {
     isSelfServiceEnable();
 
-    StripeCustomer stripeCustomer =
-        stripeCustomerRepository.findByAccountIdentifierAndCustomerId(accountIdentifier, customerId);
+    StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
     if (stripeCustomer == null) {
-      String errorMessage = String.format("Customer %s doesn't exists", customerId);
+      String errorMessage = String.format("Customer for account ID %s doesn't exists", accountIdentifier);
       log.error(errorMessage);
       throw new InvalidRequestException(errorMessage);
     }
@@ -549,6 +560,10 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     if (customerDTO.getAddress() != null) {
       builder.address(customerDTO.getAddress());
+    }
+
+    if (customerDTO.getDefaultPaymentMethod() != null) {
+      builder.defaultPaymentMethod(customerDTO.getDefaultPaymentMethod());
     }
 
     CustomerDetailDTO customerDetailDTO = stripeHelper.updateCustomer(builder.build());
@@ -657,7 +672,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
 
   private void isSelfServiceEnable() {
-    if (deployMode.equals("KUBERNETES_ONPREM")) {
+    if (deployMode != null && deployMode.equals("KUBERNETES_ONPREM")) {
       String errorMessage = "Self Service is not available for OnPrem deployments.";
       log.error(errorMessage);
       throw new UnsupportedOperationException(errorMessage);

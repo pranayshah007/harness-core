@@ -64,7 +64,7 @@ public interface ApprovalInstanceService {
       @NotNull @Valid HarnessApprovalActivityRequestDTO request);
 
   List<String> findAllPreviousWaitingApprovals(String accountId, String orgId, String projectId,
-      @NotEmpty String pipelineId, String approvalKey, Ambiance ambiance);
+      @NotEmpty String pipelineId, String approvalKey, Ambiance ambiance, Long createdAt);
 
   boolean isNodeExecutionOfApprovalStepType(NodeExecution nodeExecution);
   void deleteByNodeExecutionIds(@NotNull Set<String> nodeExecutionIds);

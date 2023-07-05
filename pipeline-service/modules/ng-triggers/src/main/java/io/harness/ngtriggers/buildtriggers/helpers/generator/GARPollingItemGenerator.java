@@ -29,7 +29,7 @@ public class GARPollingItemGenerator implements PollingItemGenerator {
   @Override
   public PollingItem generatePollingItem(BuildTriggerOpsData buildTriggerOpsData) {
     NGTriggerEntity ngTriggerEntity = buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity();
-    PollingItem.Builder builder = getBaseInitializedPollingItem(ngTriggerEntity);
+    PollingItem.Builder builder = getBaseInitializedPollingItem(ngTriggerEntity, buildTriggerOpsData);
     String connectorRef = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.connectorRef");
     String pkg = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.package");
     String region = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.region");

@@ -19,7 +19,7 @@ go_library(
         "//commons/go/lib/filesystem",
         "//commons/go/lib/utils",
         "//product/ci/common/external",
-        "//product/ci/ti-service/types",
+        "@com_github_harness_ti_client//types",
         "@org_uber_go_zap//:zap",
     ],
 )

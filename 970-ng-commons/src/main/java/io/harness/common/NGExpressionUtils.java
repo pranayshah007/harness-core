@@ -124,6 +124,10 @@ public class NGExpressionUtils {
     return matchesInputSetPattern(fieldValue) || hasExpressions(fieldValue);
   }
 
+  public boolean isStrictlyExpressionField(String fieldValue) {
+    return !isRuntimeField(fieldValue) && isExpressionField(fieldValue);
+  }
+
   public boolean isRuntimeField(String fieldValue) {
     return matchesInputSetPattern(fieldValue);
   }

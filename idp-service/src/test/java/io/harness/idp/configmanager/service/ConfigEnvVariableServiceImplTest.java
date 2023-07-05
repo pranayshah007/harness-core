@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.DEVESH;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -56,6 +57,8 @@ public class ConfigEnvVariableServiceImplTest extends CategoryTest {
   private static final String TEST_CONFIG = "test-config";
   private static final String TEST_SECRET_IDENTIFIER = "test-secret-id";
   private static final String TEST_CONFIG_NAME = "test-config-name";
+  private static final String TEST_CONFIG_ID = "test-config-id";
+  private static final String TEST_NON_RESERVED_ENV_NAME = "test-non-reserved-env-name";
   static final long TEST_UPDATED_TIME = 1681756035;
   static final long TEST_LAST_CREATED_AT_TIME = 1681756035;
   static final long TEST_ENABLED_DISABLED_AT = 1681756035;
@@ -63,16 +66,23 @@ public class ConfigEnvVariableServiceImplTest extends CategoryTest {
   static final String TEST_ERROR_MESSAGE_RESERVED_KEYWORD =
       "[\"HARNESS_GITHUB_TOKEN - is reserved env variable name, please use some other env variable name\"]";
 
+  static final String TEST_ERROR_MESSAGE_FOR_OVERLAPPING_ENV_NAME =
+      "[\"test-env-name - is already used in plugin - test-plugin-name , please use some other env variable name\"]";
+
   @Test
   @Owner(developers = DEVESH)
   @Category(UnitTests.class)
-  public void testInsertConfigEnvVariable() throws Exception {
+  public void testInsertConfigEnvVariable() {
     BackstageEnvSecretVariable backstageEnvSecretVariable = getTestBackstageEnvSecretVariable();
 
     AppConfig appConfig = getTestAppConfig(backstageEnvSecretVariable);
 
     when(backstageEnvVariableService.createOrUpdate(any(), any()))
         .thenReturn(Collections.singletonList(backstageEnvSecretVariable));
+    when(configEnvVariablesRepository.findAllByAccountIdentifierAndPluginId(any(), any()))
+        .thenReturn(Collections.singletonList(getTestPluginConfigEnvVariablesEntity()));
+    doNothing().when(configEnvVariablesRepository).deleteAllByAccountIdentifierAndPluginId(any(), any());
+    doNothing().when(backstageEnvVariableService).deleteMultiUsingEnvNames(any(), any());
     List<BackstageEnvSecretVariable> returnList =
         configEnvVariablesServiceImpl.insertConfigEnvVariables(appConfig, TEST_ACCOUNT_IDENTIFIER);
     assertEquals(returnList.get(0).getEnvName(), TEST_ENV_NAME);
@@ -95,18 +105,36 @@ public class ConfigEnvVariableServiceImplTest extends CategoryTest {
     }
     assertNotNull(exception);
     assertEquals(TEST_ERROR_MESSAGE_RESERVED_KEYWORD, exception.getMessage());
+
+    // Test for overlapping env names
+    when(configEnvVariablesRepository.findByAccountIdentifierAndEnvName(any(), any()))
+        .thenReturn(getTestPluginConfigEnvVariablesEntity());
+    backstageEnvSecretVariable.setEnvName(TEST_NON_RESERVED_ENV_NAME);
+    appConfig = getTestAppConfig(backstageEnvSecretVariable);
+    appConfig.setConfigId(TEST_CONFIG_ID);
+    try {
+      configEnvVariablesServiceImpl.updateConfigEnvVariables(appConfig, TEST_ACCOUNT_IDENTIFIER);
+    } catch (Exception e) {
+      exception = e;
+    }
+    assertNotNull(exception);
+    assertEquals(TEST_ERROR_MESSAGE_FOR_OVERLAPPING_ENV_NAME, exception.getMessage());
   }
 
   @Test
   @Owner(developers = DEVESH)
   @Category(UnitTests.class)
-  public void testUpdateEnvVariable() throws Exception {
+  public void testUpdateEnvVariable() {
     BackstageEnvSecretVariable backstageEnvSecretVariable = getTestBackstageEnvSecretVariable();
 
     AppConfig appConfig = getTestAppConfig(backstageEnvSecretVariable);
 
     when(backstageEnvVariableService.createOrUpdate(any(), any()))
         .thenReturn(Collections.singletonList(backstageEnvSecretVariable));
+    when(configEnvVariablesRepository.findAllByAccountIdentifierAndPluginId(any(), any()))
+        .thenReturn(Collections.singletonList(getTestPluginConfigEnvVariablesEntity()));
+    doNothing().when(configEnvVariablesRepository).deleteAllByAccountIdentifierAndPluginId(any(), any());
+    doNothing().when(backstageEnvVariableService).deleteMultiUsingEnvNames(any(), any());
     List<BackstageEnvSecretVariable> returnList =
         configEnvVariablesServiceImpl.updateConfigEnvVariables(appConfig, TEST_ACCOUNT_IDENTIFIER);
     assertEquals(returnList.get(0).getEnvName(), TEST_ENV_NAME);
@@ -129,6 +157,20 @@ public class ConfigEnvVariableServiceImplTest extends CategoryTest {
     }
     assertNotNull(exception);
     assertEquals(TEST_ERROR_MESSAGE_RESERVED_KEYWORD, exception.getMessage());
+
+    // Test for overlapping env names
+    when(configEnvVariablesRepository.findByAccountIdentifierAndEnvName(any(), any()))
+        .thenReturn(getTestPluginConfigEnvVariablesEntity());
+    backstageEnvSecretVariable.setEnvName(TEST_NON_RESERVED_ENV_NAME);
+    appConfig = getTestAppConfig(backstageEnvSecretVariable);
+    appConfig.setConfigId(TEST_CONFIG_ID);
+    try {
+      configEnvVariablesServiceImpl.updateConfigEnvVariables(appConfig, TEST_ACCOUNT_IDENTIFIER);
+    } catch (Exception e) {
+      exception = e;
+    }
+    assertNotNull(exception);
+    assertEquals(TEST_ERROR_MESSAGE_FOR_OVERLAPPING_ENV_NAME, exception.getMessage());
   }
 
   @Test
@@ -168,6 +210,15 @@ public class ConfigEnvVariableServiceImplTest extends CategoryTest {
     returnedList = configEnvVariablesServiceImpl.getAllEnvVariablesForAccountIdentifierAndPluginId(
         TEST_ACCOUNT_IDENTIFIER, TEST_PLUGIN_ID);
     assertEquals(0, returnedList.size());
+  }
+
+  @Test
+  @Owner(developers = DEVESH)
+  @Category(UnitTests.class)
+  public void testGetEnvVariablesFromEntities() {
+    List<String> rsultList = configEnvVariablesServiceImpl.getEnvVariablesFromEntities(
+        Collections.singletonList(getTestPluginConfigEnvVariablesEntity()));
+    assertEquals(rsultList.get(0), TEST_ENV_NAME);
   }
 
   private BackstageEnvSecretVariable getTestBackstageEnvSecretVariable() {

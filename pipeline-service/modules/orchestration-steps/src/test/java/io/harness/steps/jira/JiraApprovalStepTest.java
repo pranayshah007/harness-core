@@ -45,6 +45,7 @@ import io.harness.steps.approval.step.jira.beans.JiraApprovalResponseData;
 import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance;
 
 import java.util.Collections;
+import java.util.concurrent.ExecutorService;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -62,6 +63,7 @@ public class JiraApprovalStepTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock ApprovalInstanceService approvalInstanceService;
   @Mock LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Mock ExecutorService dashboardExecutorService;
   @InjectMocks private JiraApprovalStep jiraApprovalStep;
   private ILogStreamingStepClient logStreamingStepClient;
 

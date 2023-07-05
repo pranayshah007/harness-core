@@ -51,3 +51,11 @@ go_test(
         "@org_uber_go_zap//:zap",
     ],
 )
+
+load("//:tools/bazel/macros.bzl", "run_analysis")
+
+run_analysis(
+    language = "go",
+    targets = [":file"],
+    test_targets = [":file_test"],
+)

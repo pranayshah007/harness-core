@@ -104,7 +104,7 @@ public class ContainerStepExecutionResponseHelper {
     return buildAndReturnStepResponse(stepStatusTaskResponseData, ambiance, stepIdentifier, outcome);
   }
 
-  private StepStatusTaskResponseData filterK8StepResponse(Map<String, ResponseData> responseDataMap) {
+  public StepStatusTaskResponseData filterK8StepResponse(Map<String, ResponseData> responseDataMap) {
     // Filter final response from step
     return responseDataMap.entrySet()
         .stream()

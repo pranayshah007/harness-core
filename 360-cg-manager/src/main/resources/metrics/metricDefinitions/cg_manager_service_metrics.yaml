@@ -2,11 +2,11 @@ name: CurrentGen Manager Service Metrics
 identifier: cgManagerServiceMetrics
 metricGroup: cgManagerServiceMetricsGroup
 metrics:
-  - metricName: currentgen_manager_io_dropwizard_jetty_MutableServletContextHandler_4xx_responses
+  - metricName: currentgen_manager_io_dropwizard_jetty_MutableServletContextHandler_4xx_responses_count
     metricDefinition: Total number of 4xx error responses
     type: LastValue
     unit: count
-  - metricName: currentgen_manager_io_dropwizard_jetty_MutableServletContextHandler_5xx_responses
+  - metricName: currentgen_manager_io_dropwizard_jetty_MutableServletContextHandler_5xx_responses_count
     metricDefinition: Total number of 5xx error responses
     type: LastValue
     unit: count

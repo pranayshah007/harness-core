@@ -62,6 +62,12 @@ public final class BatchJobScheduledData
                  .field(BatchJobScheduledDataKeys.batchJobType)
                  .field(BatchJobScheduledDataKeys.startAt)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_batchJobType_jobInstanceId")
+                 .field(BatchJobScheduledDataKeys.accountId)
+                 .field(BatchJobScheduledDataKeys.batchJobType)
+                 .field(BatchJobScheduledDataKeys.jobInstanceId)
+                 .build())
         .build();
   }
 
@@ -69,6 +75,7 @@ public final class BatchJobScheduledData
   String accountId;
   String batchJobType;
   String comments;
+  long jobInstanceId;
   long jobRunTimeMillis;
   boolean validRun;
   Instant startAt;
@@ -83,13 +90,14 @@ public final class BatchJobScheduledData
   @EqualsAndHashCode.Exclude
   private Date validUntil = Date.from(OffsetDateTime.now().plusMonths(3).toInstant());
 
-  public BatchJobScheduledData(
-      String accountId, String batchJobType, long jobRunTimeMillis, Instant startAt, Instant endAt) {
+  public BatchJobScheduledData(String accountId, String batchJobType, long jobRunTimeMillis, Instant startAt,
+      Instant endAt, long batchJobInstanceId) {
     this.accountId = accountId;
     this.batchJobType = batchJobType;
     this.jobRunTimeMillis = jobRunTimeMillis;
     this.startAt = startAt;
     this.endAt = endAt;
     this.validRun = true;
+    this.jobInstanceId = batchJobInstanceId;
   }
 }

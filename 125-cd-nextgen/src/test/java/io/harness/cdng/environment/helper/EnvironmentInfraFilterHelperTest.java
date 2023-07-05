@@ -44,10 +44,8 @@ import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
-import io.harness.utils.NGFeatureFlagHelperService;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -69,7 +67,6 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   public static final String ACC_ID = "ACC_ID";
   public static final String ORG_ID = "ORG_ID";
   public static final String PROJ_ID = "PROJ_ID";
-  @Mock NGFeatureFlagHelperService featureFlagHelperService;
   @Mock EnvironmentService environmentService;
   @Mock InfrastructureEntityService infrastructureEntityService;
   @Mock EnvironmentGroupService environmentGroupService;
@@ -84,9 +81,9 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldProcessEnvInfraFilteringForEnvFilterWithNoEnvironments() {
     FilterYaml envFilter =
-        FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.environments))).type(FilterType.all).build();
     EnvironmentsYaml environmentsYaml =
-        EnvironmentsYaml.builder().filters(ParameterField.createValueField(Arrays.asList(envFilter))).build();
+        EnvironmentsYaml.builder().filters(ParameterField.createValueField(List.of(envFilter))).build();
 
     doReturn(new PageImpl<>(Collections.emptyList())).when(environmentService).list(any(), any());
 
@@ -102,7 +99,7 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldProcessEnvInfraFilteringForEnvFilterWithNoFilteredEnvironments() {
     FilterYaml envFilter = FilterYaml.builder()
-                               .entities(new HashSet<>(Arrays.asList(Entity.environments)))
+                               .entities(new HashSet<>(List.of(Entity.environments)))
                                .type(FilterType.tags)
                                .spec(TagsFilter.builder()
                                          .matchType(ParameterField.createValueField(MatchType.all.name()))
@@ -110,10 +107,10 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
                                          .build())
                                .build();
     EnvironmentsYaml environmentsYaml =
-        EnvironmentsYaml.builder().filters(ParameterField.createValueField(Arrays.asList(envFilter))).build();
+        EnvironmentsYaml.builder().filters(ParameterField.createValueField(List.of(envFilter))).build();
     Environment env1 = Environment.builder().build();
 
-    doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
+    doReturn(new PageImpl<>(List.of(env1))).when(environmentService).list(any(), any());
 
     Assertions
         .assertThatThrownBy(()
@@ -127,12 +124,12 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldProcessEnvInfraFilteringForEnvFilterWithNoInfraFilterFound() {
     FilterYaml envFilter =
-        FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.environments))).type(FilterType.all).build();
     EnvironmentsYaml environmentsYaml =
-        EnvironmentsYaml.builder().filters(ParameterField.createValueField(Arrays.asList(envFilter))).build();
+        EnvironmentsYaml.builder().filters(ParameterField.createValueField(List.of(envFilter))).build();
     Environment env1 = getEnv("env1");
 
-    doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
+    doReturn(new PageImpl<>(List.of(env1))).when(environmentService).list(any(), any());
 
     Assertions
         .assertThatThrownBy(()
@@ -146,18 +143,14 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldProcessEnvInfraFilteringForEnvFilterWithNoInfrasFoundInEnv() {
     FilterYaml envFilter =
-        FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.environments))).type(FilterType.all).build();
     Environment env1 = getEnv("env1");
-    FilterYaml infraFilter = FilterYaml.builder()
-                                 .entities(new HashSet<>(Arrays.asList(Entity.infrastructures)))
-                                 .type(FilterType.all)
-                                 .build();
+    FilterYaml infraFilter =
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.infrastructures))).type(FilterType.all).build();
     EnvironmentsYaml environmentsYaml =
-        EnvironmentsYaml.builder()
-            .filters(ParameterField.createValueField(Arrays.asList(envFilter, infraFilter)))
-            .build();
+        EnvironmentsYaml.builder().filters(ParameterField.createValueField(List.of(envFilter, infraFilter))).build();
 
-    doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
+    doReturn(new PageImpl<>(List.of(env1))).when(environmentService).list(any(), any());
     doReturn(Collections.emptyList())
         .when(infrastructureEntityService)
         .getAllInfrastructureFromEnvRefAndDeploymentType(
@@ -175,20 +168,16 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldProcessEnvInfraFilteringForEnvFilterWithSuccess() {
     FilterYaml envFilter =
-        FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.environments))).type(FilterType.all).build();
     Environment env1 = getEnv("env1");
-    FilterYaml infraFilter = FilterYaml.builder()
-                                 .entities(new HashSet<>(Arrays.asList(Entity.infrastructures)))
-                                 .type(FilterType.all)
-                                 .build();
+    FilterYaml infraFilter =
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.infrastructures))).type(FilterType.all).build();
     InfrastructureEntity infra1 = InfrastructureEntity.builder().identifier("infra1").build();
     EnvironmentsYaml environmentsYaml =
-        EnvironmentsYaml.builder()
-            .filters(ParameterField.createValueField(Arrays.asList(envFilter, infraFilter)))
-            .build();
+        EnvironmentsYaml.builder().filters(ParameterField.createValueField(List.of(envFilter, infraFilter))).build();
 
-    doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
-    doReturn(Arrays.asList(infra1))
+    doReturn(new PageImpl<>(List.of(env1))).when(environmentService).list(any(), any());
+    doReturn(List.of(infra1))
         .when(infrastructureEntityService)
         .getAllInfrastructureFromEnvRefAndDeploymentType(
             ACC_ID, ORG_ID, PROJ_ID, "env1", ServiceDefinitionType.KUBERNETES);
@@ -212,26 +201,22 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldProcessEnvInfraFilteringForEnvFilterForMultipleInfra() {
     FilterYaml envFilter =
-        FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.environments))).type(FilterType.all).build();
     Environment env1 = getEnv("env1");
     Environment env2 = getEnv("env2");
-    FilterYaml infraFilter = FilterYaml.builder()
-                                 .entities(new HashSet<>(Arrays.asList(Entity.infrastructures)))
-                                 .type(FilterType.all)
-                                 .build();
+    FilterYaml infraFilter =
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.infrastructures))).type(FilterType.all).build();
     InfrastructureEntity infra1 = InfrastructureEntity.builder().identifier("infra1").build();
     InfrastructureEntity infra2 = InfrastructureEntity.builder().identifier("infra2").build();
     EnvironmentsYaml environmentsYaml =
-        EnvironmentsYaml.builder()
-            .filters(ParameterField.createValueField(Arrays.asList(envFilter, infraFilter)))
-            .build();
+        EnvironmentsYaml.builder().filters(ParameterField.createValueField(List.of(envFilter, infraFilter))).build();
 
-    doReturn(new PageImpl<>(Arrays.asList(env1, env2))).when(environmentService).list(any(), any());
-    doReturn(Arrays.asList(infra1, infra2))
+    doReturn(new PageImpl<>(List.of(env1, env2))).when(environmentService).list(any(), any());
+    doReturn(List.of(infra1, infra2))
         .when(infrastructureEntityService)
         .getAllInfrastructureFromEnvRefAndDeploymentType(
             ACC_ID, ORG_ID, PROJ_ID, "env1", ServiceDefinitionType.KUBERNETES);
-    doReturn(Arrays.asList(infra1, infra2))
+    doReturn(List.of(infra1, infra2))
         .when(infrastructureEntityService)
         .getAllInfrastructureFromEnvRefAndDeploymentType(
             ACC_ID, ORG_ID, PROJ_ID, "env2", ServiceDefinitionType.KUBERNETES);
@@ -251,22 +236,20 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   @Owner(developers = VAIBHAV_SI)
   @Category(UnitTests.class)
   public void shouldProcessEnvInfraFilteringForInfraFilterWithSingleEnv() {
-    FilterYaml infraFilter = FilterYaml.builder()
-                                 .entities(new HashSet<>(Arrays.asList(Entity.infrastructures)))
-                                 .type(FilterType.all)
-                                 .build();
+    FilterYaml infraFilter =
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.infrastructures))).type(FilterType.all).build();
     InfrastructureEntity infra1 = InfrastructureEntity.builder().identifier("infra1").build();
     InfrastructureEntity infra2 = InfrastructureEntity.builder().identifier("infra2").build();
     EnvironmentYamlV2 envYaml = EnvironmentYamlV2.builder()
-                                    .filters(ParameterField.createValueField(Arrays.asList(infraFilter)))
+                                    .filters(ParameterField.createValueField(List.of(infraFilter)))
                                     .environmentRef(ParameterField.createValueField("env1"))
                                     .build();
     EnvironmentsYaml environmentsYaml =
-        EnvironmentsYaml.builder().values(ParameterField.createValueField(Arrays.asList(envYaml))).build();
+        EnvironmentsYaml.builder().values(ParameterField.createValueField(List.of(envYaml))).build();
     Environment env1 = getEnv("env1");
 
-    doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
-    doReturn(Arrays.asList(infra1, infra2))
+    doReturn(new PageImpl<>(List.of(env1))).when(environmentService).list(any(), any());
+    doReturn(List.of(infra1, infra2))
         .when(infrastructureEntityService)
         .getAllInfrastructureFromEnvRefAndDeploymentType(
             ACC_ID, ORG_ID, PROJ_ID, "env1", ServiceDefinitionType.KUBERNETES);
@@ -283,29 +266,27 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   @Owner(developers = VAIBHAV_SI)
   @Category(UnitTests.class)
   public void shouldProcessEnvInfraFilteringForInfraFilterWithSingleEnvAndSomeFixedInfras() {
-    FilterYaml infraFilter = FilterYaml.builder()
-                                 .entities(new HashSet<>(Arrays.asList(Entity.infrastructures)))
-                                 .type(FilterType.all)
-                                 .build();
+    FilterYaml infraFilter =
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.infrastructures))).type(FilterType.all).build();
     InfrastructureEntity infra1 = InfrastructureEntity.builder().identifier("infra1").build();
     InfrastructureEntity infra2 = InfrastructureEntity.builder().identifier("infra2").build();
     EnvironmentYamlV2 envYaml = EnvironmentYamlV2.builder()
-                                    .filters(ParameterField.createValueField(Arrays.asList(infraFilter)))
+                                    .filters(ParameterField.createValueField(List.of(infraFilter)))
                                     .environmentRef(ParameterField.createValueField("env1"))
                                     .build();
     EnvironmentYamlV2 envYaml2 = EnvironmentYamlV2.builder()
                                      .environmentRef(ParameterField.createValueField("env2"))
                                      .infrastructureDefinitions(ParameterField.createValueField(
-                                         Arrays.asList(InfraStructureDefinitionYaml.builder()
-                                                           .identifier(ParameterField.createValueField("fixedInfra"))
-                                                           .build())))
+                                         List.of(InfraStructureDefinitionYaml.builder()
+                                                     .identifier(ParameterField.createValueField("fixedInfra"))
+                                                     .build())))
                                      .build();
     EnvironmentsYaml environmentsYaml =
-        EnvironmentsYaml.builder().values(ParameterField.createValueField(Arrays.asList(envYaml, envYaml2))).build();
+        EnvironmentsYaml.builder().values(ParameterField.createValueField(List.of(envYaml, envYaml2))).build();
     Environment env1 = getEnv("env1");
 
-    doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
-    doReturn(Arrays.asList(infra1, infra2))
+    doReturn(new PageImpl<>(List.of(env1))).when(environmentService).list(any(), any());
+    doReturn(List.of(infra1, infra2))
         .when(infrastructureEntityService)
         .getAllInfrastructureFromEnvRefAndDeploymentType(
             ACC_ID, ORG_ID, PROJ_ID, "env1", ServiceDefinitionType.KUBERNETES);
@@ -341,31 +322,28 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldProcessEnvInfraFilteringForEnvGroupForEnvFilter() {
     FilterYaml envFilter =
-        FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.environments))).type(FilterType.all).build();
     Environment env1 = getEnv("env1");
     Environment env2 = getEnv("env2");
-    FilterYaml infraFilter = FilterYaml.builder()
-                                 .entities(new HashSet<>(Arrays.asList(Entity.infrastructures)))
-                                 .type(FilterType.all)
-                                 .build();
+    FilterYaml infraFilter =
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.infrastructures))).type(FilterType.all).build();
     InfrastructureEntity infra1 = InfrastructureEntity.builder().identifier("infra1").build();
     InfrastructureEntity infra2 = InfrastructureEntity.builder().identifier("infra2").build();
-    EnvironmentGroupYaml envGroupYaml =
-        EnvironmentGroupYaml.builder()
-            .envGroupRef(ParameterField.createValueField("EG_1"))
-            .filters(ParameterField.createValueField(Arrays.asList(envFilter, infraFilter)))
-            .build();
+    EnvironmentGroupYaml envGroupYaml = EnvironmentGroupYaml.builder()
+                                            .envGroupRef(ParameterField.createValueField("EG_1"))
+                                            .filters(ParameterField.createValueField(List.of(envFilter, infraFilter)))
+                                            .build();
     EnvironmentGroupEntity envGroupEntity = getEnvGroup();
 
     doReturn(Optional.of(envGroupEntity)).when(environmentGroupService).get(ACC_ID, ORG_ID, PROJ_ID, "EG_1", false);
-    doReturn(Arrays.asList(env1, env2))
+    doReturn(List.of(env1, env2))
         .when(environmentService)
-        .fetchesNonDeletedEnvironmentFromListOfIdentifiers(ACC_ID, ORG_ID, PROJ_ID, Arrays.asList("env1", "env2"));
-    doReturn(Arrays.asList(infra1, infra2))
+        .fetchesNonDeletedEnvironmentFromListOfIdentifiers(ACC_ID, ORG_ID, PROJ_ID, List.of("env1", "env2"));
+    doReturn(List.of(infra1, infra2))
         .when(infrastructureEntityService)
         .getAllInfrastructureFromEnvRefAndDeploymentType(
             ACC_ID, ORG_ID, PROJ_ID, "env1", ServiceDefinitionType.KUBERNETES);
-    doReturn(Arrays.asList(infra1, infra2))
+    doReturn(List.of(infra1, infra2))
         .when(infrastructureEntityService)
         .getAllInfrastructureFromEnvRefAndDeploymentType(
             ACC_ID, ORG_ID, PROJ_ID, "env2", ServiceDefinitionType.KUBERNETES);
@@ -386,7 +364,7 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
         .accountId(ACC_ID)
         .orgIdentifier(ORG_ID)
         .projectIdentifier(PROJ_ID)
-        .envIdentifiers(Arrays.asList("env1", "env2"))
+        .envIdentifiers(List.of("env1", "env2"))
         .build();
   }
 
@@ -399,9 +377,9 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldFilterEnvsAndClustersForEnvFilterWithNoEnvironments() {
     FilterYaml envFilter =
-        FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.environments))).type(FilterType.all).build();
     EnvironmentsYaml environmentsYaml =
-        EnvironmentsYaml.builder().filters(ParameterField.createValueField(Arrays.asList(envFilter))).build();
+        EnvironmentsYaml.builder().filters(ParameterField.createValueField(List.of(envFilter))).build();
 
     doReturn(new PageImpl<>(Collections.emptyList())).when(environmentService).list(any(), any());
 
@@ -417,7 +395,7 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldFilterEnvsAndClustersForEnvFilterWithNoFilteredEnvironments() {
     FilterYaml envFilter = FilterYaml.builder()
-                               .entities(new HashSet<>(Arrays.asList(Entity.environments)))
+                               .entities(new HashSet<>(List.of(Entity.environments)))
                                .type(FilterType.tags)
                                .spec(TagsFilter.builder()
                                          .matchType(ParameterField.createValueField(MatchType.all.name()))
@@ -425,10 +403,10 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
                                          .build())
                                .build();
     EnvironmentsYaml environmentsYaml =
-        EnvironmentsYaml.builder().filters(ParameterField.createValueField(Arrays.asList(envFilter))).build();
+        EnvironmentsYaml.builder().filters(ParameterField.createValueField(List.of(envFilter))).build();
     Environment env1 = Environment.builder().build();
 
-    doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
+    doReturn(new PageImpl<>(List.of(env1))).when(environmentService).list(any(), any());
 
     Assertions
         .assertThatThrownBy(()
@@ -442,7 +420,7 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldFilterEnvsAndClustersForEnvFilterWithNoClustersFoundInEnv() {
     FilterYaml envFilter =
-        FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.environments))).type(FilterType.all).build();
     Environment env1 = Environment.builder()
                            .accountId(ACC_ID)
                            .orgIdentifier(ORG_ID)
@@ -450,16 +428,14 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
                            .identifier("env1")
                            .build();
     FilterYaml clusterFilter =
-        FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.gitOpsClusters))).type(FilterType.all).build();
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.gitOpsClusters))).type(FilterType.all).build();
     EnvironmentsYaml environmentsYaml =
-        EnvironmentsYaml.builder()
-            .filters(ParameterField.createValueField(Arrays.asList(envFilter, clusterFilter)))
-            .build();
+        EnvironmentsYaml.builder().filters(ParameterField.createValueField(List.of(envFilter, clusterFilter))).build();
 
-    doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
+    doReturn(new PageImpl<>(List.of(env1))).when(environmentService).list(any(), any());
     doReturn(Collections.emptyList())
         .when(clusterService)
-        .listAcrossEnv(0, 1000, ACC_ID, ORG_ID, PROJ_ID, Arrays.asList("env1"));
+        .listAcrossEnv(0, 1000, ACC_ID, ORG_ID, PROJ_ID, List.of("env1"));
 
     Assertions
         .assertThatThrownBy(()
@@ -473,22 +449,18 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldFilterEnvsAndClustersForEnvFilterWithNoClusterFilterFound() throws IOException {
     FilterYaml envFilter =
-        FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.environments))).type(FilterType.all).build();
     EnvironmentsYaml environmentsYaml =
-        EnvironmentsYaml.builder().filters(ParameterField.createValueField(Arrays.asList(envFilter))).build();
+        EnvironmentsYaml.builder().filters(ParameterField.createValueField(List.of(envFilter))).build();
     Environment env1 = getEnv("env1");
     Cluster c1 = getCluster("c1", "env1");
     io.harness.gitops.models.Cluster gitopsCluster1 = new io.harness.gitops.models.Cluster("c1", "c1");
 
-    doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
-    doReturn(Arrays.asList(c1))
-        .when(clusterService)
-        .listAcrossEnv(0, 1000, ACC_ID, ORG_ID, PROJ_ID, Arrays.asList("env1"));
+    doReturn(new PageImpl<>(List.of(env1))).when(environmentService).list(any(), any());
+    doReturn(List.of(c1)).when(clusterService).listAcrossEnv(0, 1000, ACC_ID, ORG_ID, PROJ_ID, List.of("env1"));
     Call call = mock(Call.class);
     doReturn(call).when(gitopsResourceClient).listClusters(any());
-    doReturn(Response.success(PageResponse.builder().content(Arrays.asList(gitopsCluster1)).build()))
-        .when(call)
-        .execute();
+    doReturn(Response.success(PageResponse.builder().content(List.of(gitopsCluster1)).build())).when(call).execute();
 
     Assertions
         .assertThatThrownBy(()
@@ -502,26 +474,20 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldfilterEnvsAndClustersForEnvFilterWithSuccess() throws IOException {
     FilterYaml envFilter =
-        FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.environments))).type(FilterType.all).build();
     FilterYaml clusterFilter =
-        FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.gitOpsClusters))).type(FilterType.all).build();
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.gitOpsClusters))).type(FilterType.all).build();
     EnvironmentsYaml environmentsYaml =
-        EnvironmentsYaml.builder()
-            .filters(ParameterField.createValueField(Arrays.asList(envFilter, clusterFilter)))
-            .build();
+        EnvironmentsYaml.builder().filters(ParameterField.createValueField(List.of(envFilter, clusterFilter))).build();
     Environment env1 = getEnv("env1");
     Cluster c1 = getCluster("c1", "env1");
     io.harness.gitops.models.Cluster gitopsCluster1 = new io.harness.gitops.models.Cluster("c1", "c1");
 
-    doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
-    doReturn(Arrays.asList(c1))
-        .when(clusterService)
-        .listAcrossEnv(0, 1000, ACC_ID, ORG_ID, PROJ_ID, Arrays.asList("env1"));
+    doReturn(new PageImpl<>(List.of(env1))).when(environmentService).list(any(), any());
+    doReturn(List.of(c1)).when(clusterService).listAcrossEnv(0, 1000, ACC_ID, ORG_ID, PROJ_ID, List.of("env1"));
     Call call = mock(Call.class);
     doReturn(call).when(gitopsResourceClient).listClusters(any());
-    doReturn(Response.success(PageResponse.builder().content(Arrays.asList(gitopsCluster1)).build()))
-        .when(call)
-        .execute();
+    doReturn(Response.success(PageResponse.builder().content(List.of(gitopsCluster1)).build())).when(call).execute();
 
     List<EnvClusterRefs> envClusterRefs = environmentInfraFilterHelper.filterEnvsAndClusters(
         environmentsYaml, Collections.emptyList(), ACC_ID, ORG_ID, PROJ_ID);
@@ -537,13 +503,11 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldfilterEnvsAndClustersForEnvFilterWithSuccessForMultipleInfra() throws IOException {
     FilterYaml envFilter =
-        FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.environments))).type(FilterType.all).build();
     FilterYaml clusterFilter =
-        FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.gitOpsClusters))).type(FilterType.all).build();
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.gitOpsClusters))).type(FilterType.all).build();
     EnvironmentsYaml environmentsYaml =
-        EnvironmentsYaml.builder()
-            .filters(ParameterField.createValueField(Arrays.asList(envFilter, clusterFilter)))
-            .build();
+        EnvironmentsYaml.builder().filters(ParameterField.createValueField(List.of(envFilter, clusterFilter))).build();
     Environment env1 = getEnv("env1");
     Environment env2 = getEnv("env2");
     Cluster c1 = getCluster("c1", "env1");
@@ -553,14 +517,12 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
     io.harness.gitops.models.Cluster gitopsCluster2 = new io.harness.gitops.models.Cluster("c2", "c2");
     io.harness.gitops.models.Cluster gitopsCluster3 = new io.harness.gitops.models.Cluster("c3", "c3");
 
-    doReturn(new PageImpl<>(Arrays.asList(env1, env2))).when(environmentService).list(any(), any());
-    doReturn(Arrays.asList(c1, c2, c3))
-        .when(clusterService)
-        .listAcrossEnv(anyInt(), anyInt(), any(), any(), any(), any());
+    doReturn(new PageImpl<>(List.of(env1, env2))).when(environmentService).list(any(), any());
+    doReturn(List.of(c1, c2, c3)).when(clusterService).listAcrossEnv(anyInt(), anyInt(), any(), any(), any(), any());
     Call call = mock(Call.class);
     doReturn(call).when(gitopsResourceClient).listClusters(any());
     doReturn(Response.success(
-                 PageResponse.builder().content(Arrays.asList(gitopsCluster1, gitopsCluster2, gitopsCluster3)).build()))
+                 PageResponse.builder().content(List.of(gitopsCluster1, gitopsCluster2, gitopsCluster3)).build()))
         .when(call)
         .execute();
 
@@ -612,20 +574,16 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldProcessAccountLevelEnvInfraFilteringForEnvFilter() {
     FilterYaml envFilter =
-        FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.environments))).type(FilterType.all).build();
     Environment env1 = getAccountEnv("env1");
-    FilterYaml infraFilter = FilterYaml.builder()
-                                 .entities(new HashSet<>(Arrays.asList(Entity.infrastructures)))
-                                 .type(FilterType.all)
-                                 .build();
+    FilterYaml infraFilter =
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.infrastructures))).type(FilterType.all).build();
     InfrastructureEntity infra1 = InfrastructureEntity.builder().identifier("infra1").build();
     EnvironmentsYaml environmentsYaml =
-        EnvironmentsYaml.builder()
-            .filters(ParameterField.createValueField(Arrays.asList(envFilter, infraFilter)))
-            .build();
+        EnvironmentsYaml.builder().filters(ParameterField.createValueField(List.of(envFilter, infraFilter))).build();
 
-    doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
-    doReturn(Arrays.asList(infra1))
+    doReturn(new PageImpl<>(List.of(env1))).when(environmentService).list(any(), any());
+    doReturn(List.of(infra1))
         .when(infrastructureEntityService)
         .getAllInfrastructureFromEnvRefAndDeploymentType(
             ACC_ID, ORG_ID, PROJ_ID, "account.env1", ServiceDefinitionType.KUBERNETES);
@@ -649,26 +607,22 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldProcessAccountLevelEnvInfraFilteringForEnvFilterForMultipleInfra() {
     FilterYaml envFilter =
-        FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.environments))).type(FilterType.all).build();
     Environment env1 = getAccountEnv("env1");
     Environment env2 = getAccountEnv("env2");
-    FilterYaml infraFilter = FilterYaml.builder()
-                                 .entities(new HashSet<>(Arrays.asList(Entity.infrastructures)))
-                                 .type(FilterType.all)
-                                 .build();
+    FilterYaml infraFilter =
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.infrastructures))).type(FilterType.all).build();
     InfrastructureEntity infra1 = InfrastructureEntity.builder().identifier("infra1").build();
     InfrastructureEntity infra2 = InfrastructureEntity.builder().identifier("infra2").build();
     EnvironmentsYaml environmentsYaml =
-        EnvironmentsYaml.builder()
-            .filters(ParameterField.createValueField(Arrays.asList(envFilter, infraFilter)))
-            .build();
+        EnvironmentsYaml.builder().filters(ParameterField.createValueField(List.of(envFilter, infraFilter))).build();
 
-    doReturn(new PageImpl<>(Arrays.asList(env1, env2))).when(environmentService).list(any(), any());
-    doReturn(Arrays.asList(infra1, infra2))
+    doReturn(new PageImpl<>(List.of(env1, env2))).when(environmentService).list(any(), any());
+    doReturn(List.of(infra1, infra2))
         .when(infrastructureEntityService)
         .getAllInfrastructureFromEnvRefAndDeploymentType(
             ACC_ID, ORG_ID, PROJ_ID, "account.env1", ServiceDefinitionType.KUBERNETES);
-    doReturn(Arrays.asList(infra1, infra2))
+    doReturn(List.of(infra1, infra2))
         .when(infrastructureEntityService)
         .getAllInfrastructureFromEnvRefAndDeploymentType(
             ACC_ID, ORG_ID, PROJ_ID, "account.env2", ServiceDefinitionType.KUBERNETES);
@@ -688,22 +642,20 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   @Owner(developers = VAIBHAV_SI)
   @Category(UnitTests.class)
   public void shouldProcessAccountLevelEnvInfraFilteringForInfraFilterWithSingleEnv() {
-    FilterYaml infraFilter = FilterYaml.builder()
-                                 .entities(new HashSet<>(Arrays.asList(Entity.infrastructures)))
-                                 .type(FilterType.all)
-                                 .build();
+    FilterYaml infraFilter =
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.infrastructures))).type(FilterType.all).build();
     InfrastructureEntity infra1 = InfrastructureEntity.builder().identifier("infra1").build();
     InfrastructureEntity infra2 = InfrastructureEntity.builder().identifier("infra2").build();
     EnvironmentYamlV2 envYaml = EnvironmentYamlV2.builder()
-                                    .filters(ParameterField.createValueField(Arrays.asList(infraFilter)))
+                                    .filters(ParameterField.createValueField(List.of(infraFilter)))
                                     .environmentRef(ParameterField.createValueField("account.env1"))
                                     .build();
     EnvironmentsYaml environmentsYaml =
-        EnvironmentsYaml.builder().values(ParameterField.createValueField(Arrays.asList(envYaml))).build();
+        EnvironmentsYaml.builder().values(ParameterField.createValueField(List.of(envYaml))).build();
     Environment env1 = getAccountEnv("env1");
 
-    doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
-    doReturn(Arrays.asList(infra1, infra2))
+    doReturn(new PageImpl<>(List.of(env1))).when(environmentService).list(any(), any());
+    doReturn(List.of(infra1, infra2))
         .when(infrastructureEntityService)
         .getAllInfrastructureFromEnvRefAndDeploymentType(
             ACC_ID, ORG_ID, PROJ_ID, "account.env1", ServiceDefinitionType.KUBERNETES);
@@ -721,33 +673,30 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldProcessEnvInfraFilteringForAccountLevelEnvGroupForEnvFilter() {
     FilterYaml envFilter =
-        FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.environments))).type(FilterType.all).build();
     Environment env1 = getAccountEnv("env1");
     Environment env2 = getAccountEnv("env2");
-    FilterYaml infraFilter = FilterYaml.builder()
-                                 .entities(new HashSet<>(Arrays.asList(Entity.infrastructures)))
-                                 .type(FilterType.all)
-                                 .build();
+    FilterYaml infraFilter =
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.infrastructures))).type(FilterType.all).build();
     InfrastructureEntity infra1 = InfrastructureEntity.builder().identifier("infra1").build();
     InfrastructureEntity infra2 = InfrastructureEntity.builder().identifier("infra2").build();
-    EnvironmentGroupYaml envGroupYaml =
-        EnvironmentGroupYaml.builder()
-            .envGroupRef(ParameterField.createValueField("account.EG_1"))
-            .filters(ParameterField.createValueField(Arrays.asList(envFilter, infraFilter)))
-            .build();
-    EnvironmentGroupEntity envGroupEntity = getAccountLevelEnvGroup(Arrays.asList("env1", "env2"));
+    EnvironmentGroupYaml envGroupYaml = EnvironmentGroupYaml.builder()
+                                            .envGroupRef(ParameterField.createValueField("account.EG_1"))
+                                            .filters(ParameterField.createValueField(List.of(envFilter, infraFilter)))
+                                            .build();
+    EnvironmentGroupEntity envGroupEntity = getAccountLevelEnvGroup(List.of("env1", "env2"));
 
     doReturn(Optional.of(envGroupEntity))
         .when(environmentGroupService)
         .get(ACC_ID, ORG_ID, PROJ_ID, "account.EG_1", false);
-    doReturn(Arrays.asList(env1, env2))
+    doReturn(List.of(env1, env2))
         .when(environmentService)
-        .fetchesNonDeletedEnvironmentFromListOfIdentifiers(ACC_ID, null, null, Arrays.asList("env1", "env2"));
-    doReturn(Arrays.asList(infra1, infra2))
+        .fetchesNonDeletedEnvironmentFromListOfIdentifiers(ACC_ID, null, null, List.of("env1", "env2"));
+    doReturn(List.of(infra1, infra2))
         .when(infrastructureEntityService)
         .getAllInfrastructureFromEnvRefAndDeploymentType(
             ACC_ID, ORG_ID, PROJ_ID, "account.env1", ServiceDefinitionType.KUBERNETES);
-    doReturn(Arrays.asList(infra1, infra2))
+    doReturn(List.of(infra1, infra2))
         .when(infrastructureEntityService)
         .getAllInfrastructureFromEnvRefAndDeploymentType(
             ACC_ID, ORG_ID, PROJ_ID, "account.env2", ServiceDefinitionType.KUBERNETES);
@@ -768,27 +717,21 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldfilterEnvsAndClustersForAccountLevelEnvFilter() throws IOException {
     FilterYaml envFilter =
-        FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.environments))).type(FilterType.all).build();
     FilterYaml clusterFilter =
-        FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.gitOpsClusters))).type(FilterType.all).build();
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.gitOpsClusters))).type(FilterType.all).build();
     EnvironmentsYaml environmentsYaml =
-        EnvironmentsYaml.builder()
-            .filters(ParameterField.createValueField(Arrays.asList(envFilter, clusterFilter)))
-            .build();
+        EnvironmentsYaml.builder().filters(ParameterField.createValueField(List.of(envFilter, clusterFilter))).build();
     Environment env1 = getAccountEnv("env1");
     Cluster c1 = getAccountCluster("account.c1", "env1");
     io.harness.gitops.models.Cluster gitopsCluster1 = new io.harness.gitops.models.Cluster("c1", "c1");
     gitopsCluster1.setAccountIdentifier(ACC_ID);
 
-    doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
-    doReturn(Arrays.asList(c1))
-        .when(clusterService)
-        .listAcrossEnv(0, 1000, ACC_ID, ORG_ID, PROJ_ID, Arrays.asList("account.env1"));
+    doReturn(new PageImpl<>(List.of(env1))).when(environmentService).list(any(), any());
+    doReturn(List.of(c1)).when(clusterService).listAcrossEnv(0, 1000, ACC_ID, ORG_ID, PROJ_ID, List.of("account.env1"));
     Call call = mock(Call.class);
     doReturn(call).when(gitopsResourceClient).listClusters(any());
-    doReturn(Response.success(PageResponse.builder().content(Arrays.asList(gitopsCluster1)).build()))
-        .when(call)
-        .execute();
+    doReturn(Response.success(PageResponse.builder().content(List.of(gitopsCluster1)).build())).when(call).execute();
 
     List<EnvClusterRefs> envClusterRefs = environmentInfraFilterHelper.filterEnvsAndClusters(
         environmentsYaml, Collections.emptyList(), ACC_ID, ORG_ID, PROJ_ID);
@@ -804,13 +747,11 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldProcessEnvInfraFilteringForEnvironmentValuesAndFiltersProvided() {
     FilterYaml envFilter =
-        FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.environments))).type(FilterType.all).build();
     Environment env1 = getEnv("env1");
     Environment env2 = getEnv("env2");
-    FilterYaml infraFilter = FilterYaml.builder()
-                                 .entities(new HashSet<>(Arrays.asList(Entity.infrastructures)))
-                                 .type(FilterType.all)
-                                 .build();
+    FilterYaml infraFilter =
+        FilterYaml.builder().entities(new HashSet<>(List.of(Entity.infrastructures))).type(FilterType.all).build();
     InfrastructureEntity infra1 = InfrastructureEntity.builder().identifier("infra1").build();
     InfrastructureEntity infra2 = InfrastructureEntity.builder().identifier("infra2").build();
 
@@ -820,11 +761,11 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
     EnvironmentsYaml environmentsYaml =
         EnvironmentsYaml.builder()
             .values(ParameterField.createValueField(Collections.singletonList(fixedEnvYamlProvidedInSetup)))
-            .filters(ParameterField.createValueField(Arrays.asList(envFilter, infraFilter)))
+            .filters(ParameterField.createValueField(List.of(envFilter, infraFilter)))
             .build();
 
-    doReturn(new PageImpl<>(Arrays.asList(env1, env2))).when(environmentService).list(any(), any());
-    doReturn(Arrays.asList(infra1, infra2))
+    doReturn(new PageImpl<>(List.of(env1, env2))).when(environmentService).list(any(), any());
+    doReturn(List.of(infra1, infra2))
         .when(infrastructureEntityService)
         .getAllInfrastructureFromEnvRefAndDeploymentType(
             ACC_ID, ORG_ID, PROJ_ID, "env1", ServiceDefinitionType.KUBERNETES);

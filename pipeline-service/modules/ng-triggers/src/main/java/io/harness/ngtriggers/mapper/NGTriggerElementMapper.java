@@ -32,8 +32,8 @@ import static io.harness.ngtriggers.beans.source.WebhookTriggerType.CUSTOM;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITHUB;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITLAB;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.HARNESS;
+import static io.harness.security.PrincipalProtoMapper.toPrincipalDTO;
 
-import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.USE_NATIVE_TYPE_ID;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -102,18 +102,15 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.spring.TriggerEventHistoryRepository;
+import io.harness.security.SecurityContextBuilder;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.webhook.WebhookConfigProvider;
 import io.harness.webhook.WebhookHelper;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -176,17 +173,11 @@ public class NGTriggerElementMapper {
   }
 
   public String generateNgTriggerConfigV2Yaml(NGTriggerConfigV2 ngTriggerConfigV2) {
-    ObjectMapper objectMapper = getObjectMapper();
     try {
-      return objectMapper.writeValueAsString(ngTriggerConfigV2);
+      return YamlUtils.writeYamlString(ngTriggerConfigV2);
     } catch (Exception e) {
       throw new TriggerException("Failed while converting trigger yaml with version V0" + e, USER_SRE);
     }
-  }
-
-  public String generateNgTriggerConfigYaml(NGTriggerConfig ngTriggerConfig) throws Exception {
-    ObjectMapper objectMapper = getObjectMapper();
-    return objectMapper.writeValueAsString(ngTriggerConfig);
   }
 
   public NGTriggerConfigV2 toTriggerConfigV2(NGTriggerEntity ngTriggerEntity) {
@@ -230,6 +221,15 @@ public class NGTriggerElementMapper {
       copyFields(existingEntity, newEntity);
       return;
     }
+    if (newEntity.getType() == MULTI_REGION_ARTIFACT) {
+      /* MultiRegionArtifact triggers need different handling here, since we can't just copy the list of BuildMetadata
+      from the previously existing entity (e.g.: The number of artifacts it is listening for could have changed in
+      the update). So we only copy the previously existing signatures to `ngTriggerEntity.metadata.signatures`.
+      These will be used to unsubscribe from the previously subscribed poolingDocuments.
+      At a later step (in NGTriggerServiceImpl:stampPollingInfoForMultiArtifactTrigger) we reset the signatures
+      with the actual new signatures for this trigger. */
+      copyFieldsForMultiArtifactTrigger(existingEntity, newEntity);
+    }
 
     // Currently, enabled only for GITHUB
     if (newEntity.getType() == WEBHOOK) {
@@ -270,6 +270,18 @@ public class NGTriggerElementMapper {
     if (existingPollingConfig != null && isNotEmpty(existingPollingConfig.getPollingDocId())) {
       newEntity.getMetadata().getBuildMetadata().getPollingConfig().setPollingDocId(
           existingPollingConfig.getPollingDocId());
+    }
+  }
+
+  private void copyFieldsForMultiArtifactTrigger(NGTriggerEntity existingEntity, NGTriggerEntity newEntity) {
+    if (existingEntity.getMetadata().getSignatures() == null) {
+      log.info("Previously polling was not enabled. Trigger {} updated with polling", newEntity.getIdentifier());
+      return;
+    }
+    List<String> previousSignatures = existingEntity.getMetadata().getSignatures();
+
+    if (isNotEmpty(previousSignatures)) {
+      newEntity.getMetadata().setSignatures(existingEntity.getMetadata().getSignatures());
     }
   }
 
@@ -417,9 +429,11 @@ public class NGTriggerElementMapper {
 
     GitAware gitAware = WebhookConfigHelper.retrieveGitAware(webhookTriggerConfig);
     if (gitAware != null) {
+      boolean isHarnessScm = HARNESS.equals(webhookTriggerConfig.getType());
       return GitMetadata.builder()
           .connectorIdentifier(gitAware.fetchConnectorRef())
           .repoName(gitAware.fetchRepoName())
+          .isHarnessScm(isHarnessScm)
           .build();
     }
 
@@ -473,7 +487,8 @@ public class NGTriggerElementMapper {
   }
 
   public TriggerWebhookEventBuilder toNGTriggerWebhookEvent(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String payload, List<HeaderConfig> headerConfigs) {
+      String projectIdentifier, String payload, List<HeaderConfig> headerConfigs,
+      io.harness.security.Principal principal) {
     WebhookTriggerType webhookTriggerType;
     Map<String, List<String>> headers =
         headerConfigs.stream().collect(Collectors.toMap(HeaderConfig::getKey, HeaderConfig::getValues));
@@ -511,6 +526,9 @@ public class NGTriggerElementMapper {
             .headers(headerConfigs)
             .payload(payload)
             .isSubscriptionConfirmation(isConfirmationMessage);
+    if (principal != null) {
+      triggerWebhookEventBuilder.principal(toPrincipalDTO(accountIdentifier, principal));
+    }
 
     HeaderConfig customTriggerIdentifier = headerConfigs.stream()
                                                .filter(header -> header.getKey().equalsIgnoreCase(X_HARNESS_TRIGGER_ID))
@@ -537,7 +555,8 @@ public class NGTriggerElementMapper {
         .pipelineIdentifier(pipelineIdentifier)
         .sourceRepoType(webhookTriggerType.getEntityMetadataName())
         .headers(headerConfigs)
-        .payload(payload);
+        .payload(payload)
+        .principal(SecurityContextBuilder.getPrincipal());
   }
 
   public NGTriggerDetailsResponseDTO toNGTriggerDetailsResponseDTO(NGTriggerEntity ngTriggerEntity, boolean includeYaml,
@@ -617,7 +636,8 @@ public class NGTriggerElementMapper {
     return ngTriggerDetailsResponseDTO.build();
   }
 
-  private NGTriggerEntity getTriggerEntityWithArtifactoryRepositoryUrl(NGTriggerEntity ngTriggerEntity) {
+  @VisibleForTesting
+  NGTriggerEntity getTriggerEntityWithArtifactoryRepositoryUrl(NGTriggerEntity ngTriggerEntity) {
     if (ngTriggerEntity == null) {
       return null;
     }
@@ -729,7 +749,8 @@ public class NGTriggerElementMapper {
     return arrayList;
   }
 
-  private YamlNode validateAndGetYamlNode(String yaml) {
+  @VisibleForTesting
+  YamlNode validateAndGetYamlNode(String yaml) {
     if (isEmpty(yaml)) {
       throw new InvalidRequestException("Service YAML is empty.");
     }
@@ -800,14 +821,5 @@ public class NGTriggerElementMapper {
                     .append(TriggerHelper.getTriggerRef(ngTriggerEntity))
                     .toString());
     }
-  }
-
-  public ObjectMapper getObjectMapper() {
-    ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory()
-                                                     .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
-                                                     .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
-                                                     .disable(USE_NATIVE_TYPE_ID));
-    objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-    return objectMapper;
   }
 }

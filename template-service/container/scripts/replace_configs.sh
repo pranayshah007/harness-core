@@ -185,6 +185,10 @@ if [[ "" != "$PIPELINE_SERVICE_SECRET" ]]; then
   export PIPELINE_SERVICE_SECRET; yq -i '.pipelineServiceSecret=env(PIPELINE_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
+if [[ "" != "$DISTRIBUTED_LOCK_IMPLEMENTATION" ]]; then
+  export DISTRIBUTED_LOCK_IMPLEMENTATION; yq -i '.distributedLockImplementation=env(DISTRIBUTED_LOCK_IMPLEMENTATION)' $CONFIG_FILE
+fi
+
 replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE
 replace_key_value cacheConfig.cacheBackend $CACHE_BACKEND
 
@@ -199,6 +203,19 @@ replace_key_value eventsFramework.redis.sslConfig.CATrustStorePath $EVENTS_FRAME
 replace_key_value eventsFramework.redis.sslConfig.CATrustStorePassword $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD
 replace_key_value eventsFramework.redis.retryAttempts $REDIS_RETRY_ATTEMPTS
 replace_key_value eventsFramework.redis.retryInterval $REDIS_RETRY_INTERVAL
+
+replace_key_value redisLockConfig.sentinel $LOCK_CONFIG_USE_SENTINEL
+replace_key_value redisLockConfig.envNamespace $LOCK_CONFIG_ENV_NAMESPACE
+replace_key_value redisLockConfig.redisUrl $LOCK_CONFIG_REDIS_URL
+replace_key_value redisLockConfig.masterName $LOCK_CONFIG_SENTINEL_MASTER_NAME
+replace_key_value redisLockConfig.userName $LOCK_CONFIG_REDIS_USERNAME
+replace_key_value redisLockConfig.password $LOCK_CONFIG_REDIS_PASSWORD
+replace_key_value redisLockConfig.nettyThreads $REDIS_NETTY_THREADS
+replace_key_value redisLockConfig.connectionPoolSize $REDIS_CONNECTION_POOL_SIZE
+replace_key_value redisLockConfig.retryInterval $REDIS_RETRY_INTERVAL
+replace_key_value redisLockConfig.retryAttempts $REDIS_RETRY_ATTEMPTS
+replace_key_value redisLockConfig.timeout $REDIS_TIMEOUT
+replace_key_value redisLockConfig.useScriptCache $REDIS_LOCK_CONFIG_REDIS_USE_SCRIPT_CACHE
 
 replace_key_value shouldDeployWithGitSync "$ENABLE_GIT_SYNC"
 

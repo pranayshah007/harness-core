@@ -23,7 +23,6 @@ public class ServiceOverridesMapperV2 {
   public NGServiceOverridesEntity toEntity(
       @NotNull String accountId, @NonNull ServiceOverrideRequestDTOV2 requestDTOV2) {
     return NGServiceOverridesEntity.builder()
-        .identifier(requestDTOV2.getIdentifier())
         .accountId(accountId)
         .orgIdentifier(requestDTOV2.getOrgIdentifier())
         .projectIdentifier(requestDTOV2.getProjectIdentifier())
@@ -33,6 +32,7 @@ public class ServiceOverridesMapperV2 {
         .clusterIdentifier(requestDTOV2.getClusterIdentifier())
         .spec(requestDTOV2.getSpec())
         .type(requestDTOV2.getType())
+        .yamlInternal(requestDTOV2.getYamlInternal())
         .build();
   }
 
@@ -49,6 +49,7 @@ public class ServiceOverridesMapperV2 {
         .spec(entity.getSpec())
         .type(entity.getType())
         .isNewlyCreated(isNewlyCreated)
+        .yamlInternal(entity.getYamlInternal())
         .build();
   }
 }

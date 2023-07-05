@@ -21,6 +21,8 @@ public class SplunkDTOToEntity implements ConnectorDTOToEntityMapper<SplunkConne
     return SplunkConnector.builder()
         .username(connectorDTO.getUsername())
         .passwordRef(SecretRefHelper.getSecretConfigString(connectorDTO.getPasswordRef()))
+        .tokenRef(SecretRefHelper.getSecretConfigString(connectorDTO.getTokenRef()))
+        .authType(connectorDTO.getAuthType())
         .splunkUrl(connectorDTO.getSplunkUrl())
         .accountId(connectorDTO.getAccountId())
         .build();

@@ -254,6 +254,10 @@ public class NGTriggerElementMapperTest extends CategoryTest {
     ngTriggerElementMapper.updateEntityYmlWithEnabledValue(ngTriggerEntity1);
     assertThat(ngTriggerEntity1.getYaml()).startsWith("trigger");
     assertThat(ngTriggerEntity1.getYaml()).doesNotStartWith("---");
+
+    ngTriggerEntity1.setYaml("yaml");
+    ngTriggerElementMapper.updateEntityYmlWithEnabledValue(ngTriggerEntity1);
+    assertThat(ngTriggerEntity1.getYaml()).isEqualTo("yaml");
   }
 
   @Test

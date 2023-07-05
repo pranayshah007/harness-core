@@ -39,6 +39,7 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -110,7 +111,7 @@ public abstract class DataCollectionTask
   private DataCollectionInfo dataCollectionInfo;
   private Instant startTime;
   private Instant endTime;
-
+  private Map<String, String> dataCollectionMetadata;
   @FdIndex private Long workerStatusIteration;
 
   @Override

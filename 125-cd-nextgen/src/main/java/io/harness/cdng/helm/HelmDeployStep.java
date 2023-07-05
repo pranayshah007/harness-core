@@ -26,7 +26,6 @@ import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
-import io.harness.common.NGTimeConversionHelper;
 import io.harness.delegate.beans.instancesync.mapper.K8sContainerToHelmServiceInstanceInfoMapper;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
@@ -53,7 +52,6 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
@@ -233,10 +231,8 @@ public class HelmDeployStep extends TaskChainExecutableWithRollbackAndRbac imple
       helmCommandRequestBuilder.serviceHooks(nativeHelmStepHelper.getServiceHooks(ambiance));
     }
     HelmInstallCommandRequestNG helmCommandRequest = helmCommandRequestBuilder.build();
-    if (!ParameterField.isNull(stepParameters.getTimeout())) {
-      helmCommandRequest.setTimeoutInMillis(
-          NGTimeConversionHelper.convertTimeStringToMilliseconds(stepParameters.getTimeout().getValue()));
-    }
+
+    helmCommandRequest.setTimeoutInMillis(CDStepHelper.getTimeoutInMillis(stepParameters));
 
     nativeHelmStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);
 

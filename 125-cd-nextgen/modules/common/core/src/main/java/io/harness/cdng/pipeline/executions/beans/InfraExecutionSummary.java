@@ -7,6 +7,7 @@
 
 package io.harness.cdng.pipeline.executions.beans;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -16,6 +17,7 @@ import lombok.Value;
 @OwnedBy(HarnessTeam.PIPELINE)
 @Value
 @Builder
+@RecasterAlias("io.harness.cdng.pipeline.executions.beans.InfraExecutionSummary")
 public class InfraExecutionSummary {
   String identifier;
   String name;

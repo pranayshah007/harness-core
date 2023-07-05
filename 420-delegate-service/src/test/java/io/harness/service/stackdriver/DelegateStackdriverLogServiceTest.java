@@ -106,7 +106,7 @@ public class DelegateStackdriverLogServiceTest {
         + "labels.app=\"delegate\"\n"
         + "timestamp >= \"2023-04-06T18:00:36Z\" AND timestamp <= \"2023-04-06T18:07:36Z\"\n"
         + "jsonPayload.harness.taskId=(\"YqEtGip5RI2d5jlCF1yeXQ\" OR \"-FaIJFMiDS62zWY7B3iHr4\")\n"
-        + "jsonPayload.harness.accountId=\"xxxxxL\"";
+        + "jsonPayload.harness.accountId=\"xxxxxL\" OR labels.accountId=\"xxxxxL\"";
     assertThat(expected).isEqualTo(result);
   }
 

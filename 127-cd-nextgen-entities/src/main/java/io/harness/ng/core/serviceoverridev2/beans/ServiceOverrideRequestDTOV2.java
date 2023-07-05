@@ -21,11 +21,9 @@ import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
-import lombok.Value;
 import lombok.experimental.FieldDefaults;
 
 @OwnedBy(PIPELINE)
-@Value
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -34,9 +32,6 @@ import lombok.experimental.FieldDefaults;
 @Schema(
     name = "ServiceOverrideRequestV2", description = "This is the Service Override Request entity defined in Harness")
 public class ServiceOverrideRequestDTOV2 {
-  // identifier field is harness-internal, we are not allowing user to provide this
-  // so should be set internally with default methods
-  String identifier;
   @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) String orgIdentifier;
   @Schema(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier;
   @Schema(description = NGCommonEntityConstants.ENV_REF_PARAM_MESSAGE) @NotNull String environmentRef;
@@ -50,6 +45,6 @@ public class ServiceOverrideRequestDTOV2 {
   ServiceOverridesType type;
 
   @Schema(description = "Spec for overrides, containing overriding fields like manifests, variables, config files")
-  @NotNull
   ServiceOverridesSpec spec;
+  @Schema(description = "YAML for the Service Overrides Spec") String yamlInternal;
 }

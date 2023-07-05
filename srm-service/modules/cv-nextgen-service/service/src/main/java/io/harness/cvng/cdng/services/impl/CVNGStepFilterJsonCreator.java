@@ -8,8 +8,8 @@
 package io.harness.cvng.cdng.services.impl;
 
 import io.harness.cvng.cdng.beans.CVNGStepInfo;
-import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
-import io.harness.cvng.cdng.services.api.VerifyStepMonitoredServiceResolutionService;
+import io.harness.cvng.cdng.beans.MonitoredServiceSpecType;
+import io.harness.cvng.cdng.services.api.PipelineStepMonitoredServiceResolutionService;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.filters.GenericStepPMSFilterJsonCreator;
@@ -30,7 +30,7 @@ public class CVNGStepFilterJsonCreator extends GenericStepPMSFilterJsonCreator {
     return CVNGPlanCreatorV2.CVNG_SUPPORTED_TYPES;
   }
   @Inject
-  private Map<MonitoredServiceSpecType, VerifyStepMonitoredServiceResolutionService> verifyStepCvConfigServiceMap;
+  private Map<MonitoredServiceSpecType, PipelineStepMonitoredServiceResolutionService> verifyStepCvConfigServiceMap;
 
   @Override
   public FilterCreationResponse handleNode(FilterCreationContext filterCreationContext, StepElementConfig yamlField) {

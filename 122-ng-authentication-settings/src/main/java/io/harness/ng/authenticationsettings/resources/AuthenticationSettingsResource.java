@@ -13,6 +13,8 @@ import static io.harness.ng.accesscontrol.PlatformPermissions.EDIT_AUTHSETTING_P
 import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_AUTHSETTING_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.AUTHSETTING;
 
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
@@ -65,7 +67,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MultipartBody;
@@ -78,7 +79,7 @@ import retrofit2.http.Multipart;
 
 @Api("authentication-settings")
 @Path("/authentication-settings")
-@Produces(MediaType.APPLICATION_JSON)
+@Produces(APPLICATION_JSON)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Tag(name = "Authentication Settings",
     description = "This contains APIs related to Authentication settings as defined in Harness")
@@ -633,6 +634,7 @@ public class AuthenticationSettingsResource {
 
   @PUT
   @Path("/session-timeout-account-level")
+  @Consumes(APPLICATION_JSON)
   @ApiOperation(value = "Set account level session timeout", nickname = "setSessionTimeoutAtAccountLevel")
   @Operation(operationId = "setSessionTimeoutAtAccountLevel", summary = "Set session timeout at account level",
       description = "Sets session timeout of all users for the given Account ID.",

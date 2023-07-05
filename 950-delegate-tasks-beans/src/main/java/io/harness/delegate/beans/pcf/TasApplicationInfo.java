@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.pcf;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -17,6 +18,7 @@ import lombok.Data;
 @Data
 @Builder
 @OwnedBy(HarnessTeam.CDP)
+@RecasterAlias("io.harness.delegate.beans.pcf.TasApplicationInfo")
 public class TasApplicationInfo {
   int runningCount;
   String applicationName;

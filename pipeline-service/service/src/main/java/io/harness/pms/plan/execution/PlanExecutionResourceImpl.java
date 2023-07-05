@@ -248,12 +248,12 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   public ResponseDTO<io.harness.engine.executions.retry.RetryInfo> getRetryStages(
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, @ResourceIdentifier @NotEmpty String pipelineIdentifier,
-      @NotNull String planExecutionId, GitEntityFindInfoDTO gitEntityBasicInfo) {
+      @NotNull String planExecutionId, GitEntityFindInfoDTO gitEntityBasicInfo, String loadFromCache) {
     if (pmsFeatureFlagService.isEnabled(accountId, PIE_GET_FILE_CONTENT_ONLY)) {
       ThreadOperationContextHelper.setUserFlow(USER_FLOW.EXECUTION);
     }
     return ResponseDTO.newResponse(retryExecutionHelper.validateRetry(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, planExecutionId));
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, planExecutionId, loadFromCache));
   }
 
   @Override
@@ -425,7 +425,7 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
     }
 
     RetryInfo retryInfo = retryExecutionHelper.validateRetry(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, previousExecutionId);
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, previousExecutionId, null);
     if (!retryInfo.isResumable()) {
       throw new InvalidRequestException(retryInfo.getErrorMessage());
     }

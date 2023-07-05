@@ -27,6 +27,7 @@ public class NotificationRuleConstants {
   public static final String SLO_PERFORMANCE = "SLO_PERFORMANCE";
   public static final String MS_HEALTH_REPORT = "MS_HEALTH_REPORT";
   public static final String MODULE_NAME = "cv";
+  public static final String CET_MODULE_NAME = "cet";
 
   public static final String THEME_COLOR = "#EC372E";
   public static final String COLOR = "COLOR";

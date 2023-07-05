@@ -33,4 +33,11 @@ public class EmbeddedUserDTO {
     }
     return EmbeddedUserDTO.builder().name(user.getName()).email(user.getEmail()).build();
   }
+
+  public static EmbeddedUser toEmbeddedUser(EmbeddedUserDTO user) {
+    if (user == null) {
+      return null;
+    }
+    return EmbeddedUser.builder().name(user.getName()).email(user.getEmail()).build();
+  }
 }

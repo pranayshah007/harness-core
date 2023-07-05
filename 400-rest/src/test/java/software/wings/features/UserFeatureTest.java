@@ -28,7 +28,7 @@ public class UserFeatureTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testUserLimitCommunity() {
     int limit = usersFeature.getMaxUsageAllowed("COMMUNITY");
-    assertThat(limit).isEqualTo(100);
+    assertThat(limit).isEqualTo(50000);
   }
 
   @Test
@@ -36,7 +36,7 @@ public class UserFeatureTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testUserLimitFree() {
     int limit = usersFeature.getMaxUsageAllowed("FREE");
-    assertThat(limit).isEqualTo(100);
+    assertThat(limit).isEqualTo(50000);
   }
 
   @Test
@@ -44,7 +44,7 @@ public class UserFeatureTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testUserLimitTrial() {
     int limit = usersFeature.getMaxUsageAllowed("TRIAL");
-    assertThat(limit).isEqualTo(100);
+    assertThat(limit).isEqualTo(50000);
   }
 
   @Test

@@ -1,0 +1,35 @@
+// Copyright 2021 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Shield 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+
+syntax = "proto3";
+
+package io.harness.delegate;
+
+import "920-delegate-service-beans/src/main/proto/io/harness/delegate/resource.proto";
+import "920-delegate-service-beans/src/main/proto/io/harness/delegate/security_context.proto";
+option go_package = "920_delegate_service_beans";
+
+option java_multiple_files = true;
+
+message K8sInfraSpec {
+  repeated ContainerSpec tasks = 1;        // Container specs for task containers
+  map<string, string> env = 2;             // Any global env variables. These envs will be applied to all containers
+  repeated Resource resources = 3;         // Any global resources like shared volumes
+  ComputingResource compute_resource = 4;  // Global resource setting for k8s infra. This is optional. The sum of task
+                                           // container resources will be used if this field is not set.
+  SecurityContext security_context = 5;    // Optional field to set global security context
+}
+
+message ContainerSpec {
+  string image = 1;                // Docker image tag
+  repeated int64 port = 2;         // Port exposed for the container
+  ComputingResource resource = 3;  // Resource requirements for infra types that need it (e.g. K8S CPU/Mem). It is
+                                   // required to provide task level resources
+
+  map<string, string> env = 4;           // Env variables
+  repeated string command = 5;           // Commands to be executed
+  repeated string args = 6;              // Args to be passed
+  SecurityContext security_context = 7;  // Optional field to set container security context
+}

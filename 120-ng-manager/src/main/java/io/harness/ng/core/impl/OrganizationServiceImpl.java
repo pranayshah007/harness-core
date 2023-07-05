@@ -277,6 +277,7 @@ public class OrganizationServiceImpl implements OrganizationService {
       Organization organization = toOrganization(organizationDTO);
       organization.setAccountIdentifier(accountIdentifier);
       organization.setId(existingOrganization.getId());
+      organization.setIdentifier(existingOrganization.getIdentifier());
       if (organization.getVersion() == null) {
         organization.setVersion(existingOrganization.getVersion());
       }

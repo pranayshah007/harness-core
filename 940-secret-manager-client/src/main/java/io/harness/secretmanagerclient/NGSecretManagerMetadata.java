@@ -7,6 +7,7 @@
 
 package io.harness.secretmanagerclient;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.ng.core.common.beans.NGTag;
 
 import java.util.List;
@@ -24,6 +25,7 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 @FieldNameConstants(innerTypeName = "NGSecretManagerMetadataKeys")
+@RecasterAlias("io.harness.secretmanagerclient.NGSecretManagerMetadata")
 public class NGSecretManagerMetadata extends NGMetadata {
   private String accountIdentifier;
   private String orgIdentifier;

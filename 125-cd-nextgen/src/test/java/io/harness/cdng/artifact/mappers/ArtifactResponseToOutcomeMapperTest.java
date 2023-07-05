@@ -945,7 +945,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
     assertThat(azureArtifactsOutcome.getProject()).isEqualTo(PROJECT);
     assertThat(azureArtifactsOutcome.getPackageType()).isEqualTo(RepositoryFormat.docker.name());
     assertThat(azureArtifactsOutcome.getScope()).isEqualTo(PROJECT);
-    assertThat(azureArtifactsOutcome.getImagePullSecret()).isEqualTo("<+imagePullSecret.identifier>");
+    assertThat(azureArtifactsOutcome.getImagePullSecret()).isEqualTo("<+imagePullSecret.primary>");
   }
 
   private void checkThrowsWhenDigestMismatch(

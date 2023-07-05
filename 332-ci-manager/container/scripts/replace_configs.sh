@@ -103,6 +103,22 @@ if [[ "" != "$S3_CACHE_IMAGE" ]]; then
   export S3_CACHE_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.cacheS3Config.image=env(S3_CACHE_IMAGE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$SSCA_ORCHESTRATION_IMAGE" ]]; then
+  export SSCA_ORCHESTRATION_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.sscaOrchestrationConfig.image=env(SSCA_ORCHESTRATION_IMAGE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SSCA_ENFORCEMENT_IMAGE" ]]; then
+  export SSCA_ENFORCEMENT_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.sscaEnforcementConfig.image=env(SSCA_ENFORCEMENT_IMAGE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$VM_SSCA_ORCHESTRATION_IMAGE" ]]; then
+  export VM_SSCA_ORCHESTRATION_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.sscaOrchestration=env(VM_SSCA_ORCHESTRATION_IMAGE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$VM_SSCA_ENFORCEMENT_IMAGE" ]]; then
+  export VM_SSCA_ENFORCEMENT_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.sscaEnforcement=env(VM_SSCA_ENFORCEMENT_IMAGE)' $CONFIG_FILE
+fi
+
 if [[ "" != "$VM_GIT_CLONE_IMAGE" ]]; then
   export VM_GIT_CLONE_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.gitClone=env(VM_GIT_CLONE_IMAGE)' $CONFIG_FILE
 fi
@@ -471,6 +487,10 @@ fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD" ]]; then
   export EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD; yq -i '.singleServerConfig.sslTruststorePassword=env(EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD)' $ENTERPRISE_REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$DISTRIBUTED_LOCK_IMPLEMENTATION" ]]; then
+  export DISTRIBUTED_LOCK_IMPLEMENTATION; yq -i '.distributedLockImplementation=env(DISTRIBUTED_LOCK_IMPLEMENTATION)' $CONFIG_FILE
 fi
 
 if [[ "$EVENTS_FRAMEWORK_USE_SENTINEL" == "true" ]]; then

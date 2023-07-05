@@ -63,6 +63,7 @@ public class SscaEnforcementStepInfo implements PluginCompatibleStep, WithConnec
   @NotNull SbomSource source;
   @NotNull VerifyAttestation verifyAttestation;
   @NotNull EnforcementPolicy policy;
+  ContainerResource resources;
 
   @Override
   public TypeInfo getNonYamlInfo() {
@@ -90,12 +91,6 @@ public class SscaEnforcementStepInfo implements PluginCompatibleStep, WithConnec
           return null;
       }
     }
-    return null;
-  }
-
-  @Override
-  @ApiModelProperty(hidden = true)
-  public ContainerResource getResources() {
     return null;
   }
 

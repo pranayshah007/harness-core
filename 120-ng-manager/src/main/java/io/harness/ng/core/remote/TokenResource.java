@@ -16,6 +16,7 @@ import static io.harness.NGCommonEntityConstants.PROJECT_PARAM_MESSAGE;
 import static io.harness.NGResourceFilterConstants.IDENTIFIERS;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.utils.PageUtils.getPageRequest;
 
 import io.harness.NGCommonEntityConstants;
@@ -25,6 +26,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SortOrder;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.enforcement.constants.FeatureRestrictionName;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.OrgIdentifier;
@@ -226,17 +228,24 @@ public class TokenResource {
           PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = "This is the API Key type like Personal Access Key or Service Account Key.") @NotNull
       @QueryParam("apiKeyType") ApiKeyType apiKeyType,
-      @Parameter(description = "ID of API key's Parent Service Account") @NotNull @QueryParam(
+      @Parameter(description = "ID of API key's Parent Service Account") @QueryParam(
           "parentIdentifier") String parentIdentifier,
-      @Parameter(description = "API key ID") @NotNull @QueryParam("apiKeyIdentifier") String apiKeyIdentifier,
+      @Parameter(description = "API key ID") @QueryParam("apiKeyIdentifier") String apiKeyIdentifier,
       @Parameter(description = "This is the list of Token IDs. Details specific to these IDs would be fetched.")
       @Optional @QueryParam(IDENTIFIERS) List<String> identifiers, @BeanParam PageRequest pageRequest,
       @Parameter(
           description =
               "This would be used to filter Tokens. Any Token having the specified string in its Name, ID and Tag would be filtered.")
-      @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm) {
-    apiKeyService.validateParentIdentifier(
-        accountIdentifier, orgIdentifier, projectIdentifier, apiKeyType, parentIdentifier);
+      @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
+      @Parameter(
+          description =
+              "Boolean value to indicate whether to list only active tokens or all tokens. By default, all tokens will be listed.")
+      @QueryParam("includeOnlyActiveTokens") boolean includeOnlyActiveTokens) {
+    if (isNotEmpty(apiKeyIdentifier) && isEmpty(parentIdentifier)) {
+      throw new InvalidRequestException(
+          "Need to pass parentIdentifier along with apikeyIdentifier to list the tokens.");
+    }
+
     if (isEmpty(pageRequest.getSortOrders())) {
       SortOrder order =
           SortOrder.Builder.aSortOrder().withField(TokenKeys.lastModifiedAt, SortOrder.OrderType.DESC).build();
@@ -251,7 +260,9 @@ public class TokenResource {
                                    .searchTerm(searchTerm)
                                    .apiKeyIdentifier(apiKeyIdentifier)
                                    .identifiers(identifiers)
+                                   .includeOnlyActiveTokens(includeOnlyActiveTokens)
                                    .build();
+    tokenService.validateTokenListPermissions(filterDTO);
     PageResponse<TokenAggregateDTO> requestDTOS =
         tokenService.listAggregateTokens(accountIdentifier, getPageRequest(pageRequest), filterDTO);
     return ResponseDTO.newResponse(requestDTOS);

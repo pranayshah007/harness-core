@@ -12,6 +12,8 @@ import io.harness.metrics.service.api.MetricsPublisher;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
@@ -35,15 +37,29 @@ public class NextGenManagerDropwizardMetricsPublisherImpl implements MetricsPubl
   private static final Pattern METRIC_NAME_RE = Pattern.compile("[^a-zA-Z0-9:_]");
   private static final String NAMESPACE = System.getenv("NAMESPACE");
   private static final String CONTAINER_NAME = System.getenv("CONTAINER_NAME");
+  private static final MetricFilter meterMetricFilter =
+      MetricFilter.startsWith("io.dropwizard.jetty.MutableServletContextHandler");
 
   @Override
   public void recordMetrics() {
+    Set<Map.Entry<String, Meter>> meterSet = metricRegistry.getMeters(meterMetricFilter).entrySet();
+    meterSet.forEach(entry -> recordMeter(sanitizeMetricName(entry.getKey()), entry.getValue()));
     Set<Map.Entry<String, Gauge>> gaugeSet = metricRegistry.getGauges().entrySet();
     gaugeSet.forEach(entry -> recordGauge(sanitizeMetricName(entry.getKey()), entry.getValue()));
     Set<Map.Entry<String, Timer>> timerSet = metricRegistry.getTimers().entrySet();
     timerSet.forEach(entry -> recordTimer(sanitizeMetricName(entry.getKey()), entry.getValue()));
     Set<Map.Entry<String, Counter>> counterSet = metricRegistry.getCounters().entrySet();
     counterSet.forEach(entry -> recordCounter(sanitizeMetricName(entry.getKey()), entry.getValue()));
+  }
+
+  private void recordMeter(String metricName, Meter meter) {
+    try (NextGenMetricsContext ignore = new NextGenMetricsContext(NAMESPACE, CONTAINER_NAME)) {
+      recordMetric(metricName + "_count", meter.getCount());
+      recordMetric(metricName + "_fifteenMinuteRate", meter.getFifteenMinuteRate());
+      recordMetric(metricName + "_fiveMinuteRate", meter.getFiveMinuteRate());
+      recordMetric(metricName + "_oneMinuteRate", meter.getOneMinuteRate());
+      recordMetric(metricName + "_meanRate", meter.getMeanRate());
+    }
   }
 
   private void recordCounter(String metricName, Counter counter) {

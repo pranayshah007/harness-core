@@ -47,6 +47,7 @@ import io.harness.steps.approval.step.servicenow.beans.ServiceNowApprovalRespons
 import io.harness.steps.approval.step.servicenow.entities.ServiceNowApprovalInstance;
 
 import java.util.Collections;
+import java.util.concurrent.ExecutorService;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -67,6 +68,7 @@ public class ServiceNowApprovalStepTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock ApprovalInstanceService approvalInstanceService;
   @Mock LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Mock ExecutorService dashboardExecutorService;
   @InjectMocks private ServiceNowApprovalStep serviceNowApprovalStep;
   private ILogStreamingStepClient logStreamingStepClient;
 

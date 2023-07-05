@@ -7,6 +7,8 @@
 
 package io.harness.engine.pms.execution.strategy.plannode;
 
+import static io.harness.beans.FeatureName.PIE_EXPRESSION_CONCATENATION;
+import static io.harness.beans.FeatureName.PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.pms.contracts.execution.failure.FailureType.APPLICATION_FAILURE;
@@ -31,7 +33,6 @@ import static org.mockito.Mockito.when;
 import io.harness.OrchestrationTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.ExecutionCheck;
 import io.harness.engine.OrchestrationEngine;
@@ -70,6 +71,7 @@ import io.harness.pms.contracts.execution.events.SdkResponseEventType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorResponseProto;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.contracts.resume.ResponseDataProto;
@@ -84,7 +86,6 @@ import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.utils.OrchestrationMapBackwardCompatibilityUtils;
 import io.harness.rule.Owner;
-import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.common.collect.ImmutableMap;
@@ -121,7 +122,6 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
   @Mock private SdkResponseProcessorFactory processorFactory;
   @Mock private AdviserResponseRequestProcessor adviserResponseProcessor;
   @Mock private WaitForExecutionInputHelper waitForExecutionInputHelper;
-  @Mock private PmsFeatureFlagService pmsFeatureFlagService;
   @Inject @InjectMocks @Spy PlanNodeExecutionStrategy executionStrategy;
   @Mock private NextStepHandler nextStepHandler;
   @Mock private AdviseHandlerFactory adviseHandlerFactory;
@@ -150,6 +150,10 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
                             .setPlanExecutionId(planExecutionId)
                             .putAllSetupAbstractions(prepareInputArgs())
                             .addLevels(Level.newBuilder().setRuntimeId(generateUuid()).build())
+                            .setMetadata(ExecutionMetadata.newBuilder()
+                                             .putAllFeatureFlagToValueMap(Map.of(PIE_EXPRESSION_CONCATENATION.name(),
+                                                 false, PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT.name(), false))
+                                             .build())
                             .build();
     PlanNode planNode =
         PlanNode.builder()
@@ -166,14 +170,17 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
     doReturn(NodeExecution.builder().build())
         .when(executionStrategy)
         .createNodeExecution(ambiance, planNode, null, null, null, null);
-    doReturn(false).when(pmsFeatureFlagService).isEnabled(any(), any(FeatureName.class));
     executionStrategy.runNode(ambiance, planNode, null);
     verify(executorService).submit(any(Runnable.class));
     doReturn(NodeExecution.builder().uuid("fda").build()).when(nodeExecutionService).save(any());
     // waitForExecutionInputHelper.waitForExecutionInputOrStart() will not be called.FF is off.
     verify(waitForExecutionInputHelper, never()).waitForExecutionInput(any(), any(), any());
-
-    doReturn(true).when(pmsFeatureFlagService).isEnabled(any(), any(FeatureName.class));
+    ambiance.toBuilder()
+        .setMetadata(ExecutionMetadata.newBuilder()
+                         .putAllFeatureFlagToValueMap(Map.of(PIE_EXPRESSION_CONCATENATION.name(), true,
+                             PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT.name(), true))
+                         .build())
+        .build();
     executionStrategy.runNode(ambiance, planNode, null);
     verify(executorService, times(2)).submit(any(Runnable.class));
     // waitForExecutionInputHelper.waitForExecutionInputOrStart() will not be called.FF is on but executionInputTemplate
@@ -222,6 +229,10 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
                             .setPlanId(planId)
                             .putAllSetupAbstractions(prepareInputArgs())
                             .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecutionId, planNode))
+                            .setMetadata(ExecutionMetadata.newBuilder()
+                                             .putAllFeatureFlagToValueMap(Map.of(PIE_EXPRESSION_CONCATENATION.name(),
+                                                 false, PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT.name(), false))
+                                             .build())
                             .build();
 
     NodeExecution nodeExecution =
@@ -263,6 +274,10 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
                             .setPlanId(planId)
                             .putAllSetupAbstractions(prepareInputArgs())
                             .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecutionId, planNode))
+                            .setMetadata(ExecutionMetadata.newBuilder()
+                                             .putAllFeatureFlagToValueMap(Map.of(PIE_EXPRESSION_CONCATENATION.name(),
+                                                 false, PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT.name(), false))
+                                             .build())
                             .build();
     NodeExecution nodeExecution =
         NodeExecution.builder().uuid(nodeExecutionId).ambiance(ambiance).planNode(planNode).build();
@@ -807,6 +822,10 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
         Ambiance.newBuilder()
             .setPlanId(planId)
             .addLevels(Level.newBuilder().setRuntimeId(runtimeId).setSetupId(setupId).setRetryIndex(1).build())
+            .setMetadata(ExecutionMetadata.newBuilder()
+                             .putAllFeatureFlagToValueMap(Map.of(PIE_EXPRESSION_CONCATENATION.name(), false,
+                                 PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT.name(), false))
+                             .build())
             .build();
     PlanNode planNode = PlanNode.builder()
                             .expressionMode(ExpressionMode.RETURN_NULL_IF_UNRESOLVED)

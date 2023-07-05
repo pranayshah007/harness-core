@@ -595,15 +595,15 @@ public class PMSPipelineServiceHelper {
     }
   }
 
-  public void computePipelineReferences(PipelineEntity pipelineEntity, boolean loadFromCache) {
-    if (!loadFromCache && GitAwareContextHelper.isDefaultBranch()) {
-      String branchName = GitAwareContextHelper.getBranchFromGitContext();
-      pipelineSetupUsageCreationHelper.submitTask(
-          FilterCreationParams.builder()
-              .pipelineEntity(pipelineEntity)
-              .filterCreationGitMetadata(
-                  FilterCreationGitMetadata.builder().branch(branchName).repo(pipelineEntity.getRepo()).build())
-              .build());
-    }
+  public void computePipelineReferences(PipelineEntity pipelineEntity) {
+    pipelineSetupUsageCreationHelper.submitTask(
+        FilterCreationParams.builder()
+            .pipelineEntity(pipelineEntity)
+            .filterCreationGitMetadata(FilterCreationGitMetadata.builder()
+                                           .branch(GitAwareContextHelper.getBranchFromGitContext())
+                                           .repo(pipelineEntity.getRepo())
+                                           .isGitDefaultBranch(true)
+                                           .build())
+            .build());
   }
 }

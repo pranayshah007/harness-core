@@ -230,10 +230,13 @@ public class SettingsServiceImpl implements SettingsService {
 
   @Override
   public void removeSetting(String identifier) {
-    Optional<SettingConfiguration> exisingSettingConfig = settingConfigurationRepository.findByIdentifier(identifier);
-    exisingSettingConfig.ifPresent(settingConfigurationRepository::delete);
+    Optional<SettingConfiguration> existingSettingConfig = settingConfigurationRepository.findByIdentifier(identifier);
+    existingSettingConfig.ifPresent(settingConfigurationRepository::delete);
     List<Setting> existingSettings = settingRepository.findByIdentifier(identifier);
     settingRepository.deleteAll(existingSettings);
+    if (existingSettingConfig.isPresent()) {
+      log.info("Deleted the setting configuration from the database- {}", existingSettingConfig.get());
+    }
   }
 
   @Override

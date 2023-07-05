@@ -118,8 +118,13 @@ public class JsonPipelineUtils {
     return YamlPipelineUtils.writeYamlString(jsonNode);
   }
 
+  // use this method only when you want only non-empty values in jsonNode else use asTreeUsingDefaultObjectMapper
   public static JsonNode asTree(Object obj) {
     return mapper.valueToTree(obj);
+  }
+
+  public static JsonNode asTreeUsingDefaultObjectMapper(Object obj) {
+    return NG_DEFAULT_OBJECT_MAPPER.valueToTree(obj);
   }
 
   /**

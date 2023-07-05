@@ -29,6 +29,8 @@ public class KubernetesExceptionHints {
 
   public final String DRY_RUN_MANIFEST_FAILED =
       "Check manifest output for invalid fields name, types or empty manifest";
+  public final String NO_OBJECT_PASSED =
+      "Manifest file contains no object to apply. Reason can be:\n1. Actual manifest file missing from configuration\n2. Only values.yaml found \n3. Files configured are empty.";
   public final String READ_MANIFEST_FAILED =
       "Manifest file contains invalid kubernetes yaml. Check invalid fields name, types or empty manifest";
 

@@ -8,8 +8,7 @@
 package io.harness.taskclient;
 
 import io.harness.beans.DelegateTask;
-import io.harness.delegate.beans.SchedulingTaskEvent;
 
 public interface TaskClient {
-  void sendTask(DelegateTask task, SchedulingTaskEvent.Method method, String uri);
+  void sendTask(DelegateTask task);
 }

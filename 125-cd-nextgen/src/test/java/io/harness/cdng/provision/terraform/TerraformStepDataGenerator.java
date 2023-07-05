@@ -141,6 +141,63 @@ public class TerraformStepDataGenerator {
         .build();
   }
 
+  public static TerraformDestroyStepParameters generateDestroyStepPlanWithVarsInline(
+      StoreConfigType storeType, Object storeConfigFilesParam) {
+    StoreConfig storeConfigFiles;
+    TerraformConfigFilesWrapper configFilesWrapper = new TerraformConfigFilesWrapper();
+    switch (storeType) {
+      case GIT:
+      case GITHUB:
+      case GITLAB:
+      case BITBUCKET:
+        TerraformStepDataGenerator.GitStoreConfig gitStoreConfigFiles =
+            (TerraformStepDataGenerator.GitStoreConfig) storeConfigFilesParam;
+        storeConfigFiles =
+            GithubStore.builder()
+                .branch(ParameterField.createValueField(gitStoreConfigFiles.branch))
+                .gitFetchType(gitStoreConfigFiles.fetchType)
+                .folderPath(ParameterField.createValueField(gitStoreConfigFiles.folderPath.getValue()))
+                .connectorRef(ParameterField.createValueField(gitStoreConfigFiles.connectoref.getValue()))
+                .build();
+        configFilesWrapper.setStore(StoreConfigWrapper.builder().spec(storeConfigFiles).type(storeType).build());
+        break;
+      case ARTIFACTORY:
+        ArtifactoryStoreConfig artifactoryStoreConfigFiles = (ArtifactoryStoreConfig) storeConfigFilesParam;
+        storeConfigFiles =
+            io.harness.cdng.manifest.yaml.ArtifactoryStoreConfig.builder()
+                .repositoryName(ParameterField.createValueField(artifactoryStoreConfigFiles.repositoryName))
+                .connectorRef(ParameterField.createValueField(artifactoryStoreConfigFiles.connectorRef))
+                .artifactPaths(ParameterField.createValueField(artifactoryStoreConfigFiles.artifacts))
+                .build();
+        configFilesWrapper.setStore(StoreConfigWrapper.builder().spec(storeConfigFiles).type(storeType).build());
+        break;
+      default:
+        break;
+    }
+    InlineTerraformVarFileSpec inlineTerraformVarFileSpec = new InlineTerraformVarFileSpec();
+    inlineTerraformVarFileSpec.setContent(ParameterField.createValueField("var-content"));
+    InlineTerraformBackendConfigSpec inlineTerraformBackendConfigSpec = new InlineTerraformBackendConfigSpec();
+    inlineTerraformBackendConfigSpec.setContent(ParameterField.createValueField("back-content"));
+    TerraformBackendConfig terraformBackendConfig = new TerraformBackendConfig();
+    terraformBackendConfig.setTerraformBackendConfigSpec(inlineTerraformBackendConfigSpec);
+    LinkedHashMap<String, TerraformVarFile> varFilesMap = new LinkedHashMap<>();
+    varFilesMap.put("var-file-01",
+        TerraformVarFile.builder().identifier("var-file-01").type("Inline").spec(inlineTerraformVarFileSpec).build());
+    return TerraformDestroyStepParameters.infoBuilder()
+        .provisionerIdentifier(ParameterField.createValueField("provId_$"))
+        .configuration(TerraformStepConfigurationParameters.builder()
+                           .type(TerraformStepConfigurationType.INLINE)
+                           .spec(TerraformExecutionDataParameters.builder()
+                                     .configFiles(configFilesWrapper)
+                                     .workspace(ParameterField.createValueField("test-workspace"))
+                                     .varFiles(varFilesMap)
+                                     .isTerraformCloudCli(ParameterField.createValueField(false))
+                                     .build())
+                           .skipTerraformRefresh(ParameterField.createValueField(false))
+                           .build())
+        .build();
+  }
+
   public static TerraformApplyStepParameters generateApplyStepPlan(
       StoreConfigType storeType, Object storeConfigFilesParam, Object varStoreConfigFilesParam) {
     StoreConfig storeConfigFiles;
@@ -193,6 +250,69 @@ public class TerraformStepDataGenerator {
                             .connectorRef(ParameterField.createValueField(artifactoryStoreVarFiles.connectorRef))
                             .build();
         remoteTerraformVarFileSpec.setStore(StoreConfigWrapper.builder().spec(storeVarFiles).type(storeType).build());
+        break;
+      default:
+        break;
+    }
+    InlineTerraformVarFileSpec inlineTerraformVarFileSpec = new InlineTerraformVarFileSpec();
+    inlineTerraformVarFileSpec.setContent(ParameterField.createValueField("var-content"));
+    InlineTerraformBackendConfigSpec inlineTerraformBackendConfigSpec = new InlineTerraformBackendConfigSpec();
+    inlineTerraformBackendConfigSpec.setContent(ParameterField.createValueField("back-content"));
+    TerraformBackendConfig terraformBackendConfig = new TerraformBackendConfig();
+    terraformBackendConfig.setTerraformBackendConfigSpec(inlineTerraformBackendConfigSpec);
+    LinkedHashMap<String, TerraformVarFile> varFilesMap = new LinkedHashMap<>();
+    varFilesMap.put("var-file-01",
+        TerraformVarFile.builder().identifier("var-file-01").type("Inline").spec(inlineTerraformVarFileSpec).build());
+    varFilesMap.put("var-file-02",
+        TerraformVarFile.builder().identifier("var-file-02").type("Remote").spec(remoteTerraformVarFileSpec).build());
+    return TerraformApplyStepParameters.infoBuilder()
+        .provisionerIdentifier(ParameterField.createValueField("provId_$"))
+        .configuration(TerraformStepConfigurationParameters.builder()
+                           .type(TerraformStepConfigurationType.INLINE)
+                           .spec(TerraformExecutionDataParameters.builder()
+                                     .configFiles(configFilesWrapper)
+                                     .workspace(ParameterField.createValueField("test-workspace"))
+                                     .isTerraformCloudCli(ParameterField.createValueField(false))
+                                     .varFiles(varFilesMap)
+                                     .build())
+                           .skipTerraformRefresh(ParameterField.createValueField(false))
+                           .build())
+        .build();
+  }
+
+  public static TerraformApplyStepParameters generateApplyStepPlanWithInlineVarFiles(
+      StoreConfigType storeType, Object storeConfigFilesParam) {
+    StoreConfig storeConfigFiles;
+    StoreConfig storeVarFiles;
+    TerraformConfigFilesWrapper configFilesWrapper = new TerraformConfigFilesWrapper();
+    RemoteTerraformVarFileSpec remoteTerraformVarFileSpec = new RemoteTerraformVarFileSpec();
+    switch (storeType) {
+      case GIT:
+      case GITHUB:
+      case GITLAB:
+      case BITBUCKET:
+        // Create the store file for the terraform files
+        TerraformStepDataGenerator.GitStoreConfig gitStoreConfigFiles =
+            (TerraformStepDataGenerator.GitStoreConfig) storeConfigFilesParam;
+        storeConfigFiles =
+            GithubStore.builder()
+                .branch(ParameterField.createValueField(gitStoreConfigFiles.branch))
+                .gitFetchType(gitStoreConfigFiles.fetchType)
+                .folderPath(ParameterField.createValueField(gitStoreConfigFiles.folderPath.getValue()))
+                .connectorRef(ParameterField.createValueField(gitStoreConfigFiles.connectoref.getValue()))
+                .build();
+        configFilesWrapper.setStore(StoreConfigWrapper.builder().spec(storeConfigFiles).type(storeType).build());
+        break;
+      case ARTIFACTORY:
+        // Create the store file for the terraform files
+        ArtifactoryStoreConfig artifactoryStoreConfigFiles = (ArtifactoryStoreConfig) storeConfigFilesParam;
+        storeConfigFiles =
+            io.harness.cdng.manifest.yaml.ArtifactoryStoreConfig.builder()
+                .repositoryName(ParameterField.createValueField(artifactoryStoreConfigFiles.repositoryName))
+                .connectorRef(ParameterField.createValueField(artifactoryStoreConfigFiles.connectorRef))
+                .artifactPaths(ParameterField.createValueField(artifactoryStoreConfigFiles.artifacts))
+                .build();
+        configFilesWrapper.setStore(StoreConfigWrapper.builder().spec(storeConfigFiles).type(storeType).build());
         break;
       default:
         break;
@@ -305,6 +425,8 @@ public class TerraformStepDataGenerator {
                            .varFiles(varFilesMap)
                            .environmentVariables(ImmutableMap.of("KEY", ParameterField.createValueField("VAL")))
                            .backendConfig(terraformBackendConfig)
+                           .isTerraformCloudCli(ParameterField.createValueField(false))
+                           .skipTerraformRefresh(ParameterField.createValueField(false))
                            .build())
         .build();
   }

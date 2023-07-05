@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 53
+version: 54
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -155,6 +155,9 @@ roles:
         - servicediscovery_networkmap_edit
         - servicediscovery_networkmap_delete
         - servicediscovery_networkmap_view
+        - chaos_chaossecuritygovernance_edit
+        - chaos_chaossecuritygovernance_delete
+        - chaos_chaossecuritygovernance_view
       allowedScopeLevels:
         - project
       managed: true
@@ -209,6 +212,7 @@ roles:
         - core_setting_view
         - code_repo_view
         - servicediscovery_networkmap_view
+        - chaos_chaossecuritygovernance_view
       allowedScopeLevels:
         - project
       managed: true
@@ -371,6 +375,9 @@ roles:
         - servicediscovery_networkmap_edit
         - servicediscovery_networkmap_delete
         - servicediscovery_networkmap_view
+        - chaos_chaossecuritygovernance_edit
+        - chaos_chaossecuritygovernance_delete
+        - chaos_chaossecuritygovernance_view
       allowedScopeLevels:
         - organization
       managed: true
@@ -427,6 +434,7 @@ roles:
         - core_setting_view
         - code_repo_view
         - servicediscovery_networkmap_view
+        - chaos_chaossecuritygovernance_view
       allowedScopeLevels:
         - organization
       managed: true
@@ -635,6 +643,9 @@ roles:
         - servicediscovery_networkmap_edit
         - servicediscovery_networkmap_delete
         - servicediscovery_networkmap_view
+        - chaos_chaossecuritygovernance_edit
+        - chaos_chaossecuritygovernance_delete
+        - chaos_chaossecuritygovernance_view
       allowedScopeLevels:
         - account
       managed: true
@@ -707,6 +718,7 @@ roles:
         - ccm_cloudAssetGovernanceRule_view
         - code_repo_view
         - servicediscovery_networkmap_view
+        - chaos_chaossecuritygovernance_view
       allowedScopeLevels:
         - account
       managed: true

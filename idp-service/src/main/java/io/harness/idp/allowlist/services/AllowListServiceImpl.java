@@ -89,8 +89,7 @@ public class AllowListServiceImpl implements AllowListService {
     appConfig.setConfigs(config);
     appConfig.setEnabled(true);
 
-    configManagerService.saveOrUpdateConfigForAccount(appConfig, accountIdentifier, ConfigType.BACKEND);
-    configManagerService.mergeAndSaveAppConfig(accountIdentifier);
+    configManagerService.saveUpdateAndMergeConfigForAccount(appConfig, accountIdentifier, ConfigType.BACKEND);
 
     log.info("Merging for allow list config completed for accountId - {}", accountIdentifier);
   }

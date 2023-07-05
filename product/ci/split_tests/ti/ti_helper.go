@@ -8,13 +8,14 @@ package ti
 import (
 	"context"
 	b64 "encoding/base64"
+	"os"
+
 	logger "github.com/harness/harness-core/commons/go/lib/logs"
 	ti_addon "github.com/harness/harness-core/product/ci/addon/remote"
 	"github.com/harness/harness-core/product/ci/common/external"
-	ticlient "github.com/harness/harness-core/product/ci/ti-service/client"
-	"github.com/harness/harness-core/product/ci/ti-service/types"
+	ticlient "github.com/harness/ti-client/client"
+	"github.com/harness/ti-client/types"
 	"go.uber.org/zap"
-	"os"
 )
 
 var (
