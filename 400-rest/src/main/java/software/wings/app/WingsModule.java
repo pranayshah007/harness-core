@@ -208,6 +208,7 @@ import io.harness.metrics.service.api.MetricsPublisher;
 import io.harness.module.AgentMtlsModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.ng.core.event.MessageListener;
+import io.harness.notification.module.NotificationClientModule;
 import io.harness.notifications.AlertNotificationRuleChecker;
 import io.harness.notifications.AlertNotificationRuleCheckerImpl;
 import io.harness.notifications.AlertVisibilityChecker;
@@ -1024,7 +1025,8 @@ public class WingsModule extends AbstractModule implements ServersModule {
     });
 
     install(new HeartbeatModule());
-
+    install(new WingsModulePersistenceModule());
+    install(new NotificationClientModule(configuration.getNotificationClientConfiguration()));
     bind(MainConfiguration.class).toInstance(configuration);
     bind(PortalConfig.class).toInstance(configuration.getPortal());
     // RetryOnException Binding start
@@ -1287,7 +1289,6 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(ExperimentalMetricAnalysisRecordService.class).to(ExperimentalMetricAnalysisRecordServiceImpl.class);
     bind(GitSyncService.class).to(GitSyncServiceImpl.class);
     bind(SecretDecryptionService.class).to(SecretDecryptionServiceImpl.class);
-
     MapBinder<String, InfrastructureProvider> infrastructureProviderMapBinder =
         MapBinder.newMapBinder(binder(), String.class, InfrastructureProvider.class);
     infrastructureProviderMapBinder.addBinding(SettingVariableTypes.AWS.name()).to(AwsInfrastructureProvider.class);
@@ -1842,7 +1843,6 @@ public class WingsModule extends AbstractModule implements ServersModule {
         .annotatedWith(Names.named(SecretSetupUsageBuilders.TRIGGER_SETUP_USAGE_BUILDER.getName()))
         .to(TriggerSetupUsageBuilder.class);
   }
-
   private void registerEventListeners() {
     bind(MessageListener.class)
         .annotatedWith(Names.named(ORGANIZATION_ENTITY + ENTITY_CRUD))

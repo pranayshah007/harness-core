@@ -135,6 +135,10 @@ import io.harness.ng.core.user.PasswordChangeResponse;
 import io.harness.ng.core.user.UserAccountLevelData.UserAccountLevelDataKeys;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
+import io.harness.notification.Team;
+import io.harness.notification.channeldetails.EmailChannel;
+import io.harness.notification.channeldetails.EmailChannel.EmailChannelBuilder;
+import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.UuidAware;
@@ -404,6 +408,8 @@ public class UserServiceImpl implements UserService {
   @Inject private AdminLicenseHttpClient adminLicenseHttpClient;
 
   @Inject private AwsMarketPlaceApiHandler awsMarketPlaceApiHandler;
+
+  @Inject private NotificationClient notificationClient;
 
   private final ScheduledExecutorService scheduledExecutor = new ScheduledThreadPoolExecutor(1,
       new ThreadFactoryBuilder().setNameFormat("invite-executor-thread-%d").setPriority(Thread.NORM_PRIORITY).build());
@@ -2539,7 +2545,6 @@ public class UserServiceImpl implements UserService {
   public boolean resetPassword(UserResource.ResetPasswordRequest resetPasswordRequest) {
     String email = resetPasswordRequest.getEmail();
     User user = getUserByEmail(email);
-
     if (user == null) {
       return true;
     }
@@ -2753,21 +2758,31 @@ public class UserServiceImpl implements UserService {
   private void sendResetPasswordEmail(User user, String token, boolean isNGRequest) {
     try {
       String resetPasswordUrl = getResetPasswordUrl(token, user, isNGRequest);
-
       Map<String, String> templateModel = getTemplateModel(user.getName(), resetPasswordUrl);
       List<String> toList = new ArrayList<>();
       toList.add(user.getEmail());
       String templateName = isNGRequest ? "ng_reset_password" : "reset_password";
-      EmailData emailData = EmailData.builder()
-                                .to(toList)
-                                .templateName(templateName)
-                                .templateModel(templateModel)
-                                .accountId(getPrimaryAccount(user).getUuid())
-                                .build();
-      emailData.setCc(Collections.emptyList());
-      emailData.setRetries(2);
-
-      emailNotificationService.send(emailData);
+      if (isNGRequest) {
+        EmailChannelBuilder emailChannel = EmailChannel.builder()
+                                               .recipients(toList)
+                                               .accountId(getPrimaryAccount(user).getUuid())
+                                               .templateId(templateName)
+                                               .templateData(templateModel)
+                                               .team(Team.OTHER)
+                                               .userGroups(Collections.emptyList());
+        log.info("sending reset password email through ng: {} ", emailChannel.toString());
+        notificationClient.sendNotificationAsync(emailChannel.build());
+      } else {
+        EmailData emailData = EmailData.builder()
+                                  .to(toList)
+                                  .templateName(templateName)
+                                  .templateModel(templateModel)
+                                  .accountId(getPrimaryAccount(user).getUuid())
+                                  .build();
+        emailData.setCc(Collections.emptyList());
+        emailData.setRetries(2);
+        emailNotificationService.send(emailData);
+      }
     } catch (URISyntaxException e) {
       log.error(RESET_ERROR, e);
     }
