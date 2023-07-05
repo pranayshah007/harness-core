@@ -54,6 +54,8 @@ import io.harness.cdng.environment.EnvironmentFilterPropertiesMapper;
 import io.harness.cdng.events.StageExecutionInfoEventListener;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.execution.service.StageExecutionInfoServiceImpl;
+import io.harness.cdng.execution.service.StageExecutionInstanceInfoService;
+import io.harness.cdng.execution.service.StageExecutionInstanceInfoServiceImpl;
 import io.harness.cdng.gitops.ClusterServiceImpl;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -162,6 +164,7 @@ public class NGModule extends AbstractModule {
     bind(S3ResourceService.class).to(S3ResourceServiceImpl.class);
     bind(GcsResourceService.class).to(GcsResourceServiceImpl.class);
     bind(InstanceInfoService.class).to(InstanceInfoServiceImpl.class);
+    bind(StageExecutionInstanceInfoService.class).to(StageExecutionInstanceInfoServiceImpl.class);
     bind(LicenseUsageInterface.class).to(CDLicenseUsageImpl.class);
     bind(InstanceService.class).to(InstanceServiceImpl.class);
     bind(ServiceEntityService.class).to(ServiceEntityServiceImpl.class);
