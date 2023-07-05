@@ -13,6 +13,7 @@ import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdUniqueCaseInsensitiveIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.user.entities.UserMetadata.UserMetadataKeys;
@@ -60,7 +61,7 @@ public class UserMetadata implements PersistentEntity {
   }
 
   @Id @dev.morphia.annotations.Id String userId;
-  @NotEmpty String email;
+  @FdUniqueCaseInsensitiveIndex @NotEmpty String email;
   String name;
   @Getter(value = AccessLevel.PRIVATE) @NotEmpty Boolean locked;
   @Getter(value = AccessLevel.PRIVATE) @NotEmpty Boolean disabled;

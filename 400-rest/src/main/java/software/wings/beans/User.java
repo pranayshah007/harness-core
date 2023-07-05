@@ -22,7 +22,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
-import io.harness.mongo.index.FdUniqueIndex;
+import io.harness.mongo.index.FdUniqueCaseInsensitiveIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
@@ -131,7 +131,7 @@ public class User extends Base implements Principal {
 
   private String familyName;
 
-  @FdUniqueIndex @Email private String email;
+  @FdUniqueCaseInsensitiveIndex @Email private String email;
 
   @JsonIgnore private String passwordHash;
 

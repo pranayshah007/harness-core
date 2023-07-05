@@ -17,6 +17,7 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.mongo.IndexManagerCollectionSession.createCollectionSession;
 import static io.harness.mongo.IndexManagerSession.Type.NORMAL_INDEX;
 import static io.harness.mongo.IndexManagerSession.Type.SPARSE_INDEX;
+import static io.harness.mongo.IndexManagerSession.Type.UNIQUE_CASE_INSENSITIVE_INDEX;
 import static io.harness.mongo.IndexManagerSession.Type.UNIQUE_INDEX;
 
 import static java.lang.String.format;
@@ -39,6 +40,7 @@ import io.harness.mongo.IndexManager.Mode;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdSparseIndex;
 import io.harness.mongo.index.FdTtlIndex;
+import io.harness.mongo.index.FdUniqueCaseInsensitiveIndex;
 import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.migrator.Migrator;
@@ -92,6 +94,9 @@ public class IndexManagerSession {
   public static final String UNIQUE = "unique";
   public static final String BACKGROUND = "background";
   public static final String SPARSE = "sparse";
+  public static final String COLLATION = "collation";
+  public static final String STRENGTH = "strength";
+  public static final String LOCALE = "locale";
   public static final String NAME = "name";
   public static final String EXPIRE_AFTER_SECONDS = "expireAfterSeconds";
   public static final Duration SOAKING_PERIOD = ofDays(1);
@@ -271,9 +276,12 @@ public class IndexManagerSession {
     for (MappedField mf : mc.getPersistenceFields()) {
       FdIndex fdIndex = mf.getField().getAnnotation(FdIndex.class);
       FdUniqueIndex fdUniqueIndex = mf.getField().getAnnotation(FdUniqueIndex.class);
+      FdUniqueCaseInsensitiveIndex fdUniqueCaseInsensitiveIndex =
+          mf.getField().getAnnotation(FdUniqueCaseInsensitiveIndex.class);
       FdSparseIndex fdSparseIndex = mf.getField().getAnnotation(FdSparseIndex.class);
       FdTtlIndex fdTtlIndex = mf.getField().getAnnotation(FdTtlIndex.class);
-      OneAndOnlyOne oneAndOnlyOne = oneAndOnlyOne(fdIndex, fdUniqueIndex, fdSparseIndex, fdTtlIndex);
+      OneAndOnlyOne oneAndOnlyOne =
+          oneAndOnlyOne(fdIndex, fdUniqueIndex, fdSparseIndex, fdTtlIndex, fdUniqueCaseInsensitiveIndex);
       if (oneAndOnlyOne == NONE) {
         continue;
       } else if (oneAndOnlyOne == MANY) {
@@ -289,9 +297,11 @@ public class IndexManagerSession {
         type = UNIQUE_INDEX;
       } else if (fdSparseIndex != null) {
         type = SPARSE_INDEX;
+      } else if (fdUniqueCaseInsensitiveIndex != null) {
+        type = UNIQUE_CASE_INSENSITIVE_INDEX;
       }
 
-      BasicDBObject options = indexOptions(indexName, type, null);
+      BasicDBObject options = indexOptions(indexName, type);
       if (fdTtlIndex != null) {
         options.put(EXPIRE_AFTER_SECONDS, fdTtlIndex.value());
       }
@@ -310,10 +320,10 @@ public class IndexManagerSession {
     throw new IndexManagerInspectException();
   }
 
-  enum Type { NORMAL_INDEX, UNIQUE_INDEX, SPARSE_INDEX }
+  enum Type { NORMAL_INDEX, UNIQUE_INDEX, SPARSE_INDEX, UNIQUE_CASE_INSENSITIVE_INDEX }
 
   @SneakyThrows
-  private static BasicDBObject indexOptions(String indexName, Type type, Annotation index) {
+  private static BasicDBObject indexOptions(String indexName, Type type) {
     BasicDBObject options = new BasicDBObject();
     options.put(NAME, indexName);
     if (type == UNIQUE_INDEX) {
@@ -323,6 +333,13 @@ public class IndexManagerSession {
     }
     if (type == SPARSE_INDEX) {
       options.put(SPARSE, Boolean.TRUE);
+    }
+    if (type == UNIQUE_CASE_INSENSITIVE_INDEX) {
+      options.put(UNIQUE, Boolean.TRUE);
+      BasicDBObject collation = new BasicDBObject();
+      collation.put(LOCALE, "en");
+      collation.put(STRENGTH, 2);
+      options.put(COLLATION, collation);
     }
     return options;
   }
