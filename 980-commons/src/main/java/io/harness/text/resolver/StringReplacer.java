@@ -204,7 +204,8 @@ public class StringReplacer {
     // ?,: -> for ternary operator
     // & -> && AND operation
     // | -> || OR operator
-    return c == '+' || c == '=' || c == '?' || c == ':' || c == '&' || c == '|';
+    // ! -> != operator
+    return c == '+' || c == '=' || c == '?' || c == ':' || c == '&' || c == '|' || c == '!';
   }
 
   private boolean skipNonCriticalCharacters(char c) {

@@ -421,6 +421,10 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     // AND operator
     assertThat(evaluator.evaluateExpression("<+c2.status> == \"RUNNING\" && <+c2.anotherStatus> == \"IGNORE_FAILED\""))
         .isEqualTo(true);
+    // Not operator
+    assertThat(
+        evaluator.evaluateExpression("(<+c2.status> == \"RUNNING\") && (<+c2.anotherStatus> != \"IGNORE_FAILED\")"))
+        .isEqualTo(false);
 
     // Complex double nesting with concatenate expressions with prefix combinations
     assertThat(evaluator.resolve("<+c1.<+var3>>", true)).isEqualTo("harness");
@@ -598,6 +602,10 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     // AND operator
     assertThat(evaluator.evaluateExpression("<+c2.status> == \"RUNNING\" && <+c2.anotherStatus> == \"IGNORE_FAILED\""))
         .isEqualTo(true);
+    // Not operator
+    assertThat(
+        evaluator.evaluateExpression("(<+c2.status> == \"RUNNING\") && (<+c2.anotherStatus> != \"IGNORE_FAILED\")"))
+        .isEqualTo(false);
 
     // Complex double nesting with concatenate expressions with prefix combinations
     assertThat(evaluator.resolve("<+c1.<+var3>>", true)).isEqualTo("harness");
