@@ -8,7 +8,6 @@
 package io.harness.pms.pipelinestage.step;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.OrchestrationStepTypes;
@@ -128,18 +127,11 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
 
     PipelineStageInfo info = prepareParentStageInfo(ambiance, stepParameters);
     try (ResponseTimeRecorder ignore1 = new ResponseTimeRecorder("[PMS_PIPELINE_STAGE_STEP]")) {
-      if (!isEmpty(stepParameters.getPipelineInputsJsonNode())) {
-        responseDto =
-            pipelineExecutor.runPipelineAsChildPipelineWithJsonNode(ambiance.getSetupAbstractions().get("accountId"),
-                stepParameters.getOrg(), stepParameters.getProject(), stepParameters.getPipeline(),
-                ambiance.getMetadata().getModuleType(), stepParameters.getPipelineInputsJsonNode(), false, false,
-                stepParameters.getInputSetReferences(), info, ambiance.getMetadata().getIsDebug());
-      } else {
-        responseDto = pipelineExecutor.runPipelineAsChildPipeline(ambiance.getSetupAbstractions().get("accountId"),
-            stepParameters.getOrg(), stepParameters.getProject(), stepParameters.getPipeline(),
-            ambiance.getMetadata().getModuleType(), stepParameters.getPipelineInputs(), false, false,
-            stepParameters.getInputSetReferences(), info, ambiance.getMetadata().getIsDebug());
-      }
+      responseDto =
+          pipelineExecutor.runPipelineAsChildPipelineWithJsonNode(ambiance.getSetupAbstractions().get("accountId"),
+              stepParameters.getOrg(), stepParameters.getProject(), stepParameters.getPipeline(),
+              ambiance.getMetadata().getModuleType(), stepParameters.getPipelineInputsJsonNode(), false, false,
+              stepParameters.getInputSetReferences(), info, ambiance.getMetadata().getIsDebug());
     }
 
     if (responseDto == null) {

@@ -167,17 +167,6 @@ public class PipelineStageHelper {
         Resource.of("PIPELINE", stepParameters.getPipeline()), PipelineRbacPermissions.PIPELINE_EXECUTE);
   }
 
-  public String getInputSetYaml(YamlField pipelineInputs, String pipelineVersion) {
-    switch (pipelineVersion) {
-      case PipelineVersion.V0:
-        return getInputSetYaml(pipelineInputs);
-      case PipelineVersion.V1:
-        return pipelineStageHelperV1.getInputSet(pipelineInputs);
-      default:
-        throw new InvalidRequestException(String.format("Child pipeline version: %s not supported", pipelineVersion));
-    }
-  }
-
   public JsonNode getInputSetJsonNode(YamlField pipelineInputs, String pipelineVersion) {
     switch (pipelineVersion) {
       case PipelineVersion.V0:
@@ -187,15 +176,6 @@ public class PipelineStageHelper {
       default:
         throw new InvalidRequestException(String.format("Child pipeline version: %s not supported", pipelineVersion));
     }
-  }
-
-  private String getInputSetYaml(YamlField pipelineInputs) {
-    String inputSetYaml = "";
-    if (pipelineInputs != null) {
-      Map<String, JsonNode> map = getInputSetMapInternal(pipelineInputs);
-      inputSetYaml = YamlUtils.writeYamlString(map);
-    }
-    return inputSetYaml;
   }
 
   private JsonNode getInputSetJsonNode(YamlField pipelineInputs) {

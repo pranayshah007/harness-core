@@ -8,7 +8,7 @@
 package io.harness.pms.ngpipeline.inputset.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSetIntoPipelineForGivenStages;
 import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSetsForGivenStages;
@@ -219,13 +219,6 @@ public class ValidateAndMergeHelper {
     return createTemplateFromPipelineForGivenStages(pipelineYaml, stageIdentifiers);
   }
 
-  public String getMergeInputSetFromPipelineTemplate(String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, List<String> inputSetReferences, String pipelineBranch, String pipelineRepoID,
-      List<String> stageIdentifiers) {
-    return getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, inputSetReferences, pipelineBranch, pipelineRepoID, stageIdentifiers, null, false, false);
-  }
-
   public JsonNode getMergeInputSetFromPipelineTemplateWithJsonNode(String accountId, String orgIdentifier,
       String projectIdentifier, String pipelineIdentifier, List<String> inputSetReferences, String pipelineBranch,
       String pipelineRepoID, List<String> stageIdentifiers) {
@@ -237,23 +230,13 @@ public class ValidateAndMergeHelper {
       String orgIdentifier, String projectIdentifier, String pipelineIdentifier, List<String> inputSetReferences,
       String pipelineBranch, String pipelineRepoID, List<String> stageIdentifiers, String lastYamlToMerge,
       boolean loadFromCache) {
-    return getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, inputSetReferences, pipelineBranch, pipelineRepoID, stageIdentifiers, lastYamlToMerge, true,
-        loadFromCache);
-  }
-
-  // TODO(shalini): remove older methods with yaml string once all are moved to jsonNode
-  public String getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(String accountId, String orgIdentifier,
-      String projectIdentifier, String pipelineIdentifier, List<String> inputSetReferences, String pipelineBranch,
-      String pipelineRepoID, List<String> stageIdentifiers, String lastYamlToMerge, boolean keepDefaultValues,
-      boolean loadFromCache) {
     JsonNode lastJsonNodeToMerge = null;
-    if (!isEmpty(lastYamlToMerge)) {
+    if (isNotEmpty(lastYamlToMerge)) {
       lastJsonNodeToMerge = YamlUtils.readAsJsonNode(lastYamlToMerge);
     }
     return YamlUtils.writeYamlString(getMergedJsonNodeFromInputSetReferencesAndRuntimeInputJsonNode(accountId,
         orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetReferences, pipelineBranch, pipelineRepoID,
-        stageIdentifiers, lastJsonNodeToMerge, keepDefaultValues, loadFromCache));
+        stageIdentifiers, lastJsonNodeToMerge, true, loadFromCache));
   }
 
   public JsonNode getMergedJsonNodeFromInputSetReferencesAndRuntimeInputJsonNode(String accountId, String orgIdentifier,

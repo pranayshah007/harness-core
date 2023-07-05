@@ -113,6 +113,7 @@ import io.harness.security.dto.ServicePrincipal;
 import io.harness.serializer.ProtoUtils;
 import io.harness.utils.PmsFeatureFlagHelper;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -297,8 +298,8 @@ public class TriggerExecutionHelper {
         switch (pipelineEntity.getHarnessVersion()) {
           case PipelineVersion.V1:
             planExecutionMetadataBuilder.inputSetYaml(runtimeInputYaml);
-            pipelineYaml =
-                InputSetMergeHelperV1.mergeInputSetIntoPipelineYaml(runtimeInputYaml, pipelineYamlBeforeMerge);
+            pipelineYaml = InputSetMergeHelperV1.mergeInputSetIntoPipelineYaml(
+                YamlUtils.readAsJsonNode(runtimeInputYaml), YamlUtils.readAsJsonNode(pipelineYamlBeforeMerge));
             break;
           default:
             String sanitizedRuntimeInputYaml =
@@ -396,8 +397,8 @@ public class TriggerExecutionHelper {
         SecurityContextBuilder.setContext(new ServicePrincipal(PIPELINE_SERVICE.getServiceId()));
         switch (pipelineEntity.getHarnessVersion()) {
           case PipelineVersion.V0:
-            String yamlForValidatingSchema =
-                executionHelper.getPipelineYamlWithUnResolvedTemplates(runtimeInputYaml, pipelineEntity);
+            JsonNode yamlForValidatingSchema = executionHelper.getPipelineYamlWithUnResolvedTemplates(
+                YamlUtils.readAsJsonNode(runtimeInputYaml), pipelineEntity);
             pmsYamlSchemaService.validateYamlSchema(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
                 pipelineEntity.getProjectIdentifier(), yamlForValidatingSchema);
             break;

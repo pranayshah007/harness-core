@@ -8,7 +8,6 @@
 package io.harness.pms.plan.execution.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -26,15 +25,6 @@ import lombok.extern.slf4j.Slf4j;
 @UtilityClass
 @Slf4j
 public class InputSetMergeHelperV1 {
-  public String mergeInputSetIntoPipelineYaml(String inputSetYaml, String pipelineYaml) {
-    if (isEmpty(inputSetYaml)) {
-      return pipelineYaml;
-    }
-    JsonNode inputSetJsonNode = YamlUtils.readAsJsonNode(inputSetYaml);
-    JsonNode pipelineJsonNode = YamlUtils.readAsJsonNode(pipelineYaml);
-    return mergeInputSetIntoPipelineYaml(inputSetJsonNode, pipelineJsonNode);
-  }
-
   public String mergeInputSetIntoPipelineYaml(JsonNode inputSetJsonNode, JsonNode pipelineJsonNode) {
     if (EmptyPredicate.isEmpty(inputSetJsonNode)) {
       return YamlUtils.writeYamlString(pipelineJsonNode);

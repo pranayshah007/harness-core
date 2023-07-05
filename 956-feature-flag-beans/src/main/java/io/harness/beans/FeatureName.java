@@ -507,9 +507,6 @@ public enum FeatureName {
       HarnessTeam.PIPELINE),
   PIE_PIPELINE_SETTINGS_ENFORCEMENT_LIMIT(
       "To enable pipeline-settings and limits in Project Default Settings in UI", HarnessTeam.PIPELINE),
-  PIE_PROCESS_ON_JSON_NODE(
-      "When FF is enabled, all processing like merging inputs, expression resolution, etc. will be done on jsonNode instead of yaml",
-      PIPELINE),
   PIE_RETRY_STEP_GROUP(
       "To enable Retry Step Group Failure Strategy, under which if a step fails in a step group, the whole group is retried",
       PIPELINE),
