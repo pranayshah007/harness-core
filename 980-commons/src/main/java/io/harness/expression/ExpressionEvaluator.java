@@ -85,6 +85,12 @@ public class ExpressionEvaluator {
       return null;
     }
 
+    // Ref: https://stackoverflow.com/q/66498157
+    // Line break in JEXL String
+    if (expression.contains("\n")) {
+      expression = expression.replaceAll("\n", "\\\\u000a");
+    }
+
     JexlExpression jexlExpression = engine.createExpression(expression);
     Object ret = jexlExpression.evaluate(context);
 
