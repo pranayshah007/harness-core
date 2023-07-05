@@ -39,4 +39,3 @@ COPY --chown=65534:65534 --from=builder /app/dockerization/base-images/apm/*.sh 
 
 CMD [ "/opt/harness/run.sh" ]
 
-USER root
