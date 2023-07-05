@@ -9,6 +9,9 @@ package io.harness.idp.pipeline.provider;
 
 import static io.harness.steps.plugin.ContainerStepConstants.PLUGIN;
 
+import io.harness.idp.pipeline.stages.filter.IDPStageFilterCreator;
+import io.harness.idp.pipeline.stages.plan.IDPStagePlanCreator;
+import io.harness.idp.pipeline.stages.variable.IDPStageVariableCreator;
 import io.harness.idp.pipeline.step.StepSpecTypeConstants;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
@@ -30,6 +33,7 @@ public class IdpPipelineServiceInfoProvider implements PipelineServiceInfoProvid
   public List<PartialPlanCreator<?>> getPlanCreators() {
     // Needs to be modified based on steps
     List<PartialPlanCreator<?>> planCreators = new LinkedList<>();
+    planCreators.add(new IDPStagePlanCreator());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -38,6 +42,7 @@ public class IdpPipelineServiceInfoProvider implements PipelineServiceInfoProvid
   public List<FilterJsonCreator> getFilterJsonCreators() {
     // Needs to be modified based on steps
     List<FilterJsonCreator> filterJsonCreators = new ArrayList<>();
+    filterJsonCreators.add(new IDPStageFilterCreator());
     injectorUtils.injectMembers(filterJsonCreators);
     return filterJsonCreators;
   }
@@ -46,6 +51,7 @@ public class IdpPipelineServiceInfoProvider implements PipelineServiceInfoProvid
   public List<VariableCreator> getVariableCreators() {
     // Needs to be modified based on steps
     List<VariableCreator> variableCreators = new ArrayList<>();
+    variableCreators.add(new IDPStageVariableCreator());
     return variableCreators;
   }
 

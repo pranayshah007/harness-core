@@ -242,6 +242,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
 
     List<ModuleType> enabledModules = obtainEnabledModules(accountIdentifier);
     enabledModules.add(ModuleType.PMS);
+    enabledModules.add(ModuleType.IDP);
     List<YamlSchemaWithDetails> schemaWithDetailsList =
         fetchSchemaWithDetailsFromModules(accountIdentifier, enabledModules);
     List<YamlSchemaWithDetails> stepsSchemaWithDetails =
@@ -384,6 +385,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
     if (StepCategory.STAGE.toString().equals(yamlGroup) || StepCategory.STEP_GROUP.toString().equals(yamlGroup)) {
       List<ModuleType> enabledModules = obtainEnabledModules(accountId);
       enabledModules.add(ModuleType.PMS);
+      enabledModules.add(ModuleType.IDP);
       yamlSchemaWithDetailsList = fetchSchemaWithDetailsFromModules(accountId, enabledModules);
       nameSpaces =
           yamlSchemaWithDetailsList.stream()

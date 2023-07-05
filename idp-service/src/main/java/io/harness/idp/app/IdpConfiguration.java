@@ -96,6 +96,7 @@ public class IdpConfiguration extends Configuration {
   public static final String NG_MANAGER_PROXY_PACKAGE = "io.harness.idp.proxy.ngmanager";
   public static final String DELEGATE_PROXY_PACKAGE = "io.harness.idp.proxy.delegate";
   public static final String IDP_HEALTH_PACKAGE = "io.harness.idp.health";
+  public static final String IDP_YAML_SCHEMA_PACKAGE ="io.harness.idp.pipeline.yaml.resources";
 
   public IdpConfiguration() {
     DefaultServerFactory defaultServerFactory = new DefaultServerFactory();
@@ -157,7 +158,7 @@ public class IdpConfiguration extends Configuration {
         .stream()
         .filter(klazz
             -> StringUtils.startsWithAny(klazz.getPackage().getName(), IDP_SPEC_PACKAGE, NG_MANAGER_PROXY_PACKAGE,
-                DELEGATE_PROXY_PACKAGE, IDP_HEALTH_PACKAGE))
+                DELEGATE_PROXY_PACKAGE, IDP_HEALTH_PACKAGE, IDP_YAML_SCHEMA_PACKAGE))
         .collect(Collectors.toSet());
   }
 }

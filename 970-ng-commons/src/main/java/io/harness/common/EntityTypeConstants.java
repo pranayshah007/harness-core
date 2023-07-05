@@ -123,6 +123,7 @@ public interface EntityTypeConstants {
   String VERACODE = "Veracode";
   String ZAP = "Zap";
   String SECURITY_STAGE = "SecurityStage";
+  String IDP_STAGE = "IDPStage";
   String SECURITY_STEPS = "SecuritySteps";
   String GIT_CLONE = "GitClone";
   String ARTIFACTORY_UPLOAD = "ArtifactoryUpload";

@@ -7,6 +7,9 @@
 
 package io.harness.idp.app;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
+import io.dropwizard.jackson.Jackson;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.govern.ProviderModule;
@@ -15,6 +18,7 @@ import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.IndexManager;
 import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.packages.HarnessPackages;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
 import io.harness.serializer.KryoRegistrar;
@@ -35,11 +39,13 @@ import dev.morphia.converters.TypeConverter;
 import io.dropwizard.Application;
 import io.dropwizard.cli.ConfiguredCommand;
 import io.dropwizard.setup.Bootstrap;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
+
+import io.harness.yaml.core.StepSpecType;
+import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 import net.sourceforge.argparse4j.inf.Namespace;
+import org.reflections.Reflections;
 
 @OwnedBy(HarnessTeam.IDP)
 public class InspectCommand<T extends io.dropwizard.Configuration> extends ConfiguredCommand<T> {
@@ -85,6 +91,14 @@ public class InspectCommand<T extends io.dropwizard.Configuration> extends Confi
             .addAll(IdpServiceRegistrars.kryoRegistrars)
             .build();
       }
+
+      @Provides
+      @Singleton
+      List<YamlSchemaRootClass> yamlSchemaRootClasses() {
+        return ImmutableList.<YamlSchemaRootClass>builder().addAll(IdpServiceRegistrars.yamlSchemaRegistrars).build();
+      }
+
+
       @Provides
       @Singleton
       public Set<Class<? extends MorphiaRegistrar>> morphiaRegistrars() {

@@ -13,6 +13,7 @@ import static io.harness.authorization.AuthorizationServiceHeader.DEFAULT;
 import static io.harness.idp.app.IdpConfiguration.HARNESS_RESOURCE_CLASSES;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.harness.Microservice;
 import io.harness.ModuleType;
 import io.harness.PipelineServiceUtilityModule;
@@ -59,6 +60,7 @@ import io.harness.pms.sdk.execution.events.node.resume.NodeResumeEventRedisConsu
 import io.harness.pms.sdk.execution.events.node.start.NodeStartEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.orchestrationevent.OrchestrationEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
+import io.harness.pms.serializer.json.PmsBeansJacksonModule;
 import io.harness.request.RequestLoggingFilter;
 import io.harness.security.InternalApiAuthFilter;
 import io.harness.security.NextGenAuthenticationFilter;
@@ -98,6 +100,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ResourceInfo;
+
+import io.harness.yaml.YamlSdkConfiguration;
+import io.harness.yaml.YamlSdkInitHelper;
+import io.serializer.HObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.glassfish.jersey.server.ServerProperties;
@@ -124,6 +130,11 @@ public class IdpApplication extends Application<IdpConfiguration> {
     }));
 
     new IdpApplication().run(args);
+  }
+
+  public static void configureObjectMapper(final ObjectMapper mapper) {
+    HObjectMapper.configureObjectMapperForNG(mapper);
+    mapper.registerModule(new PmsBeansJacksonModule());
   }
 
   @Override
@@ -169,6 +180,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
     registerResources(environment, injector);
     registerHealthChecksManager(environment, injector);
     registerQueueListeners(injector);
+    registerYamlSdk(injector);
     registerAuthFilters(configuration, environment, injector);
     registerManagedJobs(environment, injector);
     registerPmsSdkEvents(injector);
@@ -331,5 +343,14 @@ public class IdpApplication extends Application<IdpConfiguration> {
     final HealthService healthService = injector.getInstance(HealthService.class);
     environment.healthChecks().register("IDP", healthService);
     healthService.registerMonitor((HealthMonitor) injector.getInstance(MongoTemplate.class));
+  }
+
+  private void registerYamlSdk(Injector injector) {
+    YamlSdkConfiguration yamlSdkConfiguration = YamlSdkConfiguration.builder()
+            .requireSchemaInit(true)
+            .requireSnippetInit(true)
+            .requireValidatorInit(false)
+            .build();
+    YamlSdkInitHelper.initialize(injector, yamlSdkConfiguration);
   }
 }
