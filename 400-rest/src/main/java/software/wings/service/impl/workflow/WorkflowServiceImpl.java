@@ -35,6 +35,7 @@ import static io.harness.expression.ExpressionEvaluator.DEFAULT_HELMCHART_VARIAB
 import static io.harness.expression.ExpressionEvaluator.matchesVariablePattern;
 import static io.harness.govern.Switch.noop;
 import static io.harness.govern.Switch.unhandled;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.provision.TerraformConstants.INHERIT_APPROVED_PLAN;
@@ -475,6 +476,7 @@ public class WorkflowServiceImpl implements WorkflowService {
     if (isNotEmpty(queryHint)) {
       findOptions.hint(BasicDBUtils.getIndexObject(Workflow.mongoIndexes(), queryHint));
     }
+    findOptions.limit(NO_LIMIT);
     return emptyIfNull(workflowQuery.asList(findOptions));
   }
 
