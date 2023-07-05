@@ -45,6 +45,8 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.beans.dto.ExecutionDataResponseDTO;
 import io.harness.pms.plan.execution.beans.dto.ExecutionMetaDataResponseDetailsDTO;
+import io.harness.pms.plan.execution.beans.dto.ExpressionEvaluationDetail;
+import io.harness.pms.plan.execution.beans.dto.ExpressionEvaluationDetailDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionFilterPropertiesDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionIdentifierSummaryDTO;
@@ -68,7 +70,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.ws.rs.BeanParam;
@@ -354,6 +358,43 @@ public class ExecutionDetailsResource {
         childStageNodeId, renderFullBottomGraph, executionSummaryEntity, entityGitDetails);
 
     return ResponseDTO.newResponse(executionDetailDTO);
+  }
+
+  @GET
+  @Path("/{pipelineIdentifier}/evaluateExpression")
+  @ApiOperation(value = "Gets Execution Expression evaluated", nickname = "getExpressionEvaluated")
+  @Operation(operationId = "getExpressionEvaluated", description = "Returns the Map of evaluated Expression",
+      summary = "Fetch Execution Details",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the Map of evaluated Expression")
+      })
+  @Hidden
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  public ResponseDTO<ExpressionEvaluationDetailDTO>
+  getExpressionEvaluated(
+      @NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = PipelineResourceConstants.ORG_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+      @NotNull @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE, required = true) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+      @NotNull @Parameter(description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE, required = true)
+      @PathParam(NGCommonEntityConstants.PIPELINE_KEY) @ProjectIdentifier String pipelineIdentifier,
+      @Parameter(description = "Plan Execution Id for which Expression have to be evaluated",
+          required = true) @PathParam(NGCommonEntityConstants.PLAN_KEY) String planExecutionId,
+      @RequestBody(required = true, description = "Pipeline YAML") @NotNull String yaml) {
+    // TODO: need to be implemented
+    Map<String, ExpressionEvaluationDetail> dummyMapData = new HashMap<>();
+    dummyMapData.put("expression+fqn",
+        ExpressionEvaluationDetail.builder()
+            .fqn("fqn")
+            .originalExpression("originalExpression")
+            .resolvedValue("resolvedYaml")
+            .build());
+    return ResponseDTO.newResponse(
+        ExpressionEvaluationDetailDTO.builder().compiledYaml(yaml).mapExpression(dummyMapData).build());
   }
 
   @GET
