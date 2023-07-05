@@ -9,8 +9,10 @@ package io.harness.ng.core.variable.dto;
 
 import io.harness.ng.core.variable.VariableValueType;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -24,12 +26,15 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "type", visible = true)
 @JsonSubTypes({ @JsonSubTypes.Type(value = StringVariableConfigDTO.class, name = "String") })
 public abstract class VariableConfigDTO {
   public static final String FIXED_SET_VALUE_FORMAT = "<+input>.allowedValues(%s)";
   public static final String REGEX_VALUE_FORMAT = "<+input>.regex(%s)";
   @Schema(description = VariableConstants.VARIABLE_VALUE_TYPE) @NotNull VariableValueType valueType;
-  public abstract Object getValue();
+
+  @JsonIgnore public abstract Object getValue();
   public void validate() {
     // no op implementation
   }
