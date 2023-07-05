@@ -8,7 +8,6 @@
 package io.harness.iacm.execution;
 
 import static io.harness.ci.commonconstants.CIExecutionConstants.WORKSPACE_ID;
-import static io.harness.pms.contracts.plan.ExpressionMode.RETURN_NULL_IF_UNRESOLVED;
 
 import io.harness.beans.entities.Workspace;
 import io.harness.beans.entities.WorkspaceVariables;
@@ -23,9 +22,10 @@ import io.harness.iacmserviceclient.IACMServiceUtils;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.expression.EngineExpressionService;
 
-import com.fasterxml.jackson.databind.node.TextNode;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,8 +34,6 @@ import java.util.Objects;
 public class IACMStepsUtils {
   @Inject ConnectorUtils connectorUtils;
   @Inject IACMServiceUtils iacmServiceUtils;
-
-  @Inject private EngineExpressionService engineExpressionService;
 
   private Workspace getIACMWorkspaceInfo(String org, String projectId, String accountId, String workspaceID) {
     Workspace workspaceInfo = iacmServiceUtils.getIACMWorkspaceInfo(org, projectId, accountId, workspaceID);
@@ -46,44 +44,72 @@ public class IACMStepsUtils {
     return workspaceInfo;
   }
 
-  private String getTerraformEndpointsInfo(Ambiance ambiance, String workspaceId) {
-    return iacmServiceUtils.GetTerraformEndpointsData(ambiance, workspaceId);
+  private String getTerraformEndpointsInfo(String account, String org, String project, String workspaceId) {
+    return iacmServiceUtils.GetTerraformEndpointsData(account, org, project, workspaceId);
   }
 
   public void createExecution(Ambiance ambiance, String workspaceId) {
     iacmServiceUtils.createIACMExecution(ambiance, workspaceId);
   }
 
-  private Map<String, String> getWorkspaceVariables(Ambiance ambiance, String org, String projectId, String accountId,
-      String workspaceID, String command, Workspace workspaceInfo) {
+  public String populatePipelineIds(Ambiance ambiance, String json) {
+    try {
+      ObjectMapper mapper = new ObjectMapper();
+      JsonNode rootNode = mapper.readTree(json);
+
+      if (rootNode.isObject()) {
+        ObjectNode objectNode = (ObjectNode) rootNode;
+        objectNode.put("pipeline_execution_id", ambiance.getPlanExecutionId());
+        objectNode.put("pipeline_stage_execution_id", ambiance.getStageExecutionId());
+      }
+
+      return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(rootNode);
+    } catch (Exception e) {
+      e.printStackTrace();
+      return json;
+    }
+  }
+
+  public Map<String, String> replaceExpressionFunctorToken(Ambiance ambiance, Map<String, String> envVar) {
+    for (Map.Entry<String, String> entry : envVar.entrySet()) {
+      String key = entry.getKey();
+      String value = entry.getValue();
+
+      if (value != null && value.contains("functorToken")) {
+        value = value.replace("functorToken", String.valueOf(ambiance.getExpressionFunctorToken()));
+      }
+
+      envVar.put(key, value);
+    }
+    return envVar;
+  }
+
+  private Map<String, String> getWorkspaceVariables(
+      String org, String projectId, String accountId, String workspaceID, Workspace workspaceInfo) {
     WorkspaceVariables[] variables = getIACMWorkspaceVariables(org, projectId, accountId, workspaceID);
     HashMap<String, String> pluginEnvs = new HashMap<>();
 
     // Plugin system env variables
     pluginEnvs.put("PLUGIN_ROOT_DIR", workspaceInfo.getRepository_path());
     pluginEnvs.put("PLUGIN_TF_VERSION", workspaceInfo.getProvisioner_version());
-    pluginEnvs.put("PLUGIN_ENDPOINT_VARIABLES", getTerraformEndpointsInfo(ambiance, workspaceID));
-
-    if (!Objects.equals(command, "")) {
-      pluginEnvs.put("PLUGIN_COMMAND", command);
-    }
+    pluginEnvs.put("PLUGIN_CONNECTOR_REF", workspaceInfo.getProvider_connector());
+    pluginEnvs.put("PLUGIN_PROVISIONER", workspaceInfo.getProvisioner());
+    pluginEnvs.put("PLUGIN_ENDPOINT_VARIABLES", getTerraformEndpointsInfo(accountId, org, projectId, workspaceID));
 
     for (WorkspaceVariables variable : variables) {
       switch (variable.getKind()) {
         case "env":
           if (Objects.equals(variable.getValue_type(), "secret")) {
-            pluginEnvs.put("PLUGIN_WS_ENV_VAR_" + variable.getKey(),
-                "${ngSecretManager.obtain(\"" + variable.getValue() + "\", " + ambiance.getExpressionFunctorToken()
-                    + ")}");
+            pluginEnvs.put(
+                variable.getKey(), "${ngSecretManager.obtain(\"" + variable.getValue() + "\", functorToken)}");
           } else {
-            pluginEnvs.put("PLUGIN_WS_ENV_VAR_" + variable.getKey(), variable.getValue());
+            pluginEnvs.put(variable.getKey(), variable.getValue());
           }
           break;
         case "tf":
           if (Objects.equals(variable.getValue_type(), "secret")) {
             pluginEnvs.put("PLUGIN_WS_TF_VAR_" + variable.getKey(),
-                "${ngSecretManager.obtain(\"" + variable.getValue() + "\", " + ambiance.getExpressionFunctorToken()
-                    + ")}");
+                "${ngSecretManager.obtain(\"" + variable.getValue() + "\", functorToken)}");
           } else {
             pluginEnvs.put("PLUGIN_WS_TF_VAR_" + variable.getKey(), variable.getValue());
           }
@@ -101,37 +127,14 @@ public class IACMStepsUtils {
     return iacmServiceUtils.getIacmWorkspaceEnvs(org, projectId, accountId, workspaceID);
   }
 
-  // Extract the keyword operation
-  private String extractOperation(PluginStepInfo stepInfo) {
-    TextNode operationTextNode = (TextNode) stepInfo.getSettings().get("command");
+  private Map<String, String> buildIACMEnvVariables(String workspaceId, String org, String project, String account) {
+    Workspace workspaceInfo = getIACMWorkspaceInfo(org, project, account, workspaceId);
 
-    if (operationTextNode == null) {
-      return "";
-    }
-
-    return operationTextNode.asText();
+    return getWorkspaceVariables(org, project, account, workspaceId, workspaceInfo);
   }
 
-  public Map<String, String> getIACMEnvVariables(Ambiance ambiance, PluginStepInfo stepInfo) {
-    String workspaceId = stepInfo.getEnvVariables().getValue().get(WORKSPACE_ID).getValue();
-    String command = extractOperation(stepInfo);
-    return buildIACMEnvVariables(ambiance, workspaceId, command);
-  }
-
-  private Map<String, String> buildIACMEnvVariables(Ambiance ambiance, String workspaceId, String command) {
-    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-
-    Workspace workspaceInfo = getIACMWorkspaceInfo(
-        ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), ngAccess.getAccountIdentifier(), workspaceId);
-
-    createExecution(ambiance, workspaceId);
-
-    return getWorkspaceVariables(ambiance, ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(),
-        ngAccess.getAccountIdentifier(), workspaceId, command, workspaceInfo);
-  }
-
-  public Map<String, String> getIACMEnvVariables(Ambiance ambiance, String workspaceId, String command) {
-    return buildIACMEnvVariables(ambiance, workspaceId, command);
+  public Map<String, String> getIACMEnvVariables(String org, String project, String account, String workspaceId) {
+    return buildIACMEnvVariables(workspaceId, org, project, account);
   }
 
   public boolean isIACMStep(PluginStepInfo pluginStepInfo) {
@@ -140,48 +143,17 @@ public class IACMStepsUtils {
         && !Objects.equals(pluginStepInfo.getEnvVariables().getValue().get(WORKSPACE_ID).getValue(), "");
   }
 
-  public ConnectorDetails retrieveIACMConnectorDetails(Ambiance ambiance, String workspaceId) {
+  public ConnectorDetails retrieveIACMConnectorDetails(Ambiance ambiance, String connectorRef, String provisioner) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    Workspace workspaceInfo = getIACMWorkspaceInfo(
-        ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), ngAccess.getAccountIdentifier(), workspaceId);
-    if (workspaceInfo.getProvider_connector() != null) {
+    if (connectorRef != null) {
       Map<EnvVariableEnum, String> connectorSecretEnvMap = null;
-      if (workspaceInfo.getProvisioner().equals("terraform")) {
+      if (provisioner.equals("terraform")) {
         connectorSecretEnvMap = PluginSettingUtils.getConnectorSecretEnvMap(CIStepInfoType.IACM_TERRAFORM_PLUGIN);
       }
-      ConnectorDetails connectorDetails =
-          connectorUtils.getConnectorDetails(ngAccess, workspaceInfo.getProvider_connector());
+      ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorRef);
       connectorDetails.setEnvToSecretsMap(connectorSecretEnvMap);
       return connectorDetails;
     }
     return null;
-  }
-
-  private String transformMapToString(Map<String, String> originalMap) {
-    StringBuilder sb = new StringBuilder();
-    sb.append('{');
-    for (Map.Entry<String, String> entry : originalMap.entrySet()) {
-      String key = entry.getKey();
-      String value = entry.getValue();
-      String transformedValue = String.format("\"%s\"", value);
-      sb.append(String.format("\"%s\":%s,", key, transformedValue));
-    }
-    if (sb.length() > 1) {
-      sb.deleteCharAt(sb.length() - 1);
-    }
-    sb.append('}');
-    return sb.toString();
-  }
-
-  public Map<String, String> replaceHarnessVariables(Ambiance ambiance, Map<String, String> map) {
-    for (Map.Entry<String, String> entry : map.entrySet()) {
-      String key = entry.getKey();
-      String value = entry.getValue();
-      var renderedValue = engineExpressionService.renderExpression(ambiance, value, RETURN_NULL_IF_UNRESOLVED);
-      if (renderedValue != null) {
-        map.put(key, renderedValue);
-      }
-    }
-    return map;
   }
 }

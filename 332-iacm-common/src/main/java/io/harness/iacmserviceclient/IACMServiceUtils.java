@@ -205,18 +205,14 @@ public class IACMServiceUtils {
     return vars;
   }
 
-  public String GetTerraformEndpointsData(Ambiance ambiance, String workspaceId) {
-    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+  public String GetTerraformEndpointsData(String account, String org, String project, String workspaceId) {
     TerraformEndpointsData tfEndpointsData = TerraformEndpointsData.builder()
-                                                 .org_id(ngAccess.getOrgIdentifier())
+                                                 .org_id(org)
                                                  .base_url(iacmServiceConfig.getExternalUrl())
-                                                 .account_id(ngAccess.getAccountIdentifier())
-                                                 .pipeline_execution_id(ambiance.getPlanExecutionId())
-                                                 .pipeline_stage_execution_id(ambiance.getStageExecutionId())
-                                                 .project_id(ngAccess.getProjectIdentifier())
+                                                 .account_id(account)
+                                                 .project_id(project)
                                                  .workspace_id(workspaceId)
-                                                 .token(generateJWTToken(ngAccess.getAccountIdentifier(),
-                                                     ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier()))
+                                                 .token(generateJWTToken(account, org, project))
                                                  .build();
     ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
     try {
