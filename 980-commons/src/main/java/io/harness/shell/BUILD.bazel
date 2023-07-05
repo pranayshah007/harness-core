@@ -11,9 +11,6 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//980-commons/src/main/java/io/harness/serializer:module",
-        "//980-commons/src/main/java/io/harness/shell:module",
-        "//980-commons/src/main/java/io/harness/utils:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
     ],
 )
