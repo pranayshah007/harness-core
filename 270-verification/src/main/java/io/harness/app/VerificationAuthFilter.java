@@ -60,6 +60,6 @@ public class VerificationAuthFilter extends VerificationServiceAuthenticationFil
   public void validateDelegateToken(
       String accountId, String tokenString, String delegateId, String delegateTokenName, String agentMtlsAuthority) {
     delegateTokenAuthenticator.validateDelegateToken(
-        accountId, tokenString, delegateId, delegateTokenName, agentMtlsAuthority, false);
+        accountId, tokenString, delegateId, delegateTokenName, agentMtlsAuthority, false, false);
   }
 }
