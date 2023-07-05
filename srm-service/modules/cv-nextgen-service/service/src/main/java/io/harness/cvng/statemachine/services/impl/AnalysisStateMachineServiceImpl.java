@@ -219,7 +219,8 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
     if (AnalysisStatus.getFinalStates().contains(analysisStateMachine.getStatus())) {
       Duration timeDuration =
           Duration.between(analysisStateMachine.getStartTime(), analysisStateMachine.getAnalysisEndTime());
-      cvngLogTags.addAll(CVNGTaskMetadataUtils.getTaskDurationTags(timeDuration));
+      cvngLogTags.addAll(
+          CVNGTaskMetadataUtils.getTaskDurationTags(CVNGTaskMetadataUtils.DurationType.TOTAL_DURATION, timeDuration));
     }
     executionLogService.getLogger(analysisStateMachine)
         .log(analysisStateMachine.getLogLevel(), cvngLogTags,

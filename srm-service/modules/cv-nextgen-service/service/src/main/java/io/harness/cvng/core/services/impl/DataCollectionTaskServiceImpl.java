@@ -16,6 +16,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import io.harness.cvng.analysis.entities.VerificationTaskBase.VerificationTaskBaseKeys;
 import io.harness.cvng.beans.CVNGPerpetualTaskDTO;
 import io.harness.cvng.beans.CVNGPerpetualTaskState;
+import io.harness.cvng.beans.CVNGTaskMetadataConstants;
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.beans.DataCollectionTaskDTO;
 import io.harness.cvng.beans.DataCollectionTaskDTO.DataCollectionTaskResult;
@@ -48,7 +49,6 @@ import dev.morphia.query.UpdateOperations;
 import dev.morphia.query.UpdateResults;
 import io.fabric8.utils.Lists;
 import java.time.Clock;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -191,12 +191,21 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
     }
     DataCollectionTask dataCollectionTask = getDataCollectionTask(result.getDataCollectionTaskId());
     ExecutionLogger executionLogger = executionLogService.getLogger(dataCollectionTask);
-
-    // TODO Very Imp to null check everywhere, version compability is very important.
     List<CVNGLogTag> cvngLogTags = CVNGTaskMetadataUtils.getCvngLogTagsForTask(dataCollectionTask.getUuid());
     if (!DataCollectionExecutionStatus.getNonFinalStatuses().contains(dataCollectionTask.getStatus())) {
-      Duration duration = dataCollectionTask.totalTime(Instant.now());
-      cvngLogTags.addAll(CVNGTaskMetadataUtils.getTaskDurationTags(duration));
+      if (dataCollectionTask.getRetryCount() > 0) {
+        cvngLogTags.add(CVNGTaskMetadataUtils.getCvngLogTag(
+            CVNGTaskMetadataConstants.RETRY_COUNT, String.valueOf(dataCollectionTask.getRetryCount())));
+      }
+      if (dataCollectionTask.getLastPickedAt() != null) {
+        cvngLogTags.addAll(CVNGTaskMetadataUtils.getTaskDurationTags(
+            CVNGTaskMetadataUtils.DurationType.WAIT_DURATION, dataCollectionTask.waitTime()));
+        cvngLogTags.addAll(CVNGTaskMetadataUtils.getTaskDurationTags(
+            CVNGTaskMetadataUtils.DurationType.RUNNING_DURATION, dataCollectionTask.runningTime(Instant.now())));
+      } else {
+        cvngLogTags.addAll(CVNGTaskMetadataUtils.getTaskDurationTags(
+            CVNGTaskMetadataUtils.DurationType.TOTAL_DURATION, dataCollectionTask.totalTime(Instant.now())));
+      }
     }
     cvngLogTags.addAll(CVNGTaskMetadataUtils.getDataCollectionMetadataTags(result));
     String message = "Data collection task status: " + dataCollectionTask.getStatus();

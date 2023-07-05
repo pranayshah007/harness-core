@@ -234,7 +234,8 @@ public class LearningEngineTaskServiceImpl implements LearningEngineTaskService 
 
   private static List<CVNGLogTag> getCvngLogTagsForFinalState(String taskId, Duration duration) {
     List<CVNGLogTag> cvngLogTags = CVNGTaskMetadataUtils.getCvngLogTagsForTask(taskId);
-    cvngLogTags.addAll(CVNGTaskMetadataUtils.getTaskDurationTags(duration));
+    cvngLogTags.addAll(
+        CVNGTaskMetadataUtils.getTaskDurationTags(CVNGTaskMetadataUtils.DurationType.TOTAL_DURATION, duration));
     return cvngLogTags;
   }
 

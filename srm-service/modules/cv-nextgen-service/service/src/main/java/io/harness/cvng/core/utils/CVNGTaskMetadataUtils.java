@@ -30,6 +30,7 @@ import org.apache.commons.lang3.StringUtils;
 @UtilityClass
 @Slf4j
 public class CVNGTaskMetadataUtils {
+  public enum DurationType { TOTAL_DURATION, WAIT_DURATION, RUNNING_DURATION }
   public static CVNGLogTag getCvngLogTag(String tagKey, String tagValue) {
     return CVNGLogTag.builder().key(tagKey).value(tagValue).type(CVNGLogTag.TagType.STRING).build();
   }
@@ -59,38 +60,48 @@ public class CVNGTaskMetadataUtils {
     return duration.toString().substring(2).replaceAll("(\\d[HMS])(?!$)", "$1 ").toLowerCase();
   }
 
-  public static List<CVNGLogTag> getTaskDurationTags(Duration duration) {
-    String timeReadableFormat = CVNGTaskMetadataUtils.humanReadableFormat(duration);
-    List<CVNGLogTag> cvngLogTags = new ArrayList<>();
+  public static List<CVNGLogTag> getTaskDurationTags(DurationType durationType, Duration duration) {
+    String durationTypeKey = null;
+    switch (durationType) {
+      case TOTAL_DURATION:
+        durationTypeKey = CVNGTaskMetadataConstants.TOTAL_DURATION;
+        break;
+      case WAIT_DURATION:
+        durationTypeKey = CVNGTaskMetadataConstants.WAIT_DURATION;
+        break;
+      case RUNNING_DURATION:
+        durationTypeKey = CVNGTaskMetadataConstants.RUNNING_DURATION;
+        break;
+      default:
+        break;
+    }
     CVNGLogTag cvngLogTagDuration =
-        CVNGTaskMetadataUtils.getCvngLogTag(CVNGTaskMetadataConstants.DURATION, timeReadableFormat);
-    cvngLogTags.add(cvngLogTagDuration);
-    return cvngLogTags;
+        CVNGTaskMetadataUtils.getCvngLogTag(durationTypeKey, CVNGTaskMetadataUtils.humanReadableFormat(duration));
+    return new ArrayList<>(List.of(cvngLogTagDuration));
   }
 
   public static Map<String, String> getDataCollectionInfoMetadata(
       CVConfig cvConfig, VerificationJobInstance verificationJobInstance, String verificationTaskId) {
     Map<String, String> dataCollectionMetadata = new HashMap<>();
     try {
-      String queryId = "";
+      List<String> queryIds = new ArrayList<>();
       String groupId = "";
       if (cvConfig instanceof NextGenLogCVConfig) {
-        queryId = ((NextGenLogCVConfig) cvConfig).getQueryName();
+        queryIds.add(((NextGenLogCVConfig) cvConfig).getQueryName());
         groupId = ((NextGenLogCVConfig) cvConfig).getGroupName();
       } else if (cvConfig instanceof LogCVConfig) {
-        queryId = ((LogCVConfig) cvConfig).getQueryName();
+        queryIds.add(((LogCVConfig) cvConfig).getQueryName());
       } else if (cvConfig instanceof MetricCVConfig) {
         groupId = ((MetricCVConfig<AnalysisInfo>) cvConfig).maybeGetGroupName().orElse("DEFAULT_GROUP");
-        queryId = ((MetricCVConfig<AnalysisInfo>) cvConfig)
-                      .getMetricInfos()
-                      .stream()
-                      .filter(metricInfo -> metricInfo.getDeploymentVerification().isEnabled())
-                      .map(AnalysisInfo::getMetricName)
-                      .collect(Collectors.toList())
-                      .toString();
+        queryIds.addAll(((MetricCVConfig<AnalysisInfo>) cvConfig)
+                            .getMetricInfos()
+                            .stream()
+                            .filter(metricInfo -> metricInfo.getDeploymentVerification().isEnabled())
+                            .map(AnalysisInfo::getMetricName)
+                            .collect(Collectors.toList()));
       }
-      if (StringUtils.isNotEmpty(queryId)) {
-        dataCollectionMetadata.put(CVNGTaskMetadataConstants.QUERY_IDS, queryId);
+      if (!queryIds.isEmpty()) {
+        dataCollectionMetadata.put(CVNGTaskMetadataConstants.QUERY_IDS, queryIds.toString());
       }
       if (StringUtils.isNotEmpty(groupId)) {
         dataCollectionMetadata.put(CVNGTaskMetadataConstants.GROUP_ID, groupId);

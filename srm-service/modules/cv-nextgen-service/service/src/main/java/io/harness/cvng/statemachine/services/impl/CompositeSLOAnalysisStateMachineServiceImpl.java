@@ -9,8 +9,10 @@ package io.harness.cvng.statemachine.services.impl;
 
 import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_MINUTES_FOR_SLI;
 
+import io.harness.cvng.beans.cvnglog.CVNGLogTag;
 import io.harness.cvng.core.services.api.ExecutionLogService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.core.utils.CVNGTaskMetadataUtils;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
@@ -21,6 +23,8 @@ import io.harness.cvng.statemachine.entities.CompositeSLOMetricAnalysisState;
 import io.harness.cvng.statemachine.entities.CompositeSLORestoreMetricAnalysisState;
 
 import com.google.inject.Inject;
+import java.time.Duration;
+import java.util.List;
 
 public class CompositeSLOAnalysisStateMachineServiceImpl extends AnalysisStateMachineServiceImpl {
   @Inject private VerificationTaskService verificationTaskService;
@@ -50,8 +54,14 @@ public class CompositeSLOAnalysisStateMachineServiceImpl extends AnalysisStateMa
     stateMachine.setAccountId(compositeServiceLevelObjective.getAccountId());
     stateMachine.setStateMachineIgnoreMinutes(STATE_MACHINE_IGNORE_MINUTES_FOR_SLI);
     stateMachine.setCurrentState(firstState);
+    List<CVNGLogTag> cvngLogTags = CVNGTaskMetadataUtils.getCvngLogTagsForTask(stateMachine.getUuid());
+    if (AnalysisStatus.getFinalStates().contains(stateMachine.getStatus())) {
+      Duration timeDuration = Duration.between(stateMachine.getStartTime(), stateMachine.getAnalysisEndTime());
+      cvngLogTags.addAll(
+          CVNGTaskMetadataUtils.getTaskDurationTags(CVNGTaskMetadataUtils.DurationType.TOTAL_DURATION, timeDuration));
+    }
     executionLogService.getLogger(stateMachine)
-        .log(stateMachine.getLogLevel(), "Analysis state machine status: " + stateMachine.getStatus());
+        .log(stateMachine.getLogLevel(), cvngLogTags, "Analysis state machine status: " + stateMachine.getStatus());
     return stateMachine;
   }
 }

@@ -130,6 +130,8 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
             if (dataCollectionTaskDTO.getDataCollectionMetadata() != null) {
               dataCollectionTaskDTO.getDataCollectionMetadata().put(
                   CVNGTaskMetadataConstants.DELEGATE_ID, DelegateAgentCommonVariables.getDelegateId());
+              dataCollectionTaskDTO.getDataCollectionMetadata().put(
+                  CVNGTaskMetadataConstants.PERPETUAL_TASK_ID, taskId.getId());
             }
           });
           List<CompletableFuture> completableFutures =
