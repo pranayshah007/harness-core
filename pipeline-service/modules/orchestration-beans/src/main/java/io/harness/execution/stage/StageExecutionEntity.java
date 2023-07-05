@@ -11,7 +11,6 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
@@ -80,19 +79,13 @@ public class StageExecutionEntity implements PersistentEntity, UuidAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(SortCompoundMongoIndex.builder()
-                 .name("stage_execution_entity_idx")
+                 .name("stage_execution_entity_sorted_idx")
                  .field(StageExecutionEntityKeys.accountIdentifier)
                  .field(StageExecutionEntityKeys.orgIdentifier)
                  .field(StageExecutionEntityKeys.projectIdentifier)
                  .field(StageExecutionEntityKeys.stageExecutionId)
                  .descSortField(StageExecutionEntityKeys.createdAt)
-                 .build())
-        .add(CompoundMongoIndex.builder()
-                 .name("unique_stage_execution_entity_idx")
-                 .field(StageExecutionEntityKeys.accountIdentifier)
-                 .field(StageExecutionEntityKeys.orgIdentifier)
-                 .field(StageExecutionEntityKeys.projectIdentifier)
-                 .field(StageExecutionEntityKeys.stageExecutionId)
+                 .unique(true)
                  .build())
         .build();
   }
