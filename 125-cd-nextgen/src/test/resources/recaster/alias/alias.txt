@@ -1068,3 +1068,6 @@ io.harness.ng.core.dto.secrets.SSHConfigDTO
 io.harness.logging.UnitProgress
 io.harness.k8s.model.K8sContainer
 io.harness.steps.SectionStepSweepingOutput
+io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPackageV2StepInfo
+io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPackageV2StepNode
+io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPackageV2StepParameters

@@ -199,6 +199,7 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
   private String ngTriggerYaml_artifact_artifactorygenericregistry;
   private String ngTriggerYaml_artifact_artifactorydockerregistry;
   private String ngTriggerYaml_manifest;
+  private String ngTriggerYaml_multi_region_artifact;
 
   private String ngTriggerYaml_gitpolling;
 
@@ -291,6 +292,10 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
 
     ngTriggerYaml_manifest = Resources.toString(
         Objects.requireNonNull(classLoader.getResource("ng-trigger-manifest.yaml")), StandardCharsets.UTF_8);
+
+    ngTriggerYaml_multi_region_artifact =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource("ng-trigger-multi-region-artifact.yaml")),
+            StandardCharsets.UTF_8);
 
     payloadConditions = asList(TriggerEventDataCondition.builder().key("k1").operator(EQUALS).value("v1").build(),
         TriggerEventDataCondition.builder().key("k2").operator(NOT_EQUALS).value("v2").build(),
@@ -1660,6 +1665,24 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
     NGTriggerResponseDTO responseDTO = ngTriggerElementMapper.toResponseDTO(ngTriggerEntity);
     assertThat(responseDTO.getYaml()).isEqualTo(ngTriggerEntity.getYaml());
     assertThat(responseDTO.getType()).isEqualTo(ngTriggerEntity.getType());
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testCopyFieldsForMultiArtifactTrigger() {
+    List<String> signatures = List.of("sig1", "sig2");
+    NGTriggerEntity existingNgTriggerEntity =
+        ngTriggerElementMapper.toTriggerDetails("accId", "org", "proj", ngTriggerYaml_multi_region_artifact, true)
+            .getNgTriggerEntity();
+    existingNgTriggerEntity.getMetadata().setSignatures(signatures);
+    NGTriggerEntity newNgTriggerEntity =
+        ngTriggerElementMapper.toTriggerDetails("accId", "org", "proj", ngTriggerYaml_multi_region_artifact, true)
+            .getNgTriggerEntity();
+    assertThat(newNgTriggerEntity.getMetadata().getSignatures()).isNull();
+    ngTriggerElementMapper.copyEntityFieldsOutsideOfYml(existingNgTriggerEntity, newNgTriggerEntity);
+    assertThat(newNgTriggerEntity.getMetadata().getSignatures())
+        .isEqualTo(existingNgTriggerEntity.getMetadata().getSignatures());
   }
 
   private TriggerEventHistory generateEventHistoryWithTimestamp(SimpleDateFormat formatter6, String sDate1)

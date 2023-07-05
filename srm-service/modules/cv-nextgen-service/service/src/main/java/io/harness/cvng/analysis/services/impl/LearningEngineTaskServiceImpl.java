@@ -21,11 +21,14 @@ import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskKe
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
 import io.harness.cvng.analysis.entities.VerificationTaskBase.VerificationTaskBaseKeys;
 import io.harness.cvng.analysis.services.api.LearningEngineTaskService;
+import io.harness.cvng.beans.cvnglog.CVNGLogTag;
+import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
 import io.harness.cvng.core.jobs.StateMachineEventPublisherService;
 import io.harness.cvng.core.services.api.ExecutionLogService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.core.utils.CVNGTaskMetadataUtils;
 import io.harness.cvng.metrics.CVNGMetricsUtils;
 import io.harness.cvng.metrics.services.impl.MetricContextBuilder;
 import io.harness.metrics.AutoMetricContext;
@@ -41,6 +44,7 @@ import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
 import java.net.URISyntaxException;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -85,8 +89,10 @@ public class LearningEngineTaskServiceImpl implements LearningEngineTaskService 
     LearningEngineTask learningEngineTask =
         hPersistence.findAndModify(learningEngineTaskQuery, updateOperations, new FindAndModifyOptions());
     if (learningEngineTask != null) {
+      List<CVNGLogTag> cvngLogTags = CVNGTaskMetadataUtils.getCvngLogTagsForTask(learningEngineTask.getUuid());
       executionLogService.getLogger(learningEngineTask)
-          .log(learningEngineTask.getLogLevel(), "Learning engine task status: " + learningEngineTask.getTaskStatus());
+          .log(learningEngineTask.getLogLevel(), cvngLogTags,
+              "Learning engine task status: " + learningEngineTask.getTaskStatus());
     }
     return learningEngineTask;
   }
@@ -106,8 +112,10 @@ public class LearningEngineTaskServiceImpl implements LearningEngineTaskService 
     if (verificationTask.getTaskInfo().getTaskType() == TaskType.DEPLOYMENT) {
       learningEngineTask.setTaskPriority(P0.getValue());
     }
+    List<CVNGLogTag> cvngLogTags = CVNGTaskMetadataUtils.getCvngLogTagsForTask(learningEngineTask.getUuid());
     executionLogService.getLogger(learningEngineTask)
-        .log(learningEngineTask.getLogLevel(), "Learning engine task status: " + learningEngineTask.getTaskStatus());
+        .log(learningEngineTask.getLogLevel(), cvngLogTags,
+            "Learning engine task status: " + learningEngineTask.getTaskStatus());
     return hPersistence.save(learningEngineTask);
   }
 
@@ -130,8 +138,9 @@ public class LearningEngineTaskServiceImpl implements LearningEngineTaskService 
             task.setTaskStatus(ExecutionStatus.TIMEOUT);
             incTaskStatusMetric(task.getAccountId(), ExecutionStatus.TIMEOUT);
             addTimeToFinishMetrics(task);
+            List<CVNGLogTag> cvngLogTags = CVNGTaskMetadataUtils.getCvngLogTagsForTask(task.getUuid());
             executionLogService.getLogger(task).log(
-                task.getLogLevel(), "Learning engine task status: " + task.getTaskStatus());
+                task.getLogLevel(), cvngLogTags, "Learning engine task status: " + task.getTaskStatus());
             timedOutTaskIds.add(task.getUuid());
           }
           taskStatuses.put(task.getUuid(), task.getTaskStatus());
@@ -195,7 +204,9 @@ public class LearningEngineTaskServiceImpl implements LearningEngineTaskService 
     incTaskStatusMetric(task.getAccountId(), ExecutionStatus.SUCCESS);
     addTimeToFinishMetrics(task);
     stateMachineEventPublisherService.registerTaskComplete(task.getAccountId(), task.getVerificationTaskId());
-    executionLogService.getLogger(task).log(task.getLogLevel(), "Learning engine task status: " + task.getTaskStatus());
+    List<CVNGLogTag> cvngLogTags = getCvngLogTagsForFinalState(taskId, task.totalTime(Instant.now()));
+    executionLogService.getLogger(task).log(
+        task.getLogLevel(), cvngLogTags, "Learning engine task status: " + task.getTaskStatus());
   }
 
   @Override
@@ -215,8 +226,16 @@ public class LearningEngineTaskServiceImpl implements LearningEngineTaskService 
     LearningEngineTask learningEngineTask = get(taskId);
     incTaskStatusMetric(learningEngineTask.getAccountId(), ExecutionStatus.FAILED);
     addTimeToFinishMetrics(learningEngineTask);
+    List<CVNGLogTag> cvngLogTags = getCvngLogTagsForFinalState(taskId, learningEngineTask.totalTime(Instant.now()));
     executionLogService.getLogger(learningEngineTask)
-        .error("Learning engine task failed. Exception: ", learningEngineTask.getException());
+        .log(ExecutionLogDTO.LogLevel.ERROR, cvngLogTags,
+            "Learning engine task failed. Exception: ", learningEngineTask.getException());
+  }
+
+  private static List<CVNGLogTag> getCvngLogTagsForFinalState(String taskId, Duration duration) {
+    List<CVNGLogTag> cvngLogTags = CVNGTaskMetadataUtils.getCvngLogTagsForTask(taskId);
+    cvngLogTags.addAll(CVNGTaskMetadataUtils.getTaskDurationTags(duration));
+    return cvngLogTags;
   }
 
   private boolean hasTaskTimedOut(LearningEngineTask task) {

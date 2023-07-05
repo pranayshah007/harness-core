@@ -199,7 +199,12 @@ public class StringReplacer {
   }
 
   private boolean checkIfStringMathematicalOperator(char c) {
-    return c == '+' || c == '=' || c == '?' || c == ':' || c == '&';
+    // + operator for string addition
+    // = -> for == comparison operation
+    // ?,: -> for ternary operator
+    // & -> && AND operation
+    // | -> || OR operator
+    return c == '+' || c == '=' || c == '?' || c == ':' || c == '&' || c == '|';
   }
 
   private boolean skipNonCriticalCharacters(char c) {

@@ -580,6 +580,7 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
 
     LearningEngineExperimentalAnalysisTask learningEngineAnalysisTask =
         LearningEngineExperimentalAnalysisTask.builder()
+            .accountId(cvConfiguration.getAccountId())
             .service_id(cvConfiguration.getServiceId())
             .state_execution_id(stateExecutionIdForLETask)
             .cvConfigId(cvConfiguration.getUuid())
@@ -1092,6 +1093,7 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
           for (MLExperiments experiment : experiments) {
             LearningEngineExperimentalAnalysisTask expTask =
                 LearningEngineExperimentalAnalysisTask.builder()
+                    .accountId(cvConfiguration.getAccountId())
                     .control_input_url(inputLogsUrl)
                     .analysis_save_url(getSaveUrlForExperimentalTask(taskId))
                     .state_execution_id(
@@ -1306,6 +1308,7 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
           for (MLExperiments experiment : experiments) {
             LearningEngineExperimentalAnalysisTask expTask =
                 LearningEngineExperimentalAnalysisTask.builder()
+                    .accountId(cvConfiguration.getUuid())
                     .control_input_url(inputLogsUrl)
                     .analysis_save_url(getSaveUrlForExperimentalTask(taskId))
                     .state_execution_id("LOGS_CLUSTER_L2_" + cvConfiguration.getUuid() + "_" + l2ClusteringMinute + "-"
@@ -1461,6 +1464,7 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
       for (MLExperiments experiment : experiments) {
         LearningEngineExperimentalAnalysisTask expTask =
             LearningEngineExperimentalAnalysisTask.builder()
+                .accountId(logsCVConfiguration.getAccountId())
                 .feedback_url(feedbackUrl)
                 .logMLResultUrl(logMLResultUrl)
                 .state_execution_id(stateExecutionIdForLETask)
@@ -1958,6 +1962,7 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
 
     LearningEngineExperimentalAnalysisTask expTask =
         LearningEngineExperimentalAnalysisTask.builder()
+            .accountId(logsCVConfiguration.getAccountId())
             .state_execution_id(stateExecutionId)
             .service_id(logsCVConfiguration.getServiceId())
             .query(Lists.newArrayList(logsCVConfiguration.getQuery()))

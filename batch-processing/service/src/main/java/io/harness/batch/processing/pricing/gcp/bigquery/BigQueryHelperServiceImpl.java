@@ -475,6 +475,7 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
       log.info("costCategory updated");
     } catch (BigQueryException | InterruptedException bigQueryException) {
       log.error("Error: ", bigQueryException);
+      throw new InvalidRequestException("BQ couldn't process request");
     }
   }
 
@@ -493,6 +494,7 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
       log.info("costCategory updated");
     } catch (BigQueryException | InterruptedException bigQueryException) {
       log.error("Error: ", bigQueryException);
+      throw new InvalidRequestException("BQ couldn't process request");
     }
   }
 

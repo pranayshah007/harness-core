@@ -38,4 +38,5 @@ public class ServiceOverridesResponseDTOV2 {
   @NonNull ServiceOverridesType type;
   @NonNull ServiceOverridesSpec spec;
   boolean isNewlyCreated;
+  String yamlInternal;
 }

@@ -96,9 +96,9 @@ public abstract class ApprovalInstance implements PersistentEntity, PersistentRe
                  .field(ApprovalInstanceKeys.nodeExecutionId)
                  .build())
         .add(
-            CompoundMongoIndex.builder()
+            SortCompoundMongoIndex.builder()
                 .name(
-                    "accountId_orgIdentifier_projectIdentifier_pipelineIdentifier_approvalKey_status_isAutoRejectEnabled")
+                    "accountId_orgIdentifier_projectIdentifier_pipelineIdentifier_approvalKey_status_isAutoRejectEnabled_createdAt")
                 .field(ApprovalInstanceKeys.accountId)
                 .field(ApprovalInstanceKeys.orgIdentifier)
                 .field(ApprovalInstanceKeys.projectIdentifier)
@@ -106,6 +106,7 @@ public abstract class ApprovalInstance implements PersistentEntity, PersistentRe
                 .field(HarnessApprovalInstanceKeys.approvalKey)
                 .field(ApprovalInstanceKeys.status)
                 .field(HarnessApprovalInstanceKeys.isAutoRejectEnabled)
+                .rangeField(ApprovalInstanceKeys.createdAt)
                 .build())
         .build();
   }

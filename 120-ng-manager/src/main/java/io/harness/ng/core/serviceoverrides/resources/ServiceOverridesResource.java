@@ -7,9 +7,12 @@
 
 package io.harness.ng.core.serviceoverrides.resources;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.rbac.NGResourceType.ENVIRONMENT;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION;
 import static io.harness.utils.PageUtils.getNGPageResponse;
+
+import static java.lang.String.format;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
@@ -39,10 +42,12 @@ import io.harness.ng.core.serviceoverridev2.beans.OverrideV2SettingsUpdateRespon
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideMigrationResponseDTO;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideRequestDTOV2;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesResponseDTOV2;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.ng.core.serviceoverridev2.mappers.ServiceOverridesMapperV2;
 import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
 import io.harness.ng.core.utils.OrgAndProjectValidationHelper;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.utils.IdentifierRefHelper;
 
@@ -151,7 +156,7 @@ public class ServiceOverridesResource {
         serviceOverridesServiceV2.get(accountId, orgIdentifier, projectIdentifier, identifier);
     if (serviceOverridesEntityOptional.isEmpty()) {
       throw new NotFoundException(
-          String.format("ServiceOverrides entity with identifier [%s] in project [%s], org [%s] not found", identifier,
+          format("ServiceOverrides entity with identifier [%s] in project [%s], org [%s] not found", identifier,
               projectIdentifier, orgIdentifier));
     }
     NGServiceOverridesEntity serviceOverridesEntity = serviceOverridesEntityOptional.get();
@@ -163,7 +168,7 @@ public class ServiceOverridesResource {
         ResourceScope.of(envIdentifierRef.getAccountIdentifier(), envIdentifierRef.getOrgIdentifier(),
             envIdentifierRef.getProjectIdentifier()),
         Resource.of(ENVIRONMENT, envIdentifierRef.getIdentifier()), ENVIRONMENT_VIEW_PERMISSION,
-        String.format(
+        format(
             "Unauthorized to view environment %s referred in serviceOverrideEntity", envIdentifierRef.getIdentifier()));
 
     return ResponseDTO.newResponse(
@@ -187,6 +192,18 @@ public class ServiceOverridesResource {
                      value = DocumentationConstants.SERVICE_OVERRIDE_V2_REQUEST_DTO,
                      description = "Sample Service Override Request"))
       }) @Valid ServiceOverrideRequestDTOV2 requestDTOV2) {
+    String yamlInternal = requestDTOV2.getYamlInternal();
+    if (isNotEmpty(yamlInternal)) {
+      try {
+        ServiceOverridesSpec spec = YamlUtils.read(yamlInternal, ServiceOverridesSpec.class);
+        requestDTOV2.setSpec(spec);
+      } catch (Exception ex) {
+        log.error("Failed to create the service override entity through harness terraform provider", ex);
+        throw new InvalidRequestException(format(
+            "Creation of the service override entity through harness terraform provider failed due to following error: [%s]",
+            ex.getMessage()));
+      }
+    }
     overrideValidatorService.validateRequestOrThrow(requestDTOV2, accountId);
 
     NGServiceOverridesEntity serviceOverride = ServiceOverridesMapperV2.toEntity(accountId, requestDTOV2);
@@ -210,6 +227,18 @@ public class ServiceOverridesResource {
                      value = DocumentationConstants.SERVICE_OVERRIDE_V2_REQUEST_DTO,
                      description = "Sample Service Override Request"))
       }) @Valid ServiceOverrideRequestDTOV2 requestDTOV2) throws IOException {
+    String yamlInternal = requestDTOV2.getYamlInternal();
+    if (isNotEmpty(yamlInternal)) {
+      try {
+        ServiceOverridesSpec spec = YamlUtils.read(yamlInternal, ServiceOverridesSpec.class);
+        requestDTOV2.setSpec(spec);
+      } catch (Exception ex) {
+        log.error("Failed to update the service override entity through harness terraform provider", ex);
+        throw new InvalidRequestException(format(
+            "Updating the service override entity through harness terraform provider failed due to following error: [%s]",
+            ex.getMessage()));
+      }
+    }
     overrideValidatorService.validateRequestOrThrow(requestDTOV2, accountId);
 
     NGServiceOverridesEntity requestedServiceOverride = ServiceOverridesMapperV2.toEntity(accountId, requestDTOV2);
@@ -262,9 +291,8 @@ public class ServiceOverridesResource {
     Optional<NGServiceOverridesEntity> ngServiceOverridesEntityOptional =
         serviceOverridesServiceV2.get(accountId, orgIdentifier, projectIdentifier, identifier);
     if (ngServiceOverridesEntityOptional.isEmpty()) {
-      throw new InvalidRequestException(
-          String.format("Service Override [%s], Project[%s], Organization [%s] does not exist", identifier,
-              projectIdentifier, orgIdentifier));
+      throw new InvalidRequestException(format("Service Override [%s], Project[%s], Organization [%s] does not exist",
+          identifier, projectIdentifier, orgIdentifier));
     }
     NGServiceOverridesEntity ngServiceOverridesEntity = ngServiceOverridesEntityOptional.get();
     overrideValidatorService.validateEnvWithRBACOrThrow(

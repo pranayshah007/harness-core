@@ -19,7 +19,10 @@ public enum NotificationRuleConditionType {
   @JsonProperty("HealthScore") HEALTH_SCORE(NotificationRuleType.MONITORED_SERVICE, "Health Score"),
   @JsonProperty("ChangeObserved") CHANGE_OBSERVED(NotificationRuleType.MONITORED_SERVICE, "Change Observed"),
   @JsonProperty("CodeErrors") CODE_ERRORS(NotificationRuleType.MONITORED_SERVICE, "Code Errors"),
-  @JsonProperty("FireHydrantReport") FIRE_HYDRANT_REPORT(NotificationRuleType.FIRE_HYDRANT, "Fire Hydrant Report");
+  @JsonProperty("FireHydrantReport") FIRE_HYDRANT_REPORT(NotificationRuleType.FIRE_HYDRANT, "Fire Hydrant Report"),
+
+  @JsonProperty("DeploymentImpactReport")
+  DEPLOYMENT_IMPACT_REPORT(NotificationRuleType.MONITORED_SERVICE, "DeploymentImpactReport");
 
   private final NotificationRuleType notificationRuleType;
   private final String displayName;

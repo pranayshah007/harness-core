@@ -30,7 +30,6 @@ import io.harness.yaml.extended.ci.container.ContainerResource;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import java.util.Map;
@@ -64,12 +63,12 @@ public class ServerlessAwsLambdaDeployV2StepInfo
 
   @Builder(builderMethodName = "infoBuilder")
   public ServerlessAwsLambdaDeployV2StepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
-      ContainerResource resources, ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
+      ParameterField<String> image, ParameterField<String> connectorRef, ContainerResource resources,
+      ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
       ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
       ParameterField<String> serverlessVersion, ParameterField<List<String>> deployCommandOptions) {
-    super(delegateSelectors, settings, image, connectorRef, resources, envVariables, privileged, runAsUser,
-        imagePullPolicy, serverlessVersion);
+    super(delegateSelectors, image, connectorRef, resources, envVariables, privileged, runAsUser, imagePullPolicy,
+        serverlessVersion);
     this.deployCommandOptions = deployCommandOptions;
   }
   @Override

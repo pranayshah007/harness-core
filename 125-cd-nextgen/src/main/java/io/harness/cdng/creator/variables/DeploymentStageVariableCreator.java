@@ -287,8 +287,10 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
       }
       outputProperties.addAll(handleManifestProperties(specField, ngServiceConfig));
       outputProperties.addAll(handleArtifactProperties(specField, ngServiceConfig));
-      handleServiceOverridesV2(ctx, environmentRef, serviceRef, serviceVariables, infraIdentifier, accountIdentifier,
-          orgIdentifier, projectIdentifier, optionalService);
+      if (optionalService.isPresent()) {
+        handleServiceOverridesV2(ctx, environmentRef, serviceRef, serviceVariables, infraIdentifier, accountIdentifier,
+            orgIdentifier, projectIdentifier, optionalService.get());
+      }
       outputProperties.addAll(handleServiceVariables(specField, serviceVariables, ngServiceConfig));
     } else {
       outputProperties.addAll(handleServiceStepOutcome(serviceField));
@@ -303,8 +305,8 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
 
   private void handleServiceOverridesV2(VariableCreationContext ctx, ParameterField<String> environmentRef,
       ParameterField<String> serviceRef, Set<String> serviceVariables, String infraIdentifier, String accountIdentifier,
-      String orgIdentifier, String projectIdentifier, Optional<ServiceEntity> optionalService) {
-    if (environmentRef != null && !environmentRef.isExpression() && optionalService.isPresent()) {
+      String orgIdentifier, String projectIdentifier, ServiceEntity serviceEntity) {
+    if (environmentRef != null && !environmentRef.isExpression()) {
       if (overrideV2ValidationHelper.isOverridesV2Enabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
         Map<Scope, NGServiceOverridesEntity> envServiceOverride =
             serviceOverridesServiceV2.getEnvServiceOverride(accountIdentifier, orgIdentifier, projectIdentifier,
@@ -317,7 +319,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
           addOverrideVariablesToSet(serviceVariables, infraServiceOverride);
         }
       } else {
-        serviceVariables.addAll(getServiceOverridesVariables(ctx, environmentRef, optionalService.get()));
+        serviceVariables.addAll(getServiceOverridesVariables(ctx, environmentRef, serviceEntity));
       }
     }
   }

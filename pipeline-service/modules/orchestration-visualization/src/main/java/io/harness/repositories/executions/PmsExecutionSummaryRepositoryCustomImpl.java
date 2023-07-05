@@ -85,6 +85,26 @@ public class PmsExecutionSummaryRepositoryCustomImpl implements PmsExecutionSumm
     }
   }
 
+  @Override
+  public Page<PipelineExecutionSummaryEntity> findAllWithProjection(
+      Criteria criteria, Pageable pageable, List<String> projections) {
+    try {
+      Query query = new Query(criteria).with(pageable);
+
+      for (String key : projections) {
+        query.fields().include(key);
+      }
+      // Do not add directly the read helper inside the lambda, as secondary mongo reads were not going through if used
+      // inside lambda in PageableExecutionUtils
+      long count = pmsExecutionSummaryReadHelper.findCount(query);
+      List<PipelineExecutionSummaryEntity> summaryEntities = pmsExecutionSummaryReadHelper.find(query);
+      return PageableExecutionUtils.getPage(summaryEntities, pageable, () -> count);
+    } catch (IllegalArgumentException ex) {
+      log.error(ex.getMessage(), ex);
+      throw new InvalidRequestException("Execution Status not found", ex);
+    }
+  }
+
   // Required in a migration . May be removed in the future.
   @Override
   public CloseableIterator<PipelineExecutionSummaryEntity> findAllWithRequiredProjectionUsingAnalyticsNode(

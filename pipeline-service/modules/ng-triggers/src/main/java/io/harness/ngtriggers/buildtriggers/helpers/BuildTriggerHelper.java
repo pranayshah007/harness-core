@@ -26,6 +26,7 @@ import io.harness.jackson.JsonNodeUtils;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
+import io.harness.ngtriggers.beans.entity.metadata.BuildMetadata;
 import io.harness.ngtriggers.beans.source.NGTriggerSpecV2;
 import io.harness.ngtriggers.beans.source.artifact.BuildAware;
 import io.harness.ngtriggers.buildtriggers.helpers.dtos.BuildTriggerOpsData;
@@ -62,6 +63,7 @@ import io.harness.yaml.core.variables.NGVariableTrigger;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -244,6 +246,42 @@ public class BuildTriggerHelper {
         .triggerSpecMap(manifestTriggerSpecMap)
         .triggerDetails(triggerDetails)
         .build();
+  }
+
+  public List<BuildTriggerOpsData> generateBuildTriggerOpsDataForMultiArtifact(TriggerDetails triggerDetails)
+      throws IOException {
+    List<BuildTriggerOpsData> buildTriggerOpsData = new ArrayList<>();
+    JsonNode jsonNode = YamlUtils.readTree(triggerDetails.getNgTriggerEntity().getYaml()).getNode().getCurrJsonNode();
+    ArrayNode sources = (ArrayNode) jsonNode.get("trigger").get("source").get("spec").get("sources");
+    int buildMetadataIndex = 0;
+    for (JsonNode source : sources) {
+      Map<String, Object> triggerArtifactSpecMap = new HashMap<>();
+      triggerArtifactSpecMap.put("type", source.get("spec").get("type"));
+      triggerArtifactSpecMap.put("spec", source.get("spec"));
+      List<BuildMetadata> multiBuildMetadata =
+          triggerDetails.getNgTriggerEntity().getMetadata().getMultiBuildMetadata();
+      String thisSourceSignature = multiBuildMetadata.get(buildMetadataIndex).getPollingConfig().getSignature();
+      /* signaturesToLock is a list of the signatures from the other BuildMetadata present in this same trigger.
+         This list will be used to decide whether all this trigger's pollingDocs contain the same versions
+         before firing the trigger. */
+      List<String> signaturesToLock =
+          multiBuildMetadata.stream()
+              .filter(metadata -> !metadata.getPollingConfig().getSignature().equals(thisSourceSignature))
+              .map(metadata -> metadata.getPollingConfig().getSignature())
+              .collect(toList());
+      /* Here we need to explicitly add `buildMetadata` to BuildTriggerOpsData. This is because MultiRegionArtifact
+      triggers have a list of BuildMetadata, so PollingItemGenerator:getBaseInitializedPollingItem needs a way to
+      explicitly get the BuildMetadata for each PollingItem it will generate. */
+      buildTriggerOpsData.add(BuildTriggerOpsData.builder()
+                                  .pipelineBuildSpecMap(Collections.emptyMap())
+                                  .triggerSpecMap(triggerArtifactSpecMap)
+                                  .triggerDetails(triggerDetails)
+                                  .buildMetadata(multiBuildMetadata.get(buildMetadataIndex))
+                                  .signaturesToLock(signaturesToLock)
+                                  .build());
+      buildMetadataIndex++;
+    }
+    return buildTriggerOpsData;
   }
 
   public BuildTriggerOpsData generateBuildTriggerOpsDataForGitPolling(TriggerDetails triggerDetails) throws Exception {

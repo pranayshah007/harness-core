@@ -137,6 +137,7 @@ outboxEvents {"name": "blocked_createdAt_nextUnblockAttemptAt_outbox_Idx", "back
 outboxEvents {"name": "eventType_blocked_outbox_Idx", "background": true} {"eventType": 1, "blocked": 1}
 pollingDocuments {"name": "accountId_organizationIdentifier_projectIdentifier_pollingType_pollingItem", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "pollingType": 1, "pollingInfo": 1, "signatures": 1}
 pollingDocuments {"name": "accountId_pollingInfo.connectorRef", "background": true} {"accountId": 1, "pollingInfo.connectorRef": 1}
+pollingDocuments {"name": "accountId_signatures", "background": true} {"accountId": 1, "signatures": 1}
 primaryVersion {"name": "createdAt_1", "background": true} {"createdAt": 1}
 primaryVersion {"name": "lastUpdatedAt_1", "background": true} {"lastUpdatedAt": 1}
 progressUpdate {"name": "correlation", "background": true} {"correlationId": 1, "createdAt": -1}

@@ -21,7 +21,6 @@ import io.harness.cdng.executables.CdTaskChainExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.provision.ProvisionerOutputHelper;
-import io.harness.cdng.provision.terraform.outcome.TerraformGitRevisionOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.task.terraform.TFTaskType;
@@ -220,6 +219,7 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
     TerraformTaskNGParametersBuilder builder =
         getTerraformTaskNGParametersBuilderInline(ambiance, stepParameters, stepElementParameters);
     terraformPassThroughData.setTerraformTaskNGParametersBuilder(builder);
+    terraformPassThroughData.setOriginalStepVarFiles(spec.getVarFiles());
 
     if (hasGitVarFiles || hasS3VarFiles) {
       return helper.fetchRemoteVarFiles(terraformPassThroughData, varFilesInfo, ambiance, stepElementParameters,
@@ -360,13 +360,9 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
     }
 
     Map<String, String> outputKeys = helper.getRevisionsMap(terraformPassThroughData, terraformTaskNGResponse);
+    helper.addTerraformRevisionOutcomeIfRequired(stepResponseBuilder, outputKeys);
 
-    return stepResponseBuilder
-        .stepOutcome(StepResponse.StepOutcome.builder()
-                         .name(TerraformGitRevisionOutcome.OUTCOME_NAME)
-                         .outcome(TerraformGitRevisionOutcome.builder().revisions(outputKeys).build())
-                         .build())
-        .build();
+    return stepResponseBuilder.build();
   }
 
   private StepResponse handleTaskResultApplyInherited(Ambiance ambiance,
@@ -392,13 +388,9 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
       outputKeys.put(
           TF_BACKEND_CONFIG_FILE, terraformTaskNGResponse.getCommitIdForConfigFilesMap().get(TF_BACKEND_CONFIG_FILE));
     }
+    helper.addTerraformRevisionOutcomeIfRequired(stepResponseBuilder, outputKeys);
 
-    return stepResponseBuilder
-        .stepOutcome(StepResponse.StepOutcome.builder()
-                         .name(TerraformGitRevisionOutcome.OUTCOME_NAME)
-                         .outcome(TerraformGitRevisionOutcome.builder().revisions(outputKeys).build())
-                         .build())
-        .build();
+    return stepResponseBuilder.build();
   }
 
   private StepResponseBuilder createStepResponseBuilder(
