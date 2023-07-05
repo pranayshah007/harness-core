@@ -8,6 +8,7 @@
 package io.harness.execution.stage;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -49,7 +50,14 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("stageExecutionEntity")
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CDP)
+@ChangeDataCapture(
+    table = "stage_execution", dataStore = "pms-harness", fields = {}, handler = "PipelineStageExecutionHandler")
+@ChangeDataCapture(
+    table = "custom_stage_execution", dataStore = "pms-harness", fields = {}, handler = "CustomStageExecutionHandler")
+@ChangeDataCapture(
+    table = "execution_tags_info_ng", dataStore = "pms-harness", fields = {}, handler = "PipelineStageTagsInfoNG")
 public class StageExecutionEntity implements PersistentEntity, UuidAware {
+  // This class is used for saving all kind of stages which run in the pipeline service like Custom/Approval Stage
   @org.springframework.data.annotation.Id @Id String uuid;
   @CreatedDate private long createdAt;
   @LastModifiedDate private long lastModifiedAt;
