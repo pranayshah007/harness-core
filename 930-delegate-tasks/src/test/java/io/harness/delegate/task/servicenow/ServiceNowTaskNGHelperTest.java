@@ -90,6 +90,7 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
   public static final String TICKET_LINK =
       "incident.do?sys_id=aacc24dcdb5f85509e7c2a59139619c4&sysparm_stack=incident_list.do?sysparm_query=active=true";
   private static final String TEMPLATE_NAME = "test_incident_template";
+  private static final String CHANGE_REQUEST_TEMPLATE_NAME = "standard_change_template";
 
   @Mock private SecretDecryptionService secretDecryptionService;
   @Mock private ILogStreamingTaskClient logStreamingTaskClient;
@@ -599,6 +600,56 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
       verify(secretDecryptionService).decrypt(any(), any());
 
       verify(serviceNowRestClient).getTemplateList(anyString(), eq("incident"), anyInt(), anyInt(), anyString());
+    }
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetStandardChangeRequestTemplateListWithRetry() throws Exception {
+    ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
+
+    Call mockCall = Mockito.mock(Call.class);
+    when(serviceNowRestClient.getTemplateList(anyString(), anyString(), anyInt(), anyInt(), anyString()))
+        .thenReturn(mockCall);
+
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL jsonFile = classLoader.getResource("servicenow/serviceNowChangeRequestTemplateResponse.json");
+    ObjectMapper mapper = new ObjectMapper();
+    JsonNode responseNode = mapper.readTree(jsonFile);
+
+    Response<JsonNode> jsonNodeResponse = Response.success(responseNode);
+    when(mockCall.clone()).thenReturn(mockCall);
+    doThrow(new SocketTimeoutException()).doReturn(jsonNodeResponse).when(mockCall).execute();
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+      ServiceNowTaskNGResponse response =
+          serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                           .action(ServiceNowActionNG.GET_TEMPLATE)
+                                                           .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                           .ticketType("change_request")
+                                                           .templateListLimit(1)
+                                                           .templateListOffset(0)
+                                                           .templateName(CHANGE_REQUEST_TEMPLATE_NAME)
+                                                           .build(),
+              logStreamingTaskClient);
+
+      assertThat(response.getDelegateMetaInfo()).isNull();
+      assertThat(response.getServiceNowTemplateList()).hasSize(1);
+
+      // template fields
+      ServiceNowTemplate serviceNowTemplate = response.getServiceNowTemplateList().get(0);
+      assertThat(serviceNowTemplate.getName()).isEqualTo(CHANGE_REQUEST_TEMPLATE_NAME);
+      assertThat(serviceNowTemplate.getFields()).hasSize(12);
+      assertThat(serviceNowTemplate.getFields().get("Impact").getDisplayValue()).isEqualTo("3 - Low");
+      assertThat(serviceNowTemplate.getFields().get("Type").getDisplayValue()).isEqualTo("Standard");
+      assertThat(serviceNowTemplate.getFields().get("Actual end date").getDisplayValue())
+          .isEqualTo("2015-07-06 05:12:40");
+
+      verify(secretDecryptionService).decrypt(any(), any());
+
+      verify(serviceNowRestClient).getTemplateList(anyString(), eq("change_request"), anyInt(), anyInt(), anyString());
     }
   }
 

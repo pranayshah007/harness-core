@@ -453,9 +453,9 @@ public class ServiceNowTaskNgHelper {
       JsonNode responseObj = response.body().get("result");
       if (responseObj != null && responseObj.get("queryResponse") != null) {
         JsonNode templateList = responseObj.get("queryResponse");
-        List<ServiceNowTemplate> templateResponse = new ArrayList<>();
+        List<ServiceNowTemplate> templateResponse = new ArrayList<>(templateList.size());
         for (JsonNode template : templateList) {
-          String[] fieldList = template.get("readableValue").asText().split(".and.");
+          String[] fieldList = template.get("readableValue").asText().split("\\.and\\.");
           String templateName = template.get("name").asText();
           Map<String, ServiceNowFieldValueNG> parsedFields = new HashMap<>();
           for (String field : fieldList) {
