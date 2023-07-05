@@ -86,8 +86,9 @@ public class NotifyEventListenerHelper {
       final Supplier<ResponseData> responseDataSupplier = () -> {
         if (v instanceof ErrorResponseData) {
           if (((ErrorResponseData) v).getException() == null) {
-            log.info("Error message for responseMap is {}", ((ErrorResponseData) v).getErrorMessage());
-            throw new GeneralException(((ErrorResponseData) v).getErrorMessage());
+            ErrorResponseData errorResponseData = (ErrorResponseData) v;
+            log.error("Error message for responseMap is {}", errorResponseData.getErrorMessage());
+            throw new GeneralException(errorResponseData.getErrorMessage());
           }
           throw((ErrorResponseData) v).getException();
         } else {
