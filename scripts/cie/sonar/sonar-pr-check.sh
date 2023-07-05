@@ -127,13 +127,15 @@ if [ "$(cat $MODULES_FILE | sort -u | wc -l)" -gt 1 ]; then
     exit 1
 fi
 
-# Filtering out Bazel modules only
+# Filtering out Bazel modules only and Getting the path of the sonar prop file in the module.
 for module in $PR_MODULES
   do
      [ -d ${module} ] && [[ "${HARNESS_CORE_MODULES}" =~ "${module}" ]] \
      && BAZEL_COMPILE_MODULES+=("//${module}/...") \
+     && SONAR_PROP_FILE_PATH=$(find ${module} -type f -iname "${SONAR_CONFIG_FILE}")
      || echo "$module is not present in the bazel modules list."
   done
+echo "SONAR PROP FILE: ${SONAR_PROP_FILE_PATH}"
 
 # Running Bazel Coverage
 echo "INFO: BAZEL COMMAND: bazel ${STARTUP_ARGS} test ${BAZEL_ARGS} ${COVERAGE_ARGS} ${TEST_ARGS} -- ${BAZEL_COMPILE_MODULES[@]}"
@@ -176,28 +178,21 @@ JARS_BINS=$(get_info_from_file $JARS_FILE)
 LIBS_BINS=$(get_info_from_file $LIBS_FILE)
 
 # Preparing Sonar Properties file
-[ ! -f "${SONAR_CONFIG_FILE}" ] \
-&& echo "sonar.projectKey=harness-core-sonar-pr" > ${SONAR_CONFIG_FILE} \
-&& echo "sonar.log.level=DEBUG" >> ${SONAR_CONFIG_FILE}
-
-echo "sonar.sourceEncoding=UTF-8" >> ${SONAR_CONFIG_FILE}
-echo "sonar.sources=$PR_FILES" >> ${SONAR_CONFIG_FILE}
-echo "sonar.tests=$MODULES_TESTS" >> ${SONAR_CONFIG_FILE}
-echo "sonar.java.binaries=$JARS_BINS" >> ${SONAR_CONFIG_FILE}
-echo "sonar.java.libraries=$LIBS_BINS" >> ${SONAR_CONFIG_FILE}
-echo "sonar.coverageReportPaths=$COVERAGE_REPORT_PATH" >> ${SONAR_CONFIG_FILE}
-echo "sonar.pullrequest.key=$PR_NUMBER" >> ${SONAR_CONFIG_FILE}
-echo "sonar.pullrequest.branch=$PR_BRANCH" >> ${SONAR_CONFIG_FILE}
-echo "sonar.pullrequest.base=$BASE_BRANCH" >> ${SONAR_CONFIG_FILE}
-echo "sonar.pullrequest.github.repository=$REPO_NAME" >> ${SONAR_CONFIG_FILE}
-
-#echo "sonar.inclusions=$PR_FILES" >> ${SONAR_CONFIG_FILE}
-#echo "sonar.test.inclusions=$MODULES_TESTS" >> ${SONAR_CONFIG_FILE}
+[ -f "${SONAR_PROP_FILE_PATH}" ] \
+&& echo -e "\nsonar.java.binaries=$JARS_BINS" >> ${SONAR_PROP_FILE_PATH} \
+&& echo -e "\nsonar.java.libraries=$LIBS_BINS" >> ${SONAR_PROP_FILE_PATH} \
+&& echo -e "\nsonar.coverageReportPaths=$COVERAGE_REPORT_PATH" >> ${SONAR_PROP_FILE_PATH} \
+&& echo -e "\nsonar.pullrequest.key=$PR_NUMBER" >> ${SONAR_PROP_FILE_PATH} \
+&& echo -e "\nsonar.pullrequest.branch=$PR_BRANCH" >> ${SONAR_PROP_FILE_PATH} \
+&& echo -e "\nsonar.pullrequest.base=$BASE_BRANCH" >> ${SONAR_PROP_FILE_PATH} \
+&& echo -e "\nsonar.pullrequest.github.repository=$REPO_NAME" >> ${SONAR_PROP_FILE_PATH} \
+|| echo "ERROR: Sonar Properties File Not Found."
 
 echo "INFO: Sonar Properties"
-cat ${SONAR_CONFIG_FILE}
+cat ${SONAR_PROP_FILE_PATH}
 
-echo "INFO: Running Sonar Scan."
-[ -f "${SONAR_CONFIG_FILE}" ] \
-&& sonar-scanner -Dsonar.login=${SONAR_KEY} -Dsonar.host.url=https://sonar.harness.io \
-|| echo "ERROR: Sonar Properties File not found."
+#echo "INFO: Running Sonar Scan."
+#[ -f "${SONAR_PROP_FILE_PATH}" ] \
+#&& sonar-scanner -Dsonar.login=${SONAR_KEY} -Dsonar.host.url=https://sonar.harness.io \
+#-Dproject.settings=${SONAR_PROP_FILE_PATH}\
+#|| echo "ERROR: Sonar Properties File not found."
