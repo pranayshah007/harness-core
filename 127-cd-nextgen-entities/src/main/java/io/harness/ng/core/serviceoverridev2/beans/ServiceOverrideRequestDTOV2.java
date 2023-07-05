@@ -21,11 +21,9 @@ import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
-import lombok.Value;
 import lombok.experimental.FieldDefaults;
 
 @OwnedBy(PIPELINE)
-@Value
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -47,6 +45,6 @@ public class ServiceOverrideRequestDTOV2 {
   ServiceOverridesType type;
 
   @Schema(description = "Spec for overrides, containing overriding fields like manifests, variables, config files")
-  @NotNull
   ServiceOverridesSpec spec;
+  @Schema(description = "YAML for the Service Overrides Spec") String yamlInternal;
 }
