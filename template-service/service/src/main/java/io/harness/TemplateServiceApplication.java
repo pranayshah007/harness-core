@@ -127,6 +127,10 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
   private final MetricRegistry metricRegistry = new MetricRegistry();
 
   public static void main(String[] args) throws Exception {
+    String test = "test";
+    if (test.equals("test1")){
+      System.out.println(test);
+    }
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
       log.info("Shutdown hook, entering maintenance...");
       MaintenanceController.forceMaintenance(true);
