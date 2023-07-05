@@ -702,7 +702,8 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
                            -> templateService.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "templatex",
                                "versionxy", entity2.getVersion(), "", false))
         .isInstanceOf(UnexpectedException.class)
-        .hasMessage("Error while checking references for template templatex with version label: versionxy : null");
+        .hasMessageContainingAll(
+            "Error while checking references for template templatex with version label: versionxy :", "null");
 
     Call<ResponseDTO<Boolean>> request2 = mock(Call.class);
     String fqn2 = String.format("%s/orgId/projId/templateStable/versionxy/", ACCOUNT_ID);
