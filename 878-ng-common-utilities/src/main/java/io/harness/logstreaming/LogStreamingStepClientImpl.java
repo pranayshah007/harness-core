@@ -32,7 +32,7 @@ public class LogStreamingStepClientImpl implements ILogStreamingStepClient {
   private final String token;
   private final String accountId;
   private final String baseLogKey;
-  private final @NonNull Cache<Object, Object> logKeyCache =
+  private static final @NonNull Cache<Object, Object> logKeyCache =
       Caffeine.newBuilder().expireAfterWrite(5, TimeUnit.MINUTES).maximumSize(1000).build();
 
   @Override
@@ -72,6 +72,8 @@ public class LogStreamingStepClientImpl implements ILogStreamingStepClient {
         log.error(
             "Unable to push message to log stream for account {} and logKeySuffix {}", accountId, logKeySuffix, ex);
       }
+      log.debug("Unable to push message to log stream for account {} and logKeySuffix {} with error {}", accountId,
+          logKeySuffix, ex.getMessage());
     }
   }
 
