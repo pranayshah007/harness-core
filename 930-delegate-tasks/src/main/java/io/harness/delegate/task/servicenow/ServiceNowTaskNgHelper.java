@@ -490,13 +490,21 @@ public class ServiceNowTaskNgHelper {
     ServiceNowRestClient serviceNowRestClient = getServiceNowRestClient(serviceNowConnectorDTO.getServiceNowUrl());
 
     final Call<JsonNode> request =
-        serviceNowRestClient.getIssue(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO),
+        serviceNowRestClient.getIssue(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO, true),
             serviceNowTaskNGParameters.getTicketType().toLowerCase(),
             "number=" + serviceNowTaskNGParameters.getTicketNumber(), "all");
     Response<JsonNode> response = null;
 
     try {
       response = Retry.decorateCallable(retry, () -> request.clone().execute()).call();
+      if (isUnauthorizedError(response)) {
+        log.warn("Failed to get serviceNow ticket using cached auth token; trying with fresh token");
+        Call<JsonNode> requestWithoutCache =
+            serviceNowRestClient.getIssue(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO, false),
+                serviceNowTaskNGParameters.getTicketType().toLowerCase(),
+                "number=" + serviceNowTaskNGParameters.getTicketNumber(), "all");
+        response = Retry.decorateCallable(retry, () -> requestWithoutCache.clone().execute()).call();
+      }
       handleResponse(response, "Failed to get serviceNow ticket");
       JsonNode responseObj = response.body().get("result");
       if (responseObj.isArray()) {
@@ -850,10 +858,16 @@ public class ServiceNowTaskNgHelper {
     String url = serviceNowConnectorDTO.getServiceNowUrl();
     ServiceNowRestClient serviceNowRestClient = getServiceNowRestClient(url);
     final Call<JsonNode> request =
-        serviceNowRestClient.validateConnection(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO));
+        serviceNowRestClient.validateConnection(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO, true));
     Response<JsonNode> response = null;
     try {
       response = Retry.decorateCallable(retry, () -> request.clone().execute()).call();
+      if (isUnauthorizedError(response)) {
+        log.warn("Failed to validate ServiceNow credentials using cached auth token; trying with fresh token");
+        Call<JsonNode> requestWithoutCache =
+            serviceNowRestClient.validateConnection(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO, false));
+        response = Retry.decorateCallable(retry, () -> requestWithoutCache.clone().execute()).call();
+      }
       handleResponse(response, "Failed to validate ServiceNow credentials");
       return ServiceNowTaskNGResponse.builder().build();
     } catch (ServiceNowException se) {
@@ -918,6 +932,10 @@ public class ServiceNowTaskNgHelper {
       throw new ServiceNowException(message + " : " + response.message(), SERVICENOW_ERROR, USER);
     }
     throw new ServiceNowException(message + " : " + response.errorBody().string(), SERVICENOW_ERROR, USER);
+  }
+
+  public static boolean isUnauthorizedError(Response<?> response) {
+    return 401 == response.code();
   }
 
   @NotNull

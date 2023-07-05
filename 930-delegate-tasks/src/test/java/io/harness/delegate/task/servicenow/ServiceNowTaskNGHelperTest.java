@@ -22,6 +22,7 @@ import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
@@ -117,6 +118,37 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
       assertThat(response.getDelegateMetaInfo()).isNull();
       verify(secretDecryptionService).decrypt(any(), any());
     }
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void shouldValidateCredentialsWithRetryWhenCachedTokenGives401() throws Exception {
+    ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
+
+    Call mockCall = Mockito.mock(Call.class);
+    when(serviceNowRestClient.validateConnection(anyString())).thenReturn(mockCall);
+    Response<JsonNode> jsonNodeUnAuthResponse = Response.error(401, ResponseBody.create("", MediaType.parse("JSON")));
+    Response<JsonNode> jsonNodeResponse = Response.success(null);
+    when(mockCall.clone()).thenReturn(mockCall);
+    doReturn(jsonNodeUnAuthResponse)
+        .doThrow(new SocketTimeoutException())
+        .doReturn(jsonNodeResponse)
+        .when(mockCall)
+        .execute();
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+      ServiceNowTaskNGResponse response =
+          serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                           .action(ServiceNowActionNG.VALIDATE_CREDENTIALS)
+                                                           .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                           .build(),
+              null);
+      assertThat(response.getDelegateMetaInfo()).isNull();
+      verify(secretDecryptionService).decrypt(any(), any());
+    }
+    verify(serviceNowRestClient, times(2)).validateConnection(anyString());
   }
 
   @Test
@@ -244,6 +276,55 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
       verify(secretDecryptionService).decrypt(any(), any());
 
       verify(serviceNowRestClient).getIssue(anyString(), anyString(), eq("number=" + TICKET_NUMBER), eq("all"));
+    }
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void shouldGetTicketWithRetryWhenCachedTokenGives401() throws Exception {
+    ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
+
+    Call mockCall = Mockito.mock(Call.class);
+    when(serviceNowRestClient.getIssue(anyString(), anyString(), anyString(), anyString())).thenReturn(mockCall);
+    Map<String, Map<String, String>> responseMap =
+        ImmutableMap.of("field1", ImmutableMap.of("value", "BEvalue1", "display_value", "UIvalue1"), "field2",
+            ImmutableMap.of("value", "BEvalue2", "display_value", "UIvalue2"));
+    JsonNode successResponse =
+        JsonUtils.asTree(Collections.singletonMap("result", Collections.singletonList(responseMap)));
+    Response<JsonNode> jsonNodeUnAuthResponse = Response.error(401, ResponseBody.create("", MediaType.parse("JSON")));
+    Response<JsonNode> jsonNodeResponse = Response.success(successResponse);
+    when(mockCall.clone()).thenReturn(mockCall);
+    doReturn(jsonNodeUnAuthResponse)
+        .doThrow(new SocketTimeoutException())
+        .doReturn(jsonNodeResponse)
+        .when(mockCall)
+        .execute();
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+      ServiceNowTaskNGResponse response =
+          serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                           .action(ServiceNowActionNG.GET_TICKET)
+                                                           .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                           .ticketType("incident")
+                                                           .ticketNumber(TICKET_NUMBER)
+                                                           .build(),
+              logStreamingTaskClient);
+
+      assertThat(response.getDelegateMetaInfo()).isNull();
+      assertThat(response.getTicket().getNumber()).isEqualTo(TICKET_NUMBER);
+      assertThat(response.getTicket().getUrl())
+          .isEqualTo("https://harness.service-now.com/nav_to.do?uri=/incident.do?sysparm_query=number=INC00001");
+      assertThat(response.getTicket().getFields()).hasSize(2);
+      assertThat(response.getTicket().getFields().get("field1").getValue()).isEqualTo("BEvalue1");
+      assertThat(response.getTicket().getFields().get("field1").getDisplayValue()).isEqualTo("UIvalue1");
+      assertThat(response.getTicket().getFields().get("field2").getValue()).isEqualTo("BEvalue2");
+      assertThat(response.getTicket().getFields().get("field2").getDisplayValue()).isEqualTo("UIvalue2");
+      verify(secretDecryptionService).decrypt(any(), any());
+
+      verify(serviceNowRestClient, times(2))
+          .getIssue(anyString(), anyString(), eq("number=" + TICKET_NUMBER), eq("all"));
     }
   }
 
