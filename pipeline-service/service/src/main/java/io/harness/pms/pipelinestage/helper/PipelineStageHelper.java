@@ -274,7 +274,14 @@ public class PipelineStageHelper {
   }
 
   public PipelineStageOutcome resolveOutputVariables(Map<String, ParameterField<String>> map, Ambiance ambiance) {
-    Map<String, String> resolvedMap = new HashMap<>();
+    Map<String, Object> resolvedMap = resolveOutputVariables(map);
+
+    return new PipelineStageOutcome((Map<String, Object>) pmsEngineExpressionService.resolve(
+        ambiance, resolvedMap, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED));
+  }
+
+  public Map<String, Object> resolveOutputVariables(Map<String, ParameterField<String>> map) {
+    Map<String, Object> resolvedMap = new HashMap<>();
 
     for (Map.Entry<String, ParameterField<String>> entry : map.entrySet()) {
       String expression;
@@ -287,9 +294,7 @@ public class PipelineStageHelper {
 
       resolvedMap.put(entry.getKey(), expression);
     }
-
-    return new PipelineStageOutcome((Map<String, Object>) pmsEngineExpressionService.resolve(
-        ambiance, resolvedMap, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED));
+    return resolvedMap;
   }
 
   public void validateFailureStrategy(ParameterField<List<FailureStrategyConfig>> failureStrategies) {

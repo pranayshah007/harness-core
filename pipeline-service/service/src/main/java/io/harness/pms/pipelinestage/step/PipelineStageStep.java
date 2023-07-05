@@ -32,6 +32,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.pipelinestage.PipelineStageStepParameters;
 import io.harness.pms.pipelinestage.helper.PipelineStageHelper;
+import io.harness.pms.pipelinestage.outcome.PipelineStageOutcome;
 import io.harness.pms.pipelinestage.output.PipelineStageSweepingOutput;
 import io.harness.pms.plan.execution.PipelineExecutor;
 import io.harness.pms.plan.execution.PlanExecutionInterruptType;
@@ -183,21 +184,24 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
     Optional<NodeExecution> nodeExecutionOptional = nodeExecutionService.getPipelineNodeExecutionWithProjections(
         pipelineStageSweepingOutput.getChildExecutionId(), Collections.singleton(NodeExecutionKeys.ambiance));
 
+    PipelineStageOutcome resolvedOutcome;
     // NodeExecutionOptional can be empty when no node was executed in child execution
     if (nodeExecutionOptional.isPresent()) {
       nodeExecution = nodeExecutionOptional.get();
       childNodeAmbiance = nodeExecution.getAmbiance();
+      resolvedOutcome =
+          pipelineStageHelper.resolveOutputVariables(stepParameters.getOutputs().getValue(), childNodeAmbiance);
+    } else {
+      resolvedOutcome =
+          new PipelineStageOutcome(pipelineStageHelper.resolveOutputVariables(stepParameters.getOutputs().getValue()));
     }
 
     PipelineStageResponseData pipelineStageResponseData =
         (PipelineStageResponseData) responseDataMap.get(pipelineStageSweepingOutput.getChildExecutionId());
     return StepResponse.builder()
         .status(pipelineStageResponseData.getStatus())
-        .stepOutcome(StepResponse.StepOutcome.builder()
-                         .name(OutputExpressionConstants.OUTPUT)
-                         .outcome(pipelineStageHelper.resolveOutputVariables(
-                             stepParameters.getOutputs().getValue(), childNodeAmbiance))
-                         .build())
+        .stepOutcome(
+            StepResponse.StepOutcome.builder().name(OutputExpressionConstants.OUTPUT).outcome(resolvedOutcome).build())
         .build();
   }
 }
