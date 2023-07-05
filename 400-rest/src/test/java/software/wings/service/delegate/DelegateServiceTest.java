@@ -4021,7 +4021,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     delegate1.setNg(true);
     delegate1.setOwner(owner);
     persistence.save(delegate1);
-    assertThatThrownBy(() -> delegateService.checkUniquenessOfDelegateName(accountId, "Name1", true, owner))
+    assertThatThrownBy(() -> delegateService.getUniqueDelegateNameWithInTheScope(accountId, "Name1", true, owner))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Delegate with same name exists. Delegate name must be unique across account.");
   }
@@ -4048,7 +4048,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     delegate1.setOwner(owner);
     persistence.save(delegate1);
     DelegateEntityOwner owner2 = DelegateEntityOwner.builder().identifier("orgId2/projectId2").build();
-    assertDoesNotThrow(() -> delegateService.checkUniquenessOfDelegateName(accountId, "Name1", true, owner2));
+    assertDoesNotThrow(() -> delegateService.getUniqueDelegateNameWithInTheScope(accountId, "Name1", true, owner2));
   }
 
   private DelegateBuilder createDelegateBuilder() {

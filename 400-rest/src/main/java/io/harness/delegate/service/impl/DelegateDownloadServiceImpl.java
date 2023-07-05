@@ -88,10 +88,11 @@ public class DelegateDownloadServiceImpl implements DelegateDownloadService {
   private DelegateSetupDetails buildProperDelegateSetupDetails(String accountId, String orgIdentifier,
       String projectIdentifier, DelegateDownloadRequest delegateDownloadRequest, String delegateType) {
     DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgIdentifier, projectIdentifier);
-    delegateService.checkUniquenessOfDelegateName(accountId, delegateDownloadRequest.getName(), true, owner);
+    String delegateName =
+        delegateService.getUniqueDelegateNameWithInTheScope(accountId, delegateDownloadRequest.getName(), true, owner);
 
     DelegateSetupDetailsBuilder delegateSetupDetailsBuilder = DelegateSetupDetails.builder()
-                                                                  .name(delegateDownloadRequest.getName())
+                                                                  .name(delegateName)
                                                                   .orgIdentifier(orgIdentifier)
                                                                   .projectIdentifier(projectIdentifier)
                                                                   .description(delegateDownloadRequest.getDescription())

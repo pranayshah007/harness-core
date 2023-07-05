@@ -685,7 +685,8 @@ public class DelegateServiceImpl implements DelegateService {
     validateKubernetesSetupDetailsForYamlGeneration(accountId, delegateSetupDetails);
     DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(
         delegateSetupDetails.getOrgIdentifier(), delegateSetupDetails.getProjectIdentifier());
-    checkUniquenessOfDelegateName(accountId, delegateSetupDetails.getName(), true, owner);
+    String delegateName = getUniqueDelegateNameWithInTheScope(accountId, delegateSetupDetails.getName(), true, owner);
+    delegateSetupDetails.setName(delegateName);
     validateDelegateToken(accountId, delegateSetupDetails);
     return delegateSetupDetails;
   }
@@ -1725,7 +1726,7 @@ public class DelegateServiceImpl implements DelegateService {
   @Override
   public File downloadScripts(String managerHost, String verificationUrl, String accountId, String delegateName,
       String delegateProfile, String tokenName) throws IOException {
-    checkUniquenessOfDelegateName(accountId, delegateName, false, null);
+    checkUniquenessOfDelegateName(accountId, delegateName, false);
     File delegateFile = File.createTempFile(DELEGATE_DIR, ".tar");
 
     try (TarArchiveOutputStream out = new TarArchiveOutputStream(new FileOutputStream(delegateFile))) {
@@ -1861,7 +1862,7 @@ public class DelegateServiceImpl implements DelegateService {
   @Override
   public File downloadDocker(String managerHost, String verificationUrl, String accountId, String delegateName,
       String delegateProfile, String tokenName) throws IOException {
-    checkUniquenessOfDelegateName(accountId, delegateName, false, null);
+    checkUniquenessOfDelegateName(accountId, delegateName, false);
     File dockerDelegateFile = File.createTempFile(DOCKER_DELEGATE, ".tar");
 
     try (TarArchiveOutputStream out = new TarArchiveOutputStream(new FileOutputStream(dockerDelegateFile))) {
@@ -1941,7 +1942,7 @@ public class DelegateServiceImpl implements DelegateService {
   @Override
   public File downloadKubernetes(String managerHost, String verificationUrl, String accountId, String delegateName,
       String delegateProfile, String tokenName, boolean runAsRoot) throws IOException {
-    checkUniquenessOfDelegateName(accountId, delegateName, false, null);
+    checkUniquenessOfDelegateName(accountId, delegateName, false);
     File kubernetesDelegateFile = File.createTempFile(KUBERNETES_DELEGATE, ".tar");
 
     try (TarArchiveOutputStream out = new TarArchiveOutputStream(new FileOutputStream(kubernetesDelegateFile))) {
@@ -2005,7 +2006,7 @@ public class DelegateServiceImpl implements DelegateService {
   @Override
   public File downloadCeKubernetesYaml(String managerHost, String verificationUrl, String accountId,
       String delegateName, String delegateProfile, String tokenName) throws IOException {
-    checkUniquenessOfDelegateName(accountId, delegateName, false, null);
+    checkUniquenessOfDelegateName(accountId, delegateName, false);
     String version;
     if (mainConfiguration.getDeployMode() == DeployMode.KUBERNETES) {
       List<String> delegateVersions = accountService.getDelegateConfiguration(accountId).getDelegateVersions();
@@ -2054,7 +2055,7 @@ public class DelegateServiceImpl implements DelegateService {
   public File downloadDelegateValuesYamlFile(String managerHost, String verificationUrl, String accountId,
       String delegateName, String delegateProfile, String tokenName) throws IOException {
     String version;
-    checkUniquenessOfDelegateName(accountId, delegateName, false, null);
+    checkUniquenessOfDelegateName(accountId, delegateName, false);
     if (mainConfiguration.getDeployMode() == DeployMode.KUBERNETES) {
       List<String> delegateVersions = accountService.getDelegateConfiguration(accountId).getDelegateVersions();
       version = delegateVersions.get(delegateVersions.size() - 1);
@@ -2085,7 +2086,7 @@ public class DelegateServiceImpl implements DelegateService {
   @Override
   public File downloadECSDelegate(String managerHost, String verificationUrl, String accountId, boolean awsVpcMode,
       String hostname, String delegateGroupName, String delegateProfile, String tokenName) throws IOException {
-    checkUniquenessOfDelegateName(accountId, delegateGroupName, false, null);
+    checkUniquenessOfDelegateName(accountId, delegateGroupName, false);
     File ecsDelegateFile = File.createTempFile(ECS_DELEGATE, ".tar");
 
     try (TarArchiveOutputStream out = new TarArchiveOutputStream(new FileOutputStream(ecsDelegateFile))) {
@@ -4099,8 +4100,8 @@ public class DelegateServiceImpl implements DelegateService {
     }
     DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(
         delegateSetupDetails.getOrgIdentifier(), delegateSetupDetails.getProjectIdentifier());
-    checkUniquenessOfDelegateName(accountId, delegateSetupDetails.getName(), true, owner);
-
+    String delegateName = getUniqueDelegateNameWithInTheScope(accountId, delegateSetupDetails.getName(), true, owner);
+    delegateSetupDetails.setName(delegateName);
     if (isEmpty(delegateSetupDetails.getTokenName())) {
       throw new InvalidRequestException("Delegate Token must be provided.", USER);
     }
@@ -4239,7 +4240,8 @@ public class DelegateServiceImpl implements DelegateService {
       String verificationServiceUrl) throws IOException {
     DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(
         delegateSetupDetails.getOrgIdentifier(), delegateSetupDetails.getProjectIdentifier());
-    checkUniquenessOfDelegateName(accountId, delegateSetupDetails.getName(), true, owner);
+    String delegateName = getUniqueDelegateNameWithInTheScope(accountId, delegateSetupDetails.getName(), true, owner);
+    delegateSetupDetails.setName(delegateName);
     validateKubernetesSetupDetails(accountId, delegateSetupDetails);
 
     String version;
@@ -4341,8 +4343,7 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   @Override
-  public void checkUniquenessOfDelegateName(
-      String accountId, String delegateName, boolean isNg, DelegateEntityOwner owner) {
+  public void checkUniquenessOfDelegateName(String accountId, String delegateName, boolean isNg) {
     if (isNg) {
       Query<DelegateGroup> delegateGroupQuery = persistence.createQuery(DelegateGroup.class)
                                                     .filter(DelegateGroupKeys.accountId, accountId)
@@ -4361,13 +4362,53 @@ public class DelegateServiceImpl implements DelegateService {
                                         .field(DelegateKeys.status)
                                         .notEqual(DelegateInstanceStatus.DELETED);
 
-    if (isNg) {
-      delegateQuery.filter(DelegateKeys.owner, owner);
-    }
     if (delegateQuery.get() != null) {
       throw new InvalidRequestException(
           "Delegate with same name exists. Delegate name must be unique across account.", USER);
     }
+  }
+
+  @Override
+  public String getUniqueDelegateNameWithInTheScope(
+      String accountId, String delegateName, boolean isNg, DelegateEntityOwner owner) {
+    Query<DelegateGroup> delegateGroupQuery = persistence.createQuery(DelegateGroup.class)
+                                                  .filter(DelegateGroupKeys.accountId, accountId)
+                                                  .filter(DelegateGroupKeys.name, delegateName)
+                                                  .filter(DelegateGroupKeys.ng, true);
+    if (delegateGroupQuery.get() != null) {
+      throw new InvalidRequestException(
+          "Delegate with same name exists. Delegate name must be unique across account.", USER);
+    }
+    Query<Delegate> delegateQuery = persistence.createQuery(Delegate.class)
+                                        .filter(DelegateKeys.accountId, accountId)
+                                        .filter(DelegateKeys.delegateName, delegateName)
+                                        .filter(DelegateGroupKeys.ng, isNg)
+                                        .field(DelegateKeys.status)
+                                        .notEqual(DelegateInstanceStatus.DELETED);
+
+    if (delegateQuery.get() != null) {
+      delegateQuery.filter(DelegateKeys.owner, owner);
+      if (delegateQuery.get() != null) {
+        throw new InvalidRequestException(
+            "Delegate with same name exists. Delegate name must be unique across account.", USER);
+      }
+      if (isEmpty(owner.getIdentifier())) {
+        return delegateName;
+      }
+
+      String projectId = DelegateEntityOwnerHelper.extractProjectIdFromOwnerIdentifier(owner.getIdentifier());
+      if (isNotEmpty(projectId)) {
+        String truncatedProjectIdentifier = projectId.substring(Math.max(projectId.length() - 6, 0));
+        return String.format("%s-%s", delegateName, truncatedProjectIdentifier);
+      }
+
+      String orgId = DelegateEntityOwnerHelper.extractOrgIdFromOwnerIdentifier(owner.getIdentifier());
+      if (isNotEmpty(orgId)) {
+        String truncatedOrgIdentifier = orgId.substring(Math.max(orgId.length() - 6, 0));
+        return String.format("%s-%s", delegateName, truncatedOrgIdentifier);
+      }
+    }
+    return delegateName;
   }
 
   @Override
