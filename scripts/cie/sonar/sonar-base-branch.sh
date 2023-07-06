@@ -8,7 +8,7 @@
 
 trap 'clean_up_files' EXIT
 
-trap 'report_error' ERR
+#trap 'report_error' ERR
 
 function clean_temp_files() {
   local_files=( $1 )
