@@ -44,6 +44,7 @@ import io.harness.eventsframework.schemas.entitysetupusage.EntityDetailWithSetup
 import io.harness.eventsframework.schemas.entitysetupusage.EntityDetailWithSetupUsageDetailProtoDTO.PipelineDetailType;
 import io.harness.eventsframework.schemas.entitysetupusage.EntitySetupUsageCreateV2DTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -484,17 +485,27 @@ public class PipelineSetupUsageHelperTest extends PipelineServiceTestBase {
   @Test
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
-  public void testShouldPublishSetupUsageForCreationAndUpdation() {
+  public void testShouldPublishSetupUsageForCreationAndUpdationForRemotePipeline() {
     FilterCreationGitMetadata gitMetadata = null;
-    assertFalse(pipelineSetupUsageHelper.shouldPublishSetupUsage(gitMetadata));
+    PipelineEntity pipelineEntity = PipelineEntity.builder().storeType(StoreType.REMOTE).build();
+    assertFalse(pipelineSetupUsageHelper.shouldPublishSetupUsage(pipelineEntity, gitMetadata));
+  }
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testShouldPublishSetupUsageForCreationAndUpdationForInlinePipeline() {
+    FilterCreationGitMetadata gitMetadata = null;
+    PipelineEntity pipelineEntity = PipelineEntity.builder().storeType(StoreType.INLINE).build();
+    assertTrue(pipelineSetupUsageHelper.shouldPublishSetupUsage(pipelineEntity, gitMetadata));
   }
 
   @Test
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
-  public void testShouldPublishSetupUsageForGetDefaultBranch() {
+  public void testShouldPublishSetupUsageForGetDefaultBranchForRemotePipeline() {
     FilterCreationGitMetadata gitMetadata = FilterCreationGitMetadata.builder().isGitDefaultBranch(true).build();
-    assertTrue(pipelineSetupUsageHelper.shouldPublishSetupUsage(gitMetadata));
+    PipelineEntity pipelineEntity = PipelineEntity.builder().storeType(StoreType.REMOTE).build();
+    assertTrue(pipelineSetupUsageHelper.shouldPublishSetupUsage(pipelineEntity, gitMetadata));
   }
 
   @Test
@@ -502,6 +513,7 @@ public class PipelineSetupUsageHelperTest extends PipelineServiceTestBase {
   @Category(UnitTests.class)
   public void testShouldPublishSetupUsageForGetNonDefaultBranch() {
     FilterCreationGitMetadata gitMetadata = FilterCreationGitMetadata.builder().isGitDefaultBranch(false).build();
-    assertFalse(pipelineSetupUsageHelper.shouldPublishSetupUsage(gitMetadata));
+    PipelineEntity pipelineEntity = PipelineEntity.builder().storeType(StoreType.REMOTE).build();
+    assertFalse(pipelineSetupUsageHelper.shouldPublishSetupUsage(pipelineEntity, gitMetadata));
   }
 }

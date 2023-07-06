@@ -39,6 +39,8 @@ import io.harness.eventsframework.schemas.entitysetupusage.EntityDetailWithSetup
 import io.harness.eventsframework.schemas.entitysetupusage.EntityDetailWithSetupUsageDetailProtoDTO.EntityReferredByPipelineDetailProtoDTO;
 import io.harness.eventsframework.schemas.entitysetupusage.EntityDetailWithSetupUsageDetailProtoDTO.PipelineDetailType;
 import io.harness.eventsframework.schemas.entitysetupusage.EntitySetupUsageCreateV2DTO;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
@@ -157,7 +159,7 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
       FilterCreationParams filterCreationParams, List<EntityDetailProtoDTO> referredEntities) {
     PipelineEntity pipelineEntity = filterCreationParams.getPipelineEntity();
     FilterCreationGitMetadata gitMetadata = filterCreationParams.getFilterCreationGitMetadata();
-    if (!shouldPublishSetupUsage(gitMetadata)) {
+    if (!shouldPublishSetupUsage(pipelineEntity, gitMetadata)) {
       return;
     }
     log.info(String.format("Publishing setup usages for pipeline [%s] in repo [%s] in default branch",
@@ -224,8 +226,13 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
   }
 
   @VisibleForTesting
-  boolean shouldPublishSetupUsage(FilterCreationGitMetadata gitMetadata) {
-    return gitMetadata != null && gitMetadata.isGitDefaultBranch();
+  boolean shouldPublishSetupUsage(PipelineEntity pipelineEntity, FilterCreationGitMetadata gitMetadata) {
+    if (!StoreType.REMOTE.equals(pipelineEntity.getStoreType())
+        && !StoreType.REMOTE.equals(GitAwareContextHelper.getStoreTypeFromGitContext())) {
+      return true;
+    } else {
+      return gitMetadata != null && gitMetadata.isGitDefaultBranch();
+    }
   }
 
   private EntityDetailProtoDTO populateEntityDetailProtoDTO(
