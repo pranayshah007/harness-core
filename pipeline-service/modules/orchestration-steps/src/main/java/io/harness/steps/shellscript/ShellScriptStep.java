@@ -177,7 +177,7 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
     } finally {
       ILogStreamingStepClient logStreamingStepClient =
           logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
-      logStreamingStepClient.closeAllOpenStreamsWithPrefix(StepUtils.generateLogKeys(ambiance, emptyList()).get(0));
+      logStreamingStepClient.closeStream(ShellScriptTaskNG.COMMAND_UNIT);
     }
   }
 }
