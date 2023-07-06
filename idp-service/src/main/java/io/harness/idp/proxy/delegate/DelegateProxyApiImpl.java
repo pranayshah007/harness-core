@@ -11,10 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.IDP;
 import static io.harness.idp.proxy.ngmanager.IdpAuthInterceptor.AUTHORIZATION;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.task.http.HttpStepResponse;
-import io.harness.eraro.ErrorCode;
-import io.harness.eraro.ResponseMessage;
-import io.harness.http.HttpHeaderConfig;
 import io.harness.idp.annotations.IdpServiceAuthIfHasApiKey;
 import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCache;
 import io.harness.idp.proxy.delegate.beans.BackstageProxyRequest;
@@ -25,10 +21,14 @@ import io.harness.security.annotations.NextGenManagerAuth;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.List;
+import java.nio.charset.StandardCharsets;
 import java.util.Set;
+import java.util.zip.GZIPInputStream;
 import javax.ws.rs.POST;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Context;
@@ -36,6 +36,13 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.Header;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 
 @OwnedBy(IDP)
 @NextGenManagerAuth
@@ -65,33 +72,48 @@ public class DelegateProxyApiImpl implements DelegateProxyApi {
       log.info("Parsed request body url: {}", backstageProxyRequest.getUrl());
       log.info("Parsed request body method: {}", backstageProxyRequest.getMethod());
       StringBuilder headerString = new StringBuilder();
+
+      CloseableHttpClient httpClient = HttpClients.createDefault();
+      HttpGet httpGet = new HttpGet(backstageProxyRequest.getUrl());
+
       backstageProxyRequest.getHeaders().forEach((key, value) -> {
         if (!key.equals(AUTHORIZATION)) {
           headerString.append(String.format(HEADER_STRING_PATTERN, key, value));
         } else {
           log.debug("Skipped logging {} header", AUTHORIZATION);
         }
+        httpGet.setHeader(key, value);
       });
       log.info("Parsed request body headers: {}", headerString);
 
-      Set<String> delegateSelectors = getDelegateSelectors(backstageProxyRequest.getUrl(), accountIdentifier);
-      List<HttpHeaderConfig> headerList =
-          delegateProxyRequestForwarder.createHeaderConfig(backstageProxyRequest.getHeaders());
-
-      HttpStepResponse httpResponse =
-          delegateProxyRequestForwarder.forwardRequestToDelegate(accountIdentifier, backstageProxyRequest.getUrl(),
-              headerList, backstageProxyRequest.getBody(), backstageProxyRequest.getMethod(), delegateSelectors);
-
-      if (httpResponse == null) {
-        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-            .entity(ResponseMessage.builder()
-                        .message("Did not receive response from Delegate")
-                        .code(ErrorCode.INTERNAL_SERVER_ERROR)
-                        .build())
-            .build();
+      HttpResponse httpResponse;
+      ByteArrayOutputStream outStream;
+      try {
+        httpResponse = httpClient.execute(httpGet);
+        Response.ResponseBuilder responseBuilder = Response.status(httpResponse.getStatusLine().getStatusCode());
+        Header contentTypeHeader = httpResponse.getFirstHeader("Content-Type");
+        if (contentTypeHeader != null && contentTypeHeader.getValue().equals("application/x-gzip")) {
+          InputStream bodyStream = new GZIPInputStream(httpResponse.getEntity().getContent());
+          outStream = new ByteArrayOutputStream();
+          byte[] buffer = new byte[4096];
+          int length;
+          while ((length = bodyStream.read(buffer)) > 0) {
+            outStream.write(buffer, 0, length);
+          }
+          responseBuilder.entity(outStream.toByteArray());
+          //      for (Header header : httpResponse.getAllHeaders()) {
+          //        responseBuilder.header(header.getName(), header.getValue());
+          //      }
+          responseBuilder.header("Content-Type", "application/x-gzip");
+        } else {
+          responseBuilder.entity(EntityUtils.toString(httpResponse.getEntity(), StandardCharsets.UTF_8));
+        }
+        return responseBuilder.build();
+      } catch (ClientProtocolException e) {
+        throw new RuntimeException(e);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
       }
-
-      return Response.status(httpResponse.getHttpResponseCode()).entity(httpResponse.getHttpResponseBody()).build();
     }
   }
 
