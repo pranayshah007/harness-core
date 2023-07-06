@@ -19,6 +19,7 @@ import com.google.inject.name.Named;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.LocalCachedMapOptions;
 import org.redisson.api.RLocalCachedMap;
+import org.redisson.api.RMap;
 import org.redisson.api.RedissonClient;
 
 @OwnedBy(DEL)
@@ -38,5 +39,10 @@ public class DelegateRedissonCacheManagerImpl implements DelegateRedissonCacheMa
   public <K, V> RLocalCachedMap<K, V> getCache(
       String cacheName, Class<K> keyType, Class<V> valueType, LocalCachedMapOptions<K, V> localCachedMapOptions) {
     return redissonClient.getLocalCachedMap(cacheName, new RedissonKryoCodec(), localCachedMapOptions);
+  }
+
+  @Override
+  public RMap<Integer, RLocalCachedMap<String, Object>> getMapFromCache(String cacheName) {
+    return redissonClient.getMap(cacheName);
   }
 }
