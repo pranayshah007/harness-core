@@ -39,6 +39,8 @@ global:
       userKey: ""
       passwordKey: ""
       extraArgs: ""
+      certName: ""
+      certKey: ""
   ingress:
     enabled: false
     className: harness
@@ -69,7 +71,7 @@ image:
   repository: harness/batch-processing-signed
   pullPolicy: Always
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "78605-000"
+  tag: "79501-000"
   digest: ""
 # image pull secrets to use for batch-processing image
   imagePullSecrets: []
@@ -79,7 +81,7 @@ imageClickhouseEnabled:
   repository: harness/batch-processing-signed
   pullPolicy: Always
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "78605-000"
+  tag: "79501-000"
   digest: ""
 # image pull secrets to use for batch-processing image
   imagePullSecrets: []
@@ -141,9 +143,9 @@ service:
 autoscaling:
   enabled: false
   minReplicas: 1
-  maxReplicas: 2
-  targetCPUUtilizationPercentage: 80
-# targetMemoryUtilizationPercentage: 80
+  maxReplicas: 100
+  targetCPU: ""
+  targetMemory: ""
 
 nodeSelector: {}
 
@@ -173,10 +175,31 @@ workloadIdentity:
 
 resources:
   limits:
-    cpu: "1024m"
     memory: "10Gi"
   requests:
     cpu: "1024m"
     memory: "10Gi"
 
 additionalConfigs: {}
+
+
+# extraVolumes:
+#   - name: volume-test
+#     configMap:
+#       name: test-config
+#       # readOnly: true
+extraVolumes: []
+
+# extraVolumeMounts:
+#   - name: volume-test
+#     mountPath: /opt/harness/config
+extraVolumeMounts: []
+
+lifecycleHooks: {}
+# lifecycleHooks:
+#   postStart:
+#     exec:
+#       command:
+#   preStop:
+#     exec:
+#       command:
