@@ -29,6 +29,7 @@ public class EncryptionUtils {
   private static final String AES_CIPHER = "AES/CBC/PKCS5Padding";
 
   public static String encryptString(String unencrypted, String sharedKey) {
+    log.info("idpEncryptionSecret : {}", sharedKey);
     try {
       // Generate a random IV (Initialization Vector)
       byte[] ivBytes = generateRandomIV();
