@@ -216,7 +216,7 @@ public class CoreV1ApiWithRetry extends CoreV1Api {
       if (e.getCode() != HTTP_CONFLICT) {
         throw e;
       }
-      log.warn("Secret1 {} already exists, replacing it", body.getMetadata().getName());
+      log.warn("Secret {} already exists, replacing it", body.getMetadata().getName());
       super.deleteNamespacedSecret(body.getMetadata().getName(), namespace, pretty, dryRun, 0, null, null, null);
       return super.createNamespacedSecret(namespace, body, pretty, dryRun, fieldManager, fieldValidation);
     }
