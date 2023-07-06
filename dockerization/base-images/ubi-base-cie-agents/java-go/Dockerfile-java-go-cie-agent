@@ -23,7 +23,7 @@ RUN mkdir -p /deployments
 
 # JAVA_APP_DIR is used by run-java.sh for finding the binaries
 ENV JAVA_APP_DIR=/deployments \
-    JAVA_MAJOR_VERSION=11
+    JAVA_MAJOR_VERSION=17
 
 # Add run script as /deployments/run-java.sh and make it executable
 COPY run-java.sh /deployments/
@@ -84,3 +84,6 @@ ENV PATH ${PATH}:/opt/gsutil:/usr/local/go/bin:/opt/sonar-scanner-${SONARQUBE_VE
 
 ENV GOROOT /usr/local/go
 ENV GOPATH /usr/local
+ENV JAVA_HOME=/opt/harness/OpenJDK17/jdk-17.0.7+7
+ENV PATH=$JAVA_HOME/bin:$PATH
+
