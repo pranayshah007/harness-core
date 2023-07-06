@@ -131,6 +131,9 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
       String accountIdentifier, String projectIdentifier, String orgIdentifier, Scope scope) {
     try {
       return getPipelineYamlSchemaInternal(accountIdentifier, projectIdentifier, orgIdentifier, scope);
+    } catch (NullPointerException npe) {
+      log.error("[PMS] Failed to get pipeline yaml schema due to NPE", npe);
+      throw npe;
     } catch (Exception e) {
       log.error("[PMS] Failed to get pipeline yaml schema");
       throw new JsonSchemaException(e.getMessage());
