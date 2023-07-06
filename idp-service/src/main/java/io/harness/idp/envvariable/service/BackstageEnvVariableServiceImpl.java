@@ -278,12 +278,10 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
 
     for (BackstageEnvVariable envVariable : envVariables) {
       String envName = envVariable.getEnvName();
-
+      log.info(
+          "IDP_DYNAMIC_SECRET_RESOLUTION FF enabled: {} for account {}", loadSecretsDynamically, accountIdentifier);
       if (envVariable.getType().name().equals(BackstageEnvVariableType.SECRET.name())) {
         if (loadSecretsDynamically) {
-          log.debug("IDP_DYNAMIC_SECRET_RESOLUTION FF is enabled for account {}. "
-                  + "Just updating LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES",
-              accountIdentifier);
           secretData.put(
               LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES, String.valueOf(System.currentTimeMillis()).getBytes());
         } else {
