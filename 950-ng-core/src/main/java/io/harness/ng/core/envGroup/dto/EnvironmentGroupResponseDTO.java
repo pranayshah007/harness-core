@@ -42,6 +42,7 @@ public class EnvironmentGroupResponseDTO {
   @Schema(description = NGCommonEntityConstants.VERSION_PARAM_MESSAGE) @JsonIgnore Long version;
   @Schema(description = EnvironmentGroupConstants.ENV_IDENTIFIERS_LIST_PARAM_MESSAGE) List<String> envIdentifiers;
   @Schema(description = EnvironmentGroupConstants.ENV_RESPONSE_PARAM_MESSAGE) List<EnvironmentResponse> envResponse;
+  @Schema(description = "Yaml of the Environment Group") String yaml;
 
   // GitInfo
   @Schema(description = EnvironmentGroupConstants.GIT_DETAILS_MESSAGE) EntityGitDetails gitDetails;

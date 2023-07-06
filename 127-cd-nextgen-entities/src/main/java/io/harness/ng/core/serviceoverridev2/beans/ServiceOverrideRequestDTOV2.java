@@ -46,5 +46,5 @@ public class ServiceOverrideRequestDTOV2 {
 
   @Schema(description = "Spec for overrides, containing overriding fields like manifests, variables, config files")
   ServiceOverridesSpec spec;
-  @Schema(description = "YAML for the Service Overrides Spec") String yamlInternal;
+  String yamlInternal;
 }
