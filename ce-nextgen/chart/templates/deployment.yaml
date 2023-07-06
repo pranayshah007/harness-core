@@ -40,7 +40,7 @@ spec:
         args:
           - "pod"
           - "-lapp=mongodb-replicaset"
-      {{- end }}    
+      {{- end }}
       - name: wait-for-timescale
         image: {{ include "common.images.image" (dict "imageRoot" .Values.waitForInitContainer.image "global" .Values.global) }}
         imagePullPolicy: IfNotPresent
@@ -77,20 +77,16 @@ spec:
             - secretRef:
                 name: ce-nextgen
           env:
+            {{- include "harnesscommon.dbconnection.redisEnv" (dict "context" .Values.global.database.redis "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 12 }}
             {{- include "harnesscommon.dbconnection.mongoEnv" . | nindent 12 }}
+            {{- include "harnesscommon.dbconnection.timescaleEnv" (dict "passwordVariableName" "TIMESCALEDB_PASSWORD" "userVariableName" "TIMESCALEDB_USERNAME" "context" $) | indent 12}}
+            {{- include "harnesscommon.dbconnection.timescaleSslEnv" (dict "sslModeValue" "require" "certVariableName" "TIMESCALEDB_SSL_ROOT_CERT" "context" $ ) | nindent 12 }}
             - name: EVENTS_MONGO_DB_URL
               value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "events" "context" $) }}
             - name: NOTIFICATION_MONGO_URI
               value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "notifications" "context" $) }}
-            - name : TIMESCALEDB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.timescaleSecret.password.name }}
-                  key: {{ .Values.timescaleSecret.password.key }}
-            - name : TIMESCALEDB_USERNAME
-              value: postgres
             - name: TIMESCALEDB_URI
-              value: 'jdbc:postgresql://timescaledb-single-chart.{{ .Release.Namespace }}:5432/harness'
+              value: {{ include "harnesscommon.dbconnection.timescaleConnection" (dict "protocol" "jdbc:postgresql" "database" "harness" "context" $) }}
             {{- if .Values.clickhouse.enabled }}
             - name : CLICKHOUSE_USERNAME
               value: {{ .Values.clickhouse.username | quote}}
@@ -101,12 +97,23 @@ spec:
                   key: {{ .Values.clickhouse.password.key }}
             {{- end }}
           {{- if not .Values.workloadIdentity.enabled }}
+            {{- if .Values.lifecycleHooks }}
+              lifecycle: {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.lifecycleHooks "context" $) | nindent 12 }}
+            {{- end }}
           volumeMounts:
+          {{- if .Values.extraVolumeMounts }}
+            {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.extraVolumeMounts "context" $) | nindent 10 }}
+          {{- end }}
           - name: secret-mount
             mountPath: /opt/harness/svc
           {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
       {{- if not .Values.workloadIdentity.enabled }}
       volumes:
+      {{- if .Values.extraVolumes }}
+        {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.extraVolumes "context" $ ) | nindent 6 }}
+      {{- end }}
       - name: secret-mount
         secret:
           secretName: ceng-secret-mount
