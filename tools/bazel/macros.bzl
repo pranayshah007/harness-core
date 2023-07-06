@@ -129,7 +129,6 @@ def run_analysis(
         targets = kwargs.get("targets")
         test_targets = kwargs.get("test_targets")
         sonarqube_test(language, targets, test_targets)
-    print("Configuring Sonar Prop File for language..... " + language)
 
 def maven_test_artifact(artifact):
     entities = artifact.split(":")
