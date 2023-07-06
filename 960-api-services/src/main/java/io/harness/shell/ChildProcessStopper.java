@@ -16,6 +16,7 @@ import java.nio.charset.Charset;
 import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
 import org.zeroturnaround.exec.ProcessExecutor;
+import org.zeroturnaround.exec.ProcessResult;
 import org.zeroturnaround.exec.stop.ProcessStopper;
 
 @Slf4j
@@ -38,20 +39,27 @@ public class ChildProcessStopper implements ProcessStopper {
       try (FileOutputStream outputStream = new FileOutputStream(scriptFile)) {
         String command = "list_descendants ()\n"
             + "{\n"
-            + "  local children=$(ps -ef | grep -v grep | grep $1 | awk '{print $2}')\n"
-            + "  kill -9 ${children[0]}\n"
+            + "  local -a children=()\n"
+            + "  read -ra children <<< \"$(ps -ef | grep -v grep | grep $1 | awk '{print $2}' | tr '\\n' ' ')\"\n"
             + "\n"
             + "  for (( c=1; c<${#children[@]} ; c++ ))\n"
             + "  do\n"
             + "    list_descendants ${children[c]}\n"
             + "  done\n"
+            + "\n"
+            + "  if kill -9 ${children[0]}; then\n"
+            + "    echo \"Termination successful for PID: ${children[0]}\"\n"
+            + "  else\n"
+            + "    echo \"Failed to terminate PID: ${children[0]}\"\n"
+            + "  fi\n"
             + "}\n"
             + "\n"
             + "list_descendants $(ps -ef | grep -v grep | grep -m1 " + fileName + " | awk '{print $2}')";
         log.info("Kill child processes command: {}", command);
         outputStream.write(command.getBytes(Charset.forName("UTF-8")));
         processExecutor.command("/bin/bash", killFileName);
-        processExecutor.execute();
+        ProcessResult result = processExecutor.execute();
+        log.info("Kill child processes command exited with: {}", result.getExitValue());
       } catch (IOException | InterruptedException | TimeoutException e) {
         log.error("Exception in script execution ", e);
       } finally {
