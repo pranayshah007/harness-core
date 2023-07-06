@@ -15,6 +15,7 @@ import static io.harness.delegate.utils.DelegateServiceConstants.STREAM_DELEGATE
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_DESTROYED;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_RESTARTED;
 
+import com.mongodb.MongoTimeoutException;
 import io.harness.beans.DelegateHeartbeatParams;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateInstanceStatus;
@@ -112,13 +113,13 @@ public abstract class DelegateHeartbeatService<T extends Object> {
 
   private Delegate getExistingDelegateExceptionIfNullOrDeleted(
       @NotNull final String accountId, @NotNull final String delegateId) {
-    final Delegate delegate = delegateCache.get(accountId, delegateId, true);
-    if (Objects.isNull(delegate) || (delegate.getStatus() == DelegateInstanceStatus.DELETED)) {
-      log.warn("Sending self destruct command from register delegate because the existing delegate "
-          + (Objects.isNull(delegate) ? "is not found" : "has status deleted."));
-      throw new DelegateNotRegisteredException(String.format("{uuid %s, account_id %s}", delegateId, accountId));
-    }
-    return delegate;
+      final Delegate delegate = delegateCache.get(accountId, delegateId, true);
+      if (Objects.isNull(delegate) || (delegate.getStatus() == DelegateInstanceStatus.DELETED)) {
+        log.warn("Sending self destruct command from register delegate because the existing delegate "
+            + (Objects.isNull(delegate) ? "is not found" : "has status deleted."));
+        throw new DelegateNotRegisteredException(String.format("{uuid %s, account_id %s}", delegateId, accountId));
+      }
+      return delegate;
   }
 
   public T process(@NotNull DelegateHeartbeatParams params) {
@@ -141,6 +142,8 @@ public abstract class DelegateHeartbeatService<T extends Object> {
       final T failureResponse = Optional.ofNullable(buildHeartbeatResponseOnFailure(params, e)).orElseThrow(() -> e);
       finish(failureResponse, params);
       return failureResponse;
+    } catch (MongoTimeoutException e) {
+      return null;
     }
   }
 

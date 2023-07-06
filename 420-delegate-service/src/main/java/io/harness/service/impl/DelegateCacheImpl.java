@@ -16,6 +16,7 @@ import static io.harness.serializer.DelegateServiceCacheRegistrar.DELEGATE_GROUP
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import com.mongodb.MongoTimeoutException;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTask;
@@ -164,7 +165,7 @@ public class DelegateCacheImpl implements DelegateCache {
           });
 
   @Override
-  public Delegate get(String accountId, String delegateId, boolean forceRefresh) {
+  public Delegate get(String accountId, String delegateId, boolean forceRefresh)  {
     try {
       if (enableRedisForDelegateService) {
         return getDelegateFromRedisCache(delegateId, forceRefresh);
@@ -183,7 +184,12 @@ public class DelegateCacheImpl implements DelegateCache {
     } catch (ExecutionException e) {
       log.error("Execution exception", e);
     } catch (UncheckedExecutionException e) {
-      log.error("Delegate not found exception", e);
+      if (e.getCause() instanceof MongoTimeoutException) {
+        log.error("Failed to connect to mongodb when fetching delegate from cache.", e.getCause());
+        throw (MongoTimeoutException) e.getCause();
+      } else {
+        log.error("Delegate not found exception", e);
+      }
     }
     return null;
   }
