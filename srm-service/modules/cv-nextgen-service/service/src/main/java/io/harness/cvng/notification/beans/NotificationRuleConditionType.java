@@ -22,7 +22,7 @@ public enum NotificationRuleConditionType {
   @JsonProperty("FireHydrantReport") FIRE_HYDRANT_REPORT(NotificationRuleType.FIRE_HYDRANT, "Fire Hydrant Report"),
 
   @JsonProperty("DeploymentImpactReport")
-  DEPLOYMENT_IMPACT_REPORT(NotificationRuleType.MONITORED_SERVICE, "DeploymentImpactReport");
+  DEPLOYMENT_IMPACT_REPORT(NotificationRuleType.MONITORED_SERVICE, "Deployment Impact Report");
 
   private final NotificationRuleType notificationRuleType;
   private final String displayName;

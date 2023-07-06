@@ -33,6 +33,7 @@ import io.harness.cvng.activity.entities.HarnessCDCurrentGenActivity.HarnessCDCu
 import io.harness.cvng.activity.entities.InternalChangeActivity.InternalChangeActivityUpdatableEntity;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity.KubernetesClusterActivityUpdatableEntity;
 import io.harness.cvng.activity.entities.PagerDutyActivity.PagerDutyActivityUpdatableEntity;
+import io.harness.cvng.activity.entities.SRMAnalysisActivity;
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.activity.services.api.ActivityUpdateHandler;
 import io.harness.cvng.activity.services.impl.ActivityServiceImpl;
@@ -40,6 +41,7 @@ import io.harness.cvng.activity.services.impl.CustomChangeActivityUpdateHandler;
 import io.harness.cvng.activity.services.impl.DeploymentActivityUpdateHandler;
 import io.harness.cvng.activity.services.impl.InternalChangeActivityUpdateHandler;
 import io.harness.cvng.activity.services.impl.KubernetesClusterActivityUpdateHandler;
+import io.harness.cvng.activity.services.impl.SRMAnalysisActivityUpdateHandler;
 import io.harness.cvng.activity.source.services.api.KubernetesActivitySourceService;
 import io.harness.cvng.activity.source.services.impl.KubernetesActivitySourceServiceImpl;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
@@ -1090,7 +1092,9 @@ public class CVServiceModule extends AbstractModule {
     activityTypeActivityUpdatableEntityMapBinder.addBinding(ActivityType.CUSTOM_FF)
         .to(CustomChangeActivityUpdatableEntity.class)
         .in(Scopes.SINGLETON);
-
+    activityTypeActivityUpdatableEntityMapBinder.addBinding(ActivityType.SRM_STEP_ANALYSIS)
+        .to(SRMAnalysisActivity.SRMAnalysiActivityUpdatableEntity.class)
+        .in(Scopes.SINGLETON);
     MapBinder<ChangeSourceType, ChangeSourceUpdateHandler> changeSourceUpdateHandlerMapBinder =
         MapBinder.newMapBinder(binder(), ChangeSourceType.class, ChangeSourceUpdateHandler.class);
     changeSourceUpdateHandlerMapBinder.addBinding(ChangeSourceType.PAGER_DUTY)
@@ -1125,6 +1129,9 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     activityUpdateHandlerMapBinder.addBinding(ActivityType.CUSTOM_FF)
         .to(CustomChangeActivityUpdateHandler.class)
+        .in(Scopes.SINGLETON);
+    activityUpdateHandlerMapBinder.addBinding(ActivityType.SRM_STEP_ANALYSIS)
+        .to(SRMAnalysisActivityUpdateHandler.class)
         .in(Scopes.SINGLETON);
 
     MapBinder<SLOTargetType, SLOTargetTransformer> sloTargetTypeSLOTargetTransformerMapBinder =
