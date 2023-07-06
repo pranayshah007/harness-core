@@ -65,7 +65,7 @@ MODULES_FILE="modules.txt"
 MODULES_TESTS_FILE="modules_tests.txt"
 PR_SRCS_FILE="pr_srcs.txt"
 SONAR_CONFIG_FILE='sonar-project.properties'
-#STARTUP_ARGS="--output_base=/tmp"
+STARTUP_ARGS="--output_base=/tmp"
 #TEST_ARGS="--discard_analysis_cache --notrack_incremental_state --nokeep_state_after_build --test_verbose_timeout_warnings --test_output=errors"
 
 # This script is required to generate the test util bzl file in root directory.
