@@ -131,10 +131,17 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
     // Apply Command Flag
     Map<String, String> k8sCommandFlag = k8sCanaryDeployRequest.getK8sCommandFlags();
     String commandFlags = K8sCommandFlagsUtils.getK8sCommandFlags(K8sCliCommandType.Apply.name(), k8sCommandFlag);
+
+    LogCallback applyManifestsLogCallback =
+        k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Apply, true, commandUnitsProgress);
+
+    if (!k8sCanaryHandlerConfig.isUseDeclarativeRollback()) {
+      k8sTaskHelperBase.warnIfReleaseNameConflictsWithSecretOrConfigMap(
+          k8sCanaryHandlerConfig.getResources(), k8sCanaryHandlerConfig.getReleaseName(), applyManifestsLogCallback);
+    }
+
     k8sTaskHelperBase.applyManifests(k8sCanaryHandlerConfig.getClient(), k8sCanaryHandlerConfig.getResources(),
-        k8sDelegateTaskParams,
-        k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Apply, true, commandUnitsProgress), true, true,
-        commandFlags);
+        k8sDelegateTaskParams, applyManifestsLogCallback, true, true, commandFlags);
 
     // At this point we're sure that manifest has been applied successfully and canary workload is deployed
     this.canaryWorkloadDeployed = true;

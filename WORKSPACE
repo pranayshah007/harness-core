@@ -751,8 +751,8 @@ go_repository(
 go_repository(
     name = "com_github_wings_software_dlite",
     importpath = "github.com/wings-software/dlite",
-    sum = "h1:143lMB7T+9OqU9VYSpm71B4DzIONQOUvWWGsmreTpHI=",
-    version = "v0.0.0-20220915141325-eb8c295a2189",
+    sum = "h1:POHuMFn5nQpZjN2Ql1maNabDO6r/8ZOargRA6uzAOuo=",
+    version = "v1.0.0-rc.5",
 )
 
 go_repository(
@@ -4605,9 +4605,16 @@ go_repository(
     version = "v1.3.1",
 )
 
+go_repository(
+    name = "com_github_harness_ti_client",
+    importpath = "github.com/harness/ti-client",
+    sum = "h1:5bAthnUBEV3zE9utLY4b6AKs/ZQ5y188uv2GkVJeetI=",
+    version = "v0.0.0-20230628234729-894f996b3046",
+)
+
 go_rules_dependencies()
 
-go_register_toolchains(version = "1.20.4")
+go_register_toolchains(version = "1.20.5")
 
 gazelle_dependencies()
 
@@ -4716,24 +4723,24 @@ plain_artifacts = [
     "com.esotericsoftware:kryo:4.0.3",
     "com.esotericsoftware:minlog:1.3.0",
     "com.esotericsoftware:reflectasm:1.11.6",
-    "com.fasterxml.jackson.core:jackson-annotations:2.14.2",
-    "com.fasterxml.jackson.core:jackson-core:2.14.2",
-    "com.fasterxml.jackson.core:jackson-databind:2.13.4.2",
-    "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.14.2",
-    "com.fasterxml.jackson.dataformat:jackson-dataformat-smile:2.14.2",
-    "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.14.2",
-    "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.14.2",
-    "com.fasterxml.jackson.datatype:jackson-datatype-guava:2.14.2",
-    "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.14.2",
-    "com.fasterxml.jackson.datatype:jackson-datatype-joda:2.14.2",
-    "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.14.2",
-    "com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:2.14.2",
-    "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:2.14.2",
-    "com.fasterxml.jackson.jaxrs:jackson-jaxrs-yaml-provider:2.14.2",
-    "com.fasterxml.jackson.module:jackson-module-afterburner:2.14.2",
-    "com.fasterxml.jackson.module:jackson-module-jaxb-annotations:2.14.2",
-    "com.fasterxml.jackson.module:jackson-module-jsonSchema:2.14.2",
-    "com.fasterxml.jackson.module:jackson-module-parameter-names:2.14.2",
+    "com.fasterxml.jackson.core:jackson-annotations:2.15.1",
+    "com.fasterxml.jackson.core:jackson-core:2.15.1",
+    "com.fasterxml.jackson.core:jackson-databind:2.15.1",
+    "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.15.1",
+    "com.fasterxml.jackson.dataformat:jackson-dataformat-smile:2.15.1",
+    "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.15.1",
+    "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.15.1",
+    "com.fasterxml.jackson.datatype:jackson-datatype-guava:2.15.1",
+    "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.15.1",
+    "com.fasterxml.jackson.datatype:jackson-datatype-joda:2.15.1",
+    "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.1",
+    "com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:2.15.1",
+    "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:2.15.1",
+    "com.fasterxml.jackson.jaxrs:jackson-jaxrs-yaml-provider:2.15.1",
+    "com.fasterxml.jackson.module:jackson-module-afterburner:2.15.1",
+    "com.fasterxml.jackson.module:jackson-module-jaxb-annotations:2.15.1",
+    "com.fasterxml.jackson.module:jackson-module-jsonSchema:2.15.1",
+    "com.fasterxml.jackson.module:jackson-module-parameter-names:2.15.1",
     "com.fasterxml.uuid:java-uuid-generator:4.0.1",
     "com.fasterxml.woodstox:woodstox-core:6.4.0",
     "com.fasterxml:classmate:1.4.0",
@@ -4807,7 +4814,7 @@ plain_artifacts = [
     "com.google.code.findbugs:jsr305:3.0.2",
     "com.google.code.gson:gson:2.8.9",
     "com.google.errorprone:error_prone_annotations:2.3.4",
-    "com.google.guava:guava:31.1-jre",
+    "com.google.guava:guava:32.0.1-jre",
     "com.google.http-client:google-http-client-apache-v2:1.38.0",
     "com.google.http-client:google-http-client-appengine:1.34.1",
     "com.google.http-client:google-http-client-jackson2:1.34.1",
@@ -4993,7 +5000,7 @@ plain_artifacts = [
     "io.grpc:grpc-services:1.50.1",
     "io.grpc:grpc-stub:1.50.1",
     "io.gsonfire:gson-fire:1.8.3",
-    "io.harness.cv:data-collection-dsl:0.56-RELEASE",
+    "io.harness.cv:data-collection-dsl:0.62-RELEASE",
     "io.harness:ff-java-server-sdk:1.1.10",
     "io.jsonwebtoken:jjwt:0.9.1",
     "io.kubernetes:client-java-api:18.0.0",
@@ -5002,17 +5009,17 @@ plain_artifacts = [
     "io.kubernetes:client-java:18.0.0",
     "io.kubernetes:client-java-api-fluent:18.0.0",
     "io.leangen.graphql:spqr:0.11.2",
-    "io.netty:netty-all:4.1.86.Final",
-    "io.netty:netty-buffer:4.1.86.Final",
-    "io.netty:netty-handler-proxy:4.1.86.Final",
-    "io.netty:netty-common:4.1.86.Final",
-    "io.netty:netty-handler:4.1.86.Final",
-    "io.netty:netty-resolver-dns:4.1.86.Final",
-    "io.netty:netty-resolver:4.1.86.Final",
-    "io.netty:netty-transport-native-epoll:linux-x86_64:4.1.86.Final",
-    "io.netty:netty-transport-native-kqueue:4.1.86.Final",
-    "io.netty:netty-transport-native-unix-common:4.1.86.Final",
-    "io.netty:netty-transport:4.1.86.Final",
+    "io.netty:netty-all:4.1.94.Final",
+    "io.netty:netty-buffer:4.1.94.Final",
+    "io.netty:netty-handler-proxy:4.1.94.Final",
+    "io.netty:netty-common:4.1.94.Final",
+    "io.netty:netty-handler:4.1.94.Final",
+    "io.netty:netty-resolver-dns:4.1.94.Final",
+    "io.netty:netty-resolver:4.1.94.Final",
+    "io.netty:netty-transport-native-epoll:linux-x86_64:4.1.94.Final",
+    "io.netty:netty-transport-native-kqueue:4.1.94.Final",
+    "io.netty:netty-transport-native-unix-common:4.1.94.Final",
+    "io.netty:netty-transport:4.1.94.Final",
     "io.opencensus:opencensus-api:0.24.0",
     "io.opencensus:opencensus-contrib-http-util:0.24.0",
     "io.opencensus:opencensus-exporter-stats-stackdriver:0.28.0",
@@ -5355,7 +5362,7 @@ plain_artifacts = [
     "io.swagger.core.v3:swagger-integration:2.2.0",
     "io.opentelemetry:opentelemetry-api:1.18.0",
     "io.harness:smp-license:1.0.11",
-    "com.clickhouse:clickhouse-jdbc:0.3.2-patch11",
+    "com.clickhouse:clickhouse-jdbc:0.4.6",
 ]
 
 amazon_artifacts = [

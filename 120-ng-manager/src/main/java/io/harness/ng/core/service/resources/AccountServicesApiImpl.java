@@ -52,6 +52,11 @@ public class AccountServicesApiImpl extends AbstractServicesApiImpl implements A
     return super.deleteServiceEntity(null, null, service, account, Boolean.TRUE == forceDelete);
   }
 
+  @Override
+  public Response getAccountScopedPrimaryManifests(String service, String harnessAccount) {
+    return super.getPrimaryManifestList(service, null, null, harnessAccount);
+  }
+
   @NGAccessControlCheck(resourceType = NGResourceType.SERVICE, permission = "core_service_view")
   @Override
   public Response getAccountScopedService(@ResourceIdentifier String service, @AccountIdentifier String account) {

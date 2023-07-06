@@ -149,6 +149,7 @@ import io.harness.modules.ModulesClientModule;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.ng.accesscontrol.migrations.AccessControlMigrationModule;
 import io.harness.ng.accesscontrol.user.AggregateUserService;
 import io.harness.ng.accesscontrol.user.AggregateUserServiceImpl;
 import io.harness.ng.authenticationsettings.AuthenticationSettingsModule;
@@ -574,6 +575,13 @@ public class NextGenModule extends AbstractModule {
     return this.appConfig.getGitServiceConfiguration();
   }
 
+  @Provides
+  @Singleton
+  @Named("ngServiceSecret")
+  public String getNgManagerServiceSecret() {
+    return this.appConfig.getNextGenConfig().getNgManagerServiceSecret();
+  }
+
   @Override
   protected void configure() {
     install(VersionModule.getInstance());
@@ -654,6 +662,7 @@ public class NextGenModule extends AbstractModule {
     });
     install(new NextGenPersistenceModule());
     install(new CoreModule());
+    install(AccessControlMigrationModule.getInstance());
     install(UserClientModule.getInstance(this.appConfig.getManagerClientConfig(),
         this.appConfig.getNextGenConfig().getManagerServiceSecret(), NG_MANAGER.getServiceId()));
     install(new InviteModule(appConfig.isNgAuthUIEnabled()));

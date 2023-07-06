@@ -33,4 +33,5 @@ public class CDPipelineModuleInfo implements PipelineModuleInfo {
   @Singular private List<String> infrastructureIdentifiers;
   @Singular private List<String> infrastructureNames;
   @Singular private List<String> freezeIdentifiers;
+  @Singular private List<String> gitOpsAppIdentifiers;
 }

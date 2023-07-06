@@ -87,7 +87,7 @@ public class ApprovalResourceImplServiceImplTest extends CategoryTest {
   @Mock private UserClient userClient;
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Mock private PmsEngineExpressionService pmsEngineExpressionService;
-
+  private static final Long CREATED_AT = 1000L;
   ApprovalResourceServiceImpl approvalResourceService;
   @Before
   public void setUp() {
@@ -137,7 +137,7 @@ public class ApprovalResourceImplServiceImplTest extends CategoryTest {
     when(currentUserHelper.getPrincipalFromSecurityContext())
         .thenReturn(new UserPrincipal("email@harness.io", "name", "user", "ACCOUNTID"));
     Call userCall = mock(Call.class);
-    when(userClient.getUserById("email@harness.io", false)).thenReturn(userCall);
+    when(userClient.getUserById("email@harness.io")).thenReturn(userCall);
     when(userCall.execute()).thenReturn(Response.success(new RestResponse(Optional.of(UserInfo.builder().build()))));
     // Should approve successfully
     approvalResourceService.addHarnessApprovalActivity(id, harnessApprovalActivityRequestDTO);
@@ -212,6 +212,8 @@ public class ApprovalResourceImplServiceImplTest extends CategoryTest {
     newInstance.setProjectIdentifier(projId);
     newInstance.setPipelineIdentifier(pipelineId);
     newInstance.setAmbiance(ambiance1);
+    newInstance.setCreatedAt(CREATED_AT);
+
     HarnessApprovalInstance oldInstance =
         HarnessApprovalInstance.builder()
             .approvalKey("approvalKey")
@@ -234,11 +236,11 @@ public class ApprovalResourceImplServiceImplTest extends CategoryTest {
     when(currentUserHelper.getPrincipalFromSecurityContext())
         .thenReturn(new UserPrincipal("email@harness.io", "name", "user", "ACCOUNTID"));
     Call userCall = mock(Call.class);
-    when(userClient.getUserById("email@harness.io", false)).thenReturn(userCall);
+    when(userClient.getUserById("email@harness.io")).thenReturn(userCall);
     when(userCall.execute()).thenReturn(Response.success(new RestResponse(Optional.of(UserInfo.builder().build()))));
     List<String> approvalInstanceIds = Collections.singletonList("uuid2");
     when(approvalInstanceService.findAllPreviousWaitingApprovals(
-             accountId, orgId, projId, pipelineId, "approvalKey", ambiance1))
+             accountId, orgId, projId, pipelineId, "approvalKey", ambiance1, CREATED_AT))
         .thenReturn(approvalInstanceIds);
     when(approvalInstanceService.getHarnessApprovalInstance("uuid2")).thenReturn(oldInstance);
     ILogStreamingStepClient stepClient = Mockito.mock(ILogStreamingStepClient.class);

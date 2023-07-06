@@ -15,16 +15,19 @@ import io.harness.delegate.beans.DelegateConnectionHeartbeat;
 import io.harness.delegate.beans.DelegateParams;
 import io.harness.delegate.beans.DelegateRegisterResponse;
 import io.harness.delegate.beans.DelegateTaskPackage;
+import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.DelegateUnregisterRequest;
 import io.harness.delegate.core.beans.AcquireTasksResponse;
 import io.harness.delegate.core.beans.ExecutionStatusResponse;
 import io.harness.rest.RestResponse;
+import io.harness.serializer.kryo.KryoRequest;
 import io.harness.serializer.kryo.KryoResponse;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
+import retrofit2.http.Headers;
 import retrofit2.http.POST;
 import retrofit2.http.PUT;
 import retrofit2.http.Path;
@@ -66,4 +69,11 @@ public interface DelegateCoreManagerClient {
   @PUT("agent/delegates/{delegateId}/tasks/{taskId}/acquire/v2")
   Call<DelegateTaskPackage> acquireTask(@Path("delegateId") String delegateId, @Path("taskId") String uuid,
       @Query("accountId") String accountId, @Query("delegateInstanceId") String delegateInstanceId);
+
+  // Support for Kryo task response
+  @Headers({"Content-Type: application/x-kryo-v2"})
+  @KryoRequest
+  @POST("agent/tasks/{taskId}/delegates/{delegateId}/v2")
+  Call<ResponseBody> sendTaskStatus(@Path("delegateId") String delegateId, @Path("taskId") String taskId,
+      @Query("accountId") String accountId, @Body DelegateTaskResponse delegateTaskResponse);
 }

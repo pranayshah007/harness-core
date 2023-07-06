@@ -15,7 +15,6 @@ import io.harness.delegate.beans.executioncapability.AwsCliInstallationCapabilit
 import io.harness.delegate.beans.executioncapability.AwsRegionCapability;
 import io.harness.delegate.beans.executioncapability.AwsSamInstallationCapability;
 import io.harness.delegate.beans.executioncapability.ChartMuseumCapability;
-import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.executioncapability.GitInstallationCapability;
 import io.harness.delegate.beans.executioncapability.HelmInstallationCapability;
@@ -117,7 +116,6 @@ public class DelegateTasksBeansMorphiaRegistrar implements MorphiaRegistrar {
   public void registerClasses(Set<Class> set) {
     set.add(HDelegateTask.class);
     set.add(ExecutionCapabilityDemander.class);
-    set.add(ExecutionCapability.class);
     set.add(ArtifactSourceable.class);
   }
 

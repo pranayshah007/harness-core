@@ -33,6 +33,7 @@ import io.harness.cvng.activity.entities.HarnessCDCurrentGenActivity.HarnessCDCu
 import io.harness.cvng.activity.entities.InternalChangeActivity.InternalChangeActivityUpdatableEntity;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity.KubernetesClusterActivityUpdatableEntity;
 import io.harness.cvng.activity.entities.PagerDutyActivity.PagerDutyActivityUpdatableEntity;
+import io.harness.cvng.activity.entities.SRMAnalysisActivity;
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.activity.services.api.ActivityUpdateHandler;
 import io.harness.cvng.activity.services.impl.ActivityServiceImpl;
@@ -40,6 +41,7 @@ import io.harness.cvng.activity.services.impl.CustomChangeActivityUpdateHandler;
 import io.harness.cvng.activity.services.impl.DeploymentActivityUpdateHandler;
 import io.harness.cvng.activity.services.impl.InternalChangeActivityUpdateHandler;
 import io.harness.cvng.activity.services.impl.KubernetesClusterActivityUpdateHandler;
+import io.harness.cvng.activity.services.impl.SRMAnalysisActivityUpdateHandler;
 import io.harness.cvng.activity.source.services.api.KubernetesActivitySourceService;
 import io.harness.cvng.activity.source.services.impl.KubernetesActivitySourceServiceImpl;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
@@ -65,19 +67,19 @@ import io.harness.cvng.analysis.services.impl.VerificationJobInstanceAnalysisSer
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.ChangeSourceType;
-import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
+import io.harness.cvng.cdng.beans.MonitoredServiceSpecType;
 import io.harness.cvng.cdng.resources.VerifyStepResourceImpl;
 import io.harness.cvng.cdng.services.api.CDStageMetaDataService;
 import io.harness.cvng.cdng.services.api.CVNGStepService;
 import io.harness.cvng.cdng.services.api.CVNGStepTaskService;
+import io.harness.cvng.cdng.services.api.PipelineStepMonitoredServiceResolutionService;
 import io.harness.cvng.cdng.services.api.VerifyStepDemoService;
-import io.harness.cvng.cdng.services.api.VerifyStepMonitoredServiceResolutionService;
 import io.harness.cvng.cdng.services.impl.CDStageMetaDataServiceImpl;
 import io.harness.cvng.cdng.services.impl.CVNGStepServiceImpl;
 import io.harness.cvng.cdng.services.impl.CVNGStepTaskServiceImpl;
-import io.harness.cvng.cdng.services.impl.ConfiguredVerifyStepMonitoredServiceResolutionServiceImpl;
-import io.harness.cvng.cdng.services.impl.DefaultVerifyStepMonitoredServiceResolutionServiceImpl;
-import io.harness.cvng.cdng.services.impl.TemplateVerifyStepMonitoredServiceResolutionServiceImpl;
+import io.harness.cvng.cdng.services.impl.ConfiguredPipelineStepMonitoredServiceResolutionServiceImpl;
+import io.harness.cvng.cdng.services.impl.DefaultPipelineStepMonitoredServiceResolutionServiceImpl;
+import io.harness.cvng.cdng.services.impl.TemplatePipelineStepMonitoredServiceResolutionServiceImpl;
 import io.harness.cvng.cdng.services.impl.VerifyStepDemoServiceImpl;
 import io.harness.cvng.client.ErrorTrackingService;
 import io.harness.cvng.client.ErrorTrackingServiceImpl;
@@ -336,6 +338,7 @@ import io.harness.cvng.notification.services.impl.BurnRateTemplateDataGenerator;
 import io.harness.cvng.notification.services.impl.ChangeImpactTemplateDataGenerator;
 import io.harness.cvng.notification.services.impl.ChangeObservedTemplateDataGenerator;
 import io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator;
+import io.harness.cvng.notification.services.impl.FireHydrantTemplateDataGenerator;
 import io.harness.cvng.notification.services.impl.HealthScoreTemplateDataGenerator;
 import io.harness.cvng.notification.services.impl.NotificationRuleServiceImpl;
 import io.harness.cvng.notification.services.impl.RemainingMinutesTemplateDataGenerator;
@@ -763,17 +766,17 @@ public class CVServiceModule extends AbstractModule {
     dataSourceTypeDataCollectionInfoMapperMapBinder.addBinding(DataSourceType.GRAFANA_LOKI_LOGS)
         .to(GrafanaLokiLogDataCollectionInfoMapper.class)
         .in(Scopes.SINGLETON);
-    MapBinder<MonitoredServiceSpecType, VerifyStepMonitoredServiceResolutionService>
+    MapBinder<MonitoredServiceSpecType, PipelineStepMonitoredServiceResolutionService>
         verifyStepCvConfigServiceMapBinder = MapBinder.newMapBinder(
-            binder(), MonitoredServiceSpecType.class, VerifyStepMonitoredServiceResolutionService.class);
+            binder(), MonitoredServiceSpecType.class, PipelineStepMonitoredServiceResolutionService.class);
     verifyStepCvConfigServiceMapBinder.addBinding(MonitoredServiceSpecType.CONFIGURED)
-        .to(ConfiguredVerifyStepMonitoredServiceResolutionServiceImpl.class)
+        .to(ConfiguredPipelineStepMonitoredServiceResolutionServiceImpl.class)
         .in(Scopes.SINGLETON);
     verifyStepCvConfigServiceMapBinder.addBinding(MonitoredServiceSpecType.DEFAULT)
-        .to(DefaultVerifyStepMonitoredServiceResolutionServiceImpl.class)
+        .to(DefaultPipelineStepMonitoredServiceResolutionServiceImpl.class)
         .in(Scopes.SINGLETON);
     verifyStepCvConfigServiceMapBinder.addBinding(MonitoredServiceSpecType.TEMPLATE)
-        .to(TemplateVerifyStepMonitoredServiceResolutionServiceImpl.class)
+        .to(TemplatePipelineStepMonitoredServiceResolutionServiceImpl.class)
         .in(Scopes.SINGLETON);
 
     bind(VerifyStepResource.class).to(VerifyStepResourceImpl.class);
@@ -1089,7 +1092,9 @@ public class CVServiceModule extends AbstractModule {
     activityTypeActivityUpdatableEntityMapBinder.addBinding(ActivityType.CUSTOM_FF)
         .to(CustomChangeActivityUpdatableEntity.class)
         .in(Scopes.SINGLETON);
-
+    activityTypeActivityUpdatableEntityMapBinder.addBinding(ActivityType.SRM_STEP_ANALYSIS)
+        .to(SRMAnalysisActivity.SRMAnalysiActivityUpdatableEntity.class)
+        .in(Scopes.SINGLETON);
     MapBinder<ChangeSourceType, ChangeSourceUpdateHandler> changeSourceUpdateHandlerMapBinder =
         MapBinder.newMapBinder(binder(), ChangeSourceType.class, ChangeSourceUpdateHandler.class);
     changeSourceUpdateHandlerMapBinder.addBinding(ChangeSourceType.PAGER_DUTY)
@@ -1124,6 +1129,9 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     activityUpdateHandlerMapBinder.addBinding(ActivityType.CUSTOM_FF)
         .to(CustomChangeActivityUpdateHandler.class)
+        .in(Scopes.SINGLETON);
+    activityUpdateHandlerMapBinder.addBinding(ActivityType.SRM_STEP_ANALYSIS)
+        .to(SRMAnalysisActivityUpdateHandler.class)
         .in(Scopes.SINGLETON);
 
     MapBinder<SLOTargetType, SLOTargetTransformer> sloTargetTypeSLOTargetTransformerMapBinder =
@@ -1294,6 +1302,10 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     notificationRuleConditionTypeTemplateDataGeneratorMapBinder.addBinding(NotificationRuleConditionType.CODE_ERRORS)
         .to(ErrorTrackingTemplateDataGenerator.class)
+        .in(Scopes.SINGLETON);
+    notificationRuleConditionTypeTemplateDataGeneratorMapBinder
+        .addBinding(NotificationRuleConditionType.FIRE_HYDRANT_REPORT)
+        .to(FireHydrantTemplateDataGenerator.class)
         .in(Scopes.SINGLETON);
 
     ServiceHttpClientConfig serviceHttpClientConfig = this.verificationConfiguration.getAuditClientConfig();

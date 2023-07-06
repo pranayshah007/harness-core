@@ -8,6 +8,7 @@
 package software.wings.app;
 
 import static io.harness.beans.DelegateTask.Status.QUEUED;
+import static io.harness.beans.FeatureName.DELEGATE_TASK_CAPACITY_CHECK;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -152,6 +153,12 @@ public class DelegateQueueTask implements Runnable {
           alreadyTriedDelegates.clear();
           broadcastRoundCount++;
           nextInterval = (long) broadcastRoundCount * BROADCAST_INTERVAL;
+          if (featureFlagService.isEnabled(DELEGATE_TASK_CAPACITY_CHECK, delegateTask.getAccountId())) {
+            // If this FF is enabled then reset broadcastRoundCount to 0
+            // as we want to keep rebroadcasting until the task expires.
+            // The nextInterval for rebroadcast in this case will always be 1 minute.
+            broadcastRoundCount = 0;
+          }
         }
         alreadyTriedDelegates.addAll(broadcastToDelegates);
 

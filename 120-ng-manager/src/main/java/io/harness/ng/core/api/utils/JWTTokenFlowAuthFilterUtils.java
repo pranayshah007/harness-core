@@ -274,7 +274,7 @@ public class JWTTokenFlowAuthFilterUtils {
     }
 
     List<SettingResponseDTO> settingsResponse = settingsService.list(accountIdentifier, null, null,
-        SettingCategory.SCIM, SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_GROUP_IDENTIFIER);
+        SettingCategory.SCIM, SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_GROUP_IDENTIFIER, false);
 
     if (isEmpty(settingsResponse)) {
       // No account settings configuration found, so cannot process request coming with JWT token

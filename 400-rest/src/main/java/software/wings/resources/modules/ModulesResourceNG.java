@@ -47,7 +47,6 @@ public class ModulesResourceNG {
     Map<ModuleType, FeatureName> modules = new HashMap<>();
     modules.put(ModuleType.CE, FeatureName.CENG_ENABLED);
     modules.put(ModuleType.CF, FeatureName.CFNG_ENABLED);
-    modules.put(ModuleType.CI, FeatureName.CING_ENABLED);
     modules.put(ModuleType.CV, FeatureName.CVNG_ENABLED);
     modules.put(ModuleType.SRM, FeatureName.CVNG_ENABLED);
     return modules;

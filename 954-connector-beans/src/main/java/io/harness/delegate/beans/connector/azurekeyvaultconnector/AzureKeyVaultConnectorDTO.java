@@ -61,7 +61,7 @@ public class AzureKeyVaultConnectorDTO extends ConnectorConfigDTO implements Del
   @NotNull @Schema(description = "The Azure Vault name") private String vaultName;
   @NotNull @Schema(description = "Azure Subscription ID.") private String subscription;
   @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault;
-
+  private boolean vaultConfiguredManually;
   @Builder.Default
   @Schema(description = "This specifies the Azure Environment type, which is AZURE by default.")
   private AzureEnvironmentType azureEnvironmentType = AZURE;
@@ -85,6 +85,7 @@ public class AzureKeyVaultConnectorDTO extends ConnectorConfigDTO implements Del
         .vaultName(vaultName)
         .subscription(subscription)
         .isDefault(isDefault)
+        .vaultConfiguredManually(vaultConfiguredManually)
         .azureEnvironmentType(azureEnvironmentType)
         .delegateSelectors(delegateSelectors)
         .useManagedIdentity(useManagedIdentity)

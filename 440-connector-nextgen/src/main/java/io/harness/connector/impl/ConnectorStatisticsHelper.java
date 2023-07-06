@@ -8,6 +8,7 @@
 package io.harness.connector.impl;
 
 import static io.harness.NGCommonEntityConstants.MONGODB_ID;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.Boolean.parseBoolean;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.facet;
@@ -51,8 +52,10 @@ public class ConnectorStatisticsHelper {
   NGSettingsClient settingsClient;
   AccountClient accountClient;
 
-  public ConnectorStatistics getStats(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    Criteria criteria = createCriteriaObjectForConnectorScope(accountIdentifier, orgIdentifier, projectIdentifier);
+  public ConnectorStatistics getStats(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> connectorIds) {
+    Criteria criteria =
+        createCriteriaObjectForConnectorScope(accountIdentifier, orgIdentifier, projectIdentifier, connectorIds);
     MatchOperation matchStage = Aggregation.match(criteria);
     GroupOperation groupByType = group(ConnectorKeys.type).count().as(ConnectorTypeStatsKeys.count);
     ProjectionOperation projectType =
@@ -69,7 +72,7 @@ public class ConnectorStatisticsHelper {
   }
 
   private Criteria createCriteriaObjectForConnectorScope(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> connectorIds) {
     Criteria criteria =
         where(ConnectorKeys.accountIdentifier)
             .in(accountIdentifier)
@@ -84,13 +87,20 @@ public class ConnectorStatisticsHelper {
     if (isBuiltInSMDisabled) {
       criteria.and(GcpKmsConnectorKeys.harnessManaged).ne(true);
     }
+
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
     if (gitEntityInfo != null) {
       criteria.and(ConnectorKeys.yamlGitConfigRef)
           .is(gitEntityInfo.getYamlGitConfigId())
           .and(ConnectorKeys.branch)
           .is(gitEntityInfo.getBranch());
+      if (!isEmpty(connectorIds)) {
+        criteria.and("_id").in(connectorIds);
+      }
     } else {
+      if (!isEmpty(connectorIds)) {
+        criteria.and("_id").in(connectorIds);
+      }
       final Criteria isDefaultConnectorCriteria = new Criteria().orOperator(
           where(ConnectorKeys.isFromDefaultBranch).is(true), where(ConnectorKeys.isFromDefaultBranch).exists(false));
       List<Criteria> criteriaList = Arrays.asList(criteria, isDefaultConnectorCriteria);

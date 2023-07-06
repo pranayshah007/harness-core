@@ -13,7 +13,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonValue;
 import org.springframework.data.annotation.TypeAlias;
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true, defaultImpl = EmptyDirYaml.class)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true,
+    include = JsonTypeInfo.As.EXISTING_PROPERTY, defaultImpl = EmptyDirYaml.class)
 @JsonSubTypes({
   @JsonSubTypes.Type(value = EmptyDirYaml.class, name = "EmptyDir")
   , @JsonSubTypes.Type(value = PersistentVolumeClaimYaml.class, name = "PersistentVolumeClaim"),

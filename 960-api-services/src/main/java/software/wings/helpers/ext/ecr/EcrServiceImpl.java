@@ -99,16 +99,22 @@ public class EcrServiceImpl implements EcrService {
 
   @Override
   public List<BuildDetailsInternal> getBuilds(AwsInternalConfig awsConfig, String registryId, String imageUrl,
-      String region, String imageName, int maxNumberOfBuilds) {
+      String region, String imageName, int maxNumberOfImagesPerPage) {
     List<BuildDetailsInternal> buildDetailsInternals = new ArrayList<>();
     try {
+      log.debug("GetBuilds for {} in region {} with maxPageSize {}", imageName, region, maxNumberOfImagesPerPage);
       DescribeImagesResult describeImagesResult;
-      DescribeImagesRequest describeImagesRequest = new DescribeImagesRequest().withRepositoryName(imageName);
+      DescribeImagesRequest describeImagesRequest =
+          new DescribeImagesRequest().withRepositoryName(imageName).withMaxResults(maxNumberOfImagesPerPage);
       if (StringUtils.isNotBlank(registryId)) {
         describeImagesRequest.setRegistryId(registryId);
       }
+      int pageCounter = 0;
       do {
+        log.debug("Making a describeImages API call page request no. {}", ++pageCounter);
         describeImagesResult = awsApiHelperService.describeEcrImages(awsConfig, region, describeImagesRequest);
+        log.debug(
+            "DescribeImages API page result got back with {} images", describeImagesResult.getImageDetails().size());
 
         describeImagesResult.getImageDetails()
             .stream()
@@ -127,11 +133,12 @@ public class EcrServiceImpl implements EcrService {
               });
             });
         describeImagesRequest.setNextToken(describeImagesResult.getNextToken());
+        log.debug("Finished processing page no. {} for describeImages API call", pageCounter);
       } while (describeImagesRequest.getNextToken() != null);
     } catch (Exception e) {
       return getBuildsFallback(awsConfig, registryId, imageUrl, region, imageName);
     }
-    // Sorting at build tag for docker artifacts.
+    log.debug("GetBuilds describeImages API has done with the fetch of {} tags", buildDetailsInternals.size());
     return buildDetailsInternals;
   }
 
@@ -188,28 +195,44 @@ public class EcrServiceImpl implements EcrService {
   public BuildDetailsInternal getLastSuccessfulBuildFromRegex(AwsInternalConfig awsInternalConfig, String registryId,
       String imageUrl, String region, String imageName, String tagRegex) {
     List<BuildDetailsInternal> builds =
-        getBuilds(awsInternalConfig, registryId, imageUrl, region, imageName, MAX_NO_OF_TAGS_PER_IMAGE);
-
-    Pattern pattern = Pattern.compile(tagRegex.replace(".", "\\.").replace("?", ".?").replace("*", ".*?"));
+        getBuilds(awsInternalConfig, registryId, imageUrl, region, imageName, MAX_NO_OF_IMAGES);
 
     if (EmptyPredicate.isEmpty(builds)) {
       throw new InvalidArtifactServerException(
           "There are no builds for this image: " + imageName + " and tagRegex: " + tagRegex, USER);
     }
 
-    List<BuildDetailsInternal> buildsResponse =
-        builds.stream()
-            .filter(build -> !build.getNumber().endsWith("/") && pattern.matcher(build.getNumber()).find())
-            .sorted(new BuildDetailsInternalComparatorDescending())
-            .collect(Collectors.toList());
+    final String modifiedTagRegex = tagRegex.replace(".", "\\.").replace("?", ".?").replace("*", ".*?");
+    final Pattern modifiedPattern = Pattern.compile(modifiedTagRegex);
+    final Pattern originalPattern = Pattern.compile(tagRegex);
 
-    if (buildsResponse.isEmpty()) {
-      throw new InvalidArtifactServerException(
-          "There are no builds for this image: " + imageName + " and tagRegex: " + tagRegex, USER);
+    List<BuildDetailsInternal> buildsResponse = filterByRegex(builds, modifiedPattern);
+
+    if (EmptyPredicate.isEmpty(buildsResponse)) {
+      // CDS-71903: If the modified regex does not match any build, try to match the builds with original regex.
+      List<BuildDetailsInternal> buildsResponseWithOriginalRegex = filterByRegex(builds, originalPattern);
+      if (EmptyPredicate.isEmpty(buildsResponseWithOriginalRegex)) {
+        throw new InvalidArtifactServerException(
+            "There are no builds for this image: " + imageName + " and tagRegex: " + tagRegex, USER);
+      }
+      log.info("Tag {} matched with original regex {}, did not match modified regex, {}",
+          buildsResponseWithOriginalRegex.get(0).getNumber(), tagRegex, modifiedTagRegex);
+      return verifyBuildNumber(awsInternalConfig, registryId, imageUrl, region, imageName,
+          buildsResponseWithOriginalRegex.get(0).getNumber());
     }
+    final String buildNumber = buildsResponse.get(0).getNumber();
+    if (!originalPattern.matcher(buildNumber).find()) {
+      log.info("Tag {} matched with modified regex {}, did not match with original regex {}", buildNumber,
+          modifiedTagRegex, tagRegex);
+    }
+    return verifyBuildNumber(awsInternalConfig, registryId, imageUrl, region, imageName, buildNumber);
+  }
 
-    return verifyBuildNumber(
-        awsInternalConfig, registryId, imageUrl, region, imageName, buildsResponse.get(0).getNumber());
+  private List<BuildDetailsInternal> filterByRegex(List<BuildDetailsInternal> builds, Pattern pattern) {
+    return builds.stream()
+        .filter(build -> !build.getNumber().endsWith("/") && pattern.matcher(build.getNumber()).find())
+        .sorted(new BuildDetailsInternalComparatorDescending())
+        .collect(Collectors.toList());
   }
 
   @Override

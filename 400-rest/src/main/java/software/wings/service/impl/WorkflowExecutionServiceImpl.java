@@ -39,7 +39,6 @@ import static io.harness.beans.FeatureName.PIPELINE_PER_ENV_DEPLOYMENT_PERMISSIO
 import static io.harness.beans.FeatureName.RESOLVE_DEPLOYMENT_TAGS_BEFORE_EXECUTION;
 import static io.harness.beans.FeatureName.SPG_ALLOW_REFRESH_PIPELINE_EXECUTION_BEFORE_CONTINUE_PIPELINE;
 import static io.harness.beans.FeatureName.SPG_ENABLE_POPULATE_USING_ARTIFACT_VARIABLE;
-import static io.harness.beans.FeatureName.SPG_REDUCE_KEYWORDS_PERSISTENCE_ON_EXECUTIONS;
 import static io.harness.beans.FeatureName.SPG_SAVE_REJECTED_BY_FREEZE_WINDOWS;
 import static io.harness.beans.FeatureName.WEBHOOK_TRIGGER_AUTHORIZATION;
 import static io.harness.beans.FeatureName.WORKFLOW_EXECUTION_REFRESH_STATUS;
@@ -2735,14 +2734,11 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
   public void populateArtifactsAndServices(WorkflowExecution workflowExecution, WorkflowStandardParams stdParams,
       Set<String> keywords, ExecutionArgs executionArgs, String accountId) {
-    boolean shouldReduceKeywords =
-        featureFlagService.isEnabled(SPG_REDUCE_KEYWORDS_PERSISTENCE_ON_EXECUTIONS, accountId);
     boolean shouldCollectArtifactVariablesData =
         featureFlagService.isEnabled(SPG_ENABLE_POPULATE_USING_ARTIFACT_VARIABLE, accountId);
 
     if (featureFlagService.isEnabled(HELM_CHART_AS_ARTIFACT, accountId)) {
-      populateHelmChartsInWorkflowExecution(
-          workflowExecution, keywords, executionArgs, accountId, shouldReduceKeywords);
+      populateHelmChartsInWorkflowExecution(workflowExecution, keywords, executionArgs, accountId);
     }
 
     List<Artifact> artifacts;
@@ -2807,12 +2803,10 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       artifact.setArtifactFiles(null);
       artifact.setCreatedBy(null);
       artifact.setLastUpdatedBy(null);
-      if (!shouldReduceKeywords) {
-        keywords.add(artifact.getArtifactSourceName());
-        keywords.add(artifact.getDescription());
-        keywords.add(artifact.getRevision());
-        keywords.addAll(artifact.getMetadata().values());
-      }
+      keywords.add(artifact.getArtifactSourceName());
+      keywords.add(artifact.getDescription());
+      keywords.add(artifact.getRevision());
+      keywords.addAll(artifact.getMetadata().values());
     });
 
     executionArgs.setArtifacts(artifacts);
@@ -2853,8 +2847,8 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     }
   }
 
-  private void populateHelmChartsInWorkflowExecution(WorkflowExecution workflowExecution, Set<String> keywords,
-      ExecutionArgs executionArgs, String accountId, boolean shouldReduceKeywords) {
+  private void populateHelmChartsInWorkflowExecution(
+      WorkflowExecution workflowExecution, Set<String> keywords, ExecutionArgs executionArgs, String accountId) {
     if (isEmpty(executionArgs.getHelmCharts())) {
       return;
     }
@@ -2881,14 +2875,12 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     List<HelmChart> filteredHelmCharts =
         helmCharts.stream().filter(chart -> serviceIds.contains(chart.getServiceId())).collect(toList());
 
-    if (!shouldReduceKeywords) {
-      filteredHelmCharts.forEach(helmChart -> {
-        keywords.addAll(Arrays.asList(helmChart.getName(), helmChart.getVersion(), helmChart.getDescription()));
-        if (isNotEmpty(helmChart.getMetadata())) {
-          keywords.addAll(helmChart.getMetadata().values());
-        }
-      });
-    }
+    filteredHelmCharts.forEach(helmChart -> {
+      keywords.addAll(Arrays.asList(helmChart.getName(), helmChart.getVersion(), helmChart.getDescription()));
+      if (isNotEmpty(helmChart.getMetadata())) {
+        keywords.addAll(helmChart.getMetadata().values());
+      }
+    });
 
     executionArgs.setHelmCharts(helmCharts);
     workflowExecution.setHelmCharts(filteredHelmCharts);

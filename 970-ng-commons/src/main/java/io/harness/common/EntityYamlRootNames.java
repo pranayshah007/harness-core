@@ -41,6 +41,7 @@ public class EntityYamlRootNames {
   public static final String OVERLAY_INPUT_SET = "overlayInputSet";
   public static final String CV_CONFIG = "cvConfig";
   public static final String VERIFY = "Verify";
+  public static final String ANALYZE_DEPLOYMENT_IMPACT = "AnalyzeDeploymentImpact";
   public static final String DELEGATE = "delegate";
   public static final String DELEGATE_CONFIGURATION = "delegateConfigurations";
   public static final String CV_VERIFICATION_JOB = "cvVerificationJob";
@@ -106,6 +107,7 @@ public class EntityYamlRootNames {
   public static final String CHECKMARX = "Checkmarx";
   public static final String CLAIR = "Clair";
   public static final String CODEQL = "CodeQL";
+  public static final String COVERITY = "Coverity";
   public static final String CUSTOM_INGEST = "CustomIngest";
   public static final String DATA_THEOREM = "DataTheorem";
   public static final String DOCKER_CONTENT_TRUST = "DockerContentTrust";
@@ -199,7 +201,8 @@ public class EntityYamlRootNames {
   public static final String TERRAGRUNT_DESTROY = "TerragruntDestroy";
   public static final String TERRAGRUNT_ROLLBACK = "TerragruntRollback";
   public static final String IACM_TERRAFORM_PLUGIN = "IACMTerraformPlugin";
-  public static final String IACM_TEMPLATE = "IACMTemplate";
+  public static final String IACM_APPROVAL = "IACMApproval";
+
   public static final String ELASTIGROUP_BG_STAGE_SETUP = "ElastigroupBGStageSetup";
   public static final String ELASTIGROUP_SWAP_ROUTE = "ElastigroupSwapRoute";
   public static final String ASG_CANARY_DEPLOY = "AsgCanaryDeploy";
@@ -242,4 +245,9 @@ public class EntityYamlRootNames {
 
   public static final String AWS_LAMBDA_ROLLBACK = "AwsLambdaRollback";
   public static final String TAS_ROUTE_MAPPING = "RouteMapping";
+
+  public static final String SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2 = "ServerlessAwsLambdaPrepareRollbackV2";
+  public static final String SERVERLESS_AWS_LAMBDA_ROLLBACK_V2 = "ServerlessAwsLambdaRollbackV2";
+  public static final String SERVERLESS_AWS_LAMBDA_DEPLOY_V2 = "ServerlessAwsLambdaDeployV2";
+  public static final String SERVERLESS_AWS_LAMBDA_PACKAGE_V2 = "ServerlessAwsLambdaPackageV2";
 }

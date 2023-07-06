@@ -31,7 +31,6 @@ import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -71,7 +70,7 @@ public class K8sInstanceSyncPerpetualTaskV2Executor extends AbstractInstanceSync
 
   @Override
   protected List<ServerInstanceInfo> retrieveServiceInstances(
-      InstanceSyncV2Request instanceSyncV2Request, DeploymentReleaseDetails details) {
+      InstanceSyncV2Request instanceSyncV2Request, DeploymentReleaseDetails details) throws Exception {
     List<ServerInstanceInfo> serverInstanceInfos = new ArrayList<>();
 
     Set<K8sDeploymentReleaseDetails> k8sDeploymentReleaseDetailsList =
@@ -89,10 +88,9 @@ public class K8sInstanceSyncPerpetualTaskV2Executor extends AbstractInstanceSync
     for (K8sDeploymentReleaseDetails k8sDeploymentReleaseDetails : k8sDeploymentReleaseDetailsList) {
       Set<PodDetailsRequest> distinctPodDetailsRequestList =
           getDistinctPodDetailsRequestList(instanceSyncV2Request, k8sDeploymentReleaseDetails);
-      serverInstanceInfos.addAll(distinctPodDetailsRequestList.stream()
-                                     .map(k8sInstanceSyncV2Helper::getServerInstanceInfoList)
-                                     .flatMap(Collection::stream)
-                                     .collect(Collectors.toList()));
+      for (PodDetailsRequest podDetailsRequest : distinctPodDetailsRequestList) {
+        serverInstanceInfos.addAll(k8sInstanceSyncV2Helper.getServerInstanceInfoList(podDetailsRequest));
+      }
     }
     return serverInstanceInfos;
   }

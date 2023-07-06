@@ -44,6 +44,7 @@ import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -70,6 +71,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 
 public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelperService {
   private final ConnectorResourceClient connectorResourceClient;
@@ -103,7 +105,7 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
     Optional<ConnectorDTO> connectorDTOOptional = NGRestUtils.getResponse(
         connectorResourceClient.get(identifierRef.getIdentifier(), identifierRef.getAccountIdentifier(),
             identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier()));
-    if (!connectorDTOOptional.isPresent()) {
+    if (connectorDTOOptional.isEmpty()) {
       throw new InvalidRequestException(
           String.format("Connector not found for identifier: [%s]", connectorRef), WingsException.USER);
     }
@@ -233,10 +235,7 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
                             .build();
     return TaskRequestsUtils.prepareTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
         TaskCategory.DELEGATE_TASK_V2, Collections.singletonList(COMMAND_UNIT), true, jenkinsPollTaskName,
-        emptyIfNull(params.getDelegateSelectors())
-            .stream()
-            .map(s -> TaskSelector.newBuilder().setSelector(s).build())
-            .collect(Collectors.toList()),
+        TaskSelectorYaml.toTaskSelector(((JenkinsBuildSpecParameters) stepParameters.getSpec()).getDelegateSelectors()),
         Scope.PROJECT, EnvironmentType.ALL, false, Collections.emptyList(), false, null);
   }
 
@@ -247,7 +246,7 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
     Optional<ConnectorDTO> connectorDTOOptional = NGRestUtils.getResponse(
         connectorResourceClient.get(identifierRef.getIdentifier(), identifierRef.getAccountIdentifier(),
             identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier()));
-    if (!connectorDTOOptional.isPresent()) {
+    if (connectorDTOOptional.isEmpty()) {
       throw new InvalidRequestException(
           String.format("Connector not found for identifier: [%s]", connectorRef), WingsException.USER);
     }
@@ -279,8 +278,8 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
             .buildFullDisplayName(jenkinsBuildTaskNGResponse.getBuildFullDisplayName())
             .buildNumber(jenkinsBuildTaskNGResponse.getBuildNumber())
             .envVars(jenkinsBuildTaskNGResponse.getEnvVars())
-            .jobUrl(jenkinsBuildTaskNGResponse.getJobUrl())
-            .queuedBuildUrl(jenkinsBuildTaskNGResponse.getQueuedBuildUrl())
+            .jobUrl(sanitizeUrl(jenkinsBuildTaskNGResponse.getJobUrl()))
+            .queuedBuildUrl(sanitizeUrl(jenkinsBuildTaskNGResponse.getQueuedBuildUrl()))
             .executionStatus(jenkinsBuildTaskNGResponse.getExecutionStatus())
             .description(jenkinsBuildTaskNGResponse.getDescription());
     Status status = Status.SUCCEEDED;
@@ -291,6 +290,13 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
         .status(status)
         .stepOutcome(StepOutcome.builder().name("build").outcome(jenkinsBuildOutcomeBuilder.build()).build())
         .build();
+  }
+
+  private static String sanitizeUrl(String strUrl) {
+    if (StringUtils.isBlank(strUrl)) {
+      return strUrl;
+    }
+    return strUrl.replace(" ", "%20");
   }
 
   public ArtifactTaskExecutionResponse executeSyncTask(JenkinsArtifactDelegateRequest jenkinsRequest,

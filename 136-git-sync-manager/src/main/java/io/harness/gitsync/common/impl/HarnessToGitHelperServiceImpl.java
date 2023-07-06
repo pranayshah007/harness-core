@@ -701,6 +701,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
               .setBlobId(scmGetFileResponseDTO.getBlobId())
               .setFilePath(filepath)
               .setFileUrl(getFileUrl(scmGetFileResponseDTO, scope, gitRepositoryDTO, filepath, connectorRef))
+              .setIsGitDefaultBranch(scmGetFileResponseDTO.isGitDefaultBranch())
               .build());
     }
     return getFileResponseOrBuilder.build();
@@ -792,6 +793,9 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
     }
     if (gitErrorMetadata.getFilepath() != null) {
       gitMetaDataOrBuilder.setFilePath(gitErrorMetadata.getFilepath());
+    }
+    if (gitErrorMetadata.getRepo() != null) {
+      gitMetaDataOrBuilder.setRepoName(gitErrorMetadata.getRepo());
     }
     return gitMetaDataOrBuilder.build();
   }

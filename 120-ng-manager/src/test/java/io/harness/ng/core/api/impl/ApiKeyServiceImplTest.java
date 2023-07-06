@@ -17,7 +17,6 @@ import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -28,6 +27,7 @@ import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.DuplicateFieldException;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.ng.core.AccountOrgProjectValidator;
 import io.harness.ng.core.account.ServiceAccountConfig;
 import io.harness.ng.core.api.ApiKeyService;
@@ -52,7 +52,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-import javax.ws.rs.NotAuthorizedException;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -77,6 +76,7 @@ public class ApiKeyServiceImplTest extends NgManagerTestBase {
 
   private static final String TEST_PRINCIPAL = "TEST_PRINCIPAL";
   private static final String TEST_ACCOUNT_ID = "TEST_ACCOUNT_ID";
+  private static final String TEST_ACCOUNT_ID2 = "TEST_ACCOUNT_ID2";
   private static final String TEST_USER_EMAIL = "test.user@harness.io";
 
   @Before
@@ -222,13 +222,13 @@ public class ApiKeyServiceImplTest extends NgManagerTestBase {
                         .accounts(ImmutableList.of(GatewayAccountRequestDTO.builder().uuid(TEST_ACCOUNT_ID).build()))
                         .build()))
         .when(ngUserService)
-        .getUserById(any(), anyBoolean());
+        .getUserById(any());
 
     // Act
     apiKeyService.validateParentIdentifier(TEST_ACCOUNT_ID, null, null, ApiKeyType.USER, TEST_PRINCIPAL);
   }
 
-  @Test(expected = NotAuthorizedException.class)
+  @Test(expected = InvalidArgumentsException.class)
   @Owner(developers = GAURAV_NANDA)
   @Category(UnitTests.class)
   public void validateParentIdentifier_userDoesNotBelongToAccount_notAuthorizedExceptionThrown() {
@@ -241,7 +241,7 @@ public class ApiKeyServiceImplTest extends NgManagerTestBase {
                         .accounts(ImmutableList.of(GatewayAccountRequestDTO.builder().uuid(randomAccountId).build()))
                         .build()))
         .when(ngUserService)
-        .getUserById(any(), anyBoolean());
+        .getUserById(any());
 
     // Act
     apiKeyService.validateParentIdentifier(TEST_ACCOUNT_ID, null, null, ApiKeyType.USER, TEST_PRINCIPAL);

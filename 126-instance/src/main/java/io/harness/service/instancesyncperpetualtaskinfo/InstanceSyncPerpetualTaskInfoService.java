@@ -35,6 +35,8 @@ public interface InstanceSyncPerpetualTaskInfoService {
 
   InstanceSyncPerpetualTaskInfoDTO updatePerpetualTaskIdV1OrV2(
       InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO);
+  InstanceSyncPerpetualTaskInfoDTO updateLastSuccessfulRun(
+      InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO);
 
   List<InstanceSyncPerpetualTaskInfoDTO> findAll(String accountId, String perpetualTaskId);
 

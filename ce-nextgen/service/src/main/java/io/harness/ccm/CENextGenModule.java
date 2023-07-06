@@ -25,6 +25,7 @@ import static io.harness.lock.DistributedLockImplementation.MONGO;
 
 import io.harness.AccessControlClientModule;
 import io.harness.accesscontrol.AccessControlAdminClientModule;
+import io.harness.account.AccountClientModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.retry.MethodExecutionHelper;
 import io.harness.annotations.retry.RetryOnException;
@@ -391,6 +392,8 @@ public class CENextGenModule extends AbstractModule {
     install(NgLicenseHttpClientModule.getInstance(configuration.getNgManagerClientConfig(),
         configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId()));
     install(new CENGGraphQLModule(configuration.getCurrencyPreferencesConfig()));
+    install(new AccountClientModule(
+        configuration.getManagerClientConfig(), configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId()));
     install(YamlSdkModule.getInstance());
     bind(HPersistence.class).to(MongoPersistence.class);
     bind(CENextGenConfiguration.class).toInstance(configuration);
@@ -433,6 +436,7 @@ public class CENextGenModule extends AbstractModule {
     bind(ManagedAccountDataService.class).to(ManagedAccountDataServiceImpl.class);
     bind(MarginDetailsBqService.class).to(MarginDetailsBqServiceImpl.class);
     bind(MspValidationService.class).to(MspValidationServiceImpl.class);
+    bind(LabelFlattenedService.class).to(LabelFlattenedServiceImpl.class);
 
     if (configuration.isClickHouseEnabled()) {
       bind(ViewsBillingService.class).to(ClickHouseViewsBillingServiceImpl.class);
@@ -440,7 +444,6 @@ public class CENextGenModule extends AbstractModule {
     } else {
       bind(ViewsBillingService.class).to(ViewsBillingServiceImpl.class);
       bind(DataResponseService.class).to(BigQueryDataResponseServiceImpl.class);
-      bind(LabelFlattenedService.class).to(LabelFlattenedServiceImpl.class);
     }
 
     try {
@@ -546,14 +549,15 @@ public class CENextGenModule extends AbstractModule {
   @Provides
   @Singleton
   DistributedLockImplementation distributedLockImplementation() {
-    return MONGO;
+    return configuration.getDistributedLockImplementation() == null ? MONGO
+                                                                    : configuration.getDistributedLockImplementation();
   }
 
   @Provides
   @Named("lock")
   @Singleton
   RedisConfig redisConfig() {
-    return RedisConfig.builder().build();
+    return configuration.getRedisLockConfig();
   }
 
   private ValidatorFactory getValidatorFactory() {

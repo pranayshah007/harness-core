@@ -17,7 +17,6 @@ import io.harness.walktree.visitor.utilities.VisitorParentPathUtils;
 
 @OwnedBy(CDC)
 public interface YamlTypes {
-  String GITOPS_CREATE_PR = StepSpecTypeConstants.GITOPS_CREATE_PR;
   String GITOPS_MERGE_PR = StepSpecTypeConstants.GITOPS_MERGE_PR;
   String UPDATE_RELEASE_REPO = StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO;
   String GITOPS_SYNC = StepSpecTypeConstants.GITOPS_SYNC;
@@ -225,4 +224,10 @@ public interface YamlTypes {
 
   String AWS_LAMBDA_ROLLBACK = StepSpecTypeConstants.AWS_LAMBDA_ROLLBACK;
   String TAS_ROUTE_MAPPING = StepSpecTypeConstants.TAS_ROUTE_MAPPING;
+
+  // SERVERLESS CONTAINER STEPS
+  String SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2 = StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2;
+  String SERVERLESS_AWS_LAMBDA_ROLLBACK_V2 = StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2;
+  String SERVERLESS_AWS_LAMBDA_DEPLOY_V2 = StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2;
+  String SERVERLESS_AWS_LAMBDA_PACKAGE_V2 = StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PACKAGE_V2;
 }

@@ -7,6 +7,8 @@
 
 package io.harness.delegate.beans.connector.k8Connector;
 
+import io.harness.annotation.RecasterAlias;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -21,6 +23,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(name = "KubernetesAuth", description = "This contains kubernetes auth details")
+@RecasterAlias("io.harness.delegate.beans.connector.k8Connector.KubernetesAuthDTO")
 public class KubernetesAuthDTO {
   @NotNull @JsonProperty("type") KubernetesAuthType authType;
 

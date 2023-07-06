@@ -182,6 +182,7 @@ public class AwsSamBuildPluginInfoProvider implements CDPluginInfoProvider {
     samBuildEnvironmentVariablesMap.put("PLUGIN_SAM_DIR", samDir);
     samBuildEnvironmentVariablesMap.put(
         "PLUGIN_BUILD_COMMAND_OPTIONS", String.join(" ", buildCommandOptions.getValue()));
+    samBuildEnvironmentVariablesMap.put("PLUGIN_SAM_TEMPLATE_FILE_PATH", "template.yaml");
 
     if (envVariables != null && envVariables.getValue() != null) {
       samBuildEnvironmentVariablesMap.putAll(envVariables.getValue());

@@ -62,6 +62,7 @@ public class GraphVertex implements Serializable {
   private PmsStepParameters stepParameters;
   private ExecutionMode mode;
 
+  private String logBaseKey;
   private List<ExecutableResponse> executableResponses;
   private List<GraphDelegateSelectionLogParams> graphDelegateSelectionLogParams;
   private List<InterruptEffect> interruptHistories;

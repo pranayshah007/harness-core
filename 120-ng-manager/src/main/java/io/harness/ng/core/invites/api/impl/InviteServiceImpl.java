@@ -91,6 +91,7 @@ import io.harness.telemetry.TelemetryReporter;
 import io.harness.user.remote.UserClient;
 import io.harness.user.remote.UserFilterNG;
 import io.harness.utils.PageUtils;
+import io.harness.utils.UserUtils;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.auth0.jwt.interfaces.Claim;
@@ -554,6 +555,9 @@ public class InviteServiceImpl implements InviteService {
     if (updatedInvite == null) {
       return Optional.empty();
     }
+    if (isNotEmpty(updatedInvite.getName())) {
+      UserUtils.validateUserName(updatedInvite.getName());
+    }
     preCreateInvite(updatedInvite);
     Optional<Invite> inviteOptional = getInvite(updatedInvite.getId(), false);
     if (!inviteOptional.isPresent() || TRUE.equals(inviteOptional.get().getApproved())) {
@@ -598,6 +602,9 @@ public class InviteServiceImpl implements InviteService {
 
   private InviteOperationResponse newInvite(Invite invite, boolean[] scimLdapArray) {
     checkUserLimit(invite.getAccountIdentifier(), invite.getEmail());
+    if (isNotEmpty(invite.getName())) {
+      UserUtils.validateUserName(invite.getName());
+    }
     Invite savedInvite = inviteRepository.save(invite);
 
     try (AutoLogContext ignore =

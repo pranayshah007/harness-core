@@ -1,8 +1,2 @@
-BUILD_SCRIPT_PATH: 120-ng-manager/build/feature_build.sh
 DOCKER_FILE_PATH: /harness/harness-core/dist/ng-manager/Dockerfile-cie-jdk
-CONTEXT_PATH: /harness/harness-core/dist/ng-manager
-ARTIFACT_REPO: harness/feature-ng-manager-openjdk-8u242
 HELM_CHART_SOURCE_DIRECTORY: harness-core/120-ng-manager/chart
-HELM_REPO_NAME: us-west1-docker.pkg.dev/platform-205701/harness-helm-artifacts
-BUILD_STEP_RESOURCE_CPU: 1000m
-BUILD_STEP_RESOURCE_MEMORY: 4Gi

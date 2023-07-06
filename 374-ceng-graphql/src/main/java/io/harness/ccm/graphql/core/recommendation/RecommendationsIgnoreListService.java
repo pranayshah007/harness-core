@@ -16,10 +16,12 @@ import io.harness.ccm.commons.dao.recommendation.RecommendationsIgnoreListDAO;
 import io.harness.ccm.commons.entities.recommendations.RecommendationAzureVmId;
 import io.harness.ccm.commons.entities.recommendations.RecommendationEC2InstanceId;
 import io.harness.ccm.commons.entities.recommendations.RecommendationECSServiceId;
+import io.harness.ccm.commons.entities.recommendations.RecommendationGovernanceRuleId;
 import io.harness.ccm.commons.entities.recommendations.RecommendationNodepoolId;
 import io.harness.ccm.commons.entities.recommendations.RecommendationWorkloadId;
 import io.harness.ccm.commons.entities.recommendations.RecommendationsIgnoreList;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationsIgnoreResourcesDTO;
+import io.harness.ccm.views.dao.RuleExecutionDAO;
 import io.harness.data.structure.CollectionUtils;
 
 import com.google.inject.Inject;
@@ -39,6 +41,7 @@ public class RecommendationsIgnoreListService {
   @Inject private ECSRecommendationDAO ecsRecommendationDAO;
   @Inject private EC2RecommendationDAO ec2RecommendationDAO;
   @Inject private AzureRecommendationDAO azureRecommendationDAO;
+  @Inject private RuleExecutionDAO governanceRecommendationDAO;
 
   public RecommendationsIgnoreList getIgnoreList(String accountId) {
     Optional<RecommendationsIgnoreList> ignoreListFromDB = ignoreListDAO.get(accountId);
@@ -50,6 +53,7 @@ public class RecommendationsIgnoreListService {
           .ecsServiceIgnoreList(new HashSet<>())
           .ec2InstanceIgnoreList(new HashSet<>())
           .azureVmIgnoreList(new HashSet<>())
+          .governanceRuleIgnoreList(new HashSet<>())
           .build();
     }
     RecommendationsIgnoreList ignoreList = ignoreListFromDB.get();
@@ -58,6 +62,7 @@ public class RecommendationsIgnoreListService {
     ignoreList.setEcsServiceIgnoreList(CollectionUtils.emptyIfNull(ignoreList.getEcsServiceIgnoreList()));
     ignoreList.setEc2InstanceIgnoreList(CollectionUtils.emptyIfNull(ignoreList.getEc2InstanceIgnoreList()));
     ignoreList.setAzureVmIgnoreList(CollectionUtils.emptyIfNull(ignoreList.getAzureVmIgnoreList()));
+    ignoreList.setGovernanceRuleIgnoreList(CollectionUtils.emptyIfNull(ignoreList.getGovernanceRuleIgnoreList()));
     return ignoreList;
   }
 
@@ -74,6 +79,8 @@ public class RecommendationsIgnoreListService {
         ignoreEC2Instances(accountId, ignoreList.getEc2InstanceIgnoreList(), ignoreResourcesDTO.getEc2Instances());
     Set<RecommendationAzureVmId> azureVmIgnoreList =
         ignoreAzureVmInstances(accountId, ignoreList.getAzureVmIgnoreList(), ignoreResourcesDTO.getAzureVmIds());
+    Set<RecommendationGovernanceRuleId> governanceRuleIgnoreList = ignoreGovernanceRules(
+        accountId, ignoreList.getGovernanceRuleIgnoreList(), ignoreResourcesDTO.getGovernanceRuleIds());
 
     ignoreListDAO.save(RecommendationsIgnoreList.builder()
                            .accountId(accountId)
@@ -82,6 +89,7 @@ public class RecommendationsIgnoreListService {
                            .ecsServiceIgnoreList(ecsServiceIgnoreList)
                            .ec2InstanceIgnoreList(ec2InstanceIgnoreList)
                            .azureVmIgnoreList(azureVmIgnoreList)
+                           .governanceRuleIgnoreList(governanceRuleIgnoreList)
                            .build());
     return getIgnoreList(accountId);
   }
@@ -99,6 +107,8 @@ public class RecommendationsIgnoreListService {
         unIgnoreEC2Instances(accountId, ignoreList.getEc2InstanceIgnoreList(), ignoreResourcesDTO.getEc2Instances());
     Set<RecommendationAzureVmId> azureVmIgnoreList =
         unIgnoreAzureVmInstances(accountId, ignoreList.getAzureVmIgnoreList(), ignoreResourcesDTO.getAzureVmIds());
+    Set<RecommendationGovernanceRuleId> governanceRuleIgnoreList = unIgnoreGovernanceRules(
+        accountId, ignoreList.getGovernanceRuleIgnoreList(), ignoreResourcesDTO.getGovernanceRuleIds());
 
     ignoreListDAO.save(RecommendationsIgnoreList.builder()
                            .accountId(accountId)
@@ -107,6 +117,7 @@ public class RecommendationsIgnoreListService {
                            .ecsServiceIgnoreList(ecsServiceIgnoreList)
                            .ec2InstanceIgnoreList(ec2InstanceIgnoreList)
                            .azureVmIgnoreList(azureVmIgnoreList)
+                           .governanceRuleIgnoreList(governanceRuleIgnoreList)
                            .build());
     return getIgnoreList(accountId);
   }
@@ -276,6 +287,22 @@ public class RecommendationsIgnoreListService {
     return azureVmIgnoreList;
   }
 
+  private Set<RecommendationGovernanceRuleId> ignoreGovernanceRules(String accountId,
+      Set<RecommendationGovernanceRuleId> governanceRuleIgnoreList,
+      Set<RecommendationGovernanceRuleId> addGovernanceRules) {
+    if (addGovernanceRules != null) {
+      List<RecommendationGovernanceRuleId> toIgnore = new ArrayList<>();
+      for (RecommendationGovernanceRuleId governanceRuleId : addGovernanceRules) {
+        if (!governanceRuleIgnoreList.contains(governanceRuleId)) {
+          toIgnore.add(governanceRuleId);
+        }
+      }
+      governanceRuleIgnoreList.addAll(toIgnore);
+      governanceRecommendationDAO.ignoreGovernanceRecommendations(accountId, toIgnore);
+    }
+    return governanceRuleIgnoreList;
+  }
+
   private Set<RecommendationWorkloadId> unIgnoreWorkloads(String accountId,
       Set<RecommendationWorkloadId> workloadIgnoreList, Set<RecommendationWorkloadId> removeWorkloads) {
     if (removeWorkloads != null) {
@@ -349,5 +376,21 @@ public class RecommendationsIgnoreListService {
       azureRecommendationDAO.unIgnoreAzureVmRecommendations(accountId, toUnIgnore);
     }
     return azureVmIgnoreList;
+  }
+
+  private Set<RecommendationGovernanceRuleId> unIgnoreGovernanceRules(String accountId,
+      Set<RecommendationGovernanceRuleId> governanceRuleIgnoreList,
+      Set<RecommendationGovernanceRuleId> removeGovernanceRules) {
+    if (removeGovernanceRules != null) {
+      List<RecommendationGovernanceRuleId> toUnIgnore = new ArrayList<>();
+      for (RecommendationGovernanceRuleId governanceRuleId : removeGovernanceRules) {
+        if (governanceRuleIgnoreList.contains(governanceRuleId)) {
+          governanceRuleIgnoreList.remove(governanceRuleId);
+          toUnIgnore.add(governanceRuleId);
+        }
+      }
+      governanceRecommendationDAO.unIgnoreGovernanceRecommendations(accountId, toUnIgnore);
+    }
+    return governanceRuleIgnoreList;
   }
 }

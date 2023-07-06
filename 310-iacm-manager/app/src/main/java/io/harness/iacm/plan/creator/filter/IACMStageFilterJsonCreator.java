@@ -115,7 +115,7 @@ public class IACMStageFilterJsonCreator extends GenericStageFilterJsonCreatorV2<
 
   private void validateStage(IACMStageNode stageNode) {
     IntegrationStageConfig integrationStageConfig = (IntegrationStageConfig) stageNode.getStageInfoConfig();
-    validateInfrastructure(integrationStageConfig);
+    //    validateInfrastructure(integrationStageConfig); // Disabling this for kubernetes delegate work
     validateExecution(integrationStageConfig);
     validateCache(integrationStageConfig);
     validatePlatform(integrationStageConfig);

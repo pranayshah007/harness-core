@@ -1,0 +1,35 @@
+name: MyTrigger-abc
+identifier: MyTrigger-abc
+enabled: true
+description: ""
+tags: {}
+orgIdentifier: NgTriggersOrg
+projectIdentifier: viniciusTest
+pipelineIdentifier: GCRPipeline
+source:
+  type: Webhook
+  spec:
+    type: Custom
+    spec:
+      payloadConditions: []
+      headerConditions: []
+inputYaml: |
+  pipeline:
+    identifier: GCRPipeline
+    stages:
+      - stage:
+          identifier: dep
+          type: Deployment
+          spec:
+            service:
+              serviceInputs:
+                serviceDefinition:
+                  type: Kubernetes
+                  spec:
+                    artifacts:
+                      primary:
+                        sources:
+                          - identifier: myArtifact
+                            type: Gcr
+                            spec:
+                              tag: <+trigger.tag>

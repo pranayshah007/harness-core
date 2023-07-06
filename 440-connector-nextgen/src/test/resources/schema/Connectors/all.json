@@ -1328,6 +1328,9 @@
             "useManagedIdentity": {
               "type": "boolean"
             },
+            "vaultConfiguredManually": {
+              "type": "boolean"
+            },
             "vaultName": {
               "type": "string"
             }
@@ -6248,7 +6251,8 @@
           "type": "string",
           "enum": [
             "UsernamePassword",
-            "AdfsClientCredentialsWithCertificate"
+            "AdfsClientCredentialsWithCertificate",
+            "RefreshTokenGrantType"
           ]
         }
       },
@@ -6266,6 +6270,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/ServiceNowADFSDTO"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "RefreshTokenGrantType"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ServiceNowRefreshTokenDTO"
               }
             }
           }
@@ -6320,6 +6340,39 @@
               "type": "string"
             },
             "usernameRef": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ServiceNowRefreshTokenDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ServiceNowAuthCredentialsDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "clientIdRef",
+            "refreshTokenRef",
+            "tokenUrl"
+          ],
+          "properties": {
+            "clientIdRef": {
+              "type": "string"
+            },
+            "clientSecretRef": {
+              "type": "string"
+            },
+            "refreshTokenRef": {
+              "type": "string"
+            },
+            "scope": {
+              "type": "string"
+            },
+            "tokenUrl": {
               "type": "string"
             }
           }
@@ -6405,7 +6458,6 @@
           "type": "object",
           "required": [
             "accountId",
-            "passwordRef",
             "splunkUrl"
           ],
           "properties": {
@@ -6424,6 +6476,17 @@
             },
             "splunkUrl": {
               "type": "string"
+            },
+            "tokenRef": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "UsernamePassword",
+                "Anonymous",
+                "Bearer Token(HTTP Header)"
+              ]
             },
             "username": {
               "type": "string"

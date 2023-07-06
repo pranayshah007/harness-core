@@ -31,7 +31,6 @@ import io.harness.yaml.extended.ci.container.ContainerResource;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import java.util.Map;
@@ -65,14 +64,14 @@ public class AwsSamBuildStepInfo extends AwsSamBaseStepInfo implements CDAbstrac
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> samBuildDockerRegistryConnectorRef;
 
   @Builder(builderMethodName = "infoBuilder")
-  public AwsSamBuildStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
-      ContainerResource resources, ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
+  public AwsSamBuildStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<String> image,
+      ParameterField<String> connectorRef, ContainerResource resources,
+      ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
       ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
       ParameterField<List<String>> buildCommandOptions, ParameterField<String> samBuildDockerRegistryConnectorRef,
       ParameterField<String> samVersion) {
-    super(delegateSelectors, settings, image, connectorRef, resources, envVariables, privileged, runAsUser,
-        imagePullPolicy, samVersion);
+    super(delegateSelectors, image, connectorRef, resources, envVariables, privileged, runAsUser, imagePullPolicy,
+        samVersion);
     this.buildCommandOptions = buildCommandOptions;
     this.samBuildDockerRegistryConnectorRef = samBuildDockerRegistryConnectorRef;
   }

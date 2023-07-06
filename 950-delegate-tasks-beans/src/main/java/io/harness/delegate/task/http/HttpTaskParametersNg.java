@@ -39,6 +39,7 @@ public class HttpTaskParametersNg implements TaskParameters, ExecutionCapability
   boolean useProxy;
   boolean isCertValidationRequired;
   boolean shouldAvoidHeadersInCapability;
+  boolean isIgnoreResponseCode;
 
   // New type for supporting NG secret resolution
   @Expression(ALLOW_SECRETS) HttpCertificateNG certificateNG;
@@ -47,17 +48,31 @@ public class HttpTaskParametersNg implements TaskParameters, ExecutionCapability
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     if (shouldAvoidHeadersInCapability) {
-      return Collections.singletonList(
-          HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-              url, QUERY, maskingEvaluator));
-    }
-    List<KeyValuePair> headers = new ArrayList<>();
-    if (EmptyPredicate.isNotEmpty(requestHeader)) {
-      for (HttpHeaderConfig headerConfig : requestHeader) {
-        headers.add(KeyValuePair.builder().key(headerConfig.getKey()).value(headerConfig.getValue()).build());
+      if (isIgnoreResponseCode) {
+        return Collections.singletonList(
+            HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapabilityWithIgnoreResponseCode(
+                url, maskingEvaluator, true, QUERY));
+      } else {
+        return Collections.singletonList(
+            HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
+                url, QUERY, maskingEvaluator));
+      }
+    } else {
+      List<KeyValuePair> headers = new ArrayList<>();
+      if (EmptyPredicate.isNotEmpty(requestHeader)) {
+        for (HttpHeaderConfig headerConfig : requestHeader) {
+          headers.add(KeyValuePair.builder().key(headerConfig.getKey()).value(headerConfig.getValue()).build());
+        }
+      }
+      if (isIgnoreResponseCode) {
+        return Collections.singletonList(
+            HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapabilityWithIgnoreResponseCode(
+                url, maskingEvaluator, true, headers, QUERY));
+      } else {
+        return Collections.singletonList(
+            HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
+                url, headers, QUERY, maskingEvaluator));
       }
     }
-    return Collections.singletonList(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-        url, headers, QUERY, maskingEvaluator));
   }
 }

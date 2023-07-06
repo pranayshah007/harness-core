@@ -9,6 +9,7 @@ package software.wings.service.impl.workflow;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
+import static io.harness.beans.FeatureName.CDS_QUERY_OPTIMIZATION;
 import static io.harness.beans.FeatureName.HELM_CHART_AS_ARTIFACT;
 import static io.harness.beans.FeatureName.SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW;
 import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
@@ -34,6 +35,7 @@ import static io.harness.expression.ExpressionEvaluator.DEFAULT_HELMCHART_VARIAB
 import static io.harness.expression.ExpressionEvaluator.matchesVariablePattern;
 import static io.harness.govern.Switch.noop;
 import static io.harness.govern.Switch.unhandled;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.provision.TerraformConstants.INHERIT_APPROVED_PLAN;
@@ -301,6 +303,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.ReadPreference;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
@@ -463,13 +466,17 @@ public class WorkflowServiceImpl implements WorkflowService {
 
   @Override
   public List<Workflow> list(String accountId, List<String> projectFields, String queryHint) {
+    FindOptions findOptions = new FindOptions();
+    if (featureFlagService.isEnabled(CDS_QUERY_OPTIMIZATION, accountId)) {
+      findOptions.readPreference(ReadPreference.secondaryPreferred());
+    }
     Query<Workflow> workflowQuery =
         wingsPersistence.createQuery(Workflow.class).filter(WorkflowKeys.accountId, accountId);
     emptyIfNull(projectFields).forEach(field -> { workflowQuery.project(field, true); });
-    FindOptions findOptions = new FindOptions();
     if (isNotEmpty(queryHint)) {
       findOptions.hint(BasicDBUtils.getIndexObject(Workflow.mongoIndexes(), queryHint));
     }
+    findOptions.limit(NO_LIMIT);
     return emptyIfNull(workflowQuery.asList(findOptions));
   }
 

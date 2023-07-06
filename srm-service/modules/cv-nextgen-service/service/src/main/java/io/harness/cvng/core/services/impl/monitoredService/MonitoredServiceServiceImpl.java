@@ -19,6 +19,9 @@ import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.get
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.CHANGE_EVENT_TYPE;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.COOL_OFF_DURATION;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.CURRENT_HEALTH_SCORE;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_IDENTIFIER;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_NAME;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_IDENTIFIER;
 import static io.harness.data.structure.CollectionUtils.distinctByKey;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -97,6 +100,7 @@ import io.harness.cvng.events.monitoredservice.MonitoredServiceCreateEvent;
 import io.harness.cvng.events.monitoredservice.MonitoredServiceDeleteEvent;
 import io.harness.cvng.events.monitoredservice.MonitoredServiceToggleEvent;
 import io.harness.cvng.events.monitoredservice.MonitoredServiceUpdateEvent;
+import io.harness.cvng.notification.beans.NotificationRuleCondition;
 import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleRef;
 import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
@@ -821,6 +825,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                        .serviceRef(monitoredService.getServiceIdentifier())
                        .serviceName(serviceIdNameMap.get(monitoredService.getServiceIdentifier()))
                        .environmentRefs(monitoredService.getEnvironmentIdentifierList())
+                       .tags(TagMapper.convertToMap(monitoredService.getTags()))
                        .type(monitoredService.getType())
                        .configuredChangeSources(isNotEmpty(monitoredService.getChangeSourceIdentifiers())
                                ? monitoredService.getChangeSourceIdentifiers().size()
@@ -1403,7 +1408,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                                               .filter(MonitoredServiceKeys.projectIdentifier, projectIdentifier)
                                               .asList()
                                               .stream()
-                                              .map(monitoredService -> monitoredService.getEnvironmentIdentifier())
+                                              .map(MonitoredService::getEnvironmentIdentifier)
                                               .collect(Collectors.toList());
 
     return nextGenService.listEnvironment(accountId, orgIdentifier, projectIdentifier, environmentIdentifiers)
@@ -1521,7 +1526,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
 
   private void checkLicenseForMonitoredServiceToggle(
       ProjectParams projectParams, MonitoredService monitoredService, boolean enable) {
-    if (enable == true
+    if (enable
         && featureFlagService.isFeatureFlagEnabled(
             projectParams.getAccountIdentifier(), FeatureFlagNames.CVNG_LICENSE_ENFORCEMENT)) {
       AccountLicenseDTO accountLicenseDTO = null;
@@ -1654,7 +1659,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         .peek(healthSource
             -> healthSource.setIdentifier(HealthSourceService.getNameSpacedIdentifier(
                 monitoredServiceEntity.getIdentifier(), healthSource.getIdentifier())))
-        .map(healthSource -> HealthSourceDTO.toHealthSourceDTO(healthSource))
+        .map(HealthSourceDTO::toHealthSourceDTO)
         .collect(Collectors.toList());
   }
 
@@ -1898,7 +1903,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     List<String> notificationRuleRefs = monitoredService.getNotificationRuleRefs()
                                             .stream()
                                             .filter(ref -> ref.isEligible(clock.instant(), COOL_OFF_DURATION))
-                                            .filter(ref -> ref.isEnabled())
+                                            .filter(NotificationRuleRef::isEnabled)
                                             .map(NotificationRuleRef::getNotificationRuleRef)
                                             .collect(Collectors.toList());
     return notificationRuleService.getEntities(projectParams, notificationRuleRefs);
@@ -1941,12 +1946,13 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
             break;
         }
         if (notificationData.shouldSendNotification()) {
+          Map<String, Object> entityDetails = Map.of(ENTITY_NAME, monitoredService.getName(), ENTITY_IDENTIFIER,
+              monitoredService.getIdentifier(), SERVICE_IDENTIFIER, monitoredService.getServiceIdentifier());
           CVNGNotificationChannel notificationChannel = notificationRule.getNotificationMethod();
           final NotificationRuleTemplateDataGenerator notificationRuleTemplateDataGenerator =
               notificationRuleConditionTypeTemplateDataGeneratorMap.get(condition.getType());
-          Map<String, String> templateData = notificationRuleTemplateDataGenerator.getTemplateData(projectParams,
-              monitoredService.getName(), monitoredService.getIdentifier(), monitoredService.getServiceIdentifier(),
-              monitoredService.getIdentifier(), condition, notificationData.getTemplateDataMap());
+          Map<String, String> templateData = notificationRuleTemplateDataGenerator.getTemplateData(
+              projectParams, entityDetails, condition, notificationData.getTemplateDataMap());
           String templateId = notificationRuleTemplateDataGenerator.getTemplateId(
               notificationRule.getType(), notificationChannel.getType());
           try {
@@ -1972,19 +1978,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   @Override
   public PageResponse<NotificationRuleResponse> getNotificationRules(
       ProjectParams projectParams, String monitoredServiceIdentifier, PageParams pageParams) {
-    MonitoredService monitoredService =
-        getMonitoredService(MonitoredServiceParams.builderWithProjectParams(projectParams)
-                                .monitoredServiceIdentifier(monitoredServiceIdentifier)
-                                .build());
-    if (monitoredService == null) {
-      throw new InvalidRequestException(String.format(
-          "Monitored Service  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
-          monitoredServiceIdentifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
-          projectParams.getProjectIdentifier()));
-    }
-    List<NotificationRuleRef> notificationRuleRefList = monitoredService.getNotificationRuleRefs();
     List<NotificationRuleResponse> notificationRuleResponseList =
-        notificationRuleService.getNotificationRuleResponse(projectParams, notificationRuleRefList);
+        getNotificationRuleResponses(projectParams, monitoredServiceIdentifier);
     PageResponse<NotificationRuleResponse> notificationRulePageResponse =
         PageUtils.offsetAndLimit(notificationRuleResponseList, pageParams.getPage(), pageParams.getSize());
 
@@ -1996,6 +1991,48 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         .pageItemCount(notificationRulePageResponse.getPageItemCount())
         .content(notificationRulePageResponse.getContent())
         .build();
+  }
+
+  @Override
+  public PageResponse<NotificationRuleCondition> getNotificationRuleConditions(ProjectParams projectParams,
+      String monitoredServiceIdentifier, PageParams pageParams, List<NotificationRuleConditionType> conditionTypes) {
+    List<NotificationRuleResponse> notificationRules =
+        getNotificationRuleResponses(projectParams, monitoredServiceIdentifier);
+    List<NotificationRuleCondition> notificationRuleConditions =
+        notificationRules.stream()
+            .flatMap(
+                notificationRuleResponse -> notificationRuleResponse.getNotificationRule().getConditions().stream())
+            .collect(Collectors.toList());
+    notificationRuleConditions =
+        notificationRuleConditions.stream()
+            .filter(notificationRuleCondition -> conditionTypes.contains(notificationRuleCondition.getType()))
+            .collect(Collectors.toList());
+    PageResponse<NotificationRuleCondition> notificationRulePageResponse =
+        PageUtils.offsetAndLimit(notificationRuleConditions, pageParams.getPage(), pageParams.getSize());
+    return PageResponse.<NotificationRuleCondition>builder()
+        .pageSize(pageParams.getSize())
+        .pageIndex(pageParams.getPage())
+        .totalPages(notificationRulePageResponse.getTotalPages())
+        .totalItems(notificationRulePageResponse.getTotalItems())
+        .pageItemCount(notificationRulePageResponse.getPageItemCount())
+        .content(notificationRulePageResponse.getContent())
+        .build();
+  }
+
+  private List<NotificationRuleResponse> getNotificationRuleResponses(
+      ProjectParams projectParams, String monitoredServiceIdentifier) {
+    MonitoredService monitoredService =
+        getMonitoredService(MonitoredServiceParams.builderWithProjectParams(projectParams)
+                                .monitoredServiceIdentifier(monitoredServiceIdentifier)
+                                .build());
+    if (monitoredService == null) {
+      throw new InvalidRequestException(String.format(
+          "Monitored Service  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
+          monitoredServiceIdentifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+          projectParams.getProjectIdentifier()));
+    }
+    List<NotificationRuleRef> notificationRuleRefList = monitoredService.getNotificationRuleRefs();
+    return notificationRuleService.getNotificationRuleResponse(projectParams, notificationRuleRefList);
   }
 
   @Override

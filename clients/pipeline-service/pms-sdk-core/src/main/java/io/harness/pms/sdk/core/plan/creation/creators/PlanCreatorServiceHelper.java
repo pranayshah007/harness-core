@@ -10,9 +10,12 @@ package io.harness.pms.sdk.core.plan.creation.creators;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.logging.AutoLogContext;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.RollbackModeBehaviour;
+import io.harness.pms.contracts.plan.SetupMetadata;
 import io.harness.pms.plan.creation.PlanCreationBlobResponseUtils;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.pipeline.creators.CreatorResponse;
@@ -216,5 +219,34 @@ public class PlanCreatorServiceHelper {
 
   boolean isBehaviourToPropagate(RollbackModeBehaviour behaviour) {
     return behaviour == RollbackModeBehaviour.PRESERVE;
+  }
+
+  public static AutoLogContext autoLogContextFromSetupMetadata(SetupMetadata setupMetadata) {
+    if (setupMetadata == null) {
+      return new AutoLogContext(new HashMap<>(), AutoLogContext.OverrideBehavior.OVERRIDE_NESTS);
+    }
+    return new AutoLogContext(
+        logContextMap(setupMetadata.getAccountId(), setupMetadata.getOrgId(), setupMetadata.getProjectId()),
+        AutoLogContext.OverrideBehavior.OVERRIDE_NESTS);
+  }
+
+  public static AutoLogContext autoLogContextFromPlanCreationContextValue(
+      PlanCreationContextValue planCreationContextValue) {
+    if (planCreationContextValue == null) {
+      return new AutoLogContext(new HashMap<>(), AutoLogContext.OverrideBehavior.OVERRIDE_NESTS);
+    }
+    return new AutoLogContext(
+        logContextMap(planCreationContextValue.getAccountIdentifier(), planCreationContextValue.getOrgIdentifier(),
+            planCreationContextValue.getProjectIdentifier()),
+        AutoLogContext.OverrideBehavior.OVERRIDE_NESTS);
+  }
+
+  public static Map<String, String> logContextMap(String accountId, String orgId, String projId) {
+    Map<String, String> logContext = new HashMap<>();
+    logContext.put("accountId", accountId);
+    logContext.put("orgId", orgId);
+    logContext.put("projId", projId);
+
+    return logContext;
   }
 }

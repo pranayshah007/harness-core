@@ -68,7 +68,7 @@ public class K8sInstanceSyncPerpetualTaskV2ExecutorTest extends WingsBaseTest {
   @Test
   @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
   @Category(UnitTests.class)
-  public void retrieveServiceInstancesTest() {
+  public void retrieveServiceInstancesTest() throws Exception {
     PerpetualTaskId taskId = PerpetualTaskId.newBuilder().setId(PERPETUAL_TASK).build();
 
     PerpetualTaskExecutionParams params =

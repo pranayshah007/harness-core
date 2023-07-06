@@ -165,19 +165,16 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
         .getQuery(any(), any(), any(), any(), any(), any(), anyString(), any(), any());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any(), anyMap(),
-            anyBoolean());
+        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any(), anyMap());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any(), anyMap(),
-            anyBoolean());
+        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any(), anyMap());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any(), anyMap(),
-            anyBoolean());
+        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any(), anyMap());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getTotalCountQuery(any(), any(), any(), any(), anyString(), any(), anyMap(), anyBoolean());
+        .getTotalCountQuery(any(), any(), any(), any(), anyString(), any(), anyMap());
     doReturn(resultSet).when(bigQuery).query(any());
     doReturn(job).when(bigQuery).create(any(JobInfo.class));
     doReturn(JobId.of(UUID.randomUUID().toString())).when(job).getJobId();

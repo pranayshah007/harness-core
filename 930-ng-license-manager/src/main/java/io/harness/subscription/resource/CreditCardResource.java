@@ -8,13 +8,17 @@
 package io.harness.subscription.resource;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
+import static io.harness.licensing.accesscontrol.LicenseAccessControlPermissions.VIEW_LICENSE_PERMISSION;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.accesscontrol.NGAccessControlCheck;
+import io.harness.licensing.accesscontrol.ResourceTypes;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.subscription.dto.CardDTO;
 import io.harness.subscription.dto.CreditCardDTO;
 import io.harness.subscription.responses.CreditCardResponse;
 import io.harness.subscription.services.CreditCardService;
@@ -75,6 +79,22 @@ public class CreditCardResource {
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @Valid @RequestBody(description = "Non-sensitive credit card information") @NotNull CreditCardDTO creditCardDTO) {
     return ResponseDTO.newResponse(creditCardService.saveCreditCard(creditCardDTO));
+  }
+
+  @GET
+  @Path("/default")
+  @ApiOperation(value = "Gets the default card for the customer", nickname = "getDefaultCard")
+  @Operation(operationId = "getDefaultCard", summary = "Gets the default card for the customer",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns payment details")
+      })
+  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
+  public ResponseDTO<CardDTO>
+  getPrimaryCreditCard(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+      NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
+    return ResponseDTO.newResponse(creditCardService.getDefaultCreditCard(accountIdentifier));
   }
 
   @GET

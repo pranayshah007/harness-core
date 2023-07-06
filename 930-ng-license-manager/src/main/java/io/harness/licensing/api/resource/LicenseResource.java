@@ -242,7 +242,7 @@ public class LicenseResource {
           description = "This is the details of the Trial License. ModuleType and edition are mandatory") @NotNull
       @Valid @Body StartTrialDTO startTrialRequestDTO,
       @Parameter(description = "Referrer URL") @QueryParam(NGCommonEntityConstants.REFERER) String referer) {
-    checkCITrialLicense(startTrialRequestDTO);
+    blockTrialLicense();
     return ResponseDTO.newResponse(licenseService.startTrialLicense(accountIdentifier, startTrialRequestDTO, referer));
   }
 
@@ -263,14 +263,12 @@ public class LicenseResource {
       @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true,
           description = "This is the details of the Trial License. ModuleType and edition are mandatory") @NotNull
       @Valid @Body StartTrialDTO startTrialRequestDTO) {
-    checkCITrialLicense(startTrialRequestDTO);
+    blockTrialLicense();
     return ResponseDTO.newResponse(licenseService.extendTrialLicense(accountIdentifier, startTrialRequestDTO));
   }
 
-  private void checkCITrialLicense(StartTrialDTO startTrialRequestDTO) {
-    if (ModuleType.CI.equals(startTrialRequestDTO.getModuleType())) {
-      throw new InvalidRequestException("Trial license for CI module is not supported!");
-    }
+  private void blockTrialLicense() {
+    throw new InvalidRequestException("Trial license is not supported!");
   }
 
   @GET

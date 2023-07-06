@@ -7,11 +7,13 @@ package testreports
 
 import (
 	"context"
-	"github.com/harness/harness-core/product/ci/ti-service/types"
+
+	"github.com/harness/ti-client/types"
 )
 
-//go:generate mockgen -source reporter.go -package=testreports -destination mocks/reporter.go TestReporter
 // TestReporter is any interface which can send us tests in our custom format
+//
+//go:generate mockgen -source reporter.go -package=testreports -destination mocks/reporter.go TestReporter
 type TestReporter interface {
 	// Get test case information
 	GetTests(context.Context) <-chan *types.TestCase

@@ -9,24 +9,31 @@ package io.harness.ngtriggers.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.CommitDetails;
+import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.PushWebhookEvent;
 import io.harness.beans.Repository;
 import io.harness.beans.WebhookGitUser;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.aws.codecommit.AwsCodeCommitApiTaskResponse;
 import io.harness.delegate.beans.aws.codecommit.AwsCodeCommitDataObtainmentTaskResult;
+import io.harness.delegate.beans.ci.pod.ConnectorDetails;
+import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitConnectorDTO;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.ngtriggers.NgTriggersTestHelper;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
@@ -39,6 +46,9 @@ import io.harness.product.ci.scm.proto.PushHook;
 import io.harness.product.ci.scm.proto.Signature;
 import io.harness.product.ci.scm.proto.User;
 import io.harness.rule.Owner;
+import io.harness.serializer.KryoSerializer;
+import io.harness.tasks.BinaryResponseData;
+import io.harness.utils.ConnectorUtils;
 
 import com.google.protobuf.Timestamp;
 import java.io.IOException;
@@ -53,6 +63,10 @@ import org.mockito.Spy;
 @OwnedBy(PIPELINE)
 public class AwsCodeCommitDataObtainerTest extends CategoryTest {
   @Mock private WebhookEventPayloadParser webhookEventPayloadParser;
+  @Mock TaskExecutionUtils taskExecutionUtils;
+  @Mock KryoSerializer kryoSerializer;
+  @Mock KryoSerializer referenceFalseKryoSerializer;
+  @Mock ConnectorUtils connectorUtils;
   @Spy @InjectMocks AwsCodeCommitDataObtainer awsCodeCommitDataObtainer;
   private static final List<TriggerDetails> triggerDetailsList;
   private static final Repository repository =
@@ -183,6 +197,8 @@ public class AwsCodeCommitDataObtainerTest extends CategoryTest {
   @Before
   public void setUp() throws IOException {
     initMocks(this);
+    on(awsCodeCommitDataObtainer).set("kryoSerializer", kryoSerializer);
+    on(awsCodeCommitDataObtainer).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
   }
 
   @Test
@@ -209,5 +225,39 @@ public class AwsCodeCommitDataObtainerTest extends CategoryTest {
     assertThat(filterRequestData.getWebhookPayloadData()).isNotNull();
     assertThat(filterRequestData.getWebhookPayloadData().getParseWebhookResponse())
         .isEqualTo(obtainedParseWebhookResponse);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testBuildAndExecuteAwsCodeCommitDelegateTask() {
+    ConnectorDetails connectorDetails = ConnectorDetails.builder()
+                                            .connectorType(ConnectorType.AWS)
+                                            .connectorConfig(AwsCodeCommitConnectorDTO.builder().build())
+                                            .executeOnDelegate(true)
+                                            .build();
+    when(connectorUtils.getConnectorDetails(any(), any())).thenReturn(connectorDetails);
+    when(taskExecutionUtils.executeSyncTask(any(DelegateTaskRequest.class)))
+        .thenReturn(BinaryResponseData.builder().build());
+    when(kryoSerializer.asInflatedObject(any())).thenReturn(awsCodeCommitApiTaskResponse);
+    AwsCodeCommitApiTaskResponse response = awsCodeCommitDataObtainer.buildAndExecuteAwsCodeCommitDelegateTask(
+        webhookPayloadData, triggerDetailsList.get(0), "connector");
+    assertThat(
+        ((AwsCodeCommitDataObtainmentTaskResult) response.getAwsCodecommitApiResult()).getCommitDetailsList().size())
+        .isEqualTo(1);
+    assertThat(((AwsCodeCommitDataObtainmentTaskResult) response.getAwsCodecommitApiResult())
+                   .getCommitDetailsList()
+                   .get(0)
+                   .getCommitId())
+        .isEqualTo("f70e8226cac251f6116315984b6e9ed7098ce586");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testParsePrHook() {
+    ParseWebhookResponse parsedWebhookResponse = awsCodeCommitDataObtainer.parsePrHook(obtainedParseWebhookResponse,
+        (AwsCodeCommitDataObtainmentTaskResult) awsCodeCommitApiTaskResponse.getAwsCodecommitApiResult());
+    assertThat(parsedWebhookResponse).isEqualToComparingFieldByField(obtainedParseWebhookResponse);
   }
 }

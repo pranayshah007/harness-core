@@ -67,7 +67,7 @@ func TokenGenerationMiddleware(config config.Config, validateAccount bool, ngCli
 
 // GetAuthFunc is middleware to ensure that the incoming request is allowed to access resources
 // at the specific accountID
-func AuthMiddleware(config config.Config, ngClient *client.HTTPClient) func(http.Handler) http.Handler {
+func AuthMiddleware(config config.Config, ngClient *client.HTTPClient, skipKeyCheck bool) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -104,8 +104,8 @@ func AuthMiddleware(config config.Config, ngClient *client.HTTPClient) func(http
 				}
 			}
 
-			// Validate that a key / keys field is present in the request
-			if r.FormValue(keyParam) == "" && r.FormValue(keysParam) == "" {
+			// Validate that a key field is present in the request
+			if !skipKeyCheck && r.FormValue(keyParam) == "" {
 				WriteBadRequest(w, errors.New("no key exists in the URL"))
 				return
 			}

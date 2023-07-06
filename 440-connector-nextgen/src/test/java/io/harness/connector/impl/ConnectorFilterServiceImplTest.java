@@ -10,6 +10,7 @@ package io.harness.connector.impl;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.VED;
 
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
@@ -20,6 +21,7 @@ import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.rule.Owner;
 
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
@@ -50,9 +52,9 @@ public class ConnectorFilterServiceImplTest {
     criteria.and(ConnectorKeys.type).is("DOCKER");
     criteria.and(ConnectorKeys.categories).in(ConnectorCategory.ARTIFACTORY);
 
-    Criteria actualCriteria =
-        connectorFilterService.createCriteriaFromConnectorFilter("accountIdentifier", "orgIdentifier",
-            "projectIdentifier", null, ConnectorType.DOCKER, ConnectorCategory.ARTIFACTORY, null, false, null);
+    Criteria actualCriteria = connectorFilterService.createCriteriaFromConnectorFilter("accountIdentifier",
+        "orgIdentifier", "projectIdentifier", null, ConnectorType.DOCKER, ConnectorCategory.ARTIFACTORY, null, false,
+        null, emptyList());
 
     assertThat(actualCriteria.getCriteriaObject()).isEqualTo(criteria.getCriteriaObject());
   }
@@ -70,9 +72,30 @@ public class ConnectorFilterServiceImplTest {
     criteria.and(ConnectorKeys.categories).in(ConnectorCategory.ARTIFACTORY);
     criteria.and("nexusVersion").is("3.x");
 
-    Criteria actualCriteria =
-        connectorFilterService.createCriteriaFromConnectorFilter("accountIdentifier", "orgIdentifier",
-            "projectIdentifier", null, ConnectorType.NEXUS, ConnectorCategory.ARTIFACTORY, null, false, "3.x");
+    Criteria actualCriteria = connectorFilterService.createCriteriaFromConnectorFilter("accountIdentifier",
+        "orgIdentifier", "projectIdentifier", null, ConnectorType.NEXUS, ConnectorCategory.ARTIFACTORY, null, false,
+        "3.x", emptyList());
+
+    assertThat(actualCriteria.getCriteriaObject()).isEqualTo(criteria.getCriteriaObject());
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void createCriteriaFromConnectorIdsInFilter() {
+    Criteria criteria = new Criteria();
+    criteria.and(ConnectorKeys.accountIdentifier).is("accountIdentifier");
+    criteria.orOperator(where(ConnectorKeys.deleted).exists(false), where(ConnectorKeys.deleted).is(false));
+    criteria.and(ConnectorKeys.orgIdentifier).is("orgIdentifier");
+    criteria.and(ConnectorKeys.projectIdentifier).is("projectIdentifier");
+    criteria.and(ConnectorKeys.type).is("NEXUS");
+    criteria.and(ConnectorKeys.categories).in(ConnectorCategory.ARTIFACTORY);
+    criteria.and("nexusVersion").is("3.x");
+    List<String> connectorIds = List.of("connector1");
+    criteria.and("_id").in(connectorIds);
+    Criteria actualCriteria = connectorFilterService.createCriteriaFromConnectorFilter("accountIdentifier",
+        "orgIdentifier", "projectIdentifier", null, ConnectorType.NEXUS, ConnectorCategory.ARTIFACTORY, null, false,
+        "3.x", connectorIds);
 
     assertThat(actualCriteria.getCriteriaObject()).isEqualTo(criteria.getCriteriaObject());
   }

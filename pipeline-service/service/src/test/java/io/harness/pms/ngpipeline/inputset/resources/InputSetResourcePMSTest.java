@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SAMARTH;
 import static io.harness.rule.OwnerRule.SHALINI;
+import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
@@ -35,6 +36,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitImportInfoDTO;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.gitsync.sdk.EntityGitDetails;
@@ -70,6 +72,7 @@ import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.rule.Owner;
+import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -102,6 +105,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Mock GitSyncSdkService gitSyncSdkService;
   @Mock InputSetsApiUtils inputSetsApiUtils;
   @Mock PMSExecutionService executionService;
+  @Mock PmsFeatureFlagService pmsFeatureFlagService;
 
   private static final String ACCOUNT_ID = "accountId";
   private static final String ORG_IDENTIFIER = "orgId";
@@ -138,7 +142,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
     inputSetResourcePMSImpl = new InputSetResourcePMSImpl(pmsInputSetService, pipelineService, gitSyncSdkService,
-        validateAndMergeHelper, inputSetsApiUtils, executionService);
+        validateAndMergeHelper, inputSetsApiUtils, executionService, pmsFeatureFlagService);
 
     String inputSetFilename = "inputSet1.yml";
     inputSetYaml = readFile(inputSetFilename);
@@ -582,7 +586,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     MockedStatic<InputSetValidationHelper> mockSettings = Mockito.mockStatic(InputSetValidationHelper.class);
     when(InputSetValidationHelper.getYAMLDiff(gitSyncSdkService, pmsInputSetService, pipelineService,
              validateAndMergeHelper, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID,
-             "branch", "repo"))
+             "branch", "repo", inputSetsApiUtils))
         .thenReturn(InputSetYamlDiffDTO.builder().oldYAML("old: yaml").newYAML("new: yaml").build());
     ResponseDTO<InputSetYamlDiffDTO> inputSetYAMLDiff = inputSetResourcePMSImpl.getInputSetYAMLDiff(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, "branch", "repo", null);
@@ -725,5 +729,49 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
             .stageIdentifiers(Collections.emptyList())
             .build());
     assertEquals("mergedYaml", responseDTO.getData().getPipelineYaml());
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetMergeInputSetFromPipelineForRemoteBranchTemplate() {
+    doReturn(pipelineYaml)
+        .when(validateAndMergeHelper)
+        .getMergedYamlFromInputSetReferencesAndRuntimeInputYamlWithDefaultValues(ACCOUNT_ID, ORG_IDENTIFIER,
+            PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, Collections.emptyList(), "remote", null, null, null, false);
+    doReturn(pipelineYaml)
+        .when(validateAndMergeHelper)
+        .mergeInputSetIntoPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, pipelineYaml,
+            "remote", null, null, false);
+    MergeInputSetRequestDTOPMS inputSetRequestDTOPMS = MergeInputSetRequestDTOPMS.builder()
+                                                           .withMergedPipelineYaml(true)
+                                                           .inputSetReferences(Collections.emptyList())
+                                                           .build();
+    GitEntityFindInfoDTO gitEntityFindInfoDTO = GitEntityFindInfoDTO.builder().branch("remote").build();
+    ResponseDTO<MergeInputSetResponseDTOPMS> mergeInputSetResponseDTOPMSResponseDTO =
+        inputSetResourcePMSImpl.getMergeInputSetFromPipelineTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+            PIPELINE_IDENTIFIER, null, null, gitEntityFindInfoDTO, inputSetRequestDTOPMS, "false");
+    assertEquals(mergeInputSetResponseDTOPMSResponseDTO.getStatus(), Status.SUCCESS);
+    assertEquals(mergeInputSetResponseDTOPMSResponseDTO.getData().getCompletePipelineYaml(), pipelineYaml);
+    assertEquals(mergeInputSetResponseDTOPMSResponseDTO.getData().getPipelineYaml(), pipelineYaml);
+
+    doReturn(pipelineYaml)
+        .when(validateAndMergeHelper)
+        .getMergedYamlFromInputSetReferencesAndRuntimeInputYamlWithDefaultValues(ACCOUNT_ID, ORG_IDENTIFIER,
+            PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, Collections.emptyList(), "remote", null, stages, null, false);
+
+    MergeInputSetRequestDTOPMS inputSetRequestDTOPMSWithStages = MergeInputSetRequestDTOPMS.builder()
+                                                                     .withMergedPipelineYaml(false)
+                                                                     .inputSetReferences(Collections.emptyList())
+                                                                     .stageIdentifiers(stages)
+                                                                     .build();
+    mergeInputSetResponseDTOPMSResponseDTO =
+        inputSetResourcePMSImpl.getMergeInputSetFromPipelineTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+            PIPELINE_IDENTIFIER, null, null, gitEntityFindInfoDTO, inputSetRequestDTOPMSWithStages, "false");
+    assertEquals(mergeInputSetResponseDTOPMSResponseDTO.getStatus(), Status.SUCCESS);
+    assertEquals(mergeInputSetResponseDTOPMSResponseDTO.getData().getPipelineYaml(), pipelineYaml);
+    verify(validateAndMergeHelper, times(1))
+        .getMergedYamlFromInputSetReferencesAndRuntimeInputYamlWithDefaultValues(ACCOUNT_ID, ORG_IDENTIFIER,
+            PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, Collections.emptyList(), "remote", null, stages, null, false);
   }
 }

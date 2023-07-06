@@ -389,11 +389,27 @@ public class ServiceEnvironmentV2MigrationService {
       branch = requestDto.getBranch();
       createPr = true;
     }
+    String rootFolder = gitDetails.getRootFolder();
+    String filePath = gitDetails.getFilePath();
+    String objectId = gitDetails.getObjectId();
+    String commitId = gitDetails.getCommitId();
+    String baseBranch = gitDetails.getBranch();
+    if (!isNewBranch) {
+      final PMSPipelineResponseDTO existingV2Pipeline =
+          NGRestUtils.getResponse(pipelineServiceClient.getPipelineByIdentifier(requestDto.getPipelineIdentifier(),
+              accountId, requestDto.getOrgIdentifier(), requestDto.getProjectIdentifier(), branch, null, null));
+
+      if (existingV2Pipeline.getGitDetails() != null) {
+        rootFolder = existingV2Pipeline.getGitDetails().getRootFolder();
+        filePath = existingV2Pipeline.getGitDetails().getFilePath();
+        objectId = existingV2Pipeline.getGitDetails().getObjectId();
+        commitId = existingV2Pipeline.getGitDetails().getCommitId();
+      }
+    }
     NGRestUtils.getResponse(pipelineServiceClient.updatePipeline(null, requestDto.getPipelineIdentifier(), accountId,
         requestDto.getOrgIdentifier(), requestDto.getProjectIdentifier(), null, null, null,
-        RequestBody.create(MediaType.parse("application/yaml"), migratedPipelineYaml), branch,
-        gitDetails.getRootFolder(), gitDetails.getFilePath(), "migrate pipeline", gitDetails.getObjectId(), null,
-        StoreType.REMOTE, gitDetails.getCommitId(), isNewBranch, createPr, gitDetails.getBranch()));
+        RequestBody.create(MediaType.parse("application/yaml"), migratedPipelineYaml), branch, rootFolder, filePath,
+        "migrate pipeline", objectId, null, StoreType.REMOTE, commitId, isNewBranch, createPr, baseBranch));
   }
 
   private Optional<JsonNode> createMigratedYaml(String accountId, YamlNode stageNode,

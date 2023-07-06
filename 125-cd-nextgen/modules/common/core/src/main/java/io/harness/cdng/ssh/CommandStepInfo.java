@@ -13,6 +13,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.filters.WithFileRefs;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.contracts.steps.StepType;
@@ -26,7 +27,9 @@ import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -41,7 +44,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = CommandStepInfoVisitorHelper.class)
 @TypeAlias("commandStepInfo")
 @RecasterAlias("io.harness.cdng.ssh.CommandStepInfo")
-public class CommandStepInfo extends CommandBaseStepInfo implements CDAbstractStepInfo, Visitable {
+public class CommandStepInfo extends CommandBaseStepInfo implements CDAbstractStepInfo, Visitable, WithFileRefs {
   List<NGVariable> environmentVariables;
   @VariableExpression(skipVariableExpression = true) List<NGVariable> outputVariables;
 
@@ -82,5 +85,21 @@ public class CommandStepInfo extends CommandBaseStepInfo implements CDAbstractSt
   @Override
   public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
     return getDelegateSelectors();
+  }
+
+  @Override
+  public Map<String, ParameterField<List<String>>> extractFileRefs() {
+    Map<String, ParameterField<List<String>>> fileRefMap = new HashMap<>();
+    if (commandUnits != null) {
+      commandUnits.forEach(commandUnit -> {
+        if (commandUnit != null && commandUnit.getSpec() instanceof ScriptCommandUnitSpec) {
+          ScriptCommandUnitSpec scriptCommandUnitSpec = (ScriptCommandUnitSpec) commandUnit.getSpec();
+          List<String> fileRef = scriptCommandUnitSpec.getSource().fetchFileRefs();
+          fileRefMap.put(String.format("commandUnits.%s.spec.source.spec.file", commandUnit.getIdentifier()),
+              ParameterField.createValueField(fileRef));
+        }
+      });
+    }
+    return fileRefMap;
   }
 }

@@ -109,7 +109,7 @@ def main(event, context):
     ingest_data_to_preagg(jsonData)
     ingest_data_to_unified(jsonData)
     update_connector_data_sync_status(jsonData, PROJECTID, client)
-    ingest_data_to_costagg(jsonData)
+    # ingest_data_to_costagg(jsonData)
     if jsonData.get("triggerHistoricalCostUpdateInPreferredCurrency") and jsonData["ccmPreferredCurrency"]:
         trigger_historical_cost_update_in_preferred_currency(jsonData)
 

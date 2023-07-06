@@ -205,7 +205,7 @@ public class WorkflowImportService implements ImportService {
     TemplateLinkConfig templateLinkConfig = new TemplateLinkConfig();
     templateLinkConfig.setTemplateRef(MigratorUtility.getIdentifierWithScope(ngEntityDetail));
     templateLinkConfig.setTemplateInputs(
-        migrationTemplateUtils.getTemplateInputs(ngEntityDetail, inputDTO.getDestinationAccountIdentifier()));
+        migrationTemplateUtils.getTemplateInputs(inputDTO, ngEntityDetail, inputDTO.getDestinationAccountIdentifier()));
 
     TemplateStageNode templateStageNode = new TemplateStageNode();
     templateStageNode.setName(name);

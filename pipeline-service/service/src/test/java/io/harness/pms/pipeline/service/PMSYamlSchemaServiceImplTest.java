@@ -47,6 +47,8 @@ import io.harness.pms.pipeline.service.yamlschema.SchemaFetcher;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
+import io.harness.serializer.JsonUtils;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.schema.YamlSchemaProvider;
 import io.harness.yaml.schema.YamlSchemaTransientHelper;
 import io.harness.yaml.schema.beans.YamlGroup;
@@ -60,10 +62,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeoutException;
@@ -84,6 +88,8 @@ public class PMSYamlSchemaServiceImplTest {
   @Mock PmsYamlSchemaHelper pmsYamlSchemaHelper;
   @Mock PmsSdkInstanceService pmsSdkInstanceService;
   @Mock YamlSchemaValidator yamlSchemaValidator;
+
+  @Mock PmsFeatureFlagService pmsFeatureFlagService;
   @InjectMocks private PMSYamlSchemaServiceImpl pmsYamlSchemaService;
   @Mock private ExecutorService yamlSchemaExecutor;
 
@@ -97,7 +103,7 @@ public class PMSYamlSchemaServiceImplTest {
   public void setUp() throws ExecutionException, InterruptedException, TimeoutException {
     MockitoAnnotations.initMocks(this);
     pmsYamlSchemaService = new PMSYamlSchemaServiceImpl(yamlSchemaProvider, yamlSchemaValidator, pmsSdkInstanceService,
-        pmsYamlSchemaHelper, schemaFetcher, 25, yamlSchemaExecutor);
+        pmsYamlSchemaHelper, schemaFetcher, 25, yamlSchemaExecutor, pmsFeatureFlagService);
   }
 
   @Test
@@ -202,6 +208,13 @@ public class PMSYamlSchemaServiceImplTest {
         "https://raw.githubusercontent.com/harness/harness-schema/quality-assurance/v1/template.json");
   }
 
+  public JsonNode fetchFile(String filePath) throws IOException {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    String staticJson =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource(filePath)), StandardCharsets.UTF_8);
+    return JsonUtils.asObject(staticJson, JsonNode.class);
+  }
+
   @Test
   @Owner(developers = FERNANDOD)
   @Category(UnitTests.class)
@@ -225,7 +238,7 @@ public class PMSYamlSchemaServiceImplTest {
   public void shouldNotValidateYamlSchema() throws IOException {
     when(pmsYamlSchemaHelper.isFeatureFlagEnabled(FeatureName.DISABLE_PIPELINE_SCHEMA_VALIDATION, ACC_ID))
         .thenReturn(true);
-    pmsYamlSchemaService.validateYamlSchemaInternal(ACC_ID, ORG_ID, PRJ_ID, "");
+    pmsYamlSchemaService.validateYamlSchemaInternal(ACC_ID, ORG_ID, PRJ_ID, null);
     verify(yamlSchemaValidator, never()).validate(anyString(), anyString(), anyBoolean(), anyInt(), anyString());
   }
 
@@ -243,13 +256,18 @@ public class PMSYamlSchemaServiceImplTest {
     when(pmsYamlSchemaHelper.isFeatureFlagEnabled(FeatureName.DONT_RESTRICT_PARALLEL_STAGE_COUNT, ACC_ID))
         .thenReturn(false);
 
+    when(pmsYamlSchemaHelper.isFeatureFlagEnabled(FeatureName.PIE_STATIC_YAML_SCHEMA, ACC_ID)).thenReturn(false);
+
     try (MockedStatic<JsonPipelineUtils> pipelineUtils = mockStatic(JsonPipelineUtils.class)) {
       pipelineUtils.when(() -> JsonPipelineUtils.writeJsonString(any())).thenReturn(schemaString);
-      prepareAndAssertGetPipelineYamlSchemaInternal(
-          scope, () -> pmsYamlSchemaService.validateYamlSchemaInternal(ACC_ID, ORG_ID, PRJ_ID, yaml));
+      prepareAndAssertGetPipelineYamlSchemaInternal(scope,
+          ()
+              -> pmsYamlSchemaService.validateYamlSchemaInternal(
+                  ACC_ID, ORG_ID, PRJ_ID, YamlUtils.readAsJsonNode(yaml)));
     }
 
-    verify(yamlSchemaValidator).validate(eq(yaml), eq(schemaString), anyBoolean(), anyInt(), anyString());
+    verify(yamlSchemaValidator)
+        .validate(eq(YamlUtils.readAsJsonNode(yaml)), eq(schemaString), anyBoolean(), anyInt(), anyString());
   }
 
   private JsonNode readJsonNode(String resourceName) throws IOException {

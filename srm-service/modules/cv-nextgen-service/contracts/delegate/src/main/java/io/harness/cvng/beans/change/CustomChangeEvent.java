@@ -19,5 +19,6 @@ public class CustomChangeEvent {
   String changeEventDetailsLink;
   String externalLinkToEntity;
   String channelUrl;
+  String webhookUrl;
   MSHealthReport msHealthReport;
 }

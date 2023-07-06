@@ -10,6 +10,7 @@ package software.wings.delegatetasks.buildsource;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 
 import static software.wings.beans.artifact.ArtifactStreamType.ACR;
 import static software.wings.beans.artifact.ArtifactStreamType.AMI;
@@ -26,7 +27,6 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
-import io.harness.mongo.MongoConfig;
 import io.harness.persistence.HIterator;
 
 import software.wings.beans.Account;
@@ -105,7 +105,8 @@ public class BuildSourceCleanupHelper {
     Set<String> buildNumbers =
         isEmpty(builds) ? new HashSet<>() : builds.stream().map(BuildDetails::getNumber).collect(Collectors.toSet());
     List<Artifact> deletedArtifactsNew = new ArrayList<>();
-    try (HIterator<Artifact> artifacts = new HIterator<>(artifactService.prepareCleanupQuery(artifactStream).fetch())) {
+    try (HIterator<Artifact> artifacts =
+             new HIterator<>(artifactService.prepareCleanupQuery(artifactStream).limit(NO_LIMIT).fetch())) {
       for (Artifact artifact : artifacts) {
         if (!buildNumbers.contains(artifact.getBuildNo())) {
           deletedArtifactsNew.add(artifact);
@@ -158,7 +159,7 @@ public class BuildSourceCleanupHelper {
     List<Artifact> toBeDeletedArtifacts = new ArrayList<>();
     int deletedCount = 0;
     try (HIterator<Artifact> artifactHIterator =
-             new HIterator<>(artifactService.prepareCleanupQuery(artifactStream).limit(MongoConfig.NO_LIMIT).fetch())) {
+             new HIterator<>(artifactService.prepareCleanupQuery(artifactStream).limit(NO_LIMIT).fetch())) {
       for (Artifact artifact : artifactHIterator) {
         if (!buildDetailsMap.containsKey(artifactKeyFn.apply(artifact))) {
           toBeDeletedArtifacts.add(artifact);

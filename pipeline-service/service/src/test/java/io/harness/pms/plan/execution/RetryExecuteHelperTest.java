@@ -993,7 +993,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
         .when(executionService)
         .getPipelineExecutionSummaryEntity(accountId, orgId, projectId, planExecId, false);
     doReturn(Optional.empty()).when(pipelineService).getPipeline(accountId, orgId, projectId, pipelineId, false, false);
-    RetryInfo retryInfo = retryExecuteHelper.validateRetry(accountId, orgId, projectId, pipelineId, planExecId);
+    RetryInfo retryInfo = retryExecuteHelper.validateRetry(accountId, orgId, projectId, pipelineId, planExecId, null);
     assertThat(retryInfo.isResumable()).isFalse();
     assertThat(retryInfo.getErrorMessage())
         .isEqualTo("Pipeline with the given ID: pipeline does not exist or has been deleted");
@@ -1009,7 +1009,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
     doReturn(PipelineExecutionSummaryEntity.builder().isLatestExecution(false).build())
         .when(executionService)
         .getPipelineExecutionSummaryEntity(accountId, orgId, projectId, planExecId, false);
-    RetryInfo retryInfo = retryExecuteHelper.validateRetry(accountId, orgId, projectId, pipelineId, planExecId);
+    RetryInfo retryInfo = retryExecuteHelper.validateRetry(accountId, orgId, projectId, pipelineId, planExecId, null);
     assertThat(retryInfo.isResumable()).isFalse();
     assertThat(retryInfo.getErrorMessage())
         .isEqualTo(
@@ -1026,7 +1026,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
                  .build())
         .when(executionService)
         .getPipelineExecutionSummaryEntity(accountId, orgId, projectId, planExecId, false);
-    RetryInfo retryInfo = retryExecuteHelper.validateRetry(accountId, orgId, projectId, pipelineId, planExecId);
+    RetryInfo retryInfo = retryExecuteHelper.validateRetry(accountId, orgId, projectId, pipelineId, planExecId, null);
     assertThat(retryInfo.isResumable()).isFalse();
     assertThat(retryInfo.getErrorMessage())
         .isEqualTo("This execution has undergone Pipeline Rollback, and hence cannot be retried.");
@@ -1038,14 +1038,15 @@ public class RetryExecuteHelperTest extends CategoryTest {
   public void testValidateRetryWhenThirtyDaysHavePassed() {
     doReturn(Optional.of(PipelineEntity.builder().build()))
         .when(pipelineService)
-        .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false, false, false);
     doReturn(PipelineExecutionSummaryEntity.builder()
                  .isLatestExecution(true)
                  .createdAt(System.currentTimeMillis() - 60 * DAY_IN_MS)
                  .build())
         .when(executionService)
         .getPipelineExecutionSummaryEntity(accountId, orgId, projectId, planExecId, false);
-    RetryInfo retryInfo = retryExecuteHelper.validateRetry(accountId, orgId, projectId, pipelineId, planExecId);
+    RetryInfo retryInfo =
+        retryExecuteHelper.validateRetry(accountId, orgId, projectId, pipelineId, planExecId, "false");
     assertThat(retryInfo.isResumable()).isFalse();
     assertThat(retryInfo.getErrorMessage()).isEqualTo("Execution is more than 30 days old. Cannot retry");
   }
@@ -1056,7 +1057,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
   public void testValidateRetryWhenPlanExecutionDoesNotExist() {
     doReturn(Optional.of(PipelineEntity.builder().build()))
         .when(pipelineService)
-        .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false, false, false);
     doReturn(PipelineExecutionSummaryEntity.builder()
                  .isLatestExecution(true)
                  .createdAt(System.currentTimeMillis() - DAY_IN_MS)
@@ -1065,7 +1066,8 @@ public class RetryExecuteHelperTest extends CategoryTest {
         .getPipelineExecutionSummaryEntity(accountId, orgId, projectId, planExecId, false);
     doReturn(Optional.empty()).when(planExecutionMetadataService).findByPlanExecutionId(planExecId);
 
-    RetryInfo retryInfo = retryExecuteHelper.validateRetry(accountId, orgId, projectId, pipelineId, planExecId);
+    RetryInfo retryInfo =
+        retryExecuteHelper.validateRetry(accountId, orgId, projectId, pipelineId, planExecId, "false");
     assertThat(retryInfo.isResumable()).isFalse();
     assertThat(retryInfo.getErrorMessage()).isEqualTo("No Plan Execution exists for id plan");
   }
@@ -1079,7 +1081,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
 
     doReturn(Optional.of(PipelineEntity.builder().yaml(originalYaml).build()))
         .when(pipelineService)
-        .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false, false, false);
     doReturn(PipelineExecutionSummaryEntity.builder()
                  .isLatestExecution(true)
                  .createdAt(System.currentTimeMillis() - DAY_IN_MS)
@@ -1094,7 +1096,8 @@ public class RetryExecuteHelperTest extends CategoryTest {
         .when(planExecutionMetadataService)
         .findByPlanExecutionId(planExecId);
 
-    RetryInfo retryInfo = retryExecuteHelper.validateRetry(accountId, orgId, projectId, pipelineId, planExecId);
+    RetryInfo retryInfo =
+        retryExecuteHelper.validateRetry(accountId, orgId, projectId, pipelineId, planExecId, "false");
     assertThat(retryInfo.isResumable()).isTrue();
   }
 
@@ -1107,7 +1110,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
 
     doReturn(Optional.of(PipelineEntity.builder().yaml(originalYaml).build()))
         .when(pipelineService)
-        .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false, false, false);
     doReturn(PipelineExecutionSummaryEntity.builder()
                  .isLatestExecution(true)
                  .createdAt(System.currentTimeMillis() - DAY_IN_MS)
@@ -1118,7 +1121,8 @@ public class RetryExecuteHelperTest extends CategoryTest {
         .when(planExecutionMetadataService)
         .findByPlanExecutionId(planExecId);
 
-    RetryInfo retryInfo = retryExecuteHelper.validateRetry(accountId, orgId, projectId, pipelineId, planExecId);
+    RetryInfo retryInfo =
+        retryExecuteHelper.validateRetry(accountId, orgId, projectId, pipelineId, planExecId, "false");
     assertThat(retryInfo.isResumable()).isTrue();
   }
 
@@ -1143,7 +1147,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
 
     doReturn(Optional.of(PipelineEntity.builder().yaml(pipelineYaml).build()))
         .when(pipelineService)
-        .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false, false, false);
     doReturn(PipelineExecutionSummaryEntity.builder()
                  .isLatestExecution(true)
                  .createdAt(System.currentTimeMillis() - DAY_IN_MS)
@@ -1162,7 +1166,8 @@ public class RetryExecuteHelperTest extends CategoryTest {
         .when(planExecutionMetadataService)
         .findByPlanExecutionId(planExecId);
 
-    RetryInfo retryInfo = retryExecuteHelper.validateRetry(accountId, orgId, projectId, pipelineId, planExecId);
+    RetryInfo retryInfo =
+        retryExecuteHelper.validateRetry(accountId, orgId, projectId, pipelineId, planExecId, "false");
     assertThat(retryInfo.isResumable()).isTrue();
   }
 

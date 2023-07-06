@@ -9,7 +9,6 @@ package io.harness.beans.steps.stepinfo.security.shared;
 
 import static io.harness.annotations.dev.HarnessTeam.STO;
 import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -40,7 +39,7 @@ public class STOYamlAdvancedSettings {
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH, name = "include_raw")
   private ParameterField<Boolean> includeRaw;
 
-  @YamlSchemaTypes(value = {expression})
+  @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlFailOnSeverity", name = "fail_on_severity")
-  private ParameterField<STOYamlFailOnSeverity> failOnSeverity;
+  private STOYamlFailOnSeverity failOnSeverity;
 }

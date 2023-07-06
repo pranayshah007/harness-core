@@ -25,7 +25,6 @@ import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
-import io.harness.beans.FeatureName;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
@@ -74,6 +73,7 @@ import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverridev2.beans.NGServiceOverrideConfigV2;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
+import io.harness.ng.core.utils.ServiceOverrideV2ValidationHelper;
 import io.harness.ngsettings.SettingValueType;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngsettings.dto.SettingValueResponseDTO;
@@ -149,6 +149,8 @@ public class ServiceStepV3Test extends CategoryTest {
 
   @Mock private NGSettingsClient ngSettingsClient;
   @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
+  @Mock ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
+
   private AutoCloseable mocks;
   @InjectMocks private ServiceStepV3 step = new ServiceStepV3();
 
@@ -351,8 +353,7 @@ public class ServiceStepV3Test extends CategoryTest {
     final Environment environment = testEnvEntity();
 
     doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
-    doReturn(false).when(ngFeatureFlagHelperService).isEnabled(anyString(), eq(FeatureName.CDS_SERVICE_OVERRIDES_2_0));
-
+    doReturn(false).when(overrideV2ValidationHelper).isOverridesV2Enabled(any(), any(), any());
     mockService(serviceEntity);
     mockEnv(environment);
 
@@ -385,7 +386,7 @@ public class ServiceStepV3Test extends CategoryTest {
     final Environment environment = testOrgEnvEntity();
 
     doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
-    doReturn(false).when(ngFeatureFlagHelperService).isEnabled(anyString(), eq(FeatureName.CDS_SERVICE_OVERRIDES_2_0));
+    doReturn(false).when(overrideV2ValidationHelper).isOverridesV2Enabled(any(), any(), any());
 
     mockService(serviceEntity);
     mockEnv(environment);
@@ -419,7 +420,7 @@ public class ServiceStepV3Test extends CategoryTest {
     final Environment environment = testAccountEnvEntity();
 
     doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
-    doReturn(false).when(ngFeatureFlagHelperService).isEnabled(anyString(), eq(FeatureName.CDS_SERVICE_OVERRIDES_2_0));
+    doReturn(false).when(overrideV2ValidationHelper).isOverridesV2Enabled(any(), any(), any());
     mockService(serviceEntity);
     mockEnv(environment);
 
@@ -701,7 +702,7 @@ public class ServiceStepV3Test extends CategoryTest {
     final Environment environment = testEnvEntity();
     mockService(serviceEntity);
     mockEnv(environment);
-    doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), eq(FeatureName.CDS_SERVICE_OVERRIDES_2_0));
+    doReturn(true).when(overrideV2ValidationHelper).isOverridesV2Enabled(any(), any(), any());
     SettingValueResponseDTO settingValueResponseDTO =
         SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
     doReturn(request).when(ngSettingsClient).getSetting(anyString(), anyString(), anyString(), anyString());
@@ -739,8 +740,7 @@ public class ServiceStepV3Test extends CategoryTest {
     final Environment environment = testEnvEntity();
     mockService(serviceEntity);
     mockEnv(environment);
-    doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), eq(FeatureName.CDS_SERVICE_OVERRIDES_2_0));
-
+    doReturn(true).when(overrideV2ValidationHelper).isOverridesV2Enabled(any(), any(), any());
     SettingValueResponseDTO settingValueResponseDTO =
         SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
     doReturn(request).when(ngSettingsClient).getSetting(anyString(), anyString(), anyString(), anyString());
@@ -792,7 +792,7 @@ public class ServiceStepV3Test extends CategoryTest {
     final Environment environment = testEnvEntity();
     mockService(serviceEntity);
     mockEnv(environment);
-    doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), eq(FeatureName.CDS_SERVICE_OVERRIDES_2_0));
+    doReturn(true).when(overrideV2ValidationHelper).isOverridesV2Enabled(any(), any(), any());
     SettingValueResponseDTO settingValueResponseDTO =
         SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
     doReturn(request).when(ngSettingsClient).getSetting(anyString(), anyString(), anyString(), anyString());

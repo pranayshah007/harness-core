@@ -40,23 +40,6 @@ import lombok.extern.slf4j.Slf4j;
 @UtilityClass
 @Slf4j
 public class StagesExpressionExtractor {
-  public String replaceExpressions(String pipelineYaml, Map<String, String> expressionValues) {
-    if (EmptyPredicate.isEmpty(expressionValues)) {
-      return pipelineYaml;
-    }
-    for (Map.Entry<String, String> entry : expressionValues.entrySet()) {
-      String expression = entry.getKey();
-      String replacement = entry.getValue();
-      if (!NGExpressionUtils.containsPattern(NGExpressionUtils.GENERIC_EXPRESSIONS_PATTERN, expression)) {
-        log.error(expression + " is not a syntactically valid pipeline expression.");
-        throw new InvalidRequestException(
-            expression + " is not a syntactically valid pipeline expression. Is the expression surrounded by <+ >?");
-      }
-      pipelineYaml = pipelineYaml.replace(expression, replacement);
-    }
-    return pipelineYaml;
-  }
-
   public String replaceExpressionsWithJsonNode(String pipelineYaml, Map<String, String> expressionValues) {
     if (EmptyPredicate.isEmpty(expressionValues)) {
       return pipelineYaml;

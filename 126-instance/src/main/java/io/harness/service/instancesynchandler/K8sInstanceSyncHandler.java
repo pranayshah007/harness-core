@@ -10,13 +10,20 @@ package io.harness.service.instancesynchandler;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DIRECT;
 
+import static software.wings.beans.TaskType.INSTANCE_SYNC_V2_NG_SUPPORT;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
+import io.harness.cdng.infra.beans.K8sRancherInfrastructureOutcome;
+import io.harness.delegate.AccountId;
+import io.harness.delegate.TaskType;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
@@ -29,13 +36,16 @@ import io.harness.entities.InstanceType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.helper.K8sAndHelmInfrastructureUtility;
 import io.harness.helper.K8sCloudConfigMetadata;
+import io.harness.helper.KubernetesInfrastructureDTO;
 import io.harness.models.infrastructuredetails.InfrastructureDetails;
 import io.harness.models.infrastructuredetails.K8sInfrastructureDetails;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.perpetualtask.PerpetualTaskType;
 import io.harness.perpetualtask.instancesync.DeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesync.k8s.K8sDeploymentReleaseDetails;
+import io.harness.service.DelegateGrpcClientWrapper;
 
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -49,6 +59,8 @@ import org.apache.commons.lang3.tuple.Pair;
 @Singleton
 @Slf4j
 public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
+  @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Override
   public String getPerpetualTaskType() {
     return PerpetualTaskType.K8S_INSTANCE_SYNC;
@@ -69,8 +81,10 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
     return KUBERNETES_DIRECT;
   }
 
-  public boolean isInstanceSyncV2Enabled() {
-    return false;
+  public boolean isInstanceSyncV2EnabledAndSupported(String accountId) {
+    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_K8S_HELM_INSTANCE_SYNC_V2_NG)
+        && delegateGrpcClientWrapper.isTaskTypeSupported(AccountId.newBuilder().setId(accountId).build(),
+            TaskType.newBuilder().setType(INSTANCE_SYNC_V2_NG_SUPPORT.name()).build());
   }
 
   @Override
@@ -136,9 +150,10 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
     if (!((infrastructureOutcome instanceof K8sDirectInfrastructureOutcome)
             || (infrastructureOutcome instanceof K8sGcpInfrastructureOutcome)
             || (infrastructureOutcome instanceof K8sAwsInfrastructureOutcome)
-            || (infrastructureOutcome instanceof K8sAzureInfrastructureOutcome))) {
+            || (infrastructureOutcome instanceof K8sAzureInfrastructureOutcome)
+            || (infrastructureOutcome instanceof K8sRancherInfrastructureOutcome))) {
       throw new InvalidArgumentsException(Pair.of("infrastructureOutcome",
-          "Must be instance of K8sDirectInfrastructureOutcome, K8sGcpInfrastructureOutcome, K8sAwsInfrastructureOutcome or K8sAzureInfrastructureOutcome"));
+          "Must be instance of K8sDirectInfrastructureOutcome, K8sGcpInfrastructureOutcome, K8sAwsInfrastructureOutcome, K8sAzureInfrastructureOutcome or K8sRancherInfrastructureOutcome"));
     }
     if (!(serverInstanceInfoList.get(0) instanceof K8sServerInstanceInfo)) {
       throw new InvalidArgumentsException(Pair.of("serverInstanceInfo", "Must be instance of K8sServerInstanceInfo"));
@@ -161,8 +176,17 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
   @Override
   public InfrastructureOutcome getInfrastructureOutcome(
       String infrastructureKind, DeploymentInfoDTO deploymentInfoDTO, String connectorRef) {
+    K8sDeploymentInfoDTO k8sDeploymentInfoDTO = (K8sDeploymentInfoDTO) deploymentInfoDTO;
+    KubernetesInfrastructureDTO kubernetesInfrastructureDTO =
+        KubernetesInfrastructureDTO.builder()
+            .namespaces(k8sDeploymentInfoDTO.getNamespaces())
+            .releaseName(k8sDeploymentInfoDTO.getReleaseName())
+            .cloudConfigMetadata(k8sDeploymentInfoDTO.getCloudConfigMetadata() == null
+                    ? null
+                    : k8sDeploymentInfoDTO.getCloudConfigMetadata())
+            .build();
     return K8sAndHelmInfrastructureUtility.getInfrastructureOutcome(
-        infrastructureKind, deploymentInfoDTO, connectorRef);
+        infrastructureKind, kubernetesInfrastructureDTO, connectorRef);
   }
 
   private LinkedHashSet<String> getNamespaces(@NotNull List<ServerInstanceInfo> serverInstanceInfoList) {

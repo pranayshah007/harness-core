@@ -10,16 +10,18 @@ package io.harness.cdng.k8s;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.CDS_K8S_SOCKET_CAPABILITY_CHECK_NG;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.beans.connector.ConnectorType.AWS;
 import static io.harness.delegate.beans.connector.ConnectorType.AZURE;
 import static io.harness.delegate.beans.connector.ConnectorType.GCP;
 import static io.harness.delegate.beans.connector.ConnectorType.KUBERNETES_CLUSTER;
+import static io.harness.delegate.beans.connector.ConnectorType.RANCHER;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AWS;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AZURE;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DIRECT;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_GCP;
+import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_RANCHER;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -33,6 +35,7 @@ import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
+import io.harness.cdng.infra.beans.K8sRancherInfrastructureOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -45,11 +48,13 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthCredentialD
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterDetailsDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
+import io.harness.delegate.beans.connector.rancher.RancherConnectorDTO;
 import io.harness.delegate.task.k8s.AzureK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.EksK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.GcpK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
+import io.harness.delegate.task.k8s.RancherK8sInfraDelegateConfig;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.KubernetesHelperService;
@@ -99,48 +104,27 @@ public class K8sEntityHelper {
 
       case HTTP_HELM_REPO:
         HttpHelmConnectorDTO httpHelmConnectorDTO = (HttpHelmConnectorDTO) connectorDTO.getConnectorConfig();
-        List<DecryptableEntity> decryptableEntities = httpHelmConnectorDTO.getDecryptableEntities();
-        if (isNotEmpty(decryptableEntities)) {
-          return secretManagerClientService.getEncryptionDetails(ngAccess, decryptableEntities.get(0));
-        } else {
-          return emptyList();
-        }
+        return getEncryptionDataDetailsInternal(ngAccess, httpHelmConnectorDTO.getDecryptableEntities());
 
       case OCI_HELM_REPO:
         OciHelmConnectorDTO ociHelmConnectorDTO = (OciHelmConnectorDTO) connectorDTO.getConnectorConfig();
-        List<DecryptableEntity> ociDecryptableEntities = ociHelmConnectorDTO.getDecryptableEntities();
-        if (isNotEmpty(ociDecryptableEntities)) {
-          return secretManagerClientService.getEncryptionDetails(ngAccess, ociDecryptableEntities.get(0));
-        } else {
-          return emptyList();
-        }
+        return getEncryptionDataDetailsInternal(ngAccess, ociHelmConnectorDTO.getDecryptableEntities());
 
       case AWS:
         AwsConnectorDTO awsConnectorDTO = (AwsConnectorDTO) connectorDTO.getConnectorConfig();
-        List<DecryptableEntity> awsDecryptableEntities = awsConnectorDTO.getDecryptableEntities();
-        if (isNotEmpty(awsDecryptableEntities)) {
-          return secretManagerClientService.getEncryptionDetails(ngAccess, awsDecryptableEntities.get(0));
-        } else {
-          return emptyList();
-        }
+        return getEncryptionDataDetailsInternal(ngAccess, awsConnectorDTO.getDecryptableEntities());
 
       case GCP:
         GcpConnectorDTO gcpConnectorDTO = (GcpConnectorDTO) connectorDTO.getConnectorConfig();
-        List<DecryptableEntity> gcpDecryptableEntities = gcpConnectorDTO.getDecryptableEntities();
-        if (isNotEmpty(gcpDecryptableEntities)) {
-          return secretManagerClientService.getEncryptionDetails(ngAccess, gcpDecryptableEntities.get(0));
-        } else {
-          return emptyList();
-        }
+        return getEncryptionDataDetailsInternal(ngAccess, gcpConnectorDTO.getDecryptableEntities());
 
       case AZURE:
         AzureConnectorDTO azureConnectorDTO = (AzureConnectorDTO) connectorDTO.getConnectorConfig();
-        List<DecryptableEntity> azureDecryptableEntities = azureConnectorDTO.getDecryptableEntities();
-        if (isNotEmpty(azureDecryptableEntities)) {
-          return secretManagerClientService.getEncryptionDetails(ngAccess, azureDecryptableEntities.get(0));
-        } else {
-          return emptyList();
-        }
+        return getEncryptionDataDetailsInternal(ngAccess, azureConnectorDTO.getDecryptableEntities());
+
+      case RANCHER:
+        RancherConnectorDTO rancherConnectorDTO = (RancherConnectorDTO) connectorDTO.getConnectorConfig();
+        return getEncryptionDataDetailsInternal(ngAccess, rancherConnectorDTO.getDecryptableEntities());
 
       case APP_DYNAMICS:
       case SPLUNK:
@@ -149,6 +133,14 @@ public class K8sEntityHelper {
         throw new UnsupportedOperationException(
             format("Unsupported connector type : [%s]", connectorDTO.getConnectorType()));
     }
+  }
+
+  private List<EncryptedDataDetail> getEncryptionDataDetailsInternal(
+      @Nonnull NGAccess ngAccess, List<DecryptableEntity> decryptableEntities) {
+    if (isEmpty(decryptableEntities)) {
+      return emptyList();
+    }
+    return secretManagerClientService.getEncryptionDetails(ngAccess, decryptableEntities.get(0));
   }
 
   public ConnectorInfoDTO getConnectorInfoDTO(String connectorId, NGAccess ngAccess) {
@@ -219,12 +211,24 @@ public class K8sEntityHelper {
               .encryptionDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
               .build();
 
+        case KUBERNETES_RANCHER:
+          K8sRancherInfrastructureOutcome k8sRancherInfrastructure = (K8sRancherInfrastructureOutcome) infrastructure;
+          KubernetesHelperService.validateNamespace(k8sRancherInfrastructure.getNamespace());
+          KubernetesHelperService.validateCluster(k8sRancherInfrastructure.getClusterName());
+
+          return RancherK8sInfraDelegateConfig.builder()
+              .namespace(k8sRancherInfrastructure.getNamespace())
+              .cluster(k8sRancherInfrastructure.getClusterName())
+              .rancherConnectorDTO((RancherConnectorDTO) connectorDTO.getConnectorConfig())
+              .encryptionDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
+              .build();
+
         default:
           throw new UnsupportedOperationException(
               format("Unsupported Infrastructure type: [%s]", infrastructure.getKind()));
       }
     } catch (ClassCastException ex) {
-      if (Set.of(KUBERNETES_DIRECT, KUBERNETES_GCP, KUBERNETES_AZURE, KUBERNETES_AWS)
+      if (Set.of(KUBERNETES_DIRECT, KUBERNETES_GCP, KUBERNETES_AZURE, KUBERNETES_AWS, KUBERNETES_RANCHER)
               .contains(infrastructure.getKind())) {
         String requiredConnectorType = getRequiredConnectorType(infrastructure.getKind());
         throw new InvalidArgumentsException(Pair.of("connectorRef",
@@ -245,6 +249,8 @@ public class K8sEntityHelper {
         return AZURE.getDisplayName();
       case KUBERNETES_AWS:
         return AWS.getDisplayName();
+      case KUBERNETES_RANCHER:
+        return RANCHER.getDisplayName();
       default:
         return StringUtils.EMPTY;
     }

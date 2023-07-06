@@ -112,4 +112,5 @@ public class CVNGDataCollectionDelegateServiceImplTest extends CategoryTest {
       assertThat(e.getMessage().startsWith("Response"));
     }
   }
+  // TODO Add proper tests here , assert we save the call logs
 }

@@ -29,6 +29,7 @@ import io.harness.beans.steps.nodes.security.BurpScanNode;
 import io.harness.beans.steps.nodes.security.CheckmarxScanNode;
 import io.harness.beans.steps.nodes.security.ClairScanNode;
 import io.harness.beans.steps.nodes.security.CodeqlScanNode;
+import io.harness.beans.steps.nodes.security.CoverityScanNode;
 import io.harness.beans.steps.nodes.security.CustomIngestScanNode;
 import io.harness.beans.steps.nodes.security.DataTheoremScanNode;
 import io.harness.beans.steps.nodes.security.DockerContentTrustScanNode;
@@ -104,6 +105,8 @@ public enum STOStepType {
   CHECKMARX("Checkmarx", null, null, CheckmarxScanNode.class, EntityType.CHECKMARX, new String[] {SAST}),
   CLAIR("Clair", null, FeatureName.STO_STEPS_TEST_MODE, ClairScanNode.class, EntityType.CLAIR,
       new String[] {CONTAINER_SECURITY}),
+  COVERITY("Coverity", null, FeatureName.STO_STEP_PALETTE_COVERITY, CoverityScanNode.class, EntityType.COVERITY,
+      new String[] {SAST}),
   DATA_THEOREM("DataTheorem", "Data Theorem", FeatureName.STO_STEPS_TEST_MODE, DataTheoremScanNode.class,
       EntityType.DATA_THEOREM, new String[] {SECURITY}),
   DOCKER_CONTENT_TRUST("DockerContentTrust", "Docker Content Trust", FeatureName.STO_STEPS_TEST_MODE,

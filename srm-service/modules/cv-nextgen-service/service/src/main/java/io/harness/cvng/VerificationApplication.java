@@ -1219,10 +1219,10 @@ public class VerificationApplication extends Application<VerificationConfigurati
         PredefinedTemplate.CVNG_SLO_COMPOSITE_PROJECT_EMAIL, PredefinedTemplate.CVNG_SLO_COMPOSITE_PROJECT_PAGERDUTY,
         PredefinedTemplate.CVNG_SLO_COMPOSITE_PROJECT_MSTEAMS, PredefinedTemplate.CVNG_SLO_COMPOSITE_ACCOUNT_SLACK,
         PredefinedTemplate.CVNG_SLO_COMPOSITE_ACCOUNT_EMAIL, PredefinedTemplate.CVNG_SLO_COMPOSITE_ACCOUNT_PAGERDUTY,
-        PredefinedTemplate.CVNG_SLO_COMPOSITE_ACCOUNT_MSTEAMS, PredefinedTemplate.CVNG_MONITOREDSERVICE_SLACK,
-        PredefinedTemplate.CVNG_MONITOREDSERVICE_EMAIL, PredefinedTemplate.CVNG_MONITOREDSERVICE_PAGERDUTY,
-        PredefinedTemplate.CVNG_MONITOREDSERVICE_MSTEAMS, PredefinedTemplate.CVNG_MONITOREDSERVICE_ET_SLACK,
-        PredefinedTemplate.CVNG_MONITOREDSERVICE_ET_EMAIL));
+        PredefinedTemplate.CVNG_SLO_COMPOSITE_ACCOUNT_MSTEAMS, PredefinedTemplate.CVNG_FIREHYDRANT_SLACK,
+        PredefinedTemplate.CVNG_MONITOREDSERVICE_SLACK, PredefinedTemplate.CVNG_MONITOREDSERVICE_EMAIL,
+        PredefinedTemplate.CVNG_MONITOREDSERVICE_PAGERDUTY, PredefinedTemplate.CVNG_MONITOREDSERVICE_MSTEAMS,
+        PredefinedTemplate.CVNG_MONITOREDSERVICE_ET_SLACK, PredefinedTemplate.CVNG_MONITOREDSERVICE_ET_EMAIL));
 
     if (configuration.getShouldConfigureWithNotification()) {
       for (PredefinedTemplate template : templates) {

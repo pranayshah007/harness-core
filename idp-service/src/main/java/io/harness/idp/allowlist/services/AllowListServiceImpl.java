@@ -16,8 +16,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.common.CommonUtils;
 import io.harness.idp.common.YamlUtils;
-import io.harness.idp.configmanager.ConfigType;
 import io.harness.idp.configmanager.service.ConfigManagerService;
+import io.harness.idp.configmanager.utils.ConfigManagerUtils;
+import io.harness.idp.configmanager.utils.ConfigType;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.HostInfo;
 
@@ -41,16 +42,17 @@ public class AllowListServiceImpl implements AllowListService {
   private static final String INVALID_SCHEMA_FOR_ALLOW_LIST =
       "Invalid json schema for allow list config for account - %s";
   private static final String ALLOW_LIST = "allow-list";
-  private static final String BACKEND_PROPERTY = "backend";
   private static final String READING_PROPERTY = "reading";
   private static final String ALLOW_PROPERTY = "allow";
+  private static final String PATHS_PROPERTY = "paths";
 
   @Override
   public List<HostInfo> getAllowList(String harnessAccount) throws Exception {
     AppConfig appConfig = configManagerService.getAppConfig(harnessAccount, ALLOW_LIST, ConfigType.BACKEND);
     if (appConfig != null) {
       JsonNode jsonNode = asJsonNode(appConfig.getConfigs());
-      return Arrays.asList(YamlUtils.read(getReadingNode(jsonNode).get(ALLOW_PROPERTY).toString(), HostInfo[].class));
+      JsonNode readingNode = ConfigManagerUtils.getNodeByName(jsonNode, READING_PROPERTY);
+      return Arrays.asList(YamlUtils.read(readingNode.get(ALLOW_PROPERTY).toString(), HostInfo[].class));
     }
     return new ArrayList<>();
   }
@@ -58,17 +60,23 @@ public class AllowListServiceImpl implements AllowListService {
   @Override
   public List<HostInfo> saveAllowList(List<HostInfo> hostInfoList, String harnessAccount) throws Exception {
     JsonNode allowListNode = asJsonNode(YamlUtils.writeObjectAsYaml(hostInfoList));
+    removePathsNodeIfEmpty(allowListNode);
     String yamlString = CommonUtils.readFileFromClassPath(ALLOW_LIST_CONFIG_FILE);
     JsonNode rootNode = asJsonNode(yamlString);
-    getReadingNode(rootNode).put(ALLOW_PROPERTY, allowListNode);
+    JsonNode readingNode = ConfigManagerUtils.getNodeByName(rootNode, READING_PROPERTY);
+    ((ObjectNode) readingNode).put(ALLOW_PROPERTY, allowListNode);
     String config = asYaml(rootNode.toString());
     createOrUpdateAllowListAppConfig(config, harnessAccount);
     return hostInfoList;
   }
 
-  private ObjectNode getReadingNode(JsonNode rootNode) {
-    JsonNode backendNode = rootNode.get(BACKEND_PROPERTY);
-    return (ObjectNode) backendNode.get(READING_PROPERTY);
+  private void removePathsNodeIfEmpty(JsonNode jsonNode) {
+    for (JsonNode allowNode : jsonNode) {
+      JsonNode pathsNode = allowNode.get(PATHS_PROPERTY);
+      if (pathsNode.isArray() && pathsNode.isEmpty()) {
+        ((ObjectNode) allowNode).remove(PATHS_PROPERTY);
+      }
+    }
   }
 
   private void createOrUpdateAllowListAppConfig(String config, String accountIdentifier) throws Exception {
@@ -81,8 +89,7 @@ public class AllowListServiceImpl implements AllowListService {
     appConfig.setConfigs(config);
     appConfig.setEnabled(true);
 
-    configManagerService.saveOrUpdateConfigForAccount(appConfig, accountIdentifier, ConfigType.BACKEND);
-    configManagerService.mergeAndSaveAppConfig(accountIdentifier);
+    configManagerService.saveUpdateAndMergeConfigForAccount(appConfig, accountIdentifier, ConfigType.BACKEND);
 
     log.info("Merging for allow list config completed for accountId - {}", accountIdentifier);
   }

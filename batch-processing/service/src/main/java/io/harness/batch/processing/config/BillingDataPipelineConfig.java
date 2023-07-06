@@ -25,6 +25,7 @@ public class BillingDataPipelineConfig {
   private String clusterDataGcsBackupBucketName;
   private boolean awsUseNewPipeline;
   private String awsRoleName;
+  private int bufferSizeInMB;
 
   public String getGcpPipelinePubSubTopic() {
     return "projects/" + gcpProjectId + "/topics/" + gcpPipelinePubSubTopic;

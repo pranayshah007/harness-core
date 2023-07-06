@@ -22,7 +22,7 @@ for KEY in ${KEYS[@]}
 
     components=$(echo "${response}" | jq -r '.fields.components')
 
-    if name=$(echo "${components}" | jq -r '.[] | select(.name == "Pipeline") | .name'); test -n "${name}"; then
+    if name=$(echo "${components}" | jq -r '.[] | select(.name == "Pipeline" or .name == "YAML" or .name == "ORCHESTRATION" or .name == "Expression Engine") | .name'); test -n "${name}"; then
       FINAL_KEYS+=( "$KEY" )
     fi
   done

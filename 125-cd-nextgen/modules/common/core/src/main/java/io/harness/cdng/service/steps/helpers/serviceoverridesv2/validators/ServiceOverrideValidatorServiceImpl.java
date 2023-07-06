@@ -135,7 +135,7 @@ public class ServiceOverrideValidatorServiceImpl implements ServiceOverrideValid
                                               .collect(Collectors.toList());
       if (isNotEmpty(duplicateIdentifiers)) {
         throw new InvalidRequestException(
-            String.format("found duplicate manifests %s in override request", duplicateIdentifiers.toString()));
+            String.format("found duplicate config files %s in override request", duplicateIdentifiers.toString()));
       }
     }
   }

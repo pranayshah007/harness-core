@@ -14,6 +14,7 @@ import io.harness.beans.GraphVertex;
 import io.harness.beans.stepDetail.NodeExecutionDetailsInfo;
 import io.harness.beans.stepDetail.NodeExecutionsInfo;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.dto.GraphDelegateSelectionLogParams;
 import io.harness.execution.NodeExecution;
 import io.harness.pms.contracts.ambiance.Level;
@@ -33,7 +34,7 @@ import java.util.stream.Collectors;
 public class GraphVertexConverter {
   @Inject DelegateInfoHelper delegateInfoHelper;
 
-  public GraphVertex convertFrom(NodeExecution nodeExecution) {
+  public GraphVertex convertFrom(NodeExecution nodeExecution, List<String> logBaseKeys) {
     List<GraphDelegateSelectionLogParams> graphDelegateSelectionLogParamsList =
         delegateInfoHelper.getDelegateInformationForGivenTask(nodeExecution.getExecutableResponses(),
             nodeExecution.getMode(), AmbianceUtils.getAccountId(nodeExecution.getAmbiance()));
@@ -54,7 +55,6 @@ public class GraphVertexConverter {
         .stepType(stepType)
         .status(nodeExecution.getStatus())
         .failureInfo(nodeExecution.getFailureInfo())
-        .skipInfo(nodeExecution.getSkipInfo())
         .nodeRunInfo(nodeExecution.getNodeRunInfo())
         .mode(nodeExecution.getMode())
         .executableResponses(CollectionUtils.emptyIfNull(nodeExecution.getExecutableResponses()))
@@ -65,11 +65,12 @@ public class GraphVertexConverter {
         .progressData(nodeExecution.getPmsProgressData())
         .graphDelegateSelectionLogParams(graphDelegateSelectionLogParamsList)
         .executionInputConfigured(nodeExecution.getExecutionInputConfigured())
+        .logBaseKey(EmptyPredicate.isNotEmpty(logBaseKeys) ? logBaseKeys.get(0) : "")
         .build();
   }
 
-  public GraphVertex convertFrom(
-      NodeExecution nodeExecution, Map<String, PmsOutcome> outcomes, NodeExecutionsInfo nodeExecutionsInfo) {
+  public GraphVertex convertFrom(NodeExecution nodeExecution, Map<String, PmsOutcome> outcomes,
+      NodeExecutionsInfo nodeExecutionsInfo, List<String> logBaseKeys) {
     List<GraphDelegateSelectionLogParams> graphDelegateSelectionLogParamsList =
         delegateInfoHelper.getDelegateInformationForGivenTask(nodeExecution.getExecutableResponses(),
             nodeExecution.getMode(), AmbianceUtils.getAccountId(nodeExecution.getAmbiance()));
@@ -89,7 +90,6 @@ public class GraphVertexConverter {
         .failureInfo(nodeExecution.getFailureInfo())
         .stepParameters(
             nodeExecutionsInfo == null ? nodeExecution.getPmsStepParameters() : nodeExecutionsInfo.getResolvedInputs())
-        .skipInfo(nodeExecution.getSkipInfo())
         .nodeRunInfo(nodeExecution.getNodeRunInfo())
         .mode(nodeExecution.getMode())
         .executableResponses(CollectionUtils.emptyIfNull(nodeExecution.getExecutableResponses()))
@@ -101,6 +101,7 @@ public class GraphVertexConverter {
         .unitProgresses(nodeExecution.getUnitProgresses())
         .progressData(nodeExecution.getPmsProgressData())
         .graphDelegateSelectionLogParams(graphDelegateSelectionLogParamsList)
+        .logBaseKey(EmptyPredicate.isNotEmpty(logBaseKeys) ? logBaseKeys.get(0) : "")
         .stepDetails(nodeExecutionsInfo == null
                 ? new HashMap<>()
                 : nodeExecutionsInfo.getNodeExecutionDetailsInfoList().stream().collect(

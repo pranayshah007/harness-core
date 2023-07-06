@@ -22,4 +22,5 @@ import lombok.Data;
 @OwnedBy(CE)
 public class AzureVmItemDTO {
   @JsonProperty("retailPrice") double retailPrice;
+  @JsonProperty("skuName") String skuName;
 }

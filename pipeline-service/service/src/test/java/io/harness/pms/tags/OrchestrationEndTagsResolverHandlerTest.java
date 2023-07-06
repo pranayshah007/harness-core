@@ -24,6 +24,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.Sets;
@@ -63,14 +64,17 @@ public class OrchestrationEndTagsResolverHandlerTest extends CategoryTest {
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
   public void testOnEnd() {
-    PipelineExecutionSummaryEntity dummyEntity =
-        PipelineExecutionSummaryEntity.builder().tag(NGTag.builder().key("key1").value("value1").build()).build();
+    PipelineExecutionSummaryEntity dummyEntity = PipelineExecutionSummaryEntity.builder()
+                                                     .tag(NGTag.builder().key("key1").value("value1").build())
+                                                     .pipelineVersion(PipelineVersion.V0)
+                                                     .build();
     List<NGTag> dummyTags = new ArrayList<>();
     Ambiance ambiance =
         Ambiance.newBuilder().putAllSetupAbstractions(setupAbstractions).setPlanExecutionId(PLAN_EXECUTION_ID).build();
     doReturn(dummyEntity)
         .when(pmsExecutionSummaryService)
-        .getPipelineExecutionSummaryWithProjections(PLAN_EXECUTION_ID, Sets.newHashSet(PlanExecutionSummaryKeys.tags));
+        .getPipelineExecutionSummaryWithProjections(PLAN_EXECUTION_ID,
+            Sets.newHashSet(PlanExecutionSummaryKeys.tags, PlanExecutionSummaryKeys.pipelineVersion));
     doReturn(dummyTags).when(pmsEngineExpressionService).resolve(ambiance, dummyEntity.getTags(), true);
     orchestrationEndTagsResolveHandler.onEnd(ambiance);
 

@@ -318,8 +318,9 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       pipelineEntity = getAndValidatePipeline(
           accountId, orgIdentifier, projectIdentifier, pipelineId, false, loadFromFallbackBranch, loadFromCache);
     }
-    if (pipelineEntity.isPresent() && StoreType.REMOTE.equals(pipelineEntity.get().getStoreType())) {
-      pmsPipelineServiceHelper.computePipelineReferences(pipelineEntity.get(), loadFromCache);
+    if (pipelineEntity.isPresent()
+        && PipelineGitXHelper.shouldPublishSetupUsages(loadFromCache, pipelineEntity.get().getStoreType())) {
+      pmsPipelineServiceHelper.computePipelineReferences(pipelineEntity.get());
     }
     return PipelineGetResult.builder().pipelineEntity(pipelineEntity).asyncValidationUUID(validationUUID).build();
   }
@@ -798,6 +799,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     for (StepPalleteModuleInfo request : stepPalleteFilterWrapper.getStepPalleteModuleInfos()) {
       String module = request.getModule();
       String category = request.getCategory();
+
       StepPalleteInfo stepPalleteInfo = serviceInstanceNameToSupportedSteps.get(module);
       if (stepPalleteInfo == null) {
         continue;
@@ -856,8 +858,10 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     if (!pmsFeatureFlagService.isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE)) {
       return null;
     }
-    return pipelineGovernanceService.getExpandedPipelineJSONFromYaml(
-        accountId, orgIdentifier, projectIdentifier, pipelineEntityOptional.get().getYaml(), null, null);
+
+    String branch = GitAwareContextHelper.getBranchInRequestOrFromSCMGitMetadata();
+    return pipelineGovernanceService.getExpandedPipelineJSONFromYaml(accountId, orgIdentifier, projectIdentifier,
+        pipelineEntityOptional.get().getYaml(), branch, pipelineEntityOptional.get());
   }
 
   @Override
@@ -954,17 +958,16 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
 
   private void setupGitContext(MoveConfigOperationDTO moveConfigDTO) {
-    GitAwareContextHelper.populateGitDetails(
-        GitEntityInfo.builder()
-            .branch(moveConfigDTO.getBranch())
-            .filePath(moveConfigDTO.getFilePath())
-            .commitMsg(moveConfigDTO.getCommitMessage())
-            .isNewBranch(isNotEmpty(moveConfigDTO.getBranch()) && isNotEmpty(moveConfigDTO.getBaseBranch()))
-            .baseBranch(moveConfigDTO.getBaseBranch())
-            .connectorRef(moveConfigDTO.getConnectorRef())
-            .storeType(StoreType.REMOTE)
-            .repoName(moveConfigDTO.getRepoName())
-            .build());
+    GitAwareContextHelper.populateGitDetails(GitEntityInfo.builder()
+                                                 .branch(moveConfigDTO.getBranch())
+                                                 .filePath(moveConfigDTO.getFilePath())
+                                                 .commitMsg(moveConfigDTO.getCommitMessage())
+                                                 .isNewBranch(moveConfigDTO.isNewBranch())
+                                                 .baseBranch(moveConfigDTO.getBaseBranch())
+                                                 .connectorRef(moveConfigDTO.getConnectorRef())
+                                                 .storeType(StoreType.REMOTE)
+                                                 .repoName(moveConfigDTO.getRepoName())
+                                                 .build());
   }
 
   private void checkProjectExists(String accountIdentifier, String orgIdentifier, String projectIdentifier) {

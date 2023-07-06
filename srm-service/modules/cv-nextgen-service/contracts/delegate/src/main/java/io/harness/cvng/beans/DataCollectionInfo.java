@@ -12,6 +12,7 @@ import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.util.List;
 import java.util.Map;
 import lombok.Data;
 
@@ -21,6 +22,7 @@ import lombok.Data;
 public abstract class DataCollectionInfo<T extends ConnectorConfigDTO> {
   private String dataCollectionDsl;
   private boolean collectHostData;
+  private List<String> serviceInstances;
   public abstract VerificationType getVerificationType();
   public abstract Map<String, Object> getDslEnvVariables(T connectorConfigDTO);
   public abstract String getBaseUrl(T connectorConfigDTO);

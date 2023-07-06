@@ -109,8 +109,8 @@ import retrofit2.Call;
 import retrofit2.Response;
 
 @Slf4j
-public abstract class AbstractDelegateAgentService<AcquireResponse> implements DelegateAgentService {
-  protected static final String HOST_NAME = getLocalHostName();
+public abstract class AbstractDelegateAgentService<AcquireResponse, ExecutionResponse> implements DelegateAgentService {
+  private static final String HOST_NAME = getLocalHostName();
   protected static final String DELEGATE_INSTANCE_ID = generateUuid();
   private static final int POLL_INTERVAL_SECONDS = 3;
   // Marker string to indicate task events.
@@ -119,7 +119,7 @@ public abstract class AbstractDelegateAgentService<AcquireResponse> implements D
   private static final String HEARTBEAT_RESPONSE = "{\"eventType\":\"DelegateHeartbeatResponseStreaming\"";
 
   private static final String DELEGATE_TYPE = System.getenv("DELEGATE_TYPE");
-  protected static final String DELEGATE_NAME =
+  private static final String DELEGATE_NAME =
       isNotBlank(System.getenv("DELEGATE_NAME")) ? System.getenv("DELEGATE_NAME") : "";
   private static final String DELEGATE_GROUP_NAME = System.getenv("DELEGATE_GROUP_NAME");
   private static final boolean DELEGATE_NG =
@@ -168,13 +168,14 @@ public abstract class AbstractDelegateAgentService<AcquireResponse> implements D
 
   protected abstract void abortTask(DelegateTaskAbortEvent taskEvent);
   protected abstract AcquireResponse acquireTask(String taskId) throws IOException;
-  protected abstract void executeTask(AcquireResponse acquireResponse);
+  protected abstract ExecutionResponse executeTask(AcquireResponse acquireResponse);
   protected abstract List<String> getCurrentlyExecutingTaskIds();
   protected abstract List<TaskType> getSupportedTasks();
   protected abstract void onDelegateStart();
   protected abstract void onDelegateRegistered();
   protected abstract void onHeartbeat();
   protected abstract void onPostExecute(String delegateTaskId);
+  protected abstract void onTaskResponse(String taskId, ExecutionResponse response) throws IOException;
   protected abstract void onPostExecute(String delegateTaskId, Future<?> taskFuture);
 
   /**
@@ -238,7 +239,7 @@ public abstract class AbstractDelegateAgentService<AcquireResponse> implements D
   public void recordMetrics() {
     final long tasksExecutionCount = taskExecutor.getActiveCount();
     metricRegistry.recordGaugeValue(
-        TASKS_CURRENTLY_EXECUTING.getMetricName(), new String[] {DELEGATE_NAME}, tasksExecutionCount);
+        TASKS_CURRENTLY_EXECUTING.getMetricName(), new String[] {getDelegateName()}, tasksExecutionCount);
   }
 
   @Override
@@ -293,7 +294,8 @@ public abstract class AbstractDelegateAgentService<AcquireResponse> implements D
         log.debug("Try to acquire DelegateTask - accountId: {}", getDelegateConfiguration().getAccountId());
 
         final var taskGroup = acquireTask(delegateTaskId);
-        executeTask(taskGroup);
+        final var taskResponse = executeTask(taskGroup);
+        onTaskResponse(delegateTaskId, taskResponse);
       } catch (final IOException e) {
         log.error("Unable to get task for validation", e);
       } catch (final Exception e) {
@@ -327,7 +329,7 @@ public abstract class AbstractDelegateAgentService<AcquireResponse> implements D
 
   private void unregisterDelegate() {
     final DelegateUnregisterRequest request =
-        new DelegateUnregisterRequest(DelegateAgentCommonVariables.getDelegateId(), HOST_NAME, DELEGATE_NG,
+        new DelegateUnregisterRequest(DelegateAgentCommonVariables.getDelegateId(), getDelegateHostname(), DELEGATE_NG,
             DELEGATE_TYPE, getLocalHostAddress(), DELEGATE_ORG_IDENTIFIER, DELEGATE_PROJECT_IDENTIFIER);
     try {
       log.info("Unregistering delegate {}", DelegateAgentCommonVariables.getDelegateId());
@@ -396,8 +398,8 @@ public abstract class AbstractDelegateAgentService<AcquireResponse> implements D
       log.info("Delegate process started");
       long start = getClock().millis();
 
-      if (isNotEmpty(DELEGATE_NAME)) {
-        log.info("Registering delegate with delegate name: {}", DELEGATE_NAME);
+      if (isNotEmpty(getDelegateName())) {
+        log.info("Registering delegate with delegate name: {}", getDelegateName());
       }
 
       final DelegateParamsBuilder builder = createDelegateParamsBuilder();
@@ -440,7 +442,7 @@ public abstract class AbstractDelegateAgentService<AcquireResponse> implements D
 
     if (isNotBlank(DELEGATE_TYPE)) {
       log.info("Registering delegate with delegate Type: {}, DelegateGroupName: {} that supports tasks: {}",
-          DELEGATE_TYPE, DELEGATE_GROUP_NAME, supportedTasks);
+          DELEGATE_TYPE, getDelegateGroupName(), supportedTasks);
     }
 
     final String delegateDescription = System.getenv().get("DELEGATE_DESCRIPTION");
@@ -459,9 +461,9 @@ public abstract class AbstractDelegateAgentService<AcquireResponse> implements D
         .accountId(getDelegateConfiguration().getAccountId())
         .orgIdentifier(DELEGATE_ORG_IDENTIFIER)
         .projectIdentifier(DELEGATE_PROJECT_IDENTIFIER)
-        .hostName(HOST_NAME)
-        .delegateName(DELEGATE_NAME)
-        .delegateGroupName(DELEGATE_GROUP_NAME)
+        .hostName(getDelegateHostname())
+        .delegateName(getDelegateName())
+        .delegateGroupName(getDelegateGroupName())
         .delegateGroupId(DELEGATE_GROUP_ID)
         .delegateProfileId(isNotBlank(delegateProfile) ? delegateProfile : null)
         .description(description)
@@ -725,7 +727,7 @@ public abstract class AbstractDelegateAgentService<AcquireResponse> implements D
               .addParameter("delegateId", DelegateAgentCommonVariables.getDelegateId())
               .addParameter("delegateTokenName", DelegateAgentCommonVariables.getDelegateTokenName())
               .addParameter("delegateConnectionId", DELEGATE_CONNECTION_ID)
-              .addParameter("token", tokenGenerator.getToken("https", "localhost", 9090, HOST_NAME))
+              .addParameter("token", tokenGenerator.getToken("https", "localhost", 9090, getDelegateHostname()))
               .addParameter("version", getVersion());
 
       URI uri = uriBuilder.build();
@@ -950,5 +952,17 @@ public abstract class AbstractDelegateAgentService<AcquireResponse> implements D
     final String[] suffixes = nonProxyHostsString.split("\\|");
     final List<String> nonProxyHosts = Stream.of(suffixes).map(suffix -> suffix.substring(1)).collect(toList());
     log.info("No proxy for hosts with suffix in: {}", nonProxyHosts);
+  }
+
+  private String getDelegateName() {
+    return getDelegateConfiguration().isLocalNgDelegate() ? DELEGATE_INSTANCE_ID : DELEGATE_NAME;
+  }
+
+  private String getDelegateGroupName() {
+    return getDelegateConfiguration().isLocalNgDelegate() ? DELEGATE_INSTANCE_ID : DELEGATE_GROUP_NAME;
+  }
+
+  private String getDelegateHostname() {
+    return getDelegateConfiguration().isLocalNgDelegate() ? DELEGATE_INSTANCE_ID : HOST_NAME;
   }
 }

@@ -16,9 +16,12 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.YamlNode;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.Collections;
+import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -46,5 +49,16 @@ public class ShellScriptSourceWrapper {
   public ShellScriptSourceWrapper(String type, ShellScriptBaseSource spec) {
     this.type = type;
     this.spec = spec;
+  }
+
+  @JsonIgnore
+  public List<String> fetchFileRefs() {
+    if (spec instanceof HarnessFileStoreSource) {
+      HarnessFileStoreSource harnessFileStoreSource = (HarnessFileStoreSource) spec;
+      if (harnessFileStoreSource.getFile() != null && harnessFileStoreSource.getFile().getValue() != null) {
+        return List.of(harnessFileStoreSource.getFile().getValue());
+      }
+    }
+    return Collections.emptyList();
   }
 }

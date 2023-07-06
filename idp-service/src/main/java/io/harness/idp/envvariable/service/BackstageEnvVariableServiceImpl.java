@@ -25,6 +25,8 @@ import io.harness.idp.envvariable.repositories.BackstageEnvVariableRepository;
 import io.harness.idp.events.producers.SetupUsageProducer;
 import io.harness.idp.k8s.client.K8sClient;
 import io.harness.idp.namespace.service.NamespaceService;
+import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
+import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.spec.server.idp.v1.model.BackstageEnvConfigVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
@@ -33,6 +35,7 @@ import io.harness.spec.server.idp.v1.model.NamespaceInfo;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
@@ -257,7 +260,12 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
             ngSecretService.getDecryptedSecretValue(accountIdentifier, null, null, secretIdentifier);
 
         if (envName.equals(GITHUB_APP_PRIVATE_KEY_REF)) {
-          decryptedValue.setDecryptedValue(new String(Base64.getDecoder().decode(decryptedValue.getDecryptedValue())));
+          SecretResponseWrapper secretResponseWrapper =
+              ngSecretService.getSecret(accountIdentifier, null, null, secretIdentifier);
+          if (secretResponseWrapper.getSecret().getType().equals(SecretType.SecretFile)) {
+            decryptedValue.setDecryptedValue(
+                new String(Base64.getDecoder().decode(decryptedValue.getDecryptedValue()), StandardCharsets.UTF_8));
+          }
         }
 
         secretData.put(envName, decryptedValue.getDecryptedValue().getBytes());
@@ -278,7 +286,6 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
         backstageEnvVariableRepository.findAllByAccountIdentifierAndMultipleEnvNames(
             accountIdentifier, envVariableNames);
     BackstageEnvVariableMapper envVariableMapper = getEnvVariableMapper((BackstageEnvVariableType.SECRET));
-    List<BackstageEnvSecretVariable> backstageEnvSecretVariableList = new ArrayList<>();
 
     for (BackstageEnvVariableEntity backstageEnvVariableEntity : listEnvVariablesAndSecretId) {
       resultList.add((BackstageEnvSecretVariable) envVariableMapper.toDto(backstageEnvVariableEntity));

@@ -48,6 +48,7 @@ public class YAMLFieldNameConstants {
   public final String TYPE = "type";
   public final String KEY = "key";
   public final String VALUE = "value";
+  public final String REQUIRED = "required";
   public final String UUID = YamlNode.UUID_FIELD_NAME;
   public final String TIMEOUT = "timeout";
   public final String OUTPUT_VARIABLES = "outputVariables";

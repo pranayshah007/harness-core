@@ -17,6 +17,7 @@ import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.UUIDGenerator;
@@ -109,6 +110,11 @@ public class DownloadManifestsStepHelper {
         .name(gitManifestOutcome.getIdentifier())
         .uuid(gitManifestOutcome.getIdentifier())
         .build();
+  }
+
+  public String getValuesPathFromValuesManifestOutcome(ValuesManifestOutcome valuesManifestOutcome) {
+    GitStoreConfig gitStoreConfig = (GitStoreConfig) valuesManifestOutcome.getStore();
+    return "/harness/" + valuesManifestOutcome.getIdentifier() + "/" + gitStoreConfig.getPaths().getValue().get(0);
   }
 
   public String getGitCloneStepIdentifier(ManifestOutcome gitManifestOutcome) {

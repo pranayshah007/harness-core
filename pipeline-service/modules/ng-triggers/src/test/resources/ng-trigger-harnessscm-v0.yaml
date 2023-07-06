@@ -1,0 +1,55 @@
+trigger:
+  name: first trigger
+  identifier: first_trigger
+  enabled: true
+  target:
+    targetIdentifier: pipeline
+    type: Pipeline
+    spec:
+      runtimeInputYaml: |
+        pipeline:
+          identifier: secrethttp1
+          stages:
+            - stage:
+                identifier: qaStage
+                spec:
+                  infrastructure:
+                    infrastructureDefinition:
+                      spec:
+                        releaseName: releaseName1
+  source:
+    type: Webhook
+    spec:
+      type: HARNESS
+      spec:
+        gitRepoSpec:
+          identifier: conn
+          repoName: myrepo
+        event: Push
+        payloadConditions:
+          - key: k1
+            operator: equals
+            value: v1
+          - key: k2
+            operator: not equals
+            value: v2
+          - key: k3
+            operator: in
+            value: v3,c
+          - key: k4
+            operator: not in
+            value: v4
+          - key: k5
+            operator: starts with
+            value: v5
+          - key: k6
+            operator: ends with
+            value: v6
+          - key: k7
+            operator: contains
+            value: v7
+        headerConditions:
+          - key: h1
+            operator: equals
+            value: v1
+        jexlCondition: true

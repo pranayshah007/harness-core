@@ -1,0 +1,68 @@
+{
+  "data" : {
+    "pairs" : [ {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/api/v1/query_range"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "prometheus.demo.do.prometheus.io"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "end" : [ {
+            "matcher" : "exact",
+            "value" : "1686824460"
+          } ],
+          "query" : [ {
+            "matcher" : "exact",
+            "value" : "sum(avg(avg(prometheus_http_requests_total{})by(handler,code)) by (handler)) by (handler)"
+          } ],
+          "start" : [ {
+            "matcher" : "exact",
+            "value" : "1686824340"
+          } ],
+          "step" : [ {
+            "matcher" : "exact",
+            "value" : "60s"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAA/6yXYW/6OAzGv0teTow2aeu2fI57N02nUAzk1BYuSblNE9/9BCv7b/XqZGK8fFblFzu2H+9NOK/94MRKuKFp0DmxEBvttVi9CYtuaP1fr0cUK9Fpb82LWIyqWD29iQ69Nc3l073uNy1asRKJOC/ESbcDOrF6epJQQaXyLE8XIs+keF7cpDylEtyk5/Ni5vjHZI+69fvXeU5RAyVdxHLKKmrIM46mW7TezaNUNeV8VWBUGMLRJCeZPBy1389zJIlHksRJNm8j5xpQp3u9Q8vERfNHH4p/p888BiRTqAsSWwo1kPBSqMsIYqvX2CarXneYjMz5MNM0XRI8VeGTGncBrmaUyknVTDT40IK4Dr2+duw8UNLnnGrwoQWB/w5ome6TqcqrpfrmUVVeL0uSV5mqQkYl9gr+G1+wO7aarV6VffOqUxH+iJFoq/sdMpGXNRQFJV/0Uk1SAuMf6iLqAnZouUKWqcxKRVMus5LMo4tapRFMh9ZwUFWBpNFS9X0IgopBXt0oWQ+m3Zh+e2AiVpUCErCqMtJHoxjLbg791uwYd6HWQjqpiOmjkbdt9Y5LMp0VdFL8IDw79N50yCe3or5WUWOropxt5Hq3WTMdS3gZwWUxNK/tDlnDkbRqJDWbixQLixjBhEmILK9ptXOmYXYr0vuKFEkMILjv/A4m1GN02yEPFIMJtNYvUXZWH5nVrSQTknpgyVrADeTQnkyDjxvjmsOJN+HfCe3Su6ZJHramxcCCqtKMTuOvGnxoYXKwj++txEAF1tPj6+nxdeB4d2jRRaUuXcKXH5mF/Bcw88X87Ta4HnbJgxvW/M3unFpbfTLNoV+ahrGavCD9MZHgJjEk3KDVntvNyINK8qKSfdLAMCE2TVyaNenQEAE6RYCOEWCz1OnebNH55T/u0DOpKmgBFrTiCrbE3kVu+FaQ1SUBVZBLOjQqyDN2Y+3xv9C/0HcOjMACntXk/IkEN2me8YMBr2g4NB4eFj3bi7peZp9+pNTZD+D7D/iLDUyq6WpKFlPu+LCz3L1xX3bdx1AYivilIoWvWK88oXWG6+TIkn8+n/8HAAD//wEAAP//koPhPQgUAAA=",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Length" : [ "827" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Fri, 16 Jun 2023 17:21:18 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Server" : [ "Caddy" ]
+        }
+      }
+    } ],
+    "globalActions" : {
+      "delays" : [ ]
+    }
+  },
+  "meta" : {
+    "schemaVersion" : "v5",
+    "hoverflyVersion" : "v1.1.5",
+    "timeExported" : "2023-06-16T17:21:19Z"
+  }
+}

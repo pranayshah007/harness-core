@@ -76,6 +76,10 @@ if [[ "" != "$QUERY_BATCH_SIZE" ]]; then
   export QUERY_BATCH_SIZE; yq -i '.batchQueryConfig.queryBatchSize=env(QUERY_BATCH_SIZE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$BILLING_DATA_QUERY_BATCH_SIZE" ]]; then
+  export BILLING_DATA_QUERY_BATCH_SIZE; yq -i '.batchQueryConfig.billingDataQueryBatchSize=env(BILLING_DATA_QUERY_BATCH_SIZE)' $CONFIG_FILE
+fi
+
 if [[ "" != "$BULK_OPERATION_QUERY_BATCH_SIZE" ]]; then
   export BULK_OPERATION_QUERY_BATCH_SIZE; yq -i '.bulkOperationBatchQueryConfig.queryBatchSize=env(BULK_OPERATION_QUERY_BATCH_SIZE)' $CONFIG_FILE
 fi
@@ -132,6 +136,9 @@ if [[ "" != "$AWS_ROLE_NAME" ]]; then
   export AWS_ROLE_NAME; yq -i '.billingDataPipelineConfig.awsRoleName=env(AWS_ROLE_NAME)' $CONFIG_FILE
 fi
 
+if [[ "" != "$BUFFER_SIZE_IN_MB" ]]; then
+  export BUFFER_SIZE_IN_MB; yq -i '.billingDataPipelineConfig.bufferSizeInMB=env(BUFFER_SIZE_IN_MB)' $CONFIG_FILE
+fi
 
 if [[ "" != "$SMTP_HOST" ]]; then
   export SMTP_HOST; yq -i '.smtp.host=env(SMTP_HOST)' $CONFIG_FILE
@@ -189,8 +196,16 @@ if [[ "" != "$BUDGET_ALERTS_JOB_CRON" ]]; then
   export BUDGET_ALERTS_JOB_CRON; yq -i '.scheduler-jobs-config.budgetAlertsJobCron=env(BUDGET_ALERTS_JOB_CRON)' $CONFIG_FILE
 fi
 
+if [[ "" != "$DAILY_BUDGET_ALERTS_JOB_CRON" ]]; then
+  export DAILY_BUDGET_ALERTS_JOB_CRON; yq -i '.scheduler-jobs-config.dailyBudgetAlertsJobCron=env(DAILY_BUDGET_ALERTS_JOB_CRON)' $CONFIG_FILE
+fi
+
 if [[ "" != "$BUDGET_COST_UPDATE_JOB_CRON" ]]; then
   export BUDGET_COST_UPDATE_JOB_CRON; yq -i '.scheduler-jobs-config.budgetCostUpdateJobCron=env(BUDGET_COST_UPDATE_JOB_CRON)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DAILY_BUDGET_COST_UPDATE_JOB_CRON" ]]; then
+  export DAILY_BUDGET_COST_UPDATE_JOB_CRON; yq -i '.scheduler-jobs-config.dailyBudgetCostUpdateJobCron=env(DAILY_BUDGET_COST_UPDATE_JOB_CRON)' $CONFIG_FILE
 fi
 
 if [[ "" != "$WEEKLY_REPORT_JOB_CRON" ]]; then
@@ -269,6 +284,14 @@ if [[ "" != "$NG_MANAGER_SERVICE_HTTP_CLIENT_CONFIG_BASE_URL" ]]; then
   export NG_MANAGER_SERVICE_HTTP_CLIENT_CONFIG_BASE_URL; yq -i '.ngManagerServiceHttpClientConfig.baseUrl=env(NG_MANAGER_SERVICE_HTTP_CLIENT_CONFIG_BASE_URL)' $CONFIG_FILE
 fi
 
+if [[ "" != "$NG_MANAGER_SERVICE_HTTP_CLIENT_CONFIG_CONNECT_TIMEOUT" ]]; then
+  export NG_MANAGER_SERVICE_HTTP_CLIENT_CONFIG_CONNECT_TIMEOUT; yq -i '.ngManagerServiceHttpClientConfig.connectTimeOutSeconds=env(NG_MANAGER_SERVICE_HTTP_CLIENT_CONFIG_CONNECT_TIMEOUT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$NG_MANAGER_SERVICE_HTTP_CLIENT_CONFIG_READ_TIMEOUT" ]]; then
+  export NG_MANAGER_SERVICE_HTTP_CLIENT_CONFIG_READ_TIMEOUT; yq -i '.ngManagerServiceHttpClientConfig.readTimeOutSeconds=env(NG_MANAGER_SERVICE_HTTP_CLIENT_CONFIG_READ_TIMEOUT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
   export NEXT_GEN_MANAGER_SECRET; yq -i '.ngManagerServiceSecret=env(NEXT_GEN_MANAGER_SECRET)' $CONFIG_FILE
 fi
@@ -291,6 +314,10 @@ fi
 
 if [[ "" != "$GCP_BQ_UPDATE_BATCH_SUBSCRIPTION_NAME" ]]; then
   export GCP_BQ_UPDATE_BATCH_SUBSCRIPTION_NAME; yq -i '.gcpConfig.bigQueryUpdatePubSubTopic.subscriptionName=env(GCP_BQ_UPDATE_BATCH_SUBSCRIPTION_NAME)' $CONFIG_FILE
+fi
+
+if [[ "" != "$BATCH_JOB_REPOSITORY_TIMESCALE_ENABLE" ]]; then
+  export BATCH_JOB_REPOSITORY_TIMESCALE_ENABLE; yq -i '.batchJobRepository.timescaleEnabled=env(BATCH_JOB_REPOSITORY_TIMESCALE_ENABLE)' $CONFIG_FILE
 fi
 
 replace_key_value cfClientConfig.apiKey "$CF_CLIENT_API_KEY"

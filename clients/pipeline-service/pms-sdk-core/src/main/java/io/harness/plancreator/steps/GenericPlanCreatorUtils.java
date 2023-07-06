@@ -71,7 +71,7 @@ public class GenericPlanCreatorUtils {
     if (currentField != null && currentField.getNode() != null) {
       if (currentField.checkIfParentIsParallel(STEPS) || currentField.checkIfParentIsParallel(ROLLBACK_STEPS)) {
         // Check if step is inside StepGroup and StepGroup is inside Parallel but not the step.
-        YamlNode stepGroupNode = YamlUtils.findParentNode(currentField.getNode(), STEP_GROUP);
+        YamlNode stepGroupNode = YamlUtils.findParentNode(currentField.getNode().getParentNode(), STEP_GROUP);
         if (stepGroupNode == null) {
           return true;
         }

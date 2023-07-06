@@ -122,7 +122,7 @@ public abstract class AbstractSCMOAuthTokenRefresher<T extends UserSourceCodeMan
     Principal principal = SecurityContextBuilder.getPrincipal();
     boolean isUserPrincipal = principal instanceof UserPrincipal;
     if (principal == null || !isUserPrincipal) {
-      Optional<UserInfo> userInfo = ngUserService.getUserById(userId, false);
+      Optional<UserInfo> userInfo = ngUserService.getUserById(userId);
       if (userInfo.isEmpty()) {
         log.error("Failed to get user details for user id: {}", userId);
         throw new InvalidRequestException(String.format("Failed to get user details for user id: %s", userId));

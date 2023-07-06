@@ -46,6 +46,24 @@ public class HttpConnectionExecutionCapabilityGenerator {
     return httpConnectionExecutionCapability;
   }
 
+  public static HttpConnectionExecutionCapability buildHttpConnectionExecutionCapabilityWithIgnoreResponseCode(
+      String urlString, ExpressionEvaluator maskingEvaluator, boolean ignoreResponseCode,
+      HttpCapabilityDetailsLevel level) {
+    HttpConnectionExecutionCapability httpConnectionExecutionCapability =
+        buildHttpConnectionExecutionCapability(urlString, level, maskingEvaluator);
+    httpConnectionExecutionCapability.setIgnoreResponseCode(ignoreResponseCode);
+    return httpConnectionExecutionCapability;
+  }
+
+  public static HttpConnectionExecutionCapability buildHttpConnectionExecutionCapabilityWithIgnoreResponseCode(
+      String urlString, ExpressionEvaluator maskingEvaluator, boolean ignoreResponseCode, List<KeyValuePair> headers,
+      HttpCapabilityDetailsLevel level) {
+    HttpConnectionExecutionCapability httpConnectionExecutionCapability =
+        buildHttpConnectionExecutionCapability(urlString, headers, level, maskingEvaluator);
+    httpConnectionExecutionCapability.setIgnoreResponseCode(ignoreResponseCode);
+    return httpConnectionExecutionCapability;
+  }
+
   public static HttpConnectionExecutionCapability buildHttpConnectionExecutionCapability(
       String urlString, HttpCapabilityDetailsLevel level, ExpressionEvaluator maskingEvaluator) {
     try {

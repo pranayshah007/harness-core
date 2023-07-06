@@ -25,6 +25,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
 import io.harness.delegate.beans.connector.scm.github.outcome.GithubHttpCredentialsOutcomeDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.common.Constants;
+import io.harness.idp.configmanager.utils.ConfigManagerUtils;
 import io.harness.idp.gitintegration.processor.base.ConnectorProcessor;
 import io.harness.idp.gitintegration.utils.GitIntegrationConstants;
 import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
@@ -36,9 +37,13 @@ import io.harness.spec.server.idp.v1.model.CatalogConnectorInfo;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.IDP)
+@Slf4j
 public class GithubConnectorProcessor extends ConnectorProcessor {
+  private static final String SUFFIX_FOR_GITHUB_APP_CONNECTOR = "_App";
+  private static final String TARGET_TO_REPLACE_IN_CONFIG_FOR_GITHUB_API_BASE_URL = "API_BASE_URL";
   @Override
   public String getInfraConnectorType(ConnectorInfoDTO connectorInfoDTO) {
     GithubConnectorDTO config = (GithubConnectorDTO) connectorInfoDTO.getConnectorConfig();
@@ -48,6 +53,7 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
   public Map<String, BackstageEnvVariable> getConnectorAndSecretsInfo(
       String accountIdentifier, ConnectorInfoDTO connectorInfoDTO) {
     String connectorIdentifier = connectorInfoDTO.getIdentifier();
+    String connectorTypeAsString = connectorInfoDTO.getConnectorType().toString();
     if (!connectorInfoDTO.getConnectorType().toString().equals(GitIntegrationConstants.GITHUB_CONNECTOR_TYPE)) {
       throw new InvalidRequestException(
           String.format("Connector with id - [%s] is not github connector ", connectorIdentifier));
@@ -64,6 +70,8 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
     Map<String, BackstageEnvVariable> secrets = new HashMap<>();
 
     if (apiAccess != null && apiAccess.getType().toString().equals(GitIntegrationConstants.GITHUB_APP_CONNECTOR_TYPE)) {
+      connectorTypeAsString = connectorTypeAsString + SUFFIX_FOR_GITHUB_APP_CONNECTOR;
+
       GithubAppSpecDTO apiAccessSpec = (GithubAppSpecDTO) apiAccess.getSpec();
 
       if (apiAccessSpec.getApplicationIdRef() == null) {
@@ -100,6 +108,13 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
 
     secrets.put(Constants.GITHUB_TOKEN,
         GitIntegrationUtils.getBackstageEnvSecretVariable(tokenSecretIdentifier, Constants.GITHUB_TOKEN));
+
+    // config for github connector git integration
+    String integrationConfigs = ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(connectorTypeAsString);
+    integrationConfigs = integrationConfigs.replace(TARGET_TO_REPLACE_IN_CONFIG_FOR_GITHUB_API_BASE_URL,
+        getGithubApiBaseUrlFromHost(GitIntegrationUtils.getHostForConnector(connectorInfoDTO)));
+    configManagerService.createOrUpdateAppConfigForGitIntegrations(
+        accountIdentifier, connectorInfoDTO, integrationConfigs, connectorTypeAsString);
     return secrets;
   }
 
@@ -134,5 +149,10 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
   public String getLocationTarget(CatalogConnectorInfo catalogConnectorInfo, String path) {
     return catalogConnectorInfo.getRepo() + SLASH_DELIMITER + SOURCE_FORMAT + SLASH_DELIMITER
         + catalogConnectorInfo.getBranch() + path;
+  }
+
+  private String getGithubApiBaseUrlFromHost(String host) {
+    return (host.equals("github.com")) ? String.format("https://api.%s", host)
+                                       : String.format("https://%s/api/v3", host);
   }
 }

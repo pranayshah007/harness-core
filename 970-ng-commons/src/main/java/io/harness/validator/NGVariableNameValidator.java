@@ -23,8 +23,9 @@ public class NGVariableNameValidator implements ConstraintValidator<NGVariableNa
   public static final String ALLOWED_CHARS_STRING_DEFAULT =
       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_. ";
 
-  static final Set<String> NOT_ALLOWED_STRING_SET_DEFAULT = Sets.newHashSet("or", "and", "eq", "ne", "lt", "gt", "le",
-      "ge", "div", "mod", "not", "null", "true", "false", "new", "var", "return");
+  static final Set<String> NOT_ALLOWED_STRING_SET_DEFAULT =
+      Sets.newHashSet("or", "and", "eq", "ne", "lt", "gt", "le", "ge", "div", "mod", "not", "null", "true", "false",
+          "new", "var", "return", "step", "parallel", "stepGroup", "org", "account", "class", "shellScriptProvisioner");
 
   public static final int MAX_ALLOWED_LENGTH = 128;
 

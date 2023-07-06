@@ -13,7 +13,9 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Data;
@@ -68,6 +70,19 @@ public class K8SLegacyReleaseHistory implements IK8sReleaseHistory {
             -> currentReleaseNumber != release.getReleaseNumber() && release.getManagedWorkload() != null
                 && release.getManagedWorkload().getName().endsWith(color))
         .collect(Collectors.toList());
+  }
+
+  @Override
+  public IK8sRelease getLatestSuccessfulReleaseMatchingColor(String color) {
+    Optional<K8sLegacyRelease> latestSuccessfulRelease =
+        releaseHistory.getReleases()
+            .stream()
+            .filter(release
+                -> release.getManagedWorkload() != null && release.getManagedWorkload().getName().endsWith(color))
+            .filter(release -> release.getReleaseStatus().equals(IK8sRelease.Status.Succeeded))
+            .max(Comparator.comparing(IK8sRelease::getReleaseNumber));
+
+    return latestSuccessfulRelease.orElse(null);
   }
 
   @Override

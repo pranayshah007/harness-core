@@ -7,9 +7,6 @@
                     blaze-command="run"
                     keep-in-sync="true">
         <blaze-target>//310-iacm-manager/app:module</blaze-target>
-        <blaze-user-flag>
-            --run_under=". $PROJECT_DIR$/../310-iacm-manager/build/container/scripts/set_manager_env.sh &amp;&amp; export SHOULD_CONFIGURE_WITH_PMS=true &amp;&amp;"
-        </blaze-user-flag>
         <blaze-user-exe-flag>server</blaze-user-exe-flag>
         <blaze-user-exe-flag>$PROJECT_DIR$/../310-iacm-manager/config/iacm-manager-config.yml</blaze-user-exe-flag>
     </blaze-settings>

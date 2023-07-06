@@ -19,11 +19,15 @@ import io.harness.cvng.beans.cvnglog.ApiCallLogDTO;
 import io.harness.cvng.beans.cvnglog.ApiCallLogDTO.ApiCallLogDTOField;
 import io.harness.cvng.beans.cvnglog.TraceableType;
 import io.harness.datacollection.entity.CallDetails;
+import io.harness.datacollection.utils.DataCollectionUtils;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.delegatetasks.DelegateLogService;
 
 import com.google.common.base.Preconditions;
+import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -50,6 +54,7 @@ public class ThirdPartyCallHandler implements Consumer<CallDetails> {
 
   @Override
   public void accept(CallDetails callDetails) {
+    // Actual data coll path TODO remove
     Preconditions.checkNotNull(callDetails.getRequest(), "Call Details request is null.");
     final ApiCallLogDTO cvngLogDTO = ApiCallLogDTO.builder()
                                          .traceableId(requestUuid)
@@ -60,10 +65,11 @@ public class ThirdPartyCallHandler implements Consumer<CallDetails> {
                                          .requestTime(callDetails.getRequestTime().toEpochMilli())
                                          .responseTime(callDetails.getResponseTime().toEpochMilli())
                                          .build();
+    String encodedURL = callDetails.getRequest().request().url().toString();
     cvngLogDTO.addFieldToRequest(ApiCallLogDTOField.builder()
                                      .name(REQUEST_URL)
                                      .type(ApiCallLogDTO.FieldType.URL)
-                                     .value(callDetails.getRequest().request().url().toString())
+                                     .value(URLDecoder.decode(encodedURL, StandardCharsets.UTF_8))
                                      .build());
     String method = callDetails.getRequest().request().method();
     cvngLogDTO.addFieldToRequest(
@@ -76,14 +82,23 @@ public class ThirdPartyCallHandler implements Consumer<CallDetails> {
                                        .value(JsonUtils.asJson(headerNames))
                                        .build());
     }
+    setApiCallLogDTOWithResponse(callDetails, cvngLogDTO);
+    delegateLogService.save(accountId, cvngLogDTO);
+  }
+
+  private static void setApiCallLogDTOWithResponse(CallDetails callDetails, ApiCallLogDTO cvngLogDTO) {
     if (callDetails.getRequest().request().body() != null) {
       cvngLogDTO.addCallDetailsBodyFieldToRequest(callDetails.getRequest().request());
     }
     if (callDetails.getResponse() != null && callDetails.getResponse().body() != null) {
       cvngLogDTO.addFieldToResponse(
           callDetails.getResponse().code(), callDetails.getResponse().body(), ApiCallLogDTO.FieldType.JSON);
+    } else if (callDetails.getResponse() != null && callDetails.getResponse().errorBody() != null) {
+      try {
+        cvngLogDTO.addFieldToResponse(callDetails.getResponse().code(),
+            DataCollectionUtils.getErrorBodyString(callDetails.getResponse()), ApiCallLogDTO.FieldType.JSON);
+      } catch (IOException ignored) {
+      }
     }
-
-    delegateLogService.save(accountId, cvngLogDTO);
   }
 }

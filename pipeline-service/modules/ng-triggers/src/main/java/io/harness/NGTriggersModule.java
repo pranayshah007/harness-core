@@ -103,5 +103,6 @@ public class NGTriggersModule extends AbstractModule {
     gitProviderBaseDataObtainerMap.addBinding(WebhookSourceRepo.GITHUB.name()).to(SCMDataObtainer.class);
     gitProviderBaseDataObtainerMap.addBinding(WebhookSourceRepo.BITBUCKET.name()).to(SCMDataObtainer.class);
     gitProviderBaseDataObtainerMap.addBinding(WebhookSourceRepo.GITLAB.name()).to(SCMDataObtainer.class);
+    gitProviderBaseDataObtainerMap.addBinding(WebhookSourceRepo.HARNESS.name()).to(SCMDataObtainer.class);
   }
 }

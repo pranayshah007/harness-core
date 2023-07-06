@@ -41,9 +41,15 @@ tags:
   - name: Project Favorites
     description: This contains APIs for project-scoped Favorites.
     x-displayName: 'Project Favorites [Beta]'
-  - name: Rancher Infrastructure
-    description: This contains APIs for Rancher infra entities.
-    x-displayName: 'Rancher Infrastructure [Beta]'
+  - name: Account Rancher Infrastructure
+    description: This contains APIs for Rancher infra entities for account level.
+    x-displayName: 'Account Rancher Infrastructure [Beta]'
+  - name: Org Rancher Infrastructure
+    description: This contains APIs for Rancher infra entities for org level.
+    x-displayName: 'Org Rancher Infrastructure [Beta]'
+  - name: Project Rancher Infrastructure
+    description: This contains APIs for Rancher infra entities for project level.
+    x-displayName: 'Project Rancher Infrastructure [Beta]'
 paths:
   '/v1/orgs/{org}/projects/{project}/services/{service}':
     get:
@@ -483,6 +489,7 @@ paths:
           in: query
           name: module_type
           description: Project's module type
+        - $ref: '#/components/parameters/onlyFavorites'
         - $ref: '#/components/parameters/SearchTerm'
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
@@ -1285,7 +1292,7 @@ paths:
     get:
       summary: List rancher clusters using account level connector
       tags:
-        - Rancher Infrastructure
+        - Account Rancher Infrastructure
       responses:
         '200':
           $ref: '#/components/responses/RancherListClustersResponse'
@@ -1306,7 +1313,7 @@ paths:
     get:
       summary: List rancher clusters using org level connector
       tags:
-        - Rancher Infrastructure
+        - Org Rancher Infrastructure
       responses:
         '200':
           $ref: '#/components/responses/RancherListClustersResponse'
@@ -1328,7 +1335,7 @@ paths:
     get:
       summary: List rancher clusters using project level connector
       tags:
-        - Rancher Infrastructure
+        - Project Rancher Infrastructure
       responses:
         '200':
           $ref: '#/components/responses/RancherListClustersResponse'
@@ -1342,14 +1349,14 @@ paths:
       security:
         - x-api-key: []
       description: List rancher clusters using the given project level rancher connector
-  '/v1/environments/{environment}/rancher/infrastructure-definitions/{infrastructure-definition}/clusters':
+  '/v1/rancher/environments/{environment}/infrastructure-definitions/{infrastructure-definition}/clusters':
     parameters:
       - $ref: '#/components/parameters/EnvironmentPathParam'
       - $ref: '#/components/parameters/InfrastructureDefinitionPathParam'
     get:
       summary: List rancher clusters using account level env and infra def
       tags:
-        - Rancher Infrastructure
+        - Account Rancher Infrastructure
       responses:
         '200':
           $ref: '#/components/responses/RancherListClustersResponse'
@@ -1363,7 +1370,7 @@ paths:
       security:
         - x-api-key: []
       description: List rancher clusters using the given account level environment and infrastructure definition.
-  '/v1/orgs/{org}/environments/{environment}/rancher/infrastructure-definitions/{infrastructure-definition}/clusters':
+  '/v1/orgs/{org}/rancher/environments/{environment}/infrastructure-definitions/{infrastructure-definition}/clusters':
     parameters:
       - $ref: '#/components/parameters/OrgPathParam'
       - $ref: '#/components/parameters/EnvironmentPathParam'
@@ -1371,7 +1378,7 @@ paths:
     get:
       summary: List rancher clusters using org level env and infra def
       tags:
-        - Rancher Infrastructure
+        - Org Rancher Infrastructure
       responses:
         '200':
           $ref: '#/components/responses/RancherListClustersResponse'
@@ -1385,7 +1392,7 @@ paths:
       security:
         - x-api-key: []
       description: List rancher clusters using the given org level environment and infrastructure definition.
-  '/v1/orgs/{org}/projects/{project}/environments/{environment}/rancher/infrastructure-definitions/{infrastructure-definition}/clusters':
+  '/v1/orgs/{org}/projects/{project}/rancher/environments/{environment}/infrastructure-definitions/{infrastructure-definition}/clusters':
     parameters:
       - $ref: '#/components/parameters/OrgPathParam'
       - $ref: '#/components/parameters/ProjectPathParam'
@@ -1394,7 +1401,7 @@ paths:
     get:
       summary: List rancher clusters using project level env and infra def
       tags:
-        - Rancher Infrastructure
+        - Project Rancher Infrastructure
       responses:
         '200':
           $ref: '#/components/responses/RancherListClustersResponse'
@@ -1408,6 +1415,57 @@ paths:
       security:
         - x-api-key: []
       description: List rancher clusters using the given project level environment and infrastructure definition.
+  '/v1/orgs/{org}/projects/{project}/services/{service}/primary-manifests':
+    parameters:
+      - $ref: '#/components/parameters/ServicePathParam'
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/ProjectPathParam'
+    get:
+      summary: List primary manifests of a project scoped service
+      responses:
+        '200':
+          $ref: '#/components/responses/ManifestsResponseDTO'
+      operationId: get-primary-manifests
+      description: Returns a list of eligible primary manifests from all configured manifest in a project-scoped service.
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      tags:
+        - Project Services
+  '/v1/orgs/{org}/services/{service}/primary-manifests':
+    parameters:
+      - $ref: '#/components/parameters/ServicePathParam'
+      - $ref: '#/components/parameters/OrgPathParam'
+    get:
+      summary: List primary manifests of a org scoped service
+      responses:
+        '200':
+          $ref: '#/components/responses/ManifestsResponseDTO'
+      operationId: get-org-scoped-primary-manifests
+      description: Returns a list of eligible primary manifests from all configured manifest in an org-scoped service.
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      tags:
+        - Org Services
+  '/v1/services/{service}/primary-manifests':
+    parameters:
+      - $ref: '#/components/parameters/ServicePathParam'
+    get:
+      summary: List primary manifests of a account scoped service
+      responses:
+        '200':
+          $ref: '#/components/responses/ManifestsResponseDTO'
+      operationId: get-account-scoped-primary-manifests
+      description: Returns a list of eligible primary manifests from all configured manifest in an account-scoped service.
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      tags:
+        - Account Services
 components:
   schemas:
     Service:
@@ -1434,7 +1492,6 @@ components:
         account:
           type: string
           description: Account Identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_]{0,127}$'
           minLength: 1
           maxLength: 128
         identifier:
@@ -1505,7 +1562,6 @@ components:
         user_id:
           type: string
           description: Identifier of the user.
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
           maxLength: 128
         module:
@@ -1755,6 +1811,9 @@ components:
           type: integer
           format: int64
           description: Updated timestamp for the project
+        isFavorite:
+          type: boolean
+          description: True if its your favorite project
     OrganizationResponse:
       title: OrganizationResponse
       type: object
@@ -2385,6 +2444,22 @@ components:
         allowed_for_api:
           type: boolean
           description: This indicates if a given IP is allowlisted in Harness for API requests
+    ManifestsResponseDTO:
+      title: ManifestsResponseDTO
+      type: object
+      properties:
+        identifiers:
+          type: array
+          description: List of Manifest Identifiers
+          items:
+            type: string
+      description: ManifestsResponseDTO returns a list of manifest identifiers from a service's eligible primary manifests.
+      x-internal: false
+      x-examples:
+        Example 1:
+          identifiers:
+            - id1
+            - id2
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -2563,6 +2638,7 @@ components:
                     property2: value2
                 created: 1234567890
                 updated: 1234567890
+                isFavorite: true
         application/yaml:
           schema:
             $ref: '#/components/schemas/ProjectResponse'
@@ -2582,6 +2658,7 @@ components:
                     property2: value2
                 created: 1234567890
                 updated: 1234567890
+                isFavorite: true
     FavoriteResponse:
       description: Favorite response
       content:
@@ -2654,6 +2731,7 @@ components:
                       property2: value2
                   created: 1234567890
                   updated: 1234567890
+                  isFavorite: true
         application/yaml:
           schema:
             type: array
@@ -2675,6 +2753,7 @@ components:
                       property2: value2
                   created: 1234567890
                   updated: 1234567890
+                  isFavorite: true
       headers:
         X-Total-Elements:
           schema:
@@ -2953,6 +3032,22 @@ components:
           schema:
             type: integer
           description: Maximum page size in Paginated response.
+    ManifestsResponseDTO:
+      description: Response containing a list of eligible manifest identifiers that can be applied as primary manifest.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ManifestsResponseDTO'
+          examples:
+            Example 1:
+              value:
+                identifiers:
+                  - id1
+                  - id2
+        application/xml:
+          schema:
+            type: object
+            properties: {}
   requestBodies:
     ServiceRequest:
       content:
@@ -3522,6 +3617,14 @@ components:
         default: 30
         maximum: 1000
       description: Number of items to return per page.
+    onlyFavorites:
+      name: only_favorites
+      in: query
+      required: false
+      schema:
+        type: boolean
+      description: >-
+        Enable this field to fetch only the entities that are marked as favorites.
     SearchTerm:
       name: search_term
       in: query

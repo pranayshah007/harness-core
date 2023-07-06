@@ -43,12 +43,14 @@ public class HelmCommandDataMapperNG {
       HelmInstallCommandRequestNG helmInstallCommandRequest = (HelmInstallCommandRequestNG) helmCommandRequestNG;
       helmCommandData.setPrevReleaseVersion(helmInstallCommandRequest.getPrevReleaseVersion());
       helmCommandData.setNewReleaseVersion(helmInstallCommandRequest.getNewReleaseVersion());
+      helmCommandData.setTimeOutInMillis(helmInstallCommandRequest.getTimeoutInMillis());
     }
 
     if (helmCommandRequestNG instanceof HelmRollbackCommandRequestNG) {
       HelmRollbackCommandRequestNG helmRollbackCommandRequest = (HelmRollbackCommandRequestNG) helmCommandRequestNG;
       helmCommandData.setPrevReleaseVersion(helmRollbackCommandRequest.getPrevReleaseVersion());
       helmCommandData.setNewReleaseVersion(helmRollbackCommandRequest.getNewReleaseVersion());
+      helmCommandData.setTimeOutInMillis(helmRollbackCommandRequest.getTimeoutInMillis());
     }
 
     return helmCommandData;

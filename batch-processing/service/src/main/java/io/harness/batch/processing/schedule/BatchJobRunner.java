@@ -34,6 +34,7 @@ import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.Job;
+import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.batch.core.JobParametersInvalidException;
@@ -143,13 +144,16 @@ public class BatchJobRunner {
           try (AutoLogContext ignore =
                    new BatchJobTimeLogContext(String.valueOf(startInstant.toEpochMilli()), OVERRIDE_ERROR)) {
             Instant jobStartTime = Instant.now();
-            BatchStatus status = jobLauncher.run(job, params).getStatus();
+            JobExecution jobExecution = jobLauncher.run(job, params);
+            BatchStatus status = jobExecution.getStatus();
             log.info("Job status {}", status);
+            long instanceId =
+                jobExecution.getJobInstance() != null ? jobExecution.getJobInstance().getInstanceId() : 0l;
             Instant jobStopTime = Instant.now();
 
             if (status == BatchStatus.COMPLETED) {
               BatchJobScheduledData batchJobScheduledData = new BatchJobScheduledData(accountId, batchJobType.name(),
-                  Duration.between(jobStartTime, jobStopTime).toMillis(), startInstant, endInstant);
+                  Duration.between(jobStartTime, jobStopTime).toMillis(), startInstant, endInstant, instanceId);
               batchJobScheduledDataService.create(batchJobScheduledData);
               startInstant = endInstant;
             } else {

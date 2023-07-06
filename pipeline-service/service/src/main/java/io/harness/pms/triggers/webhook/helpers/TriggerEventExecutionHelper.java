@@ -252,7 +252,10 @@ public class TriggerEventExecutionHelper {
     }
 
     if (parseWebhookResponse != null) {
-      if (parseWebhookResponse.hasPr()) {
+      if (parseWebhookResponse.hasRelease()) {
+        builder.setParsedPayload(ParsedPayload.newBuilder().setRelease(parseWebhookResponse.getRelease()).build())
+            .build();
+      } else if (parseWebhookResponse.hasPr()) {
         builder.setParsedPayload(ParsedPayload.newBuilder().setPr(parseWebhookResponse.getPr()).build()).build();
       } else {
         builder.setParsedPayload(ParsedPayload.newBuilder().setPush(parseWebhookResponse.getPush()).build()).build();
@@ -354,7 +357,7 @@ public class TriggerEventExecutionHelper {
         runtimeInputYaml = triggerExecutionHelper.fetchInputSetYAML(triggerDetails, pseudoEvent);
       }
 
-      Type buildType = ngTriggerEntity.getType() == NGTriggerType.ARTIFACT ? Type.ARTIFACT : Type.MANIFEST;
+      Type buildType = getBuildType(ngTriggerEntity);
       Builder triggerPayloadBuilder = TriggerPayload.newBuilder().setType(buildType);
 
       String build = pollingResponse.getBuildInfo().getVersions(0);
@@ -568,5 +571,13 @@ public class TriggerEventExecutionHelper {
     }
     abstractions.put(NG, "true");
     return abstractions;
+  }
+
+  private Type getBuildType(NGTriggerEntity ngTriggerEntity) {
+    if (ngTriggerEntity.getType() == NGTriggerType.ARTIFACT
+        || ngTriggerEntity.getType() == NGTriggerType.MULTI_REGION_ARTIFACT) {
+      return Type.ARTIFACT;
+    }
+    return Type.MANIFEST;
   }
 }

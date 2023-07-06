@@ -211,7 +211,7 @@ public class ClickHouseViewsBillingServiceImpl implements ViewsBillingService {
     boolean isClusterPerspective = viewParametersHelper.isClusterTableQuery(filters, groupBy, queryParams);
     String cloudProviderTableName = ClickHouseConstants.CLICKHOUSE_UNIFIED_TABLE;
     Map<String, String> labelsKeyAndColumnMapping =
-        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId(), filters);
+        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId());
     if (isClusterPerspective) {
       cloudProviderTableName = ClickHouseConstants.CLICKHOUSE_CLUSTER_DATA_TABLE;
     }
@@ -420,7 +420,7 @@ public class ClickHouseViewsBillingServiceImpl implements ViewsBillingService {
       Integer limit, ViewQueryParams queryParams) {
     String cloudProviderTableName = ClickHouseConstants.CLICKHOUSE_UNIFIED_TABLE;
     Map<String, String> labelsKeyAndColumnMapping =
-        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId(), filters);
+        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId());
     List<QLCEViewGroupBy> groupByExcludingGroupByTime =
         groupBy.stream().filter(g -> g.getEntityGroupBy() != null).collect(Collectors.toList());
 
@@ -472,7 +472,7 @@ public class ClickHouseViewsBillingServiceImpl implements ViewsBillingService {
       boolean addSharedCostFromGroupBy) {
     String cloudProviderTableName = ClickHouseConstants.CLICKHOUSE_UNIFIED_TABLE;
     Map<String, String> labelsKeyAndColumnMapping =
-        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId(), filters);
+        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId());
     List<QLCEViewGroupBy> groupByExcludingGroupByTime =
         groupBy.stream().filter(g -> g.getEntityGroupBy() != null).collect(Collectors.toList());
 
@@ -522,7 +522,7 @@ public class ClickHouseViewsBillingServiceImpl implements ViewsBillingService {
       Integer limit, ViewQueryParams queryParams) {
     String cloudProviderTableName = ClickHouseConstants.CLICKHOUSE_UNIFIED_TABLE;
     Map<String, String> labelsKeyAndColumnMapping =
-        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId(), filters);
+        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId());
     List<QLCEViewGroupBy> groupByExcludingGroupByTime =
         groupBy.stream().filter(g -> g.getEntityGroupBy() != null).collect(Collectors.toList());
 
@@ -659,7 +659,7 @@ public class ClickHouseViewsBillingServiceImpl implements ViewsBillingService {
     cloudProviderTableName = viewBillingServiceHelper.getUpdatedCloudProviderTableName(
         filters, null, aggregateFunction, "", cloudProviderTableName, queryParams.isClusterQuery());
     Map<String, String> labelsKeyAndColumnMapping =
-        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId(), filters);
+        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId());
     boolean isClusterTableQuery = viewParametersHelper.isClusterTableQuery(filters, groupBy, queryParams);
     List<QLCEViewTimeFilter> timeFilters = viewsQueryHelper.getTimeFilters(filters);
 
@@ -738,7 +738,7 @@ public class ClickHouseViewsBillingServiceImpl implements ViewsBillingService {
       List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy, ViewQueryParams queryParams) {
     String cloudProviderTableName = ClickHouseConstants.CLICKHOUSE_UNIFIED_TABLE;
     Map<String, String> labelsKeyAndColumnMapping =
-        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId(), filters);
+        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId());
     SelectQuery query =
         getTotalCountQuery(filters, groupBy, cloudProviderTableName, queryParams, labelsKeyAndColumnMapping);
     if (Objects.isNull(query)) {
@@ -792,7 +792,7 @@ public class ClickHouseViewsBillingServiceImpl implements ViewsBillingService {
       List<QLCEViewSortCriteria> sort, ViewQueryParams queryParams) {
     String cloudProviderTableName = ClickHouseConstants.CLICKHOUSE_UNIFIED_TABLE;
     Map<String, String> labelsKeyAndColumnMapping =
-        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId(), filters);
+        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId());
     if (viewBillingServiceHelper.shouldShowUnallocatedCost(groupBy)
         && viewParametersHelper.isClusterTableQuery(filters, groupBy, queryParams)) {
       final List<QLCEViewAggregation> aggregateFunction =
@@ -824,7 +824,7 @@ public class ClickHouseViewsBillingServiceImpl implements ViewsBillingService {
       List<QLCEViewSortCriteria> sort, ViewQueryParams queryParams) {
     String cloudProviderTableName = ClickHouseConstants.CLICKHOUSE_UNIFIED_TABLE;
     Map<String, String> labelsKeyAndColumnMapping =
-        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId(), filters);
+        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId());
     final List<QLCEViewAggregation> aggregateFunction =
         Collections.singletonList(QLCEViewAggregation.builder()
                                       .operationType(QLCEViewAggregateOperation.SUM)
@@ -872,7 +872,7 @@ public class ClickHouseViewsBillingServiceImpl implements ViewsBillingService {
       List<QLCEViewAggregation> aggregateFunction, ViewQueryParams queryParams) {
     String cloudProviderTableName = ClickHouseConstants.CLICKHOUSE_UNIFIED_TABLE;
     Map<String, String> labelsKeyAndColumnMapping =
-        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId(), filters);
+        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId());
     if (Lists.isNullOrEmpty(groupBy)) {
       Optional<QLCEViewFilterWrapper> viewMetadataFilter = viewParametersHelper.getViewMetadataFilter(filters);
       if (viewMetadataFilter.isPresent()) {
@@ -933,7 +933,7 @@ public class ClickHouseViewsBillingServiceImpl implements ViewsBillingService {
       List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, ViewQueryParams queryParams) {
     boolean isClusterTableQuery = viewParametersHelper.isClusterTableQuery(filters, groupBy, queryParams);
     Map<String, String> labelsKeyAndColumnMapping =
-        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId(), filters);
+        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId());
     SelectQuery query = viewBillingServiceHelper.getQuery(filters, groupBy, aggregateFunction, Collections.emptyList(),
         ClickHouseConstants.CLICKHOUSE_UNIFIED_TABLE, queryParams, Collections.emptyList(), labelsKeyAndColumnMapping);
     ResultSet resultSet = null;
@@ -1024,7 +1024,7 @@ public class ClickHouseViewsBillingServiceImpl implements ViewsBillingService {
       ViewQueryParams queryParams, boolean skipRoundOff) {
     String cloudProviderTableName = ClickHouseConstants.CLICKHOUSE_UNIFIED_TABLE;
     Map<String, String> labelsKeyAndColumnMapping =
-        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId(), filters);
+        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId());
 
     // Fetching business mapping Ids from filters
     List<ViewRule> viewRules = getViewRules(filters);

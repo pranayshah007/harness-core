@@ -9,7 +9,7 @@ package io.harness.beans.steps.stepinfo.security.shared;
 
 import static io.harness.annotations.dev.HarnessTeam.STO;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
@@ -30,9 +30,9 @@ import lombok.Data;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class STOYamlTarget {
   @NotNull
-  @YamlSchemaTypes(value = {expression})
+  @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlTargetType")
-  protected ParameterField<STOYamlTargetType> type;
+  protected STOYamlTargetType type;
 
   @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> name;
 

@@ -13,6 +13,7 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.context.GlobalContext;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
@@ -234,11 +235,24 @@ public class GitAwareContextHelper {
     updateGitEntityContext(gitEntityInfo);
   }
 
+  public String getBranchInRequestOrFromSCMGitMetadata() {
+    String branch = getBranchInRequest();
+    return !EmptyPredicate.isEmpty(branch) ? branch : getBranchInSCMGitMetadata();
+  }
+
   public void resetTransientBranch() {
     setTransientBranch(null);
   }
 
   private boolean isPresent(String val) {
     return !isEmpty(val) && !DEFAULT.equals(val);
+  }
+
+  public boolean isGitDefaultBranch() {
+    ScmGitMetaData scmGitMetaData = getScmGitMetaData();
+    if (scmGitMetaData == null) {
+      return false;
+    }
+    return scmGitMetaData.isGitDefaultBranch();
   }
 }

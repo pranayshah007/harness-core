@@ -38,4 +38,5 @@ public final class RecommendationsIgnoreList implements PersistentEntity, Accoun
   Set<RecommendationECSServiceId> ecsServiceIgnoreList;
   Set<RecommendationEC2InstanceId> ec2InstanceIgnoreList;
   Set<RecommendationAzureVmId> azureVmIgnoreList;
+  Set<RecommendationGovernanceRuleId> governanceRuleIgnoreList;
 }

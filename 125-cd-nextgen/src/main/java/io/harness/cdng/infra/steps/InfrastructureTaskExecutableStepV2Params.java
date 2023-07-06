@@ -7,6 +7,7 @@
 
 package io.harness.cdng.infra.steps;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
@@ -18,6 +19,7 @@ import lombok.Data;
 
 @Data
 @Builder
+@RecasterAlias("io.harness.cdng.infra.steps.InfrastructureTaskExecutableStepV2Params")
 public class InfrastructureTaskExecutableStepV2Params implements StepParameters {
   @NotNull private ParameterField<String> envRef;
   @NotNull private ParameterField<String> infraRef;

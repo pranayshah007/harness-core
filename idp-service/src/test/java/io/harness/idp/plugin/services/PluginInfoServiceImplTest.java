@@ -28,9 +28,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.common.FileUtils;
-import io.harness.idp.configmanager.ConfigType;
 import io.harness.idp.configmanager.service.ConfigManagerService;
 import io.harness.idp.configmanager.service.PluginsProxyInfoService;
+import io.harness.idp.configmanager.utils.ConfigType;
 import io.harness.idp.plugin.beans.ExportsData;
 import io.harness.idp.plugin.beans.PluginInfoEntity;
 import io.harness.idp.plugin.beans.PluginRequestEntity;
@@ -141,7 +141,7 @@ public class PluginInfoServiceImplTest {
     when(FileUtils.readFile(any(), any(), any())).thenReturn(schema);
     when(pluginInfoRepository.saveOrUpdate(any(PluginInfoEntity.class))).thenReturn(pluginInfoEntity);
     pluginInfoServiceImpl.saveAllPluginInfo();
-    verify(pluginInfoRepository, times(8)).saveOrUpdate(any(PluginInfoEntity.class));
+    verify(pluginInfoRepository, times(12)).saveOrUpdate(any(PluginInfoEntity.class));
   }
 
   @Test

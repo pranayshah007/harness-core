@@ -14,6 +14,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.adapter.BitbucketToGitMapper;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
@@ -23,6 +24,7 @@ import io.harness.delegate.beans.connector.scm.bitbucket.outcome.BitbucketHttpCr
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.common.Constants;
+import io.harness.idp.configmanager.utils.ConfigManagerUtils;
 import io.harness.idp.gitintegration.processor.base.ConnectorProcessor;
 import io.harness.idp.gitintegration.utils.GitIntegrationConstants;
 import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
@@ -37,6 +39,9 @@ import java.util.Map;
 
 @OwnedBy(HarnessTeam.IDP)
 public class BitbucketConnectorProcessor extends ConnectorProcessor {
+  private static final String SUFFIX_FOR_BITBUCKET_SERVER_PAT = "_Server_Pat";
+  private static final String SUFFIX_FOR_BITBUCKET_SERVER_AUTH = "_Server_Auth";
+  private static final String SUFFIX_FOR_BITBUCKET_CLOUD = "_Cloud";
   @Override
   public String getInfraConnectorType(ConnectorInfoDTO connectorInfoDTO) {
     BitbucketConnectorDTO config = (BitbucketConnectorDTO) connectorInfoDTO.getConnectorConfig();
@@ -47,7 +52,7 @@ public class BitbucketConnectorProcessor extends ConnectorProcessor {
   public Map<String, BackstageEnvVariable> getConnectorAndSecretsInfo(
       String accountIdentifier, ConnectorInfoDTO connectorInfoDTO) {
     String connectorIdentifier = connectorInfoDTO.getIdentifier();
-    String host = GitIntegrationUtils.getHostForConnector(connectorInfoDTO);
+    String connectorTypeAsString = connectorInfoDTO.getConnectorType().toString();
     if (!connectorInfoDTO.getConnectorType().toString().equals(GitIntegrationConstants.BITBUCKET_CONNECTOR_TYPE)) {
       throw new InvalidRequestException(
           String.format("Connector with id - [%s] is not bitbucket connector for accountId: [%s]", connectorIdentifier,
@@ -88,6 +93,7 @@ public class BitbucketConnectorProcessor extends ConnectorProcessor {
     secrets.put(Constants.BITBUCKET_TOKEN,
         GitIntegrationUtils.getBackstageEnvSecretVariable(pwdSecretIdentifier, Constants.BITBUCKET_TOKEN));
 
+    String host = GitIntegrationUtils.getHostForConnector(connectorInfoDTO);
     if (apiAccess != null && apiAccess.getType().toString().equals(GitIntegrationConstants.BITBUCKET_API_ACCESS_TYPE)
         && !host.equals(GitIntegrationConstants.HOST_FOR_BITBUCKET_CLOUD)) {
       BitbucketUsernameTokenApiAccessDTO bitbucketUsernameTokenApiAccessDTO =
@@ -108,6 +114,21 @@ public class BitbucketConnectorProcessor extends ConnectorProcessor {
           GitIntegrationUtils.getBackstageEnvSecretVariable(
               bitbucketUsernameTokenApiAccessDTO.getTokenRef().getIdentifier(), Constants.BITBUCKET_API_ACCESS_TOKEN));
     }
+
+    if (apiAccess != null && !host.equals(GitIntegrationConstants.HOST_FOR_BITBUCKET_CLOUD)) {
+      connectorTypeAsString = connectorTypeAsString + SUFFIX_FOR_BITBUCKET_SERVER_PAT;
+    }
+
+    if (apiAccess == null && !host.equals(GitIntegrationConstants.HOST_FOR_BITBUCKET_CLOUD)) {
+      connectorTypeAsString = connectorTypeAsString + SUFFIX_FOR_BITBUCKET_SERVER_AUTH;
+    }
+
+    if (host.equals(GitIntegrationConstants.HOST_FOR_BITBUCKET_CLOUD)) {
+      connectorTypeAsString = connectorTypeAsString + SUFFIX_FOR_BITBUCKET_CLOUD;
+    }
+
+    configManagerService.createOrUpdateAppConfigForGitIntegrations(accountIdentifier, connectorInfoDTO,
+        ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(connectorTypeAsString), connectorTypeAsString);
     return secrets;
   }
 

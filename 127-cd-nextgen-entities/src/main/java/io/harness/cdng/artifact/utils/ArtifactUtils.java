@@ -66,7 +66,7 @@ public class ArtifactUtils {
       + " connectorRef: %s%n";
 
   public String getArtifactKey(ArtifactConfig artifactConfig) {
-    return artifactConfig.isPrimaryArtifact() ? artifactConfig.getIdentifier()
+    return artifactConfig.isPrimaryArtifact() ? PRIMARY_ARTIFACT
                                               : SIDECAR_ARTIFACT + "." + artifactConfig.getIdentifier();
   }
 
@@ -197,14 +197,13 @@ public class ArtifactUtils {
         GithubPackagesArtifactConfig githubPackagesArtifactConfig = (GithubPackagesArtifactConfig) artifactConfig;
         if (maven.name().equals(githubPackagesArtifactConfig.getPackageType().getValue())) {
           return String.format(
-              "\ntype: %s \nconnectorRef: %s \norg: %s \npackageName: %s \npackageType: %s \nartifactId: %s \ngroupId: %s \nrepository: %s \nversion: %s \nversionRegex: %s\n",
+              "\ntype: %s \nconnectorRef: %s \norg: %s \npackageName: %s \npackageType: %s \nartifactId: %s \ngroupId: %s \nversion: %s \nversionRegex: %s\n",
               sourceType, githubPackagesArtifactConfig.getConnectorRef().getValue(),
               githubPackagesArtifactConfig.getOrg().getValue(),
               githubPackagesArtifactConfig.getPackageName().getValue(),
               githubPackagesArtifactConfig.getPackageType().getValue(),
               githubPackagesArtifactConfig.getArtifactId().getValue(),
               githubPackagesArtifactConfig.getGroupId().getValue(),
-              githubPackagesArtifactConfig.getRepository().getValue(),
               githubPackagesArtifactConfig.getVersion().getValue(),
               githubPackagesArtifactConfig.getVersionRegex().getValue());
         }

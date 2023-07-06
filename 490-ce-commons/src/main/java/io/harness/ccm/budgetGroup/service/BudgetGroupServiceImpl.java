@@ -25,8 +25,10 @@ import io.harness.ccm.budget.dao.BudgetDao;
 import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.budgetGroup.BudgetGroup;
 import io.harness.ccm.budgetGroup.BudgetGroupChildEntityDTO;
+import io.harness.ccm.budgetGroup.BudgetGroupSortType;
 import io.harness.ccm.budgetGroup.dao.BudgetGroupDao;
 import io.harness.ccm.budgetGroup.utils.BudgetGroupUtils;
+import io.harness.ccm.commons.entities.CCMSortOrder;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.commons.entities.budget.BudgetCostData;
 import io.harness.ccm.commons.entities.budget.BudgetData;
@@ -39,6 +41,8 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -149,8 +153,8 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
   }
 
   @Override
-  public List<BudgetGroup> list(String accountId) {
-    return budgetGroupDao.list(accountId, Integer.MAX_VALUE, 0);
+  public List<BudgetGroup> list(String accountId, BudgetGroupSortType budgetGroupSortType, CCMSortOrder ccmSortOrder) {
+    return budgetGroupDao.list(accountId, Integer.MAX_VALUE, 0, budgetGroupSortType, ccmSortOrder);
   }
 
   @Override
@@ -388,43 +392,45 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
   }
 
   @Override
-  public List<BudgetSummary> listAllEntities(String accountId) {
-    HashMap<String, List<BudgetSummary>> flattenedChildList = getFlattenedList(accountId);
+  public List<BudgetSummary> listAllEntities(
+      String accountId, BudgetGroupSortType budgetGroupSortType, CCMSortOrder ccmSortOrder) {
+    HashMap<String, List<BudgetSummary>> flattenedChildList =
+        getFlattenedList(accountId, budgetGroupSortType, ccmSortOrder);
     List<BudgetSummary> summaryList = new ArrayList<>();
-    List<BudgetGroup> budgetGroups = list(accountId);
-    budgetGroups.sort(Comparator.comparing(BudgetGroup::getLastUpdatedAt).reversed());
-    List<Budget> budgets = budgetDao.list(accountId);
-    budgets.sort(Comparator.comparing(Budget::getLastUpdatedAt).reversed());
+    List<BudgetGroup> budgetGroups = list(accountId, budgetGroupSortType, ccmSortOrder);
+    List<Budget> budgets = budgetDao.list(accountId, Integer.MAX_VALUE - 1, 0,
+        budgetGroupSortType == null ? null : budgetGroupSortType.getBudgetSortType(), ccmSortOrder);
 
     budgets.forEach(budget -> summaryList.add(BudgetUtils.buildBudgetSummary(budget)));
     budgetGroups.forEach(budgetGroup
         -> summaryList.add(
             BudgetGroupUtils.buildBudgetGroupSummary(budgetGroup, flattenedChildList.get(budgetGroup.getUuid()))));
+    summaryList.sort(getComparator(budgetGroupSortType, ccmSortOrder));
 
     return summaryList;
   }
 
   @Override
-  public List<BudgetSummary> listBudgetsAndBudgetGroupsSummary(String accountId, String id) {
+  public List<BudgetSummary> listBudgetsAndBudgetGroupsSummary(
+      String accountId, String id, BudgetGroupSortType budgetGroupSortType, CCMSortOrder ccmSortOrder) {
     List<BudgetSummary> summaryList = new ArrayList<>();
 
-    List<BudgetGroup> budgetGroups = list(accountId);
+    List<BudgetGroup> budgetGroups = list(accountId, budgetGroupSortType, ccmSortOrder);
     final Map<String, BudgetGroup> budgetGroupIdMapping =
         budgetGroups.stream().collect(Collectors.toMap(BudgetGroup::getUuid, budgetGroup -> budgetGroup));
-    budgetGroups.sort(Comparator.comparing(BudgetGroup::getLastUpdatedAt).reversed());
 
-    List<Budget> budgets = budgetDao.list(accountId);
+    List<Budget> budgets = budgetDao.list(accountId, Integer.MAX_VALUE - 1, 0,
+        budgetGroupSortType == null ? null : budgetGroupSortType.getBudgetSortType(), ccmSortOrder);
     budgets = budgets.stream().filter(BudgetUtils::isPerspectiveBudget).collect(Collectors.toList());
     unsetInvalidParents(budgetGroups, budgets);
-    budgets.sort(Comparator.comparing(Budget::getLastUpdatedAt).reversed());
     List<Budget> budgetsPartOfBudgetGroups =
         budgets.stream().filter(budget -> budget.getParentBudgetGroupId() != null).collect(Collectors.toList());
     List<Budget> budgetsNotPartOfBudgetGroups =
         budgets.stream().filter(budget -> budget.getParentBudgetGroupId() == null).collect(Collectors.toList());
 
     if (budgetsPartOfBudgetGroups.size() != 0) {
-      Map<String, List<BudgetSummary>> childEntitySummaryMapping = new HashMap<>();
-      Set<String> parentBudgetGroupIds = new HashSet<>();
+      Map<String, List<BudgetSummary>> childEntitySummaryMapping = new LinkedHashMap<>();
+      Set<String> parentBudgetGroupIds = new LinkedHashSet<>();
 
       for (Budget budget : budgetsPartOfBudgetGroups) {
         String parentBudgetGroupId = budget.getParentBudgetGroupId();
@@ -442,7 +448,7 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
         if (id != null && childEntitySummaryMapping.containsKey(id)) {
           return childEntitySummaryMapping.get(id);
         }
-        Set<String> newParentBudgetGroupIds = new HashSet<>();
+        Set<String> newParentBudgetGroupIds = new LinkedHashSet<>();
         parentBudgetGroupIds.forEach(budgetGroupId -> {
           BudgetGroup budgetGroup = budgetGroupIdMapping.get(budgetGroupId);
           String parentBudgetGroupId = budgetGroup.getParentBudgetGroupId();
@@ -468,6 +474,7 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
     }
 
     budgetsNotPartOfBudgetGroups.forEach(budget -> summaryList.add(BudgetUtils.buildBudgetSummary(budget)));
+    summaryList.sort(getComparator(budgetGroupSortType, ccmSortOrder));
     return summaryList;
   }
 
@@ -887,12 +894,14 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
     return rootBudgetGroup;
   }
 
-  private HashMap<String, List<BudgetSummary>> getFlattenedList(String accountId) {
-    List<BudgetSummary> nestedSummaryList = listBudgetsAndBudgetGroupsSummary(accountId, null);
+  private HashMap<String, List<BudgetSummary>> getFlattenedList(
+      String accountId, BudgetGroupSortType budgetGroupSortType, CCMSortOrder ccmSortOrder) {
+    List<BudgetSummary> nestedSummaryList =
+        listBudgetsAndBudgetGroupsSummary(accountId, null, budgetGroupSortType, ccmSortOrder);
     nestedSummaryList =
         nestedSummaryList.stream().filter(budgetSummary -> budgetSummary.isBudgetGroup()).collect(Collectors.toList());
 
-    HashMap<String, List<BudgetSummary>> flattenedChildList = new HashMap<>();
+    LinkedHashMap<String, List<BudgetSummary>> flattenedChildList = new LinkedHashMap<>();
     Queue<BudgetSummary> budgetSummaryStore = new LinkedList<>();
     nestedSummaryList.forEach(summary -> budgetSummaryStore.add(summary));
 
@@ -934,5 +943,18 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
           oldBudgetGroup.getBudgetGroupMonthlyBreakdown().getBudgetMonthlyAmount());
     }
     upwardCascadeBudgetGroupAmount(parentBudgetGroup, isMonthlyBreadownBudgetGroup, amountDiff, amountMonthlyDiff);
+  }
+
+  private Comparator getComparator(BudgetGroupSortType budgetGroupSortType, CCMSortOrder ccmSortOrder) {
+    Comparator comparator;
+    if (budgetGroupSortType == BudgetGroupSortType.BUDGET_GROUP_AMOUNT) {
+      comparator = Comparator.comparingDouble(BudgetSummary::getBudgetAmount);
+    } else {
+      comparator = Comparator.comparing(BudgetSummary::getName, String.CASE_INSENSITIVE_ORDER);
+    }
+    if (ccmSortOrder == CCMSortOrder.DESCENDING) {
+      comparator = comparator.reversed();
+    }
+    return comparator;
   }
 }

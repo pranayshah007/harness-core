@@ -8,6 +8,7 @@
 package io.harness.ngtriggers.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.rule.OwnerRule.ABHINAV;
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SRIDHAR;
@@ -185,6 +186,50 @@ public class NGTriggerWebhookRegistrationServiceTest extends CategoryTest {
                                        .build())
                           .build())
             .build();
+    WebhookRegistrationStatusData webhookRegistrationStatus =
+        ngTriggerWebhookRegistrationService.registerWebhook(ngTriggerEntity);
+    assertThat(webhookRegistrationStatus.getWebhookAutoRegistrationStatus().getRegistrationResult())
+        .isEqualTo(WebhookRegistrationStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = ABHINAV)
+  @Category(UnitTests.class)
+  public void shouldRegisterWebhookHarnessScm() throws IOException {
+    ConnectorDetails connectorDetails = ConnectorDetails.builder().connectorType(ConnectorType.HARNESS).build();
+    when(connectorUtils.getConnectorDetails(any(), any())).thenReturn(connectorDetails);
+    when(connectorUtils.retrieveURL(connectorDetails)).thenReturn("repoUrl");
+    when(connectorUtils.getConnectionType(connectorDetails)).thenReturn(GitConnectionType.PROJECT);
+
+    ClassLoader classLoader = getClass().getClassLoader();
+    String ngTriggerYaml_azurerepo_pr = Resources.toString(
+        Objects.requireNonNull(classLoader.getResource("ng-trigger-harnessscm.yaml")), StandardCharsets.UTF_8);
+
+    when(ngTriggerElementMapper.toTriggerConfigV2(any(String.class))).thenCallRealMethod();
+    NGTriggerConfigV2 ngTriggerConfigV2 = ngTriggerElementMapper.toTriggerConfigV2(ngTriggerYaml_azurerepo_pr);
+
+    when(ngTriggerElementMapper.toTriggerConfigV2(any(String.class))).thenReturn(ngTriggerConfigV2);
+
+    Call<ResponseDTO<UpsertWebhookResponseDTO>> requestCall = mock(Call.class);
+    when(requestCall.execute())
+        .thenReturn(Response.success(ResponseDTO.newResponse(UpsertWebhookResponseDTO.builder().status(200).build())));
+    when(webhookEventClient.upsertWebhook(any())).thenReturn(requestCall);
+    NGTriggerEntity ngTriggerEntity = NGTriggerEntity.builder()
+                                          .projectIdentifier("proj")
+                                          .orgIdentifier("org")
+                                          .accountId("acct")
+                                          .yaml(ngTriggerYaml_azurerepo_pr)
+                                          .enabled(true)
+                                          .metadata(NGTriggerMetadata.builder()
+                                                        .webhook(WebhookMetadata.builder()
+                                                                     .git(GitMetadata.builder()
+                                                                              .connectorIdentifier("conn")
+                                                                              .repoName("repo")
+                                                                              .isHarnessScm(true)
+                                                                              .build())
+                                                                     .build())
+                                                        .build())
+                                          .build();
     WebhookRegistrationStatusData webhookRegistrationStatus =
         ngTriggerWebhookRegistrationService.registerWebhook(ngTriggerEntity);
     assertThat(webhookRegistrationStatus.getWebhookAutoRegistrationStatus().getRegistrationResult())

@@ -79,6 +79,11 @@ public class K8sNodeRecommendationTasklet implements Tasklet {
             jobConstants.getAccountId(), nodePoolId.getClusterid());
         continue;
       }
+      if (k8sRecommendationDAO.fetchDistinctInstanceFamilies(jobConstants, nodePoolId).size() > 1) {
+        log.info("There is a node_pool with multiple instance families in [accountId:{}, nodePoolId:{}], skipping",
+            jobConstants.getAccountId(), nodePoolId);
+        continue;
+      }
 
       createTotalResourceUsageAndInsert(jobConstants, nodePoolId);
 

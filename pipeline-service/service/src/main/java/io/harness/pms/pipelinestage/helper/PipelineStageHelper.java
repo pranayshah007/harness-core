@@ -86,8 +86,8 @@ public class PipelineStageHelper {
       validateNestedChainedPipeline(pipelineEntity);
     } catch (Exception e) {
       log.error("Error during nested chaining validation ", e);
-      throw NestedExceptionUtils.hintWithExplanationException(String.format(NESTED_ERROR_EXCEPTION_HINT, stageName),
-          String.format(NESTED_ERROR_EXCEPTION, stageName), null);
+      throw NestedExceptionUtils.hintWithExplanationException(
+          String.format(NESTED_ERROR_EXCEPTION_HINT, stageName), e.getMessage(), null);
     }
   }
 
@@ -155,7 +155,8 @@ public class PipelineStageHelper {
     if (yamlNode.getField(YAMLFieldNameConstants.STAGE) != null
         && yamlNode.getField(YAMLFieldNameConstants.STAGE).getNode() != null
         && yamlNode.getField(YAMLFieldNameConstants.STAGE).getNode().getType().equals("Pipeline")) {
-      throw new InvalidRequestException("Nested pipeline is not supported");
+      throw new InvalidRequestException(
+          String.format(NESTED_ERROR_EXCEPTION, yamlNode.getField(YAMLFieldNameConstants.STAGE).getNode().getName()));
     }
   }
 
@@ -164,17 +165,6 @@ public class PipelineStageHelper {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(ambiance.getSetupAbstractions().get("accountId"),
                                                   stepParameters.getOrg(), stepParameters.getProject()),
         Resource.of("PIPELINE", stepParameters.getPipeline()), PipelineRbacPermissions.PIPELINE_EXECUTE);
-  }
-
-  public String getInputSetYaml(YamlField pipelineInputs, String pipelineVersion) {
-    switch (pipelineVersion) {
-      case PipelineVersion.V0:
-        return getInputSetYaml(pipelineInputs);
-      case PipelineVersion.V1:
-        return pipelineStageHelperV1.getInputSet(pipelineInputs);
-      default:
-        throw new InvalidRequestException(String.format("Child pipeline version: %s not supported", pipelineVersion));
-    }
   }
 
   public JsonNode getInputSetJsonNode(YamlField pipelineInputs, String pipelineVersion) {
@@ -186,15 +176,6 @@ public class PipelineStageHelper {
       default:
         throw new InvalidRequestException(String.format("Child pipeline version: %s not supported", pipelineVersion));
     }
-  }
-
-  private String getInputSetYaml(YamlField pipelineInputs) {
-    String inputSetYaml = "";
-    if (pipelineInputs != null) {
-      Map<String, JsonNode> map = getInputSetMapInternal(pipelineInputs);
-      inputSetYaml = YamlUtils.writeYamlString(map);
-    }
-    return inputSetYaml;
   }
 
   private JsonNode getInputSetJsonNode(YamlField pipelineInputs) {
@@ -273,7 +254,14 @@ public class PipelineStageHelper {
   }
 
   public PipelineStageOutcome resolveOutputVariables(Map<String, ParameterField<String>> map, Ambiance ambiance) {
-    Map<String, String> resolvedMap = new HashMap<>();
+    Map<String, Object> resolvedMap = resolveOutputVariables(map);
+
+    return new PipelineStageOutcome((Map<String, Object>) pmsEngineExpressionService.resolve(
+        ambiance, resolvedMap, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED));
+  }
+
+  public Map<String, Object> resolveOutputVariables(Map<String, ParameterField<String>> map) {
+    Map<String, Object> resolvedMap = new HashMap<>();
 
     for (Map.Entry<String, ParameterField<String>> entry : map.entrySet()) {
       String expression;
@@ -286,9 +274,7 @@ public class PipelineStageHelper {
 
       resolvedMap.put(entry.getKey(), expression);
     }
-
-    return new PipelineStageOutcome((Map<String, Object>) pmsEngineExpressionService.resolve(
-        ambiance, resolvedMap, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED));
+    return resolvedMap;
   }
 
   public void validateFailureStrategy(ParameterField<List<FailureStrategyConfig>> failureStrategies) {

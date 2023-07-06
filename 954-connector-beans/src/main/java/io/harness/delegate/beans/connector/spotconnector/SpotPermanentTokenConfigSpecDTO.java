@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.connector.spotconnector;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.beans.DecryptableEntity;
 import io.harness.encryption.SecretRefData;
 import io.harness.secret.SecretReference;
@@ -26,6 +27,7 @@ import lombok.Value;
 @ApiModel("SpotPermanentTokenConfigSpec")
 @OneOfField(fields = {"spotAccountId", "spotAccountIdRef"})
 @Schema(name = "SpotPermanentTokenConfigSpec", description = "This contains Spot permanent token connector spec")
+@RecasterAlias("io.harness.delegate.beans.connector.spotconnector.SpotPermanentTokenConfigSpecDTO")
 public class SpotPermanentTokenConfigSpecDTO implements SpotCredentialSpecDTO, DecryptableEntity {
   String spotAccountId;
   @ApiModelProperty(dataType = "string") @SecretReference SecretRefData spotAccountIdRef;

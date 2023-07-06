@@ -57,6 +57,7 @@ public class TriggerReferenceHelper {
         entityDetailProtoDTOList.add(getReferredConnectorDetails(ngTriggerConfigV2, accountId, connectorRef));
       }
     }
+    // todo(abhinav): add reference for harness code?
     return entityDetailProtoDTOList;
   }
 
@@ -112,7 +113,8 @@ public class TriggerReferenceHelper {
     Set<String> connectorRefs = new HashSet<>();
     if (ngTriggerConfigV2.getSource().getType() == WEBHOOK) {
       WebhookTriggerConfigV2 webhookTriggerConfigV2 = (WebhookTriggerConfigV2) ngTriggerConfigV2.getSource().getSpec();
-      if (webhookTriggerConfigV2.getSpec().fetchGitAware() != null) {
+      if (webhookTriggerConfigV2.getSpec().fetchGitAware() != null
+          && webhookTriggerConfigV2.getSpec().fetchGitAware().fetchConnectorRef() != null) {
         connectorRefs.add(webhookTriggerConfigV2.getSpec().fetchGitAware().fetchConnectorRef());
       }
     } else if (ngTriggerConfigV2.getSource().getType() == ARTIFACT) {

@@ -7,6 +7,9 @@
 
 package io.harness.idp.common.delegateselectors.cache.memory;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.UnexpectedException;
 import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCache;
 import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCacheLoader;
 import io.harness.idp.common.delegateselectors.cache.factory.DelegateSelectorsCacheLoaderFactory;
@@ -22,9 +25,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 @Singleton
+@Slf4j
+@OwnedBy(HarnessTeam.IDP)
 public class DelegateSelectorsInMemoryCache implements DelegateSelectorsCache {
   private static final long EXPIRY_IN_HOURS = 1;
   private static final long MAX_CACHE_SIZE = 1000;
@@ -45,8 +51,14 @@ public class DelegateSelectorsInMemoryCache implements DelegateSelectorsCache {
           });
 
   @Override
-  public Set<String> get(String accountIdentifier, String host) throws ExecutionException {
-    Map<String, Set<String>> hostDelegateSelectMap = cache.get(accountIdentifier);
+  public Set<String> get(String accountIdentifier, String host) {
+    Map<String, Set<String>> hostDelegateSelectMap = null;
+    try {
+      hostDelegateSelectMap = cache.get(accountIdentifier);
+    } catch (ExecutionException e) {
+      log.error("Error in fetching delegate selectors cache. Error = {}", e.getMessage(), e);
+      throw new UnexpectedException(e.getMessage());
+    }
     Set<String> delegateSelectors = hostDelegateSelectMap.get(host);
     if (delegateSelectors == null) {
       delegateSelectors = new HashSet<>();
@@ -55,9 +67,32 @@ public class DelegateSelectorsInMemoryCache implements DelegateSelectorsCache {
   }
 
   @Override
-  public void put(String accountIdentifier, String host, Set<String> delegateSelectors) throws ExecutionException {
-    Map<String, Set<String>> hostDelegateSelectorMap = cache.get(accountIdentifier);
+  public void put(String accountIdentifier, String host, Set<String> delegateSelectors) {
+    Map<String, Set<String>> hostDelegateSelectorMap = null;
+    try {
+      hostDelegateSelectorMap = cache.get(accountIdentifier);
+    } catch (ExecutionException e) {
+      log.error("Error in updating delegate selectors cache. Error = {}", e.getMessage(), e);
+      throw new UnexpectedException(e.getMessage());
+    }
     hostDelegateSelectorMap.put(host, delegateSelectors);
     cache.put(accountIdentifier, hostDelegateSelectorMap);
+  }
+
+  @Override
+  public void remove(String accountIdentifier, Set<String> hosts) {
+    Map<String, Set<String>> hostDelegateSelectorMap = null;
+    try {
+      hostDelegateSelectorMap = cache.get(accountIdentifier);
+    } catch (ExecutionException e) {
+      log.error("Error in removing entry from delegate selectors cache. Error = {}", e.getMessage(), e);
+      throw new UnexpectedException(e.getMessage());
+    }
+    hosts.forEach(hostDelegateSelectorMap::remove);
+    if (hostDelegateSelectorMap.isEmpty()) {
+      cache.invalidate(accountIdentifier);
+    } else {
+      cache.put(accountIdentifier, hostDelegateSelectorMap);
+    }
   }
 }

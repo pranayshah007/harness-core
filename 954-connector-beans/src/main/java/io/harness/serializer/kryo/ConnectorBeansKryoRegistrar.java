@@ -247,8 +247,10 @@ import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthCredentialsD
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthenticationDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowRefreshTokenDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.signalfxconnector.SignalFXConnectorDTO;
+import io.harness.delegate.beans.connector.splunkconnector.SplunkAuthType;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO;
@@ -502,6 +504,7 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(CustomSecretManagerConnectorDTO.class, 19875);
     kryo.register(TemplateLinkConfigForCustomSecretManager.class, 19877);
     kryo.register(GcpSecretManagerConnectorDTO.class, 19878);
+    kryo.register(SplunkAuthType.class, 19880);
     kryo.register(ELKConnectorDTO.class, 10000001);
     kryo.register(ELKAuthType.class, 10000002);
 
@@ -515,6 +518,7 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(ServiceNowAuthCredentialsDTO.class, 10000114);
     kryo.register(ServiceNowUserNamePasswordDTO.class, 10000115);
     kryo.register(ServiceNowADFSDTO.class, 10000116);
+    kryo.register(ServiceNowRefreshTokenDTO.class, 10000117);
 
     kryo.register(TasConnectorDTO.class, 10000201);
     kryo.register(TasCredentialDTO.class, 10000202);

@@ -40,6 +40,8 @@ import com.amazonaws.retry.RetryPolicy;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.BucketVersioningConfiguration;
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -56,6 +58,7 @@ public class AwsApiHelperServiceTest extends CategoryTest {
   @Mock AmazonS3Client amazonS3Client;
   @Mock AwsCallTracker tracker;
   @Mock KryoSerializer kryoSerializer;
+  @Mock ObjectMetadata metadata;
   @InjectMocks @Spy AwsApiHelperService awsApiHelperService;
 
   @Before
@@ -193,5 +196,28 @@ public class AwsApiHelperServiceTest extends CategoryTest {
     AwsInternalConfig awsInternalConfig = AwsInternalConfig.builder().build();
     awsApiHelperService.getArtifactBuildDetails(awsInternalConfig, bucketName, filePath, false, 100, region, false);
     verify(tracker, times(0)).trackS3Call("Get Object Metadata");
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testgetArtifactMetaData() {
+    String region = "us-east-1";
+    String bucketName = "bucket";
+    String filePath = "file.jar:abcd";
+    Map<String, Object> map = new HashMap<>();
+    map.put("accept-ranges", "helloworld");
+    map.put("Content Length", "325");
+    AwsInternalConfig awsInternalConfig = AwsInternalConfig.builder().build();
+    doReturn(amazonS3Client).when(awsApiHelperService).getAmazonS3Client(any(), anyString());
+    when(amazonS3Client.getBucketVersioningConfiguration(eq("bucket")))
+        .thenReturn(new BucketVersioningConfiguration("ENABLED"));
+
+    when(amazonS3Client.getObjectMetadata(eq(bucketName), eq(filePath))).thenReturn(metadata);
+    when(metadata.getRawMetadata()).thenReturn(map);
+    BuildDetails buildDetails =
+        awsApiHelperService.getArtifactBuildDetails(awsInternalConfig, bucketName, filePath, false, 100, region, true);
+    assertThat(buildDetails.getMetadata()).isEqualTo(map);
+    verify(tracker, times(1)).trackS3Call("Get Object Metadata");
   }
 }

@@ -18,7 +18,6 @@ import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.JsonUtils;
 import io.harness.strategy.StrategyValidationUtils;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
@@ -47,8 +46,8 @@ public class StrategyHelper {
       boolean isStepGroup, Class cls) throws IOException {
     JsonNode node = nodeWithStrategy.get("strategy");
     if (node == null || node.isNull()) {
-      JsonNode clonedNode = JsonPipelineUtils.asTree(JsonUtils.asMap(
-          StrategyUtils.replaceExpressions(nodeWithStrategy.deepCopy().toString(), new HashMap<>(), 0, 1, null)));
+      JsonNode clonedNode =
+          StrategyUtils.replaceExpressions(JsonPipelineUtils.asTree(nodeWithStrategy), new HashMap<>(), 0, 1, null);
       return StrategyInfo.builder().expandedJsonNodes(Collections.singletonList(clonedNode)).maxConcurrency(1).build();
     }
     StrategyConfig strategyConfig = JsonPipelineUtils.read(node.toString(), StrategyConfig.class);
@@ -71,8 +70,8 @@ public class StrategyHelper {
       throws IOException {
     JsonNode node = nodeWithStrategy.get("strategy");
     if (node == null || node.isNull()) {
-      JsonNode clonedNode = JsonPipelineUtils.asTree(JsonUtils.asMap(
-          StrategyUtils.replaceExpressions(nodeWithStrategy.deepCopy().toString(), new HashMap<>(), 0, 1, null)));
+      JsonNode clonedNode =
+          StrategyUtils.replaceExpressions(JsonPipelineUtils.asTree(nodeWithStrategy), new HashMap<>(), 0, 1, null);
       return StrategyInfo.builder().expandedJsonNodes(Collections.singletonList(clonedNode)).maxConcurrency(1).build();
     }
     StrategyConfig strategyConfig = JsonPipelineUtils.read(node.toString(), StrategyConfig.class);

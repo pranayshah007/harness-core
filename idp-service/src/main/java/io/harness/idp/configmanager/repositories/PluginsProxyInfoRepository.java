@@ -20,5 +20,6 @@ public interface PluginsProxyInfoRepository
     extends CrudRepository<PluginsProxyInfoEntity, String>, PluginsProxyInfoRepositoryCustom {
   PluginsProxyInfoEntity findByAccountIdentifierAndHost(String accountIdentifier, String host);
   List<PluginsProxyInfoEntity> findAllByAccountIdentifierAndPluginId(String accountIdentifier, String pluginId);
+  List<PluginsProxyInfoEntity> findAllByAccountIdentifier(String accountIdentifier);
   void deleteAllByAccountIdentifierAndPluginId(String accountIdentifier, String pluginId);
 }

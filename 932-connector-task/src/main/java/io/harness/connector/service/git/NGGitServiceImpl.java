@@ -29,6 +29,10 @@ import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitBaseRequest;
 import io.harness.git.model.GitRepositoryType;
 import io.harness.git.model.JgitSshAuthRequest;
+import io.harness.git.model.ListRemoteRequest;
+import io.harness.git.model.ListRemoteResult;
+import io.harness.git.model.RevertAndPushRequest;
+import io.harness.git.model.RevertAndPushResult;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.ssh.SshFactory;
 import io.harness.shell.ssh.client.jsch.JschConnection;
@@ -64,6 +68,13 @@ public class NGGitServiceImpl implements NGGitService {
     final GitBaseRequest gitBaseRequest = GitBaseRequest.builder().build();
     setGitBaseRequest(gitConfig, accountId, gitBaseRequest, YAML, sshSessionConfig, true);
     gitClientV2.validateOrThrow(gitBaseRequest);
+  }
+
+  @Override
+  public ListRemoteResult listRemote(GitConfigDTO gitConfig, ListRemoteRequest listRemoteRequest, String accountId,
+      SshSessionConfig sshSessionConfig, boolean overrideFromGitConfig) {
+    setGitBaseRequest(gitConfig, accountId, listRemoteRequest, YAML, sshSessionConfig, overrideFromGitConfig);
+    return gitClientV2.listRemote(listRemoteRequest);
   }
 
   @VisibleForTesting
@@ -120,6 +131,13 @@ public class NGGitServiceImpl implements NGGitService {
       String accountId, SshSessionConfig sshSessionConfig, boolean overrideFromGitConfig) {
     setGitBaseRequest(gitConfig, accountId, commitAndPushRequest, YAML, sshSessionConfig, overrideFromGitConfig);
     return gitClientV2.commitAndPush(commitAndPushRequest);
+  }
+
+  @Override
+  public RevertAndPushResult revertCommitAndPush(GitConfigDTO gitConfig, RevertAndPushRequest commitAndPushRequest,
+      String accountId, SshSessionConfig sshSessionConfig, boolean overrideFromGitConfig) {
+    setGitBaseRequest(gitConfig, accountId, commitAndPushRequest, YAML, sshSessionConfig, overrideFromGitConfig);
+    return gitClientV2.revertAndPush(commitAndPushRequest);
   }
 
   @Override

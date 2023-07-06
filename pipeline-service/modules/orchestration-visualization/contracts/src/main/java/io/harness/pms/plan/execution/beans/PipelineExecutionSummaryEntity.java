@@ -22,6 +22,9 @@ import io.harness.execution.StagesExecutionMetadata;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.governance.GovernanceMetadata;
+import io.harness.mongo.collation.CollationLocale;
+import io.harness.mongo.collation.CollationStrength;
+import io.harness.mongo.index.Collation;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
@@ -39,6 +42,7 @@ import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
+import io.harness.yaml.core.NGLabel;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.reinert.jjschema.SchemaIgnore;
@@ -119,6 +123,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
   Boolean executionInputConfigured;
 
   @Singular @Size(max = 128) List<NGTag> tags;
+  @Singular @Size(max = 128) List<NGLabel> labels;
 
   @Builder.Default Map<String, org.bson.Document> moduleInfo = new HashMap<>();
   @Setter @NonFinal @Builder.Default Map<String, GraphLayoutNodeDTO> layoutNodeMap = new HashMap<>();
@@ -142,6 +147,8 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
 
   Long startTs;
   Long endTs;
+
+  String pipelineVersion;
 
   Boolean notifyOnlyMe;
 
@@ -246,7 +253,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
         .add(
             SortCompoundMongoIndex.builder()
                 .name(
-                    "accountId_orgId_projectId_name_startTs_repo_branch_pipelineIds_status_modules_parent_info_range_idx")
+                    "accountId_orgId_projectId_name_startTs_repo_branch_pipelineIds_status_modules_parent_info_range_WithCollationIdx")
                 .field(PlanExecutionSummaryKeys.accountId)
                 .field(PlanExecutionSummaryKeys.orgIdentifier)
                 .field(PlanExecutionSummaryKeys.projectIdentifier)
@@ -260,6 +267,8 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
                 .ascRangeField(PlanExecutionSummaryKeys.status)
                 .ascRangeField(PlanExecutionSummaryKeys.modules)
                 .ascRangeField(PlanExecutionSummaryKeys.isChildPipeline)
+                .collation(
+                    Collation.builder().locale(CollationLocale.ENGLISH).strength(CollationStrength.SECONDARY).build())
                 .build())
         // Sort queries are added for list page
         .add(SortCompoundMongoIndex.builder()
@@ -299,6 +308,10 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
     public String tagsKey = PlanExecutionSummaryKeys.tags + "."
         + "key";
     public String tagsValue = PlanExecutionSummaryKeys.tags + "."
+        + "value";
+    public String labelsKey = PlanExecutionSummaryKeys.labels + "."
+        + "key";
+    public String labelsValue = PlanExecutionSummaryKeys.labels + "."
         + "value";
     public String isChildPipeline = PlanExecutionSummaryKeys.parentStageInfo + "."
         + "hasParentPipeline";

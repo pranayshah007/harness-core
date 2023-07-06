@@ -13,7 +13,10 @@ import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner
 import static java.util.Objects.isNull;
 
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.servicenow.utils.ServiceNowFieldNGUtils;
 import io.harness.common.NGTaskType;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -30,6 +33,7 @@ import io.harness.eraro.ErrorCode;
 import io.harness.exception.DelegateNotAvailableException;
 import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.HintException;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ServiceNowException;
 import io.harness.exception.WingsException;
@@ -46,10 +50,13 @@ import io.harness.servicenow.ServiceNowFieldTypeNG;
 import io.harness.servicenow.ServiceNowStagingTable;
 import io.harness.servicenow.ServiceNowTemplate;
 import io.harness.servicenow.ServiceNowTicketTypeDTO;
+import io.harness.servicenow.ServiceNowTicketTypeNG;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -59,22 +66,41 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ServiceNowResourceServiceImpl implements ServiceNowResourceService {
   private static final Duration TIMEOUT = Duration.ofSeconds(30);
-
+  private static final String SYS_ID_FIELD_KEY = "sys_id";
   private final ConnectorService connectorService;
   private final SecretManagerClientService secretManagerClientService;
   private final DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  private final CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Inject
   public ServiceNowResourceServiceImpl(@Named(DEFAULT_CONNECTOR_SERVICE) ConnectorService connectorService,
-      SecretManagerClientService secretManagerClientService, DelegateGrpcClientWrapper delegateGrpcClientWrapper) {
+      SecretManagerClientService secretManagerClientService, DelegateGrpcClientWrapper delegateGrpcClientWrapper,
+      CDFeatureFlagHelper cdFeatureFlagHelper) {
     this.connectorService = connectorService;
     this.secretManagerClientService = secretManagerClientService;
     this.delegateGrpcClientWrapper = delegateGrpcClientWrapper;
+    this.cdFeatureFlagHelper = cdFeatureFlagHelper;
   }
 
   @Override
   public List<ServiceNowFieldNG> getIssueCreateMetadata(
       IdentifierRef serviceNowConnectorRef, String orgId, String projectId, String ticketType) {
+    if (cdFeatureFlagHelper.isEnabled(
+            serviceNowConnectorRef.getAccountIdentifier(), FeatureName.CDS_SERVICENOW_USE_METADATA_V2)) {
+      try {
+        ServiceNowTaskNGParametersBuilder parametersBuilder =
+            ServiceNowTaskNGParameters.builder().action(ServiceNowActionNG.GET_METADATA_V2).ticketType(ticketType);
+        return parseFieldsAndSetSysIdAsNotMandatory(
+            obtainServiceNowTaskNGResponse(serviceNowConnectorRef, orgId, projectId, parametersBuilder)
+                .getServiceNowFieldJsonNGListAsString());
+      } catch (Exception ex) {
+        // InvalidArgumentsException may occur when delegate task expired or not picked.
+        log.warn("Exception while executing GET_METADATA_V2 servicenow task", ex);
+        if (!isResultingFromDelegateNotHavingActionEnum(ex)) {
+          throw ex;
+        }
+      }
+    }
     ServiceNowTaskNGParametersBuilder parametersBuilder = ServiceNowTaskNGParameters.builder()
                                                               .action(ServiceNowActionNG.GET_TICKET_CREATE_METADATA)
                                                               .ticketType(ticketType);
@@ -101,9 +127,40 @@ public class ServiceNowResourceServiceImpl implements ServiceNowResourceService 
     return serviceNowFieldNG;
   }
 
+  private List<ServiceNowFieldNG> parseFieldsAndSetSysIdAsNotMandatory(String jsonNodeListAsString) {
+    List<JsonNode> jsonNodeList = ServiceNowFieldNGUtils.parseServiceNowMetadataResponse(jsonNodeListAsString);
+    return jsonNodeList.stream()
+        .map(jsonNode -> {
+          ServiceNowFieldNG serviceNowFieldNG = ServiceNowFieldNGUtils.parseServiceNowFieldNG(jsonNode);
+
+          if (SYS_ID_FIELD_KEY.equals(serviceNowFieldNG.getKey())) {
+            serviceNowFieldNG.setRequired(false);
+          }
+          return serviceNowFieldNG;
+        })
+        .collect(Collectors.toList());
+  }
+
   @Override
   public List<ServiceNowFieldNG> getMetadata(
       IdentifierRef serviceNowConnectorRef, String orgId, String projectId, String ticketType) {
+    if (cdFeatureFlagHelper.isEnabled(
+            serviceNowConnectorRef.getAccountIdentifier(), FeatureName.CDS_SERVICENOW_USE_METADATA_V2)) {
+      try {
+        ServiceNowTaskNGParametersBuilder parametersBuilder =
+            ServiceNowTaskNGParameters.builder().action(ServiceNowActionNG.GET_METADATA_V2).ticketType(ticketType);
+        return parseFieldsAndSetSysIdAsNotMandatory(
+            obtainServiceNowTaskNGResponse(serviceNowConnectorRef, orgId, projectId, parametersBuilder)
+                .getServiceNowFieldJsonNGListAsString());
+      } catch (Exception ex) {
+        // InvalidArgumentsException may occur when delegate task expired or not picked.
+        log.warn("Exception while executing GET_METADATA_V2 servicenow task", ex);
+        if (!isResultingFromDelegateNotHavingActionEnum(ex)) {
+          throw ex;
+        }
+      }
+    }
+
     ServiceNowTaskNGParametersBuilder parametersBuilder =
         ServiceNowTaskNGParameters.builder().action(ServiceNowActionNG.GET_METADATA).ticketType(ticketType);
     return obtainServiceNowTaskNGResponse(serviceNowConnectorRef, orgId, projectId, parametersBuilder)
@@ -136,8 +193,21 @@ public class ServiceNowResourceServiceImpl implements ServiceNowResourceService 
   public List<ServiceNowTicketTypeDTO> getTicketTypesV2(IdentifierRef connectorRef, String orgId, String projectId) {
     ServiceNowTaskNGParametersBuilder parametersBuilder =
         ServiceNowTaskNGParameters.builder().action(ServiceNowActionNG.GET_TICKET_TYPES);
-    return obtainServiceNowTaskNGResponse(connectorRef, orgId, projectId, parametersBuilder)
-        .getServiceNowTicketTypeList();
+    List<ServiceNowTicketTypeDTO> serviceNowStandardTicketTypeList =
+        Arrays.stream(ServiceNowTicketTypeNG.values())
+            .map(ticketType -> new ServiceNowTicketTypeDTO(ticketType.name(), ticketType.getDisplayName()))
+            .collect(Collectors.toList());
+    try {
+      return obtainServiceNowTaskNGResponse(connectorRef, orgId, projectId, parametersBuilder)
+          .getServiceNowTicketTypeList();
+    } catch (Exception ex) {
+      // InvalidArgumentsException may occur when delegate task expired or not picked.
+      log.warn("Exception while executing GET_TICKET_TYPES servicenow task", ex);
+      if (isResultingFromDelegateNotHavingActionEnum(ex)) {
+        return serviceNowStandardTicketTypeList;
+      }
+      throw ex;
+    }
   }
 
   private ServiceNowTaskNGResponse obtainServiceNowTaskNGResponse(IdentifierRef serviceNowConnectorRef, String orgId,
@@ -227,5 +297,11 @@ public class ServiceNowResourceServiceImpl implements ServiceNowResourceService 
     return new HintException(
         String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
         new DelegateNotAvailableException(delegateDownErrorMessage, WingsException.USER));
+  }
+
+  private static boolean isResultingFromDelegateNotHavingActionEnum(Exception ex) {
+    return (HintException.class.equals(ex.getClass()) && !isNull(ex.getCause())
+               && DelegateNotAvailableException.class.equals(ex.getCause().getClass()))
+        || InvalidArgumentsException.class.equals(ex.getClass());
   }
 }

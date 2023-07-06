@@ -13,7 +13,6 @@ import io.harness.annotations.dev.OwnedBy;
 
 @OwnedBy(CDP)
 public interface StepSpecTypeConstants {
-  String GITOPS_CREATE_PR = "CreatePR";
   String GITOPS_MERGE_PR = "MergePR";
   String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
   String GITOPS_SYNC = "GitOpsSync";
@@ -132,4 +131,9 @@ public interface StepSpecTypeConstants {
   String TERRAFORM_CLOUD_ROLLBACK = "TerraformCloudRollback";
 
   String AWS_LAMBDA_ROLLBACK = "AwsLambdaRollback";
+
+  String SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2 = "ServerlessAwsLambdaPrepareRollbackV2";
+  String SERVERLESS_AWS_LAMBDA_ROLLBACK_V2 = "ServerlessAwsLambdaRollbackV2";
+  String SERVERLESS_AWS_LAMBDA_DEPLOY_V2 = "ServerlessAwsLambdaDeployV2";
+  String SERVERLESS_AWS_LAMBDA_PACKAGE_V2 = "ServerlessAwsLambdaPackageV2";
 }

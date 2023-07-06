@@ -37,8 +37,9 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
 public class FilterCreatorHelper {
-  private final List<String> jexlKeywords = ImmutableList.of("or", "and", "eq", "ne", "lt", "gt", "le", "ge", "div",
-      "mod", "not", "null", "true", "false", "new", "var", "return");
+  private final List<String> jexlKeywords =
+      ImmutableList.of("or", "and", "eq", "ne", "lt", "gt", "le", "ge", "div", "mod", "not", "null", "true", "false",
+          "new", "var", "return", "step", "parallel", "stepGroup", "org", "account", "class", "shellScriptProvisioner");
 
   @VisibleForTesting
   void checkIfNameIsJexlKeyword(YamlNode variable) {

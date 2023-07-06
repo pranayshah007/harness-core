@@ -50,6 +50,9 @@ public class ServiceNowAuthenticationDTODeserializer extends StdDeserializer<Ser
     if (type == ServiceNowAuthType.ADFS) {
       servicenowAuthCredentials = mapper.readValue(authSpec.toString(), ServiceNowADFSDTO.class);
     }
+    if (type == ServiceNowAuthType.REFRESH_TOKEN) {
+      servicenowAuthCredentials = mapper.readValue(authSpec.toString(), ServiceNowRefreshTokenDTO.class);
+    }
     // add condition for future types here
     return ServiceNowAuthenticationDTO.builder().authType(type).credentials(servicenowAuthCredentials).build();
   }

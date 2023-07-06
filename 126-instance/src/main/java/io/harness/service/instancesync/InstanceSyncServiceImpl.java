@@ -77,6 +77,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -114,6 +115,8 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
       Integer.parseInt(System.getenv().getOrDefault("INSTANCE_SYNC_RESPONSE_BATCH_INSTANCE_COUNT", "100"));
   private static final int RELEASE_COUNT_LIMIT =
       Integer.parseInt(System.getenv().getOrDefault("INSTANCE_SYNC_RESPONSE_BATCH_RELEASE_COUNT", "5"));
+
+  static final long RELEASE_PRESERVE_TIME = TimeUnit.DAYS.toMillis(7);
 
   @Inject
   public InstanceSyncServiceImpl(PersistentLocker persistentLocker,
@@ -168,7 +171,8 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
 
           InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO;
 
-          if (abstractInstanceSyncHandler.isInstanceSyncV2Enabled()) {
+          if (abstractInstanceSyncHandler.isInstanceSyncV2EnabledAndSupported(
+                  deploymentSummaryDTO.getAccountIdentifier())) {
             instanceSyncPerpetualTaskInfoDTO = handlingInstanceSyncPerpetualTaskV2(
                 abstractInstanceSyncHandler, infrastructureMappingDTO, deploymentSummaryDTO);
           } else {
@@ -185,7 +189,8 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
           // Sync only for deployment infos / instance sync handler keys from instances from server
           performInstanceSync(instanceSyncPerpetualTaskInfoDTO, infrastructureMappingDTO,
               deploymentSummaryDTO.getServerInstanceInfoList(), abstractInstanceSyncHandler, true,
-              abstractInstanceSyncHandler.isInstanceSyncV2Enabled());
+              abstractInstanceSyncHandler.isInstanceSyncV2EnabledAndSupported(
+                  deploymentSummaryDTO.getAccountIdentifier()));
 
           instanceSyncMonitoringService.recordMetrics(
               infrastructureMappingDTO.getAccountIdentifier(), true, true, System.currentTimeMillis() - startTime);
@@ -250,14 +255,17 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
     InstanceSyncPerpetualTaskMappingDTO instanceSyncPerpetualTaskMappingDTO;
     if (connectorDTO.isPresent()) {
       ConnectorInfoDTO connectorInfoDTO = connectorDTO.get().getConnector();
-      instanceSyncPerpetualTaskMappingDTOOptional = instanceSyncPerpetualTaskMappingService.findByConnectorRef(
-          infrastructureMappingDTO.getAccountIdentifier(), connectorInfoDTO.getOrgIdentifier(),
-          connectorInfoDTO.getProjectIdentifier(), infrastructureMappingDTO.getConnectorRef());
+      instanceSyncPerpetualTaskMappingDTOOptional =
+          instanceSyncPerpetualTaskMappingService.findByConnectorRefAndDeploymentType(
+              infrastructureMappingDTO.getAccountIdentifier(), connectorInfoDTO.getOrgIdentifier(),
+              connectorInfoDTO.getProjectIdentifier(), infrastructureMappingDTO.getConnectorRef(),
+              deploymentSummaryDTO.getDeploymentInfoDTO().getType());
       if (instanceSyncPerpetualTaskMappingDTOOptional.isEmpty()) {
         instanceSyncPerpetualTaskMappingDTO = instanceSyncPerpetualTaskMappingService.save(
             InstanceSyncPerpetualTaskMappingDTO.builder()
                 .accountId(infrastructureMappingDTO.getAccountIdentifier())
                 .orgId(connectorInfoDTO.getOrgIdentifier())
+                .deploymentType(deploymentSummaryDTO.getDeploymentInfoDTO().getType())
                 .projectId(connectorInfoDTO.getProjectIdentifier())
                 .perpetualTaskId(instanceSyncPerpetualTaskService.createPerpetualTaskV2(
                     abstractInstanceSyncHandler, infrastructureMappingDTO, connectorInfoDTO))
@@ -304,9 +312,11 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
       IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRefOrThrowException(
           infrastructureMappingDTO.getConnectorRef(), infrastructureMappingDTO.getAccountIdentifier(),
           deploymentSummaryDTO.getOrgIdentifier(), deploymentSummaryDTO.getProjectIdentifier(), CONNECTOR);
-      instanceSyncPerpetualTaskMappingDTOOptional = instanceSyncPerpetualTaskMappingService.findByConnectorRef(
-          identifierRef.getAccountIdentifier(), identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier(),
-          infrastructureMappingDTO.getConnectorRef());
+      instanceSyncPerpetualTaskMappingDTOOptional =
+          instanceSyncPerpetualTaskMappingService.findByConnectorRefAndDeploymentType(
+              identifierRef.getAccountIdentifier(), identifierRef.getOrgIdentifier(),
+              identifierRef.getProjectIdentifier(), infrastructureMappingDTO.getConnectorRef(),
+              deploymentSummaryDTO.getDeploymentInfoDTO().getType());
       instanceSyncPerpetualTaskMappingDTOOptional.ifPresent(syncPerpetualTaskMappingDTO
           -> instanceSyncPerpetualTaskService.deletePerpetualTask(
               infrastructureMappingDTO.getAccountIdentifier(), syncPerpetualTaskMappingDTO.getPerpetualTaskId()));
@@ -409,6 +419,9 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
       if (!result.getStatus().getExecutionStatus().isEmpty() && !result.getStatus().getIsSuccessful()) {
         log.error("Instance Sync failed for perpetual task: [{}] and response [{}], with error: [{}]", perpetualTaskId,
             result, result.getStatus().getErrorMessage());
+        for (InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO : instanceSyncPerpetualTaskInfoDTOList) {
+          cleanPerpetualTaskIfFailingForSevenDays(instanceSyncPerpetualTaskInfoDTO);
+        }
         return;
       }
 
@@ -422,6 +435,9 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
         if (instanceSyncData.getStatus().getIsSuccessful()
             && !instancesPerTask.containsKey(instanceSyncData.getTaskInfoId())) {
           instancesPerTask.put(instanceSyncData.getTaskInfoId(), instanceSyncData);
+        } else {
+          cleanPerpetualTaskIfFailingForSevenDays(
+              instanceSyncPerpetualTaskInfoMap.get(instanceSyncData.getTaskInfoId()));
         }
       }
 
@@ -474,7 +490,7 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
                     .getType(),
                 infrastructureMappingDTO.get().getInfrastructureKind());
 
-        if (!abstractInstanceSyncHandler.isInstanceSyncV2Enabled()) {
+        if (!abstractInstanceSyncHandler.isInstanceSyncV2EnabledAndSupported(accountIdentifier)) {
           migrateToInstanceSyncV1(
               instanceSyncPerpetualTaskInfoDTO, infrastructureMappingDTO.get(), abstractInstanceSyncHandler);
           continue;
@@ -504,6 +520,8 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
             log.info("Instance Sync completed");
             // cleaning up V1 perpetual task
             cleanupPerpetualTaskV1(instanceSyncPerpetualTaskInfoDTO);
+            instanceSyncPerpetualTaskInfoDTO.setLastSuccessfulRun(System.currentTimeMillis());
+            instanceSyncPerpetualTaskInfoService.updateLastSuccessfulRun(instanceSyncPerpetualTaskInfoDTO);
           } catch (Exception exception) {
             log.error("Exception occurred during instance sync", exception);
           } finally {
@@ -530,6 +548,17 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
       instanceSyncPerpetualTaskInfoDTO.setPerpetualTaskIdV2(null);
       instanceSyncPerpetualTaskInfoDTO.setPerpetualTaskId(perpetualTaskIdV1);
       instanceSyncPerpetualTaskInfoService.updatePerpetualTaskIdV1OrV2(instanceSyncPerpetualTaskInfoDTO);
+    }
+  }
+
+  private void cleanPerpetualTaskIfFailingForSevenDays(
+      InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO) {
+    if (instanceSyncPerpetualTaskInfoDTO.getLastSuccessfulRun() != null
+        && instanceSyncPerpetualTaskInfoDTO.getLastSuccessfulRun() != 0
+        && instanceSyncPerpetualTaskInfoDTO.getLastSuccessfulRun() + RELEASE_PRESERVE_TIME
+            < System.currentTimeMillis()) {
+      instanceSyncPerpetualTaskInfoService.deleteById(
+          instanceSyncPerpetualTaskInfoDTO.getAccountIdentifier(), instanceSyncPerpetualTaskInfoDTO.getId());
     }
   }
 
@@ -855,6 +884,7 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
                                           .build()))
         .perpetualTaskIdV2(perpetualTaskId)
         .connectorIdentifier(connectorIdentifier)
+        .lastSuccessfulRun(System.currentTimeMillis())
         .build();
   }
 

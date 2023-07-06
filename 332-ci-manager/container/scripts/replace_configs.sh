@@ -103,6 +103,22 @@ if [[ "" != "$S3_CACHE_IMAGE" ]]; then
   export S3_CACHE_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.cacheS3Config.image=env(S3_CACHE_IMAGE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$SSCA_ORCHESTRATION_IMAGE" ]]; then
+  export SSCA_ORCHESTRATION_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.sscaOrchestrationConfig.image=env(SSCA_ORCHESTRATION_IMAGE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SSCA_ENFORCEMENT_IMAGE" ]]; then
+  export SSCA_ENFORCEMENT_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.sscaEnforcementConfig.image=env(SSCA_ENFORCEMENT_IMAGE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$VM_SSCA_ORCHESTRATION_IMAGE" ]]; then
+  export VM_SSCA_ORCHESTRATION_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.sscaOrchestration=env(VM_SSCA_ORCHESTRATION_IMAGE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$VM_SSCA_ENFORCEMENT_IMAGE" ]]; then
+  export VM_SSCA_ENFORCEMENT_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.sscaEnforcement=env(VM_SSCA_ENFORCEMENT_IMAGE)' $CONFIG_FILE
+fi
+
 if [[ "" != "$VM_GIT_CLONE_IMAGE" ]]; then
   export VM_GIT_CLONE_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.gitClone=env(VM_GIT_CLONE_IMAGE)' $CONFIG_FILE
 fi
@@ -473,6 +489,10 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD" ]]; then
   export EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD; yq -i '.singleServerConfig.sslTruststorePassword=env(EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD)' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
+if [[ "" != "$DISTRIBUTED_LOCK_IMPLEMENTATION" ]]; then
+  export DISTRIBUTED_LOCK_IMPLEMENTATION; yq -i '.distributedLockImplementation=env(DISTRIBUTED_LOCK_IMPLEMENTATION)' $CONFIG_FILE
+fi
+
 if [[ "$EVENTS_FRAMEWORK_USE_SENTINEL" == "true" ]]; then
   yq -i 'del(.singleServerConfig)' $ENTERPRISE_REDISSON_CACHE_FILE
 
@@ -515,3 +535,16 @@ replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFOR
 
 replace_key_value policyManagerSecret "$OPA_SERVER_SECRET"
 replace_key_value opaClientConfig.baseUrl "$OPA_SERVER_BASEURL"
+
+replace_key_value cfClientConfig.apiKey "$CF_CLIENT_API_KEY"
+replace_key_value cfClientConfig.configUrl "$CF_CLIENT_CONFIG_URL"
+replace_key_value cfClientConfig.eventUrl "$CF_CLIENT_EVENT_URL"
+replace_key_value cfClientConfig.analyticsEnabled "$CF_CLIENT_ANALYTICS_ENABLED"
+replace_key_value cfClientConfig.connectionTimeout "$CF_CLIENT_CONNECTION_TIMEOUT"
+replace_key_value cfClientConfig.readTimeout "$CF_CLIENT_READ_TIMEOUT"
+replace_key_value cfClientConfig.bufferSize "$CF_CLIENT_BUFFER_SIZE"
+replace_key_value cfClientConfig.retries "$CF_RETRIES"
+replace_key_value cfClientConfig.sleepInterval "$CF_SLEEP_INTERVAL"
+
+replace_key_value featureFlagConfig.featureFlagSystem "$FEATURE_FLAG_SYSTEM"
+replace_key_value featureFlagConfig.syncFeaturesToCF "$SYNC_FEATURES_TO_CF"

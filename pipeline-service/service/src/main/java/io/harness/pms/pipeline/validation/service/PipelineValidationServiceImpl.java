@@ -44,7 +44,7 @@ public class PipelineValidationServiceImpl implements PipelineValidationService 
       checkIfRootNodeIsPipeline(pipelineYaml);
     }
     pmsYamlSchemaService.validateYamlSchema(
-        accountIdentifier, orgIdentifier, projectIdentifier, yamlWithTemplatesResolved);
+        accountIdentifier, orgIdentifier, projectIdentifier, YamlUtils.readAsJsonNode(yamlWithTemplatesResolved));
     // validate unique fqn in resolveTemplateRefsInPipeline
     pmsYamlSchemaService.validateUniqueFqn(yamlWithTemplatesResolved);
     return true;
@@ -56,7 +56,8 @@ public class PipelineValidationServiceImpl implements PipelineValidationService 
     if (Objects.equals(harnessVersion, PipelineVersion.V0)) {
       checkIfRootNodeIsPipeline(pipelineYaml);
     }
-    pmsYamlSchemaService.validateYamlSchema(accountIdentifier, orgIdentifier, projectIdentifier, pipelineYaml);
+    pmsYamlSchemaService.validateYamlSchema(
+        accountIdentifier, orgIdentifier, projectIdentifier, YamlUtils.readAsJsonNode(pipelineYaml));
     pmsYamlSchemaService.validateUniqueFqn(pipelineYaml);
   }
 
@@ -66,8 +67,10 @@ public class PipelineValidationServiceImpl implements PipelineValidationService 
       PipelineEntity pipelineEntity) {
     validateYaml(accountIdentifier, orgIdentifier, projectIdentifier, yamlWithTemplatesResolved,
         pipelineEntity.getYaml(), pipelineEntity.getHarnessVersion());
+
+    String branch = GitAwareContextHelper.getBranchInRequest();
     GovernanceMetadata governanceMetadata = pipelineGovernanceService.validateGovernanceRulesAndThrowExceptionIfDenied(
-        accountIdentifier, orgIdentifier, projectIdentifier, resolvedYamlWithTemplateRefs);
+        accountIdentifier, orgIdentifier, projectIdentifier, branch, pipelineEntity, resolvedYamlWithTemplateRefs);
     return PipelineValidationResponse.builder().governanceMetadata(governanceMetadata).build();
   }
 
@@ -77,8 +80,10 @@ public class PipelineValidationServiceImpl implements PipelineValidationService 
       PipelineEntity pipelineEntity) {
     validateYaml(accountIdentifier, orgIdentifier, projectIdentifier, yamlWithTemplatesResolved,
         pipelineEntity.getYaml(), pipelineEntity.getHarnessVersion());
+
+    String branch = GitAwareContextHelper.getBranchInRequest();
     GovernanceMetadata governanceMetadata = pipelineGovernanceService.validateGovernanceRules(
-        accountIdentifier, orgIdentifier, projectIdentifier, resolvedYamlWithTemplateRefs);
+        accountIdentifier, orgIdentifier, projectIdentifier, branch, pipelineEntity, resolvedYamlWithTemplateRefs);
     return PipelineValidationResponse.builder().governanceMetadata(governanceMetadata).build();
   }
 

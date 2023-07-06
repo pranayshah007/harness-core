@@ -19,4 +19,5 @@ import lombok.Value;
 public class FilterCreationGitMetadata {
   String branch;
   String repo;
+  boolean isGitDefaultBranch;
 }

@@ -31,6 +31,7 @@ import io.harness.ngtriggers.beans.source.webhook.BitbucketTriggerSpec;
 import io.harness.ngtriggers.beans.source.webhook.CustomWebhookTriggerSpec;
 import io.harness.ngtriggers.beans.source.webhook.GithubTriggerSpec;
 import io.harness.ngtriggers.beans.source.webhook.GitlabTriggerSpec;
+import io.harness.ngtriggers.beans.source.webhook.HarnessScmTriggerSpec;
 import io.harness.ngtriggers.beans.source.webhook.WebhookAction;
 import io.harness.ngtriggers.beans.source.webhook.WebhookCondition;
 import io.harness.ngtriggers.beans.source.webhook.WebhookEvent;
@@ -68,6 +69,14 @@ import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.action.GitlabPRActio
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.event.GitlabPRSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.event.GitlabPushSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.event.GitlabTriggerEvent;
+import io.harness.ngtriggers.beans.source.webhook.v2.harness.HarnessSpec;
+import io.harness.ngtriggers.beans.source.webhook.v2.harness.HarnessSpec.HarnessSpecBuilder;
+import io.harness.ngtriggers.beans.source.webhook.v2.harness.action.HarnessIssueCommentAction;
+import io.harness.ngtriggers.beans.source.webhook.v2.harness.action.HarnessPRAction;
+import io.harness.ngtriggers.beans.source.webhook.v2.harness.event.HarnessIssueCommentSpec;
+import io.harness.ngtriggers.beans.source.webhook.v2.harness.event.HarnessPRSpec;
+import io.harness.ngtriggers.beans.source.webhook.v2.harness.event.HarnessPushSpec;
+import io.harness.ngtriggers.beans.source.webhook.v2.harness.event.HarnessTriggerEvent;
 import io.harness.ngtriggers.beans.target.pipeline.PipelineTargetSpec;
 import io.harness.ngtriggers.conditionchecker.ConditionOperator;
 
@@ -122,6 +131,8 @@ public class NgTriggerConfigAdaptor {
       handleAwsCodeCommitTriggerConfig(webhookTriggerConfigV2Builder, (AwsCodeCommitTriggerSpec) webhookTriggerSpec);
     } else if (CustomWebhookTriggerSpec.class.isAssignableFrom(webhookTriggerSpec.getClass())) {
       handleCustomConfig(webhookTriggerConfigV2Builder, (CustomWebhookTriggerSpec) webhookTriggerSpec);
+    } else if (HarnessScmTriggerSpec.class.isAssignableFrom(webhookTriggerSpec.getClass())) {
+      handleHarnessScmConfig(webhookTriggerConfigV2Builder, (HarnessScmTriggerSpec) webhookTriggerSpec);
     } else {
       throw new TriggerException(
           "Invalid webhook trigger type encountered with Version 0 while converting to Version 2" + webhookTriggerSpec,
@@ -129,6 +140,14 @@ public class NgTriggerConfigAdaptor {
     }
 
     triggerConfigV2Builder.source(ngTriggerSourceV2Builder.spec(webhookTriggerConfigV2Builder.build()).build());
+  }
+
+  private static void handleHarnessScmConfig(
+      WebhookTriggerConfigV2Builder webhookTriggerConfigV2Builder, HarnessScmTriggerSpec webhookTriggerSpec) {
+    webhookTriggerConfigV2Builder.type(WebhookTriggerType.HARNESS);
+    HarnessSpecBuilder harnessSpecBuilder = HarnessSpec.builder();
+    initHarnessScmSpec(webhookTriggerSpec, harnessSpecBuilder);
+    webhookTriggerConfigV2Builder.spec(harnessSpecBuilder.build());
   }
 
   private static void handleCustomConfig(
@@ -334,6 +353,48 @@ public class NgTriggerConfigAdaptor {
     }
   }
 
+  private static void initHarnessScmSpec(
+      HarnessScmTriggerSpec harnessScmTriggerSpec, HarnessSpecBuilder harnessScmTriggerSpecBuilder) {
+    if (harnessScmTriggerSpec.getEvent() == WebhookEvent.PULL_REQUEST) {
+      harnessScmTriggerSpecBuilder.type(HarnessTriggerEvent.PULL_REQUEST);
+      harnessScmTriggerSpecBuilder.spec(
+          HarnessPRSpec.builder()
+              .repoName(harnessScmTriggerSpec.getGitRepoSpec().getRepoName())
+              .headerConditions(mapToTriggerEventDataCondition(harnessScmTriggerSpec.getHeaderConditions()))
+              .payloadConditions(mapToTriggerEventDataCondition(harnessScmTriggerSpec.getPayloadConditions()))
+              .jexlCondition(harnessScmTriggerSpec.getJexlCondition())
+              .autoAbortPreviousExecutions(false)
+              .actions(getHarnessScmPrActions(harnessScmTriggerSpec))
+              .build());
+    } else if (harnessScmTriggerSpec.getEvent() == WebhookEvent.PUSH) {
+      harnessScmTriggerSpecBuilder.type(HarnessTriggerEvent.PUSH);
+      harnessScmTriggerSpecBuilder.spec(
+          HarnessPushSpec.builder()
+              .repoName(harnessScmTriggerSpec.getGitRepoSpec().getRepoName())
+              .headerConditions(mapToTriggerEventDataCondition(harnessScmTriggerSpec.getHeaderConditions()))
+              .payloadConditions(mapToTriggerEventDataCondition(harnessScmTriggerSpec.getPayloadConditions()))
+              .jexlCondition(harnessScmTriggerSpec.getJexlCondition())
+              .autoAbortPreviousExecutions(false)
+              .build());
+    } else if (harnessScmTriggerSpec.getEvent() == WebhookEvent.ISSUE_COMMENT) {
+      harnessScmTriggerSpecBuilder.type(HarnessTriggerEvent.ISSUE_COMMENT);
+      harnessScmTriggerSpecBuilder.spec(
+          HarnessIssueCommentSpec.builder()
+              .repoName(harnessScmTriggerSpec.getGitRepoSpec().getRepoName())
+              .headerConditions(mapToTriggerEventDataCondition(harnessScmTriggerSpec.getHeaderConditions()))
+              .payloadConditions(mapToTriggerEventDataCondition(harnessScmTriggerSpec.getPayloadConditions()))
+              .jexlCondition(harnessScmTriggerSpec.getJexlCondition())
+              .autoAbortPreviousExecutions(false)
+              .actions(getHarnessScmIssueCommentActions(harnessScmTriggerSpec))
+              .build());
+    } else {
+      throw new TriggerException(
+          "Invalid Event Type encountered in Trigger with Version 0 while converting to Version 2"
+              + harnessScmTriggerSpec.getEvent(),
+          USER_SRE);
+    }
+  }
+
   private static void initCustomSpec(
       CustomWebhookTriggerSpec customWebhookTriggerSpec, CustomTriggerSpecBuilder customTriggerSpecBuilder) {
     customTriggerSpecBuilder
@@ -388,6 +449,27 @@ public class NgTriggerConfigAdaptor {
     List<GitAction> gitActions =
         getGitActions(bitbucketTriggerSpec.getActions(), Arrays.asList(BitbucketPRAction.values()));
     return gitActions.stream().map(gitAction -> (BitbucketPRAction) gitAction).collect(toList());
+  }
+
+  private static List<HarnessPRAction> getHarnessScmPrActions(HarnessScmTriggerSpec harnessScmTriggerSpec) {
+    if (isEmpty(harnessScmTriggerSpec.getActions())) {
+      return emptyList();
+    }
+
+    List<GitAction> gitActions =
+        getGitActions(harnessScmTriggerSpec.getActions(), Arrays.asList(HarnessPRAction.values()));
+    return gitActions.stream().map(HarnessPRAction.class ::cast).collect(toList());
+  }
+
+  private static List<HarnessIssueCommentAction> getHarnessScmIssueCommentActions(
+      HarnessScmTriggerSpec harnessScmTriggerSpec) {
+    if (isEmpty(harnessScmTriggerSpec.getActions())) {
+      return emptyList();
+    }
+
+    List<GitAction> gitActions =
+        getGitActions(harnessScmTriggerSpec.getActions(), Arrays.asList(HarnessIssueCommentAction.values()));
+    return gitActions.stream().map(HarnessIssueCommentAction.class ::cast).collect(toList());
   }
 
   private static List<GitAction> getGitActions(

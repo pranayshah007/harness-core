@@ -54,6 +54,7 @@ import io.harness.delegate.task.helm.HelmCmdExecResponseNG;
 import io.harness.delegate.task.helm.HelmCommandRequestNG;
 import io.harness.delegate.task.helm.HelmFetchFileResult;
 import io.harness.delegate.task.helm.HelmValuesFetchResponse;
+import io.harness.delegate.task.k8s.RancherK8sInfraDelegateConfig;
 import io.harness.delegate.task.localstore.LocalStoreFetchFilesResult;
 import io.harness.delegate.task.localstore.ManifestFiles;
 import io.harness.delegate.task.manifests.response.CustomManifestValuesFetchResponse;
@@ -87,7 +88,6 @@ import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
-import software.wings.beans.ServiceHookDelegateConfig;
 import software.wings.beans.TaskType;
 import software.wings.stencils.DefaultValue;
 
@@ -125,12 +125,7 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
   public TaskChainResponse queueNativeHelmTask(StepElementParameters stepElementParameters,
       HelmCommandRequestNG helmCommandRequest, Ambiance ambiance,
       NativeHelmExecutionPassThroughData executionPassThroughData) {
-    List<ServiceHookDelegateConfig> serviceHooks = helmCommandRequest.getServiceHooks();
-    TaskType taskType = TaskType.HELM_COMMAND_TASK_NG;
-    if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_K8S_SERVICE_HOOKS_NG)
-        && isNotEmpty(serviceHooks)) {
-      taskType = TaskType.HELM_COMMAND_TASK_NG_V2;
-    }
+    TaskType taskType = getHelmTaskType(helmCommandRequest, ambiance);
     TaskData taskData = TaskData.builder()
                             .parameters(new Object[] {helmCommandRequest})
                             .taskType(taskType.name())
@@ -148,6 +143,17 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
         .chainEnd(true)
         .passThroughData(executionPassThroughData)
         .build();
+  }
+
+  private TaskType getHelmTaskType(HelmCommandRequestNG helmCommandRequest, Ambiance ambiance) {
+    if (helmCommandRequest.getK8sInfraDelegateConfig() instanceof RancherK8sInfraDelegateConfig) {
+      return TaskType.HELM_COMMAND_TASK_NG_RANCHER;
+    }
+    if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_K8S_SERVICE_HOOKS_NG)
+        && isNotEmpty(helmCommandRequest.getServiceHooks())) {
+      return TaskType.HELM_COMMAND_TASK_NG_V2;
+    }
+    return TaskType.HELM_COMMAND_TASK_NG;
   }
 
   public List<String> renderValues(

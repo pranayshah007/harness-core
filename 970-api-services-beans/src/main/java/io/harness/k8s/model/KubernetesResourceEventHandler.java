@@ -18,8 +18,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDP)
+@Slf4j
 public class KubernetesResourceEventHandler {
   static Map<Kind, KubernetesResourceUpdateHandler> kubernetesResourceUpdateHandlers =
       Collections.unmodifiableMap(new HashMap() {
@@ -33,15 +35,13 @@ public class KubernetesResourceEventHandler {
   public static void handleNameChange(KubernetesResourceUpdateContext kubernetesResourceUpdateContext) {
     handleChange(kubernetesResourceUpdateContext,
         resource
-        -> getHandler(Kind.valueOf(resource.getResourceId().getKind()))
-               .onNameChange(resource, kubernetesResourceUpdateContext));
+        -> getHandler(resource.getResourceId().getKind()).onNameChange(resource, kubernetesResourceUpdateContext));
   }
 
   public static void handleSelectorChange(KubernetesResourceUpdateContext kubernetesResourceUpdateContext) {
     handleChange(kubernetesResourceUpdateContext,
         resource
-        -> getHandler(Kind.valueOf(resource.getResourceId().getKind()))
-               .onSelectorsChange(resource, kubernetesResourceUpdateContext));
+        -> getHandler(resource.getResourceId().getKind()).onSelectorsChange(resource, kubernetesResourceUpdateContext));
   }
 
   private static void handleChange(
@@ -51,11 +51,16 @@ public class KubernetesResourceEventHandler {
     }
   }
 
-  public static KubernetesResourceUpdateHandler getHandler(Kind kind) {
-    KubernetesResourceUpdateHandler resourceUpdateHandler = kubernetesResourceUpdateHandlers.get(kind);
+  public static KubernetesResourceUpdateHandler getHandler(String kindType) {
+    try {
+      Kind kind = Kind.valueOf(kindType);
+      KubernetesResourceUpdateHandler resourceUpdateHandler = kubernetesResourceUpdateHandlers.get(kind);
 
-    if (resourceUpdateHandler != null) {
-      return resourceUpdateHandler;
+      if (resourceUpdateHandler != null) {
+        return resourceUpdateHandler;
+      }
+    } catch (Exception e) {
+      log.debug("Kind type {} is not part of recognize K8s Kinds.", kindType);
     }
 
     return kubernetesResourceUpdateHandlers.get(Kind.NOOP);

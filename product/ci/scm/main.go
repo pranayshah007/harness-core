@@ -59,7 +59,6 @@ func main() {
 		WithFields("deployable", deployable,
 			"application_name", applicationName)
 	logger := logBuilder.MustBuild().Sugar()
-
 	logger.Infow("Starting CI GRPC scm server", "version", Version, "buildCommitID", BuildCommitID, "port", args.Port, "unixSocket", args.UnixSocket)
 	s, err := scmServer(args.Port, args.UnixSocket, logger)
 	if err != nil {

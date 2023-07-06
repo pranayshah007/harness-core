@@ -49,6 +49,7 @@ if [ ! -e $ACCOUNT_SECRET ]; then
 else
   echo "delegateToken: $DELEGATE_TOKEN" >> config.yml
 fi
+echo "delegateName: $DELEGATE_NAME" >> config.yml
 echo "managerUrl: $MANAGER_HOST_AND_PORT/api/" >> config.yml
 echo "verificationServiceUrl: $MANAGER_HOST_AND_PORT/verification/" >> config.yml
 echo "cvNextGenUrl: $MANAGER_HOST_AND_PORT/cv/api/" >> config.yml

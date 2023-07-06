@@ -6,7 +6,8 @@
 // Supports running tests via the nunit console test runner for C#
 //
 // Test filtering:
-// 		nunit3-console.exe <path-to-dll> --where "class =~ FirstTest || class =~ SecondTest"
+//
+//	nunit3-console.exe <path-to-dll> --where "class =~ FirstTest || class =~ SecondTest"
 package csharp
 
 import (
@@ -18,7 +19,7 @@ import (
 
 	"github.com/harness/harness-core/commons/go/lib/exec"
 	"github.com/harness/harness-core/commons/go/lib/filesystem"
-	"github.com/harness/harness-core/product/ci/ti-service/types"
+	"github.com/harness/ti-client/types"
 	"go.uber.org/zap"
 )
 

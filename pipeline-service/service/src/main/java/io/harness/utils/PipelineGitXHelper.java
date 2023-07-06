@@ -12,14 +12,14 @@ import static io.harness.eraro.ErrorCode.SCM_BAD_REQUEST;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.context.GlobalContext;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ScmException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitx.USER_FLOW;
-import io.harness.manage.GlobalContextManager;
+import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 
 import lombok.experimental.UtilityClass;
 
@@ -84,11 +84,16 @@ public class PipelineGitXHelper {
     return false;
   }
 
-  public void setUserFlowContext(USER_FLOW userFlow) {
-    if (!GlobalContextManager.isAvailable()) {
-      GlobalContextManager.set(new GlobalContext());
+  public boolean shouldPublishSetupUsages(boolean loadFromCache, StoreType storeType) {
+    return StoreType.REMOTE.equals(storeType) && isFetchedFromGit(loadFromCache)
+        && GitAwareContextHelper.isGitDefaultBranch();
+  }
+
+  private boolean isFetchedFromGit(boolean loadFromCache) {
+    if (loadFromCache) {
+      return PMSPipelineDtoMapper.getCacheResponseFromGitContext() == null;
+    } else {
+      return true;
     }
-    GlobalContextManager.upsertGlobalContextRecord(
-        ThreadOperationContextHelper.getOrInitThreadOperationContext().withUserFlow(userFlow));
   }
 }

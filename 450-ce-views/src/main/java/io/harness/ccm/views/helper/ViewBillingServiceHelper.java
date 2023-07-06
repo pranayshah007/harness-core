@@ -32,7 +32,6 @@ import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ClusterData;
 import io.harness.ccm.views.entities.ViewField;
-import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.entities.ViewQueryParams;
 import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.entities.ViewTimeGranularity;
@@ -67,7 +66,6 @@ import com.google.inject.name.Named;
 import com.healthmarketscience.sqlbuilder.SelectQuery;
 import com.healthmarketscience.sqlbuilder.SetOperationQuery;
 import com.healthmarketscience.sqlbuilder.UnionQuery;
-import io.fabric8.utils.Lists;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
@@ -187,19 +185,15 @@ public class ViewBillingServiceHelper {
       // Changes column name for cost to billingAmount
       modifiedAggregateFunction = viewParametersHelper.getModifiedAggregations(aggregateFunction);
     }
-    // TODO: Remove shouldUseFlattenedLabelsColumn check for AWS perspective only
-    final List<ViewFieldIdentifier> dataSources = getDataSourcesFromViewMetadataFilter(filters);
-    final boolean shouldUseFlattenedLabelsColumn = shouldUseFlattenedLabelsColumn(dataSources);
     for (final CostTarget costTarget : sharedCostBusinessMapping.getCostTargets()) {
       if (selectedCostTargets.contains(costTarget.getName())) {
         for (final SharedCost sharedCost : sharedCostBusinessMapping.getSharedCosts()) {
           if (shouldAddSharedCostQuery(entityCosts, totalCost, costTarget, sharedCost)) {
             final BusinessMapping businessMapping = sharedCostBusinessMapping.toDTO();
             businessMapping.setSharedCosts(List.of(sharedCost));
-            final SelectQuery selectQuery =
-                viewsQueryBuilder.getSharedCostQuery(modifiedGroupBy, modifiedAggregateFunction, entityCosts, totalCost,
-                    costTarget, sharedCost, businessMapping, cloudProviderTableName, isClusterPerspective, queryParams,
-                    labelsKeyAndColumnMapping, shouldUseFlattenedLabelsColumn);
+            final SelectQuery selectQuery = viewsQueryBuilder.getSharedCostQuery(modifiedGroupBy,
+                modifiedAggregateFunction, entityCosts, totalCost, costTarget, sharedCost, businessMapping,
+                cloudProviderTableName, isClusterPerspective, queryParams, labelsKeyAndColumnMapping);
             if (Objects.nonNull(selectQuery)) {
               final SelectQuery subQuery = getQuery(filters, groupBy, Collections.emptyList(), aggregateFunction,
                   Collections.emptyList(), cloudProviderTableName, queryParams, businessMapping,
@@ -212,22 +206,6 @@ public class ViewBillingServiceHelper {
       }
     }
     return unionQuery;
-  }
-
-  public List<ViewFieldIdentifier> getDataSourcesFromViewMetadataFilter(final List<QLCEViewFilterWrapper> filters) {
-    List<ViewFieldIdentifier> dataSources = null;
-    final Optional<QLCEViewFilterWrapper> viewMetadataFilter = viewParametersHelper.getViewMetadataFilter(filters);
-    if (viewMetadataFilter.isPresent()) {
-      final QLCEViewMetadataFilter metadataFilter = viewMetadataFilter.get().getViewMetadataFilter();
-      final String viewId = metadataFilter.getViewId();
-      if (!metadataFilter.isPreview()) {
-        final CEView ceView = viewService.get(viewId);
-        if (Objects.nonNull(ceView)) {
-          dataSources = ceView.getDataSources();
-        }
-      }
-    }
-    return dataSources;
   }
 
   private boolean shouldAddSharedCostQuery(final Map<String, Double> entityCosts, final double totalCost,
@@ -244,12 +222,10 @@ public class ViewBillingServiceHelper {
         String.format("(%s)", unionQuery), limit, offset, isLimitRequired, true);
   }
 
-  // TODO: Remove filters param
-  public SelectQuery getSharedCostOuterQuery(final List<QLCEViewFilterWrapper> filters,
-      final List<QLCEViewGroupBy> groupBy, final List<QLCEViewAggregation> aggregateFunction,
-      final List<QLCEViewSortCriteria> sort, final boolean isClusterPerspective, final UnionQuery unionQuery,
-      final String cloudProviderTableName, final ViewQueryParams queryParams,
-      final Map<String, String> labelsKeyAndColumnMapping) {
+  public SelectQuery getSharedCostOuterQuery(final List<QLCEViewGroupBy> groupBy,
+      final List<QLCEViewAggregation> aggregateFunction, final List<QLCEViewSortCriteria> sort,
+      final boolean isClusterPerspective, final UnionQuery unionQuery, final String cloudProviderTableName,
+      final ViewQueryParams queryParams, final Map<String, String> labelsKeyAndColumnMapping) {
     List<QLCEViewAggregation> modifiedAggregateFunction = aggregateFunction;
     List<QLCEViewSortCriteria> modifiedSort = sort;
     List<QLCEViewGroupBy> modifiedGroupBy = groupBy;
@@ -262,18 +238,12 @@ public class ViewBillingServiceHelper {
       modifiedAggregateFunction = viewParametersHelper.getModifiedAggregations(aggregateFunction);
       modifiedSort = viewParametersHelper.getModifiedSort(sort);
     }
-    // TODO: Remove shouldUseFlattenedLabelsColumn check for AWS perspective only
-    final List<ViewFieldIdentifier> dataSources = getDataSourcesFromViewMetadataFilter(filters);
-    final boolean shouldUseFlattenedLabelsColumn = shouldUseFlattenedLabelsColumn(dataSources);
     return viewsQueryBuilder.getSharedCostOuterQuery(modifiedGroupBy, modifiedAggregateFunction, modifiedSort,
-        unionQuery, cloudProviderTableName, isClusterPerspective, queryParams, labelsKeyAndColumnMapping,
-        shouldUseFlattenedLabelsColumn);
+        unionQuery, cloudProviderTableName, isClusterPerspective, queryParams, labelsKeyAndColumnMapping);
   }
 
-  // TODO: Remove filters param
-  public SelectQuery getTotalCountSharedCostOuterQuery(final List<QLCEViewFilterWrapper> filters,
-      final List<QLCEViewGroupBy> groupBy, final UnionQuery unionQuery, final String cloudProviderTableName,
-      final boolean isClusterPerspective, final ViewQueryParams queryParams,
+  public SelectQuery getTotalCountSharedCostOuterQuery(final List<QLCEViewGroupBy> groupBy, final UnionQuery unionQuery,
+      final String cloudProviderTableName, final boolean isClusterPerspective, final ViewQueryParams queryParams,
       final Map<String, String> labelsKeyAndColumnMapping) {
     List<QLCEViewGroupBy> modifiedGroupBy = groupBy;
     if (viewsQueryHelper.isGroupByNonePresent(modifiedGroupBy)) {
@@ -282,11 +252,8 @@ public class ViewBillingServiceHelper {
     if (isClusterPerspective) {
       modifiedGroupBy = viewParametersHelper.addAdditionalRequiredGroupBy(modifiedGroupBy);
     }
-    // TODO: Remove shouldUseFlattenedLabelsColumn check for AWS perspective only
-    final List<ViewFieldIdentifier> dataSources = getDataSourcesFromViewMetadataFilter(filters);
-    final boolean shouldUseFlattenedLabelsColumn = shouldUseFlattenedLabelsColumn(dataSources);
-    return viewsQueryBuilder.getTotalCountSharedCostOuterQuery(modifiedGroupBy, unionQuery, cloudProviderTableName,
-        queryParams, labelsKeyAndColumnMapping, shouldUseFlattenedLabelsColumn);
+    return viewsQueryBuilder.getTotalCountSharedCostOuterQuery(
+        modifiedGroupBy, unionQuery, cloudProviderTableName, queryParams, labelsKeyAndColumnMapping);
   }
 
   // ----------------------------------------------------------------------------------------------------------------
@@ -589,8 +556,6 @@ public class ViewBillingServiceHelper {
       }
     }
 
-    boolean shouldUseFlattenedLabelsColumn = false;
-
     if (viewMetadataFilter.isPresent()) {
       QLCEViewMetadataFilter metadataFilter = viewMetadataFilter.get().getViewMetadataFilter();
       final String viewId = metadataFilter.getViewId();
@@ -607,7 +572,6 @@ public class ViewBillingServiceHelper {
           modifiedGroupBy = viewParametersHelper.getModifiedGroupBy(groupBy, defaultGroupByField,
               defaultTimeGranularity, queryParams.isTimeTruncGroupByRequired(), skipDefaultGroupBy);
         }
-        shouldUseFlattenedLabelsColumn = shouldUseFlattenedLabelsColumn(ceView.getDataSources());
       }
     }
     List<QLCEViewFilter> idFilters =
@@ -637,19 +601,12 @@ public class ViewBillingServiceHelper {
 
     if (queryParams.isTotalCountQuery()) {
       return viewsQueryBuilder.getTotalCountQuery(viewRuleList, idFilters, timeFilters, modifiedGroupBy,
-          cloudProviderTableName, queryParams, labelsKeyAndColumnMapping, shouldUseFlattenedLabelsColumn);
+          cloudProviderTableName, queryParams, labelsKeyAndColumnMapping);
     }
     return viewsQueryBuilder.getQuery(viewRuleList, idFilters, timeFilters,
         viewParametersHelper.getInExpressionFilters(filters), modifiedGroupBy, sharedCostGroupBy, aggregateFunction,
         sort, cloudProviderTableName, queryParams, sharedCostBusinessMapping, sharedCostBusinessMappings,
-        labelsKeyAndColumnMapping, shouldUseFlattenedLabelsColumn);
-  }
-
-  // TODO: Remove it once verification is done on prod
-  public boolean shouldUseFlattenedLabelsColumn(final List<ViewFieldIdentifier> dataSources) {
-    // Enabling flattened labels for AWS perspective only
-    return !Lists.isNullOrEmpty(dataSources) && dataSources.size() == 1
-        && dataSources.contains(ViewFieldIdentifier.AWS);
+        labelsKeyAndColumnMapping);
   }
 
   // ----------------------------------------------------------------------------------------------------------------

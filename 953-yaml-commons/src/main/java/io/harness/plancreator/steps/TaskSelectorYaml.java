@@ -13,6 +13,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.TaskSelector;
+import io.harness.exception.InvalidRequestException;
 import io.harness.pms.yaml.ParameterField;
 
 import java.util.ArrayList;
@@ -49,6 +50,11 @@ public class TaskSelectorYaml {
   public static List<TaskSelector> toTaskSelector(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     if (ParameterField.isNull(delegateSelectors)) {
       return Collections.emptyList();
+    }
+
+    if (delegateSelectors.getValue() != null && !(delegateSelectors.getValue() instanceof List)) {
+      throw new InvalidRequestException(
+          String.format("The resolved value of Delegate Selectors %s is not a list", delegateSelectors.getValue()));
     }
 
     if (isNotEmpty(delegateSelectors.getValue()) && delegateSelectors.getValue().get(0) instanceof TaskSelectorYaml) {

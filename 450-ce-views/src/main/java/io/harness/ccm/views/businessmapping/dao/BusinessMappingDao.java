@@ -113,6 +113,13 @@ public class BusinessMappingDao {
     return hPersistence.createQuery(BusinessMapping.class).filter(BusinessMappingKeys.accountId, accountId).asList();
   }
 
+  public List<BusinessMapping> findBusinessMappingIdsByAccountId(String accountId) {
+    return hPersistence.createQuery(BusinessMapping.class)
+        .project(BusinessMappingKeys.uuid, true)
+        .filter(BusinessMappingKeys.accountId, accountId)
+        .asList();
+  }
+
   private Query<BusinessMapping> getQueryByAccountIdAndRegexName(String accountId, String searchKey) {
     Query<BusinessMapping> query =
         hPersistence.createQuery(BusinessMapping.class).filter(BusinessMappingKeys.accountId, accountId);

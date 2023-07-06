@@ -128,6 +128,7 @@ import io.harness.delegate.logging.DelegateStackdriverLogAppender;
 import io.harness.delegate.message.Message;
 import io.harness.delegate.message.MessageService;
 import io.harness.delegate.service.common.DelegateTaskExecutionData;
+import io.harness.delegate.service.handlermapping.context.Context;
 import io.harness.delegate.task.ActivityAccess;
 import io.harness.delegate.task.Cd1ApplicationAccess;
 import io.harness.delegate.task.TaskParameters;
@@ -315,6 +316,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       : DEFAULT_MAX_THRESHOLD;
   private final boolean dynamicRequestHandling = isNotBlank(System.getenv().get("DYNAMIC_REQUEST_HANDLING"))
       && Boolean.parseBoolean(System.getenv().get("DYNAMIC_REQUEST_HANDLING"));
+  private final Optional<Integer> delegateTaskCapacity = getDelegateTaskCapacity();
   private String MANAGER_PROXY_CURL = System.getenv().get("MANAGER_PROXY_CURL");
   private String MANAGER_HOST_AND_PORT = System.getenv().get("MANAGER_HOST_AND_PORT");
   private static final String DEFAULT_PATCH_VERSION = "000";
@@ -360,6 +362,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   @Inject private KryoSerializer kryoSerializer;
   @Nullable @Inject(optional = true) private ChronicleEventTailer chronicleEventTailer;
   @Inject HarnessMetricRegistry metricRegistry;
+  @Inject private Context context;
 
   private final AtomicBoolean waiter = new AtomicBoolean(true);
 
@@ -372,6 +375,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private final AtomicInteger maxExecutingTasksCount = new AtomicInteger();
   private final AtomicInteger maxExecutingFuturesCount = new AtomicInteger();
   private final AtomicInteger heartbeatSuccessCalls = new AtomicInteger();
+  private final AtomicInteger currentlyAcquiringTasksCount = new AtomicInteger();
 
   private final AtomicLong lastHeartbeatSentAt = new AtomicLong(System.currentTimeMillis());
   private final AtomicLong frozenAt = new AtomicLong(-1);
@@ -722,6 +726,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           delegateLogService.registerLogSanitizer(new GenericLogSanitizer(new HashSet<>(localSecrets.values())));
         }
       }
+      // TODO: we need to refactor configuration related codes. All static configs abtained from DelegateConfiguration
+      context.set(Context.DELEGATE_ID, delegateId);
     } catch (RuntimeException | IOException e) {
       log.error("Exception while starting/running delegate", e);
     }
@@ -1777,7 +1783,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       return;
     }
     log.info("Last heartbeat received at {} and sent to manager at {}", lastHeartbeatReceivedAt.get(),
-        lastHeartbeatReceivedAt.get());
+        lastHeartbeatSentAt.get());
     long now = clock.millis();
     boolean heartbeatReceivedTimeExpired = lastHeartbeatReceivedAt.get() != 0
         && (now - lastHeartbeatReceivedAt.get()) > HEARTBEAT_SOCKET_TIMEOUT && !closingSocket.get();
@@ -2009,6 +2015,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void dispatchDelegateTask(DelegateTaskEvent delegateTaskEvent) {
+    boolean incrementedCurrentlyAcquiredTaskCounter = false;
     try (TaskLogContext ignore = new TaskLogContext(delegateTaskEvent.getDelegateTaskId(), OVERRIDE_ERROR)) {
       String delegateTaskId = delegateTaskEvent.getDelegateTaskId();
 
@@ -2032,6 +2039,19 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         if (currentlyValidatingTasks.containsKey(delegateTaskId)) {
           log.info("Task [DelegateTaskEvent: {}] already validating. Don't validate again", delegateTaskEvent);
           return;
+        }
+
+        // So this feature works only if ENV - DELEGATE_TASK_CAPACITY is defined.
+        if (delegateTaskCapacity.isPresent()) {
+          // Check if current acquiring tasks is below capacity.
+          int taskCapacity = delegateTaskCapacity.get();
+          final int processingTaskCount = currentlyAcquiringTasksCount.getAndIncrement();
+          incrementedCurrentlyAcquiredTaskCounter = true;
+          if (processingTaskCount >= taskCapacity) {
+            log.info("Not acquiring task - currently processing {} tasks count exceeds task capacity {}",
+                processingTaskCount, taskCapacity);
+            return;
+          }
         }
 
         currentlyAcquiringTasks.add(delegateTaskId);
@@ -2076,6 +2096,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         log.error("Unable to get task for validation", e);
       } finally {
         currentlyAcquiringTasks.remove(delegateTaskId);
+        if (incrementedCurrentlyAcquiredTaskCounter) {
+          currentlyAcquiringTasksCount.getAndDecrement();
+        }
         currentlyExecutingFutures.remove(delegateTaskId);
       }
     }
@@ -2343,6 +2366,20 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       }
     }
     return secrets;
+  }
+
+  private static Optional<Integer> getDelegateTaskCapacity() {
+    String val = System.getenv().get("DELEGATE_TASK_CAPACITY");
+    Optional<Integer> taskCapacity = Optional.empty();
+    if (StringUtils.isNotEmpty(val)) {
+      try {
+        taskCapacity = Optional.of(Integer.parseInt(val));
+      } catch (NumberFormatException ex) {
+        log.error("Unable to parse DELEGATE_TASK_CAPACITY env variable {} ", ex);
+      }
+    }
+
+    return taskCapacity;
   }
 
   private BooleanSupplier getPreExecutionFunction(@NotNull DelegateTaskPackage delegateTaskPackage,

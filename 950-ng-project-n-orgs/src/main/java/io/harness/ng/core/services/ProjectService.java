@@ -10,6 +10,7 @@ package io.harness.ng.core.services;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.favorites.entities.Favorite;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ActiveProjectsCountDTO;
@@ -43,7 +44,10 @@ public interface ProjectService {
   /**
    * Use this method with caution, verify that the pageable sort is able to make use of the indexes.
    */
-  Page<Project> listPermittedProjects(String accountIdentifier, Pageable pageable, ProjectFilterDTO projectFilterDTO);
+  Page<Project> listPermittedProjects(
+      String accountIdentifier, Pageable pageable, ProjectFilterDTO projectFilterDTO, Boolean onlyFavorites);
+
+  List<Favorite> getProjectFavorites(String accountIdentifier, ProjectFilterDTO projectFilterDTO, String userId);
 
   List<ProjectDTO> listPermittedProjects(String accountIdentifier, ProjectFilterDTO projectFilterDTO);
 
@@ -66,4 +70,6 @@ public interface ProjectService {
   Map<String, Integer> getProjectsCountPerOrganization(String accountIdentifier, List<String> orgIdentifiers);
 
   Long countProjects(String accountIdentifier);
+
+  boolean isFavorite(Project project, String userId);
 }

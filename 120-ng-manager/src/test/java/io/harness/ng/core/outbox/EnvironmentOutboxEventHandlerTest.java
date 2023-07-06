@@ -16,6 +16,7 @@ import static io.harness.ng.core.events.EnvironmentUpdatedEvent.Status.UPDATED;
 import static io.harness.ng.core.utils.NGYamlUtils.getYamlString;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
+import static io.harness.rule.OwnerRule.TATHAGAT;
 
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 import static junit.framework.TestCase.assertEquals;
@@ -48,14 +49,20 @@ import io.harness.ng.core.events.EnvironmentUpsertEvent;
 import io.harness.ng.core.events.OutboxEventConstants;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec;
+import io.harness.ng.core.serviceoverridev2.mappers.ServiceOverrideEventDTOMapper;
 import io.harness.outbox.OutboxEvent;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.security.SourcePrincipalContextData;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.UserPrincipal;
+import io.harness.yaml.core.variables.StringNGVariable;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.util.List;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.junit.Before;
@@ -70,6 +77,12 @@ public class EnvironmentOutboxEventHandlerTest extends CategoryTest {
   private ObjectMapper objectMapper;
   private AuditClientService auditClientService;
   private EnvironmentOutboxEventHandler environmentOutboxEventHandler;
+
+  private static final String OVERRIDE_IDENTIFIER = "overrideIdentifier";
+  private static final String OLD_OVERRIDE_VAR_NAME = "oldOverrideVarName";
+  private static final String OLD_OVERRIDE_VAR_VALUE = "oldOverrideVarValue";
+  private static final String NEW_OVERRIDE_VAR_NAME = "newOverrideVarName";
+  private static final String NEW_OVERRIDE_VAR_VALUE = "newOverrideVarValue";
 
   @Before
   public void setup() {
@@ -253,11 +266,13 @@ public class EnvironmentOutboxEventHandlerTest extends CategoryTest {
     String environmentRef = randomAlphabetic(10);
     String serviceRef = randomAlphabetic(10);
     NGServiceOverridesEntity newServiceOverridesEntity = NGServiceOverridesEntity.builder()
+                                                             .identifier(OVERRIDE_IDENTIFIER)
                                                              .accountId(accountIdentifier)
                                                              .projectIdentifier(projectIdentifier)
                                                              .orgIdentifier(orgIdentifier)
                                                              .environmentRef(environmentRef)
                                                              .serviceRef(serviceRef)
+                                                             .isV2(true)
                                                              .yaml("yaml")
                                                              .build();
     EnvironmentUpdatedEvent environmentUpdatedEvent =
@@ -297,7 +312,7 @@ public class EnvironmentOutboxEventHandlerTest extends CategoryTest {
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, auditEntry, outboxEvent);
     assertEquals(Action.UPDATE, auditEntry.getAction());
-    assertEquals(serviceRef + " Override", auditEntry.getResource().getLabels().get(SERVICE_OVERRIDE_NAME));
+    assertEquals(OVERRIDE_IDENTIFIER, auditEntry.getResource().getLabels().get(SERVICE_OVERRIDE_NAME));
     assertEquals(CREATED.name(), auditEntry.getResource().getLabels().get(STATUS));
     assertEquals(newYaml, auditEntry.getNewYaml());
   }
@@ -313,12 +328,14 @@ public class EnvironmentOutboxEventHandlerTest extends CategoryTest {
     String serviceRef = randomAlphabetic(10);
 
     NGServiceOverridesEntity oldServiceOverridesEntity = NGServiceOverridesEntity.builder()
+                                                             .identifier(OVERRIDE_IDENTIFIER)
                                                              .accountId(accountIdentifier)
                                                              .projectIdentifier(projectIdentifier)
                                                              .orgIdentifier(orgIdentifier)
                                                              .environmentRef(environmentRef)
                                                              .serviceRef(serviceRef)
                                                              .yaml("oldYaml")
+                                                             .isV2(true)
                                                              .build();
     EnvironmentUpdatedEvent environmentUpdatedEvent =
         EnvironmentUpdatedEvent.builder()
@@ -357,7 +374,7 @@ public class EnvironmentOutboxEventHandlerTest extends CategoryTest {
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, auditEntry, outboxEvent);
     assertEquals(Action.UPDATE, auditEntry.getAction());
-    assertEquals(serviceRef + " Override", auditEntry.getResource().getLabels().get(SERVICE_OVERRIDE_NAME));
+    assertEquals(OVERRIDE_IDENTIFIER, auditEntry.getResource().getLabels().get(SERVICE_OVERRIDE_NAME));
     assertEquals(DELETED.name(), auditEntry.getResource().getLabels().get(STATUS));
     assertEquals(oldYaml, auditEntry.getOldYaml());
   }
@@ -375,9 +392,11 @@ public class EnvironmentOutboxEventHandlerTest extends CategoryTest {
                                                              .projectIdentifier(projectIdentifier)
                                                              .orgIdentifier(orgIdentifier)
                                                              .environmentRef(environmentRef)
+                                                             .identifier(OVERRIDE_IDENTIFIER)
                                                              .serviceRef(serviceRef)
                                                              .yaml("newYaml")
                                                              .build();
+
     NGServiceOverridesEntity oldServiceOverridesEntity = NGServiceOverridesEntity.builder()
                                                              .accountId(accountIdentifier)
                                                              .projectIdentifier(projectIdentifier)
@@ -425,12 +444,242 @@ public class EnvironmentOutboxEventHandlerTest extends CategoryTest {
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, auditEntry, outboxEvent);
     assertEquals(Action.UPDATE, auditEntry.getAction());
-    assertEquals(serviceRef + " Override", auditEntry.getResource().getLabels().get(SERVICE_OVERRIDE_NAME));
+    assertEquals(oldServiceOverridesEntity.getServiceRef() + " Override",
+        auditEntry.getResource().getLabels().get(SERVICE_OVERRIDE_NAME));
     assertEquals(UPDATED.name(), auditEntry.getResource().getLabels().get(STATUS));
     assertEquals(newYaml, auditEntry.getNewYaml());
     assertEquals(oldYaml, auditEntry.getOldYaml());
   }
 
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testUpdateEnvCreateServiceOverrideV2() throws IOException {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String environmentRef = randomAlphabetic(10);
+    String serviceRef = randomAlphabetic(10);
+    NGServiceOverridesEntity newServiceOverridesEntity =
+        NGServiceOverridesEntity.builder()
+            .identifier(OVERRIDE_IDENTIFIER)
+            .accountId(accountIdentifier)
+            .projectIdentifier(projectIdentifier)
+            .orgIdentifier(orgIdentifier)
+            .environmentRef(environmentRef)
+            .serviceRef(serviceRef)
+            .yaml("yaml")
+            .spec(ServiceOverridesSpec.builder()
+                      .variables(List.of(StringNGVariable.builder()
+                                             .name(NEW_OVERRIDE_VAR_NAME)
+                                             .value(ParameterField.createValueField(NEW_OVERRIDE_VAR_VALUE))
+                                             .build()))
+                      .build())
+            .build();
+
+    EnvironmentUpdatedEvent environmentUpdatedEvent =
+        EnvironmentUpdatedEvent.builder()
+            .accountIdentifier(accountIdentifier)
+            .orgIdentifier(orgIdentifier)
+            .projectIdentifier(projectIdentifier)
+            .resourceType(EnvironmentUpdatedEvent.ResourceType.SERVICE_OVERRIDE)
+            .status(EnvironmentUpdatedEvent.Status.CREATED)
+            .overrideAuditV2(true)
+            .newOverrideAuditEventDTO(ServiceOverrideEventDTOMapper.toOverrideAuditEventDTO(newServiceOverridesEntity))
+            .build();
+
+    GlobalContext globalContext = new GlobalContext();
+    Principal principal =
+        new UserPrincipal(randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10));
+    SourcePrincipalContextData sourcePrincipalContextData =
+        SourcePrincipalContextData.builder().principal(principal).build();
+    globalContext.upsertGlobalContextRecord(sourcePrincipalContextData);
+    String eventData = objectMapper.writeValueAsString(environmentUpdatedEvent);
+
+    OutboxEvent outboxEvent = OutboxEvent.builder()
+                                  .id(randomAlphabetic(10))
+                                  .blocked(false)
+                                  .eventType(OutboxEventConstants.ENVIRONMENT_UPDATED)
+                                  .eventData(eventData)
+                                  .resource(environmentUpdatedEvent.getResource())
+                                  .resourceScope(environmentUpdatedEvent.getResourceScope())
+                                  .globalContext(globalContext)
+                                  .createdAt(Long.valueOf(randomNumeric(6)))
+                                  .build();
+
+    String newYaml = "variables:\n  - name: newOverrideVarName\n    value: newOverrideVarValue\n    required: false\n";
+    final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
+    when(auditClientService.publishAudit(any(), any(), any())).thenReturn(true);
+    environmentOutboxEventHandler.handle(outboxEvent);
+    verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any(), any());
+    AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
+    assertAuditEntry(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, auditEntry, outboxEvent);
+    assertEquals(Action.UPDATE, auditEntry.getAction());
+    assertEquals(newServiceOverridesEntity.getServiceRef() + " Override",
+        auditEntry.getResource().getLabels().get(SERVICE_OVERRIDE_NAME));
+    assertEquals(CREATED.name(), auditEntry.getResource().getLabels().get(STATUS));
+    assertEquals(newYaml, auditEntry.getNewYaml());
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testUpdateEnvDeleteServiceOverrideV2() throws IOException {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String environmentRef = randomAlphabetic(10);
+    String serviceRef = randomAlphabetic(10);
+
+    NGServiceOverridesEntity oldServiceOverridesEntity =
+        NGServiceOverridesEntity.builder()
+            .identifier(OVERRIDE_IDENTIFIER)
+            .accountId(accountIdentifier)
+            .projectIdentifier(projectIdentifier)
+            .orgIdentifier(orgIdentifier)
+            .environmentRef(environmentRef)
+            .serviceRef(serviceRef)
+            .spec(ServiceOverridesSpec.builder()
+                      .variables(List.of(StringNGVariable.builder()
+                                             .name(OLD_OVERRIDE_VAR_NAME)
+                                             .value(ParameterField.createValueField(OLD_OVERRIDE_VAR_VALUE))
+                                             .build()))
+                      .build())
+            .yaml("oldYaml")
+            .isV2(true)
+            .build();
+    EnvironmentUpdatedEvent environmentUpdatedEvent =
+        EnvironmentUpdatedEvent.builder()
+            .accountIdentifier(accountIdentifier)
+            .orgIdentifier(orgIdentifier)
+            .projectIdentifier(projectIdentifier)
+            .resourceType(EnvironmentUpdatedEvent.ResourceType.SERVICE_OVERRIDE)
+            .status(DELETED)
+            .overrideAuditV2(true)
+            .oldOverrideAuditEventDTO(ServiceOverrideEventDTOMapper.toOverrideAuditEventDTO(oldServiceOverridesEntity))
+            .build();
+
+    GlobalContext globalContext = new GlobalContext();
+    Principal principal =
+        new UserPrincipal(randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10));
+    SourcePrincipalContextData sourcePrincipalContextData =
+        SourcePrincipalContextData.builder().principal(principal).build();
+    globalContext.upsertGlobalContextRecord(sourcePrincipalContextData);
+    String eventData = objectMapper.writeValueAsString(environmentUpdatedEvent);
+
+    OutboxEvent outboxEvent = OutboxEvent.builder()
+                                  .id(randomAlphabetic(10))
+                                  .blocked(false)
+                                  .eventType(OutboxEventConstants.ENVIRONMENT_UPDATED)
+                                  .eventData(eventData)
+                                  .resource(environmentUpdatedEvent.getResource())
+                                  .resourceScope(environmentUpdatedEvent.getResourceScope())
+                                  .globalContext(globalContext)
+                                  .createdAt(Long.valueOf(randomNumeric(6)))
+                                  .build();
+
+    String oldYaml = "variables:\n  - name: oldOverrideVarName\n    value: oldOverrideVarValue\n    required: false\n";
+    final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
+    when(auditClientService.publishAudit(any(), any(), any())).thenReturn(true);
+    environmentOutboxEventHandler.handle(outboxEvent);
+    verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any(), any());
+    AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
+    assertAuditEntry(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, auditEntry, outboxEvent);
+    assertEquals(Action.UPDATE, auditEntry.getAction());
+    assertEquals(OVERRIDE_IDENTIFIER, auditEntry.getResource().getLabels().get(SERVICE_OVERRIDE_NAME));
+    assertEquals(DELETED.name(), auditEntry.getResource().getLabels().get(STATUS));
+    assertEquals(oldYaml, auditEntry.getOldYaml());
+  }
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testUpdateEnvUpdateServiceOverrideV2() throws IOException {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String environmentRef = randomAlphabetic(10);
+    String serviceRef = randomAlphabetic(10);
+    NGServiceOverridesEntity newServiceOverridesEntity =
+        NGServiceOverridesEntity.builder()
+            .accountId(accountIdentifier)
+            .projectIdentifier(projectIdentifier)
+            .orgIdentifier(orgIdentifier)
+            .environmentRef(environmentRef)
+            .identifier(OVERRIDE_IDENTIFIER)
+            .serviceRef(serviceRef)
+            .yaml("newYaml")
+            .spec(ServiceOverridesSpec.builder()
+                      .variables(List.of(StringNGVariable.builder()
+                                             .name(NEW_OVERRIDE_VAR_NAME)
+                                             .value(ParameterField.createValueField(NEW_OVERRIDE_VAR_VALUE))
+                                             .build()))
+                      .build())
+            .isV2(true)
+            .build();
+    NGServiceOverridesEntity oldServiceOverridesEntity =
+        NGServiceOverridesEntity.builder()
+            .accountId(accountIdentifier)
+            .projectIdentifier(projectIdentifier)
+            .orgIdentifier(orgIdentifier)
+            .environmentRef(environmentRef)
+            .identifier(OVERRIDE_IDENTIFIER)
+            .serviceRef(serviceRef)
+            .yaml("oldYaml")
+            .spec(ServiceOverridesSpec.builder()
+                      .variables(List.of(StringNGVariable.builder()
+                                             .name(OLD_OVERRIDE_VAR_NAME)
+                                             .value(ParameterField.createValueField(OLD_OVERRIDE_VAR_VALUE))
+                                             .build()))
+                      .build())
+            .isV2(true)
+            .build();
+    EnvironmentUpdatedEvent environmentUpdatedEvent =
+        EnvironmentUpdatedEvent.builder()
+            .accountIdentifier(accountIdentifier)
+            .orgIdentifier(orgIdentifier)
+            .projectIdentifier(projectIdentifier)
+            .resourceType(EnvironmentUpdatedEvent.ResourceType.SERVICE_OVERRIDE)
+            .status(UPDATED)
+            .overrideAuditV2(true)
+            .newOverrideAuditEventDTO(ServiceOverrideEventDTOMapper.toOverrideAuditEventDTO(newServiceOverridesEntity))
+            .oldOverrideAuditEventDTO(ServiceOverrideEventDTOMapper.toOverrideAuditEventDTO(oldServiceOverridesEntity))
+            .build();
+
+    GlobalContext globalContext = new GlobalContext();
+    Principal principal =
+        new UserPrincipal(randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10));
+    SourcePrincipalContextData sourcePrincipalContextData =
+        SourcePrincipalContextData.builder().principal(principal).build();
+    globalContext.upsertGlobalContextRecord(sourcePrincipalContextData);
+    String eventData = objectMapper.writeValueAsString(environmentUpdatedEvent);
+
+    OutboxEvent outboxEvent = OutboxEvent.builder()
+                                  .id(randomAlphabetic(10))
+                                  .blocked(false)
+                                  .eventType(OutboxEventConstants.ENVIRONMENT_UPDATED)
+                                  .eventData(eventData)
+                                  .resource(environmentUpdatedEvent.getResource())
+                                  .resourceScope(environmentUpdatedEvent.getResourceScope())
+                                  .globalContext(globalContext)
+                                  .createdAt(Long.valueOf(randomNumeric(6)))
+                                  .build();
+
+    String oldYaml = "variables:\n  - name: oldOverrideVarName\n    value: oldOverrideVarValue\n    required: false\n";
+    String newYaml = "variables:\n  - name: newOverrideVarName\n    value: newOverrideVarValue\n    required: false\n";
+
+    final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
+    when(auditClientService.publishAudit(any(), any(), any())).thenReturn(true);
+    environmentOutboxEventHandler.handle(outboxEvent);
+    verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any(), any());
+    AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
+    assertAuditEntry(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, auditEntry, outboxEvent);
+    assertEquals(Action.UPDATE, auditEntry.getAction());
+    assertEquals(OVERRIDE_IDENTIFIER, auditEntry.getResource().getLabels().get(SERVICE_OVERRIDE_NAME));
+    assertEquals(UPDATED.name(), auditEntry.getResource().getLabels().get(STATUS));
+
+    assertEquals(newYaml, auditEntry.getNewYaml());
+    assertEquals(oldYaml, auditEntry.getOldYaml());
+  }
   @Test
   @Owner(developers = NAMAN_TALAYCHA)
   @Category(UnitTests.class)

@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.DEVESH;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -49,29 +50,30 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 public class MergedPluginsConfigApiImplTest extends CategoryTest {
   AutoCloseable openMocks;
 
-  ConfigManagerService configManagerService;
-  @Mock IdpCommonService idpCommonService;
+  @Mock ConfigManagerService configManagerService;
+  @Mock private IdpCommonService idpCommonService;
   @Mock NamespaceService namespaceService;
   @Mock BackstageEnvVariableService backstageEnvVariableService;
   @Mock PluginsProxyInfoService pluginsProxyInfoService;
-  String backstageAppBaseUrl;
-  String backstageBackendBaseUrl;
-  String backstagePostgresHost;
-
-  @InjectMocks MergedPluginsConfigApiImpl mergedPluginsConfigApiImpl;
+  final String backstageAppBaseUrl = "test-backstage-app-base-url";
+  final String backstageBackendBaseUrl = "test-backstage-backend-base-url";
+  final String backstagePostgresHost = "test-backstage-postgres-host";
+  MergedPluginsConfigApiImpl mergedPluginsConfigApiImpl;
 
   @Before
   public void setUp() {
-    configManagerService = Mockito.mock(ConfigManagerService.class);
-    mergedPluginsConfigApiImpl = new MergedPluginsConfigApiImpl(backstageAppBaseUrl, backstagePostgresHost,
-        ServiceHttpClientConfig.builder().build(), namespaceService, idpCommonService, configManagerService,
-        backstageEnvVariableService, pluginsProxyInfoService);
     openMocks = MockitoAnnotations.openMocks(this);
+    mergedPluginsConfigApiImpl = new MergedPluginsConfigApiImpl(backstageAppBaseUrl, backstageBackendBaseUrl,
+        ServiceHttpClientConfig.builder().baseUrl(backstageBackendBaseUrl).build(), namespaceService, idpCommonService,
+        configManagerService, backstageEnvVariableService, pluginsProxyInfoService);
   }
 
   static final String TEST_ACCOUNT_IDENTIFIER = "test-account-id";
 
   static final String ERROR_TOGGLE_PLUGIN_FOR_ACCOUNT = "Error : Plugin toggle for account is unsuccessful";
+
+  static final String ERROR_MERGING_CONFIG_FOR_ACCOUNT = "Error : Merging config for account is unsuccessful";
+  static final String TEST_NAMESPACE = "test-name-space";
 
   @Test
   @Owner(developers = DEVESH)
@@ -94,6 +96,26 @@ public class MergedPluginsConfigApiImplTest extends CategoryTest {
     Response response = mergedPluginsConfigApiImpl.getMergedPluginsConfig(TEST_ACCOUNT_IDENTIFIER);
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
     assertEquals(ERROR_TOGGLE_PLUGIN_FOR_ACCOUNT, ((ResponseMessage) response.getEntity()).getMessage());
+  }
+
+  @Test
+  @Owner(developers = DEVESH)
+  @Category(UnitTests.class)
+  public void testSyncAppConfig() throws Exception {
+    doNothing().when(idpCommonService).checkUserAuthorization();
+    NamespaceInfo namespaceInfo = new NamespaceInfo();
+    namespaceInfo.setNamespace(TEST_NAMESPACE);
+    when(namespaceService.getNamespaceForAccountIdentifier(any())).thenReturn(namespaceInfo);
+    doNothing().when(configManagerService).updateConfigMap(any(), any(), any());
+    Response response = mergedPluginsConfigApiImpl.syncAppConfig(TEST_ACCOUNT_IDENTIFIER, true);
+    assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
+    response = mergedPluginsConfigApiImpl.syncAppConfig(TEST_ACCOUNT_IDENTIFIER, false);
+    assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
+    when(configManagerService.mergeAllAppConfigsForAccount(any()))
+        .thenThrow(new InvalidRequestException(ERROR_MERGING_CONFIG_FOR_ACCOUNT));
+    response = mergedPluginsConfigApiImpl.syncAppConfig(TEST_ACCOUNT_IDENTIFIER, true);
+    assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
+    assertEquals(ERROR_MERGING_CONFIG_FOR_ACCOUNT, ((ResponseMessage) response.getEntity()).getMessage());
   }
 
   @Test

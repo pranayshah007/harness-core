@@ -1,0 +1,77 @@
+pipeline:
+  name: s3 test
+  identifier: s3_test
+  projectIdentifier: inder_test
+  orgIdentifier: default
+  tags: {}
+  stages:
+    - stage:
+        name: serverless
+        identifier: serverless
+        description: ""
+        type: Deployment
+        spec:
+          deploymentType: ServerlessAwsLambda
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: shell
+                  identifier: shell
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: echo "<+artifact>"
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 10m
+            rollbackSteps:
+              - step:
+                  name: Serverless Lambda Rollback
+                  identifier: ServerlessLambdaRollback
+                  type: ServerlessAwsLambdaRollback
+                  timeout: 10m
+                  spec: {}
+          service:
+            serviceRef: serverless
+            serviceInputs:
+              serviceDefinition:
+                type: ServerlessAwsLambda
+                spec:
+                  artifacts:
+                    primary:
+                      primaryArtifactRef: <+serviceVariables.randomExpression>
+                      sources:
+                        - identifier: artifactory
+                          type: ArtifactoryRegistry
+                          spec:
+                              artifactDirectory: <+input>
+                              artifactPath: <+input>
+          environment:
+            environmentRef: testenv
+            deployToAll: false
+            infrastructureDefinitions:
+              - identifier: infra2
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback
+  variables:
+    - name: region
+      type: String
+      description: ""
+      value: <+input>
+    - name: filePath
+      type: String
+      description: ""
+      value: <+input>
+    - name: bucket
+      type: String
+      description: ""
+      value: <+input>

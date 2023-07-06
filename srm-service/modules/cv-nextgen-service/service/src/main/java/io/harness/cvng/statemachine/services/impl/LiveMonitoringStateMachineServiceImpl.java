@@ -11,10 +11,12 @@ import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_MINUTES_DEFAULT;
 import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_MINUTES_FOR_DEMO;
 
 import io.harness.cvng.analysis.beans.LogClusterLevel;
+import io.harness.cvng.beans.cvnglog.CVNGLogTag;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.ExecutionLogService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.core.utils.CVNGTaskMetadataUtils;
 import io.harness.cvng.models.VerificationType;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisState;
@@ -25,6 +27,7 @@ import io.harness.cvng.statemachine.entities.ServiceGuardTimeSeriesAnalysisState
 import io.harness.cvng.statemachine.exception.AnalysisStateMachineException;
 
 import com.google.inject.Inject;
+import java.util.List;
 
 public class LiveMonitoringStateMachineServiceImpl extends AnalysisStateMachineServiceImpl {
   @Inject private VerificationTaskService verificationTaskService;
@@ -64,8 +67,9 @@ public class LiveMonitoringStateMachineServiceImpl extends AnalysisStateMachineS
     firstState.setInputs(inputForAnalysis);
     stateMachine.setAccountId(cvConfig.getAccountId());
     stateMachine.setCurrentState(firstState);
+    List<CVNGLogTag> cvngLogTags = CVNGTaskMetadataUtils.getCvngLogTagsForTask(stateMachine.getUuid());
     executionLogService.getLogger(stateMachine)
-        .log(stateMachine.getLogLevel(), "Analysis state machine status: " + stateMachine.getStatus());
+        .log(stateMachine.getLogLevel(), cvngLogTags, "Analysis state machine status: " + stateMachine.getStatus());
     return stateMachine;
   }
 }

@@ -12,6 +12,7 @@ import static io.harness.ngmigration.utils.NGMigrationConstants.SERVICE_COMMAND_
 import static io.harness.ngmigration.utils.NGMigrationConstants.UNKNOWN_SERVICE;
 
 import static software.wings.ngmigration.NGMigrationEntityType.SERVICE_COMMAND_TEMPLATE;
+import static software.wings.ngmigration.NGMigrationEntityType.TEMPLATE;
 
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.encryption.Scope;
@@ -279,6 +280,7 @@ public class ServiceCommandTemplateMigrationService extends NgMigrationService {
                                                 .build())
                         .build())
               .ngEntityDetail(NgEntityDetail.builder()
+                                  .entityType(TEMPLATE)
                                   .identifier(MigratorUtility.generateIdentifier(
                                       identifierSource, inputDTO.getIdentifierCaseFormat()))
                                   .orgIdentifier(orgIdentifier)

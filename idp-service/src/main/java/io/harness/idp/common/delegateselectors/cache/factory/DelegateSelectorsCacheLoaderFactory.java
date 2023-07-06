@@ -7,8 +7,11 @@
 
 package io.harness.idp.common.delegateselectors.cache.factory;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCacheLoader;
 import io.harness.idp.common.delegateselectors.cache.connector.ConnectorCacheLoader;
+import io.harness.idp.common.delegateselectors.cache.plugins.PluginCacheLoader;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -16,12 +19,15 @@ import java.util.List;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
+@OwnedBy(HarnessTeam.IDP)
 public class DelegateSelectorsCacheLoaderFactory {
   private ConnectorCacheLoader connectorCacheLoader;
+  private PluginCacheLoader pluginCacheLoader;
 
   public List<DelegateSelectorsCacheLoader> getCacheLoaders() {
     List<DelegateSelectorsCacheLoader> cacheLoaders = new ArrayList<>();
     cacheLoaders.add(connectorCacheLoader);
+    cacheLoaders.add(pluginCacheLoader);
     return cacheLoaders;
   }
 }

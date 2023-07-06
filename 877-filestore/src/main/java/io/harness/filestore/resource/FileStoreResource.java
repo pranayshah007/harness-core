@@ -29,6 +29,7 @@ import static io.harness.NGCommonEntityConstants.ORG_KEY;
 import static io.harness.NGCommonEntityConstants.ORG_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.PROJECT_KEY;
 import static io.harness.NGCommonEntityConstants.PROJECT_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.SCOPED_FILE_PATH_PARAM_MESSAGE;
 import static io.harness.NGResourceFilterConstants.FILTER_KEY;
 import static io.harness.NGResourceFilterConstants.IDENTIFIERS;
 import static io.harness.NGResourceFilterConstants.PAGE_KEY;
@@ -491,5 +492,25 @@ public class FileStoreResource {
 
     return ResponseDTO.newResponse(
         fileStoreService.getCreatedByList(accountIdentifier, orgIdentifier, projectIdentifier));
+  }
+
+  @GET
+  @Consumes({"application/json"})
+  @Path("files/{scopedFilePath}/content")
+  @ApiOperation(
+      value = "Get file content as string using scopedFilePath", nickname = "getFileContentUsingScopedFilePath")
+  @Operation(operationId = "getFileContentUsingScopedFilePath", summary = "Get file content of scopedFilePath",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the file content of scopedFilePath")
+      })
+  public ResponseDTO<String>
+  getFileContentUsingScopedFilePath(@Parameter(description = SCOPED_FILE_PATH_PARAM_MESSAGE) @PathParam(
+                                        "scopedFilePath") @NotBlank String scopedFilePath,
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier) {
+    return ResponseDTO.newResponse(fileStoreService.getFileContentAsString(
+        accountIdentifier, orgIdentifier, projectIdentifier, scopedFilePath, Long.MAX_VALUE));
   }
 }

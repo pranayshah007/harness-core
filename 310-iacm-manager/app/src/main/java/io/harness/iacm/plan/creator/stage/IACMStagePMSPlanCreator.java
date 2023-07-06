@@ -7,6 +7,7 @@
 
 package io.harness.iacm.plan.creator.stage;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.EXECUTION;
 import static io.harness.yaml.extended.ci.codebase.Build.builder;
@@ -23,18 +24,20 @@ import io.harness.beans.execution.WebhookEvent;
 import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.stages.IACMStageNode;
 import io.harness.beans.stages.IntegrationStageNode;
-import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.steps.IACMStepSpecTypeConstants;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.integrationstage.CIIntegrationStageModifier;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.plan.creator.codebase.CodebasePlanCreator;
 import io.harness.ci.states.CISpecStep;
-import io.harness.ci.states.IntegrationStageStepPMS;
 import io.harness.ci.utils.CIStagePlanCreationUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.IACMStageExecutionException;
+import io.harness.iacm.execution.IACMIntegrationStageStepPMS;
+import io.harness.iacm.execution.IACMIntegrationStageStepParametersPMS;
+import io.harness.iacm.execution.IACMStepsUtils;
 import io.harness.iacmserviceclient.IACMServiceUtils;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
@@ -71,10 +74,12 @@ import io.harness.yaml.extended.ci.codebase.BuildType;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 import io.harness.yaml.extended.ci.codebase.PRCloneStrategy;
 import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
+import io.harness.yaml.extended.ci.codebase.impl.PRBuildSpec;
 import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -82,8 +87,10 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
@@ -96,6 +103,8 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
   @Inject private ConnectorUtils connectorUtils;
   @Inject private CIStagePlanCreationUtils cIStagePlanCreationUtils;
   @Inject private IACMServiceUtils serviceUtils;
+
+  @Inject private IACMStepsUtils iacmStepsUtils;
 
   /**
    This function seems to be what is called by the pmsSDK in order to create an execution plan
@@ -125,6 +134,14 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     stageNode.getIacmStageConfig().setCloneCodebase(ParameterField.<Boolean>builder().value(true).build());
 
     CodeBase codeBase = getIACMCodebase(ctx, workspace);
+
+    // Add the CODEBASE task. This task is required to be able to get the sweeping output for the clone step
+    String codeBaseNodeUUID =
+        fetchCodeBaseNodeUUID(codeBase, executionField.getNode().getUuid(), planCreationResponseMap);
+    if (isNotEmpty(codeBaseNodeUUID)) {
+      childNodeId = codeBaseNodeUUID; // Change the child of integration stage to codebase node
+    }
+
     ExecutionSource executionSource = buildExecutionSource(ctx, stageNode);
 
     // Because we are using a CI stage, the Stage is of type IntegrationStageConfig. From here we are only interested
@@ -135,7 +152,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
         modifyYAMLWithImplicitSteps(ctx, executionSource, executionField, stageNode, codeBase);
 
     ExecutionElementConfig modifiedExecutionPlanWithworkspace =
-        addworkspaceToIACMSteps(modifiedExecutionPlan, workspace);
+        addworkspaceToIACMSteps(ctx, modifiedExecutionPlan, workspace);
     // Retrieve the Modified Plan execution where the InitialTask and Git Clone step have been injected. Then retrieve
     // the steps from the plan to the level of steps->spec->stageElementConfig->execution->steps. Here, we can inject
     // any step and that step will be available in the InitialTask step in the path:
@@ -145,9 +162,10 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
 
     BuildStatusUpdateParameter buildStatusUpdateParameter =
         obtainBuildStatusUpdateParameter(ctx, stageNode, executionSource, workspace);
+
     PlanNode specPlanNode = getSpecPlanNode(specField,
-        IntegrationStageStepParametersPMS.getStepParameters(
-            getIntegrationStageNode(stageNode), childNodeId, buildStatusUpdateParameter, ctx));
+        IACMIntegrationStageStepParametersPMS.getStepParameters(
+            ctx, getIntegrationStageNode(stageNode), codeBase, childNodeId));
     planCreationResponseMap.put(
         specPlanNode.getUuid(), PlanCreationResponse.builder().node(specPlanNode.getUuid(), specPlanNode).build());
 
@@ -156,17 +174,43 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
   }
 
   private ExecutionElementConfig addworkspaceToIACMSteps(
-      ExecutionElementConfig modifiedExecutionPlan, String workspace) {
+      PlanCreationContext ctx, ExecutionElementConfig modifiedExecutionPlan, String workspace) {
     List<ExecutionWrapperConfig> modifiedSteps = new ArrayList<>();
+    Map<String, String> envVars = iacmStepsUtils.getIACMEnvVariables(
+        ctx.getOrgIdentifier(), ctx.getProjectIdentifier(), ctx.getAccountIdentifier(), workspace);
     for (ExecutionWrapperConfig wrapperConfig : modifiedExecutionPlan.getSteps()) {
-      if (wrapperConfig.getStep().get("spec").get("envVariables") != null) {
-        ((ObjectNode) wrapperConfig.getStep().get("spec").get("envVariables")).put("HARNESS_WORKSPACE", workspace);
-      }
       switch (wrapperConfig.getStep().get("type").asText()) {
+        // If the step is one of our steps, we want to put all the variables from the workspace, including the system
+        // variables
         case IACMStepSpecTypeConstants.IACM_TERRAFORM_PLUGIN:
+        case IACMStepSpecTypeConstants.IACM_APPROVAL:
           ((ObjectNode) wrapperConfig.getStep().get("spec")).put("workspace", workspace);
+          Map<String, String> envVarsCopy = new HashMap<>(envVars);
+          String command = wrapperConfig.getStep().get("spec").get("command").asText();
+          envVarsCopy.put("PLUGIN_COMMAND", command);
+          ObjectMapper objectMapper = new ObjectMapper();
+          ((ObjectNode) wrapperConfig.getStep().get("spec")).set("envVariables", objectMapper.valueToTree(envVarsCopy));
           break;
         default:
+          // For any other step, we want to put only the variables defined in the workspace. Skip this for the
+          // liteTaskEngine and clone step
+          if (!Objects.equals(
+                  wrapperConfig.getStep().get("type").asText(), IACMStepSpecTypeConstants.IACM_LITE_EMNGINE)) {
+            if (!Objects.equals(
+                    wrapperConfig.getStep().get("type").asText(), IACMStepSpecTypeConstants.IACM_CLONE_CODEBASE)) {
+              Map<String, String> copyMap = new HashMap<>();
+              for (Map.Entry<String, String> entry : envVars.entrySet()) {
+                if (!entry.getKey().startsWith("PLUGIN_")) {
+                  copyMap.put(entry.getKey(), entry.getValue());
+                }
+              }
+              ((ObjectNode) wrapperConfig.getStep().get("spec")).put("workspace", workspace);
+              Map<String, String> pluginEnvVarsCopy = new HashMap<>(copyMap);
+              ObjectMapper pluginObjectMapper = new ObjectMapper();
+              ((ObjectNode) wrapperConfig.getStep().get("spec"))
+                  .set("envVariables", pluginObjectMapper.valueToTree(pluginEnvVarsCopy));
+            }
+          }
           break;
       }
       modifiedSteps.add(wrapperConfig);
@@ -185,20 +229,24 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
 
   @Override
   public StepType getStepType(IACMStageNode stageNode) {
-    return IntegrationStageStepPMS.STEP_TYPE;
+    return IACMIntegrationStageStepPMS.STEP_TYPE;
   }
 
   @Override
   /*
    * This function creates the spec parameters for the Stage. The stage is treated as if it were another step, so this
-   * function basically identifies the spec under the stage and returns it as IntegrationStageStepParametersPMS
+   * function basically identifies the spec under the stage and returns it as IACMIntegrationStageStepParametersPMS
    * */
   public SpecParameters getSpecParameters(String childNodeId, PlanCreationContext ctx, IACMStageNode stageNode) {
-    ExecutionSource executionSource = buildExecutionSource(ctx, stageNode);
-    BuildStatusUpdateParameter buildStatusUpdateParameter = obtainBuildStatusUpdateParameter(
-        ctx, stageNode, executionSource, stageNode.getIacmStageConfig().getWorkspace().getValue());
-    return IntegrationStageStepParametersPMS.getStepParameters(
-        getIntegrationStageNode(stageNode), childNodeId, buildStatusUpdateParameter, ctx);
+    YamlField specField =
+        Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
+    YamlField executionField = specField.getNode().getField(EXECUTION);
+    YamlNode parentNode = executionField.getNode().getParentNode();
+    String workspace = parentNode.getField("workspace").getNode().getCurrJsonNode().asText();
+    CodeBase codeBase = getIACMCodebase(ctx, workspace);
+
+    return IACMIntegrationStageStepParametersPMS.getStepParameters(
+        ctx, getIntegrationStageNode(stageNode), codeBase, childNodeId);
   }
 
   @Override
@@ -276,14 +324,14 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     }
     IntegrationStageNode integrationStageNode = getIntegrationStageNode(stageNode);
     return ciIntegrationStageModifier.modifyExecutionPlan(executionElementConfig, integrationStageNode, ctx, codeBase,
-        IntegrationStageStepParametersPMS.getInfrastructure(integrationStageNode, ctx), executionSource);
+        IACMIntegrationStageStepParametersPMS.getInfrastructure(integrationStageNode, ctx), executionSource);
   }
 
   /**
   This is one of the functions that I think that we really need to understand. This function creates a PlanNode for a
   step and the step is the CISpecStep, but I don't understand what is this step doing. Is this the
    */
-  private PlanNode getSpecPlanNode(YamlField specField, IntegrationStageStepParametersPMS stepParameters) {
+  private PlanNode getSpecPlanNode(YamlField specField, IACMIntegrationStageStepParametersPMS stepParameters) {
     return PlanNode.builder()
         .uuid(specField.getNode().getUuid())
         .identifier(YAMLFieldNameConstants.SPEC)
@@ -387,7 +435,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
 
       // If the trigger type is WEBHOOK, we need to get the repository name from the webhook payload.
       // If the trigger is not a WEBHOOK, then we retrieve the repository from the Workspace
-      if (ctx.getMetadata().getMetadata().getTriggerInfo().getTriggerType().name().equals("WEBHOOK")) {
+      if (ctx.getTriggerInfo().getTriggerType().name().equals("WEBHOOK")) {
         // It looks like the connector type in the workspace has to match with the connector type in the webhook,.
         // I could not find a way to get the connector type from the webhook, so I will use the connector type from the
         // workspace and assume that both are the same. This is required because if the connector is an account
@@ -403,13 +451,29 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
                   .value(ctx.getMetadata().getTriggerPayload().getParsedPayload().getPr().getRepo().getClone())
                   .build());
         }
-        buildObject.type(BuildType.BRANCH);
-        buildObject.spec(
-            BranchBuildSpec.builder()
-                .branch(ParameterField.<String>builder()
-                            .value(ctx.getMetadata().getTriggerPayload().getParsedPayload().getPr().getPr().getSource())
-                            .build())
-                .build());
+        // If getPr is not null the trigger type is a PR trigger, and we want to use the PRBuildSpec.
+        // If getPush is not null, the trigger type is then a Push trigger, and we want to use the BranchBuildSpec as
+        // PR does not makes sense.
+        if (ctx.getTriggerPayload().getParsedPayload().getPr().hasPr()) {
+          buildObject.type(BuildType.PR);
+          buildObject.spec(PRBuildSpec.builder()
+                               .number(ParameterField.<String>builder().value("<+trigger.prNumber>").build())
+                               .build());
+        } else if (ctx.getTriggerPayload().getParsedPayload().getPush().hasCommit()) {
+          buildObject.type(BuildType.BRANCH);
+          buildObject.spec(BranchBuildSpec.builder()
+                               .branch(ParameterField.<String>builder().value("<+trigger.branch>").build())
+                               .build());
+        } else {
+          // This should be triggered only if the trigger is a tag. There could be a chance that we hit this with
+          // a trigger with comments but I was unable to test this so I will need to check if that has been implemented
+          // or not
+          buildObject.type(BuildType.TAG);
+          buildObject.spec(TagBuildSpec.builder()
+                               .tag(ParameterField.<String>builder().value("<+trigger.tag>").expression(true).build())
+                               .build());
+        }
+
       } else {
         // If the repository name is empty, it means that the connector is an account connector and the repo needs to be
         // defined
@@ -484,5 +548,20 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
   @Override
   public Set<String> getSupportedYamlVersions() {
     return Set.of(PipelineVersion.V0);
+  }
+
+  private String fetchCodeBaseNodeUUID(CodeBase codeBase, String executionNodeUUid,
+      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap) {
+    String codeBaseNodeUUID = generateUuid();
+    List<PlanNode> codeBasePlanNodeList =
+        CodebasePlanCreator.buildCodebasePlanNodes(codeBaseNodeUUID, executionNodeUUid, kryoSerializer, codeBase, null);
+    if (isNotEmpty(codeBasePlanNodeList)) {
+      for (PlanNode planNode : codeBasePlanNodeList) {
+        planCreationResponseMap.put(
+            planNode.getUuid(), PlanCreationResponse.builder().node(planNode.getUuid(), planNode).build());
+      }
+      return codeBaseNodeUUID;
+    }
+    return null;
   }
 }

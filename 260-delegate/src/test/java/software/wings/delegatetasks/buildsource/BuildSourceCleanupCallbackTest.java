@@ -32,6 +32,7 @@ import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -339,6 +340,7 @@ public class BuildSourceCleanupCallbackTest extends WingsBaseTest {
   public void shouldNotifyOnSuccessWithDeleteArtifacts() {
     buildSourceCleanupCallback.setArtifactStreamId(ARTIFACT_STREAM_ID_1);
     when(artifactService.prepareArtifactWithMetadataQuery(any(), anyBoolean())).thenReturn(query);
+    when(query.limit(anyInt())).thenReturn(query);
     when(query.fetch()).thenReturn(artifactIterator);
 
     when(artifactIterator.hasNext()).thenReturn(true).thenReturn(false);
@@ -420,6 +422,7 @@ public class BuildSourceCleanupCallbackTest extends WingsBaseTest {
   public void shouldNotifyOnSuccess() {
     buildSourceCleanupCallback.setArtifactStreamId(ARTIFACT_STREAM_ID_1);
     when(artifactService.prepareArtifactWithMetadataQuery(any(), anyBoolean())).thenReturn(query);
+    when(query.limit(anyInt())).thenReturn(query);
     when(query.fetch()).thenReturn(artifactIterator);
 
     when(artifactIterator.hasNext()).thenReturn(true).thenReturn(false);

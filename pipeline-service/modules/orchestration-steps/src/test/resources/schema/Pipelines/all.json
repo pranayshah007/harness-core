@@ -1898,30 +1898,6 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "DelegateInfra": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepGroupInfra"
-        },
-        {
-          "type": "object",
-          "required": [
-            "type"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "KubernetesDirect",
-                "Delegate",
-                "Noop"
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "Distribution": {
       "type": "object",
       "required": [
@@ -8123,9 +8099,6 @@
         "stepGroupInfra": {
           "oneOf": [
             {
-              "$ref": "#/definitions/DelegateInfra"
-            },
-            {
               "$ref": "#/definitions/K8sDirectInfra"
             }
           ]
@@ -8152,6 +8125,22 @@
         },
         "template": {
           "$ref": "#/definitions/TemplateLinkConfig"
+        },
+        "variables": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/NumberNGVariable"
+              },
+              {
+                "$ref": "#/definitions/SecretNGVariable"
+              },
+              {
+                "$ref": "#/definitions/StringNGVariable"
+              }
+            ]
+          }
         },
         "when": {
           "oneOf": [
@@ -8350,7 +8339,8 @@
             "format": {
               "type": "string",
               "enum": [
-                "spdx-json"
+                "spdx-json",
+                "cyclonedx-json"
               ]
             }
           }
