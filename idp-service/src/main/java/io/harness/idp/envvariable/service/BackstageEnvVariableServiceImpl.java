@@ -271,15 +271,17 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
     if (envVariables.isEmpty()) {
       return;
     }
+    boolean idpEnabled =
+        CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(FeatureName.IDP_ENABLED.name(), accountIdentifier));
+    log.info("IDP_ENABLED FF enabled: {} for account {}", idpEnabled, accountIdentifier);
     boolean loadSecretsDynamically = CGRestUtils.getResponse(
         accountClient.isFeatureFlagEnabled(FeatureName.IDP_DYNAMIC_SECRET_RESOLUTION.name(), accountIdentifier));
+    log.info("IDP_DYNAMIC_SECRET_RESOLUTION FF enabled: {} for account {}", loadSecretsDynamically, accountIdentifier);
     envVariables = removeAccountFromIdentifierForBackstageEnvVarList(envVariables);
     Map<String, byte[]> secretData = new HashMap<>();
 
     for (BackstageEnvVariable envVariable : envVariables) {
       String envName = envVariable.getEnvName();
-      log.info(
-          "IDP_DYNAMIC_SECRET_RESOLUTION FF enabled: {} for account {}", loadSecretsDynamically, accountIdentifier);
       if (envVariable.getType().name().equals(BackstageEnvVariableType.SECRET.name())) {
         if (loadSecretsDynamically) {
           secretData.put(
