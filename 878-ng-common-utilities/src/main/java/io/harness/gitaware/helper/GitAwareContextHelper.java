@@ -253,6 +253,6 @@ public class GitAwareContextHelper {
     if (scmGitMetaData == null) {
       return false;
     }
-    return scmGitMetaData.isGitDefaultBranch();
+    return Boolean.TRUE.equals(scmGitMetaData.getIsGitDefaultBranch());
   }
 }
