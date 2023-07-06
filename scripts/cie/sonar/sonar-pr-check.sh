@@ -132,7 +132,6 @@ for module in $PR_MODULES
   do
      [ -d ${module} ] && [[ "${HARNESS_CORE_MODULES}" =~ "${module}" ]] \
      && BAZEL_COMPILE_MODULES+=("//${module}/...") \
-
      && SONAR_PROP_FILE_PATH=$(find ${module} -type f -iname "${SONAR_CONFIG_FILE}") \
      || echo "$module is not present in the bazel modules list."
   done
