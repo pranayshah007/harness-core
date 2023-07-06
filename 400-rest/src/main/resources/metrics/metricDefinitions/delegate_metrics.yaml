@@ -2,6 +2,10 @@ name: Delegate Metrics
 identifier: delegate_metrics
 metricGroup: delegate
 metrics:
+  - metricName: delegate_registration
+    metricDefinition: Delegate registration call
+    type: Count
+    unit: "1"
   - metricName: delegate_registration_failed
     metricDefinition: Delegate registration failed count
     type: Count
