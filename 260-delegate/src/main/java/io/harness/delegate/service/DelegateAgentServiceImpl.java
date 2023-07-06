@@ -927,7 +927,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       return;
     }
 
-    // Hnandle SchedulingTaskEvent
+    // Hnandle SchedulingTaskEvent. Used only in new delegate task apis
     if (StringUtils.startsWith(message, SCHEDULING_TASK_EVENT_MARKER)) {
       log.info("New scheduling task event received: {}", message);
       try {
@@ -947,6 +947,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     taskExecutor.submit(() -> handleMessage(message));
   }
 
+  /**
+   * It will acquire task payload and process the task payload.
+   * Used only in new delegate task apis
+   * @param taskEvent Task event used for new delegate tasks
+   */
   private void dispatchTasksToRunner(SchedulingTaskEvent taskEvent) {
     if (!shouldProceedProcessingTaskEvent(taskEvent.getTaskId())) {
       return;
@@ -972,6 +977,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     });
   }
 
+  /**
+   * Checks if it should proceed with processing task event.
+   * @param taskId
+   * @return
+   */
   private boolean shouldProceedProcessingTaskEvent(String taskId) {
     if (taskId == null) {
       log.warn("Delegate task id cannot be null");
@@ -1118,8 +1128,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private <T> void handleErrorResponse(Response<T> response) {
     if (response != null && !response.isSuccessful()) {
       try {
-        String errorResponse = null;
-        errorResponse = response.errorBody().string();
+        String errorResponse = errorResponse = response.errorBody().string();
         log.warn("Received Error Response: {}", errorResponse);
 
         if (errorResponse.contains(INVALID_TOKEN.name())) {
@@ -2013,7 +2022,23 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private void dispatchDelegateTaskAsync(DelegateTaskEvent delegateTaskEvent) {
     final String delegateTaskId = delegateTaskEvent.getDelegateTaskId();
-    if (!shouldProceedProcessingTaskEvent(delegateTaskId)) {
+    if (delegateTaskId == null) {
+      log.warn("Delegate task id cannot be null");
+      return;
+    }
+
+    if (!shouldContactManager()) {
+      log.info("Dropping task, self destruct in progress");
+      return;
+    }
+
+    if (rejectRequest.get()) {
+      log.info("Delegate running out of resources, dropping this request");
+      return;
+    }
+
+    if (currentlyExecutingFutures.containsKey(delegateTaskEvent.getDelegateTaskId())) {
+      log.info("Task [DelegateTaskEvent: {}] already queued, dropping this request ", delegateTaskEvent);
       return;
     }
 
@@ -2043,6 +2068,12 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       String delegateTaskId = delegateTaskEvent.getDelegateTaskId();
 
       try {
+        if (frozen.get()) {
+          log.info(
+              "Delegate process with detected time out of sync or with revoked token is running. Won't acquire tasks.");
+          return;
+        }
+
         if (!acquireTasks.get()) {
           log.info("[Old] Upgraded process is running. Won't acquire task while completing other tasks");
           return;
@@ -2084,9 +2115,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           log.debug("received task package {} for delegateInstance {}", delegateTaskPackage, delegateInstanceId);
         }
 
-        // Delegate assignment protocol implicitly use instance id (set or not) to determine if a task has been
-        // assigned. This is not a good way of design. Good way is to use delegate id, or precisely one of delegate id
-        // or instance id
         if (isEmpty(delegateTaskPackage.getDelegateInstanceId())) {
           // Not whitelisted. Perform validation.
           // TODO: Remove this once TaskValidation does not use secrets
