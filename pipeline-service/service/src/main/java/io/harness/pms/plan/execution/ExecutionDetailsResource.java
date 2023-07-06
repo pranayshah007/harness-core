@@ -361,10 +361,10 @@ public class ExecutionDetailsResource {
   }
 
   @GET
-  @Path("/{pipelineIdentifier}/evaluateExpression")
+  @Path("/{planExecutionId}/evaluateExpression")
   @ApiOperation(value = "Gets Execution Expression evaluated", nickname = "getExpressionEvaluated")
   @Operation(operationId = "getExpressionEvaluated", description = "Returns the Map of evaluated Expression",
-      summary = "Fetch Execution Details",
+      summary = "Gets Execution Expression evaluated",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -381,7 +381,7 @@ public class ExecutionDetailsResource {
       @NotNull @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE, required = true) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @NotNull @Parameter(description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE, required = true)
-      @PathParam(NGCommonEntityConstants.PIPELINE_KEY) @ProjectIdentifier String pipelineIdentifier,
+      @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) @ProjectIdentifier String pipelineIdentifier,
       @Parameter(description = "Plan Execution Id for which Expression have to be evaluated",
           required = true) @PathParam(NGCommonEntityConstants.PLAN_KEY) String planExecutionId,
       @RequestBody(required = true, description = "Pipeline YAML") @NotNull String yaml) {

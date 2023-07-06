@@ -7,6 +7,7 @@
 
 package io.harness.steps.pipelinestage;
 
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.sdk.core.variables.AbstractStageVariableCreator;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationContext;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationResponse;
@@ -30,11 +31,12 @@ public class PipelineStageVariableCreator extends AbstractStageVariableCreator<P
     if (specField != null && specField.getNode().getField(YAMLFieldNameConstants.OUTPUTS) != null) {
       YamlField outputsField = specField.getNode().getField(YAMLFieldNameConstants.OUTPUTS);
 
-      HashMap<String, YamlField> outputs = new HashMap<>();
-      outputs.put(outputsField.getUuid(), outputsField);
-
-      variableResponseMap.put(config.getUuid(),
-          VariableCreationResponse.builder().dependencies(DependenciesUtils.toDependenciesProto(outputs)).build());
+      if (outputsField != null && EmptyPredicate.isNotEmpty(outputsField.getNode().asArray())) {
+        HashMap<String, YamlField> outputs = new HashMap<>();
+        outputs.put(outputsField.getUuid(), outputsField);
+        variableResponseMap.put(config.getUuid(),
+            VariableCreationResponse.builder().dependencies(DependenciesUtils.toDependenciesProto(outputs)).build());
+      }
     }
     return variableResponseMap;
   }
