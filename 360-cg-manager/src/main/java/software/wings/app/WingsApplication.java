@@ -63,6 +63,7 @@ import io.harness.delegate.beans.DelegateTaskProgressResponse;
 import io.harness.delegate.beans.StartupMode;
 import io.harness.delegate.event.handler.DelegateProfileEventHandler;
 import io.harness.delegate.eventstream.EntityCRUDConsumer;
+import io.harness.delegate.heartbeat.DelegateHeartBeatSyncFromRedis;
 import io.harness.delegate.heartbeat.polling.DelegatePollingHeartbeatService;
 import io.harness.delegate.heartbeat.stream.DelegateStreamHeartbeatService;
 import io.harness.delegate.queueservice.DelegateTaskQueueService;
@@ -1391,6 +1392,12 @@ public class WingsApplication extends Application<MainConfiguration> {
           new Schedulable("Failed while auto revoking delegate tokens",
               () -> injector.getInstance(DelegateNgTokenServiceImpl.class).autoRevokeExpiredTokens()),
           1L, 1L, TimeUnit.HOURS);
+
+      // DelegateHeartBeatSyncFromRedis
+      delegateExecutor.scheduleWithFixedDelay(
+          new Schedulable(
+              "Sync delegate HB from redis", () -> injector.getInstance(DelegateHeartBeatSyncFromRedis.class).run()),
+          2L, 2L, TimeUnit.MINUTES);
     }
   }
 

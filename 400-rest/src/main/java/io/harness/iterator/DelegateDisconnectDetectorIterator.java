@@ -24,6 +24,7 @@ import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
 import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
 import io.harness.observer.Subject;
+import io.harness.service.intfc.DelegateCache;
 
 import software.wings.service.impl.DelegateDao;
 import software.wings.service.impl.DelegateObserver;
@@ -52,6 +53,7 @@ public class DelegateDisconnectDetectorIterator
   @Inject private DelegateService delegateService;
   @Inject private DelegateDao delegateDao;
   @Inject private DelegateMetricsService delegateMetricsService;
+  @Inject private DelegateCache delegateCache;
 
   @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
 
@@ -107,6 +109,14 @@ public class DelegateDisconnectDetectorIterator
     if (isDelegateExpiryCheckDoneAlready(delegate)) {
       return;
     }
+    Delegate delegateFromCache = delegateCache.get(delegate.getAccountId(), delegate.getUuid());
+    // adding check if HB updated in cache but not synced with DB
+    if (delegateFromCache != null
+        && delegateFromCache.getLastHeartBeat()
+            > (System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(DELEGATE_DISCONNECT_TIMEOUT))) {
+      return;
+    }
+
     log.info(
         "Delegate detected as disconnected delegate id {}, host name {}", delegate.getUuid(), delegate.getHostName());
     try (AutoLogContext ignore1 = new DelegateLogContext(delegate.getUuid(), OVERRIDE_ERROR);
