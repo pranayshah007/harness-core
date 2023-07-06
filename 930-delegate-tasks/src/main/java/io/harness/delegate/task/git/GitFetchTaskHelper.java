@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitDecryptionHelper;
+import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
@@ -82,5 +83,14 @@ public class GitFetchTaskHelper {
     ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
         GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(gitStoreDelegateConfig.getGitConfigDTO()),
         gitStoreDelegateConfig.getApiAuthEncryptedDataDetails());
+  }
+
+  public void decryptGitConfig(GitStoreDelegateConfig gitStoreDelegateConfig) {
+    if (gitStoreDelegateConfig.isOptimizedFilesFetch()) {
+      decryptGitStoreConfig(gitStoreDelegateConfig);
+    } else {
+      GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());
+      gitDecryptionHelper.decryptGitConfig(gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());
+    }
   }
 }

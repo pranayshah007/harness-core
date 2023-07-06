@@ -45,12 +45,19 @@ import io.harness.ng.core.environment.beans.EnvironmentInputsMergedResponseDto;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
+import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
+import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
+import io.harness.ng.core.utils.ServiceOverrideV2ValidationHelper;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.outbox.api.OutboxService;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.environment.spring.EnvironmentRepository;
 import io.harness.rule.Owner;
 import io.harness.setupusage.EnvironmentEntitySetupUsageHelper;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.PageUtils;
 
 import com.google.common.io.Resources;
@@ -74,6 +81,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -93,6 +102,12 @@ public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
   @Mock private EnvironmentRepository mockEnvironmentRepository;
 
   @Inject private OutboxService outboxService;
+  @Mock private NGSettingsClient ngSettingsClient;
+  @Mock private ServiceOverrideService serviceOverrideService;
+  @Mock private ServiceOverridesServiceV2 serviceOverridesServiceV2;
+  @Mock NGSettingsClient settingsClient;
+  @Mock NGFeatureFlagHelperService featureFlagHelperService;
+  @Mock ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
   @InjectMocks private EnvironmentServiceImpl environmentService;
   @InjectMocks private EnvironmentServiceImpl environmentServiceUsingMocks;
 
@@ -110,6 +125,9 @@ public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
     Reflect.on(environmentService).set("outboxService", outboxService);
     when(entitySetupUsageService.listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString()))
         .thenReturn(new PageImpl<>(Collections.emptyList()));
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    SettingValueResponseDTO settingValueResponseDTO = SettingValueResponseDTO.builder().value("false").build();
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(settingValueResponseDTO);
   }
 
   @Test

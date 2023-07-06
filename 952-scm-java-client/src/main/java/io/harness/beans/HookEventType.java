@@ -39,8 +39,11 @@ public enum HookEventType {
       Arrays.asList(AzureWebhookEvent.AZURE_PUSH, AzureWebhookEvent.AZURE_PULLREQUEST_CREATED,
           AzureWebhookEvent.AZURE_PULLREQUEST_MERGED, AzureWebhookEvent.AZURE_PULLREQUEST_UPDATED,
           AzureWebhookEvent.AZURE_PULL_REQUEST_ISSUE_COMMENT),
-      // todo(abhinav): add more events.
-      Arrays.asList(HarnessWebhookEvent.HARNESS_BRANCH_UPDATED, HarnessWebhookEvent.HARNESS_TAG_UPDATED));
+      // todo(abhinav): add issue comments when it arrives.
+      Arrays.asList(HarnessWebhookEvent.HARNESS_PULLREQ_CREATED, HarnessWebhookEvent.HARNESS_PULLREQ_REOPENED,
+          HarnessWebhookEvent.HARNESS_TAG_UPDATED, HarnessWebhookEvent.HARNESS_TAG_CREATED,
+          HarnessWebhookEvent.HARNESS_TAG_DELETED, HarnessWebhookEvent.HARNESS_PULLREQ_BRANCH_UPDATED,
+          HarnessWebhookEvent.HARNESS_BRANCH_UPDATED, HarnessWebhookEvent.HARNESS_BRANCH_CREATED));
 
   public List<GithubWebhookEvent> githubWebhookEvents;
   public List<GitlabWebhookEvent> gitlabWebhookEvents;

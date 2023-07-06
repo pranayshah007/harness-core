@@ -27,6 +27,7 @@ import io.harness.ng.core.refresh.bean.EntityRefreshContext;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
 import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
+import io.harness.ng.core.utils.ServiceOverrideV2ValidationHelper;
 import io.harness.ngsettings.SettingValueType;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngsettings.dto.SettingValueResponseDTO;
@@ -61,6 +62,7 @@ public class EnvironmentRefreshHelperTest extends CategoryTest {
   @Mock ServiceOverridesServiceV2 serviceOverridesServiceV2;
   @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
   @Mock private Call<RestResponse<Boolean>> restRequest;
+  @Mock ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
 
   @InjectMocks private EnvironmentRefreshHelper refreshHelper;
 

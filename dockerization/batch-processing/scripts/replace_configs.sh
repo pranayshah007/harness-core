@@ -292,6 +292,10 @@ if [[ "" != "$GCP_BQ_UPDATE_BATCH_SUBSCRIPTION_NAME" ]]; then
   export GCP_BQ_UPDATE_BATCH_SUBSCRIPTION_NAME; yq -i '.gcpConfig.bigQueryUpdatePubSubTopic.subscriptionName=env(GCP_BQ_UPDATE_BATCH_SUBSCRIPTION_NAME)' $CONFIG_FILE
 fi
 
+if [[ "" != "$BATCH_JOB_REPOSITORY_TIMESCALE_ENABLE" ]]; then
+  export BATCH_JOB_REPOSITORY_TIMESCALE_ENABLE; yq -i '.batchJobRepository.timescaleEnabled=env(BATCH_JOB_REPOSITORY_TIMESCALE_ENABLE)' $CONFIG_FILE
+fi
+
 replace_key_value cfClientConfig.apiKey "$CF_CLIENT_API_KEY"
 replace_key_value cfClientConfig.configUrl "$CF_CLIENT_CONFIG_URL"
 replace_key_value cfClientConfig.eventUrl "$CF_CLIENT_EVENT_URL"

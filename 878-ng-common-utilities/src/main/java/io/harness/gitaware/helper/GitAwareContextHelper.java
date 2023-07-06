@@ -247,4 +247,12 @@ public class GitAwareContextHelper {
   private boolean isPresent(String val) {
     return !isEmpty(val) && !DEFAULT.equals(val);
   }
+
+  public boolean isGitDefaultBranch() {
+    ScmGitMetaData scmGitMetaData = getScmGitMetaData();
+    if (scmGitMetaData == null) {
+      return false;
+    }
+    return scmGitMetaData.isGitDefaultBranch();
+  }
 }

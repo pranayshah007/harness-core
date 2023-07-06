@@ -17,9 +17,9 @@ import (
 	"github.com/harness/harness-core/commons/go/lib/exec"
 	"github.com/harness/harness-core/commons/go/lib/logs"
 	plogs "github.com/harness/harness-core/product/ci/common/logs"
-	ticlient "github.com/harness/harness-core/product/ci/ti-service/client"
-	"github.com/harness/harness-core/product/ci/ti-service/types"
 	"github.com/harness/harness-core/product/log-service/client"
+	ticlient "github.com/harness/ti-client/client"
+	"github.com/harness/ti-client/types"
 	"go.uber.org/zap"
 )
 

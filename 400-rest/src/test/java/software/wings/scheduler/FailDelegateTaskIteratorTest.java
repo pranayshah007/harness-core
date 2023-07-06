@@ -722,7 +722,7 @@ public class FailDelegateTaskIteratorTest extends WingsBaseTest {
             .waitId(generateUuid())
             .expiry(System.currentTimeMillis() - 10)
             .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
-            .broadcastCount(3)
+            .broadcastRound(3)
             .nextBroadcast(nextInterval)
             .eligibleToExecuteDelegateIds(new LinkedList<>(Arrays.asList("del1", "del2", "del3")))
             .data(TaskData.builder()

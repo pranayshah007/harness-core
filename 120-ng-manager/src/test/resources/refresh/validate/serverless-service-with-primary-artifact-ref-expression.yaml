@@ -1,0 +1,32 @@
+service:
+  name: serverless
+  identifier: serverless
+  tags: {}
+  serviceDefinition:
+    spec:
+      artifacts:
+        primary:
+          sources:
+            - spec:
+                connectorRef: account.artifactorytest
+                artifactDirectory: <+input>
+                artifactPath: <+input>
+                repository: helm-remote
+                repositoryFormat: generic
+              identifier: artifactory
+              type: ArtifactoryRegistry
+            - spec:
+                connectorRef: account.testAWSConnectorq4sLm3tGLs
+                bucketName: lambda-harness-tutorial
+                region: us-east-2
+                filePathRegex: "*"
+              identifier: s3
+              type: AmazonS3
+          primaryArtifactRef: <+serviceVariables.primaryArtifactRef>
+      variables:
+        - name: pAR
+          type: String
+          description: ""
+          required: false
+          value: artifactory
+    type: ServerlessAwsLambda

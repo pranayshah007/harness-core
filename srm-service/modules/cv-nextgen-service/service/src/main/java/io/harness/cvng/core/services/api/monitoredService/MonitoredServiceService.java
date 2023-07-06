@@ -31,6 +31,8 @@ import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.LiveMonitoringLogsFilter;
 import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.DeleteEntityByHandler;
+import io.harness.cvng.notification.beans.NotificationRuleCondition;
+import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.servicelevelobjective.beans.MonitoredServiceDetail;
 import io.harness.cvng.usage.impl.ActiveServiceMonitoredDTO;
@@ -126,6 +128,9 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
   void handleNotification(MonitoredService monitoredService);
   PageResponse<NotificationRuleResponse> getNotificationRules(
       ProjectParams projectParams, String monitoredServiceIdentifier, PageParams pageParams);
+
+  PageResponse<NotificationRuleCondition> getNotificationRuleConditions(ProjectParams projectParams,
+      String monitoredServiceIdentifier, PageParams pageParams, List<NotificationRuleConditionType> conditionTypes);
   void beforeNotificationRuleDelete(ProjectParams projectParams, String notificationRuleRef);
   long countUniqueEnabledServices(String accountId);
 

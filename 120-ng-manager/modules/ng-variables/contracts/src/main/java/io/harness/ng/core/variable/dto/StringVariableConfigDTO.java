@@ -16,8 +16,8 @@ import io.harness.exception.UnknownEnumTypeException;
 import io.harness.exception.UnsupportedOperationException;
 import io.harness.ng.core.variable.VariableValueType;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Set;
 import javax.annotation.RegEx;
@@ -39,17 +39,12 @@ import org.checkerframework.checker.regex.RegexUtil;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class StringVariableConfigDTO extends VariableConfigDTO {
   @Schema(description = VariableConstants.FIXED_VALUE) String fixedValue;
-  @Schema(description = VariableConstants.DEFAULT_VALUE) String defaultValue;
-  @Schema(description = VariableConstants.ALLOWED_VALUES) Set<String> allowedValues;
-  @RegEx String regex;
+  @Schema(description = VariableConstants.DEFAULT_VALUE, hidden = true) String defaultValue;
+  @Schema(description = VariableConstants.ALLOWED_VALUES, hidden = true) Set<String> allowedValues;
+  @Schema(hidden = true) @ApiModelProperty(hidden = true) @RegEx String regex;
 
   @Override
-  public String getValue() {
-    return getRawValue();
-  }
-
-  @JsonIgnore
-  public String getRawValue() {
+  public Object getValue() {
     switch (getValueType()) {
       case FIXED:
         return fixedValue;

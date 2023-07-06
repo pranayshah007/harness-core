@@ -79,17 +79,12 @@ public class SubscriptionResourceTest extends CategoryTest {
           .quantityIncludedInPrice(false)
           .build());
 
-  private static final List<StripeItemRequest> DEFAULT_STRIPE_ITEM_LIST =
-      List.of(StripeItemRequest.Builder.newInstance()
-                  .withQuantity(DEFAULT_NUMBER_MAUS)
-                  .withQuantityIncludedInPrice(true)
-                  .withPriceId(MAU_PRICE_ID)
-                  .build(),
-          StripeItemRequest.Builder.newInstance()
-              .withQuantity(DEFAULT_NUMBER_USERS)
-              .withQuantityIncludedInPrice(false)
-              .withPriceId(DEVELOPER_PRICE_ID)
-              .build());
+  private static final List<StripeItemRequest> DEFAULT_STRIPE_ITEM_LIST = List.of(
+      StripeItemRequest.Builder.newInstance().withQuantity(DEFAULT_NUMBER_MAUS).withPriceId(MAU_PRICE_ID).build(),
+      StripeItemRequest.Builder.newInstance()
+          .withQuantity(DEFAULT_NUMBER_USERS)
+          .withPriceId(DEVELOPER_PRICE_ID)
+          .build());
 
   private static final PriceDTO DEFAULT_MAU_PRICE_DTO =
       PriceDTO.builder().priceId(MAU_PRICE_ID).productId(MAU_PRODUCT_ID).unitAmount(DEFAULT_MAU_PRICE).build();

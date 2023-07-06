@@ -38,7 +38,7 @@ public class FakeServiceResourceClient implements ServiceResourceClient {
     return new Call<>() {
       @Override
       public Response<ResponseDTO<PageResponse<ServiceResponse>>> execute() {
-        if (Objects.equals(accountId, ACCOUNT_IDENTIFIER)) {
+        if (Objects.equals(accountId, ACCOUNT_IDENTIFIER) && page < 1) {
           return Response.success(ResponseDTO.newResponse(
               PageResponse.<ServiceResponse>builder()
                   .content(Collections.singletonList(ServiceResponse.builder()

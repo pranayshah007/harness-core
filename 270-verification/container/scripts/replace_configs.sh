@@ -63,6 +63,10 @@ if [[ "" != "$SG_ITERATOR_INTERVAL_SECS" ]]; then
   export SG_ITERATOR_INTERVAL_SECS; yq -i '.serviceGuardIteratorConfig.targetIntervalInSeconds=env(SG_ITERATOR_INTERVAL_SECS)' $CONFIG_FILE
 fi
 
+if [[ "" != "$DISTRIBUTED_LOCK_IMPLEMENTATION" ]]; then
+  export DISTRIBUTED_LOCK_IMPLEMENTATION; yq -i '.distributedLockImplementation=env(DISTRIBUTED_LOCK_IMPLEMENTATION)' $CONFIG_FILE
+fi
+
   yq -i '.server.requestLog.appenders[0].type="console"' $CONFIG_FILE
   yq -i '.server.requestLog.appenders[0].threshold="TRACE"' $CONFIG_FILE
   yq -i '.server.requestLog.appenders[0].target="STDOUT"' $CONFIG_FILE
@@ -95,3 +99,16 @@ replace_key_value cfClientConfig.readTimeout "$CF_CLIENT_READ_TIMEOUT"
 replace_key_value cfClientConfig.bufferSize "$CF_CLIENT_BUFFER_SIZE"
 replace_key_value featureFlagConfig.featureFlagSystem "$FEATURE_FLAG_SYSTEM"
 replace_key_value featureFlagConfig.syncFeaturesToCF "$SYNC_FEATURES_TO_CF"
+
+replace_key_value redisLockConfig.sentinel $LOCK_CONFIG_USE_SENTINEL
+replace_key_value redisLockConfig.envNamespace $LOCK_CONFIG_ENV_NAMESPACE
+replace_key_value redisLockConfig.redisUrl $LOCK_CONFIG_REDIS_URL
+replace_key_value redisLockConfig.masterName $LOCK_CONFIG_SENTINEL_MASTER_NAME
+replace_key_value redisLockConfig.userName $LOCK_CONFIG_REDIS_USERNAME
+replace_key_value redisLockConfig.password $LOCK_CONFIG_REDIS_PASSWORD
+replace_key_value redisLockConfig.nettyThreads $REDIS_NETTY_THREADS
+replace_key_value redisLockConfig.connectionPoolSize $REDIS_CONNECTION_POOL_SIZE
+replace_key_value redisLockConfig.retryInterval $REDIS_RETRY_INTERVAL
+replace_key_value redisLockConfig.retryAttempts $REDIS_RETRY_ATTEMPTS
+replace_key_value redisLockConfig.timeout $REDIS_TIMEOUT
+replace_key_value redisLockConfig.useScriptCache $REDIS_LOCK_CONFIG_REDIS_USE_SCRIPT_CACHE

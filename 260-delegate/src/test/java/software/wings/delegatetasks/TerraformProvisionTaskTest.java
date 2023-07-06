@@ -19,6 +19,7 @@ import static io.harness.rule.OwnerRule.AKHIL_PANDEY;
 import static io.harness.rule.OwnerRule.BOJANA;
 import static io.harness.rule.OwnerRule.JELENA;
 import static io.harness.rule.OwnerRule.SATYAM;
+import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
@@ -59,6 +60,7 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.terraform.TerraformBaseHelperImpl;
 import io.harness.delegate.task.terraform.TerraformCommand;
 import io.harness.delegate.task.terraform.TerraformCommandUnit;
+import io.harness.delegate.task.terraform.handlers.HarnessSMEncryptionDecryptionHandler;
 import io.harness.filesystem.FileIo;
 import io.harness.logging.LogCallback;
 import io.harness.provision.TerraformPlanSummary;
@@ -134,6 +136,7 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
   @Mock private EncryptDecryptHelper planEncryptDecryptHelper;
   @Mock private AwsHelperService awsHelperService;
   @Mock private TerraformClient terraformClient;
+  @Mock private HarnessSMEncryptionDecryptionHandler harnessSMEncryptionDecryptionHandler;
   @InjectMocks private TerraformBaseHelperImpl terraformBaseHelper;
 
   @Mock private AwsS3HelperServiceDelegateImpl awsS3HelperServiceDelegate;
@@ -186,6 +189,7 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
     on(terraformProvisionTask).set("terraformBaseHelper", spyTerraformBaseHelperImpl);
     on(terraformProvisionTask).set("terraformClient", terraformClient);
     on(terraformProvisionTask).set("awsS3HelperServiceDelegate", awsS3HelperServiceDelegate);
+    on(terraformProvisionTask).set("harnessSMEncryptionDecryptionHandler", harnessSMEncryptionDecryptionHandler);
 
     gitConfig = GitConfig.builder().branch(GIT_BRANCH).build();
     gitConfig.setReference(COMMIT_REFERENCE);
@@ -304,7 +308,7 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
     // regular apply
     TerraformProvisionParametersBuilder terraformProvisionParametersBuilder =
         getTerraformProvisionParametersBuilder(false, false, null, TerraformCommandUnit.Apply, TerraformCommand.APPLY,
-            false, false, backendConfigs, variables, environmentVariables, tfVarFiles, false, true)
+            false, false, backendConfigs, variables, environmentVariables, tfVarFiles, false, true, false)
             .awsConfigId("awsConfigId")
             .awsRoleArn("awsRoleArn")
             .awsConfig(awsConfig)
@@ -347,7 +351,7 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
     // regular apply
     TerraformProvisionParametersBuilder terraformProvisionParametersBuilder =
         getTerraformProvisionParametersBuilder(false, false, null, TerraformCommandUnit.Apply, TerraformCommand.APPLY,
-            false, false, backendConfigs, variables, environmentVariables, tfVarFiles, false, true)
+            false, false, backendConfigs, variables, environmentVariables, tfVarFiles, false, true, false)
             .awsConfigId("awsConfigId")
             .awsRoleArn("awsRoleArn")
             .awsConfig(awsConfig)
@@ -397,7 +401,7 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
     // regular apply
     TerraformProvisionParametersBuilder terraformProvisionParametersBuilder =
         getTerraformProvisionParametersBuilder(false, false, null, TerraformCommandUnit.Apply, TerraformCommand.APPLY,
-            false, false, backendConfigs, variables, environmentVariables, tfVarFiles, false, true)
+            false, false, backendConfigs, variables, environmentVariables, tfVarFiles, false, true, false)
             .awsConfigId("awsConfigId")
             .awsConfig(awsConfig)
             .awsRegion("awsRegion")
@@ -684,7 +688,7 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
 
     TerraformProvisionParametersBuilder terraformProvisionParametersBuilder =
         getTerraformProvisionParametersBuilder(false, false, null, TerraformCommandUnit.Apply, TerraformCommand.APPLY,
-            false, false, null, null, null, null, false, true)
+            false, false, null, null, null, null, false, true, false)
             .remoteS3BackendConfig(remoteS3BackendConfig)
             .sourceType(TerraformSourceType.S3)
             .configFilesS3URI(s3SourceURI)
@@ -994,7 +998,7 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
     byte[] terraformPlan = "terraformPlan".getBytes();
     EncryptedRecordData encryptedRecordData = EncryptedRecordData.builder().build();
     TerraformProvisionParameters terraformProvisionParameters = createTerraformProvisionParameters(
-        true, true, null, TerraformCommandUnit.Apply, TerraformCommand.APPLY, true, false, true, true);
+        true, true, null, TerraformCommandUnit.Apply, TerraformCommand.APPLY, true, false, true, true, false);
 
     doReturn(terraformPlan)
         .when(terraformProvisionTaskSpy)
@@ -1052,13 +1056,13 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
       boolean exportPlanToApplyStep, EncryptedRecordData encryptedTfPlan, TerraformCommandUnit commandUnit,
       TerraformCommand command, boolean saveTerraformJson, boolean skipRefresh) {
     return createTerraformProvisionParameters(runPlanOnly, exportPlanToApplyStep, encryptedTfPlan, commandUnit, command,
-        saveTerraformJson, skipRefresh, false, true);
+        saveTerraformJson, skipRefresh, false, true, false);
   }
 
   private TerraformProvisionParameters createTerraformProvisionParameters(boolean runPlanOnly,
       boolean exportPlanToApplyStep, EncryptedRecordData encryptedTfPlan, TerraformCommandUnit commandUnit,
       TerraformCommand command, boolean saveTerraformJson, boolean skipRefresh, boolean useOptimizedTfPlan,
-      boolean shouldAnalyseTfPlanSummary) {
+      boolean shouldAnalyseTfPlanSummary, boolean shouldEncryptHarnessSMOnManager) {
     Map<String, String> backendConfigs = new HashMap<>();
     backendConfigs.put("var1", "value1");
 
@@ -1072,7 +1076,7 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
 
     return getTerraformProvisionParametersBuilder(runPlanOnly, exportPlanToApplyStep, encryptedTfPlan, commandUnit,
         command, saveTerraformJson, skipRefresh, backendConfigs, variables, environmentVariables, tfVarFiles,
-        useOptimizedTfPlan, shouldAnalyseTfPlanSummary)
+        useOptimizedTfPlan, shouldAnalyseTfPlanSummary, shouldEncryptHarnessSMOnManager)
         .build();
   }
 
@@ -1080,7 +1084,7 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
       boolean exportPlanToApplyStep, EncryptedRecordData encryptedTfPlan, TerraformCommandUnit commandUnit,
       TerraformCommand command, boolean saveTerraformJson, boolean skipRefresh, Map<String, String> backendConfigs,
       Map<String, String> variables, Map<String, String> environmentVariables, List<String> tfVarFiles,
-      boolean useOptimizedTfPlan, boolean shouldAnalyseTfPlanSummary) {
+      boolean useOptimizedTfPlan, boolean shouldAnalyseTfPlanSummary, boolean shouldEncryptHarnessSMOnManager) {
     return TerraformProvisionParameters.builder()
         .sourceRepo(gitConfig)
         .sourceRepoSettingId(SOURCE_REPO_SETTINGS_ID)
@@ -1100,6 +1104,7 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
         .environmentVariables(environmentVariables)
         .encryptedEnvironmentVariables(encryptedEnvironmentVariables)
         .tfVarFiles(tfVarFiles)
+        .encryptDecryptPlanForHarnessSMOnManager(shouldEncryptHarnessSMOnManager)
         .saveTerraformJson(saveTerraformJson)
         .useOptimizedTfPlanJson(useOptimizedTfPlan)
         .skipRefreshBeforeApplyingPlan(skipRefresh)
@@ -1219,7 +1224,7 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
 
     TerraformProvisionParametersBuilder terraformProvisionParametersBuilder =
         getTerraformProvisionParametersBuilder(false, false, null, TerraformCommandUnit.Apply, TerraformCommand.APPLY,
-            false, false, backendConfigs, variables, environmentVariables, tfVarFiles, false, true)
+            false, false, backendConfigs, variables, environmentVariables, tfVarFiles, false, true, false)
             .awsConfigId("awsConfigId")
             .awsConfig(awsConfig)
             .awsRegion("awsRegion")
@@ -1228,5 +1233,62 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
     TerraformExecutionData terraformExecutionData = terraformProvisionTaskSpy.run(parameters);
     assertThat(terraformExecutionData.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
     Mockito.verify(delegateFileManager, times(0)).upload(any(DelegateFile.class), any(InputStream.class));
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testApplyPlanAndExport_withHarnessSMEncryption()
+      throws IOException, TimeoutException, InterruptedException {
+    setupForApply();
+    // run plan only and execute terraform show command
+    byte[] terraformPlan = "terraformPlan".getBytes();
+    TerraformPlanSummary terraformPlanSummary =
+        TerraformPlanSummary.builder().add(1).change(2).destroy(0).changesExist(true).build();
+    TerraformProvisionParameters terraformProvisionParameters = createTerraformProvisionParameters(
+        true, true, null, TerraformCommandUnit.Apply, TerraformCommand.APPLY, true, true, false, true, true);
+    doReturn(terraformPlan)
+        .when(terraformProvisionTaskSpy)
+        .getTerraformPlanFile(anyString(), any(TerraformProvisionParameters.class));
+    doReturn(terraformPlanSummary)
+        .when(terraformProvisionTaskSpy)
+        .analyseTerraformPlan(any(), any(), any(), any(), any(), any());
+
+    doReturn(encryptedPlanContent).when(harnessSMEncryptionDecryptionHandler).encryptContent(any(), any());
+    TerraformExecutionData terraformExecutionData = terraformProvisionTaskSpy.run(terraformProvisionParameters);
+    verify(terraformExecutionData, TerraformCommand.APPLY);
+    verifyCommandExecuted(
+        "terraform init", "terraform workspace", "terraform refresh", "terraform plan", "terraform show");
+    assertThat(terraformExecutionData.getEncryptedTfPlan()).isEqualTo(encryptedPlanContent);
+    Mockito.verify(harnessSMEncryptionDecryptionHandler, times(1)).encryptContent(any(), any());
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testDecryptionHarnessSMOnManager() throws IOException {
+    String scriptDirectory = "repository/testSaveAndGetTerraformPlanFile";
+    FileIo.createDirectoryIfDoesNotExist(scriptDirectory);
+    byte[] planContent = "terraformPlanContent".getBytes();
+    String workspacePath = "workspace";
+    TerraformProvisionParameters terraformProvisionParameters = TerraformProvisionParameters.builder()
+                                                                    .workspace(workspacePath)
+                                                                    .encryptedTfPlan(encryptedPlanContent)
+                                                                    .command(TerraformCommand.APPLY)
+                                                                    .encryptDecryptPlanForHarnessSMOnManager(true)
+                                                                    .secretManagerConfig(KmsConfig.builder().build())
+                                                                    .build();
+    doReturn(planContent).when(harnessSMEncryptionDecryptionHandler).getDecryptedContent(any(), any(), any());
+
+    terraformProvisionTask.saveTerraformPlanContentToFile(terraformProvisionParameters, scriptDirectory);
+    List<FileData> fileDataList = FileIo.getFilesUnderPath(scriptDirectory);
+    assertThat(fileDataList.size()).isEqualTo(1);
+    assertThat(fileDataList.get(0).getFileBytes()).isEqualTo(planContent);
+
+    byte[] retrievedTerraformPlanContent =
+        terraformProvisionTask.getTerraformPlanFile(scriptDirectory, terraformProvisionParameters);
+    assertThat(retrievedTerraformPlanContent).isEqualTo(planContent);
+    Mockito.verify(harnessSMEncryptionDecryptionHandler, times(1)).getDecryptedContent(any(), any(), any());
+    FileIo.deleteDirectoryAndItsContentIfExists(scriptDirectory);
   }
 }

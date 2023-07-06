@@ -78,6 +78,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 public interface WorkflowExecutionService extends StateStatusUpdate {
   void refreshPipelineExecution(WorkflowExecution workflowExecution);
+
   void refreshStatus(WorkflowExecution workflowExecution);
 
   HIterator<WorkflowExecution> executions(String appId, long startedFrom, long statedTo, Set<String> includeOnlyFields);

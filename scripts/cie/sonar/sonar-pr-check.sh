@@ -132,10 +132,17 @@ for module in $PR_MODULES
   do
      [ -d ${module} ] && [[ "${HARNESS_CORE_MODULES}" =~ "${module}" ]] \
      && BAZEL_COMPILE_MODULES+=("//${module}/...") \
-     && SONAR_PROP_FILE_PATH=$(find ${module} -type f -iname "${SONAR_CONFIG_FILE}")
+
+     && SONAR_PROP_FILE_PATH=$(find ${module} -type f -iname "${SONAR_CONFIG_FILE}") \
      || echo "$module is not present in the bazel modules list."
   done
-echo "SONAR PROP FILE: ${SONAR_PROP_FILE_PATH}"
+
+if [ -f ${SONAR_PROP_FILE_PATH} ]; then
+  echo "SONAR PROP FILE: ${SONAR_PROP_FILE_PATH}"
+else
+  echo "SONAR PROP FILE NOT FOUND. Exiting....."
+  exit 1
+fi
 
 # Running Bazel Coverage
 echo "INFO: BAZEL COMMAND: bazel ${STARTUP_ARGS} test ${BAZEL_ARGS} ${COVERAGE_ARGS} ${TEST_ARGS} -- ${BAZEL_COMPILE_MODULES[@]}"
@@ -191,8 +198,8 @@ LIBS_BINS=$(get_info_from_file $LIBS_FILE)
 echo "INFO: Sonar Properties"
 cat ${SONAR_PROP_FILE_PATH}
 
-#echo "INFO: Running Sonar Scan."
-#[ -f "${SONAR_PROP_FILE_PATH}" ] \
-#&& sonar-scanner -Dsonar.login=${SONAR_KEY} -Dsonar.host.url=https://sonar.harness.io \
-#-Dproject.settings=${SONAR_PROP_FILE_PATH}\
-#|| echo "ERROR: Sonar Properties File not found."
+echo "INFO: Running Sonar Scan."
+[ -f "${SONAR_PROP_FILE_PATH}" ] \
+&& sonar-scanner -Dsonar.login=${SONAR_KEY} -Dsonar.host.url=https://sonar.harness.io \
+-Dproject.settings=${SONAR_PROP_FILE_PATH}\
+|| echo "ERROR: Sonar Properties File not found."

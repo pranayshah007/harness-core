@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static java.lang.String.format;
 import static lombok.AccessLevel.PRIVATE;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidArgumentsException;
 
@@ -30,6 +31,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @FieldDefaults(level = PRIVATE, makeFinal = true)
 @FieldNameConstants(innerTypeName = "ScopeKeys")
 @EqualsAndHashCode
+@RecasterAlias("io.harness.beans.Scope")
 public class Scope {
   @NotEmpty String accountIdentifier;
   String orgIdentifier;

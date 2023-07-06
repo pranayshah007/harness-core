@@ -22,9 +22,6 @@ public class ConfigEnvVariablesMapper {
   public List<PluginConfigEnvVariablesEntity> getEntitiesForEnvVariables(
       AppConfig appConfig, String accountIdentifier) {
     List<PluginConfigEnvVariablesEntity> resultList = new ArrayList<>();
-    if (appConfig.getEnvVariables() == null) {
-      return resultList;
-    }
     List<BackstageEnvSecretVariable> envVariables = appConfig.getEnvVariables();
     for (BackstageEnvSecretVariable backstageEnvSecretVariable : envVariables) {
       resultList.add(PluginConfigEnvVariablesEntity.builder()

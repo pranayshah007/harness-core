@@ -19,6 +19,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.DecryptableEntity;
 import io.harness.cvng.CVNGRequestExecutor;
 import io.harness.cvng.beans.CVDataCollectionInfo;
+import io.harness.cvng.beans.CVNGTaskMetadataConstants;
 import io.harness.cvng.beans.DataCollectionInfo;
 import io.harness.cvng.beans.DataCollectionTaskDTO;
 import io.harness.cvng.beans.DataCollectionTaskDTO.DataCollectionTaskResult;
@@ -29,6 +30,7 @@ import io.harness.datacollection.DataCollectionDSLService;
 import io.harness.datacollection.entity.LogDataRecord;
 import io.harness.datacollection.entity.RuntimeParameters;
 import io.harness.datacollection.entity.TimeSeriesRecord;
+import io.harness.delegate.DelegateAgentCommonVariables;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.service.HostRecordDataStoreService;
 import io.harness.delegate.service.LogRecordDataStoreService;
@@ -61,6 +63,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 @Slf4j
@@ -123,6 +126,14 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
           break;
         } else {
           log.info("Next tasks to process: {}", dataCollectionTasks);
+          dataCollectionTasks.forEach(dataCollectionTaskDTO -> {
+            if (dataCollectionTaskDTO.getDataCollectionMetadata() != null) {
+              dataCollectionTaskDTO.getDataCollectionMetadata().put(
+                  CVNGTaskMetadataConstants.DELEGATE_ID, DelegateAgentCommonVariables.getDelegateId());
+              dataCollectionTaskDTO.getDataCollectionMetadata().put(
+                  CVNGTaskMetadataConstants.PERPETUAL_TASK_ID, taskId.getId());
+            }
+          });
           List<CompletableFuture> completableFutures =
               dataCollectionTasks.stream()
                   .map(dct
@@ -137,7 +148,7 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
                              }))
                   .collect(Collectors.toList());
           // execute and wait for all CFs to complete parallely
-          CompletableFuture.allOf(completableFutures.toArray(n -> new CompletableFuture[n]))
+          CompletableFuture.allOf(completableFutures.toArray(CompletableFuture[] ::new))
               .exceptionally(ex -> {
                 log.error("Exception in parallel execution:", ex);
                 return null;
@@ -171,6 +182,7 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
               .commonHeaders(dataCollectionTask.getDataCollectionInfo().collectionHeaders(connectorConfigDTO))
               .commonOptions(dataCollectionTask.getDataCollectionInfo().collectionParams(connectorConfigDTO))
               .otherEnvVariables(dataCollectionInfo.getDslEnvVariables(connectorConfigDTO))
+              .hostNamesToCollect(dataCollectionInfo.getServiceInstances())
               .endTime(dataCollectionTask.getEndTime())
               .startTime(dataCollectionTask.getStartTime())
               .build();
@@ -180,6 +192,11 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
               dataCollectionInfo.getDataCollectionDsl(), runtimeParameters,
               new ThirdPartyCallHandler(dataCollectionTask.getAccountId(), dataCollectionTask.getVerificationTaskId(),
                   delegateLogService, dataCollectionTask.getStartTime(), dataCollectionTask.getEndTime()));
+          if (CollectionUtils.isNotEmpty(dataCollectionInfo.getServiceInstances())) {
+            timeSeriesRecords = timeSeriesRecords.stream()
+                                    .filter(tsr -> dataCollectionInfo.getServiceInstances().contains(tsr.getHostname()))
+                                    .collect(Collectors.toList());
+          }
           timeSeriesDataStoreService.saveTimeSeriesDataRecords(
               dataCollectionTask.getAccountId(), dataCollectionTask.getVerificationTaskId(), timeSeriesRecords);
 
@@ -190,6 +207,13 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
               dataCollectionInfo.getDataCollectionDsl(), runtimeParameters,
               new ThirdPartyCallHandler(dataCollectionTask.getAccountId(), dataCollectionTask.getVerificationTaskId(),
                   delegateLogService, dataCollectionTask.getStartTime(), dataCollectionTask.getEndTime()));
+          if (CollectionUtils.isNotEmpty(dataCollectionInfo.getServiceInstances())) {
+            logDataRecords =
+                logDataRecords.stream()
+                    .filter(
+                        logDataRecord -> dataCollectionInfo.getServiceInstances().contains(logDataRecord.getHostname()))
+                    .collect(Collectors.toList());
+          }
           if (logDataRecords.size() > LOG_RECORD_THRESHOLD) {
             logDataRecords = pickNRandomElements(logDataRecords);
             ExecutionLog delegateLogs =
@@ -241,6 +265,7 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
       log.info("data collection success for {}.", dataCollectionTask.getVerificationTaskId());
       DataCollectionTaskResult result = DataCollectionTaskResult.builder()
                                             .dataCollectionTaskId(dataCollectionTask.getUuid())
+                                            .dataCollectionMetadata(dataCollectionTask.getDataCollectionMetadata())
                                             .status(SUCCESS)
                                             .executionLogs(executionLogs)
                                             .build();
@@ -266,6 +291,7 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
     DataCollectionTaskResult result = DataCollectionTaskResult.builder()
                                           .dataCollectionTaskId(dataCollectionTask.getUuid())
                                           .status(FAILED)
+                                          .dataCollectionMetadata(dataCollectionTask.getDataCollectionMetadata())
                                           .exception(ExceptionUtils.getMessage(e))
                                           .stacktrace(ExceptionUtils.getStackTrace(e))
                                           .build();

@@ -32,7 +32,7 @@ public class AzureArtifactsPollingItemGenerator implements PollingItemGenerator 
   public PollingItem generatePollingItem(BuildTriggerOpsData buildTriggerOpsData) {
     NGTriggerEntity ngTriggerEntity = buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity();
 
-    PollingItem.Builder builder = getBaseInitializedPollingItem(ngTriggerEntity);
+    PollingItem.Builder builder = getBaseInitializedPollingItem(ngTriggerEntity, buildTriggerOpsData);
 
     String connectorRef = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.connectorRef");
 

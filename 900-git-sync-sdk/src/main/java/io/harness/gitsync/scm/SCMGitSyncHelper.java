@@ -461,6 +461,7 @@ public class SCMGitSyncHelper {
         .commitId(gitMetaData.getCommitId())
         .fileUrl(gitMetaData.getFileUrl())
         .repoUrl(gitMetaData.getRepoUrl())
+        .isGitDefaultBranch(gitMetaData.getIsGitDefaultBranch())
         .build();
   }
 
@@ -484,6 +485,7 @@ public class SCMGitSyncHelper {
         .fileUrl(gitMetaData.getFileUrl())
         .repoUrl(gitMetaData.getRepoUrl())
         .cacheResponse(getCacheResponseFromGitProtoResponse(cacheResponse))
+        .isGitDefaultBranch(gitMetaData.getIsGitDefaultBranch())
         .build();
   }
 

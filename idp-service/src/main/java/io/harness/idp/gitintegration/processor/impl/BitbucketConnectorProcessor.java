@@ -53,7 +53,6 @@ public class BitbucketConnectorProcessor extends ConnectorProcessor {
       String accountIdentifier, ConnectorInfoDTO connectorInfoDTO) {
     String connectorIdentifier = connectorInfoDTO.getIdentifier();
     String connectorTypeAsString = connectorInfoDTO.getConnectorType().toString();
-    String host = GitIntegrationUtils.getHostForConnector(connectorInfoDTO);
     if (!connectorInfoDTO.getConnectorType().toString().equals(GitIntegrationConstants.BITBUCKET_CONNECTOR_TYPE)) {
       throw new InvalidRequestException(
           String.format("Connector with id - [%s] is not bitbucket connector for accountId: [%s]", connectorIdentifier,
@@ -94,6 +93,7 @@ public class BitbucketConnectorProcessor extends ConnectorProcessor {
     secrets.put(Constants.BITBUCKET_TOKEN,
         GitIntegrationUtils.getBackstageEnvSecretVariable(pwdSecretIdentifier, Constants.BITBUCKET_TOKEN));
 
+    String host = GitIntegrationUtils.getHostForConnector(connectorInfoDTO);
     if (apiAccess != null && apiAccess.getType().toString().equals(GitIntegrationConstants.BITBUCKET_API_ACCESS_TYPE)
         && !host.equals(GitIntegrationConstants.HOST_FOR_BITBUCKET_CLOUD)) {
       BitbucketUsernameTokenApiAccessDTO bitbucketUsernameTokenApiAccessDTO =

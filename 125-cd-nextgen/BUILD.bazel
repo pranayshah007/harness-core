@@ -79,6 +79,7 @@ java_library(
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/infra/steps:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/k8s/beans:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/manifest:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/manifest/delegate:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/manifest/mappers:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/manifest/resources:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/manifest/steps:module",

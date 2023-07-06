@@ -11,15 +11,12 @@ import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SWEEPING_O
 import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SYNC_SWEEPING_OUTPUT;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
-import static io.harness.exception.WingsException.USER;
 
 import static java.lang.String.format;
 
-import io.harness.beans.FeatureName;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.eraro.Level;
-import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.gitops.models.Application;
@@ -32,7 +29,6 @@ import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
@@ -79,10 +75,6 @@ public class SyncStep implements AsyncExecutableWithRbac<StepElementParameters> 
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     log.info("Starting execution for Sync step [{}]", stepParameters);
 
-    String accountId = AmbianceUtils.getAccountId(ambiance);
-    if (!cdFeatureFlagHelper.isEnabled(accountId, FeatureName.GITOPS_SYNC_STEP)) {
-      throw new InvalidRequestException("Feature Flag GITOPS_SYNC_STEP is not enabled.", USER);
-    }
     String taskId = getTaskId(stepParameters);
 
     SyncRunnable runnable = new SyncRunnable(taskId, ambiance, stepParameters);

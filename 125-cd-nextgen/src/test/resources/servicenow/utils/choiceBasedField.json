@@ -1,0 +1,96 @@
+{
+  "filterable": true,
+  "canmatch": true,
+  "cangroup": true,
+  "label": "Priority",
+  "type": "choice",
+  "max_unit": "days",
+  "mandatory": false,
+  "default": "",
+  "base_type": "string",
+  "read_only": false,
+  "hint": "Sequence in which an Incident or Problem needs to be resolved, based on impact and urgency",
+  "name": "priority",
+  "choice_type": 1,
+  "column_type": "element",
+  "choices": [
+    {
+      "label": "-- None --",
+      "used": false,
+      "reference": false,
+      "image": "",
+      "rawLabel": "-- None --",
+      "missing": false,
+      "selected": false,
+      "value": ""
+    },
+    {
+      "used": false,
+      "label": "1 - Critical",
+      "reference": false,
+      "image": "",
+      "rawLabel": "1 - Critical",
+      "missing": false,
+      "selected": false,
+      "value": "1",
+      "parameters": {
+        "name": "task"
+      }
+    },
+    {
+      "used": false,
+      "label": "2 - High",
+      "reference": false,
+      "image": "",
+      "rawLabel": "2 - High",
+      "missing": false,
+      "selected": false,
+      "value": "2",
+      "parameters": {
+        "name": "task"
+      }
+    },
+    {
+      "used": false,
+      "label": "3 - Moderate",
+      "reference": false,
+      "image": "",
+      "rawLabel": "3 - Moderate",
+      "missing": false,
+      "selected": false,
+      "value": "3",
+      "parameters": {
+        "name": "task"
+      }
+    },
+    {
+      "used": false,
+      "label": "4 - Low",
+      "reference": false,
+      "image": "",
+      "rawLabel": "4 - Low",
+      "missing": false,
+      "selected": false,
+      "value": "4",
+      "parameters": {
+        "name": "task"
+      }
+    },
+    {
+      "used": false,
+      "label": "5 - Planning",
+      "reference": false,
+      "image": "",
+      "rawLabel": "5 - Planning",
+      "missing": false,
+      "selected": false,
+      "value": "5",
+      "parameters": {
+        "name": "task"
+      }
+    }
+  ],
+  "internal_type": "integer",
+  "cansort": true,
+  "max_length": 40
+}

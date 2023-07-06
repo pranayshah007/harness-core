@@ -138,7 +138,6 @@ public final class HelmConstants {
     }
   }
 
-  public static final long DEFAULT_HELM_COMMAND_TIMEOUT = TimeUnit.MINUTES.toMillis(120);
   public static final long DEFAULT_TILLER_CONNECTION_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(60);
   public static final String HELM_RELEASE_LABEL = "release";
   public static final String HELM_HOOK_ANNOTATION = "helm.sh/hook";

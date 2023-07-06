@@ -9,13 +9,18 @@ package io.harness.cdng.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import static java.util.Objects.isNull;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
+import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
+import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.K8sApplyStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.filters.WithFileRefs;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.contracts.steps.StepType;
@@ -28,7 +33,10 @@ import io.harness.walktree.visitor.Visitable;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -44,7 +52,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = K8sApplyStepInfoVisitorHelper.class)
 @TypeAlias("k8sApplyStepInfo")
 @RecasterAlias("io.harness.cdng.k8s.K8sApplyStepInfo")
-public class K8sApplyStepInfo extends K8sApplyBaseStepInfo implements CDAbstractStepInfo, Visitable {
+public class K8sApplyStepInfo extends K8sApplyBaseStepInfo implements CDAbstractStepInfo, Visitable, WithFileRefs {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -87,5 +95,30 @@ public class K8sApplyStepInfo extends K8sApplyBaseStepInfo implements CDAbstract
   @Override
   public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
     return getDelegateSelectors();
+  }
+
+  @Override
+  public Map<String, ParameterField<List<String>>> extractFileRefs() {
+    Map<String, ParameterField<List<String>>> fileRefMap = new HashMap<>();
+
+    List<String> fileRefs = new ArrayList<>();
+    if (isNull(overrides)) {
+      return fileRefMap;
+    }
+    overrides.forEach(manifestWrapper -> {
+      if (isNull(manifestWrapper.getManifest())) {
+        return;
+      }
+      ManifestAttributes manifestAttributes = manifestWrapper.getManifest().getSpec();
+      if (manifestAttributes.getStoreConfig() instanceof HarnessStore) {
+        ParameterField<List<String>> files = ((HarnessStore) manifestAttributes.getStoreConfig()).getFiles();
+        if (files.getValue() != null) {
+          fileRefMap.put(String.format("overrides.manifest.%s.spec.store.spec.files",
+                             manifestWrapper.getManifest().getIdentifier()),
+              files);
+        }
+      }
+    });
+    return fileRefMap;
   }
 }

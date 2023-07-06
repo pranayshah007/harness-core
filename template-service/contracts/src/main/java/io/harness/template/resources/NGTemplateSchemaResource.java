@@ -11,6 +11,7 @@ import static io.harness.NGCommonEntityConstants.ACCOUNT_KEY;
 import static io.harness.NGCommonEntityConstants.ENTITY_TYPE;
 import static io.harness.NGCommonEntityConstants.ORG_KEY;
 import static io.harness.NGCommonEntityConstants.PROJECT_KEY;
+import static io.harness.NGCommonEntityConstants.VERSION_FIELD;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.NGCommonEntityConstants;
@@ -34,6 +35,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -87,4 +89,14 @@ public interface NGTemplateSchemaResource {
       @QueryParam(PROJECT_KEY) String projectIdentifier, @QueryParam(ORG_KEY) String orgIdentifier,
       @QueryParam("scope") Scope scope, @NotNull @QueryParam(ACCOUNT_KEY) String accountIdentifier,
       @QueryParam(ENTITY_TYPE) String templateChildType);
+
+  @GET
+  @Path("/static")
+  @ApiOperation(value = "Get Static Yaml Schema", nickname = "getStaticSchemaYaml")
+  @Hidden
+  ResponseDTO<JsonNode> getStaticYamlSchema(@NotNull @QueryParam(ACCOUNT_KEY) String accountIdentifier,
+      @QueryParam(ORG_KEY) String orgIdentifier, @QueryParam(PROJECT_KEY) String projectIdentifier,
+      @QueryParam(ENTITY_TYPE) String templateChildType,
+      @QueryParam("templateEntityType") @NotNull TemplateEntityType entityType, @QueryParam("scope") Scope scope,
+      @QueryParam(VERSION_FIELD) @DefaultValue("v0") String version);
 }

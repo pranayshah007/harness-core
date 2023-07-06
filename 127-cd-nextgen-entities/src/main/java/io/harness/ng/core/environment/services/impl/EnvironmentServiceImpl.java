@@ -64,6 +64,7 @@ import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.services.impl.InputSetMergeUtility;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
+import io.harness.ng.core.utils.ServiceOverrideV2ValidationHelper;
 import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.outbox.api.OutboxService;
@@ -133,6 +134,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   private final ServiceEntityService serviceEntityService;
   private final AccountClient accountClient;
   private final NGSettingsClient settingsClient;
+  private final ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
   private final EnvironmentEntitySetupUsageHelper environmentEntitySetupUsageHelper;
 
   @Inject
@@ -142,7 +144,8 @@ public class EnvironmentServiceImpl implements EnvironmentService {
       InfrastructureEntityService infrastructureEntityService, ClusterService clusterService,
       ServiceOverrideService serviceOverrideService, ServiceOverridesServiceV2 serviceOverridesServiceV2,
       ServiceEntityService serviceEntityService, AccountClient accountClient, NGSettingsClient settingsClient,
-      EnvironmentEntitySetupUsageHelper environmentEntitySetupUsageHelper) {
+      EnvironmentEntitySetupUsageHelper environmentEntitySetupUsageHelper,
+      ServiceOverrideV2ValidationHelper overrideV2ValidationHelper) {
     this.environmentRepository = environmentRepository;
     this.entitySetupUsageService = entitySetupUsageService;
     this.eventProducer = eventProducer;
@@ -156,6 +159,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     this.accountClient = accountClient;
     this.settingsClient = settingsClient;
     this.environmentEntitySetupUsageHelper = environmentEntitySetupUsageHelper;
+    this.overrideV2ValidationHelper = overrideV2ValidationHelper;
   }
 
   @Override
@@ -378,9 +382,14 @@ public class EnvironmentServiceImpl implements EnvironmentService {
                            accountId, orgIdentifier, projectIdentifier, environmentIdentifier));
     processQuietly(
         () -> clusterService.deleteAllFromEnv(accountId, orgIdentifier, projectIdentifier, environmentIdentifier));
+
+    boolean isOverridesV2Enabled =
+        overrideV2ValidationHelper.isOverridesV2Enabled(accountId, orgIdentifier, projectIdentifier);
     processQuietly(()
-                       -> serviceOverrideService.deleteAllInEnv(
-                           accountId, orgIdentifier, projectIdentifier, environmentIdentifier));
+                       -> isOverridesV2Enabled ? (serviceOverridesServiceV2.deleteAllForEnv(
+                              accountId, orgIdentifier, projectIdentifier, environmentIdentifier))
+                                               : (serviceOverrideService.deleteAllInEnv(accountId, orgIdentifier,
+                                                   projectIdentifier, environmentIdentifier)));
   }
 
   @Override

@@ -9,6 +9,7 @@ package io.harness.cdng.infra.beans.host.dto;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
 
@@ -20,6 +21,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @OwnedBy(CDP)
+@RecasterAlias("io.harness.cdng.infra.beans.host.dto.HostFilterDTO")
 public class HostFilterDTO {
   HostFilterType type;
   HostFilterSpecDTO spec;

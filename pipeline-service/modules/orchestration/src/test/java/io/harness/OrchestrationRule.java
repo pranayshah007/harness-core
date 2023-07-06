@@ -29,6 +29,7 @@ import io.harness.engine.expressions.AmbianceExpressionEvaluatorProvider;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
+import io.harness.ff.FeatureFlagService;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
@@ -180,6 +181,8 @@ public class OrchestrationRule implements MethodRule, InjectorRuleMixin, MongoRu
         bind(OpaServiceClient.class).toInstance(mock(OpaServiceClient.class));
         bind(DelegateSyncService.class).toInstance(mock(DelegateSyncService.class));
         bind(DelegateAsyncService.class).toInstance(mock(DelegateAsyncService.class));
+        bind(AccountClient.class).toInstance(mock(AccountClient.class));
+        bind(FeatureFlagService.class).toInstance(mock(FeatureFlagService.class));
         bind(new TypeLiteral<DelegateServiceGrpc.DelegateServiceBlockingStub>() {
         }).toInstance(DelegateServiceGrpc.newBlockingStub(InProcessChannelBuilder.forName(generateUuid()).build()));
         bind(OrchestrationEventEmitter.class).to(MockEventEmitter.class);

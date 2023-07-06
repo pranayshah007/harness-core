@@ -1,0 +1,22 @@
+// Copyright 2021 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Shield 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+
+syntax = "proto3";
+
+package io.harness.delegate;
+
+import "920-delegate-service-beans/src/main/proto/io/harness/delegate/k8s_infra.proto";
+import "920-delegate-service-beans/src/main/proto/io/harness/delegate/log_config.proto";
+option go_package = "920_delegate_service_beans";
+
+option java_multiple_files = true;
+
+message ExecutionInfrastructure {
+  LogConfig log_config = 1;  // log stream service settings
+  oneof infraSpec {
+    K8sInfraSpec k8Infraspec = 2;
+    // VMInfraSpec
+  }
+}

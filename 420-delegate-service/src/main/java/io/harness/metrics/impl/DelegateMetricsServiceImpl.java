@@ -40,6 +40,7 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   public static final String DELEGATE_TASK_VALIDATION = "delegate_task_validation";
   public static final String DELEGATE_TASK_NO_FIRST_WHITELISTED = "delegate_task_no_first_whitelisted";
   public static final String DELEGATE_REGISTRATION_FAILED = "delegate_registration_failed";
+  public static final String DELEGATE_REGISTRATION = "delegate_registration";
   public static final String DELEGATE_RESTARTED = "delegate_restarted";
   public static final String DELEGATE_DISCONNECTED = "delegate_disconnected";
   public static final String DELEGATE_DESTROYED = "destroy_delegate";

@@ -1,0 +1,55 @@
+trigger:
+  name: multiRegionArtifactTrigger
+  identifier: multiRegionArtifactTrigger
+  enabled: true
+  orgIdentifier: org
+  projectIdentifier: proj
+  pipelineIdentifier: pipeline
+  source:
+    type: MultiRegionArtifact
+    spec:
+      type: DockerRegistry
+      eventConditions:
+        - key: build
+          operator: Equals
+          value: "1.0"
+      sources:
+        - spec:
+            type: DockerRegistry
+            connectorRef: DockerConnectorUs
+            imagePath: v2/hello-world-us
+        - spec:
+            type: DockerRegistry
+            connectorRef: DockerConnectorApac
+            imagePath: v2/hello-world-apac
+  inputYaml: |
+    pipeline:
+      identifier: pipeline
+      stages:
+        - stage:
+            identifier: MyDockerStage
+            type: Deployment
+            spec:
+              serviceConfig:
+                serviceDefinition:
+                  type: Kubernetes
+                  spec:
+                    artifacts:
+                      primary:
+                        type: DockerRegistry
+                        spec:
+                          tag: <+trigger.artifact.build>
+        - stage:
+            identifier: Stage2
+            type: Deployment
+            spec:
+              service:
+                serviceInputs:
+                  serviceDefinition:
+                    type: Kubernetes
+                    spec:
+                      artifacts:
+                        primary:
+                          type: DockerRegistry
+                          spec:
+                            tag: <+trigger.artifact.build>

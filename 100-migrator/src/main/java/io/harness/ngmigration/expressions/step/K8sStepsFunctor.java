@@ -22,7 +22,7 @@ public class K8sStepsFunctor extends StepExpressionFunctor {
   @Override
   public synchronized Object get(Object key) {
     if (StringUtils.equals(stepOutput.getStageIdentifier(), getCurrentStageIdentifier())) {
-      return String.format("<+execution.steps.%s.steps.%s.%s>", stepOutput.getStepGroupIdentifier(),
+      return String.format("<+execution.steps.%s.steps.%s.output.%s>", stepOutput.getStepGroupIdentifier(),
           stepOutput.getStepIdentifier(), key);
     }
     return String.format("<+pipeline.stages.%s.spec.execution.steps.%s.steps.%s.output.%s>",

@@ -82,7 +82,7 @@ public class CDNGPipelineConfigurationResource {
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @QueryParam("deploymentMetadataYaml") String deploymentMetaDataYaml) throws IOException {
     return ResponseDTO.newResponse(cdngPipelineConfigurationHelper.getExecutionStrategyYaml(
-        serviceDefinitionType, executionStrategyType, includeVerify, deploymentMetaDataYaml));
+        serviceDefinitionType, executionStrategyType, includeVerify, deploymentMetaDataYaml, accountIdentifier));
   }
 
   @GET

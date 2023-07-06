@@ -263,19 +263,21 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
       return null;
     }
     try {
-      GovernanceJobDetailsAWS governanceJobDetailsAWS = GovernanceJobDetailsAWS.builder()
-                                                            .accountId(accountId)
-                                                            .awsAccountId(governanceJobEnqueueDTO.getTargetAccountId())
-                                                            .externalId(governanceJobEnqueueDTO.getExternalId())
-                                                            .roleArn(governanceJobEnqueueDTO.getRoleArn())
-                                                            .isDryRun(governanceJobEnqueueDTO.getIsDryRun())
-                                                            .ruleId(governanceJobEnqueueDTO.getRuleId())
-                                                            .region(governanceJobEnqueueDTO.getTargetRegion())
-                                                            .ruleEnforcementId("") // This is adhoc run
-                                                            .policy(governanceJobEnqueueDTO.getPolicy())
-                                                            .isOOTB(governanceJobEnqueueDTO.getIsOOTB())
-                                                            .executionType(governanceJobEnqueueDTO.getExecutionType())
-                                                            .build();
+      GovernanceJobDetailsAWS governanceJobDetailsAWS =
+          GovernanceJobDetailsAWS.builder()
+              .accountId(accountId)
+              .awsAccountId(governanceJobEnqueueDTO.getTargetAccountDetails().getTargetInfo())
+              .externalId(governanceJobEnqueueDTO.getTargetAccountDetails().getRoleId())
+              .roleArn(governanceJobEnqueueDTO.getTargetAccountDetails().getRoleInfo())
+              .isDryRun(governanceJobEnqueueDTO.getIsDryRun())
+              .ruleId(governanceJobEnqueueDTO.getRuleId())
+              .region(governanceJobEnqueueDTO.getTargetRegion())
+              .ruleEnforcementId("") // This is adhoc run
+              .policy(governanceJobEnqueueDTO.getPolicy())
+              .isOOTB(governanceJobEnqueueDTO.getIsOOTB())
+              .executionType(governanceJobEnqueueDTO.getExecutionType())
+              .build();
+
       Gson gson = new GsonBuilder().create();
       String json = gson.toJson(governanceJobDetailsAWS);
       log.info("Enqueuing job in Faktory {}", json);
@@ -284,29 +286,30 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
           governanceConfig.getAwsFaktoryJobType(), governanceConfig.getAwsFaktoryQueueName(), json);
       log.info("Pushed job in Faktory: {}", jid);
       // Make a record in Mongo
-      RuleExecution ruleExecution = RuleExecution.builder()
-                                        .accountId(accountId)
-                                        .jobId(jid)
-                                        .cloudProvider(governanceJobEnqueueDTO.getRuleCloudProviderType())
-                                        .executionLogPath("") // Updated by worker when execution finishes
-                                        .isDryRun(governanceJobEnqueueDTO.getIsDryRun())
-                                        .ruleEnforcementIdentifier(ruleEnforcementUuid)
-                                        .executionCompletedAt(null) // Updated by worker when execution finishes
-                                        .ruleIdentifier(governanceJobEnqueueDTO.getRuleId())
-                                        .targetAccount(governanceJobEnqueueDTO.getTargetAccountId())
-                                        .targetRegions(Arrays.asList(governanceJobEnqueueDTO.getTargetRegion()))
-                                        .executionLogBucketType("")
-                                        .executionType(governanceJobEnqueueDTO.getExecutionType())
-                                        .resourceCount(0)
-                                        .ruleName(rulesList.get(0).getName())
-                                        .OOTB(rulesList.get(0).getIsOOTB())
-                                        .executionStatus(RuleExecutionStatusType.ENQUEUED)
-                                        .build();
+      RuleExecution ruleExecution =
+          RuleExecution.builder()
+              .accountId(accountId)
+              .jobId(jid)
+              .cloudProvider(governanceJobEnqueueDTO.getRuleCloudProviderType())
+              .executionLogPath("") // Updated by worker when execution finishes
+              .isDryRun(governanceJobEnqueueDTO.getIsDryRun())
+              .ruleEnforcementIdentifier(ruleEnforcementUuid)
+              .executionCompletedAt(null) // Updated by worker when execution finishes
+              .ruleIdentifier(governanceJobEnqueueDTO.getRuleId())
+              .targetAccount(governanceJobEnqueueDTO.getTargetAccountDetails().getTargetInfo())
+              .targetRegions(Arrays.asList(governanceJobEnqueueDTO.getTargetRegion()))
+              .executionLogBucketType("")
+              .executionType(governanceJobEnqueueDTO.getExecutionType())
+              .resourceCount(0)
+              .ruleName(rulesList.get(0).getName())
+              .OOTB(rulesList.get(0).getIsOOTB())
+              .executionStatus(RuleExecutionStatusType.ENQUEUED)
+              .build();
       response = ruleExecutionService.save(ruleExecution);
     } catch (Exception e) {
       log.warn("Exception enqueueing job for ruleEnforcementUuid: {} for targetAccount: {} for targetRegions: {}, {}",
-          ruleEnforcementUuid, governanceJobEnqueueDTO.getTargetAccountId(), governanceJobEnqueueDTO.getTargetRegion(),
-          e);
+          ruleEnforcementUuid, governanceJobEnqueueDTO.getTargetAccountDetails().getTargetInfo(),
+          governanceJobEnqueueDTO.getTargetRegion(), e);
     }
     return response;
   }

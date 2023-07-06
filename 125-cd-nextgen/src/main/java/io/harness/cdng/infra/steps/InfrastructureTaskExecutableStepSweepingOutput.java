@@ -7,6 +7,7 @@
 
 package io.harness.cdng.infra.steps;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 
@@ -16,6 +17,7 @@ import lombok.Value;
 
 @Value
 @Builder
+@RecasterAlias("io.harness.cdng.infra.steps.InfrastructureTaskExecutableStepSweepingOutput")
 public class InfrastructureTaskExecutableStepSweepingOutput implements ExecutionSweepingOutput {
   @NotNull InfrastructureOutcome infrastructureOutcome;
   boolean skipInstances;

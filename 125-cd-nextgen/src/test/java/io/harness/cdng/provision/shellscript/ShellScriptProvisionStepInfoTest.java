@@ -7,6 +7,7 @@
 
 package io.harness.cdng.provision.shellscript;
 
+import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -20,6 +21,7 @@ import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.steps.shellscript.HarnessFileStoreSource;
 import io.harness.steps.shellscript.ShellScriptInlineSource;
 import io.harness.steps.shellscript.ShellScriptSourceWrapper;
 import io.harness.yaml.core.variables.NGVariable;
@@ -27,11 +29,13 @@ import io.harness.yaml.core.variables.StringNGVariable;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @OwnedBy(HarnessTeam.CDP)
 public class ShellScriptProvisionStepInfoTest extends CategoryTest {
+  private final String FILE_PATH = "source.spec.file";
   @Test
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
@@ -70,5 +74,23 @@ public class ShellScriptProvisionStepInfoTest extends CategoryTest {
     StepType response = shellScriptProvisionStepInfo.getStepType();
     assertThat(response).isNotNull();
     assertThat(response.getType()).isEqualTo(ExecutionNodeType.SHELL_SCRIPT_PROVISION.getYamlType());
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testExtractRefs() {
+    ShellScriptProvisionStepInfo shellScriptProvisionStepInfo =
+        ShellScriptProvisionStepInfo.infoBuilder()
+            .source(
+                ShellScriptSourceWrapper.builder()
+                    .type("inline")
+                    .spec(HarnessFileStoreSource.builder().file(ParameterField.createValueField("/script.sh")).build())
+                    .build())
+            .build();
+    Map<String, ParameterField<List<String>>> fileMap;
+    fileMap = shellScriptProvisionStepInfo.extractFileRefs();
+    assertThat(fileMap.get(FILE_PATH).getValue().size()).isEqualTo(1);
+    assertThat(fileMap.get(FILE_PATH).getValue().get(0)).isEqualTo("/script.sh");
   }
 }

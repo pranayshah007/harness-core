@@ -23,6 +23,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.executioncapability.GitConnectionNGCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.storeconfig.S3StoreTFDelegateConfig;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.capability.ProcessExecutionCapabilityHelper;
@@ -75,6 +76,7 @@ public class TerraformTaskNGParameters
   @Expression(ALLOW_SECRETS) Map<String, String> terraformCommandFlags;
   // For plan
   TerraformCommand terraformCommand;
+  CommandUnitsProgress commandUnitsProgress;
 
   // To aid in logging
   TerraformCommandUnit terraformCommandUnit;

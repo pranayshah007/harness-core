@@ -35,9 +35,14 @@ import io.harness.ng.core.infrastructure.dto.NoInputMergeInputAction;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.mappers.InfrastructureFilterHelper;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
+import io.harness.ng.core.utils.ServiceOverrideV2ValidationHelper;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.dto.SettingValueResponseDTO;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.UpsertOptions;
 import io.harness.rule.Owner;
 import io.harness.setupusage.InfrastructureEntitySetupUsageHelper;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.PageUtils;
 
 import com.google.common.io.Resources;
@@ -57,6 +62,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -65,6 +72,9 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @RunWith(JUnitParamsRunner.class)
 public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Mock InfrastructureEntitySetupUsageHelper infrastructureEntitySetupUsageHelper;
+  @Mock NGSettingsClient settingsClient;
+  @Mock NGFeatureFlagHelperService featureFlagHelperService;
+  @Mock ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
 
   @InjectMocks @Inject InfrastructureEntityServiceImpl infrastructureEntityService;
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
@@ -75,6 +85,9 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Before
   public void setUp() throws Exception {
     initMocks(this);
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    SettingValueResponseDTO settingValueResponseDTO = SettingValueResponseDTO.builder().value("false").build();
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(settingValueResponseDTO);
   }
 
   @Test

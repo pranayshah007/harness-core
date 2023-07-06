@@ -357,7 +357,7 @@ public class AuthenticationManager {
                               .email(user.getEmail())
                               .name(user.getName())
                               .twoFactorAuthenticationMechanism(user.getTwoFactorAuthenticationMechanism())
-                              .twoFactorAuthenticationEnabled(user.isTwoFactorAuthenticationEnabled())
+                              .twoFactorAuthenticationEnabled(true)
                               .twoFactorJwtToken(jwtToken)
                               .accounts(user.getAccounts())
                               .defaultAccountId(user.getDefaultAccountId())
@@ -432,7 +432,7 @@ public class AuthenticationManager {
         user = authHandler.authenticate(userName, password, account.getUuid()).getUser();
       }
 
-      if (user.isTwoFactorAuthenticationEnabled()) {
+      if (user.isTwoFactorAuthenticationEnabled() || account.isTwoFactorAdminEnforced()) {
         return generate2faJWTToken(user);
       } else {
         User loggedInUser = authService.generateBearerTokenForUser(user);

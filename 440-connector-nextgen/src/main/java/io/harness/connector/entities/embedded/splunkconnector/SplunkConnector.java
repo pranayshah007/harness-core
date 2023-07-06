@@ -9,6 +9,7 @@ package io.harness.connector.entities.embedded.splunkconnector;
 
 import io.harness.annotations.StoreIn;
 import io.harness.connector.entities.Connector;
+import io.harness.delegate.beans.connector.splunkconnector.SplunkAuthType;
 import io.harness.ng.DbAliases;
 
 import dev.morphia.annotations.Entity;
@@ -28,8 +29,10 @@ import org.springframework.data.annotation.TypeAlias;
 @Persistent
 @TypeAlias("io.harness.connector.entities.embedded.splunkconnector.SplunkConnector")
 public class SplunkConnector extends Connector {
-  private String username;
-  private String passwordRef;
-  private String splunkUrl;
-  private String accountId;
+  String username;
+  String passwordRef;
+  String splunkUrl;
+  String accountId;
+  SplunkAuthType authType;
+  String tokenRef;
 }

@@ -7,6 +7,7 @@ syntax = "proto3";
 package io.harness.eventsframework.schemas.entityactivity;
 
 import "970-ng-commons/src/main/proto/io/harness/eventsframework/schemas/entity/entity_detail.proto";
+import "970-ng-commons/src/main/proto/io/harness/eventsframework/schemas/entity/entity_usage_detail.proto";
 
 option java_multiple_files = true;
 option go_package = "953_events_api";
@@ -34,6 +35,7 @@ message EntityActivityCreateDTO {
     repeated ErrorDetailProto errors = 3;
     string errorSummary = 4;
     string status = 5;
+    io.harness.eventsframework.schemas.entity.EntityUsageDetailProto usageDetail = 6;
   }
 
   message ConnectorValidationResultProto {

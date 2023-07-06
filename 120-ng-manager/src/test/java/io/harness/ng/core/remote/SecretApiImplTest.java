@@ -68,7 +68,7 @@ public class SecretApiImplTest extends CategoryTest {
   private ProjectSecretApiImpl projectSecretApi;
 
   private String account = "account";
-  private String org = "org";
+  private String org = "organization";
   private String project = "project";
   private Boolean privateSecret = false;
   private String identifier = "secret_identifier";

@@ -315,7 +315,10 @@ public class ImagePullSecretUtils {
       if (githubTokenSpecDTO.getTokenRef() != null) {
         password = EmptyPredicate.isNotEmpty(githubTokenSpecDTO.getTokenRef().getDecryptedValue())
             ? new String(githubTokenSpecDTO.getTokenRef().getDecryptedValue())
-            : getPasswordExpression(githubTokenSpecDTO.getTokenRef().getIdentifier(), ambiance);
+            : getPasswordExpression(githubTokenSpecDTO.getTokenRef().toSecretRefStringValue() == null
+                    ? ""
+                    : githubTokenSpecDTO.getTokenRef().toSecretRefStringValue(),
+                ambiance);
 
       } else {
         throw new InvalidRequestException("The token reference for the Github Connector is null");
@@ -546,8 +549,6 @@ public class ImagePullSecretUtils {
         ambiance, azureTaskParams, baseNGAccess, "Azure get ACR access token task failure due to error");
 
     String token = format("\"%s\"", accessTokenResponse.getToken());
-
-    log.trace(format("Fetched token: %s", token));
 
     imageDetailsBuilder.username(ACR_DUMMY_DOCKER_USERNAME);
     imageDetailsBuilder.password(token);

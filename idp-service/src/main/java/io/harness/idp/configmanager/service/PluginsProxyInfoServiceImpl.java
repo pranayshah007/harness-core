@@ -9,6 +9,7 @@ package io.harness.idp.configmanager.service;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.UnexpectedException;
 import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCache;
 import io.harness.idp.configmanager.beans.entity.PluginsProxyInfoEntity;
 import io.harness.idp.configmanager.repositories.PluginsProxyInfoRepository;
@@ -45,8 +46,7 @@ public class PluginsProxyInfoServiceImpl implements PluginsProxyInfoService {
       "No proxy hosts are associated with Plugin id - {} for account - {}";
 
   @Override
-  public List<ProxyHostDetail> insertProxyHostDetailsForPlugin(AppConfig appConfig, String accountIdentifier)
-      throws ExecutionException {
+  public List<ProxyHostDetail> insertProxyHostDetailsForPlugin(AppConfig appConfig, String accountIdentifier) {
     List<PluginsProxyInfoEntity> pluginsProxyInfoEntities = getPluginProxyInfoEntities(appConfig, accountIdentifier);
     List<String> errorMessageForProxyDetails = getErrorMessageIfHostIsAlreadyInUse(accountIdentifier, appConfig);
     if (!errorMessageForProxyDetails.isEmpty()) {
@@ -65,8 +65,7 @@ public class PluginsProxyInfoServiceImpl implements PluginsProxyInfoService {
   }
 
   @Override
-  public List<ProxyHostDetail> updateProxyHostDetailsForPlugin(AppConfig appConfig, String accountIdentifier)
-      throws ExecutionException {
+  public List<ProxyHostDetail> updateProxyHostDetailsForPlugin(AppConfig appConfig, String accountIdentifier) {
     List<PluginsProxyInfoEntity> pluginsProxyInfoEntities = getPluginProxyInfoEntities(appConfig, accountIdentifier);
     if (pluginsProxyInfoEntities.isEmpty()) {
       log.info(String.format(NO_PROXY_HOST_ASSOCIATED_VARIABLE_ASSOCIATED, appConfig.getConfigId(), accountIdentifier));
@@ -82,7 +81,7 @@ public class PluginsProxyInfoServiceImpl implements PluginsProxyInfoService {
   }
 
   @Override
-  public void deleteProxyHostDetailsForPlugin(String accountIdentifier, String pluginId) throws ExecutionException {
+  public void deleteProxyHostDetailsForPlugin(String accountIdentifier, String pluginId) {
     List<PluginsProxyInfoEntity> existingPluginProxies =
         pluginsProxyInfoRepository.findAllByAccountIdentifierAndPluginId(accountIdentifier, pluginId);
     if (!existingPluginProxies.isEmpty()) {
@@ -172,8 +171,7 @@ public class PluginsProxyInfoServiceImpl implements PluginsProxyInfoService {
   }
 
   @VisibleForTesting
-  void updateDelegateSelectorsCache(String accountIdentifier, List<PluginsProxyInfoEntity> proxies)
-      throws ExecutionException {
+  void updateDelegateSelectorsCache(String accountIdentifier, List<PluginsProxyInfoEntity> proxies) {
     for (PluginsProxyInfoEntity proxy : proxies) {
       if (proxy.getProxy()) {
         delegateSelectorsCache.put(accountIdentifier, proxy.getHost(), new HashSet<>(proxy.getDelegateSelectors()));

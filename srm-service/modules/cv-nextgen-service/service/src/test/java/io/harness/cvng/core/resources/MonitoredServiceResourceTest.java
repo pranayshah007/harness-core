@@ -7,6 +7,7 @@
 
 package io.harness.cvng.core.resources;
 
+import static io.harness.cvng.notification.beans.NotificationRuleConditionType.DEPLOYMENT_IMPACT_REPORT;
 import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
@@ -42,6 +43,8 @@ import io.harness.cvng.core.services.api.CVNGLogService;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.cvng.notification.beans.DeploymentImpactReportConditionSpec;
+import io.harness.cvng.notification.beans.NotificationRuleCondition;
 import io.harness.cvng.notification.beans.NotificationRuleDTO;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.notification.beans.NotificationRuleType;
@@ -1290,6 +1293,72 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
                    .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
                    .queryParam("pageNumber", 0)
                    .queryParam("pageSize", 10)
+                   .request(MediaType.APPLICATION_JSON_TYPE)
+                   .get();
+    assertThat(response.getStatus()).isEqualTo(500);
+    assertThat(response.readEntity(String.class))
+        .contains(String.format(
+            "\"message\":\"io.harness.exception.InvalidRequestException: Monitored Service  with identifier MSIdentifier1, "
+                + "accountId %s, orgIdentifier %s and projectIdentifier %s  is not present\"",
+            builderFactory.getContext().getAccountId(), builderFactory.getContext().getOrgIdentifier(),
+            builderFactory.getContext().getProjectIdentifier()));
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetNotificationRuleConditions() throws IOException {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
+    notificationRuleDTO.getConditions().add(NotificationRuleCondition.builder()
+                                                .type(DEPLOYMENT_IMPACT_REPORT)
+                                                .spec(DeploymentImpactReportConditionSpec.builder().build())
+                                                .build());
+    NotificationRuleResponse notificationRuleResponse =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+
+    String monitoredServiceYaml = getResource("monitoredservice/monitored-service-with-notification-rule.yaml");
+    monitoredServiceYaml =
+        monitoredServiceYaml.replace("$orgIdentifier", builderFactory.getContext().getOrgIdentifier());
+    monitoredServiceYaml =
+        monitoredServiceYaml.replace("$projectIdentifier", builderFactory.getContext().getProjectIdentifier());
+    monitoredServiceYaml =
+        monitoredServiceYaml.replace("$identifier", notificationRuleResponse.getNotificationRule().getIdentifier());
+    monitoredServiceYaml = monitoredServiceYaml.replace("$enabled", "false");
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/monitored-service/")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(convertToJson(monitoredServiceYaml)));
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(response.readEntity(String.class))
+        .contains("\"notificationRuleRefs\":[{\"notificationRuleRef\":\"rule\",\"enabled\":false}]");
+
+    response = RESOURCES.client()
+                   .target("http://localhost:9998/monitored-service/"
+                       + "MSIdentifier"
+                       + "/notification-rule-conditions")
+                   .queryParam("accountId", builderFactory.getContext().getAccountId())
+                   .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                   .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                   .queryParam("pageNumber", 0)
+                   .queryParam("pageSize", 10)
+                   .queryParam("types", "DEPLOYMENT_IMPACT_REPORT")
+                   .request(MediaType.APPLICATION_JSON_TYPE)
+                   .get();
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(response.readEntity(String.class)).contains("\"totalItems\":1");
+
+    response = RESOURCES.client()
+                   .target("http://localhost:9998/monitored-service/"
+                       + "MSIdentifier1"
+                       + "/notification-rule-conditions")
+                   .queryParam("accountId", builderFactory.getContext().getAccountId())
+                   .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                   .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                   .queryParam("pageNumber", 0)
+                   .queryParam("pageSize", 10)
+                   .queryParam("types", "DEPLOYMENT_IMPACT_REPORT")
                    .request(MediaType.APPLICATION_JSON_TYPE)
                    .get();
     assertThat(response.getStatus()).isEqualTo(500);

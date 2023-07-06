@@ -4727,16 +4727,6 @@
         {
           "type": "object",
           "properties": {
-            "env": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/ParameterFieldMapStringString"
-                },
-                {
-                  "type": "string"
-                }
-              ]
-            },
             "image": {
               "type": "string"
             }
@@ -4769,16 +4759,6 @@
           "properties": {
             "command": {
               "type": "string"
-            },
-            "env": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/ParameterFieldMapStringString"
-                },
-                {
-                  "type": "string"
-                }
-              ]
             },
             "image": {
               "type": "string"
@@ -10730,6 +10710,9 @@
             "policy": {
               "$ref": "#/definitions/EnforcementPolicy"
             },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
             "source": {
               "$ref": "#/definitions/SbomSource"
             },
@@ -10756,6 +10739,9 @@
           "properties": {
             "attestation": {
               "$ref": "#/definitions/Attestation"
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
             },
             "source": {
               "$ref": "#/definitions/SbomSource"

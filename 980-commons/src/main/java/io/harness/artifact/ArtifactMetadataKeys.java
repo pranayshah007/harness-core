@@ -31,4 +31,7 @@ public interface ArtifactMetadataKeys {
   String bucket = "bucket";
 
   String artifactFileName = "artifactFileName";
+
+  String id = "id";
+  String planName = "planName";
 }

@@ -32,5 +32,6 @@ public class CardDTO {
   private String addressZip;
   private String addressLine1;
   private String addressLine2;
+  private String fingerPrint;
   @Optional private Boolean isDefaultCard;
 }

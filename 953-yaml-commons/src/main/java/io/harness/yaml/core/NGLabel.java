@@ -9,9 +9,11 @@ package io.harness.yaml.core;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.FieldNameConstants;
 
 @Data
 @Builder
+@FieldNameConstants(innerTypeName = "NGLabelKeys")
 public class NGLabel {
   private String key;
   private String value;

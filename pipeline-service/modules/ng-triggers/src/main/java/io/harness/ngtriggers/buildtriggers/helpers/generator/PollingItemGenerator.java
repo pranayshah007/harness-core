@@ -10,6 +10,7 @@ package io.harness.ngtriggers.buildtriggers.helpers.generator;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
+import static io.harness.ngtriggers.beans.source.NGTriggerType.MULTI_REGION_ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.WEBHOOK;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -25,9 +26,10 @@ import io.harness.polling.contracts.Qualifier;
 public interface PollingItemGenerator {
   PollingItem generatePollingItem(BuildTriggerOpsData buildTriggerOpsData);
 
-  default PollingItem.Builder getBaseInitializedPollingItem(NGTriggerEntity ngTriggerEntity) {
+  default PollingItem.Builder getBaseInitializedPollingItem(
+      NGTriggerEntity ngTriggerEntity, BuildTriggerOpsData buildTriggerOpsData) {
     if (ngTriggerEntity.getType() != MANIFEST && ngTriggerEntity.getType() != ARTIFACT
-        && ngTriggerEntity.getType() != WEBHOOK) {
+        && ngTriggerEntity.getType() != WEBHOOK && ngTriggerEntity.getType() != MULTI_REGION_ARTIFACT) {
       throw new InvalidArgumentsException("Only MANIFEST, ARTIFACT and WEBHOOK trigger types are supported");
     }
 
@@ -37,23 +39,33 @@ public interface PollingItemGenerator {
     Category category = null;
     if (type == MANIFEST) {
       category = Category.MANIFEST;
-    } else if (type == ARTIFACT) {
+    } else if (type == ARTIFACT || type == MULTI_REGION_ARTIFACT) {
       category = Category.ARTIFACT;
     } else if (type == WEBHOOK) {
       category = Category.GITPOLLING;
     }
 
-    pollingItem.setCategory(category)
-        .setQualifier(Qualifier.newBuilder()
-                          .setAccountId(ngTriggerEntity.getAccountId())
-                          .setOrganizationId(ngTriggerEntity.getOrgIdentifier())
-                          .setProjectId(ngTriggerEntity.getProjectIdentifier())
-                          .build())
-        .setSignature(ngTriggerEntity.getMetadata().getBuildMetadata().getPollingConfig().getSignature());
+    pollingItem.setCategory(category).setQualifier(Qualifier.newBuilder()
+                                                       .setAccountId(ngTriggerEntity.getAccountId())
+                                                       .setOrganizationId(ngTriggerEntity.getOrgIdentifier())
+                                                       .setProjectId(ngTriggerEntity.getProjectIdentifier())
+                                                       .build());
 
-    if (null != ngTriggerEntity.getMetadata().getBuildMetadata().getPollingConfig().getPollingDocId()) {
-      pollingItem.setPollingDocId(
-          ngTriggerEntity.getMetadata().getBuildMetadata().getPollingConfig().getPollingDocId());
+    String pollingDocId;
+    if (type == MULTI_REGION_ARTIFACT) {
+      /* For MultiRegionArtifact triggers, we need to fetch signature and pollingDocId from `buildTriggerOpsData`,
+      because the trigger's metadata itself contains a list of BuildMetadata, so we don't know which element of the
+      list corresponds to the pollingItem we are generating here. */
+      pollingItem.setSignature(buildTriggerOpsData.getBuildMetadata().getPollingConfig().getSignature());
+      pollingItem.addAllSignaturesToLock(buildTriggerOpsData.getSignaturesToLock());
+      pollingDocId = buildTriggerOpsData.getBuildMetadata().getPollingConfig().getPollingDocId();
+    } else {
+      pollingItem.setSignature(ngTriggerEntity.getMetadata().getBuildMetadata().getPollingConfig().getSignature());
+      pollingDocId = ngTriggerEntity.getMetadata().getBuildMetadata().getPollingConfig().getPollingDocId();
+    }
+
+    if (pollingDocId != null) {
+      pollingItem.setPollingDocId(pollingDocId);
     }
     return pollingItem;
   }

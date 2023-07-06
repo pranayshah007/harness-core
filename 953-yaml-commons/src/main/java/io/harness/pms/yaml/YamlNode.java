@@ -478,7 +478,7 @@ public class YamlNode implements Visitable {
 
   // get the field/node yaml from the complete pipeline yaml.
   public static JsonNode getNodeYaml(YamlNode yamlNode, List<Level> levelsList) {
-    YamlNode currentNode = yamlNode.gotoPath("");
+    YamlNode currentNode = yamlNode;
     List<Level> remainingLevels = new ArrayList<>(levelsList);
     for (Level level : levelsList) {
       if (level.getStepType().getStepCategory() == StepCategory.STRATEGY

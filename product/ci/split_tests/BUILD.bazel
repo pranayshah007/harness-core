@@ -21,9 +21,9 @@ go_library(
         "//product/ci/split_tests/junit",
         "//product/ci/split_tests/ti",
         "//product/ci/split_tests/utils",
-        "//product/ci/ti-service/types",
         "@com_github_alexflint_go_arg//:go-arg",
         "@com_github_bmatcuk_doublestar//:doublestar",
+        "@com_github_harness_ti_client//types",
         "@org_uber_go_zap//:zap",
         "@org_uber_go_zap//zapcore",
     ],
@@ -46,4 +46,12 @@ go_test(
         "//product/ci/engine/grpc/mocks",
         "@com_github_golang_mock//gomock",
     ],
+)
+
+load("//:tools/bazel/macros.bzl", "run_analysis")
+
+run_analysis(
+    language = "go",
+    targets = [":split_tests_lib"],
+    test_targets = [":split_tests_test"],
 )

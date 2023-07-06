@@ -8,6 +8,8 @@
 package io.harness.steps.matrix.v1;
 
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.YUVRAJ;
+import static io.harness.yaml.core.MatrixConstants.MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -58,5 +60,42 @@ public class MatrixConfigServiceV1Test extends CategoryTest {
 
     List<ChildrenExecutableResponse.Child> children = matrixConfigService.fetchChildren(strategyConfig, "childNodeId");
     assertThat(children.size()).isEqualTo(3);
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testFetchChildrenHavingFewSameCombinations() throws IOException {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("matrix-with-repeating-combinations.yaml");
+    assertThat(testFile).isNotNull();
+    String pipelineYaml = Resources.toString(testFile, Charsets.UTF_8);
+    String pipelineYamlWithUuid = YamlUtils.injectUuid(pipelineYaml);
+    YamlField pipelineYamlField = YamlUtils.readTree(pipelineYamlWithUuid);
+    assertThat(pipelineYamlField).isNotNull();
+    YamlField stagesYamlField = pipelineYamlField.getNode().getField("stages");
+    assertThat(stagesYamlField).isNotNull();
+
+    List<YamlNode> stageYamlNodes = stagesYamlField.getNode().asArray();
+
+    YamlField StageYamlField = new YamlField(stageYamlNodes.get(0));
+
+    YamlField strategyField = StageYamlField.getNode().getField("strategy");
+    StrategyConfigV1 strategyConfig = YamlUtils.read(strategyField.getNode().toString(), StrategyConfigV1.class);
+
+    List<ChildrenExecutableResponse.Child> children = matrixConfigService.fetchChildren(strategyConfig, "childNodeId");
+    assertThat(children.size()).isEqualTo(4);
+    assertThat(children.get(0).getStrategyMetadata().getMatrixMetadata().containsMatrixValues(
+                   MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES))
+        .isFalse();
+    assertThat(children.get(1).getStrategyMetadata().getMatrixMetadata().containsMatrixValues(
+                   MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES))
+        .isTrue();
+    assertThat(children.get(2).getStrategyMetadata().getMatrixMetadata().containsMatrixValues(
+                   MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES))
+        .isFalse();
+    assertThat(children.get(3).getStrategyMetadata().getMatrixMetadata().containsMatrixValues(
+                   MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES))
+        .isTrue();
   }
 }

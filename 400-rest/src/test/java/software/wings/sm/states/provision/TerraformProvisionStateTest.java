@@ -15,6 +15,7 @@ import static io.harness.beans.FeatureName.TERRAFORM_REMOTE_BACKEND_CONFIG;
 import static io.harness.beans.SweepingOutputInstance.Scope;
 import static io.harness.beans.SweepingOutputInstance.builder;
 import static io.harness.context.ContextElementType.TERRAFORM_INHERIT_PLAN;
+import static io.harness.expression.SecretString.SECRET_MASK;
 import static io.harness.provision.TerraformConstants.S3_STORE_TYPE;
 import static io.harness.provision.TerraformConstants.TF_NAME_PREFIX;
 import static io.harness.provision.TerraformConstants.TF_PLAN_RESOURCES_ADD;
@@ -26,6 +27,7 @@ import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.BOJANA;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.RAGHVENDRA;
+import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
@@ -118,6 +120,7 @@ import software.wings.beans.Activity;
 import software.wings.beans.Application;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.Environment;
+import software.wings.beans.GcpKmsConfig;
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitFileConfig;
 import software.wings.beans.InfrastructureProvisioner;
@@ -204,6 +207,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
   @InjectMocks private TerraformProvisionState state = new ApplyTerraformProvisionState("tf");
   @InjectMocks private TerraformProvisionState destroyProvisionState = new DestroyTerraformProvisionState("tf");
 
+  public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
   private final Answer<String> answer = invocation -> invocation.getArgument(0, String.class) + "-rendered";
   GitConfig gitConfig = GitConfig.builder().branch("master").build();
 
@@ -2601,5 +2605,17 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
         .isEnabled(eq(FeatureName.SAVE_TERRAFORM_APPLY_SWEEPING_OUTPUT_TO_WORKFLOW), anyString());
     state.handleAsyncResponse(executionContext, response);
     verify(executionContext, times(1)).prepareSweepingOutputBuilder(eq(Scope.WORKFLOW));
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testGetSecretManagerContainingTfPlan() {
+    doReturn(true).when(featureFlagService).isEnabled(any(), any());
+    when(secretManagerConfigService.getSecretManager(any(), any(), anyBoolean()))
+        .thenReturn(
+            GcpKmsConfig.builder().accountId(GLOBAL_ACCOUNT_ID).credentials("credential".toCharArray()).build());
+    GcpKmsConfig secretManagerConfig = (GcpKmsConfig) state.getSecretManagerContainingTfPlan("smId", ACCOUNT_ID);
+    assertThat(secretManagerConfig.getCredentials()).isEqualTo(SECRET_MASK.toCharArray());
   }
 }

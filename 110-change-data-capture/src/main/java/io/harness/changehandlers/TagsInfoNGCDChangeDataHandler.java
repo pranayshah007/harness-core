@@ -14,6 +14,7 @@ import static java.util.Arrays.asList;
 
 import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.changestreamsframework.ChangeEvent;
+import io.harness.execution.stage.StageExecutionEntity;
 
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
@@ -104,7 +105,8 @@ public class TagsInfoNGCDChangeDataHandler extends AbstractChangeDataHandler {
     if (isEmpty(tags)) {
       return null;
     }
-    if (changeEvent.getEntityType().equals(StageExecutionInfo.class)) {
+    if (changeEvent.getEntityType().equals(StageExecutionInfo.class)
+        || changeEvent.getEntityType().equals(StageExecutionEntity.class)) {
       tagString = TagsInfoCDChangeDataHandlerHelper.getStageExecutionTags(tags);
     } else {
       BasicDBObject[] tagArray = tags.toArray(new BasicDBObject[tags.size()]);

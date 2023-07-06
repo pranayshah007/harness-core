@@ -40,4 +40,5 @@ public class DelegateAgentConfig extends Configuration {
   @JsonProperty private final String clientCertificateKeyFilePath;
   @JsonProperty private final boolean trustAllCertificates;
   @JsonProperty private final boolean grpcAuthorityModificationDisabled;
+  @JsonProperty private final String delegateName;
 }

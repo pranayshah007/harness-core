@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.ng.core.remote.ProjectMapper.toProject;
 import static io.harness.rule.OwnerRule.ARVIND;
+import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.KARAN;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
@@ -376,6 +377,69 @@ public class ProjectServiceImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void update_onlyIdentifierChanged_noop() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String identifier = "identifier";
+    ProjectDTO projectDTO = createProjectDTO(orgIdentifier, identifier);
+    Project project = toProject(projectDTO);
+    project.setAccountIdentifier(accountIdentifier);
+    project.setOrgIdentifier(orgIdentifier);
+    project.setIdentifier(identifier);
+
+    when(organizationService.get(accountIdentifier, orgIdentifier)).thenReturn(Optional.of(random(Organization.class)));
+    when(projectService.get(accountIdentifier, orgIdentifier, identifier.toUpperCase()))
+        .thenReturn(Optional.of(project));
+    when(transactionTemplate.execute(any())).thenReturn(project);
+
+    projectDTO.setIdentifier(identifier.toUpperCase());
+    Project updatedProject =
+        projectService.update(accountIdentifier, orgIdentifier, identifier.toUpperCase(), projectDTO);
+
+    assertNotNull(updatedProject);
+    assertThat(updatedProject.getIdentifier()).isEqualTo(identifier);
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void update_identifierAndSomeOtherFieldChanged_onlyOtherFieldIsUpdated() {
+    String accountIdentifier = randomAlphabetic(10);
+    String identifier = "identifier";
+    String orgIdentifier = randomAlphabetic(10);
+    Project existingProject = Project.builder()
+                                  .accountIdentifier(accountIdentifier)
+                                  .orgIdentifier(orgIdentifier)
+                                  .identifier(identifier)
+                                  .name("test")
+                                  .description("desc")
+                                  .build();
+
+    when(organizationService.get(accountIdentifier, orgIdentifier)).thenReturn(Optional.of(random(Organization.class)));
+    when(projectService.get(accountIdentifier, orgIdentifier, identifier.toUpperCase()))
+        .thenReturn(Optional.of(existingProject));
+
+    ProjectDTO updateDTO = ProjectDTO.builder()
+                               .name("updatedTest")
+                               .description("updatedDesc")
+                               .identifier(identifier.toUpperCase())
+                               .build();
+    Project expectedProject = existingProject;
+    expectedProject.setDescription("updatedDesc");
+    expectedProject.setName("updatedTest");
+    when(transactionTemplate.execute(any())).thenReturn(expectedProject);
+    Project updatedProject =
+        projectService.update(accountIdentifier, orgIdentifier, identifier.toUpperCase(), updateDTO);
+
+    assertNotNull(updatedProject);
+    assertThat(updatedProject.getIdentifier()).isEqualTo(identifier);
+    assertThat(updatedProject.getName()).isEqualTo(expectedProject.getName());
+    assertThat(updatedProject.getDescription()).isEqualTo(expectedProject.getDescription());
+  }
+
+  @Test
   @Owner(developers = KARAN)
   @Category(UnitTests.class)
   public void testListProject() {
@@ -690,6 +754,22 @@ public class ProjectServiceImplTest extends CategoryTest {
     ProjectFilterDTO projectFilterDTO =
         ProjectFilterDTO.builder().orgIdentifiers(Collections.singleton(orgIdentifier)).build();
     projectService.getProjectFavorites(accountIdentifier, projectFilterDTO, userid);
+    verify(favoritesService, times(1))
+        .getFavorites(accountIdentifier, orgIdentifier, null, userid, ResourceType.PROJECT.toString());
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testGetProjectFavorites_filterDTONotNull_withOrgIdsNull() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String userid = randomAlphabetic(10);
+    ProjectFilterDTO projectFilterDTO = ProjectFilterDTO.builder().orgIdentifiers(null).build();
+    when(organizationService.getPermittedOrganizations(accountIdentifier, null))
+        .thenReturn(Collections.singleton(orgIdentifier));
+    projectService.getProjectFavorites(accountIdentifier, projectFilterDTO, userid);
+    verify(organizationService, times(1)).getPermittedOrganizations(accountIdentifier, null);
     verify(favoritesService, times(1))
         .getFavorites(accountIdentifier, orgIdentifier, null, userid, ResourceType.PROJECT.toString());
   }

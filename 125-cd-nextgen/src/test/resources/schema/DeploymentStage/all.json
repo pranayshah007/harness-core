@@ -1776,9 +1776,6 @@
         },
         {
           "type": "object",
-          "required": [
-            "settings"
-          ],
           "properties": {
             "buildCommandOptions": {
               "oneOf": [
@@ -1873,16 +1870,6 @@
                   "minLength": 1
                 }
               ]
-            },
-            "settings": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
-                },
-                {
-                  "type": "string"
-                }
-              ]
             }
           }
         }
@@ -1897,7 +1884,7 @@
         {
           "type": "object",
           "required": [
-            "settings"
+            "stackName"
           ],
           "properties": {
             "connectorRef": {
@@ -1988,16 +1975,6 @@
                   "type": "string",
                   "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
-                }
-              ]
-            },
-            "settings": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
-                },
-                {
-                  "type": "string"
                 }
               ]
             },
@@ -4652,117 +4629,6 @@
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "CreatePRStepInfo": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepSpecType"
-        },
-        {
-          "type": "object",
-          "required": [
-            "overrideConfig",
-            "shell"
-          ],
-          "properties": {
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "(<\\+.+>.*)",
-                  "minLength": 1
-                }
-              ]
-            },
-            "overrideConfig": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                }
-              ]
-            },
-            "shell": {
-              "type": "string",
-              "enum": [
-                "Bash"
-              ]
-            },
-            "source": {
-              "$ref": "#/definitions/CreatePRStepUpdateConfigScriptWrapper"
-            },
-            "stringMap": {
-              "$ref": "#/definitions/ParameterFieldMapStringString"
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "CreatePRStepUpdateConfigScriptBaseSource": {
-      "type": "object",
-      "discriminator": "type",
-      "properties": {
-        "type": {
-          "type": "string"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "CreatePRStepUpdateConfigScriptInlineSource": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/CreatePRStepUpdateConfigScriptBaseSource"
-        },
-        {
-          "type": "object",
-          "properties": {
-            "updateConfigScript": {
-              "type": "string"
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "CreatePRStepUpdateConfigScriptWrapper": {
-      "type": "object",
-      "required": [
-        "spec",
-        "type"
-      ],
-      "properties": {
-        "type": {
-          "type": "string"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "allOf": [
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "Inline"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/CreatePRStepUpdateConfigScriptInlineSource"
-              }
-            }
-          }
-        }
-      ]
     },
     "CustomArtifactConfig": {
       "allOf": [
@@ -8134,9 +8000,6 @@
                 "container"
               ]
             },
-            "repository": {
-              "type": "string"
-            },
             "user": {
               "type": "string"
             },
@@ -11034,6 +10897,9 @@
               "items": {
                 "$ref": "#/definitions/ServiceHookWrapper"
               }
+            },
+            "manifestConfigurations": {
+              "$ref": "#/definitions/ManifestConfigurations"
             }
           }
         }
@@ -11709,6 +11575,15 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ManifestConfigurations": {
+      "type": "object",
+      "properties": {
+        "primaryManifestRef": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ManifestOverrideSetWrapper": {
       "type": "object",
       "properties": {
@@ -11988,6 +11863,9 @@
               "items": {
                 "$ref": "#/definitions/ServiceHookWrapper"
               }
+            },
+            "manifestConfigurations": {
+              "$ref": "#/definitions/ManifestConfigurations"
             }
           }
         }
@@ -15406,6 +15284,110 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ServerlessAwsLambdaDeployV2StepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "deployCommandOptions": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "image": {
+              "type": "string"
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "serverlessVersion": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ServerlessAwsLambdaDeploymentMetaData": {
       "allOf": [
         {
@@ -15475,6 +15457,110 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ServerlessAwsLambdaPackageV2StepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "image": {
+              "type": "string"
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "packageCommandOptions": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "serverlessVersion": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ServerlessAwsLambdaPrepareRollbackV2StepInfo": {
       "allOf": [
         {
@@ -15482,9 +15568,6 @@
         },
         {
           "type": "object",
-          "required": [
-            "settings"
-          ],
           "properties": {
             "connectorRef": {
               "type": "string"
@@ -15562,16 +15645,6 @@
                   "type": "string",
                   "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
-                }
-              ]
-            },
-            "settings": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
-                },
-                {
-                  "type": "string"
                 }
               ]
             }
@@ -17855,22 +17928,6 @@
           "if": {
             "properties": {
               "type": {
-                "const": "CreatePR"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/CreatePRStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
                 "const": "CreateStack"
               }
             }
@@ -18711,6 +18768,38 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/ServerlessAwsLambdaDeployStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ServerlessAwsLambdaDeployV2"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ServerlessAwsLambdaDeployV2StepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ServerlessAwsLambdaPackageV2"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ServerlessAwsLambdaPackageV2StepInfo"
               }
             }
           }

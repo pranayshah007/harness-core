@@ -162,9 +162,16 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
     try {
       Map<String, String> k8sCommandFlag = k8sRollingDeployRequest.getK8sCommandFlags();
       String commandFlags = K8sCommandFlagsUtils.getK8sCommandFlags(K8sCliCommandType.Apply.name(), k8sCommandFlag);
-      k8sTaskHelperBase.applyManifests(client, resources, k8sDelegateTaskParams,
-          k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Apply, true, commandUnitsProgress), true, true,
-          commandFlags);
+      LogCallback applyManifestsLogCallback =
+          k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Apply, true, commandUnitsProgress);
+
+      if (!useDeclarativeRollback) {
+        k8sTaskHelperBase.warnIfReleaseNameConflictsWithSecretOrConfigMap(
+            resources, releaseName, applyManifestsLogCallback);
+      }
+
+      k8sTaskHelperBase.applyManifests(
+          client, resources, k8sDelegateTaskParams, applyManifestsLogCallback, true, true, commandFlags);
     } finally {
       if (!useDeclarativeRollback && (isNotEmpty(managedWorkloads) || isNotEmpty(customWorkloads))) {
         k8sRollingBaseHandler.setManagedWorkloadsInRelease(

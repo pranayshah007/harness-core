@@ -90,7 +90,8 @@ public class FreezeRBACHelper {
   public boolean checkIfUserHasFreezeOverrideAccess(NGFeatureFlagHelperService featureFlagHelperService,
       String accountId, String orgId, String projectId, AccessControlClient accessControlClient,
       io.harness.accesscontrol.acl.api.Principal principal) {
-    if (principal == null) {
+    if (principal == null
+        || io.harness.accesscontrol.principals.PrincipalType.SERVICE.equals(principal.getPrincipalType())) {
       return false;
     }
     Resource resource = Resource.of(DEPLOYMENTFREEZE, null);

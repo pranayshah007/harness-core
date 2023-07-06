@@ -13,18 +13,15 @@ import lombok.Data;
 public final class StripeItemRequest {
   private final String priceId;
   private final Long quantity;
-  private final boolean quantityIncludedInPrice;
 
   public StripeItemRequest(Builder builder) {
     this.priceId = builder.priceId;
     this.quantity = builder.quantity;
-    this.quantityIncludedInPrice = builder.quantityIncludedInPrice;
   }
 
   public static class Builder {
     private String priceId;
     private Long quantity;
-    private boolean quantityIncludedInPrice;
 
     public static Builder newInstance() {
       return new Builder();
@@ -38,10 +35,6 @@ public final class StripeItemRequest {
     }
     public Builder withQuantity(Long quantity) {
       this.quantity = quantity;
-      return this;
-    }
-    public Builder withQuantityIncludedInPrice(boolean quantityIncludedInPrice) {
-      this.quantityIncludedInPrice = quantityIncludedInPrice;
       return this;
     }
     public StripeItemRequest build() {

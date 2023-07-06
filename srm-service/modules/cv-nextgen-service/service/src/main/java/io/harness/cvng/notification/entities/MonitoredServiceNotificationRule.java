@@ -62,6 +62,13 @@ public class MonitoredServiceNotificationRule extends NotificationRule {
 
   @SuperBuilder
   @Data
+  public static class MonitoredServiceDeploymentImpactReportCondition
+      extends MonitoredServiceNotificationRuleCondition {
+    public final NotificationRuleConditionType type = NotificationRuleConditionType.DEPLOYMENT_IMPACT_REPORT;
+  }
+
+  @SuperBuilder
+  @Data
   public static class MonitoredServiceChangeObservedCondition extends MonitoredServiceNotificationRuleCondition {
     public final NotificationRuleConditionType type = NotificationRuleConditionType.CHANGE_OBSERVED;
     @Deprecated List<MonitoredServiceChangeEventType> changeEventTypes;

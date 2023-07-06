@@ -446,7 +446,8 @@ public interface PlanExecutionResource {
       @NotEmpty String pipelineIdentifier,
       @NotNull @PathParam(NGCommonEntityConstants.PLAN_KEY) @Parameter(
           description = "planExecutionId of the execution we want to retry") String planExecutionId,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo);
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache);
 
   @POST
   @Path("/{identifier}/inputSetList")

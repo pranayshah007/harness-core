@@ -14,6 +14,7 @@ import io.harness.cdng.artifact.bean.artifactsource.DockerArtifactSource;
 import io.harness.cdng.artifact.steps.beans.ArtifactStepParameters;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.execution.StageExecutionInfo;
+import io.harness.cdng.execution.StageExecutionInstanceInfo;
 import io.harness.cdng.infra.InfraUseFromStage;
 import io.harness.cdng.infra.steps.InfraStepParameters;
 import io.harness.cdng.instance.InstanceDeploymentInfo;
@@ -54,6 +55,7 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
     set.add(TerraformCloudConfig.class);
     set.add(TerraformCloudPlanExecutionDetails.class);
     set.add(TerraformApplyExecutionDetails.class);
+    set.add(StageExecutionInstanceInfo.class);
   }
 
   @Override

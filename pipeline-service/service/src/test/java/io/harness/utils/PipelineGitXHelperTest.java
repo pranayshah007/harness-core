@@ -16,6 +16,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
 import io.harness.exception.ScmBadRequestException;
 import io.harness.exception.ScmConflictException;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitx.ThreadOperationContext;
 import io.harness.gitx.USER_FLOW;
 import io.harness.manage.GlobalContextManager;
@@ -54,5 +55,28 @@ public class PipelineGitXHelperTest {
     GlobalContextManager.upsertGlobalContextRecord(
         ThreadOperationContext.builder().userFlow(USER_FLOW.EXECUTION).build());
     assertTrue(PipelineGitXHelper.isExecutionFlow());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testComputePipelineReferencesForInlinePipeline() {
+    boolean loadFromCache = false;
+    assertFalse(PipelineGitXHelper.shouldPublishSetupUsages(loadFromCache, StoreType.INLINE));
+  }
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testComputePipelineReferencesForRemotePipelineLoadedFromCache() {
+    boolean loadFromCache = true;
+    assertFalse(PipelineGitXHelper.shouldPublishSetupUsages(loadFromCache, StoreType.REMOTE));
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testComputePipelineReferencesForRemotePipelineLoadedFromGitForDefaultBranch() {
+    boolean loadFromCache = false;
+    assertFalse(PipelineGitXHelper.shouldPublishSetupUsages(loadFromCache, StoreType.REMOTE));
   }
 }

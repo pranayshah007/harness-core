@@ -1,0 +1,69 @@
+service:
+  name: test-serv
+  identifier: testserv
+  tags:
+    first: ""
+  gitOpsEnabled: false
+  serviceDefinition:
+    spec:
+      artifacts:
+        primary:
+          primaryArtifactRef: <+input>
+          sources:
+            - identifier: i1
+              type: DockerRegistry
+              spec:
+                connectorRef: "https://registry.hub.docker.com/"
+                imagePath: "library/nginx"
+                tag: <+input>
+            - identifier: i2
+              type: DockerRegistry
+              spec:
+                connectorRef: "https://registry.hub.docker.com/"
+                imagePath: "library/nginx"
+                tag: <+input>
+      manifestConfigurations:
+        primaryManifestRef: <+input>
+      manifests:
+        - manifest:
+            identifier: mani_i1
+            type: HelmChart
+            spec:
+              store:
+                type: Http
+                spec:
+                  connectorRef: charts_stable
+              chartName: <+input>
+              chartVersion: ""
+              helmVersion: V2
+              skipResourceVersioning: false
+        - manifest:
+            identifier: mani_i2
+            type: K8sManifest
+            spec:
+              store:
+                type: Harness
+                spec:
+                  filePath:
+                    - account:/sample-helm/
+              valuesPaths:
+                - account:/sample-k8s/values-k8s.yaml
+              skipResourceVersioning: false
+              enableDeclarativeRollback: false
+        - manifest:
+            identifier: mani_i3
+            type: Values
+            spec:
+              store:
+                type: Harness
+                spec:
+                  filePath:
+                    - account:/sample-helm/values.yaml
+      variables:
+        - name: variable1
+          type: String
+          value: <+input>
+        - name: memory
+          type: String
+          value: "8"
+    type: ECS

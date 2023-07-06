@@ -61,7 +61,6 @@ import io.harness.cdng.elastigroup.ElastigroupSetupStep;
 import io.harness.cdng.elastigroup.ElastigroupSwapRouteStep;
 import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStep;
 import io.harness.cdng.elastigroup.rollback.ElastigroupRollbackStep;
-import io.harness.cdng.gitops.CreatePRStep;
 import io.harness.cdng.gitops.MergePRStep;
 import io.harness.cdng.gitops.UpdateReleaseRepoStep;
 import io.harness.cdng.gitops.steps.FetchLinkedAppsStep;
@@ -111,9 +110,13 @@ import io.harness.cdng.provision.cloudformation.CloudformationDeleteStackStep;
 import io.harness.cdng.provision.cloudformation.CloudformationRollbackStep;
 import io.harness.cdng.provision.shellscript.ShellScriptProvisionStep;
 import io.harness.cdng.provision.terraform.TerraformApplyStep;
+import io.harness.cdng.provision.terraform.TerraformApplyStepV2;
 import io.harness.cdng.provision.terraform.TerraformDestroyStep;
+import io.harness.cdng.provision.terraform.TerraformDestroyStepV2;
 import io.harness.cdng.provision.terraform.TerraformPlanStep;
+import io.harness.cdng.provision.terraform.TerraformPlanStepV2;
 import io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStep;
+import io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStepV2;
 import io.harness.cdng.provision.terraformcloud.steps.TerraformCloudRollbackStep;
 import io.harness.cdng.provision.terraformcloud.steps.TerraformCloudRunStep;
 import io.harness.cdng.provision.terragrunt.TerragruntApplyStep;
@@ -125,6 +128,8 @@ import io.harness.cdng.rollback.steps.InfrastructureProvisionerStep;
 import io.harness.cdng.rollback.steps.RollbackStepsStep;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStep;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStep;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2Step;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPackageV2Step;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2Step;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaRollbackV2Step;
 import io.harness.cdng.service.steps.ServiceConfigStep;
@@ -164,7 +169,6 @@ public class NgStepRegistrar {
     Map<StepType, Class<? extends Step>> engineSteps = new HashMap<>();
 
     // Add CDNG steps here
-    engineSteps.put(CreatePRStep.STEP_TYPE, CreatePRStep.class);
     engineSteps.put(MergePRStep.STEP_TYPE, MergePRStep.class);
     engineSteps.put(UpdateReleaseRepoStep.STEP_TYPE, UpdateReleaseRepoStep.class);
     engineSteps.put(FetchLinkedAppsStep.STEP_TYPE, FetchLinkedAppsStep.class);
@@ -316,6 +320,14 @@ public class NgStepRegistrar {
 
     engineSteps.put(ServerlessAwsLambdaPrepareRollbackV2Step.STEP_TYPE, ServerlessAwsLambdaPrepareRollbackV2Step.class);
     engineSteps.put(ServerlessAwsLambdaRollbackV2Step.STEP_TYPE, ServerlessAwsLambdaRollbackV2Step.class);
+    engineSteps.put(ServerlessAwsLambdaDeployV2Step.STEP_TYPE, ServerlessAwsLambdaDeployV2Step.class);
+
+    engineSteps.put(TerraformPlanStepV2.STEP_TYPE, TerraformPlanStepV2.class);
+    engineSteps.put(TerraformApplyStepV2.STEP_TYPE, TerraformApplyStepV2.class);
+    engineSteps.put(TerraformDestroyStepV2.STEP_TYPE, TerraformDestroyStepV2.class);
+    engineSteps.put(TerraformRollbackStepV2.STEP_TYPE, TerraformRollbackStepV2.class);
+
+    engineSteps.put(ServerlessAwsLambdaPackageV2Step.STEP_TYPE, ServerlessAwsLambdaPackageV2Step.class);
     return engineSteps;
   }
 }

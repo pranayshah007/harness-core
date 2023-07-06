@@ -97,7 +97,7 @@ public class PlanExecutionSummaryCdChangeDataHandler extends AbstractChangeDataH
 
       // CI-relatedInfo
       if (((BasicDBObject) dbObject.get("moduleInfo")).get("ci") != null) {
-        PlanExecutionSummaryChangeDataHandler.commonHandlerRepoInfo(columnValueMapping, dbObject);
+        ciRepoInfo(columnValueMapping, dbObject);
       }
     } else {
       return null;
@@ -126,6 +126,72 @@ public class PlanExecutionSummaryCdChangeDataHandler extends AbstractChangeDataH
   @Override
   public List<String> getPrimaryKeys() {
     return asList("id", "startts");
+  }
+
+  public static void ciRepoInfo(Map<String, String> columnValueMapping, DBObject dbObject) {
+    DBObject ciObject = (DBObject) (((BasicDBObject) dbObject.get("moduleInfo")).get("ci"));
+    DBObject ciExecutionInfo = (DBObject) ciObject.get("ciExecutionInfoDTO");
+
+    if (ciObject.get("repoName") != null) {
+      columnValueMapping.put("moduleInfo_repository", ciObject.get("repoName").toString());
+    }
+
+    if (ciObject.get("branch") != null) {
+      columnValueMapping.put("moduleinfo_branch_name", ciObject.get("branch").toString());
+    }
+
+    if (ciObject.get("isPrivateRepo") != null) {
+      columnValueMapping.put("moduleinfo_is_private", ciObject.get("isPrivateRepo").toString());
+    }
+
+    if (ciExecutionInfo != null) {
+      DBObject branch = (DBObject) (ciExecutionInfo.get("branch"));
+
+      HashMap firstCommit = null;
+      String commits = "commits";
+      if (branch != null && branch.get(commits) != null && ((List) branch.get(commits)).size() > 0) {
+        firstCommit = (HashMap) ((List) branch.get(commits)).get(0);
+        if (firstCommit != null) {
+          if (firstCommit.get("id") != null) {
+            columnValueMapping.put("moduleInfo_branch_commit_id", firstCommit.get("id").toString());
+          }
+          if (firstCommit.get("message") != null) {
+            columnValueMapping.put("moduleInfo_branch_commit_message", firstCommit.get("message").toString());
+          }
+        }
+      } else if (ciExecutionInfo.get("pullRequest") != null) {
+        DBObject pullRequestObject = (DBObject) ciExecutionInfo.get("pullRequest");
+
+        if (pullRequestObject.get("sourceBranch") != null) {
+          columnValueMapping.put("source_branch", pullRequestObject.get("sourceBranch").toString());
+        }
+
+        if (pullRequestObject.get("id") != null) {
+          columnValueMapping.put("pr", String.valueOf(Long.parseLong(pullRequestObject.get("id").toString())));
+        }
+
+        if (pullRequestObject.get(commits) != null && ((List) pullRequestObject.get(commits)).size() > 0) {
+          firstCommit = (HashMap) ((List) pullRequestObject.get(commits)).get(0);
+          if (firstCommit != null) {
+            if (firstCommit.get("id") != null) {
+              columnValueMapping.put("moduleInfo_branch_commit_id", firstCommit.get("id").toString());
+            }
+            if (firstCommit.get("message") != null) {
+              columnValueMapping.put("moduleInfo_branch_commit_message", firstCommit.get("message").toString());
+            }
+          }
+        }
+      }
+      DBObject author = (DBObject) (ciExecutionInfo.get("author"));
+      if (author != null) {
+        columnValueMapping.put("moduleInfo_author_id", author.get("id").toString());
+        columnValueMapping.put("author_name", author.get("name").toString());
+        columnValueMapping.put("author_avatar", author.get("avatar").toString());
+      }
+      if (ciExecutionInfo.get("event") != null) {
+        columnValueMapping.put("moduleInfo_event", ciExecutionInfo.get("event").toString());
+      }
+    }
   }
 
   private void calculateMeanTimeToRestore(

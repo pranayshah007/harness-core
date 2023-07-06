@@ -45,8 +45,11 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.beans.dto.ExecutionDataResponseDTO;
 import io.harness.pms.plan.execution.beans.dto.ExecutionMetaDataResponseDetailsDTO;
+import io.harness.pms.plan.execution.beans.dto.ExpressionEvaluationDetail;
+import io.harness.pms.plan.execution.beans.dto.ExpressionEvaluationDetailDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionFilterPropertiesDTO;
+import io.harness.pms.plan.execution.beans.dto.PipelineExecutionIdentifierSummaryDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionSummaryDTO;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
@@ -66,7 +69,10 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.ws.rs.BeanParam;
@@ -192,6 +198,55 @@ public class ExecutionDetailsResource {
     return ResponseDTO.newResponse(planExecutionSummaryDTOS);
   }
 
+  @POST
+  @Path("/executionSummary")
+  @ApiOperation(value = "Gets Executions Id list", nickname = "getListOfExecutionIdentifier")
+  @Operation(operationId = "getListOfExecutionIdentifier",
+      description = "Returns a List of Pipeline Executions Identifier with Specific Filter",
+      summary = "List Execution Identifier",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Returns all the Executions Identifier of pipelines for given filter")
+      })
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  public ResponseDTO<Page<PipelineExecutionIdentifierSummaryDTO>>
+  getListOfExecutionIdentifier(
+      @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = PipelineResourceConstants.ORG_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+      @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+
+      @Parameter(description = PipelineResourceConstants.PIPELINE_ID_LIST_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
+      @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.SIZE)
+      @DefaultValue("10") int size, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    log.info("Get List of executions");
+    Criteria criteria = pmsExecutionService.formCriteria(
+        accountId, orgId, projectId, pipelineIdentifier, null, null, null, null, Arrays.asList(), false, false, true);
+    Pageable pageRequest;
+    if (page < 0 || !(size > 0 && size <= 1000)) {
+      throw new InvalidRequestException(
+          "Please Verify Executions list parameters for page and size, page should be >= 0 and size should be > 0 and <=1000");
+    }
+
+    pageRequest = PageRequest.of(page, size, Sort.by(Direction.DESC, PlanExecutionSummaryKeys.startTs));
+
+    List<String> projections = Arrays.asList(PlanExecutionSummaryKeys.planExecutionId,
+        PlanExecutionSummaryKeys.runSequence, PlanExecutionSummaryKeys.orgIdentifier,
+        PlanExecutionSummaryKeys.pipelineIdentifier, PlanExecutionSummaryKeys.projectIdentifier);
+
+    Page<PipelineExecutionIdentifierSummaryDTO> planExecutionSummaryDTOS =
+        pmsExecutionService.getPipelineExecutionSummaryEntityWithProjection(criteria, pageRequest, projections)
+            .map(e -> PipelineExecutionSummaryDtoMapper.toExecutionIdentifierDto(e));
+
+    return ResponseDTO.newResponse(planExecutionSummaryDTOS);
+  }
+
   // This API is used only for internal purpose currently to support IDP plugin to fetch the executions based on
   // Parametrised Operator on modules in filterProperties. This API only supports multiple accountId,orgId,
   // projectId,pipelineIdentifier (As list to support multiple pipeline identifiers) and filterProperties as filter
@@ -288,6 +343,9 @@ public class ExecutionDetailsResource {
     PipelineExecutionSummaryEntity executionSummaryEntity =
         pmsExecutionService.getPipelineExecutionSummaryEntity(accountId, orgId, projectId, planExecutionId, false);
 
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
+        Resource.of("PIPELINE", executionSummaryEntity.getPipelineIdentifier()), PipelineRbacPermissions.PIPELINE_VIEW);
+
     EntityGitDetails entityGitDetails;
     if (executionSummaryEntity.getEntityGitDetails() == null) {
       entityGitDetails =
@@ -300,6 +358,43 @@ public class ExecutionDetailsResource {
         childStageNodeId, renderFullBottomGraph, executionSummaryEntity, entityGitDetails);
 
     return ResponseDTO.newResponse(executionDetailDTO);
+  }
+
+  @GET
+  @Path("/{planExecutionId}/evaluateExpression")
+  @ApiOperation(value = "Gets Execution Expression evaluated", nickname = "getExpressionEvaluated")
+  @Operation(operationId = "getExpressionEvaluated", description = "Returns the Map of evaluated Expression",
+      summary = "Gets Execution Expression evaluated",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the Map of evaluated Expression")
+      })
+  @Hidden
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  public ResponseDTO<ExpressionEvaluationDetailDTO>
+  getExpressionEvaluated(
+      @NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = PipelineResourceConstants.ORG_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+      @NotNull @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE, required = true) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+      @NotNull @Parameter(description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE, required = true)
+      @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) @ProjectIdentifier String pipelineIdentifier,
+      @Parameter(description = "Plan Execution Id for which Expression have to be evaluated",
+          required = true) @PathParam(NGCommonEntityConstants.PLAN_KEY) String planExecutionId,
+      @RequestBody(required = true, description = "Pipeline YAML") @NotNull String yaml) {
+    // TODO: need to be implemented
+    Map<String, ExpressionEvaluationDetail> dummyMapData = new HashMap<>();
+    dummyMapData.put("expression+fqn",
+        ExpressionEvaluationDetail.builder()
+            .fqn("fqn")
+            .originalExpression("originalExpression")
+            .resolvedValue("resolvedYaml")
+            .build());
+    return ResponseDTO.newResponse(
+        ExpressionEvaluationDetailDTO.builder().compiledYaml(yaml).mapExpression(dummyMapData).build());
   }
 
   @GET
@@ -331,6 +426,9 @@ public class ExecutionDetailsResource {
     PipelineExecutionSummaryEntity executionSummaryEntity =
         pmsExecutionService.getPipelineExecutionSummaryEntity(accountId, orgId, projectId, planExecutionId, false);
 
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
+        Resource.of("PIPELINE", executionSummaryEntity.getPipelineIdentifier()), PipelineRbacPermissions.PIPELINE_VIEW);
+
     EntityGitDetails entityGitDetails;
     if (executionSummaryEntity.getEntityGitDetails() == null) {
       entityGitDetails =
@@ -338,9 +436,6 @@ public class ExecutionDetailsResource {
     } else {
       entityGitDetails = executionSummaryEntity.getEntityGitDetails();
     }
-
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
-        Resource.of("PIPELINE", executionSummaryEntity.getPipelineIdentifier()), PipelineRbacPermissions.PIPELINE_VIEW);
 
     return ResponseDTO.newResponse(
         PipelineExecutionDetailDTO.builder()

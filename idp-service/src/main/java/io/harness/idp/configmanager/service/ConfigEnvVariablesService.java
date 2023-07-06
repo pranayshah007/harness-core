@@ -16,11 +16,9 @@ import java.util.List;
 
 @OwnedBy(HarnessTeam.IDP)
 public interface ConfigEnvVariablesService {
-  List<BackstageEnvSecretVariable> insertConfigEnvVariables(AppConfig appConfig, String accountIdentifier)
-      throws Exception;
+  List<BackstageEnvSecretVariable> insertConfigEnvVariables(AppConfig appConfig, String accountIdentifier);
 
-  List<BackstageEnvSecretVariable> updateConfigEnvVariables(AppConfig appConfig, String accountIdentifier)
-      throws Exception;
+  List<BackstageEnvSecretVariable> updateConfigEnvVariables(AppConfig appConfig, String accountIdentifier);
 
   List<String> getAllEnvVariablesForAccountIdentifierAndMultiplePluginIds(
       String accountIdentifier, List<String> pluginIds);

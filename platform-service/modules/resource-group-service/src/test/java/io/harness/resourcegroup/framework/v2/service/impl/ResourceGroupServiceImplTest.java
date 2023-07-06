@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.resourcegroup.ResourceGroupPermissions.VIEW_RESOURCEGROUP_PERMISSION;
 import static io.harness.resourcegroup.ResourceGroupResourceTypes.RESOURCE_GROUP;
+import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.REETIKA;
 import static io.harness.utils.PageUtils.getPageRequest;
@@ -668,5 +669,17 @@ public class ResourceGroupServiceImplTest extends ResourceGroupTestBase {
 
     verify(resourceGroupV2RepositoryMock, times(1)).findAll(resourceGroupFilterCriteria, Pageable.unpaged());
     verify(resourceGroupV2RepositoryMock, times(0)).findAll(resourceGroupFilterCriteria, getPageRequest(pageRequest));
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testCreate_withExistingHarnessManagedId_shouldThrowException() {
+    String identifier = randomAlphabetic(10);
+    ResourceGroupDTO resourceGroupDTO =
+        ResourceGroupDTO.builder().identifier(identifier).accountIdentifier(ACCOUNT_IDENTIFIER).build();
+    when(resourceGroupV2RepositoryMock.find(any()))
+        .thenReturn(Optional.of(ResourceGroup.builder().identifier(identifier).build()));
+    resourceGroupServiceMockRepo.create(resourceGroupDTO, false);
   }
 }

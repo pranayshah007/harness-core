@@ -319,16 +319,16 @@ orchestrationStepConfig:
     logStreamingContainerStepBaseUrl: ${LOG_STREAMING_CONTAINER_STEP_BASE_URL:-http://localhost:8079}
     pluginConfig:
       sscaOrchestrationConfig:
-        image: harness/ssca-plugin:latest
+        image: ${SSCA_ORCHESTRATION_IMAGE:-harness/ssca-plugin:latest}
         entrypoint:
           - /bin/ssca-plugin
       sscaEnforcementConfig:
-        image: harness/ssca-plugin:latest
+        image: ${SSCA_ENFORCEMENT_IMAGE:-harness/ssca-plugin:latest}
         entrypoint:
           - /bin/ssca-plugin
     #Todo: Move to config Management Service
     moduleToSupportedSteps:
-      cd: [ "DownloadManifests", "AwsSamBuild", "AwsSamDeploy" ]
+      cd: [ "DownloadManifests", "AwsSamBuild", "AwsSamDeploy", "ServerlessAwsLambdaPrepareRollbackV2", "ServerlessAwsLambdaDeployV2", "ServerlessAwsLambdaPackageV2" ]
       ci: [ "Background", "background", "GitClone", "Run", "Plugin", "Action"]
 
 
@@ -365,7 +365,7 @@ redisLockConfig:
   timeout: 6000
   subscriptionsPerConnection: 5
 
-distributedLockImplementation: MONGO
+distributedLockImplementation: REDIS
 
 enableDashboardTimescale: false
 
@@ -467,6 +467,12 @@ yamlSchemaExecutorServiceConfig:
   maxPoolSize: ${YAML_SCHEMA_EXECUTOR_POOL_MAX_SIZE:-10}
   idleTime: ${YAML_SCHEMA_EXECUTOR_POOL_IDLE_TIME:-30}
   timeUnit: ${YAML_SCHEmA_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
+
+dashboardExecutorServiceConfig:
+  corePoolSize: ${DASHBOARD_EXECUTOR_POOL_CORE_SIZE:-3}
+  maxPoolSize: ${DASHBOARD_EXECUTOR_POOL_MAX_SIZE:-15}
+  idleTime: ${DASHBOARD_EXECUTOR_POOL_IDLE_TIME:-30}
+  timeUnit: ${DASHBOARD_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 pipelineRedisEventsConfig:
   setupUsage:

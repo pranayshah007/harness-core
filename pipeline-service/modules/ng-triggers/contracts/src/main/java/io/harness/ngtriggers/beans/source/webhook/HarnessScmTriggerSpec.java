@@ -28,6 +28,7 @@ public class HarnessScmTriggerSpec implements WebhookTriggerSpec {
   List<WebhookCondition> payloadConditions;
   String jexlCondition;
   List<String> pathFilters;
+  List<WebhookCondition> headerConditions;
 
   @Override
   public WebhookSourceRepo getType() {

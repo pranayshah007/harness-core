@@ -19,6 +19,7 @@ import static io.harness.signup.services.impl.SignupServiceImpl.FAILED_EVENT_NAM
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -39,12 +40,9 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SignupException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
-import io.harness.licensing.Edition;
-import io.harness.licensing.beans.modules.StartTrialDTO;
 import io.harness.licensing.services.LicenseService;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.dto.GatewayAccountRequestDTO;
-import io.harness.ng.core.user.SignupAction;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.UserRequestDTO;
 import io.harness.repositories.SignupVerificationTokenRepository;
@@ -177,14 +175,7 @@ public class SignupServiceImplTest extends CategoryTest {
     when(completeSignupInviteCall.execute())
         .thenReturn(Response.success(new RestResponse<>(
 
-            UserInfo.builder()
-                .email(EMAIL)
-                .defaultAccountId(ACCOUNT_ID)
-                .accounts(accounts)
-                .intent("ci")
-                .signupAction("TRIAL")
-                .edition("TEAM")
-                .build())));
+            UserInfo.builder().email(EMAIL).defaultAccountId(ACCOUNT_ID).accounts(accounts).intent("ci").build())));
 
     when(userClient.completeSignupInvite(any())).thenReturn(completeSignupInviteCall);
 
@@ -202,12 +193,10 @@ public class SignupServiceImplTest extends CategoryTest {
         .sendIdentifyEvent(eq(TelemetryConstants.SEGMENT_DUMMY_ACCOUNT_PREFIX + ACCOUNT_ID), any(), any());
     verify(telemetryReporter, times(1)).sendGroupEvent(eq(ACCOUNT_ID), eq(EMAIL), any(), any());
 
-    verify(licenseService, times(1)).startTrialLicense(eq(ACCOUNT_ID), any(StartTrialDTO.class), any());
+    verify(licenseService, times(1)).startFreeLicense(eq(ACCOUNT_ID), eq(ModuleType.CI), isNull(), isNull());
     verify(executorService, times(1));
     assertThat(userInfo.getIntent()).isEqualTo("ci");
     assertThat(userInfo.getEmail()).isEqualTo(EMAIL);
-    assertThat(userInfo.getSignupAction()).isEqualTo("TRIAL");
-    assertThat(userInfo.getEdition()).isEqualTo("TEAM");
     assertThat(userInfo.getDefaultAccountId()).isEqualTo(ACCOUNT_ID);
   }
 
@@ -224,13 +213,7 @@ public class SignupServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testSignupOAuth() throws IOException {
     String name = "testName";
-    OAuthSignupDTO oAuthSignupDTO = OAuthSignupDTO.builder()
-                                        .email(EMAIL)
-                                        .name(name)
-                                        .intent(ModuleType.CI)
-                                        .signupAction(SignupAction.TRIAL)
-                                        .edition(Edition.TEAM)
-                                        .build();
+    OAuthSignupDTO oAuthSignupDTO = OAuthSignupDTO.builder().email(EMAIL).name(name).intent(ModuleType.CI).build();
     AccountDTO accountDTO = AccountDTO.builder().identifier(ACCOUNT_ID).build();
     UserInfo newUser = UserInfo.builder().email(EMAIL).build();
 
@@ -257,7 +240,7 @@ public class SignupServiceImplTest extends CategoryTest {
         .sendIdentifyEvent(eq(TelemetryConstants.SEGMENT_DUMMY_ACCOUNT_PREFIX + ACCOUNT_ID), any(), any());
     verify(telemetryReporter, times(1)).sendGroupEvent(eq(ACCOUNT_ID), eq(EMAIL), any(), any());
 
-    verify(licenseService, times(1)).startTrialLicense(eq(ACCOUNT_ID), any(StartTrialDTO.class), any());
+    verify(licenseService, times(1)).startFreeLicense(eq(ACCOUNT_ID), eq(ModuleType.CI), isNull(), isNull());
     verify(executorService, times(1));
     assertThat(returnedUser.getEmail()).isEqualTo(newUser.getEmail());
   }

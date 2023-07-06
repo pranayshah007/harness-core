@@ -218,6 +218,10 @@ if [[ "" != "$IACM_EXTERNAL_SERVICE_ENDPOINT" ]]; then
   export IACM_EXTERNAL_SERVICE_ENDPOINT; yq -i '.iacmServiceConfig.externalUrl=env(IACM_EXTERNAL_SERVICE_ENDPOINT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$IACM_TERRAFORM_IMAGE" ]]; then
+  export IACM_TERRAFORM_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.iacmTerraform=env(IACM_TERRAFORM_IMAGE)' $CONFIG_FILE
+fi
+
 if [[ "" != "$SSCA_SERVICE_ENDPOINT" ]]; then
   export SSCA_SERVICE_ENDPOINT; yq -i '.sscaServiceConfig.httpClientConfig.baseUrl=env(SSCA_SERVICE_ENDPOINT)' $CONFIG_FILE
 fi
@@ -418,3 +422,17 @@ replace_key_value eventsFramework.redis.retryAttempts $REDIS_RETRY_ATTEMPTS
 replace_key_value eventsFramework.redis.retryInterval $REDIS_RETRY_INTERVAL
 replace_key_value policyManagerSecret "$OPA_SERVER_SECRET"
 replace_key_value opaClientConfig.baseUrl "$OPA_SERVER_BASEURL"
+replace_key_value distributedLockImplementation $DISTRIBUTED_LOCK_IMPLEMENTATION
+
+replace_key_value redisLockConfig.sentinel $LOCK_CONFIG_USE_SENTINEL
+replace_key_value redisLockConfig.envNamespace $LOCK_CONFIG_ENV_NAMESPACE
+replace_key_value redisLockConfig.redisUrl $LOCK_CONFIG_REDIS_URL
+replace_key_value redisLockConfig.masterName $LOCK_CONFIG_SENTINEL_MASTER_NAME
+replace_key_value redisLockConfig.userName $LOCK_CONFIG_REDIS_USERNAME
+replace_key_value redisLockConfig.password $LOCK_CONFIG_REDIS_PASSWORD
+replace_key_value redisLockConfig.nettyThreads $REDIS_NETTY_THREADS
+replace_key_value redisLockConfig.connectionPoolSize $REDIS_CONNECTION_POOL_SIZE
+replace_key_value redisLockConfig.retryInterval $REDIS_RETRY_INTERVAL
+replace_key_value redisLockConfig.retryAttempts $REDIS_RETRY_ATTEMPTS
+replace_key_value redisLockConfig.timeout $REDIS_TIMEOUT
+replace_key_value redisLockConfig.useScriptCache $REDIS_LOCK_CONFIG_REDIS_USE_SCRIPT_CACHE

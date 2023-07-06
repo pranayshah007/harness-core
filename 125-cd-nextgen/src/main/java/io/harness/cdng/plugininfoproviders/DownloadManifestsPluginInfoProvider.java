@@ -27,11 +27,13 @@ import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
 import io.harness.pms.sdk.core.plugin.ContainerPluginParseException;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -102,6 +104,11 @@ public class DownloadManifestsPluginInfoProvider implements CDPluginInfoProvider
     if (valuesManifestOutcome != null) {
       GitCloneStepInfo valuesGitCloneStepInfo =
           downloadManifestsStepHelper.getGitCloneStepInfoFromManifestOutcome(valuesManifestOutcome);
+
+      String valuesYamlPath = downloadManifestsStepHelper.getValuesPathFromValuesManifestOutcome(valuesManifestOutcome);
+
+      valuesGitCloneStepInfo.setOutputFilePathsContent(
+          ParameterField.<List<String>>builder().value(Arrays.asList(valuesYamlPath)).build());
 
       GitCloneStepNode valuesGitCloneStepNode = downloadManifestsStepHelper.getGitCloneStepNode(
           valuesManifestOutcome, valuesGitCloneStepInfo, cdAbstractStepNode);

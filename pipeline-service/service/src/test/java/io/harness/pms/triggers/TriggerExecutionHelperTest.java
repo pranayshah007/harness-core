@@ -8,6 +8,7 @@
 package io.harness.pms.triggers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.execution.PlanExecution.EXEC_TAG_SET_BY_TRIGGER;
 import static io.harness.ngtriggers.Constants.COMMIT_SHA_STRING_LENGTH;
 import static io.harness.ngtriggers.Constants.EVENT_CORRELATION_ID;
@@ -33,6 +34,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.beans.FeatureName;
 import io.harness.beans.HeaderConfig;
 import io.harness.category.element.UnitTests;
@@ -41,10 +43,12 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.TriggerException;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
+import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
@@ -64,6 +68,7 @@ import io.harness.ngtriggers.beans.target.TargetType;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.pipeline.remote.PipelineServiceClient;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.contracts.triggers.ParsedPayload;
@@ -89,6 +94,11 @@ import io.harness.product.ci.scm.proto.ReleaseHook;
 import io.harness.product.ci.scm.proto.Repository;
 import io.harness.product.ci.scm.proto.User;
 import io.harness.rule.Owner;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.SourcePrincipalContextBuilder;
+import io.harness.security.dto.Principal;
+import io.harness.security.dto.ServicePrincipal;
+import io.harness.security.dto.UserPrincipal;
 import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.google.common.io.Resources;
@@ -102,6 +112,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.groovy.util.Maps;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -110,6 +121,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.stubbing.Answer;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -128,6 +140,11 @@ public class TriggerExecutionHelperTest extends CategoryTest {
   private final ExecutionMetadata metadata = ExecutionMetadata.newBuilder().build();
   private final PlanExecutionMetadata planExecutionMetadata = PlanExecutionMetadata.builder().build();
   private final PlanExecution planExecution = PlanExecution.builder().build();
+
+  private final Ambiance ambiance = Ambiance.newBuilder()
+                                        .putAllSetupAbstractions(Maps.of("accountId", "accountId", "projectIdentifier",
+                                            "projectIdentfier", "orgIdentifier", "orgIdentifier"))
+                                        .build();
 
   @Mock PmsGitSyncHelper pmsGitSyncHelper;
   @Mock NGTriggerElementMapper ngTriggerElementMapper;
@@ -543,15 +560,133 @@ public class TriggerExecutionHelperTest extends CategoryTest {
         .thenReturn(execArgs);
     when(executionHelper.startExecution("acc", "default", "test", execArgs.getMetadata(),
              execArgs.getPlanExecutionMetadata(), false, null, null, null))
-        .thenReturn(PlanExecution.builder().build());
+        .thenReturn(PlanExecution.builder().ambiance(ambiance).build());
 
-    triggerExecutionHelper.createPlanExecutionV2(
-        triggerDetails, null, null, null, null, null, triggerDetails.getNgTriggerConfigV2().getInputYaml());
+    triggerExecutionHelper.createPlanExecutionV2(triggerDetails, null, null, null, null,
+        TriggerWebhookEvent.builder().build(), triggerDetails.getNgTriggerConfigV2().getInputYaml());
     ArgumentCaptor<String> capturedRuntimeInputYaml = ArgumentCaptor.forClass(String.class);
     verify(executionHelper, times(1))
         .buildExecutionArgs(eq(pipelineEntity), eq(null), capturedRuntimeInputYaml.capture(),
             eq(Collections.emptyList()), eq(Collections.emptyMap()), eq(null), eq(null), eq(retryExecutionParameters),
             eq(false), eq(false));
     assertThat(capturedRuntimeInputYaml.getValue()).isEqualTo("");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testNoGitXContextLeakFromCreatePlanExecutionV2() {
+    String pipelineYaml = readFile("pipeline.yml");
+    PipelineEntity pipelineEntity = PipelineEntity.builder()
+                                        .accountId(accountId)
+                                        .orgIdentifier(orgId)
+                                        .projectIdentifier(projectId)
+                                        .identifier(pipelineId)
+                                        .yaml(pipelineYaml)
+                                        .harnessVersion(PipelineVersion.V0)
+                                        .build();
+    String triggerYaml = readFile("trigger-without-inputs.yml");
+    NGTriggerElementMapper elementMapper = new NGTriggerElementMapper(null, null, null, null, null);
+    TriggerDetails triggerDetails = elementMapper.toTriggerDetails("acc", "default", "test", triggerYaml, true);
+    when(pmsFeatureFlagHelper.isEnabled("acc", FeatureName.CDS_NG_TRIGGER_SELECTIVE_STAGE_EXECUTION)).thenReturn(false);
+    GitEntityInfo gitEntityInfo = GitEntityInfo.builder().branch("branch").build();
+    ScmGitMetaData scmGitMetaData = ScmGitMetaData.builder().filePath("filepath").branchName("branch").build();
+    when(pmsPipelineService.getPipeline("acc", "default", "test", "myPipeline", false, false))
+        .thenAnswer((Answer<Optional<PipelineEntity>>) invocation -> {
+          // Simulate global context side effects that happen when fetching GitX pipelines.
+          GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
+          GitAwareContextHelper.updateScmGitMetaData(scmGitMetaData);
+          return Optional.of(pipelineEntity);
+        });
+    RetryExecutionParameters retryExecutionParameters = RetryExecutionParameters.builder().isRetry(false).build();
+    ExecArgs execArgs = ExecArgs.builder()
+                            .planExecutionMetadata(PlanExecutionMetadata.builder().build())
+                            .metadata(ExecutionMetadata.newBuilder().build())
+                            .build();
+    when(executionHelper.buildExecutionArgs(pipelineEntity, null, "", Collections.emptyList(), Collections.emptyMap(),
+             null, null, retryExecutionParameters, false, false))
+        .thenReturn(execArgs);
+    when(executionHelper.startExecution("acc", "default", "test", execArgs.getMetadata(),
+             execArgs.getPlanExecutionMetadata(), false, null, null, null))
+        .thenReturn(PlanExecution.builder().ambiance(ambiance).build());
+
+    triggerExecutionHelper.createPlanExecutionV2(triggerDetails, null, null, null, null,
+        TriggerWebhookEvent.builder().build(), triggerDetails.getNgTriggerConfigV2().getInputYaml());
+    verify(pmsPipelineService, times(1)).getPipeline("acc", "default", "test", "myPipeline", false, false);
+    assertThat(GitAwareContextHelper.getGitRequestParamsInfo())
+        .isEqualToComparingFieldByField(GitEntityInfo.builder().build());
+    assertThat(GitAwareContextHelper.getScmGitMetaData())
+        .isEqualToComparingFieldByField(ScmGitMetaData.builder().build());
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testNoGitXContextLeakIntoCreatePlanExecutionV2() {
+    String pipelineYaml = readFile("pipeline.yml");
+    PipelineEntity pipelineEntity = PipelineEntity.builder()
+                                        .accountId(accountId)
+                                        .orgIdentifier(orgId)
+                                        .projectIdentifier(projectId)
+                                        .identifier(pipelineId)
+                                        .yaml(pipelineYaml)
+                                        .harnessVersion(PipelineVersion.V0)
+                                        .build();
+    String triggerYaml = readFile("trigger-without-inputs.yml");
+    NGTriggerElementMapper elementMapper = new NGTriggerElementMapper(null, null, null, null, null);
+    TriggerDetails triggerDetails = elementMapper.toTriggerDetails("acc", "default", "test", triggerYaml, true);
+    when(pmsFeatureFlagHelper.isEnabled("acc", FeatureName.CDS_NG_TRIGGER_SELECTIVE_STAGE_EXECUTION)).thenReturn(false);
+    GitEntityInfo gitEntityInfo = GitEntityInfo.builder().branch("branch").build();
+    ScmGitMetaData scmGitMetaData = ScmGitMetaData.builder().filePath("filepath").branchName("branch").build();
+    GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
+    GitAwareContextHelper.updateScmGitMetaData(scmGitMetaData);
+    when(pmsPipelineService.getPipeline("acc", "default", "test", "myPipeline", false, false))
+        .thenAnswer((Answer<Optional<PipelineEntity>>) invocation -> {
+          if (isNotEmpty(GitAwareContextHelper.getGitRequestParamsInfo().getBranch())
+              || isNotEmpty(GitAwareContextHelper.getBranchInSCMGitMetadata())
+              || isNotEmpty(GitAwareContextHelper.getScmGitMetaData().getFilePath())) {
+            throw new Exception("Outer GitX Context was leaked into CreatePlanExecutionV2!");
+          }
+          return Optional.of(pipelineEntity);
+        });
+    RetryExecutionParameters retryExecutionParameters = RetryExecutionParameters.builder().isRetry(false).build();
+    ExecArgs execArgs = ExecArgs.builder()
+                            .planExecutionMetadata(PlanExecutionMetadata.builder().build())
+                            .metadata(ExecutionMetadata.newBuilder().build())
+                            .build();
+    when(executionHelper.buildExecutionArgs(pipelineEntity, null, "", Collections.emptyList(), Collections.emptyMap(),
+             null, null, retryExecutionParameters, false, false))
+        .thenReturn(execArgs);
+    when(executionHelper.startExecution("acc", "default", "test", execArgs.getMetadata(),
+             execArgs.getPlanExecutionMetadata(), false, null, null, null))
+        .thenReturn(PlanExecution.builder().ambiance(ambiance).build());
+
+    triggerExecutionHelper.createPlanExecutionV2(triggerDetails, null, null, null, null,
+        TriggerWebhookEvent.builder().build(), triggerDetails.getNgTriggerConfigV2().getInputYaml());
+    verify(pmsPipelineService, times(1)).getPipeline("acc", "default", "test", "myPipeline", false, false);
+    assertThat(GitAwareContextHelper.getGitRequestParamsInfo())
+        .isEqualToComparingFieldByField(GitEntityInfo.builder().build());
+    assertThat(GitAwareContextHelper.getScmGitMetaData())
+        .isEqualToComparingFieldByField(ScmGitMetaData.builder().build());
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testSetPrincipal() {
+    // Check service-principal case
+    Principal servicePrincipal = new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId());
+    TriggerWebhookEvent triggerWebhookEventWithoutPrincipal = TriggerWebhookEvent.builder().principal(null).build();
+    triggerExecutionHelper.setPrincipal(triggerWebhookEventWithoutPrincipal);
+    assertThat(SecurityContextBuilder.getPrincipal()).isEqualToComparingFieldByField(servicePrincipal);
+    assertThat(SourcePrincipalContextBuilder.getSourcePrincipal()).isEqualToComparingFieldByField(servicePrincipal);
+
+    // Check user-principal case
+    Principal userPrincipal = new UserPrincipal("user", "mail", "username", "account");
+    TriggerWebhookEvent triggerWebhookEventWithPrincipal =
+        TriggerWebhookEvent.builder().principal(userPrincipal).build();
+    triggerExecutionHelper.setPrincipal(triggerWebhookEventWithPrincipal);
+    assertThat(SecurityContextBuilder.getPrincipal()).isEqualToComparingFieldByField(userPrincipal);
+    assertThat(SourcePrincipalContextBuilder.getSourcePrincipal()).isEqualToComparingFieldByField(userPrincipal);
   }
 }

@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 
+import io.harness.beans.ScopeLevel;
 import io.harness.cdng.gitops.beans.GitOpsLinkedAppsOutcome;
 import io.harness.cdng.gitops.steps.GitopsClustersOutcome;
 import io.harness.cdng.gitops.steps.GitopsClustersOutcome.ClusterData;
@@ -20,6 +21,7 @@ import io.harness.cdng.gitops.syncstep.EnvironmentClusterListing.EnvironmentClus
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.common.NGTimeConversionHelper;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
+import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitops.models.Application;
 import io.harness.gitops.models.ApplicationResource;
@@ -43,6 +45,7 @@ import software.wings.beans.LogColor;
 import software.wings.beans.LogHelper;
 import software.wings.beans.LogWeight;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.time.Duration;
@@ -77,7 +80,6 @@ public class SyncRunnable implements Runnable {
   public static final String GITOPS_LINKED_APPS_OUTCOME = "GITOPS_LINKED_APPS_OUTCOME";
   public static final String SERVICE = "service";
   private static final String LOG_SUFFIX = "Execute";
-  private static final String PROJECT_SCOPE = "project";
 
   private final String taskId;
   private final Ambiance ambiance;
@@ -186,9 +188,14 @@ public class SyncRunnable implements Runnable {
 
     EnvironmentClusterListingBuilder environmentClusterListing = EnvironmentClusterListing.builder();
     if (optionalSweepingOutputForEnv != null && optionalSweepingOutputForEnv.isFound()) {
-      GitopsClustersOutcome outcome = (GitopsClustersOutcome) optionalSweepingOutputForEnv.getOutput();
-      environmentClusterListing.clusterIds(getScopedClusterIdsInPipelineExecution(outcome))
-          .environmentIds(getEnvIdsInPipelineExecution(outcome));
+      GitopsClustersOutcome gitopsClustersOutcome = (GitopsClustersOutcome) optionalSweepingOutputForEnv.getOutput();
+      // ideally, the gitops clusters step should fail when no cluster is present, this is an extra check
+      if (gitopsClustersOutcome == null || isEmpty(gitopsClustersOutcome.getClustersData())) {
+        log.debug("No GitOps Clusters found");
+      } else {
+        environmentClusterListing.clusterIds(getScopedClusterIdsInPipelineExecution(gitopsClustersOutcome))
+            .environmentIds(getEnvIdsInPipelineExecution(gitopsClustersOutcome));
+      }
     }
     return environmentClusterListing.build();
   }
@@ -197,13 +204,16 @@ public class SyncRunnable implements Runnable {
     return outcome.getClustersData().stream().map(ClusterData::getEnvId).collect(Collectors.toSet());
   }
 
-  private Map<String, Set<String>> getScopedClusterIdsInPipelineExecution(GitopsClustersOutcome outcome) {
-    return outcome.getClustersData().stream().collect(
+  @VisibleForTesting
+  Map<String, Set<String>> getScopedClusterIdsInPipelineExecution(GitopsClustersOutcome gitopsClustersOutcome) {
+    return gitopsClustersOutcome.getClustersData().stream().collect(
         Collectors.groupingBy(ClusterData::getAgentId, Collectors.mapping(cluster -> {
           String scope = cluster.getScope().toLowerCase();
           String clusterId = cluster.getClusterId();
-          if (PROJECT_SCOPE.equals(scope)) {
+          if (ScopeLevel.PROJECT.toString().equalsIgnoreCase(scope)) {
             return clusterId;
+          } else if (ScopeLevel.ORGANIZATION.toString().equalsIgnoreCase(scope)) {
+            return Scope.ORG.getYamlRepresentation() + "." + clusterId;
           } else {
             return scope + "." + clusterId;
           }

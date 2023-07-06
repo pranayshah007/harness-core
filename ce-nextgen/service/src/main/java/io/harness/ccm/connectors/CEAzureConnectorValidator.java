@@ -114,12 +114,9 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
               .build();
         }
       }
-      if (featuresEnabled.contains(CEFeatures.GOVERNANCE)) {
-        // Do Something
-      }
 
       List<String> requiredRoles = new ArrayList<>();
-      if (featuresEnabled.contains(CEFeatures.OPTIMIZATION)) {
+      if (featuresEnabled.contains(CEFeatures.OPTIMIZATION) || featuresEnabled.contains(CEFeatures.GOVERNANCE)) {
         requiredRoles.add(AZURE_RBAC_CONTRIBUTOR_ROLE);
       } else if (featuresEnabled.contains(CEFeatures.VISIBILITY)) {
         requiredRoles.add(AZURE_RBAC_READER_ROLE);
