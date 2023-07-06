@@ -82,9 +82,9 @@ public abstract class BackstageEnvVariableEntity implements PersistentEntity {
       return response;
     }
 
-    static List<ResolvedEnvVariableResponse> toResolvedVariableResponseList(List<ResolvedEnvVariable> variables) {
-      List<ResolvedEnvVariableResponse> response = new ArrayList<>();
-      variables.forEach(variable -> response.add(new ResolvedEnvVariableResponse().resolvedEnvVariable(variable)));
+    static ResolvedEnvVariableResponse toResolvedVariableResponse(String variables) {
+      ResolvedEnvVariableResponse response = new ResolvedEnvVariableResponse();
+      response.setResolvedEnvVariables(variables);
       return response;
     }
   }

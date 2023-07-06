@@ -21,6 +21,7 @@ import io.harness.beans.FeatureName;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.common.CommonUtils;
+import io.harness.idp.common.encryption.EncryptionUtils;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvSecretVariableEntity;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableEntity;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableEntity.BackstageEnvVariableMapper;
@@ -36,7 +37,9 @@ import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 import io.harness.spec.server.idp.v1.model.NamespaceInfo;
 import io.harness.spec.server.idp.v1.model.ResolvedEnvVariable;
+import io.harness.spec.server.idp.v1.model.ResolvedEnvVariableResponse;
 
+import com.google.gson.Gson;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
@@ -48,11 +51,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.IDP)
-@AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableService {
   private BackstageEnvVariableRepository backstageEnvVariableRepository;
@@ -61,7 +62,24 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
   private NamespaceService namespaceService;
   private Map<BackstageEnvVariableType, BackstageEnvVariableMapper> envVariableMap;
   private SetupUsageProducer setupUsageProducer;
-  private final AccountClient accountClient;
+  private AccountClient accountClient;
+  private final String idpEncryptionSecret;
+
+  @Inject
+  public BackstageEnvVariableServiceImpl(BackstageEnvVariableRepository backstageEnvVariableRepository,
+      K8sClient k8sClient, @Named("PRIVILEGED") SecretManagerClientService ngSecretService,
+      NamespaceService namespaceService, Map<BackstageEnvVariableType, BackstageEnvVariableMapper> envVariableMap,
+      SetupUsageProducer setupUsageProducer, AccountClient accountClient,
+      @Named("idpEncryptionSecret") String idpEncryptionSecret) {
+    this.backstageEnvVariableRepository = backstageEnvVariableRepository;
+    this.k8sClient = k8sClient;
+    this.ngSecretService = ngSecretService;
+    this.namespaceService = namespaceService;
+    this.envVariableMap = envVariableMap;
+    this.setupUsageProducer = setupUsageProducer;
+    this.accountClient = accountClient;
+    this.idpEncryptionSecret = idpEncryptionSecret;
+  }
 
   @Override
   public Optional<BackstageEnvVariable> findByIdAndAccountIdentifier(String identifier, String accountIdentifier) {
@@ -314,7 +332,7 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
   }
 
   @Override
-  public List<ResolvedEnvVariable> resolveSecrets(String accountIdentifier, String namespace) {
+  public ResolvedEnvVariableResponse resolveSecrets(String accountIdentifier, String namespace) {
     NamespaceInfo namespaceInfo = namespaceService.getNamespaceForAccountIdentifier(accountIdentifier);
     if (!namespaceInfo.getNamespace().equals(namespace)) {
       throw new InvalidRequestException(
@@ -336,7 +354,10 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
           secretVariableEntity.getEnvName(), secretVariableEntity.getHarnessSecretIdentifier(), accountIdentifier));
       resolvedEnvVariables.add(resolvedEnv);
     }
-    return resolvedEnvVariables;
+    Gson gson = new Gson();
+    String json = gson.toJson(resolvedEnvVariables);
+    return BackstageEnvVariableMapper.toResolvedVariableResponse(
+        EncryptionUtils.encryptString(json, idpEncryptionSecret));
   }
 
   private String getNamespaceForAccount(String accountIdentifier) {

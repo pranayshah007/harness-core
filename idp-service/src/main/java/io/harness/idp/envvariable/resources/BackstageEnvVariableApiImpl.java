@@ -25,6 +25,7 @@ import io.harness.spec.server.idp.v1.model.BackstageEnvVariableBatchRequest;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariableRequest;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariableResponse;
 import io.harness.spec.server.idp.v1.model.ResolvedEnvVariable;
+import io.harness.spec.server.idp.v1.model.ResolvedEnvVariableResponse;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -127,11 +128,9 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
 
   @Override
   public Response resolveBackstageEnvVariables(String harnessAccount, String namespace) {
-    List<ResolvedEnvVariable> resolvedEnvVariables =
+    ResolvedEnvVariableResponse resolvedEnvVariableResponse =
         backstageEnvVariableService.resolveSecrets(harnessAccount, namespace);
-    return Response.status(Response.Status.OK)
-        .entity(BackstageEnvVariableMapper.toResolvedVariableResponseList(resolvedEnvVariables))
-        .build();
+    return Response.status(Response.Status.OK).entity(resolvedEnvVariableResponse).build();
   }
 
   @Override

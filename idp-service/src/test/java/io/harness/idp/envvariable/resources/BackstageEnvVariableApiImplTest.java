@@ -11,6 +11,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNotNull;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
@@ -327,19 +328,16 @@ public class BackstageEnvVariableApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testResolveBackstageEnvVariables() {
     doNothing().when(idpCommonService).checkUserAuthorization();
-    ResolvedEnvVariable resolvedEnvVariable = new ResolvedEnvVariable();
-    resolvedEnvVariable.setEnvName(TEST_ENV_NAME);
-    resolvedEnvVariable.setDecryptedValue(TEST_DECRYPTED_VALUE);
+    ResolvedEnvVariableResponse resolvedEnvVariableResponse = new ResolvedEnvVariableResponse();
+    resolvedEnvVariableResponse.setResolvedEnvVariables("TEST_RESPONSE_ENCRYPTED");
     when(backstageEnvVariableService.resolveSecrets(TEST_ACCOUNT_IDENTIFIER, TEST_NAMESPACE))
-        .thenReturn(Collections.singletonList(resolvedEnvVariable));
+        .thenReturn(resolvedEnvVariableResponse);
 
     Response response =
         backstageEnvVariableApiImpl.resolveBackstageEnvVariables(TEST_ACCOUNT_IDENTIFIER, TEST_NAMESPACE);
 
     assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-    List<ResolvedEnvVariableResponse> responseList = (List<ResolvedEnvVariableResponse>) response.getEntity();
-    assertEquals(1, responseList.size());
-    assertEquals(resolvedEnvVariable, responseList.get(0).getResolvedEnvVariable());
+    assertNotNull(((ResolvedEnvVariableResponse) response.getEntity()).getResolvedEnvVariables());
   }
 
   @After

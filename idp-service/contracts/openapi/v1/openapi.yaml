@@ -169,7 +169,7 @@ paths:
         - BackstageEnvVariable
       responses:
         '200':
-          $ref: '#/components/responses/ResolvedEnvVariableResponseList'
+          $ref: '#/components/responses/ResolvedEnvVariableResponse'
       operationId: resolve-backstage-env-variables
       description: Returns a list of backstage env variables with their decrypted values for the given account
       x-internal: true
@@ -1856,14 +1856,14 @@ components:
       x-stoplight:
         id: kemf8ikjwhko7
       type: object
-      properties:
-        resolved_env_variable:
-          $ref: '#/components/schemas/ResolvedEnvVariable'
       x-examples:
         Example 1:
           resolved_env_variable:
             env_name: GITHUB_TOKEN
             decrypted_value: abc
+      properties:
+        resolved_env_variables:
+          type: string
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -2331,25 +2331,16 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ConfigurationEntities'
-    ResolvedEnvVariableResponseList:
-      description: Returns list of env variables with the decrypted value
+    ResolvedEnvVariableResponse:
+      description: Returns encrypted string of list of env variables with the decrypted value
       content:
         application/json:
           schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/ResolvedEnvVariableResponse'
-          examples:
-            Example 1:
-              value:
-                - resolved_env_variable:
-                    env_name: GITHUB_TOKEN
-                    decrypted_value: abc
+            $ref: '#/components/schemas/ResolvedEnvVariableResponse'
+          examples: {}
         application/yaml:
           schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/ResolvedEnvVariable'
+            type: string
           examples: {}
   securitySchemes:
     x-api-key:
