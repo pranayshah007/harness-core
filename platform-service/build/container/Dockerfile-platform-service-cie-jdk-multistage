@@ -35,6 +35,7 @@ COPY --chown=65534:65534  --from=builder /app/dist/platform-service/scripts /opt
 COPY --chown=65534:65534  --from=builder /app/dist/platform-service/default.jfc /opt/harness/
 COPY --chown=65534:65534  --from=builder /app/dist/platform-service/profile.jfc /opt/harness/
 COPY --chown=65534:65534  --from=builder /app/dist/platform-service/profile.jfc /opt/harness/
+COPY --chown=65534:65534 --from=builder /app/dockerization/base-images/apm/*.sh /opt/harness/
 
 CMD [ "/opt/harness/run.sh" ]
 
