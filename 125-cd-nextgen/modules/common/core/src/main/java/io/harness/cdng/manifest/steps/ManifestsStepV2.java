@@ -260,9 +260,8 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
     });
 
     ManifestConfigurations manifestConfigurations = ngManifestsMetadataSweepingOutput.getManifestConfigurations();
-    boolean isMultipleManifestSupportEnabled = manifestConfigurations != null;
     SvcEnvV2ManifestValidator.validateManifestList(ngManifestsMetadataSweepingOutput.getServiceDefinitionType(),
-        manifestAttributes, isMultipleManifestSupportEnabled);
+        manifestAttributes, manifestConfigurations != null);
     validateConnectors(ambiance, manifestAttributes);
 
     checkForAccessOrThrow(ambiance, manifestAttributes);
@@ -271,7 +270,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
     for (int i = 0; i < manifestAttributes.size(); i++) {
       checkAndWarnIfDoesNotFollowIdentifierRegex(manifestAttributes.get(i).getIdentifier(), logCallback);
       ManifestOutcome manifestOutcome = ManifestOutcomeMapper.toManifestOutcome(manifestAttributes.get(i), i);
-      if (isMultipleManifestSupportEnabled && ManifestType.HelmChart.equals(manifestOutcome.getType())
+      if (manifestConfigurations != null && ManifestType.HelmChart.equals(manifestOutcome.getType())
           && !manifestOutcome.getIdentifier().equals(
               ParameterFieldHelper.getParameterFieldValue(manifestConfigurations.getPrimaryManifestRef()))) {
         continue;

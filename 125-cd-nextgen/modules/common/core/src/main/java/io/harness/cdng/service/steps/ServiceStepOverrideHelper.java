@@ -109,10 +109,7 @@ public class ServiceStepOverrideHelper {
                 ngEnvironmentConfig == null || ngEnvironmentConfig.getNgEnvironmentInfoConfig() == null
                     ? StringUtils.EMPTY
                     : ngEnvironmentConfig.getNgEnvironmentInfoConfig().getIdentifier())
-            .manifestConfigurations(featureFlagHelperService.isEnabled(AmbianceUtils.getAccountId(ambiance),
-                                        FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG)
-                    ? getManifestConfigurations(ngServiceV2InfoConfig)
-                    : null)
+            .manifestConfigurations(getManifestConfigurations(ngServiceV2InfoConfig, ambiance))
             .build();
     sweepingOutputService.consume(
         ambiance, manifestsSweepingOutputName, manifestSweepingOutput, StepCategory.STAGE.name());
@@ -142,10 +139,7 @@ public class ServiceStepOverrideHelper {
             .environmentIdentifier(environmentRef)
             .svcManifests(svcManifests)
             .manifestsFromOverride(manifestsFromOverride)
-            .manifestConfigurations(featureFlagHelperService.isEnabled(AmbianceUtils.getAccountId(ambiance),
-                                        FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG)
-                    ? getManifestConfigurations(ngServiceV2InfoConfig)
-                    : null)
+            .manifestConfigurations(getManifestConfigurations(ngServiceV2InfoConfig, ambiance))
             .build();
     sweepingOutputService.consume(
         ambiance, manifestsSweepingOutputName, manifestSweepingOutput, StepCategory.STAGE.name());
@@ -689,8 +683,11 @@ public class ServiceStepOverrideHelper {
         == null;
   }
 
-  private ManifestConfigurations getManifestConfigurations(NGServiceV2InfoConfig ngServiceV2InfoConfig) {
-    if (ngServiceV2InfoConfig.getServiceDefinition() == null
+  private ManifestConfigurations getManifestConfigurations(
+      NGServiceV2InfoConfig ngServiceV2InfoConfig, Ambiance ambiance) {
+    boolean isHelmMultipleManifestSupportEnabled = featureFlagHelperService.isEnabled(
+        AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG);
+    if (isHelmMultipleManifestSupportEnabled || ngServiceV2InfoConfig.getServiceDefinition() == null
         || ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec() == null) {
       return null;
     }

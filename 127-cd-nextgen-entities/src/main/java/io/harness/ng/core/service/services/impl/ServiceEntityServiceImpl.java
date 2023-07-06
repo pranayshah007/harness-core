@@ -23,6 +23,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.NGExpressionUtils;
@@ -53,10 +54,13 @@ import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.ng.core.service.entity.ServiceInputsMergedResponseDto;
+import io.harness.ng.core.service.feature.NGServiceV2FFCalculator;
+import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
 import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.services.validators.ServiceEntityValidator;
 import io.harness.ng.core.service.services.validators.ServiceEntityValidatorFactory;
+import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
 import io.harness.ng.core.template.RefreshRequestDTO;
@@ -139,6 +143,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   @Inject private ServiceEntityValidatorFactory serviceEntityValidatorFactory;
   @Inject private TemplateResourceClient templateResourceClient;
   @Inject private ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
+  @Inject private NGServiceV2FFCalculator ngServiceV2FFCalculator;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_PROJECT =
       "Service [%s] under Project[%s], Organization [%s] in Account [%s] already exists";
@@ -1091,10 +1096,15 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       }
 
       return new ManifestsResponseDTO().identifiers(
-          ServiceFilterHelper.getManifestIdentifiersFilteredOnServiceType(manifestsField));
+          ServiceFilterHelper.getManifestIdentifiersFilteredOnManifestType(manifestsField));
     } catch (IOException e) {
       throw new InvalidRequestException(
           String.format("Error occurred while fetching list of manifests for service %s", serviceIdentifier), e);
     }
+  }
+
+  public NGServiceConfig getNGServiceConfigWithFF(ServiceEntity serviceEntity) {
+    Map<FeatureName, Boolean> featureFlagMap = ngServiceV2FFCalculator.computeFlags(serviceEntity.getAccountId());
+    return NGServiceEntityMapper.toNGServiceConfig(serviceEntity, featureFlagMap);
   }
 }

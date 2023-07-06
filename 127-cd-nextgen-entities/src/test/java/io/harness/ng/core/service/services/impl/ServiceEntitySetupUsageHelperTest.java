@@ -9,12 +9,12 @@ package io.harness.ng.core.service.services.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGEntitiesTestBase;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
@@ -29,12 +29,14 @@ import io.harness.eventsframework.schemas.entitysetupusage.EntitySetupUsageCreat
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
+import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.setupusage.SetupUsageHelper;
 import io.harness.ng.core.template.TemplateReferenceRequestDTO;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.template.remote.TemplateResourceClient;
-import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.walktree.visitor.SimpleVisitorFactory;
 
 import com.google.common.io.Resources;
@@ -44,6 +46,7 @@ import com.google.protobuf.StringValue;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -65,9 +68,10 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
   @Inject private IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
   @Inject private SetupUsageHelper setupUsageHelper;
   @Inject private TemplateResourceClient templateResourceClient;
-  @Mock private NGFeatureFlagHelperService featureFlagHelperService;
   @Mock private Producer producer;
+  @Mock private ServiceEntityService serviceEntityService;
   @InjectMocks private ServiceEntitySetupUsageHelper entitySetupUsageHelper;
+  Map<FeatureName, Boolean> featureFlags = new HashMap<>();
 
   @Before
   public void setUp() throws Exception {
@@ -76,7 +80,7 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
     Reflect.on(entitySetupUsageHelper).set("setupUsageHelper", setupUsageHelper);
     Reflect.on(entitySetupUsageHelper).set("templateResourceClient", templateResourceClient);
     Reflect.on(setupUsageHelper).set("producer", producer);
-    Mockito.doReturn(true).when(featureFlagHelperService).isEnabled(anyString(), any());
+    featureFlags.put(FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG, true);
   }
 
   @Test
@@ -92,6 +96,8 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
                                .orgIdentifier("orgId")
                                .projectIdentifier("projId")
                                .build();
+    NGServiceConfig config = NGServiceEntityMapper.toNGServiceConfig(entity, featureFlags);
+    doReturn(config).when(serviceEntityService).getNGServiceConfigWithFF(entity);
     entitySetupUsageHelper.updateSetupUsages(entity);
 
     verify(producer, times(1)).send(msgCaptor.capture());
@@ -133,6 +139,8 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
                                .projectIdentifier("projId")
                                .yaml(serviceYaml)
                                .build();
+    NGServiceConfig config = NGServiceEntityMapper.toNGServiceConfig(entity, featureFlags);
+    doReturn(config).when(serviceEntityService).getNGServiceConfigWithFF(entity);
     entitySetupUsageHelper.updateSetupUsages(entity);
 
     verify(producer, times(4)).send(msgCaptor.capture());
@@ -226,6 +234,8 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
                                .projectIdentifier("projId")
                                .yaml(serviceYaml)
                                .build();
+    NGServiceConfig config = NGServiceEntityMapper.toNGServiceConfig(entity, featureFlags);
+    doReturn(config).when(serviceEntityService).getNGServiceConfigWithFF(entity);
 
     // template client call
     Call call = Mockito.mock(Call.class);
@@ -305,6 +315,8 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
                                .accountId("accountId")
                                .orgIdentifier("orgId")
                                .build();
+    NGServiceConfig config = NGServiceEntityMapper.toNGServiceConfig(entity, featureFlags);
+    doReturn(config).when(serviceEntityService).getNGServiceConfigWithFF(entity);
     entitySetupUsageHelper.updateSetupUsages(entity);
 
     verify(producer, times(1)).send(msgCaptor.capture());
@@ -338,6 +350,8 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
 
     // org level service
     ServiceEntity entity = ServiceEntity.builder().identifier("id").name("my-service").accountId("accountId").build();
+    NGServiceConfig config = NGServiceEntityMapper.toNGServiceConfig(entity, featureFlags);
+    doReturn(config).when(serviceEntityService).getNGServiceConfigWithFF(entity);
     entitySetupUsageHelper.updateSetupUsages(entity);
 
     verify(producer, times(1)).send(msgCaptor.capture());
@@ -374,6 +388,8 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
                                .accountId("accountId")
                                .yaml(serviceYaml)
                                .build();
+    NGServiceConfig config = NGServiceEntityMapper.toNGServiceConfig(entity, featureFlags);
+    doReturn(config).when(serviceEntityService).getNGServiceConfigWithFF(entity);
     assertThatThrownBy(() -> entitySetupUsageHelper.getAllReferredEntities(entity))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("The org level connectors cannot be used at account level. Ref: [org.dp1]");

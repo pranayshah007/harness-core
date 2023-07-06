@@ -15,8 +15,6 @@ import static io.harness.rule.OwnerRule.YOGESH;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
@@ -46,7 +44,9 @@ import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.plancreator.strategy.HarnessForConfig;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.contracts.plan.SetupMetadata;
@@ -57,7 +57,6 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.rule.Owner;
-import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -65,7 +64,9 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
@@ -85,7 +86,6 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
   @Mock private EnvironmentService environmentService;
 
   @Mock private InfrastructureEntityService infraService;
-  @Mock private NGFeatureFlagHelperService featureFlagHelperService;
   @InjectMocks private DeploymentStageFilterJsonCreatorV2 filterCreator;
 
   private final ClassLoader classLoader = this.getClass().getClassLoader();
@@ -136,7 +136,6 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
   @Before
   public void setUp() throws Exception {
     mocks = MockitoAnnotations.openMocks(this);
-
     doReturn(Optional.of(serviceEntity))
         .when(serviceEntityService)
         .get("accountId", "orgId", "projectId", "service-id", false);
@@ -149,9 +148,10 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
         .when(infraService)
         .getAllInfrastructureFromIdentifierList(
             "accountId", "orgId", "projectId", "env-id", Lists.newArrayList("infra-id"));
-    doReturn(true)
-        .when(featureFlagHelperService)
-        .isEnabled(anyString(), eq(FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG));
+    Map<FeatureName, Boolean> featureFlags = new HashMap<>();
+    featureFlags.put(FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG, false);
+    NGServiceConfig config = NGServiceEntityMapper.toNGServiceConfig(serviceEntity, featureFlags);
+    doReturn(config).when(serviceEntityService).getNGServiceConfigWithFF(serviceEntity);
   }
 
   @Test

@@ -49,6 +49,7 @@ import io.harness.ng.core.service.dto.ServiceRequestDTO;
 import io.harness.ng.core.service.dto.ServiceResponse;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.feature.NGServiceV2FFCalculator;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.services.impl.ServiceEntityYamlSchemaHelper;
 import io.harness.ng.core.utils.OrgAndProjectValidationHelper;
@@ -65,6 +66,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.junit.After;
@@ -90,6 +92,7 @@ public class ServiceResourceV2Test extends CategoryTest {
   @Mock AccessControlClient accessControlClient;
   @Mock NGFeatureFlagHelperService featureFlagHelperService;
   @Mock ServiceEntityYamlSchemaHelper serviceSchemaHelper;
+  @Mock NGServiceV2FFCalculator ngServiceV2FFCalculator;
 
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
@@ -101,6 +104,7 @@ public class ServiceResourceV2Test extends CategoryTest {
   ServiceResponseDTO serviceResponseDTO;
 
   private AutoCloseable mocks;
+  Map<FeatureName, Boolean> featureFlags = new HashMap<>();
   @Before
   public void setup() {
     mocks = MockitoAnnotations.openMocks(this);
@@ -128,6 +132,8 @@ public class ServiceResourceV2Test extends CategoryTest {
                              .description("")
                              .tags(new HashMap<>())
                              .build();
+    featureFlags.put(FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG, true);
+    doReturn(featureFlags).when(ngServiceV2FFCalculator).computeFlags(ACCOUNT_ID);
   }
 
   @After

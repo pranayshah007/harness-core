@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.YOGESH;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.exception.InvalidRequestException;
@@ -24,10 +25,13 @@ import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.rule.Owner;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 public class NGServiceEntityMapperTest {
+  private Map<FeatureName, Boolean> featureFlags = new HashMap<>();
   @Test
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
@@ -203,8 +207,8 @@ public class NGServiceEntityMapperTest {
                                      .tags(Collections.singletonList(NGTag.builder().key("k1").value("v1").build()))
                                      .yaml(yaml)
                                      .build();
-    final NGServiceConfig ngServiceConfig =
-        NGServiceEntityMapper.toNGServiceConfig(entity, isHelmMultipleManifestSupportEnabled);
+    featureFlags.put(FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG, isHelmMultipleManifestSupportEnabled);
+    final NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(entity, featureFlags);
     final NGServiceV2InfoConfig ngServiceV2InfoConfig = ngServiceConfig.getNgServiceV2InfoConfig();
     assertThat(ngServiceV2InfoConfig.getName()).isEqualTo(entity.getName());
     assertThat(ngServiceV2InfoConfig.getIdentifier()).isEqualTo(entity.getIdentifier());

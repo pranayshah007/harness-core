@@ -11,7 +11,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
 
 import io.harness.NGCommonEntityConstants;
-import io.harness.beans.FeatureName;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactSource;
@@ -50,7 +49,6 @@ import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.service.entity.ServiceEntity;
-import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
@@ -74,7 +72,6 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.utils.IdentifierRefHelper;
-import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.utils.NGVariablesUtils;
 
@@ -104,7 +101,6 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
   @Inject private InfrastructureMapper infrastructureMapper;
   @Inject private ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
   @Inject private ServiceOverridesServiceV2 serviceOverridesServiceV2;
-  @Inject private NGFeatureFlagHelperService featureFlagHelperService;
   @Override
   public LinkedHashMap<String, VariableCreationResponse> createVariablesForChildrenNodes(
       VariableCreationContext ctx, YamlField config) {
@@ -286,10 +282,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
 
       NGServiceConfig ngServiceConfig = null;
       if (optionalService.isPresent()) {
-        boolean isHelmMultipleManifestSupportEnabled =
-            featureFlagHelperService.isEnabled(accountIdentifier, FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG);
-        ngServiceConfig =
-            NGServiceEntityMapper.toNGServiceConfig(optionalService.get(), isHelmMultipleManifestSupportEnabled);
+        ngServiceConfig = serviceEntityService.getNGServiceConfigWithFF(optionalService.get());
       }
       outputProperties.addAll(handleManifestProperties(specField, ngServiceConfig));
       outputProperties.addAll(handleArtifactProperties(specField, ngServiceConfig));

@@ -7,16 +7,22 @@
 
 package io.harness.ng.core.service.resources;
 
+import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.TARUN_UBA;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.feature.NGServiceV2FFCalculator;
+import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.service.services.impl.ServiceEntityServiceImpl;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.rbac.CDNGRbacPermissions;
 import io.harness.rule.Owner;
@@ -25,17 +31,25 @@ import io.harness.spec.server.ng.v1.model.ServiceRequest;
 import io.harness.spec.server.ng.v1.model.ServiceResponse;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Inject;
 import io.serializer.HObjectMapper;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
+import org.joor.Reflect;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 public class ServiceResourceApiUtilsTest extends CategoryTest {
+  @Mock NGServiceV2FFCalculator ngServiceV2FFCalculator;
+  @Inject ServiceEntityService serviceEntityService;
   private ObjectMapper objectMapper;
   private Validator validator;
   String identifier = randomAlphabetic(10);
@@ -45,27 +59,55 @@ public class ServiceResourceApiUtilsTest extends CategoryTest {
   String project = randomAlphabetic(10);
   String description = randomAlphabetic(10);
   private ServiceResourceApiUtils serviceResourceApiUtils;
+  Map<FeatureName, Boolean> featureFlags = new HashMap<>();
 
   @Before
   public void setUp() {
+    MockitoAnnotations.initMocks(this);
     objectMapper = new ObjectMapper();
     HObjectMapper.configureObjectMapperForNG(objectMapper);
 
     ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
     validator = factory.getValidator();
     serviceResourceApiUtils = new ServiceResourceApiUtils(validator);
+    serviceEntityService = new ServiceEntityServiceImpl(null, null, null, null, null, null, null, null);
+    Reflect.on(serviceResourceApiUtils).set("serviceEntityService", serviceEntityService);
+    Reflect.on(serviceEntityService).set("ngServiceV2FFCalculator", ngServiceV2FFCalculator);
   }
   @Test
   @Owner(developers = TARUN_UBA)
   @Category(UnitTests.class)
   public void testServiceEntity() {
+    featureFlags.put(FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG, false);
+    when(ngServiceV2FFCalculator.computeFlags(account)).thenReturn(featureFlags);
     ServiceRequest serviceRequest = new ServiceRequest();
     serviceRequest.setIdentifier(identifier);
     serviceRequest.setName(name);
     serviceRequest.description(description);
     serviceRequest.setTags(null);
-    ServiceEntity serviceEntity =
-        serviceResourceApiUtils.mapToServiceEntity(serviceRequest, org, project, account, false);
+    ServiceEntity serviceEntity = serviceResourceApiUtils.mapToServiceEntity(serviceRequest, org, project, account);
+    Set<ConstraintViolation<Object>> violations = validator.validate(serviceEntity);
+    assertThat(violations.isEmpty()).as(violations.toString()).isTrue();
+
+    assertEquals(account, serviceEntity.getAccountId());
+    assertEquals(identifier, serviceEntity.getIdentifier());
+    assertEquals(name, serviceEntity.getName());
+    assertEquals(org, serviceEntity.getOrgIdentifier());
+    assertEquals(project, serviceEntity.getProjectIdentifier());
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testServiceEntityWithMultipleHelmManifest() {
+    featureFlags.put(FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG, true);
+    when(ngServiceV2FFCalculator.computeFlags(account)).thenReturn(featureFlags);
+    ServiceRequest serviceRequest = new ServiceRequest();
+    serviceRequest.setIdentifier(identifier);
+    serviceRequest.setName(name);
+    serviceRequest.description(description);
+    serviceRequest.setTags(null);
+    ServiceEntity serviceEntity = serviceResourceApiUtils.mapToServiceEntity(serviceRequest, org, project, account);
     Set<ConstraintViolation<Object>> violations = validator.validate(serviceEntity);
     assertThat(violations.isEmpty()).as(violations.toString()).isTrue();
 

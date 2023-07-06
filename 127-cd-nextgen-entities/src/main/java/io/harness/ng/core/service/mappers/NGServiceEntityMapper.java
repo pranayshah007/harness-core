@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.mapper.TagMapper.convertToMap;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
@@ -27,10 +28,13 @@ import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.utils.YamlPipelineUtils;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(CDC)
@@ -45,16 +49,16 @@ public class NGServiceEntityMapper {
   }
 
   public NGServiceConfig toNGServiceConfig(ServiceEntity serviceEntity) {
-    return toNGServiceConfig(serviceEntity, false);
+    return toNGServiceConfig(serviceEntity, new HashMap<>());
   }
 
-  public NGServiceConfig toNGServiceConfig(ServiceEntity serviceEntity, boolean isHelmMultipleManifestSupportEnabled) {
+  public NGServiceConfig toNGServiceConfig(ServiceEntity serviceEntity, Map<FeatureName, Boolean> featureFlagMap) {
     ServiceDefinition sDef = null;
     Boolean gitOpsEnabled = null;
     if (isNotEmpty(serviceEntity.getYaml())) {
       try {
         final NGServiceConfig config = YamlPipelineUtils.read(serviceEntity.getYaml(), NGServiceConfig.class);
-        validateFieldsOrThrow(config.getNgServiceV2InfoConfig(), serviceEntity, isHelmMultipleManifestSupportEnabled);
+        validateFieldsOrThrow(config.getNgServiceV2InfoConfig(), serviceEntity, featureFlagMap);
         sDef = config.getNgServiceV2InfoConfig().getServiceDefinition();
         gitOpsEnabled = config.getNgServiceV2InfoConfig().getGitOpsEnabled();
       } catch (IOException e) {
@@ -74,7 +78,7 @@ public class NGServiceEntityMapper {
   }
 
   private void validateFieldsOrThrow(
-      NGServiceV2InfoConfig fromYaml, ServiceEntity requestedService, boolean isHelmMultipleManifestSupportEnabled) {
+      NGServiceV2InfoConfig fromYaml, ServiceEntity requestedService, Map<FeatureName, Boolean> featureFlagMap) {
     if (StringUtils.compare(requestedService.getIdentifier(), fromYaml.getIdentifier()) != 0) {
       throw new InvalidRequestException(
           String.format("Service Identifier : %s in service request doesn't match with identifier : %s given in yaml",
@@ -91,9 +95,8 @@ public class NGServiceEntityMapper {
 
     ServiceDefinition serviceDefinition = fromYaml.getServiceDefinition();
     if (serviceDefinition != null) {
-      validateManifests(serviceDefinition,
-          isHelmMultipleManifestSupportEnabled(
-              serviceDefinition.getServiceSpec(), isHelmMultipleManifestSupportEnabled));
+      validateManifests(
+          serviceDefinition, isHelmMultipleManifestSupportEnabled(serviceDefinition.getServiceSpec(), featureFlagMap));
     }
   }
 
@@ -113,15 +116,20 @@ public class NGServiceEntityMapper {
     }
   }
 
-  private boolean isHelmMultipleManifestSupportEnabled(ServiceSpec spec, boolean isHelmMultipleManifestSupportEnabled) {
+  private boolean isHelmMultipleManifestSupportEnabled(ServiceSpec spec, Map<FeatureName, Boolean> featureFlagMap) {
+    return BooleanUtils.isTrue(featureFlagMap.get(FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG))
+        && serviceContainsMultipleHelmManifests(spec);
+  }
+
+  private boolean serviceContainsMultipleHelmManifests(ServiceSpec spec) {
     if (spec == null) {
       return false;
     }
     if (spec instanceof KubernetesServiceSpec && ((KubernetesServiceSpec) spec).getManifestConfigurations() != null) {
-      return isHelmMultipleManifestSupportEnabled;
+      return true;
     }
     if (spec instanceof NativeHelmServiceSpec && ((NativeHelmServiceSpec) spec).getManifestConfigurations() != null) {
-      return isHelmMultipleManifestSupportEnabled;
+      return true;
     }
     return false;
   }

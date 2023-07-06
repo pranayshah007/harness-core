@@ -13,6 +13,7 @@ import static io.harness.ng.core.mapper.TagMapper.convertToList;
 import static io.harness.ng.core.mapper.TagMapper.convertToMap;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.ng.core.service.dto.ServiceRequestDTO;
 import io.harness.ng.core.service.dto.ServiceResponse;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
@@ -21,17 +22,19 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 
+import java.util.HashMap;
+import java.util.Map;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class ServiceElementMapper {
   public ServiceEntity toServiceEntity(String accountId, ServiceRequestDTO serviceRequestDTO) {
-    return toServiceEntity(accountId, serviceRequestDTO, false);
+    return toServiceEntity(accountId, serviceRequestDTO, new HashMap<>());
   }
 
   public ServiceEntity toServiceEntity(
-      String accountId, ServiceRequestDTO serviceRequestDTO, boolean isHelmMultipleManifestSupport) {
+      String accountId, ServiceRequestDTO serviceRequestDTO, Map<FeatureName, Boolean> featureFlags) {
     ServiceEntity serviceEntity = ServiceEntity.builder()
                                       .identifier(serviceRequestDTO.getIdentifier())
                                       .accountId(accountId)
@@ -43,8 +46,7 @@ public class ServiceElementMapper {
                                       .yaml(serviceRequestDTO.getYaml())
                                       .build();
     // This also validates the service yaml
-    final NGServiceConfig ngServiceConfig =
-        NGServiceEntityMapper.toNGServiceConfig(serviceEntity, isHelmMultipleManifestSupport);
+    final NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity, featureFlags);
     final NGServiceV2InfoConfig ngServiceV2InfoConfig = ngServiceConfig.getNgServiceV2InfoConfig();
     if (isEmpty(serviceEntity.getYaml())) {
       serviceEntity.setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));

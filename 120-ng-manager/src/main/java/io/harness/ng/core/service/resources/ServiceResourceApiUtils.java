@@ -20,6 +20,7 @@ import io.harness.ng.core.service.dto.ServiceRequestDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
+import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.rbac.NGResourceType;
@@ -40,6 +41,7 @@ import javax.validation.Validator;
 
 @Singleton
 public class ServiceResourceApiUtils {
+  @Inject private ServiceEntityService serviceEntityService;
   private final Validator validator;
 
   @Inject
@@ -87,8 +89,8 @@ public class ServiceResourceApiUtils {
     return serviceResponse;
   }
 
-  public ServiceEntity mapToServiceEntity(ServiceRequest sharedRequestBody, String org, String project, String account,
-      boolean isHelmMultipleManifestSupportEnabled) {
+  public ServiceEntity mapToServiceEntity(
+      ServiceRequest sharedRequestBody, String org, String project, String account) {
     ServiceEntity serviceEntity = ServiceEntity.builder()
                                       .identifier(sharedRequestBody.getIdentifier())
                                       .accountId(account)
@@ -100,8 +102,7 @@ public class ServiceResourceApiUtils {
                                       .yaml(sharedRequestBody.getYaml())
                                       .build();
     // This also validates the service yaml
-    final NGServiceConfig ngServiceConfig =
-        NGServiceEntityMapper.toNGServiceConfig(serviceEntity, isHelmMultipleManifestSupportEnabled);
+    final NGServiceConfig ngServiceConfig = serviceEntityService.getNGServiceConfigWithFF(serviceEntity);
     final NGServiceV2InfoConfig ngServiceV2InfoConfig = ngServiceConfig.getNgServiceV2InfoConfig();
     if (isEmpty(serviceEntity.getYaml())) {
       serviceEntity.setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));

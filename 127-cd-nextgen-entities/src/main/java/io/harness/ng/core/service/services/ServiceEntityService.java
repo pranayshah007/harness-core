@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceInputsMergedResponseDto;
+import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.repositories.UpsertOptions;
@@ -108,4 +109,6 @@ public interface ServiceEntityService {
   String resolveArtifactSourceTemplateRefs(String accountId, String orgId, String projectId, String yaml);
 
   ManifestsResponseDTO getManifestIdentifiers(String yaml, String serviceIdentifier);
+
+  NGServiceConfig getNGServiceConfigWithFF(ServiceEntity serviceEntity);
 }

@@ -23,7 +23,6 @@ import io.harness.pms.rbac.NGResourceType;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.ng.v1.OrgServicesApi;
 import io.harness.spec.server.ng.v1.model.ServiceRequest;
-import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -37,9 +36,9 @@ public class OrgServicesApiImpl extends AbstractServicesApiImpl implements OrgSe
   public OrgServicesApiImpl(ServiceEntityService serviceEntityService, AccessControlClient accessControlClient,
       ServiceEntityManagementService serviceEntityManagementService,
       OrgAndProjectValidationHelper orgAndProjectValidationHelper, ServiceResourceApiUtils serviceResourceApiUtils,
-      ServiceEntityYamlSchemaHelper serviceSchemaHelper, NGFeatureFlagHelperService ngFeatureFlagHelperService) {
+      ServiceEntityYamlSchemaHelper serviceSchemaHelper) {
     super(serviceEntityService, accessControlClient, serviceEntityManagementService, orgAndProjectValidationHelper,
-        serviceResourceApiUtils, serviceSchemaHelper, ngFeatureFlagHelperService);
+        serviceResourceApiUtils, serviceSchemaHelper);
   }
 
   @Override

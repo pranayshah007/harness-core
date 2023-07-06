@@ -319,16 +319,18 @@ public class ServiceFilterHelper {
             || ServiceSpecType.KUBERNETES.equals(serviceDefinitionType))) {
       throw new UnsupportedOperationException(format("Service Spec Type %s is not supported", serviceDefinitionType));
     }
+    return getManifestsNodeFromServiceDefinitionYaml(serviceDefinitionField);
+  }
 
+  private YamlField getManifestsNodeFromServiceDefinitionYaml(YamlField serviceDefinitionField) {
     YamlField serviceSpecField = serviceDefinitionField.getNode().getField(YamlTypes.SERVICE_SPEC);
     if (serviceSpecField == null) {
       return null;
     }
-
     return serviceSpecField.getNode().getField(YamlTypes.MANIFEST_LIST_CONFIG);
   }
 
-  public List<String> getManifestIdentifiersFilteredOnServiceType(YamlField manifestsField) {
+  public List<String> getManifestIdentifiersFilteredOnManifestType(YamlField manifestsField) {
     List<String> manifestIdentifierList = new ArrayList<>();
     List<YamlNode> manifests = manifestsField.getNode().asArray();
     for (YamlNode manifestConfig : manifests) {

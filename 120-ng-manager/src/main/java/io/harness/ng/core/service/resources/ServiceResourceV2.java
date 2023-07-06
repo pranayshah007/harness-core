@@ -78,6 +78,7 @@ import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.ng.core.service.entity.ServiceInputsMergedResponseDto;
+import io.harness.ng.core.service.feature.NGServiceV2FFCalculator;
 import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
 import io.harness.ng.core.service.mappers.ServiceElementMapper;
 import io.harness.ng.core.service.mappers.ServiceFilterHelper;
@@ -194,6 +195,7 @@ public class ServiceResourceV2 {
   private ServiceEntityYamlSchemaHelper serviceSchemaHelper;
   private ScopeAccessHelper scopeAccessHelper;
   @Inject private DeploymentMetadataServiceHelper deploymentMetadataServiceHelper;
+  @Inject private NGServiceV2FFCalculator ngServiceV2FFCalculator;
   private ServiceRbacHelper serviceRbacHelper;
   private final NGFeatureFlagHelperService featureFlagService;
   public static final String SERVICE_PARAM_MESSAGE = "Service Identifier for the entity";
@@ -230,11 +232,8 @@ public class ServiceResourceV2 {
         serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, deleted);
     if (serviceEntity.isPresent()) {
       if (EmptyPredicate.isEmpty(serviceEntity.get().getYaml())) {
-        boolean isHelmMultipleManifestSupportEnabled =
-            featureFlagService.isEnabled(accountId, FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG);
-        NGServiceConfig ngServiceConfig =
-            NGServiceEntityMapper.toNGServiceConfig(serviceEntity.get(), isHelmMultipleManifestSupportEnabled);
-        serviceEntity.get().setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
+        serviceEntity.get().setYaml(
+            NGServiceEntityMapper.toYaml(serviceEntityService.getNGServiceConfigWithFF(serviceEntity.get())));
       }
     } else {
       throw new NotFoundException(format("Service with identifier [%s] in project [%s], org [%s] not found",
@@ -279,10 +278,8 @@ public class ServiceResourceV2 {
         ResourceScope.of(accountId, serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier()),
         Resource.of(NGResourceType.SERVICE, null), SERVICE_CREATE_PERMISSION);
     serviceSchemaHelper.validateSchema(accountId, serviceRequestDTO.getYaml());
-    boolean isHelmMultipleManifestSupportEnabled =
-        featureFlagService.isEnabled(accountId, FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG);
-    ServiceEntity serviceEntity =
-        ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO, isHelmMultipleManifestSupportEnabled);
+    ServiceEntity serviceEntity = ServiceElementMapper.toServiceEntity(
+        accountId, serviceRequestDTO, ngServiceV2FFCalculator.computeFlags(accountId));
     if (isEmpty(serviceRequestDTO.getYaml())) {
       serviceSchemaHelper.validateSchema(accountId, serviceEntity.getYaml());
     }
@@ -315,12 +312,10 @@ public class ServiceResourceV2 {
     }
     serviceRequestDTOs.forEach(
         serviceRequestDTO -> serviceSchemaHelper.validateSchema(accountId, serviceRequestDTO.getYaml()));
-    boolean isHelmMultipleManifestSupportEnabled =
-        featureFlagService.isEnabled(accountId, FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG);
     List<ServiceEntity> serviceEntities = serviceRequestDTOs.stream()
                                               .map(serviceRequestDTO
                                                   -> ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO,
-                                                      isHelmMultipleManifestSupportEnabled))
+                                                      ngServiceV2FFCalculator.computeFlags(accountId)))
                                               .collect(Collectors.toList());
 
     for (int i = 0; i < serviceRequestDTOs.size(); i++) {
@@ -375,10 +370,8 @@ public class ServiceResourceV2 {
         ResourceScope.of(accountId, serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier()),
         Resource.of(NGResourceType.SERVICE, serviceRequestDTO.getIdentifier()), SERVICE_UPDATE_PERMISSION);
     serviceSchemaHelper.validateSchema(accountId, serviceRequestDTO.getYaml());
-    boolean isHelmMultipleManifestSupportEnabled =
-        featureFlagService.isEnabled(accountId, FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG);
-    ServiceEntity requestService =
-        ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO, isHelmMultipleManifestSupportEnabled);
+    ServiceEntity requestService = ServiceElementMapper.toServiceEntity(
+        accountId, serviceRequestDTO, ngServiceV2FFCalculator.computeFlags(accountId));
     if (isEmpty(serviceRequestDTO.getYaml())) {
       serviceSchemaHelper.validateSchema(accountId, requestService.getYaml());
     }
@@ -405,10 +398,8 @@ public class ServiceResourceV2 {
         ResourceScope.of(accountId, serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier()),
         Resource.of(NGResourceType.SERVICE, serviceRequestDTO.getIdentifier()), SERVICE_UPDATE_PERMISSION);
     serviceSchemaHelper.validateSchema(accountId, serviceRequestDTO.getYaml());
-    boolean isHelmMultipleManifestSupportEnabled =
-        featureFlagService.isEnabled(accountId, FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG);
-    ServiceEntity requestService =
-        ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO, isHelmMultipleManifestSupportEnabled);
+    ServiceEntity requestService = ServiceElementMapper.toServiceEntity(
+        accountId, serviceRequestDTO, ngServiceV2FFCalculator.computeFlags(accountId));
     if (isEmpty(serviceRequestDTO.getYaml())) {
       serviceSchemaHelper.validateSchema(accountId, requestService.getYaml());
     }
@@ -558,11 +549,8 @@ public class ServiceResourceV2 {
 
     serviceEntities.forEach(serviceEntity -> {
       if (EmptyPredicate.isEmpty(serviceEntity.getYaml())) {
-        boolean isHelmMultipleManifestSupportEnabled =
-            featureFlagService.isEnabled(accountId, FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG);
-        NGServiceConfig ngServiceConfig =
-            NGServiceEntityMapper.toNGServiceConfig(serviceEntity, isHelmMultipleManifestSupportEnabled);
-        serviceEntity.setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
+        serviceEntity.setYaml(
+            NGServiceEntityMapper.toYaml(serviceEntityService.getNGServiceConfigWithFF(serviceEntity)));
       }
     });
     return ResponseDTO.newResponse(

@@ -15,10 +15,12 @@ import static io.harness.rule.OwnerRule.YOGESH;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.NGCommonEntityConstants;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.infra.InfrastructureMapper;
@@ -32,7 +34,9 @@ import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec;
@@ -101,7 +105,7 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
   private final String ORG_IDENTIFIER = "default";
   private final String PROJ_IDENTIFIER = "svcenvrefactor";
   private final String ENV_IDENTIFIER = "environmentVariableTest";
-
+  Map<FeatureName, Boolean> featureFlags = new HashMap<>();
   AutoCloseable mocks;
 
   @Before
@@ -109,6 +113,7 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
     mocks = MockitoAnnotations.openMocks(this);
     Reflect.on(deploymentStageVariableCreator).set("infrastructureMapper", infrastructureMapper);
     Reflect.on(infrastructureMapper).set("connectorService", Mockito.mock(ConnectorService.class));
+    featureFlags.put(FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG, false);
   }
 
   @After
@@ -390,6 +395,8 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
     creationContext.put(NGCommonEntityConstants.ORG_KEY, ORG_IDENTIFIER);
     creationContext.put(NGCommonEntityConstants.PROJECT_KEY, PROJ_IDENTIFIER);
 
+    NGServiceConfig config = NGServiceEntityMapper.toNGServiceConfig(serviceEntity, featureFlags);
+    doReturn(config).when(serviceEntityService).getNGServiceConfigWithFF(serviceEntity);
     LinkedHashMap<String, VariableCreationResponse> variablesForChildrenNodesV2 =
         deploymentStageVariableCreator.createVariablesForChildrenNodesV2(
             creationContext, YamlUtils.read(stageField.getNode().toString(), DeploymentStageNode.class));
@@ -527,6 +534,8 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
     creationContext.put(NGCommonEntityConstants.ORG_KEY, ORG_IDENTIFIER);
     creationContext.put(NGCommonEntityConstants.PROJECT_KEY, PROJ_IDENTIFIER);
 
+    NGServiceConfig config = NGServiceEntityMapper.toNGServiceConfig(serviceEntity, featureFlags);
+    doReturn(config).when(serviceEntityService).getNGServiceConfigWithFF(serviceEntity);
     LinkedHashMap<String, VariableCreationResponse> variablesForChildrenNodesV2 =
         deploymentStageVariableCreator.createVariablesForChildrenNodesV2(
             creationContext, YamlUtils.read(stageField.getNode().toString(), DeploymentStageNode.class));
