@@ -24,6 +24,7 @@ import io.harness.cvng.beans.cvnglog.TraceableType;
 import io.harness.datacollection.DataCollectionDSLService;
 import io.harness.datacollection.entity.CallDetails;
 import io.harness.datacollection.entity.RuntimeParameters;
+import io.harness.datacollection.utils.DataCollectionUtils;
 import io.harness.perpetualtask.datacollection.DataCollectionLogContext;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
@@ -150,7 +151,7 @@ public class CVNGDataCollectionDelegateServiceImpl implements CVNGDataCollection
       responseObj = callDetails.getResponse().body();
     } else if (callDetails.getResponse() != null && callDetails.getResponse().errorBody() != null) {
       try {
-        responseObj = callDetails.getResponse().errorBody().string();
+        responseObj = DataCollectionUtils.getErrorBodyString(callDetails.getResponse());
       } catch (IOException ignored) {
       }
     } else {

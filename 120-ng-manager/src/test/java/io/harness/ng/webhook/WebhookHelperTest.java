@@ -18,6 +18,8 @@ import static io.harness.eventsframework.EventsFrameworkConstants.GIT_PR_EVENT_S
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_PUSH_EVENT_STREAM;
 import static io.harness.eventsframework.EventsFrameworkConstants.WEBHOOK_EVENTS_STREAM;
 import static io.harness.rule.OwnerRule.MEET;
+import static io.harness.rule.OwnerRule.VINICIUS;
+import static io.harness.security.PrincipalProtoMapper.toPrincipalProto;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -39,6 +41,8 @@ import io.harness.product.ci.scm.proto.PullRequestHook;
 import io.harness.product.ci.scm.proto.PushHook;
 import io.harness.product.ci.scm.proto.ReleaseHook;
 import io.harness.rule.Owner;
+import io.harness.security.dto.Principal;
+import io.harness.security.dto.UserPrincipal;
 
 import com.google.inject.name.Named;
 import java.util.ArrayList;
@@ -237,5 +241,29 @@ public class WebhookHelperTest extends CategoryTest {
                        .setSourceRepoType(SourceRepoType.GITHUB)
                        .setEvent(WebhookEventType.DELETE_BRANCH)
                        .build());
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGenerateWebhookDTOForCustomWebhook() {
+    HeaderConfig header = HeaderConfig.builder().key("header-key").values(List.of("value")).build();
+    Principal principal = new UserPrincipal("name", "mail", "username", "account");
+    WebhookEvent webhookEvent = WebhookEvent.builder()
+                                    .payload("payload")
+                                    .headers(List.of(header))
+                                    .accountId("account")
+                                    .uuid("id")
+                                    .createdAt(123L)
+                                    .principal(principal)
+                                    .build();
+    WebhookDTO webhookDTO = webhookHelper.generateWebhookDTO(webhookEvent, null, null);
+    assertThat(webhookDTO.getAccountId()).isEqualTo("account");
+    assertThat(webhookDTO.getHeaders(0).getKey()).isEqualTo("header-key");
+    assertThat(webhookDTO.getHeaders(0).getValues(0)).isEqualTo("value");
+    assertThat(webhookDTO.getJsonPayload()).isEqualTo("payload");
+    assertThat(webhookDTO.getEventId()).isEqualTo("id");
+    assertThat(webhookDTO.getTime()).isEqualTo(123L);
+    assertThat(webhookDTO.getPrincipal()).isEqualToComparingFieldByField(toPrincipalProto(principal));
   }
 }

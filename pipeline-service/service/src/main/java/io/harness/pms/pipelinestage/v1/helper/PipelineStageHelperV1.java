@@ -18,7 +18,6 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.JsonUtils;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
@@ -65,15 +64,6 @@ public class PipelineStageHelperV1 {
         throw new InvalidRequestException("Nested pipeline is not supported");
       }
     }
-  }
-
-  public String getInputSet(YamlField pipelineInputs) {
-    String inputSetAsJson = "{}";
-    if (pipelineInputs != null) {
-      Map<String, JsonNode> map = getInputSetMapInternal(pipelineInputs);
-      inputSetAsJson = JsonUtils.asJson(map);
-    }
-    return inputSetAsJson;
   }
 
   public JsonNode getInputSetJsonNode(YamlField pipelineInputs) {

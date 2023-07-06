@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.dto.secrets;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.beans.DecryptableEntity;
 import io.harness.exception.UnknownEnumTypeException;
 import io.harness.ng.core.models.SSHExecutionCredentialSpec;
@@ -33,6 +34,7 @@ import lombok.NoArgsConstructor;
 @JsonTypeName("SSHKey")
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(name = "SSHKeySpec", description = "This is the SSH key authentication details defined in Harness.")
+@RecasterAlias("io.harness.ng.core.dto.secrets.SSHKeySpecDTO")
 public class SSHKeySpecDTO extends SecretSpecDTO {
   @Schema(description = "SSH port") int port;
   @Valid @NotNull SSHAuthDTO auth;

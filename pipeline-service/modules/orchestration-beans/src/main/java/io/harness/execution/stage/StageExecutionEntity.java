@@ -8,10 +8,10 @@
 package io.harness.execution.stage;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
@@ -50,7 +50,14 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("stageExecutionEntity")
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CDP)
+@ChangeDataCapture(
+    table = "stage_execution", dataStore = "pms-harness", fields = {}, handler = "PipelineStageExecutionHandler")
+@ChangeDataCapture(
+    table = "custom_stage_execution", dataStore = "pms-harness", fields = {}, handler = "CustomStageExecutionHandler")
+@ChangeDataCapture(
+    table = "execution_tags_info_ng", dataStore = "pms-harness", fields = {}, handler = "PipelineStageTagsInfoNG")
 public class StageExecutionEntity implements PersistentEntity, UuidAware {
+  // This class is used for saving all kind of stages which run in the pipeline service like Custom/Approval Stage
   @org.springframework.data.annotation.Id @Id String uuid;
   @CreatedDate private long createdAt;
   @LastModifiedDate private long lastModifiedAt;
@@ -80,19 +87,13 @@ public class StageExecutionEntity implements PersistentEntity, UuidAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(SortCompoundMongoIndex.builder()
-                 .name("stage_execution_entity_idx")
+                 .name("stage_execution_entity_sorted_idx")
                  .field(StageExecutionEntityKeys.accountIdentifier)
                  .field(StageExecutionEntityKeys.orgIdentifier)
                  .field(StageExecutionEntityKeys.projectIdentifier)
                  .field(StageExecutionEntityKeys.stageExecutionId)
                  .descSortField(StageExecutionEntityKeys.createdAt)
-                 .build())
-        .add(CompoundMongoIndex.builder()
-                 .name("unique_stage_execution_entity_idx")
-                 .field(StageExecutionEntityKeys.accountIdentifier)
-                 .field(StageExecutionEntityKeys.orgIdentifier)
-                 .field(StageExecutionEntityKeys.projectIdentifier)
-                 .field(StageExecutionEntityKeys.stageExecutionId)
+                 .unique(true)
                  .build())
         .build();
   }

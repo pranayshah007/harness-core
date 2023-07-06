@@ -423,7 +423,7 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
   public void testLogProgress_multipleUpdates() {
     cvConfigService.save(newCVConfig());
     String verificationJobInstanceId =
-        createVerificationJobInstance("envIdentifier", ExecutionStatus.RUNNING, CANARY).getUuid();
+        createVerificationJobInstance("envIdentifier", ExecutionStatus.RUNNING, CANARY, IN_PROGRESS).getUuid();
 
     VerificationJobInstance verificationJobInstance =
         verificationJobInstanceService.getVerificationJobInstance(verificationJobInstanceId);
@@ -445,6 +445,7 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
     assertThat(verificationJobInstance.getProgressLogs().get(0).getLog()).isEqualTo("time series analysis done");
 
     assertThat(verificationJobInstance.getExecutionStatus()).isEqualTo(ExecutionStatus.RUNNING);
+    assertThat(verificationJobInstance.getVerificationStatus()).isEqualTo(IN_PROGRESS);
     progressLog = AnalysisProgressLog.builder()
                       .startTime(verificationJobInstance.getEndTime().minus(Duration.ofMinutes(1)))
                       .endTime(verificationJobInstance.getEndTime())
@@ -460,6 +461,7 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
     assertThat(((AnalysisProgressLog) verificationJobInstance.getProgressLogs().get(1)).getAnalysisStatus())
         .isEqualTo(AnalysisStatus.SUCCESS);
     assertThat(verificationJobInstance.getExecutionStatus()).isEqualTo(ExecutionStatus.RUNNING);
+    assertThat(verificationJobInstance.getVerificationStatus()).isEqualTo(IN_PROGRESS);
 
     progressLog = AnalysisProgressLog.builder()
                       .startTime(verificationJobInstance.getEndTime().minus(Duration.ofMinutes(1)))
@@ -501,6 +503,7 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
     assertThat(((AnalysisProgressLog) verificationJobInstance.getProgressLogs().get(0)).getAnalysisStatus())
         .isEqualTo(AnalysisStatus.FAILED);
     assertThat(verificationJobInstance.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
+    assertThat(verificationJobInstance.getVerificationStatus()).isEqualTo(ActivityVerificationStatus.ERROR);
   }
 
   @Test
@@ -659,10 +662,13 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
     VerificationJobInstance abortedRunningVJI =
         hPersistence.get(VerificationJobInstance.class, runningVerificationJobInstance.getUuid());
     assertThat(abortedRunningVJI.getExecutionStatus()).isEqualTo(ExecutionStatus.ABORTED);
+    assertThat(abortedRunningVJI.getVerificationStatus()).isEqualTo(ActivityVerificationStatus.ABORTED);
     // Failed JobInstance will remain in failed status
     VerificationJobInstance abortedFailedVJI =
         hPersistence.get(VerificationJobInstance.class, failedVerificationJobInstance.getUuid());
     assertThat(abortedFailedVJI.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
+    assertThat(abortedFailedVJI.getVerificationStatus()).isEqualTo(VERIFICATION_PASSED);
+
     Mockito.verify(dataCollectionTaskService).abortDeploymentDataCollectionTasks(verificationTaskIds);
   }
 
@@ -778,7 +784,7 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
         .isEqualTo(devVerificationJobInstance.getResolvedJob().getJobName());
     assertThat(deploymentVerificationJobInstanceSummary.getProgressPercentage()).isEqualTo(0);
     assertThat(deploymentVerificationJobInstanceSummary.getRisk()).isNull();
-    assertThat(deploymentVerificationJobInstanceSummary.getStatus()).isEqualTo(ActivityVerificationStatus.ERROR);
+    assertThat(deploymentVerificationJobInstanceSummary.getStatus()).isEqualTo(ActivityVerificationStatus.ABORTED);
     CanaryAdditionalInfo additionalInfo = new CanaryAdditionalInfo();
     additionalInfo.setCanary(new HashSet<>());
     additionalInfo.setPrimary(new HashSet<>());
@@ -913,6 +919,7 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
     VerificationJobInstance updated =
         verificationJobInstanceService.getVerificationJobInstance(verificationJobInstance.getUuid());
     assertThat(updated.getExecutionStatus()).isEqualTo(ExecutionStatus.TIMEOUT);
+    assertThat(updated.getVerificationStatus()).isEqualTo(ActivityVerificationStatus.ERROR);
   }
 
   @Test
@@ -941,6 +948,7 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
     VerificationJobInstance updated =
         verificationJobInstanceService.getVerificationJobInstance(verificationJobInstance.getUuid());
     assertThat(updated.getExecutionStatus()).isEqualTo(ExecutionStatus.QUEUED);
+    assertThat(updated.getVerificationStatus()).isEqualTo(ActivityVerificationStatus.NOT_STARTED);
   }
 
   @Test
@@ -955,6 +963,7 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
     VerificationJobInstance updated =
         verificationJobInstanceService.getVerificationJobInstance(verificationJobInstance.getUuid());
     assertThat(updated.getExecutionStatus()).isEqualTo(ExecutionStatus.TIMEOUT);
+    assertThat(updated.getVerificationStatus()).isEqualTo(ActivityVerificationStatus.ERROR);
   }
 
   @Test
@@ -1174,6 +1183,7 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
         VerificationJobInstance.builder()
             .accountId(accountId)
             .executionStatus(ExecutionStatus.QUEUED)
+            .verificationStatus(ActivityVerificationStatus.NOT_STARTED)
             .deploymentStartTime(Instant.ofEpochMilli(deploymentStartTimeMs))
             .resolvedJob(verificationJob)
             .startTime(Instant.ofEpochMilli(deploymentStartTimeMs + Duration.ofMinutes(2).toMillis()))
@@ -1200,6 +1210,11 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
 
   private VerificationJobInstance createVerificationJobInstance(
       String envIdentifier, ExecutionStatus executionStatus, VerificationJobType verificationJobType) {
+    return createVerificationJobInstance(envIdentifier, executionStatus, verificationJobType, VERIFICATION_PASSED);
+  }
+
+  private VerificationJobInstance createVerificationJobInstance(String envIdentifier, ExecutionStatus executionStatus,
+      VerificationJobType verificationJobType, ActivityVerificationStatus activityVerificationStatus) {
     VerificationJob verificationJob = createVerificationJob(verificationJobType);
     verificationJob.setEnvIdentifier(RuntimeParameter.builder().value(envIdentifier).build());
     VerificationJobInstance verificationJobInstance =
@@ -1210,7 +1225,7 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
             .resolvedJob(verificationJob)
             .createdAt(deploymentStartTimeMs + Duration.ofMinutes(2).toMillis())
             .startTime(Instant.ofEpochMilli(deploymentStartTimeMs + Duration.ofMinutes(2).toMillis()))
-            .verificationStatus(VERIFICATION_PASSED)
+            .verificationStatus(activityVerificationStatus)
             .cvConfigMap(Collections.singletonMap(cvConfigId, cvConfig))
             .build();
     verificationJobInstanceService.create(verificationJobInstance);

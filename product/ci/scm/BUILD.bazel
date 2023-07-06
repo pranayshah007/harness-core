@@ -35,3 +35,11 @@ go_test(
         "@org_uber_go_zap//:zap",
     ],
 )
+
+load("//:tools/bazel/macros.bzl", "run_analysis")
+
+run_analysis(
+    language = "go",
+    targets = [":scm_lib"],
+    test_targets = [":scm_test"],
+)

@@ -8,6 +8,7 @@
 package io.harness.steps.approval.step;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.YUVRAJ;
@@ -108,6 +109,10 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
   private static final String nodeExecutionId = "nodeExecutionId";
   private static final String ACCOUNT_ID = "account";
   private static final String ORG_ID = "account";
+  private static final String PROJECT_ID = "PROJECT_ID";
+  private static final String PIPELINE_ID = "PIPELINE_ID";
+  private static final String APPROVAL_KEY = "key";
+  private static final Long CREATED_AT = 1000L;
   @Spy @Inject @InjectMocks private ApprovalInstanceServiceImpl approvalInstanceServiceImpl;
 
   @Test
@@ -302,11 +307,6 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
   @Owner(developers = YUVRAJ)
   @Category(UnitTests.class)
   public void testFindAllPreviousWaitingApprovals() {
-    String accountId = "ACCOUNT_ID";
-    String orgId = "ORG_ID";
-    String projectId = "PROJECT_ID";
-    String pipelineId = "PIPELINE_ID";
-    String approvalKey = "key";
     Ambiance ambiance1 = Ambiance.newBuilder().setPlanExecutionId("planExecutionId1").build();
     Ambiance ambiance2 = Ambiance.newBuilder().setPlanExecutionId("planExecutionId2").build();
     List<ApprovalInstance> approvalInstances = new ArrayList<>();
@@ -321,11 +321,27 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
     approvalInstance.setAmbiance(ambiance2);
     approvalInstance.setId("_id");
     approvalInstances.add(approvalInstance);
-    when(approvalInstanceRepository.findAll(any())).thenReturn(approvalInstances);
+    when(approvalInstanceRepository.findAll(Criteria.where("accountId")
+                                                .is(ACCOUNT_ID)
+                                                .and("orgIdentifier")
+                                                .is(ORG_ID)
+                                                .and("projectIdentifier")
+                                                .is(PROJECT_ID)
+                                                .and("pipelineIdentifier")
+                                                .is(PIPELINE_ID)
+                                                .and("approvalKey")
+                                                .is(APPROVAL_KEY)
+                                                .and(ApprovalInstanceKeys.status)
+                                                .is(ApprovalStatus.WAITING)
+                                                .and("isAutoRejectEnabled")
+                                                .is(true)
+                                                .and(ApprovalInstanceKeys.createdAt)
+                                                .lt(CREATED_AT)))
+        .thenReturn(approvalInstances);
     when(pmsEngineExpressionService.renderExpression(ambiance1, "<+service.identifier>", true)).thenReturn("ser1");
     when(pmsEngineExpressionService.renderExpression(ambiance2, "<+service.identifier>", true)).thenReturn("ser1");
     List<String> approvalIds = approvalInstanceServiceImpl.findAllPreviousWaitingApprovals(
-        accountId, orgId, projectId, pipelineId, approvalKey, ambiance1);
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, APPROVAL_KEY, ambiance1, CREATED_AT);
     assertThat(approvalIds).isNotNull();
     assertThat(approvalIds.size()).isEqualTo(1);
     assertThat(approvalIds.get(0)).isEqualTo("_id");
@@ -335,11 +351,6 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
   @Owner(developers = YUVRAJ)
   @Category(UnitTests.class)
   public void testFindAllPreviousWaitingApprovalsNegative() {
-    String accountId = "ACCOUNT_ID";
-    String orgId = "ORG_ID";
-    String projectId = "PROJECT_ID";
-    String pipelineId = "PIPELINE_ID";
-    String approvalKey = "key";
     Ambiance ambiance1 = Ambiance.newBuilder().setPlanExecutionId("planExecutionId1").build();
     Ambiance ambiance2 = Ambiance.newBuilder().setPlanExecutionId("planExecutionId2").build();
     List<ApprovalInstance> approvalInstances = new ArrayList<>();
@@ -354,11 +365,27 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
     approvalInstance.setAmbiance(ambiance2);
     approvalInstance.setId("_id");
     approvalInstances.add(approvalInstance);
-    when(approvalInstanceRepository.findAll(any())).thenReturn(approvalInstances);
+    when(approvalInstanceRepository.findAll(Criteria.where("accountId")
+                                                .is(ACCOUNT_ID)
+                                                .and("orgIdentifier")
+                                                .is(ORG_ID)
+                                                .and("projectIdentifier")
+                                                .is(PROJECT_ID)
+                                                .and("pipelineIdentifier")
+                                                .is(PIPELINE_ID)
+                                                .and("approvalKey")
+                                                .is(APPROVAL_KEY)
+                                                .and(ApprovalInstanceKeys.status)
+                                                .is(ApprovalStatus.WAITING)
+                                                .and("isAutoRejectEnabled")
+                                                .is(true)
+                                                .and(ApprovalInstanceKeys.createdAt)
+                                                .lt(CREATED_AT)))
+        .thenReturn(approvalInstances);
     when(pmsEngineExpressionService.renderExpression(ambiance1, "<+service.identifier>", true)).thenReturn("ser1");
     when(pmsEngineExpressionService.renderExpression(ambiance2, "<+service.identifier>", true)).thenReturn("ser2");
     List<String> approvalIds = approvalInstanceServiceImpl.findAllPreviousWaitingApprovals(
-        accountId, orgId, projectId, pipelineId, approvalKey, ambiance1);
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, APPROVAL_KEY, ambiance1, CREATED_AT);
     assertThat(approvalIds).isNotNull();
     assertThat(approvalIds).isEmpty();
   }
@@ -367,31 +394,13 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
   @Owner(developers = YUVRAJ)
   @Category(UnitTests.class)
   public void testFindAllPreviousWaitingApprovalsWithoutApprovalKey() {
-    String accountId = "ACCOUNT_ID";
-    String orgId = "ORG_ID";
-    String projectId = "PROJECT_ID";
-    String pipelineId = "PIPELINE_ID";
     Ambiance ambiance1 = Ambiance.newBuilder().setPlanExecutionId("planExecutionId1").build();
-    Ambiance ambiance2 = Ambiance.newBuilder().setPlanExecutionId("planExecutionId2").build();
-    List<ApprovalInstance> approvalInstances = new ArrayList<>();
-    ApprovalInstance approvalInstance = HarnessApprovalInstance.builder()
-                                            .approvalKey("key")
-                                            .approvalActivities(Collections.EMPTY_LIST)
-                                            .approvalMessage("message1")
-                                            .approvers(ApproversDTO.builder().build())
-                                            .isAutoRejectEnabled(true)
-                                            .includePipelineExecutionHistory(false)
-                                            .build();
-    approvalInstance.setAmbiance(ambiance2);
-    approvalInstance.setId("_id");
-    approvalInstances.add(approvalInstance);
-    when(approvalInstanceRepository.findAll(any())).thenReturn(approvalInstances);
     when(pmsEngineExpressionService.renderExpression(ambiance1, "<+service.identifier>", true)).thenReturn("ser1");
-    when(pmsEngineExpressionService.renderExpression(ambiance2, "<+service.identifier>", true)).thenReturn("ser1");
     List<String> approvalIds = approvalInstanceServiceImpl.findAllPreviousWaitingApprovals(
-        accountId, orgId, projectId, pipelineId, null, ambiance1);
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, null, ambiance1, CREATED_AT);
     assertThat(approvalIds).isNotNull();
     assertThat(approvalIds).isEmpty();
+    verifyNoMoreInteractions(approvalInstanceRepository);
   }
 
   @Test
@@ -782,7 +791,23 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
     entity.setStatus(ApprovalStatus.WAITING);
     Optional<ApprovalInstance> optional = Optional.of(entity);
     when(approvalInstanceRepository.findById(any())).thenReturn(optional);
-    when(approvalInstanceRepository.findAll(any())).thenReturn(Collections.emptyList());
+    when(approvalInstanceRepository.findAll(Criteria.where("accountId")
+                                                .is(ACCOUNT_ID)
+                                                .and("orgIdentifier")
+                                                .is(ORG_ID)
+                                                .and("projectIdentifier")
+                                                .is(PROJECT_ID)
+                                                .and("pipelineIdentifier")
+                                                .is(PIPELINE)
+                                                .and("approvalKey")
+                                                .is(APPROVAL_KEY)
+                                                .and(ApprovalInstanceKeys.status)
+                                                .is(ApprovalStatus.WAITING)
+                                                .and("isAutoRejectEnabled")
+                                                .is(true)
+                                                .and(ApprovalInstanceKeys.createdAt)
+                                                .lt(CREATED_AT)))
+        .thenReturn(Collections.emptyList());
     EmbeddedUser embeddedUser = EmbeddedUser.builder().name("embeddedUser").build();
 
     HarnessApprovalActivityRequestDTO harnessApprovalActivityRequestDTO =
@@ -792,6 +817,10 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
     instance.setStatus(ApprovalStatus.APPROVED);
     instance.setAccountId(ACCOUNT_ID);
     instance.setOrgIdentifier(ORG_ID);
+    instance.setProjectIdentifier(PROJECT_ID);
+    instance.setPipelineIdentifier(PIPELINE_ID);
+    instance.setApprovalKey(APPROVAL_KEY);
+    instance.setCreatedAt(CREATED_AT);
 
     instance.setStatus(ApprovalStatus.APPROVED);
     when(approvalInstanceRepository.save(any())).thenReturn(instance);

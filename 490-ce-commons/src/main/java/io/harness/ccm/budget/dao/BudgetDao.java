@@ -87,7 +87,7 @@ public class BudgetDao {
         : Sort.descending(finalBudgetSortType.getColumnName());
 
     final FindOptions options = new FindOptions();
-    if (budgetSortType.equals(BudgetSortType.NAME)) {
+    if (finalBudgetSortType.equals(BudgetSortType.NAME)) {
       options.collation(Collation.builder().locale(LOCALE_EN).build());
     }
     options.limit(count);

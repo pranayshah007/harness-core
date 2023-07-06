@@ -1885,15 +1885,17 @@ public class BuilderFactory {
 
   private List<NotificationRuleCondition> getNotificationRuleConditions(NotificationRuleType type) {
     if (type.equals(NotificationRuleType.SLO)) {
-      return Arrays.asList(NotificationRuleCondition.builder()
-                               .type(NotificationRuleConditionType.ERROR_BUDGET_REMAINING_PERCENTAGE)
-                               .spec(ErrorBudgetRemainingPercentageConditionSpec.builder().threshold(10.0).build())
-                               .build());
+      return new ArrayList<>(
+          Arrays.asList(NotificationRuleCondition.builder()
+                            .type(NotificationRuleConditionType.ERROR_BUDGET_REMAINING_PERCENTAGE)
+                            .spec(ErrorBudgetRemainingPercentageConditionSpec.builder().threshold(10.0).build())
+                            .build()));
     } else {
-      return Arrays.asList(NotificationRuleCondition.builder()
-                               .type(NotificationRuleConditionType.HEALTH_SCORE)
-                               .spec(HealthScoreConditionSpec.builder().threshold(20.0).period("10m").build())
-                               .build());
+      return new ArrayList<>(
+          Arrays.asList(NotificationRuleCondition.builder()
+                            .type(NotificationRuleConditionType.HEALTH_SCORE)
+                            .spec(HealthScoreConditionSpec.builder().threshold(20.0).period("10m").build())
+                            .build()));
     }
   }
 

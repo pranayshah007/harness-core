@@ -36,3 +36,11 @@ go_test(
     embed = [":exec"],
     deps = ["@com_github_stretchr_testify//assert"],
 )
+
+load("//:tools/bazel/macros.bzl", "run_analysis")
+
+run_analysis(
+    language = "go",
+    targets = [":exec"],
+    test_targets = [":exec_test"],
+)

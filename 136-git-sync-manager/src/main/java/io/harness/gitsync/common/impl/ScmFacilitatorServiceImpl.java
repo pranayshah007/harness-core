@@ -394,7 +394,10 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
 
     gitDefaultBranchCacheHelper.cacheDefaultBranchResponse(scope.getAccountIdentifier(), scmConnector,
         scmGetFileByBranchRequestDTO.getRepoName(), workingBranch, gitFileResponse.getBranch());
-    return getScmGetFileResponseDTO(gitFileResponse);
+    return getScmGetFileResponseDTO(gitFileResponse,
+        gitDefaultBranchCacheHelper.isGitDefaultBranch(scope.getAccountIdentifier(), scmConnector,
+            scmGetFileByBranchRequestDTO.getRepoName(), scmGetFileByBranchRequestDTO.getBranchName(),
+            gitFileResponse.getBranch()));
   }
 
   @Override
@@ -785,8 +788,13 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
               -> GitRepositoryResponseDTO.builder().name(gitRepoHelper.getCompleteRepoName(repository)).build())
           .collect(Collectors.toList());
     }
+
     if (isNotEmpty(gitRepository.getName())) {
-      return Collections.singletonList(GitRepositoryResponseDTO.builder().name(gitRepository.getName()).build());
+      String absoluteRepoName = gitRepository.getName();
+      if (gitRepoHelper.isRepoPresent(response.getReposList(), absoluteRepoName)) {
+        return Collections.singletonList(GitRepositoryResponseDTO.builder().name(absoluteRepoName).build());
+      }
+      return Collections.singletonList(GitRepositoryResponseDTO.builder().build());
     } else if (isNotEmpty(gitRepository.getOrg()) && isNamespaceNotEmpty(response)) {
       return prepareListRepoResponseWithNamespace(scmConnector, response, gitRepository);
     } else {
@@ -1055,7 +1063,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
           gitDefaultBranchCacheHelper.cacheDefaultBranchResponse(accountIdentifier, gitFileRequest.getScmConnector(),
               gitFileRequest.getRepo(), gitFileRequest.getBranch(), gitFileResponse.getBranch());
         }
-        finalResponseMap.put(identifier, getScmGetFileResponseDTO(gitFileResponse).toScmGetFileResponseV2DTO());
+        finalResponseMap.put(identifier, getScmGetFileResponseDTO(gitFileResponse, false).toScmGetFileResponseV2DTO());
       } catch (Exception exception) {
         finalResponseMap.put(identifier, prepareScmGetFileResponseV2FromException(exception));
       }
@@ -1121,7 +1129,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     }
   }
 
-  private ScmGetFileResponseDTO getScmGetFileResponseDTO(GitFileResponse gitFileResponse) {
+  private ScmGetFileResponseDTO getScmGetFileResponseDTO(GitFileResponse gitFileResponse, boolean isGitDefaultBranch) {
     String branch = isEmpty(gitFileResponse.getBranch()) ? "" : gitFileResponse.getBranch();
 
     return ScmGetFileResponseDTO.builder()
@@ -1129,6 +1137,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
         .blobId(gitFileResponse.getObjectId())
         .commitId(gitFileResponse.getCommitId())
         .branchName(branch)
+        .isGitDefaultBranch(isGitDefaultBranch)
         .build();
   }
 

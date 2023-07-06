@@ -19,6 +19,7 @@ import io.harness.migrations.all.AddAccountIdToDeploymentEntities;
 import io.harness.migrations.all.AddAccountIdToEntityVersion;
 import io.harness.migrations.all.AddAccountIdToExecutionInterruptCollection;
 import io.harness.migrations.all.AddAccountIdToInfraDefinition;
+import io.harness.migrations.all.AddAccountIdToLearningEngineExperimentalAnalysisTask;
 import io.harness.migrations.all.AddAccountIdToLogAnalysisRecordsMigration;
 import io.harness.migrations.all.AddAccountIdToLogDataRecordsMigration;
 import io.harness.migrations.all.AddAccountIdToNewRelicMetricAnalysisRecords;
@@ -427,6 +428,7 @@ public class MigrationBackgroundList {
         .add(Pair.of(249, EncryptDelegateTokenMigration.class))
         .add(Pair.of(250, NoOpMigration.class))
         .add(Pair.of(251, EncryptDelegateTokenMigration.class))
+        .add(Pair.of(252, AddAccountIdToLearningEngineExperimentalAnalysisTask.class))
         .build();
   }
 }

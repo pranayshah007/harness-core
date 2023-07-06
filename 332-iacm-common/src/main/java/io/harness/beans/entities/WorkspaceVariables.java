@@ -26,7 +26,7 @@ public class WorkspaceVariables {
   String value_type;
   String value;
   String key;
-  String stack;
+  String workspace;
   String account;
   String org;
   String project;

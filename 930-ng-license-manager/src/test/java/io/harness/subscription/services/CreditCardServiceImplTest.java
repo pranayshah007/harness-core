@@ -28,6 +28,7 @@ import io.harness.exception.DuplicateFieldException;
 import io.harness.repositories.CreditCardRepository;
 import io.harness.repositories.StripeCustomerRepository;
 import io.harness.rule.Owner;
+import io.harness.subscription.dto.CardDTO;
 import io.harness.subscription.helpers.impl.StripeHelperImpl;
 import io.harness.subscription.responses.CreditCardResponse;
 import io.harness.subscription.services.impl.CreditCardServiceImpl;
@@ -105,5 +106,17 @@ public class CreditCardServiceImplTest extends CategoryTest {
 
     creditCardService.hasValidCard(DEFAULT_ACCOUNT_ID);
     assertThat(creditCardService.hasValidCard(DEFAULT_ACCOUNT_ID)).isFalse();
+  }
+
+  @Test
+  @Owner(developers = TOMMY)
+  @Category(UnitTests.class)
+  public void testGetDefaultCard() {
+    when(stripeCustomerRepository.findByAccountIdentifier(DEFAULT_ACCOUNT_ID)).thenReturn(DEFAULT_CUSTOMER);
+    when(stripeHelper.listPaymentMethods(DEFAULT_CUSTOMER_ID)).thenReturn(DEFAULT_PAYMENT_METHODS);
+
+    CardDTO cardDTO = creditCardService.getDefaultCreditCard(DEFAULT_ACCOUNT_ID);
+
+    assertThat(cardDTO.getIsDefaultCard()).isTrue();
   }
 }

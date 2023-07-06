@@ -135,4 +135,11 @@ public class SshExceptionConstants {
       + " repository and package details. We recommend also checking for the artifact on Github server";
   public final String GITHUB_PACKAGE_ARTIFACT_DOWNLOAD_EXPLANATION =
       "Failed to download GithubPackage Artifact with id: %s";
+
+  public final String COPY_AND_DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_GITHUB_PACKAGE_ARTIFACT_HINT =
+      "Please make sure there is no copy or download artifact command unit specified";
+  public final String COPY_AND_DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_GITHUB_PACKAGE_ARTIFACT_EXPLANATION =
+      "Copy and Download Artifact for package type `%s` is not supported for Github Package Repository artifacts defined in service";
+  public final String COPY_AND_DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_GITHUB_PACKAGE_ARTIFACT_FAILED =
+      "Copy and Download Artifact for package type `%s` is not supported for Github Package Repository artifacts";
 }

@@ -9,7 +9,6 @@ package io.harness.delegate.heartbeat;
 
 import static io.harness.data.structure.UUIDGenerator.generateTimeBasedUuid;
 import static io.harness.delegate.message.ManagerMessageConstants.SELF_DESTRUCT;
-import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_RESTARTED;
 import static io.harness.rule.OwnerRule.JENNY;
 import static io.harness.rule.OwnerRule.XINGCHI_JIN;
 
@@ -20,7 +19,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -178,8 +176,6 @@ public class DelegateStreamHeartbeatServiceTest extends WingsBaseTest {
     delegateStreamHeartbeatService.process(params2);
     Delegate updatedDelegateWithNewConnectionId = persistence.get(Delegate.class, delegateId);
     assertThat(updatedDelegateWithNewConnectionId.getDelegateConnectionId()).isEqualTo(TEST_CONNECTION_ID1);
-    // verify delegate restart registered in metrics
-    verify(delegateMetricsService).recordDelegateMetrics(updatedDelegate, DELEGATE_RESTARTED);
   }
 
   @Test

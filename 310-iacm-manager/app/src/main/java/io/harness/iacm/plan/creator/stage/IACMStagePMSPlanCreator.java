@@ -37,6 +37,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.IACMStageExecutionException;
 import io.harness.iacm.execution.IACMIntegrationStageStepPMS;
 import io.harness.iacm.execution.IACMIntegrationStageStepParametersPMS;
+import io.harness.iacm.execution.IACMStepsUtils;
 import io.harness.iacmserviceclient.IACMServiceUtils;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
@@ -78,6 +79,7 @@ import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -85,8 +87,10 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
@@ -99,6 +103,8 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
   @Inject private ConnectorUtils connectorUtils;
   @Inject private CIStagePlanCreationUtils cIStagePlanCreationUtils;
   @Inject private IACMServiceUtils serviceUtils;
+
+  @Inject private IACMStepsUtils iacmStepsUtils;
 
   /**
    This function seems to be what is called by the pmsSDK in order to create an execution plan
@@ -146,7 +152,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
         modifyYAMLWithImplicitSteps(ctx, executionSource, executionField, stageNode, codeBase);
 
     ExecutionElementConfig modifiedExecutionPlanWithworkspace =
-        addworkspaceToIACMSteps(modifiedExecutionPlan, workspace);
+        addworkspaceToIACMSteps(ctx, modifiedExecutionPlan, workspace);
     // Retrieve the Modified Plan execution where the InitialTask and Git Clone step have been injected. Then retrieve
     // the steps from the plan to the level of steps->spec->stageElementConfig->execution->steps. Here, we can inject
     // any step and that step will be available in the InitialTask step in the path:
@@ -168,18 +174,43 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
   }
 
   private ExecutionElementConfig addworkspaceToIACMSteps(
-      ExecutionElementConfig modifiedExecutionPlan, String workspace) {
+      PlanCreationContext ctx, ExecutionElementConfig modifiedExecutionPlan, String workspace) {
     List<ExecutionWrapperConfig> modifiedSteps = new ArrayList<>();
+    Map<String, String> envVars = iacmStepsUtils.getIACMEnvVariables(
+        ctx.getOrgIdentifier(), ctx.getProjectIdentifier(), ctx.getAccountIdentifier(), workspace);
     for (ExecutionWrapperConfig wrapperConfig : modifiedExecutionPlan.getSteps()) {
-      if (wrapperConfig.getStep().get("spec").get("envVariables") != null) {
-        ((ObjectNode) wrapperConfig.getStep().get("spec").get("envVariables")).put("HARNESS_WORKSPACE", workspace);
-      }
       switch (wrapperConfig.getStep().get("type").asText()) {
+        // If the step is one of our steps, we want to put all the variables from the workspace, including the system
+        // variables
         case IACMStepSpecTypeConstants.IACM_TERRAFORM_PLUGIN:
         case IACMStepSpecTypeConstants.IACM_APPROVAL:
           ((ObjectNode) wrapperConfig.getStep().get("spec")).put("workspace", workspace);
+          Map<String, String> envVarsCopy = new HashMap<>(envVars);
+          String command = wrapperConfig.getStep().get("spec").get("command").asText();
+          envVarsCopy.put("PLUGIN_COMMAND", command);
+          ObjectMapper objectMapper = new ObjectMapper();
+          ((ObjectNode) wrapperConfig.getStep().get("spec")).set("envVariables", objectMapper.valueToTree(envVarsCopy));
           break;
         default:
+          // For any other step, we want to put only the variables defined in the workspace. Skip this for the
+          // liteTaskEngine and clone step
+          if (!Objects.equals(
+                  wrapperConfig.getStep().get("type").asText(), IACMStepSpecTypeConstants.IACM_LITE_EMNGINE)) {
+            if (!Objects.equals(
+                    wrapperConfig.getStep().get("type").asText(), IACMStepSpecTypeConstants.IACM_CLONE_CODEBASE)) {
+              Map<String, String> copyMap = new HashMap<>();
+              for (Map.Entry<String, String> entry : envVars.entrySet()) {
+                if (!entry.getKey().startsWith("PLUGIN_")) {
+                  copyMap.put(entry.getKey(), entry.getValue());
+                }
+              }
+              ((ObjectNode) wrapperConfig.getStep().get("spec")).put("workspace", workspace);
+              Map<String, String> pluginEnvVarsCopy = new HashMap<>(copyMap);
+              ObjectMapper pluginObjectMapper = new ObjectMapper();
+              ((ObjectNode) wrapperConfig.getStep().get("spec"))
+                  .set("envVariables", pluginObjectMapper.valueToTree(pluginEnvVarsCopy));
+            }
+          }
           break;
       }
       modifiedSteps.add(wrapperConfig);

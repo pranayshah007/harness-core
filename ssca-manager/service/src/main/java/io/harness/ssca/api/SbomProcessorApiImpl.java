@@ -10,11 +10,13 @@ package io.harness.ssca.api;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.spec.server.ssca.v1.SbomProcessorApi;
+import io.harness.spec.server.ssca.v1.model.EnforceSbomRequestBody;
 import io.harness.spec.server.ssca.v1.model.SbomProcessRequestBody;
 import io.harness.spec.server.ssca.v1.model.SbomProcessResponseBody;
 import io.harness.ssca.services.SbomProcessorService;
 
 import com.google.inject.Inject;
+import javax.validation.Valid;
 import javax.ws.rs.core.Response;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -26,6 +28,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SbomProcessorApiImpl implements SbomProcessorApi {
   @Inject SbomProcessorService sbomProcessorService;
+
+  @Override
+  public Response enforceSbom(String org, String project, @Valid EnforceSbomRequestBody body, String harnessAccount) {
+    return null;
+  }
 
   @SneakyThrows
   @Override

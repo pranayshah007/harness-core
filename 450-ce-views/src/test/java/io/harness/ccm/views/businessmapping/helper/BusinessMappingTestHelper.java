@@ -48,6 +48,10 @@ public final class BusinessMappingTestHelper {
         .build();
   }
 
+  public static BusinessMapping getBusinessMappingOnlyWithUuid(final String uuid) {
+    return BusinessMapping.builder().uuid(uuid).build();
+  }
+
   public static CostTarget getCostTarget(final String name, final List<ViewRule> rules) {
     return CostTarget.builder().name(name).rules(rules).build();
   }

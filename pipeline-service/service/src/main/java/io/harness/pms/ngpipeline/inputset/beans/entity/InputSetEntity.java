@@ -16,6 +16,9 @@ import io.harness.data.validator.EntityName;
 import io.harness.data.validator.Trimmed;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.persistance.GitSyncableEntity;
+import io.harness.mongo.collation.CollationLocale;
+import io.harness.mongo.collation.CollationStrength;
+import io.harness.mongo.index.Collation;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -98,13 +101,15 @@ public class InputSetEntity implements GitAware, GitSyncableEntity, PersistentEn
         // for full sync
         //            TODO: remove the index once the old git sync is sunset
         .add(SortCompoundMongoIndex.builder()
-                 .name("accountId_organizationId_projectId_repo_branch")
+                 .name("accountId_organizationId_projectId_repo_branch_WithCollationIdx")
                  .field(InputSetEntityKeys.accountId)
                  .field(InputSetEntityKeys.orgIdentifier)
                  .field(InputSetEntityKeys.projectIdentifier)
                  .field(InputSetEntityKeys.yamlGitConfigRef)
                  .field(InputSetEntityKeys.branch)
                  .descRangeField(InputSetEntityKeys.lastUpdatedAt)
+                 .collation(
+                     Collation.builder().locale(CollationLocale.ENGLISH).strength(CollationStrength.SECONDARY).build())
                  .build())
         .build();
   }

@@ -236,6 +236,7 @@ public class NGTriggerServiceImplTest extends CategoryTest {
                                                .version(0L)
                                                .build();
   String pipelineYamlV1;
+  String multiRegionArtifactTriggerYaml;
 
   @Before
   public void setup() throws Exception {
@@ -253,6 +254,9 @@ public class NGTriggerServiceImplTest extends CategoryTest {
 
     pipelineYamlV1 =
         Resources.toString(Objects.requireNonNull(classLoader.getResource("pipeline-v1.yaml")), StandardCharsets.UTF_8);
+    multiRegionArtifactTriggerYaml =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource("ng-trigger-multi-region-artifact.yaml")),
+            StandardCharsets.UTF_8);
   }
 
   @Test
@@ -952,7 +956,8 @@ public class NGTriggerServiceImplTest extends CategoryTest {
         .thenReturn(optionalNGTrigger);
     when(ngTriggerRepository.hardDelete(any(Criteria.class))).thenReturn(DeleteResult.acknowledged(1));
     when(executorService.submit(runnableCaptor.capture())).then(executeRunnable(runnableCaptor));
-    when(pollingSubscriptionHelper.generatePollingItem(eq(ngTrigger))).thenReturn(pollingItem);
+    when(pollingSubscriptionHelper.generatePollingItems(eq(ngTrigger)))
+        .thenReturn(Collections.singletonList(pollingItem));
     when(pollingResourceClient.unsubscribe(any())).thenReturn(call);
     when(call.execute()).thenReturn(Response.success(Boolean.TRUE));
     when(kryoSerializer.asBytes(any(PollingItem.class))).thenReturn(bytes);
@@ -1327,7 +1332,7 @@ public class NGTriggerServiceImplTest extends CategoryTest {
         .thenReturn(optionalNGTrigger);
     when(ngTriggerRepository.hardDelete(any(Criteria.class))).thenReturn(DeleteResult.acknowledged(1));
     when(executorService.submit(runnableCaptor.capture())).then(executeRunnable(runnableCaptor));
-    when(pollingSubscriptionHelper.generatePollingItem(eq(ngTriggerEntity))).thenReturn(pollingItem);
+    when(pollingSubscriptionHelper.generatePollingItems(eq(ngTriggerEntity))).thenReturn(List.of(pollingItem));
     when(pollingResourceClient.unsubscribe(any())).thenReturn(call);
     when(call.execute()).thenReturn(Response.success(Boolean.TRUE));
     when(kryoSerializer.asBytes(any(PollingItem.class))).thenReturn(bytes);
@@ -1388,7 +1393,7 @@ public class NGTriggerServiceImplTest extends CategoryTest {
             .build();
     PollingItem pollingItem = createPollingItem(ngTriggerEntity);
     byte[] bytes = {70};
-    when(pollingSubscriptionHelper.generatePollingItem(ngTriggerEntity)).thenReturn(pollingItem);
+    when(pollingSubscriptionHelper.generatePollingItems(ngTriggerEntity)).thenReturn(List.of(pollingItem));
     when(kryoSerializer.asBytes(pollingItem)).thenReturn(bytes);
     when(pmsFeatureFlagService.isEnabled(anyString(), eq(FeatureName.CD_GIT_WEBHOOK_POLLING))).thenReturn(true);
     Call<Boolean> call = mock(Call.class);
@@ -1790,5 +1795,194 @@ public class NGTriggerServiceImplTest extends CategoryTest {
     assertThatThrownBy(() -> ngTriggerServiceImpl.update(ngTriggerEntity, oldNgTriggerEntity))
         .isInstanceOf(InvalidYamlException.class)
         .hasMessage("message");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testExecutePollingSubscriptionChangesForMultiRegionArtifactTriggerNotIsUpdate() throws Exception {
+    NGTriggerElementMapper actualNgTriggerElementMapper =
+        new NGTriggerElementMapper(null, null, null, pmsFeatureFlagService, null);
+    when(pmsFeatureFlagService.isEnabled("account", FeatureName.CD_GIT_WEBHOOK_POLLING)).thenReturn(true);
+    PollingItem pollingItem = PollingItem.newBuilder().setPollingDocId("id1").build();
+    when(pollingSubscriptionHelper.generatePollingItems(any())).thenReturn(List.of(pollingItem, pollingItem));
+    when(pollingSubscriptionHelper.generateMultiArtifactPollingItemsToUnsubscribe(any()))
+        .thenReturn(List.of(pollingItem, pollingItem));
+    byte[] bytes = {70};
+    when(kryoSerializer.asBytes(any())).thenReturn(bytes);
+    PollingDocument pollingDocument = PollingDocument.newBuilder().setPollingDocId("id1").build();
+    when(kryoSerializer.asObject((byte[]) any())).thenReturn(pollingDocument);
+
+    ResponseDTO<PollingResponseDTO> pollingResponse =
+        ResponseDTO.newResponse(PollingResponseDTO.builder().pollingResponse(bytes).build());
+    Call<ResponseDTO<PollingResponseDTO>> subscribeCall = mock(Call.class);
+    when(subscribeCall.execute()).thenReturn(Response.success(pollingResponse));
+    when(pollingResourceClient.subscribe(any())).thenReturn(subscribeCall);
+
+    Call<Boolean> unsubscribeCall = mock(Call.class);
+    when(unsubscribeCall.execute()).thenReturn(Response.success(true));
+    when(pollingResourceClient.unsubscribe(any())).thenReturn(unsubscribeCall);
+
+    NGTriggerEntity ngTriggerEntity = actualNgTriggerElementMapper.toTriggerEntity(
+        "account", "org", "proj", "multiRegionArtifactTrigger", multiRegionArtifactTriggerYaml, true);
+    when(ngTriggerRepository.updateValidationStatusAndMetadata(any(), any())).thenReturn(ngTriggerEntity);
+
+    ngTriggerServiceImpl.executePollingSubscriptionChanges(ngTriggerEntity, false);
+    verify(pollingResourceClient, times(2)).subscribe(any());
+    verify(pollingResourceClient, times(0)).unsubscribe(any());
+    assertThat(ngTriggerEntity.getMetadata().getMultiBuildMetadata().get(0).getPollingConfig().getPollingDocId())
+        .isEqualTo("id1");
+    assertThat(ngTriggerEntity.getMetadata().getMultiBuildMetadata().get(1).getPollingConfig().getPollingDocId())
+        .isEqualTo("id1");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testExecutePollingSubscriptionChangesForMultiRegionArtifactTriggerIsUpdate() throws Exception {
+    NGTriggerElementMapper actualNgTriggerElementMapper =
+        new NGTriggerElementMapper(null, null, null, pmsFeatureFlagService, null);
+    PollingItem pollingItem = PollingItem.newBuilder().setPollingDocId("id1").build();
+    when(pollingSubscriptionHelper.generatePollingItems(any())).thenReturn(List.of(pollingItem, pollingItem));
+    when(pollingSubscriptionHelper.generateMultiArtifactPollingItemsToUnsubscribe(any()))
+        .thenReturn(List.of(pollingItem, pollingItem));
+    byte[] bytes = {70};
+    when(kryoSerializer.asBytes(any())).thenReturn(bytes);
+    PollingDocument pollingDocument = PollingDocument.newBuilder().setPollingDocId("id1").build();
+    when(kryoSerializer.asObject((byte[]) any())).thenReturn(pollingDocument);
+
+    ResponseDTO<PollingResponseDTO> pollingResponse =
+        ResponseDTO.newResponse(PollingResponseDTO.builder().pollingResponse(bytes).build());
+    Call<ResponseDTO<PollingResponseDTO>> subscribeCall = mock(Call.class);
+    when(subscribeCall.execute()).thenReturn(Response.success(pollingResponse));
+    when(pollingResourceClient.subscribe(any())).thenReturn(subscribeCall);
+
+    Call<Boolean> unsubscribeCall = mock(Call.class);
+    when(unsubscribeCall.execute()).thenReturn(Response.success(true));
+    when(pollingResourceClient.unsubscribe(any())).thenReturn(unsubscribeCall);
+
+    NGTriggerEntity ngTriggerEntity = actualNgTriggerElementMapper.toTriggerEntity(
+        "account", "org", "proj", "multiRegionArtifactTrigger", multiRegionArtifactTriggerYaml, true);
+    when(ngTriggerRepository.updateValidationStatusAndMetadata(any(), any())).thenReturn(ngTriggerEntity);
+
+    ngTriggerServiceImpl.executePollingSubscriptionChanges(ngTriggerEntity, true);
+    verify(pollingResourceClient, times(2)).subscribe(any());
+    verify(pollingResourceClient, times(2)).unsubscribe(any());
+    assertThat(ngTriggerEntity.getMetadata().getMultiBuildMetadata().get(0).getPollingConfig().getPollingDocId())
+        .isEqualTo("id1");
+    assertThat(ngTriggerEntity.getMetadata().getMultiBuildMetadata().get(1).getPollingConfig().getPollingDocId())
+        .isEqualTo("id1");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testExecutePollingSubscriptionChangesForMultiRegionArtifactTriggerDisabled() throws Exception {
+    NGTriggerElementMapper actualNgTriggerElementMapper =
+        new NGTriggerElementMapper(null, null, null, pmsFeatureFlagService, null);
+    PollingItem pollingItem = PollingItem.newBuilder().setPollingDocId("id1").build();
+    when(pollingSubscriptionHelper.generatePollingItems(any())).thenReturn(List.of(pollingItem, pollingItem));
+    when(pollingSubscriptionHelper.generateMultiArtifactPollingItemsToUnsubscribe(any()))
+        .thenReturn(List.of(pollingItem, pollingItem));
+    byte[] bytes = {70};
+    when(kryoSerializer.asBytes(any())).thenReturn(bytes);
+    PollingDocument pollingDocument = PollingDocument.newBuilder().setPollingDocId("id1").build();
+    when(kryoSerializer.asObject((byte[]) any())).thenReturn(pollingDocument);
+
+    ResponseDTO<PollingResponseDTO> pollingResponse =
+        ResponseDTO.newResponse(PollingResponseDTO.builder().pollingResponse(bytes).build());
+    Call<ResponseDTO<PollingResponseDTO>> subscribeCall = mock(Call.class);
+    when(subscribeCall.execute()).thenReturn(Response.success(pollingResponse));
+    when(pollingResourceClient.subscribe(any())).thenReturn(subscribeCall);
+
+    Call<Boolean> unsubscribeCall = mock(Call.class);
+    when(unsubscribeCall.execute()).thenReturn(Response.success(true));
+    when(pollingResourceClient.unsubscribe(any())).thenReturn(unsubscribeCall);
+
+    NGTriggerEntity ngTriggerEntity = actualNgTriggerElementMapper.toTriggerEntity(
+        "account", "org", "proj", "multiRegionArtifactTrigger", multiRegionArtifactTriggerYaml, true);
+    ngTriggerEntity.setEnabled(false);
+    when(ngTriggerRepository.updateValidationStatusAndMetadata(any(), any())).thenReturn(ngTriggerEntity);
+
+    ngTriggerServiceImpl.executePollingSubscriptionChanges(ngTriggerEntity, true);
+    verify(pollingResourceClient, times(0)).subscribe(any());
+    verify(pollingResourceClient, times(2)).unsubscribe(any());
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetPollingItemsToUnsubscribeForMultiRegionArtifactTrigger() {
+    NGTriggerElementMapper actualNgTriggerElementMapper =
+        new NGTriggerElementMapper(null, null, null, pmsFeatureFlagService, null);
+    PollingItem pollingItem = PollingItem.newBuilder().setPollingDocId("id1").build();
+    when(pollingSubscriptionHelper.generateMultiArtifactPollingItemsToUnsubscribe(any()))
+        .thenReturn(List.of(pollingItem, pollingItem));
+    NGTriggerEntity ngTriggerEntity = actualNgTriggerElementMapper.toTriggerEntity(
+        "account", "org", "proj", "multiRegionArtifactTrigger", multiRegionArtifactTriggerYaml, true);
+    List<PollingItem> pollingItemsToUnsubscribe =
+        ngTriggerServiceImpl.getPollingItemsToUnsubscribe(ngTriggerEntity, List.of(pollingItem, pollingItem));
+    verify(pollingSubscriptionHelper, times(1)).generateMultiArtifactPollingItemsToUnsubscribe(any());
+    assertThat(pollingItemsToUnsubscribe.get(0).getPollingDocId()).isEqualTo("id1");
+    assertThat(pollingItemsToUnsubscribe.get(1).getPollingDocId()).isEqualTo("id1");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testCheckIfShouldSubscribePollingForMultiRegionArtifactTriggerEnabled() {
+    NGTriggerElementMapper actualNgTriggerElementMapper =
+        new NGTriggerElementMapper(null, null, null, pmsFeatureFlagService, null);
+    NGTriggerEntity ngTriggerEntity = actualNgTriggerElementMapper.toTriggerEntity(
+        "account", "org", "proj", "multiRegionArtifactTrigger", multiRegionArtifactTriggerYaml, true);
+    boolean shouldSubscribe = ngTriggerServiceImpl.checkIfShouldSubscribePolling(ngTriggerEntity);
+    assertThat(shouldSubscribe).isTrue();
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testCheckIfShouldSubscribePollingForMultiRegionArtifactTriggerDisabled() {
+    NGTriggerElementMapper actualNgTriggerElementMapper =
+        new NGTriggerElementMapper(null, null, null, pmsFeatureFlagService, null);
+    NGTriggerEntity ngTriggerEntity = actualNgTriggerElementMapper.toTriggerEntity(
+        "account", "org", "proj", "multiRegionArtifactTrigger", multiRegionArtifactTriggerYaml, true);
+    ngTriggerEntity.setEnabled(false);
+    boolean shouldSubscribe = ngTriggerServiceImpl.checkIfShouldSubscribePolling(ngTriggerEntity);
+    assertThat(shouldSubscribe).isFalse();
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testCheckIfShouldUnsubscribePollingForMultiRegionArtifactTriggerIsUpdate() {
+    NGTriggerElementMapper actualNgTriggerElementMapper =
+        new NGTriggerElementMapper(null, null, null, pmsFeatureFlagService, null);
+    NGTriggerEntity ngTriggerEntity = actualNgTriggerElementMapper.toTriggerEntity(
+        "account", "org", "proj", "multiRegionArtifactTrigger", multiRegionArtifactTriggerYaml, true);
+    boolean shouldUnsubscribe = ngTriggerServiceImpl.checkIfShouldUnsubscribePolling(ngTriggerEntity, true);
+    assertThat(shouldUnsubscribe).isTrue();
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testStampPollingInfoForMultiArtifactTrigger() {
+    NGTriggerElementMapper actualNgTriggerElementMapper =
+        new NGTriggerElementMapper(null, null, null, pmsFeatureFlagService, null);
+    NGTriggerEntity ngTriggerEntity = actualNgTriggerElementMapper.toTriggerEntity(
+        "account", "org", "proj", "multiRegionArtifactTrigger", multiRegionArtifactTriggerYaml, true);
+    ngTriggerEntity.getMetadata().setSignatures(List.of("oldSig1", "oldSig2"));
+    PollingDocument pollingDocument = PollingDocument.newBuilder().setPollingDocId("id1").build();
+    ngTriggerServiceImpl.stampPollingInfoForMultiArtifactTrigger(
+        ngTriggerEntity, List.of(pollingDocument, pollingDocument));
+    assertThat(ngTriggerEntity.getMetadata().getSignatures().get(0))
+        .isEqualTo(ngTriggerEntity.getMetadata().getMultiBuildMetadata().get(0).getPollingConfig().getSignature());
+    assertThat(ngTriggerEntity.getMetadata().getMultiBuildMetadata().get(0).getPollingConfig().getPollingDocId())
+        .isEqualTo("id1");
+    assertThat(ngTriggerEntity.getMetadata().getSignatures().get(1))
+        .isEqualTo(ngTriggerEntity.getMetadata().getMultiBuildMetadata().get(1).getPollingConfig().getSignature());
+    assertThat(ngTriggerEntity.getMetadata().getMultiBuildMetadata().get(1).getPollingConfig().getPollingDocId())
+        .isEqualTo("id1");
   }
 }

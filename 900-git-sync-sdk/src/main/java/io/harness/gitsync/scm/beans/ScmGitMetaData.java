@@ -30,4 +30,5 @@ public class ScmGitMetaData {
   String fileUrl;
   String repoUrl;
   @Setter CacheResponse cacheResponse;
+  boolean isGitDefaultBranch;
 }

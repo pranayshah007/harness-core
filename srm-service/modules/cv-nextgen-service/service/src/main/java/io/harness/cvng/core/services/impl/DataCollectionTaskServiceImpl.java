@@ -16,10 +16,12 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import io.harness.cvng.analysis.entities.VerificationTaskBase.VerificationTaskBaseKeys;
 import io.harness.cvng.beans.CVNGPerpetualTaskDTO;
 import io.harness.cvng.beans.CVNGPerpetualTaskState;
+import io.harness.cvng.beans.CVNGTaskMetadataConstants;
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.beans.DataCollectionTaskDTO;
 import io.harness.cvng.beans.DataCollectionTaskDTO.DataCollectionTaskResult;
 import io.harness.cvng.beans.DataCollectionTaskDTO.DataCollectionTaskResult.ExecutionLog;
+import io.harness.cvng.beans.cvnglog.CVNGLogTag;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.DataCollectionTask;
@@ -33,6 +35,7 @@ import io.harness.cvng.core.services.api.ExecutionLogService;
 import io.harness.cvng.core.services.api.ExecutionLogger;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
+import io.harness.cvng.core.utils.CVNGTaskMetadataUtils;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
 import io.harness.persistence.HPersistence;
@@ -108,6 +111,7 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
                              .uuid(task.getUuid())
                              .accountId(task.getAccountId())
                              .verificationTaskId(task.getVerificationTaskId())
+                             .dataCollectionMetadata(task.getDataCollectionMetadata())
                              .dataCollectionInfo(task.getDataCollectionInfo())
                              .startTime(task.getStartTime())
                              .endTime(task.getEndTime())
@@ -123,9 +127,7 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
     Optional<DataCollectionTaskDTO> nextTaskDTO;
     do {
       nextTaskDTO = getNextTaskDTO(accountId, dataCollectionWorkerId);
-      if (nextTaskDTO.isPresent()) {
-        dataCollectionTasks.add(nextTaskDTO.get());
-      }
+      nextTaskDTO.ifPresent(dataCollectionTasks::add);
     } while (nextTaskDTO.isPresent() && dataCollectionTasks.size() < CVNG_MAX_PARALLEL_THREADS);
     return dataCollectionTasks;
   }
@@ -189,11 +191,28 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
     }
     DataCollectionTask dataCollectionTask = getDataCollectionTask(result.getDataCollectionTaskId());
     ExecutionLogger executionLogger = executionLogService.getLogger(dataCollectionTask);
-    executionLogger.log(
-        dataCollectionTask.getLogLevel(), "Data collection task status: " + dataCollectionTask.getStatus());
+    List<CVNGLogTag> cvngLogTags = CVNGTaskMetadataUtils.getCvngLogTagsForTask(dataCollectionTask.getUuid());
+    if (!DataCollectionExecutionStatus.getNonFinalStatuses().contains(dataCollectionTask.getStatus())) {
+      if (dataCollectionTask.getRetryCount() > 0) {
+        cvngLogTags.add(CVNGTaskMetadataUtils.getCvngLogTag(
+            CVNGTaskMetadataConstants.RETRY_COUNT, String.valueOf(dataCollectionTask.getRetryCount())));
+      }
+      if (dataCollectionTask.getLastPickedAt() != null) {
+        cvngLogTags.addAll(CVNGTaskMetadataUtils.getTaskDurationTags(
+            CVNGTaskMetadataUtils.DurationType.WAIT_DURATION, dataCollectionTask.waitTime()));
+        cvngLogTags.addAll(CVNGTaskMetadataUtils.getTaskDurationTags(
+            CVNGTaskMetadataUtils.DurationType.RUNNING_DURATION, dataCollectionTask.runningTime(Instant.now())));
+      } else {
+        cvngLogTags.addAll(CVNGTaskMetadataUtils.getTaskDurationTags(
+            CVNGTaskMetadataUtils.DurationType.TOTAL_DURATION, dataCollectionTask.totalTime(Instant.now())));
+      }
+    }
+    cvngLogTags.addAll(CVNGTaskMetadataUtils.getDataCollectionMetadataTags(result));
+    String message = "Data collection task status: " + dataCollectionTask.getStatus();
+    executionLogger.log(dataCollectionTask.getLogLevel(), cvngLogTags, message);
     if (result.getException() != null) {
-      executionLogger.log(
-          dataCollectionTask.getLogLevel(), "Data collection task failed with exception: ", result.getException());
+      executionLogger.log(dataCollectionTask.getLogLevel(), cvngLogTags,
+          "Data collection task failed with exception: ", result.getException());
     }
     for (ExecutionLog executionLog : result.getExecutionLogs()) {
       executionLogger.log(executionLog.getLogLevel(), executionLog.getLog());
@@ -218,7 +237,6 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
       retry(dataCollectionTask);
     }
   }
-
   @Override
   public DataCollectionTask getLastDataCollectionTask(String accountId, String verificationTaskId) {
     return hPersistence.createQuery(DataCollectionTask.class)
@@ -284,8 +302,9 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
                               .filter(DataCollectionTaskKeys.uuid, task.getNextTaskId())
                               .filter(DataCollectionTaskKeys.status, DataCollectionExecutionStatus.WAITING),
           updateOperations);
+      List<CVNGLogTag> cvngLogTags = CVNGTaskMetadataUtils.getCvngLogTagsForTask(task.getUuid());
       executionLogService.getLogger(task).log(
-          task.getLogLevel(), "Data collection task status: " + DataCollectionExecutionStatus.QUEUED);
+          task.getLogLevel(), cvngLogTags, "Data collection task status: " + DataCollectionExecutionStatus.QUEUED);
     }
   }
 
@@ -301,9 +320,10 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
       Query<DataCollectionTask> query = hPersistence.createQuery(DataCollectionTask.class)
                                             .filter(DataCollectionTaskKeys.uuid, dataCollectionTask.getUuid());
       hPersistence.update(query, updateOperations);
+      List<CVNGLogTag> cvngLogTags = CVNGTaskMetadataUtils.getCvngLogTagsForTask(dataCollectionTask.getUuid());
       executionLogService.getLogger(dataCollectionTask)
-          .log(
-              dataCollectionTask.getLogLevel(), "Data collection task status: " + DataCollectionExecutionStatus.QUEUED);
+          .log(dataCollectionTask.getLogLevel(), cvngLogTags,
+              "Data collection task status: " + DataCollectionExecutionStatus.QUEUED);
     } else {
       markDependentTasksFailed(dataCollectionTask);
       if (dataCollectionTask.shouldCreateNextTask()) {

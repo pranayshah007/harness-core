@@ -1221,3 +1221,6 @@ fi
 
 replace_key_value cdTsDbRetentionPeriodMonths "$CD_TSDB_RETENTION_PERIOD_MONTHS"
 replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
+replace_key_value notificationClient.httpClient.baseUrl "$NOTIFICATION_BASE_URL"
+replace_key_value notificationClient.secrets.notificationClientSecret "$NEXT_GEN_MANAGER_SECRET"
+replace_key_value notificationClient.messageBroker.uri "${NOTIFICATION_MONGO_URI//\\&/&}"

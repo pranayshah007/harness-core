@@ -50,6 +50,8 @@ import io.harness.encryptors.KmsEncryptor;
 import io.harness.encryptors.KmsEncryptorsRegistry;
 import io.harness.encryptors.VaultEncryptor;
 import io.harness.encryptors.VaultEncryptorsRegistry;
+import io.harness.exception.ExceptionUtils;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementException;
 import io.harness.persistence.HIterator;
 import io.harness.queue.QueuePublisher;
@@ -782,6 +784,40 @@ public class SecretServiceImpl implements SecretService {
     return secretsRBACService.hasAccessToEditSecrets(accountId, secretScopeMetadataSet);
   }
 
+  @Override
+  public PageResponse<EncryptedData> listSecrets(
+      String accountId, PageRequest<EncryptedData> pageRequest, String appId, String envId) {
+    List<EncryptedData> filteredEncryptedDataList = Lists.newArrayList();
+
+    try {
+      PageRequest<EncryptedData> copiedPageRequest = pageRequest.copy();
+      int offset = copiedPageRequest.getStart();
+      int limit = copiedPageRequest.getPageSize();
+
+      copiedPageRequest.setOffset("0");
+      copiedPageRequest.setLimit(String.valueOf(PageRequest.DEFAULT_UNLIMITED));
+      PageResponse<EncryptedData> batchPageResponse = secretsDao.listSecrets(copiedPageRequest);
+      List<EncryptedData> encryptedDataList = batchPageResponse.getResponse();
+      filterSecreteDataBasedOnUsageRestrictions(accountId, appId, envId, encryptedDataList, filteredEncryptedDataList);
+      List<EncryptedData> response;
+      if (isNotEmpty(filteredEncryptedDataList) && filteredEncryptedDataList.size() > offset) {
+        int endIdx = Math.min(offset + limit, filteredEncryptedDataList.size());
+        response = filteredEncryptedDataList.subList(offset, endIdx);
+      } else {
+        response = Collections.emptyList();
+      }
+
+      return aPageResponse()
+          .withResponse(response)
+          .withTotal(filteredEncryptedDataList.size())
+          .withOffset(pageRequest.getOffset())
+          .withLimit(pageRequest.getLimit())
+          .build();
+    } catch (Exception e) {
+      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+    }
+  }
+
   private void buildSecretScopeMetadataSet(
       String accountId, Set<String> secretIds, Set<SecretScopeMetadata> secretScopeMetadataSet) {
     if (isEmpty(secretIds)) {
@@ -815,35 +851,6 @@ public class SecretServiceImpl implements SecretService {
                                        .build());
       }
     }
-  }
-
-  @Override
-  public PageResponse<EncryptedData> listSecrets(
-      String accountId, PageRequest<EncryptedData> pageRequest, String appId, String envId) {
-    List<EncryptedData> filteredEncryptedDataList = Lists.newArrayList();
-
-    int inputPageSize = pageRequest.getPageSize();
-    int batchOffset = pageRequest.getStart();
-    int batchPageSize = Math.min(PageRequest.DEFAULT_UNLIMITED, 2 * inputPageSize);
-    int numRecordsReturnedCurrentBatch;
-    do {
-      PageRequest<EncryptedData> batchPageRequest = pageRequest.copy();
-      batchPageRequest.setOffset(String.valueOf(batchOffset));
-      batchPageRequest.setLimit(String.valueOf(batchPageSize));
-      PageResponse<EncryptedData> batchPageResponse = secretsDao.listSecrets(batchPageRequest);
-      List<EncryptedData> encryptedDataList = batchPageResponse.getResponse();
-      numRecordsReturnedCurrentBatch = encryptedDataList.size();
-      filterSecreteDataBasedOnUsageRestrictions(accountId, appId, envId, encryptedDataList, filteredEncryptedDataList);
-      // Set the new offset if another batch retrieval is needed if the requested page size is not fulfilled yet.
-      batchOffset = numRecordsReturnedCurrentBatch + batchOffset;
-    } while (numRecordsReturnedCurrentBatch == batchPageSize && filteredEncryptedDataList.size() < inputPageSize);
-
-    return aPageResponse()
-        .withOffset(String.valueOf(batchOffset))
-        .withLimit(String.valueOf(inputPageSize))
-        .withResponse(filteredEncryptedDataList)
-        .withTotal(Long.valueOf(filteredEncryptedDataList.size()))
-        .build();
   }
 
   @Override

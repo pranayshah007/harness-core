@@ -54,6 +54,8 @@ import io.harness.cdng.environment.EnvironmentFilterPropertiesMapper;
 import io.harness.cdng.events.StageExecutionInfoEventListener;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.execution.service.StageExecutionInfoServiceImpl;
+import io.harness.cdng.execution.service.StageExecutionInstanceInfoService;
+import io.harness.cdng.execution.service.StageExecutionInstanceInfoServiceImpl;
 import io.harness.cdng.gitops.ClusterServiceImpl;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -73,6 +75,7 @@ import io.harness.cdng.plugininfoproviders.AwsSamDeployPluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.DownloadManifestsPluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.GitClonePluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.ServerlessAwsLambdaDeployV2PluginInfoProvider;
+import io.harness.cdng.plugininfoproviders.ServerlessAwsLambdaPackageV2PluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.ServerlessPrepareRollbackPluginInfoProvider;
 import io.harness.cdng.provision.terraform.executions.TerraformApplyExecutionDetailsService;
 import io.harness.cdng.provision.terraform.executions.TerraformApplyExecutionDetailsServiceImpl;
@@ -161,6 +164,7 @@ public class NGModule extends AbstractModule {
     bind(S3ResourceService.class).to(S3ResourceServiceImpl.class);
     bind(GcsResourceService.class).to(GcsResourceServiceImpl.class);
     bind(InstanceInfoService.class).to(InstanceInfoServiceImpl.class);
+    bind(StageExecutionInstanceInfoService.class).to(StageExecutionInstanceInfoServiceImpl.class);
     bind(LicenseUsageInterface.class).to(CDLicenseUsageImpl.class);
     bind(InstanceService.class).to(InstanceServiceImpl.class);
     bind(ServiceEntityService.class).to(ServiceEntityServiceImpl.class);
@@ -219,5 +223,6 @@ public class NGModule extends AbstractModule {
     pluginInfoProviderMultibinder.addBinding().to(GitClonePluginInfoProvider.class);
     pluginInfoProviderMultibinder.addBinding().to(ServerlessPrepareRollbackPluginInfoProvider.class);
     pluginInfoProviderMultibinder.addBinding().to(ServerlessAwsLambdaDeployV2PluginInfoProvider.class);
+    pluginInfoProviderMultibinder.addBinding().to(ServerlessAwsLambdaPackageV2PluginInfoProvider.class);
   }
 }

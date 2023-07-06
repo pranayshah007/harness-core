@@ -39,7 +39,6 @@ import io.harness.cdng.provision.terraform.TerraformConfig;
 import io.harness.cdng.provision.terraform.TerraformConfigDAL;
 import io.harness.cdng.provision.terraform.TerraformConfigHelper;
 import io.harness.cdng.provision.terraform.TerraformStepHelper;
-import io.harness.cdng.provision.terraform.outcome.TerraformGitRevisionOutcome;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
@@ -363,14 +362,12 @@ public class TerraformRollbackStepTest extends CategoryTest {
     assertThat(stepResponse).isNotNull();
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getUnitProgressList()).isEqualTo(unitProgresses);
-    assertThat(stepResponse.getStepOutcomes()).isNotNull();
-    StepResponse.StepOutcome stepOutcome = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(0);
-    assertThat(stepOutcome.getName()).isEqualTo(TerraformGitRevisionOutcome.OUTCOME_NAME);
 
     verify(terraformStepHelper, times(1)).saveTerraformConfig(terraformConfig, ambiance);
     verify(stepHelper, times(1)).sendRollbackTelemetryEvent(any(), any(), any());
     verify(terraformStepHelper, times(1)).saveTerraformConfig(any(), any());
     verify(terraformStepHelper, times(1)).getRevisionsMap(anyList(), any());
+    verify(terraformStepHelper).addTerraformRevisionOutcomeIfRequired(any(), any());
   }
 
   @Test
@@ -388,7 +385,8 @@ public class TerraformRollbackStepTest extends CategoryTest {
                                                           .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                                                           .unitProgressData(unitProgressData)
                                                           .build();
-    TerraformConfig terraformConfig = TerraformConfig.builder().entityId("entityId").build();
+    TerraformConfig terraformConfig =
+        TerraformConfig.builder().entityId("entityId").varFileConfigs(new ArrayList<>()).build();
     TerraformConfigSweepingOutput terraformConfigSweepingOutput =
         TerraformConfigSweepingOutput.builder().terraformConfig(terraformConfig).tfTaskType(TFTaskType.DESTROY).build();
     OptionalSweepingOutput optionalSweepingOutput =
@@ -407,6 +405,8 @@ public class TerraformRollbackStepTest extends CategoryTest {
     assertThat(stepResponse.getUnitProgressList()).isEqualTo(unitProgresses);
     verify(terraformConfigDAL, times(1)).clearTerraformConfig(ambiance, "entityId");
     verify(stepHelper, times(1)).sendRollbackTelemetryEvent(any(), any(), any());
+    verify(terraformStepHelper, times(1)).getRevisionsMap(anyList(), any());
+    verify(terraformStepHelper).addTerraformRevisionOutcomeIfRequired(any(), any());
   }
 
   @Test

@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import java.util.List;
+import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -57,6 +58,12 @@ public class PollingDocument implements PersistentEntity, AccountAccess, UuidAwa
                  .field(PollingDocumentKeys.accountId)
                  .field(PollingDocumentKeys.pollingInfo + "." + YAMLFieldNameConstants.CONNECTOR_REF)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_signatures")
+                 .field(PollingDocumentKeys.accountId)
+                 .field(PollingDocumentKeys.signatures)
+                 .build())
+
         .build();
   }
 
@@ -66,6 +73,7 @@ public class PollingDocument implements PersistentEntity, AccountAccess, UuidAwa
   private String orgIdentifier;
   private String projectIdentifier;
   @NotNull private List<String> signatures;
+  private Map<String, List<String>> signaturesLock; // Used for MultiRegionArtifact triggers.
 
   @JsonProperty("type") private PollingType pollingType;
 

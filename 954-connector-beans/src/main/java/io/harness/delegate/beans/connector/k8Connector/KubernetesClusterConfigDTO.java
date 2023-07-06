@@ -10,6 +10,7 @@ package io.harness.delegate.beans.connector.k8Connector;
 import static io.harness.ConnectorConstants.INHERIT_FROM_DELEGATE_TYPE_ERROR_MSG;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
@@ -38,6 +39,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(name = "KubernetesClusterConfig", description = "This contains kubernetes cluster config details")
+@RecasterAlias("io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO")
 public class KubernetesClusterConfigDTO extends ConnectorConfigDTO implements DelegateSelectable {
   @Valid @NotNull KubernetesCredentialDTO credential;
   Set<String> delegateSelectors;
