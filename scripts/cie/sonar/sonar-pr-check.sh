@@ -185,8 +185,9 @@ LIBS_BINS=$(get_info_from_file $LIBS_FILE)
 
 # Preparing Sonar Properties file
 [ -f "${SONAR_PROP_FILE_PATH}" ] \
+&& echo -e "\nsonar.scm.revision=$COMMIT_SHA" >> ${SONAR_PROP_FILE_PATH} \
 && echo -e "\nsonar.java.binaries=$JARS_BINS" >> ${SONAR_PROP_FILE_PATH} \
-&& echo -e "\nsonar.java.libraries=$LIBS_BINS" >> ${SONAR_PROP_FILE_PATH} \
+&& echo -e "\nsonar.java.libraries=$JARS_BINS" >> ${SONAR_PROP_FILE_PATH} \
 && echo -e "\nsonar.coverageReportPaths=$COVERAGE_REPORT_PATH" >> ${SONAR_PROP_FILE_PATH} \
 && echo -e "\nsonar.pullrequest.key=$PR_NUMBER" >> ${SONAR_PROP_FILE_PATH} \
 && echo -e "\nsonar.pullrequest.branch=$PR_BRANCH" >> ${SONAR_PROP_FILE_PATH} \
