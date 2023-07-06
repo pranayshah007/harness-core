@@ -2726,7 +2726,6 @@ public class UserServiceImpl implements UserService {
     log.info("Enabling 2FA for user {}", user.getEmail());
     TwoFactorAuthenticationSettings twoFactorAuthenticationSettings =
         totpAuthHandler.createTwoFactorAuthenticationSettings(user, account);
-    twoFactorAuthenticationSettings.setTwoFactorAuthenticationEnabled(true);
     User updatedUser = updateTwoFactorAuthenticationSettings(user, twoFactorAuthenticationSettings);
     publishUserEvent(user, updatedUser);
     return updatedUser;
@@ -2751,6 +2750,7 @@ public class UserServiceImpl implements UserService {
     if (defaultAccountId.equals(account.getUuid()) && account.isTwoFactorAdminEnforced()
         && !user.isTwoFactorAuthenticationEnabled()) {
       user = enableTwoFactorAuthenticationForUser(user, account);
+      user.setTwoFactorAuthenticationEnabled(true);
     }
     return user;
   }
