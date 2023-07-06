@@ -24,7 +24,6 @@ import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariableBatchRequest;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariableRequest;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariableResponse;
-import io.harness.spec.server.idp.v1.model.ResolvedEnvVariable;
 import io.harness.spec.server.idp.v1.model.ResolvedEnvVariableResponse;
 
 import com.google.inject.Inject;
@@ -37,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
-//@NextGenManagerAuth
+@NextGenManagerAuth
 @Slf4j
 public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
   private IdpCommonService idpCommonService;
