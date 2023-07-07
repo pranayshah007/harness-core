@@ -34,7 +34,6 @@ COPY --chown=65534:65534  --from=builder /app/dist/platform-service/classpath_me
 COPY --chown=65534:65534  --from=builder /app/dist/platform-service/scripts /opt/harness
 COPY --chown=65534:65534  --from=builder /app/dist/platform-service/default.jfc /opt/harness/
 COPY --chown=65534:65534  --from=builder /app/dist/platform-service/profile.jfc /opt/harness/
-COPY --chown=65534:65534  --from=builder /app/dist/platform-service/profile.jfc /opt/harness/
 COPY --chown=65534:65534 --from=builder /app/dockerization/base-images/apm/*.sh /opt/harness
 RUN chmod +x /opt/harness/*.sh
 CMD [ "/opt/harness/run.sh" ]
@@ -44,7 +43,9 @@ FROM base as onprem
 
 RUN /opt/harness/inject-onprem-apm-bins-into-dockerimage.sh && rm /opt/harness/inject-onprem-apm-bins-into-dockerimage.sh
 USER root
-RUN microdnf remove tar unzip gzip
+RUN microdnf remove tar unzip gzip \
+    && microdnf clean all \
+    && rm -rf /var/cache/yum
 USER 65534
 
 ############################SAAS#########################
