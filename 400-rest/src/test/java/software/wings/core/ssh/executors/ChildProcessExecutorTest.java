@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.PRABU;
 
 import static org.mockito.Mockito.mock;
+import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -20,11 +21,14 @@ import io.harness.shell.ChildProcessStopper;
 import software.wings.WingsBaseTest;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.zeroturnaround.exec.ProcessExecutor;
+import org.zeroturnaround.exec.ProcessResult;
 
 @OwnedBy(CDC)
 public class ChildProcessExecutorTest extends WingsBaseTest {
@@ -37,25 +41,31 @@ public class ChildProcessExecutorTest extends WingsBaseTest {
   @Test
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
-  public void testExecuteScript() throws IllegalAccessException {
+  public void testExecuteScript() throws IllegalAccessException, IOException, InterruptedException, TimeoutException {
     Process process = mock(Process.class);
+    when(processExecutor.execute()).thenReturn(new ProcessResult(0, null));
     Logger mockLogger = mock(Logger.class);
     setStaticFieldValue(ChildProcessStopper.class, "log", mockLogger);
     childProcessStopper.stop(process);
     Mockito.verify(processExecutor).command("/bin/bash", "kill-" + FILE_NAME);
     Mockito.verify(mockLogger)
-        .info("Kill child processes command: {}",
-            "list_descendants ()\n"
-                + "{\n"
-                + "  local children=$(ps -ef | grep -v grep | grep $1 | awk '{print $2}')\n"
-                + "  kill -9 ${children[0]}\n"
-                + "\n"
-                + "  for (( c=1; c<${#children[@]} ; c++ ))\n"
-                + "  do\n"
-                + "    list_descendants ${children[c]}\n"
-                + "  done\n"
-                + "}\n"
-                + "\n"
-                + "list_descendants $(ps -ef | grep -v grep | grep -m1 FILE | awk '{print $2}')");
+        .info("Kill child processes command: list_descendants ()\n"
+            + "{\n"
+            + "  local -a children=()\n"
+            + "  read -ra children <<< \"$(ps -ef | grep -v grep | grep $1 | awk '{print $2}' | tr '\\n' ' ')\"\n"
+            + "\n"
+            + "  for (( c=1; c<${#children[@]} ; c++ ))\n"
+            + "  do\n"
+            + "    list_descendants ${children[c]}\n"
+            + "  done\n"
+            + "\n"
+            + "  if kill -9 ${children[0]}; then\n"
+            + "    echo \"Termination successful for PID: ${children[0]}\"\n"
+            + "  else\n"
+            + "    echo \"Failed to terminate PID: ${children[0]}\"\n"
+            + "  fi\n"
+            + "}\n"
+            + "\n"
+            + "list_descendants $(ps -ef | grep -v grep | grep -m1 FILE | awk '{print $2}')");
   }
 }
