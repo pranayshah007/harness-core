@@ -265,6 +265,10 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
   private HarnessMetricRegistry harnessMetricRegistry;
 
   public static void main(String[] args) throws Exception {
+    String test = "test";
+    if (test.equals("test1")){
+      System.out.println(test);
+    }
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
       log.info("Shutdown hook, entering maintenance...");
       MaintenanceController.forceMaintenance(true);
