@@ -45,10 +45,10 @@ public class ContainerExecutionConstants {
   public static final String ADDON_VOLUME = "addon";
   public static final String ADDON_VOL_MOUNT_PATH = "/addon";
 
-  public static final Integer LITE_ENGINE_CONTAINER_MEM = 100;
+  public static final Integer LITE_ENGINE_CONTAINER_MEM = 10;
   public static final Integer DEFAULT_CONTAINER_MEM_POV = 3000;
   public static final Integer DEFAULT_CONTAINER_CPU_POV = 1000;
-  public static final Integer LITE_ENGINE_CONTAINER_CPU = 100;
+  public static final Integer LITE_ENGINE_CONTAINER_CPU = 10;
   public static final String DELEGATE_SERVICE_ENDPOINT_VARIABLE = "DELEGATE_SERVICE_ENDPOINT";
   public static final String DELEGATE_SERVICE_ID_VARIABLE = "DELEGATE_SERVICE_ID";
   public static final String DELEGATE_SERVICE_ID_VARIABLE_VALUE = "delegate-grpc-service";
