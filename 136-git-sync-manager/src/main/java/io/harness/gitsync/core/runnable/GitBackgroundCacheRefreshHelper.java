@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.GitSyncModule;
 import io.harness.gitsync.common.service.ScmFacilitatorService;
 import io.harness.gitsync.core.beans.GitBatchFileFetchRunnableParams;
+import io.harness.gitsync.core.beans.GitDefaultBranchCacheRunnableParams;
 import io.harness.gitsync.core.beans.GitFileFetchRunnableParams;
 
 import com.google.inject.Inject;
@@ -59,6 +60,19 @@ public class GitBackgroundCacheRefreshHelper {
           "Skipping background BATCH cache update as task queue is full : {}", rejectedExecutionException.getMessage());
     } catch (Exception exception) {
       log.error("Faced exception while submitting background BATCH cache update task", exception);
+    }
+  }
+  public void submitDefaultBranchTask(GitDefaultBranchCacheRunnableParams gitDefaultBranchCacheRunnableParams) {
+    try {
+      GitDefaultBranchRunnable gitDefaultBranchRunnable =
+          new GitDefaultBranchRunnable(gitDefaultBranchCacheRunnableParams);
+      injector.injectMembers(gitDefaultBranchRunnable);
+      executor.execute(gitDefaultBranchRunnable);
+    } catch (RejectedExecutionException rejectedExecutionException) {
+      log.warn("Skipping background default branch cache update as task queue is full : {}",
+          rejectedExecutionException.getMessage());
+    } catch (Exception exception) {
+      log.error("Faced exception while submitting background default branch cache update task", exception);
     }
   }
 }

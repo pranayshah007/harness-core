@@ -394,10 +394,10 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
 
     gitDefaultBranchCacheHelper.cacheDefaultBranchResponse(scope.getAccountIdentifier(), scmConnector,
         scmGetFileByBranchRequestDTO.getRepoName(), workingBranch, gitFileResponse.getBranch());
+
     return getScmGetFileResponseDTO(gitFileResponse,
-        gitDefaultBranchCacheHelper.isGitDefaultBranch(scope.getAccountIdentifier(), scmConnector,
-            scmGetFileByBranchRequestDTO.getRepoName(), scmGetFileByBranchRequestDTO.getBranchName(),
-            gitFileResponse.getBranch()));
+        gitDefaultBranchCacheHelper.isGitDefaultBranch(scope, scmConnector, scmGetFileByBranchRequestDTO.getRepoName(),
+            scmGetFileByBranchRequestDTO.getBranchName(), gitFileResponse.getBranch()));
   }
 
   @Override
@@ -721,20 +721,16 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef, String repoName) {
     final ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(
         accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, repoName);
+    return getGitDefaultBranch(accountIdentifier, orgIdentifier, projectIdentifier, scmConnector, repoName);
+  }
 
-    GetUserRepoResponse getUserRepoResponse =
-        scmOrchestratorService.processScmRequestUsingConnectorSettings(scmClientFacilitatorService
-            -> scmClientFacilitatorService.getRepoDetails(
-                accountIdentifier, orgIdentifier, projectIdentifier, scmConnector),
-            scmConnector);
-
-    if (ScmApiErrorHandlingHelper.isFailureResponse(getUserRepoResponse.getStatus(), scmConnector.getConnectorType())) {
-      ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.GET_DEFAULT_BRANCH, scmConnector.getConnectorType(),
-          scmConnector.getUrl(), getUserRepoResponse.getStatus(), getUserRepoResponse.getError(),
-          ErrorMetadata.builder().connectorRef(connectorRef).repoName(repoName).build());
-    }
-
-    return getUserRepoResponse.getRepo().getBranch();
+  @Override
+  public String getDefaultBranch(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      ScmConnector scmConnector, String repoName) {
+    String gitDefaultBranch =
+        getGitDefaultBranch(accountIdentifier, orgIdentifier, projectIdentifier, scmConnector, repoName);
+    gitDefaultBranchCacheHelper.upsertDefaultBranch(accountIdentifier, repoName, gitDefaultBranch, scmConnector);
+    return gitDefaultBranch;
   }
 
   @Override
@@ -1236,5 +1232,21 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   private void validateCreateFileRequest(ScmCreateFileRequestDTO scmCreateFileRequestDTO, ScmConnector scmConnector) {
     gitRepoAllowlistHelper.validateRepo(
         scmCreateFileRequestDTO.getScope(), scmConnector, scmCreateFileRequestDTO.getRepoName());
+  }
+
+  private String getGitDefaultBranch(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      ScmConnector scmConnector, String repoName) {
+    GetUserRepoResponse getUserRepoResponse =
+        scmOrchestratorService.processScmRequestUsingConnectorSettings(scmClientFacilitatorService
+            -> scmClientFacilitatorService.getRepoDetails(
+                accountIdentifier, orgIdentifier, projectIdentifier, scmConnector),
+            scmConnector);
+
+    if (ScmApiErrorHandlingHelper.isFailureResponse(getUserRepoResponse.getStatus(), scmConnector.getConnectorType())) {
+      ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.GET_DEFAULT_BRANCH, scmConnector.getConnectorType(),
+          scmConnector.getUrl(), getUserRepoResponse.getStatus(), getUserRepoResponse.getError(),
+          ErrorMetadata.builder().repoName(repoName).build());
+    }
+    return getUserRepoResponse.getRepo().getBranch();
   }
 }

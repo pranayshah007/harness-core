@@ -12,10 +12,13 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.beans.Scope;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.gitsync.caching.beans.GitDefaultBranchCacheKey;
 import io.harness.gitsync.caching.beans.GitDefaultBranchCacheResponse;
 import io.harness.gitsync.caching.service.GitDefaultBranchCacheService;
+import io.harness.gitsync.core.beans.GitDefaultBranchCacheRunnableParams;
+import io.harness.gitsync.core.runnable.GitBackgroundCacheRefreshHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
@@ -29,6 +32,7 @@ public class GitDefaultBranchCacheHelper {
   @Inject GitDefaultBranchCacheService gitDefaultBranchCacheService;
   @Inject GitRepoHelper gitRepoHelper;
   @Inject NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  @Inject GitBackgroundCacheRefreshHelper gitBackgroundCacheRefreshHelper;
   public static final String GIT_DEFAULT_BRANCH_CACHE = "GIT_DEFAULT_BRANCH_CACHE";
 
   public void upsertDefaultBranch(
@@ -88,14 +92,24 @@ public class GitDefaultBranchCacheHelper {
     return new GitDefaultBranchCacheKey(accountIdentifier, repoUrl, repoName);
   }
 
-  public boolean isGitDefaultBranch(String accountIdentifier, ScmConnector scmConnector, String repoName,
-      String requestBranch, String responseBranch) {
+  public boolean isGitDefaultBranch(
+      Scope scope, ScmConnector scmConnector, String repoName, String requestBranch, String responseBranch) {
     if (isEmpty(requestBranch)) {
       return true;
     }
     if (isEmpty(responseBranch)) {
       return false;
     }
-    return responseBranch.equals(getDefaultBranchFromCache(accountIdentifier, repoName, scmConnector));
+    String defaultBranchFromCache = getDefaultBranchFromCache(scope.getAccountIdentifier(), repoName, scmConnector);
+    if (isEmpty(defaultBranchFromCache)) {
+      gitBackgroundCacheRefreshHelper.submitDefaultBranchTask(GitDefaultBranchCacheRunnableParams.builder()
+                                                                  .accountIdentifier(scope.getAccountIdentifier())
+                                                                  .orgIdentifier(scope.getOrgIdentifier())
+                                                                  .projectIdentifier(scope.getProjectIdentifier())
+                                                                  .scmConnector(scmConnector)
+                                                                  .repoName(repoName)
+                                                                  .build());
+    }
+    return responseBranch.equals(defaultBranchFromCache);
   }
 }
