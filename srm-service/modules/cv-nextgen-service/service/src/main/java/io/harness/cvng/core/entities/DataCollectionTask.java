@@ -158,7 +158,8 @@ public abstract class DataCollectionTask
 
   public enum Type { SERVICE_GUARD, DEPLOYMENT, SLI }
   public Duration totalTime(Instant currentTime) {
-    return Duration.between(validAfter, currentTime);
+    Instant maxOfCreatedAndValidAfter = getMaximumInstant(validAfter, Instant.ofEpochMilli(getCreatedAt()));
+    return Duration.between(maxOfCreatedAndValidAfter, currentTime);
   }
   public Duration runningTime(Instant currentTime) {
     Preconditions.checkNotNull(lastPickedAt,
@@ -169,7 +170,8 @@ public abstract class DataCollectionTask
   public Duration waitTime() {
     Preconditions.checkNotNull(lastPickedAt,
         "Last picked up needs to be not null for wait time calculation for dataCollectionTaskId: " + uuid);
-    return Duration.between(validAfter, lastPickedAt);
+    Instant maxOfCreatedAndValidAfter = getMaximumInstant(validAfter, Instant.ofEpochMilli(getCreatedAt()));
+    return Duration.between(maxOfCreatedAndValidAfter, lastPickedAt);
   }
   public LogLevel getLogLevel() {
     if (DataCollectionExecutionStatus.getFailedStatuses().contains(status)) {
@@ -179,5 +181,8 @@ public abstract class DataCollectionTask
     } else {
       return LogLevel.INFO;
     }
+  }
+  private Instant getMaximumInstant(Instant i1, Instant i2) {
+    return i1.isAfter(i2) ? i1 : i2;
   }
 }

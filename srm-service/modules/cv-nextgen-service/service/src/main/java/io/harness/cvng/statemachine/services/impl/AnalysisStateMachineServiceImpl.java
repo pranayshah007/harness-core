@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.cvng.analysis.entities.VerificationTaskBase.VerificationTaskBaseKeys;
+import io.harness.cvng.beans.CVNGTaskMetadataConstants;
 import io.harness.cvng.beans.cvnglog.CVNGLogTag;
 import io.harness.cvng.core.services.api.ExecutionLogService;
 import io.harness.cvng.core.utils.CVNGTaskMetadataUtils;
@@ -215,17 +216,26 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
       }
     }
     hPersistence.save(analysisStateMachine);
-    List<CVNGLogTag> cvngLogTags = CVNGTaskMetadataUtils.getCvngLogTagsForTask(analysisStateMachine.getUuid());
-    if (AnalysisStatus.getFinalStates().contains(analysisStateMachine.getStatus())) {
-      Duration timeDuration =
-          Duration.between(analysisStateMachine.getStartTime(), analysisStateMachine.getAnalysisEndTime());
-      cvngLogTags.addAll(
-          CVNGTaskMetadataUtils.getTaskDurationTags(CVNGTaskMetadataUtils.DurationType.TOTAL_DURATION, timeDuration));
-    }
+    List<CVNGLogTag> cvngLogTags = getCvngLogTags(analysisStateMachine, analysisStateMachine.getNextAttemptTime());
     executionLogService.getLogger(analysisStateMachine)
         .log(analysisStateMachine.getLogLevel(), cvngLogTags,
             "Analysis state machine status: " + analysisStateMachine.getStatus());
     return analysisStateMachine.getCurrentState().getStatus();
+  }
+
+  private static List<CVNGLogTag> getCvngLogTags(
+      AnalysisStateMachine analysisStateMachine, long nextAttemptTimeAtStart) {
+    List<CVNGLogTag> cvngLogTags = CVNGTaskMetadataUtils.getCvngLogTagsForTask(analysisStateMachine.getUuid());
+    if (analysisStateMachine.getTotalRetryCount() > 0) {
+      cvngLogTags.add(CVNGTaskMetadataUtils.getCvngLogTag(
+          CVNGTaskMetadataConstants.RETRY_COUNT, String.valueOf(analysisStateMachine.getTotalRetryCount())));
+    }
+    if (AnalysisStatus.getFinalStates().contains(analysisStateMachine.getStatus())) {
+      Duration timeDuration = Duration.between(Instant.ofEpochMilli(nextAttemptTimeAtStart), Instant.now());
+      cvngLogTags.addAll(
+          CVNGTaskMetadataUtils.getTaskDurationTags(CVNGTaskMetadataUtils.DurationType.TOTAL_DURATION, timeDuration));
+    }
+    return cvngLogTags;
   }
 
   @Override

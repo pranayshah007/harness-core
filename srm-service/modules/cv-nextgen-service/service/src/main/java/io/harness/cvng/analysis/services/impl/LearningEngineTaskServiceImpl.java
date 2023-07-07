@@ -44,7 +44,6 @@ import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
 import java.net.URISyntaxException;
 import java.time.Clock;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -204,7 +203,7 @@ public class LearningEngineTaskServiceImpl implements LearningEngineTaskService 
     incTaskStatusMetric(task.getAccountId(), ExecutionStatus.SUCCESS);
     addTimeToFinishMetrics(task);
     stateMachineEventPublisherService.registerTaskComplete(task.getAccountId(), task.getVerificationTaskId());
-    List<CVNGLogTag> cvngLogTags = getCvngLogTagsForFinalState(taskId, task.totalTime(Instant.now()));
+    List<CVNGLogTag> cvngLogTags = getCvngLogTagsForFinalState(task);
     executionLogService.getLogger(task).log(
         task.getLogLevel(), cvngLogTags, "Learning engine task status: " + task.getTaskStatus());
   }
@@ -226,16 +225,23 @@ public class LearningEngineTaskServiceImpl implements LearningEngineTaskService 
     LearningEngineTask learningEngineTask = get(taskId);
     incTaskStatusMetric(learningEngineTask.getAccountId(), ExecutionStatus.FAILED);
     addTimeToFinishMetrics(learningEngineTask);
-    List<CVNGLogTag> cvngLogTags = getCvngLogTagsForFinalState(taskId, learningEngineTask.totalTime(Instant.now()));
+    List<CVNGLogTag> cvngLogTags = getCvngLogTagsForFinalState(learningEngineTask);
     executionLogService.getLogger(learningEngineTask)
         .log(ExecutionLogDTO.LogLevel.ERROR, cvngLogTags,
             "Learning engine task failed. Exception: ", learningEngineTask.getException());
   }
 
-  private static List<CVNGLogTag> getCvngLogTagsForFinalState(String taskId, Duration duration) {
-    List<CVNGLogTag> cvngLogTags = CVNGTaskMetadataUtils.getCvngLogTagsForTask(taskId);
-    cvngLogTags.addAll(
-        CVNGTaskMetadataUtils.getTaskDurationTags(CVNGTaskMetadataUtils.DurationType.TOTAL_DURATION, duration));
+  private static List<CVNGLogTag> getCvngLogTagsForFinalState(LearningEngineTask learningEngineTask) {
+    List<CVNGLogTag> cvngLogTags = CVNGTaskMetadataUtils.getCvngLogTagsForTask(learningEngineTask.getUuid());
+    if (learningEngineTask.getPickedAt() != null) {
+      cvngLogTags.addAll(CVNGTaskMetadataUtils.getTaskDurationTags(
+          CVNGTaskMetadataUtils.DurationType.WAIT_DURATION, learningEngineTask.waitTime()));
+      cvngLogTags.addAll(CVNGTaskMetadataUtils.getTaskDurationTags(
+          CVNGTaskMetadataUtils.DurationType.RUNNING_DURATION, learningEngineTask.runningTime(Instant.now())));
+    } else {
+      cvngLogTags.addAll(CVNGTaskMetadataUtils.getTaskDurationTags(
+          CVNGTaskMetadataUtils.DurationType.TOTAL_DURATION, learningEngineTask.totalTime(Instant.now())));
+    }
     return cvngLogTags;
   }
 
