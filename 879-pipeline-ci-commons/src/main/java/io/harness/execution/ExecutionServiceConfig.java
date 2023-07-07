@@ -26,6 +26,8 @@ public class ExecutionServiceConfig {
   String delegateServiceEndpointVariableValue;
   Integer defaultMemoryLimit;
   Integer defaultCPULimit;
+  Integer liteEngineDefaultCPU;
+  Integer liteEngineDefaultMem;
   Integer pvcDefaultStorageSize;
   String addonImage;
   String liteEngineImage;

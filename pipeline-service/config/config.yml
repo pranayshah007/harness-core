@@ -303,6 +303,8 @@ orchestrationStepConfig:
     liteEngineImageTag: releaseBuild-29
     defaultMemoryLimit: 500
     defaultCPULimit: 400
+    liteEngineDefaultCPU: ${LITE_ENGINE_DEFAULT_CPU:-10}
+    liteEngineDefaultMem: ${LITE_ENGINE_DEFAULT_MEM:-10}
     defaultInternalImageConnector: 'account.harnessImage'
     pvcDefaultStorageSize: 25600
     delegateServiceEndpointVariableValue: "delegate-service:8080"

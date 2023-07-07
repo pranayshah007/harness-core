@@ -21,8 +21,6 @@ import static io.harness.ci.commonconstants.ContainerExecutionConstants.HARNESS_
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.HARNESS_PROJECT_ID_VARIABLE;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.HARNESS_STAGE_ID_VARIABLE;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.HARNESS_WORKSPACE;
-import static io.harness.ci.commonconstants.ContainerExecutionConstants.LITE_ENGINE_CONTAINER_CPU;
-import static io.harness.ci.commonconstants.ContainerExecutionConstants.LITE_ENGINE_CONTAINER_MEM;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.PWSH_COMMAND;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.SETUP_ADDON_CONTAINER_NAME;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.SH_COMMAND;
@@ -82,8 +80,8 @@ public class ContainerParamsProvider {
   }
 
   private ContainerResourceParams getLiteEngineResourceParams(Integer stepCpuRequest, Integer stepMemoryRequest) {
-    Integer cpu = stepCpuRequest + LITE_ENGINE_CONTAINER_CPU;
-    Integer memory = stepMemoryRequest + LITE_ENGINE_CONTAINER_MEM;
+    Integer cpu = stepCpuRequest + containerExecutionConfig.getLiteEngineDefaultCPU();
+    Integer memory = stepMemoryRequest + containerExecutionConfig.getLiteEngineDefaultMem();
     return ContainerResourceParams.builder()
         .resourceRequestMilliCpu(cpu)
         .resourceRequestMemoryMiB(memory)
@@ -93,8 +91,8 @@ public class ContainerParamsProvider {
   }
 
   private ContainerResourceParams getAddonResourceParams() {
-    Integer cpu = LITE_ENGINE_CONTAINER_CPU;
-    Integer memory = LITE_ENGINE_CONTAINER_MEM;
+    Integer cpu = containerExecutionConfig.getLiteEngineDefaultCPU();
+    Integer memory = containerExecutionConfig.getLiteEngineDefaultMem();
     return ContainerResourceParams.builder()
         .resourceRequestMilliCpu(cpu)
         .resourceRequestMemoryMiB(memory)
