@@ -13,7 +13,9 @@ import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalSta
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.ngtriggers.beans.dto.eventmapping.NotMatchedTriggerInfo;
 import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventMappingResponse;
+import io.harness.ngtriggers.beans.entity.TriggerEventHistory;
 import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent;
 import io.harness.ngtriggers.beans.response.TriggerEventResponse;
 import io.harness.ngtriggers.beans.scm.WebhookPayloadData;
@@ -93,6 +95,7 @@ public class BuildTriggerEventMapper {
       for (TriggerFilter triggerFilter : triggerFilters) {
         triggerFilterInAction = triggerFilter;
         webhookEventMappingResponse = triggerFilter.applyFilter(filterRequestData);
+        saveEventHistoryForNotMatchedTriggers(webhookEventMappingResponse);
         if (webhookEventMappingResponse.isFailedToFindTrigger()) {
           return webhookEventMappingResponse;
         } else {
@@ -104,6 +107,30 @@ public class BuildTriggerEventMapper {
       return triggerFilterInAction.getWebhookResponseForException(filterRequestData, e);
     }
     return webhookEventMappingResponse;
+  }
+
+  private void saveEventHistoryForNotMatchedTriggers(WebhookEventMappingResponse webhookEventMappingResponse) {
+    for (NotMatchedTriggerInfo notMatchedTriggerInfo : webhookEventMappingResponse.getNotMatchedTriggerInfos()) {
+      triggerEventHistoryRepository.save(
+          TriggerEventHistory.builder()
+              .triggerIdentifier(notMatchedTriggerInfo.getNotMatchedTriggers().getNgTriggerEntity().getIdentifier())
+              .pollingDocId(notMatchedTriggerInfo.getNotMatchedTriggers()
+                                .getNgTriggerEntity()
+                                .getMetadata()
+                                .getBuildMetadata()
+                                .getPollingConfig()
+                                .getPollingDocId())
+              .projectIdentifier(
+                  notMatchedTriggerInfo.getNotMatchedTriggers().getNgTriggerEntity().getProjectIdentifier())
+              .finalStatus(notMatchedTriggerInfo.getFinalStatus().toString())
+              .message(notMatchedTriggerInfo.getMessage())
+              .orgIdentifier(notMatchedTriggerInfo.getNotMatchedTriggers().getNgTriggerEntity().getOrgIdentifier())
+              .targetIdentifier(
+                  notMatchedTriggerInfo.getNotMatchedTriggers().getNgTriggerEntity().getTargetIdentifier())
+              .triggerIdentifier(notMatchedTriggerInfo.getNotMatchedTriggers().getNgTriggerEntity().getIdentifier())
+              .accountId(notMatchedTriggerInfo.getNotMatchedTriggers().getNgTriggerEntity().getAccountId())
+              .build());
+    }
   }
 
   private WebhookEventMappingResponse generateWebhookEventMappingResponseUsingError(

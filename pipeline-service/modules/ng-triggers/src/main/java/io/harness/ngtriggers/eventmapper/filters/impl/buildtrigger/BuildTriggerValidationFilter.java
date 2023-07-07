@@ -13,8 +13,10 @@ import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalSta
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
+import io.harness.ngtriggers.beans.dto.eventmapping.NotMatchedTriggerInfo;
 import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventMappingResponse;
 import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventMappingResponse.WebhookEventMappingResponseBuilder;
+import io.harness.ngtriggers.beans.response.TriggerEventResponse;
 import io.harness.ngtriggers.buildtriggers.helpers.BuildTriggerHelper;
 import io.harness.ngtriggers.eventmapper.filters.TriggerFilter;
 import io.harness.ngtriggers.eventmapper.filters.dto.FilterRequestData;
@@ -44,16 +46,28 @@ public class BuildTriggerValidationFilter implements TriggerFilter {
   public WebhookEventMappingResponse applyFilter(FilterRequestData filterRequestData) {
     WebhookEventMappingResponseBuilder mappingResponseBuilder = initWebhookEventMappingResponse(filterRequestData);
     List<TriggerDetails> matchedTriggers = new ArrayList<>();
+    List<NotMatchedTriggerInfo> notMatchedTriggersInfo = new ArrayList<>();
 
     for (TriggerDetails trigger : filterRequestData.getDetails()) {
       try {
         if (checkTriggerEligibility(trigger)) {
           matchedTriggers.add(trigger);
         }
+        else {
+          NotMatchedTriggerInfo notMatchedTriggerInfo =
+                  NotMatchedTriggerInfo.builder()
+                          .notMatchedTriggers(trigger)
+                          .finalStatus(TriggerEventResponse.FinalStatus.VALIDATION_FAILED_FOR_TRIGGER)
+                          .message("")
+                          .build();
+          notMatchedTriggersInfo.add(notMatchedTriggerInfo);
+        }
       } catch (Exception e) {
         log.error(getTriggerSkipMessage(trigger.getNgTriggerEntity()), e);
       }
     }
+
+    mappingResponseBuilder.notMatchedTriggerInfos(notMatchedTriggersInfo);
 
     if (isEmpty(matchedTriggers)) {
       log.info("No trigger matched polling event after event condition evaluation:");

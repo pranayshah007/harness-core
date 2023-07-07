@@ -17,8 +17,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.TriggerException;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
+import io.harness.ngtriggers.beans.dto.eventmapping.NotMatchedTriggerInfo;
 import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventMappingResponse;
 import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventMappingResponse.WebhookEventMappingResponseBuilder;
+import io.harness.ngtriggers.beans.response.TriggerEventResponse;
 import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
 import io.harness.ngtriggers.beans.source.NGTriggerSpecV2;
 import io.harness.ngtriggers.beans.source.artifact.ArtifactTriggerConfig;
@@ -52,6 +54,7 @@ public class ArtifactJexlConditionsTriggerFilter implements TriggerFilter {
   public WebhookEventMappingResponse applyFilter(FilterRequestData filterRequestData) {
     WebhookEventMappingResponseBuilder mappingResponseBuilder = initWebhookEventMappingResponse(filterRequestData);
     List<TriggerDetails> matchedTriggers = new ArrayList<>();
+    List<NotMatchedTriggerInfo> notMatchedTriggersInfo = new ArrayList<>();
 
     for (TriggerDetails trigger : filterRequestData.getDetails()) {
       try {
@@ -66,12 +69,22 @@ public class ArtifactJexlConditionsTriggerFilter implements TriggerFilter {
                                             .build();
         if (checkTriggerEligibility(filterRequestData, triggerDetails)) {
           matchedTriggers.add(triggerDetails);
+        } else {
+          NotMatchedTriggerInfo notMatchedTriggerInfo =
+              NotMatchedTriggerInfo.builder()
+                  .notMatchedTriggers(triggerDetails)
+                  .finalStatus(TriggerEventResponse.FinalStatus.TRIGGER_DIDNT_MATCH_ARTIFACT_JEXL_CONDITION_CONDITION)
+                  .message(triggerDetails.getNgTriggerEntity().getIdentifier()
+                      + " didn't match condition for artifact jexl condition")
+                  .build();
+          notMatchedTriggersInfo.add(notMatchedTriggerInfo);
         }
       } catch (Exception e) {
         log.error(getTriggerSkipMessage(trigger.getNgTriggerEntity()), e);
       }
     }
 
+    mappingResponseBuilder.notMatchedTriggerInfos(notMatchedTriggersInfo);
     if (isEmpty(matchedTriggers)) {
       log.info("No trigger matched polling event after condition evaluation:");
       mappingResponseBuilder.failedToFindTrigger(true)
