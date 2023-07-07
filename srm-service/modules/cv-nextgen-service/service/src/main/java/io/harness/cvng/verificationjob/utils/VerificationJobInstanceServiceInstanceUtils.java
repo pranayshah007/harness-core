@@ -7,15 +7,22 @@
 
 package io.harness.cvng.verificationjob.utils;
 
+import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
+import io.harness.cvng.core.services.api.ExecutionLogger;
 import io.harness.cvng.verificationjob.entities.ServiceInstanceDetails;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 
+import com.google.common.collect.Sets;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 @UtilityClass
 public class VerificationJobInstanceServiceInstanceUtils {
@@ -30,41 +37,79 @@ public class VerificationJobInstanceServiceInstanceUtils {
     return getRandomElement(getControlNodes(verificationJobInstance), MAX_CONTROL_NODE_COUNT);
   }
 
+  public Set<String> filterValidTestNodes(
+      Set<String> testNodes, VerificationJobInstance verificationJobInstance, ExecutionLogger executionLogger) {
+    if (verificationJobInstance.getServiceInstanceDetails() == null
+        || StringUtils.isEmpty(verificationJobInstance.getServiceInstanceDetails().getTestNodeRegExPattern())) {
+      return new HashSet<>(testNodes);
+    }
+    Set<String> filteredTestNodes =
+        testNodes.stream()
+            .filter(str
+                -> Pattern.matches(verificationJobInstance.getServiceInstanceDetails().getTestNodeRegExPattern(), str))
+            .collect(Collectors.toSet());
+    if (filteredTestNodes.size() < testNodes.size()) {
+      executionLogger.log(ExecutionLogDTO.LogLevel.INFO,
+          "Following test nodes were filtered out of testNodes because of regex match failure: "
+              + String.join(",", Sets.difference(testNodes, filteredTestNodes)));
+    }
+    return filteredTestNodes;
+  }
+
+  public Set<String> filterValidControlNodes(
+      Set<String> controlNodes, VerificationJobInstance verificationJobInstance, ExecutionLogger executionLogger) {
+    if (verificationJobInstance.getServiceInstanceDetails() == null
+        || StringUtils.isEmpty(verificationJobInstance.getServiceInstanceDetails().getControlNodeRegExPattern())) {
+      return new HashSet<>(controlNodes);
+    }
+    Set<String> filteredControlNodes =
+        controlNodes.stream()
+            .filter(str
+                -> Pattern.matches(
+                    verificationJobInstance.getServiceInstanceDetails().getControlNodeRegExPattern(), str))
+            .collect(Collectors.toSet());
+    if (filteredControlNodes.size() < controlNodes.size()) {
+      executionLogger.log(ExecutionLogDTO.LogLevel.INFO,
+          "Following control nodes were filtered out of testNodes because of regex match failure: "
+              + String.join(",", Sets.difference(controlNodes, filteredControlNodes)));
+    }
+    return filteredControlNodes;
+  }
+
   public List<String> getTestNodes(VerificationJobInstance verificationJobInstance) {
-    if (verificationJobInstance.getServiceInstanceDetailsFromCD() == null
-        || verificationJobInstance.getServiceInstanceDetailsFromCD().isValid() == false
+    if (verificationJobInstance.getServiceInstanceDetails() == null
+        || verificationJobInstance.getServiceInstanceDetails().isShouldUseNodesFromCD() == false
         || CollectionUtils.isEmpty(
-            verificationJobInstance.getServiceInstanceDetailsFromCD().getServiceInstancesAfterDeployment())) {
+            verificationJobInstance.getServiceInstanceDetails().getServiceInstancesAfterDeployment())) {
       return null;
     }
     return CollectionUtils
-        .emptyIfNull(verificationJobInstance.getServiceInstanceDetailsFromCD().getDeployedServiceInstances())
+        .emptyIfNull(verificationJobInstance.getServiceInstanceDetails().getDeployedServiceInstances())
         .stream()
-        .filter(si
-            -> verificationJobInstance.getServiceInstanceDetailsFromCD().getServiceInstancesAfterDeployment().contains(
-                si))
+        .filter(
+            si -> verificationJobInstance.getServiceInstanceDetails().getServiceInstancesAfterDeployment().contains(si))
         .collect(Collectors.toList());
   }
 
   public List<String> getControlNodes(VerificationJobInstance verificationJobInstance) {
-    if (verificationJobInstance.getServiceInstanceDetailsFromCD() == null
-        || verificationJobInstance.getServiceInstanceDetailsFromCD().isValid() == false
+    if (verificationJobInstance.getServiceInstanceDetails() == null
+        || verificationJobInstance.getServiceInstanceDetails().isShouldUseNodesFromCD() == false
         || CollectionUtils.isEmpty(
-            verificationJobInstance.getServiceInstanceDetailsFromCD().getServiceInstancesAfterDeployment())) {
+            verificationJobInstance.getServiceInstanceDetails().getServiceInstancesAfterDeployment())) {
       return null;
     }
 
     switch (verificationJobInstance.getResolvedJob().getType()) {
       case CANARY:
-        return getControlNodesForCanaryComparison(verificationJobInstance.getServiceInstanceDetailsFromCD());
+        return getControlNodesForCanaryComparison(verificationJobInstance.getServiceInstanceDetails());
       case ROLLING:
       case BLUE_GREEN:
-        return getControlNodesForBeforeAfterComparison(verificationJobInstance.getServiceInstanceDetailsFromCD());
+        return getControlNodesForBeforeAfterComparison(verificationJobInstance.getServiceInstanceDetails());
       case AUTO:
-        if (isValidCanaryDeployment(verificationJobInstance.getServiceInstanceDetailsFromCD())) {
-          return getControlNodesForCanaryComparison(verificationJobInstance.getServiceInstanceDetailsFromCD());
+        if (isValidCanaryDeployment(verificationJobInstance.getServiceInstanceDetails())) {
+          return getControlNodesForCanaryComparison(verificationJobInstance.getServiceInstanceDetails());
         } else {
-          return getControlNodesForBeforeAfterComparison(verificationJobInstance.getServiceInstanceDetailsFromCD());
+          return getControlNodesForBeforeAfterComparison(verificationJobInstance.getServiceInstanceDetails());
         }
       default:
         return null;

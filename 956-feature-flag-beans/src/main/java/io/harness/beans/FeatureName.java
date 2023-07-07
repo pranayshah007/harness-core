@@ -17,7 +17,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureFlag.Scope;
 
 import lombok.Getter;
-
 /**
  * Add your feature name here. When the feature is fully launched and no longer needs to be flagged,
  * delete the feature name.
@@ -301,6 +300,10 @@ public enum FeatureName {
   CVNG_TEMPLATE_VERIFY_STEP,
   CVNG_VERIFY_STEP_DEMO,
   CV_AWS_PROMETHEUS("Enable AWS Prometheus for CV State", HarnessTeam.CV),
+  CV_UI_DISPLAY_NODE_REGEX_FILTER(
+      "Displays the control node and test node reg filter option in Verify step", HarnessTeam.CV),
+  CV_UI_DISPLAY_SHOULD_USE_NODES_FROM_CD_CHECKBOX(
+      "Displays the should use nodes from CD checkbox in Verify step", HarnessTeam.CV),
   CV_DEMO,
   CV_FAIL_ON_EMPTY_NODES,
   CV_HOST_SAMPLING,

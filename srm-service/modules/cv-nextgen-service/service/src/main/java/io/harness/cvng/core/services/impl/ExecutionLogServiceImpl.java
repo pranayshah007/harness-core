@@ -11,10 +11,12 @@ import io.harness.cvng.beans.cvnglog.CVNGLogTag;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
 import io.harness.cvng.beans.cvnglog.TraceableType;
+import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.entities.VerificationTaskExecutionInstance;
 import io.harness.cvng.core.services.api.CVNGLogService;
 import io.harness.cvng.core.services.api.ExecutionLogService;
 import io.harness.cvng.core.services.api.ExecutionLogger;
+import io.harness.cvng.core.services.api.VerificationTaskService;
 
 import com.google.inject.Inject;
 import java.time.Instant;
@@ -31,6 +33,8 @@ import org.apache.commons.collections4.CollectionUtils;
 public class ExecutionLogServiceImpl implements ExecutionLogService {
   @Inject private CVNGLogService cvngLogService;
 
+  @Inject private VerificationTaskService verificationTaskService;
+
   @Override
   public ExecutionLogger getLogger(VerificationTaskExecutionInstance verificationTaskExecutionInstance) {
     return ExecutionLoggerImpl.builder()
@@ -39,6 +43,18 @@ public class ExecutionLogServiceImpl implements ExecutionLogService {
         .verificationTaskId(verificationTaskExecutionInstance.getVerificationTaskId())
         .startTime(verificationTaskExecutionInstance.getStartTime())
         .endTime(verificationTaskExecutionInstance.getEndTime())
+        .build();
+  }
+
+  @Override
+  public ExecutionLogger getLogger(String verificationTaskId, Instant startTime, Instant endTime) {
+    VerificationTask verificationTask = verificationTaskService.get(verificationTaskId);
+    return ExecutionLoggerImpl.builder()
+        .cvngLogService(cvngLogService)
+        .accountId(verificationTask.getAccountId())
+        .verificationTaskId(verificationTaskId)
+        .startTime(startTime)
+        .endTime(endTime)
         .build();
   }
 

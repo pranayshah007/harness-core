@@ -34,6 +34,7 @@ import io.harness.cvng.core.services.api.SideKickService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.models.VerificationType;
 import io.harness.cvng.verificationjob.entities.ServiceInstanceDetails;
+import io.harness.cvng.verificationjob.entities.ServiceInstanceDetails.ServiceInstanceDetailsBuilder;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJob.RuntimeParameter;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
@@ -190,13 +191,7 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
                 monitoredServiceTemplateIdentifier, monitoredServiceTemplateVersionLabel, cvConfigs);
         activity.fillInVerificationJobInstanceDetails(verificationJobInstanceBuilder);
         verificationJobInstanceBuilder.monitoredServiceType(monitoredServiceType);
-        if (stepParameters.getShouldUseCDNodes() != null && stepParameters.getShouldUseCDNodes().getValue() != null) {
-          verificationJobInstanceBuilder.serviceInstanceDetailsFromCD(
-              ServiceInstanceDetails.builder().valid(stepParameters.getShouldUseCDNodes().getValue()).build());
-        } else {
-          verificationJobInstanceBuilder.serviceInstanceDetailsFromCD(
-              ServiceInstanceDetails.builder().valid(false).build());
-        }
+        verificationJobInstanceBuilder.serviceInstanceDetails(getServiceInstanceDetails(ambiance, stepParameters));
         verificationJobInstanceBuilder.nodeExecutionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
         verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstanceBuilder.build());
       }
@@ -237,6 +232,23 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
       return Sensitivity.HIGH.getValue().equalsIgnoreCase(sensitivity.getValue());
     }
     return identifier.endsWith("_dev");
+  }
+
+  private ServiceInstanceDetails getServiceInstanceDetails(Ambiance ambiance, CVNGStepParameter cvngStepParameter) {
+    ServiceInstanceDetailsBuilder serviceInstanceDetailsBuilder =
+        ServiceInstanceDetails.builder()
+            .shouldUseNodesFromCD(getValueFromParameterisedField(cvngStepParameter.getShouldUseCDNodes(), false))
+            .testNodeRegExPattern(getValueFromParameterisedField(cvngStepParameter.getTestNodeRegExPattern(), null))
+            .controlNodeRegExPattern(
+                getValueFromParameterisedField(cvngStepParameter.getControlNodeRegExPattern(), null));
+    return serviceInstanceDetailsBuilder.build();
+  }
+
+  private <T> T getValueFromParameterisedField(ParameterField<T> parameterField, T defaultValue) {
+    if (parameterField != null && parameterField.getValue() != null) {
+      return parameterField.getValue();
+    }
+    return defaultValue;
   }
 
   private VerificationJobInstanceBuilder getVerificationJobInstanceBuilder(String stepName,
