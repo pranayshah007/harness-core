@@ -157,67 +157,6 @@ public class NgDelegate2TaskExecutor implements TaskExecutor {
     return setupExecutionInfrastructureRequest;
   }
 
-  private WebsocketAPIRequest convertTo(SubmitTaskRequest submitTaskRequest) {
-    SchedulingConfig networkMetadata = SchedulingConfig.newBuilder()
-                                           .addAllSelectors(submitTaskRequest.getSelectorsList())
-                                           .setSetupAbstractions(submitTaskRequest.getSetupAbstractions())
-                                           .setRunnerType(RunnerType.RUNNER_TYPE_K8S)
-                                           .setAccountId(submitTaskRequest.getAccountId().getId())
-                                           .setExecutionTimeout(submitTaskRequest.getDetails().getExecutionTimeout())
-                                           .setSelectionTrackingLogEnabled(true)
-                                           .setCallbackToken(tokenSupplier.get())
-                                           .build();
-
-    // referenceFalseKryoSerializer.asObject(submitTaskRequest.getDetails().getKryoParameters().toByteArray());
-    Object params =
-        referenceFalseKryoSerializer.asInflatedObject(submitTaskRequest.getDetails().getKryoParameters().toByteArray());
-    TaskData taskData =
-        TaskData.builder().parameters(new Object[] {params}).taskType(SHELL_SCRIPT_TASK_NG.name()).async(true).build();
-    DelegateTaskPackage delegateTaskPackage =
-        DelegateTaskPackage.builder().accountId(submitTaskRequest.getAccountId().getId()).data(taskData).build();
-    byte[] taskPackageBytes = referenceFalseKryoSerializer.asDeflatedBytes(delegateTaskPackage);
-
-    ExecuteStepRequest request =
-        ExecuteStepRequest
-            .builder()
-            // TODO: use proper stage id
-            .stageRuntimeID("random")
-            .config(ExecuteStepRequest.Config.builder()
-                        .id(generateUuid())
-                        .workingDir("/opt/harness")
-                        .timeout(3600)
-                        .detach(false)
-                        .image("harnessdev/delegate-runner:shell")
-                        .envs(Map.of("delegate-service_SERVICE_HOST", "host.docker.internal",
-                            "delegate-service_SERVICE_PORT", "3460",
-                            // TODO: this SHOULD_SEND_RESPONSE put in runner's code
-                            "SHOULD_SEND_RESPONSE", "true"))
-                        .logKey(LogStreamingHelper.generateLogBaseKey(
-                            new LinkedHashMap(submitTaskRequest.getLogAbstractions().getValuesMap())))
-                        .volumeMounts(List.of(
-                            ExecuteStepRequest.VolumeMount.builder().name("harness").path("/tmp/harness").build(),
-                            ExecuteStepRequest.VolumeMount.builder().name("addon").path("/tmp/addon").build()))
-                        //.runConfig(ExecuteStepRequest.RunConfig.builder().command(List.of("/bin/bash", "-c", "--",
-                        //"while true; do sleep 30; done;")).build())
-                        .build())
-            .build();
-    log.info("Shell task package: len {}", taskPackageBytes.length);
-    log.info(DigestUtils.md5Hex(taskPackageBytes));
-    byte[] requestBytes = new byte[0];
-    try {
-      ObjectMapper objectMapper = new ObjectMapper();
-      requestBytes = objectMapper.writeValueAsBytes(request);
-    } catch (JsonProcessingException e) {
-      e.printStackTrace();
-    }
-    return WebsocketAPIRequest.newBuilder()
-        .setTaskNetworkMetadata(networkMetadata)
-        .setSerialization(WebsocketAPIRequest.SERIALIZATION_METHOD.JSON)
-        .setExpressionFunctorToken(submitTaskRequest.getDetails().getExpressionFunctorToken())
-        .setData(ByteString.copyFrom(requestBytes))
-        .build();
-  }
-
   @Override
   public <T extends ResponseData> T executeTask(Map<String, String> setupAbstractions, TaskRequest taskRequest) {
     TaskRequestValidityCheck check = validateTaskRequest(taskRequest, TaskMode.SYNC);

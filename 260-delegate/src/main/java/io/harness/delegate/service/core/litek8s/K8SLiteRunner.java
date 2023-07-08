@@ -8,6 +8,7 @@
 package io.harness.delegate.service.core.litek8s;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.service.core.litek8s.ContainerFactory.RESERVED_ADDON_PORT;
 import static io.harness.delegate.service.core.litek8s.ContainerFactory.RESERVED_LE_PORT;
 import static io.harness.delegate.service.core.util.K8SConstants.DELEGATE_FIELD_MANAGER;
 
@@ -174,8 +175,14 @@ public class K8SLiteRunner implements Runner {
                                   .addAllExecuteCommand(List.of("./start.sh"))
                                   .build();
 
-    UnitStep unitStep =
-        UnitStep.newBuilder().setId(taskGroupId).setTaskId(taskGroupId).setExecuteTask(executeStep).build();
+    UnitStep unitStep = UnitStep.newBuilder()
+                            .setId(taskGroupId)
+                            .setExecuteTask(executeStep)
+                            .setCallbackToken(config.getDelegateToken())
+                            .setTaskId(taskGroupId)
+                            .setAccountId(config.getAccountId())
+                            .setContainerPort(RESERVED_ADDON_PORT)
+                            .build();
 
     ExecuteStepRequest executeStepRequest = ExecuteStepRequest.newBuilder().setStep(unitStep).build();
 

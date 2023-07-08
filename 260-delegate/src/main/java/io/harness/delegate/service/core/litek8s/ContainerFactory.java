@@ -51,6 +51,7 @@ public class ContainerFactory {
   private static final String HARNESS_LOG_PREFIX = "HARNESS_LOG_PREFIX";
   private static final String HARNESS_LOG_SERVICE_ENDPOINT = "HARNESS_LOG_SERVICE_ENDPOINT";
   private static final String HARNESS_LOG_SERVICE_TOKEN = "HARNESS_LOG_SERVICE_TOKEN";
+  private static final String TASK_PARAMETERS_FILE = "TASK_PARAMETERS_FILE";
   private static final String TASK_DATA_PATH = "TASK_DATA_PATH";
   private static final String DELEGATE_TOKEN = "DELEGATE_TOKEN";
   private static final String TASK_ID = "TASK_ID";
@@ -59,6 +60,7 @@ public class ContainerFactory {
   private static final String ADDON_RUN_COMMAND = "/addon/bin/ci-addon";
   private static final String ADDON_RUN_ARGS_FORMAT = "--port";
   public static final int RESERVED_LE_PORT = 20001;
+  public static final int RESERVED_ADDON_PORT = 20002;
 
   private final K8SRunnerConfig config;
 
@@ -72,6 +74,7 @@ public class ContainerFactory {
     envVars.put(HARNESS_LOG_SERVICE_ENDPOINT, config.getLogServiceUrl());
     envVars.put(HARNESS_LOG_SERVICE_TOKEN, k8SInfra.getLogToken());
     envVars.put(DELEGATE_TOKEN, config.getDelegateToken());
+    envVars.put(TASK_PARAMETERS_FILE, config.getDelegateTaskParamsFile());
     envVars.put(TASK_DATA_PATH, config.getDelegateTaskParamsFile());
     envVars.put(TASK_ID, taskId);
     final V1ContainerBuilder containerBuilder = new V1ContainerBuilder()

@@ -156,26 +156,6 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
     this.executionInfrastructureService = executionInfrastructureService;
   }
 
-  @Override
-  public void createWebsocketAPIRequest(
-      WebsocketAPIRequest request, StreamObserver<SubmitTaskResponse> responseObserver) {
-    try {
-      String taskId = delegateTaskMigrationHelper.generateDelegateTaskUUID();
-      final SchedulingConfig networkMetadata = request.getTaskNetworkMetadata();
-      scheduleTaskInternal(networkMetadata, request.getData().toByteArray(), null, SchedulingTaskEvent.Method.POST,
-          "/execution/k8s", Optional.empty(), taskId, responseObserver);
-
-    } catch (Exception ex) {
-      if (ex instanceof NoDelegatesException) {
-        log.warn("No delegate exception found while processing submit task request. reason {}",
-            ExceptionUtils.getMessage(ex));
-      } else {
-        log.error("Unexpected error occurred while processing submit task request.", ex);
-      }
-      responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
-    }
-  }
-
   // Helper function that will persist a delegate grpc request to task.
   private void scheduleTaskInternal(SchedulingConfig schedulingConfig, byte[] taskData, byte[] infraData,
       SchedulingTaskEvent.Method method, String requestUri, Optional<String> executionInfraRef, String taskId,
