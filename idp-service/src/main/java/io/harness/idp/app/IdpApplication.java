@@ -14,6 +14,10 @@ import static io.harness.idp.app.IdpConfiguration.HARNESS_RESOURCE_CLASSES;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableSet;
+import com.google.inject.*;
+import com.google.inject.Module;
+import com.google.inject.util.Providers;
 import io.harness.Microservice;
 import io.harness.ModuleType;
 import io.harness.PipelineServiceUtilityModule;
@@ -21,6 +25,8 @@ import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.CacheModule;
+import io.harness.ci.serializer.CiExecutionRegistrars;
+import io.harness.ff.FeatureFlagService;
 import io.harness.health.HealthMonitor;
 import io.harness.health.HealthService;
 import io.harness.idp.annotations.IdpServiceAuth;
@@ -66,7 +72,7 @@ import io.harness.security.InternalApiAuthFilter;
 import io.harness.security.NextGenAuthenticationFilter;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.serializer.PipelineServiceUtilAdviserRegistrar;
+import io.harness.serializer.*;
 import io.harness.service.impl.DelegateAsyncServiceImpl;
 import io.harness.service.impl.DelegateProgressServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
@@ -77,10 +83,6 @@ import io.harness.token.remote.TokenClient;
 import com.codahale.metrics.MetricRegistry;
 import com.github.dirkraft.dropwizard.fileassets.FileAssetsBundle;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.google.inject.Key;
-import com.google.inject.Module;
 import com.google.inject.name.Names;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
@@ -91,10 +93,7 @@ import io.dropwizard.jersey.setup.JerseyEnvironment;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import java.lang.annotation.Annotation;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -132,10 +131,6 @@ public class IdpApplication extends Application<IdpConfiguration> {
     new IdpApplication().run(args);
   }
 
-  public static void configureObjectMapper(final ObjectMapper mapper) {
-    HObjectMapper.configureObjectMapperForNG(mapper);
-    mapper.registerModule(new PmsBeansJacksonModule());
-  }
 
   @Override
   public String getName() {
@@ -175,12 +170,18 @@ public class IdpApplication extends Application<IdpConfiguration> {
     modules.add(PipelineServiceUtilityModule.getInstance());
     modules.add(NGMigrationSdkModule.getInstance());
 
+    modules.add(new AbstractModule() {
+      @Override
+      protected void configure() {
+        bind(FeatureFlagService.class).toProvider(Providers.of(null));
+      }
+    });
+
     Injector injector = Guice.createInjector(modules);
     registerPMSSDK(configuration, injector);
     registerResources(environment, injector);
     registerHealthChecksManager(environment, injector);
     registerQueueListeners(injector);
-    registerYamlSdk(injector);
     registerAuthFilters(configuration, environment, injector);
     registerManagedJobs(environment, injector);
     registerPmsSdkEvents(injector);
@@ -343,14 +344,5 @@ public class IdpApplication extends Application<IdpConfiguration> {
     final HealthService healthService = injector.getInstance(HealthService.class);
     environment.healthChecks().register("IDP", healthService);
     healthService.registerMonitor((HealthMonitor) injector.getInstance(MongoTemplate.class));
-  }
-
-  private void registerYamlSdk(Injector injector) {
-    YamlSdkConfiguration yamlSdkConfiguration = YamlSdkConfiguration.builder()
-            .requireSchemaInit(true)
-            .requireSnippetInit(true)
-            .requireValidatorInit(false)
-            .build();
-    YamlSdkInitHelper.initialize(injector, yamlSdkConfiguration);
   }
 }

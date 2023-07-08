@@ -161,3 +161,25 @@ backstageAppBaseUrl: https://localhost:3000
 backstagePostgresHost: ""
 
 delegateSelectorsCacheMode: redis # in-memory or redis
+
+
+logServiceConfig:
+  baseUrl: http://localhost-inc:8079
+  globalToken: "c76e567a-b341-404d-a8dd-d9738714eb82"
+
+tiServiceConfig:
+  baseUrl: http://localhost:8078
+  globalToken: "78d16b66-4b4c-11eb-8377-acde48001122"
+
+sscaServiceConfig:
+  httpClientConfig:
+    baseUrl: http://localhost:8186
+    connectTimeOutSeconds: 40
+    readTimeOutSeconds: 40
+  serviceSecret: secret
+
+stoServiceConfig:
+  baseUrl: http://localhost:8078
+  globalToken: "78d16b66-4b4c-11eb-8377-acde48001122"
+
+apiUrl: https://localhost:8181/#/

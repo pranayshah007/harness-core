@@ -18,7 +18,6 @@ import io.harness.pms.yaml.*;
 
 import java.util.*;
 
-import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
 
 public class IDPStageVariableCreator extends AbstractStageVariableCreator<IDPStageNode> {
     @Override
@@ -34,17 +33,6 @@ public class IDPStageVariableCreator extends AbstractStageVariableCreator<IDPSta
             responseMap.put(executionField.getNode().getUuid(),
                     VariableCreationResponse.builder()
                             .dependencies(DependenciesUtils.toDependenciesProto(executionDependencyMap))
-                            .build());
-        }
-
-        YamlField strategyField = config.getNode().getField(STRATEGY);
-
-        if (strategyField != null) {
-            Map<String, YamlField> strategyDependencyMap = new HashMap<>();
-            strategyDependencyMap.put(strategyField.getNode().getUuid(), strategyField);
-            responseMap.put(strategyField.getNode().getUuid(),
-                    VariableCreationResponse.builder()
-                            .dependencies(DependenciesUtils.toDependenciesProto(strategyDependencyMap))
                             .build());
         }
 
@@ -87,15 +75,9 @@ public class IDPStageVariableCreator extends AbstractStageVariableCreator<IDPSta
 
     @Override
     public Map<String, Set<String>> getSupportedTypes() {
-        return Collections.singletonMap(YAMLFieldNameConstants.STAGE,Collections.singleton(IDPStepSpecTypeConstants.IDP_STAGE));
+        return Collections.singletonMap(
+                YAMLFieldNameConstants.STAGE, Collections.singleton(IDPStepSpecTypeConstants.IDP_STAGE));
     }
-
-    //
-    //  @Override
-    //  public Map<String, Set<String>> getSupportedTypes() {
-    //    return Collections.singletonMap(YAMLFieldNameConstants.STAGE,
-    //            Set.of(IACMStepSpecTypeConstants.IACM_STAGE, IACMStepSpecTypeConstants.IACM_STAGE_V1));
-    //  }
 
     @Override
     public LinkedHashMap<String, VariableCreationResponse> createVariablesForChildrenNodesV2(

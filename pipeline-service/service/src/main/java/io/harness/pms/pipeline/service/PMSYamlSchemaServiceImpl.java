@@ -94,7 +94,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   private static final String STEP_ELEMENT_CONFIG = YamlSchemaUtils.getSwaggerName(StepElementConfig.class);
   public static final String STAGE_ELEMENT_CONFIG = YamlSchemaUtils.getSwaggerName(StageElementConfig.class);
 
-  public static final long SCHEMA_TIMEOUT = 10;
+  public static final long SCHEMA_TIMEOUT = 100;
 
   private final YamlSchemaProvider yamlSchemaProvider;
   private final YamlSchemaValidator yamlSchemaValidator;

@@ -19,6 +19,7 @@ import io.harness.beans.yaml.extended.cache.Caching;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.beans.yaml.extended.runtime.Runtime;
+import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.idp.pipeline.stages.IDPStepSpecTypeConstants;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.pms.yaml.ParameterField;
@@ -42,7 +43,7 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @TypeAlias("IDPStage")
-public class IDPStageConfigImpl implements IDPStageConfig{
+public class IDPStageConfigImpl implements IntegrationStageConfig {
 
     @JsonProperty(YamlNode.UUID_FIELD_NAME)
     @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
@@ -66,6 +67,9 @@ public class IDPStageConfigImpl implements IDPStageConfig{
     @YamlSchemaTypes(value = {SupportedPossibleFieldTypes.runtime})
     @ApiModelProperty(dataType = "[Lio.harness.beans.dependencies.DependencyElement;")
     ParameterField<List<DependencyElement>> serviceDependencies;
+    @YamlSchemaTypes(value = {SupportedPossibleFieldTypes.runtime})
+    @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+    private ParameterField<Boolean> cloneCodebase;
 
     @YamlSchemaTypes(value = {SupportedPossibleFieldTypes.runtime})
     @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.cache.Caching")

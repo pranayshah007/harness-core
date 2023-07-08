@@ -92,11 +92,11 @@ public class InspectCommand<T extends io.dropwizard.Configuration> extends Confi
             .build();
       }
 
-      @Provides
-      @Singleton
-      List<YamlSchemaRootClass> yamlSchemaRootClasses() {
-        return ImmutableList.<YamlSchemaRootClass>builder().addAll(IdpServiceRegistrars.yamlSchemaRegistrars).build();
-      }
+//      @Provides
+//      @Singleton
+//      List<YamlSchemaRootClass> yamlSchemaRootClasses() {
+//        return ImmutableList.<YamlSchemaRootClass>builder().addAll(IdpServiceRegistrars.yamlSchemaRegistrars).build();
+//      }
 
 
       @Provides

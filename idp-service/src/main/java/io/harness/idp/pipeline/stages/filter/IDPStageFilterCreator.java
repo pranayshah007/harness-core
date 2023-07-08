@@ -15,6 +15,7 @@ import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.filters.FilterCreatorHelper;
 import io.harness.filters.GenericStageFilterJsonCreatorV2;
 import io.harness.idp.pipeline.stages.IDPStepSpecTypeConstants;
+import io.harness.idp.pipeline.stages.node.IDPStageConfigImpl;
 import io.harness.idp.pipeline.stages.node.IDPStageNode;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.pms.pipeline.filter.PipelineFilter;
@@ -63,7 +64,7 @@ public class IDPStageFilterCreator extends GenericStageFilterJsonCreatorV2<IDPSt
         return null;
     }
 
-    private void validateExecution(IntegrationStageConfig integrationStageConfig) {
+    private void validateExecution(IDPStageConfigImpl integrationStageConfig) {
         ExecutionElementConfig executionElementConfig = integrationStageConfig.getExecution();
         if (executionElementConfig == null) {
             throw new CIStageExecutionException("Execution field is required in this stage");
@@ -71,8 +72,8 @@ public class IDPStageFilterCreator extends GenericStageFilterJsonCreatorV2<IDPSt
     }
 
     private void validateStage(IDPStageNode stageNode) {
-        IntegrationStageConfig integrationStageConfig = (IntegrationStageConfig) stageNode.getStageInfoConfig();
+//        IntegrationStageConfig integrationStageConfig = (IntegrationStageConfig) stageNode.getStageInfoConfig();
         //    validateInfrastructure(integrationStageConfig); // Disabling this for kubernetes delegate work
-        validateExecution(integrationStageConfig);
+        validateExecution(stageNode.getIdpStageConfig());
     }
 }

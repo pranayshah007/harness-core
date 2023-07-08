@@ -107,6 +107,9 @@ grpcClientConfigs:
   iacm:
     target: localhost:15301
     authority: localhost
+  idp:
+    target: localhost:12501
+    authority: localhost
 
 yamlSchemaClientConfig:
   yamlSchemaHttpClientMap:
