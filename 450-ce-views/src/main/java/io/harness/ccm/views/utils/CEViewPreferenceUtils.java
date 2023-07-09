@@ -79,7 +79,7 @@ public class CEViewPreferenceUtils {
   @Inject private ViewParametersHelper viewParametersHelper;
 
   public ViewPreferences getCEViewPreferencesForMigration(final CEView ceView) {
-    return getCEViewPreferences(ceView, true);
+    return getCEViewPreferences(ceView, false);
   }
 
   public ViewPreferences getCEViewPreferences(
@@ -93,7 +93,7 @@ public class CEViewPreferenceUtils {
           settingsDTO.stream().collect(Collectors.toMap(SettingDTO::getIdentifier, SettingDTO::getValue));
       viewPreferences = getViewPreferences(ceView, settingsMap, updateWithViewPreferenceDefaultSettings);
     } else {
-      log.warn(
+      log.error(
           "Unable to fetch perspective preferences account default settings for account: {}", ceView.getAccountId());
     }
     return viewPreferences;
@@ -247,7 +247,7 @@ public class CEViewPreferenceUtils {
   private Boolean getBooleanSettingValue(final Map<String, String> settingsMap, final String settingIdentifier) {
     final String settingValue = settingsMap.get(settingIdentifier);
     if (Objects.isNull(settingValue)) {
-      log.warn("Unable to get perspective preference default setting value. settingsMap: {}, settingIdentifier: {}",
+      log.error("Unable to get perspective preference default setting value. settingsMap: {}, settingIdentifier: {}",
           settingsMap, settingIdentifier);
     }
     return parseBoolean(settingValue);
@@ -257,7 +257,7 @@ public class CEViewPreferenceUtils {
       final Map<String, String> settingsMap, final String settingIdentifier) {
     final String settingValue = settingsMap.get(settingIdentifier);
     if (Objects.isNull(settingValue)) {
-      log.warn("Unable to get perspective preference default setting value. settingsMap: {}, settingIdentifier: {}",
+      log.error("Unable to get perspective preference default setting value. settingsMap: {}, settingIdentifier: {}",
           settingsMap, settingIdentifier);
     }
     return AWSViewPreferenceCost.fromString(settingValue);
@@ -266,7 +266,7 @@ public class CEViewPreferenceUtils {
   public List<QLCEViewPreferenceAggregation> getViewPreferenceAggregations(
       final CEView ceView, final ViewPreferences viewPreferences) {
     if (Objects.isNull(ceView) || Objects.isNull(viewPreferences)) {
-      log.warn("View preferences are not set for view: {}", ceView);
+      log.error("View preferences are not set for view: {}", ceView);
       return Collections.emptyList();
     }
     final List<QLCEViewPreferenceAggregation> viewPreferenceAggregations = new ArrayList<>();
@@ -301,33 +301,29 @@ public class CEViewPreferenceUtils {
   private List<QLCEViewPreferenceAggregation> getQLCEAWSViewPreferenceAggregation(
       final ViewPreferences viewPreferences) {
     if (Objects.isNull(viewPreferences.getAwsPreferences())) {
-      log.warn("AWS preferences are not set for view preference: {}", viewPreferences);
+      log.error("AWS preferences are not set for view preference: {}", viewPreferences);
       return Collections.emptyList();
     }
     List<QLCEViewPreferenceAggregation> awsViewPreferenceAggregations = new ArrayList<>();
     final AWSViewPreferences awsViewPreferences = viewPreferences.getAwsPreferences();
     switch (awsViewPreferences.getAwsCost()) {
       case BLENDED:
-        // [TODO]: Add/Subtract discounts and other values for blended cost
         awsViewPreferenceAggregations.addAll(getAWSBlendedViewPreferenceAggregations(awsViewPreferences));
         break;
       case AMORTISED:
-        // [TODO]: Add/Subtract discounts and other values for blended cost
         awsViewPreferenceAggregations.addAll(getAWSAmortisedViewPreferenceAggregations(awsViewPreferences));
         break;
       case NET_AMORTISED:
-        // [TODO]: Add/Subtract discounts and other values for blended cost
         awsViewPreferenceAggregations.addAll(getAWSNetAmortisedViewPreferenceAggregations(awsViewPreferences));
         break;
       case EFFECTIVE:
-        // [TODO]: Add/Subtract discounts and other values for blended cost
         awsViewPreferenceAggregations.addAll(getAWSEffectiveViewPreferenceAggregations());
         break;
       case UNBLENDED:
         awsViewPreferenceAggregations.addAll(getAWSUnblendedViewPreferenceAggregations(awsViewPreferences));
         break;
       default:
-        log.warn("AWS Cost Type: {} is not supported", awsViewPreferences.getAwsCost());
+        log.error("AWS Cost Type: {} is not supported", awsViewPreferences.getAwsCost());
         break;
     }
 
@@ -341,19 +337,16 @@ public class CEViewPreferenceUtils {
         QLCEViewAggregateArithmeticOperation.ADD,
         getCloudProviderFilter(new String[] {ViewFieldIdentifier.AWS.getDisplayName()}, QLCEViewFilterOperator.IN)));
     if (!Boolean.TRUE.equals(awsViewPreferences.getIncludeCredits())) {
-      awsViewPreferenceAggregations.add(
-          getQLCEViewPreferenceAggregation(awsCostTypeColumnName, QLCEViewAggregateArithmeticOperation.SUBTRACT,
-              getAWSLineItemTypeFilter(new String[] {AWS_LINE_ITEM_TYPE_CREDIT})));
+      awsViewPreferenceAggregations.add(getQLCEViewPreferenceAggregation(awsCostTypeColumnName,
+          QLCEViewAggregateArithmeticOperation.SUBTRACT, getAWSLineItemTypeFilter(AWS_LINE_ITEM_TYPE_CREDIT)));
     }
     if (!Boolean.TRUE.equals(awsViewPreferences.getIncludeRefunds())) {
-      awsViewPreferenceAggregations.add(
-          getQLCEViewPreferenceAggregation(awsCostTypeColumnName, QLCEViewAggregateArithmeticOperation.SUBTRACT,
-              getAWSLineItemTypeFilter(new String[] {AWS_LINE_ITEM_TYPE_REFUND})));
+      awsViewPreferenceAggregations.add(getQLCEViewPreferenceAggregation(awsCostTypeColumnName,
+          QLCEViewAggregateArithmeticOperation.SUBTRACT, getAWSLineItemTypeFilter(AWS_LINE_ITEM_TYPE_REFUND)));
     }
     if (!Boolean.TRUE.equals(awsViewPreferences.getIncludeTaxes())) {
-      awsViewPreferenceAggregations.add(
-          getQLCEViewPreferenceAggregation(awsCostTypeColumnName, QLCEViewAggregateArithmeticOperation.SUBTRACT,
-              getAWSLineItemTypeFilter(new String[] {AWS_LINE_ITEM_TYPE_TAX})));
+      awsViewPreferenceAggregations.add(getQLCEViewPreferenceAggregation(awsCostTypeColumnName,
+          QLCEViewAggregateArithmeticOperation.SUBTRACT, getAWSLineItemTypeFilter(AWS_LINE_ITEM_TYPE_TAX)));
     }
     return awsViewPreferenceAggregations;
   }
@@ -365,7 +358,13 @@ public class CEViewPreferenceUtils {
 
   private List<QLCEViewPreferenceAggregation> getAWSAmortisedViewPreferenceAggregations(
       final AWSViewPreferences awsViewPreferences) {
-    return getAWSCommonViewPreferenceAggregations(awsViewPreferences, AWS_AMORTISED_COST);
+    final List<QLCEViewPreferenceAggregation> awsAmortisedViewPreferenceAggregations =
+        new ArrayList<>(getAWSCommonViewPreferenceAggregations(awsViewPreferences, AWS_AMORTISED_COST));
+    if (!Boolean.TRUE.equals(awsViewPreferences.getIncludeDiscounts())) {
+      awsAmortisedViewPreferenceAggregations.add(getQLCEViewPreferenceAggregation(AWS_AMORTISED_COST,
+          QLCEViewAggregateArithmeticOperation.SUBTRACT, getAWSLineItemTypeFilter(AWS_LINE_ITEM_TYPE_DISCOUNT)));
+    }
+    return awsAmortisedViewPreferenceAggregations;
   }
 
   private List<QLCEViewPreferenceAggregation> getAWSNetAmortisedViewPreferenceAggregations(
@@ -386,9 +385,8 @@ public class CEViewPreferenceUtils {
     final List<QLCEViewPreferenceAggregation> awsUnblendedViewPreferenceAggregations =
         new ArrayList<>(getAWSCommonViewPreferenceAggregations(awsViewPreferences, AWS_UNBLENDED_COST));
     if (!Boolean.TRUE.equals(awsViewPreferences.getIncludeDiscounts())) {
-      awsUnblendedViewPreferenceAggregations.add(
-          getQLCEViewPreferenceAggregation(AWS_UNBLENDED_COST, QLCEViewAggregateArithmeticOperation.SUBTRACT,
-              getAWSLineItemTypeFilter(new String[] {AWS_LINE_ITEM_TYPE_DISCOUNT})));
+      awsUnblendedViewPreferenceAggregations.add(getQLCEViewPreferenceAggregation(AWS_UNBLENDED_COST,
+          QLCEViewAggregateArithmeticOperation.SUBTRACT, getAWSLineItemTypeFilter(AWS_LINE_ITEM_TYPE_DISCOUNT)));
     }
     return awsUnblendedViewPreferenceAggregations;
   }
@@ -396,7 +394,7 @@ public class CEViewPreferenceUtils {
   private List<QLCEViewPreferenceAggregation> getQLCEGCPViewPreferenceAggregation(
       final ViewPreferences viewPreferences) {
     if (Objects.isNull(viewPreferences.getGcpPreferences())) {
-      log.warn("GCP preferences are not set for view preference: {}", viewPreferences);
+      log.error("GCP preferences are not set for view preference: {}", viewPreferences);
       return Collections.emptyList();
     }
     final List<QLCEViewPreferenceAggregation> gcpViewPreferenceAggregations = new ArrayList<>();
@@ -438,7 +436,7 @@ public class CEViewPreferenceUtils {
         .build();
   }
 
-  private QLCEViewFilter getAWSLineItemTypeFilter(final String[] values) {
+  private QLCEViewFilter getAWSLineItemTypeFilter(final String value) {
     return QLCEViewFilter.builder()
         .field(QLCEViewFieldInput.builder()
                    .fieldId(AWS_LINE_ITEM_TYPE)
@@ -447,7 +445,7 @@ public class CEViewPreferenceUtils {
                    .identifierName(ViewFieldIdentifier.AWS.getDisplayName())
                    .build())
         .operator(QLCEViewFilterOperator.IN)
-        .values(values)
+        .values(new String[] {value})
         .build();
   }
 
