@@ -1634,6 +1634,7 @@ public class BuilderFactory {
     testVerificationJob.setProjectIdentifier(context.getProjectIdentifier());
     testVerificationJob.setOrgIdentifier(context.getOrgIdentifier());
     testVerificationJob.setCvConfigs(cvConfigs);
+    testVerificationJob.setBaselineVerificationJobInstanceId(UUID.randomUUID().toString());
     return testVerificationJob;
   }
 

@@ -179,7 +179,13 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
       VerifyStepPathParams verifyStepPathParams, AppliedDeploymentAnalysisType appliedDeploymentAnalysisType,
       VerificationJobInstance verificationJobInstance,
       DeploymentVerificationJobInstanceSummary deploymentVerificationJobInstanceSummary) {
-    Optional<VerificationJobInstance> baselineVerificationJobInstance =
+    boolean isBaseline = false;
+    boolean isExpired = false;
+    BaselineOverview baselineOverview = null;
+    long baselineExpiry = -1L;
+    String planExecutionId = null;
+
+    Optional<VerificationJobInstance> currentPinnedBaselineVerificationJobInstance =
         verificationJobInstanceService.getPinnedBaselineVerificationJobInstance(
             ServiceEnvironmentParams.builder()
                 .environmentIdentifier(verificationSpec.getAnalysedEnvIdentifier())
@@ -188,16 +194,27 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
                 .projectIdentifier(verifyStepPathParams.getProjectIdentifier())
                 .orgIdentifier(verifyStepPathParams.getOrgIdentifier())
                 .build());
-    boolean isExpired = false;
-    BaselineOverview baselineOverview = null;
+    if (currentPinnedBaselineVerificationJobInstance.isPresent()
+        && Objects.equals(
+            currentPinnedBaselineVerificationJobInstance.get().getUuid(), verificationJobInstance.getUuid())) {
+      isBaseline = true;
+    }
+
+    String baselineVerificationJobInstanceId =
+        verificationJobInstance.getResolvedJob().getBaselineVerificationJobInstanceId();
+    VerificationJobInstance baselineVerificationJobInstance = null;
+    if (baselineVerificationJobInstanceId != null) {
+      baselineVerificationJobInstance =
+          verificationJobInstanceService.getVerificationJobInstance(baselineVerificationJobInstanceId);
+    }
     if (verificationJobInstance.getResolvedJob().getType() == VerificationJobType.TEST) {
-      String baselineVerificationJobInstanceId = null;
-      long baselineExpiry = 1L;
-      String planExecutionId = "";
-      if (baselineVerificationJobInstance.isPresent()) {
-        baselineVerificationJobInstanceId = baselineVerificationJobInstance.get().getUuid();
-        baselineExpiry = baselineVerificationJobInstance.get().getValidUntil().getTime();
-        planExecutionId = baselineVerificationJobInstance.get().getPlanExecutionId();
+      if (baselineVerificationJobInstance != null) {
+        baselineVerificationJobInstanceId = baselineVerificationJobInstance.getUuid();
+        baselineExpiry = baselineVerificationJobInstance.getValidUntil().getTime();
+        planExecutionId = baselineVerificationJobInstance.getPlanExecutionId();
+        if (System.currentTimeMillis() > baselineExpiry) {
+          isExpired = true;
+        }
       }
       baselineOverview = BaselineOverview.builder()
                              .baselineVerificationJobInstanceId(baselineVerificationJobInstanceId)
@@ -206,7 +223,7 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
                              .isBaselineExpired(isExpired)
                              .baselineExpiryTimestamp(baselineExpiry)
                              .planExecutionId(planExecutionId)
-                             .isBaseline(verificationJobInstance.getUuid().equals(baselineVerificationJobInstanceId))
+                             .isBaseline(isBaseline)
                              .build();
     }
     return baselineOverview;
