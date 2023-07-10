@@ -7,22 +7,23 @@
 
 package io.harness.ng.core.service.resources;
 
+import static io.harness.ng.core.mapper.TagMapper.convertToList;
 import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.TARUN_UBA;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
 import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.core.service.entity.ServiceEntity;
-import io.harness.ng.core.service.feature.NGServiceV2FFCalculator;
+import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
 import io.harness.ng.core.service.services.ServiceEntityService;
-import io.harness.ng.core.service.services.impl.ServiceEntityServiceImpl;
+import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.rbac.CDNGRbacPermissions;
 import io.harness.rule.Owner;
@@ -31,7 +32,6 @@ import io.harness.spec.server.ng.v1.model.ServiceRequest;
 import io.harness.spec.server.ng.v1.model.ServiceResponse;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.inject.Inject;
 import io.serializer.HObjectMapper;
 import java.util.HashMap;
 import java.util.Map;
@@ -48,8 +48,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 public class ServiceResourceApiUtilsTest extends CategoryTest {
-  @Mock NGServiceV2FFCalculator ngServiceV2FFCalculator;
-  @Inject ServiceEntityService serviceEntityService;
+  @Mock ServiceEntityService serviceEntityService;
   private ObjectMapper objectMapper;
   private Validator validator;
   String identifier = randomAlphabetic(10);
@@ -59,7 +58,6 @@ public class ServiceResourceApiUtilsTest extends CategoryTest {
   String project = randomAlphabetic(10);
   String description = randomAlphabetic(10);
   private ServiceResourceApiUtils serviceResourceApiUtils;
-  Map<FeatureName, Boolean> featureFlags = new HashMap<>();
 
   @Before
   public void setUp() {
@@ -70,16 +68,17 @@ public class ServiceResourceApiUtilsTest extends CategoryTest {
     ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
     validator = factory.getValidator();
     serviceResourceApiUtils = new ServiceResourceApiUtils(validator);
-    serviceEntityService = new ServiceEntityServiceImpl(null, null, null, null, null, null, null, null);
     Reflect.on(serviceResourceApiUtils).set("serviceEntityService", serviceEntityService);
-    Reflect.on(serviceEntityService).set("ngServiceV2FFCalculator", ngServiceV2FFCalculator);
   }
   @Test
   @Owner(developers = TARUN_UBA)
   @Category(UnitTests.class)
   public void testServiceEntity() {
+    Map<FeatureName, Boolean> featureFlags = new HashMap<>();
     featureFlags.put(FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG, false);
-    when(ngServiceV2FFCalculator.computeFlags(account)).thenReturn(featureFlags);
+    ServiceEntity mockServiceEntity = createServiceEntity();
+    NGServiceConfig config = NGServiceEntityMapper.toNGServiceConfig(mockServiceEntity, featureFlags);
+    doReturn(config).when(serviceEntityService).getNGServiceConfigWithFF(mockServiceEntity);
     ServiceRequest serviceRequest = new ServiceRequest();
     serviceRequest.setIdentifier(identifier);
     serviceRequest.setName(name);
@@ -100,8 +99,11 @@ public class ServiceResourceApiUtilsTest extends CategoryTest {
   @Owner(developers = PRATYUSH)
   @Category(UnitTests.class)
   public void testServiceEntityWithMultipleHelmManifest() {
+    Map<FeatureName, Boolean> featureFlags = new HashMap<>();
     featureFlags.put(FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG, true);
-    when(ngServiceV2FFCalculator.computeFlags(account)).thenReturn(featureFlags);
+    ServiceEntity mockServiceEntity = createServiceEntity();
+    NGServiceConfig config = NGServiceEntityMapper.toNGServiceConfig(mockServiceEntity, featureFlags);
+    doReturn(config).when(serviceEntityService).getNGServiceConfigWithFF(mockServiceEntity);
     ServiceRequest serviceRequest = new ServiceRequest();
     serviceRequest.setIdentifier(identifier);
     serviceRequest.setName(name);
@@ -199,5 +201,24 @@ public class ServiceResourceApiUtilsTest extends CategoryTest {
     assertEquals(account, permissionCheckDTO.getResourceScope().getAccountIdentifier());
     assertEquals(project, permissionCheckDTO.getResourceScope().getProjectIdentifier());
     assertEquals(NGResourceType.SERVICE, permissionCheckDTO.getResourceType());
+  }
+
+  private ServiceEntity createServiceEntity() {
+    ServiceRequest serviceRequest = new ServiceRequest();
+    serviceRequest.setIdentifier(identifier);
+    serviceRequest.setName(name);
+    serviceRequest.description(description);
+    serviceRequest.setTags(null);
+    ServiceEntity serviceEntity = ServiceEntity.builder()
+                                      .identifier(serviceRequest.getIdentifier())
+                                      .accountId(account)
+                                      .orgIdentifier(org)
+                                      .projectIdentifier(project)
+                                      .name(serviceRequest.getName())
+                                      .description(serviceRequest.getDescription())
+                                      .tags(convertToList(serviceRequest.getTags()))
+                                      .yaml(serviceRequest.getYaml())
+                                      .build();
+    return serviceEntity;
   }
 }

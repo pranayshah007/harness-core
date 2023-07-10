@@ -569,6 +569,41 @@ public class ServiceStepV3Test extends CategoryTest {
     executeWithServiceInputs(testServiceEntityWithManifestConfigurationsInputs(), inputYaml, true);
   }
 
+  @Test
+  @Owner(developers = OwnerRule.PRATYUSH)
+  @Category(UnitTests.class)
+  public void executeSyncWithServiceInputsForMultipleHelmManifestNH() throws IOException {
+    String inputYaml = "  serviceDefinition:\n"
+        + "    type: \"NativeHelm\"\n"
+        + "    spec:\n"
+        + "      artifacts:\n"
+        + "        primary:\n"
+        + "          spec:\n"
+        + "            tag: develop-1\n"
+        + "          type: DockerRegistry\n"
+        + "      manifestConfigurations:\n"
+        + "        primaryManifestRef: m1\n"
+        + "      manifests:\n"
+        + "      - manifest:\n"
+        + "          identifier: \"m1\"\n"
+        + "          type: \"HelmChart\"\n"
+        + "          spec:\n"
+        + "            valuesPaths:\n"
+        + "               - v1.yaml\n"
+        + "               - v2.yaml\n"
+        + "      - manifest:\n"
+        + "          identifier: \"m2\"\n"
+        + "          type: \"HelmChart\"\n"
+        + "          spec:\n"
+        + "            valuesPaths:\n"
+        + "               - v3.yaml\n"
+        + "               - v4.yaml";
+    Reflect.on(serviceStepOverrideHelper).set("sweepingOutputService", sweepingOutputService);
+    Reflect.on(serviceStepOverrideHelper).set("featureFlagHelperService", ngFeatureFlagHelperService);
+    doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
+    executeWithServiceInputs(testServiceEntityWithManifestConfigurationsInputs(), inputYaml, true);
+  }
+
   private void executeWithServiceInputs(
       ServiceEntity serviceEntity, String inputYaml, boolean isHelmMultipleManifestSupportEnabled) throws IOException {
     final Environment environment = testEnvEntity();
