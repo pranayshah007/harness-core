@@ -163,8 +163,7 @@ public class AdminAccountServiceImpl implements AdminAccountService {
 
   @Override
   public boolean delete(String accountId) {
-    accountService.updateAccountStatus(accountId, MARKED_FOR_DELETION);
-    return true;
+    return accountService.delete(accountId);
   }
 
   @Override
