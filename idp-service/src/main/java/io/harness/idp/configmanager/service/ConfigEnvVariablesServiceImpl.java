@@ -19,6 +19,7 @@ import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.Gson;
 import java.util.ArrayList;
 import java.util.List;
@@ -127,8 +128,8 @@ public class ConfigEnvVariablesServiceImpl implements ConfigEnvVariablesService 
     return resultList;
   }
 
-  private List<String> getEnvVariablesFromEntities(
-      List<PluginConfigEnvVariablesEntity> pluginConfigEnvVariablesEntities) {
+  @VisibleForTesting
+  List<String> getEnvVariablesFromEntities(List<PluginConfigEnvVariablesEntity> pluginConfigEnvVariablesEntities) {
     List<String> resultList = new ArrayList<>();
     for (PluginConfigEnvVariablesEntity pluginConfigEnvVariablesEntity : pluginConfigEnvVariablesEntities) {
       resultList.add(pluginConfigEnvVariablesEntity.getEnvName());

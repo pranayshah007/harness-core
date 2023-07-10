@@ -9,6 +9,7 @@ package io.harness.delegate.task.pcf.request;
 
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.expression.Expression;
 import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 
@@ -18,6 +19,7 @@ import lombok.Data;
 
 @Data
 @Builder
+@RecasterAlias("io.harness.delegate.task.pcf.request.TasManifestsPackage")
 public class TasManifestsPackage implements NestedAnnotationResolver {
   @Expression(ALLOW_SECRETS) private String manifestYml;
   @Expression(ALLOW_SECRETS) private String autoscalarManifestYml;

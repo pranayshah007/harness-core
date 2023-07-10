@@ -31,7 +31,7 @@ public class JenkinsPollingItemGenerator implements PollingItemGenerator {
   @Override
   public PollingItem generatePollingItem(BuildTriggerOpsData buildTriggerOpsData) {
     NGTriggerEntity ngTriggerEntity = buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity();
-    PollingItem.Builder builder = getBaseInitializedPollingItem(ngTriggerEntity);
+    PollingItem.Builder builder = getBaseInitializedPollingItem(ngTriggerEntity, buildTriggerOpsData);
     String connectorRef = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.connectorRef");
     String jobName = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.jobName");
     String artifactPath = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.artifactPath");

@@ -28,6 +28,9 @@ public class CVNGStepParameter implements SpecParameters {
   ParameterField<String> deploymentTag;
   ParameterField<String> sensitivity;
   ParameterField<Boolean> failOnNoAnalysis;
+  ParameterField<Boolean> shouldUseCDNodes;
+  ParameterField<String> testNodeRegExPattern;
+  ParameterField<String> controlNodeRegExPattern;
   VerificationJobSpec spec;
   ParameterField<String> baseline;
   MonitoredServiceNode monitoredService;

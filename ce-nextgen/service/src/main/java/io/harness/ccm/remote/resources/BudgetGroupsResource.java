@@ -21,7 +21,9 @@ import io.harness.ccm.audittrails.events.BudgetGroup.BudgetGroupUpdateEvent;
 import io.harness.ccm.budget.BudgetSummary;
 import io.harness.ccm.budget.ValueDataPoint;
 import io.harness.ccm.budgetGroup.BudgetGroup;
+import io.harness.ccm.budgetGroup.BudgetGroupSortType;
 import io.harness.ccm.budgetGroup.service.BudgetGroupService;
+import io.harness.ccm.commons.entities.CCMSortOrder;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -155,9 +157,12 @@ public class BudgetGroupsResource {
       })
   public ResponseDTO<List<BudgetGroup>>
   list(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
-      NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
+           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @Parameter(description = "Budget Group List Sort Type") @QueryParam(
+          "budgetGroupSortType") BudgetGroupSortType budgetGroupSortType,
+      @Parameter(description = "Budget Group List Sort Order") @QueryParam("sortOrder") CCMSortOrder ccmSortOrder) {
     rbacHelper.checkBudgetViewPermission(accountId, null, null, null);
-    return ResponseDTO.newResponse(budgetGroupService.list(accountId));
+    return ResponseDTO.newResponse(budgetGroupService.list(accountId, budgetGroupSortType, ccmSortOrder));
   }
 
   @PUT
@@ -269,11 +274,15 @@ public class BudgetGroupsResource {
   getBudgetAndBudgetGroupsList(
       @Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY)
       @AccountIdentifier @NotNull @Valid String accountId, @QueryParam("budgetGroupId") @Valid String budgetGroupId,
-      @QueryParam("showAllEntities") @NotNull @Valid boolean showAllEntities) {
+      @QueryParam("showAllEntities") @NotNull @Valid boolean showAllEntities,
+      @Parameter(description = "Budget Group List Sort Type") @QueryParam(
+          "budgetGroupSortType") BudgetGroupSortType budgetGroupSortType,
+      @Parameter(description = "Budget Group List Sort Order") @QueryParam("sortOrder") CCMSortOrder ccmSortOrder) {
     rbacHelper.checkBudgetViewPermission(accountId, null, null, null);
     List<BudgetSummary> summaryList = showAllEntities
-        ? budgetGroupService.listAllEntities(accountId)
-        : budgetGroupService.listBudgetsAndBudgetGroupsSummary(accountId, budgetGroupId);
+        ? budgetGroupService.listAllEntities(accountId, budgetGroupSortType, ccmSortOrder)
+        : budgetGroupService.listBudgetsAndBudgetGroupsSummary(
+            accountId, budgetGroupId, budgetGroupSortType, ccmSortOrder);
     return ResponseDTO.newResponse(summaryList);
   }
 }

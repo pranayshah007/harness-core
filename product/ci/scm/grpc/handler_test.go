@@ -26,8 +26,10 @@ func TestParseWebhookErr(t *testing.T) {
 	defer ctrl.Finish()
 
 	stopCh := make(chan bool)
+	h := NewSCMHandler(stopCh)
+
 	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewSCMHandler(stopCh, log.Sugar())
+	ctx = context.WithValue(ctx, "logger", log.Sugar())
 	_, err := h.ParseWebhook(ctx, &pb.ParseWebhookRequest{})
 	assert.NotNil(t, err)
 }
@@ -66,9 +68,11 @@ func TestIsLatestFilePositivePath(t *testing.T) {
 	}
 
 	stopCh := make(chan bool)
+	h := NewSCMHandler(stopCh)
 	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewSCMHandler(stopCh, log.Sugar())
-	got, err := h.IsLatestFile(context.Background(), in)
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, "logger", log.Sugar())
+	got, err := h.IsLatestFile(ctx, in)
 
 	assert.Nil(t, err, "no errors")
 	assert.True(t, got.Latest, "status matches")

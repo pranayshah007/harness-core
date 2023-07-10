@@ -1,0 +1,28 @@
+stages:
+  - type: Custom
+    id: stage1
+    name: stage1
+    strategy:
+      type: matrix
+      spec:
+        axis:
+          command:
+            - "echo Hi"
+            - "echo Hi"
+          a:
+            - "true"
+            - "false"
+        concurrency: 2
+    spec:
+      steps:
+        - type: ShellScript
+          spec:
+            shell: Bash
+            onDelegate: true
+            source:
+              type: Inline
+              spec:
+                script: <+matrix.command>
+                environmentVariables: []
+                outputVariables: []
+          timeout: 10s

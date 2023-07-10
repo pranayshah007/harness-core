@@ -51,7 +51,6 @@ public class AzureKubernetesClientImpl extends AzureClient implements AzureKuber
     log.info(format(
         "Fetching cluster credentials [subscription: %s] [resourceGroup: %s] [aksClusterName: %s] [credentials: %s]",
         subscriptionId, resourceGroup, aksClusterName, shouldGetAdminCredentials ? "admin" : "user"));
-    log.trace(format("Using token: %s", accessToken));
 
     Call<AksClusterCredentials> request;
     String error;
@@ -68,7 +67,6 @@ public class AzureKubernetesClientImpl extends AzureClient implements AzureKuber
       Response<AksClusterCredentials> response = request.execute();
       if (response.isSuccessful()) {
         String clusterCredentials = response.body().getKubeconfigs().get(0).getValue();
-        log.trace(format("Cluster credentials (base64): %s", clusterCredentials));
 
         return clusterCredentials;
       }

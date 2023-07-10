@@ -31,6 +31,7 @@ public class CIStepConfig {
   StepImageConfig cacheS3Config;
   StepImageConfig sscaOrchestrationConfig;
   StepImageConfig sscaEnforcementConfig;
+  StepImageConfig iacmTerraform;
   VmImageConfig vmImageConfig;
   VmContainerlessStepConfig vmContainerlessStepConfig;
 }

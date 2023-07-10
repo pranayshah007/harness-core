@@ -10,6 +10,7 @@ package io.harness.ngtriggers.eventmapper.filters.impl;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.NO_MATCHING_TRIGGER_FOR_EVENT_ACTION;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.WEBHOOK;
+import static io.harness.rule.OwnerRule.ABHINAV;
 import static io.harness.rule.OwnerRule.ADWAIT;
 
 import static java.util.Collections.emptyList;
@@ -36,6 +37,9 @@ import io.harness.ngtriggers.beans.source.webhook.v2.github.GithubSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.github.event.GithubPRSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.github.event.GithubPushSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.github.event.GithubTriggerEvent;
+import io.harness.ngtriggers.beans.source.webhook.v2.harness.HarnessSpec;
+import io.harness.ngtriggers.beans.source.webhook.v2.harness.event.HarnessPushSpec;
+import io.harness.ngtriggers.beans.source.webhook.v2.harness.event.HarnessTriggerEvent;
 import io.harness.ngtriggers.eventmapper.filters.dto.FilterRequestData;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.ngtriggers.service.NGTriggerService;
@@ -124,5 +128,48 @@ public class TriggerEventActionFilterTest extends CategoryTest {
     assertThat(webhookEventMappingResponse.isFailedToFindTrigger()).isFalse();
     assertThat(webhookEventMappingResponse.getTriggers().size()).isEqualTo(1);
     assertThat(webhookEventMappingResponse.getTriggers().get(0).getNgTriggerEntity()).isEqualTo(triggerEntityGithub);
+  }
+
+  @Test
+  @Owner(developers = ABHINAV)
+  @Category(UnitTests.class)
+  public void applyFilterTest_Harness() {
+    WebhookPayloadData webhookPayloadData =
+        WebhookPayloadData.builder()
+            .webhookEvent(PRWebhookEvent.builder().build())
+            .originalEvent(TriggerWebhookEvent.builder().accountId("acc").createdAt(0l).build())
+            .parseWebhookResponse(
+                ParseWebhookResponse.newBuilder()
+                    .setPr(PullRequestHook.newBuilder().setPr(PullRequest.newBuilder().setNumber(1).build()).build())
+                    .build())
+            .build();
+
+    NGTriggerEntity triggerEntityHarness =
+        NGTriggerEntity.builder()
+            .metadata(NGTriggerMetadata.builder().webhook(WebhookMetadata.builder().type("HARNESS").build()).build())
+            .yaml("yaml")
+            .enabled(true)
+            .build();
+
+    HarnessSpec harnessSpec =
+        HarnessSpec.builder().type(HarnessTriggerEvent.PUSH).spec(HarnessPushSpec.builder().build()).build();
+    WebhookTriggerConfigV2 webhookTriggerConfigV1 =
+        WebhookTriggerConfigV2.builder().type(WebhookTriggerType.HARNESS).spec(harnessSpec).build();
+    NGTriggerSourceV2 ngTriggerSourceV2 =
+        NGTriggerSourceV2.builder().type(WEBHOOK).spec(webhookTriggerConfigV1).build();
+    NGTriggerConfigV2 ngTriggerConfigV2 = NGTriggerConfigV2.builder().source(ngTriggerSourceV2).build();
+
+    // No payload match
+    doReturn(ngTriggerConfigV2).when(ngTriggerElementMapper).toTriggerConfigV2(triggerEntityHarness);
+    WebhookEventMappingResponse webhookEventMappingResponse = filter.applyFilter(
+        FilterRequestData.builder()
+            .details(Arrays.asList(TriggerDetails.builder().ngTriggerEntity(triggerEntityHarness).build()))
+            .webhookPayloadData(webhookPayloadData)
+            .accountId("p")
+            .build());
+
+    assertThat(webhookEventMappingResponse.isFailedToFindTrigger()).isFalse();
+    assertThat(webhookEventMappingResponse.getTriggers().size()).isEqualTo(1);
+    assertThat(webhookEventMappingResponse.getTriggers().get(0).getNgTriggerEntity()).isEqualTo(triggerEntityHarness);
   }
 }

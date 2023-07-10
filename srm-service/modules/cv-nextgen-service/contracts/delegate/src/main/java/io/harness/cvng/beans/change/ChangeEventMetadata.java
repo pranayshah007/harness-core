@@ -20,7 +20,8 @@ import lombok.experimental.SuperBuilder;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @ApiModel(description = "This is the change Source entity defined in Harness",
     subTypes = {HarnessCDCurrentGenEventMetadata.class, HarnessCDEventMetadata.class, PagerDutyEventMetaData.class,
-        KubernetesChangeEventMetadata.class, InternalChangeEventMetaData.class, CustomChangeEventMetadata.class})
+        KubernetesChangeEventMetadata.class, InternalChangeEventMetaData.class, CustomChangeEventMetadata.class,
+        HarnessSRMAnalysisEventMetadata.class})
 public abstract class ChangeEventMetadata {
   @JsonIgnore public abstract ChangeSourceType getType();
 }

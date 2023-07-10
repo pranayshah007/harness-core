@@ -17,6 +17,7 @@ import io.harness.mongo.index.FdTtlIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAccess;
+import io.harness.security.dto.Principal;
 
 import dev.morphia.annotations.Entity;
 import java.time.OffsetDateTime;
@@ -47,6 +48,7 @@ public class WebhookEvent implements PersistentEntity, UuidAccess, PersistentReg
   String payload;
   List<HeaderConfig> headers;
   String accountId;
+  Principal principal;
   @Setter @NonFinal @Builder.Default boolean processing = Boolean.FALSE;
   @Setter @NonFinal @Builder.Default Integer attemptCount = 0;
   @FdTtlIndex @Default Date validUntil = Date.from(OffsetDateTime.now().plusDays(7).toInstant());

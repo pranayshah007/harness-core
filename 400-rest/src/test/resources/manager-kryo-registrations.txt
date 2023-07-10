@@ -1859,6 +1859,7 @@
 19877:io.harness.delegate.beans.connector.customsecretmanager.TemplateLinkConfigForCustomSecretManager
 19878:io.harness.delegate.beans.connector.gcpsecretmanager.GcpSecretManagerConnectorDTO
 19879:io.harness.delegate.beans.connector.gcpsecretmanagerconnector.GcpSecretManagerValidationParams
+19880:io.harness.delegate.beans.connector.splunkconnector.SplunkAuthType
 20001:io.harness.delegate.task.shell.ShellScriptApprovalTaskParameters
 20002:io.harness.delegate.task.http.HttpTaskParameters
 20003:io.harness.beans.HttpCertificate

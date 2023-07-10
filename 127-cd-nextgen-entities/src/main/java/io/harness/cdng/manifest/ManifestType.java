@@ -7,8 +7,12 @@
 
 package io.harness.cdng.manifest;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.UnsupportedOperationException;
+import io.harness.ng.core.k8s.ServiceSpecType;
 
 import com.google.common.collect.ImmutableSet;
 import java.util.Arrays;
@@ -76,5 +80,17 @@ public interface ManifestType {
         AsgScheduledUpdateGroupAction, ManifestType.GoogleCloudFunctionDefinition,
         ManifestType.AwsLambdaFunctionDefinition, ManifestType.AwsLambdaFunctionAliasDefinition,
         ManifestType.AwsSamDirectory, ManifestType.GoogleCloudFunctionGenOneDefinition));
+  }
+
+  static Set<String> getSupportedManifestTypes(String serviceType) {
+    if (ServiceSpecType.KUBERNETES.equals(serviceType)) {
+      return K8S_SUPPORTED_MANIFEST_TYPES;
+    }
+
+    if (ServiceSpecType.NATIVE_HELM.equals(serviceType)) {
+      return HELM_SUPPORTED_MANIFEST_TYPES;
+    }
+
+    throw new UnsupportedOperationException(format("Service Spec Type %s is not supported", serviceType));
   }
 }

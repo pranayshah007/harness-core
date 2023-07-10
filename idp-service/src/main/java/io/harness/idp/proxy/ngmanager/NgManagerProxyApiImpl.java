@@ -37,11 +37,11 @@ import okio.BufferedSink;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-@Slf4j
 @OwnedBy(HarnessTeam.IDP)
 @RequestScoped
 @NextGenManagerAuth
 @NoArgsConstructor
+@Slf4j
 public class NgManagerProxyApiImpl implements NgManagerProxyApi {
   private static final String FORWARDING_MESSAGE = "Forwarding request to [{}]";
   private ServiceHttpClientConfig ngManagerServiceHttpClientConfig;

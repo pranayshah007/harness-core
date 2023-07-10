@@ -403,7 +403,7 @@ public class TerragruntTaskService {
 
   public void saveTerraformPlanContentToFile(EncryptionConfig encryptionConfig, EncryptedRecordData encryptedTfPlan,
       String scriptDirectory, String accountId, String terraformOutputFileName,
-      boolean encryptDecryptPlanForHarnessSMOnManager, boolean isNG) throws IOException {
+      boolean encryptDecryptPlanForHarnessSMOnManager) throws IOException {
     File tfPlanFile = Paths.get(scriptDirectory, terraformOutputFileName).toFile();
 
     byte[] decryptedTerraformPlan;

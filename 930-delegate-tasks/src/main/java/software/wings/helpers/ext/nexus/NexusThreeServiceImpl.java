@@ -650,7 +650,14 @@ public class NexusThreeServiceImpl {
               if (isNotEmpty(artifactFileMetadata)) {
                 versionToArtifactUrls.put(version, getArtifactDownloadUrl(artifactFileMetadata, extension, classifier));
               }
-              versionToArtifactDownloadUrls.put(version, artifactFileMetadata);
+              final List<ArtifactFileMetadata> previousMetadata =
+                  versionToArtifactDownloadUrls.put(version, artifactFileMetadata);
+              if (previousMetadata != null) {
+                // THIS CONDITION CAN HAPPEN WHEN USING A NEXUS GROUP REPOSITORY AND THE SAME GAV IS UPLOADED TO MORE
+                // THAN ONE REPOSITORY MEMBER. GAV MEANS GROUP-ID, ARTIFACT-ID, AND VERSION NUMBER.
+                log.warn("Updated metadata of version {} from repository {} and ID {} [new={}, previous={}]", version,
+                    component.getRepository(), component.getId(), previousMetadata, artifactFileMetadata);
+              }
             }
           }
           if (response.body().getContinuationToken() != null) {

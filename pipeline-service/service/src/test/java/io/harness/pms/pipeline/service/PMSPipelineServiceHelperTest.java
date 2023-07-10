@@ -20,8 +20,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 import io.harness.PipelineServiceTestBase;
 import io.harness.annotations.dev.OwnedBy;
@@ -33,7 +31,6 @@ import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
-import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.governance.GovernanceMetadata;
@@ -450,49 +447,5 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
     GitEntityInfo gitEntityInfo1 = GitContextHelper.getGitEntityInfo();
 
     assertEquals(gitEntityInfo1.getBranch(), gitEntityInfo.getBranch());
-  }
-
-  @Test
-  @Owner(developers = ADITHYA)
-  @Category(UnitTests.class)
-  public void testComputePipelineReferencesForInlinePipeline() {
-    PipelineEntity pipelineEntity = PipelineEntity.builder().storeType(StoreType.INLINE).build();
-    boolean loadFromCache = false;
-    pmsPipelineServiceHelper.computePipelineReferences(pipelineEntity, loadFromCache);
-    verify(pipelineSetupUsageCreationHelper, times(0)).submitTask(any());
-  }
-  @Test
-  @Owner(developers = ADITHYA)
-  @Category(UnitTests.class)
-  public void testComputePipelineReferencesForRemotePipelineLoadedFromCache() {
-    PipelineEntity pipelineEntity = PipelineEntity.builder().storeType(StoreType.REMOTE).build();
-    boolean loadFromCache = true;
-    pmsPipelineServiceHelper.computePipelineReferences(pipelineEntity, loadFromCache);
-    verify(pipelineSetupUsageCreationHelper, times(0)).submitTask(any());
-  }
-
-  @Test
-  @Owner(developers = ADITHYA)
-  @Category(UnitTests.class)
-  public void testComputePipelineReferencesForRemotePipelineLoadedFromGitForDefaultBranch() {
-    PipelineEntity pipelineEntity = PipelineEntity.builder().storeType(StoreType.REMOTE).build();
-    boolean loadFromCache = false;
-    GitEntityInfo gitEntityInfo = GitEntityInfo.builder().repoName("repoName").branch("").isDefaultBranch(true).build();
-    GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
-    pmsPipelineServiceHelper.computePipelineReferences(pipelineEntity, loadFromCache);
-    verify(pipelineSetupUsageCreationHelper, times(1)).submitTask(any());
-  }
-
-  @Test
-  @Owner(developers = ADITHYA)
-  @Category(UnitTests.class)
-  public void testComputePipelineReferencesForRemotePipelineLoadedFromGitForNonDefaultBranch() {
-    PipelineEntity pipelineEntity = PipelineEntity.builder().storeType(StoreType.REMOTE).build();
-    boolean loadFromCache = false;
-    GitEntityInfo gitEntityInfo =
-        GitEntityInfo.builder().repoName("repoName").branch("main-patch").isDefaultBranch(false).build();
-    GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
-    pmsPipelineServiceHelper.computePipelineReferences(pipelineEntity, loadFromCache);
-    verify(pipelineSetupUsageCreationHelper, times(0)).submitTask(any());
   }
 }

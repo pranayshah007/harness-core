@@ -7,7 +7,6 @@
 
 package io.harness.cdng.provision.terraform;
 
-import static io.harness.beans.FeatureName.CDS_TERRAFORM_CLI_OPTIONS_NG;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.DESTROY;
 
 import io.harness.EntityType;
@@ -58,7 +57,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
@@ -152,9 +153,7 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
       builder.workspace(ParameterFieldHelper.getParameterFieldValue(spec.getWorkspace()));
     }
 
-    if (cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAFORM_CLI_OPTIONS_NG)) {
-      builder.terraformCommandFlags(helper.getTerraformCliFlags(parameters.getConfiguration().getCliOptions()));
-    }
+    builder.terraformCommandFlags(helper.getTerraformCliFlags(parameters.getConfiguration().getCliOptions()));
 
     ParameterField<Boolean> skipTerraformRefreshCommandParameter =
         parameters.getConfiguration().getIsSkipTerraformRefresh();
@@ -215,9 +214,7 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
     builder.entityId(entityId);
     builder.currentStateFileId(helper.getLatestFileId(entityId));
 
-    if (cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAFORM_CLI_OPTIONS_NG)) {
-      builder.terraformCommandFlags(helper.getTerraformCliFlags(parameters.getConfiguration().getCliOptions()));
-    }
+    builder.terraformCommandFlags(helper.getTerraformCliFlags(parameters.getConfiguration().getCliOptions()));
 
     TerraformInheritOutput inheritOutput =
         helper.getSavedInheritOutput(provisionerIdentifier, DESTROY.name(), ambiance);
@@ -230,7 +227,7 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
                     ? helper.prepareTerraformConfigFileInfo(inheritOutput.getFileStorageConfigDTO(), ambiance)
                     : helper.getFileStoreFetchFilesConfig(
                         inheritOutput.getFileStoreConfig(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
-            .varFileInfos(helper.prepareTerraformVarFileInfo(inheritOutput.getVarFileConfigs(), ambiance))
+            .varFileInfos(helper.prepareTerraformVarFileInfo(inheritOutput.getVarFileConfigs(), ambiance, false))
             .backendConfig(inheritOutput.getBackendConfig())
             .backendConfigFileInfo(helper.prepareTerraformBackendConfigFileInfo(
                 inheritOutput.getBackendConfigurationFileConfig(), ambiance))
@@ -275,13 +272,11 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
     builder.entityId(entityId);
     builder.currentStateFileId(helper.getLatestFileId(entityId));
 
-    if (cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAFORM_CLI_OPTIONS_NG)) {
-      builder.terraformCommandFlags(helper.getTerraformCliFlags(parameters.getConfiguration().getCliOptions()));
-    }
+    builder.terraformCommandFlags(helper.getTerraformCliFlags(parameters.getConfiguration().getCliOptions()));
 
     TerraformConfig terraformConfig = helper.getLastSuccessfulApplyConfig(parameters, ambiance);
     builder.workspace(terraformConfig.getWorkspace())
-        .varFileInfos(helper.prepareTerraformVarFileInfo(terraformConfig.getVarFileConfigs(), ambiance))
+        .varFileInfos(helper.prepareTerraformVarFileInfo(terraformConfig.getVarFileConfigs(), ambiance, false))
         .backendConfig(terraformConfig.getBackendConfig())
         .backendConfigFileInfo(
             helper.prepareTerraformBackendConfigFileInfo(terraformConfig.getBackendConfigFileConfig(), ambiance))
@@ -353,6 +348,8 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
             WingsException.USER);
     }
 
+    Map<String, String> outputKeys = getGitRevisionsOutput(ambiance, parameters, terraformTaskNGResponse);
+
     if (CommandExecutionStatus.SUCCESS == terraformTaskNGResponse.getCommandExecutionStatus()) {
       terraformConfigDAL.clearTerraformConfig(ambiance,
           helper.generateFullIdentifier(
@@ -362,6 +359,28 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
               ParameterFieldHelper.getParameterFieldValue(parameters.getProvisionerIdentifier()), ambiance),
           terraformTaskNGResponse.getStateFileId());
     }
+    helper.addTerraformRevisionOutcomeIfRequired(stepResponseBuilder, outputKeys);
     return stepResponseBuilder.build();
+  }
+
+  @NotNull
+  private Map<String, String> getGitRevisionsOutput(
+      Ambiance ambiance, TerraformDestroyStepParameters parameters, TerraformTaskNGResponse terraformTaskNGResponse) {
+    Map<String, String> outputKeys = new HashMap<>();
+    if (parameters.getConfiguration().getType().getDisplayName().equalsIgnoreCase(
+            TerraformStepConfigurationType.INLINE.getDisplayName())) {
+      outputKeys = helper.getRevisionsMap(parameters.getConfiguration().getSpec().getVarFiles(),
+          terraformTaskNGResponse.getCommitIdForConfigFilesMap());
+    } else if (parameters.getConfiguration().getType().getDisplayName().equalsIgnoreCase(
+                   TerraformStepConfigurationType.INHERIT_FROM_PLAN.getDisplayName())) {
+      outputKeys =
+          helper.getRevisionsMap(Collections.emptyList(), terraformTaskNGResponse.getCommitIdForConfigFilesMap());
+    } else if (parameters.getConfiguration().getType().getDisplayName().equalsIgnoreCase(
+                   TerraformStepConfigurationType.INHERIT_FROM_APPLY.getDisplayName())) {
+      TerraformConfig terraformConfig = helper.getLastSuccessfulApplyConfig(parameters, ambiance);
+      outputKeys = helper.getRevisionsMap(
+          terraformConfig.getVarFileConfigs(), terraformTaskNGResponse.getCommitIdForConfigFilesMap());
+    }
+    return outputKeys;
   }
 }

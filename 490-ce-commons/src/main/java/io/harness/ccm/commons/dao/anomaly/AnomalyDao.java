@@ -114,16 +114,18 @@ public class AnomalyDao {
 
   @Nullable
   @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
-  public List<AnomalySummary> fetchAnomaliesTotalCost(
-      @NonNull String accountId, @Nullable Condition condition, Set<String> allowedAnomaliesIds) {
+  public List<AnomalySummary> fetchAnomaliesTotalCost(@NonNull String accountId, @Nullable Condition condition,
+      Set<String> allowedAnomaliesIds, boolean alwaysAllowed) {
+    Condition condition1 = ANOMALIES.ACCOUNTID.eq(accountId).and(firstNonNull(condition, DSL.noCondition()));
+    if (!alwaysAllowed) {
+      condition1 = condition1.and(ANOMALIES.ID.in(allowedAnomaliesIds));
+    }
     SelectConditionStep<Record3<Integer, BigDecimal, BigDecimal>> finalStep =
         dslContext
             .select(DSL.count().as("count"), sum(ANOMALIES.ACTUALCOST).as("actualCost"),
                 sum(ANOMALIES.EXPECTEDCOST).as("expectedCost"))
             .from(ANOMALIES)
-            .where(ANOMALIES.ACCOUNTID.eq(accountId)
-                       .and(firstNonNull(condition, DSL.noCondition()))
-                       .and(ANOMALIES.ID.in(allowedAnomaliesIds)));
+            .where(condition1);
     log.info("Anomaly Query: {}", finalStep.getQuery());
     return finalStep.fetchInto(AnomalySummary.class);
   }

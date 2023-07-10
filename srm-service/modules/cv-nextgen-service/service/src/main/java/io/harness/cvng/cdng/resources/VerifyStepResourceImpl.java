@@ -21,7 +21,7 @@ import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.job.VerificationJobType;
-import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
+import io.harness.cvng.cdng.beans.MonitoredServiceSpecType;
 import io.harness.cvng.cdng.beans.v2.AbstractAnalysedNode;
 import io.harness.cvng.cdng.beans.v2.AnalysedDeploymentNode;
 import io.harness.cvng.cdng.beans.v2.AnalysedLoadTestNode;
@@ -170,7 +170,7 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
             verifyStepPathParams.getAccountIdentifier(), verifyStepPathParams.getVerifyStepExecutionId()))
         .baselineOverview(getBaselineOverview(verificationSpec, verifyStepPathParams, appliedDeploymentAnalysisType,
             verificationJobInstance, deploymentVerificationJobInstanceSummary))
-        .controlDataStartTimestamp(getControlDataStartTimestamp(verificationJobInstance))
+        .controlDataStartTimestamp(getControlDataStartTimestamp(verificationJobInstance, appliedDeploymentAnalysisType))
         .testDataStartTimestamp(getTestDataStartTimestamp(verificationJobInstance))
         .build();
   }
@@ -179,7 +179,13 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
       VerifyStepPathParams verifyStepPathParams, AppliedDeploymentAnalysisType appliedDeploymentAnalysisType,
       VerificationJobInstance verificationJobInstance,
       DeploymentVerificationJobInstanceSummary deploymentVerificationJobInstanceSummary) {
-    Optional<VerificationJobInstance> baselineVerificationJobInstance =
+    boolean isBaseline = false;
+    boolean isExpired = false;
+    BaselineOverview baselineOverview = null;
+    long baselineExpiry = -1L;
+    String planExecutionId = null;
+
+    Optional<VerificationJobInstance> currentPinnedBaselineVerificationJobInstance =
         verificationJobInstanceService.getPinnedBaselineVerificationJobInstance(
             ServiceEnvironmentParams.builder()
                 .environmentIdentifier(verificationSpec.getAnalysedEnvIdentifier())
@@ -188,16 +194,27 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
                 .projectIdentifier(verifyStepPathParams.getProjectIdentifier())
                 .orgIdentifier(verifyStepPathParams.getOrgIdentifier())
                 .build());
-    boolean isExpired = false;
-    BaselineOverview baselineOverview = null;
+    if (currentPinnedBaselineVerificationJobInstance.isPresent()
+        && Objects.equals(
+            currentPinnedBaselineVerificationJobInstance.get().getUuid(), verificationJobInstance.getUuid())) {
+      isBaseline = true;
+    }
+
+    String baselineVerificationJobInstanceId =
+        verificationJobInstance.getResolvedJob().getBaselineVerificationJobInstanceId();
+    VerificationJobInstance baselineVerificationJobInstance = null;
+    if (baselineVerificationJobInstanceId != null) {
+      baselineVerificationJobInstance =
+          verificationJobInstanceService.getVerificationJobInstance(baselineVerificationJobInstanceId);
+    }
     if (verificationJobInstance.getResolvedJob().getType() == VerificationJobType.TEST) {
-      String baselineVerificationJobInstanceId = null;
-      long baselineExpiry = 1L;
-      String planExecutionId = "";
-      if (baselineVerificationJobInstance.isPresent()) {
-        baselineVerificationJobInstanceId = baselineVerificationJobInstance.get().getUuid();
-        baselineExpiry = baselineVerificationJobInstance.get().getValidUntil().getTime();
-        planExecutionId = baselineVerificationJobInstance.get().getPlanExecutionId();
+      if (baselineVerificationJobInstance != null) {
+        baselineVerificationJobInstanceId = baselineVerificationJobInstance.getUuid();
+        baselineExpiry = baselineVerificationJobInstance.getValidUntil().getTime();
+        planExecutionId = baselineVerificationJobInstance.getPlanExecutionId();
+        if (System.currentTimeMillis() > baselineExpiry) {
+          isExpired = true;
+        }
       }
       baselineOverview = BaselineOverview.builder()
                              .baselineVerificationJobInstanceId(baselineVerificationJobInstanceId)
@@ -206,7 +223,7 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
                              .isBaselineExpired(isExpired)
                              .baselineExpiryTimestamp(baselineExpiry)
                              .planExecutionId(planExecutionId)
-                             .isBaseline(verificationJobInstance.getUuid().equals(baselineVerificationJobInstanceId))
+                             .isBaseline(isBaseline)
                              .build();
     }
     return baselineOverview;
@@ -219,7 +236,9 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
 
   private static AppliedDeploymentAnalysisType getAppliedDeploymentAnalysisType(
       DeploymentVerificationJobInstanceSummary summary) {
-    if (summary.getRisk() == Risk.NO_DATA || summary.getRisk() == Risk.NO_ANALYSIS) {
+    if (summary.getRisk() == Risk.NO_DATA
+        || (summary.getRisk() == Risk.NO_ANALYSIS
+            && summary.getAdditionalInfo().getType() != VerificationJobType.SIMPLE)) {
       return AppliedDeploymentAnalysisType.NO_ANALYSIS;
     } else {
       return AppliedDeploymentAnalysisType.fromVerificationJobType(summary.getAdditionalInfo().getType());
@@ -505,13 +524,12 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
     return testDataStartTimestamp;
   }
 
-  private Long getControlDataStartTimestamp(VerificationJobInstance verificationJobInstance) {
+  private Long getControlDataStartTimestamp(
+      VerificationJobInstance verificationJobInstance, AppliedDeploymentAnalysisType appliedDeploymentAnalysisType) {
     Long controlDataStartTimestamp = null;
     TimeRange controlDataStartTimerange =
         deploymentTimeSeriesAnalysisService
-            .getControlDataTimeRange(AppliedDeploymentAnalysisType.fromVerificationJobType(
-                                         verificationJobInstance.getResolvedJob().getType()),
-                verificationJobInstance, null)
+            .getControlDataTimeRange(appliedDeploymentAnalysisType, verificationJobInstance, null)
             .orElse(null);
     if (Objects.nonNull(controlDataStartTimerange)) {
       controlDataStartTimestamp = controlDataStartTimerange.getStartTime().toEpochMilli();

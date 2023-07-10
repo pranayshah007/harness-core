@@ -433,6 +433,7 @@ public class ProjectServiceImpl implements ProjectService {
       project.setAccountIdentifier(accountIdentifier);
       project.setOrgIdentifier(orgIdentifier);
       project.setId(existingProject.getId());
+      project.setIdentifier(existingProject.getIdentifier());
       project.setCreatedAt(existingProject.getCreatedAt() == null ? existingProject.getLastModifiedAt()
                                                                   : existingProject.getCreatedAt());
       if (project.getVersion() == null) {
@@ -484,14 +485,16 @@ public class ProjectServiceImpl implements ProjectService {
       String accountIdentifier, ProjectFilterDTO projectFilterDTO, String userId) {
     List<Favorite> favorites = new ArrayList<>();
     Set<String> orgIdentifiers;
-    if (projectFilterDTO != null && projectFilterDTO.getOrgIdentifiers().size() > 0) {
+    if (projectFilterDTO != null && isNotEmpty(projectFilterDTO.getOrgIdentifiers())) {
       orgIdentifiers = projectFilterDTO.getOrgIdentifiers();
     } else {
       orgIdentifiers = organizationService.getPermittedOrganizations(accountIdentifier, null);
     }
-    for (String orgIdentifier : orgIdentifiers) {
-      favorites.addAll(favoritesService.getFavorites(
-          accountIdentifier, orgIdentifier, null, userId, ResourceType.PROJECT.toString()));
+    if (isNotEmpty(orgIdentifiers)) {
+      for (String orgIdentifier : orgIdentifiers) {
+        favorites.addAll(favoritesService.getFavorites(
+            accountIdentifier, orgIdentifier, null, userId, ResourceType.PROJECT.toString()));
+      }
     }
     return favorites;
   }

@@ -39,10 +39,14 @@ import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRoll
 import io.harness.cdng.serverless.container.steps.ServerlessValuesYamlDataOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.mapper.ServerlessAwsLambdaFunctionToServerInstanceInfoMapper;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.beans.serverless.ServerlessAwsLambdaFunction;
+import io.harness.delegate.beans.serverless.ServerlessAwsLambdaFunctionsWithServiceName;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaPrepareRollbackDataResult;
 import io.harness.delegate.beans.serverless.ServerlessS3FetchFileResult;
 import io.harness.delegate.beans.serverless.StackDetails;
@@ -108,8 +112,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -154,6 +160,28 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
           ambiance, stepElementParameters, infrastructureOutcome, serverlessManifestOutcome, serverlessStepHelper);
     }
     return taskChainResponse;
+  }
+
+  public List<ServerlessAwsLambdaFunction> getServerlessAwsLambdaFunctions(String instancesList)
+      throws JsonProcessingException {
+    ObjectMapper objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    return Arrays.asList(objectMapper.readValue(instancesList, ServerlessAwsLambdaFunction[].class));
+  }
+
+  public ServerlessAwsLambdaFunctionsWithServiceName getServerlessAwsLambdaFunctionsWithServiceName(String instances)
+      throws JsonProcessingException {
+    ObjectMapper objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    return objectMapper.readValue(instances, ServerlessAwsLambdaFunctionsWithServiceName.class);
+  }
+
+  public List<ServerInstanceInfo> getServerlessDeployFunctionInstanceInfo(
+      List<ServerlessAwsLambdaFunction> serverlessAwsLambdaFunctions, String region, String stage, String service,
+      String infraStructureKey) {
+    if (EmptyPredicate.isEmpty(serverlessAwsLambdaFunctions)) {
+      return Collections.emptyList();
+    }
+    return ServerlessAwsLambdaFunctionToServerInstanceInfoMapper.toServerInstanceInfoList(
+        serverlessAwsLambdaFunctions, region, stage, service, infraStructureKey);
   }
 
   @NotNull

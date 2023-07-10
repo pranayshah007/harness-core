@@ -14,6 +14,7 @@ import io.harness.ModuleType;
 import io.harness.cvng.cdng.beans.CVNGStepInfo;
 import io.harness.cvng.core.services.api.CVNGYamlSchemaService;
 import io.harness.encryption.Scope;
+import io.harness.jackson.JsonNodeUtils;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.yaml.schema.SchemaGeneratorUtils;
 import io.harness.yaml.schema.YamlSchemaGenerator;
@@ -81,7 +82,10 @@ public class CVNGYamlSchemaServiceImpl implements CVNGYamlSchemaService {
       String orgIdentifier, String projectIdentifier, Scope scope, List<YamlSchemaWithDetails> stepSchemaWithDetails) {
     JsonNode deploymentSteps =
         yamlSchemaProvider.getYamlSchema(EntityType.VERIFY_STEP, orgIdentifier, projectIdentifier, scope);
+    JsonNode deploymentImpactSteps = yamlSchemaProvider.getYamlSchema(
+        EntityType.ANALYZE_DEPLOYMENT_IMPACT_STEP, orgIdentifier, projectIdentifier, scope);
     JsonNode definitions = deploymentSteps.get(DEFINITIONS_NODE);
+    JsonNodeUtils.merge(definitions, deploymentImpactSteps);
     yamlSchemaProvider.mergeAllV2StepsDefinitions(projectIdentifier, orgIdentifier, scope, (ObjectNode) definitions,
         YamlSchemaUtils.getNodeEntityTypesByYamlGroup(yamlSchemaRootClasses, StepCategory.STEP.name()));
 

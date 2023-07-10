@@ -8,6 +8,7 @@
 package io.harness.idp.proxy.ngmanager;
 
 import static io.harness.idp.proxy.ngmanager.ManagerAllowList.VALIDATE_SUPPORT_USER;
+import static io.harness.idp.proxy.ngmanager.NgManagerAllowList.TOKEN_VALIDATE;
 import static io.harness.idp.proxy.ngmanager.NgManagerAllowList.USERS;
 import static io.harness.idp.proxy.ngmanager.NgManagerAllowList.USER_GROUPS;
 
@@ -28,7 +29,7 @@ public class ProxyUtils {
   private static final String MANAGER_PROXY_PATH = "v1/idp-proxy/manager";
   private static final String QUERY_PARAMS_DELIMITER = "\\?";
   private static final String PATH_DELIMITER = "/";
-  private static final List<String> NG_MANAGER_ALLOW_LIST = List.of(USERS, USER_GROUPS);
+  private static final List<String> NG_MANAGER_ALLOW_LIST = List.of(USERS, USER_GROUPS, TOKEN_VALIDATE);
   private static final List<String> MANAGER_ALLOW_LIST = List.of(VALIDATE_SUPPORT_USER);
   private static final String CONTENT_TYPE_HEADER = "Content-Type";
 

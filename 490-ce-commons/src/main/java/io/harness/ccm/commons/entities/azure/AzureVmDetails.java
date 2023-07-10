@@ -27,4 +27,6 @@ public class AzureVmDetails {
   String name;
   Double avgCpuUtilisation;
   Double maxCpuUtilisation;
+  Double avgMemoryUtilisation;
+  Double maxMemoryUtilisation;
 }

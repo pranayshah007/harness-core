@@ -6458,7 +6458,6 @@
           "type": "object",
           "required": [
             "accountId",
-            "passwordRef",
             "splunkUrl"
           ],
           "properties": {
@@ -6477,6 +6476,17 @@
             },
             "splunkUrl": {
               "type": "string"
+            },
+            "tokenRef": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "UsernamePassword",
+                "Anonymous",
+                "Bearer Token(HTTP Header)"
+              ]
             },
             "username": {
               "type": "string"

@@ -17,6 +17,7 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.beans.recommendation.RecommendationOverviewStats;
+import io.harness.ccm.commons.beans.recommendation.RecommendationState;
 import io.harness.ccm.graphql.dto.recommendation.FilterStatsDTO;
 import io.harness.ccm.graphql.dto.recommendation.K8sRecommendationFilterDTO;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationsDTO;
@@ -192,13 +193,13 @@ public class RESTWrapperRecommendationOverview {
   }
 
   @POST
-  @Path("mark-applied")
+  @Path("change-state")
   @Timed
   @LogAccountIdentifier
   @ExceptionMetered
   @Consumes(MediaType.APPLICATION_JSON)
-  @ApiOperation(value = "Mark recommendation as applied", nickname = "markApplied")
-  @Operation(operationId = "markRecommendationApplied", description = "Mark recommendation as applied",
+  @ApiOperation(value = "Mark recommendation as applied/open", nickname = "changeRecommendationState")
+  @Operation(operationId = "changeRecommendationState", description = "Mark recommendation as applied/open",
       summary = "Return void",
       responses =
       {
@@ -206,11 +207,12 @@ public class RESTWrapperRecommendationOverview {
             content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
   public ResponseDTO<Void>
-  markApplied(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+  changeState(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
                   NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-      @QueryParam("recommendationId") @NotNull @Valid String recommendationId) {
+      @QueryParam("recommendationId") @NotNull @Valid String recommendationId,
+      @QueryParam("state") @NotNull @Valid RecommendationState newState) {
     final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(accountId);
-    overviewQueryV2.markRecommendationAsApplied(recommendationId, env);
+    overviewQueryV2.changeState(recommendationId, newState, env);
     return ResponseDTO.newResponse();
   }
 }

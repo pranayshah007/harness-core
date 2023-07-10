@@ -163,12 +163,7 @@ public class TwoFactorAuthenticationManager {
   }
 
   private boolean isAllowed2FADisable(User user) {
-    if (isEmpty(user.getAccounts())) {
-      return false;
-    } else {
-      Optional<Account> defaultAccount = getDefaultAccount(user);
-      return defaultAccount.isPresent() && !defaultAccount.get().isTwoFactorAdminEnforced();
-    }
+    return !isEmpty(user.getAccounts());
   }
 
   private Optional<Account> getDefaultAccount(User user) {

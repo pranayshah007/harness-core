@@ -37,14 +37,13 @@ import io.harness.ngtriggers.events.TriggerDeleteEvent;
 import io.harness.ngtriggers.events.TriggerOutboxEvents;
 import io.harness.ngtriggers.events.TriggerUpdateEvent;
 import io.harness.outbox.OutboxEvent;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.security.SourcePrincipalContextData;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.UserPrincipal;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.serializer.HObjectMapper;
 import java.io.IOException;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,7 +52,6 @@ import org.mockito.ArgumentCaptor;
 
 @OwnedBy(HarnessTeam.CI)
 public class TriggerOutboxEventHandlerTest extends CategoryTest {
-  private ObjectMapper objectMapper;
   private AuditClientService auditClientService;
   private TriggerOutboxEventHandler eventHandler;
   String newYaml;
@@ -61,7 +59,6 @@ public class TriggerOutboxEventHandlerTest extends CategoryTest {
 
   @Before
   public void setup() throws IOException {
-    objectMapper = HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
     auditClientService = mock(AuditClientService.class);
     eventHandler = spy(new TriggerOutboxEventHandler(auditClientService));
     newYaml = "pipeline:\n"
@@ -102,7 +99,7 @@ public class TriggerOutboxEventHandlerTest extends CategoryTest {
                                         .build();
     TriggerCreateEvent triggerCreateEvent =
         new TriggerCreateEvent(accountIdentifier, orgIdentifier, projectIdentifier, triggerEntity);
-    String eventData = objectMapper.writeValueAsString(triggerCreateEvent);
+    String eventData = YamlUtils.writeYamlString(triggerCreateEvent);
     GlobalContext globalContext = new GlobalContext();
     Principal principal =
         new UserPrincipal(randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10));
@@ -154,7 +151,7 @@ public class TriggerOutboxEventHandlerTest extends CategoryTest {
                                      .build();
     TriggerUpdateEvent triggerUpdateEvent =
         new TriggerUpdateEvent(accountIdentifier, orgIdentifier, projectIdentifier, oldTrigger, newTrigger);
-    String eventData = objectMapper.writeValueAsString(triggerUpdateEvent);
+    String eventData = YamlUtils.writeYamlString(triggerUpdateEvent);
     GlobalContext globalContext = new GlobalContext();
     Principal principal =
         new UserPrincipal(randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10));
@@ -200,7 +197,7 @@ public class TriggerOutboxEventHandlerTest extends CategoryTest {
                                         .build();
     TriggerDeleteEvent triggerDeleteEvent =
         new TriggerDeleteEvent(accountIdentifier, orgIdentifier, projectIdentifier, triggerEntity);
-    String eventData = objectMapper.writeValueAsString(triggerDeleteEvent);
+    String eventData = YamlUtils.writeYamlString(triggerDeleteEvent);
     GlobalContext globalContext = new GlobalContext();
     Principal principal =
         new UserPrincipal(randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10));

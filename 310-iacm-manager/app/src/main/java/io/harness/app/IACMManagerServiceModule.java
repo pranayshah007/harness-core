@@ -192,14 +192,16 @@ public class IACMManagerServiceModule extends AbstractModule {
   @Provides
   @Singleton
   DistributedLockImplementation distributedLockImplementation() {
-    return MONGO;
+    return iacmManagerConfiguration.getDistributedLockImplementation() == null
+        ? MONGO
+        : iacmManagerConfiguration.getDistributedLockImplementation();
   }
 
   @Provides
   @Named("lock")
   @Singleton
   RedisConfig redisConfig() {
-    return iacmManagerConfiguration.getEventsFrameworkConfiguration().getRedisConfig();
+    return iacmManagerConfiguration.getRedisLockConfig();
   }
 
   @Override

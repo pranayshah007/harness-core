@@ -35,7 +35,9 @@ import static io.harness.k8s.KubernetesConvention.getAccountIdentifier;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_DESTROYED;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_DISCONNECTED;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_REGISTRATION;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_REGISTRATION_FAILED;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_RESTARTED;
 import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.obfuscate.Obfuscator.obfuscate;
 import static io.harness.persistence.HQuery.excludeAuthority;
@@ -2528,6 +2530,9 @@ public class DelegateServiceImpl implements DelegateService {
 
   @Override
   public DelegateRegisterResponse register(final DelegateParams delegateParams, final boolean isConnectedUsingMtls) {
+    delegateMetricsService.recordDelegateMetrics(
+        Delegate.builder().accountId(delegateParams.getAccountId()).version(delegateParams.getVersion()).build(),
+        DELEGATE_REGISTRATION);
     // TODO: remove broadcasts from the flow of this function. Because it's called only in the first registration,
     // which is before the open of websocket connection.
     if (licenseService.isAccountDeleted(delegateParams.getAccountId())) {
@@ -2563,13 +2568,20 @@ public class DelegateServiceImpl implements DelegateService {
     final Delegate existingDelegate = getExistingDelegate(delegateParams.getAccountId(), hostName,
         delegateParams.isNg(), delegateParams.getDelegateType(), delegateParams.getIp());
 
-    // this code is to mark all the task in running as failed if same delegate registration for immutable
-    // this should not impact any functionality wrt legacy delegate
-    if ((existingDelegate != null) && (existingDelegate.isImmutable())) {
-      try {
-        onDelegateDisconnected(delegateParams.getAccountId(), existingDelegate.getUuid());
-      } catch (Exception e) {
-        log.error("Couldn't delete the task associated with existing delegate: {}", existingDelegate.getUuid(), e);
+    if (existingDelegate != null) {
+      // if the version is same then delegate restarted
+      if (existingDelegate.getVersion().equals(delegateParams.getVersion())
+          && !ECS.equals(existingDelegate.getDelegateType())) {
+        delegateMetricsService.recordDelegateMetrics(existingDelegate, DELEGATE_RESTARTED);
+      }
+
+      // if its immutable delegate then mark all the tasks failed
+      if (existingDelegate.isImmutable()) {
+        try {
+          onDelegateDisconnected(delegateParams.getAccountId(), existingDelegate.getUuid());
+        } catch (Exception e) {
+          log.error("Couldn't delete the task associated with existing delegate: {}", existingDelegate.getUuid(), e);
+        }
       }
     }
 
@@ -2738,6 +2750,8 @@ public class DelegateServiceImpl implements DelegateService {
         .project(DelegateKeys.delegateGroupName, true)
         .project(DelegateKeys.description, true)
         .project(DelegateKeys.immutable, true)
+        .project(DelegateKeys.version, true)
+        .project(DelegateKeys.delegateType, true)
         .get();
   }
 

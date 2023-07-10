@@ -96,7 +96,7 @@ public class TemplateImportService implements ImportService {
       pageRequest.addFilter(TemplateKeys.appId, EQ, appId);
     }
     if (EmptyPredicate.isNotEmpty(specificIds)) {
-      pageRequest.addFilter(TemplateKeys.uuid, IN, specificIds);
+      pageRequest.addFilter("_id", IN, specificIds.toArray());
     }
     PageResponse<Template> pageResponse = templateService.list(pageRequest, new ArrayList<>(), accountId, true);
     return pageResponse.getResponse();

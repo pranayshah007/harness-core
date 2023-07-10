@@ -31,9 +31,9 @@ public class SMPLicenseValidationJobImpl implements SMPLicenseValidationJob {
   }
 
   @Override
-  public void scheduleValidation(String accountIdentifier, String licenseSign, int frequencyInMinutes,
+  public void scheduleValidation(String accountIdentifier, SMPLicense smpLicense, int frequencyInMinutes,
       Function<String, SMPLicense> licenseProvider) {
-    Runnable task = taskFactoryProvider.create(accountIdentifier, licenseSign, licenseProvider);
+    Runnable task = taskFactoryProvider.create(accountIdentifier, smpLicense, licenseProvider);
     executorService.scheduleAtFixedRate(task, frequencyInMinutes, frequencyInMinutes, TimeUnit.MINUTES);
   }
 }

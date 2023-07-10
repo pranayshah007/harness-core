@@ -20,6 +20,7 @@ import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.BasicDBObject;
 import dev.morphia.query.Query;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -30,6 +31,10 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @OwnedBy(CE)
 public class InstanceDataDao {
+  private static final String SUB_FIELD_FORMAT = "%s.%s";
+  private static final String NOT_EQUAL = "$ne";
+  private static final String AND = "$and";
+
   @Inject private HPersistence hPersistence;
 
   public boolean create(InstanceData instanceData) {
@@ -69,10 +74,36 @@ public class InstanceDataDao {
         .filter(InstanceDataKeys.accountId, accountId)
         .filter(InstanceDataKeys.clusterId, clusterId)
         .filter(InstanceDataKeys.instanceType, instanceType)
-        // currently we are only computing recommendation for non-null node_pool_name
-        .filter(InstanceDataKeys.metaData + "." + InstanceMetaDataConstants.NODE_POOL_NAME, nodePoolName)
+        // Currently, we are only computing recommendation for non-null node_pool_name
+        .filter(String.format(SUB_FIELD_FORMAT, InstanceDataKeys.metaData, InstanceMetaDataConstants.NODE_POOL_NAME),
+            nodePoolName)
         .filter(InstanceDataKeys.instanceState, instanceState)
+        .field(String.format(SUB_FIELD_FORMAT, InstanceDataKeys.metaData, InstanceMetaDataConstants.INSTANCE_FAMILY))
+        .notEqual(null)
         .get();
+  }
+
+  @SuppressWarnings("unchecked")
+  public List<String> fetchDistinctInstanceFamilies(
+      String accountId, String clusterId, InstanceType instanceType, String nodePoolName, InstanceState instanceState) {
+    BasicDBObject instanceFamiliesQuery = new BasicDBObject();
+    List<BasicDBObject> conditions = new ArrayList<>();
+    conditions.add(new BasicDBObject(InstanceDataKeys.accountId, accountId));
+    conditions.add(new BasicDBObject(InstanceDataKeys.clusterId, clusterId));
+    conditions.add(new BasicDBObject(InstanceDataKeys.instanceType, instanceType));
+    // Currently, we are only computing recommendation for non-null node_pool_name
+    conditions.add(new BasicDBObject(
+        String.format(SUB_FIELD_FORMAT, InstanceDataKeys.metaData, InstanceMetaDataConstants.NODE_POOL_NAME),
+        nodePoolName));
+    conditions.add(new BasicDBObject(InstanceDataKeys.instanceState, instanceState));
+    // noinspection ConstantConditions
+    conditions.add(new BasicDBObject(
+        String.format(SUB_FIELD_FORMAT, InstanceDataKeys.metaData, InstanceMetaDataConstants.INSTANCE_FAMILY),
+        new BasicDBObject(NOT_EQUAL, null)));
+    instanceFamiliesQuery.put(AND, conditions);
+    return hPersistence.getCollection(InstanceData.class)
+        .distinct(String.format(SUB_FIELD_FORMAT, InstanceDataKeys.metaData, InstanceMetaDataConstants.INSTANCE_FAMILY),
+            instanceFamiliesQuery);
   }
 
   private List<InstanceData> fetchInstanceData(Iterator<InstanceData> iterator) {

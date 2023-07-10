@@ -10,13 +10,17 @@ package io.harness.cdng.ssh;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 
+import static java.util.Objects.isNull;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.steps.shellscript.HarnessFileStoreSource;
 import io.harness.steps.shellscript.ShellScriptSourceWrapper;
 import io.harness.steps.shellscript.ShellType;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
@@ -44,5 +48,14 @@ public class ScriptCommandUnitSpec implements CommandUnitBaseSpec {
   @Override
   public String getType() {
     return CommandUnitSpecType.SCRIPT;
+  }
+
+  @JsonIgnore
+  public String fetchFileRef() {
+    if (source.getSpec() instanceof HarnessFileStoreSource) {
+      HarnessFileStoreSource harnessFileStoreSource = (HarnessFileStoreSource) source.getSpec();
+      return isNull(harnessFileStoreSource.getFile()) ? null : harnessFileStoreSource.getFile().getValue();
+    }
+    return null;
   }
 }

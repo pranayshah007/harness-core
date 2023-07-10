@@ -12,7 +12,6 @@ import static io.harness.authorization.AuthorizationServiceHeader.TEMPLATE_SERVI
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ORGANIZATION_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
-import static io.harness.lock.DistributedLockImplementation.MONGO;
 import static io.harness.ng.core.template.TemplateEntityConstants.ARTIFACT_SOURCE;
 import static io.harness.ng.core.template.TemplateEntityConstants.CUSTOM_DEPLOYMENT;
 import static io.harness.ng.core.template.TemplateEntityConstants.MONITORED_SERVICE;
@@ -72,6 +71,8 @@ import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.TemplateServiceModuleRegistrars;
 import io.harness.service.DelegateServiceDriverModule;
 import io.harness.service.ServiceResourceClientModule;
+import io.harness.telemetry.AbstractTelemetryModule;
+import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.template.event.OrgEntityCrudStreamListener;
 import io.harness.template.event.ProjectEntityCrudStreamListener;
 import io.harness.template.events.TemplateOutboxEventHandler;
@@ -227,6 +228,13 @@ public class TemplateServiceModule extends AbstractModule {
     install(new OpaClientModule(templateServiceConfiguration.getOpaClientConfig(),
         templateServiceConfiguration.getPolicyManagerSecret(), TEMPLATE_SERVICE.getServiceId()));
 
+    install(new AbstractTelemetryModule() {
+      @Override
+      public TelemetryConfiguration telemetryConfiguration() {
+        return templateServiceConfiguration.getSegmentConfiguration();
+      }
+    });
+
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("taskPollExecutor"))
         .toInstance(new ManagedScheduledExecutorService("TaskPoll-Thread"));
@@ -312,14 +320,14 @@ public class TemplateServiceModule extends AbstractModule {
   @Provides
   @Singleton
   DistributedLockImplementation distributedLockImplementation() {
-    return MONGO;
+    return templateServiceConfiguration.getDistributedLockImplementation();
   }
 
   @Provides
   @Named("lock")
   @Singleton
   RedisConfig redisConfig() {
-    return RedisConfig.builder().build();
+    return templateServiceConfiguration.getRedisLockConfig();
   }
 
   @Provides
@@ -410,6 +418,18 @@ public class TemplateServiceModule extends AbstractModule {
             templateServiceConfiguration.getTemplateAsyncSetupUsagePoolConfig().getIdleTime(),
             templateServiceConfiguration.getTemplateAsyncSetupUsagePoolConfig().getTimeUnit(),
             new ThreadFactoryBuilder().setNameFormat("TemplateAsyncSetupUsageExecutorService-%d").build()));
+  }
+
+  @Provides
+  @Singleton
+  @Named("TemplateServiceHelperExecutorService")
+  public Executor templateServiceHelperExecutorService() {
+    return new ManagedExecutorService(
+        ThreadPool.create(templateServiceConfiguration.getTemplateServiceHelperPoolConfig().getCorePoolSize(),
+            templateServiceConfiguration.getTemplateServiceHelperPoolConfig().getMaxPoolSize(),
+            templateServiceConfiguration.getTemplateServiceHelperPoolConfig().getIdleTime(),
+            templateServiceConfiguration.getTemplateServiceHelperPoolConfig().getTimeUnit(),
+            new ThreadFactoryBuilder().setNameFormat("TemplateServiceHelperExecutorService-%d").build()));
   }
 
   private ValidatorFactory getValidatorFactory() {

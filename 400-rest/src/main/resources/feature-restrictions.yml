@@ -6,11 +6,11 @@
 
   USERS:
     COMMUNITY:
-      maxUsersAllowed: 100
+      maxUsersAllowed: 50000
     TRIAL:
-      maxUsersAllowed: 100
+      maxUsersAllowed: 50000
     FREE:
-      maxUsersAllowed: 100
+      maxUsersAllowed: 50000
     PAID:
       maxUsersAllowed: 50000
 

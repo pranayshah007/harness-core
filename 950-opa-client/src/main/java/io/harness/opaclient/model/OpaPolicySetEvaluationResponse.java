@@ -28,4 +28,5 @@ public class OpaPolicySetEvaluationResponse {
   String account_id;
   String org_id;
   String project_id;
+  String description;
 }

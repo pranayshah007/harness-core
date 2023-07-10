@@ -103,6 +103,22 @@ if [[ "" != "$S3_CACHE_IMAGE" ]]; then
   export S3_CACHE_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.cacheS3Config.image=env(S3_CACHE_IMAGE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$SSCA_ORCHESTRATION_IMAGE" ]]; then
+  export SSCA_ORCHESTRATION_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.sscaOrchestrationConfig.image=env(SSCA_ORCHESTRATION_IMAGE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SSCA_ENFORCEMENT_IMAGE" ]]; then
+  export SSCA_ENFORCEMENT_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.sscaEnforcementConfig.image=env(SSCA_ENFORCEMENT_IMAGE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$VM_SSCA_ORCHESTRATION_IMAGE" ]]; then
+  export VM_SSCA_ORCHESTRATION_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.sscaOrchestration=env(VM_SSCA_ORCHESTRATION_IMAGE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$VM_SSCA_ENFORCEMENT_IMAGE" ]]; then
+  export VM_SSCA_ENFORCEMENT_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.sscaEnforcement=env(VM_SSCA_ENFORCEMENT_IMAGE)' $CONFIG_FILE
+fi
+
 if [[ "" != "$VM_GIT_CLONE_IMAGE" ]]; then
   export VM_GIT_CLONE_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.gitClone=env(VM_GIT_CLONE_IMAGE)' $CONFIG_FILE
 fi
@@ -449,19 +465,28 @@ fi
 
 if [[ "$CACHE_CONFIG_USE_SENTINEL" == "true" ]]; then
   yq -i 'del(.singleServerConfig)' $REDISSON_CACHE_FILE
+  if [[ "" != "$CACHE_CONFIG_SENTINEL_MASTER_NAME" ]]; then
+    export CACHE_CONFIG_SENTINEL_MASTER_NAME; yq -i '.sentinelServersConfig.masterName=env(CACHE_CONFIG_SENTINEL_MASTER_NAME)' $REDISSON_CACHE_FILE
+  fi
+
+  if [[ "" != "$CACHE_CONFIG_REDIS_SENTINELS" ]]; then
+    IFS=',' read -ra SENTINEL_URLS <<< "$CACHE_CONFIG_REDIS_SENTINELS"
+    INDEX=0
+    for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
+      export REDIS_SENTINEL_URL; export INDEX; yq -i '.sentinelServersConfig.sentinelAddresses.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $REDISSON_CACHE_FILE
+      INDEX=$(expr $INDEX + 1)
+    done
+  fi
 fi
 
-if [[ "" != "$CACHE_CONFIG_SENTINEL_MASTER_NAME" ]]; then
-  export CACHE_CONFIG_SENTINEL_MASTER_NAME; yq -i '.sentinelServersConfig.masterName=env(CACHE_CONFIG_SENTINEL_MASTER_NAME)' $REDISSON_CACHE_FILE
+if [[ "" != "$CACHE_CONFIG_REDIS_USERNAME" ]]; then
+  export CACHE_CONFIG_REDIS_USERNAME; yq -i '.singleServerConfig.username=env(CACHE_CONFIG_REDIS_USERNAME)' $REDISSON_CACHE_FILE
+  export CACHE_CONFIG_REDIS_USERNAME; yq -i '.singleServerConfig.username=env(CACHE_CONFIG_REDIS_USERNAME)' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
-if [[ "" != "$CACHE_CONFIG_REDIS_SENTINELS" ]]; then
-  IFS=',' read -ra SENTINEL_URLS <<< "$CACHE_CONFIG_REDIS_SENTINELS"
-  INDEX=0
-  for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    export REDIS_SENTINEL_URL; export INDEX; yq -i '.sentinelServersConfig.sentinelAddresses.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $REDISSON_CACHE_FILE
-    INDEX=$(expr $INDEX + 1)
-  done
+if [[ "" != "$CACHE_CONFIG_REDIS_PASSWORD" ]]; then
+  export CACHE_CONFIG_REDIS_PASSWORD; yq -i '.singleServerConfig.password=env(CACHE_CONFIG_REDIS_PASSWORD)' $REDISSON_CACHE_FILE
+  export CACHE_CONFIG_REDIS_PASSWORD; yq -i '.singleServerConfig.password=env(CACHE_CONFIG_REDIS_PASSWORD)' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$REDIS_NETTY_THREADS" ]]; then

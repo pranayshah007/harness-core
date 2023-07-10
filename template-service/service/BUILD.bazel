@@ -20,6 +20,7 @@ shared_dependencies = [
     "//940-primary-version-manager:module",
     "//942-enforcement-sdk:module",
     "//950-ng-core:module",
+    "//950-telemetry:module",
     "//953-events-api:module",
     "//953-yaml-commons:module",
     "//955-filters-sdk:module",
@@ -108,7 +109,10 @@ java_library(
     name = "tests",
     testonly = True,
     srcs = glob(["src/test/**/*.java"]),
-    resources = ["//template-service/service/src/test/resources:resource"],
+    resources = [
+        "//template-service/service/src/main/resources:static_resource",
+        "//template-service/service/src/test/resources:resource",
+    ],
     visibility = ["//template-service-service/build:__subpackages__"],
     deps = shared_dependencies + [
         ":module",

@@ -72,6 +72,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -327,6 +328,13 @@ public class K8sRecommendationDAO {
   }
 
   @NonNull
+  public List<String> fetchDistinctInstanceFamilies(JobConstants jobConstants, NodePoolId nodePoolId) {
+    List<String> instanceFamilies = instanceDataDao.fetchDistinctInstanceFamilies(jobConstants.getAccountId(),
+        nodePoolId.getClusterid(), InstanceType.K8S_NODE, nodePoolId.getNodepoolname(), InstanceState.RUNNING);
+    return firstNonNull(instanceFamilies, Collections.emptyList());
+  }
+
+  @NonNull
   public K8sServiceProvider getServiceProvider(JobConstants jobConstants, NodePoolId nodePoolId) {
     InstanceData instanceData = instanceDataDao.fetchInstanceData(jobConstants.getAccountId(),
         nodePoolId.getClusterid(), InstanceType.K8S_NODE, nodePoolId.getNodepoolname(), InstanceState.RUNNING);
@@ -407,6 +415,7 @@ public class K8sRecommendationDAO {
         .set(CE_RECOMMENDATIONS.ISVALID, shouldShowRecommendation)
         .set(CE_RECOMMENDATIONS.LASTPROCESSEDAT, toOffsetDateTime(lastReceivedUntilAt))
         .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
+        .set(CE_RECOMMENDATIONS.CLOUDPROVIDER, CloudProvider.UNKNOWN.name())
         .onConflictOnConstraint(CE_RECOMMENDATIONS.getPrimaryKey())
         .doUpdate()
         .set(CE_RECOMMENDATIONS.MONTHLYCOST, monthlyCost)
@@ -446,6 +455,7 @@ public class K8sRecommendationDAO {
         .set(CE_RECOMMENDATIONS.ISVALID, true)
         .set(CE_RECOMMENDATIONS.LASTPROCESSEDAT, toOffsetDateTime(lastReceivedUntilAt))
         .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
+        .set(CE_RECOMMENDATIONS.CLOUDPROVIDER, CloudProvider.UNKNOWN.name())
         .onConflictOnConstraint(CE_RECOMMENDATIONS.getPrimaryKey())
         .doUpdate()
         .set(CE_RECOMMENDATIONS.MONTHLYCOST, stats.getTotalMonthlyCost())

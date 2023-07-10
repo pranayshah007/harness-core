@@ -17,6 +17,7 @@ go_library(
         "//955-delegate-beans/src/main/proto/io/harness/delegate",
         "//commons/go/lib/delegate-task-grpc-service/grpc",
         "//commons/go/lib/utils",
+        "//product/ci/common/external",
         "//product/ci/engine/output",
         "//product/ci/engine/proto",
         "//product/ci/engine/status/payloads",
@@ -45,4 +46,12 @@ go_test(
         "@com_github_stretchr_testify//assert",
         "@org_uber_go_zap//:zap",
     ],
+)
+
+load("//:tools/bazel/macros.bzl", "run_analysis")
+
+run_analysis(
+    language = "go",
+    targets = [":status"],
+    test_targets = [":status_test"],
 )

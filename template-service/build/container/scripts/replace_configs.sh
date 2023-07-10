@@ -23,6 +23,10 @@ if [[ "" != "$LOGGING_LEVEL" ]]; then
     export LOGGING_LEVEL; yq -i '.logging.level=env(LOGGING_LEVEL)' $CONFIG_FILE
 fi
 
+if [[ "" != "$STATIC_SCHEMA_FILE_URL" ]]; then
+  export STATIC_SCHEMA_FILE_URL; yq -i '.staticSchemaFileURL=env(STATIC_SCHEMA_FILE_URL)' $CONFIG_FILE
+fi
+
 if [[ "" != "$SERVER_PORT" ]]; then
   export SERVER_PORT; yq -i '.server.applicationConnectors[0].port=env(SERVER_PORT)' $CONFIG_FILE
 else
@@ -146,19 +150,30 @@ fi
 
 if [[ "$CACHE_CONFIG_USE_SENTINEL" == "true" ]]; then
   yq -i 'del(.singleServerConfig)' $REDISSON_CACHE_FILE
+
+  if [[ "" != "$CACHE_CONFIG_SENTINEL_MASTER_NAME" ]]; then
+    export CACHE_CONFIG_SENTINEL_MASTER_NAME; yq -i '.sentinelServersConfig.masterName=env(CACHE_CONFIG_SENTINEL_MASTER_NAME)' $REDISSON_CACHE_FILE
+  fi
+
+  if [[ "" != "$CACHE_CONFIG_REDIS_SENTINELS" ]]; then
+    IFS=',' read -ra SENTINEL_URLS <<< "$CACHE_CONFIG_REDIS_SENTINELS"
+    INDEX=0
+    for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
+      export REDIS_SENTINEL_URL; export INDEX; yq -i '.sentinelServersConfig.sentinelAddresses.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $REDISSON_CACHE_FILE
+      INDEX=$(expr $INDEX + 1)
+    done
+  fi
+
 fi
 
-if [[ "" != "$CACHE_CONFIG_SENTINEL_MASTER_NAME" ]]; then
-  export CACHE_CONFIG_SENTINEL_MASTER_NAME; yq -i '.sentinelServersConfig.masterName=env(CACHE_CONFIG_SENTINEL_MASTER_NAME)' $REDISSON_CACHE_FILE
+if [[ "" != "$CACHE_CONFIG_REDIS_USERNAME" ]]; then
+  export CACHE_CONFIG_REDIS_USERNAME; yq -i '.singleServerConfig.username=env(CACHE_CONFIG_REDIS_USERNAME)' $REDISSON_CACHE_FILE
+  export CACHE_CONFIG_REDIS_USERNAME; yq -i '.singleServerConfig.username=env(CACHE_CONFIG_REDIS_USERNAME)' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
-if [[ "" != "$CACHE_CONFIG_REDIS_SENTINELS" ]]; then
-  IFS=',' read -ra SENTINEL_URLS <<< "$CACHE_CONFIG_REDIS_SENTINELS"
-  INDEX=0
-  for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    export REDIS_SENTINEL_URL; yq -i '.sentinelServersConfig.sentinelAddresses +=[env(REDIS_SENTINEL_URL)]' $REDISSON_CACHE_FILE
-    INDEX=$(expr $INDEX + 1)
-  done
+if [[ "" != "$CACHE_CONFIG_REDIS_PASSWORD" ]]; then
+  export CACHE_CONFIG_REDIS_PASSWORD; yq -i '.singleServerConfig.password=env(CACHE_CONFIG_REDIS_PASSWORD)' $REDISSON_CACHE_FILE
+  export CACHE_CONFIG_REDIS_PASSWORD; yq -i '.singleServerConfig.password=env(CACHE_CONFIG_REDIS_PASSWORD)' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$REDIS_NETTY_THREADS" ]]; then

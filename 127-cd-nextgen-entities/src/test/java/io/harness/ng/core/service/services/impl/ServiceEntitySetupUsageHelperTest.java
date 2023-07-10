@@ -15,6 +15,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGEntitiesTestBase;
+import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
 import io.harness.eventsframework.protohelper.IdentifierRefProtoDTOHelper;
@@ -113,7 +114,7 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
   }
 
   @Test
-  @Owner(developers = OwnerRule.YOGESH)
+  @Owner(developers = {OwnerRule.YOGESH, OwnerRule.MLUKIC})
   @Category(UnitTests.class)
   public void testUpdateSetupUsages_1() throws InvalidProtocolBufferException {
     ArgumentCaptor<Message> msgCaptor = ArgumentCaptor.forClass(Message.class);
@@ -129,9 +130,11 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
                                .build();
     entitySetupUsageHelper.updateSetupUsages(entity);
 
-    verify(producer, times(1)).send(msgCaptor.capture());
+    verify(producer, times(4)).send(msgCaptor.capture());
 
-    Message value = msgCaptor.getValue();
+    List<Message> messages = msgCaptor.getAllValues();
+
+    Message value = messages.get(0);
     EntitySetupUsageCreateV2DTO createV2DTO = EntitySetupUsageCreateV2DTO.parseFrom(value.getData());
     Map<String, String> metadataMap = value.getMetadataMap();
 
@@ -193,10 +196,17 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
     assertThat(metadataMap.get("accountId")).isEqualTo("accountId");
     assertThat(metadataMap.get("referredEntityType")).isNotNull();
     assertThat(metadataMap.get("action")).isEqualTo("flushCreate");
+
+    assertThat(
+        messages.subList(1, messages.size())
+            .stream()
+            .map(msg -> String.valueOf(msg.getMetadataMap().get(EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE)))
+            .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder("TEMPLATE", "FILES", "SECRETS");
   }
 
   @Test
-  @Owner(developers = OwnerRule.HINGER)
+  @Owner(developers = {OwnerRule.HINGER, OwnerRule.MLUKIC})
   @Category(UnitTests.class)
   public void testUpdateSetupUsages_2() throws InvalidProtocolBufferException, IOException {
     // test template references
@@ -231,9 +241,11 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
 
     entitySetupUsageHelper.updateSetupUsages(entity);
 
-    verify(producer, times(1)).send(msgCaptor.capture());
+    verify(producer, times(4)).send(msgCaptor.capture());
 
-    Message value = msgCaptor.getValue();
+    List<Message> messages = msgCaptor.getAllValues();
+
+    Message value = messages.get(0);
     EntitySetupUsageCreateV2DTO createV2DTO = EntitySetupUsageCreateV2DTO.parseFrom(value.getData());
     Map<String, String> metadataMap = value.getMetadataMap();
 
@@ -266,6 +278,13 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
     assertThat(metadataMap.get("accountId")).isEqualTo("accountId");
     assertThat(metadataMap.get("referredEntityType")).isEqualTo("TEMPLATE");
     assertThat(metadataMap.get("action")).isEqualTo("flushCreate");
+
+    assertThat(
+        messages.subList(1, messages.size())
+            .stream()
+            .map(msg -> String.valueOf(msg.getMetadataMap().get(EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE)))
+            .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder("CONNECTORS", "FILES", "SECRETS");
   }
 
   @Test

@@ -229,3 +229,8 @@ managerServiceHttpClientConfig:
   baseUrl: http://localhost:3457/api/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
+
+batchJobRepository:
+  timescaleEnabled: false
+  metadataCleanupSchedule: "0 */30 * * * ?"
+  dataRetentionPeriodInDays: 7

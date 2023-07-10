@@ -34,8 +34,6 @@ import io.harness.cdng.elastigroup.ElastigroupSwapRouteStepInfo;
 import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStepInfo;
 import io.harness.cdng.elastigroup.rollback.ElastigroupRollbackStepInfo;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
-import io.harness.cdng.gitops.CreatePRStepInfo;
-import io.harness.cdng.gitops.CreatePRStepParams;
 import io.harness.cdng.gitops.MergePRStepInfo;
 import io.harness.cdng.gitops.MergePRStepParams;
 import io.harness.cdng.gitops.UpdateReleaseRepoStepInfo;
@@ -153,8 +151,6 @@ import com.esotericsoftware.kryo.Kryo;
 public class NGKryoRegistrar implements KryoRegistrar {
   @Override
   public void register(Kryo kryo) {
-    kryo.register(CreatePRStepInfo.class, 13007);
-    kryo.register(CreatePRStepParams.class, 13008);
     kryo.register(UpdateReleaseRepoStepInfo.class, 13009);
     kryo.register(UpdateReleaseRepoStepParams.class, 13010);
 

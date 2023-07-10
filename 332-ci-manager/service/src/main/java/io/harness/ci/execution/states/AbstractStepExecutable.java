@@ -430,6 +430,8 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
       case GIT_CLONE:
       case SSCA_ORCHESTRATION:
       case SSCA_ENFORCEMENT:
+      case IACM_TERRAFORM_PLUGIN:
+      case IACM_APPROVAL:
         return pluginCompatibleStepSerializer.serializeStepWithStepParameters((PluginCompatibleStep) ciStepInfo, port,
             taskId, logKey, stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId,
             stepName, os, ambiance);

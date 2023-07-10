@@ -1082,6 +1082,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
     try {
       helmKubernetesResources =
           getKubernetesResourcesFromHelmChart(commandRequest, namespace, workingDir, valueOverrides);
+      k8sTaskHelperBase.warnIfReleaseNameConflictsWithSecretOrConfigMap(
+          helmKubernetesResources, commandRequest.getReleaseName(), executionLogCallback);
       executionLogCallback.saveExecutionLog(ManifestHelper.toYamlForLogs(helmKubernetesResources));
 
     } catch (InterruptedException e) {

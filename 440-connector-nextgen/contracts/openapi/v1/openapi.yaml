@@ -520,17 +520,6 @@ components:
           Artifactory: '#/components/schemas/ArtifactoryConnectorSpec'
           ArtifactoryEncrypted: '#/components/schemas/ArtifactoryEncryptedConnectorSpec'
           ArtifactoryAnonymous: '#/components/schemas/ArtifactoryAnonymousConnectorSpec'
-          AwsCodeCommit: '#/components/schemas/AwsCodeCommitConnectorSpec'
-          AwsAccessKey: '#/components/schemas/AwsAccessKeyConnectorSpec'
-          AwsEncryptedAccessKey: '#/components/schemas/AwsEncryptedAccessKeyConnectorSpec'
-          AwsIAMRole: '#/components/schemas/AwsIAMRoleConnectorSpec'
-          AwsIRSA: '#/components/schemas/AwsIRSAConnectorSpec'
-          AwsKmsAccessKey: '#/components/schemas/AwsKmsAccessKeyConnectorSpec'
-          AwsKmsAssumeIAM: '#/components/schemas/AwsKmsAssumeIAMConnectorSpec'
-          AwsKmsAssumeSTS: '#/components/schemas/AwsKmsAssumeSTSConnectorSpec'
-          AwsSecretManagerAccessKey: '#/components/schemas/AwsSecretManagerAccessKeyConnectorSpec'
-          AwsSecretManagerAssumeIAM: '#/components/schemas/AwsSecretManagerAssumeIAMConnectorSpec'
-          AwsSecretManagerAssumeSTS: '#/components/schemas/AwsSecretManagerAssumeSTSConnectorSpec'
           AzureClientSecretKey: '#/components/schemas/AzureClientSecretKeyConnectorSpec'
           AzureClientCertificate: '#/components/schemas/AzureClientCertificateConnectorSpec'
           AzureInheritFromDelegateUserAssignedManagedIdentity: '#/components/schemas/AzureInheritFromDelegateUserAssignedManagedIdentityConnectorSpec'
@@ -547,17 +536,6 @@ components:
             - Artifactory
             - ArtifactoryEncrypted
             - ArtifactoryAnonymous
-            - AwsCodeCommit
-            - AwsAccessKey
-            - AwsEncryptedAccessKey
-            - AwsIAMRole
-            - AwsIRSA
-            - AwsKmsAccessKey
-            - AwsKmsAssumeIAM
-            - AwsKmsAssumeSTS
-            - AwsSecretManagerAccessKey
-            - AwsSecretManagerAssumeIAM
-            - AwsSecretManagerAssumeSTS
             - AzureClientSecretKey
             - AzureClientCertificate
             - AzureInheritFromDelegateUserAssignedManagedIdentity

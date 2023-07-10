@@ -10,9 +10,10 @@ package io.harness.ccm.graphql.query.instanceutilization;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.commons.beans.recommendation.AzureVmMetricType;
 import io.harness.ccm.commons.beans.recommendation.AzureVmUtilisationDTO;
 import io.harness.ccm.commons.beans.recommendation.EC2InstanceUtilizationData;
-import io.harness.ccm.graphql.core.recommendation.AzureCpuUtilisationService;
+import io.harness.ccm.graphql.core.recommendation.AzureMetricsUtilisationService;
 import io.harness.ccm.graphql.core.recommendation.EC2InstanceUtilizationService;
 import io.harness.ccm.graphql.utils.GraphQLUtils;
 import io.harness.ccm.graphql.utils.annotations.GraphQLApi;
@@ -37,7 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CE)
 public class UtilizationQuery {
   @Inject GraphQLUtils graphQLUtils;
-  @Inject AzureCpuUtilisationService azureCpuUtilisationService;
+  @Inject AzureMetricsUtilisationService azureMetricsUtilisationService;
   @Inject EC2InstanceUtilizationService ec2InstanceUtilizationService;
 
   /**
@@ -60,10 +61,12 @@ public class UtilizationQuery {
    * @param env
    * @return
    */
-  @GraphQLQuery(name = "azureVmUtilData", description = "Fetches the cpu utilization data for azure vm")
+  @GraphQLQuery(name = "azureVmUtilData", description = "Fetches the utilization data for azure vm")
   public List<AzureVmUtilisationDTO> azureVmUtilData(@GraphQLArgument(name = "azureVmId") String azureVmId,
-      @GraphQLArgument(name = "duration") int duration, @GraphQLEnvironment final ResolutionEnvironment env) {
+      @GraphQLArgument(name = "duration") int duration, @GraphQLEnvironment final ResolutionEnvironment env,
+      @GraphQLArgument(name = "metricType") AzureVmMetricType azureVmMetricType) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
-    return azureCpuUtilisationService.getAzureVmCpuUtilisationData(azureVmId, accountId, duration);
+    return azureMetricsUtilisationService.getAzureVmMetricUtilisationData(
+        azureVmId, accountId, duration, azureVmMetricType);
   }
 }

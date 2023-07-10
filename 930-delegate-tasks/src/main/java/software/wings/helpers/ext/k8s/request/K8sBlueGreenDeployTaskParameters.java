@@ -76,6 +76,7 @@ public class K8sBlueGreenDeployTaskParameters extends K8sTaskParameters implemen
     if (isNotEmpty(delegateSelectors)) {
       capabilities.add(SelectorCapability.builder().selectors(delegateSelectors).build());
     }
+    capabilities.addAll(getSecretManagerExecutionCapabilities(maskingEvaluator, k8sDelegateManifestConfig));
     return capabilities;
   }
 }

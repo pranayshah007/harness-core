@@ -22,6 +22,9 @@ import io.harness.ng.core.activityhistory.service.NGActivityService;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -48,10 +51,14 @@ public class NGActivityResourceTest extends CategoryTest {
     String projectIdentifier = "projectIdentifier";
     String identifier = "identifier";
     ngActivityResource.list(100, 100, accountIdentifier, orgIdentifier, projectIdentifier, identifier, 0L, 100L,
-        NGActivityStatus.SUCCESS, CONNECTORS, null);
+        NGActivityStatus.SUCCESS, CONNECTORS, null, null);
+
+    Set<NGActivityType> ngActivityTypes = new HashSet<>(List.of(NGActivityType.values()));
+    ngActivityTypes.remove(NGActivityType.CONNECTIVITY_CHECK);
+
     Mockito.verify(activityService, times(1))
         .list(eq(100), eq(100), eq(accountIdentifier), eq(orgIdentifier), eq(projectIdentifier), eq(identifier), eq(0L),
-            eq(100L), eq(NGActivityStatus.SUCCESS), eq(CONNECTORS), eq(null));
+            eq(100L), eq(NGActivityStatus.SUCCESS), eq(CONNECTORS), eq(null), eq(ngActivityTypes));
   }
 
   @Test

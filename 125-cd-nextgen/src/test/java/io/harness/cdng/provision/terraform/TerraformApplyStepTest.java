@@ -15,6 +15,7 @@ import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.times;
@@ -62,8 +63,10 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.TaskRequestsUtils;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Rule;
@@ -384,6 +387,7 @@ public class TerraformApplyStepTest extends CategoryTest {
     assertThat(taskParameters.getFileStoreConfigFiles().getConnectorDTO().getConnectorType().toString())
         .isEqualTo(ConnectorType.ARTIFACTORY.toString());
   }
+
   @Test(expected = NullPointerException.class) // configFile is Absent
   @Owner(developers = NAMAN_TALAYCHA)
   @Category(UnitTests.class)
@@ -646,8 +650,12 @@ public class TerraformApplyStepTest extends CategoryTest {
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(applyStepParameters).build();
     doReturn("test-account/test-org/test-project/Id").when(terraformStepHelper).generateFullIdentifier(any(), any());
     doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
-    TerraformInheritOutput inheritOutput =
-        TerraformInheritOutput.builder().backendConfig("back-content").workspace("w1").planName("plan").build();
+    TerraformInheritOutput inheritOutput = TerraformInheritOutput.builder()
+                                               .varFileConfigs(new ArrayList<>())
+                                               .backendConfig("back-content")
+                                               .workspace("w1")
+                                               .planName("plan")
+                                               .build();
     doReturn(inheritOutput).when(terraformStepHelper).getSavedInheritOutput(any(), any(), any());
     List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
     UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
@@ -659,6 +667,8 @@ public class TerraformApplyStepTest extends CategoryTest {
         ambiance, stepElementParameters, () -> terraformTaskNGResponse);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
+    verify(terraformStepHelper).getRevisionsMap(anyList(), any());
+    verify(terraformStepHelper).addTerraformRevisionOutcomeIfRequired(any(), any());
   }
 
   @Test
@@ -669,8 +679,10 @@ public class TerraformApplyStepTest extends CategoryTest {
     TerraformApplyStepParameters applyStepParameters =
         TerraformApplyStepParameters.infoBuilder()
             .provisionerIdentifier(ParameterField.createValueField("Id"))
-            .configuration(
-                TerraformStepConfigurationParameters.builder().type(TerraformStepConfigurationType.INLINE).build())
+            .configuration(TerraformStepConfigurationParameters.builder()
+                               .type(TerraformStepConfigurationType.INLINE)
+                               .spec(TerraformExecutionDataParameters.builder().varFiles(new LinkedHashMap<>()).build())
+                               .build())
             .build();
     GitConfigDTO gitConfigDTO = GitConfigDTO.builder()
                                     .gitAuthType(GitAuthType.HTTP)
@@ -702,6 +714,8 @@ public class TerraformApplyStepTest extends CategoryTest {
         ambiance, stepElementParameters, () -> terraformTaskNGResponse);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
+    verify(terraformStepHelper).getRevisionsMap(any(LinkedHashMap.class), any());
+    verify(terraformStepHelper).addTerraformRevisionOutcomeIfRequired(any(), any());
   }
 
   @Test
@@ -712,8 +726,10 @@ public class TerraformApplyStepTest extends CategoryTest {
     TerraformApplyStepParameters applyStepParameters =
         TerraformApplyStepParameters.infoBuilder()
             .provisionerIdentifier(ParameterField.createValueField("Id"))
-            .configuration(
-                TerraformStepConfigurationParameters.builder().type(TerraformStepConfigurationType.INLINE).build())
+            .configuration(TerraformStepConfigurationParameters.builder()
+                               .type(TerraformStepConfigurationType.INLINE)
+                               .spec(TerraformExecutionDataParameters.builder().varFiles(new LinkedHashMap<>()).build())
+                               .build())
             .build();
     ArtifactoryStoreDelegateConfig artifactoryStoreDelegateConfig =
         TerraformStepDataGenerator.createStoreDelegateConfig();
@@ -736,6 +752,7 @@ public class TerraformApplyStepTest extends CategoryTest {
         ambiance, stepElementParameters, () -> terraformTaskNGResponse);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
+    verify(terraformStepHelper).addTerraformRevisionOutcomeIfRequired(any(), any());
   }
 
   @Test
@@ -744,6 +761,7 @@ public class TerraformApplyStepTest extends CategoryTest {
   public void testGetStepParametersClass() {
     assertThat(terraformApplyStep.getStepParametersClass()).isEqualTo(StepElementParameters.class);
   }
+
   @Test
   @Owner(developers = NAMAN_TALAYCHA)
   @Category(UnitTests.class)
@@ -924,6 +942,7 @@ public class TerraformApplyStepTest extends CategoryTest {
     assertThat(terraformApplyOutcome.size()).isEqualTo(2);
     assertThat(terraformApplyOutcome.get("test-output-name1")).isEqualTo("test-output-value1");
     assertThat(terraformApplyOutcome.get("test-output-name2")).isEqualTo("test-output-value2");
+    verify(terraformStepHelper).addTerraformRevisionOutcomeIfRequired(any(), any());
   }
 
   @Test
@@ -1003,6 +1022,13 @@ public class TerraformApplyStepTest extends CategoryTest {
             .build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(applyStepParameters).build();
     doReturn("test-account/test-org/test-project/Id").when(terraformStepHelper).generateFullIdentifier(any(), any());
+    TerraformInheritOutput inheritOutput = TerraformInheritOutput.builder()
+                                               .varFileConfigs(new ArrayList<>())
+                                               .backendConfig("back-content")
+                                               .workspace("w1")
+                                               .planName("plan")
+                                               .build();
+    doReturn(inheritOutput).when(terraformStepHelper).getSavedInheritOutput(any(), any(), any());
 
     String tfJsonOutput =
         "{   \"test-output-name1\": {     \"sensitive\": false,     \"type\": \"string\",     \"value\": "
@@ -1054,6 +1080,13 @@ public class TerraformApplyStepTest extends CategoryTest {
             .build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(applyStepParameters).build();
     doReturn("test-account/test-org/test-project/Id").when(terraformStepHelper).generateFullIdentifier(any(), any());
+    TerraformInheritOutput inheritOutput = TerraformInheritOutput.builder()
+                                               .varFileConfigs(new ArrayList<>())
+                                               .backendConfig("back-content")
+                                               .workspace("w1")
+                                               .planName("plan")
+                                               .build();
+    doReturn(inheritOutput).when(terraformStepHelper).getSavedInheritOutput(any(), any(), any());
 
     String tfJsonOutput =
         "{   \"test-output-name1\": {     \"sensitive\": false,     \"type\": \"string\",     \"value\": "

@@ -9,8 +9,9 @@ package io.harness.cvng.cdng.services.impl;
 
 import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.PATH_CONNECTOR;
 
+import io.harness.cvng.cdng.beans.DefaultAndConfiguredMonitoredServiceNode;
 import io.harness.cvng.cdng.beans.MonitoredServiceNode;
-import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
+import io.harness.cvng.cdng.beans.MonitoredServiceSpecType;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
@@ -51,6 +52,12 @@ public class CVNGStepUtils {
   }
 
   public static MonitoredServiceSpecType getMonitoredServiceSpecType(MonitoredServiceNode monitoredServiceNode) {
+    return Objects.nonNull(monitoredServiceNode) ? MonitoredServiceSpecType.getByName(monitoredServiceNode.getType())
+                                                 : MonitoredServiceSpecType.DEFAULT;
+  }
+
+  public static MonitoredServiceSpecType getMonitoredServiceSpecType(
+      DefaultAndConfiguredMonitoredServiceNode monitoredServiceNode) {
     return Objects.nonNull(monitoredServiceNode) ? MonitoredServiceSpecType.getByName(monitoredServiceNode.getType())
                                                  : MonitoredServiceSpecType.DEFAULT;
   }

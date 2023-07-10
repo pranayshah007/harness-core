@@ -16,6 +16,7 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfigType;
 import io.harness.delegate.task.shell.CommandTaskParameters;
+import io.harness.delegate.task.ssh.artifact.AzureArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactType;
 import io.harness.delegate.task.ssh.config.FileDelegateConfig;
@@ -32,6 +33,8 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @OwnedBy(HarnessTeam.CDP)
 public class CommandTaskDataFactory {
+  private static final String AZURE_UNIVERSAL_PACKAGE = "upack";
+
   public TaskData create(CommandTaskParameters taskParameters, ParameterField<String> timeout) {
     TaskType taskType = getTaskType(taskParameters);
     return TaskData.builder()
@@ -50,6 +53,9 @@ public class CommandTaskDataFactory {
       return TaskType.COMMAND_TASK_NG_WITH_GIT_CONFIGS;
     } else if (artifactDelegateConfig != null
         && SshWinRmArtifactType.AZURE.equals(artifactDelegateConfig.getArtifactType())) {
+      if (AZURE_UNIVERSAL_PACKAGE.equals(((AzureArtifactDelegateConfig) artifactDelegateConfig).getPackageType())) {
+        return TaskType.COMMAND_TASK_NG_WITH_AZURE_UNIVERSAL_PACKAGE_ARTIFACT;
+      }
       return TaskType.COMMAND_TASK_NG_WITH_AZURE_ARTIFACT;
     } else if (artifactDelegateConfig != null
         && SshWinRmArtifactType.GITHUB_PACKAGE.equals(artifactDelegateConfig.getArtifactType())) {

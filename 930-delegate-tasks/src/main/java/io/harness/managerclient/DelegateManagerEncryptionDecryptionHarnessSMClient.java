@@ -10,6 +10,8 @@ package io.harness.managerclient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptedRecord;
+import io.harness.beans.DelegateFileEncryptedDataPackage;
+import io.harness.beans.DelegateFileEncryptedRecordDataPackage;
 import io.harness.beans.EncryptData;
 import io.harness.beans.EncryptedSMData;
 import io.harness.rest.RestResponse;
@@ -33,10 +35,20 @@ public interface DelegateManagerEncryptionDecryptionHarnessSMClient {
   Call<RestResponse<DecryptedRecord>> decryptHarnessSMSecret(
       @Query("accountId") String accountId, @Body EncryptedSMData encryptedSMData);
 
+  @POST("encryption/encrypt-harness-sm-secret-upload")
+  @Consumes({"application/x-protobuf"})
+  Call<RestResponse<DelegateFileEncryptedRecordDataPackage>> encryptHarnessSMSecretWithFileUpload(
+      @Query("accountId") String accountId, @Body DelegateFileEncryptedDataPackage delegateFileEncryptedDataPackage);
+
   @POST("encryption-ng/encrypt-harness-sm-secret")
   @Consumes({"application/x-protobuf"})
   Call<RestResponse<EncryptedRecordData>> encryptHarnessSMSecretNG(
       @Query("accountId") String accountId, @Body EncryptData encryptData);
+
+  @POST("encryption-ng/encrypt-harness-sm-secret-upload")
+  @Consumes({"application/x-protobuf"})
+  Call<RestResponse<DelegateFileEncryptedRecordDataPackage>> encryptHarnessSMSecretNGWithFileUpload(
+      @Query("accountId") String accountId, @Body DelegateFileEncryptedDataPackage delegateFileEncryptedDataPackage);
 
   @POST("encryption-ng/decrypt-harness-sm-secret")
   @Consumes({"application/x-protobuf"})

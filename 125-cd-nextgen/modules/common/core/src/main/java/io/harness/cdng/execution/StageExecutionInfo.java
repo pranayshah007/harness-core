@@ -55,6 +55,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @ChangeDataCapture(
     table = "execution_tags_info_ng", dataStore = "pms-harness", fields = {}, handler = "StageTagsInfoNGCD")
 public class StageExecutionInfo implements PersistentEntity, UuidAware {
+  // This class is used for saving only CD/GitOps Stage data
   @org.springframework.data.annotation.Id @Id String uuid;
   @CreatedDate private long createdAt;
   @LastModifiedDate private long lastModifiedAt;

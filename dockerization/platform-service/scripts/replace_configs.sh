@@ -375,4 +375,6 @@ replace_key_value secretsConfiguration.secretResolutionEnabled "$RESOLVE_SECRETS
 replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
 
 replace_key_value resourceGroupServiceConfig.resourceClients.ce-nextgen.baseUrl "$CE_NEXTGEN_CLIENT_BASEURL"
+replace_key_value resourceGroupServiceConfig.resourceClients.code.baseUrl "$CODE_SERVICE_CLIENT_BASEURL"
+replace_key_value resourceGroupServiceConfig.resourceClients.code.secret "$CODE_SERVICE_SECRET"
 replace_key_value resourceGroupServiceConfig.resourceClients.ce-nextgen.secret "$CE_NEXTGEN_SECRET"

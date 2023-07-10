@@ -19,8 +19,8 @@ go_library(
         "//product/ci/engine/consts",
         "//product/ci/engine/grpc/client",
         "//product/ci/engine/proto",
-        "//product/ci/ti-service/client",
-        "//product/ci/ti-service/types",
+        "@com_github_harness_ti_client//client",
+        "@com_github_harness_ti_client//types",
         "@org_uber_go_zap//:zap",
     ],
 )

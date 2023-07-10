@@ -19,6 +19,7 @@ import io.harness.migrations.all.AddAccountIdToDeploymentEntities;
 import io.harness.migrations.all.AddAccountIdToEntityVersion;
 import io.harness.migrations.all.AddAccountIdToExecutionInterruptCollection;
 import io.harness.migrations.all.AddAccountIdToInfraDefinition;
+import io.harness.migrations.all.AddAccountIdToLearningEngineExperimentalAnalysisTask;
 import io.harness.migrations.all.AddAccountIdToLogAnalysisRecordsMigration;
 import io.harness.migrations.all.AddAccountIdToLogDataRecordsMigration;
 import io.harness.migrations.all.AddAccountIdToNewRelicMetricAnalysisRecords;
@@ -135,6 +136,7 @@ import io.harness.migrations.all.RemoveDeprecatedFieldsFromHarnessUserGroup;
 import io.harness.migrations.all.RemoveDuplicateUserGroupNameMigration;
 import io.harness.migrations.all.RemoveSupportEmailFromSalesContacts;
 import io.harness.migrations.all.RemoveUsageRestrictionForApplicationDefaultsMigration;
+import io.harness.migrations.all.SamlSSOSettingsConfiguredFromNGAuthenticationEnabledMigration;
 import io.harness.migrations.all.ScheduleSegmentPublishJob;
 import io.harness.migrations.all.SendInviteUrlForAllUserInvites;
 import io.harness.migrations.all.SetAccountIdProvisioners;
@@ -142,7 +144,6 @@ import io.harness.migrations.all.SetDefaultTimeOutAndActionForManualIntervention
 import io.harness.migrations.all.SetDummyTechStackForOldAccounts;
 import io.harness.migrations.all.SetEmailToIndividualMemberFlag;
 import io.harness.migrations.all.SetLastLoginTimeToAllUsers;
-import io.harness.migrations.all.SettingAttributesServiceAccountTokenMigration;
 import io.harness.migrations.all.TemplateLibraryYamlMigration;
 import io.harness.migrations.all.TerraformIsTemplatizedMigration;
 import io.harness.migrations.all.TimeSeriesMLScoresTTLMigration;
@@ -410,7 +411,7 @@ public class MigrationBackgroundList {
         .add(Pair.of(231, TimeSeriesRiskSummaryTTLMigration.class))
         .add(Pair.of(232, TimeSeriesMLScoresTTLMigration.class))
         .add(Pair.of(233, BaseMigration.class))
-        .add(Pair.of(234, SettingAttributesServiceAccountTokenMigration.class))
+        .add(Pair.of(234, NoOpMigration.class))
         .add(Pair.of(235, ExecuteWorkflowAbortActionMigration.class))
         .add(Pair.of(236, CorrectingQuartzTriggerFrequency.class))
         .add(Pair.of(237, DisableArtifactCollectionForInactiveAccount.class))
@@ -428,6 +429,8 @@ public class MigrationBackgroundList {
         .add(Pair.of(249, EncryptDelegateTokenMigration.class))
         .add(Pair.of(250, NoOpMigration.class))
         .add(Pair.of(251, EncryptDelegateTokenMigration.class))
+        .add(Pair.of(252, AddAccountIdToLearningEngineExperimentalAnalysisTask.class))
+        .add(Pair.of(253, SamlSSOSettingsConfiguredFromNGAuthenticationEnabledMigration.class))
         .build();
   }
 }

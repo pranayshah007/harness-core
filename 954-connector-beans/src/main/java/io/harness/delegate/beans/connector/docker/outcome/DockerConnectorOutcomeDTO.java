@@ -9,6 +9,7 @@ package io.harness.delegate.beans.connector.docker.outcome;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
@@ -37,6 +38,7 @@ import org.hibernate.validator.constraints.URL;
 @EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@RecasterAlias("io.harness.delegate.beans.connector.docker.outcome.DockerConnectorOutcomeDTO")
 public class DockerConnectorOutcomeDTO
     extends ConnectorConfigOutcomeDTO implements DelegateSelectable, ManagerExecutable {
   @URL @NotNull @NotBlank String dockerRegistryUrl;

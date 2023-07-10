@@ -62,4 +62,5 @@ public class K8sDelegateManifestConfig implements NestedAnnotationResolver {
 
   private boolean shouldSaveManifest;
   private boolean skipApplyHelmDefaultValues;
+  private boolean secretManagerCapabilitiesEnabled;
 }

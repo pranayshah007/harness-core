@@ -15,6 +15,7 @@ import static io.harness.ngtriggers.beans.source.WebhookTriggerType.BITBUCKET;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.CUSTOM;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITHUB;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITLAB;
+import static io.harness.ngtriggers.beans.source.WebhookTriggerType.HARNESS;
 import static io.harness.ngtriggers.conditionchecker.ConditionOperator.CONTAINS;
 import static io.harness.ngtriggers.conditionchecker.ConditionOperator.ENDS_WITH;
 import static io.harness.ngtriggers.conditionchecker.ConditionOperator.EQUALS;
@@ -22,6 +23,7 @@ import static io.harness.ngtriggers.conditionchecker.ConditionOperator.IN;
 import static io.harness.ngtriggers.conditionchecker.ConditionOperator.NOT_EQUALS;
 import static io.harness.ngtriggers.conditionchecker.ConditionOperator.NOT_IN;
 import static io.harness.ngtriggers.conditionchecker.ConditionOperator.STARTS_WITH;
+import static io.harness.rule.OwnerRule.ABHINAV;
 import static io.harness.rule.OwnerRule.ADWAIT;
 
 import static java.util.Arrays.asList;
@@ -54,6 +56,8 @@ import io.harness.ngtriggers.beans.source.webhook.v2.github.action.GithubPRActio
 import io.harness.ngtriggers.beans.source.webhook.v2.github.event.GithubTriggerEvent;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.action.GitlabPRAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.event.GitlabTriggerEvent;
+import io.harness.ngtriggers.beans.source.webhook.v2.harness.HarnessSpec;
+import io.harness.ngtriggers.beans.source.webhook.v2.harness.event.HarnessTriggerEvent;
 import io.harness.ngtriggers.beans.target.NGTriggerTarget;
 import io.harness.ngtriggers.beans.target.TargetType;
 import io.harness.ngtriggers.beans.target.pipeline.PipelineTargetSpec;
@@ -249,6 +253,13 @@ public class NgTriggerConfigAdaptorTest extends CategoryTest {
     assertPayloadProperties(CUSTOM, webhookTriggerConfigV2.getSpec());
   }
 
+  @Test
+  @Owner(developers = ABHINAV)
+  @Category(UnitTests.class)
+  public void testConvertHarnessRTriggerFromV0ToV2() throws Exception {
+    initiateTest("ng-trigger-harnessscm-v0.yaml", HARNESS, HarnessTriggerEvent.PUSH, emptyList());
+  }
+
   private void initiateTest(String fileName, WebhookTriggerType webhookTriggerType, GitEvent gitEvent,
       List<? extends GitAction> gitActions) throws Exception {
     // Trigger mapping with older yaml.. (Build NgTriggerConfigV2 using older yaml flow)
@@ -302,7 +313,9 @@ public class NgTriggerConfigAdaptorTest extends CategoryTest {
   private void assertGitProperties(
       GitEvent gitEvent, List<? extends GitAction> gitActions, WebhookTriggerSpecV2 webhookTriggerConfigV2Spec) {
     assertThat(webhookTriggerConfigV2Spec.fetchGitAware().fetchRepoName()).isEqualTo(REPO_NAME);
-    assertThat(webhookTriggerConfigV2Spec.fetchGitAware().fetchConnectorRef()).isEqualTo(CON_REF);
+    if (!(webhookTriggerConfigV2Spec instanceof HarnessSpec)) {
+      assertThat(webhookTriggerConfigV2Spec.fetchGitAware().fetchConnectorRef()).isEqualTo(CON_REF);
+    }
     assertThat(webhookTriggerConfigV2Spec.fetchGitAware().fetchAutoAbortPreviousExecutions()).isFalse();
     assertThat(webhookTriggerConfigV2Spec.fetchGitAware().fetchEvent()).isEqualTo(gitEvent);
     assertThat(webhookTriggerConfigV2Spec.fetchGitAware().fetchActions()).containsAll(gitActions);

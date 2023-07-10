@@ -211,6 +211,7 @@ message GitMetaData {
   string blobId = 5;
   string fileUrl = 6;
   string repoUrl = 7;
+  bool isGitDefaultBranch = 8;
 }
 
 message ErrorDetails {

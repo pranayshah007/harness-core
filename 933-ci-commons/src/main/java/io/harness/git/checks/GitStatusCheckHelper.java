@@ -274,7 +274,8 @@ public class GitStatusCheckHelper {
                    -> azureRepoService.sendStatus(
                        AzureRepoConfig.builder().azureRepoUrl(getAzureRepoApiURL(gitConfigDTO.getUrl())).build(),
                        gitStatusCheckParams.getUserName(), token, gitStatusCheckParams.getSha(),
-                       gitStatusCheckParams.getOwner(), project, repo, bodyObjectMap));
+                       gitStatusCheckParams.getPrNumber(), gitStatusCheckParams.getOwner(), project, repo,
+                       bodyObjectMap));
     } else {
       log.error("Not sending status because token is empty sha {}", gitStatusCheckParams.getSha());
       return false;

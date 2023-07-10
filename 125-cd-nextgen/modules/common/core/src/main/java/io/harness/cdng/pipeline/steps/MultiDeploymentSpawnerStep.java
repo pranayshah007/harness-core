@@ -18,6 +18,7 @@ import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
@@ -65,7 +66,6 @@ import io.harness.rbac.CDNGRbacPermissions;
 import io.harness.steps.executable.ChildrenExecutableWithRollbackAndRbac;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.IdentifierRefHelper;
-import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -80,7 +80,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAndRbac<MultiDeploymentStepParameters> {
-  @Inject private NGFeatureFlagHelperService featureFlagHelperService;
   @Inject private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
   @Inject private NGServiceEntityHelper serviceEntityHelper;
   @Inject private AccessControlClient accessControlClient;
@@ -97,7 +96,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
   @Override
   public StepResponse handleChildrenResponseInternal(
       Ambiance ambiance, MultiDeploymentStepParameters stepParameters, Map<String, ResponseData> responseDataMap) {
-    log.info("Completed  execution for MultiDeploymentSpawner Step [{}]", stepParameters);
+    log.info("Completed execution for MultiDeploymentSpawner Step [{}]", stepParameters);
     // Mark the status as Skipped if all children are skipped.
     if (StatusUtils.checkIfAllChildrenSkipped(responseDataMap.values()
                                                   .stream()
@@ -142,9 +141,8 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
           return;
         }
 
-        io.harness.accesscontrol.principals.PrincipalType principalType =
-            PrincipalTypeProtoToPrincipalTypeMapper.convertToAccessControlPrincipalType(
-                executionPrincipalInfo.getPrincipalType());
+        PrincipalType principalType = PrincipalTypeProtoToPrincipalTypeMapper.convertToAccessControlPrincipalType(
+            executionPrincipalInfo.getPrincipalType());
         accessControlClient.checkForAccessOrThrow(Principal.of(principalType, principal),
             ResourceScope.of(envGroupIdentifierRef.getAccountIdentifier(), envGroupIdentifierRef.getOrgIdentifier(),
                 envGroupIdentifierRef.getProjectIdentifier()),
@@ -235,7 +233,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
 
     int currentIteration = 0;
     int totalIterations = servicesMap.size() * environmentsMapList.size();
-    int maxConcurrency = 0;
+    int maxConcurrency;
     if (isServiceParallel) {
       if (!isEnvironmentParallel) {
         maxConcurrency = servicesMap.size();
@@ -395,7 +393,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
     }
     List<ServiceYamlV2> services = servicesYaml.getValues().getValue();
     if (services.isEmpty()) {
-      throw new InvalidYamlException("No value of services provided. Please provide atleast one value");
+      throw new InvalidYamlException("No value of services provided. Please provide at least one value");
     }
     Map<String, Map<String, String>> serviceToMatrixMetadataMap = new LinkedHashMap<>();
     for (ServiceYamlV2 service : services) {
@@ -494,8 +492,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
 
   private ChildrenExecutableResponse.Child getChildForMultiServiceInfra(String childNodeId, int currentIteration,
       int totalIterations, Map<String, String> serviceMap, EnvironmentMapResponse environmentMapResponse) {
-    Map<String, String> matrixMetadataMap = new HashMap<>();
-    matrixMetadataMap.putAll(serviceMap);
+    Map<String, String> matrixMetadataMap = new HashMap<>(serviceMap);
     Map<String, String> environmentMap = environmentMapResponse.getEnvironmentsMapList();
     String serviceRef = MultiDeploymentSpawnerUtils.getServiceRef(serviceMap);
     if (environmentMapResponse.getServiceOverrideInputsYamlMap() != null
@@ -523,10 +520,11 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
       return new ArrayList<>();
     }
     if (ParameterField.isNull(environmentsYaml.getValues())) {
-      throw new InvalidYamlException("Expected a value of serviceRefs to be provided but found null");
+      throw new InvalidYamlException("Expected a value of environments to be provided but found null");
     }
     if (environmentsYaml.getValues().isExpression()) {
-      throw new InvalidYamlException("Expression could not be resolved for environments yaml");
+      throw new InvalidYamlException(String.format("Expression (%s) could not be resolved for environments yaml",
+          environmentsYaml.getValues().getExpressionValue()));
     }
     List<EnvironmentYamlV2> environments = environmentsYaml.getValues().getValue();
     return getEnvironmentsMap(environments, null);
@@ -534,7 +532,9 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
 
   private List<EnvironmentMapResponse> getEnvironmentsGroupMap(EnvironmentGroupYaml environmentGroupYaml) {
     if (environmentGroupYaml.getEnvironments().isExpression()) {
-      throw new InvalidYamlException("Expected a value of environmentRefs to be provided but found expression");
+      throw new InvalidYamlException(
+          String.format("Expected a value of environmentRefs to be provided but found expression (%s)",
+              environmentGroupYaml.getEnvironments().getExpressionValue()));
     }
     List<EnvironmentYamlV2> environments = environmentGroupYaml.getEnvironments().getValue();
     if (EmptyPredicate.isEmpty(environments)) {
@@ -546,7 +546,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
 
   private List<EnvironmentMapResponse> getEnvironmentsMap(List<EnvironmentYamlV2> environments, Scope envGroupScope) {
     if (EmptyPredicate.isEmpty(environments)) {
-      throw new InvalidYamlException("No value of environment provided. Please provide atleast one value");
+      throw new InvalidYamlException("No value of environment provided. Please provide at least one value");
     }
     List<EnvironmentMapResponse> environmentMapResponses = new ArrayList<>();
     for (EnvironmentYamlV2 environmentYamlV2 : environments) {
@@ -554,8 +554,8 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
         environmentMapResponses.add(getEnvironmentsMapResponse(
             environmentYamlV2, environmentYamlV2.getInfrastructureDefinition().getValue(), envGroupScope));
       } else {
-        if (environmentYamlV2.getInfrastructureDefinitions().getValue() == null) {
-          throw new InvalidYamlException("No infrastructure definition provided. Please provide atleast one value");
+        if (EmptyPredicate.isEmpty(environmentYamlV2.getInfrastructureDefinitions().getValue())) {
+          throw new InvalidYamlException("No infrastructure definition provided. Please provide at least one value");
         }
         for (InfraStructureDefinitionYaml infra : environmentYamlV2.getInfrastructureDefinitions().getValue()) {
           environmentMapResponses.add(getEnvironmentsMapResponse(environmentYamlV2, infra, envGroupScope));
@@ -593,7 +593,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
     }
     List<ServiceYamlV2> services = servicesYaml.getValues().getValue();
     if (services.isEmpty()) {
-      throw new InvalidYamlException("No value of services provided. Please provide atleast one value");
+      throw new InvalidYamlException("No value of services provided. Please provide at least one value");
     }
     List<Map<String, String>> environmentsMap = new ArrayList<>();
     for (ServiceYamlV2 service : services) {

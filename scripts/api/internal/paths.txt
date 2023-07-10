@@ -7,3 +7,4 @@ connectors: ../../../440-connector-nextgen/contracts/openapi/v1/openapi.yaml
 resource-groups: ../../../platform-service/modules/resource-group-service/contracts/openapi/v1/openapi.yaml
 audit-service: ../../../platform-service/modules/audit-service/contracts/openapi/v1/openapi.yaml
 idp-service: ../../../idp-service/contracts/openapi/v1/openapi.yaml
+ssca-manager: ../../../ssca-manager/contracts/openapi/v1/openapi.yaml

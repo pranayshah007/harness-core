@@ -168,6 +168,10 @@ resourceGroupServiceConfig:
     ce-nextgen:
       baseUrl: http://localhost:7340/
       secret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+    code:
+      baseUrl: http://localhost:3000/
+      secret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+
   redis:
     sentinel: false
     masterName: "test"

@@ -7,6 +7,8 @@
 
 package io.harness.spotinst.model;
 
+import io.harness.annotation.RecasterAlias;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Builder;
 import lombok.Data;
@@ -14,6 +16,7 @@ import lombok.Data;
 @Data
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
+@RecasterAlias("io.harness.spotinst.model.ElastiGroup")
 public class ElastiGroup implements Cloneable {
   private String id;
   private String name;

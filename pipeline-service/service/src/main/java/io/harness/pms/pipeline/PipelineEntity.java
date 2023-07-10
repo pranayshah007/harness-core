@@ -18,6 +18,9 @@ import io.harness.data.validator.EntityName;
 import io.harness.data.validator.Trimmed;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.persistance.GitSyncableEntity;
+import io.harness.mongo.collation.CollationLocale;
+import io.harness.mongo.collation.CollationStrength;
+import io.harness.mongo.index.Collation;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
@@ -113,7 +116,7 @@ public class PipelineEntity implements GitAware, GitSyncableEntity, PersistentEn
                  .ascRangeField(PipelineEntityKeys.identifier)
                  .build())
         .add(SortCompoundMongoIndex.builder()
-                 .name("accountId_orgId_projectId_name_repo_identifier_idx")
+                 .name("accountId_orgId_projectId_name_repo_identifier_WithCollationIdx")
                  .field(PipelineEntityKeys.accountId)
                  .field(PipelineEntityKeys.orgIdentifier)
                  .field(PipelineEntityKeys.projectIdentifier)
@@ -121,6 +124,8 @@ public class PipelineEntity implements GitAware, GitSyncableEntity, PersistentEn
                  // Range filters
                  .ascRangeField(PipelineEntityKeys.repo)
                  .ascRangeField(PipelineEntityKeys.identifier)
+                 .collation(
+                     Collation.builder().locale(CollationLocale.ENGLISH).strength(CollationStrength.SECONDARY).build())
                  .build())
         .add(SortCompoundMongoIndex.builder()
                  .name("accountId_orgId_projectId_lastExecutedAt_repo_identifier_idx")

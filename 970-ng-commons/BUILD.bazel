@@ -63,6 +63,7 @@ java_library(
         "//970-ng-commons/src/main/java/io/harness/ng/core/dto:module",
         "//970-ng-commons/src/main/java/io/harness/ng/core/entitydetail:module",
         "//970-ng-commons/src/main/java/io/harness/ng/core/entitysetupusage/dto:module",
+        "//970-ng-commons/src/main/java/io/harness/ng/core/entityusageactivity:module",
         "//970-ng-commons/src/main/java/io/harness/ng/core/event:module",
         "//970-ng-commons/src/main/java/io/harness/ng/core/filter:module",
         "//970-ng-commons/src/main/java/io/harness/ng/core/logging:module",

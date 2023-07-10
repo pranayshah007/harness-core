@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.SRIDHAR;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -49,6 +50,7 @@ import io.harness.rule.Owner;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Objects;
 import org.junit.Before;
 import org.junit.Test;
@@ -195,7 +197,24 @@ public class GeneratorFactoryTest extends CategoryTest {
         GithubPackagesPollingItemGenerator.class);
   }
 
-  private void assertType(String pipelinePath, String triggerYmlPath, Class expectedGeneratprClass) throws Exception {
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testMultiRegionDockerRegistryPollingItemGeneration_pipelineContainsFixedValuesExceptTag()
+      throws Exception {
+    String triggerYaml =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource("ng-trigger-multi-region-artifact.yaml")),
+            StandardCharsets.UTF_8);
+    TriggerDetails triggerDetails = ngTriggerElementMapper.toTriggerDetails("acc", "org", "proj", triggerYaml, true);
+    List<BuildTriggerOpsData> buildTriggerOpsDataList =
+        buildTriggerHelper.generateBuildTriggerOpsDataForMultiArtifact(triggerDetails);
+    for (BuildTriggerOpsData buildTriggerOpsData : buildTriggerOpsDataList) {
+      PollingItemGenerator pollingItemGenerator = generatorFactory.retrievePollingItemGenerator(buildTriggerOpsData);
+      assertThat(pollingItemGenerator.getClass().isAssignableFrom(DockerRegistryPollingItemGenerator.class)).isTrue();
+    }
+  }
+
+  private void assertType(String pipelinePath, String triggerYmlPath, Class expectedGeneratorClass) throws Exception {
     String ecr_pipeline_artifact_snippet_runtime_all =
         Resources.toString(Objects.requireNonNull(classLoader.getResource(pipelinePath)), StandardCharsets.UTF_8);
     String ngTriggerYaml_artifact_ecr =
@@ -205,6 +224,6 @@ public class GeneratorFactoryTest extends CategoryTest {
     BuildTriggerOpsData buildTriggerOpsData = buildTriggerHelper.generateBuildTriggerOpsDataForArtifact(
         triggerDetails, ecr_pipeline_artifact_snippet_runtime_all);
     PollingItemGenerator pollingItemGenerator = generatorFactory.retrievePollingItemGenerator(buildTriggerOpsData);
-    assertThat(pollingItemGenerator.getClass().isAssignableFrom(expectedGeneratprClass)).isTrue();
+    assertThat(pollingItemGenerator.getClass().isAssignableFrom(expectedGeneratorClass)).isTrue();
   }
 }

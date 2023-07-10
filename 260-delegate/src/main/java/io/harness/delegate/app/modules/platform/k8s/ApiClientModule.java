@@ -7,6 +7,8 @@
 
 package io.harness.delegate.app.modules.platform.k8s;
 
+import io.harness.delegate.service.core.apiclient.CoreV1ApiWithRetry;
+
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
@@ -19,8 +21,8 @@ import java.io.IOException;
 public class ApiClientModule extends AbstractModule {
   @Provides
   @Singleton
-  public CoreV1Api coreApi(final ApiClient apiClient) {
-    return new CoreV1Api(apiClient);
+  public CoreV1Api replacingCoreV1Api(final ApiClient apiClient) {
+    return new CoreV1ApiWithRetry(apiClient);
   }
 
   @Override
