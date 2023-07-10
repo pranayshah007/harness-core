@@ -1343,7 +1343,7 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
                    .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
                    .queryParam("pageNumber", 0)
                    .queryParam("pageSize", 10)
-                   .queryParam("types", "DEPLOYMENT_IMPACT_REPORT")
+                   .queryParam("types", "DeploymentImpactReport")
                    .request(MediaType.APPLICATION_JSON_TYPE)
                    .get();
     assertThat(response.getStatus()).isEqualTo(200);
