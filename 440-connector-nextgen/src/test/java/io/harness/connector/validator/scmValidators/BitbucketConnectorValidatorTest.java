@@ -10,6 +10,7 @@ package io.harness.connector.validator.scmValidators;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -89,21 +90,19 @@ public class BitbucketConnectorValidatorTest extends CategoryTest {
     on(gitValidationHandler).set("gitCommandTaskHandler", gitCommandTaskHandler);
     on(gitValidationHandler).set("gitDecryptionHelper", gitDecryptionHelper);
     when(gitValidationHandler.validate(any(), any())).thenCallRealMethod();
-    when(connectorTypeToConnectorValidationHandlerMap.get(ArgumentMatchers.eq("Bitbucket")))
-        .thenReturn(gitValidationHandler);
+    when(connectorTypeToConnectorValidationHandlerMap.get(eq("Bitbucket"))).thenReturn(gitValidationHandler);
 
     ConnectorValidationResult connectorValidationResult =
         ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build();
 
-    when(gitCommandTaskHandler.validateGitCredentials(any(), any(), any(), any(), false))
+    when(gitCommandTaskHandler.validateGitCredentials(any(), any(), any(), any(), eq(false)))
         .thenReturn(connectorValidationResult);
     ScmConnectorValidationParamsProvider scmConnectorValidationParamsProvider =
         new ScmConnectorValidationParamsProvider();
 
     on(scmConnectorValidationParamsProvider)
         .set("gitConfigAuthenticationInfoHelper", gitConfigAuthenticationInfoHelper);
-    when(connectorValidationParamsProviderMap.get(ArgumentMatchers.eq("Bitbucket")))
-        .thenReturn(scmConnectorValidationParamsProvider);
+    when(connectorValidationParamsProviderMap.get(eq("Bitbucket"))).thenReturn(scmConnectorValidationParamsProvider);
 
     ConnectorValidationResult validationResult = bitbucketConnectorValidator.validate(
         bitbucketConnectorDTO, "accountIdentifier", "orgIdentifier", "projectIdentifier", "identifier");

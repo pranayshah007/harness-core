@@ -11,11 +11,13 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.delegate.beans.connector.scm.GitAuthType.HTTP;
 import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.DEEPAK;
+import static io.harness.rule.OwnerRule.SOURABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
@@ -81,7 +83,7 @@ public class GitValidationHandlerTest extends CategoryTest {
     ConnectorValidationResult result = ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build();
     doReturn(result)
         .when(gitCommandTaskHandler)
-        .validateGitCredentials(any(GitConfigDTO.class), any(ScmConnector.class), any(String.class), any(), false);
+        .validateGitCredentials(any(GitConfigDTO.class), any(ScmConnector.class), any(String.class), any(), eq(false));
 
     GitConfigDTO gitconfigDTO = GitConfigDTO.builder()
                                     .gitConnectionType(GitConnectionType.ACCOUNT)
@@ -107,7 +109,7 @@ public class GitValidationHandlerTest extends CategoryTest {
     ConnectorValidationResult result = ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build();
     doReturn(result)
         .when(gitCommandTaskHandler)
-        .validateGitCredentials(any(GitConfigDTO.class), any(ScmConnector.class), any(String.class), any(), false);
+        .validateGitCredentials(any(GitConfigDTO.class), any(ScmConnector.class), any(String.class), any(), eq(false));
 
     ScmValidationParams gitValidationParameters =
         ScmValidationParams.builder()
@@ -123,7 +125,7 @@ public class GitValidationHandlerTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = ABHINAV2)
+  @Owner(developers = SOURABH)
   @Category(UnitTests.class)
   public void testValidationForGitHubAppConnector() {
     ConnectorValidationResult result = ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build();

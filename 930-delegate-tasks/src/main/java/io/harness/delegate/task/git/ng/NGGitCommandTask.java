@@ -11,7 +11,6 @@ import static io.harness.git.Constants.GIT_YAML_LOG_PREFIX;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.connector.helper.GitAuthenticationDecryptionHelper;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitCommandTaskHandler;
 import io.harness.connector.task.git.GitDecryptionHelper;

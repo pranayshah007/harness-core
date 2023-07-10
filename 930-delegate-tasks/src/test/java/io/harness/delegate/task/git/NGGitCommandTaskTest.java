@@ -17,6 +17,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 
@@ -87,7 +88,7 @@ public class NGGitCommandTaskTest extends CategoryTest {
         GitCommandExecutionResponse.builder().gitCommandStatus(GitCommandStatus.SUCCESS).build();
     doReturn(gitCommandExecutionResponse)
         .when(gitCommandTaskHandler)
-        .handleValidateTask(any(GitConfigDTO.class), any(), anyString(), any(), false);
+        .handleValidateTask(any(GitConfigDTO.class), any(), anyString(), any(), eq(false));
     TaskParameters params = GitCommandParams.builder()
                                 .gitConfig(GitConfigDTO.builder().build())
                                 .gitCommandType(GitCommandType.VALIDATE)
