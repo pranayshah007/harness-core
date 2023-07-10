@@ -87,6 +87,16 @@ public class DelegateRingServiceImpl implements DelegateRingService {
   }
 
   @Override
+  public String getDelegateJREVersion(final String accountId) {
+    return accountDataProvider.getDelegateRing(accountId).getDelegateJREVersion();
+  }
+
+  @Override
+  public String getWatcherJREVersion(final String accountId) {
+    return accountDataProvider.getDelegateRing(accountId).getWatcherJREVersion();
+  }
+
+  @Override
   public Map<String, String> getWatcherVersionsAllRings(boolean skipCache) {
     return Arrays.asList(RING_NAME_1, RING_NAME_2, RING_NAME_3, RING_NAME_4)
         .stream()

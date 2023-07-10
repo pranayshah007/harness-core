@@ -173,6 +173,25 @@ public class DelegateVersionService {
     }
   }
 
+  public String getJREVersion(final String accountId, boolean isDelegate) {
+    String JREVersionFromRing = "";
+    try {
+      if (isDelegate){
+        JREVersionFromRing = delegateRingService.getDelegateJREVersion(accountId);
+      } else {
+        JREVersionFromRing = delegateRingService.getWatcherJREVersion(accountId);
+      }
+      if (isNotEmpty(JREVersionFromRing)) {
+        return JREVersionFromRing;
+      }
+    } catch (Exception ex) {
+      log.error("Unable to fetch jre version from ring", ex);
+      throw new IllegalStateException("Unable to fetch jre version");
+    }
+    return JREVersionFromRing;
+  }
+
+
   private VersionOverride getVersionOverride(final String accountId, final VersionOverrideType overrideType) {
     return persistence.createQuery(VersionOverride.class)
         .filter(VersionOverrideKeys.accountId, accountId)

@@ -127,6 +127,7 @@ public interface AccountService {
   DelegateConfiguration getDelegateConfiguration(String accountId);
 
   String getWatcherVersion(String accountId);
+  String getJREVersion(String accountId, boolean isDelegate);
 
   String getAccountPrimaryDelegateVersion(String accountId);
 
