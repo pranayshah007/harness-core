@@ -13,7 +13,6 @@ import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVI
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ABOSII;
-import static io.harness.rule.OwnerRule.PRATYUSH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -46,7 +45,6 @@ import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
 import io.harness.cdng.manifest.yaml.kinds.ValuesManifest;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
-import io.harness.cdng.manifestConfigs.ManifestConfigurations;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
@@ -152,15 +150,6 @@ public class ManifestsStepV2Test extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = PRATYUSH)
-  @Category(UnitTests.class)
-  public void executeSyncMultipleHelmChart() {
-    StepResponse stepResponse = testExecuteForHelmMultipleManifest(
-        () -> step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null));
-    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
-  }
-
-  @Test
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void executeAsync() {
@@ -169,35 +158,13 @@ public class ManifestsStepV2Test extends CategoryTest {
     assertThat(asyncResponse.getCallbackIdsList().asByteStringList()).isEmpty();
   }
 
-  @Test
-  @Owner(developers = PRATYUSH)
-  @Category(UnitTests.class)
-  public void executeAsyncMultipleHelmCharts() {
-    AsyncExecutableResponse asyncResponse = testExecuteForHelmMultipleManifest(
-        () -> step.executeAsync(buildAmbiance(), new EmptyStepParameters(), null, null));
-    assertThat(asyncResponse.getCallbackIdsList().asByteStringList()).isEmpty();
-  }
-
   private <T> T testExecute(Supplier<T> executeMethod) {
-    List<ManifestConfigWrapper> manifests =
-        Collections.singletonList(sampleManifestFile("file1", ManifestConfigType.K8_MANIFEST));
-    return testExecuteHelper(executeMethod, manifests, "file1", false);
-  }
-
-  private <T> T testExecuteForHelmMultipleManifest(Supplier<T> executeMethod) {
-    List<ManifestConfigWrapper> manifests =
-        Arrays.asList(sampleHelmChartManifestFile("file1", ManifestConfigType.HELM_CHART),
-            sampleHelmChartManifestFile("primary", ManifestConfigType.HELM_CHART));
-    return testExecuteHelper(executeMethod, manifests, "primary", true);
-  }
-
-  private <T> T testExecuteHelper(Supplier<T> executeMethod, List<ManifestConfigWrapper> manifests,
-      String primaryManifestRef, boolean isHelmMultipleManifestSupportEnabled) {
+    ManifestConfigWrapper file1 = sampleManifestFile("file1", ManifestConfigType.K8_MANIFEST);
     ManifestConfigWrapper file2 = sampleValuesYamlFile("file2");
     ManifestConfigWrapper file3 = sampleValuesYamlFile("file3");
 
     final Map<String, List<ManifestConfigWrapper>> finalManifests = new HashMap<>();
-    finalManifests.put(SERVICE, manifests);
+    finalManifests.put(SERVICE, Collections.singletonList(file1));
     finalManifests.put(ENVIRONMENT_GLOBAL_OVERRIDES, Collections.singletonList(file2));
     finalManifests.put(SERVICE_OVERRIDES, Collections.singletonList(file3));
 
@@ -208,11 +175,6 @@ public class ManifestsStepV2Test extends CategoryTest {
                              .serviceIdentifier(SVC_ID)
                              .environmentIdentifier(ENV_ID)
                              .serviceDefinitionType(ServiceDefinitionType.KUBERNETES)
-                             .manifestConfigurations(isHelmMultipleManifestSupportEnabled
-                                     ? ManifestConfigurations.builder()
-                                           .primaryManifestRef(ParameterField.createValueField(primaryManifestRef))
-                                           .build()
-                                     : null)
                              .build())
                  .build())
         .when(sweepingOutputService)
@@ -240,9 +202,9 @@ public class ManifestsStepV2Test extends CategoryTest {
 
     ManifestsOutcome outcome = captor.getValue();
 
-    assertThat(outcome.keySet()).containsExactlyInAnyOrder(primaryManifestRef, "file2", "file3");
-    assertThat(outcome.get("file2").getOrder()).isEqualTo(isHelmMultipleManifestSupportEnabled ? 2 : 1);
-    assertThat(outcome.get("file3").getOrder()).isEqualTo(isHelmMultipleManifestSupportEnabled ? 3 : 2);
+    assertThat(outcome.keySet()).containsExactlyInAnyOrder("file1", "file2", "file3");
+    assertThat(outcome.get("file2").getOrder()).isEqualTo(1);
+    assertThat(outcome.get("file3").getOrder()).isEqualTo(2);
     verify(pipelineRbacHelper, times(1)).checkRuntimePermissions(any(), any(List.class), any(Boolean.class));
 
     return response;
@@ -353,8 +315,8 @@ public class ManifestsStepV2Test extends CategoryTest {
   }
 
   private <T> void executeSyncFailWithInvalidMultipleHelmManifestList_1(Supplier<T> executeMethod) {
-    ManifestConfigWrapper file1 = sampleManifestFile("file1", ManifestConfigType.K8_MANIFEST);
-    ManifestConfigWrapper file2 = sampleManifestFile("file2", ManifestConfigType.K8_MANIFEST);
+    ManifestConfigWrapper file1 = sampleHelmChartManifestFile("file1", ManifestConfigType.HELM_CHART);
+    ManifestConfigWrapper file2 = sampleHelmChartManifestFile("file2", ManifestConfigType.HELM_CHART);
     ManifestConfigWrapper file3 = sampleValuesYamlFile("file3");
 
     final Map<String, List<ManifestConfigWrapper>> finalManifests = new HashMap<>();
@@ -368,9 +330,6 @@ public class ManifestsStepV2Test extends CategoryTest {
                              .serviceIdentifier(SVC_ID)
                              .environmentIdentifier(ENV_ID)
                              .serviceDefinitionType(ServiceDefinitionType.KUBERNETES)
-                             .manifestConfigurations(ManifestConfigurations.builder()
-                                                         .primaryManifestRef(ParameterField.createValueField("file1"))
-                                                         .build())
                              .build())
                  .build())
         .when(sweepingOutputService)
@@ -382,7 +341,7 @@ public class ManifestsStepV2Test extends CategoryTest {
     } catch (InvalidRequestException ex) {
       assertThat(ex.getMessage())
           .contains(
-              "Multiple manifests found [file2 : K8sManifest, file1 : K8sManifest]. Kubernetes deployment support only Helm Chart for multiple manifest feature. Remove all unused manifests");
+              "Multiple manifests found [file2 : HelmChart, file1 : HelmChart]. Kubernetes deployment support only one manifest of one of types: K8sManifest, HelmChart, Kustomize, OpenshiftTemplate. Remove all unused manifests");
       return;
     }
 

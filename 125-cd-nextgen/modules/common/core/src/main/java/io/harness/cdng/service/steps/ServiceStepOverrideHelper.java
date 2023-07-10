@@ -42,6 +42,8 @@ import io.harness.cdng.service.ServiceSpec;
 import io.harness.cdng.service.WebAppSpec;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.NativeHelmServiceSpec;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
@@ -99,7 +101,11 @@ public class ServiceStepOverrideHelper {
       finalLocationManifestsMap = getManifestsFromAllLocations(ngServiceV2InfoConfig, serviceOverrideConfig,
           ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride());
     }
-
+    if (featureFlagHelperService.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG)) {
+      applyManifestConfigurationsToManifestsIfAny(
+          finalLocationManifestsMap, serviceV2Config.getNgServiceV2InfoConfig());
+    }
     final NgManifestsMetadataSweepingOutput manifestSweepingOutput =
         NgManifestsMetadataSweepingOutput.builder()
             .finalSvcManifestsMap(finalLocationManifestsMap)
@@ -109,7 +115,6 @@ public class ServiceStepOverrideHelper {
                 ngEnvironmentConfig == null || ngEnvironmentConfig.getNgEnvironmentInfoConfig() == null
                     ? StringUtils.EMPTY
                     : ngEnvironmentConfig.getNgEnvironmentInfoConfig().getIdentifier())
-            .manifestConfigurations(getManifestConfigurations(ngServiceV2InfoConfig, ambiance))
             .build();
     sweepingOutputService.consume(
         ambiance, manifestsSweepingOutputName, manifestSweepingOutput, StepCategory.STAGE.name());
@@ -122,7 +127,7 @@ public class ServiceStepOverrideHelper {
     if (ngServiceV2InfoConfig == null) {
       throw new InvalidRequestException(SERVICE_CONFIGURATION_NOT_FOUND);
     }
-    final List<ManifestConfigWrapper> svcManifests = getSvcManifests(ngServiceV2InfoConfig);
+    List<ManifestConfigWrapper> svcManifests = getSvcManifests(ngServiceV2InfoConfig);
     Map<ServiceOverridesType, List<ManifestConfigWrapper>> manifestsFromOverride = new HashMap<>();
     if (isNotEmpty(overrideV2Configs)) {
       overrideV2Configs.forEach((type, override) -> {
@@ -131,7 +136,13 @@ public class ServiceStepOverrideHelper {
         }
       });
     }
-
+    if (featureFlagHelperService.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG)) {
+      ManifestConfigurations manifestConfigurations =
+          getManifestConfigurations(ngServiceV2InfoConfig.getServiceDefinition().getType(),
+              ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec());
+      svcManifests = applyManifestConfigurationsToSvcManifests(svcManifests, manifestConfigurations);
+    }
     final NgManifestsMetadataSweepingOutput manifestSweepingOutput =
         NgManifestsMetadataSweepingOutput.builder()
             .serviceDefinitionType(ngServiceV2InfoConfig.getServiceDefinition().getType())
@@ -139,7 +150,6 @@ public class ServiceStepOverrideHelper {
             .environmentIdentifier(environmentRef)
             .svcManifests(svcManifests)
             .manifestsFromOverride(manifestsFromOverride)
-            .manifestConfigurations(getManifestConfigurations(ngServiceV2InfoConfig, ambiance))
             .build();
     sweepingOutputService.consume(
         ambiance, manifestsSweepingOutputName, manifestSweepingOutput, StepCategory.STAGE.name());
@@ -683,21 +693,45 @@ public class ServiceStepOverrideHelper {
         == null;
   }
 
-  private ManifestConfigurations getManifestConfigurations(
-      NGServiceV2InfoConfig ngServiceV2InfoConfig, Ambiance ambiance) {
-    boolean isHelmMultipleManifestSupportEnabled = featureFlagHelperService.isEnabled(
-        AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG);
-    if (isHelmMultipleManifestSupportEnabled || ngServiceV2InfoConfig.getServiceDefinition() == null
-        || ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec() == null) {
-      return null;
+  private void applyManifestConfigurationsToManifestsIfAny(
+      Map<String, List<ManifestConfigWrapper>> manifestsMap, NGServiceV2InfoConfig serviceV2Config) {
+    if (serviceV2Config == null || serviceV2Config.getServiceDefinition() == null
+        || serviceV2Config.getServiceDefinition().getServiceSpec() == null || isEmpty(manifestsMap)) {
+      return;
     }
-    ServiceSpec spec = ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec();
-    if (spec instanceof KubernetesServiceSpec && ((KubernetesServiceSpec) spec).getManifestConfigurations() != null) {
-      return ((KubernetesServiceSpec) spec).getManifestConfigurations();
+    ManifestConfigurations manifestConfigurations = getManifestConfigurations(
+        serviceV2Config.getServiceDefinition().getType(), serviceV2Config.getServiceDefinition().getServiceSpec());
+    manifestsMap.replace(
+        SERVICE, applyManifestConfigurationsToSvcManifests(manifestsMap.get(SERVICE), manifestConfigurations));
+  }
+
+  private static ManifestConfigurations getManifestConfigurations(ServiceDefinitionType type, ServiceSpec spec) {
+    switch (type) {
+      case KUBERNETES:
+        return ((KubernetesServiceSpec) spec).getManifestConfigurations();
+
+      case NATIVE_HELM:
+        return ((NativeHelmServiceSpec) spec).getManifestConfigurations();
+
+      default:
+        return null;
     }
-    if (spec instanceof NativeHelmServiceSpec && ((NativeHelmServiceSpec) spec).getManifestConfigurations() != null) {
-      return ((NativeHelmServiceSpec) spec).getManifestConfigurations();
+  }
+
+  private List<ManifestConfigWrapper> applyManifestConfigurationsToSvcManifests(
+      List<ManifestConfigWrapper> svcManifests, ManifestConfigurations manifestConfigurations) {
+    if (manifestConfigurations == null) {
+      return svcManifests;
     }
-    return null;
+    String primaryManifestId =
+        ParameterFieldHelper.getParameterFieldValue(manifestConfigurations.getPrimaryManifestRef());
+    if (isEmpty(primaryManifestId)) {
+      return svcManifests;
+    }
+    return svcManifests.stream()
+        .filter(manifest
+            -> !ManifestConfigType.HELM_CHART.equals(manifest.getManifest().getType())
+                || primaryManifestId.equals(manifest.getManifest().getIdentifier()))
+        .collect(Collectors.toList());
   }
 }

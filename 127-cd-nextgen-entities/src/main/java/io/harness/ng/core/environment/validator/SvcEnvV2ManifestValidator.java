@@ -95,6 +95,10 @@ public class SvcEnvV2ManifestValidator {
     }
   }
 
+  public void validateManifestList(ServiceDefinitionType serviceDefinitionType, List<ManifestAttributes> manifestList) {
+    validateManifestList(serviceDefinitionType, manifestList, false);
+  }
+
   public void validateManifestList(ServiceDefinitionType serviceDefinitionType, List<ManifestAttributes> manifestList,
       boolean isHelmMultipleManifestSupportEnabled) {
     if (serviceDefinitionType == null || isEmpty(manifestList)) {

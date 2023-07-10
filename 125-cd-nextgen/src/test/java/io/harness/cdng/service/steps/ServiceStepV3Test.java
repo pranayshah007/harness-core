@@ -555,7 +555,14 @@ public class ServiceStepV3Test extends CategoryTest {
         + "          spec:\n"
         + "            valuesPaths:\n"
         + "               - v1.yaml\n"
-        + "               - v2.yaml";
+        + "               - v2.yaml\n"
+        + "      - manifest:\n"
+        + "          identifier: \"m2\"\n"
+        + "          type: \"HelmChart\"\n"
+        + "          spec:\n"
+        + "            valuesPaths:\n"
+        + "               - v3.yaml\n"
+        + "               - v4.yaml";
     Reflect.on(serviceStepOverrideHelper).set("sweepingOutputService", sweepingOutputService);
     Reflect.on(serviceStepOverrideHelper).set("featureFlagHelperService", ngFeatureFlagHelperService);
     doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
@@ -601,6 +608,7 @@ public class ServiceStepV3Test extends CategoryTest {
     KubernetesServiceSpec spec = (KubernetesServiceSpec) serviceConfig.getServiceDefinition().getServiceSpec();
     assertThat(((DockerHubArtifactConfig) spec.getArtifacts().getPrimary().getSpec()).getTag().getValue())
         .isEqualTo("develop-1");
+    assertThat(spec.getManifests().size()).isEqualTo(1);
     if (isHelmMultipleManifestSupportEnabled) {
       assertThat(spec.getManifestConfigurations().getPrimaryManifestRef().getValue()).isEqualTo("m1");
       assertThat(((HelmChartManifest) spec.getManifests().get(0).getManifest().getSpec()).getValuesPaths().getValue())
