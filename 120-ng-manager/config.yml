@@ -441,7 +441,7 @@ signupNotificationConfiguration:
   expireDurationInMinutes: 60
 
 cacheConfig:
-  cacheBackend: REDIS
+  cacheBackend: HAZELCAST
   cacheNamespace: ""
   disabledCaches: [ ]
   enterpriseCacheEnabled: true
