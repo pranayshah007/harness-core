@@ -30,6 +30,7 @@ import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.BambooArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusConstant;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig;
@@ -45,6 +46,8 @@ import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryBuildDetai
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryImagePathsDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryRequestDTO;
 import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceService;
+import io.harness.cdng.artifact.resources.bamboo.BambooResourceService;
+import io.harness.cdng.artifact.resources.bamboo.dtos.BambooRequestDTO;
 import io.harness.cdng.artifact.resources.custom.CustomResourceService;
 import io.harness.cdng.artifact.resources.docker.dtos.DockerBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.docker.dtos.DockerRequestDTO;
@@ -142,6 +145,7 @@ public class ArtifactResourceUtils {
   @Inject AcrResourceService acrResourceService;
   @Inject AzureResourceService azureResourceService;
   @Inject ArtifactoryResourceService artifactoryResourceService;
+  @Inject BambooResourceService bambooResourceService;
   @Inject AccessControlClient accessControlClient;
   @Inject CustomResourceService customResourceService;
 
@@ -1449,6 +1453,34 @@ public class ArtifactResourceUtils {
         azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
 
     return azureResourceService.getSubscriptions(connectorRef, orgIdentifier, projectIdentifier);
+  }
+
+  public List<BuildDetails> getBambooBuilds(String bambooConnectorIdentifier, String accountId, String orgIdentifier,
+      String projectIdentifier, String pipelineIdentifier, String planName, GitEntityFindInfoDTO gitEntityBasicInfo,
+      String fqnPath, String serviceRef, BambooRequestDTO bambooRequestDTO) {
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService =
+          locateArtifactInService(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      BambooArtifactConfig bambooArtifactConfig = (BambooArtifactConfig) artifactSpecFromService;
+      if (isEmpty(bambooConnectorIdentifier)) {
+        bambooConnectorIdentifier = (String) bambooArtifactConfig.getConnectorRef().fetchFinalValue();
+      }
+      if (isEmpty(planName)) {
+        planName = bambooArtifactConfig.getPlanKey().fetchFinalValue().toString();
+      }
+      if (isEmpty(bambooRequestDTO.getArtifactPathList())) {
+        bambooRequestDTO.setArtifactPathList((List<String>) bambooArtifactConfig.getArtifactPaths().fetchFinalValue());
+      }
+    }
+    planName = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        bambooRequestDTO.getRuntimeInputYaml(), planName, fqnPath, gitEntityBasicInfo, serviceRef);
+    bambooConnectorIdentifier = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        bambooRequestDTO.getRuntimeInputYaml(), bambooConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(bambooConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+
+    return bambooResourceService.getBuilds(
+        connectorRef, orgIdentifier, projectIdentifier, planName, bambooRequestDTO.getArtifactPathList());
   }
 
   @Data

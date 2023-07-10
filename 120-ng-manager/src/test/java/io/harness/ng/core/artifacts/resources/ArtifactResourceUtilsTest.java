@@ -45,6 +45,7 @@ import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.BambooArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusConstant;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig;
 import io.harness.cdng.artifact.resources.acr.dtos.AcrRegistriesDTO;
@@ -55,6 +56,8 @@ import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryDockerBuil
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryImagePathsDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryRequestDTO;
 import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceService;
+import io.harness.cdng.artifact.resources.bamboo.BambooResourceService;
+import io.harness.cdng.artifact.resources.bamboo.dtos.BambooRequestDTO;
 import io.harness.cdng.artifact.resources.custom.CustomResourceService;
 import io.harness.cdng.artifact.resources.docker.dtos.DockerBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.docker.dtos.DockerRequestDTO;
@@ -135,6 +138,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   @Mock AzureResourceService azureResourceService;
   @Mock NexusResourceService nexusResourceService;
   @Mock ArtifactoryResourceService artifactoryResourceService;
+  @Mock BambooResourceService bambooResourceService;
   @Mock AccessControlClient accessControlClient;
   @Mock CustomResourceService customResourceService;
   private static final String ACCOUNT_ID = "accountId";
@@ -170,6 +174,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   private static final String REPO_NAME_2 = "repoName2";
   private static final String REGISTRY_2 = "registry2";
   private static final String SUBSCRIPTION_2 = "subscription2";
+  private static final List<String> ARTIFACT_LIST = Arrays.asList(IMAGE, IMAGE_2);
   private static final String pipelineYamlWithoutTemplates = "pipeline:\n"
       + "    name: image expression test\n"
       + "    identifier: image_expression_test\n"
@@ -322,6 +327,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   private static final AcrRegistriesDTO ACR_REGISTRIES_DTO = AcrRegistriesDTO.builder().build();
   private static final AzureSubscriptionsDTO AZURE_SUBSCRIPTIONS_DTO = AzureSubscriptionsDTO.builder().build();
   private static final NexusBuildDetailsDTO NEXUS_BUILD_DETAILS_DTO = NexusBuildDetailsDTO.builder().build();
+  private static final List<String> DUMMY_LIST = new ArrayList<>();
   private static final ArtifactoryDockerBuildDetailsDTO ARTIFACTORY_DOCKER_BUILD_DETAILS_DTO =
       ArtifactoryDockerBuildDetailsDTO.builder().build();
   private static final IdentifierRef IDENTIFIER_REF =
@@ -2571,6 +2577,116 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
     verify(spyartifactResourceUtils)
         .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
             CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetBambooBuilds_ValuesFromConfig() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    BambooArtifactConfig bambooArtifactConfig = BambooArtifactConfig.builder()
+                                                    .connectorRef(ParameterField.createValueField(CONNECTOR_REF))
+                                                    .planKey(ParameterField.createValueField(REPO_NAME))
+                                                    .artifactPaths(ParameterField.createValueField(ARTIFACT_LIST))
+                                                    .build();
+
+    doReturn(bambooArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doReturn(DUMMY_LIST)
+        .when(bambooResourceService)
+        .getBuilds(IDENTIFIER_REF, ORG_ID, PROJECT_ID, REPO_NAME, ARTIFACT_LIST);
+
+    assertThat(spyartifactResourceUtils.getBambooBuilds(null, ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, null,
+                   GIT_ENTITY_FIND_INFO_DTO, FQN, SERVICE_REF,
+                   BambooRequestDTO.builder().runtimeInputYaml(pipelineYamlWithoutTemplates).build()))
+        .isSameAs(DUMMY_LIST);
+
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetBambooBuilds_ValuesFromParams() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    BambooArtifactConfig bambooArtifactConfig = BambooArtifactConfig.builder().build();
+
+    doReturn(bambooArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doReturn(DUMMY_LIST)
+        .when(bambooResourceService)
+        .getBuilds(IDENTIFIER_REF, ORG_ID, PROJECT_ID, REPO_NAME, ARTIFACT_LIST);
+
+    assertThat(spyartifactResourceUtils.getBambooBuilds(CONNECTOR_REF, ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+                   REPO_NAME, GIT_ENTITY_FIND_INFO_DTO, FQN, SERVICE_REF,
+                   BambooRequestDTO.builder()
+                       .runtimeInputYaml(pipelineYamlWithoutTemplates)
+                       .artifactPathList(ARTIFACT_LIST)
+                       .build()))
+        .isSameAs(DUMMY_LIST);
+
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetBambooBuilds_ValuesFromResolvedExpressions() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    BambooArtifactConfig bambooArtifactConfig = BambooArtifactConfig.builder().build();
+
+    doReturn(bambooArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doReturn(DUMMY_LIST)
+        .when(bambooResourceService)
+        .getBuilds(IDENTIFIER_REF, ORG_ID, PROJECT_ID, REPO_NAME, ARTIFACT_LIST);
+
+    doReturn(CONNECTOR_REF)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+
+    doReturn(REPO_NAME)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+
+    assertThat(spyartifactResourceUtils.getBambooBuilds(CONNECTOR_REF_2, ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+                   REPO_NAME_2, GIT_ENTITY_FIND_INFO_DTO, FQN, SERVICE_REF,
+                   BambooRequestDTO.builder()
+                       .runtimeInputYaml(pipelineYamlWithoutTemplates)
+                       .artifactPathList(ARTIFACT_LIST)
+                       .build()))
+        .isSameAs(DUMMY_LIST);
+
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
   }
 
   private void mockEnvironmentGetCall() {

@@ -18,6 +18,7 @@ import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.BambooArtifactConfig;
 import io.harness.cdng.artifact.resources.bamboo.BambooResourceService;
 import io.harness.cdng.artifact.resources.bamboo.dtos.BambooPlanKeysDTO;
+import io.harness.cdng.artifact.resources.bamboo.dtos.BambooRequestDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -128,31 +129,11 @@ public class BambooArtifactResource {
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
       @QueryParam(NGCommonEntityConstants.PLAN_NAME) String planName,
-      @QueryParam(NGCommonEntityConstants.ARTIFACT_PATH) List<String> artifactPath,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @QueryParam(NGCommonEntityConstants.FQN_PATH) String fqnPath,
-      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef, String runtimeInputYaml) {
-    if (isNotEmpty(serviceRef)) {
-      final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
-          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
-      BambooArtifactConfig bambooArtifactConfig = (BambooArtifactConfig) artifactSpecFromService;
-      if (isEmpty(bambooConnectorIdentifier)) {
-        bambooConnectorIdentifier = bambooArtifactConfig.getConnectorRef().getValue();
-      }
-      if (isEmpty(planName)) {
-        planName = bambooArtifactConfig.getPlanKey().fetchFinalValue().toString();
-      }
-      if (isEmpty(artifactPath)) {
-        artifactPath = bambooArtifactConfig.getArtifactPaths().getValue();
-      }
-    }
-    planName = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, planName, fqnPath, gitEntityBasicInfo, serviceRef);
-    bambooConnectorIdentifier = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, bambooConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
-    IdentifierRef connectorRef =
-        IdentifierRefHelper.getIdentifierRef(bambooConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef, BambooRequestDTO bambooRequestDTO) {
     List<BuildDetails> artifactPaths =
-        bambooResourceService.getBuilds(connectorRef, orgIdentifier, projectIdentifier, planName, artifactPath);
+        artifactResourceUtils.getBambooBuilds(bambooConnectorIdentifier, accountId, orgIdentifier, projectIdentifier,
+            pipelineIdentifier, planName, gitEntityBasicInfo, fqnPath, serviceRef, bambooRequestDTO);
     return ResponseDTO.newResponse(artifactPaths);
   }
 }
