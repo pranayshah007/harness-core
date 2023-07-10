@@ -74,7 +74,7 @@ redisLockConfig:
   userName: ""
   password: ""
 
-enableAuth: true
+enableAuth: ${ENABLE_AUTH:-true}
 
 distributedLockImplementation: MONGO
 
