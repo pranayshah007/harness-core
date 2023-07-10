@@ -15,7 +15,6 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class K8SResourceHelper {
   private static final Pattern RESOURCE_NAME_NORMALIZER = Pattern.compile("_");
-  public static final String HARNESS_NAME_LABEL = "harness.io/name";
 
   @NonNull
   public static String getPodName(final String taskGroupId) {

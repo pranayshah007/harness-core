@@ -399,22 +399,28 @@ if [[ "" != "$SIGNUP_TARGET_ENV" ]]; then
   export SIGNUP_TARGET_ENV; yq -i '.signupTargetEnv=env(SIGNUP_TARGET_ENV)' $CONFIG_FILE
 fi
 
+if [[ "" != "$LOCK_CONFIG_REDIS_USERNAME" ]]; then
+  export LOCK_CONFIG_REDIS_USERNAME; yq -i '.singleServerConfig.username=env(LOCK_CONFIG_REDIS_USERNAME)' $REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$LOCK_CONFIG_REDIS_PASSWORD" ]]; then
+  export LOCK_CONFIG_REDIS_PASSWORD; yq -i '.singleServerConfig.password=env(LOCK_CONFIG_REDIS_PASSWORD)' $REDISSON_CACHE_FILE
+fi
+
 if [[ "$LOCK_CONFIG_USE_SENTINEL" == "true" ]]; then
   yq -i 'del(.singleServerConfig)' $REDISSON_CACHE_FILE
-fi
-
-if [[ "" != "$LOCK_CONFIG_SENTINEL_MASTER_NAME" ]]; then
-  export LOCK_CONFIG_SENTINEL_MASTER_NAME; yq -i '.sentinelServersConfig.masterName=env(LOCK_CONFIG_SENTINEL_MASTER_NAME)' $REDISSON_CACHE_FILE
-fi
-
-if [[ "" != "$LOCK_CONFIG_REDIS_SENTINELS" ]]; then
-  IFS=',' read -ra SENTINEL_URLS <<< "$LOCK_CONFIG_REDIS_SENTINELS"
-  INDEX=0
-  for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    export REDIS_SENTINEL_URL; export INDEX; yq -i '.redisLockConfig.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
-    export REDIS_SENTINEL_URL; export INDEX; yq -i '.sentinelServersConfig.sentinelAddresses.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $REDISSON_CACHE_FILE
-    INDEX=$(expr $INDEX + 1)
-  done
+  if [[ "" != "$LOCK_CONFIG_SENTINEL_MASTER_NAME" ]]; then
+    export LOCK_CONFIG_SENTINEL_MASTER_NAME; yq -i '.sentinelServersConfig.masterName=env(LOCK_CONFIG_SENTINEL_MASTER_NAME)' $REDISSON_CACHE_FILE
+  fi
+  if [[ "" != "$LOCK_CONFIG_REDIS_SENTINELS" ]]; then
+    IFS=',' read -ra SENTINEL_URLS <<< "$LOCK_CONFIG_REDIS_SENTINELS"
+    INDEX=0
+    for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
+      export REDIS_SENTINEL_URL; export INDEX; yq -i '.redisLockConfig.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
+      export REDIS_SENTINEL_URL; export INDEX; yq -i '.sentinelServersConfig.sentinelAddresses.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $REDISSON_CACHE_FILE
+      INDEX=$(expr $INDEX + 1)
+    done
+  fi
 fi
 
 if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
@@ -453,10 +459,12 @@ fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_USERNAME" ]]; then
   export EVENTS_FRAMEWORK_REDIS_USERNAME; yq -i '.singleServerConfig.username=env(EVENTS_FRAMEWORK_REDIS_USERNAME)' $ENTERPRISE_REDISSON_CACHE_FILE
+  export EVENTS_FRAMEWORK_REDIS_USERNAME; yq -i '.singleServerConfig.username=env(EVENTS_FRAMEWORK_REDIS_USERNAME)' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_PASSWORD" ]]; then
   export EVENTS_FRAMEWORK_REDIS_PASSWORD; yq -i '.singleServerConfig.password=env(EVENTS_FRAMEWORK_REDIS_PASSWORD)' $ENTERPRISE_REDISSON_CACHE_FILE
+  export EVENTS_FRAMEWORK_REDIS_PASSWORD; yq -i '.singleServerConfig.password=env(EVENTS_FRAMEWORK_REDIS_PASSWORD)' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH" ]]; then

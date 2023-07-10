@@ -15,9 +15,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ScmException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitx.USER_FLOW;
+import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 
 import lombok.experimental.UtilityClass;
 
@@ -80,5 +82,18 @@ public class PipelineGitXHelper {
       return user_flow.equals(USER_FLOW.EXECUTION);
     }
     return false;
+  }
+
+  public boolean shouldPublishSetupUsages(boolean loadFromCache, StoreType storeType) {
+    return StoreType.REMOTE.equals(storeType) && isFetchedFromGit(loadFromCache)
+        && GitAwareContextHelper.isGitDefaultBranch();
+  }
+
+  private boolean isFetchedFromGit(boolean loadFromCache) {
+    if (loadFromCache) {
+      return PMSPipelineDtoMapper.getCacheResponseFromGitContext() == null;
+    } else {
+      return true;
+    }
   }
 }

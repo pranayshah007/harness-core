@@ -10,7 +10,7 @@ package io.harness.connector.helper;
 import static io.harness.delegate.beans.connector.scm.GitAuthType.HTTP;
 import static io.harness.rule.OwnerRule.SOURABH;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;

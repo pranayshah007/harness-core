@@ -7,11 +7,14 @@
 
 package io.harness.k8s.model;
 
+import io.harness.annotation.RecasterAlias;
+
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
+@RecasterAlias("io.harness.k8s.model.K8sContainer")
 public class K8sContainer {
   private String containerId;
   private String name;

@@ -27,6 +27,7 @@ import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.audittrails.events.RuleCreateEvent;
 import io.harness.ccm.audittrails.events.RuleDeleteEvent;
 import io.harness.ccm.audittrails.events.RuleUpdateEvent;
+import io.harness.ccm.governance.entities.RecommendationAdhocDTO;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.service.intf.CCMConnectorDetailsService;
 import io.harness.ccm.utils.LogAccountIdentifier;
@@ -37,7 +38,6 @@ import io.harness.ccm.views.dto.GovernanceAdhocEnqueueDTO;
 import io.harness.ccm.views.dto.GovernanceEnqueueResponseDTO;
 import io.harness.ccm.views.dto.GovernanceJobEnqueueDTO;
 import io.harness.ccm.views.dto.ListDTO;
-import io.harness.ccm.views.entities.RecommendationAdhocDTO;
 import io.harness.ccm.views.entities.Rule;
 import io.harness.ccm.views.entities.RuleClone;
 import io.harness.ccm.views.entities.RuleEnforcement;
@@ -627,11 +627,15 @@ public class GovernanceRuleResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @Parameter(description = "View governance connector list") @QueryParam("view") boolean view,
       @QueryParam("connectorType") ConnectorType connectorType) {
+    List<ConnectorType> connectorTypes = new ArrayList<>();
     if (connectorType == null) {
-      connectorType = ConnectorType.CE_AWS;
+      connectorTypes.add(ConnectorType.CE_AWS);
+      connectorTypes.add(ConnectorType.CE_AZURE);
+    } else {
+      connectorTypes.add(connectorType);
     }
-    List<ConnectorResponseDTO> nextGenConnectorResponses = connectorDetailsService.listNgConnectors(
-        accountId, Arrays.asList(connectorType), Arrays.asList(CEFeatures.GOVERNANCE), null);
+    List<ConnectorResponseDTO> nextGenConnectorResponses =
+        connectorDetailsService.listNgConnectors(accountId, connectorTypes, Arrays.asList(CEFeatures.GOVERNANCE), null);
     Set<String> allowedAccountIds = null;
     List<ConnectorResponseDTO> connectorResponse = new ArrayList<>();
     if (nextGenConnectorResponses != null) {
@@ -684,10 +688,8 @@ public class GovernanceRuleResource {
         GovernanceJobEnqueueDTO governanceJobEnqueueDTO =
             GovernanceJobEnqueueDTO.builder()
                 .targetRegion(targetRegion)
-                .targetAccountId(targetAccount)
+                .targetAccountDetails(recommendationAdhocDTO)
                 .ruleId(governanceAdhocEnqueueDTO.getRuleId())
-                .roleArn(recommendationAdhocDTO.getRoleArn())
-                .externalId(recommendationAdhocDTO.getExternalId())
                 .isDryRun(governanceAdhocEnqueueDTO.getIsDryRun())
                 .policy(governanceAdhocEnqueueDTO.getPolicy())
                 .ruleCloudProviderType(governanceAdhocEnqueueDTO.getRuleCloudProviderType())

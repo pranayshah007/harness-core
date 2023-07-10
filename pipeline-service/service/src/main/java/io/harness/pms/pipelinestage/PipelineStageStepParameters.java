@@ -34,7 +34,6 @@ public class PipelineStageStepParameters implements StepParameters {
   @NotNull String project;
   @NotNull String org;
 
-  private String pipelineInputs;
   String stageNodeId;
   JsonNode pipelineInputsJsonNode;
 

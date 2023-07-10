@@ -8,6 +8,7 @@
 package io.harness.cdng.provision.azure;
 
 import static io.harness.rule.OwnerRule.NGONZALEZ;
+import static io.harness.rule.OwnerRule.SOURABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -17,12 +18,14 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.manifest.yaml.GithubStore;
+import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -150,5 +153,27 @@ public class AzureCreateBPStepInfoTest extends CategoryTest {
     StepType response = azureCreateStepInfo.getStepType();
     assertThat(response).isNotNull();
     assertThat(response.getType()).isEqualTo("AzureCreateBPResource");
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testExtractRefs() {
+    AzureCreateBPStepInfo azureCreateBPStepInfo = new AzureCreateBPStepInfo();
+    AzureTemplateFile templateFile = new AzureTemplateFile();
+    StoreConfigWrapper configStoreConfigWrapper =
+        StoreConfigWrapper.builder()
+            .spec(HarnessStore.builder().files(ParameterField.createValueField(List.of("/script.sh"))).build())
+            .build();
+    templateFile.setStore(configStoreConfigWrapper);
+    azureCreateBPStepInfo.setCreateStepBPConfiguration(
+        AzureCreateBPStepConfiguration.builder()
+            .template(templateFile)
+            .connectorRef(ParameterField.createValueField("azConnectorRef"))
+            .build());
+    Map<String, ParameterField<List<String>>> fileMap;
+    fileMap = azureCreateBPStepInfo.extractFileRefs();
+    assertThat(fileMap.get("configuration.template.store.spec.files").getValue().size()).isEqualTo(1);
+    assertThat(fileMap.get("configuration.template.store.spec.files").getValue().get(0)).isEqualTo("/script.sh");
   }
 }

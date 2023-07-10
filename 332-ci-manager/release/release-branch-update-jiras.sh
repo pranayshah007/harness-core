@@ -5,9 +5,7 @@
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 set -ex
-FINAL_KEYS=$(git log --pretty=oneline --abbrev-commit |\
-      awk "/${PREVIOUS_CUT_COMMIT_MESSAGE}/ {exit} {print}" |\
-      grep -o -iE '('CI')-[0-9]+' | sort | uniq)
+FINAL_KEYS=$(git log --pretty=oneline --format="%s" --abbrev-commit  ${PREVIOUS_RELEASE_BRANCH}..${CURRENT_RELEASE_BRANCH}  | grep -o -iE '('CI')-[0-9]+' | sort | uniq)
 
 echo $FINAL_KEYS
 

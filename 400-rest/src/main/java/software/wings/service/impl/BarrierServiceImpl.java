@@ -67,7 +67,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import dev.morphia.query.UpdateOperations;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -161,6 +160,8 @@ public class BarrierServiceImpl extends IteratorPumpAndRedisModeHandler implemen
 
   @Override
   public BarrierInstance update(BarrierInstance barrierInstance) {
+    log.info("Barrier instance {} with name {} has state {}", barrierInstance.getUuid(), barrierInstance.getName(),
+        barrierInstance.getState());
     if (!STANDING.name().equals(barrierInstance.getState())) {
       return barrierInstance;
     }
@@ -172,7 +173,6 @@ public class BarrierServiceImpl extends IteratorPumpAndRedisModeHandler implemen
     // Grouping by on workflowId + pipelineStageId Because If a workflow is added twice manually in pipeline in same
     // parallel section, then they have different pipeline stages IDs, whereas we only want to group together the looped
     // workflows.
-    Instant startTime = Instant.now();
     Map<String, List<BarrierInstanceWorkflow>> barrierWorkflows = pipeline.getWorkflows().stream().collect(
         Collectors.groupingBy(BarrierInstanceWorkflow::getUniqueWorkflowKeyInPipeline));
 
@@ -281,6 +281,8 @@ public class BarrierServiceImpl extends IteratorPumpAndRedisModeHandler implemen
 
     Barrier barrier = Barrier.builder().id(new BarrierId(barrierInstance.getUuid())).forcer(forcer).build();
     Barrier.State state = barrier.pushDown(this);
+    log.info("Barrier instance {} with name {} turn to state {}", barrierInstance.getUuid(), barrierInstance.getName(),
+        state);
     switch (state) {
       case STANDING:
         return barrierInstance;

@@ -10,14 +10,17 @@ package io.harness.template.events;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.PRABU;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertNull;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.apache.commons.lang3.RandomStringUtils.randomNumeric;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -34,6 +37,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
 import io.harness.encryption.Scope;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
+import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.eventsframework.producer.Message;
@@ -257,6 +261,64 @@ public class TemplateOutboxEventHandlerTest extends CategoryTest {
     assertEquals(oldYaml, auditEntry.getOldYaml());
   }
 
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testForceDelete() throws IOException, ClassNotFoundException {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String identifier = randomAlphabetic(10);
+    String templateVersionLabel = randomAlphabetic(10);
+
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .name(randomAlphabetic(10))
+                                        .identifier(identifier)
+                                        .versionLabel(templateVersionLabel)
+                                        .templateScope(Scope.PROJECT)
+                                        .templateEntityType(TemplateEntityType.STAGE_TEMPLATE)
+                                        .isEntityInvalid(false)
+                                        .yaml(oldYaml)
+                                        .build();
+    TemplateForceDeleteEvent deleteEvent =
+        new TemplateForceDeleteEvent(accountIdentifier, orgIdentifier, projectIdentifier, templateEntity, "");
+    String eventData = objectMapper.writeValueAsString(deleteEvent);
+    GlobalContext globalContext = new GlobalContext();
+    Principal principal =
+        new UserPrincipal(randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10));
+    SourcePrincipalContextData sourcePrincipalContextData =
+        SourcePrincipalContextData.builder().principal(principal).build();
+    globalContext.upsertGlobalContextRecord(sourcePrincipalContextData);
+
+    OutboxEvent outboxEvent = OutboxEvent.builder()
+                                  .resource(deleteEvent.getResource())
+                                  .resourceScope(deleteEvent.getResourceScope())
+                                  .eventType(TemplateOutboxEvents.TEMPLATE_VERSION_FORCE_DELETED)
+                                  .blocked(false)
+                                  .globalContext(globalContext)
+                                  .createdAt(Long.valueOf(randomNumeric(6)))
+                                  .eventData(eventData)
+                                  .id(randomAlphabetic(10))
+                                  .build();
+    final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
+    when(auditClientService.publishAudit(any(), any(), any())).thenReturn(true);
+    templateOutboxEventHandler.handle(outboxEvent);
+    verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any(), any());
+    verify(templateReferenceHelper, times(1)).deleteTemplateReferences(templateEntity);
+
+    final ArgumentCaptor<Message> messageArgumentCaptor = ArgumentCaptor.forClass(Message.class);
+    verify(eventProducer, times(1)).send(messageArgumentCaptor.capture());
+
+    assertRedisEvent(messageArgumentCaptor.getAllValues().get(0), EventsFrameworkMetadataConstants.DELETE_ACTION);
+
+    AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
+    assertAuditEntry(
+        accountIdentifier, orgIdentifier, projectIdentifier, identifier, templateVersionLabel, auditEntry, outboxEvent);
+    assertEquals(Action.FORCE_DELETE, auditEntry.getAction());
+    assertNull(auditEntry.getNewYaml());
+    assertEquals(oldYaml, auditEntry.getOldYaml());
+  }
+
   private void assertAuditEntry(String accountId, String orgIdentifier, String projectIdentifier, String identifier,
       String templateVersionLabel, AuditEntry auditEntry, OutboxEvent outboxEvent) {
     assertNotNull(auditEntry);
@@ -286,6 +348,7 @@ public class TemplateOutboxEventHandlerTest extends CategoryTest {
                                            .versionLabel(templateVersionLabel)
                                            .accountId(accountIdentifier)
                                            .orgIdentifier(orgIdentifier)
+                                           .projectIdentifier(projectIdentifier)
                                            .templateScope(Scope.PROJECT)
                                            .templateEntityType(TemplateEntityType.STAGE_TEMPLATE)
                                            .yaml(oldYaml)
@@ -361,7 +424,9 @@ public class TemplateOutboxEventHandlerTest extends CategoryTest {
                                         .versionLabel(templateVersionLabel)
                                         .accountId(accountIdentifier)
                                         .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
                                         .templateScope(Scope.PROJECT)
+                                        .isStableTemplate(true)
                                         .templateEntityType(TemplateEntityType.STAGE_TEMPLATE)
                                         .yaml(oldYaml)
                                         .build();
@@ -390,5 +455,15 @@ public class TemplateOutboxEventHandlerTest extends CategoryTest {
     assertEquals(entityChangeDTOArgumentCaptor.getValue().getProjectIdentifier().getValue(), projectIdentifier);
     assertEquals(entityChangeDTOArgumentCaptor.getValue().getOrgIdentifier().getValue(), orgIdentifier);
     assertEquals(entityChangeDTOArgumentCaptor.getValue().getAccountIdentifier().getValue(), accountIdentifier);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testPublishEventWhenEventsFrameWorkIsDown() {
+    doThrow(new EventsFrameworkDownException("msg")).when(eventProducer).send(any());
+    boolean published = templateOutboxEventHandler.publishEvent(EventsFrameworkMetadataConstants.UPDATE_ACTION,
+        "accountIdentifier", "identifer", EntityChangeDTO.newBuilder().build());
+    assertFalse(published);
   }
 }

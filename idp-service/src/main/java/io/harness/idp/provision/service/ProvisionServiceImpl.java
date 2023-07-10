@@ -9,14 +9,11 @@ package io.harness.idp.provision.service;
 import static io.harness.idp.provision.ProvisionConstants.ACCOUNT_ID;
 import static io.harness.idp.provision.ProvisionConstants.NAMESPACE;
 import static io.harness.idp.provision.ProvisionConstants.PROVISION_MODULE_CONFIG;
-import static io.harness.remote.client.CGRestUtils.getResponse;
 
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.client.NgConnectorManagerClient;
-import io.harness.exception.AccessDeniedException;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.WingsException;
 import io.harness.idp.common.Constants;
 import io.harness.idp.configmanager.service.ConfigManagerService;
 import io.harness.idp.envvariable.service.BackstageEnvVariableService;
@@ -30,7 +27,6 @@ import io.harness.retry.RetryHelper;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.ValueType;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
-import io.harness.security.SecurityContextBuilder;
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.ServicePrincipal;
@@ -38,6 +34,7 @@ import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 import io.harness.spec.server.idp.v1.model.BackstagePermissions;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.github.resilience4j.retry.Retry;
@@ -46,7 +43,6 @@ import java.net.ConnectException;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
@@ -173,7 +169,7 @@ public class ProvisionServiceImpl implements ProvisionService {
 
   private void makeTriggerApi(String accountIdentifier, String namespace) {
     Request request = createHttpRequest(accountIdentifier, namespace);
-    OkHttpClient client = new OkHttpClient();
+    OkHttpClient client = getOkHttpClient();
     Supplier<Response> response = Retry.decorateSupplier(retry, () -> {
       try {
         return client.newCall(request).execute();
@@ -187,6 +183,11 @@ public class ProvisionServiceImpl implements ProvisionService {
     if (!response.get().isSuccessful()) {
       throw new InvalidRequestException("Pipeline Trigger http call failed");
     }
+  }
+
+  @VisibleForTesting
+  OkHttpClient getOkHttpClient() {
+    return new OkHttpClient();
   }
 
   private Request createHttpRequest(String accountIdentifier, String namespace) {

@@ -474,7 +474,8 @@ public class PMSPipelineServiceHelper {
     return new InvalidYamlException(errorMessage, errorWrapperDTO, pipelineYaml);
   }
 
-  public String importPipelineFromRemote(String accountId, String orgIdentifier, String projectIdentifier) {
+  public String importPipelineFromRemote(
+      String accountId, String orgIdentifier, String projectIdentifier, boolean applyRepoAllowListFilter) {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     Scope scope = Scope.of(accountId, orgIdentifier, projectIdentifier);
     GitContextRequestParams gitContextRequestParams = GitContextRequestParams.builder()
@@ -482,6 +483,7 @@ public class PMSPipelineServiceHelper {
                                                           .connectorRef(gitEntityInfo.getConnectorRef())
                                                           .filePath(gitEntityInfo.getFilePath())
                                                           .repoName(gitEntityInfo.getRepoName())
+                                                          .applyRepoAllowListFilter(applyRepoAllowListFilter)
                                                           .build();
     return gitAwareEntityHelper.fetchYAMLFromRemote(scope, gitContextRequestParams, Collections.emptyMap());
   }
@@ -595,15 +597,15 @@ public class PMSPipelineServiceHelper {
     }
   }
 
-  public void computePipelineReferences(PipelineEntity pipelineEntity, boolean loadFromCache) {
-    if (!loadFromCache && GitAwareContextHelper.isDefaultBranch()) {
-      String branchName = GitAwareContextHelper.getBranchFromGitContext();
-      pipelineSetupUsageCreationHelper.submitTask(
-          FilterCreationParams.builder()
-              .pipelineEntity(pipelineEntity)
-              .filterCreationGitMetadata(
-                  FilterCreationGitMetadata.builder().branch(branchName).repo(pipelineEntity.getRepo()).build())
-              .build());
-    }
+  public void computePipelineReferences(PipelineEntity pipelineEntity) {
+    pipelineSetupUsageCreationHelper.submitTask(
+        FilterCreationParams.builder()
+            .pipelineEntity(pipelineEntity)
+            .filterCreationGitMetadata(FilterCreationGitMetadata.builder()
+                                           .branch(GitAwareContextHelper.getBranchFromGitContext())
+                                           .repo(pipelineEntity.getRepo())
+                                           .isGitDefaultBranch(true)
+                                           .build())
+            .build());
   }
 }

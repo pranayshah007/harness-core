@@ -8,12 +8,14 @@
 package io.harness.steps.jira;
 
 import static io.harness.eraro.ErrorCode.APPROVAL_REJECTION;
+import static io.harness.rule.OwnerRule.ABHINAV_MITTAL;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -23,8 +25,10 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
 import io.harness.delegate.task.shell.ShellScriptTaskNG;
 import io.harness.exception.ApprovalStepNGException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -38,6 +42,7 @@ import io.harness.rule.Owner;
 import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
+import io.harness.steps.approval.step.jira.JiraApprovalHelperService;
 import io.harness.steps.approval.step.jira.JiraApprovalOutcome;
 import io.harness.steps.approval.step.jira.JiraApprovalSpecParameters;
 import io.harness.steps.approval.step.jira.JiraApprovalStep;
@@ -64,6 +69,7 @@ public class JiraApprovalStepTest extends CategoryTest {
   @Mock ApprovalInstanceService approvalInstanceService;
   @Mock LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Mock ExecutorService dashboardExecutorService;
+  @Mock JiraApprovalHelperService jiraApprovalHelperService;
   @InjectMocks private JiraApprovalStep jiraApprovalStep;
   private ILogStreamingStepClient logStreamingStepClient;
 
@@ -71,6 +77,8 @@ public class JiraApprovalStepTest extends CategoryTest {
   public void setup() {
     logStreamingStepClient = mock(ILogStreamingStepClient.class);
     when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(logStreamingStepClient);
+    when(jiraApprovalHelperService.getJiraConnector(anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(JiraConnectorDTO.builder().build());
   }
 
   @Test
@@ -96,6 +104,20 @@ public class JiraApprovalStepTest extends CategoryTest {
     assertThat(instance.getIssueKey()).isEqualTo(TICKET_NUMBER);
     assertThat(instance.getConnectorRef()).isEqualTo(CONNECTOR);
     verify(logStreamingStepClient, times(1)).openStream(ShellScriptTaskNG.COMMAND_UNIT);
+  }
+
+  @Test
+  @Owner(developers = ABHINAV_MITTAL)
+  @Category(UnitTests.class)
+  public void testExecuteAsyncWhenConnectorRefIsWrong() {
+    Ambiance ambiance = buildAmbiance();
+    when(jiraApprovalHelperService.getJiraConnector(anyString(), anyString(), anyString(), anyString()))
+        .thenThrow(
+            new InvalidRequestException(String.format("Connector not found for identifier : [%s]", "connectorReg")));
+    StepElementParameters parameters = getStepElementParameters();
+    assertThatThrownBy(() -> jiraApprovalStep.executeAsync(ambiance, parameters, null, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(String.format("Connector not found for identifier : [%s]", "connectorReg"));
   }
 
   @Test

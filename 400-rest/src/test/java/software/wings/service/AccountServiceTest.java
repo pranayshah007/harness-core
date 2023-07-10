@@ -31,6 +31,7 @@ import static io.harness.rule.OwnerRule.RAGHU;
 import static io.harness.rule.OwnerRule.RAJ;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
+import static io.harness.rule.OwnerRule.SAHIBA;
 import static io.harness.rule.OwnerRule.SHASHANK;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 import static io.harness.rule.OwnerRule.UJJAWAL;
@@ -1792,5 +1793,37 @@ public class AccountServiceTest extends WingsBaseTest {
     SessionTimeoutSettings sessionTimeoutSettings = new SessionTimeoutSettings(4321);
     assertThatExceptionOfType(ConstraintViolationException.class)
         .isThrownBy(() -> accountService.setSessionTimeoutInMinutes(account.getUuid(), sessionTimeoutSettings));
+  }
+
+  @Test
+  @Owner(developers = SAHIBA)
+  @Category(UnitTests.class)
+  public void testIsSSOEnabledForOAuth() {
+    Account account = accountService.save(anAccount()
+                                              .withCompanyName("CompanyName 1")
+                                              .withAccountName("Account Name 1")
+                                              .withAccountKey("ACCOUNT_KEY")
+                                              .withAuthenticationMechanism(AuthenticationMechanism.USER_PASSWORD)
+                                              .withOauthEnabled(true)
+                                              .withLicenseInfo(getLicenseInfo())
+                                              .withWhitelistedDomains(new HashSet<>())
+                                              .build(),
+        false);
+    Boolean result = accountService.isSSOEnabled(account);
+    assertThat(result).isTrue();
+
+    Account onlyUserPassAccount =
+        accountService.save(anAccount()
+                                .withCompanyName("CompanyName 1")
+                                .withAccountName("Account Name 2")
+                                .withAccountKey("ACCOUNT_KEY")
+                                .withAuthenticationMechanism(AuthenticationMechanism.USER_PASSWORD)
+                                .withOauthEnabled(false)
+                                .withLicenseInfo(getLicenseInfo())
+                                .withWhitelistedDomains(new HashSet<>())
+                                .build(),
+            false);
+    Boolean isSSO = accountService.isSSOEnabled(onlyUserPassAccount);
+    assertThat(isSSO).isFalse();
   }
 }

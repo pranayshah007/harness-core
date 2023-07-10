@@ -25,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +35,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.validator.constraints.NotBlank;
@@ -57,16 +59,19 @@ public class HarnessConnectorDTO extends ConnectorConfigDTO implements ScmConnec
   @Valid HarnessApiAccessDTO apiAccess;
   Boolean executeOnDelegate = Boolean.FALSE;
   String gitConnectionUrl;
+  @ApiModelProperty(hidden = true) @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) String apiUrl;
 
   @Builder
   public HarnessConnectorDTO(GitConnectionType connectionType, String url, String validationRepo,
-      HarnessAuthenticationDTO authentication, HarnessApiAccessDTO apiAccess, boolean executeOnDelegate) {
+      HarnessAuthenticationDTO authentication, HarnessApiAccessDTO apiAccess, boolean executeOnDelegate,
+      String apiUrl) {
     this.connectionType = connectionType;
     this.url = url;
     this.validationRepo = validationRepo;
     this.authentication = authentication;
     this.apiAccess = apiAccess;
     this.executeOnDelegate = executeOnDelegate;
+    this.apiUrl = apiUrl;
   }
 
   @Override

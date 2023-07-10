@@ -9,6 +9,10 @@ package io.harness.cvng.core.services.api;
 
 import io.harness.cvng.core.entities.VerificationTaskExecutionInstance;
 
+import java.time.Instant;
+
 public interface ExecutionLogService {
   ExecutionLogger getLogger(VerificationTaskExecutionInstance verificationTaskExecutionInstance);
+
+  ExecutionLogger getLogger(String verificationTaskId, Instant startTime, Instant endTime);
 }

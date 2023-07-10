@@ -34,3 +34,11 @@ go_test(
     embed = [":gitclient"],
     deps = ["//product/ci/scm/proto"],
 )
+
+load("//:tools/bazel/macros.bzl", "run_analysis")
+
+run_analysis(
+    language = "go",
+    targets = [":gitclient"],
+    test_targets = [":gitclient_test"],
+)

@@ -50,6 +50,7 @@ import io.harness.cvng.migration.list.MigrateSLOTargetInSLOV2;
 import io.harness.cvng.migration.list.NewRelicCustomPackForExistingProjects;
 import io.harness.cvng.migration.list.NoOppMigration;
 import io.harness.cvng.migration.list.OrphanMonitoredServicesCleanup;
+import io.harness.cvng.migration.list.PopulateVerificationStatusInVerificationJobInstances;
 import io.harness.cvng.migration.list.PrometheusConnectorAuthenticationPerpetualTaskMigration;
 import io.harness.cvng.migration.list.RecoverMonitoringSourceWorkerId;
 import io.harness.cvng.migration.list.RecreateMetricPackAndThresholdMigration;
@@ -152,6 +153,7 @@ public class CVNGBackgroundMigrationList {
         .add(Pair.of(68, SLIRecordToSLIRecordBucketMigration.class))
         .add(Pair.of(69, SLIBucketCleanupMigration.class))
         .add(Pair.of(70, SLIRecordMigration.class))
+        .add(Pair.of(71, PopulateVerificationStatusInVerificationJobInstances.class))
         .build();
   }
 }

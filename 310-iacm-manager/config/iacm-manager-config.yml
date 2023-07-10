@@ -218,6 +218,12 @@ ciExecutionServiceConfig:
         - /bin/drone-cache
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
+    iacmTerraform:
+      image: plugins/harness_terraform:dev
+      entrypoint:
+        - /bin/harness-terraform
+      windowsEntrypoint:
+        - "C:\\harness-terraform.exe"
     vmImageConfig:
       # Use root image for VM git clone
       gitClone: harness/drone-git:1.2.7

@@ -23,6 +23,7 @@ import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
 import io.harness.ngtriggers.beans.source.NGTriggerSpecV2;
 import io.harness.ngtriggers.beans.source.artifact.ArtifactTriggerConfig;
 import io.harness.ngtriggers.beans.source.artifact.ManifestTriggerConfig;
+import io.harness.ngtriggers.beans.source.artifact.MultiRegionArtifactTriggerConfig;
 import io.harness.ngtriggers.eventmapper.filters.TriggerFilter;
 import io.harness.ngtriggers.eventmapper.filters.dto.FilterRequestData;
 import io.harness.ngtriggers.expressions.TriggerExpressionEvaluator;
@@ -96,6 +97,9 @@ public class ArtifactJexlConditionsTriggerFilter implements TriggerFilter {
     } else if (ArtifactTriggerConfig.class.isAssignableFrom(spec.getClass())) {
       ArtifactTriggerConfig artifactTriggerConfig = (ArtifactTriggerConfig) spec;
       triggerJexlCondition = artifactTriggerConfig.getSpec().fetchJexlArtifactConditions();
+    } else if (MultiRegionArtifactTriggerConfig.class.isAssignableFrom(spec.getClass())) {
+      MultiRegionArtifactTriggerConfig multiRegionArtifactTriggerConfig = (MultiRegionArtifactTriggerConfig) spec;
+      triggerJexlCondition = multiRegionArtifactTriggerConfig.getJexlCondition();
     }
 
     if (isEmpty(triggerJexlCondition)) {

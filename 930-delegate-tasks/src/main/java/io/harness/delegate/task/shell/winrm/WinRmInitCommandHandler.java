@@ -14,6 +14,7 @@ import static io.harness.delegate.task.shell.winrm.WinRmUtils.getWinRmSessionCon
 import static io.harness.delegate.task.shell.winrm.WinRmUtils.getWorkingDir;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifacts.azureartifacts.beans.AzureArtifactsProtocolType;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.shell.CommandTaskParameters;
@@ -24,12 +25,18 @@ import io.harness.delegate.task.ssh.NGCommandUnitType;
 import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.delegate.task.ssh.NgInitCommandUnit;
 import io.harness.delegate.task.ssh.ScriptCommandUnit;
+import io.harness.delegate.task.ssh.artifact.AzureArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.exception.SshExceptionConstants;
 import io.harness.delegate.task.winrm.WinRmExecutorFactoryNG;
 import io.harness.delegate.task.winrm.WinRmSessionConfig;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.runtime.SshCommandExecutionException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.shell.AbstractScriptExecutor;
+import io.harness.shell.BaseScriptExecutor;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ShellExecutorConfig;
 
@@ -44,6 +51,8 @@ import org.jetbrains.annotations.NotNull;
 @OwnedBy(CDP)
 @Singleton
 public class WinRmInitCommandHandler implements CommandHandler {
+  private static final String AZURE_CLI_CHECK_SCRIPT = "az -v";
+
   @Inject private WinRmExecutorFactoryNG winRmExecutorFactoryNG;
   @Inject private WinRmConfigAuthEnhancer winRmConfigAuthEnhancer;
   @Inject private ShellExecutorFactoryNG shellExecutorFactory;
@@ -69,38 +78,15 @@ public class WinRmInitCommandHandler implements CommandHandler {
       }
     }
 
-    CommandExecutionStatus commandExecutionStatus =
-        executeCommand(logStreamingTaskClient, commandUnitsProgress, winRmCommandTaskParameters, commandUnit);
+    BaseScriptExecutor executor =
+        getExecutor(logStreamingTaskClient, commandUnitsProgress, winRmCommandTaskParameters, commandUnit);
 
-    return ExecuteCommandResponse.builder().status(commandExecutionStatus).build();
-  }
-
-  private CommandExecutionStatus executeCommand(ILogStreamingTaskClient logStreamingTaskClient,
-      CommandUnitsProgress commandUnitsProgress, WinrmTaskParameters winRmCommandTaskParameters,
-      NgCommandUnit commandUnit) {
-    if (winRmCommandTaskParameters.isExecuteOnDelegate()) {
-      return executeOnDelegate(logStreamingTaskClient, commandUnitsProgress, winRmCommandTaskParameters, commandUnit);
-    } else {
-      return executeOnRemote(logStreamingTaskClient, commandUnitsProgress, winRmCommandTaskParameters, commandUnit);
-    }
-  }
-
-  @NotNull
-  private CommandExecutionStatus executeOnDelegate(ILogStreamingTaskClient logStreamingTaskClient,
-      CommandUnitsProgress commandUnitsProgress, WinrmTaskParameters taskParameters, NgCommandUnit commandUnit) {
-    ShellExecutorConfig config = getShellExecutorConfig(taskParameters, commandUnit);
-
-    AbstractScriptExecutor executor =
-        shellExecutorFactory.getExecutor(config, logStreamingTaskClient, commandUnitsProgress, true);
     try {
-      ExecuteCommandResponse executeCommandResponse =
-          executor.executeCommandString(getInitCommand("/tmp"), Collections.emptyList());
+      checkIfDownloadAzureUniversalArtifactSupported(executor, winRmCommandTaskParameters);
 
-      final CommandExecutionStatus status = getStatus(executeCommandResponse);
+      CommandExecutionStatus commandExecutionStatus = executeCommand(executor, winRmCommandTaskParameters, commandUnit);
 
-      executor.getLogCallback().saveExecutionLog("Command finished with status " + status, LogLevel.INFO, status);
-
-      return status;
+      return ExecuteCommandResponse.builder().status(commandExecutionStatus).build();
     } catch (Exception e) {
       executor.getLogCallback().saveExecutionLog("Command finished with status " + CommandExecutionStatus.FAILURE,
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);
@@ -108,16 +94,37 @@ public class WinRmInitCommandHandler implements CommandHandler {
     }
   }
 
-  private CommandExecutionStatus executeOnRemote(ILogStreamingTaskClient logStreamingTaskClient,
-      CommandUnitsProgress commandUnitsProgress, WinrmTaskParameters winRmCommandTaskParameters,
-      NgCommandUnit commandUnit) {
-    WinRmSessionConfig config = getWinRmSessionConfig(commandUnit, winRmCommandTaskParameters, winRmConfigAuthEnhancer);
+  private CommandExecutionStatus executeCommand(
+      BaseScriptExecutor executor, WinrmTaskParameters winRmCommandTaskParameters, NgCommandUnit commandUnit) {
+    if (winRmCommandTaskParameters.isExecuteOnDelegate()) {
+      return executeOnDelegate((AbstractScriptExecutor) executor);
+    } else {
+      return executeOnRemote((WinRmExecutor) executor, commandUnit);
+    }
+  }
 
-    WinRmExecutor executor =
-        winRmExecutorFactoryNG.getExecutor(config, winRmCommandTaskParameters.isDisableWinRMCommandEncodingFFSet(),
-            winRmCommandTaskParameters.isWinrmScriptCommandSplit(), logStreamingTaskClient, commandUnitsProgress);
+  @NotNull
+  private CommandExecutionStatus executeOnDelegate(AbstractScriptExecutor executor, String script) {
+    ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(script, Collections.emptyList());
 
-    return executor.executeCommandString(getInitCommand(getWorkingDir(commandUnit.getDestinationPath())));
+    final CommandExecutionStatus status = getStatus(executeCommandResponse);
+
+    executor.getLogCallback().saveExecutionLog("Command finished with status " + status, LogLevel.INFO, status);
+
+    return status;
+  }
+
+  @NotNull
+  private CommandExecutionStatus executeOnDelegate(AbstractScriptExecutor executor) {
+    return executeOnDelegate(executor, getInitCommand("/tmp"));
+  }
+
+  private CommandExecutionStatus executeOnRemote(WinRmExecutor executor, String script) {
+    return executor.executeCommandString(script);
+  }
+
+  private CommandExecutionStatus executeOnRemote(WinRmExecutor executor, NgCommandUnit commandUnit) {
+    return executeOnRemote(executor, getInitCommand(getWorkingDir(commandUnit.getDestinationPath())));
   }
 
   private String getInitCommand(String workingDirectory) {
@@ -133,5 +140,49 @@ public class WinRmInitCommandHandler implements CommandHandler {
         + "}";
 
     return String.format(script, workingDirectory);
+  }
+
+  private void checkIfDownloadAzureUniversalArtifactSupported(
+      BaseScriptExecutor executor, WinrmTaskParameters winRmCommandTaskParameters) {
+    SshWinRmArtifactDelegateConfig artifactDelegateConfig = winRmCommandTaskParameters.getArtifactDelegateConfig();
+    if (artifactDelegateConfig instanceof AzureArtifactDelegateConfig) {
+      AzureArtifactDelegateConfig azureArtifactDelegateConfig = (AzureArtifactDelegateConfig) artifactDelegateConfig;
+      if (AzureArtifactsProtocolType.upack.name().equals(azureArtifactDelegateConfig.getPackageType())) {
+        for (NgCommandUnit cu : winRmCommandTaskParameters.getCommandUnits()) {
+          if (NGCommandUnitType.DOWNLOAD_ARTIFACT.equals(cu.getCommandUnitType())) {
+            checkIfAzureCliInstalled(executor, winRmCommandTaskParameters);
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  private void checkIfAzureCliInstalled(BaseScriptExecutor executor, WinrmTaskParameters winRmCommandTaskParameters) {
+    final CommandExecutionStatus status;
+    if (winRmCommandTaskParameters.isExecuteOnDelegate()) {
+      status = executeOnDelegate((AbstractScriptExecutor) executor, AZURE_CLI_CHECK_SCRIPT);
+    } else {
+      status = executeOnRemote((WinRmExecutor) executor, AZURE_CLI_CHECK_SCRIPT);
+    }
+
+    if (!CommandExecutionStatus.SUCCESS.equals(status)) {
+      throw NestedExceptionUtils.hintWithExplanationException(SshExceptionConstants.AZURE_CLI_INSTALLATION_CHECK_HINT,
+          SshExceptionConstants.AZURE_CLI_INSTALLATION_CHECK_EXPLANATION,
+          new SshCommandExecutionException(SshExceptionConstants.AZURE_CLI_INSTALLATION_CHECK_FAILED));
+    }
+  }
+
+  private BaseScriptExecutor getExecutor(ILogStreamingTaskClient logStreamingTaskClient,
+      CommandUnitsProgress commandUnitsProgress, WinrmTaskParameters taskParameters, NgCommandUnit commandUnit) {
+    if (taskParameters.isExecuteOnDelegate()) {
+      ShellExecutorConfig config = getShellExecutorConfig(taskParameters, commandUnit);
+      return shellExecutorFactory.getExecutor(config, logStreamingTaskClient, commandUnitsProgress, true);
+    }
+
+    WinRmSessionConfig config = getWinRmSessionConfig(commandUnit, taskParameters, winRmConfigAuthEnhancer);
+
+    return winRmExecutorFactoryNG.getExecutor(config, taskParameters.isDisableWinRMCommandEncodingFFSet(),
+        taskParameters.isWinrmScriptCommandSplit(), logStreamingTaskClient, commandUnitsProgress);
   }
 }

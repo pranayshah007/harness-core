@@ -31,6 +31,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.jfrog.artifactory.client.model.impl.PackageTypeImpl;
@@ -39,6 +42,7 @@ import org.jfrog.artifactory.client.model.impl.PackageTypeImpl;
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
+  private static String ARTIFACT_PATH_FILTER_SEARCH_WILDCARD_TERM = "*";
   @Inject ArtifactoryClientImpl artifactoryClient;
 
   @Override
@@ -53,24 +57,65 @@ public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
     return artifactoryClient.getArtifactList(artifactoryConfig, repositoryName, artifactPath, maxVersions);
   }
 
+  private List<BuildDetails> getLatestArtifactForArtifactPath(ArtifactoryConfigRequest artifactoryConfig,
+      String repositoryName, String artifactDirectory, String artifactPath, int maxVersions) {
+    String filePath = Paths.get(artifactDirectory, artifactPath).toString();
+    List<BuildDetails> buildDetails =
+        artifactoryClient.getArtifactList(artifactoryConfig, repositoryName, filePath, maxVersions);
+
+    List<BuildDetails> buildDetailsFiltered =
+        buildDetails.stream().filter(bd -> bd.getArtifactPath().endsWith(artifactPath)).collect(toList());
+    if (!buildDetailsFiltered.isEmpty()) {
+      return buildDetailsFiltered;
+    }
+    return buildDetails;
+  }
+
+  private List<BuildDetails> getLatestArtifactForArtifactPathFilter(ArtifactoryConfigRequest artifactoryConfig,
+      String repositoryName, String artifactDirectory, String artifactPathFilter, int maxVersions) {
+    Pattern artifactPathRegexPattern = null;
+    try {
+      artifactPathRegexPattern = Pattern.compile(artifactPathFilter);
+    } catch (PatternSyntaxException e) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Please check ArtifactPathFilter field in Artifactory artifact configuration.",
+          "Regular expression in Artifact Path Filter is invalid", new ArtifactoryRegistryException(e.getMessage()));
+    }
+    String filePath = Paths.get(artifactDirectory, ARTIFACT_PATH_FILTER_SEARCH_WILDCARD_TERM).toString();
+    List<BuildDetails> buildDetails =
+        artifactoryClient.getArtifactList(artifactoryConfig, repositoryName, filePath, maxVersions);
+
+    Pattern finalArtifactPathRegexPattern = artifactPathRegexPattern;
+    int directoryPathLength = EmptyPredicate.isNotEmpty(artifactDirectory)
+        ? filePath.equalsIgnoreCase("/*") ? 0 : filePath.length() - ARTIFACT_PATH_FILTER_SEARCH_WILDCARD_TERM.length()
+        : 0;
+    return buildDetails.stream()
+        .filter(bd -> {
+          String fileName = bd.getArtifactPath().substring(directoryPathLength);
+          Matcher matcher = finalArtifactPathRegexPattern.matcher(fileName);
+          return matcher.matches();
+        })
+        .sorted(new BuildDetailsComparatorDescending())
+        .collect(Collectors.toList());
+  }
+
   @Override
   public BuildDetails getLatestArtifact(ArtifactoryConfigRequest artifactoryConfig, String repositoryName,
       String artifactDirectory, String artifactPathFilter, String artifactPath, int maxVersions) {
+    List<BuildDetails> buildDetails = null;
     if (EmptyPredicate.isEmpty(artifactPath) && EmptyPredicate.isEmpty(artifactPathFilter)) {
       throw NestedExceptionUtils.hintWithExplanationException(
           "Please check ArtifactPath/ArtifactPathFilter field in Artifactory artifact configuration.",
           "Both Artifact Path and Artifact Path Filter cannot be empty",
           new ArtifactoryRegistryException("Could not find an artifact"));
     } else if (EmptyPredicate.isEmpty(artifactPathFilter)) {
-      artifactPathFilter = artifactPath;
+      buildDetails = getLatestArtifactForArtifactPath(
+          artifactoryConfig, repositoryName, artifactDirectory, artifactPath, maxVersions);
+    } else {
+      buildDetails = getLatestArtifactForArtifactPathFilter(
+          artifactoryConfig, repositoryName, artifactDirectory, artifactPathFilter, maxVersions);
     }
 
-    String filePath = Paths.get(artifactDirectory, artifactPathFilter).toString();
-
-    List<BuildDetails> buildDetails =
-        artifactoryClient.getArtifactList(artifactoryConfig, repositoryName, filePath, maxVersions);
-
-    buildDetails = buildDetails.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList());
     if (buildDetails.isEmpty()) {
       if (EmptyPredicate.isEmpty(artifactPath)) {
         throw NestedExceptionUtils.hintWithExplanationException(
@@ -88,14 +133,6 @@ public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
                 artifactPath, repositoryName, artifactDirectory, artifactoryConfig.getArtifactoryUrl()),
             new ArtifactoryRegistryException(
                 String.format("Could not find an artifact with artifactPath '%s'", artifactPath)));
-      }
-    }
-
-    if (EmptyPredicate.isEmpty(artifactPathFilter)) {
-      List<BuildDetails> buildDetailsFiltered =
-          buildDetails.stream().filter(bd -> bd.getArtifactPath().endsWith(artifactPath)).collect(toList());
-      if (!buildDetailsFiltered.isEmpty()) {
-        return buildDetailsFiltered.get(0);
       }
     }
 

@@ -2014,7 +2014,8 @@ public class AccountServiceImpl implements AccountService {
   @Override
   public boolean isSSOEnabled(Account account) {
     return (account.getAuthenticationMechanism() != null)
-        && (account.getAuthenticationMechanism() != AuthenticationMechanism.USER_PASSWORD);
+        && ((account.getAuthenticationMechanism() != AuthenticationMechanism.USER_PASSWORD)
+            || (account.isOauthEnabled()));
   }
 
   /**

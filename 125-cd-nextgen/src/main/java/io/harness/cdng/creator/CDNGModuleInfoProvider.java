@@ -239,6 +239,20 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
             .collect(Collectors.toSet())
             .forEach(cdPipelineModuleInfoBuilder::envGroupIdentifier);
       }
+    } else if (isFetchLinkedAppsNodeAndCompleted(stepType, event.getStatus())) {
+      OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
+          event.getAmbiance(), RefObjectUtils.getOutcomeRefObject(FetchLinkedAppsStep.GITOPS_LINKED_APPS_OUTCOME));
+      if (optionalOutcome != null && optionalOutcome.isFound()) {
+        GitOpsLinkedAppsOutcome linkedAppsOutcome = (GitOpsLinkedAppsOutcome) optionalOutcome.getOutcome();
+        GitOpsAppSummary gitOpsAppSummary =
+            GitOpsAppSummary.builder().applications(linkedAppsOutcome.getApps()).build();
+        gitOpsAppSummary.getApplications()
+            .stream()
+            .map(app -> String.format("%s:%s", app.getAgentIdentifier().toLowerCase(), app.getName().toLowerCase()))
+            .filter(EmptyPredicate::isNotEmpty)
+            .collect(Collectors.toSet())
+            .forEach(cdPipelineModuleInfoBuilder::gitOpsAppIdentifier);
+      }
     }
     return cdPipelineModuleInfoBuilder.build();
   }

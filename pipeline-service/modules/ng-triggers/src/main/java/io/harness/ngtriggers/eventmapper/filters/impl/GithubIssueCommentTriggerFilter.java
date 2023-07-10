@@ -8,6 +8,7 @@
 package io.harness.ngtriggers.eventmapper.filters.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.EXCEPTION_WHILE_PROCESSING;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.FAILED_TO_FETCH_PR_DETAILS;
@@ -243,7 +244,15 @@ public class GithubIssueCommentTriggerFilter implements TriggerFilter {
           ? referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData())
           : kryoSerializer.asInflatedObject(binaryResponseData.getData());
       if (object instanceof GitApiTaskResponse) {
-        return (GitApiTaskResponse) object;
+        GitApiTaskResponse gitApiTaskResponse = (GitApiTaskResponse) object;
+        if (gitApiTaskResponse.getGitApiResult() == null) {
+          if (isNotEmpty(gitApiTaskResponse.getErrorMessage())) {
+            throw new TriggerException(
+                String.format("Failed to fetch PR Details. Reason: " + gitApiTaskResponse.getErrorMessage()),
+                WingsException.SRE);
+          }
+        }
+        return gitApiTaskResponse;
       } else if (object instanceof ErrorResponseData) {
         ErrorResponseData errorResponseData = (ErrorResponseData) object;
         throw new TriggerException(

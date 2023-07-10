@@ -18,6 +18,8 @@ import io.harness.configuration.KubernetesCliCommandType;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.exception.KubernetesCliTaskRuntimeException;
 import io.harness.filesystem.FileIo;
+import io.harness.k8s.ProcessResponse;
+import io.harness.k8s.kubectl.CreateCommand;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sDelegateTaskParams;
@@ -26,12 +28,10 @@ import io.harness.logging.LogCallback;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.io.ByteArrayOutputStream;
 import java.security.MessageDigest;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.zeroturnaround.exec.ProcessResult;
-import org.zeroturnaround.exec.stream.LogOutputStream;
 
 @Singleton
 @Slf4j
@@ -41,24 +41,25 @@ public class K8sManifestHashGenerator {
   private static final String MANIFEST_FOR_HASH = "manifest-hash.yaml";
 
   public String manifestHash(List<KubernetesResource> resources, K8sDelegateTaskParams k8sDelegateTaskParams,
-      LogCallback executionLogCallback, long timeoutInMillis, Kubectl client) throws Exception {
-    FileIo.writeUtf8StringToFile(
-        k8sDelegateTaskParams.getWorkingDirectory() + "/" + MANIFEST_FOR_HASH, ManifestHelper.toYaml(resources));
-    String output = "";
-    try (ByteArrayOutputStream errorCaptureStream = new ByteArrayOutputStream(1024);
-         LogOutputStream logErrorStream =
-             K8sTaskHelperBase.getExecutionLogOutputStream(executionLogCallback, ERROR, errorCaptureStream)) {
-      String kubectlCreateCommand = client.create(MANIFEST_FOR_HASH).command();
-      ProcessResult processResult = k8sTaskHelperBase.executeShellCommand(
-          k8sDelegateTaskParams.getWorkingDirectory(), kubectlCreateCommand, logErrorStream, timeoutInMillis);
-      output = processResult.hasOutput() ? processResult.outputUTF8() : EMPTY;
+      LogCallback executionLogCallback, Kubectl client) throws Exception {
+    String manifestHash;
+    try {
+      FileIo.writeUtf8StringToFile(
+          k8sDelegateTaskParams.getWorkingDirectory() + "/" + MANIFEST_FOR_HASH, ManifestHelper.toYaml(resources));
+      final CreateCommand kubectlCreateCommand = client.create(MANIFEST_FOR_HASH);
+      ProcessResponse response = K8sTaskHelperBase.executeCommandSilentlyWithErrorCapture(
+          kubectlCreateCommand, k8sDelegateTaskParams, executionLogCallback, ERROR);
+      ProcessResult processResult = response.getProcessResult();
+      String output = processResult.hasOutput() ? processResult.outputUTF8() : EMPTY;
       if (processResult.getExitValue() != 0) {
-        throw new KubernetesCliTaskRuntimeException(output, KubernetesCliCommandType.GENERATE_HASH);
+        k8sTaskHelperBase.logExecutableFailed(processResult, executionLogCallback);
+        throw new KubernetesCliTaskRuntimeException(response, KubernetesCliCommandType.GENERATE_HASH);
       }
+      manifestHash = generatedHash(output);
     } finally {
       FileIo.deleteFileIfExists(k8sDelegateTaskParams.getWorkingDirectory() + "/" + MANIFEST_FOR_HASH);
     }
-    return generatedHash(output);
+    return manifestHash;
   }
 
   public String generatedHash(String manifestOutput) throws Exception {

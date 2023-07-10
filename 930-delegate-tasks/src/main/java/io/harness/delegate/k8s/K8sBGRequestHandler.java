@@ -351,8 +351,8 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
         k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
 
     if (storeReleaseHash) {
-      currentManifestHash = k8sManifestHashGenerator.manifestHash(
-          resources, k8sDelegateTaskParams, executionLogCallback, timeoutInMillis, client);
+      currentManifestHash =
+          k8sManifestHashGenerator.manifestHash(resources, k8sDelegateTaskParams, executionLogCallback, client);
     }
 
     if (request.isSkipDryRun()) {

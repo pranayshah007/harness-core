@@ -9,7 +9,6 @@ package io.harness.pms.plan.execution;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -39,6 +38,7 @@ import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.InputSetMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.mappers.GitXCacheMapper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
@@ -117,7 +117,7 @@ public class RetryExecutionHelper {
   }
 
   public RetryInfo validateRetry(String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String planExecutionId) {
+      String pipelineIdentifier, String planExecutionId, String loadFromCache) {
     // Checking if this is the latest execution
     PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
         pmsExecutionService.getPipelineExecutionSummaryEntity(
@@ -140,7 +140,8 @@ public class RetryExecutionHelper {
     PipelineGitXHelper.setupEntityDetails(pipelineExecutionSummaryEntity.getEntityGitDetails());
 
     Optional<PipelineEntity> optionalPipelineEntity =
-        pmsPipelineService.getPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false);
+        pmsPipelineService.getPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false,
+            false, GitXCacheMapper.parseLoadFromCacheHeaderParam(loadFromCache));
     if (optionalPipelineEntity.isEmpty()) {
       return RetryInfo.builder()
           .isResumable(false)
@@ -174,7 +175,7 @@ public class RetryExecutionHelper {
     // if pipeline is having templates we need to use resolved yaml
     if (TemplateRefHelper.hasTemplateRef(updatedPipeline)) {
       templateMergeResponseDTO = pmsPipelineTemplateHelper.resolveTemplateRefsInPipeline(
-          accountId, orgIdentifier, projectIdentifier, updatedPipeline, BOOLEAN_FALSE_VALUE);
+          accountId, orgIdentifier, projectIdentifier, updatedPipeline, loadFromCache);
       if (templateMergeResponseDTO != null) {
         updatedPipeline = isNotEmpty(templateMergeResponseDTO.getMergedPipelineYaml())
             ? templateMergeResponseDTO.getMergedPipelineYaml()

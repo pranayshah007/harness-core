@@ -4711,16 +4711,6 @@
         {
           "type": "object",
           "properties": {
-            "env": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/ParameterFieldMapStringString"
-                },
-                {
-                  "type": "string"
-                }
-              ]
-            },
             "image": {
               "type": "string"
             }
@@ -4753,16 +4743,6 @@
           "properties": {
             "command": {
               "type": "string"
-            },
-            "env": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/ParameterFieldMapStringString"
-                },
-                {
-                  "type": "string"
-                }
-              ]
             },
             "image": {
               "type": "string"

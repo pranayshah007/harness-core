@@ -174,6 +174,10 @@ if [[ "" != "$IDP_SERVICE_SECRET" ]]; then
   export IDP_SERVICE_SECRET; yq -i '.idpServiceSecret=env(IDP_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
+if [[ "" != "$IDP_ENCRYPTION_SECRET" ]]; then
+  export IDP_ENCRYPTION_SECRET; yq -i '.idpEncryptionSecret=env(IDP_ENCRYPTION_SECRET)' $CONFIG_FILE
+fi
+
 if [[ "" != "$NG_MANAGER_GITSYNC_TARGET" ]]; then
   export NG_MANAGER_GITSYNC_TARGET; yq -i '.gitManagerGrpcClientConfig.target=env(NG_MANAGER_GITSYNC_TARGET)' $CONFIG_FILE
 fi
@@ -212,6 +216,7 @@ replace_key_value backstageSaCaCrt "$BACKSTAGE_SA_CA_CRT"
 replace_key_value backstageMasterUrl "$BACKSTAGE_MASTER_URL"
 replace_key_value backstagePodLabel "$BACKSTAGE_POD_LABEL"
 replace_key_value idpServiceSecret "$IDP_SERVICE_SECRET"
+replace_key_value idpEncryptionSecret "$IDP_ENCRYPTION_SECRET"
 replace_key_value jwtAuthSecret "$JWT_AUTH_SECRET"
 replace_key_value jwtIdentityServiceSecret "$JWT_IDENTITY_SERVICE_SECRET"
 replace_key_value provisionModuleConfig.triggerPipelineUrl "$TRIGGER_PIPELINE_URL"

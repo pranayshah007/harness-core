@@ -110,6 +110,7 @@ public class ResourceGroupServiceImpl implements ResourceGroupService {
   }
 
   private ResourceGroup create(ResourceGroup resourceGroup, boolean pushEvent) {
+    validateHarnessManagedRGDoesNotExistsWithGivenId(resourceGroup.getIdentifier());
     try {
       return createInternal(resourceGroup, pushEvent);
     } catch (DuplicateKeyException ex) {
@@ -117,6 +118,17 @@ public class ResourceGroupServiceImpl implements ResourceGroupService {
           String.format("A resource group with identifier %s already exists at the specified scope",
               resourceGroup.getIdentifier()),
           USER_SRE, ex);
+    }
+  }
+
+  private void validateHarnessManagedRGDoesNotExistsWithGivenId(String identifier) {
+    Criteria criteria = new Criteria();
+    criteria.and(ResourceGroupKeys.identifier).is(identifier);
+    criteria.and(ResourceGroupKeys.harnessManaged).is(true);
+    Optional<ResourceGroup> resourceGroupOptional = resourceGroupV2Repository.find(criteria);
+    if (resourceGroupOptional.isPresent()) {
+      throw new InvalidRequestException(
+          String.format("Another Harness managed resource group already exists with identifier %s", identifier));
     }
   }
 

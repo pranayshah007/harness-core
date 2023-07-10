@@ -17,7 +17,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureFlag.Scope;
 
 import lombok.Getter;
-
 /**
  * Add your feature name here. When the feature is fully launched and no longer needs to be flagged,
  * delete the feature name.
@@ -102,6 +101,9 @@ public enum FeatureName {
       "Enables Blue Green Scale Down Stage Scale Down Step. This will help bring down the stage environment in Blue Green Deployment. Epic: https://harness.atlassian.net/browse/CDS-55822",
       HarnessTeam.CDP),
   CDS_CONTAINER_STEP_GROUP("Support for container step group in CD", HarnessTeam.CDP),
+  CDS_CUSTOM_STAGE_EXECUTION_DATA_SYNC(
+      "This flag controls if you want Custom Stage execution data saved in mongodb and eventually synced to timescale",
+      HarnessTeam.CDP),
   CDS_DEBEZIUM_ENABLED_CG("This flag is enable sync using debezium in cg", HarnessTeam.CDC, Scope.GLOBAL),
   CDS_ENABLE_TRIGGER_YAML_VALIDATION("Enables trigger yaml validation", HarnessTeam.SPG),
   CDS_ENCODE_HTTP_STEP_URL("Enables the encoding of HTTP Step URL if it is not already encoded", HarnessTeam.CDP),
@@ -131,8 +133,6 @@ public enum FeatureName {
   CDS_NG_TRIGGER_EXECUTION_REFACTOR(
       "Refactor trigger execution to use same logic used in manual execution", HarnessTeam.SPG),
   CDS_NG_TRIGGER_MULTI_ARTIFACTS("Allows creation of multi-region artifact triggers", HarnessTeam.CDC),
-  CDS_NG_TRIGGER_SELECTIVE_STAGE_EXECUTION(
-      "Allows triggers to execute selective stages for the underlying pipeline in NG", HarnessTeam.SPG),
   CDS_NOT_ALLOW_READ_ONLY_SECRET_MANAGER_TERRAFORM_TERRAGRUNT_PLAN(
       "Enable the check if Vault secret manager is read only", HarnessTeam.CDP),
   CDS_NOT_USE_HEADERS_FOR_HTTP_CAPABILITY(
@@ -299,6 +299,10 @@ public enum FeatureName {
   CVNG_TEMPLATE_VERIFY_STEP,
   CVNG_VERIFY_STEP_DEMO,
   CV_AWS_PROMETHEUS("Enable AWS Prometheus for CV State", HarnessTeam.CV),
+  CV_UI_DISPLAY_NODE_REGEX_FILTER(
+      "Displays the control node and test node reg filter option in Verify step", HarnessTeam.CV),
+  CV_UI_DISPLAY_SHOULD_USE_NODES_FROM_CD_CHECKBOX(
+      "Displays the should use nodes from CD checkbox in Verify step", HarnessTeam.CV),
   CV_DEMO,
   CV_FAIL_ON_EMPTY_NODES,
   CV_HOST_SAMPLING,
@@ -373,9 +377,6 @@ public enum FeatureName {
   FETCH_PIPELINE_HEALTH_FROM_NEW_TABLE(
       "We will fetch pipeline health and execution data from the new timescale table if this FF is on",
       HarnessTeam.PIPELINE),
-  FFM_1512,
-  FFM_1513,
-  FFM_1827,
   FFM_1859,
   FFM_2134_FF_PIPELINES_TRIGGER,
   FFM_3938_STALE_FLAGS_ACTIVE_CARD_HIDE_SHOW,
@@ -393,6 +394,7 @@ public enum FeatureName {
   FFM_6800_FF_MFE_ONBOARDING("Enable Feature Flag MFE Onboarding page", HarnessTeam.CF),
   FFM_7127_FF_MFE_ONBOARDING_DETAIL("Enable Feature Flag MFE Onboarding Detail page", HarnessTeam.CF),
   FFM_7921_ARCHIVING_FEATURE_FLAGS("Enable archiving feature flags instead of permanent deletion", HarnessTeam.CF),
+  FFM_7258_INTERCOM_VIDEO_LINKS("Enable links to launch Intercom window containing video tutorials", HarnessTeam.CF),
   FF_ALLOW_OPTIONAL_VARIABLE("Allow Optional Variable from UI in NG.", HarnessTeam.PIPELINE),
   FF_FLAG_SYNC_THROUGH_GITEX_ENABLED,
   FF_GITSYNC,
@@ -425,6 +427,7 @@ public enum FeatureName {
   HOSTED_BUILDS("Used to enabled Hosted builds in paid accounts", HarnessTeam.CI),
   HTTP_HEADERS_CAPABILITY_CHECK,
   IACM_ENABLED("Enable support for IACM micro front end capabilities", HarnessTeam.IACM),
+  IDP_DYNAMIC_SECRET_RESOLUTION("Enable dynamic resolution of secrets", HarnessTeam.IDP),
   IDP_ENABLED("This for enabling IDP on UI", HarnessTeam.IDP),
   IDP_ENABLE_EDIT_HARNESS_CI_CD_PLUGIN(
       "This FF is for allowing user to edit config for harness-ci-cd plugin from UI", HarnessTeam.IDP),
@@ -505,9 +508,6 @@ public enum FeatureName {
       HarnessTeam.PIPELINE),
   PIE_PIPELINE_SETTINGS_ENFORCEMENT_LIMIT(
       "To enable pipeline-settings and limits in Project Default Settings in UI", HarnessTeam.PIPELINE),
-  PIE_PROCESS_ON_JSON_NODE(
-      "When FF is enabled, all processing like merging inputs, expression resolution, etc. will be done on jsonNode instead of yaml",
-      PIPELINE),
   PIE_RETRY_STEP_GROUP(
       "To enable Retry Step Group Failure Strategy, under which if a step fails in a step group, the whole group is retried",
       PIPELINE),
@@ -630,6 +630,7 @@ public enum FeatureName {
       HarnessTeam.SPG),
   SPG_CG_STATS_INSTANCE_CONSUMER("Optimize stats collector for instance collection", HarnessTeam.SPG),
   SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW("Enable timeout failure strategy at workflow level", HarnessTeam.SPG),
+  SPG_CG_K8S_SECRET_MANAGER_CAPABILITIES("Enable to enforce secret manager capabilities on k8s tasks", HarnessTeam.SPG),
   SPG_CHANGE_SECRET_VAULT_PATTERN_ON_YAML("Change the format of secret in yaml when use vault", HarnessTeam.SPG),
   SPG_DASHBOARD_STATS_OPTIMIZE_ACTIVE_SERVICES(
       "Active services slow api call optimization. Also solves MOM issue in CG.", HarnessTeam.SPG),
@@ -663,6 +664,7 @@ public enum FeatureName {
       "Verify if application references from a user group still exist", HarnessTeam.SPG),
   SPG_HTTP_STEP_CERTIFICATE("Allow enforce SSL/TLS certificate in HTTP step", HarnessTeam.SPG),
   SPG_LIVE_DASHBOARD_STATS_DEBUGGING("Live debugging for dashboard stats in CG", HarnessTeam.SPG),
+  SPG_LOG_SERVICE_ENABLE_DOWNLOAD_LOGS("Enable download logs in ng. Only used by ui.", HarnessTeam.SPG),
   SPG_MODULE_VERSION_INFO("Enable version information on module level", HarnessTeam.SPG),
   SPG_NEW_DEPLOYMENT_FREEZE_EXCLUSIONS(
       "Flag to support deployment freeze exclusions. Depends on NEW_DEPLOYMENT_FREEZE", HarnessTeam.SPG),
@@ -814,7 +816,8 @@ public enum FeatureName {
   YAML_GIT_CONNECTOR_NAME,
   CDS_STEP_EXECUTION_DATA_SYNC(
       "This flag controls if you want Step execution data saved in mongodb and eventually synced to timescale",
-      HarnessTeam.CDP);
+      HarnessTeam.CDP),
+  CDS_GITHUB_PACKAGES("Used for SSH/WinRm copy and download Github packages artifacts", HarnessTeam.CDP);
   // keep-sorted end
 
   @Deprecated

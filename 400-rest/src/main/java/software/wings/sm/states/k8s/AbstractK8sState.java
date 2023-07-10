@@ -259,6 +259,8 @@ public abstract class AbstractK8sState extends State implements K8sStateExecutor
             .optimizedFilesFetch(featureFlagService.isEnabled(OPTIMIZED_GIT_FETCH_FILES, context.getAccountId())
                 && !applicationManifestUtils.isKustomizeSource(context));
 
+    manifestConfigBuilder.secretManagerCapabilitiesEnabled(
+        featureFlagService.isEnabled(FeatureName.SPG_CG_K8S_SECRET_MANAGER_CAPABILITIES, context.getAccountId()));
     boolean customManifestEnabled = featureFlagService.isEnabled(FeatureName.CUSTOM_MANIFEST, context.getAccountId());
     manifestConfigBuilder.customManifestEnabled(customManifestEnabled);
     StoreType storeType = appManifest.getStoreType();

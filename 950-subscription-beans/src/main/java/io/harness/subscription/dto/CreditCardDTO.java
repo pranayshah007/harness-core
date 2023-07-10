@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PLG;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -19,8 +20,6 @@ import lombok.Data;
 @Data
 @Builder
 public class CreditCardDTO {
-  @NotNull private String accountIdentifier;
-  @NotNull private String fingerprint;
-  @NotNull private String customerIdentifier;
-  @NotNull private String creditCardIdentifier;
+  @NotNull @NotEmpty private String accountIdentifier;
+  @NotNull @NotEmpty private String creditCardIdentifier;
 }

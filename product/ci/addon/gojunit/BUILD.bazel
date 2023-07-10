@@ -33,3 +33,11 @@ go_test(
         "@com_github_stretchr_testify//require",
     ],
 )
+
+load("//:tools/bazel/macros.bzl", "run_analysis")
+
+run_analysis(
+    language = "go",
+    targets = [":gojunit"],
+    test_targets = [":gojunit_test"],
+)

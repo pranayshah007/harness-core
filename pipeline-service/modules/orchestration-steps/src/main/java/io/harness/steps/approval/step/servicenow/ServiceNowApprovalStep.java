@@ -50,6 +50,7 @@ public class ServiceNowApprovalStep extends PipelineAsyncExecutable {
   @Inject private ApprovalInstanceService approvalInstanceService;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private StepExecutionEntityService stepExecutionEntityService;
+  @Inject private ServiceNowApprovalHelperService serviceNowApprovalHelperService;
   @Inject @Named("DashboardExecutorService") ExecutorService dashboardExecutorService;
 
   @Override
@@ -59,6 +60,9 @@ public class ServiceNowApprovalStep extends PipelineAsyncExecutable {
     logStreamingStepClient.openStream(ShellScriptTaskNG.COMMAND_UNIT);
     ServiceNowApprovalInstance approvalInstance =
         ServiceNowApprovalInstance.fromStepParameters(ambiance, stepParameters);
+    serviceNowApprovalHelperService.getServiceNowConnector(AmbianceUtils.getAccountId(ambiance),
+        AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance),
+        approvalInstance.getConnectorRef());
     approvalInstance = (ServiceNowApprovalInstance) approvalInstanceService.save(approvalInstance);
     return AsyncExecutableResponse.newBuilder()
         .addCallbackIds(approvalInstance.getId())

@@ -3255,3 +3255,4 @@
 20000614:io.harness.delegate.beans.serverless.RollbackConfiguration
 20000615:io.harness.delegate.beans.serverless.RollbackTrigger
 20000616:io.harness.delegate.beans.serverless.Tag
+20001000:io.harness.delegate.beans.connector.scm.github.GithubAppDTO

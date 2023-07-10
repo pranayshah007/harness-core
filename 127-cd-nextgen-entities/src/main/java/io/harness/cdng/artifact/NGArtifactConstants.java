@@ -31,4 +31,5 @@ public class NGArtifactConstants {
   public static final String PROJECT = "project";
   public static final String IMAGE_PATH = "imagePath";
   public static final String REGISTRY_ID = "registryId";
+  public static final String ARTIFACT_PATH = "artifactPath";
 }

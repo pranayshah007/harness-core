@@ -1,0 +1,47 @@
+trigger:
+  name: test-artifact
+  identifier: testartifact
+  enabled: true
+  tags: {}
+  orgIdentifier: org
+  projectIdentifier: proj
+  pipelineIdentifier: k8helm
+  stagesToExecute: []
+  source:
+    type: Artifact
+    spec:
+      type: Gcr
+      spec:
+        connectorRef: rohitgcpconnector
+        eventConditions: []
+        imagePath: cd-play/rohit-test/nginx-stable01
+        registryHostname: us.gcr.io
+        tag: <+trigger.artifact.build>
+        metaDataConditions: []
+  inputYaml: |
+    pipeline:
+      identifier: k8helm
+      stages:
+        - stage:
+            identifier: stage1
+            type: Deployment
+            spec:
+              serviceConfig:
+                serviceDefinition:
+                  type: Kubernetes
+                  spec:
+                    artifacts:
+                      primary:
+                        type: DockerRegistry
+                        spec:
+                          tag: "1.0"
+              execution:
+                steps:
+                  - step:
+                      identifier: ShellScript_1
+                      type: ShellScript
+                      spec:
+                        outputVariables:
+                          - name: namename
+                            type: String
+                            value: "123"

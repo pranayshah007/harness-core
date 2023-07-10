@@ -9,6 +9,7 @@ package io.harness.freeze.beans.response;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
@@ -43,6 +44,7 @@ import lombok.With;
 @ApiModel("FreezeSummaryResponse")
 @Schema(name = "FreezeSummaryResponse", description = "This contains summary of the Freeze Response")
 @EqualsAndHashCode
+@RecasterAlias("io.harness.freeze.beans.response.FreezeSummaryResponseDTO")
 public class FreezeSummaryResponseDTO {
   @NotEmpty String accountId;
 

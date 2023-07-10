@@ -87,7 +87,8 @@ public class InstanceMetaDataUtils {
     }
     if (null == nodePoolValue) {
       for (Map.Entry<String, String> labelSet : labelsMap.entrySet()) {
-        if (labelSet.getKey().contains(K8sCCMConstants.GENERAL_NODE_POOL_KEY)) {
+        if (labelSet.getKey().contains(K8sCCMConstants.GENERAL_NODE_POOL_KEY)
+            || labelSet.getKey().equals(K8sCCMConstants.GENERAL_NODE_GROUP_KEY)) {
           nodePoolValue = labelSet.getValue();
         }
       }

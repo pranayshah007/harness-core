@@ -28,6 +28,7 @@ import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.remote.beans.anomaly.AnomalyFilterPropertiesDTO;
 import io.harness.ccm.service.intf.AnomalyService;
 import io.harness.ccm.utils.LogAccountIdentifier;
+import io.harness.ccm.views.dto.DefaultViewIdDto;
 import io.harness.ccm.views.dto.PerspectiveQueryDTO;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.service.CEViewService;
@@ -49,6 +50,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -100,17 +102,27 @@ public class AnomalyResource {
   listAnomalies(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
                     NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(description = "Anomaly Filter Properties") AnomalyFilterPropertiesDTO anomalyFilterPropertiesDTO) {
-    List<CEView> ceViewsList = ceViewService.getAllViews(accountId);
-    Set<String> allowedFolderIds = rbacHelper.checkFolderIdsGivenPermission(accountId, null, null,
-        ceViewsList.stream().map(ceView -> ceView.getFolderId()).collect(Collectors.toSet()), PERSPECTIVE_VIEW);
+    List<AnomalyData> anomalyData;
+    DefaultViewIdDto defaultViewIds = null;
+    HashMap<String, CEView> allowedAnomaliesIdAndPerspectives = null;
+    if (rbacHelper.hasPerspectiveViewOnResources(accountId, null, null, ceViewService.getSampleFolderId(accountId))) {
+      anomalyData = anomalyService.listAnomalies(accountId,
+          AnomalyQueryHelper.buildAnomalyQueryFromFilterProperties(anomalyFilterPropertiesDTO), Collections.emptyList(),
+          Collections.emptySet(), true);
+      defaultViewIds = ceViewService.getDefaultViewIds(accountId);
+    } else {
+      List<CEView> ceViewsList = ceViewService.getAllViews(accountId);
+      Set<String> allowedFolderIds = rbacHelper.checkFolderIdsGivenPermission(accountId, null, null,
+          ceViewsList.stream().map(ceView -> ceView.getFolderId()).collect(Collectors.toSet()), PERSPECTIVE_VIEW);
 
-    HashMap<String, CEView> allowedAnomaliesIdAndPerspectives =
-        anomalyService.listAllowedAnomaliesIdAndPerspectives(accountId, allowedFolderIds, ceViewsList);
-    List<AnomalyData> anomalyData = anomalyService.listAnomalies(accountId,
-        AnomalyQueryHelper.buildAnomalyQueryFromFilterProperties(anomalyFilterPropertiesDTO),
-        allowedAnomaliesIdAndPerspectives.keySet());
-
-    return ResponseDTO.newResponse(anomalyService.addPerspectiveInfo(anomalyData, allowedAnomaliesIdAndPerspectives));
+      allowedAnomaliesIdAndPerspectives =
+          anomalyService.listAllowedAnomaliesIdAndPerspectives(accountId, allowedFolderIds, ceViewsList);
+      anomalyData = anomalyService.listAnomalies(accountId,
+          AnomalyQueryHelper.buildAnomalyQueryFromFilterProperties(anomalyFilterPropertiesDTO),
+          allowedAnomaliesIdAndPerspectives.keySet());
+    }
+    return ResponseDTO.newResponse(
+        anomalyService.addPerspectiveInfo(anomalyData, allowedAnomaliesIdAndPerspectives, defaultViewIds));
   }
 
   @POST
@@ -183,16 +195,18 @@ public class AnomalyResource {
                             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @Parameter(required = true, description = "Unique identifier for perspective") @QueryParam("anomalyId")
       String anomalyId, @RequestBody(required = true, description = "Feedback") AnomalyFeedbackDTO feedback) {
-    List<CEView> ceViewsList = ceViewService.getAllViews(accountId);
-    Set<String> allowedFolderIds = rbacHelper.checkFolderIdsGivenPermission(accountId, null, null,
-        ceViewsList.stream().map(ceView -> ceView.getFolderId()).collect(Collectors.toSet()), PERSPECTIVE_VIEW);
-    Set<String> allowedAnomaliesIds = anomalyService.listAllowedAnomaliesIds(accountId, allowedFolderIds, ceViewsList);
+    if (!rbacHelper.hasPerspectiveViewOnResources(accountId, null, null, ceViewService.getSampleFolderId(accountId))) {
+      List<CEView> ceViewsList = ceViewService.getAllViews(accountId);
+      Set<String> allowedFolderIds = rbacHelper.checkFolderIdsGivenPermission(accountId, null, null,
+          ceViewsList.stream().map(ceView -> ceView.getFolderId()).collect(Collectors.toSet()), PERSPECTIVE_VIEW);
+      Set<String> allowedAnomaliesIds =
+          anomalyService.listAllowedAnomaliesIds(accountId, allowedFolderIds, ceViewsList);
 
-    if (!allowedAnomaliesIds.contains(anomalyId)) {
-      throw new NGAccessDeniedException(
-          String.format(PERMISSION_MISSING_MESSAGE, PERSPECTIVE_VIEW, RESOURCE_FOLDER), WingsException.USER, null);
+      if (!allowedAnomaliesIds.contains(anomalyId)) {
+        throw new NGAccessDeniedException(
+            String.format(PERMISSION_MISSING_MESSAGE, PERSPECTIVE_VIEW, RESOURCE_FOLDER), WingsException.USER, null);
+      }
     }
-
     return ResponseDTO.newResponse(anomalyService.updateAnomalyFeedback(accountId, anomalyId, feedback));
   }
 
@@ -213,13 +227,19 @@ public class AnomalyResource {
   getAnomaliesSummary(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
                           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(description = "Anomaly Filter Properties") AnomalyFilterPropertiesDTO anomalyFilterPropertiesDTO) {
-    List<CEView> ceViewsList = ceViewService.getAllViews(accountId);
-    Set<String> allowedFolderIds = rbacHelper.checkFolderIdsGivenPermission(accountId, null, null,
-        ceViewsList.stream().map(ceView -> ceView.getFolderId()).collect(Collectors.toSet()), PERSPECTIVE_VIEW);
-    Set<String> allowedAnomaliesIds = anomalyService.listAllowedAnomaliesIds(accountId, allowedFolderIds, ceViewsList);
+    Set<String> allowedAnomaliesIds = Collections.emptySet();
+    boolean alwaysAllowed = true;
+    if (!rbacHelper.hasPerspectiveViewOnResources(accountId, null, null, ceViewService.getSampleFolderId(accountId))) {
+      List<CEView> ceViewsList = ceViewService.getAllViews(accountId);
+      Set<String> allowedFolderIds = rbacHelper.checkFolderIdsGivenPermission(accountId, null, null,
+          ceViewsList.stream().map(ceView -> ceView.getFolderId()).collect(Collectors.toSet()), PERSPECTIVE_VIEW);
+      allowedAnomaliesIds = anomalyService.listAllowedAnomaliesIds(accountId, allowedFolderIds, ceViewsList);
+      alwaysAllowed = false;
+    }
 
     return ResponseDTO.newResponse(anomalyService.getAnomalySummary(accountId,
-        AnomalyQueryHelper.buildAnomalyQueryFromFilterProperties(anomalyFilterPropertiesDTO), allowedAnomaliesIds));
+        AnomalyQueryHelper.buildAnomalyQueryFromFilterProperties(anomalyFilterPropertiesDTO), allowedAnomaliesIds,
+        alwaysAllowed));
   }
 
   @POST
@@ -240,12 +260,18 @@ public class AnomalyResource {
   getAnomalyWidgetsData(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
                             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(description = "Anomaly Filter Properties") AnomalyFilterPropertiesDTO anomalyFilterPropertiesDTO) {
-    List<CEView> ceViewsList = ceViewService.getAllViews(accountId);
-    Set<String> allowedFolderIds = rbacHelper.checkFolderIdsGivenPermission(accountId, null, null,
-        ceViewsList.stream().map(ceView -> ceView.getFolderId()).collect(Collectors.toSet()), PERSPECTIVE_VIEW);
-    Set<String> allowedAnomaliesIds = anomalyService.listAllowedAnomaliesIds(accountId, allowedFolderIds, ceViewsList);
+    Set<String> allowedAnomaliesIds = Collections.emptySet();
+    boolean alwaysAllowed = true;
+    if (!rbacHelper.hasPerspectiveViewOnResources(accountId, null, null, ceViewService.getSampleFolderId(accountId))) {
+      List<CEView> ceViewsList = ceViewService.getAllViews(accountId);
+      Set<String> allowedFolderIds = rbacHelper.checkFolderIdsGivenPermission(accountId, null, null,
+          ceViewsList.stream().map(ceView -> ceView.getFolderId()).collect(Collectors.toSet()), PERSPECTIVE_VIEW);
+      allowedAnomaliesIds = anomalyService.listAllowedAnomaliesIds(accountId, allowedFolderIds, ceViewsList);
+      alwaysAllowed = false;
+    }
 
     return ResponseDTO.newResponse(anomalyService.getAnomalyWidgetData(accountId,
-        AnomalyQueryHelper.buildAnomalyQueryFromFilterProperties(anomalyFilterPropertiesDTO), allowedAnomaliesIds));
+        AnomalyQueryHelper.buildAnomalyQueryFromFilterProperties(anomalyFilterPropertiesDTO), allowedAnomaliesIds,
+        alwaysAllowed));
   }
 }

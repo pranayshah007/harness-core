@@ -7,6 +7,7 @@
 
 package io.harness.cdng.pipeline.executions.beans;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -17,6 +18,7 @@ import lombok.Value;
 @OwnedBy(HarnessTeam.CDC)
 @Value
 @Builder
+@RecasterAlias("io.harness.cdng.pipeline.executions.beans.FreezeExecutionSummary")
 public class FreezeExecutionSummary {
   List<FreezeExecutionInfo> freezeExecutionInfoList;
 }

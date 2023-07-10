@@ -15,6 +15,7 @@ import static io.harness.security.encryption.SecretManagerType.KMS;
 
 import static software.wings.beans.helper.NgSecretManagerHelper.updateNGSecretManagerMetadata;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.beans.SecretManagerCapabilities;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -44,6 +45,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@RecasterAlias("software.wings.beans.LocalEncryptionConfig")
 public class LocalEncryptionConfig extends SecretManagerConfig {
   public static final String HARNESS_DEFAULT_SECRET_MANAGER = "Harness Secrets Manager";
   @Builder.Default private String name = HARNESS_DEFAULT_SECRET_MANAGER;

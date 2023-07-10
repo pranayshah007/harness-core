@@ -22,6 +22,7 @@ import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
 import io.harness.ngtriggers.beans.source.NGTriggerSpecV2;
 import io.harness.ngtriggers.beans.source.artifact.ArtifactTriggerConfig;
 import io.harness.ngtriggers.beans.source.artifact.ManifestTriggerConfig;
+import io.harness.ngtriggers.beans.source.artifact.MultiRegionArtifactTriggerConfig;
 import io.harness.ngtriggers.beans.source.webhook.v2.TriggerEventDataCondition;
 import io.harness.ngtriggers.conditionchecker.ConditionEvaluator;
 import io.harness.ngtriggers.eventmapper.filters.TriggerFilter;
@@ -97,6 +98,9 @@ public class MetadataConditionsTriggerFilter implements TriggerFilter {
     } else if (ArtifactTriggerConfig.class.isAssignableFrom(spec.getClass())) {
       ArtifactTriggerConfig artifactTriggerConfig = (ArtifactTriggerConfig) spec;
       triggerMetadataConditions = artifactTriggerConfig.getSpec().fetchMetaDataConditions();
+    } else if (MultiRegionArtifactTriggerConfig.class.isAssignableFrom(spec.getClass())) {
+      MultiRegionArtifactTriggerConfig multiRegionArtifactTriggerConfig = (MultiRegionArtifactTriggerConfig) spec;
+      triggerMetadataConditions = multiRegionArtifactTriggerConfig.getMetaDataConditions();
     }
 
     if (isEmpty(triggerMetadataConditions)) {

@@ -32,6 +32,7 @@ import static io.harness.ngtriggers.beans.source.WebhookTriggerType.CUSTOM;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITHUB;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITLAB;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.HARNESS;
+import static io.harness.security.PrincipalProtoMapper.toPrincipalDTO;
 
 import static java.time.temporal.ChronoUnit.DAYS;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -101,6 +102,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.spring.TriggerEventHistoryRepository;
+import io.harness.security.SecurityContextBuilder;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.utils.YamlPipelineUtils;
@@ -219,6 +221,15 @@ public class NGTriggerElementMapper {
       copyFields(existingEntity, newEntity);
       return;
     }
+    if (newEntity.getType() == MULTI_REGION_ARTIFACT) {
+      /* MultiRegionArtifact triggers need different handling here, since we can't just copy the list of BuildMetadata
+      from the previously existing entity (e.g.: The number of artifacts it is listening for could have changed in
+      the update). So we only copy the previously existing signatures to `ngTriggerEntity.metadata.signatures`.
+      These will be used to unsubscribe from the previously subscribed poolingDocuments.
+      At a later step (in NGTriggerServiceImpl:stampPollingInfoForMultiArtifactTrigger) we reset the signatures
+      with the actual new signatures for this trigger. */
+      copyFieldsForMultiArtifactTrigger(existingEntity, newEntity);
+    }
 
     // Currently, enabled only for GITHUB
     if (newEntity.getType() == WEBHOOK) {
@@ -259,6 +270,18 @@ public class NGTriggerElementMapper {
     if (existingPollingConfig != null && isNotEmpty(existingPollingConfig.getPollingDocId())) {
       newEntity.getMetadata().getBuildMetadata().getPollingConfig().setPollingDocId(
           existingPollingConfig.getPollingDocId());
+    }
+  }
+
+  private void copyFieldsForMultiArtifactTrigger(NGTriggerEntity existingEntity, NGTriggerEntity newEntity) {
+    if (existingEntity.getMetadata().getSignatures() == null) {
+      log.info("Previously polling was not enabled. Trigger {} updated with polling", newEntity.getIdentifier());
+      return;
+    }
+    List<String> previousSignatures = existingEntity.getMetadata().getSignatures();
+
+    if (isNotEmpty(previousSignatures)) {
+      newEntity.getMetadata().setSignatures(existingEntity.getMetadata().getSignatures());
     }
   }
 
@@ -464,7 +487,8 @@ public class NGTriggerElementMapper {
   }
 
   public TriggerWebhookEventBuilder toNGTriggerWebhookEvent(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String payload, List<HeaderConfig> headerConfigs) {
+      String projectIdentifier, String payload, List<HeaderConfig> headerConfigs,
+      io.harness.security.Principal principal) {
     WebhookTriggerType webhookTriggerType;
     Map<String, List<String>> headers =
         headerConfigs.stream().collect(Collectors.toMap(HeaderConfig::getKey, HeaderConfig::getValues));
@@ -502,6 +526,10 @@ public class NGTriggerElementMapper {
             .headers(headerConfigs)
             .payload(payload)
             .isSubscriptionConfirmation(isConfirmationMessage);
+    if (principal != null
+        && !principal.getPrincipalCase().equals(io.harness.security.Principal.PrincipalCase.PRINCIPAL_NOT_SET)) {
+      triggerWebhookEventBuilder.principal(toPrincipalDTO(accountIdentifier, principal));
+    }
 
     HeaderConfig customTriggerIdentifier = headerConfigs.stream()
                                                .filter(header -> header.getKey().equalsIgnoreCase(X_HARNESS_TRIGGER_ID))
@@ -528,7 +556,8 @@ public class NGTriggerElementMapper {
         .pipelineIdentifier(pipelineIdentifier)
         .sourceRepoType(webhookTriggerType.getEntityMetadataName())
         .headers(headerConfigs)
-        .payload(payload);
+        .payload(payload)
+        .principal(SecurityContextBuilder.getPrincipal());
   }
 
   public NGTriggerDetailsResponseDTO toNGTriggerDetailsResponseDTO(NGTriggerEntity ngTriggerEntity, boolean includeYaml,
