@@ -116,10 +116,7 @@ public class ManifestsPlanCreator extends ChildrenPlanCreator<ManifestsListConfi
       return planCreationResponseMap;
     }
 
-    boolean isHelmMultipleManifestSupportEnabled =
-        cdFeatureFlagHelper.isEnabled(ctx.getAccountIdentifier(), FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG)
-        && ctx.getDependency().getMetadataMap().containsKey(PRIMARY_MANIFEST_REF);
-    validateManifestList(serviceDefinitionType, manifestList, isHelmMultipleManifestSupportEnabled);
+    validateManifestList(serviceDefinitionType, manifestList, ctx);
     YamlField manifestsYamlField = ctx.getCurrentField();
 
     List<YamlNode> yamlNodes = Optional.of(manifestsYamlField.getNode().asArray()).orElse(Collections.emptyList());
@@ -202,11 +199,14 @@ public class ManifestsPlanCreator extends ChildrenPlanCreator<ManifestsListConfi
     return Collections.singletonMap(YamlTypes.MANIFEST_LIST_CONFIG, Collections.singleton(PlanCreatorUtils.ANY_TYPE));
   }
 
-  private void validateManifestList(ServiceDefinitionType serviceDefinitionType, ManifestList manifestList,
-      boolean isHelmMultipleManifestSupportEnabled) {
+  private void validateManifestList(
+      ServiceDefinitionType serviceDefinitionType, ManifestList manifestList, PlanCreationContext ctx) {
     if (serviceDefinitionType == null) {
       return;
     }
+    boolean isHelmMultipleManifestSupportEnabled =
+        cdFeatureFlagHelper.isEnabled(ctx.getAccountIdentifier(), FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG)
+        && ctx.getDependency().getMetadataMap().containsKey(PRIMARY_MANIFEST_REF);
 
     switch (serviceDefinitionType) {
       case KUBERNETES:

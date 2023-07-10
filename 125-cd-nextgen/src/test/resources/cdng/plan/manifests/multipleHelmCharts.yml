@@ -36,10 +36,3 @@
             - ng-automation/k8s/valuesWithClusterTypeService.yaml
           branch: master
     type: Values
-
-
-
-
-
-
-
