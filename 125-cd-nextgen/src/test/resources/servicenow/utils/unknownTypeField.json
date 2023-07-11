@@ -1,0 +1,28 @@
+{
+  "filterable": true,
+  "reference_display_field": "number",
+  "reference_attributes": {
+    "display_field": "number",
+    "ref_ac_columns": [],
+    "ref_ac_columns_search": "",
+    "ref_ac_display_value": true,
+    "ref_auto_completer": ""
+  },
+  "canmatch": true,
+  "cangroup": true,
+  "label": "Parent",
+  "type": "reference",
+  "max_unit": "days",
+  "mandatory": false,
+  "reference": "task",
+  "default": "",
+  "base_type": "GUID",
+  "read_only": false,
+  "hint": "",
+  "name": "parent",
+  "attributes": "encode_utf8=false",
+  "column_type": "element",
+  "internal_type": "reference",
+  "cansort": true,
+  "max_length": 32
+}

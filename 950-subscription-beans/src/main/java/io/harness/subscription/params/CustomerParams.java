@@ -20,4 +20,5 @@ public class CustomerParams {
   private String name;
   private String billingContactEmail;
   private AddressDto address;
+  private String defaultPaymentMethod;
 }

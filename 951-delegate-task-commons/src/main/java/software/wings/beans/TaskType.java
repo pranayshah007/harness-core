@@ -493,7 +493,8 @@ public enum TaskType {
   HELM_COMMAND_TASK_NG_RANCHER(TaskGroup.HELM, "Helm Task for NG Rancher deployments"),
   HELM_FETCH_CHART_MANIFEST_TASK(TaskGroup.HELM, "Fetch helm chart", true),
   COMMAND_TASK_NG_WITH_GITHUB_PACKAGE_ARTIFACT(TaskGroup.COMMAND_TASK_NG, "Command Task"),
-  INSTANCE_SYNC_V2_NG_SUPPORT(TaskGroup.K8S_NG, "Instance sync V2 support for NG");
+  INSTANCE_SYNC_V2_NG_SUPPORT(TaskGroup.K8S_NG, "Instance sync V2 support for NG"),
+  COMMAND_TASK_NG_WITH_AZURE_UNIVERSAL_PACKAGE_ARTIFACT(TaskGroup.COMMAND_TASK_NG, "Command Task");
 
   private final TaskGroup taskGroup;
   private final String displayName;

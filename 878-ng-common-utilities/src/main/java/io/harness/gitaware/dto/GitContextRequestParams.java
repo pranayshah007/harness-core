@@ -31,4 +31,5 @@ public class GitContextRequestParams {
   boolean loadFromCache;
   EntityType entityType;
   boolean getOnlyFileContent;
+  boolean applyRepoAllowListFilter;
 }

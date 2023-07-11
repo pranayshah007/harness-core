@@ -3963,6 +3963,65 @@
       "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "GithubApp": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/GithubHttpCredentialsSpecDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "privateKeyRef"
+          ],
+          "properties": {
+            "applicationId": {
+              "type": "string"
+            },
+            "applicationIdRef": {
+              "type": "string"
+            },
+            "installationId": {
+              "type": "string"
+            },
+            "installationIdRef": {
+              "type": "string"
+            },
+            "privateKeyRef": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "applicationIdRef"
+              ]
+            },
+            {
+              "required": [
+                "applicationId"
+              ]
+            }
+          ]
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "installationIdRef"
+              ]
+            },
+            {
+              "required": [
+                "installationId"
+              ]
+            }
+          ]
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "GithubAppSpec": {
       "allOf": [
         {
@@ -4142,8 +4201,25 @@
               "enum": [
                 "UsernamePassword",
                 "UsernameToken",
-                "OAuth"
+                "OAuth",
+                "GithubApp"
               ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "GithubApp"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GithubApp"
+              }
             }
           }
         },

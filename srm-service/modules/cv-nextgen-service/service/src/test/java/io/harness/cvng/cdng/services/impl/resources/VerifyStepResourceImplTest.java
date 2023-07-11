@@ -109,7 +109,7 @@ public class VerifyStepResourceImplTest extends CvNextGenTestBase {
   private static VerifyStepResource verifyStepResource = new VerifyStepResourceImpl();
   private BuilderFactory builderFactory;
   private VerificationJobInstance verificationJobInstance;
-  private VerificationJobInstance testVerificationJobInstace;
+  private VerificationJobInstance testVerificationJobInstance;
   private CVNGStepTask cvngStepTask;
   private DeploymentActivitySummaryDTO deploymentActivitySummaryDTO;
   private List<MetricsAnalysis> metricsAnalyses;
@@ -339,41 +339,97 @@ public class VerifyStepResourceImplTest extends CvNextGenTestBase {
     String testVerificationJobInstanceId = "-q3bCyfZSmyXsybsfr9t3B";
     loadVerificationRelatedDocuments(testVerificationJobInstanceId);
     String baselineVerificationJobInstanceId = generateUuid();
-    testVerificationJobInstace = builderFactory.verificationJobInstanceBuilder().build();
-    testVerificationJobInstace.setUuid(testVerificationJobInstanceId);
+    testVerificationJobInstance = builderFactory.verificationJobInstanceBuilder().build();
+    testVerificationJobInstance.setUuid(testVerificationJobInstanceId);
 
-    VerificationJobInstance baselineVerificationJobInstance = builderFactory.verificationJobInstanceBuilder().build();
-    baselineVerificationJobInstance.setUuid(baselineVerificationJobInstanceId);
+    VerificationJobInstance currentBaselineVerificationJobInstance =
+        builderFactory.verificationJobInstanceBuilder().build();
+    currentBaselineVerificationJobInstance.setUuid(baselineVerificationJobInstanceId);
+
+    VerificationJobInstance appliedBaselineVerificationJobInstance =
+        builderFactory.verificationJobInstanceBuilder().build();
+    appliedBaselineVerificationJobInstance.setUuid(
+        testVerificationJobInstance.getResolvedJob().getBaselineVerificationJobInstanceId());
+
     when(stepTaskService.getByCallBackId(testVerificationJobInstanceId)).thenReturn(cvngStepTask);
     when(verificationJobInstanceService.getVerificationJobInstance(testVerificationJobInstanceId))
-        .thenReturn(testVerificationJobInstace);
+        .thenReturn(testVerificationJobInstance);
+    when(verificationJobInstanceService.getVerificationJobInstance(appliedBaselineVerificationJobInstance.getUuid()))
+        .thenReturn(appliedBaselineVerificationJobInstance);
     when(stepTaskService.getDeploymentSummary(any())).thenReturn(getDeploymentActivitySummaryDTOForLoadTest());
     Optional<VerificationJobInstance> baselineVerificationJobInstanceIdOptional =
-        Optional.of(baselineVerificationJobInstance);
+        Optional.of(currentBaselineVerificationJobInstance);
     when(verificationJobInstanceService.getPinnedBaselineVerificationJobInstance(
              ServiceEnvironmentParams.builder()
-                 .environmentIdentifier(testVerificationJobInstace.getResolvedJob().getEnvIdentifier())
-                 .serviceIdentifier(testVerificationJobInstace.getResolvedJob().getServiceIdentifier())
-                 .accountIdentifier(testVerificationJobInstace.getResolvedJob().getAccountId())
-                 .projectIdentifier(testVerificationJobInstace.getResolvedJob().getProjectIdentifier())
-                 .orgIdentifier(testVerificationJobInstace.getResolvedJob().getOrgIdentifier())
+                 .environmentIdentifier(testVerificationJobInstance.getResolvedJob().getEnvIdentifier())
+                 .serviceIdentifier(testVerificationJobInstance.getResolvedJob().getServiceIdentifier())
+                 .accountIdentifier(testVerificationJobInstance.getResolvedJob().getAccountId())
+                 .projectIdentifier(testVerificationJobInstance.getResolvedJob().getProjectIdentifier())
+                 .orgIdentifier(testVerificationJobInstance.getResolvedJob().getOrgIdentifier())
                  .build()))
         .thenReturn(baselineVerificationJobInstanceIdOptional);
     when(verificationJobInstanceService.getVerificationJobInstance(baselineVerificationJobInstanceId))
-        .thenReturn(testVerificationJobInstace);
+        .thenReturn(testVerificationJobInstance);
 
     String url = "http://localhost:9998/account/" + builderFactory.getContext().getAccountId() + "/orgs/"
         + builderFactory.getContext().getOrgIdentifier() + "/projects/"
         + builderFactory.getContext().getProjectIdentifier() + "/verifications/" + testVerificationJobInstanceId;
     Response response = RESOURCES.client().target(url + "/overview").request(MediaType.APPLICATION_JSON_TYPE).get();
     assertThat(response.getStatus()).isEqualTo(200);
-    VerificationOverview verificationOverview = response.readEntity(new GenericType<VerificationOverview>() {});
+    VerificationOverview verificationOverview = response.readEntity(new GenericType<>() {});
 
     assertThat(verificationOverview.getBaselineOverview().getBaselineVerificationJobInstanceId())
-        .isEqualTo(baselineVerificationJobInstanceId);
+        .isEqualTo(appliedBaselineVerificationJobInstance.getUuid());
     assertThat(verificationOverview.getBaselineOverview().isApplicableForBaseline()).isTrue();
     assertThat(verificationOverview.getBaselineOverview().isBaselineExpired()).isFalse();
-    assertThat(verificationOverview.getBaselineOverview().isBaseline()).isEqualTo(false);
+    assertThat(verificationOverview.getBaselineOverview().isBaseline()).isFalse();
+    assertThat(verificationOverview.getBaselineOverview().getPlanExecutionId())
+        .isEqualTo(appliedBaselineVerificationJobInstance.getPlanExecutionId());
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testGetVerificationOverviewForLoadTest_isBaseline() throws IOException {
+    builderFactory = BuilderFactory.getDefault();
+    String testVerificationJobInstanceId = "-q3bCyfZSmyXsybsfr9t3B";
+    loadVerificationRelatedDocuments(testVerificationJobInstanceId);
+    String baselineVerificationJobInstanceId = generateUuid();
+    testVerificationJobInstance = builderFactory.verificationJobInstanceBuilder().build();
+    testVerificationJobInstance.setUuid(testVerificationJobInstanceId);
+
+    VerificationJobInstance currentBaselineVerificationJobInstance = testVerificationJobInstance;
+    currentBaselineVerificationJobInstance.setUuid(baselineVerificationJobInstanceId);
+
+    when(stepTaskService.getByCallBackId(testVerificationJobInstanceId)).thenReturn(cvngStepTask);
+    when(verificationJobInstanceService.getVerificationJobInstance(testVerificationJobInstanceId))
+        .thenReturn(testVerificationJobInstance);
+
+    when(stepTaskService.getDeploymentSummary(any())).thenReturn(getDeploymentActivitySummaryDTOForLoadTest());
+    Optional<VerificationJobInstance> baselineVerificationJobInstanceIdOptional =
+        Optional.of(currentBaselineVerificationJobInstance);
+    when(verificationJobInstanceService.getPinnedBaselineVerificationJobInstance(
+             ServiceEnvironmentParams.builder()
+                 .environmentIdentifier(testVerificationJobInstance.getResolvedJob().getEnvIdentifier())
+                 .serviceIdentifier(testVerificationJobInstance.getResolvedJob().getServiceIdentifier())
+                 .accountIdentifier(testVerificationJobInstance.getResolvedJob().getAccountId())
+                 .projectIdentifier(testVerificationJobInstance.getResolvedJob().getProjectIdentifier())
+                 .orgIdentifier(testVerificationJobInstance.getResolvedJob().getOrgIdentifier())
+                 .build()))
+        .thenReturn(baselineVerificationJobInstanceIdOptional);
+    when(verificationJobInstanceService.getVerificationJobInstance(baselineVerificationJobInstanceId))
+        .thenReturn(testVerificationJobInstance);
+
+    String url = "http://localhost:9998/account/" + builderFactory.getContext().getAccountId() + "/orgs/"
+        + builderFactory.getContext().getOrgIdentifier() + "/projects/"
+        + builderFactory.getContext().getProjectIdentifier() + "/verifications/" + testVerificationJobInstanceId;
+    Response response = RESOURCES.client().target(url + "/overview").request(MediaType.APPLICATION_JSON_TYPE).get();
+    assertThat(response.getStatus()).isEqualTo(200);
+    VerificationOverview verificationOverview = response.readEntity(new GenericType<>() {});
+
+    assertThat(verificationOverview.getBaselineOverview().isApplicableForBaseline()).isTrue();
+    assertThat(verificationOverview.getBaselineOverview().isBaselineExpired()).isFalse();
+    assertThat(verificationOverview.getBaselineOverview().isBaseline()).isTrue();
   }
 
   @Test

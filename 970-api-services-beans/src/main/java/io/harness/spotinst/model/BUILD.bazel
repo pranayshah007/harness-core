@@ -12,6 +12,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//979-recaster/src/main/java/io/harness/annotation:module",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
     ],
 )

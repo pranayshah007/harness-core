@@ -32,6 +32,7 @@ public class ScmValidationParams implements ConnectorValidationParams, Execution
   List<EncryptedDataDetail> encryptedDataDetails;
   SSHKeySpecDTO sshKeySpecDTO;
   String connectorName;
+  boolean githubAppAuthentication;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

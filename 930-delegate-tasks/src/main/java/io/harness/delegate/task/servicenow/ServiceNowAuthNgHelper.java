@@ -95,7 +95,39 @@ public class ServiceNowAuthNgHelper {
       return getAuthTokenUsingAdfs(serviceNowADFSDTO);
     } else if (ServiceNowAuthType.REFRESH_TOKEN.equals(serviceNowAuthType)) {
       ServiceNowRefreshTokenDTO serviceNowRefreshTokenDTO = (ServiceNowRefreshTokenDTO) serviceNowAuthCredentialsDTO;
-      return getAuthTokenUsingRefreshToken(serviceNowRefreshTokenDTO);
+      return getAuthTokenUsingRefreshToken(serviceNowRefreshTokenDTO, false);
+    } else {
+      throw new InvalidRequestException(
+          String.format("Unsupported auth type in servicenow connector: %s", serviceNowAuthType));
+    }
+  }
+
+  public static String getAuthToken(ServiceNowConnectorDTO decryptedServiceNowConnectorDTO, boolean fetchFromCache) {
+    if (isNull(decryptedServiceNowConnectorDTO)) {
+      return null;
+    }
+    if (isNull(decryptedServiceNowConnectorDTO.getAuth())
+        || isNull(decryptedServiceNowConnectorDTO.getAuth().getCredentials())) {
+      // means somehow auth type is not present (not easily possible as migration done)
+      return getAuthTokenUsingUserNamePassword(decryptedServiceNowConnectorDTO.getUsername(),
+          decryptedServiceNowConnectorDTO.getUsernameRef(), decryptedServiceNowConnectorDTO.getPasswordRef());
+    }
+
+    ServiceNowAuthType serviceNowAuthType = decryptedServiceNowConnectorDTO.getAuth().getAuthType();
+    ServiceNowAuthCredentialsDTO serviceNowAuthCredentialsDTO =
+        decryptedServiceNowConnectorDTO.getAuth().getCredentials();
+
+    if (ServiceNowAuthType.USER_PASSWORD.equals(serviceNowAuthType)) {
+      ServiceNowUserNamePasswordDTO serviceNowUserNamePasswordDTO =
+          (ServiceNowUserNamePasswordDTO) serviceNowAuthCredentialsDTO;
+      return getAuthTokenUsingUserNamePassword(serviceNowUserNamePasswordDTO.getUsername(),
+          serviceNowUserNamePasswordDTO.getUsernameRef(), serviceNowUserNamePasswordDTO.getPasswordRef());
+    } else if (ServiceNowAuthType.ADFS.equals(serviceNowAuthType)) {
+      ServiceNowADFSDTO serviceNowADFSDTO = (ServiceNowADFSDTO) serviceNowAuthCredentialsDTO;
+      return getAuthTokenUsingAdfs(serviceNowADFSDTO);
+    } else if (ServiceNowAuthType.REFRESH_TOKEN.equals(serviceNowAuthType)) {
+      ServiceNowRefreshTokenDTO serviceNowRefreshTokenDTO = (ServiceNowRefreshTokenDTO) serviceNowAuthCredentialsDTO;
+      return getAuthTokenUsingRefreshToken(serviceNowRefreshTokenDTO, fetchFromCache);
     } else {
       throw new InvalidRequestException(
           String.format("Unsupported auth type in servicenow connector: %s", serviceNowAuthType));
@@ -165,7 +197,8 @@ public class ServiceNowAuthNgHelper {
    *
    * Tested using ServiceNow and Okta as authentication severs.
    */
-  private static String getAuthTokenUsingRefreshToken(ServiceNowRefreshTokenDTO serviceNowRefreshTokenDTO) {
+  private static String getAuthTokenUsingRefreshToken(
+      ServiceNowRefreshTokenDTO serviceNowRefreshTokenDTO, boolean fetchFromCache) {
     String refreshToken = new String(serviceNowRefreshTokenDTO.getRefreshTokenRef().getDecryptedValue());
     String clientId = new String(serviceNowRefreshTokenDTO.getClientIdRef().getDecryptedValue());
     String clientSecret = isNull(serviceNowRefreshTokenDTO.getClientSecretRef())
@@ -175,7 +208,7 @@ public class ServiceNowAuthNgHelper {
     String scope = serviceNowRefreshTokenDTO.getScope();
     String tokenUrl = serviceNowRefreshTokenDTO.getTokenUrl();
 
-    return RefreshTokenAuthNgHelper.getAuthToken(refreshToken, clientId, clientSecret, scope, tokenUrl, true);
+    return RefreshTokenAuthNgHelper.getAuthToken(refreshToken, clientId, clientSecret, scope, tokenUrl, fetchFromCache);
   }
 
   private static AdfsRestClient getAdfsRestClient(String url) {

@@ -118,7 +118,7 @@ public class IACMPipelineServiceInfoProvider implements PipelineServiceInfoProvi
 
   private StepInfo createStepInfo(IACMStepType iacmStepType, String stepCategory) {
     return StepInfo.newBuilder()
-        .setName(iacmStepType.getName())
+        .setName(iacmStepType.getDisplayName())
         .setType(iacmStepType.getName())
         .setFeatureFlag(iacmStepType.getFeatureName().name())
         .setStepMetaData(StepMetaData.newBuilder().addFolderPaths(stepCategory).build())

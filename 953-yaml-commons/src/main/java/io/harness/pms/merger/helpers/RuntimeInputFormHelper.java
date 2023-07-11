@@ -69,6 +69,10 @@ public class RuntimeInputFormHelper {
     return runtimeInputFormYamlConfig.getYaml();
   }
 
+  public Map<FQN, String> fetchExpressionAndFqnFromYaml(String pipelineYaml) {
+    return createExpressionFormYamlConfig(new YamlConfig(pipelineYaml));
+  }
+
   private YamlConfig createRuntimeInputFormYamlConfig(String yaml, boolean keepInput) {
     YamlConfig yamlConfig = new YamlConfig(yaml);
     return createRuntimeInputFormYamlConfig(yamlConfig, keepInput, false);
@@ -131,6 +135,19 @@ public class RuntimeInputFormHelper {
     }
 
     return new YamlConfig(templateMap, yamlConfig.getYamlMap());
+  }
+
+  public Map<FQN, String> createExpressionFormYamlConfig(YamlConfig yamlConfig) {
+    Map<FQN, Object> fullMap = yamlConfig.getFqnToValueMap();
+    Map<FQN, String> fqnExpressionMap = new LinkedHashMap<>();
+    fullMap.keySet().forEach(key -> {
+      String value = HarnessStringUtils.removeLeadingAndTrailingQuotesBothOrNone(fullMap.get(key).toString());
+      if (NGExpressionUtils.isExpressionField(value)) {
+        fqnExpressionMap.put(key, fullMap.get(key).toString());
+      }
+    });
+
+    return fqnExpressionMap;
   }
 
   public JsonNode createRuntimeInputFormJsonNode(JsonNode jsonNode, boolean keepInput, boolean keepDefaultValues) {

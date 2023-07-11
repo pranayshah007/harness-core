@@ -19,6 +19,7 @@ import io.harness.migrations.all.AddAccountIdToDeploymentEntities;
 import io.harness.migrations.all.AddAccountIdToEntityVersion;
 import io.harness.migrations.all.AddAccountIdToExecutionInterruptCollection;
 import io.harness.migrations.all.AddAccountIdToInfraDefinition;
+import io.harness.migrations.all.AddAccountIdToLearningEngineExperimentalAnalysisTask;
 import io.harness.migrations.all.AddAccountIdToLogAnalysisRecordsMigration;
 import io.harness.migrations.all.AddAccountIdToLogDataRecordsMigration;
 import io.harness.migrations.all.AddAccountIdToNewRelicMetricAnalysisRecords;
@@ -135,6 +136,7 @@ import io.harness.migrations.all.RemoveDeprecatedFieldsFromHarnessUserGroup;
 import io.harness.migrations.all.RemoveDuplicateUserGroupNameMigration;
 import io.harness.migrations.all.RemoveSupportEmailFromSalesContacts;
 import io.harness.migrations.all.RemoveUsageRestrictionForApplicationDefaultsMigration;
+import io.harness.migrations.all.SamlSSOSettingsConfiguredFromNGAuthenticationEnabledMigration;
 import io.harness.migrations.all.ScheduleSegmentPublishJob;
 import io.harness.migrations.all.SendInviteUrlForAllUserInvites;
 import io.harness.migrations.all.SetAccountIdProvisioners;
@@ -427,6 +429,8 @@ public class MigrationBackgroundList {
         .add(Pair.of(249, EncryptDelegateTokenMigration.class))
         .add(Pair.of(250, NoOpMigration.class))
         .add(Pair.of(251, EncryptDelegateTokenMigration.class))
+        .add(Pair.of(252, AddAccountIdToLearningEngineExperimentalAnalysisTask.class))
+        .add(Pair.of(253, SamlSSOSettingsConfiguredFromNGAuthenticationEnabledMigration.class))
         .build();
   }
 }

@@ -10,6 +10,7 @@ package io.harness.cdng.artifact.bean.yaml.nexusartifact;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.integer;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
@@ -29,6 +30,7 @@ import lombok.experimental.Wither;
 @OneOfField(fields = {"repositoryPort", "repositoryUrl"})
 @Schema(name = "NexusRegistryDockerConfig",
     description = "This entity contains the details of the Nexus config for docker repository")
+@RecasterAlias("io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig")
 public class NexusRegistryDockerConfig implements NexusRegistryConfigSpec {
   /**
    * Artifacts in repos need to be referenced via a path.

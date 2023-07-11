@@ -485,6 +485,13 @@ public class IdpModule extends AbstractModule {
     return this.appConfig.getBackstagePostgresHost();
   }
 
+  @Provides
+  @Singleton
+  @Named("idpEncryptionSecret")
+  public String idpEncryptionSecret() {
+    return this.appConfig.getIdpEncryptionSecret();
+  }
+
   private DelegateCallbackToken getDelegateCallbackToken(DelegateServiceGrpcClient delegateServiceClient) {
     log.info("Generating Delegate callback token");
     final DelegateCallbackToken delegateCallbackToken = delegateServiceClient.registerCallback(

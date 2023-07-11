@@ -1783,7 +1783,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       return;
     }
     log.info("Last heartbeat received at {} and sent to manager at {}", lastHeartbeatReceivedAt.get(),
-        lastHeartbeatReceivedAt.get());
+        lastHeartbeatSentAt.get());
     long now = clock.millis();
     boolean heartbeatReceivedTimeExpired = lastHeartbeatReceivedAt.get() != 0
         && (now - lastHeartbeatReceivedAt.get()) > HEARTBEAT_SOCKET_TIMEOUT && !closingSocket.get();

@@ -57,13 +57,18 @@ public class HarnessSCMWebhookServiceImpl implements WebhookEventService {
   @Override
   public UpsertWebhookResponseDTO upsertWebhook(UpsertWebhookRequestDTO upsertWebhookRequestDTO) {
     UpsertWebhookResponseDTO upsertWebhookResponseDTO = null;
-    ScmConnector scmConnector = getScmConnector(upsertWebhookRequestDTO.getRepoURL());
+    ScmConnector scmConnector = getDummyScmConnector(upsertWebhookRequestDTO.getRepoURL());
     try (AutoLogContext ignore1 = new NgAutoLogContext(upsertWebhookRequestDTO.getProjectIdentifier(),
              upsertWebhookRequestDTO.getOrgIdentifier(), upsertWebhookRequestDTO.getAccountIdentifier(),
              AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
       String target = getTargetUrl(upsertWebhookRequestDTO.getAccountIdentifier());
       GitWebhookDetails gitWebhookDetails =
-          GitWebhookDetails.builder().hookEventType(upsertWebhookRequestDTO.getHookEventType()).target(target).build();
+          GitWebhookDetails.builder()
+              .hookEventType(upsertWebhookRequestDTO.getHookEventType())
+              .target(target)
+              // todo(abhinav): check about secret
+              //                  .secret(upsertWebhookRequestDTO.getWebhookSecretIdentifierRef())
+              .build();
       CreateWebhookResponse createWebhookResponse = scmClient.upsertWebhook(scmConnector, gitWebhookDetails);
       UpsertWebhookResponseDTO response = UpsertWebhookResponseDTO.builder()
                                               .webhookResponse(createWebhookResponse.getWebhook())
@@ -82,7 +87,7 @@ public class HarnessSCMWebhookServiceImpl implements WebhookEventService {
   }
 
   private String getTargetUrl(String accountIdentifier) {
-    String basewebhookUrl = baseUrls.getNgManagerScmBaseUrl();
+    String basewebhookUrl = baseUrls.getNgManagerInternalBaseUrl();
     if (!basewebhookUrl.endsWith("/")) {
       basewebhookUrl += "/";
     }
@@ -96,11 +101,12 @@ public class HarnessSCMWebhookServiceImpl implements WebhookEventService {
     return webhookUrl.toString();
   }
 
-  private ScmConnector getScmConnector(String repoURL) {
+  private ScmConnector getDummyScmConnector(String repoURL) {
     return HarnessConnectorDTO.builder()
         .connectionType(GitConnectionType.REPO)
         .url(repoURL)
         .apiAccess(getApiAccess())
+        .apiUrl(baseUrls.getScmServiceBaseUrl())
         .build();
   }
 

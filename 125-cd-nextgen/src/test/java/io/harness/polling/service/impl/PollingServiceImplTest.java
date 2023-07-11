@@ -104,7 +104,7 @@ public class PollingServiceImplTest extends CategoryTest {
     doReturn(null)
         .when(pollingRepository)
         .addSubscribersToExistingPollingDoc(accountId, orgId, projectId, PollingType.ARTIFACT, dockerHubArtifactInfo,
-            Collections.singletonList("trigger1"));
+            Collections.singletonList("trigger1"), Collections.emptyMap());
     doReturn(pollingDocument).when(pollingRepository).save(any());
     pollingService.save(pollingDocument);
     ArgumentCaptor<PollingDocument> pollingDocumentArgumentCaptor = ArgumentCaptor.forClass(PollingDocument.class);

@@ -684,7 +684,7 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
 
     assertThat(((ElastigroupStepExceptionPassThroughData) taskChainResponse.getPassThroughData()).getErrorMessage())
         .isNotNull()
-        .isEqualTo("NullPointerException");
+        .contains("NullPointerException");
   }
 
   @Test

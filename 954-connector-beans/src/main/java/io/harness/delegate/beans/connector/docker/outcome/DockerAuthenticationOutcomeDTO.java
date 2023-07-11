@@ -9,6 +9,7 @@ package io.harness.delegate.beans.connector.docker.outcome;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.docker.DockerAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.docker.DockerAuthType;
@@ -27,6 +28,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@RecasterAlias("io.harness.delegate.beans.connector.docker.outcome.DockerAuthenticationOutcomeDTO")
 public class DockerAuthenticationOutcomeDTO {
   @NotNull DockerAuthType type;
 

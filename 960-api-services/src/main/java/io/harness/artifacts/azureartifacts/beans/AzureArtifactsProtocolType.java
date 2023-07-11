@@ -7,4 +7,4 @@
 
 package io.harness.artifacts.azureartifacts.beans;
 
-public enum AzureArtifactsProtocolType { maven, nuget }
+public enum AzureArtifactsProtocolType { maven, nuget, upack }

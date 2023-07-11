@@ -464,7 +464,7 @@ public class ServiceNowAuthNgHelperTest extends CategoryTest {
             .build();
 
     try (MockedStatic<RefreshTokenAuthNgHelper> ignored = Mockito.mockStatic(RefreshTokenAuthNgHelper.class)) {
-      when(RefreshTokenAuthNgHelper.getAuthToken(REFRESH_TOKEN, CLIENT_ID, CLIENT_SECRET, SCOPE, TOKEN_URL, true))
+      when(RefreshTokenAuthNgHelper.getAuthToken(REFRESH_TOKEN, CLIENT_ID, CLIENT_SECRET, SCOPE, TOKEN_URL, false))
           .thenThrow(new ServiceNowOIDCException(
               "Error fetching access token", SERVICENOW_REFRESH_TOKEN_ERROR, WingsException.USER));
 
@@ -496,7 +496,7 @@ public class ServiceNowAuthNgHelperTest extends CategoryTest {
             .build();
 
     try (MockedStatic<RefreshTokenAuthNgHelper> ignored = Mockito.mockStatic(RefreshTokenAuthNgHelper.class)) {
-      when(RefreshTokenAuthNgHelper.getAuthToken(REFRESH_TOKEN, CLIENT_ID, CLIENT_SECRET, SCOPE, TOKEN_URL, true))
+      when(RefreshTokenAuthNgHelper.getAuthToken(REFRESH_TOKEN, CLIENT_ID, CLIENT_SECRET, SCOPE, TOKEN_URL, false))
           .thenReturn(BEARER_TOKEN);
 
       assertThat(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO)).isEqualTo(BEARER_TOKEN);
@@ -508,10 +508,52 @@ public class ServiceNowAuthNgHelperTest extends CategoryTest {
     serviceNowRefreshTokenDTO.setClientSecretRef(SecretRefData.builder().build());
 
     try (MockedStatic<RefreshTokenAuthNgHelper> ignored = Mockito.mockStatic(RefreshTokenAuthNgHelper.class)) {
-      when(RefreshTokenAuthNgHelper.getAuthToken(REFRESH_TOKEN, CLIENT_ID, null, SCOPE, TOKEN_URL, true))
+      when(RefreshTokenAuthNgHelper.getAuthToken(REFRESH_TOKEN, CLIENT_ID, null, SCOPE, TOKEN_URL, false))
           .thenReturn(BEARER_TOKEN);
 
       assertThat(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO)).isEqualTo(BEARER_TOKEN);
+    }
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetAuthTokenWhenRefreshTokenWithCache() {
+    // refresh token
+    ServiceNowConnectorDTO serviceNowConnectorDTO =
+        ServiceNowConnectorDTO.builder()
+            .auth(ServiceNowAuthenticationDTO.builder()
+                      .authType(ServiceNowAuthType.REFRESH_TOKEN)
+                      .credentials(
+                          ServiceNowRefreshTokenDTO.builder()
+                              .refreshTokenRef(
+                                  SecretRefData.builder().decryptedValue(REFRESH_TOKEN.toCharArray()).build())
+                              .scope(SCOPE)
+                              .tokenUrl(TOKEN_URL)
+                              .clientSecretRef(
+                                  SecretRefData.builder().decryptedValue(CLIENT_SECRET.toCharArray()).build())
+                              .clientIdRef(SecretRefData.builder().decryptedValue(CLIENT_ID.toCharArray()).build())
+                              .build())
+                      .build())
+            .build();
+
+    try (MockedStatic<RefreshTokenAuthNgHelper> ignored = Mockito.mockStatic(RefreshTokenAuthNgHelper.class)) {
+      when(RefreshTokenAuthNgHelper.getAuthToken(REFRESH_TOKEN, CLIENT_ID, CLIENT_SECRET, SCOPE, TOKEN_URL, true))
+          .thenReturn(BEARER_TOKEN);
+
+      assertThat(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO, true)).isEqualTo(BEARER_TOKEN);
+    }
+
+    // client secret null
+    ServiceNowRefreshTokenDTO serviceNowRefreshTokenDTO =
+        (ServiceNowRefreshTokenDTO) serviceNowConnectorDTO.getAuth().getCredentials();
+    serviceNowRefreshTokenDTO.setClientSecretRef(SecretRefData.builder().build());
+
+    try (MockedStatic<RefreshTokenAuthNgHelper> ignored = Mockito.mockStatic(RefreshTokenAuthNgHelper.class)) {
+      when(RefreshTokenAuthNgHelper.getAuthToken(REFRESH_TOKEN, CLIENT_ID, null, SCOPE, TOKEN_URL, true))
+          .thenReturn(BEARER_TOKEN);
+
+      assertThat(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO, true)).isEqualTo(BEARER_TOKEN);
     }
   }
 }

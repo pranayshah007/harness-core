@@ -2188,8 +2188,9 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     }
     log.warn("Marking delegate tasks {} failed since delegate went down before completion.",
         delegateTasks.stream().map(DelegateTask::getUuid).collect(Collectors.toList()));
-    Delegate delegate = delegateCache.get(accountId, delegateId, false);
-    final String delegateName = isNotEmpty(delegate.getHostName()) ? delegate.getHostName() : delegate.getUuid();
+    Optional<Delegate> delegate = Optional.ofNullable(delegateCache.get(accountId, delegateId, false));
+    final String delegateName =
+        delegate.filter(d -> isNotEmpty(d.getHostName())).map(Delegate::getHostName).orElse(delegateId);
     final String errorMessage = "Delegate [" + delegateName + "] disconnected while executing the task";
     final DelegateTaskResponse delegateTaskResponse =
         DelegateTaskResponse.builder()

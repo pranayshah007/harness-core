@@ -100,7 +100,7 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
 
     CIBuildStatusPushParameters pushParameters = gitBuildStatusUtility.getCIBuildStatusPushParams(
         Ambiance.newBuilder(ambiance).setMetadata(executionMetadata).build(), buildStatusUpdateParameter,
-        Status.SUCCEEDED, "sha");
+        Status.SUCCEEDED, "sha", "1");
 
     assertThat(pushParameters.getDesc())
         .isEqualTo("Execution status of Pipeline - shortPipelineId (executionuuid) Stage - shortname was SUCCEEDED");
@@ -120,7 +120,7 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
 
     CIBuildStatusPushParameters pushParameters = gitBuildStatusUtility.getCIBuildStatusPushParams(
         Ambiance.newBuilder(ambiance).setMetadata(executionMetadata).build(), buildStatusUpdateParameter,
-        Status.SUCCEEDED, "sha");
+        Status.SUCCEEDED, "sha", "1");
 
     assertThat(pushParameters.getDesc())
         .isEqualTo("Execution status of Pipeline - pipelineId (executionuuid) Stage - shortname was SUCCEEDED");
@@ -147,7 +147,7 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
 
     CIBuildStatusPushParameters pushParameters = gitBuildStatusUtility.getCIBuildStatusPushParams(
         Ambiance.newBuilder(ambiance).setMetadata(executionMetadata).build(), buildStatusUpdateParameter,
-        Status.SUCCEEDED, "sha");
+        Status.SUCCEEDED, "sha", "1");
 
     assertThat(pushParameters.getDesc())
         .isEqualTo(
@@ -174,7 +174,7 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
 
     CIBuildStatusPushParameters pushParameters = gitBuildStatusUtility.getCIBuildStatusPushParams(
         Ambiance.newBuilder(ambiance).setMetadata(executionMetadata).build(), buildStatusUpdateParameter,
-        Status.SUCCEEDED, "sha");
+        Status.SUCCEEDED, "sha", "1");
 
     assertThat(pushParameters.getDesc())
         .isEqualTo(
@@ -201,7 +201,7 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
 
     CIBuildStatusPushParameters pushParameters = gitBuildStatusUtility.getCIBuildStatusPushParams(
         Ambiance.newBuilder(ambiance).setMetadata(executionMetadata).build(), buildStatusUpdateParameter,
-        Status.SUCCEEDED, "sha");
+        Status.SUCCEEDED, "sha", "1");
 
     assertThat(pushParameters.getDesc())
         .isEqualTo(
@@ -226,7 +226,7 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
 
     CIBuildStatusPushParameters pushParameters = gitBuildStatusUtility.getCIBuildStatusPushParams(
         Ambiance.newBuilder(ambiance).setMetadata(executionMetadata).build(), buildStatusUpdateParameter,
-        Status.SUCCEEDED, "sha");
+        Status.SUCCEEDED, "sha", "1");
 
     assertThat(pushParameters.getDetailsUrl())
         .isEqualTo(
@@ -249,7 +249,7 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
 
     CIBuildStatusPushParameters pushParameters = gitBuildStatusUtility.getCIBuildStatusPushParams(
         Ambiance.newBuilder(ambiance).setMetadata(executionMetadata).build(), buildStatusUpdateParameter,
-        Status.SUCCEEDED, "sha");
+        Status.SUCCEEDED, "sha", "1");
 
     assertThat(pushParameters.getDetailsUrl())
         .isEqualTo(
@@ -276,7 +276,7 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
 
     CIBuildStatusPushParameters pushParameters = gitBuildStatusUtility.getCIBuildStatusPushParams(
         Ambiance.newBuilder(ambiance).setMetadata(executionMetadata).build(), buildStatusUpdateParameter,
-        Status.SUCCEEDED, "sha");
+        Status.SUCCEEDED, "sha", "1");
 
     assertThat(pushParameters.getOwner()).isEqualTo("org");
     assertThat(pushParameters.getRepo()).isEqualTo("project/_git/repo");
@@ -302,7 +302,7 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
 
     CIBuildStatusPushParameters pushParameters = gitBuildStatusUtility.getCIBuildStatusPushParams(
         Ambiance.newBuilder(ambiance).setMetadata(executionMetadata).build(), buildStatusUpdateParameter,
-        Status.SUCCEEDED, "sha");
+        Status.SUCCEEDED, "sha", "1");
 
     assertThat(pushParameters.getOwner()).isEqualTo("org");
     assertThat(pushParameters.getRepo()).isEqualTo("project/_git/repo");
@@ -329,7 +329,7 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
 
     CIBuildStatusPushParameters pushParameters = gitBuildStatusUtility.getCIBuildStatusPushParams(
         Ambiance.newBuilder(ambiance).setMetadata(executionMetadata).build(), buildStatusUpdateParameter,
-        Status.SUCCEEDED, "sha");
+        Status.SUCCEEDED, "sha", "1");
 
     assertThat(pushParameters.getOwner()).isEqualTo("org");
     assertThat(pushParameters.getRepo()).isEqualTo("project/repo");
@@ -355,7 +355,7 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
 
     CIBuildStatusPushParameters pushParameters = gitBuildStatusUtility.getCIBuildStatusPushParams(
         Ambiance.newBuilder(ambiance).setMetadata(executionMetadata).build(), buildStatusUpdateParameter,
-        Status.SUCCEEDED, "sha");
+        Status.SUCCEEDED, "sha", "1");
 
     assertThat(pushParameters.getOwner()).isEqualTo("org");
     assertThat(pushParameters.getRepo()).isEqualTo("project/repo");

@@ -658,12 +658,17 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
             existingConnector.getIdentifier());
         newConnector.setHeartbeatPerpetualTaskId(
             connectorHeartbeatTaskId == null ? null : connectorHeartbeatTaskId.getId());
+        log.info("Started Heartbeat Perpetual task for connector {} with taskID {}",
+            newConnector.getAccountIdentifier(),
+            connectorHeartbeatTaskId == null ? null : connectorHeartbeatTaskId.getId());
       } else if (existingConnector.getHeartbeatPerpetualTaskId() != null) {
         if (executeOnDelegate) {
           connectorHeartbeatService.resetPerpetualTask(
               accountIdentifier, existingConnector.getHeartbeatPerpetualTaskId());
           newConnector.setHeartbeatPerpetualTaskId(existingConnector.getHeartbeatPerpetualTaskId());
         } else {
+          log.info("Deleting Heartbeat Perpetual task for connector {} with taskID {}",
+              existingConnector.getAccountIdentifier(), existingConnector.getHeartbeatPerpetualTaskId());
           connectorHeartbeatService.deletePerpetualTask(
               accountIdentifier, existingConnector.getHeartbeatPerpetualTaskId(), fullyQualifiedIdentifier);
         }

@@ -61,6 +61,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -91,32 +92,43 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
   @Override
   public void createPlan(PlanCreationBlobRequest request,
       StreamObserver<io.harness.pms.contracts.plan.PlanCreationResponse> responseObserver) {
-    io.harness.pms.contracts.plan.PlanCreationResponse planCreationResponse;
-    long start = System.currentTimeMillis();
-    PlanCreationContextValue metadata = request.getContextMap().get("metadata");
-    try (AutoLogContext ignore = PlanCreatorUtils.autoLogContextWithRandomRequestId(metadata.getMetadata(),
-             metadata.getAccountIdentifier(), metadata.getOrgIdentifier(), metadata.getProjectIdentifier())) {
-      try {
-        MergePlanCreationResponse finalResponse = createPlanForDependenciesRecursive(
-            request.getDeps(), request.getContextMap(), request.getServiceAffinityMap());
-        planCreationResponse = getPlanCreationResponseFromFinalResponse(finalResponse);
-      } catch (Exception ex) {
-        log.error(ExceptionUtils.getMessage(ex), ex);
-        WingsException processedException = exceptionManager.processException(ex);
-        planCreationResponse =
-            io.harness.pms.contracts.plan.PlanCreationResponse.newBuilder()
-                .setErrorResponse(
-                    ErrorResponse.newBuilder().addMessages(ExceptionUtils.getMessage(processedException)).build())
-                .build();
-      } finally {
-        log.info(
-            "[PMS_PlanCreatorService_Time] Total Sdk Plan Creation time took {}ms for initial dependencies size {}",
-            System.currentTimeMillis() - start, request.getDeps().getDependenciesMap().size());
+    PlanCreationContextValue planCreationContextValue = null;
+    if (request != null && request.getContext() != null) {
+      List<PlanCreationContextValue> planCreationContextValues =
+          request.getContext().values().stream().collect(Collectors.toList());
+      if (planCreationContextValues.size() != 0) {
+        planCreationContextValue = planCreationContextValues.get(0);
       }
     }
+    try (AutoLogContext autoLogContext =
+             PlanCreatorServiceHelper.autoLogContextFromPlanCreationContextValue(planCreationContextValue)) {
+      io.harness.pms.contracts.plan.PlanCreationResponse planCreationResponse;
+      long start = System.currentTimeMillis();
+      PlanCreationContextValue metadata = request.getContextMap().get("metadata");
+      try (AutoLogContext ignore = PlanCreatorUtils.autoLogContextWithRandomRequestId(metadata.getMetadata(),
+               metadata.getAccountIdentifier(), metadata.getOrgIdentifier(), metadata.getProjectIdentifier())) {
+        try {
+          MergePlanCreationResponse finalResponse = createPlanForDependenciesRecursive(
+              request.getDeps(), request.getContextMap(), request.getServiceAffinityMap());
+          planCreationResponse = getPlanCreationResponseFromFinalResponse(finalResponse);
+        } catch (Exception ex) {
+          log.error(ExceptionUtils.getMessage(ex), ex);
+          WingsException processedException = exceptionManager.processException(ex);
+          planCreationResponse =
+              io.harness.pms.contracts.plan.PlanCreationResponse.newBuilder()
+                  .setErrorResponse(
+                      ErrorResponse.newBuilder().addMessages(ExceptionUtils.getMessage(processedException)).build())
+                  .build();
+        } finally {
+          log.info(
+              "[PMS_PlanCreatorService_Time] Total Sdk Plan Creation time took {}ms for initial dependencies size {}",
+              System.currentTimeMillis() - start, request.getDeps().getDependenciesMap().size());
+        }
+      }
 
-    responseObserver.onNext(planCreationResponse);
-    responseObserver.onCompleted();
+      responseObserver.onNext(planCreationResponse);
+      responseObserver.onCompleted();
+    }
   }
 
   private MergePlanCreationResponse createPlanForDependenciesRecursive(Dependencies initialDependencies,
@@ -191,26 +203,30 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
 
   @Override
   public void createFilter(FilterCreationBlobRequest request, StreamObserver<FilterCreationResponse> responseObserver) {
-    FilterCreationResponse filterCreationResponse;
-    try {
-      FilterCreationBlobResponse response = filterCreatorService.createFilterBlobResponse(request);
-      filterCreationResponse = FilterCreationResponse.newBuilder().setBlobResponse(response).build();
-    } catch (Exception ex) {
-      WingsException processedException = exceptionManager.processException(ex);
-      filterCreationResponse =
-          FilterCreationResponse.newBuilder()
-              .setErrorResponseV2(
-                  ErrorResponseV2.newBuilder()
-                      .addErrors(ErrorMetadata.newBuilder()
-                                     .setWingsExceptionErrorCode(String.valueOf(processedException.getCode()))
-                                     .setErrorMessage(ExceptionUtils.getMessage(processedException))
-                                     .build())
-                      .build())
-              .build();
-    }
+    try (AutoLogContext autoLogContext =
+             PlanCreatorServiceHelper.autoLogContextFromSetupMetadata(request.getSetupMetadata())) {
+      FilterCreationResponse filterCreationResponse;
+      try {
+        FilterCreationBlobResponse response = filterCreatorService.createFilterBlobResponse(request);
+        filterCreationResponse = FilterCreationResponse.newBuilder().setBlobResponse(response).build();
+      } catch (Exception ex) {
+        log.error(ExceptionUtils.getMessage(ex), ex);
+        WingsException processedException = exceptionManager.processException(ex);
+        filterCreationResponse =
+            FilterCreationResponse.newBuilder()
+                .setErrorResponseV2(
+                    ErrorResponseV2.newBuilder()
+                        .addErrors(ErrorMetadata.newBuilder()
+                                       .setWingsExceptionErrorCode(String.valueOf(processedException.getCode()))
+                                       .setErrorMessage(ExceptionUtils.getMessage(processedException))
+                                       .build())
+                        .build())
+                .build();
+      }
 
-    responseObserver.onNext(filterCreationResponse);
-    responseObserver.onCompleted();
+      responseObserver.onNext(filterCreationResponse);
+      responseObserver.onCompleted();
+    }
   }
 
   @Override
@@ -221,6 +237,12 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
       VariablesCreationBlobResponse response = variableCreatorService.createVariablesResponse(request);
       variablesCreationResponse = VariablesCreationResponse.newBuilder().setBlobResponse(response).build();
     } catch (Exception ex) {
+      log.error(
+          String.format("Error in creating variables YAML for the following accountId %s, orgId %s, and projId %s.",
+              request.getMetadata().getMetadata().get("accountIdentifier"),
+              request.getMetadata().getMetadata().get("orgIdentifier"),
+              request.getMetadata().getMetadata().get("projectIdentifier")),
+          ex);
       variablesCreationResponse =
           VariablesCreationResponse.newBuilder()
               .setErrorResponse(ErrorResponse.newBuilder().addMessages(ExceptionUtils.getMessage(ex)).build())

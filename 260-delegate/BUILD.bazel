@@ -123,6 +123,7 @@ java_library(
         "//260-delegate/src/main/java/io/harness/delegate/service/common:module",
         "//260-delegate/src/main/java/io/harness/delegate/service/core/apiclient:module",
         "//260-delegate/src/main/java/io/harness/delegate/service/core/k8s:module",
+        "//260-delegate/src/main/java/io/harness/delegate/service/core/litek8s:module",
         "//260-delegate/src/main/java/io/harness/verificationclient:module",
         "//400-rest:module",
         "//400-rest:supporter-test",

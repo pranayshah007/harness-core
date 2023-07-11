@@ -58,6 +58,6 @@ public class BillingJobProcessedDataFetcherTest extends AbstractDataFetcherTestB
 
   private BatchJobScheduledData getBatchJobScheduledData() {
     return new BatchJobScheduledData(
-        ACCOUNT_ID, BATCH_JOB_TYPE, 1200, LAST_PROCESSED_DATA_START_TIME, LAST_PROCESSED_DATA_END_TIME);
+        ACCOUNT_ID, BATCH_JOB_TYPE, 1200, LAST_PROCESSED_DATA_START_TIME, LAST_PROCESSED_DATA_END_TIME, 111111L);
   }
 }

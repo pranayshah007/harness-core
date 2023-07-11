@@ -131,7 +131,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
     when(recommendationService.listAll(
              eq(ACCOUNT_ID), any(Condition.class), eq(GraphQLUtils.DEFAULT_OFFSET), eq(GraphQLUtils.DEFAULT_LIMIT)))
         .thenReturn(Collections.emptyList());
-    when(rbacHelper.hasPerspectiveViewOnAllResources(any(), any(), any())).thenReturn(false);
+    when(rbacHelper.hasPerspectiveViewOnResources(any(), any(), any(), any())).thenReturn(false);
 
     RecommendationsOverviewQueryV2 overviewQueryV2 = Mockito.spy(overviewQuery);
     Mockito.doReturn(allowedMockedRecommendations(null))
@@ -464,7 +464,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
     Mockito.doReturn(Collections.singletonList(createCEViewShortHand()))
         .when(overviewQueryV2)
         .getAllowedPerspectives(any());
-    when(rbacHelper.hasPerspectiveViewOnAllResources(any(), any(), any())).thenReturn(true);
+    when(rbacHelper.hasPerspectiveViewOnResources(any(), any(), any(), any())).thenReturn(true);
     Mockito.doReturn(emptyList()).when(overviewQueryV2).getPerspectiveRuleList(any());
 
     List<FilterStatsDTO> result =
@@ -495,7 +495,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
     Mockito.doReturn(Collections.singletonList(createCEViewShortHand()))
         .when(overviewQueryV2)
         .getAllowedPerspectives(any());
-    when(rbacHelper.hasPerspectiveViewOnAllResources(any(), any(), any())).thenReturn(true);
+    when(rbacHelper.hasPerspectiveViewOnResources(any(), any(), any(), any())).thenReturn(true);
     Mockito.doReturn(emptyList()).when(overviewQueryV2).getPerspectiveRuleList(any());
 
     K8sRecommendationFilterDTO filter = K8sRecommendationFilterDTO.builder()

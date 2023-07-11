@@ -390,7 +390,7 @@ public class MigratorUtility {
   }
 
   public static NGVariable getNGVariable(MigrationContext migrationContext, ServiceVariable serviceVariable) {
-    if (serviceVariable.getType().equals(ServiceVariableType.ENCRYPTED_TEXT)) {
+    if (ServiceVariableType.ENCRYPTED_TEXT.equals(serviceVariable.getType())) {
       return SecretNGVariable.builder()
           .type(NGVariableType.SECRET)
           .value(ParameterField.createValueField(MigratorUtility.getSecretRef(

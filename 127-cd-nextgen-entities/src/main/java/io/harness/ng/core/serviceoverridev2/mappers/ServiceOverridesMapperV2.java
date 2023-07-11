@@ -32,6 +32,7 @@ public class ServiceOverridesMapperV2 {
         .clusterIdentifier(requestDTOV2.getClusterIdentifier())
         .spec(requestDTOV2.getSpec())
         .type(requestDTOV2.getType())
+        .yamlInternal(requestDTOV2.getYamlInternal())
         .build();
   }
 
@@ -48,6 +49,7 @@ public class ServiceOverridesMapperV2 {
         .spec(entity.getSpec())
         .type(entity.getType())
         .isNewlyCreated(isNewlyCreated)
+        .yamlInternal(entity.getYamlInternal())
         .build();
   }
 }

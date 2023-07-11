@@ -89,12 +89,14 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
+import org.mockito.Mockito;
 import org.springframework.core.convert.converter.Converter;
 
 @Slf4j
@@ -151,6 +153,13 @@ public class OrchestrationStepsRule implements MethodRule, InjectorRuleMixin, Mo
         return ImmutableList.<Class<? extends Converter<?, ?>>>builder()
             .addAll(OrchestrationStepsModuleRegistrars.springConverters)
             .build();
+      }
+
+      @Provides
+      @Singleton
+      @Named("logStreamingClientThreadPool")
+      public ThreadPoolExecutor logStreamingClientThreadPool() {
+        return Mockito.mock(ThreadPoolExecutor.class);
       }
 
       @Provides

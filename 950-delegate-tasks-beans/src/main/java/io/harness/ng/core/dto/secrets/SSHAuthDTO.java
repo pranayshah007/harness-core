@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.dto.secrets;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.ng.core.models.SSHAuth;
 import io.harness.secretmanagerclient.SSHAuthScheme;
 
@@ -24,6 +25,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @Schema(name = "SSHAuth", description = "This is the SSH Authentication specification defined in Harness.")
+@RecasterAlias("io.harness.ng.core.dto.secrets.SSHAuthDTO")
 public class SSHAuthDTO {
   @JsonProperty("type")
   @NotNull

@@ -15,6 +15,7 @@ import io.harness.mongo.index.FdTtlIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAccess;
+import io.harness.security.dto.Principal;
 
 import dev.morphia.annotations.Entity;
 import java.time.OffsetDateTime;
@@ -49,6 +50,7 @@ public class TriggerWebhookEvent implements PersistentEntity, UuidAccess, Persis
   String orgIdentifier;
   String projectIdentifier;
   String sourceRepoType;
+  Principal principal;
   @Builder.Default boolean isSubscriptionConfirmation = Boolean.FALSE;
 
   @Setter @NonFinal @Builder.Default boolean processing = Boolean.FALSE;

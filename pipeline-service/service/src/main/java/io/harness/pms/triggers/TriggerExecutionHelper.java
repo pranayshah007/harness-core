@@ -112,6 +112,7 @@ import io.harness.security.dto.ServicePrincipal;
 import io.harness.serializer.ProtoUtils;
 import io.harness.utils.PmsFeatureFlagHelper;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -181,9 +182,10 @@ public class TriggerExecutionHelper {
   }
 
   // Todo: Check if we can merge some logic with ExecutionHelper
-  private PlanExecution createPlanExecution(TriggerDetails triggerDetails, TriggerPayload triggerPayload,
-      String payload, String executionTagForGitEvent, ExecutionTriggerInfo triggerInfo,
-      TriggerWebhookEvent triggerWebhookEvent, String runtimeInputYaml) {
+  @VisibleForTesting
+  PlanExecution createPlanExecution(TriggerDetails triggerDetails, TriggerPayload triggerPayload, String payload,
+      String executionTagForGitEvent, ExecutionTriggerInfo triggerInfo, TriggerWebhookEvent triggerWebhookEvent,
+      String runtimeInputYaml) {
     try {
       SecurityContextBuilder.setContext(
           new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
@@ -289,15 +291,17 @@ public class TriggerExecutionHelper {
           PlanExecutionMetadata.builder().planExecutionId(executionId).triggerJsonPayload(payload);
 
       String pipelineYaml;
+      JsonNode runtimeInputJsonNode = null;
       if (isBlank(runtimeInputYaml)) {
         pipelineYaml = pipelineEntity.getYaml();
       } else {
+        runtimeInputJsonNode = YamlUtils.readAsJsonNode(runtimeInputYaml);
         String pipelineYamlBeforeMerge = pipelineEntity.getYaml();
         switch (pipelineEntity.getHarnessVersion()) {
           case PipelineVersion.V1:
             planExecutionMetadataBuilder.inputSetYaml(runtimeInputYaml);
-            pipelineYaml =
-                InputSetMergeHelperV1.mergeInputSetIntoPipelineYaml(runtimeInputYaml, pipelineYamlBeforeMerge);
+            pipelineYaml = InputSetMergeHelperV1.mergeInputSetIntoPipelineYaml(
+                runtimeInputJsonNode, YamlUtils.readAsJsonNode(pipelineYamlBeforeMerge));
             break;
           default:
             String sanitizedRuntimeInputYaml =
@@ -333,9 +337,7 @@ public class TriggerExecutionHelper {
         }
 
         StagesExecutionInfo stagesExecutionInfo = null;
-        if (featureFlagService.isEnabled(
-                pipelineEntity.getAccountId(), FeatureName.CDS_NG_TRIGGER_SELECTIVE_STAGE_EXECUTION)
-            && triggerDetails.getNgTriggerConfigV2() != null
+        if (triggerDetails.getNgTriggerConfigV2() != null
             && EmptyPredicate.isNotEmpty(triggerDetails.getNgTriggerConfigV2().getStagesToExecute())) {
           boolean allowedStageExecution = false;
           if (PipelineVersion.V0.equals(pipelineEntity.getHarnessVersion())) {
@@ -395,8 +397,8 @@ public class TriggerExecutionHelper {
         SecurityContextBuilder.setContext(new ServicePrincipal(PIPELINE_SERVICE.getServiceId()));
         switch (pipelineEntity.getHarnessVersion()) {
           case PipelineVersion.V0:
-            String yamlForValidatingSchema =
-                executionHelper.getPipelineYamlWithUnResolvedTemplates(runtimeInputYaml, pipelineEntity);
+            JsonNode yamlForValidatingSchema =
+                executionHelper.getPipelineYamlWithUnResolvedTemplates(runtimeInputJsonNode, pipelineEntity);
             pmsYamlSchemaService.validateYamlSchema(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
                 pipelineEntity.getProjectIdentifier(), yamlForValidatingSchema);
             break;
@@ -430,18 +432,12 @@ public class TriggerExecutionHelper {
     // when removing the Feature Flag CDS_NG_TRIGGER_EXECUTION_REFACTOR.
     GitAwareContextHelper.initDefaultScmGitMetaDataAndRequestParams();
     try {
-      SecurityContextBuilder.setContext(
-          new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
-      SourcePrincipalContextBuilder.setSourcePrincipal(
-          new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
-
+      setPrincipal(triggerWebhookEvent);
       PipelineEntity pipelineEntity = getPipelineEntityToExecute(triggerDetails, triggerWebhookEvent);
       RetryExecutionParameters retryExecutionParameters = RetryExecutionParameters.builder().isRetry(false).build();
       List<String> stagesToExecute = Collections.emptyList();
 
-      if (featureFlagService.isEnabled(
-              pipelineEntity.getAccountId(), FeatureName.CDS_NG_TRIGGER_SELECTIVE_STAGE_EXECUTION)
-          && triggerDetails.getNgTriggerConfigV2() != null
+      if (triggerDetails.getNgTriggerConfigV2() != null
           && EmptyPredicate.isNotEmpty(triggerDetails.getNgTriggerConfigV2().getStagesToExecute())) {
         stagesToExecute = triggerDetails.getNgTriggerConfigV2().getStagesToExecute();
       }
@@ -829,5 +825,21 @@ public class TriggerExecutionHelper {
       return "";
     }
     return runtimeInputYaml;
+  }
+
+  @VisibleForTesting
+  void setPrincipal(TriggerWebhookEvent triggerWebhookEvent) {
+    /* If user or svc-account principal is available in triggerWebhookEvent, we used it.
+    This means that all API calls will inherit the underlying user or svc-account's permissions.
+    Otherwise, we just set a Service Principal, which always has full privileges. */
+    if (triggerWebhookEvent != null && triggerWebhookEvent.getPrincipal() != null) {
+      SecurityContextBuilder.setContext(triggerWebhookEvent.getPrincipal());
+      SourcePrincipalContextBuilder.setSourcePrincipal(triggerWebhookEvent.getPrincipal());
+    } else {
+      SecurityContextBuilder.setContext(
+          new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
+      SourcePrincipalContextBuilder.setSourcePrincipal(
+          new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
+    }
   }
 }

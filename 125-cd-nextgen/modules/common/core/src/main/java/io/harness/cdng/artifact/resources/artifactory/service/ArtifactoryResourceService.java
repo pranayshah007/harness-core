@@ -32,7 +32,7 @@ public interface ArtifactoryResourceService {
 
   ArtifactoryResponseDTO getBuildDetails(IdentifierRef artifactoryConnectorRef, String repositoryName,
       String artifactPath, String repositoryFormat, String artifactRepositoryUrl, String orgIdentifier,
-      String projectIdentifier);
+      String projectIdentifier, String tagRegex);
 
   ArtifactoryBuildDetailsDTO getSuccessfulBuild(IdentifierRef artifactoryConnectorRef, String repositoryName,
       String artifactPath, String repositoryFormat, String artifactRepositoryUrl,

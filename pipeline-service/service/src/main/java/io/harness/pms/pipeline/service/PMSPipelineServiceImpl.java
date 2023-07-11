@@ -318,8 +318,9 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       pipelineEntity = getAndValidatePipeline(
           accountId, orgIdentifier, projectIdentifier, pipelineId, false, loadFromFallbackBranch, loadFromCache);
     }
-    if (pipelineEntity.isPresent() && StoreType.REMOTE.equals(pipelineEntity.get().getStoreType())) {
-      pmsPipelineServiceHelper.computePipelineReferences(pipelineEntity.get(), loadFromCache);
+    if (pipelineEntity.isPresent()
+        && PipelineGitXHelper.shouldPublishSetupUsages(loadFromCache, pipelineEntity.get().getStoreType())) {
+      pmsPipelineServiceHelper.computePipelineReferences(pipelineEntity.get());
     }
     return PipelineGetResult.builder().pipelineEntity(pipelineEntity).asyncValidationUUID(validationUUID).build();
   }
@@ -734,7 +735,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     String repoUrl = pmsPipelineServiceHelper.getRepoUrlAndCheckForFileUniqueness(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, isForceImport);
     String importedPipelineYAML =
-        pmsPipelineServiceHelper.importPipelineFromRemote(accountId, orgIdentifier, projectIdentifier);
+        pmsPipelineServiceHelper.importPipelineFromRemote(accountId, orgIdentifier, projectIdentifier, true);
     String pipelineVersion = pipelineVersion(accountId, importedPipelineYAML);
     PMSPipelineServiceHelper.checkAndThrowMismatchInImportedPipelineMetadata(orgIdentifier, projectIdentifier,
         pipelineIdentifier, pipelineImportRequest, importedPipelineYAML, pipelineVersion);
@@ -957,17 +958,16 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
 
   private void setupGitContext(MoveConfigOperationDTO moveConfigDTO) {
-    GitAwareContextHelper.populateGitDetails(
-        GitEntityInfo.builder()
-            .branch(moveConfigDTO.getBranch())
-            .filePath(moveConfigDTO.getFilePath())
-            .commitMsg(moveConfigDTO.getCommitMessage())
-            .isNewBranch(isNotEmpty(moveConfigDTO.getBranch()) && isNotEmpty(moveConfigDTO.getBaseBranch()))
-            .baseBranch(moveConfigDTO.getBaseBranch())
-            .connectorRef(moveConfigDTO.getConnectorRef())
-            .storeType(StoreType.REMOTE)
-            .repoName(moveConfigDTO.getRepoName())
-            .build());
+    GitAwareContextHelper.populateGitDetails(GitEntityInfo.builder()
+                                                 .branch(moveConfigDTO.getBranch())
+                                                 .filePath(moveConfigDTO.getFilePath())
+                                                 .commitMsg(moveConfigDTO.getCommitMessage())
+                                                 .isNewBranch(moveConfigDTO.isNewBranch())
+                                                 .baseBranch(moveConfigDTO.getBaseBranch())
+                                                 .connectorRef(moveConfigDTO.getConnectorRef())
+                                                 .storeType(StoreType.REMOTE)
+                                                 .repoName(moveConfigDTO.getRepoName())
+                                                 .build());
   }
 
   private void checkProjectExists(String accountIdentifier, String orgIdentifier, String projectIdentifier) {

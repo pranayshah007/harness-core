@@ -26,6 +26,7 @@ import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
+import io.harness.logging.AutoLogContext;
 import io.harness.logging.ResponseTimeRecorder;
 import io.harness.manage.GlobalContextManager;
 import io.harness.pms.contracts.plan.Dependencies;
@@ -46,6 +47,7 @@ import io.harness.pms.pipeline.references.FilterCreationParams;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.plan.creation.PlanCreatorServiceInfo;
 import io.harness.pms.sdk.PmsSdkHelper;
+import io.harness.pms.sdk.core.plan.creation.creators.PlanCreatorServiceHelper;
 import io.harness.pms.utils.CompletableFutures;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -189,32 +191,34 @@ public class FilterCreatorMergeService {
   @VisibleForTesting
   public FilterCreationBlobResponse obtainFiltersRecursively(Map<String, PlanCreatorServiceInfo> services,
       Dependencies initialDependencies, Map<String, String> filters, SetupMetadata setupMetadata) throws IOException {
-    Dependencies initialDependenciesWithoutTemplates =
-        FilterCreationBlobResponseUtils.removeTemplateDependencies(initialDependencies);
-    FilterCreationBlobResponse.Builder finalResponseBuilder =
-        FilterCreationBlobResponse.newBuilder().setDeps(initialDependenciesWithoutTemplates);
+    try (AutoLogContext autoLogContext = PlanCreatorServiceHelper.autoLogContextFromSetupMetadata(setupMetadata)) {
+      Dependencies initialDependenciesWithoutTemplates =
+          FilterCreationBlobResponseUtils.removeTemplateDependencies(initialDependencies);
+      FilterCreationBlobResponse.Builder finalResponseBuilder =
+          FilterCreationBlobResponse.newBuilder().setDeps(initialDependenciesWithoutTemplates);
 
-    if (isEmpty(services) || isEmpty(initialDependenciesWithoutTemplates.getDependenciesMap())) {
+      if (isEmpty(services) || isEmpty(initialDependenciesWithoutTemplates.getDependenciesMap())) {
+        return finalResponseBuilder.build();
+      }
+
+      for (int i = 0; i < MAX_DEPTH && EmptyPredicate.isNotEmpty(finalResponseBuilder.getDeps().getDependenciesMap());
+           i++) {
+        FilterCreationBlobResponse currIterResponse =
+            obtainFiltersPerIteration(services, finalResponseBuilder, filters, setupMetadata);
+
+        FilterCreationBlobResponseUtils.mergeResolvedDependencies(finalResponseBuilder, currIterResponse);
+        if (isNotEmpty(finalResponseBuilder.getDeps().getDependenciesMap())) {
+          throw new InvalidRequestException(
+              PmsExceptionUtils.getUnresolvedDependencyPathsErrorMessage(finalResponseBuilder.getDeps()));
+        }
+        FilterCreationBlobResponseUtils.mergeDependencies(finalResponseBuilder, currIterResponse);
+        FilterCreationBlobResponseUtils.updateStageCount(finalResponseBuilder, currIterResponse);
+        FilterCreationBlobResponseUtils.mergeReferredEntities(finalResponseBuilder, currIterResponse);
+        FilterCreationBlobResponseUtils.mergeStageNames(finalResponseBuilder, currIterResponse);
+      }
+
       return finalResponseBuilder.build();
     }
-
-    for (int i = 0; i < MAX_DEPTH && EmptyPredicate.isNotEmpty(finalResponseBuilder.getDeps().getDependenciesMap());
-         i++) {
-      FilterCreationBlobResponse currIterResponse =
-          obtainFiltersPerIteration(services, finalResponseBuilder, filters, setupMetadata);
-
-      FilterCreationBlobResponseUtils.mergeResolvedDependencies(finalResponseBuilder, currIterResponse);
-      if (isNotEmpty(finalResponseBuilder.getDeps().getDependenciesMap())) {
-        throw new InvalidRequestException(
-            PmsExceptionUtils.getUnresolvedDependencyPathsErrorMessage(finalResponseBuilder.getDeps()));
-      }
-      FilterCreationBlobResponseUtils.mergeDependencies(finalResponseBuilder, currIterResponse);
-      FilterCreationBlobResponseUtils.updateStageCount(finalResponseBuilder, currIterResponse);
-      FilterCreationBlobResponseUtils.mergeReferredEntities(finalResponseBuilder, currIterResponse);
-      FilterCreationBlobResponseUtils.mergeStageNames(finalResponseBuilder, currIterResponse);
-    }
-
-    return finalResponseBuilder.build();
   }
 
   @VisibleForTesting

@@ -140,10 +140,10 @@ public class CCMRbacHelperImpl implements CCMRbacHelper {
   }
 
   @Override
-  public boolean hasPerspectiveViewOnAllResources(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+  public boolean hasPerspectiveViewOnResources(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId) {
     return accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(FOLDER, null), PERSPECTIVE_VIEW);
+        Resource.of(FOLDER, folderId), PERSPECTIVE_VIEW);
   }
 
   @Override

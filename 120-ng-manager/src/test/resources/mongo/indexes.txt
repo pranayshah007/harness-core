@@ -3,6 +3,7 @@
 !!!custom_delegateSyncTaskResponses {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 !!!custom_delegateTaskProgressResponses {"name": "processAfter_1", "background": true} {"processAfter": 1}
 !!!custom_delegateTaskProgressResponses {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
+StageExecutionInstanceInfo {"name": "unique_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "pipelineExecutionId": 1, "stageExecutionId": 1}
 accountSettings {"name": "accountId_orgId_projectId_type_unique_Index", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "type": 1}
 aclMigrations {"name": "accountIdentifierOrgIdentifierProjectIdentifierIdx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}
 artifactSourceNG {"name": "createdAt_1", "background": true} {"createdAt": 1}
@@ -137,6 +138,7 @@ outboxEvents {"name": "blocked_createdAt_nextUnblockAttemptAt_outbox_Idx", "back
 outboxEvents {"name": "eventType_blocked_outbox_Idx", "background": true} {"eventType": 1, "blocked": 1}
 pollingDocuments {"name": "accountId_organizationIdentifier_projectIdentifier_pollingType_pollingItem", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "pollingType": 1, "pollingInfo": 1, "signatures": 1}
 pollingDocuments {"name": "accountId_pollingInfo.connectorRef", "background": true} {"accountId": 1, "pollingInfo.connectorRef": 1}
+pollingDocuments {"name": "accountId_signatures", "background": true} {"accountId": 1, "signatures": 1}
 primaryVersion {"name": "createdAt_1", "background": true} {"createdAt": 1}
 primaryVersion {"name": "lastUpdatedAt_1", "background": true} {"lastUpdatedAt": 1}
 progressUpdate {"name": "correlation", "background": true} {"correlationId": 1, "createdAt": -1}

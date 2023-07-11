@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.ssh;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.pdcconnector.PhysicalDataCenterConnectorDTO;
@@ -21,6 +22,7 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)
+@RecasterAlias("io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig")
 public class PdcSshInfraDelegateConfig implements SshInfraDelegateConfig {
   Set<String> hosts;
   PhysicalDataCenterConnectorDTO physicalDataCenterConnectorDTO;

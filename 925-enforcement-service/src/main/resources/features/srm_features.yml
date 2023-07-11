@@ -21,3 +21,18 @@ features:
       ENTERPRISE:
         restrictionType: AVAILABILITY
         enabled: true
+  - name: ANALYZE_DEPLOYMENT_STEP
+    description: Analyze Deployment Step
+    restrictions:
+      COMMUNITY:
+        restrictionType: AVAILABILITY
+        enabled: true
+      FREE:
+        restrictionType: AVAILABILITY
+        enabled: false
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true

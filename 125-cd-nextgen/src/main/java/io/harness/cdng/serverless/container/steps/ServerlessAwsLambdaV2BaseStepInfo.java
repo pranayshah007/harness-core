@@ -21,14 +21,11 @@ import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
-import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.extended.ci.container.ContainerResource;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import java.util.Map;
-import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
@@ -46,11 +43,6 @@ public class ServerlessAwsLambdaV2BaseStepInfo {
   @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
-
-  @NotNull
-  @VariableExpression(skipVariableExpression = true)
-  @YamlSchemaTypes(value = {string})
-  private ParameterField<Map<String, JsonNode>> settings;
 
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> image;
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> connectorRef;

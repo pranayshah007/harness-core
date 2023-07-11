@@ -283,15 +283,16 @@ public class GitClientV2Impl implements GitClientV2 {
       ListRemoteRequest listRemoteRequest = buildListRemoteRequestFromGitBaseRequest(request);
       ListRemoteResult listRemoteResult = listRemote(listRemoteRequest);
       Map<String, String> refs = listRemoteResult.getRemoteList();
+      String branchToClone;
       if (refs.containsKey(REFS_HEADS + request.getBranch())) {
-        cloneCommand.setBranch(isEmpty(request.getBranch()) ? null : request.getBranch());
+        branchToClone = isEmpty(request.getBranch()) ? null : REFS_HEADS + request.getBranch();
         cloneCommand.setNoCheckout(noCheckout);
       } else {
-        String branchToClone = refs.get("HEAD");
-        cloneCommand.setBranch(branchToClone);
-        cloneCommand.setBranchesToClone(Collections.singleton(branchToClone));
+        branchToClone = refs.get("HEAD");
         cloneCommand.setNoCheckout(true);
       }
+      cloneCommand.setBranch(branchToClone);
+      cloneCommand.setBranchesToClone(Collections.singleton(branchToClone));
     }
     try (Git git = cloneCommand.call()) {
     } catch (GitAPIException ex) {

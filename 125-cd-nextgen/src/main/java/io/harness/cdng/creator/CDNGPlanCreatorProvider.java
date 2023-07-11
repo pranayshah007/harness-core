@@ -165,6 +165,7 @@ import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsRollbac
 import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsTrafficShiftStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaDeployV2StepPlanCreator;
+import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaPackageV2StepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaPrepareRollbackV2StepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaRollbackV2StepPlanCreator;
@@ -215,6 +216,7 @@ import io.harness.cdng.creator.variables.K8sRollingStepVariableCreator;
 import io.harness.cdng.creator.variables.K8sScaleStepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaDeployV2StepVariableCreator;
+import io.harness.cdng.creator.variables.ServerlessAwsLambdaPackageV2StepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaPrepareRollbackV2StepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaRollbackV2StepVariableCreator;
@@ -502,6 +504,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new ServerlessAwsLambdaPrepareRollbackV2StepPlanCreator());
     planCreators.add(new ServerlessAwsLambdaRollbackV2StepPlanCreator());
     planCreators.add(new ServerlessAwsLambdaDeployV2StepPlanCreator());
+    planCreators.add(new ServerlessAwsLambdaPackageV2StepPlanCreator());
 
     injectorUtils.injectMembers(planCreators);
     return planCreators;
@@ -648,6 +651,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new ServerlessAwsLambdaPrepareRollbackV2StepVariableCreator());
     variableCreators.add(new ServerlessAwsLambdaRollbackV2StepVariableCreator());
     variableCreators.add(new ServerlessAwsLambdaDeployV2StepVariableCreator());
+    variableCreators.add(new ServerlessAwsLambdaPackageV2StepVariableCreator());
 
     return variableCreators;
   }
@@ -1422,6 +1426,17 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                .setFeatureFlag(FeatureName.CDS_SERVERLESS_V2.name())
                                                .build();
 
+    StepInfo serverlessAwsLambdaPackageV2 = StepInfo.newBuilder()
+                                                .setName("Serverless Aws Lambda Package V2")
+                                                .setType(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PACKAGE_V2)
+                                                .setStepMetaData(StepMetaData.newBuilder()
+                                                                     .addCategory("SERVERLESS_AWS_LAMBDA_PACKAGE_V2")
+                                                                     .addCategory(PLUGIN)
+                                                                     .setFolderPath("Serverless Lambda")
+                                                                     .build())
+                                                .setFeatureFlag(FeatureName.CDS_SERVERLESS_V2.name())
+                                                .build();
+
     List<StepInfo> stepInfos = new ArrayList<>();
 
     stepInfos.add(gitOpsMergePR);
@@ -1515,6 +1530,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(serverlessAwsLambdaPrepareRollbackV2);
     stepInfos.add(serverlessAwsLambdaRollbackV2);
     stepInfos.add(serverlessAwsLambdaDeployV2);
+    stepInfos.add(serverlessAwsLambdaPackageV2);
     return stepInfos;
   }
 }

@@ -34,6 +34,7 @@ import io.harness.gitsync.persistance.testing.NoOpGitAwarePersistenceImpl;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
+import io.harness.manage.ManagedExecutorService;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
@@ -73,6 +74,7 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Named;
+import com.google.inject.name.Names;
 import dev.morphia.converters.TypeConverter;
 import io.dropwizard.jackson.Jackson;
 import io.grpc.inprocess.InProcessChannelBuilder;
@@ -84,6 +86,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.rules.MethodRule;
@@ -204,6 +208,9 @@ public class TemplateServiceTestRule implements InjectorRuleMixin, MethodRule, M
         bind(AccountClient.class).toInstance(mock(AccountClient.class));
         bind(CustomDeploymentResourceClient.class).toInstance(mock(CustomDeploymentResourceClient.class));
         bind(NGTemplateFeatureFlagHelperService.class).toInstance(mock(NGTemplateFeatureFlagHelperService.class));
+        bind(Executor.class)
+            .annotatedWith(Names.named("TemplateServiceHelperExecutorService"))
+            .toInstance(new ManagedExecutorService(Executors.newFixedThreadPool(5)));
       }
     });
 

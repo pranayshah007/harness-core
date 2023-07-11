@@ -16,7 +16,7 @@ paths:
       - $ref: '#/components/parameters/OrgParam'
       - $ref: '#/components/parameters/ProjectParam'
     post:
-      summary: 'process raw SBOM into harness usable normalized form'
+      summary: process raw SBOM into harness usable normalized form
       operationId: process-sbom
       responses:
         '200':
@@ -38,6 +38,35 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
       requestBody:
         $ref: '#/components/requestBodies/SbomProcessRequestBody'
+      tags:
+        - sbomProcessor
+  '/v1/org/{org}/project/{project}/sbom/enforcement':
+    parameters:
+      - $ref: '#/components/parameters/OrgParam'
+      - $ref: '#/components/parameters/ProjectParam'
+    post:
+      summary: enforce normalized SBOM based on policies applied
+      operationId: enforce-sbom
+      responses:
+        '200':
+          $ref: '#/components/responses/EnforceSbomResponseBody'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+        '500':
+          description: Internal Server Error
+        '502':
+          description: Bad Gateway
+      description: enforce an sbom
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/EnforceSbomRequestBody'
       tags:
         - sbomProcessor
 components:
@@ -181,6 +210,32 @@ components:
         artifact_id:
           type: string
           description: Id of created artifact
+    EnforceSbomResponseBody:
+      title: SbomEnforceResponseBody
+      x-stoplight:
+        id: f15827644558e
+      type: object
+      properties:
+        enforcement_id:
+          type: string
+          description: ID of the enforcement of the SBOM
+        status:
+          type: string
+          description: Status of the enforcement
+      required:
+        - enforcement_id
+    EnforceSbomRequestBody:
+      title: SbomEnforceRequestBody
+      x-stoplight:
+        id: f13c698c0fe30
+      type: object
+      properties:
+        enforcement_id:
+          type: string
+        artifact:
+          $ref: '#/components/schemas/Artifact'
+        policy_file_id:
+          type: string
   parameters:
     OrgParam:
       name: org
@@ -209,6 +264,11 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/SbomProcessRequestBody'
+    EnforceSbomRequestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnforceSbomRequestBody'
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -222,5 +282,11 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/SbomProcessResponseBody'
+    EnforceSbomResponseBody:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnforceSbomResponseBody'
 tags:
   - name: sbomProcessor

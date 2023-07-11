@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 53
+version: 54
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -1503,6 +1503,30 @@ permissions:
       - project
   - identifier: servicediscovery_networkmap_view
     name: View a Network Map
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: chaos_chaossecuritygovernance_edit
+    name: Edit a Chaos Security Governance
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: chaos_chaossecuritygovernance_delete
+    name: Delete a Chaos Security Governance
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: chaos_chaossecuritygovernance_view
+    name: View a Chaos Security Governance
     status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:

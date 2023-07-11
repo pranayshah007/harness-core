@@ -11,6 +11,8 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.HarnessServiceInfoNG;
+import io.harness.cdng.execution.StepExecutionInstanceInfo;
+import io.harness.cdng.execution.service.StageExecutionInstanceInfoService;
 import io.harness.dtos.InstanceDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.InternalApi;
@@ -50,6 +52,7 @@ public class InstanceNGResource {
   public static final String INSTANCE_INFO_POD_NAME = "instanceInfoPodName";
   public static final String INSTANCE_INFO_NAMESPACE = "instanceInfoNamespace";
   private final InstanceService instanceService;
+  private final StageExecutionInstanceInfoService stageExecutionInstanceInfoService;
 
   @GET
   @Path("/")
@@ -70,5 +73,18 @@ public class InstanceNGResource {
           instanceDTO.getInfrastructureMappingId())));
     }
     return ResponseDTO.newResponse(Optional.empty());
+  }
+
+  @GET
+  @Path("/stage-instance-info")
+  @ApiOperation(value = "Get instance info deployed in previous steps of stage", nickname = "getStageInstanceInfo")
+  public ResponseDTO<List<StepExecutionInstanceInfo>> getInstanceInfo(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PIPELINE_EXECUTION_ID) String pipelineExecutionId,
+      @NotNull @QueryParam(NGCommonEntityConstants.STAGE_KEY) String stageExecutionId) {
+    return ResponseDTO.newResponse(stageExecutionInstanceInfoService.get(
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineExecutionId, stageExecutionId));
   }
 }

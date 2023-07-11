@@ -9,6 +9,7 @@ go_library(
     name = "tasks",
     srcs = [
         "common.go",
+        "execute_task.go",
         "plugin.go",
         "run.go",
         "runtests.go",
@@ -65,4 +66,12 @@ go_test(
         "@com_github_stretchr_testify//assert",
         "@org_uber_go_zap//:zap",
     ],
+)
+
+load("//:tools/bazel/macros.bzl", "run_analysis")
+
+run_analysis(
+    language = "go",
+    targets = [":tasks"],
+    test_targets = [":tasks_test"],
 )

@@ -223,7 +223,8 @@ public class ScmGitProviderMapper {
     return Provider.newBuilder()
         .setHarness(createHarnessProvider(harnessConnector))
         .setDebug(debug)
-        .setEndpoint(GitClientHelper.getHarnessApiURL(harnessConnector.getUrl()))
+        .setEndpoint(harnessConnector.getApiUrl() == null ? GitClientHelper.getHarnessApiURL(harnessConnector.getUrl())
+                                                          : harnessConnector.getApiUrl())
         .setSkipVerify(skipVerify)
         .setAdditionalCertsPath(getAdditionalCertsPath())
         .build();

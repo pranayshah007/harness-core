@@ -324,6 +324,7 @@ import io.harness.telemetry.CdTelemetryEventListener;
 import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.template.TemplateResourceClientModule;
 import io.harness.threading.ThreadPool;
+import io.harness.threading.ThreadPoolConfig;
 import io.harness.time.TimeModule;
 import io.harness.timescaledb.JooqModule;
 import io.harness.timescaledb.TimeScaleDBConfig;
@@ -370,6 +371,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import javax.cache.Cache;
@@ -580,6 +582,19 @@ public class NextGenModule extends AbstractModule {
   @Named("ngServiceSecret")
   public String getNgManagerServiceSecret() {
     return this.appConfig.getNextGenConfig().getNgManagerServiceSecret();
+  }
+
+  @Provides
+  @Singleton
+  @Named("logStreamingClientThreadPool")
+  public ThreadPoolExecutor logStreamingClientThreadPool() {
+    ThreadPoolConfig threadPoolConfig = appConfig != null && appConfig.getLogStreamingServiceConfig() != null
+            && appConfig.getLogStreamingServiceConfig().getThreadPoolConfig() != null
+        ? appConfig.getLogStreamingServiceConfig().getThreadPoolConfig()
+        : ThreadPoolConfig.builder().corePoolSize(1).maxPoolSize(50).idleTime(30).timeUnit(TimeUnit.SECONDS).build();
+    return ThreadPool.create(threadPoolConfig.getCorePoolSize(), threadPoolConfig.getMaxPoolSize(),
+        threadPoolConfig.getIdleTime(), threadPoolConfig.getTimeUnit(),
+        new ThreadFactoryBuilder().setNameFormat("log-client-pool-%d").build());
   }
 
   @Override
