@@ -118,10 +118,10 @@ public class NGServiceEntityMapper {
 
   private boolean isHelmMultipleManifestSupportEnabled(ServiceSpec spec, Map<FeatureName, Boolean> featureFlagMap) {
     return BooleanUtils.isTrue(featureFlagMap.get(FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG))
-        && serviceContainsMultipleHelmManifests(spec);
+        && serviceContainsManifestConfigurations(spec);
   }
 
-  private boolean serviceContainsMultipleHelmManifests(ServiceSpec spec) {
+  private boolean serviceContainsManifestConfigurations(ServiceSpec spec) {
     if (spec == null) {
       return false;
     }

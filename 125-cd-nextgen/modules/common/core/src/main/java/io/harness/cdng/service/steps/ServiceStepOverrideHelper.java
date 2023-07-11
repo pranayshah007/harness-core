@@ -141,7 +141,7 @@ public class ServiceStepOverrideHelper {
       ManifestConfigurations manifestConfigurations =
           getManifestConfigurations(ngServiceV2InfoConfig.getServiceDefinition().getType(),
               ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec());
-      svcManifests = filterPrimaryHelmManifest(svcManifests, manifestConfigurations);
+      svcManifests = filterPrimaryManifest(svcManifests, manifestConfigurations);
     }
     final NgManifestsMetadataSweepingOutput manifestSweepingOutput =
         NgManifestsMetadataSweepingOutput.builder()
@@ -701,7 +701,7 @@ public class ServiceStepOverrideHelper {
     }
     ManifestConfigurations manifestConfigurations = getManifestConfigurations(
         serviceV2Config.getServiceDefinition().getType(), serviceV2Config.getServiceDefinition().getServiceSpec());
-    manifestsMap.replace(SERVICE, filterPrimaryHelmManifest(manifestsMap.get(SERVICE), manifestConfigurations));
+    manifestsMap.replace(SERVICE, filterPrimaryManifest(manifestsMap.get(SERVICE), manifestConfigurations));
   }
 
   private static ManifestConfigurations getManifestConfigurations(ServiceDefinitionType type, ServiceSpec spec) {
@@ -717,7 +717,7 @@ public class ServiceStepOverrideHelper {
     }
   }
 
-  private List<ManifestConfigWrapper> filterPrimaryHelmManifest(
+  private List<ManifestConfigWrapper> filterPrimaryManifest(
       List<ManifestConfigWrapper> svcManifests, ManifestConfigurations manifestConfigurations) {
     if (manifestConfigurations == null) {
       return svcManifests;
@@ -729,7 +729,7 @@ public class ServiceStepOverrideHelper {
     }
     return svcManifests.stream()
         .filter(manifest
-            -> !ManifestConfigType.HELM_CHART.equals(manifest.getManifest().getType())
+            -> SERVICE_OVERRIDE_SUPPORTED_MANIFEST_TYPES.contains(manifest.getManifest().getType().getDisplayName())
                 || primaryManifestId.equals(manifest.getManifest().getIdentifier()))
         .collect(Collectors.toList());
   }
