@@ -7,6 +7,7 @@
 
 package io.harness.cdng;
 
+import static io.harness.beans.FeatureName.CDS_GITHUB_APP_AUTHENTICATION;
 import static io.harness.beans.FeatureName.OPTIMIZED_GIT_FETCH_FILES;
 import static io.harness.common.ParameterFieldHelper.getBooleanParameterFieldValue;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
@@ -72,6 +73,7 @@ import io.harness.common.NGTimeConversionHelper;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
+import io.harness.connector.helper.GitAuthenticationDecryptionHelper;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
 import io.harness.data.structure.CollectionUtils;
@@ -455,6 +457,16 @@ public class CDStepHelper {
         gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(gitConfigDTO, sshKeySpecDTO, basicNGAccessObject);
 
     scmConnector = gitConfigDTO;
+    boolean githubAppAuthentication =
+        GitAuthenticationDecryptionHelper.isGitHubAppAuthentication((ScmConnector) connectorDTO.getConnectorConfig())
+        && cdFeatureFlagHelper.isEnabled(basicNGAccessObject.getAccountIdentifier(), CDS_GITHUB_APP_AUTHENTICATION);
+
+    if (githubAppAuthentication) {
+      scmConnector = (ScmConnector) connectorDTO.getConnectorConfig();
+      encryptedDataDetails.addAll(
+          gitConfigAuthenticationInfoHelper.getGithubAppEncryptedDataDetail(scmConnector, basicNGAccessObject));
+    }
+
     if (optimizedFilesFetch) {
       scmConnector = (ScmConnector) connectorDTO.getConnectorConfig();
       addApiAuthIfRequired(scmConnector);
@@ -479,6 +491,7 @@ public class CDStepHelper {
         .manifestType(manifestType)
         .manifestId(manifestIdentifier)
         .optimizedFilesFetch(optimizedFilesFetch)
+        .isGithubAppAuthentication(githubAppAuthentication)
         .build();
   }
 

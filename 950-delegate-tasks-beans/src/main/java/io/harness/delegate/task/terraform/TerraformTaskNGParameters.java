@@ -17,13 +17,18 @@ import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V5;
 import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V6;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.connector.helper.GitAuthenticationDecryptionHelper;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryCapabilityHelper;
+import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.utils.ScmConnectorHelper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.executioncapability.GitConnectionNGCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
+import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3StoreTFDelegateConfig;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.capability.ProcessExecutionCapabilityHelper;
@@ -94,13 +99,21 @@ public class TerraformTaskNGParameters
       capabilities = ProcessExecutionCapabilityHelper.generateExecutionCapabilitiesForTerraform(
           configFile.getGitStoreDelegateConfig().getEncryptedDataDetails(), maskingEvaluator);
       log.info("Adding Required Execution Capabilities for GitStores");
-      capabilities.add(GitConnectionNGCapability.builder()
-                           .gitConfig((GitConfigDTO) configFile.getGitStoreDelegateConfig().getGitConfigDTO())
-                           .encryptedDataDetails(configFile.getGitStoreDelegateConfig().getEncryptedDataDetails())
-                           .sshKeySpecDTO(configFile.getGitStoreDelegateConfig().getSshKeySpecDTO())
-                           .build());
+      GitStoreDelegateConfig gitStoreDelegateConfig = configFile.getGitStoreDelegateConfig();
+      GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());
 
-      GitConfigDTO gitConfigDTO = (GitConfigDTO) configFile.getGitStoreDelegateConfig().getGitConfigDTO();
+      GitConnectionNGCapability.GitConnectionNGCapabilityBuilder gitConnectionNGCapabilityBuilder =
+          GitConnectionNGCapability.builder()
+              .gitConfig(gitConfigDTO)
+              .encryptedDataDetails(gitStoreDelegateConfig.getEncryptedDataDetails())
+              .sshKeySpecDTO(gitStoreDelegateConfig.getSshKeySpecDTO());
+
+      if (gitStoreDelegateConfig.isGithubAppAuthentication()) {
+        gitConnectionNGCapabilityBuilder.githubConnectorDTO(
+            (GithubConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO());
+        gitConnectionNGCapabilityBuilder.isGithubAppAuthentication(true);
+      }
+      capabilities.add(gitConnectionNGCapabilityBuilder.build());
       if (isNotEmpty(gitConfigDTO.getDelegateSelectors())) {
         capabilities.add(SelectorCapability.builder().selectors(gitConfigDTO.getDelegateSelectors()).build());
       }
@@ -148,14 +161,21 @@ public class TerraformTaskNGParameters
       GitFetchFilesConfig gitFetchFilesConfig, FileStoreFetchFilesConfig fileStoreFetchConfig) {
     List<ExecutionCapability> capabilities = new ArrayList<>();
     if (gitFetchFilesConfig != null) {
-      capabilities.add(
-          GitConnectionNGCapability.builder()
-              .gitConfig((GitConfigDTO) gitFetchFilesConfig.getGitStoreDelegateConfig().getGitConfigDTO())
-              .encryptedDataDetails(gitFetchFilesConfig.getGitStoreDelegateConfig().getEncryptedDataDetails())
-              .sshKeySpecDTO(gitFetchFilesConfig.getGitStoreDelegateConfig().getSshKeySpecDTO())
-              .build());
+      GitStoreDelegateConfig gitStoreDelegateConfig = gitFetchFilesConfig.getGitStoreDelegateConfig();
+      GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());
 
-      GitConfigDTO gitConfigDTO = (GitConfigDTO) gitFetchFilesConfig.getGitStoreDelegateConfig().getGitConfigDTO();
+      GitConnectionNGCapability.GitConnectionNGCapabilityBuilder gitConnectionNGCapabilityBuilder =
+          GitConnectionNGCapability.builder()
+              .gitConfig(gitConfigDTO)
+              .encryptedDataDetails(gitStoreDelegateConfig.getEncryptedDataDetails())
+              .sshKeySpecDTO(gitStoreDelegateConfig.getSshKeySpecDTO());
+
+      if (gitStoreDelegateConfig.isGithubAppAuthentication()) {
+        gitConnectionNGCapabilityBuilder.githubConnectorDTO(
+            (GithubConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO());
+        gitConnectionNGCapabilityBuilder.isGithubAppAuthentication(true);
+      }
+      capabilities.add(gitConnectionNGCapabilityBuilder.build());
       if (isNotEmpty(gitConfigDTO.getDelegateSelectors())) {
         capabilities.add(SelectorCapability.builder().selectors(gitConfigDTO.getDelegateSelectors()).build());
       }

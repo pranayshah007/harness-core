@@ -12,6 +12,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
+import io.harness.delegate.beans.connector.scm.github.GithubAppDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
@@ -60,6 +61,8 @@ public class GithubPackagesRequestResponseMapper {
 
           username = FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef(
               githubUsernameTokenDTO.getUsername(), githubUsernameTokenDTO.getUsernameRef());
+        } else if (httpDTO.getType() == GithubHttpAuthenticationType.GITHUB_APP) {
+          username = GithubAppDTO.username;
         }
       }
     }

@@ -7,6 +7,7 @@
 
 package io.harness.cdng.provision.terraform;
 
+import static io.harness.beans.FeatureName.CDS_GITHUB_APP_AUTHENTICATION;
 import static io.harness.beans.FeatureName.CDS_NOT_ALLOW_READ_ONLY_SECRET_MANAGER_TERRAFORM_TERRAGRUNT_PLAN;
 import static io.harness.beans.FeatureName.CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_NG;
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
@@ -67,6 +68,7 @@ import io.harness.cdng.provision.terraform.outcome.TerraformGitRevisionOutcome;
 import io.harness.cdng.provision.terraform.output.TerraformHumanReadablePlanOutput;
 import io.harness.cdng.provision.terraform.output.TerraformPlanJsonOutput;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.helper.GitAuthenticationDecryptionHelper;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.FileBucket;
@@ -331,23 +333,39 @@ public class TerraformStepHelper {
     } else {
       paths.addAll(getParameterFieldValue(gitStoreConfig.getPaths()));
     }
-    GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder()
-                                                        .gitConfigDTO(gitConfigDTO)
-                                                        .sshKeySpecDTO(sshKeySpecDTO)
-                                                        .encryptedDataDetails(encryptedDataDetails)
-                                                        .fetchType(gitStoreConfig.getGitFetchType())
-                                                        .branch(getParameterFieldValue(gitStoreConfig.getBranch()))
-                                                        .commitId(getParameterFieldValue(gitStoreConfig.getCommitId()))
-                                                        .paths(paths)
-                                                        .connectorName(connectorDTO.getName())
-                                                        .build();
+
+    GitStoreDelegateConfig.GitStoreDelegateConfigBuilder gitStoreDelegateConfigBuilder =
+        GitStoreDelegateConfig.builder()
+            .gitConfigDTO(gitConfigDTO)
+            .sshKeySpecDTO(sshKeySpecDTO)
+            .encryptedDataDetails(encryptedDataDetails)
+            .fetchType(gitStoreConfig.getGitFetchType())
+            .branch(getParameterFieldValue(gitStoreConfig.getBranch()))
+            .commitId(getParameterFieldValue(gitStoreConfig.getCommitId()))
+            .paths(paths)
+            .connectorName(connectorDTO.getName());
+
+    boolean githubAppAuthentication =
+        GitAuthenticationDecryptionHelper.isGitHubAppAuthentication((ScmConnector) connectorDTO.getConnectorConfig())
+        && cdFeatureFlagHelper.isEnabled(basicNGAccessObject.getAccountIdentifier(), CDS_GITHUB_APP_AUTHENTICATION);
+
+    if (githubAppAuthentication) {
+      ScmConnector scmConnector = (ScmConnector) connectorDTO.getConnectorConfig();
+      encryptedDataDetails.addAll(
+          gitConfigAuthenticationInfoHelper.getGithubAppEncryptedDataDetail(scmConnector, basicNGAccessObject));
+      gitStoreDelegateConfigBuilder.gitConfigDTO(scmConnector);
+      gitStoreDelegateConfigBuilder.isGithubAppAuthentication(true);
+      gitStoreDelegateConfigBuilder.encryptedDataDetails(encryptedDataDetails);
+    }
 
     GitFetchFilesConfigBuilder builder = GitFetchFilesConfig.builder();
 
     if (manifestType != null) {
       builder.manifestType(manifestType);
     }
-    builder.identifier(identifier).succeedIfFileNotFound(false).gitStoreDelegateConfig(gitStoreDelegateConfig);
+    builder.identifier(identifier)
+        .succeedIfFileNotFound(false)
+        .gitStoreDelegateConfig(gitStoreDelegateConfigBuilder.build());
     return builder.build();
   }
 

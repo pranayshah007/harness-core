@@ -17,6 +17,7 @@
 package io.harness.cdng.provision.terragrunt;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.beans.FeatureName.CDS_GITHUB_APP_AUTHENTICATION;
 import static io.harness.beans.FeatureName.CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_NG;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
@@ -51,6 +52,7 @@ import io.harness.cdng.provision.terragrunt.TerragruntConfig.TerragruntConfigKey
 import io.harness.cdng.provision.terragrunt.TerragruntInheritOutput.TerragruntInheritOutputBuilder;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.helper.GitAuthenticationDecryptionHelper;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.FileBucket;
@@ -304,16 +306,30 @@ public class TerragruntStepHelper {
     } else {
       paths.addAll(ParameterFieldHelper.getParameterFieldValue(gitStoreConfig.getPaths()));
     }
-    return GitStoreDelegateConfig.builder()
-        .gitConfigDTO(gitConfigDTO)
-        .sshKeySpecDTO(sshKeySpecDTO)
-        .encryptedDataDetails(encryptedDataDetails)
-        .fetchType(gitStoreConfig.getGitFetchType())
-        .branch(getParameterFieldValue(gitStoreConfig.getBranch()))
-        .commitId(getParameterFieldValue(gitStoreConfig.getCommitId()))
-        .paths(paths)
-        .connectorName(connectorDTO.getName())
-        .build();
+    GitStoreDelegateConfig.GitStoreDelegateConfigBuilder gitStoreDelegateConfigBuilder =
+        GitStoreDelegateConfig.builder()
+            .gitConfigDTO(gitConfigDTO)
+            .sshKeySpecDTO(sshKeySpecDTO)
+            .encryptedDataDetails(encryptedDataDetails)
+            .fetchType(gitStoreConfig.getGitFetchType())
+            .branch(getParameterFieldValue(gitStoreConfig.getBranch()))
+            .commitId(getParameterFieldValue(gitStoreConfig.getCommitId()))
+            .paths(paths)
+            .connectorName(connectorDTO.getName());
+
+    boolean githubAppAuthentication =
+        GitAuthenticationDecryptionHelper.isGitHubAppAuthentication((ScmConnector) connectorDTO.getConnectorConfig())
+        && cdFeatureFlagHelper.isEnabled(basicNGAccessObject.getAccountIdentifier(), CDS_GITHUB_APP_AUTHENTICATION);
+
+    if (githubAppAuthentication) {
+      ScmConnector scmConnector = (ScmConnector) connectorDTO.getConnectorConfig();
+      encryptedDataDetails.addAll(
+          gitConfigAuthenticationInfoHelper.getGithubAppEncryptedDataDetail(scmConnector, basicNGAccessObject));
+      gitStoreDelegateConfigBuilder.gitConfigDTO(scmConnector);
+      gitStoreDelegateConfigBuilder.isGithubAppAuthentication(true);
+      gitStoreDelegateConfigBuilder.encryptedDataDetails(encryptedDataDetails);
+    }
+    return gitStoreDelegateConfigBuilder.build();
   }
 
   private void addAllEncryptionDataDetail(

@@ -8,6 +8,7 @@
 package io.harness.delegate.task.git;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.beans.connector.scm.github.GithubConnectorConstants.GITHUB_APP;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
@@ -18,14 +19,18 @@ import static software.wings.beans.LogWeight.Bold;
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cistatus.service.GithubService;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitDecryptionHelper;
+import io.harness.connector.task.git.GitHubAppAuthenticationHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.connector.scm.genericgitconnector.GitHTTPAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
@@ -35,6 +40,7 @@ import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
+import io.harness.encryption.SecretRefData;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.git.GitFetchMetadataContext;
 import io.harness.git.model.FetchFilesResult;
@@ -66,6 +72,8 @@ public class GitFetchTaskNG extends AbstractDelegateRunnableTask {
   @Inject private GitFetchFilesTaskHelper gitFetchFilesTaskHelper;
   @Inject private GitDecryptionHelper gitDecryptionHelper;
   @Inject private ScmFetchFilesHelperNG scmFetchFilesHelper;
+  @Inject private GithubService githubService;
+  @Inject private GitHubAppAuthenticationHelper gitHubAppAuthenticationHelper;
 
   public static final int GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT = 10;
 
@@ -185,12 +193,20 @@ public class GitFetchTaskNG extends AbstractDelegateRunnableTask {
     } else {
       GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());
       gitDecryptionHelper.decryptGitConfig(gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());
+
+      if (gitStoreDelegateConfig.isGithubAppAuthentication()) {
+        GitHTTPAuthenticationDTO gitHTTPAuthenticationDTO = (GitHTTPAuthenticationDTO) gitConfigDTO.getGitAuth();
+        gitHTTPAuthenticationDTO.setPasswordRef(gitHubAppAuthenticationHelper.getGithubAppSecretFromConnector(
+            (GithubConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO(),
+            gitStoreDelegateConfig.getEncryptedDataDetails()));
+        gitConfigDTO.setGitAuth(gitHTTPAuthenticationDTO);
+      }
+
       SshSessionConfig sshSessionConfig = gitDecryptionHelper.getSSHSessionConfig(
           gitStoreDelegateConfig.getSshKeySpecDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());
       gitFetchFilesResult =
           ngGitService.fetchFilesByPath(identifier, gitStoreDelegateConfig, accountId, sshSessionConfig, gitConfigDTO);
     }
-
     gitFetchFilesTaskHelper.printFileNamesInExecutionLogs(executionLogCallback, gitFetchFilesResult.getFiles(), false);
 
     return gitFetchFilesResult;
