@@ -1472,6 +1472,16 @@ public class ArtifactResourceUtils {
         bambooRequestDTO.setArtifactPathList((List<String>) bambooArtifactConfig.getArtifactPaths().fetchFinalValue());
       }
     }
+
+    List<String> artifactPathList = bambooRequestDTO.getArtifactPathList();
+
+    for (int i = 0; i < artifactPathList.size(); i++) {
+      artifactPathList.set(i,
+          getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+              bambooRequestDTO.getRuntimeInputYaml(), artifactPathList.get(i), fqnPath, gitEntityBasicInfo,
+              serviceRef));
+    }
+
     planName = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
         bambooRequestDTO.getRuntimeInputYaml(), planName, fqnPath, gitEntityBasicInfo, serviceRef);
     bambooConnectorIdentifier = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,

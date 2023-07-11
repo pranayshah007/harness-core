@@ -174,7 +174,8 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   private static final String REPO_NAME_2 = "repoName2";
   private static final String REGISTRY_2 = "registry2";
   private static final String SUBSCRIPTION_2 = "subscription2";
-  private static final List<String> ARTIFACT_LIST = Arrays.asList(IMAGE, IMAGE_2);
+  private static final List<String> ARTIFACT_LIST = Arrays.asList(IMAGE, VERSION);
+  private static final List<String> ARTIFACT_LIST_2 = Arrays.asList(IMAGE_2, TAG_2);
   private static final String pipelineYamlWithoutTemplates = "pipeline:\n"
       + "    name: image expression test\n"
       + "    identifier: image_expression_test\n"
@@ -2672,11 +2673,21 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME_2,
             FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
 
+    doReturn(IMAGE)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+
+    doReturn(VERSION)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+
     assertThat(spyartifactResourceUtils.getBambooBuilds(CONNECTOR_REF_2, ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
                    REPO_NAME_2, GIT_ENTITY_FIND_INFO_DTO, FQN, SERVICE_REF,
                    BambooRequestDTO.builder()
                        .runtimeInputYaml(pipelineYamlWithoutTemplates)
-                       .artifactPathList(ARTIFACT_LIST)
+                       .artifactPathList(ARTIFACT_LIST_2)
                        .build()))
         .isSameAs(DUMMY_LIST);
 
@@ -2687,6 +2698,14 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
     verify(spyartifactResourceUtils)
         .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME_2,
             FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
   }
 
   private void mockEnvironmentGetCall() {
