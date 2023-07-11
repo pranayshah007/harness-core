@@ -438,31 +438,35 @@ class ServiceOverride(ImportExport):
         return response_list_entity[i]["data"]["content"][i]["environmentRef"]
 
     def get_entity(self, response_list_entity, i):
-        environment_instance = Environment()
-        response_list_entity = environment_instance.list_entity()
-        environment_identifiers = [
-            environment_instance.get_entity_identifier(response_list_entity, i)
-            for i in range(len(response_list_entity["data"]["content"]))
-        ]
+        return response_list_entity
 
-        responses = []
-        for environment_identifier in environment_identifiers:
-            url_secret_list = (
-                environment_service
-                + source_query_param
-                + "&environmentIdentifier="
-                + environment_identifier
-                + "&pageIndex=0&pageSize=10"
-            )
-            response = get_response_data("GET", url_secret_list, "")
-            if response["status"] == "SUCCESS" or response["code"] == "DUPLICATE_FIELD":
-
-                responses.append(response)
-
-        if i < len(responses):
-            return responses[i]
-        else:
-            return responses[0]
+        # environment_instance = Environment()
+        # response_list_entity = environment_instance.list_entity()
+        # environment_identifiers = [
+        #     environment_instance.get_entity_identifier(response_list_entity, i)
+        #     for i in range(len(response_list_entity["data"]["content"]))
+        # ]
+        #
+        # responses = []
+        # for environment_identifier in environment_identifiers:
+        #     url_secret_list = (
+        #         environment_service
+        #         + source_query_param
+        #         + "&environmentIdentifier="
+        #         + environment_identifier
+        #         + "&pageIndex=0&pageSize=10"
+        #     )
+        #     response = get_response_data("GET", url_secret_list, "")
+        #     print (response)
+        #     if response["status"] == "SUCCESS" or response["code"] == "DUPLICATE_FIELD":
+        #
+        #         responses.append(response)
+        #
+        # if i < len(responses):
+        #     print (responses)
+        #     return responses[i]
+        # else:
+        #     return responses[0]
 
     def get_payload(self, response_get_entity,i):
         item = response_get_entity["data"]["content"][i]
@@ -549,29 +553,30 @@ class InfraOverride(ImportExport):
         return response_list_entity[i]["data"]["content"][i]["infrastructure"]
 
     def get_entity(self, response_list_entity, i):
-        environment_instance = Environment()
-        response_list_entity = environment_instance.list_entity()
-        environment_identifiers = [
-            environment_instance.get_entity_identifier(response_list_entity, i)
-            for i in range(len(response_list_entity["data"]["content"]))
-        ]
-        responses = []
-        for environment_identifier in environment_identifiers:
-            url_secret_list = (
-                environment_infra
-                + source_query_param
-                + "&environmentIdentifier="
-                + environment_identifier
-                + "&pageIndex=0&pageSize=10"
-            )
-            response = get_response_data("GET", url_secret_list, "")
-            if response["status"] == "SUCCESS" or response["code"] == "DUPLICATE_FIELD":
-                responses.append(response)
-
-        if i < len(responses):
-            return responses[i]
-        else:
-            return responses[0]
+        return response_list_entity
+        # environment_instance = Environment()
+        # response_list_entity = environment_instance.list_entity()
+        # environment_identifiers = [
+        #     environment_instance.get_entity_identifier(response_list_entity, i)
+        #     for i in range(len(response_list_entity["data"]["content"]))
+        # ]
+        # responses = []
+        # for environment_identifier in environment_identifiers:
+        #     url_secret_list = (
+        #         environment_infra
+        #         + source_query_param
+        #         + "&environmentIdentifier="
+        #         + environment_identifier
+        #         + "&pageIndex=0&pageSize=10"
+        #     )
+        #     response = get_response_data("GET", url_secret_list, "")
+        #     if response["status"] == "SUCCESS" or response["code"] == "DUPLICATE_FIELD":
+        #         responses.append(response)
+        #
+        # if i < len(responses):
+        #     return responses[i]
+        # else:
+        #     return responses[0]
 
     def get_payload(self, response_get_entity):
 
@@ -1207,6 +1212,7 @@ class RoleAssignToUG(ImportExport):
         identifier = response_get_entity["data"]["userGroupDTO"]["identifier"]
         name = response_get_entity["data"]["userGroupDTO"]["name"]
         roleassignment = response_get_entity["data"]["roleAssignmentsMetadataDTO"]
+
         new_included_roleIdentifier = []
         for role in roleassignment:
             new_scope = {
@@ -1460,21 +1466,25 @@ class RoleAssignToUG(ImportExport):
     identifier = response_get_entity["data"]["userGroupDTO"]["identifier"]
     name = response_get_entity["data"]["userGroupDTO"]["name"]
     roleassignment = response_get_entity["data"]["roleAssignmentsMetadataDTO"]
-    new_included_roleIdentifier = []
-    for role in roleassignment:
-        new_scope = {
-            "roleIdentifier": role["roleIdentifier"],
-            "resourceGroupIdentifier" : role["resourceGroupIdentifier"] ,
-            "principal" : {
-                "identifier" : identifier,
-                "type" : "USER_GROUP"
+    if str(roleassignment) == "None":
+        new_included_roleIdentifier = []
+    else:
+        new_included_roleIdentifier = []
+        for role in roleassignment:
+            new_scope = {
+                "roleIdentifier": role["roleIdentifier"],
+                "resourceGroupIdentifier" : role["resourceGroupIdentifier"] ,
+                "principal" : {
+                    "identifier" : identifier,
+                    "type" : "USER_GROUP"
+                }
             }
-        }
-        new_included_roleIdentifier.append(new_scope)
+            new_included_roleIdentifier.append(new_scope)
 
     payload = {
-      "roleAssignments": new_included_roleIdentifier,
+        "roleAssignments": new_included_roleIdentifier,
     }
+
     return json.dumps(payload)
 
 
@@ -1503,36 +1513,36 @@ def main_export(entityType):
     failure_count = 0
     duplicate_count = 0
     response_list_entity = x.list_entity()
-
+    print("============================================")
+    print ("currently working on entity : " + entityType)
+    print("============================================")
     if entityType == "ServiceOverride" or entityType == "InfraOverride":
+
         for response_entity in response_list_entity:
-            total_pages = response_entity["data"]["totalPages"]
-            for j in range(0, total_pages):
-                response_list_entity_paginated = x.list_entity_paginated(j)
-                for entity_paginated in response_list_entity_paginated:
-                    page_item_count = entity_paginated["data"]["pageItemCount"]
-                    for i in range(0, page_item_count):
-                        response_get_entity = x.get_entity(entity_paginated, i)
-                        new_payload = x.get_payload(response_get_entity,i)
-                        response_create_entity = x.create_entity(new_payload)
-                        if isinstance(response_create_entity, list):
-                            for response_item in response_create_entity:
-                                if response_item["status"] == "SUCCESS":
-                                    success_count += 1
-                                elif response_item["code"] == "DUPLICATE_FIELD":
-                                    duplicate_count += 1
-                                else:
-                                    failure_count += 1
-                                    identifier = x.get_entity_identifier(
-                                        entity_paginated, i
-                                    )
-                                    list_error_response.append(
-                                        entityType
-                                        + " Identifier: "
-                                        + identifier
-                                        + ", Error Message:"
-                                        + response_item["message"]
-                                    )
+            page_item_count = response_entity["data"]["pageItemCount"]
+            if page_item_count > 0:
+                for i in range(0, page_item_count):
+                    response_get_entity = x.get_entity(response_entity, i)
+                    new_payload = x.get_payload(response_get_entity,i)
+                    response_create_entity = x.create_entity(new_payload)
+                    if isinstance(response_create_entity, list):
+                        for response_item in response_create_entity:
+                            if response_item["status"] == "SUCCESS":
+                                success_count += 1
+                            elif response_item["code"] == "DUPLICATE_FIELD":
+                                duplicate_count += 1
+                            else:
+                                failure_count += 1
+                                identifier = x.get_entity_identifier(
+                                    entity_paginated, i
+                                )
+                                list_error_response.append(
+                                    entityType
+                                    + " Identifier: "
+                                    + identifier
+                                    + ", Error Message:"
+                                    + response_item["message"]
+                                )
 
     else:
 
@@ -1583,7 +1593,7 @@ for n in range(0, len(Entities)):
         + Entities[n]
     )
 
-    print("\n")
-    for i in range(0, success_failure_count[n][1]):
-        print(success_failure_count[n][2][i])
-        print("\n")
+    # print("\n")
+    # for i in range(0, success_failure_count[n][1]):
+    #     print(success_failure_count[n][2][i])
+    #     print("\n")
