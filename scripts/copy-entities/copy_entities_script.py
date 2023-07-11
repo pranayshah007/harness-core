@@ -1520,29 +1520,29 @@ def main_export(entityType):
 
         for response_entity in response_list_entity:
             page_item_count = response_entity["data"]["pageItemCount"]
-            if page_item_count > 0:
-                for i in range(0, page_item_count):
-                    response_get_entity = x.get_entity(response_entity, i)
-                    new_payload = x.get_payload(response_get_entity,i)
-                    response_create_entity = x.create_entity(new_payload)
-                    if isinstance(response_create_entity, list):
-                        for response_item in response_create_entity:
-                            if response_item["status"] == "SUCCESS":
-                                success_count += 1
-                            elif response_item["code"] == "DUPLICATE_FIELD":
-                                duplicate_count += 1
-                            else:
-                                failure_count += 1
-                                identifier = x.get_entity_identifier(
-                                    entity_paginated, i
-                                )
-                                list_error_response.append(
-                                    entityType
-                                    + " Identifier: "
-                                    + identifier
-                                    + ", Error Message:"
-                                    + response_item["message"]
-                                )
+            for i in range(0, page_item_count):
+                response_get_entity = x.get_entity(response_entity, i)
+                new_payload = x.get_payload(response_get_entity,i)
+                response_create_entity = x.create_entity(new_payload)
+                if isinstance(response_create_entity, list):
+                    for response_item in response_create_entity:
+                        if response_item["status"] == "SUCCESS":
+                            success_count += 1
+                        elif response_item["code"] == "DUPLICATE_FIELD":
+                            duplicate_count += 1
+                        else:
+                            failure_count += 1
+                            identifier = x.get_entity_identifier(
+                                entity_paginated, i
+                            )
+                            list_error_response.append(
+                                entityType
+                                + " Identifier: "
+                                + identifier
+                                + ", Error Message:"
+                                + response_item["message"]
+                            )
+
 
     else:
 
@@ -1593,7 +1593,7 @@ for n in range(0, len(Entities)):
         + Entities[n]
     )
 
-    # print("\n")
-    # for i in range(0, success_failure_count[n][1]):
-    #     print(success_failure_count[n][2][i])
-    #     print("\n")
+    print("\n")
+    for i in range(0, success_failure_count[n][1]):
+        print(success_failure_count[n][3][i])
+        print("\n")
