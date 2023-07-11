@@ -11,11 +11,11 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//:lombok",
         "//970-ng-commons/src/main/java/io/harness/event:module",
         "//970-ng-commons/src/main/java/io/harness/ng/core:module",
         "//980-commons/src/main/java/io/harness/data/structure:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "//:lombok",
         "//platform-service/modules/audit-service/contracts:module",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
     ],

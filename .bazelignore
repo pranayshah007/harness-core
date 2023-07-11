@@ -25,3 +25,9 @@ python
 scripts
 service_version.properties
 toolset
+.idea
+.idea.bkp
+.env
+.ijwb
+.ijwb.bkp
+speedy

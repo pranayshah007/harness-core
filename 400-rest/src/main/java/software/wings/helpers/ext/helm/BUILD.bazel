@@ -11,8 +11,8 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//930-delegate-tasks:module",
         "//930-delegate-tasks/src/main/java/software/wings/helpers/ext/helm/response:module",
+        "//930-delegate-tasks:module",
         "//950-delegate-tasks-beans:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
     ],

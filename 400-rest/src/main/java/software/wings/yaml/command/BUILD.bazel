@@ -11,10 +11,10 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//:lombok",
         "//930-delegate-tasks:module",
         "//955-cg-yaml:module",
         "//980-commons/src/main/java/software/wings/beans:module",
+        "//:lombok",
     ],
 )
 

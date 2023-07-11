@@ -11,8 +11,8 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//930-delegate-tasks:module",
         "//930-delegate-tasks/src/main/java/software/wings/verification/stackdriver:module",
+        "//930-delegate-tasks:module",
         "//950-delegate-tasks-beans:module",
     ],
 )

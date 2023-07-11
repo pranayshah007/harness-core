@@ -1,0 +1,31 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/api/arm:module",
+        "//400-rest/src/main/java/software/wings/api/artifact:module",
+        "//400-rest/src/main/java/software/wings/api/helm:module",
+        "//400-rest/src/main/java/software/wings/api/instancedetails:module",
+        "//400-rest/src/main/java/software/wings/api/terraform:module",
+        "//400-rest/src/main/java/software/wings/api/terragrunt:module",
+        "//400-rest/src/main/java/software/wings/beans/utm:module",
+        "//400-rest/src/main/java/software/wings/delegatetasks/event:module",
+        "//400-rest/src/main/java/software/wings/helpers/ext/cloudformation:module",
+        "//400-rest/src/main/java/software/wings/helpers/ext/ecs/request:module",
+        "//400-rest/src/main/java/software/wings/persistence/artifact:module",
+        "//400-rest:module",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/user:module",
+        "//970-ng-commons/src/main/java/io/harness/ng/core/common/beans:module",
+        "//980-commons/src/main/java/io/harness/serializer:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "@maven//:com_amazonaws_aws_java_sdk_kms",
+        "@maven//:com_esotericsoftware_kryo",
+        "@maven//:org_mongodb_mongo_java_driver",
+    ],
+)
+
+run_analysis_per_module()

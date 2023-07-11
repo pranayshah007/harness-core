@@ -1,0 +1,33 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//400-rest:module",
+        "//420-delegate-service:module",
+        "//970-ng-commons/src/main/java/io/harness/constants:module",
+        "//970-ng-commons/src/main/java/io/harness/security/annotations:module",
+        "//970-rbac-core/src/main/java/software/wings/security/annotations:module",
+        "//970-rbac-core/src/main/java/software/wings/security:module",
+        "//980-commons/src/main/java/io/harness/eraro:module",
+        "//980-commons/src/main/java/io/harness/exception:module",
+        "//980-commons/src/main/java/io/harness/logging/autolog:module",
+        "//980-commons/src/main/java/io/harness/logging:module",
+        "//980-commons/src/main/java/io/harness/rest:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "//:lombok",
+        "//clients/access-control/sdk:module",
+        "@maven//:com_google_inject_guice",
+        "@maven//:io_dropwizard_dropwizard_jersey",
+        "@maven//:io_dropwizard_metrics_metrics_annotation",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:javax_validation_validation_api",
+        "@maven//:javax_ws_rs_javax_ws_rs_api",
+    ],
+)
+
+run_analysis_per_module()

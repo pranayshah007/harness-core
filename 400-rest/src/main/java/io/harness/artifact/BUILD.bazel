@@ -1,0 +1,37 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "//400-rest:module",
+        "//400-rest/src/main/java/io/harness/perpetualtask:module",
+        "//400-rest/src/main/java/software/wings/beans/artifact:module",
+        "//400-rest/src/main/java/software/wings/persistence/artifact:module",
+        "//420-delegate-service:module",
+        "//870-cg-orchestration:module",
+        "//930-delegate-tasks/src/main/java/io/harness/perpetualtask:module",
+        "//930-delegate-tasks/src/main/java/software/wings/beans/artifact:module",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/buildsource:module",
+        "//930-delegate-tasks/src/main/java/software/wings/utils/delegate:module",
+        "//940-feature-flag:module",
+        "//956-feature-flag-beans:module",
+        "//957-cg-beans:module",
+        "//970-api-services-beans/src/main/java/io/harness/logging:module",
+        "//970-api-services-beans/src/main/java/software/wings/helpers/ext/jenkins:module",
+        "//980-commons/src/main/java/io/harness/data/structure:module",
+        "//980-commons/src/main/java/io/harness/logging:module",
+        "//980-commons/src/main/java/io/harness/logging/autolog:module",
+        "//980-commons/src/main/java/io/harness/serializer:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_google_inject_guice",
+        "@maven//:com_google_protobuf_protobuf_java",
+        "@maven//:javax_validation_validation_api",
+    ],
+)
+
+run_analysis_per_module()

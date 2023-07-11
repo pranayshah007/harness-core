@@ -11,8 +11,8 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//:lombok",
         "//970-rbac-core/src/main/java/software/wings/security:module",
+        "//:lombok",
     ],
 )
 

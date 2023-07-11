@@ -11,8 +11,8 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//:lombok",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "//:lombok",
         "@maven//:com_graphql_java_graphql_java",
         "@maven//:com_intellij_annotations",
     ],

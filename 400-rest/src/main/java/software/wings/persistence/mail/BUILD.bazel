@@ -11,13 +11,13 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//:lombok",
-        "//930-delegate-tasks/src/main/java/software/wings/helpers/ext/mail:module",
         "//960-persistence/src/main/java/io/harness/annotation:module",
         "//960-persistence/src/main/java/io/harness/ng:module",
         "//960-persistence/src/main/java/io/harness/queue:module",
         "//980-commons/src/main/java/io/harness/annotations:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "//930-delegate-tasks/src/main/java/software/wings/helpers/ext/mail:module",
+        "//:lombok",
         "@maven//:dev_morphia_morphia_core",
     ],
 )

@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/software/wings/beans/infrastructure/instance:module",
+        "//957-cg-beans:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "//:lombok",
+        "@maven//:com_amazonaws_aws_java_sdk_ec2",
+        "@maven//:org_apache_commons_commons_collections4",
+    ],
+)
+
+run_analysis_per_module()

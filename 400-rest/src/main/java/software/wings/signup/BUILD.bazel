@@ -1,0 +1,34 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/persistence/mail:module",
+        "//400-rest:module",
+        "//920-delegate-agent-beans:module",
+        "//957-cg-beans:module",
+        "//970-ng-commons/src/main/java/io/harness/ng/core/common/beans:module",
+        "//980-commons/src/main/java/io/harness/configuration:module",
+        "//980-commons/src/main/java/io/harness/data/structure:module",
+        "//980-commons/src/main/java/io/harness/eraro:module",
+        "//980-commons/src/main/java/io/harness/exception:module",
+        "//980-commons/src/main/java/io/harness/network:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "//:lombok",
+        "@maven//:com_auth0_java_jwt",
+        "@maven//:com_bugsnag_bugsnag",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_google_inject_guice",
+        "@maven//:com_squareup_okhttp3_okhttp",
+        "@maven//:commons_codec_commons_codec",
+        "@maven//:commons_validator_commons_validator",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_apache_httpcomponents_httpclient",
+        "@maven//:org_springframework_security_spring_security_crypto",
+    ],
+)
+
+run_analysis_per_module()

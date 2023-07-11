@@ -11,8 +11,8 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//:lombok",
         "//980-commons/src/main/java/io/harness/yaml:module",
+        "//:lombok",
     ],
 )
 

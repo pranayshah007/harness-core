@@ -1,0 +1,44 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "//400-rest:module",
+        "//400-rest/src/main/java/software/wings/beans:module",
+        "//400-rest/src/main/java/software/wings/beans/template:module",
+        "//400-rest/src/main/java/software/wings/service/impl:module",
+        "//870-cg-orchestration:module",
+        "//930-delegate-tasks/src/main/java/software/wings/utils/artifact:module",
+        "//957-cg-beans:module",
+        "//957-cg-beans/src/main/java/software/wings/ngmigration:module",
+        "//957-cg-beans/src/main/java/software/wings/stencils:module",
+        "//960-persistence/src/main/java/io/harness/annotation:module",
+        "//960-persistence/src/main/java/io/harness/mongo/index:module",
+        "//960-persistence/src/main/java/io/harness/mongo/index/annotation:module",
+        "//960-persistence/src/main/java/io/harness/ng:module",
+        "//970-api-services-beans/src/main/java/io/harness/logging:module",
+        "//980-commons/src/main/java/io/harness/annotations:module",
+        "//980-commons/src/main/java/io/harness/beans/user:module",
+        "//980-commons/src/main/java/io/harness/data/structure:module",
+        "//980-commons/src/main/java/io/harness/exception:module",
+        "//980-commons/src/main/java/io/harness/expression:module",
+        "//980-commons/src/main/java/io/harness/expression/common:module",
+        "//980-commons/src/main/java/io/harness/reflection:module",
+        "//980-commons/src/main/java/io/harness/serializer:module",
+        "//980-commons/src/main/java/software/wings/stencils:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_github_reinert_jjschema",
+        "@maven//:com_google_guava_guava",
+        "@maven//:dev_morphia_morphia_core",
+        "@maven//:org_hibernate_validator_hibernate_validator",
+        "@maven//:org_jooq_joor",
+    ],
+)
+
+run_analysis_per_module()

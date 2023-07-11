@@ -1,0 +1,31 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//400-rest:module",
+        "//420-delegate-service:module",
+        "//920-delegate-agent-beans:module",
+        "//930-delegate-tasks:module",
+        "//950-delegate-tasks-beans:module",
+        "//980-commons/src/main/java/io/harness/agent:module",
+        "//980-commons/src/main/java/io/harness/data/structure:module",
+        "//980-commons/src/main/java/io/harness/eraro:module",
+        "//980-commons/src/main/java/io/harness/exception:module",
+        "//980-commons/src/main/java/io/harness/govern:module",
+        "//980-commons/src/main/java/io/harness/logging/autolog:module",
+        "//980-commons/src/main/java/io/harness/logging:module",
+        "//980-commons/src/main/java/io/harness/serializer:module",
+        "//:lombok",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_google_inject_guice",
+        "@maven//:com_intellij_annotations",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_atmosphere_atmosphere_runtime",
+    ],
+)
+
+run_analysis_per_module()

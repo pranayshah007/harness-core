@@ -1,0 +1,23 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//400-rest:module",
+        "//450-ce-views:module",
+        "//490-ce-commons:module",
+        "//980-commons/src/main/java/io/harness/rest:module",
+        "@maven//:com_google_cloud_google_cloud_bigquery",
+        "@maven//:com_google_inject_guice",
+        "@maven//:io_dropwizard_metrics_metrics_annotation",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:javax_validation_validation_api",
+        "@maven//:javax_ws_rs_javax_ws_rs_api",
+        "@maven//:org_springframework_spring_web",
+    ],
+)
+
+run_analysis_per_module()

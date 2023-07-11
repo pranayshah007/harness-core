@@ -11,12 +11,12 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//:lombok",
         "//960-persistence/src/main/java/io/harness/annotation:module",
         "//960-persistence/src/main/java/io/harness/mongo/index/annotation:module",
         "//960-persistence/src/main/java/io/harness/ng:module",
         "//960-persistence/src/main/java/io/harness/persistence/api:module",
         "//980-commons/src/main/java/io/harness/annotations:module",
+        "//:lombok",
         "@maven//:dev_morphia_morphia_core",
     ],
 )

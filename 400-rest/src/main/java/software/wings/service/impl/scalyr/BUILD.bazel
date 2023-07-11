@@ -12,8 +12,8 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//400-rest/src/main/java/software/wings/service/intfc/scalyr:module",
-        "//930-delegate-tasks:module",
         "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/cv/beans:module",
+        "//930-delegate-tasks:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
     ],
 )

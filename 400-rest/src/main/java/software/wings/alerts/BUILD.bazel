@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//400-rest:module",
+        "//920-delegate-service-beans:module",
+        "//980-commons/src/main/java/io/harness/alert:module",
+        "@maven//:com_google_inject_guice",
+    ],
+)
+
+run_analysis_per_module()

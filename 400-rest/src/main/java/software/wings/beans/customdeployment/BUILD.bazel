@@ -11,8 +11,8 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//:lombok",
         "//957-cg-beans:module",
+        "//:lombok",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
     ],
 )

@@ -11,9 +11,9 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//:lombok",
         "//950-delegate-tasks-beans:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "//:lombok",
     ],
 )
 

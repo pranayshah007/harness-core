@@ -11,10 +11,10 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//:lombok",
         "//930-delegate-tasks:module",
         "//957-cg-beans:module",
         "//970-api-services-beans/src/main/java/io/harness/deployment:module",
+        "//:lombok",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
     ],
 )

@@ -1,0 +1,25 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/service/intfc/ce:module",
+        "//400-rest:module",
+        "//450-ce-views:module",
+        "//490-ce-commons:module",
+        "//959-common-entities/src/main/java/io/harness/beans:module",
+        "//960-persistence:module",
+        "//980-commons/src/main/java/io/harness/exception:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "//:lombok",
+        "@maven//:com_github_ben_manes_caffeine_caffeine",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_google_inject_guice",
+        "@maven//:org_apache_commons_commons_lang3",
+    ],
+)
+
+run_analysis_per_module()
