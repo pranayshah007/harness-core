@@ -8,6 +8,7 @@
 package io.harness.pms.events.base;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.eventsframework.EventsFrameworkConstants.SDK_RESPONSE_EVENT_BATCH_SIZE;
 import static io.harness.maintenance.MaintenanceController.getMaintenanceFlag;
 import static io.harness.threading.Morpheus.sleep;
 
@@ -15,6 +16,7 @@ import static java.time.Duration.ofSeconds;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
@@ -35,6 +37,10 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
     extends RedisTraceConsumer implements PmsRedisConsumer {
   private static final int WAIT_TIME_IN_SECONDS = 1;
   private static final int THREAD_SLEEP_TIME_IN_MILLIS = 200;
+  private static final int THREAD_SLEEP_MILLIS_WHEN_CONSUMER_IS_BUSY =
+      EmptyPredicate.isNotEmpty(System.getenv("THREAD_SLEEP_MILLIS_WHEN_CONSUMER_IS_BUSY"))
+      ? Integer.parseInt(System.getenv("THREAD_SLEEP_MILLIS_WHEN_CONSUMER_IS_BUSY"))
+      : 0;
   private static final int SLEEP_SECONDS = 10;
   private static final String CACHE_KEY = "%s_%s";
   private final Consumer redisConsumer;
@@ -88,7 +94,8 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
     try {
       pollAndProcessMessages();
       // Adding thread sleep to allow queue clients to not overload connections and over submit events.
-      TimeUnit.MILLISECONDS.sleep(THREAD_SLEEP_TIME_IN_MILLIS);
+      // Removing the sleep from here. Because the sleep is added in the pollAndProcessMessages method.
+      //      TimeUnit.MILLISECONDS.sleep(THREAD_SLEEP_TIME_IN_MILLIS);
     } catch (EventsFrameworkDownException e) {
       log.error("Events framework is down for " + this.getClass().getSimpleName() + " consumer. Retrying again...", e);
       TimeUnit.SECONDS.sleep(WAIT_TIME_IN_SECONDS);
@@ -96,7 +103,7 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
   }
 
   @VisibleForTesting
-  void pollAndProcessMessages() {
+  void pollAndProcessMessages() throws InterruptedException {
     List<Message> messages;
     String messageId;
     boolean messageProcessed;
@@ -107,6 +114,15 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
       if (messageProcessed) {
         redisConsumer.acknowledge(messageId);
       }
+    }
+    // Only checking the size for SDK_RESPONSE_EVENT_BATCH_SIZE now for testing. Will take the correct batch-size for
+    // the various events.
+    if (messages.size() < SDK_RESPONSE_EVENT_BATCH_SIZE) {
+      // Adding thread sleep when the events read are less than the batch-size. This way when the load is high, consumer
+      // will query the events quickly. And in case of low load, thread will sleep for sometime.
+      TimeUnit.MILLISECONDS.sleep(THREAD_SLEEP_TIME_IN_MILLIS);
+    } else if (THREAD_SLEEP_MILLIS_WHEN_CONSUMER_IS_BUSY > 0) {
+      TimeUnit.MILLISECONDS.sleep(THREAD_SLEEP_MILLIS_WHEN_CONSUMER_IS_BUSY);
     }
   }
 

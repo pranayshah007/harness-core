@@ -10,6 +10,7 @@ package io.harness.eventsframework;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 
 import java.time.Duration;
 import lombok.experimental.UtilityClass;
@@ -55,7 +56,10 @@ public final class EventsFrameworkConstants {
 
   public static final String PIPELINE_SDK_RESPONSE_EVENT_TOPIC = "pipeline_sdk_response";
   public static final int PIPELINE_SDK_RESPONSE_EVENT_MAX_TOPIC_SIZE = 5000;
-  public static final int SDK_RESPONSE_EVENT_BATCH_SIZE = 40;
+  public static final int SDK_RESPONSE_EVENT_BATCH_SIZE =
+      EmptyPredicate.isNotEmpty(System.getenv("SDK_RESPONSE_EVENT_BATCH_SIZE"))
+      ? Integer.parseInt(System.getenv("SDK_RESPONSE_EVENT_BATCH_SIZE"))
+      : 20;
 
   public static final String INITIATE_NODE_EVENT_TOPIC = "pipeline_initiate_node";
   public static final int INITIATE_NODE_EVENT_BATCH_SIZE = 10;
