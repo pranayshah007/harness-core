@@ -372,9 +372,15 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
   }
 
   private void populateAzureFilters(Criteria criteria, CcmConnectorFilter ccmConnectorFilter) {
+    Set<String> unionOfArrays = new HashSet<>();
     if (ccmConnectorFilter.getAzureSubscriptionId() != null) {
-      populateInFilter(
-          criteria, CEAzureConfigKeys.subscriptionId, Arrays.asList(ccmConnectorFilter.getAzureSubscriptionId()));
+      unionOfArrays.addAll(List.of(ccmConnectorFilter.getAzureSubscriptionId()));
+    }
+    if (ccmConnectorFilter.getAzureSubscriptionIds() != null) {
+      unionOfArrays.addAll(ccmConnectorFilter.getAzureSubscriptionIds());
+    }
+    if (!unionOfArrays.isEmpty()) {
+      populateInFilter(criteria, CEAzureConfigKeys.subscriptionId, Arrays.asList(unionOfArrays.toArray()));
     }
     if (ccmConnectorFilter.getAzureTenantId() != null) {
       populateInFilter(criteria, CEAzureConfigKeys.tenantId, Arrays.asList(ccmConnectorFilter.getAzureTenantId()));

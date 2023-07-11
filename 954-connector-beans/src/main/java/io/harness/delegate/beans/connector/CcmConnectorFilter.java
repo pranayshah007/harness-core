@@ -25,6 +25,7 @@ public class CcmConnectorFilter {
   String awsAccountId; // For backword compatibility with UI
   List<String> awsAccountIds;
   String azureSubscriptionId;
+  List<String> azureSubscriptionIds;
   String azureTenantId;
   String gcpProjectId;
   List<String> k8sConnectorRef;
