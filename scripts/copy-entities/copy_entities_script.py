@@ -325,6 +325,8 @@ class Environment(ImportExport):
             )["environment"]
         )
 
+
+
     def create_entity(self, payload):
         url_create_env = environment_endpoint + routing_and_accountId_param
         return create_and_print_entity(url_create_env, payload)
@@ -457,23 +459,25 @@ class ServiceOverride(ImportExport):
 
                 responses.append(response)
 
-        return responses[i]
+        if i < len(responses):
+            return responses[i]
+        else:
+            return responses[0]
 
-    def get_payload(self, response_get_entity):
-        content = response_get_entity["data"]["content"]
+    def get_payload(self, response_get_entity,i):
+        item = response_get_entity["data"]["content"][i]
         modified_payloads = []
-        for item in content:
-            yaml_data = item["yaml"]
-            service_ref = item["serviceRef"]
-            env_ref = item["environmentRef"]
-            payload = {
-                "serviceIdentifier": service_ref,
-                "environmentIdentifier": env_ref,
-                "yaml": str(yaml_data),
-                "projectIdentifier": to_projectIdentifier,
-                "orgIdentifier": to_orgIdentifier,
-            }
-            modified_payloads.append(payload)
+        yaml_data = item["yaml"]
+        service_ref = item["serviceRef"]
+        env_ref = item["environmentRef"]
+        payload = {
+            "serviceIdentifier": service_ref,
+            "environmentIdentifier": env_ref,
+            "yaml": str(yaml_data),
+            "projectIdentifier": to_projectIdentifier,
+            "orgIdentifier": to_orgIdentifier,
+        }
+        modified_payloads.append(payload)
         return json.dumps(modified_payloads)
 
     def create_entity(self, payload):
@@ -545,7 +549,6 @@ class InfraOverride(ImportExport):
         return response_list_entity[i]["data"]["content"][i]["infrastructure"]
 
     def get_entity(self, response_list_entity, i):
-
         environment_instance = Environment()
         response_list_entity = environment_instance.list_entity()
         environment_identifiers = [
@@ -595,6 +598,31 @@ class InfraOverride(ImportExport):
             }
 
             modified_payloads.append(payload)
+
+        return json.dumps(modified_payloads)
+
+    def get_payload(self, response_get_entity, i):
+
+        infrastructure = response_get_entity["data"]["content"][i]["infrastructure"]
+
+        modified_payloads = []
+        yaml_data = infrastructure["yaml"]
+        modified_yaml = yaml_data.replace("projectIdentifier", to_projectIdentifier)
+        modified_yaml = modified_yaml.replace("orgIdentifier", to_orgIdentifier)
+        payload = {
+            "identifier": infrastructure["identifier"],
+            "name": infrastructure["name"],
+            "environmentRef": infrastructure["environmentRef"],
+            "yaml": str(modified_yaml),
+            "type": infrastructure["type"],
+            "deploymentType": infrastructure["deploymentType"],
+            "description": infrastructure["description"],
+            "tags": infrastructure["tags"],
+            "projectIdentifier": to_projectIdentifier,
+            "orgIdentifier": to_orgIdentifier,
+        }
+
+        modified_payloads.append(payload)
 
         return json.dumps(modified_payloads)
 
@@ -1485,9 +1513,8 @@ def main_export(entityType):
                     page_item_count = entity_paginated["data"]["pageItemCount"]
                     for i in range(0, page_item_count):
                         response_get_entity = x.get_entity(entity_paginated, i)
-                        new_payload = x.get_payload(response_get_entity)
+                        new_payload = x.get_payload(response_get_entity,i)
                         response_create_entity = x.create_entity(new_payload)
-
                         if isinstance(response_create_entity, list):
                             for response_item in response_create_entity:
                                 if response_item["status"] == "SUCCESS":
@@ -1543,7 +1570,6 @@ def main_export(entityType):
 
 for n in range(0, len(Entities)):
     success_failure_count[n] = main_export(Entities[n])
-    duplicates_count[n] = main_export(Entities[n])
 
 for n in range(0, len(Entities)):
     print(
