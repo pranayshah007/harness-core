@@ -22,6 +22,9 @@ import io.harness.ccm.license.CeLicenseInfoDTO;
 import io.harness.ccm.license.remote.CeLicenseClient;
 import io.harness.configuration.DeployMode;
 import io.harness.configuration.DeployVariant;
+import io.harness.credit.beans.credits.CICreditDTO;
+import io.harness.credit.beans.credits.CreditDTO;
+import io.harness.credit.services.CreditService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.Edition;
 import io.harness.licensing.EditionAction;
@@ -89,12 +92,14 @@ public class DefaultLicenseServiceImpl implements LicenseService {
   private final CeLicenseClient ceLicenseClient;
   private final LicenseComplianceResolver licenseComplianceResolver;
   private final Cache<String, List> cache;
+  protected final CreditService creditService;
   protected final LicenseGenerator licenseGenerator;
   protected final LicenseValidator licenseValidator;
   protected final SMPLicenseMapper smpLicenseMapper;
 
   protected final AccountService accountService;
 
+  static final int FREE_CI_CREDITS_QUANTITY = 2000;
   static final String FAILED_OPERATION = "START_TRIAL_ATTEMPT_FAILED";
   static final String SUCCEED_START_FREE_OPERATION = "FREE_PLAN";
   static final String SUCCEED_START_TRIAL_OPERATION = "NEW_TRIAL";
@@ -108,7 +113,8 @@ public class DefaultLicenseServiceImpl implements LicenseService {
       LicenseObjectConverter licenseObjectConverter, ModuleLicenseInterface licenseInterface,
       AccountService accountService, TelemetryReporter telemetryReporter, CeLicenseClient ceLicenseClient,
       LicenseComplianceResolver licenseComplianceResolver, @Named(LICENSE_CACHE_NAMESPACE) Cache<String, List> cache,
-      LicenseGenerator licenseGenerator, LicenseValidator licenseValidator, SMPLicenseMapper smpLicenseMapper) {
+      CreditService creditService, LicenseGenerator licenseGenerator, LicenseValidator licenseValidator,
+      SMPLicenseMapper smpLicenseMapper) {
     this.moduleLicenseRepository = moduleLicenseRepository;
     this.licenseObjectConverter = licenseObjectConverter;
     this.licenseInterface = licenseInterface;
@@ -117,6 +123,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
     this.ceLicenseClient = ceLicenseClient;
     this.licenseComplianceResolver = licenseComplianceResolver;
     this.cache = cache;
+    this.creditService = creditService;
     this.licenseGenerator = licenseGenerator;
     this.licenseValidator = licenseValidator;
     this.smpLicenseMapper = smpLicenseMapper;
@@ -215,6 +222,13 @@ public class DefaultLicenseServiceImpl implements LicenseService {
       throw new InvalidRequestException(
           String.format("ModuleLicense with accountIdentifier [%s] and moduleType [%s] already exists",
               moduleLicense.getAccountIdentifier(), moduleLicense.getModuleType()));
+    }
+    if (ModuleType.CI.equals(moduleLicense.getModuleType())) {
+      CreditDTO ciCreditDTO = CICreditDTO.builder()
+                                  .accountIdentifier(moduleLicense.getAccountIdentifier())
+                                  .quantity(FREE_CI_CREDITS_QUANTITY)
+                                  .build();
+      creditService.purchaseCredit(moduleLicense.getAccountIdentifier(), ciCreditDTO);
     }
 
     // Validate entity

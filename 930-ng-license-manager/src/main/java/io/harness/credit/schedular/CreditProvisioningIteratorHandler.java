@@ -62,6 +62,9 @@ public class CreditProvisioningIteratorHandler implements Handler<CIModuleLicens
   @Override
   public void handle(CIModuleLicense entity) {
     try {
+      if (entity.getStartTime() > getStartOfMonth().getTimeInMillis()) {
+        return;
+      }
       CreditDTO creditDTO = buildCreditDTO(entity);
       creditService.purchaseCredit(entity.getAccountIdentifier(), creditDTO);
     } catch (Exception ex) {
@@ -99,7 +102,7 @@ public class CreditProvisioningIteratorHandler implements Handler<CIModuleLicens
                                  .is(ModuleType.CI));
   }
 
-  private static Calendar getStartOfNextMonth() {
+  private static Calendar getStartOfMonth() {
     Calendar calendar = Calendar.getInstance();
     calendar.setTimeZone(TimeZone.getTimeZone("GMT"));
     calendar.set(Calendar.DAY_OF_MONTH, 1);
@@ -107,6 +110,12 @@ public class CreditProvisioningIteratorHandler implements Handler<CIModuleLicens
     calendar.set(Calendar.HOUR, 0);
     calendar.set(Calendar.MINUTE, 0);
     calendar.set(Calendar.SECOND, 0);
+    calendar.set(Calendar.MILLISECOND, 0);
+    return calendar;
+  }
+
+  private static Calendar getStartOfNextMonth() {
+    Calendar calendar = getStartOfMonth();
     calendar.add(Calendar.MONTH, 1);
     return calendar;
   }
