@@ -9,6 +9,7 @@ package io.harness.connector.mappers.githubconnector;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.connector.entities.embedded.githubconnector.GithubApp;
 import io.harness.connector.entities.embedded.githubconnector.GithubAppApiAccess;
 import io.harness.connector.entities.embedded.githubconnector.GithubAuthentication;
 import io.harness.connector.entities.embedded.githubconnector.GithubConnector;
@@ -24,6 +25,7 @@ import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
+import io.harness.delegate.beans.connector.scm.github.GithubAppDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAppSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
@@ -117,6 +119,17 @@ public class GithubEntityToDTO implements ConnectorEntityToDTOMapper<GithubConne
 
         githubHttpCredentialsSpecDTO =
             GithubOauthDTO.builder().tokenRef(SecretRefHelper.createSecretRef(githubOauth.getTokenRef())).build();
+        break;
+      case GITHUB_APP:
+        final GithubApp githubApp = (GithubApp) auth;
+        githubHttpCredentialsSpecDTO =
+            GithubAppDTO.builder()
+                .applicationId(githubApp.getApplicationId())
+                .installationId(githubApp.getInstallationId())
+                .privateKeyRef(SecretRefHelper.createSecretRef(githubApp.getPrivateKeyRef()))
+                .applicationIdRef(SecretRefHelper.createSecretRef(githubApp.getApplicationIdRef()))
+                .installationIdRef(SecretRefHelper.createSecretRef(githubApp.getInstallationIdRef()))
+                .build();
         break;
       default:
         Switch.unhandled(type);

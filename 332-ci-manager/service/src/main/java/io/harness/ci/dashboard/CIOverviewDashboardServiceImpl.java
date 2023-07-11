@@ -7,11 +7,13 @@
 
 package io.harness.core.ci.services;
 
-import static io.harness.beans.execution.ExecutionSource.Type.MANUAL;
-import static io.harness.beans.execution.ExecutionSource.Type.WEBHOOK;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.pms.contracts.plan.TriggerType.MANUAL;
+import static io.harness.pms.contracts.plan.TriggerType.SCHEDULER_CRON;
+import static io.harness.pms.contracts.plan.TriggerType.WEBHOOK;
+import static io.harness.pms.contracts.plan.TriggerType.WEBHOOK_CUSTOM;
 
 import static java.lang.String.format;
 
@@ -83,6 +85,9 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
       ExecutionStatus.ASYNCWAITING.name(), ExecutionStatus.TASKWAITING.name(), ExecutionStatus.TIMEDWAITING.name(),
       ExecutionStatus.PAUSED.name(), ExecutionStatus.PAUSING.name());
 
+  private static final String TRIGGER_TYPES =
+      String.join(",", Arrays.asList("'" + MANUAL + "'", "'" + WEBHOOK_CUSTOM + "'", "'" + SCHEDULER_CRON + "'"));
+
   private static final int MAX_RETRY_COUNT = 1;
 
   // This ID comes, and should only come from internal source only. No need to use prepare statement here
@@ -98,7 +103,8 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
     long totalTries = 0;
     String query = "select count(distinct moduleinfo_author_id) from " + tableName
         + " where accountid=? and moduleinfo_type ='CI' and moduleinfo_author_id is not null and moduleinfo_is_private=true and (trigger_type='"
-        + WEBHOOK + "' OR (trigger_type='" + MANUAL + "' AND user_source='GIT')) and startts<=? and startts>=?;";
+        + WEBHOOK + "' OR (trigger_type IN (" + TRIGGER_TYPES
+        + ") AND user_source='GIT')) and startts<=? and startts>=?;";
 
     while (totalTries <= MAX_RETRY_COUNT) {
       totalTries++;
@@ -156,7 +162,8 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
     long totalTries = 0;
     String query = "select distinct moduleinfo_author_id, projectidentifier , orgidentifier from " + tableName
         + " where accountid=? and moduleinfo_type ='CI' and moduleinfo_author_id is not null and moduleinfo_is_private=true and (trigger_type='"
-        + WEBHOOK + "' OR (trigger_type='" + MANUAL + "' AND user_source='GIT')) and startts<=? and startts>=?;";
+        + WEBHOOK + "' OR (trigger_type IN (" + TRIGGER_TYPES
+        + ") AND user_source='GIT')) and startts<=? and startts>=?;";
 
     while (totalTries <= MAX_RETRY_COUNT) {
       totalTries++;

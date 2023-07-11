@@ -55,7 +55,7 @@ Entities = [
     "Connector",
     "Service",
     "Environment",
-    "EnvironmentOverride"
+    "EnvironmentOverride",
     "ServiceOverride",
     "InfraOverride",
     "Template",

@@ -10,6 +10,7 @@ package io.harness.artifactory;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.MLUKIC;
+import static io.harness.rule.OwnerRule.SARTHAK_KASAT;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.vivekveman;
 
@@ -113,7 +114,23 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
     doReturn(buildDetails).when(artifactoryClient).getArtifactList(any(), any(), any(), anyInt());
 
     List<BuildDetails> result =
-        artifactoryNgService.getArtifactList(artifactoryConfigRequest, "repoName", "artifactPath", 10);
+        artifactoryNgService.getArtifactList(artifactoryConfigRequest, "repoName", "artifactPath", 10, null, null);
+
+    verify(artifactoryClient, times(1)).getArtifactList(any(), any(), any(), anyInt());
+    assertThat(result).isEqualTo(buildDetails);
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetArtifactListWithArtifactFilter() {
+    ArtifactoryConfigRequest artifactoryConfigRequest = ArtifactoryConfigRequest.builder().build();
+    List<BuildDetails> buildDetails = new ArrayList<>();
+    buildDetails.add(
+        BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactDirectory/artifactPathFilter.exe.temp").build());
+    doReturn(buildDetails).when(artifactoryClient).getArtifactList(any(), any(), any(), anyInt());
+
+    List<BuildDetails> result = artifactoryNgService.getArtifactList(
+        artifactoryConfigRequest, "repoName", "artifactPath", 10, "artifactPathFilter.*", "artifactDirectory");
 
     verify(artifactoryClient, times(1)).getArtifactList(any(), any(), any(), anyInt());
     assertThat(result).isEqualTo(buildDetails);

@@ -606,8 +606,7 @@ public class MonitoredServiceResource {
   getNotificationRuleConditionsForMonitoredService(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @Parameter(description = NGCommonEntityConstants.IDENTIFIER_PARAM_MESSAGE) @ApiParam(
           required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String monitoredServiceIdentifier,
-      @NotNull @QueryParam("types") @ResourceIdentifier List<NotificationRuleConditionType> types,
-      @BeanParam PageParams pageParams) {
+      @NotNull @QueryParam("types") List<NotificationRuleConditionType> types, @BeanParam PageParams pageParams) {
     return ResponseDTO.newResponse(monitoredServiceService.getNotificationRuleConditions(
         projectParams.getProjectParams(), monitoredServiceIdentifier, pageParams, types));
   }

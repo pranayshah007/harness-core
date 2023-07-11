@@ -15,6 +15,7 @@ java_library(
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/manifest/mappers:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/manifest/steps/outcome:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/manifest/steps/output:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/manifest/steps/task:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/service/steps:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/service/steps/constants:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/service/steps/helpers:module",

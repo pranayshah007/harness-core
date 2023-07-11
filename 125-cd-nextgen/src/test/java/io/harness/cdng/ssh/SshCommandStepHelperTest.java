@@ -296,9 +296,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
     doReturn(Arrays.asList(encryptedDataDetail)).when(ngEncryptedDataService).getEncryptionDetails(any(), any());
     doReturn(harnessStore).when(cdExpressionResolver).updateExpressions(any(), any());
     doNothing().when(cdExpressionResolver).updateStoreConfigExpressions(any(), any());
-    doReturn(fileDelegateConfig)
-        .when(sshWinRmConfigFileHelper)
-        .getFileDelegateConfig(any(), eq(ambiance), anyBoolean());
+    doReturn(fileDelegateConfig).when(sshWinRmConfigFileHelper).getFileDelegateConfig(any(), eq(ambiance));
   }
 
   @After

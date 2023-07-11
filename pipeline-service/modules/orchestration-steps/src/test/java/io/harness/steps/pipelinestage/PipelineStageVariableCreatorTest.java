@@ -117,4 +117,36 @@ public class PipelineStageVariableCreatorTest extends CategoryTest {
     assertThat(fqnPropertiesList).containsOnly("output.var2", "output.var1");
     assertThat(variablesForChildrenNodes.getYamlUpdates()).isNotNull();
   }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void createVariablesForChildrenWithoutOutputs() throws IOException {
+    // Pipeline Node
+    String yamlField = "---\n"
+        + "name: \"parent pipeline\"\n"
+        + "identifier: \"rc-" + generateUuid() + "\"\n"
+        + "timeout: \"1w\"\n"
+        + "type: \"Pipeline\"\n"
+        + "spec:\n"
+        + "  pipeline: \"childPipeline\"\n"
+        + "  org: \"org\"\n"
+        + "  project: \"project\"\n"
+        + "  outputs: []";
+    YamlField fullYamlField = YamlUtils.injectUuidInYamlField(yamlField);
+
+    YamlField outputYamlField = fullYamlField.fromYamlPath("spec").fromYamlPath("outputs");
+    // yaml input expressions
+    VariableCreationResponse variablesForChildrenNodes =
+        pipelineStageOutputsVariableCreator.createVariablesForParentNodeV2(
+            VariableCreationContext.builder().currentField(outputYamlField).build(), outputYamlField);
+
+    List<String> fqnPropertiesList = variablesForChildrenNodes.getYamlProperties()
+                                         .values()
+                                         .stream()
+                                         .map(YamlProperties::getFqn)
+                                         .collect(Collectors.toList());
+
+    assertThat(fqnPropertiesList).isEmpty();
+  }
 }

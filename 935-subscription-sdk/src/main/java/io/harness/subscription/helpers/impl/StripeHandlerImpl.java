@@ -16,13 +16,11 @@ import io.harness.telemetry.TelemetryReporter;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.stripe.exception.StripeException;
-import com.stripe.model.Card;
 import com.stripe.model.Customer;
 import com.stripe.model.Invoice;
 import com.stripe.model.PaymentIntent;
 import com.stripe.model.PaymentMethod;
 import com.stripe.model.PaymentMethodCollection;
-import com.stripe.model.PaymentSourceCollection;
 import com.stripe.model.Price;
 import com.stripe.model.PriceCollection;
 import com.stripe.model.PriceSearchResult;
@@ -41,7 +39,6 @@ import com.stripe.param.SubscriptionCreateParams;
 import com.stripe.param.SubscriptionRetrieveParams;
 import com.stripe.param.SubscriptionSearchParams;
 import com.stripe.param.SubscriptionUpdateParams;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,8 +62,10 @@ public class StripeHandlerImpl {
       sendTelemetryEvent("Subscription Creation Succeeded", null, null, moduleType);
       return subscription;
     } catch (StripeException e) {
-      sendTelemetryEvent("Subscription Creation Failed", null, null, moduleType);
-      throw new InvalidRequestException("Unable to create subscription", e);
+      String errorMessage = "Subscription Creation Failed";
+      sendTelemetryEvent(errorMessage, null, null, moduleType);
+      log.error(errorMessage);
+      throw new InvalidRequestException(errorMessage, e);
     }
   }
 
@@ -80,8 +79,10 @@ public class StripeHandlerImpl {
       sendTelemetryEvent("Subscription Modification Succeeded", null, null, moduleType);
       return updatedSubscription;
     } catch (StripeException e) {
-      sendTelemetryEvent("Subscription Modification Failed", null, null, moduleType);
-      throw new InvalidRequestException("Unable to update subscription", e);
+      String errorMessage = "Subscription Modification Failed";
+      log.error(errorMessage);
+      sendTelemetryEvent(errorMessage, null, null, moduleType);
+      throw new InvalidRequestException(errorMessage, e);
     }
   }
 
@@ -92,8 +93,10 @@ public class StripeHandlerImpl {
       sendTelemetryEvent("Subscription Cancellation Succeeded", null, null, moduleType);
       return cancelledSubscription;
     } catch (StripeException e) {
-      sendTelemetryEvent("Subscription Cancellation Failed", null, null, moduleType);
-      throw new InvalidRequestException("Unable to cancel subscription", e);
+      String errorMessage = "Subscription Cancellation Failed";
+      log.error(errorMessage);
+      sendTelemetryEvent(errorMessage, null, null, moduleType);
+      throw new InvalidRequestException(errorMessage, e);
     }
   }
 
@@ -110,7 +113,9 @@ public class StripeHandlerImpl {
       }
       return Subscription.retrieve(subscriptionId, builder.build(), null);
     } catch (StripeException e) {
-      throw new InvalidRequestException("Unable to retrieve subscription", e);
+      String errorMessage = "Unable to retrieve subscription";
+      log.error(errorMessage);
+      throw new InvalidRequestException(errorMessage, e);
     }
   }
 
@@ -118,7 +123,9 @@ public class StripeHandlerImpl {
     try {
       return Customer.create(customerCreateParams);
     } catch (StripeException e) {
-      throw new InvalidRequestException("Unable to create customer information", e);
+      String errorMessage = "Unable to create customer information";
+      log.error(errorMessage);
+      throw new InvalidRequestException(errorMessage, e);
     }
   }
 
@@ -131,7 +138,9 @@ public class StripeHandlerImpl {
 
       return paymentMethod.attach(params);
     } catch (StripeException e) {
-      throw new InvalidRequestException("Unable to link customer to payment method", e);
+      String errorMessage = "Unable to link customer to payment method";
+      log.error(errorMessage);
+      throw new InvalidRequestException(errorMessage, e);
     }
   }
 
@@ -140,7 +149,9 @@ public class StripeHandlerImpl {
       Customer customer = Customer.retrieve(customerId);
       return customer.update(customerUpdateParams);
     } catch (StripeException e) {
-      throw new InvalidRequestException("Unable to update customer information", e);
+      String errorMessage = "Unable to update customer information";
+      log.error(errorMessage);
+      throw new InvalidRequestException(errorMessage, e);
     }
   }
 
@@ -148,7 +159,9 @@ public class StripeHandlerImpl {
     try {
       return Customer.retrieve(customerId, customerRetrieveParams, null);
     } catch (StripeException e) {
-      throw new InvalidRequestException("Unable to retrieve customer information", e);
+      String errorMessage = "Unable to retrieve customer";
+      log.error(errorMessage);
+      throw new InvalidRequestException(errorMessage, e);
     }
   }
 
@@ -156,7 +169,9 @@ public class StripeHandlerImpl {
     try {
       return Subscription.search(subscriptionSearchParams);
     } catch (StripeException e) {
-      throw new InvalidRequestException("Unable to list subscriptions", e);
+      String errorMessage = "Unable to list subscriptions";
+      log.error(errorMessage);
+      throw new InvalidRequestException(errorMessage, e);
     }
   }
 
@@ -164,7 +179,9 @@ public class StripeHandlerImpl {
     try {
       return Price.search(priceSearchParams);
     } catch (StripeException e) {
-      throw new InvalidRequestException("Unable to list prices", e);
+      String errorMessage = "Unable to list prices";
+      log.error(errorMessage);
+      throw new InvalidRequestException(errorMessage, e);
     }
   }
 
@@ -172,7 +189,9 @@ public class StripeHandlerImpl {
     try {
       return Price.list(priceListParams);
     } catch (StripeException e) {
-      throw new InvalidRequestException("Unable to list prices", e);
+      String errorMessage = "Unable to list prices";
+      log.error(errorMessage);
+      throw new InvalidRequestException(errorMessage, e);
     }
   }
 
@@ -180,7 +199,9 @@ public class StripeHandlerImpl {
     try {
       return Price.retrieve(priceId);
     } catch (StripeException e) {
-      throw new InvalidRequestException("Unable to retrieve price", e);
+      String errorMessage = "Unable to retrieve price";
+      log.error(errorMessage);
+      throw new InvalidRequestException(errorMessage, e);
     }
   }
 
@@ -188,6 +209,8 @@ public class StripeHandlerImpl {
     try {
       return Invoice.upcoming(params);
     } catch (StripeException e) {
+      String errorMessage = "Unable to retrieve invoice";
+      log.error(errorMessage);
       throw new InvalidRequestException("Unable to retrieve invoice", e);
     }
   }
@@ -196,7 +219,9 @@ public class StripeHandlerImpl {
     try {
       return Invoice.retrieve(invoiceId);
     } catch (StripeException e) {
-      throw new InvalidRequestException("Unable to retrieve invoice", e);
+      String errorMessage = "Unable to retrieve invoice";
+      log.error(errorMessage);
+      throw new InvalidRequestException(errorMessage, e);
     }
   }
 
@@ -204,7 +229,9 @@ public class StripeHandlerImpl {
     try {
       return Invoice.upcoming(invoiceUpcomingParams);
     } catch (StripeException e) {
-      throw new InvalidRequestException("Unable to preview upcoming invoice", e);
+      String errorMessage = "Unable to preview upcoming invoice";
+      log.error(errorMessage);
+      throw new InvalidRequestException(errorMessage, e);
     }
   }
 
@@ -227,7 +254,9 @@ public class StripeHandlerImpl {
       InvoiceUpdateParams invoiceUpdateParams = InvoiceUpdateParams.builder().putMetadata(key, value).build();
       return invoice.update(invoiceUpdateParams);
     } catch (StripeException e) {
-      throw new InvalidRequestException("Unable to retrieve invoice", e);
+      String errorMessage = "Unable to pay invoice";
+      log.error(errorMessage);
+      throw new InvalidRequestException(errorMessage, e);
     }
   }
 
@@ -235,7 +264,9 @@ public class StripeHandlerImpl {
     try {
       return PaymentIntent.retrieve(paymentIntentId);
     } catch (StripeException e) {
-      throw new InvalidRequestException("Unable to retrieve payment intent invoice", e);
+      String errorMessage = "Unable to retrieve payment intent invoice";
+      log.error(errorMessage);
+      throw new InvalidRequestException(errorMessage, e);
     }
   }
 
@@ -246,7 +277,9 @@ public class StripeHandlerImpl {
 
       return PaymentMethod.list(paymentMethodListParams);
     } catch (StripeException e) {
-      throw new InvalidRequestException("Unable to retrieve payment methods", e);
+      String errorMessage = "Unable to retrieve payment methods";
+      log.error(errorMessage);
+      throw new InvalidRequestException(errorMessage, e);
     }
   }
 
@@ -256,29 +289,28 @@ public class StripeHandlerImpl {
 
       return invoice.finalizeInvoice();
     } catch (StripeException e) {
-      throw new InvalidRequestException("Unable to finalize invoice", e);
+      String errorMessage = "Unable to finalize invoice";
+      log.error(errorMessage);
+      throw new InvalidRequestException(errorMessage, e);
     }
   }
 
-  public void deleteCard(String customerIdentifier, String cardIdentifier) {
+  public void detachPaymentMethod(String paymentMethodIdentifier) {
     try {
-      Map<String, Object> retrieveParams = new HashMap<>();
-      List<String> expandList = new ArrayList<>();
-      expandList.add("sources");
-      retrieveParams.put("expand", expandList);
-      Customer customer = Customer.retrieve(customerIdentifier, retrieveParams, null);
-
-      PaymentSourceCollection paymentSourceCollection = customer.getSources();
-
-      if (paymentSourceCollection.getData().isEmpty()) {
-        PaymentMethod paymentMethod = PaymentMethod.retrieve(cardIdentifier);
-        paymentMethod.detach();
+      PaymentMethod paymentMethod = PaymentMethod.retrieve(paymentMethodIdentifier);
+      if (paymentMethod == null) {
+        log.error("No payment method found with payment identifier {}. Cannot detach.", paymentMethodIdentifier);
         return;
       }
 
-      ((Card) paymentSourceCollection.retrieve(cardIdentifier)).delete();
+      paymentMethod.detach();
+      log.info("Successfully detached payment method {} from customer {}", paymentMethod.getId(),
+          paymentMethod.getCustomer());
+
     } catch (StripeException e) {
-      throw new InvalidRequestException("Unable to delete card", e);
+      String errorMessage = "Unable to delete card";
+      log.error(errorMessage);
+      throw new InvalidRequestException(errorMessage, e);
     }
   }
 
@@ -295,7 +327,9 @@ public class StripeHandlerImpl {
 
       return SetupIntent.create(params);
     } catch (StripeException e) {
-      throw new InvalidRequestException("Unable to create setup intent", e);
+      String errorMessage = "Unable to create setup intent";
+      log.error(errorMessage);
+      throw new InvalidRequestException(errorMessage, e);
     }
   }
 }

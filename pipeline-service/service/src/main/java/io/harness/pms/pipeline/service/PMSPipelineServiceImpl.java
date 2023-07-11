@@ -735,7 +735,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     String repoUrl = pmsPipelineServiceHelper.getRepoUrlAndCheckForFileUniqueness(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, isForceImport);
     String importedPipelineYAML =
-        pmsPipelineServiceHelper.importPipelineFromRemote(accountId, orgIdentifier, projectIdentifier);
+        pmsPipelineServiceHelper.importPipelineFromRemote(accountId, orgIdentifier, projectIdentifier, true);
     String pipelineVersion = pipelineVersion(accountId, importedPipelineYAML);
     PMSPipelineServiceHelper.checkAndThrowMismatchInImportedPipelineMetadata(orgIdentifier, projectIdentifier,
         pipelineIdentifier, pipelineImportRequest, importedPipelineYAML, pipelineVersion);

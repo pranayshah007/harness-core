@@ -437,7 +437,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
     String description = "this has a description too";
     String pipelineIdentifier = "Test_Pipline11";
     when(inputSetsApiUtils.inputSetVersion(ACCOUNT_ID, YAML)).thenReturn(PipelineVersion.V0);
-    doReturn(YAML).when(gitAwareEntityHelper).fetchYAMLFromRemote(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+    doReturn(YAML).when(gitAwareEntityHelper).fetchYAMLFromRemote(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, true);
     InputSetEntity inBetweenEntity = PMSInputSetElementMapper.toInputSetEntity(ACCOUNT_ID, YAML);
     InputSetImportRequestDTO inputSetImportRequest =
         InputSetImportRequestDTO.builder().inputSetName(name).inputSetDescription(description).build();
@@ -901,7 +901,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
     String name = "set1";
     String description = "this has a description too";
     when(inputSetsApiUtils.inputSetVersion(ACCOUNT_ID, YAMLV1)).thenReturn(PipelineVersion.V1);
-    doReturn(YAMLV1).when(gitAwareEntityHelper).fetchYAMLFromRemote(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+    doReturn(YAMLV1).when(gitAwareEntityHelper).fetchYAMLFromRemote(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, true);
     InputSetEntity inBetweenEntity = PMSInputSetElementMapper.toInputSetEntityV1(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, YAMLV1, InputSetEntityType.INPUT_SET);
     InputSetImportRequestDTO inputSetImportRequest =

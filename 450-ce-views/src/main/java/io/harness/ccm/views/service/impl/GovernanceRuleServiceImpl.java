@@ -8,6 +8,7 @@
 package io.harness.ccm.views.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.views.helper.RuleCloudProviderType.AZURE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -18,6 +19,7 @@ import io.harness.ccm.views.dto.GovernanceJobEnqueueDTO;
 import io.harness.ccm.views.entities.Rule;
 import io.harness.ccm.views.entities.RuleExecution;
 import io.harness.ccm.views.helper.GovernanceJobDetailsAWS;
+import io.harness.ccm.views.helper.GovernanceJobDetailsAzure;
 import io.harness.ccm.views.helper.GovernanceRuleFilter;
 import io.harness.ccm.views.helper.RuleExecutionStatusType;
 import io.harness.ccm.views.helper.RuleList;
@@ -263,28 +265,13 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
       return null;
     }
     try {
-      GovernanceJobDetailsAWS governanceJobDetailsAWS =
-          GovernanceJobDetailsAWS.builder()
-              .accountId(accountId)
-              .awsAccountId(governanceJobEnqueueDTO.getTargetAccountDetails().getTargetInfo())
-              .externalId(governanceJobEnqueueDTO.getTargetAccountDetails().getRoleId())
-              .roleArn(governanceJobEnqueueDTO.getTargetAccountDetails().getRoleInfo())
-              .isDryRun(governanceJobEnqueueDTO.getIsDryRun())
-              .ruleId(governanceJobEnqueueDTO.getRuleId())
-              .region(governanceJobEnqueueDTO.getTargetRegion())
-              .ruleEnforcementId("") // This is adhoc run
-              .policy(governanceJobEnqueueDTO.getPolicy())
-              .isOOTB(governanceJobEnqueueDTO.getIsOOTB())
-              .executionType(governanceJobEnqueueDTO.getExecutionType())
-              .build();
+      String jid;
+      if (governanceJobEnqueueDTO.getRuleCloudProviderType() == AZURE) {
+        jid = enqueueAdhocAzure(accountId, governanceJobEnqueueDTO);
+      } else {
+        jid = enqueueAdhocAws(accountId, governanceJobEnqueueDTO);
+      }
 
-      Gson gson = new GsonBuilder().create();
-      String json = gson.toJson(governanceJobDetailsAWS);
-      log.info("Enqueuing job in Faktory {}", json);
-      // jobType, jobQueue, json
-      String jid = FaktoryProducer.push(
-          governanceConfig.getAwsFaktoryJobType(), governanceConfig.getAwsFaktoryQueueName(), json);
-      log.info("Pushed job in Faktory: {}", jid);
       // Make a record in Mongo
       RuleExecution ruleExecution =
           RuleExecution.builder()
@@ -313,6 +300,59 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
     }
     return response;
   }
+
+  private String enqueueAdhocAzure(String accountId, GovernanceJobEnqueueDTO governanceJobEnqueueDTO)
+      throws IOException {
+    GovernanceJobDetailsAzure governanceJobDetailsAzure =
+        GovernanceJobDetailsAzure.builder()
+            .accountId(accountId)
+            .subscriptionId(governanceJobEnqueueDTO.getTargetAccountDetails().getTargetInfo())
+            .tenantId(governanceJobEnqueueDTO.getTargetAccountDetails().getTenantInfo())
+            .isDryRun(governanceJobEnqueueDTO.getIsDryRun())
+            .policyId(governanceJobEnqueueDTO.getRuleId())
+            .region(governanceJobEnqueueDTO.getTargetRegion())
+            .policyEnforcementId("") // This is adhoc run
+            .policy(governanceJobEnqueueDTO.getPolicy())
+            .isOOTB(governanceJobEnqueueDTO.getIsOOTB())
+            .executionType(governanceJobEnqueueDTO.getExecutionType())
+            .build();
+
+    Gson gson = new GsonBuilder().create();
+    String json = gson.toJson(governanceJobDetailsAzure);
+    log.info("Enqueuing Azure job in Faktory {}", json);
+    // jobType, jobQueue, json
+    String jid = FaktoryProducer.push(
+        governanceConfig.getAzureFaktoryJobType(), governanceConfig.getAzureFaktoryQueueName(), json);
+    log.info("Pushed Azure job in Faktory: {}", jid);
+    return jid;
+  }
+
+  private String enqueueAdhocAws(String accountId, GovernanceJobEnqueueDTO governanceJobEnqueueDTO) throws IOException {
+    GovernanceJobDetailsAWS governanceJobDetailsAWS =
+        GovernanceJobDetailsAWS.builder()
+            .accountId(accountId)
+            .awsAccountId(governanceJobEnqueueDTO.getTargetAccountDetails().getTargetInfo())
+            .externalId(governanceJobEnqueueDTO.getTargetAccountDetails().getRoleId())
+            .roleArn(governanceJobEnqueueDTO.getTargetAccountDetails().getRoleInfo())
+            .isDryRun(governanceJobEnqueueDTO.getIsDryRun())
+            .ruleId(governanceJobEnqueueDTO.getRuleId())
+            .region(governanceJobEnqueueDTO.getTargetRegion())
+            .ruleEnforcementId("") // This is adhoc run
+            .policy(governanceJobEnqueueDTO.getPolicy())
+            .isOOTB(governanceJobEnqueueDTO.getIsOOTB())
+            .executionType(governanceJobEnqueueDTO.getExecutionType())
+            .build();
+
+    Gson gson = new GsonBuilder().create();
+    String json = gson.toJson(governanceJobDetailsAWS);
+    log.info("Enqueuing Aws job in Faktory {}", json);
+    // jobType, jobQueue, json
+    String jid =
+        FaktoryProducer.push(governanceConfig.getAwsFaktoryJobType(), governanceConfig.getAwsFaktoryQueueName(), json);
+    log.info("Pushed Aws job in Faktory: {}", jid);
+    return jid;
+  }
+
   @Value
   private static class CacheKey {
     String accountId;

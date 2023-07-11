@@ -1068,7 +1068,7 @@ io.harness.pms.sdk.core.steps.io.StepResponseNotifyData
 io.harness.security.encryption.EncryptedRecordData
 io.harness.secretmanagerclient.NGSecretManagerMetadata
 io.harness.ng.core.dto.secrets.SSHConfigDTO
-io.harness.logging.UnitProgress
+io.harness.logging.serializer.kryo.UnitProgressKryoSerializer
 io.harness.k8s.model.K8sContainer
 io.harness.steps.SectionStepSweepingOutput
 io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPackageV2StepInfo

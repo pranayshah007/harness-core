@@ -13,6 +13,7 @@ import static io.harness.ccm.views.entities.ViewFieldIdentifier.AWS;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.AZURE;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.CLUSTER;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.GCP;
+import static io.harness.ccm.views.entities.ViewIdOperator.EQUALS;
 import static io.harness.ccm.views.entities.ViewIdOperator.IN;
 import static io.harness.ccm.views.entities.ViewIdOperator.NOT_IN;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.AFTER;
@@ -303,7 +304,8 @@ public class CEViewServiceImpl implements CEViewService {
     }
   }
 
-  private Set<ViewFieldIdentifier> getDataSourcesFromCloudProviderField(
+  @Override
+  public Set<ViewFieldIdentifier> getDataSourcesFromCloudProviderField(
       final ViewIdCondition viewIdCondition, String accountId) {
     Set<ViewFieldIdentifier> viewFieldIdentifiers = new HashSet<>();
     if (ViewFieldConstants.CLOUD_PROVIDER_FIELD_ID.equals(viewIdCondition.getViewField().getFieldId())) {
@@ -320,7 +322,7 @@ public class CEViewServiceImpl implements CEViewService {
           dataSourcesFromValues.add(ViewFieldIdentifier.CLUSTER);
         }
       }
-      if (operator == IN) {
+      if (operator == IN || operator == EQUALS) {
         viewFieldIdentifiers = dataSourcesFromValues;
       } else if (operator == NOT_IN) {
         Set<ViewFieldIdentifier> allDataSources = getAllPossibleDataSourcesForAccount(accountId);

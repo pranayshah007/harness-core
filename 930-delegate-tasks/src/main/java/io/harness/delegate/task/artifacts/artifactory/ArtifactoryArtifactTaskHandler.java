@@ -166,7 +166,8 @@ public class ArtifactoryArtifactTaskHandler extends DelegateArtifactTaskHandler<
     String filePath = Paths.get(artifactDirectory, DEFAULT_ARTIFACT_FILTER).toString();
 
     List<BuildDetails> buildDetails = artifactoryNgService.getArtifactList(artifactoryConfigRequest,
-        artifactoryGenericArtifactDelegateRequest.getRepositoryName(), filePath, MAX_NO_OF_TAGS_PER_ARTIFACT);
+        artifactoryGenericArtifactDelegateRequest.getRepositoryName(), filePath, MAX_NO_OF_TAGS_PER_ARTIFACT,
+        artifactoryGenericArtifactDelegateRequest.getArtifactPathFilter(), artifactDirectory);
     String finalArtifactDirectory = artifactDirectory;
     buildDetails = buildDetails.stream()
                        .map(buildDetail -> {

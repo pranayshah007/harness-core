@@ -100,6 +100,28 @@ public class ApiCallLogDTOTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = ANSUMAN)
+  @Category(UnitTests.class)
+  public void testAddFieldToRequest_WithURLFormEncoded() {
+    ApiCallLogDTO apiCallLogDTO = ApiCallLogDTO.builder().accountId(accountId).build();
+    ApiCallLogDTOField field = ApiCallLogDTOField.builder().name(name).value(value).build();
+    apiCallLogDTO.addFieldToRequest(field);
+    MediaType mediaType = MediaType.parse("application/x-www-form-urlencoded");
+    RequestBody body = RequestBody.create(mediaType,
+        "search=search%20index%3D_internal%20%22%20error%20%22%20NOT%20debug%20source%3D*splunkd.log*&earliest_time=1688700000&latest_time=1688700300");
+    Request request = new Request.Builder().url("https://www.example.com/").post(body).build();
+    apiCallLogDTO.addCallDetailsBodyFieldToRequest(request);
+    assertThat(apiCallLogDTO.getRequests()).hasSize(2);
+    assertThat(apiCallLogDTO.getRequests().get(0).getName()).isEqualTo(name);
+    assertThat(apiCallLogDTO.getRequests().get(0).getValue()).isEqualTo(value);
+    assertThat(apiCallLogDTO.getRequests().get(1).getName()).isEqualTo("Request Body");
+    assertThat(apiCallLogDTO.getRequests().get(1).getValue())
+        .isEqualTo(
+            "search=search index=_internal \" error \" NOT debug source=*splunkd.log*&earliest_time=1688700000&latest_time=1688700300");
+    assertThat(apiCallLogDTO.getRequests().get(1).getType()).isEqualTo(ApiCallLogDTO.FieldType.TEXT);
+  }
+
+  @Test
   @Owner(developers = KANHAIYA)
   @Category(UnitTests.class)
   public void testAddFieldToResponse_NullField() {

@@ -296,6 +296,14 @@ if [[ "" != "$BATCH_JOB_REPOSITORY_TIMESCALE_ENABLE" ]]; then
   export BATCH_JOB_REPOSITORY_TIMESCALE_ENABLE; yq -i '.batchJobRepository.timescaleEnabled=env(BATCH_JOB_REPOSITORY_TIMESCALE_ENABLE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$BATCH_JOB_METADATA_CLEANUP_SCHEDULE" ]]; then
+  export BATCH_JOB_METADATA_CLEANUP_SCHEDULE; yq -i '.batchJobRepository.metadataCleanupSchedule=env(BATCH_JOB_METADATA_CLEANUP_SCHEDULE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$BATCH_JOB_METADATA_RETENTION_PERIOD" ]]; then
+  export BATCH_JOB_METADATA_RETENTION_PERIOD; yq -i '.batchJobRepository.dataRetentionPeriodInDays=env(BATCH_JOB_METADATA_RETENTION_PERIOD)' $CONFIG_FILE
+fi
+
 replace_key_value cfClientConfig.apiKey "$CF_CLIENT_API_KEY"
 replace_key_value cfClientConfig.configUrl "$CF_CLIENT_CONFIG_URL"
 replace_key_value cfClientConfig.eventUrl "$CF_CLIENT_EVENT_URL"

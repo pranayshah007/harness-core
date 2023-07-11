@@ -316,7 +316,7 @@ io.harness.security.encryption.EncryptedRecordData
 io.harness.delegate.beans.connector.docker.DockerUserNamePasswordDTO
 io.harness.delegate.beans.connector.docker.outcome.DockerConnectorOutcomeDTO
 io.harness.delegate.task.pcf.request.TasManifestsPackage
-io.harness.logging.UnitProgress
+io.harness.logging.serializer.kryo.UnitProgressKryoSerializer
 io.harness.delegate.beans.connector.k8Connector.KubernetesServiceAccountDTO
 io.harness.delegate.beans.instancesync.info.SpotServerInstanceInfo
 io.harness.ng.core.dto.secrets.SSHPasswordCredentialDTO

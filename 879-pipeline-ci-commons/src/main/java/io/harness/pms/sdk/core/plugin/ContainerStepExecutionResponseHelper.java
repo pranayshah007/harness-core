@@ -56,6 +56,7 @@ public class ContainerStepExecutionResponseHelper {
     for (Map.Entry<String, ResponseData> entry : responseDataMap.entrySet()) {
       entry.setValue(serializedResponseDataHelper.deserialize(entry.getValue()));
       if (entry.getValue() instanceof BinaryResponseData) {
+        log.info("Binary Response Data Received");
         entry.setValue((ResponseData) referenceFalseKryoSerializer.asInflatedObject(
             ((BinaryResponseData) entry.getValue()).getData()));
       }

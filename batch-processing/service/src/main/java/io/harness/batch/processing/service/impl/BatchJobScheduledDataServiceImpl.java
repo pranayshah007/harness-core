@@ -49,6 +49,10 @@ public class BatchJobScheduledDataServiceImpl implements BatchJobScheduledDataSe
     if (null == instant) {
       if (batchJobType.equals(BatchJobType.MSP_MARKUP_AMOUNT)) {
         return Instant.now().minus(5, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS);
+      } else if (batchJobType.equals(BatchJobType.RERUN_JOB)) {
+        return Instant.ofEpochMilli(Instant.now().toEpochMilli())
+            .truncatedTo(ChronoUnit.DAYS)
+            .minus(2, ChronoUnit.DAYS);
       }
       if (ImmutableSet.of(BatchJobBucket.OUT_OF_CLUSTER, BatchJobBucket.OUT_OF_CLUSTER_ECS)
               .contains(batchJobType.getBatchJobBucket())) {

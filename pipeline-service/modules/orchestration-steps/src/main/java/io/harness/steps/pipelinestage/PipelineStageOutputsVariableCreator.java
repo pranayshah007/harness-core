@@ -53,7 +53,7 @@ public class PipelineStageOutputsVariableCreator extends ChildrenVariableCreator
     List<YamlNode> variableNodes = variablesField.getNode().asArray();
     variableNodes.forEach(variableNode -> {
       YamlField uuidNode = variableNode.getField(YAMLFieldNameConstants.UUID);
-      if (uuidNode != null) {
+      if (uuidNode != null && variableNode.getField(YAMLFieldNameConstants.VALUE) != null) {
         YamlField valueNode = variableNode.getField(YAMLFieldNameConstants.VALUE);
         valueNode.getNode().setCurrJsonNode(
             TextNode.valueOf(UUIDGenerator.generateUuid()), valueNode.getNode().getFieldName());

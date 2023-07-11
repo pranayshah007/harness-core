@@ -2284,11 +2284,11 @@ public class DelegateServiceImpl implements DelegateService {
       throw new InvalidRequestException("Unable to fetch delegate with delegate id " + delegateId);
     }
 
+    onDelegateDisconnected(accountId, delegateId);
     persistence.delete(persistence.createQuery(Delegate.class)
                            .filter(DelegateKeys.accountId, accountId)
                            .filter(DelegateKeys.uuid, delegateId));
     sendDelegateDeleteAuditEvent(existingDelegate, accountId);
-    onDelegateDisconnected(accountId, delegateId);
     log.info("Delegate: {} deleted.", delegateId);
     return new DelegateDeleteResponse("Successfully deleted delegate.");
   }

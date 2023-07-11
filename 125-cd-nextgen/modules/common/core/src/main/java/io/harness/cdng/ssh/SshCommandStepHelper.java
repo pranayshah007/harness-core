@@ -461,12 +461,9 @@ public class SshCommandStepHelper extends CDStepHelper {
 
   @Nullable
   private FileDelegateConfig getFileDelegateConfig(@NotNull Ambiance ambiance) {
-    boolean shouldRenderConfigFiles =
-        cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_NG_CONFIG_FILE_EXPRESSION);
     Optional<ConfigFilesOutcome> configFilesOutcomeOptional = getConfigFilesOutcome(ambiance);
     return configFilesOutcomeOptional
-        .map(configFilesOutcome
-            -> sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance, shouldRenderConfigFiles))
+        .map(configFilesOutcome -> sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance))
         .orElse(null);
   }
 

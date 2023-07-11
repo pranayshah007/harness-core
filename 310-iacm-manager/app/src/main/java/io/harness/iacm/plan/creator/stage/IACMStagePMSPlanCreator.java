@@ -151,14 +151,14 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     ExecutionElementConfig modifiedExecutionPlan =
         modifyYAMLWithImplicitSteps(ctx, executionSource, executionField, stageNode, codeBase);
 
-    ExecutionElementConfig modifiedExecutionPlanWithworkspace =
-        addworkspaceToIACMSteps(ctx, modifiedExecutionPlan, workspace);
+    ExecutionElementConfig modifiedExecutionPlanWithWorkspace =
+        addWorkspaceToIACMSteps(ctx, modifiedExecutionPlan, workspace);
     // Retrieve the Modified Plan execution where the InitialTask and Git Clone step have been injected. Then retrieve
     // the steps from the plan to the level of steps->spec->stageElementConfig->execution->steps. Here, we can inject
     // any step and that step will be available in the InitialTask step in the path:
     // stageElementConfig -> Execution -> Steps -> InjectedSteps
     putNewExecutionYAMLInResponseMap(
-        executionField, planCreationResponseMap, modifiedExecutionPlanWithworkspace, parentNode);
+        executionField, planCreationResponseMap, modifiedExecutionPlanWithWorkspace, parentNode);
 
     BuildStatusUpdateParameter buildStatusUpdateParameter =
         obtainBuildStatusUpdateParameter(ctx, stageNode, executionSource, workspace);
@@ -173,11 +173,18 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     return planCreationResponseMap;
   }
 
-  private ExecutionElementConfig addworkspaceToIACMSteps(
+  private ExecutionElementConfig addWorkspaceToIACMSteps(
       PlanCreationContext ctx, ExecutionElementConfig modifiedExecutionPlan, String workspace) {
-    List<ExecutionWrapperConfig> modifiedSteps = new ArrayList<>();
     Map<String, String> envVars = iacmStepsUtils.getIACMEnvVariables(
         ctx.getOrgIdentifier(), ctx.getProjectIdentifier(), ctx.getAccountIdentifier(), workspace);
+    Map<String, String> envVarsFromConnector = iacmStepsUtils.getIACMEnvVariablesFromConnector(
+        ctx.getOrgIdentifier(), ctx.getProjectIdentifier(), ctx.getAccountIdentifier(), workspace);
+    Map<String, String> secretVars = iacmStepsUtils.getIACMSecretVariables(
+        ctx.getOrgIdentifier(), ctx.getProjectIdentifier(), ctx.getAccountIdentifier(), workspace);
+    Map<String, String> secretVarsFromConnector = iacmStepsUtils.getIACMSecretVariablesFromConnector(
+        ctx.getOrgIdentifier(), ctx.getProjectIdentifier(), ctx.getAccountIdentifier(), workspace);
+
+    List<ExecutionWrapperConfig> modifiedSteps = new ArrayList<>();
     for (ExecutionWrapperConfig wrapperConfig : modifiedExecutionPlan.getSteps()) {
       switch (wrapperConfig.getStep().get("type").asText()) {
         // If the step is one of our steps, we want to put all the variables from the workspace, including the system
@@ -186,16 +193,48 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
         case IACMStepSpecTypeConstants.IACM_APPROVAL:
           ((ObjectNode) wrapperConfig.getStep().get("spec")).put("workspace", workspace);
           Map<String, String> envVarsCopy = new HashMap<>(envVars);
-          String command = wrapperConfig.getStep().get("spec").get("command").asText();
+          String command;
+          if (Objects.equals(wrapperConfig.getStep().get("type").asText(), IACMStepSpecTypeConstants.IACM_APPROVAL)) {
+            command = "approval";
+          } else {
+            command = wrapperConfig.getStep().get("spec").get("command").asText();
+          }
           envVarsCopy.put("PLUGIN_COMMAND", command);
           ObjectMapper objectMapper = new ObjectMapper();
           ((ObjectNode) wrapperConfig.getStep().get("spec")).set("envVariables", objectMapper.valueToTree(envVarsCopy));
+          ((ObjectNode) wrapperConfig.getStep().get("spec"))
+              .set("envVariablesFromConnector", objectMapper.valueToTree(envVarsFromConnector));
+          ((ObjectNode) wrapperConfig.getStep().get("spec"))
+              .set("secretVariables", objectMapper.valueToTree(secretVars));
+          ((ObjectNode) wrapperConfig.getStep().get("spec"))
+              .set("secretVariablesFromConnector", objectMapper.valueToTree(secretVarsFromConnector));
+          break;
+        case IACMStepSpecTypeConstants.IACM_LITE_ENGINE:
+          try {
+            for (JsonNode jsonNode : wrapperConfig.getStep().get("spec").get("executionElementConfig").get("steps")) {
+              JsonNode step = jsonNode.get("step");
+              if (step.get("type") != null
+                  && (step.get("type").asText().equals(IACMStepSpecTypeConstants.IACM_TERRAFORM_PLUGIN)
+                      || step.get("type").asText().equals(IACMStepSpecTypeConstants.IACM_APPROVAL))) {
+                ObjectNode spec = (ObjectNode) step.get("spec");
+                spec.put("workspace", workspace);
+                spec.set("envVariables", new ObjectMapper().valueToTree(envVars));
+                spec.set("envVariablesFromConnector", new ObjectMapper().valueToTree(envVarsFromConnector));
+                spec.set("secretVariables", new ObjectMapper().valueToTree(secretVars));
+                spec.set("secretVariablesFromConnector", new ObjectMapper().valueToTree(secretVarsFromConnector));
+              }
+            }
+          } catch (NullPointerException npe) {
+            log.error(
+                "failed to add workspace and env variables to the lite engine task for kubernetes during planning",
+                npe);
+          }
           break;
         default:
           // For any other step, we want to put only the variables defined in the workspace. Skip this for the
           // liteTaskEngine and clone step
           if (!Objects.equals(
-                  wrapperConfig.getStep().get("type").asText(), IACMStepSpecTypeConstants.IACM_LITE_EMNGINE)) {
+                  wrapperConfig.getStep().get("type").asText(), IACMStepSpecTypeConstants.IACM_LITE_ENGINE)) {
             if (!Objects.equals(
                     wrapperConfig.getStep().get("type").asText(), IACMStepSpecTypeConstants.IACM_CLONE_CODEBASE)) {
               Map<String, String> copyMap = new HashMap<>();

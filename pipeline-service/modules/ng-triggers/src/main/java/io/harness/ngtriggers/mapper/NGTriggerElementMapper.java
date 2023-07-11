@@ -526,7 +526,8 @@ public class NGTriggerElementMapper {
             .headers(headerConfigs)
             .payload(payload)
             .isSubscriptionConfirmation(isConfirmationMessage);
-    if (principal != null) {
+    if (principal != null
+        && !principal.getPrincipalCase().equals(io.harness.security.Principal.PrincipalCase.PRINCIPAL_NOT_SET)) {
       triggerWebhookEventBuilder.principal(toPrincipalDTO(accountIdentifier, principal));
     }
 

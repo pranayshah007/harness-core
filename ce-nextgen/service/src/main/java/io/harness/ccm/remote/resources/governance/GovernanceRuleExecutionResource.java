@@ -14,6 +14,7 @@ import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.bigQuery.BigQueryService;
+import io.harness.ccm.governance.dto.OverviewExecutionCostDetails;
 import io.harness.ccm.views.dto.CreateRuleExecutionDTO;
 import io.harness.ccm.views.dto.CreateRuleExecutionFilterDTO;
 import io.harness.ccm.views.entities.RuleExecution;
@@ -46,7 +47,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import java.io.IOException;
-import java.util.Map;
 import java.util.Objects;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -304,7 +304,7 @@ public class GovernanceRuleExecutionResource {
             description = "Return  rule Details", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
 
-  public ResponseDTO<Map<String, Double>>
+  public ResponseDTO<OverviewExecutionCostDetails>
   getExecutionCostDetails(
       @Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,

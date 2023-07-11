@@ -263,6 +263,12 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     }
 
     if (!environmentRef.isExpression()) {
+      if (!gitOpsEnabled && ParameterField.isNull(env.getInfrastructureDefinitions())
+          && ParameterField.isNull(env.getInfrastructureDefinition())) {
+        throw new InvalidYamlRuntimeException(format(
+            "infrastructureDefinitions or infrastructureDefinition should be present in stage [%s]. Please add it and try again",
+            YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
+      }
       Optional<Environment> environmentEntityOptional = environmentService.get(
           filterCreationContext.getSetupMetadata().getAccountId(), filterCreationContext.getSetupMetadata().getOrgId(),
           filterCreationContext.getSetupMetadata().getProjectId(), environmentRef.getValue(), false);

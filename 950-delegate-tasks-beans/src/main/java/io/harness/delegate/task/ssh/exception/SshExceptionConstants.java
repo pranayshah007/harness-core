@@ -142,4 +142,9 @@ public class SshExceptionConstants {
       "Copy and Download Artifact for package type `%s` is not supported for Github Package Repository artifacts defined in service";
   public final String COPY_AND_DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_GITHUB_PACKAGE_ARTIFACT_FAILED =
       "Copy and Download Artifact for package type `%s` is not supported for Github Package Repository artifacts";
+
+  public final String AZURE_CLI_INSTALLATION_CHECK_FAILED = "Azure CLI not installed";
+  public final String AZURE_CLI_INSTALLATION_CHECK_HINT =
+      "Please install Azure CLI in order to download Azure Universal packages";
+  public final String AZURE_CLI_INSTALLATION_CHECK_EXPLANATION = "Azure CLI check failed";
 }

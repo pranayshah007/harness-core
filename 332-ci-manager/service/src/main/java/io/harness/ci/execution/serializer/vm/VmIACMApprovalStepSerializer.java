@@ -41,6 +41,8 @@ public class VmIACMApprovalStepSerializer {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
 
     Map<String, String> envVars = stepInfo.getEnvVariables().getValue();
+    envVars.put("PLUGIN_ENDPOINT_VARIABLES",
+        iacmStepsUtils.populatePipelineIds(ambiance, envVars.get("PLUGIN_ENDPOINT_VARIABLES")));
 
     String image;
     if (stepInfo.getImage().getValue() != null) {

@@ -29,10 +29,13 @@ import io.harness.delegate.task.shell.ShellExecutorFactoryNG;
 import io.harness.delegate.task.shell.SshCommandTaskParameters;
 import io.harness.delegate.task.shell.WinrmTaskParameters;
 import io.harness.delegate.task.ssh.NgCleanupCommandUnit;
+import io.harness.delegate.task.ssh.NgDownloadArtifactCommandUnit;
 import io.harness.delegate.task.ssh.NgInitCommandUnit;
 import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.AzureArtifactDelegateConfig;
 import io.harness.delegate.task.winrm.WinRmExecutorFactoryNG;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -139,5 +142,71 @@ public class WinRmInitCommandHandlerTest {
                                iLogStreamingTaskClient, CommandUnitsProgress.builder().build(), taskContext))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Invalid command unit specified for command task.");
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testShouldCheckIfForAzureUniversalPackageCLI_isInstalled() {
+    List<String> outputVariables = Collections.singletonList("variable");
+    WinRmInfraDelegateConfig winRmInfraDelegateConfig = mock(WinRmInfraDelegateConfig.class);
+    NgInitCommandUnit initCommandUnit = NgInitCommandUnit.builder().build();
+    NgDownloadArtifactCommandUnit downloadArtifactCommandUnit = NgDownloadArtifactCommandUnit.builder().build();
+
+    AzureArtifactDelegateConfig azureArtifactDelegateConfig =
+        AzureArtifactDelegateConfig.builder().packageType("upack").build();
+
+    WinrmTaskParameters winrmTaskParameters =
+        WinrmTaskParameters.builder()
+            .commandUnits(Arrays.asList(initCommandUnit, downloadArtifactCommandUnit))
+            .winRmInfraDelegateConfig(winRmInfraDelegateConfig)
+            .executeOnDelegate(false)
+            .disableWinRMCommandEncodingFFSet(true)
+            .outputVariables(outputVariables)
+            .artifactDelegateConfig(azureArtifactDelegateConfig)
+            .build();
+
+    WinRmExecutor executor = mock(WinRmExecutor.class);
+    when(winRmExecutorFactoryNG.getExecutor(any(), anyBoolean(), anyBoolean(), any(), any())).thenReturn(executor);
+    when(executor.executeCommandString(any())).thenReturn(CommandExecutionStatus.SUCCESS);
+    CommandExecutionStatus result = winRmInitCommandHandler
+                                        .handle(winrmTaskParameters, initCommandUnit, iLogStreamingTaskClient,
+                                            CommandUnitsProgress.builder().build(), taskContext)
+                                        .getStatus();
+    assertThat(result).isEqualTo(CommandExecutionStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testShouldCheckIfForAzureUniversalPackageCLI_isInstalled_Fails() {
+    List<String> outputVariables = Collections.singletonList("variable");
+    WinRmInfraDelegateConfig winRmInfraDelegateConfig = mock(WinRmInfraDelegateConfig.class);
+    NgInitCommandUnit initCommandUnit = NgInitCommandUnit.builder().build();
+    NgDownloadArtifactCommandUnit downloadArtifactCommandUnit = NgDownloadArtifactCommandUnit.builder().build();
+
+    AzureArtifactDelegateConfig azureArtifactDelegateConfig =
+        AzureArtifactDelegateConfig.builder().packageType("upack").build();
+
+    WinrmTaskParameters winrmTaskParameters =
+        WinrmTaskParameters.builder()
+            .commandUnits(Arrays.asList(initCommandUnit, downloadArtifactCommandUnit))
+            .winRmInfraDelegateConfig(winRmInfraDelegateConfig)
+            .executeOnDelegate(false)
+            .disableWinRMCommandEncodingFFSet(true)
+            .outputVariables(outputVariables)
+            .artifactDelegateConfig(azureArtifactDelegateConfig)
+            .build();
+
+    WinRmExecutor executor = mock(WinRmExecutor.class);
+    when(winRmExecutorFactoryNG.getExecutor(any(), anyBoolean(), anyBoolean(), any(), any())).thenReturn(executor);
+    when(executor.getLogCallback()).thenReturn(mock(LogCallback.class));
+    when(executor.executeCommandString(any())).thenReturn(CommandExecutionStatus.FAILURE);
+
+    assertThatThrownBy(()
+                           -> winRmInitCommandHandler.handle(winrmTaskParameters, initCommandUnit,
+                               iLogStreamingTaskClient, CommandUnitsProgress.builder().build(), taskContext))
+        .isInstanceOf(HintException.class)
+        .hasMessage("Please install Azure CLI in order to download Azure Universal packages");
   }
 }

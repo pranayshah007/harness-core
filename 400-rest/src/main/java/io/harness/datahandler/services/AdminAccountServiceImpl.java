@@ -11,8 +11,6 @@ import static io.harness.annotations.dev.HarnessModule._955_ACCOUNT_MGMT;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 
-import static software.wings.beans.AccountStatus.MARKED_FOR_DELETION;
-
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.FeatureFlag;
@@ -163,8 +161,7 @@ public class AdminAccountServiceImpl implements AdminAccountService {
 
   @Override
   public boolean delete(String accountId) {
-    accountService.updateAccountStatus(accountId, MARKED_FOR_DELETION);
-    return true;
+    return accountService.delete(accountId);
   }
 
   @Override

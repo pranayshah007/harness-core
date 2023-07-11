@@ -20,9 +20,11 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import javax.validation.constraints.NotNull;
 
@@ -32,17 +34,15 @@ public class LogStreamingStepClientFactory {
   @Inject LogStreamingServiceConfiguration logStreamingServiceConfiguration;
   @Inject LogStreamingClient logStreamingClient;
   @Inject LogStreamingServiceRestClient logStreamingServiceRestClient;
+  @Inject @Named("logStreamingClientThreadPool") ThreadPoolExecutor logStreamingClientThreadPool;
 
   public LoadingCache<String, String> accountIdToTokenCache =
-      CacheBuilder.newBuilder()
-          .maximumSize(1000)
-          .expireAfterWrite(5, TimeUnit.MINUTES)
-          .build(new CacheLoader<String, String>() {
-            @Override
-            public String load(@NotNull String accountId) throws IOException {
-              return retrieveLogStreamingAccountToken(accountId);
-            }
-          });
+      CacheBuilder.newBuilder().maximumSize(1000).expireAfterWrite(5, TimeUnit.MINUTES).build(new CacheLoader<>() {
+        @Override
+        public String load(@NotNull String accountId) throws IOException {
+          return retrieveLogStreamingAccountToken(accountId);
+        }
+      });
 
   public ILogStreamingStepClient getLogStreamingStepClient(Ambiance ambiance) {
     return getLogStreamingStepClientInternal(ambiance, new HashSet<>());
@@ -57,6 +57,7 @@ public class LogStreamingStepClientFactory {
           .baseLogKey(LogStreamingHelper.generateLogBaseKey(StepUtils.generateLogAbstractions(ambiance)))
           .accountId(accountId)
           .token(accountIdToTokenCache.get(accountId))
+          .logStreamingClientExecutor(logStreamingClientThreadPool)
           .build();
     } catch (Exception exception) {
       throw new InvalidRequestException("Could not generate token for given account Id " + accountId);

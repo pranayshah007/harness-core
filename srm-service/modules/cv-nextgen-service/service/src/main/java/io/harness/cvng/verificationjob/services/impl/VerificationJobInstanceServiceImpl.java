@@ -737,6 +737,8 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
                   VerificationJobInstanceDataCollectionUtils.getPreDeploymentNodesToCollect(verificationJobInstance));
           preDeploymentDataCollectionInfo.setDataCollectionDsl(cvConfig.getDataCollectionDsl());
           preDeploymentDataCollectionInfo.setCollectHostData(verificationJob.collectHostData());
+          preDeploymentDataCollectionInfo.setValidServiceInstanceRegExPatterns(
+              VerificationJobInstanceDataCollectionUtils.validPreDeploymentNodePatterns(verificationJobInstance));
           dataCollectionInfoMapper.postProcessDataCollectionInfo(
               preDeploymentDataCollectionInfo, cvConfig, TaskType.DEPLOYMENT);
           preDeploymentDataCollectionTimeRanges.forEach(timeRange -> {
@@ -769,6 +771,8 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
         // Keeping this simple for now.
         dataCollectionInfo.setDataCollectionDsl(cvConfig.getDataCollectionDsl());
         dataCollectionInfo.setCollectHostData(verificationJob.collectHostData());
+        dataCollectionInfo.setValidServiceInstanceRegExPatterns(
+            VerificationJobInstanceDataCollectionUtils.validPostDeploymentNodePatterns(verificationJobInstance));
         dataCollectionInfoMapper.postProcessDataCollectionInfo(dataCollectionInfo, cvConfig, TaskType.DEPLOYMENT);
         Map<String, String> dataCollectionMetadata =
             CVNGTaskMetadataUtils.getDataCollectionInfoMetadata(cvConfig, verificationJobInstance, verificationTaskId);
