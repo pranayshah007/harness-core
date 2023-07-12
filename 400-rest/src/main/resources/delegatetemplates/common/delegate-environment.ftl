@@ -83,8 +83,6 @@
           value: "true"
 </#macro>
 <#macro common>
-        - name: JAVA_OPTS
-          value: "-Xms64M"
         - name: ACCOUNT_ID
           value: ${accountId}
         - name: MANAGER_HOST_AND_PORT
@@ -101,4 +99,6 @@
               fieldPath: metadata.namespace
         - name: INIT_SCRIPT
           value: ""
+        - name: JAVA_OPTS
+          value: "-Xms64M"
 </#macro>

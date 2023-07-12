@@ -41,9 +41,9 @@ memory: ${delegateRam}
 # Need to run something specific before delegate starts, enter your script in initScripts.
 initScript: ""
 
-# Specify JAVA_OPTS
-javaOpts: "-Xms64M"
-
 # Set to true to run delegate as root
 securityContext:
   runAsRoot: ${runAsRoot}
+
+# Specify JAVA_OPTS
+javaOpts: "-Xms64M"
