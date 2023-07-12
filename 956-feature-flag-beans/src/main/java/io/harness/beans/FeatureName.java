@@ -812,6 +812,7 @@ public enum FeatureName {
   WORKFLOW_EXECUTION_ZOMBIE_MONITOR,
   WORKFLOW_PIPELINE_PERMISSION_BY_ENTITY,
   YAML_APIS_GRANULAR_PERMISSION,
+  CDS_ENABLE_LOAD_FROM_CACHE_FOR_RETRY_FORM("Used for enabling load from cache on retry form", HarnessTeam.PIPELINE),
   YAML_GIT_CONNECTOR_NAME;
   // keep-sorted end
 
