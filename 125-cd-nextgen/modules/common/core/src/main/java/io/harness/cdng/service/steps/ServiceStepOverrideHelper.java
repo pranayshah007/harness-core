@@ -30,6 +30,7 @@ import io.harness.cdng.azure.webapp.steps.NgAppSettingsSweepingOutput;
 import io.harness.cdng.azure.webapp.steps.NgConnectionStringsSweepingOutput;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.configfile.steps.NgConfigFilesMetadataSweepingOutput;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.hooks.ServiceHook;
 import io.harness.cdng.hooks.ServiceHookWrapper;
 import io.harness.cdng.hooks.steps.ServiceHooksMetadataSweepingOutput;
@@ -62,6 +63,7 @@ import io.harness.utils.NGFeatureFlagHelperService;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -82,6 +84,7 @@ import org.apache.commons.lang3.StringUtils;
 public class ServiceStepOverrideHelper {
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
   @Inject private NGFeatureFlagHelperService featureFlagHelperService;
+  @Inject private CDExpressionResolver expressionResolver;
 
   public void prepareAndSaveFinalManifestMetadataToSweepingOutput(@NonNull NGServiceConfig serviceV2Config,
       NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentConfig ngEnvironmentConfig, Ambiance ambiance,
@@ -104,7 +107,7 @@ public class ServiceStepOverrideHelper {
     if (featureFlagHelperService.isEnabled(
             AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG)) {
       applyManifestConfigurationsToManifestsIfAny(
-          finalLocationManifestsMap, serviceV2Config.getNgServiceV2InfoConfig());
+          finalLocationManifestsMap, serviceV2Config.getNgServiceV2InfoConfig(), ambiance);
     }
     final NgManifestsMetadataSweepingOutput manifestSweepingOutput =
         NgManifestsMetadataSweepingOutput.builder()
@@ -141,6 +144,9 @@ public class ServiceStepOverrideHelper {
       ManifestConfigurations manifestConfigurations =
           getManifestConfigurations(ngServiceV2InfoConfig.getServiceDefinition().getType(),
               ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec());
+      if (manifestConfigurations != null) {
+        resolve(ambiance, manifestConfigurations.getPrimaryManifestRef());
+      }
       svcManifests = filterPrimaryManifest(svcManifests, manifestConfigurations);
     }
     final NgManifestsMetadataSweepingOutput manifestSweepingOutput =
@@ -694,13 +700,16 @@ public class ServiceStepOverrideHelper {
   }
 
   private void applyManifestConfigurationsToManifestsIfAny(
-      Map<String, List<ManifestConfigWrapper>> manifestsMap, NGServiceV2InfoConfig serviceV2Config) {
+      Map<String, List<ManifestConfigWrapper>> manifestsMap, NGServiceV2InfoConfig serviceV2Config, Ambiance ambiance) {
     if (serviceV2Config == null || serviceV2Config.getServiceDefinition() == null
         || serviceV2Config.getServiceDefinition().getServiceSpec() == null || isEmpty(manifestsMap)) {
       return;
     }
     ManifestConfigurations manifestConfigurations = getManifestConfigurations(
         serviceV2Config.getServiceDefinition().getType(), serviceV2Config.getServiceDefinition().getServiceSpec());
+    if (manifestConfigurations != null) {
+      resolve(ambiance, manifestConfigurations.getPrimaryManifestRef());
+    }
     manifestsMap.replace(SERVICE, filterPrimaryManifest(manifestsMap.get(SERVICE), manifestConfigurations));
   }
 
@@ -732,5 +741,10 @@ public class ServiceStepOverrideHelper {
             -> SERVICE_OVERRIDE_SUPPORTED_MANIFEST_TYPES.contains(manifest.getManifest().getType().getDisplayName())
                 || primaryManifestId.equals(manifest.getManifest().getIdentifier()))
         .collect(Collectors.toList());
+  }
+
+  private void resolve(Ambiance ambiance, Object... objects) {
+    final List<Object> toResolve = new ArrayList<>(Arrays.asList(objects));
+    expressionResolver.updateExpressions(ambiance, toResolve);
   }
 }
