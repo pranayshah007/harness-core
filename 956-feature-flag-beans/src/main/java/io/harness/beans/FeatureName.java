@@ -815,6 +815,7 @@ public enum FeatureName {
   WORKFLOW_PIPELINE_PERMISSION_BY_ENTITY,
   YAML_APIS_GRANULAR_PERMISSION,
   YAML_GIT_CONNECTOR_NAME,
+  CDS_ENABLE_LOAD_FROM_CACHE_FOR_RETRY_FORM("Used for enabling load from cache on retry form", HarnessTeam.PIPELINE),
   CDS_STEP_EXECUTION_DATA_SYNC(
       "This flag controls if you want Step execution data saved in mongodb and eventually synced to timescale",
       HarnessTeam.CDP);
