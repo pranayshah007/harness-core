@@ -48,7 +48,7 @@ TimescaleDB HA Deployment.
 | curlImage.pullPolicy | string | `"Always"` |  |
 | curlImage.registry | string | `"docker.io"` |  |
 | curlImage.repository | string | `"curlimages/curl"` |  |
-| curlImage.tag | string | `"latest"` |  |
+| curlImage.tag | string | `"8.1.2"` |  |
 | debug.execStartPre | string | `nil` |  |
 | env | string | `nil` |  |
 | envFrom | string | `nil` |  |

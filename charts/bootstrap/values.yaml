@@ -11,11 +11,16 @@ global:
       installed: true
     redis:
       installed: true
+    # -- Section to provide configuration on an NGINX ingress controller.
   ingress:
     enabled: false
     loadBalancerIP: '0.0.0.0'
     loadBalancerEnabled: false
     className: "harness"
+    # -- set to ingress controller's k8s service FQDN for internal routing. eg "internal-nginx.default.svc.cluster.local"
+    # If not set, internal request routing would happen via global.loadbalancerUrl
+    ingressGatewayServiceUrl: ""
+    # -- add global.ingress.ingressGatewayServiceUrl in hosts if global.ingress.ingressGatewayServiceUrl is not empty.
     hosts:
       - 'myhost.example.com'
     tls:
@@ -26,19 +31,27 @@ global:
     nginx:
       # -- Create Nginx Controller.  True will deploy a controller into your cluster
       create: false
+      healthPort: ""
+      healthNodePort: ""
+      httpNodePort: ""
+      httpsNodePort: ""
       controller:
         # -- annotations to be addded to ingress Controller
-        annotations: { }
+        annotations: {}
       objects:
         # -- annotations to be added to ingress Objects
-        annotations: { }
+        annotations: {}
+      nodeSelector: {}
+      tolerations: []
+      affinity: {}
       image:
-        registry: us.gcr.io
+        registry:  us.gcr.io
         repository: k8s-artifacts-prod/ingress-nginx/controller
         pullPolicy: IfNotPresent
         # Overrides the image tag whose default is the chart appVersion.
         tag: "v1.0.0-alpha.2"
         digest: ""
+
 
     defaultbackend:
       # -- Create will deploy a default backend into your cluster
@@ -58,9 +71,18 @@ global:
     gateway:
       create: true
       port: 443
+      # -- override the name of gateway
+      name: ""
+      # -- override the name of namespace to deploy gateway
+      namespace: ""
+      # -- adds a gateway selector
+      selector:
+        istio: ingressgateway
       protocol: HTTPS
-      selector: "ingressgateway"
-      namespace: "istio-system"
+    # -- set to istio gateway's k8s service FQDN for internal use case. eg "internal-istio-gateway.istio-system.svc.cluster.local"
+    # If not set, internal request routing would happen via global.loadbalancerUrl
+    istioGatewayServiceUrl: ""
+    # -- add global.istio.istioGatewayServiceUrl in hosts if global.istio.istioGatewayServiceUrl is not empty.
     hosts:
       - '*'
     tls:
@@ -68,5 +90,6 @@ global:
       minProtocolVersion: TLSV1_2
       mode: SIMPLE
     virtualService:
+      # -- add global.istio.istioGatewayServiceUrl in hosts if global.istio.istioGatewayServiceUrl is not empty.
       hosts:
         - "myhostname.example.com"

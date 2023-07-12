@@ -13,7 +13,6 @@ useAntiAffinity: true
 redis:
   resources:
     limits:
-      cpu: 0.1
       memory: 200Mi
     requests:
       cpu: 0.1
@@ -29,7 +28,6 @@ redis:
 sentinel:
   resources:
     limits:
-      cpu: 100m
       memory: 200Mi
     requests:
       cpu: 100m

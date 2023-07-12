@@ -45,7 +45,6 @@ A Helm chart for Kubernetes
 | redis.image.registry | string | `"docker.io"` |  |
 | redis.image.repository | string | `"harness/redis"` |  |
 | redis.image.tag | string | `"6.2.5-alpine"` |  |
-| redis.resources.limits.cpu | float | `0.1` |  |
 | redis.resources.limits.memory | string | `"200Mi"` |  |
 | redis.resources.requests.cpu | float | `0.1` |  |
 | redis.resources.requests.memory | string | `"200Mi"` |  |
@@ -58,7 +57,6 @@ A Helm chart for Kubernetes
 | sentinel.image.registry | string | `"docker.io"` |  |
 | sentinel.image.repository | string | `"harness/redis"` |  |
 | sentinel.image.tag | string | `"6.2.5-alpine"` |  |
-| sentinel.resources.limits.cpu | string | `"100m"` |  |
 | sentinel.resources.limits.memory | string | `"200Mi"` |  |
 | sentinel.resources.requests.cpu | string | `"100m"` |  |
 | sentinel.resources.requests.memory | string | `"200Mi"` |  |
