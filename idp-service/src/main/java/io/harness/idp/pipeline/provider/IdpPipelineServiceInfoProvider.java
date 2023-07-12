@@ -12,6 +12,13 @@ import static io.harness.steps.plugin.ContainerStepConstants.PLUGIN;
 
 
 import io.harness.idp.pipeline.step.StepSpecTypeConstants;
+import io.harness.ci.creator.variables.RunStepVariableCreator;
+import io.harness.ci.plan.creator.steps.CIStepsPlanCreator;
+import io.harness.ci.plancreator.RunStepPlanCreator;
+import io.harness.idp.pipeline.stages.filtercreator.IDPStageFilterCreator;
+import io.harness.idp.pipeline.stages.filtercreator.IDPStepFilterJsonCreator;
+import io.harness.idp.pipeline.stages.plancreator.IDPStagePlanCreator;
+import io.harness.idp.pipeline.stages.variablecreator.IDPStageVariableCreator;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
@@ -32,6 +39,12 @@ public class IdpPipelineServiceInfoProvider implements PipelineServiceInfoProvid
   public List<PartialPlanCreator<?>> getPlanCreators() {
     // Needs to be modified based on steps
     List<PartialPlanCreator<?>> planCreators = new LinkedList<>();
+    planCreators.add(new IDPStagePlanCreator());
+    planCreators.add(new RunStepPlanCreator());
+    //    planCreators.add(new InitializeStepPlanCreator());
+
+    //    planCreators.add(new RunStepPlanCreatorV1());
+    planCreators.add(new CIStepsPlanCreator());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -40,6 +53,8 @@ public class IdpPipelineServiceInfoProvider implements PipelineServiceInfoProvid
   public List<FilterJsonCreator> getFilterJsonCreators() {
     // Needs to be modified based on steps
     List<FilterJsonCreator> filterJsonCreators = new ArrayList<>();
+    filterJsonCreators.add(new IDPStageFilterCreator());
+    filterJsonCreators.add(new IDPStepFilterJsonCreator());
     injectorUtils.injectMembers(filterJsonCreators);
     return filterJsonCreators;
   }
@@ -48,21 +63,22 @@ public class IdpPipelineServiceInfoProvider implements PipelineServiceInfoProvid
   public List<VariableCreator> getVariableCreators() {
     // Needs to be modified based on steps
     List<VariableCreator> variableCreators = new ArrayList<>();
+    variableCreators.add(new IDPStageVariableCreator());
+    variableCreators.add(new RunStepVariableCreator());
     return variableCreators;
   }
 
   @Override
   public List<StepInfo> getStepInfo() {
     // Needs to be modified based on steps
-    StepInfo gitCloneStepInfo =
-        StepInfo.newBuilder()
-            .setName("Git Clone")
-            .setType(StepSpecTypeConstants.GIT_CLONE)
-            .setStepMetaData(StepMetaData.newBuilder().addCategory(PLUGIN).addFolderPaths("Build").build())
-            .build();
+    StepInfo runStepInfo = StepInfo.newBuilder()
+                               .setName("Run")
+                               .setType(StepSpecTypeConstants.RUN)
+                               .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
+                               .build();
 
     ArrayList<StepInfo> stepInfos = new ArrayList<>();
-    stepInfos.add(gitCloneStepInfo);
+    stepInfos.add(runStepInfo);
     return stepInfos;
   }
 }

@@ -210,6 +210,26 @@ if [[ "" != "$PROXY_ALLOW_LIST_CONFIG_SERVICES" ]]; then
   sed -i '' 's/  services: |-/  services:/g' $CONFIG_FILE
 fi
 
+if [[ "" != "$LOG_SERVICE_ENDPOINT" ]]; then
+  yq write -i $CONFIG_FILE logServiceConfig.baseUrl "$LOG_SERVICE_ENDPOINT"
+fi
+
+if [[ "" != "$LOG_SERVICE_GLOBAL_TOKEN" ]]; then
+  yq write -i $CONFIG_FILE logServiceConfig.globalToken "$LOG_SERVICE_GLOBAL_TOKEN"
+fi
+
+if [[ "" != "$SSCA_SERVICE_ENDPOINT" ]]; then
+  export SSCA_SERVICE_ENDPOINT; yq -i '.sscaServiceConfig.httpClientConfig.baseUrl=env(SSCA_SERVICE_ENDPOINT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SSCA_SERVICE_SECRET" ]]; then
+  export SSCA_SERVICE_SECRET; yq -i '.sscaServiceConfig.serviceSecret=env(SSCA_SERVICE_SECRET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$API_URL" ]]; then
+  export API_URL; yq -i '.apiUrl=env(API_UcRL)' $CONFIG_FILE
+fi
+
 yq -i 'del(.codec)' $REDISSON_CACHE_FILE
 
 if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
@@ -352,4 +372,3 @@ if [[ "$EVENTS_FRAMEWORK_USE_SENTINEL" == "true" ]]; then
     done
   fi
 fi
-

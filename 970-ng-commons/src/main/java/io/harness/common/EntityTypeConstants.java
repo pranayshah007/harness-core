@@ -124,6 +124,7 @@ public interface EntityTypeConstants {
   String VERACODE = "Veracode";
   String ZAP = "Zap";
   String SECURITY_STAGE = "SecurityStage";
+  String IDP_STAGE = "IDPStage";
   String SECURITY_STEPS = "SecuritySteps";
   String GIT_CLONE = "GitClone";
   String ARTIFACTORY_UPLOAD = "ArtifactoryUpload";
@@ -194,6 +195,7 @@ public interface EntityTypeConstants {
   String IACM_STAGE = "IACMStage";
   String IACM_STEPS = "IACMStep";
   String IACM = "IACM";
+  String IDP = "IDP";
   String ELASTIGROUP_SETUP = "ElastigroupSetup";
   String TERRAGRUNT_PLAN = "TerragruntPlan";
   String TERRAGRUNT_APPLY = "TerragruntApply";

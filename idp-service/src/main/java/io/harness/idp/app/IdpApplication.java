@@ -16,10 +16,16 @@ import static io.harness.logging.LoggingInitializer.initializeLogging;
 import io.harness.Microservice;
 import io.harness.ModuleType;
 import io.harness.PipelineServiceUtilityModule;
+import io.harness.SCMGrpcClientModule;
 import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.CacheModule;
+import io.harness.ci.execution.OrchestrationExecutionEventHandlerRegistrar;
+import io.harness.ci.plan.creator.CIModuleInfoProvider;
+import io.harness.ci.plan.creator.filter.CIFilterCreationResponseMerger;
+import io.harness.ci.registrars.ExecutionAdvisers;
+import io.harness.ff.FeatureFlagService;
 import io.harness.health.HealthMonitor;
 import io.harness.health.HealthService;
 import io.harness.idp.annotations.IdpServiceAuth;
@@ -31,7 +37,6 @@ import io.harness.idp.events.consumers.IdpEventConsumerController;
 import io.harness.idp.migration.IdpMigrationProvider;
 import io.harness.idp.namespace.jobs.DefaultAccountIdToNamespaceMappingForPrEnv;
 import io.harness.idp.pipeline.filter.IdpFilterCreationResponseMerger;
-import io.harness.idp.pipeline.provider.IdpModuleInfoProvider;
 import io.harness.idp.pipeline.provider.IdpPipelineServiceInfoProvider;
 import io.harness.idp.pipeline.registrar.IdpStepRegistrar;
 import io.harness.idp.user.jobs.UserSyncJob;
@@ -60,6 +65,7 @@ import io.harness.pms.sdk.execution.events.node.start.NodeStartEventRedisConsume
 import io.harness.pms.sdk.execution.events.orchestrationevent.OrchestrationEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.plan.CreatePartialPlanRedisConsumer;
 import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
+import io.harness.pms.serializer.json.PmsBeansJacksonModule;
 import io.harness.request.RequestLoggingFilter;
 import io.harness.security.InternalApiAuthFilter;
 import io.harness.security.NextGenAuthenticationFilter;
@@ -72,15 +78,17 @@ import io.harness.service.impl.DelegateSyncServiceImpl;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 import io.harness.token.remote.TokenClient;
+import io.harness.yaml.YamlSdkConfiguration;
+import io.harness.yaml.YamlSdkInitHelper;
 
 import com.codahale.metrics.MetricRegistry;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.dirkraft.dropwizard.fileassets.FileAssetsBundle;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.google.inject.Key;
+import com.google.inject.*;
 import com.google.inject.Module;
 import com.google.inject.name.Names;
+import com.google.inject.util.Providers;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
@@ -89,6 +97,7 @@ import io.dropwizard.jersey.jackson.JsonProcessingExceptionMapper;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+import io.serializer.HObjectMapper;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -125,6 +134,11 @@ public class IdpApplication extends Application<IdpConfiguration> {
     }));
 
     new IdpApplication().run(args);
+  }
+
+  public static void configureObjectMapper(final ObjectMapper mapper) {
+    HObjectMapper.configureObjectMapperForNG(mapper);
+    mapper.registerModule(new PmsBeansJacksonModule());
   }
 
   @Override
@@ -164,6 +178,13 @@ public class IdpApplication extends Application<IdpConfiguration> {
     modules.add(PmsSdkModule.getInstance(idpPmsSdkConfiguration));
     modules.add(PipelineServiceUtilityModule.getInstance());
     modules.add(NGMigrationSdkModule.getInstance());
+    modules.add(new SCMGrpcClientModule(configuration.getScmConnectionConfig()));
+    modules.add(new AbstractModule() {
+      @Override
+      protected void configure() {
+        bind(FeatureFlagService.class).toProvider(Providers.of(null));
+      }
+    });
 
     Injector injector = Guice.createInjector(modules);
     registerPMSSDK(configuration, injector);
@@ -176,6 +197,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
     registerExceptionMappers(environment.jersey());
     registerMigrations(injector);
     registerHealthCheck(environment, injector);
+    registerYamlSdk(injector);
     environment.jersey().register(RequestLoggingFilter.class);
     //    initMetrics(injector);
     log.info("Starting app done");
@@ -296,10 +318,14 @@ public class IdpApplication extends Application<IdpConfiguration> {
         .grpcServerConfig(configuration.getPmsSdkGrpcServerConfig())
         .pmsGrpcClientConfig(configuration.getPmsGrpcClientConfig())
         .pipelineServiceInfoProviderClass(IdpPipelineServiceInfoProvider.class)
-        .filterCreationResponseMerger(new IdpFilterCreationResponseMerger())
+        .filterCreationResponseMerger(new CIFilterCreationResponseMerger())
         .engineSteps(IdpStepRegistrar.getEngineSteps())
-        .engineAdvisers(PipelineServiceUtilAdviserRegistrar.getEngineAdvisers())
-        .executionSummaryModuleInfoProviderClass(IdpModuleInfoProvider.class)
+        .engineAdvisers(ExecutionAdvisers.getEngineAdvisers())
+        .engineEventHandlersMap(OrchestrationExecutionEventHandlerRegistrar.getEngineEventHandlers())
+        .eventsFrameworkConfiguration(configuration.getEventsFrameworkConfiguration())
+        .executionPoolConfig(configuration.getPmsSdkExecutionPoolConfig())
+        .orchestrationEventPoolConfig(configuration.getPmsSdkOrchestrationEventPoolConfig())
+        .executionSummaryModuleInfoProviderClass(CIModuleInfoProvider.class)
         .eventsFrameworkConfiguration(configuration.getEventsFrameworkConfiguration())
         .build();
   }
@@ -333,5 +359,14 @@ public class IdpApplication extends Application<IdpConfiguration> {
     final HealthService healthService = injector.getInstance(HealthService.class);
     environment.healthChecks().register("IDP", healthService);
     healthService.registerMonitor((HealthMonitor) injector.getInstance(MongoTemplate.class));
+  }
+
+  private void registerYamlSdk(Injector injector) {
+    YamlSdkConfiguration yamlSdkConfiguration = YamlSdkConfiguration.builder()
+                                                    .requireSchemaInit(true)
+                                                    .requireSnippetInit(true)
+                                                    .requireValidatorInit(false)
+                                                    .build();
+    YamlSdkInitHelper.initialize(injector, yamlSdkConfiguration);
   }
 }

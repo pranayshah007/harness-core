@@ -8,29 +8,66 @@
 package io.harness.idp.app;
 
 import static io.harness.authorization.AuthorizationServiceHeader.IDP_SERVICE;
+import static io.harness.ci.utils.HostedVmSecretResolver.SECRET_CACHE_KEY;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.idp.provision.ProvisionConstants.PROVISION_MODULE_CONFIG;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
+import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 
 import io.harness.AccessControlClientModule;
+import io.harness.ScmConnectionConfig;
 import io.harness.account.AccountClientModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.AwsClient;
+import io.harness.aws.AwsClientImpl;
+import io.harness.beans.entities.IACMServiceConfig;
+import io.harness.beans.execution.license.CILicenseService;
+import io.harness.cache.NoOpCache;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
+import io.harness.ci.CIExecutionServiceModule;
+import io.harness.ci.beans.entities.EncryptedDataDetails;
+import io.harness.ci.beans.entities.LogServiceConfig;
+import io.harness.ci.beans.entities.TIServiceConfig;
+import io.harness.ci.buildstate.PluginSettingUtils;
+import io.harness.ci.buildstate.SecretDecryptorViaNg;
+import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.ff.CIFeatureFlagService;
+import io.harness.ci.ff.impl.CIFeatureFlagServiceImpl;
+import io.harness.ci.license.impl.CILicenseServiceImpl;
+import io.harness.ci.logserviceclient.CILogServiceClientModule;
+import io.harness.ci.serializer.PluginCompatibleStepSerializer;
+import io.harness.ci.tiserviceclient.TIServiceClientModule;
+import io.harness.ci.validation.CIAccountValidationService;
+import io.harness.ci.validation.CIAccountValidationServiceImpl;
+import io.harness.ci.validation.CIYAMLSanitizationService;
+import io.harness.ci.validation.CIYAMLSanitizationServiceImpl;
+import io.harness.cistatus.service.GithubService;
+import io.harness.cistatus.service.GithubServiceImpl;
+import io.harness.cistatus.service.azurerepo.AzureRepoService;
+import io.harness.cistatus.service.azurerepo.AzureRepoServiceImpl;
+import io.harness.cistatus.service.bitbucket.BitbucketService;
+import io.harness.cistatus.service.bitbucket.BitbucketServiceImpl;
+import io.harness.cistatus.service.gitlab.GitlabService;
+import io.harness.cistatus.service.gitlab.GitlabServiceImpl;
 import io.harness.client.NgConnectorManagerClientModule;
 import io.harness.clients.BackstageResourceClientModule;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
+import io.harness.enforcement.client.EnforcementClientConfiguration;
+import io.harness.enforcement.client.EnforcementClientModule;
+import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
 import io.harness.exception.exceptionmanager.ExceptionModule;
 import io.harness.git.GitClientV2;
 import io.harness.git.GitClientV2Impl;
 import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
+import io.harness.iacmserviceclient.IACMServiceClientModule;
 import io.harness.idp.allowlist.resources.AllowListApiImpl;
 import io.harness.idp.allowlist.services.AllowListService;
 import io.harness.idp.allowlist.services.AllowListServiceImpl;
@@ -65,6 +102,8 @@ import io.harness.idp.onboarding.config.OnboardingModuleConfig;
 import io.harness.idp.onboarding.resources.OnboardingResourceApiImpl;
 import io.harness.idp.onboarding.service.OnboardingService;
 import io.harness.idp.onboarding.service.impl.OnboardingServiceImpl;
+import io.harness.idp.pipeline.stages.yamlschema.IDPYamlSchemaService;
+import io.harness.idp.pipeline.stages.yamlschema.IDPYamlSchemaServiceImpl;
 import io.harness.idp.plugin.resources.AuthInfoApiImpl;
 import io.harness.idp.plugin.resources.PluginInfoApiImpl;
 import io.harness.idp.plugin.services.AuthInfoService;
@@ -90,6 +129,8 @@ import io.harness.idp.status.k8s.PodHealthCheck;
 import io.harness.idp.status.resources.StatusInfoApiImpl;
 import io.harness.idp.status.service.StatusInfoService;
 import io.harness.idp.status.service.StatusInfoServiceImpl;
+import io.harness.impl.scm.ScmServiceClientImpl;
+import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.manage.ManagedExecutorService;
@@ -99,19 +140,26 @@ import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.event.MessageListener;
+import io.harness.opaclient.OpaClientModule;
 import io.harness.organization.OrganizationClientModule;
 import io.harness.outbox.TransactionOutboxModule;
+import io.harness.packages.HarnessPackages;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
+import io.harness.plugin.service.BasePluginCompatibleSerializer;
+import io.harness.plugin.service.PluginService;
+import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.project.ProjectClientModule;
 import io.harness.queue.QueueController;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.secrets.SecretDecryptor;
 import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.service.DelegateServiceDriverModule;
+import io.harness.service.ScmServiceClient;
 import io.harness.service.ServiceResourceClientModule;
 import io.harness.spec.server.idp.v1.AccountInfoApi;
 import io.harness.spec.server.idp.v1.AllowListApi;
@@ -127,13 +175,25 @@ import io.harness.spec.server.idp.v1.OnboardingResourceApi;
 import io.harness.spec.server.idp.v1.PluginInfoApi;
 import io.harness.spec.server.idp.v1.ProvisionApi;
 import io.harness.spec.server.idp.v1.StatusInfoApi;
+import io.harness.ssca.beans.entities.SSCAServiceConfig;
+import io.harness.ssca.client.SSCAServiceClientModuleV2;
+import io.harness.sto.beans.entities.STOServiceConfig;
+import io.harness.stoserviceclient.STOServiceClientModule;
+import io.harness.telemetry.AbstractTelemetryModule;
+import io.harness.telemetry.TelemetryConfiguration;
+import io.harness.telemetry.segment.SegmentConfiguration;
 import io.harness.threading.ThreadPool;
+import io.harness.threading.ThreadPoolConfig;
 import io.harness.time.TimeModule;
 import io.harness.token.TokenClientModule;
+import io.harness.user.UserClientModule;
 import io.harness.version.VersionModule;
-import io.harness.waiter.AbstractWaiterModule;
-import io.harness.waiter.WaiterConfiguration;
+import io.harness.waiter.AsyncWaitEngineImpl;
+import io.harness.waiter.WaitNotifyEngine;
+import io.harness.yaml.core.StepSpecType;
+import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -146,6 +206,8 @@ import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import dev.morphia.converters.TypeConverter;
+import io.dropwizard.jackson.Jackson;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -154,7 +216,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import javax.cache.Cache;
 import lombok.extern.slf4j.Slf4j;
+import org.reflections.Reflections;
 import org.springframework.core.convert.converter.Converter;
 
 @Slf4j
@@ -264,18 +328,43 @@ public class IdpModule extends AbstractModule {
     install(new BackstageResourceClientModule());
     install(DelegateServiceDriverModule.getInstance(false, false));
     install(ExceptionModule.getInstance());
-    install(new AbstractWaiterModule() {
-      @Override
-      public WaiterConfiguration waiterConfiguration() {
-        return WaiterConfiguration.builder().persistenceLayer(WaiterConfiguration.PersistenceLayer.SPRING).build();
-      }
-    });
+    //    install(new AbstractWaiterModule() {
+    //      @Override
+    //      public WaiterConfiguration waiterConfiguration() {
+    //        return
+    //        WaiterConfiguration.builder().persistenceLayer(WaiterConfiguration.PersistenceLayer.SPRING).build();
+    //      }
+    //    });
     install(new DelegateServiceDriverGrpcClientModule(
         appConfig.getManagerServiceSecret(), appConfig.getManagerTarget(), appConfig.getManagerAuthority(), true));
 
     bind(IdpConfiguration.class).toInstance(appConfig);
     install(PersistentLockModule.getInstance());
     install(TimeModule.getInstance());
+    install(new CILogServiceClientModule(appConfig.getLogServiceConfig()));
+    install(new TIServiceClientModule(appConfig.getTiServiceConficg()));
+    install(NgLicenseHttpClientModule.getInstance(appConfig.getNgManagerServiceHttpClientConfig(),
+        appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
+    install(new SSCAServiceClientModuleV2(appConfig.getSscaServiceConfig(), IDP_SERVICE.getServiceId()));
+    install(new STOServiceClientModule(appConfig.getStoServiceConfig()));
+    install(new EntitySetupUsageClientModule(
+        appConfig.getNgManagerServiceHttpClientConfig(), appConfig.getNgManagerServiceSecret(), IDP_SERVICE.name()));
+    install(UserClientModule.getInstance(
+        appConfig.getManagerClientConfig(), appConfig.getManagerServiceSecret(), IDP_SERVICE.getServiceId()));
+    install(new OpaClientModule(
+        appConfig.getOpaClientConfig(), appConfig.getPolicyManagerSecret(), IDP_SERVICE.getServiceId()));
+    install(
+        new CIExecutionServiceModule(appConfig.getCiExecutionServiceConfig(), appConfig.getShouldConfigureWithPMS()));
+    install(new IACMServiceClientModule(appConfig.getIacmServiceConfig()));
+    install(new AbstractTelemetryModule() {
+      @Override
+      public TelemetryConfiguration telemetryConfiguration() {
+        return appConfig.getSegmentConfiguration();
+      }
+    });
+    install(EnforcementClientModule.getInstance(appConfig.getManagerClientConfig(), // Licencing
+        appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId(),
+        appConfig.getEnforcementClientConfiguration()));
     // Keeping it to 1 thread to start with. Assuming executor service is used only to
     // serve health checks. If it's being used for other tasks also, max pool size should be increased.
     bind(ExecutorService.class)
@@ -333,6 +422,21 @@ public class IdpModule extends AbstractModule {
         .annotatedWith(Names.named("DefaultPREnvAccountIdToNamespaceMappingCreator"))
         .toInstance(new ManagedExecutorService(Executors.newSingleThreadExecutor()));
     bind(HealthResource.class).to(HealthResourceImpl.class);
+    bind(IDPYamlSchemaService.class).to(IDPYamlSchemaServiceImpl.class).in(Singleton.class);
+    bind(CILicenseService.class).to(CILicenseServiceImpl.class).in(Singleton.class);
+    bind(CIFeatureFlagService.class).to(CIFeatureFlagServiceImpl.class).in(Singleton.class);
+    bind(CIAccountValidationService.class).to(CIAccountValidationServiceImpl.class).in(Singleton.class);
+    bind(SecretDecryptor.class).to(SecretDecryptorViaNg.class); // same?
+    bind(AwsClient.class).to(AwsClientImpl.class);
+    bind(GithubService.class).to(GithubServiceImpl.class);
+    bind(AzureRepoService.class).to(AzureRepoServiceImpl.class);
+    bind(BitbucketService.class).to(BitbucketServiceImpl.class);
+    bind(GitlabService.class).to(GitlabServiceImpl.class);
+    bind(ScmServiceClient.class).to(ScmServiceClientImpl.class);
+    //    bind(IACMServiceConfig.class)
+    //            .toInstance(
+    //                    IACMServiceConfig.builder().baseUrl("http://localhost:4000").globalToken("api/v1/token").build());
+    //    bind(IACMServiceClient.class).toProvider(IACMServiceClientFactory.class).in(Scopes.SINGLETON);
 
     if (appConfig.getDelegateSelectorsCacheMode().equals(IN_MEMORY)) {
       bind(DelegateSelectorsCache.class).to(DelegateSelectorsInMemoryCache.class);
@@ -350,6 +454,11 @@ public class IdpModule extends AbstractModule {
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("taskPollExecutor"))
         .toInstance(new ManagedScheduledExecutorService("TaskPoll-Thread"));
+
+    bind(PluginService.class).to(PluginSettingUtils.class);
+    bind(BasePluginCompatibleSerializer.class).to(PluginCompatibleStepSerializer.class);
+    bind(CIYAMLSanitizationService.class).to(CIYAMLSanitizationServiceImpl.class).in(Singleton.class);
+    //    bind(HsqsClient.class).toProvider(HsqsServiceHttpClientFactory.class).in(Scopes.SINGLETON);
   }
 
   @Provides
@@ -502,6 +611,152 @@ public class IdpModule extends AbstractModule {
             .build());
     log.info("delegate callback token generated =[{}]", delegateCallbackToken.getToken());
     return delegateCallbackToken;
+  }
+
+  @Provides
+  @Singleton
+  @Named("logServiceConfig")
+  public LogServiceConfig logServiceConfig() {
+    return this.appConfig.getLogServiceConfig();
+  }
+
+  @Provides
+  @Singleton
+  @Named("tiServiceConfig")
+  public TIServiceConfig tiServiceConfig() {
+    return this.appConfig.getTiServiceConficg();
+  }
+
+  @Provides
+  @Singleton
+  @Named("sscaServiceConfig")
+  public SSCAServiceConfig sscaServiceConfig() {
+    return this.appConfig.getSscaServiceConfig();
+  }
+
+  @Provides
+  @Singleton
+  @Named("stoServiceConfig")
+  public STOServiceConfig stoServiceConfig() {
+    return this.appConfig.getStoServiceConfig();
+  }
+
+  @Provides
+  @Singleton
+  @Named("ngBaseUrl")
+  String getNgBaseUrl() {
+    String apiUrl = appConfig.getApiUrl();
+    if (apiUrl.endsWith("/")) {
+      return apiUrl.substring(0, apiUrl.length() - 1);
+    }
+    return apiUrl;
+  }
+
+  @Provides
+  @Named(SECRET_CACHE_KEY)
+  Cache<String, EncryptedDataDetails> getSecretTokenCache() {
+    return new NoOpCache<>();
+  }
+
+  @Provides
+  @Named("yaml-schema-mapper")
+  @Singleton
+  public ObjectMapper getYamlSchemaObjectMapper() {
+    ObjectMapper objectMapper = Jackson.newObjectMapper();
+    IdpApplication.configureObjectMapper(objectMapper);
+    return objectMapper;
+  }
+  @Provides
+  @Singleton
+  List<YamlSchemaRootClass> yamlSchemaRootClasses() {
+    return ImmutableList.<YamlSchemaRootClass>builder().addAll(IdpServiceRegistrars.yamlSchemaRegistrars).build();
+  }
+
+  @Provides
+  @Singleton
+  ScmConnectionConfig scmConnectionConfig() {
+    return this.appConfig.getScmConnectionConfig();
+  }
+
+  @Provides
+  @Named("yaml-schema-subtypes")
+  @Singleton
+  public Map<Class<?>, Set<Class<?>>> yamlSchemaSubtypes() {
+    Reflections reflections = new Reflections(HarnessPackages.IO_HARNESS);
+
+    Set<Class<? extends StepSpecType>> subTypesOfStepSpecType = reflections.getSubTypesOf(StepSpecType.class);
+    Set<Class<?>> set = new HashSet<>(subTypesOfStepSpecType);
+
+    return ImmutableMap.of(StepSpecType.class, set);
+  }
+
+  @Provides
+  @Singleton
+  @Named("pmsSdkExecutionPoolConfig")
+  public ThreadPoolConfig pmsSdkExecutionPoolConfig() {
+    return this.appConfig.getPmsSdkExecutionPoolConfig();
+  }
+
+  @Provides
+  @Singleton
+  @Named("pmsSdkOrchestrationEventPoolConfig")
+  public ThreadPoolConfig pmsSdkOrchestrationEventPoolConfig() {
+    return this.appConfig.getPmsSdkOrchestrationEventPoolConfig();
+  }
+
+  @Provides
+  @Singleton
+  @Named("pmsPlanCreatorServicePoolConfig")
+  public ThreadPoolConfig pmsPlanCreatorServicePoolConfig() {
+    return this.appConfig.getPmsPlanCreatorServicePoolConfig();
+  }
+
+  @Provides
+  @Singleton
+  @Named("opaClientConfig")
+  public ServiceHttpClientConfig opaClientConfig() {
+    return this.appConfig.getOpaClientConfig();
+  }
+
+  @Provides
+  @Singleton
+  @Named("policyManagerSecret")
+  public String policyManagerSecret() {
+    return this.appConfig.getPolicyManagerSecret();
+  }
+
+  @Provides
+  @Singleton
+  @Named("ciExecutionServiceConfig")
+  public CIExecutionServiceConfig ciExecutionServiceConfig() {
+    return this.appConfig.getCiExecutionServiceConfig();
+  }
+
+  @Provides
+  @Singleton
+  @Named("segmentConfiguration")
+  public SegmentConfiguration segmentConfiguration() {
+    return this.appConfig.getSegmentConfiguration();
+  }
+
+  @Provides
+  @Singleton
+  @Named("iacmServiceConfig")
+  public IACMServiceConfig iacmServiceConfig() {
+    return this.appConfig.getIacmServiceConfig();
+  }
+
+  @Provides
+  @Singleton
+  @Named("enforcementClientConfiguration")
+  public EnforcementClientConfiguration enforcementClientConfiguration() {
+    return this.appConfig.getEnforcementClientConfiguration();
+  }
+
+  @Provides
+  @Singleton
+  public AsyncWaitEngine asyncWaitEngine(WaitNotifyEngine waitNotifyEngine) {
+    return new AsyncWaitEngineImpl(waitNotifyEngine, NG_ORCHESTRATION);
   }
 
   @Provides
