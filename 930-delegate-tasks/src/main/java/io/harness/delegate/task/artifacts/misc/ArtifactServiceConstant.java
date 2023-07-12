@@ -6,4 +6,11 @@
  */
 
 package io.harness.delegate.task.artifacts;
-public final class ArtifactServiceConstant { public static final String ACCEPT_ALL_REGEX = ".*?"; }
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
+public final class ArtifactServiceConstant {
+  public static final String ACCEPT_ALL_REGEX = ".*?";
+}

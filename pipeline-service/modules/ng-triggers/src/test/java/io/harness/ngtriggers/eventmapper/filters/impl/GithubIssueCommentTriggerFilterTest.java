@@ -7,6 +7,8 @@
 
 package io.harness.ngtriggers.eventmapper.filters.impl;
 
+import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.FAILED_TO_FETCH_PR_DETAILS;
+import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static java.util.Arrays.asList;
@@ -14,12 +16,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
 import io.harness.beans.IssueCommentWebhookEvent;
 import io.harness.beans.Repository;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.gitapi.GitApiFindPRTaskResponse;
 import io.harness.delegate.beans.gitapi.GitApiTaskResponse;
 import io.harness.logging.CommandExecutionStatus;
@@ -408,5 +412,44 @@ public class GithubIssueCommentTriggerFilterTest extends CategoryTest {
         .isEqualTo("Failed to fetch PR Details: java.lang.NullPointerException");
     assertThat(webhookEventMappingResponse.getWebhookEventResponse().getPayload()).isEqualTo(pushPayload);
     assertThat(webhookEventMappingResponse.isFailedToFindTrigger()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testFailedToFetchPr() {
+    FilterRequestData filterRequestData1 =
+        FilterRequestData.builder()
+            .isCustomTrigger(false)
+            .webhookPayloadData(
+                WebhookPayloadData.builder()
+                    .originalEvent(TriggerWebhookEvent.builder().createdAt(1L).build())
+                    .webhookEvent(IssueCommentWebhookEvent.builder().pullRequestNum("pullRequestNum").build())
+                    .repository(Repository.builder().branch("branch").name("name").build())
+                    .build())
+            .details(Collections.singletonList(
+                TriggerDetails.builder()
+                    .ngTriggerEntity(NGTriggerEntity.builder()
+                                         .metadata(NGTriggerMetadata.builder()
+                                                       .webhook(WebhookMetadata.builder()
+                                                                    .git(GitMetadata.builder()
+                                                                             .connectorIdentifier("connectorIdentifier")
+                                                                             .build())
+                                                                    .build())
+                                                       .build())
+                                         .build())
+                    .build()))
+            .build();
+    ConnectorDetails connectorDetails = ConnectorDetails.builder().build();
+    when(connectorUtils.getConnectorDetails(any(), any())).thenReturn(connectorDetails);
+    BinaryResponseData binaryResponseData = BinaryResponseData.builder().build();
+    when(taskExecutionUtils.executeSyncTask(any())).thenReturn(binaryResponseData);
+    GitApiTaskResponse gitApiTaskResponse = GitApiTaskResponse.builder().errorMessage("errorMessage").build();
+    when(kryoSerializer.asInflatedObject(any())).thenReturn(gitApiTaskResponse);
+    WebhookEventMappingResponse webhookEventMappingResponse1 =
+        githubIssueCommentTriggerFilter.applyFilter(filterRequestData1);
+    assertThat(webhookEventMappingResponse1.isFailedToFindTrigger()).isEqualTo(true);
+    assertThat(webhookEventMappingResponse1.getWebhookEventResponse().getFinalStatus())
+        .isEqualTo(FAILED_TO_FETCH_PR_DETAILS);
   }
 }

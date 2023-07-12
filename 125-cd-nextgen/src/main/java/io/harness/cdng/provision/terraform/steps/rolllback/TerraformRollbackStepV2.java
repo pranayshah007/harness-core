@@ -21,7 +21,6 @@ import io.harness.cdng.provision.terraform.TerraformConfigDAL;
 import io.harness.cdng.provision.terraform.TerraformConfigHelper;
 import io.harness.cdng.provision.terraform.TerraformPassThroughData;
 import io.harness.cdng.provision.terraform.TerraformStepHelper;
-import io.harness.cdng.provision.terraform.outcome.TerraformGitRevisionOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.task.terraform.TFTaskType;
@@ -152,11 +151,13 @@ public class TerraformRollbackStepV2 extends CdTaskChainExecutable {
       TerraformTaskNGParametersBuilder builder =
           getTerraformTaskNgBuilder(ambiance, rollbackConfig, tfTaskType, entityId, stepParametersSpec, stepParameters);
 
-      TerraformPassThroughData terraformPassThroughData = TerraformPassThroughData.builder()
-                                                              .hasGitFiles(hasGitVarFiles)
-                                                              .hasS3Files(hasS3VarFiles)
-                                                              .terraformTaskNGParametersBuilder(builder)
-                                                              .build();
+      TerraformPassThroughData terraformPassThroughData =
+          TerraformPassThroughData.builder()
+              .hasGitFiles(hasGitVarFiles)
+              .hasS3Files(hasS3VarFiles)
+              .terraformTaskNGParametersBuilder(builder)
+              .originalVarFileConfigs(rollbackConfig.getVarFileConfigs())
+              .build();
 
       if (hasGitVarFiles || hasS3VarFiles) {
         return terraformStepHelper.fetchRemoteVarFiles(terraformPassThroughData, varFilesInfo, ambiance, stepParameters,
@@ -215,7 +216,7 @@ public class TerraformRollbackStepV2 extends CdTaskChainExecutable {
   }
 
   @Override
-  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance,
+  public TaskChainResponse executeNextLinkWithSecurityContextAndNodeInfo(Ambiance ambiance,
       StepElementParameters stepElementParameters, StepInputPackage inputPackage, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
     TerraformRollbackStepParameters stepParameters = (TerraformRollbackStepParameters) stepElementParameters.getSpec();
@@ -225,8 +226,9 @@ public class TerraformRollbackStepV2 extends CdTaskChainExecutable {
   }
 
   @Override
-  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
+  public StepResponse finalizeExecutionWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepElementParameters stepParameters, PassThroughData passThroughData,
+      ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     log.info("Handling Task Result With Security Context for the Rollback Step");
     StepResponse stepResponse = null;
 
@@ -306,13 +308,9 @@ public class TerraformRollbackStepV2 extends CdTaskChainExecutable {
     }
 
     Map<String, String> outputKeys = terraformStepHelper.getRevisionsMap(terraformPassThroughData, taskResponse);
+    terraformStepHelper.addTerraformRevisionOutcomeIfRequired(stepResponseBuilder, outputKeys);
 
-    return stepResponseBuilder
-        .stepOutcome(StepResponse.StepOutcome.builder()
-                         .name(TerraformGitRevisionOutcome.OUTCOME_NAME)
-                         .outcome(TerraformGitRevisionOutcome.builder().revisions(outputKeys).build())
-                         .build())
-        .build();
+    return stepResponseBuilder.build();
   }
 
   private String prepareExecutionUrl(String pipelineExecutionId, Ambiance ambiance) {

@@ -25,7 +25,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.connector.ConnectorType.AZURE_REPO;
 import static io.harness.delegate.beans.connector.ConnectorType.BITBUCKET;
 import static io.harness.delegate.beans.connector.ConnectorType.CODECOMMIT;
-import static io.harness.delegate.beans.connector.ConnectorType.DOCKER;
 import static io.harness.delegate.beans.connector.ConnectorType.GIT;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.delegate.beans.connector.ConnectorType.GITLAB;
@@ -36,8 +35,6 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.CI_CODE_BASE;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.PROPERTIES;
 
 import static java.lang.String.format;
-import static org.springframework.util.StringUtils.trimLeadingCharacter;
-import static org.springframework.util.StringUtils.trimTrailingCharacter;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -81,8 +78,6 @@ import io.harness.ci.states.RunTestsStep;
 import io.harness.ci.utils.WebhookTriggerProcessorUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
-import io.harness.delegate.beans.connector.ConnectorType;
-import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitConnectorDTO;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitUrlType;
@@ -94,6 +89,7 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.connector.scm.harness.HarnessConnectorDTO;
 import io.harness.delegate.task.citasks.cik8handler.params.CIConstants;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.git.GitClientHelper;
 import io.harness.jackson.JsonNodeUtils;
@@ -130,8 +126,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.fabric8.utils.Strings;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -665,41 +659,12 @@ public class IntegrationStageUtils {
 
   // Returns fully qualified image name with registryURL prepended in the image name.
   public static String getFullyQualifiedImageName(String imageName, ConnectorDetails connectorDetails) {
-    if (connectorDetails == null) {
-      return imageName;
-    }
-
-    ConnectorType connectorType = connectorDetails.getConnectorType();
-    if (connectorType != DOCKER) {
-      return imageName;
-    }
-
-    DockerConnectorDTO dockerConnectorDTO = (DockerConnectorDTO) connectorDetails.getConnectorConfig();
-    String dockerRegistryUrl = dockerConnectorDTO.getDockerRegistryUrl();
-    return getImageWithRegistryPath(imageName, dockerRegistryUrl, connectorDetails.getIdentifier());
-  }
-
-  private static String getImageWithRegistryPath(String imageName, String registryUrl, String connectorId) {
-    URL url = null;
     try {
-      url = new URL(registryUrl);
-    } catch (MalformedURLException e) {
-      throw new CIStageExecutionException(
-          format("Malformed registryUrl %s in docker connector id: %s", registryUrl, connectorId));
+      return CiIntegrationStageUtils.getFullyQualifiedImageName(imageName, connectorDetails);
+    } catch (WingsException ex) {
+      log.error("Error while getting Fully qualified image", ex);
+      throw new CIStageExecutionException(ex.getMessage());
     }
-
-    String registryHostName = url.getHost();
-    if (url.getPort() != -1) {
-      registryHostName = url.getHost() + ":" + url.getPort();
-    }
-
-    if (imageName.contains(registryHostName) || registryHostName.equals("index.docker.io")
-        || registryHostName.equals("registry.hub.docker.com")) {
-      return imageName;
-    }
-
-    String prefixRegistryPath = registryHostName + url.getPath();
-    return trimTrailingCharacter(prefixRegistryPath, '/') + '/' + trimLeadingCharacter(imageName, '/');
   }
 
   private static ManualExecutionSource buildCustomExecutionSource(

@@ -37,7 +37,8 @@ public class DeploymentLogAnalysisDTO {
     BASELINE("Baseline", 3),
     KNOWN_EVENT("Known", 2),
     UNEXPECTED_FREQUENCY("Unexpected Frequency", 1),
-    UNKNOWN_EVENT("Unknown", 0);
+    UNKNOWN_EVENT("Unknown", 0),
+    NO_BASELINE_AVAILABLE("No Baseline available", 4);
     private final String displayName;
     private final int sortOrder;
     ClusterType(String displayName, int sortOrder) {

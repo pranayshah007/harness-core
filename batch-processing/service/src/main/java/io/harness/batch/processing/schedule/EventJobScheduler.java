@@ -17,6 +17,7 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static java.lang.String.format;
 
 import io.harness.batch.processing.YamlPropertyLoaderFactory;
+import io.harness.batch.processing.billing.timeseries.service.impl.BatchJobMetadataCleanupServiceImpl;
 import io.harness.batch.processing.billing.timeseries.service.impl.BillingDataServiceImpl;
 import io.harness.batch.processing.billing.timeseries.service.impl.K8sUtilizationGranularDataServiceImpl;
 import io.harness.batch.processing.billing.timeseries.service.impl.PodCountComputationServiceImpl;
@@ -69,6 +70,8 @@ import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -112,6 +115,7 @@ public class EventJobScheduler {
   @Autowired private K8sRecommendationDAO k8sRecommendationDAO;
   @Autowired private InstanceInfoTimescaleDAO instanceInfoTimescaleDAO;
   @Autowired private GovernanceRecommendationService governanceRecommendationService;
+  @Autowired private BatchJobMetadataCleanupServiceImpl batchJobMetadataCleanupService;
 
   @PostConstruct
   public void orderJobs() {
@@ -473,5 +477,19 @@ public class EventJobScheduler {
     } catch (Exception ex) {
       log.error("Exception while running job {}", job);
     }
+  }
+
+  @Value(value = "${batchJobRepository.dataRetentionPeriodInDays}") private int days;
+
+  //  @Scheduled(cron = "0 */2 * * * ?")
+  @Scheduled(cron = "${batchJobRepository.metadataCleanupSchedule}") // Every 30 minutes for testing
+  @ConditionalOnProperty(value = "batchJobRepository.timescaleEnabled", havingValue = "true")
+  public void processBatchJobMetadataCleanUp() {
+    batchJobMetadataCleanupService.deleteOldBatchStepExecutionContext(days);
+    batchJobMetadataCleanupService.deleteOldBatchStepExecution(days);
+    batchJobMetadataCleanupService.deleteOldBatchJobExecutionContext(days);
+    batchJobMetadataCleanupService.deleteOldBatchJobExecutionParams(days);
+    batchJobMetadataCleanupService.deleteOldBatchJobExecution(days);
+    batchJobMetadataCleanupService.deleteOldBatchJobInstance(days);
   }
 }

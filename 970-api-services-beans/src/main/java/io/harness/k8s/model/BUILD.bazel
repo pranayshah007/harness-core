@@ -15,6 +15,7 @@ java_library(
         "//970-api-services-beans/src/main/java/io/harness/k8s/model/harnesscrds:module",
         "//970-api-services-beans/src/main/java/io/harness/k8s/utils:module",
         "//970-api-services-beans/src/main/java/io/harness/yaml:module",
+        "//979-recaster/src/main/java/io/harness/annotation:module",
         "//980-commons/src/main/java/io/harness/data/structure:module",
         "//980-commons/src/main/java/io/harness/data/validator:module",
         "//980-commons/src/main/java/io/harness/exception:module",

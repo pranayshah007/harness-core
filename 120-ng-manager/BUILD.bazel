@@ -61,7 +61,6 @@ shared_dependencies = [
     "//pipeline-service/modules/pms-contracts:module",
     "//920-ng-signup:module",
     "//925-enforcement-service:module",
-    "//930-ng-license-manager:module",
     "//937-persistence-tracer:module",
     "//940-primary-version-manager:module",
     "//942-enforcement-sdk:module",

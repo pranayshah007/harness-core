@@ -16,6 +16,7 @@ import static io.harness.audit.api.impl.AuditServiceImpl.runTimeEvents;
 import static io.harness.audit.beans.PrincipalType.SYSTEM;
 import static io.harness.rule.OwnerRule.KARAN;
 import static io.harness.rule.OwnerRule.REETIKA;
+import static io.harness.rule.OwnerRule.SAHIBA;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.utils.PageTestUtils.getPage;
 
@@ -24,6 +25,7 @@ import static java.util.Collections.singletonList;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
@@ -38,6 +40,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.Action;
 import io.harness.audit.StaticAuditFilter;
 import io.harness.audit.api.AuditService;
+import io.harness.audit.api.AuditSettingsService;
 import io.harness.audit.api.AuditYamlService;
 import io.harness.audit.beans.AuditFilterPropertiesDTO;
 import io.harness.audit.beans.Environment;
@@ -47,6 +50,7 @@ import io.harness.audit.beans.ResourceDTO;
 import io.harness.audit.beans.ResourceScopeDTO;
 import io.harness.audit.entities.AuditEvent;
 import io.harness.audit.entities.AuditEvent.AuditEventKeys;
+import io.harness.audit.entities.AuditSettings;
 import io.harness.audit.remote.StaticAuditFilterV2;
 import io.harness.audit.repositories.AuditRepository;
 import io.harness.category.element.UnitTests;
@@ -74,6 +78,7 @@ public class AuditServiceImplTest extends CategoryTest {
   private AuditFilterPropertiesValidator auditFilterPropertiesValidator;
   private AuditService auditService;
   private TransactionTemplate transactionTemplate;
+  private AuditSettingsService auditSettingsService;
 
   private final PageRequest samplePageRequest = PageRequest.builder().pageIndex(0).pageSize(50).build();
 
@@ -83,9 +88,10 @@ public class AuditServiceImplTest extends CategoryTest {
     auditYamlService = mock(AuditYamlService.class);
     auditFilterPropertiesValidator = mock(AuditFilterPropertiesValidator.class);
     transactionTemplate = mock(TransactionTemplate.class);
+    auditSettingsService = mock(AuditSettingsService.class);
 
-    auditService = spy(
-        new AuditServiceImpl(auditRepository, auditYamlService, auditFilterPropertiesValidator, transactionTemplate));
+    auditService = spy(new AuditServiceImpl(
+        auditRepository, auditYamlService, auditFilterPropertiesValidator, transactionTemplate, auditSettingsService));
     doNothing().when(auditFilterPropertiesValidator).validate(any(), any());
   }
 
@@ -417,5 +423,22 @@ public class AuditServiceImplTest extends CategoryTest {
     assertEquals(1, andList.size());
     Document principalTypeDocument = (Document) andList.get(0);
     assertEquals(SYSTEM, principalTypeDocument.get(AuditEventKeys.PRINCIPAL_TYPE_KEY));
+  }
+
+  @Test
+  @Owner(developers = SAHIBA)
+  @Category(UnitTests.class)
+  public void testClearDeletedAccountAuditInfo() {
+    String accountIdentifier = randomAlphabetic(10);
+    auditService.deleteAuditInfo(accountIdentifier);
+    verify(auditSettingsService, times(1)).deleteByAccountIdentifier(accountIdentifier);
+    Criteria criteria = Criteria.where(AuditEventKeys.ACCOUNT_IDENTIFIER_KEY).is(accountIdentifier);
+    verify(auditRepository, times(1)).delete(criteria);
+    verify(auditYamlService, times(1)).deleteByAccount(accountIdentifier);
+    when(auditRepository.findAll(any(Criteria.class), any(Pageable.class))).thenReturn(getPage(emptyList(), 0));
+    Page<AuditEvent> auditEvents = auditService.list(accountIdentifier, samplePageRequest, null);
+    assertThat(auditEvents.getTotalElements()).isEqualTo(0);
+    AuditSettings auditSettings = auditSettingsService.getAuditRetentionPolicy(accountIdentifier);
+    assertThat(auditSettings).isEqualTo(null);
   }
 }

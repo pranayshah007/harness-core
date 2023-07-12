@@ -7,6 +7,7 @@ awsEntityToBucketMapping {"name": "unique_accountId_awsConnectorIdentifier", "un
 azureRecommendation {"name": "unique_accountId_recommendationId", "unique": true} {"accountId": 1, "recommendationId": 1}
 azureRecommendation {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 batchJobInterval {"name": "accountId_batchJobType", "unique": true} {"accountId": 1, "batchJobType": 1}
+batchJobScheduledData {"name": "accountId_batchJobType_jobInstanceId", "background": true} {"accountId": 1, "batchJobType": 1, "jobInstanceId": 1}
 batchJobScheduledData {"name": "accountId_batchJobType_startAt", "background": true} {"accountId": 1, "batchJobType": 1, "startAt": 1}
 batchJobScheduledData {"name": "accountId_batchJobType_validRun_endAt", "background": true} {"accountId": 1, "batchJobType": 1, "validRun": 1, "endAt": -1}
 batchJobScheduledData {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}

@@ -11,13 +11,18 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.utils.StageStatus;
 
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
 public class StageExecutionEntityUpdateDTO {
+  private String stageName;
+  private String stageIdentifier;
+  private Map<String, String> tags;
   private FailureInfo failureInfo;
+  private StageExecutionSummaryDetails stageExecutionSummaryDetails;
   private Status status;
   private StageStatus stageStatus;
   private Long endTs;

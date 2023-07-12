@@ -7,6 +7,7 @@
 
 package io.harness.cdng.infra;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -16,6 +17,7 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDC)
+@RecasterAlias("io.harness.cdng.infra.Connector")
 public class Connector {
   String name;
 }

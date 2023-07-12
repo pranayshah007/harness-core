@@ -8,15 +8,23 @@
 package io.harness.cdng.manifest.steps;
 
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.execution.ServiceExecutionSummaryDetails;
+import io.harness.cdng.execution.StageExecutionInfoUpdateDTO;
+import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.manifest.mappers.ManifestOutcomeMapper;
+import io.harness.cdng.manifest.mappers.ManifestSummaryMapper;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
+import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.cdng.manifest.yaml.summary.ManifestSummary;
 import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -39,10 +47,12 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -57,6 +67,8 @@ public class ManifestStep implements SyncExecutable<ManifestStepParameters> {
 
   @Inject private ServiceStepsHelper serviceStepsHelper;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
+  @Inject NGFeatureFlagHelperService featureFlagHelperService;
+  @Inject private StageExecutionInfoService stageExecutionInfoService;
 
   @Override
   public Class<ManifestStepParameters> getStepParametersClass() {
@@ -73,12 +85,11 @@ public class ManifestStep implements SyncExecutable<ManifestStepParameters> {
     ManifestAttributes finalManifest = applyManifestsOverlay(stepParameters);
     getConnector(finalManifest, ambiance);
     // logCallback.saveExecutionLog(format("Processed manifest [%s]", stepParameters.getIdentifier()));
+    ManifestOutcome manifestOutcome = ManifestOutcomeMapper.toManifestOutcome(finalManifest, stepParameters.getOrder());
+    saveManifestExecutionDataToStageInfo(ambiance, manifestOutcome);
     return StepResponse.builder()
         .status(Status.SUCCEEDED)
-        .stepOutcome(StepOutcome.builder()
-                         .name("output")
-                         .outcome(ManifestOutcomeMapper.toManifestOutcome(finalManifest, stepParameters.getOrder()))
-                         .build())
+        .stepOutcome(StepOutcome.builder().name("output").outcome(manifestOutcome).build())
         .build();
   }
 
@@ -133,5 +144,40 @@ public class ManifestStep implements SyncExecutable<ManifestStepParameters> {
           String.format("Connector not found for identifier : [%s]", connectorIdentifierRef));
     }
     ConnectorUtils.checkForConnectorValidityOrThrow(connectorDTO.get());
+  }
+
+  public void saveManifestExecutionDataToStageInfo(Ambiance ambiance, ManifestOutcome manifestOutcome) {
+    if (isNull(manifestOutcome)) {
+      return;
+    }
+    if (!featureFlagHelperService.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_CUSTOM_STAGE_EXECUTION_DATA_SYNC)) {
+      return;
+    }
+    try {
+      List<ManifestSummary> manifestsSummary = mapManifestOutcomeToSummary(manifestOutcome);
+      if (isNotEmpty(manifestsSummary)) {
+        stageExecutionInfoService.updateStageExecutionInfo(ambiance,
+            StageExecutionInfoUpdateDTO.builder()
+                .manifestsSummary(ServiceExecutionSummaryDetails.ManifestsSummary.builder()
+                                      .manifestSummaries(manifestsSummary)
+                                      .build())
+                .build());
+      }
+    } catch (Exception e) {
+      log.error(String.format(
+          "[CustomDashboard]: Error while saving manifest info to StageExecutionInfo for accountIdentifier %s, orgIdentifier %s, projectIdentifier %s and stageExecutionId %s",
+          AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+          AmbianceUtils.getProjectIdentifier(ambiance), ambiance.getStageExecutionId()));
+    }
+  }
+
+  private List<ManifestSummary> mapManifestOutcomeToSummary(ManifestOutcome manifestOutcome) {
+    List<ManifestSummary> manifestSummaries = new ArrayList<>();
+    ManifestSummary manifestSummary = ManifestSummaryMapper.toManifestSummary(manifestOutcome);
+    if (manifestSummary != null) {
+      manifestSummaries.add(manifestSummary);
+    }
+    return manifestSummaries;
   }
 }

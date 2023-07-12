@@ -14,7 +14,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
-import io.harness.beans.InputSetValidatorType;
 import io.harness.cdng.artifact.NGArtifactConstants;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
@@ -23,12 +22,15 @@ import io.harness.cdng.artifact.resources.docker.dtos.DockerRequestDTO;
 import io.harness.cdng.artifact.resources.docker.dtos.DockerResponseDTO;
 import io.harness.cdng.artifact.resources.docker.service.DockerResourceService;
 import io.harness.common.NGExpressionUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.validation.RuntimeInputValuesValidator;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
@@ -91,8 +93,9 @@ public class DockerArtifactResource {
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
-      @NotNull @QueryParam("fqnPath") String fqnPath, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
-      @NotNull String runtimeInputYaml, @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
+      @QueryParam(NGArtifactConstants.TAG_INPUT) String tagInput, @NotNull @QueryParam("fqnPath") String fqnPath,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @NotNull String runtimeInputYaml,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
     String tagRegex = null;
     if (isNotEmpty(serviceRef)) {
       final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
@@ -104,10 +107,17 @@ public class DockerArtifactResource {
       if (isEmpty(dockerConnectorIdentifier)) {
         dockerConnectorIdentifier = (String) dockerHubArtifactConfig.getConnectorRef().fetchFinalValue();
       }
-      if (dockerHubArtifactConfig.getTag().getExpressionValue() != null
-          && dockerHubArtifactConfig.getTag().getInputSetValidator() != null
-          && dockerHubArtifactConfig.getTag().getInputSetValidator().getValidatorType()
-              == InputSetValidatorType.REGEX) {
+
+      if (EmptyPredicate.isNotEmpty(tagInput)) {
+        final ParameterField<String> tagRegexParameterField =
+            RuntimeInputValuesValidator.getInputSetParameterField(tagInput);
+        if (tagRegexParameterField != null && artifactResourceUtils.checkValidRegexType(tagRegexParameterField)) {
+          tagRegex = tagRegexParameterField.getInputSetValidator().getParameters();
+        }
+      }
+
+      if (EmptyPredicate.isEmpty(tagRegex)
+          && artifactResourceUtils.checkValidRegexType(dockerHubArtifactConfig.getTag())) {
         tagRegex = dockerHubArtifactConfig.getTag().getInputSetValidator().getParameters();
       }
     }

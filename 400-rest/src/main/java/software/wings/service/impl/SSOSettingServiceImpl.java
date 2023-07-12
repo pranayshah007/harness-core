@@ -593,6 +593,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     settings.getConnectionSettings().setEncryptedBindSecret(
         oldSettings.getConnectionSettings().getEncryptedBindSecret());
     oldSettings.getConnectionSettings().setAccountId(settings.getAccountId());
+    oldSettings.getConnectionSettings().setDelegateSelectors(settings.getConnectionSettings().getDelegateSelectors());
     oldSettings.setUrl(settings.getUrl());
     oldSettings.setDisplayName(settings.getDisplayName());
     oldSettings.setConnectionSettings(settings.getConnectionSettings());

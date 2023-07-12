@@ -71,6 +71,8 @@ import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.TemplateServiceModuleRegistrars;
 import io.harness.service.DelegateServiceDriverModule;
 import io.harness.service.ServiceResourceClientModule;
+import io.harness.telemetry.AbstractTelemetryModule;
+import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.template.event.OrgEntityCrudStreamListener;
 import io.harness.template.event.ProjectEntityCrudStreamListener;
 import io.harness.template.events.TemplateOutboxEventHandler;
@@ -135,6 +137,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 import javax.validation.Validation;
@@ -225,6 +228,13 @@ public class TemplateServiceModule extends AbstractModule {
         TEMPLATE_SERVICE.getServiceId()));
     install(new OpaClientModule(templateServiceConfiguration.getOpaClientConfig(),
         templateServiceConfiguration.getPolicyManagerSecret(), TEMPLATE_SERVICE.getServiceId()));
+
+    install(new AbstractTelemetryModule() {
+      @Override
+      public TelemetryConfiguration telemetryConfiguration() {
+        return templateServiceConfiguration.getSegmentConfiguration();
+      }
+    });
 
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("taskPollExecutor"))
@@ -409,6 +419,18 @@ public class TemplateServiceModule extends AbstractModule {
             templateServiceConfiguration.getTemplateAsyncSetupUsagePoolConfig().getIdleTime(),
             templateServiceConfiguration.getTemplateAsyncSetupUsagePoolConfig().getTimeUnit(),
             new ThreadFactoryBuilder().setNameFormat("TemplateAsyncSetupUsageExecutorService-%d").build()));
+  }
+
+  @Provides
+  @Singleton
+  @Named("TemplateServiceHelperExecutorService")
+  public ExecutorService templateServiceHelperExecutorService() {
+    return new ManagedExecutorService(
+        ThreadPool.create(templateServiceConfiguration.getTemplateServiceHelperPoolConfig().getCorePoolSize(),
+            templateServiceConfiguration.getTemplateServiceHelperPoolConfig().getMaxPoolSize(),
+            templateServiceConfiguration.getTemplateServiceHelperPoolConfig().getIdleTime(),
+            templateServiceConfiguration.getTemplateServiceHelperPoolConfig().getTimeUnit(),
+            new ThreadFactoryBuilder().setNameFormat("TemplateServiceHelperExecutorService-%d").build()));
   }
 
   private ValidatorFactory getValidatorFactory() {

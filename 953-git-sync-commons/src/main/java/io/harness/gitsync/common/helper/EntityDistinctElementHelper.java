@@ -14,15 +14,18 @@ import io.harness.gitsync.common.beans.EntityWithCount;
 import io.harness.gitsync.common.beans.EntityWithCount.EntityWithCountKeys;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationOptions;
 import org.springframework.data.mongodb.core.aggregation.CountOperation;
 import org.springframework.data.mongodb.core.aggregation.GroupOperation;
 import org.springframework.data.mongodb.core.aggregation.MatchOperation;
+import org.springframework.data.mongodb.core.query.Collation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.repository.support.PageableExecutionUtils;
 
@@ -42,8 +45,18 @@ public class EntityDistinctElementHelper {
     final GroupOperation distinctGroupStage = Aggregation.group(distinctKeys);
     final CountOperation totalStage = Aggregation.count().as(EntityWithCountKeys.total);
 
-    final Aggregation aggregationForEntity = Aggregation.newAggregation(matchStage, groupOperation,
-        Aggregation.skip(pageable.getPageNumber() * pageable.getPageSize()), Aggregation.limit(pageable.getPageSize()));
+    // Create a Collation object with the desired collation options
+    Collation collation = Collation.of(Locale.ENGLISH).strength(2);
+
+    // Create AggregationOptions and set the collation
+    AggregationOptions aggregationOptions = AggregationOptions.builder().collation(collation).build();
+    final Aggregation aggregationForEntity =
+        Aggregation
+            .newAggregation(matchStage, groupOperation,
+                Aggregation.skip(pageable.getPageNumber() * pageable.getPageSize()),
+                Aggregation.limit(pageable.getPageSize()))
+            .withOptions(aggregationOptions);
+
     final Aggregation aggregationForCount = Aggregation.newAggregation(matchStage, distinctGroupStage, totalStage);
     final String collectionName = mongoTemplate.getCollectionName(entityClass);
 

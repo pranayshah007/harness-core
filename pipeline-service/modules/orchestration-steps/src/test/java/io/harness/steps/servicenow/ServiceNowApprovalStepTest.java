@@ -8,12 +8,14 @@
 package io.harness.steps.servicenow;
 
 import static io.harness.eraro.ErrorCode.APPROVAL_REJECTION;
+import static io.harness.rule.OwnerRule.ABHINAV_MITTAL;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -23,6 +25,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
 import io.harness.delegate.task.shell.ShellScriptTaskNG;
 import io.harness.exception.ApprovalStepNGException;
 import io.harness.exception.InvalidRequestException;
@@ -40,6 +43,7 @@ import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.ServiceNowChangeWindowSpec;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
+import io.harness.steps.approval.step.servicenow.ServiceNowApprovalHelperService;
 import io.harness.steps.approval.step.servicenow.ServiceNowApprovalOutCome;
 import io.harness.steps.approval.step.servicenow.ServiceNowApprovalSpecParameters;
 import io.harness.steps.approval.step.servicenow.ServiceNowApprovalStep;
@@ -69,12 +73,15 @@ public class ServiceNowApprovalStepTest extends CategoryTest {
   @Mock ApprovalInstanceService approvalInstanceService;
   @Mock LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Mock ExecutorService dashboardExecutorService;
+  @Mock ServiceNowApprovalHelperService serviceNowApprovalHelperService;
   @InjectMocks private ServiceNowApprovalStep serviceNowApprovalStep;
   private ILogStreamingStepClient logStreamingStepClient;
 
   @Before
   public void setup() {
     logStreamingStepClient = mock(ILogStreamingStepClient.class);
+    when(serviceNowApprovalHelperService.getServiceNowConnector(anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(ServiceNowConnectorDTO.builder().build());
     when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(logStreamingStepClient);
   }
 
@@ -117,6 +124,20 @@ public class ServiceNowApprovalStepTest extends CategoryTest {
     assertThat(instance.getChangeWindow().getStartField()).isEqualTo(CHANGE_WINDOW_START);
     assertThat(instance.getChangeWindow().getEndField()).isEqualTo(CHANGE_WINDOW_END);
     verify(logStreamingStepClient, times(4)).openStream(ShellScriptTaskNG.COMMAND_UNIT);
+  }
+
+  @Test
+  @Owner(developers = ABHINAV_MITTAL)
+  @Category(UnitTests.class)
+  public void testExecuteAsyncWhenConnectorRefIsWrong() {
+    Ambiance ambiance = buildAmbiance();
+    when(serviceNowApprovalHelperService.getServiceNowConnector(anyString(), anyString(), anyString(), anyString()))
+        .thenThrow(
+            new InvalidRequestException(String.format("Connector not found for identifier : [%s]", "connectorReg")));
+    StepElementParameters parameters = getStepElementParameters(TICKET_NUMBER, PROBLEM, CONNECTOR);
+    assertThatThrownBy(() -> serviceNowApprovalStep.executeAsync(ambiance, parameters, null, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(String.format("Connector not found for identifier : [%s]", "connectorReg"));
   }
 
   @Test

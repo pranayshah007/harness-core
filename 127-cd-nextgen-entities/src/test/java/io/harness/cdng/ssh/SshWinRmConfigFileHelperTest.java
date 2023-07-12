@@ -97,13 +97,15 @@ public class SshWinRmConfigFileHelperTest extends CategoryTest {
     configFilesOutcome.put(
         "validConfigFile", ConfigFileOutcome.builder().identifier("validConfigFile").store(harnessStore).build());
     when(cdExpressionResolver.updateExpressions(ambiance, harnessStore)).thenReturn(harnessStore);
+    when(cdExpressionResolver.renderExpression(eq(ambiance), anyString(), anyBoolean()))
+        .thenReturn(CONFIG_FILE_CONTENT);
     when(fileStoreService.getWithChildrenByPath(ACCOUNT_ID, ORG_ID, PROJECT_ID, CONFIG_FILE_VALID_PATH, true))
         .thenReturn(Optional.of(getFileNodeDTO()));
     when(ngEncryptedDataService.getEncryptionDetails(any(), any()))
         .thenReturn(List.of(EncryptedDataDetail.builder().fieldName(ENCRYPTED_FILE_NAME).build()));
 
     FileDelegateConfig fileDelegateConfig =
-        sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance, false);
+        sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance);
 
     assertThat(fileDelegateConfig.getStores()).isNotEmpty();
     List<StoreDelegateConfig> stores = fileDelegateConfig.getStores();
@@ -175,7 +177,7 @@ public class SshWinRmConfigFileHelperTest extends CategoryTest {
         .thenReturn(List.of(EncryptedDataDetail.builder().fieldName(ENCRYPTED_FILE_NAME).build()));
 
     FileDelegateConfig fileDelegateConfig =
-        sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance, false);
+        sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance);
 
     assertThat(fileDelegateConfig.getStores()).isNotEmpty();
     List<StoreDelegateConfig> stores = fileDelegateConfig.getStores();
@@ -204,7 +206,7 @@ public class SshWinRmConfigFileHelperTest extends CategoryTest {
     when(cdExpressionResolver.renderExpression(eq(ambiance), any(), anyBoolean())).thenReturn(CONFIG_FILE_CONTENT);
 
     FileDelegateConfig fileDelegateConfig =
-        sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance, true);
+        sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance);
 
     assertThat(fileDelegateConfig.getStores()).isNotEmpty();
     List<StoreDelegateConfig> stores = fileDelegateConfig.getStores();
@@ -237,7 +239,7 @@ public class SshWinRmConfigFileHelperTest extends CategoryTest {
         .thenReturn(List.of(EncryptedDataDetail.builder().fieldName(ENCRYPTED_FILE_NAME).build()));
 
     FileDelegateConfig fileDelegateConfig =
-        sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance, true);
+        sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance);
 
     assertThat(fileDelegateConfig.getStores()).isNotEmpty();
     List<StoreDelegateConfig> stores = fileDelegateConfig.getStores();
@@ -267,7 +269,7 @@ public class SshWinRmConfigFileHelperTest extends CategoryTest {
     when(fileStoreService.getWithChildrenByPath(ACCOUNT_ID, ORG_ID, PROJECT_ID, CONFIG_FILE_VALID_PATH, true))
         .thenReturn(Optional.of(getFileNodeDTOWith16MBFile()));
 
-    assertThatThrownBy(() -> sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance, false))
+    assertThatThrownBy(() -> sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Config file size is larger than maximum [15728640], path [validFilePath], scope: [PROJECT]");
   }
@@ -286,7 +288,7 @@ public class SshWinRmConfigFileHelperTest extends CategoryTest {
     when(fileStoreService.getWithChildrenByPath(ACCOUNT_ID, ORG_ID, PROJECT_ID, CONFIG_FILE_VALID_PATH, true))
         .thenReturn(Optional.of(getFolderNodeDTO()));
 
-    assertThatThrownBy(() -> sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance, false))
+    assertThatThrownBy(() -> sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Config file cannot be directory, path [validFilePath], scope: [PROJECT]");
   }

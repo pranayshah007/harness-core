@@ -234,9 +234,8 @@ public class FileStoreServiceImpl implements FileStoreService {
 
   @Override
   public String getFileContentAsString(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String scopedFileIdentifier, long allowedBytesFileSize) {
-    FileReference fileReference =
-        FileReference.of(scopedFileIdentifier, accountIdentifier, orgIdentifier, projectIdentifier);
+      String scopedFilePath, long allowedBytesFileSize) {
+    FileReference fileReference = FileReference.of(scopedFilePath, accountIdentifier, orgIdentifier, projectIdentifier);
 
     Optional<FileStoreNodeDTO> file = getWithChildrenByPath(fileReference.getAccountIdentifier(),
         fileReference.getOrgIdentifier(), fileReference.getProjectIdentifier(), fileReference.getPath(), true);
@@ -255,7 +254,7 @@ public class FileStoreServiceImpl implements FileStoreService {
 
     String content = ((FileNodeDTO) fileStoreNodeDTO).getContent();
     if (content.getBytes(StandardCharsets.UTF_8).length > allowedBytesFileSize) {
-      throw new InvalidRequestException(format("Too large file, scopedFileIdentifier: %s", scopedFileIdentifier));
+      throw new InvalidRequestException(format("Too large file, scopedFilePath: %s", scopedFilePath));
     }
 
     return content;

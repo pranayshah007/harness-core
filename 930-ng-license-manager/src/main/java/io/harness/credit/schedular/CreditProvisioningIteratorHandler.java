@@ -8,8 +8,6 @@ package io.harness.credit.schedular;
 
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.IRREGULAR;
 
-import static java.time.Duration.ofDays;
-import static java.time.Duration.ofHours;
 import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 
@@ -44,8 +42,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public class CreditProvisioningIteratorHandler implements Handler<CIModuleLicense> {
   protected static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(1);
   protected static final Duration ACCEPTABLE_EXECUTION_TIME = ofSeconds(30);
-  protected static final Duration TARGET_INTERVAL = ofDays(27);
-  protected static final Duration INTERVAL = ofHours(6);
+  protected static final Duration TARGET_INTERVAL = ofMinutes(10);
+  protected static final Duration INTERVAL = ofMinutes(10);
 
   private static final int FREE_CREDITS_QUANTITY = 2000;
 
@@ -93,7 +91,12 @@ public class CreditProvisioningIteratorHandler implements Handler<CIModuleLicens
   }
 
   protected SpringFilterExpander getFilterQuery() {
-    return query -> query.addCriteria(new Criteria().and(ModuleLicenseKeys.status).is(LicenseStatus.ACTIVE));
+    return query
+        -> query.addCriteria(new Criteria()
+                                 .and(ModuleLicenseKeys.status)
+                                 .is(LicenseStatus.ACTIVE)
+                                 .and(ModuleLicenseKeys.moduleType)
+                                 .is(ModuleType.CI));
   }
 
   private static Calendar getStartOfNextMonth() {
@@ -108,19 +111,13 @@ public class CreditProvisioningIteratorHandler implements Handler<CIModuleLicens
     return calendar;
   }
 
-  private static Calendar getStartOfMonthFollowingNext() {
-    Calendar calendar = getStartOfNextMonth();
-    calendar.add(Calendar.MONTH, 1);
-    return calendar;
-  }
-
   private CreditDTO buildCreditDTO(CIModuleLicense entity) {
     return CICreditDTO.builder()
         .accountIdentifier(entity.getAccountIdentifier())
         .creditStatus(CreditStatus.ACTIVE)
         .quantity(FREE_CREDITS_QUANTITY)
-        .purchaseTime(getStartOfNextMonth().getTimeInMillis())
-        .expiryTime(getStartOfMonthFollowingNext().getTimeInMillis())
+        .purchaseTime(System.currentTimeMillis())
+        .expiryTime(getStartOfNextMonth().getTimeInMillis())
         .creditType(CreditType.FREE)
         .moduleType(ModuleType.CI)
         .build();

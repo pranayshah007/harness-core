@@ -86,5 +86,5 @@ public class OutcomeExpressionConstants {
   public final String SSH_WINRM_PREPARE_ROLLBACK_DATA_OUTCOME = "sshWinRmPrepareRollbackDataOutcome";
   public final String AWS_SAM_VALUES_YAML_DATA_OUTCOME = "AwsSamValuesYamlDataOutcome";
   public final String SERVERLESS_VALUES_YAML_DATA_OUTCOME = "ServerlessValuesYamlDataOutcome";
-  public final String SERVICE_VARIABLES_OUTCOME = "serviceVariables";
+  public final String SERVERLESS_V2_DIRECTORY_PATH_OUTCOME = "serverlessV2";
 }

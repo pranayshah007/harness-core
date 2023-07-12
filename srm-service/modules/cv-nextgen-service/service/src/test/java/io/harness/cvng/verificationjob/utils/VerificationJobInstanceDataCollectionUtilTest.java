@@ -42,12 +42,12 @@ public class VerificationJobInstanceDataCollectionUtilTest extends CvNextGenTest
     VerificationJobInstance verificationJobInstance =
         builderFactory.verificationJobInstanceBuilder()
             .resolvedJob(builderFactory.canaryVerificationJobBuilder().build())
-            .serviceInstanceDetailsFromCD(ServiceInstanceDetails.builder()
-                                              .valid(false)
-                                              .deployedServiceInstances(Arrays.asList("c1", "c2"))
-                                              .serviceInstancesBeforeDeployment(Arrays.asList("p1", "p2", "p3"))
-                                              .serviceInstancesAfterDeployment(Arrays.asList("p1", "p2", "c1", "c2"))
-                                              .build())
+            .serviceInstanceDetails(ServiceInstanceDetails.builder()
+                                        .shouldUseNodesFromCD(false)
+                                        .deployedServiceInstances(Arrays.asList("c1", "c2"))
+                                        .serviceInstancesBeforeDeployment(Arrays.asList("p1", "p2", "p3"))
+                                        .serviceInstancesAfterDeployment(Arrays.asList("p1", "p2", "c1", "c2"))
+                                        .build())
             .build();
     assertThat(VerificationJobInstanceDataCollectionUtils.shouldCollectPreDeploymentData(verificationJobInstance))
         .isTrue();
@@ -60,12 +60,12 @@ public class VerificationJobInstanceDataCollectionUtilTest extends CvNextGenTest
     VerificationJobInstance verificationJobInstance =
         builderFactory.verificationJobInstanceBuilder()
             .resolvedJob(builderFactory.canaryVerificationJobBuilder().build())
-            .serviceInstanceDetailsFromCD(ServiceInstanceDetails.builder()
-                                              .valid(true)
-                                              .deployedServiceInstances(Arrays.asList("c1", "c2"))
-                                              .serviceInstancesBeforeDeployment(Arrays.asList("p1", "p2", "p3"))
-                                              .serviceInstancesAfterDeployment(Arrays.asList("p1", "p2", "c1", "c2"))
-                                              .build())
+            .serviceInstanceDetails(ServiceInstanceDetails.builder()
+                                        .shouldUseNodesFromCD(true)
+                                        .deployedServiceInstances(Arrays.asList("c1", "c2"))
+                                        .serviceInstancesBeforeDeployment(Arrays.asList("p1", "p2", "p3"))
+                                        .serviceInstancesAfterDeployment(Arrays.asList("p1", "p2", "c1", "c2"))
+                                        .build())
             .build();
     assertThat(VerificationJobInstanceDataCollectionUtils.shouldCollectPreDeploymentData(verificationJobInstance))
         .isFalse();
@@ -78,12 +78,12 @@ public class VerificationJobInstanceDataCollectionUtilTest extends CvNextGenTest
     VerificationJobInstance verificationJobInstance =
         builderFactory.verificationJobInstanceBuilder()
             .resolvedJob(builderFactory.autoVerificationJobBuilder().build())
-            .serviceInstanceDetailsFromCD(ServiceInstanceDetails.builder()
-                                              .valid(true)
-                                              .deployedServiceInstances(Arrays.asList("c1", "c2"))
-                                              .serviceInstancesBeforeDeployment(Arrays.asList("p1", "p2", "p3"))
-                                              .serviceInstancesAfterDeployment(Arrays.asList("p1", "p2", "c1", "c2"))
-                                              .build())
+            .serviceInstanceDetails(ServiceInstanceDetails.builder()
+                                        .shouldUseNodesFromCD(true)
+                                        .deployedServiceInstances(Arrays.asList("c1", "c2"))
+                                        .serviceInstancesBeforeDeployment(Arrays.asList("p1", "p2", "p3"))
+                                        .serviceInstancesAfterDeployment(Arrays.asList("p1", "p2", "c1", "c2"))
+                                        .build())
             .build();
     assertThat(VerificationJobInstanceDataCollectionUtils.shouldCollectPreDeploymentData(verificationJobInstance))
         .isFalse();
@@ -96,12 +96,12 @@ public class VerificationJobInstanceDataCollectionUtilTest extends CvNextGenTest
     VerificationJobInstance verificationJobInstance =
         builderFactory.verificationJobInstanceBuilder()
             .resolvedJob(builderFactory.autoVerificationJobBuilder().build())
-            .serviceInstanceDetailsFromCD(ServiceInstanceDetails.builder()
-                                              .valid(true)
-                                              .deployedServiceInstances(Arrays.asList("c1", "c2"))
-                                              .serviceInstancesBeforeDeployment(Arrays.asList("p1", "p2", "p3"))
-                                              .serviceInstancesAfterDeployment(Arrays.asList("c1", "c2"))
-                                              .build())
+            .serviceInstanceDetails(ServiceInstanceDetails.builder()
+                                        .shouldUseNodesFromCD(true)
+                                        .deployedServiceInstances(Arrays.asList("c1", "c2"))
+                                        .serviceInstancesBeforeDeployment(Arrays.asList("p1", "p2", "p3"))
+                                        .serviceInstancesAfterDeployment(Arrays.asList("c1", "c2"))
+                                        .build())
             .build();
     assertThat(VerificationJobInstanceDataCollectionUtils.shouldCollectPreDeploymentData(verificationJobInstance))
         .isTrue();
@@ -114,12 +114,12 @@ public class VerificationJobInstanceDataCollectionUtilTest extends CvNextGenTest
     VerificationJobInstance verificationJobInstance =
         builderFactory.verificationJobInstanceBuilder()
             .resolvedJob(builderFactory.blueGreenVerificationJobBuilder().build())
-            .serviceInstanceDetailsFromCD(ServiceInstanceDetails.builder()
-                                              .valid(true)
-                                              .deployedServiceInstances(Arrays.asList("c1", "c2"))
-                                              .serviceInstancesBeforeDeployment(Arrays.asList("p1", "p2", "p3"))
-                                              .serviceInstancesAfterDeployment(Arrays.asList("c1", "c2"))
-                                              .build())
+            .serviceInstanceDetails(ServiceInstanceDetails.builder()
+                                        .shouldUseNodesFromCD(true)
+                                        .deployedServiceInstances(Arrays.asList("c1", "c2"))
+                                        .serviceInstancesBeforeDeployment(Arrays.asList("p1", "p2", "p3"))
+                                        .serviceInstancesAfterDeployment(Arrays.asList("c1", "c2"))
+                                        .build())
             .build();
     assertThat(VerificationJobInstanceDataCollectionUtils.shouldCollectPreDeploymentData(verificationJobInstance))
         .isTrue();
@@ -132,12 +132,12 @@ public class VerificationJobInstanceDataCollectionUtilTest extends CvNextGenTest
     VerificationJobInstance verificationJobInstance =
         builderFactory.verificationJobInstanceBuilder()
             .resolvedJob(builderFactory.blueGreenVerificationJobBuilder().build())
-            .serviceInstanceDetailsFromCD(ServiceInstanceDetails.builder()
-                                              .valid(false)
-                                              .deployedServiceInstances(Arrays.asList("c1", "c2"))
-                                              .serviceInstancesBeforeDeployment(Arrays.asList("p1", "p2", "p3"))
-                                              .serviceInstancesAfterDeployment(Arrays.asList("c1", "c2"))
-                                              .build())
+            .serviceInstanceDetails(ServiceInstanceDetails.builder()
+                                        .shouldUseNodesFromCD(false)
+                                        .deployedServiceInstances(Arrays.asList("c1", "c2"))
+                                        .serviceInstancesBeforeDeployment(Arrays.asList("p1", "p2", "p3"))
+                                        .serviceInstancesAfterDeployment(Arrays.asList("c1", "c2"))
+                                        .build())
             .build();
     assertThat(VerificationJobInstanceDataCollectionUtils.shouldCollectPreDeploymentData(verificationJobInstance))
         .isTrue();
@@ -150,9 +150,9 @@ public class VerificationJobInstanceDataCollectionUtilTest extends CvNextGenTest
     VerificationJobInstance verificationJobInstance =
         builderFactory.verificationJobInstanceBuilder()
             .resolvedJob(builderFactory.autoVerificationJobBuilder().build())
-            .serviceInstanceDetailsFromCD(
+            .serviceInstanceDetails(
                 ServiceInstanceDetails.builder()
-                    .valid(true)
+                    .shouldUseNodesFromCD(true)
                     .deployedServiceInstances(
                         IntStream.range(0, 200).boxed().map(i -> "c" + i).collect(Collectors.toList()))
                     .serviceInstancesBeforeDeployment(
@@ -177,9 +177,9 @@ public class VerificationJobInstanceDataCollectionUtilTest extends CvNextGenTest
     VerificationJobInstance verificationJobInstance =
         builderFactory.verificationJobInstanceBuilder()
             .resolvedJob(builderFactory.canaryVerificationJobBuilder().build())
-            .serviceInstanceDetailsFromCD(
+            .serviceInstanceDetails(
                 ServiceInstanceDetails.builder()
-                    .valid(true)
+                    .shouldUseNodesFromCD(true)
                     .deployedServiceInstances(
                         IntStream.range(0, 200).boxed().map(i -> "c" + i).collect(Collectors.toList()))
                     .serviceInstancesBeforeDeployment(
@@ -209,9 +209,9 @@ public class VerificationJobInstanceDataCollectionUtilTest extends CvNextGenTest
     VerificationJobInstance verificationJobInstance =
         builderFactory.verificationJobInstanceBuilder()
             .resolvedJob(builderFactory.blueGreenVerificationJobBuilder().build())
-            .serviceInstanceDetailsFromCD(
+            .serviceInstanceDetails(
                 ServiceInstanceDetails.builder()
-                    .valid(true)
+                    .shouldUseNodesFromCD(true)
                     .deployedServiceInstances(
                         IntStream.range(0, 200).boxed().map(i -> "g" + i).collect(Collectors.toList()))
                     .serviceInstancesBeforeDeployment(

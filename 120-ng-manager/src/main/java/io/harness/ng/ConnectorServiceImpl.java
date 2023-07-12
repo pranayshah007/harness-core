@@ -16,6 +16,7 @@ import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.errorhandling.NGErrorHelper.DEFAULT_ERROR_SUMMARY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_IDENTIFIER_METRICS_KEY;
+import static io.harness.exception.HintException.HINT_INVALID_GIT_API_AUTHORIZATION;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.ng.NextGenModule.SECRET_MANAGER_CONNECTOR_SERVICE;
@@ -40,6 +41,7 @@ import io.harness.connector.ConnectorConnectivityDetails.ConnectorConnectivityDe
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.ConnectorInternalFilterPropertiesDTO;
 import io.harness.connector.ConnectorRegistryFactory;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
@@ -648,11 +650,37 @@ public class ConnectorServiceImpl implements ConnectorService {
       Connector connector =
           getConnectorWithIdentifier(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier);
       setConnectivityStatusInConnector(connector, connectorValidationResult, connector.getConnectivityDetails());
+      updatePTForGitConnector(connectorValidationResult, connector, accountIdentifier, orgIdentifier, projectIdentifier,
+          connectorIdentifier);
+
       connectorRepository.save(connector, ChangeType.NONE);
     } catch (Exception ex) {
       log.error("Error saving the connector status for the connector {}",
           String.format(CONNECTOR_STRING, connectorIdentifier, accountIdentifier, orgIdentifier, projectIdentifier),
           ex);
+    }
+  }
+
+  private void updatePTForGitConnector(ConnectorValidationResult connectorValidationResult, Connector connector,
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
+    if (connectorValidationResult.getStatus() == SUCCESS) {
+      startPTForGitConnector(connectorValidationResult, connector, accountIdentifier);
+    } else if (connectorValidationResult.getStatus() == FAILURE) {
+      deletePTForGitConnector(connectorValidationResult, connector, accountIdentifier);
+    }
+  }
+
+  private void startPTForGitConnector(
+      ConnectorValidationResult connectorValidationResult, Connector connector, String accountIdentifier) {
+    // Start PT if connection success and doesnt exist
+    if (connectorValidationResult.getStatus() == SUCCESS && connector.getType() == ConnectorType.GITHUB
+        && connector.getHeartbeatPerpetualTaskId() == null && connector.getExecuteOnDelegate()) {
+      PerpetualTaskId connectorHeartbeatTaskId = connectorHeartbeatService.createConnectorHeatbeatTask(
+          accountIdentifier, connector.getOrgIdentifier(), connector.getProjectIdentifier(), connector.getIdentifier());
+      log.info("Started Heartbeat Perpetual task for connector {} with taskID {}", connector.getAccountIdentifier(),
+          connectorHeartbeatTaskId.getId());
+
+      connector.setHeartbeatPerpetualTaskId(connectorHeartbeatTaskId == null ? null : connectorHeartbeatTaskId.getId());
     }
   }
 
@@ -690,6 +718,23 @@ public class ConnectorServiceImpl implements ConnectorService {
     }
   }
 
+  private void deletePTForGitConnector(
+      ConnectorValidationResult connectorValidationResult, Connector connector, String accountIdentifier) {
+    // Delete PT during connection failure if it exist
+    if (connectorValidationResult.getErrorSummary().contains(HINT_INVALID_GIT_API_AUTHORIZATION)
+        && connector.getType() == ConnectorType.GITHUB && connector.getHeartbeatPerpetualTaskId() != null) {
+      String fullyQualifiedIdentifier = FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(
+          accountIdentifier, connector.getOrgIdentifier(), connector.getProjectIdentifier(), connector.getIdentifier());
+      boolean isConnectorHeartbeatDeleted = deleteConnectorHeartbeatTask(
+          accountIdentifier, fullyQualifiedIdentifier, connector.getHeartbeatPerpetualTaskId());
+      if (isConnectorHeartbeatDeleted) {
+        log.info("Deleted Heartbeat Perpetual task for connector {} with taskID {} due to invalid Auth",
+            connector.getAccountIdentifier(), connector.getHeartbeatPerpetualTaskId());
+        connector.setHeartbeatPerpetualTaskId(null);
+      }
+    }
+  }
+
   private void setLastUpdatedTimeIfNotPresent(Connector connector) {
     if (connector.getTimeWhenConnectorIsLastUpdated() == null) {
       connector.setTimeWhenConnectorIsLastUpdated(connector.getCreatedAt());
@@ -724,6 +769,9 @@ public class ConnectorServiceImpl implements ConnectorService {
     }
     if (connectorValidationResult != null) {
       setConnectivityStatusInConnector(connector, connectorValidationResult, connector.getConnectivityDetails());
+      if (connectorValidationResult.getStatus() == FAILURE) {
+        deletePTForGitConnector(connectorValidationResult, connector, accountIdentifier);
+      }
     }
     connectorRepository.save(connector, ChangeType.NONE);
   }
@@ -838,6 +886,12 @@ public class ConnectorServiceImpl implements ConnectorService {
       Boolean getDistinctFromBranches, Pageable pageable) {
     return defaultConnectorService.listCcmK8S(accountIdentifier, filterProperties, orgIdentifier, projectIdentifier,
         filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable);
+  }
+
+  @Override
+  public Page<ConnectorResponseDTO> list(
+      ConnectorInternalFilterPropertiesDTO connectorInternalFilterPropertiesDTO, Pageable pageable) {
+    return defaultConnectorService.list(connectorInternalFilterPropertiesDTO, pageable);
   }
 
   @Override

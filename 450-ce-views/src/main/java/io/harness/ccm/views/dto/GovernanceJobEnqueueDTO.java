@@ -7,6 +7,7 @@
 
 package io.harness.ccm.views.dto;
 
+import io.harness.ccm.governance.entities.RecommendationAdhocDTO;
 import io.harness.ccm.views.helper.RuleCloudProviderType;
 import io.harness.ccm.views.helper.RuleExecutionType;
 
@@ -20,15 +21,12 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class GovernanceJobEnqueueDTO {
   String ruleEnforcementId;
-  String roleArn;
-  String externalId;
+  RecommendationAdhocDTO targetAccountDetails;
   RuleCloudProviderType ruleCloudProviderType;
   String ruleId;
   String policy;
-  String targetAccountId;
   String targetRegion;
   Boolean isDryRun;
   Boolean isOOTB;
   RuleExecutionType executionType;
-  String identifier;
 }

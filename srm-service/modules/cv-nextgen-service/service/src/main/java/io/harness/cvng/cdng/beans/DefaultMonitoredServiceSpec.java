@@ -9,7 +9,6 @@ package io.harness.cvng.cdng.beans;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cvng.cdng.beans.v2.DefaultAndConfiguredMonitoredServiceSpec;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;

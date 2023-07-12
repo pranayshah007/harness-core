@@ -139,6 +139,7 @@ public abstract class Connector implements PersistentEntity, NGAccountAccess, Gi
         ConnectorKeys.connectivityDetails + "." + ConnectorConnectivityDetailsKeys.status;
     public static final String tagKey = ConnectorKeys.tags + "." + NGTagKeys.key;
     public static final String tagValue = ConnectorKeys.tags + "." + NGTagKeys.value;
+    public static final String featuresEnabled = "featuresEnabled";
   }
 
   public static List<MongoIndex> mongoIndexes() {
@@ -204,6 +205,17 @@ public abstract class Connector implements PersistentEntity, NGAccountAccess, Gi
         .add(CompoundMongoIndex.builder()
                  .name("type_nextTokenLookupIteration")
                  .fields(Arrays.asList(ConnectorKeys.type, VaultConnectorKeys.nextTokenLookupIteration))
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_type_status_featuresEnabled_decreasing_sort_Index")
+                 .fields(Arrays.asList(ConnectorKeys.accountIdentifier, ConnectorKeys.type,
+                     ConnectorKeys.connectionStatus, ConnectorKeys.featuresEnabled))
+                 .descSortField(ConnectorKeys.lastModifiedAt)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_status_decreasing_sort_Index")
+                 .fields(Arrays.asList(ConnectorKeys.accountIdentifier, ConnectorKeys.connectionStatus))
+                 .descSortField(ConnectorKeys.lastModifiedAt)
                  .build())
         .build();
   }

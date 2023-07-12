@@ -115,10 +115,10 @@ public class NGTriggerWebhookConfigResourceImpl implements NGTriggerWebhookConfi
     httpHeaders.getRequestHeaders().forEach(
         (k, v) -> headerConfigs.add(HeaderConfig.builder().key(k).values(v).build()));
 
-    TriggerWebhookEvent eventEntity =
-        ngTriggerElementMapper
-            .toNGTriggerWebhookEvent(accountIdentifier, orgIdentifier, projectIdentifier, eventPayload, headerConfigs)
-            .build();
+    TriggerWebhookEvent eventEntity = ngTriggerElementMapper
+                                          .toNGTriggerWebhookEvent(accountIdentifier, orgIdentifier, projectIdentifier,
+                                              eventPayload, headerConfigs, null)
+                                          .build();
     if (eventEntity != null) {
       TriggerWebhookEvent newEvent = ngTriggerService.addEventToQueue(eventEntity);
       return ResponseDTO.newResponse(newEvent.getUuid());

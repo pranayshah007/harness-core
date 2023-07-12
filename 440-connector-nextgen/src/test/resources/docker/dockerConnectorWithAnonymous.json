@@ -3,11 +3,12 @@
     "name": "name",
     "identifier": "identifier",
     "description": "description",
+    "accountIdentifier": "accountIdentifier",
     "orgIdentifier": "orgIdentifier",
     "projectIdentifier": "projectIdentifier",
     "tags": {
-      "company" : "Harness",
-      "env" : "dev"
+      "company": "Harness",
+      "env": "dev"
     },
     "type": "DockerRegistry",
     "spec": {

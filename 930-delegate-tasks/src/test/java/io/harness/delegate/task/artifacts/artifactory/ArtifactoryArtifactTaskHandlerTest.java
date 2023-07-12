@@ -267,6 +267,7 @@ public class ArtifactoryArtifactTaskHandlerTest extends CategoryTest {
                                                                      .repositoryFormat(RepositoryFormat.generic.name())
                                                                      .artifactDirectory(ARTIFACT_DIRECTORY)
                                                                      .artifactoryConnectorDTO(artifactoryConnectorDTO)
+                                                                     .artifactPathFilter(".*")
                                                                      .build();
 
     String artifactDirectory = sourceAttributes.getArtifactDirectory();
@@ -274,8 +275,8 @@ public class ArtifactoryArtifactTaskHandlerTest extends CategoryTest {
 
     doReturn(Lists.newArrayList(buildDetailsInternal))
         .when(artifactoryNgService)
-        .getArtifactList(
-            artifactoryInternalConfig, sourceAttributes.getRepositoryName(), filePath, MAX_NO_OF_TAGS_PER_ARTIFACT);
+        .getArtifactList(artifactoryInternalConfig, sourceAttributes.getRepositoryName(), filePath,
+            MAX_NO_OF_TAGS_PER_ARTIFACT, sourceAttributes.getArtifactPathFilter(), artifactDirectory);
 
     ArtifactTaskExecutionResponse lastSuccessfulBuild = artifactoryArtifactService.getBuilds(sourceAttributes);
     assertThat(lastSuccessfulBuild).isNotNull();

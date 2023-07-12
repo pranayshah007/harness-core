@@ -408,12 +408,9 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
 
   private Object[][] getDeploymentStageConfigWithFilters() throws IOException {
     final DeploymentStageNode node1 =
-        getDeploymentStageNodeFromYaml("multisvcinfra/deployStageWithEnvironmentAndFilter.yaml");
-
-    final DeploymentStageNode node2 =
         getDeploymentStageNodeFromYaml("multisvcinfra/gitops/deployStageWithEnvironmentAndFilter.yaml");
 
-    return new Object[][] {{node1}, {node2}};
+    return new Object[][] {{node1}};
   }
   private Object[][] getDeploymentStageConfig() {
     final DeploymentStageNode node1 = new DeploymentStageNode();
@@ -688,7 +685,20 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
             .deploymentType(KUBERNETES)
             .build());
 
-    return new Object[][] {{node1}, {node2}, {node3}, {node4}, {node5}, {node6}, {node7}, {node8}};
+    final DeploymentStageNode node9 = new DeploymentStageNode();
+    node9.setDeploymentStageConfig(
+        DeploymentStageConfig.builder()
+            .service(ServiceYamlV2.builder()
+                         .serviceRef(ParameterField.<String>builder().value(serviceEntity.getIdentifier()).build())
+                         .build())
+            .environment(EnvironmentYamlV2.builder()
+                             .environmentRef(ParameterField.<String>builder().value(envEntity.getIdentifier()).build())
+                             .build())
+            .deploymentType(KUBERNETES)
+            .gitOpsEnabled(Boolean.FALSE)
+            .build());
+
+    return new Object[][] {{node1}, {node2}, {node3}, {node4}, {node5}, {node6}, {node7}, {node8}, {node9}};
   }
   private Object[][] getDeploymentStageConfigEnvGroup() throws IOException {
     final DeploymentStageNode node1 =

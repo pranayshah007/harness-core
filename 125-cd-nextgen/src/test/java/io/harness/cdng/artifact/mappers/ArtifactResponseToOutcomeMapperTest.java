@@ -556,6 +556,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
     assertThat(((CustomArtifactOutcome) artifactOutcome).getVersion()).isEqualTo("build-x");
     assertThat(((CustomArtifactOutcome) artifactOutcome).getDisplayName()).isEqualTo("BuildName");
     assertThat(((CustomArtifactOutcome) artifactOutcome).getImage()).isEqualTo("build-x");
+    assertThat(((CustomArtifactOutcome) artifactOutcome).getTag()).isEqualTo("build-x");
   }
 
   private void assertCustomArtifactOutcome(ArtifactConfig artifactConfig) {

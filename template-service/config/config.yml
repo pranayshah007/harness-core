@@ -121,6 +121,12 @@ templateAsyncSetupUsagePoolConfig:
   idleTime: ${TEMPLATE_ASYNC_SETUP_USAGE_EXECUTOR_POOL_IDLE_TIME:-30}
   timeUnit: ${TEMPLATE_ASYNC_SETUP_USAGE_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
+templateServiceHelperPoolConfig:
+  corePoolSize: ${TEMPLATE_SERVICE_HELPER_EXECUTOR_POOL_CORE_SIZE:-1}
+  maxPoolSize: ${TEMPLATE_SERVICE_HELPER_EXECUTOR_POOL_MAX_SIZE:-10}
+  idleTime: ${TEMPLATE_SERVICE_HELPER_EXECUTOR_POOL_IDLE_TIME:-30}
+  timeUnit: ${TEMPLATE_SERVICE_HELPER_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
+
 enableAudit: false
 
 enableAuth: true
@@ -185,3 +191,9 @@ featureFlagConfig:
 staticSchemaFileURL: ${STATIC_SCHEMA_FILE_URL:-"https://raw.githubusercontent.com/harness/harness-schema/main/%s/%s"}
 
 distributedLockImplementation: MONGO
+
+segmentConfiguration:
+  enabled: ${SEGMENT_ENABLED:-false}
+  url: ${SEGMENT_URL:-https://api.segment.io/v1/}
+  apiKey: ${SEGMENT_APIKEY:-""}
+  certValidationRequired: ${SEGMENT_VERIFY_CERT:-false}

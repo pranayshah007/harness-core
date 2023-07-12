@@ -52,6 +52,8 @@ import io.harness.beans.steps.stepinfo.DockerStepInfo;
 import io.harness.beans.steps.stepinfo.ECRStepInfo;
 import io.harness.beans.steps.stepinfo.GCRStepInfo;
 import io.harness.beans.steps.stepinfo.GitCloneStepInfo;
+import io.harness.beans.steps.stepinfo.IACMApprovalInfo;
+import io.harness.beans.steps.stepinfo.IACMTerraformPluginInfo;
 import io.harness.beans.steps.stepinfo.RestoreCacheGCSStepInfo;
 import io.harness.beans.steps.stepinfo.RestoreCacheS3StepInfo;
 import io.harness.beans.steps.stepinfo.SaveCacheGCSStepInfo;
@@ -69,6 +71,7 @@ import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
+import io.harness.iacm.execution.IACMStepsUtils;
 import io.harness.ng.core.NGAccess;
 import io.harness.plugin.service.PluginServiceImpl;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -143,6 +146,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
   @Inject private CodebaseUtils codebaseUtils;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private SscaOrchestrationPluginUtils sscaOrchestrationPluginUtils;
+  @Inject private IACMStepsUtils iacmStepsUtils;
 
   @Override
   public Map<String, String> getPluginCompatibleEnvVariables(PluginCompatibleStep stepInfo, String identifier,
@@ -184,8 +188,13 @@ public class PluginSettingUtils extends PluginServiceImpl {
       case SSCA_ENFORCEMENT:
         return SscaEnforcementPluginHelper.getSscaEnforcementStepEnvVariables(
             (SscaEnforcementStepInfo) stepInfo, identifier, ambiance, infraType);
+      case IACM_TERRAFORM_PLUGIN:
+        return iacmStepsUtils.getVariablesForKubernetes(ambiance, (IACMTerraformPluginInfo) stepInfo);
+      case IACM_APPROVAL:
+        return iacmStepsUtils.getVariablesForKubernetes(ambiance, (IACMApprovalInfo) stepInfo);
       default:
-        throw new IllegalStateException("Unexpected value: " + stepInfo.getNonYamlInfo().getStepInfoType());
+        throw new IllegalStateException(
+            "Unexpected value in getPluginCompatibleEnvVariables: " + stepInfo.getNonYamlInfo().getStepInfoType());
     }
   }
 
@@ -197,6 +206,8 @@ public class PluginSettingUtils extends PluginServiceImpl {
       case SSCA_ENFORCEMENT:
         return SscaEnforcementPluginHelper.getSscaEnforcementSecretVariables(
             (SscaEnforcementStepInfo) step, identifier);
+      case IACM_TERRAFORM_PLUGIN:
+        return iacmStepsUtils.getSecretVariablesForKubernetes((IACMTerraformPluginInfo) step);
       default:
         return new HashMap<>();
     }

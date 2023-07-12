@@ -35,6 +35,7 @@ java_library(
         "//980-commons/src/main/java/io/harness/data/structure:module",
         "//980-commons/src/main/java/io/harness/exception:module",
         "//980-commons/src/main/java/io/harness/filesystem:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:io_harness_cv_data_collection_dsl",
     ],
 )

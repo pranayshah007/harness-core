@@ -104,7 +104,8 @@ public class CommandStep extends CdTaskExecutable<CommandTaskResponse> {
       validateStepParameters(executeCommandStepParameters);
 
       CommandTaskParameters taskParameters =
-          sshCommandStepHelper.buildCommandTaskParameters(ambiance, executeCommandStepParameters);
+          sshCommandStepHelper.buildCommandTaskParameters(ambiance, executeCommandStepParameters,
+              stepParameters.getTimeout() != null ? stepParameters.getTimeout().getValue() : null);
 
       TaskData taskData = commandTaskDataFactory.create(taskParameters, stepParameters.getTimeout());
 

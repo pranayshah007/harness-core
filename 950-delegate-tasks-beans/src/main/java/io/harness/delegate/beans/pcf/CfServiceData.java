@@ -9,6 +9,7 @@ package io.harness.delegate.beans.pcf;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 
 import lombok.Builder;
@@ -17,6 +18,7 @@ import lombok.Data;
 @Data
 @Builder
 @OwnedBy(CDP)
+@RecasterAlias("io.harness.delegate.beans.pcf.CfServiceData")
 public class CfServiceData {
   private String name;
   private String id;

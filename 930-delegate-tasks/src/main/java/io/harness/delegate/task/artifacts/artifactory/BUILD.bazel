@@ -29,6 +29,7 @@ java_library(
         "//980-commons/src/main/java/io/harness/artifact:module",
         "//980-commons/src/main/java/io/harness/data/structure:module",
         "//980-commons/src/main/java/io/harness/eraro:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_google_inject_guice",
         "@maven//:org_apache_commons_commons_lang3",
     ],

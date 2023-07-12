@@ -986,6 +986,7 @@ public class K8sTaskHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testShouldGetEmptyResourcesFromRemoteManifests() throws Exception {
     K8sDelegateTaskParams params = K8sDelegateTaskParams.builder()
+                                       .workingDirectory("/some/dir/")
                                        .goTemplateClientPath(".")
                                        .kubeconfigPath("kubeconfig")
                                        .kubectlPath("kubectlPath")
@@ -1017,6 +1018,7 @@ public class K8sTaskHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testShouldGetResourcesFromRemoteManifests() throws Exception {
     K8sDelegateTaskParams params = K8sDelegateTaskParams.builder()
+                                       .workingDirectory("/some/dir/")
                                        .goTemplateClientPath(".")
                                        .kubeconfigPath("kubeconfig")
                                        .kubectlPath("kubectlPath")

@@ -169,6 +169,12 @@ public class HelmChartVersionResource {
       }
 
       if (storeConfig instanceof OciHelmChartConfig) {
+        OciHelmChartConfig ociHelmChartConfig = (OciHelmChartConfig) storeConfig;
+
+        if (isEmpty(folderPath)) {
+          folderPath = (String) ociHelmChartConfig.getBasePath().fetchFinalValue();
+        }
+
         folderPath = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
             pipelineIdentifier, runtimeInputYaml, folderPath, fqnPath, gitEntityBasicInfo, serviceRef);
       }

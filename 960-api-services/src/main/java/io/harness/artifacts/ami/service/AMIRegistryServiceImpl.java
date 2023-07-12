@@ -6,7 +6,6 @@
  */
 
 package io.harness.artifacts.ami.service;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -17,7 +16,10 @@ import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.ami.AMITagsResponse;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.util.AwsCallTracker;
 import io.harness.data.structure.CollectionUtils;
@@ -79,6 +81,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDC)
 @Singleton
 @Slf4j

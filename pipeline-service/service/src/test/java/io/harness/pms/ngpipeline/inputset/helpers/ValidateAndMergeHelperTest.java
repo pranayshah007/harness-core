@@ -34,8 +34,11 @@ import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
+import io.harness.serializer.JsonUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -405,16 +408,17 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         .when(pmsInputSetService)
         .getWithoutValidations(accountId, orgId, projectId, pipelineId, "forS2", false, false, false);
 
-    String mergedInputSet = validateAndMergeHelper.getMergeInputSetFromPipelineTemplate(accountId, orgId, projectId,
-        pipelineId, Arrays.asList("forS1", "forS1AndS2", "forS2"), null, null, Collections.singletonList("s2"));
+    JsonNode mergedInputSet =
+        validateAndMergeHelper.getMergeInputSetFromPipelineTemplateWithJsonNode(accountId, orgId, projectId, pipelineId,
+            Arrays.asList("forS1", "forS1AndS2", "forS2"), null, null, Collections.singletonList("s2"));
     assertThat(mergedInputSet)
-        .isEqualTo("pipeline:\n"
+        .isEqualTo(YamlUtils.readAsJsonNode("pipeline:\n"
             + "  stages:\n"
             + "    - stage:\n"
             + "        identifier: s2\n"
             + "        key1: s2Value2FromForS2\n"
             + "        key2: s2Value2\n"
-            + "        key3: s2Value3\n");
+            + "        key3: s2Value3\n"));
   }
 
   @Test
@@ -500,14 +504,14 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         .when(pmsInputSetService)
         .getWithoutValidations(accountId, orgId, projectId, pipelineId, overlayId, false, false, false);
 
-    String mergedInputSets = validateAndMergeHelper.getMergeInputSetFromPipelineTemplate(
+    JsonNode mergedInputSets = validateAndMergeHelper.getMergeInputSetFromPipelineTemplateWithJsonNode(
         accountId, orgId, projectId, pipelineId, Arrays.asList(inputSetId1, inputSetId2, overlayId), null, null, null);
     assertThat(mergedInputSets)
-        .isEqualTo("inputs:\n"
+        .isEqualTo(YamlUtils.readAsJsonNode("inputs:\n"
             + "  image: alpine\n"
             + "  method: POST\n"
             + "  url: google.com\n"
-            + "  timeout: 10h\n");
+            + "  timeout: 10h\n"));
   }
   @Test
   @Owner(developers = ADITHYA)
@@ -543,8 +547,8 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         .getWithoutValidations(accountId, orgId, projectId, pipelineId, "forS1", false, false, false);
 
     assertThatThrownBy(()
-                           -> validateAndMergeHelper.getMergeInputSetFromPipelineTemplate(accountId, orgId, projectId,
-                               pipelineId, List.of("forS1"), null, null, Collections.singletonList("s2")))
+                           -> validateAndMergeHelper.getMergeInputSetFromPipelineTemplateWithJsonNode(accountId, orgId,
+                               projectId, pipelineId, List.of("forS1"), null, null, Collections.singletonList("s2")))
         .isInstanceOf(WingsException.class)
         .hasMessage("Please move the input-set from inline to remote.");
   }
@@ -594,9 +598,10 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         .when(pmsInputSetService)
         .getWithoutValidations(accountId, orgId, projectId, pipelineId, "overlaidIS1", false, false, false);
 
-    assertThatThrownBy(()
-                           -> validateAndMergeHelper.getMergeInputSetFromPipelineTemplate(accountId, orgId, projectId,
-                               pipelineId, List.of("overlaidIS1"), null, null, Collections.singletonList("s2")))
+    assertThatThrownBy(
+        ()
+            -> validateAndMergeHelper.getMergeInputSetFromPipelineTemplateWithJsonNode(accountId, orgId, projectId,
+                pipelineId, List.of("overlaidIS1"), null, null, Collections.singletonList("s2")))
         .isInstanceOf(WingsException.class)
         .hasMessage("Please move the input-set from inline to remote.");
   }
@@ -672,15 +677,16 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         + "      identifier: s2\n"
         + "      field1: lastRuntimeYaml\n"
         + "      field2: lastRuntimeYaml\n";
-    String merged1 = validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgId,
-        projectId, pipelineId, null, null, null, Collections.singletonList("s1"), lastRuntimeS1S2, false, false);
+    JsonNode merged1 = validateAndMergeHelper.getMergedJsonNodeFromInputSetReferencesAndRuntimeInputJsonNode(accountId,
+        orgId, projectId, pipelineId, null, null, null, Collections.singletonList("s1"),
+        YamlUtils.readAsJsonNode(lastRuntimeS1S2), false, false);
     String expectedMerged1 = "pipeline:\n"
         + "  stages:\n"
         + "    - stage:\n"
         + "        identifier: s1\n"
         + "        field1: lastRuntimeYaml\n"
         + "        field2: lastRuntimeYaml\n";
-    assertThat(merged1).isEqualTo(expectedMerged1);
+    assertThat(merged1).isEqualTo(YamlUtils.readAsJsonNode(expectedMerged1));
 
     String lastRuntimeS2 = "pipeline:\n"
         + "  stages:\n"
@@ -688,63 +694,65 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         + "      identifier: s2\n"
         + "      field1: <+input>\n"
         + "      field2: lastRuntimeS2\n";
-    String merged2 = validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgId,
-        projectId, pipelineId, null, null, null, Collections.singletonList("s2"), lastRuntimeS2, false, false);
+    JsonNode merged2 = validateAndMergeHelper.getMergedJsonNodeFromInputSetReferencesAndRuntimeInputJsonNode(accountId,
+        orgId, projectId, pipelineId, null, null, null, Collections.singletonList("s2"),
+        YamlUtils.readAsJsonNode(lastRuntimeS2), false, false);
     String expectedMerged2 = "pipeline:\n"
         + "  stages:\n"
         + "    - stage:\n"
         + "        identifier: s2\n"
         + "        field1: <+input>\n"
         + "        field2: lastRuntimeS2\n";
-    assertThat(merged2).isEqualTo(expectedMerged2);
+    assertThat(merged2).isEqualTo(YamlUtils.readAsJsonNode(expectedMerged2));
 
-    String merged3 = validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgId,
-        projectId, pipelineId, null, null, null, Collections.singletonList("s3"), lastRuntimeS1S2, false, false);
+    JsonNode merged3 = validateAndMergeHelper.getMergedJsonNodeFromInputSetReferencesAndRuntimeInputJsonNode(accountId,
+        orgId, projectId, pipelineId, null, null, null, Collections.singletonList("s3"),
+        YamlUtils.readAsJsonNode(lastRuntimeS1S2), false, false);
     String expectedMerged3 = "pipeline:\n"
         + "  stages:\n"
         + "    - stage:\n"
         + "        identifier: s3\n"
         + "        field1: <+input>\n"
         + "        field2: <+input>\n";
-    assertThat(merged3).isEqualTo(expectedMerged3);
+    assertThat(merged3).isEqualTo(YamlUtils.readAsJsonNode(expectedMerged3));
 
     doReturn(
         Optional.of(
             InputSetEntity.builder().yaml(lastRuntimeS1S2).inputSetEntityType(InputSetEntityType.INPUT_SET).build()))
         .when(pmsInputSetService)
         .getWithoutValidations(accountId, orgId, projectId, pipelineId, "is1", false, false, false);
-    String merged4 = validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgId,
-        projectId, pipelineId, Collections.singletonList("is1"), null, null, Collections.singletonList("s2"),
-        lastRuntimeS2, false, false);
+    JsonNode merged4 = validateAndMergeHelper.getMergedJsonNodeFromInputSetReferencesAndRuntimeInputJsonNode(accountId,
+        orgId, projectId, pipelineId, Collections.singletonList("is1"), null, null, Collections.singletonList("s2"),
+        YamlUtils.readAsJsonNode(lastRuntimeS2), false, false);
     String expectedMerged4 = "pipeline:\n"
         + "  stages:\n"
         + "    - stage:\n"
         + "        identifier: s2\n"
         + "        field1: lastRuntimeYaml\n"
         + "        field2: lastRuntimeS2\n";
-    assertThat(merged4).isEqualTo(expectedMerged4);
+    assertThat(merged4).isEqualTo(YamlUtils.readAsJsonNode(expectedMerged4));
 
-    String merged5 = validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgId,
-        projectId, pipelineId, Collections.singletonList("is1"), null, null, Collections.singletonList("s1"),
-        lastRuntimeS2, false, false);
+    JsonNode merged5 = validateAndMergeHelper.getMergedJsonNodeFromInputSetReferencesAndRuntimeInputJsonNode(accountId,
+        orgId, projectId, pipelineId, Collections.singletonList("is1"), null, null, Collections.singletonList("s1"),
+        YamlUtils.readAsJsonNode(lastRuntimeS2), false, false);
     String expectedMerged5 = "pipeline:\n"
         + "  stages:\n"
         + "    - stage:\n"
         + "        identifier: s1\n"
         + "        field1: lastRuntimeYaml\n"
         + "        field2: lastRuntimeYaml\n";
-    assertThat(merged5).isEqualTo(expectedMerged5);
+    assertThat(merged5).isEqualTo(YamlUtils.readAsJsonNode(expectedMerged5));
 
-    String merged6 = validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgId,
-        projectId, pipelineId, Collections.singletonList("is1"), null, null, Collections.singletonList("s3"),
-        lastRuntimeS2, false, false);
+    JsonNode merged6 = validateAndMergeHelper.getMergedJsonNodeFromInputSetReferencesAndRuntimeInputJsonNode(accountId,
+        orgId, projectId, pipelineId, Collections.singletonList("is1"), null, null, Collections.singletonList("s3"),
+        YamlUtils.readAsJsonNode(lastRuntimeS2), false, false);
     String expectedMerged6 = "pipeline:\n"
         + "  stages:\n"
         + "    - stage:\n"
         + "        identifier: s3\n"
         + "        field1: <+input>\n"
         + "        field2: <+input>\n";
-    assertThat(merged6).isEqualTo(expectedMerged6);
+    assertThat(merged6).isEqualTo(YamlUtils.readAsJsonNode(expectedMerged6));
   }
 
   @Test
@@ -779,15 +787,16 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         + "      identifier: s2\n"
         + "      field1: lastRuntimeYaml\n"
         + "      field2: lastRuntimeYaml\n";
-    String merged1 = validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgId,
-        projectId, pipelineId, null, null, null, Collections.singletonList("s1"), lastRuntimeS1S2, false, true);
+    JsonNode merged1 = validateAndMergeHelper.getMergedJsonNodeFromInputSetReferencesAndRuntimeInputJsonNode(accountId,
+        orgId, projectId, pipelineId, null, null, null, Collections.singletonList("s1"),
+        YamlUtils.readAsJsonNode(lastRuntimeS1S2), false, true);
     String expectedMerged1 = "pipeline:\n"
         + "  stages:\n"
         + "    - stage:\n"
         + "        identifier: s1\n"
         + "        field1: lastRuntimeYaml\n"
         + "        field2: lastRuntimeYaml\n";
-    assertThat(merged1).isEqualTo(expectedMerged1);
+    assertThat(merged1).isEqualTo(YamlUtils.readAsJsonNode(expectedMerged1));
   }
 
   @Test
@@ -812,9 +821,9 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
     doReturn(Optional.of(PipelineEntity.builder().yaml(base).build()))
         .when(pmsPipelineService)
         .getPipeline(accountId, orgId, projectId, pipelineId, false, false, false, true);
-    String merged1 = validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(
+    JsonNode merged1 = validateAndMergeHelper.getMergedJsonNodeFromInputSetReferencesAndRuntimeInputJsonNode(
         accountId, orgId, projectId, pipelineId, null, null, null, Collections.emptyList(), null, false, true);
-    assertThat(merged1).isEqualTo("{}\n");
+    assertThat(merged1).isEqualTo(JsonUtils.readTree("{}"));
   }
 
   @Test

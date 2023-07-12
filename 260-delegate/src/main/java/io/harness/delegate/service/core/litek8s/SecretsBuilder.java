@@ -55,7 +55,7 @@ public class SecretsBuilder {
     }
 
     try {
-      return K8SSecret.imagePullSecret(secretName, config.getNamespace())
+      return K8SSecret.imagePullSecret(secretName, config.getNamespace(), taskGroupId)
           .putDataItem(DOCKER_CONFIG_KEY, String.valueOf(optionalSecret.get()).getBytes(Charsets.UTF_8))
           .create(coreApi);
     } catch (ApiException e) {
@@ -64,11 +64,13 @@ public class SecretsBuilder {
     }
   }
 
-  public V1Secret createSecret(final String taskId, final Secret infraSecret) {
+  public V1Secret createSecret(final String taskGroupId, final String taskId, final Secret infraSecret) {
     final var secretName = K8SResourceHelper.getSecretName(taskId);
     final var decryptedSecrets = decryptionService.decrypt(infraSecret);
     try {
-      return K8SSecret.secret(secretName, config.getNamespace()).putAllCharDataItems(decryptedSecrets).create(coreApi);
+      return K8SSecret.secret(secretName, config.getNamespace(), taskGroupId)
+          .putAllCharDataItems(decryptedSecrets)
+          .create(coreApi);
     } catch (ApiException e) {
       log.error(ApiExceptionLogger.format(e));
       throw new RuntimeException("K8S Api invocation failed creating secret", e);

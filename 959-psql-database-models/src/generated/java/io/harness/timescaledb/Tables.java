@@ -25,7 +25,9 @@ import io.harness.timescaledb.tables.PipelineExecutionSummaryCi;
 import io.harness.timescaledb.tables.Pipelines;
 import io.harness.timescaledb.tables.PodInfo;
 import io.harness.timescaledb.tables.ServiceInfraInfo;
+import io.harness.timescaledb.tables.ServiceInstancesLicenseDailyReport;
 import io.harness.timescaledb.tables.Services;
+import io.harness.timescaledb.tables.ServicesLicenseDailyReport;
 import io.harness.timescaledb.tables.UtilizationData;
 import io.harness.timescaledb.tables.WorkloadInfo;
 
@@ -87,10 +89,22 @@ public class Tables {
       PipelineExecutionSummary.PIPELINE_EXECUTION_SUMMARY;
 
   /**
+   * The table <code>public.service_instances_license_daily_report</code>.
+   */
+  public static final ServiceInstancesLicenseDailyReport SERVICE_INSTANCES_LICENSE_DAILY_REPORT =
+      ServiceInstancesLicenseDailyReport.SERVICE_INSTANCES_LICENSE_DAILY_REPORT;
+
+  /**
    * The table <code>public.pipeline_execution_summary_cd</code>.
    */
   public static final PipelineExecutionSummaryCd PIPELINE_EXECUTION_SUMMARY_CD =
       PipelineExecutionSummaryCd.PIPELINE_EXECUTION_SUMMARY_CD;
+
+  /**
+   * The table <code>public.services_license_daily_report</code>.
+   */
+  public static final ServicesLicenseDailyReport SERVICES_LICENSE_DAILY_REPORT =
+      ServicesLicenseDailyReport.SERVICES_LICENSE_DAILY_REPORT;
 
   /**
    * The table <code>public.pipeline_execution_summary_ci</code>.

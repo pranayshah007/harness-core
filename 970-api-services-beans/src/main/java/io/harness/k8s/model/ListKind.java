@@ -15,7 +15,27 @@ public enum ListKind {
   RoleBindingList(Kind.RoleBinding),
   ClusterRoleBindingList(Kind.ClusterRoleBinding),
   ConfigMapList(Kind.ConfigMap),
-  SecretList(Kind.Secret);
+  SecretList(Kind.Secret),
+  ResourceQuotaList(Kind.ResourceQuota),
+  LimitRangeList(Kind.LimitRange),
+  StorageClassList(Kind.StorageClass),
+  PersistentVolumeList(Kind.PersistentVolume),
+  PersistentVolumeClaimList(Kind.PersistentVolumeClaim),
+  ServiceAccountList(Kind.ServiceAccount),
+  CustomResourceDefinitionList(Kind.CustomResourceDefinition),
+  ClusterRoleList(Kind.ClusterRole),
+  RoleList(Kind.Role),
+  DaemonSetList(Kind.DaemonSet),
+  PodList(Kind.Pod),
+  ReplicationControllerList(Kind.ReplicationController),
+  ReplicaSetList(Kind.ReplicaSet),
+  StatefulSetList(Kind.StatefulSet),
+  JobList(Kind.Job),
+  CronJobList(Kind.CronJob),
+  IngressList(Kind.Ingress),
+  APIServiceList(Kind.APIService),
+  HorizontalPodAutoscalerList(Kind.HorizontalPodAutoscaler),
+  PodDisruptionBudgetList(Kind.PodDisruptionBudget);
 
   private final Kind itemKind;
 

@@ -76,6 +76,7 @@ import io.harness.graph.stepDetail.PmsGraphStepDetailsServiceImpl;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.health.HealthMonitor;
 import io.harness.health.HealthService;
+import io.harness.iterator.PersistenceIterator;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.HarnessMetricRegistry;
@@ -401,12 +402,27 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     injector.getInstance(TriggerWebhookExecutionService.class)
         .registerIterators(iteratorsConfig.getTriggerWebhookConfig());
     injector.getInstance(ScheduledTriggerHandler.class).registerIterators(iteratorsConfig.getScheduleTriggerConfig());
-    injector.getInstance(TimeoutEngine.class)
-        .createAndStartIterator(PersistenceIteratorFactory.PumpExecutorOptions.builder()
-                                    .name("TimeoutEngine")
-                                    .poolSize(iteratorsConfig.getTimeoutEngineConfig().getThreadPoolCount())
-                                    .build(),
-            Duration.ofSeconds(iteratorsConfig.getTimeoutEngineConfig().getTargetIntervalInSeconds()));
+    if (PersistenceIterator.ProcessMode.REDIS_BATCH.name().equals(appConfig.getTimeoutIteratorMode())) {
+      injector.getInstance(TimeoutEngine.class)
+          .createAndStartRedisBatchIterator(
+              PersistenceIteratorFactory.RedisBatchExecutorOptions.builder()
+                  .name("TimeoutEngine")
+                  .poolSize(iteratorsConfig.getTimeoutEngineRedisConfig().getThreadPoolSize())
+                  .batchSize(iteratorsConfig.getTimeoutEngineRedisConfig().getRedisBatchSize())
+                  .lockTimeout(iteratorsConfig.getTimeoutEngineRedisConfig().getRedisLockTimeout())
+                  .interval(Duration.ofSeconds(
+                      iteratorsConfig.getTimeoutEngineRedisConfig().getThreadPoolIntervalInSeconds()))
+                  .build(),
+              Duration.ofSeconds(iteratorsConfig.getTimeoutEngineRedisConfig().getTargetIntervalInSeconds()));
+    } else {
+      injector.getInstance(TimeoutEngine.class)
+          .createAndStartIterator(PersistenceIteratorFactory.PumpExecutorOptions.builder()
+                                      .name("TimeoutEngine")
+                                      .poolSize(iteratorsConfig.getTimeoutEngineConfig().getThreadPoolCount())
+                                      .build(),
+              Duration.ofSeconds(iteratorsConfig.getTimeoutEngineConfig().getTargetIntervalInSeconds()));
+    }
+
     injector.getInstance(BarrierServiceImpl.class).registerIterators(iteratorsConfig.getBarrierConfig());
     injector.getInstance(ApprovalInstanceHandler.class).registerIterators();
     injector.getInstance(CustomApprovalInstanceHandler.class)

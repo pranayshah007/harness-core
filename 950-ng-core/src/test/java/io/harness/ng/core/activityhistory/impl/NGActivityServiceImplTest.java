@@ -8,6 +8,7 @@
 package io.harness.ng.core.activityhistory.impl;
 
 import static io.harness.rule.OwnerRule.DEEPAK;
+import static io.harness.rule.OwnerRule.TEJAS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -23,6 +24,7 @@ import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.Set;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -43,10 +45,11 @@ public class NGActivityServiceImplTest extends NGCoreTestBase {
           referredEntityIdentifierAccountLevel, NGActivityStatus.SUCCESS, startTime + i, NGActivityType.ENTITY_USAGE);
       activityHistoryService.save(activityHistory);
     }
-    List<NGActivityDTO> activityHistories = activityHistoryService
-                                                .list(0, 20, accountIdentifier, null, null, referredEntityIdentifier,
-                                                    startTime, startTime + 100L, null, EntityType.CONNECTORS, null)
-                                                .toList();
+    List<NGActivityDTO> activityHistories =
+        activityHistoryService
+            .list(0, 20, accountIdentifier, null, null, referredEntityIdentifier, startTime, startTime + 100L, null,
+                EntityType.CONNECTORS, null, null)
+            .toList();
     assertThat(activityHistories.size()).isEqualTo(10);
   }
 
@@ -78,11 +81,12 @@ public class NGActivityServiceImplTest extends NGCoreTestBase {
       activityHistoryService.save(activityHistory);
     }
 
-    List<NGActivityDTO> activityHistories = activityHistoryService
-                                                .list(0, 20, accountIdentifier, null, null, referredEntityIdentifier,
-                                                    startTime, startTime + 100L, null, EntityType.CONNECTORS, null)
-                                                .toList();
-    assertThat(activityHistories.size()).isEqualTo(10);
+    List<NGActivityDTO> activityHistories =
+        activityHistoryService
+            .list(0, 20, accountIdentifier, null, null, referredEntityIdentifier, startTime, startTime + 100L, null,
+                EntityType.CONNECTORS, null, null)
+            .toList();
+    assertThat(activityHistories.size()).isEqualTo(20);
   }
 
   @Test
@@ -127,7 +131,7 @@ public class NGActivityServiceImplTest extends NGCoreTestBase {
     List<NGActivityDTO> activityHistories =
         activityHistoryService
             .list(0, 20, accountIdentifier, orgIdentifier, null, referredEntityIdentifier, startTime, startTime + 100L,
-                null, EntityType.CONNECTORS, null)
+                null, EntityType.CONNECTORS, null, null)
             .toList();
     assertThat(activityHistories.size()).isEqualTo(10);
   }
@@ -150,7 +154,7 @@ public class NGActivityServiceImplTest extends NGCoreTestBase {
     List<NGActivityDTO> activityHistories =
         activityHistoryService
             .list(0, 20, accountIdentifier, orgIdentifier, projectIdentifier, referredEntityIdentifier, startTime,
-                startTime + 100L, null, EntityType.CONNECTORS, null)
+                startTime + 100L, null, EntityType.CONNECTORS, null, null)
             .toList();
     assertThat(activityHistories.size()).isEqualTo(10);
   }
@@ -167,5 +171,51 @@ public class NGActivityServiceImplTest extends NGCoreTestBase {
         accountIdentifier, orgIdentifier, projectIdentifier, referredEntityIdentifier, NGActivityStatus.SUCCESS,
         System.currentTimeMillis(), NGActivityType.ENTITY_USAGE));
     assertThat(savedActivityHistory).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void listAllActivityOfAAccountLevelEntity_WithActivityTypeFilter() {
+    String accountIdentifier = "accountIdentifier";
+    String referredEntityIdentifier = "referredEntityIdentifier";
+    String referredEntityIdentifierAccountLevel = "account.referredEntityIdentifier";
+    long startTime = System.currentTimeMillis();
+    for (int i = 0; i < 10; i++) {
+      NGActivityDTO activityHistory = ActivityHistoryTestHelper.createActivityHistoryDTO(accountIdentifier, null, null,
+          referredEntityIdentifierAccountLevel, NGActivityStatus.SUCCESS, startTime + i, NGActivityType.ENTITY_USAGE);
+      activityHistoryService.save(activityHistory);
+    }
+    for (int i = 0; i < 5; i++) {
+      NGActivityDTO activityHistory = ActivityHistoryTestHelper.createActivityHistoryDTO(accountIdentifier, null, null,
+          referredEntityIdentifierAccountLevel, NGActivityStatus.SUCCESS, startTime + i, NGActivityType.ENTITY_UPDATE);
+      activityHistoryService.save(activityHistory);
+    }
+    List<NGActivityDTO> activityHistories =
+        activityHistoryService
+            .list(0, 20, accountIdentifier, null, null, referredEntityIdentifier, startTime, startTime + 100L, null,
+                EntityType.CONNECTORS, null, Set.of(NGActivityType.ENTITY_USAGE))
+            .toList();
+    assertThat(activityHistories.size()).isEqualTo(10);
+
+    activityHistories =
+        activityHistoryService
+            .list(0, 20, accountIdentifier, null, null, referredEntityIdentifier, startTime, startTime + 100L, null,
+                EntityType.CONNECTORS, null, Set.of(NGActivityType.ENTITY_UPDATE))
+            .toList();
+    assertThat(activityHistories.size()).isEqualTo(5);
+
+    activityHistories =
+        activityHistoryService
+            .list(0, 20, accountIdentifier, null, null, referredEntityIdentifier, startTime, startTime + 100L, null,
+                EntityType.CONNECTORS, null, Set.of(NGActivityType.ENTITY_USAGE, NGActivityType.ENTITY_UPDATE))
+            .toList();
+    assertThat(activityHistories.size()).isEqualTo(15);
+
+    activityHistories = activityHistoryService
+                            .list(0, 20, accountIdentifier, null, null, referredEntityIdentifier, startTime,
+                                startTime + 100L, null, EntityType.CONNECTORS, null, null)
+                            .toList();
+    assertThat(activityHistories.size()).isEqualTo(15);
   }
 }

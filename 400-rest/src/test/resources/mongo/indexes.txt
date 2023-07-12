@@ -457,6 +457,7 @@ learningEngineAnalysisTask {"name": "taskFetchPriorityIdx", "background": true} 
 learningEngineAnalysisTask {"name": "task_fetch_idx", "background": true} {"state_execution_id": 1, "analysis_minute": 1, "executionStatus": 1, "ml_analysis_type": 1, "cluster_level": 1, "group_name": 1, "version": 1, "createdAt": -1}
 learningEngineAnalysisTask {"name": "usageMetricsIndex", "background": true} {"executionStatus": 1, "ml_analysis_type": 1, "is24x7Task": 1, "createdAt": -1}
 learningEngineAnalysisTask {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
+learningEngineExperimentalAnalysisTask {"name": "accountId_1", "background": true} {"accountId": 1}
 learningEngineExperimentalAnalysisTask {"name": "appId_1", "background": true} {"appId": 1}
 learningEngineExperimentalAnalysisTask {"name": "createdAt_1", "background": true} {"createdAt": 1}
 learningEngineExperimentalAnalysisTask {"name": "cvConfigStatusIdx", "background": true} {"cvConfigId": 1, "executionStatus": 1, "analysis_minute": -1}

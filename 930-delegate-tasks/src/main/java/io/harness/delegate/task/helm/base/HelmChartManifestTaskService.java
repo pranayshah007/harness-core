@@ -48,6 +48,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Collections;
@@ -83,7 +84,13 @@ public class HelmChartManifestTaskService {
     HelmChartMetadata metadata = createMetadata(request.getManifestDelegateConfig());
     Optional<HelmChartKey> helmChartKey = metadata.toHelmChartKey();
     if (helmChartKey.isPresent()) {
-      return cache.get(helmChartKey.get(), () -> fetchAndReadHelmChartYaml(request, metadata));
+      HelmChartManifest helmChartManifest = cache.getIfPresent(helmChartKey.get());
+      if (helmChartManifest == null) {
+        helmChartManifest = fetchAndReadHelmChartYaml(request, metadata);
+        cache.put(helmChartKey.get(), helmChartManifest);
+      }
+
+      return helmChartManifest;
     }
 
     return fetchAndReadHelmChartYaml(request, metadata);
@@ -107,8 +114,9 @@ public class HelmChartManifestTaskService {
       HelmChartYaml helmChartYaml = HelmChartYamlMapper.deserialize(stream);
       return HelmChartManifest.create(helmChartYaml, metadata.toMap());
     } catch (FileNotFoundException | NoSuchFileException e) {
+      log.warn("Unable to find Chart.yaml in file path: {}", helmChartYamlFile.getPath());
       String helmVersion = isNotEmpty(manifestConfig.getChartVersion())
-          ? format("%s:%s", manifestConfig.getChartName(), manifestConfig.getHelmVersion())
+          ? format("%s:%s", manifestConfig.getChartName(), manifestConfig.getChartVersion())
           : manifestConfig.getChartName();
       throw NestedExceptionUtils.hintWithExplanationException(
           format("Check if provided %s helm package is a valid helm chart", helmVersion),
@@ -130,14 +138,7 @@ public class HelmChartManifestTaskService {
       fetchHelmChartYamlFromHelmRepo(manifestConfig, destinationDirectory, timeout);
     }
 
-    String chartYamlSubpath;
-    if (isNotEmpty(manifestConfig.getSubChartPath())) {
-      chartYamlSubpath = Paths.get(manifestConfig.getSubChartPath(), CHARTS_YAML_KEY).toString();
-    } else {
-      chartYamlSubpath = CHARTS_YAML_KEY;
-    }
-
-    return Paths.get(destinationDirectory, chartYamlSubpath).toFile();
+    return findHelmChartYaml(manifestConfig, destinationDirectory);
   }
 
   private void fetchHelmChartYamlFromGit(
@@ -164,8 +165,9 @@ public class HelmChartManifestTaskService {
     }
 
     String chartYamlOutputPath = getChartYamlPath(manifestConfig, destinationDirectory);
-    FileIo.createDirectoryIfDoesNotExist(Paths.get(chartYamlOutputPath).getParent());
-    FileIo.waitForDirectoryToBeAccessibleOutOfProcess(chartYamlPath, 10);
+    Path chartYamlDirectory = Paths.get(chartYamlOutputPath).getParent();
+    FileIo.createDirectoryIfDoesNotExist(chartYamlDirectory);
+    FileIo.waitForDirectoryToBeAccessibleOutOfProcess(chartYamlDirectory.toString(), 10);
     FileIo.writeFile(
         getChartYamlPath(manifestConfig, destinationDirectory), chartYamlContent.getBytes(StandardCharsets.UTF_8));
   }
@@ -191,6 +193,25 @@ public class HelmChartManifestTaskService {
       helmTaskHelperBase.downloadHelmChart(
           manifestConfig, timeoutInMillis, new NoopExecutionCallback(), destinationDirectory);
     }
+  }
+
+  private File findHelmChartYaml(HelmChartManifestDelegateConfig manifestConfig, String destinationDirectory) {
+    String chartYamlSubpath;
+    if (isNotEmpty(manifestConfig.getSubChartPath())) {
+      chartYamlSubpath = Paths.get(manifestConfig.getSubChartPath(), CHARTS_YAML_KEY).toString();
+    } else {
+      chartYamlSubpath = CHARTS_YAML_KEY;
+    }
+
+    if (isNotEmpty(manifestConfig.getChartName())) {
+      File potentialChartYamlFile =
+          Paths.get(destinationDirectory, manifestConfig.getChartName(), chartYamlSubpath).toFile();
+      if (potentialChartYamlFile.exists()) {
+        return potentialChartYamlFile;
+      }
+    }
+
+    return Paths.get(destinationDirectory, chartYamlSubpath).toFile();
   }
 
   private String getChartYamlPath(HelmChartManifestDelegateConfig manifestConfig, String basePath) {

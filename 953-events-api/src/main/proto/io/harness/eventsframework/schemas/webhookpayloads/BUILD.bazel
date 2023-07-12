@@ -11,7 +11,10 @@ proto_library(
     name = "953_events_api_proto",
     srcs = ["webhookdata.proto"],
     visibility = ["//visibility:public"],
-    deps = ["//product/ci/scm/proto:ciscmpb_proto"],
+    deps = [
+        "//980-commons/src/main/proto/io/harness/security:980_commons_security_proto",
+        "//product/ci/scm/proto:ciscmpb_proto",
+    ],
 )
 
 go_proto_library(
@@ -19,7 +22,10 @@ go_proto_library(
     importpath = "github.com/harness/harness-core/953-events-api/src/main/proto/io/harness/eventsframework/schemas/webhookpayloads",
     proto = ":953_events_api_proto",
     visibility = ["//visibility:public"],
-    deps = ["//product/ci/scm/proto"],
+    deps = [
+        "//980-commons/src/main/proto/io/harness/security:980_commons_security_go_proto",
+        "//product/ci/scm/proto",
+    ],
 )
 
 go_library(

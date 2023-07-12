@@ -6,7 +6,6 @@
  */
 
 package io.harness.artifacts.azureartifacts.service;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.artifacts.azureartifacts.service.AzureArtifactsRegistryServiceImpl.getAzureArtifactsRestClient;
 import static io.harness.azure.utility.AzureUtils.executeRestCall;
@@ -17,7 +16,10 @@ import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.azureartifacts.beans.AzureArtifactsInternalConfig;
 import io.harness.azure.utility.AzureUtils;
 import io.harness.exception.HintException;
@@ -41,6 +43,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.ResponseBody;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDP)
 @Singleton
 public class AzureArtifactsDownloadHelper {
