@@ -423,14 +423,6 @@ if [[ "$LOCK_CONFIG_USE_SENTINEL" == "true" ]]; then
   fi
 fi
 
-if [[ "" != "$LOCK_CONFIG_REDIS_USERNAME" ]]; then
-  export LOCK_CONFIG_REDIS_USERNAME; yq -i '.singleServerConfig.username=env(LOCK_CONFIG_REDIS_USERNAME)' $REDISSON_CACHE_FILE
-fi
-
-if [[ "" != "$LOCK_CONFIG_REDIS_PASSWORD" ]]; then
-  export LOCK_CONFIG_REDIS_PASSWORD; yq -i '.singleServerConfig.password=env(LOCK_CONFIG_REDIS_PASSWORD)' $REDISSON_CACHE_FILE
-fi
-
 if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
   export REDIS_NETTY_THREADS; yq -i '.nettyThreads=env(REDIS_NETTY_THREADS)' $REDISSON_CACHE_FILE
 fi
@@ -467,12 +459,10 @@ fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_USERNAME" ]]; then
   export EVENTS_FRAMEWORK_REDIS_USERNAME; yq -i '.singleServerConfig.username=env(EVENTS_FRAMEWORK_REDIS_USERNAME)' $ENTERPRISE_REDISSON_CACHE_FILE
-  export EVENTS_FRAMEWORK_REDIS_USERNAME; yq -i '.singleServerConfig.username=env(EVENTS_FRAMEWORK_REDIS_USERNAME)' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_PASSWORD" ]]; then
   export EVENTS_FRAMEWORK_REDIS_PASSWORD; yq -i '.singleServerConfig.password=env(EVENTS_FRAMEWORK_REDIS_PASSWORD)' $ENTERPRISE_REDISSON_CACHE_FILE
-  export EVENTS_FRAMEWORK_REDIS_PASSWORD; yq -i '.singleServerConfig.password=env(EVENTS_FRAMEWORK_REDIS_PASSWORD)' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH" ]]; then
