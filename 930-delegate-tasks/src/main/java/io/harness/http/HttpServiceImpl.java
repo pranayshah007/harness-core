@@ -7,6 +7,9 @@
 
 package io.harness.http;
 
+import static io.harness.NGCommonEntityConstants.APPLICATION_GZIP_MEDIA_TYPE;
+import static io.harness.NGCommonEntityConstants.APPLICATION_OCTET_STREAM_MEDIA_TYPE;
+import static io.harness.NGCommonEntityConstants.CONTENT_TYPE_HEADER;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -51,6 +54,7 @@ import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
@@ -192,13 +196,21 @@ public class HttpServiceImpl implements HttpService {
       }
     }
 
-    httpInternalResponse.setHeader(httpInternalConfig.getHeader());
     saveLogs(logCallback, "Received response code: " + httpResponse.getStatusLine().getStatusCode());
     httpInternalResponse.setHttpResponseCode(httpResponse.getStatusLine().getStatusCode());
     saveLogs(logCallback, "Processing response body");
     HttpEntity entity = httpResponse.getEntity();
-    httpInternalResponse.setHttpResponseBody(
-        entity != null ? EntityUtils.toString(entity, StandardCharsets.UTF_8) : "");
+
+    Header contentTypeHeader = httpResponse.getFirstHeader(CONTENT_TYPE_HEADER);
+    if (httpInternalConfig.isSupportNonTextResponse() && contentTypeHeader != null
+        && (contentTypeHeader.getValue().equals(APPLICATION_GZIP_MEDIA_TYPE)
+            || contentTypeHeader.getValue().equals(APPLICATION_OCTET_STREAM_MEDIA_TYPE))) {
+      httpInternalResponse.setHttpResponseBodyInBytes(entity != null ? EntityUtils.toByteArray(entity) : null);
+      httpInternalResponse.setHeader(String.format("%s:%s;", CONTENT_TYPE_HEADER, contentTypeHeader.getValue()));
+    } else {
+      httpInternalResponse.setHttpResponseBody(
+          entity != null ? EntityUtils.toString(entity, StandardCharsets.UTF_8) : "");
+    }
 
     saveLogs(logCallback, "Finished processing response body");
 
