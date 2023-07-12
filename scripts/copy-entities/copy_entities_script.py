@@ -803,22 +803,35 @@ class Pipeline(ImportExport):
     def create_entity(self, payload):
         url_create_pipeline = (
             pipeline_endpoint
-            + "?routingId="
+            + "/clone?routingId="
             + accountIdentifier
             + "&accountIdentifier="
             + accountIdentifier
-            + "&orgIdentifier="
-            + to_orgIdentifier
-            + "&projectIdentifier="
-            + to_projectIdentifier
-            + "&pipelineIdentifier="
-            + json.loads(payload)["pipeline"]["identifier"]
-            + "&pipelineName="
-            + json.loads(payload)["pipeline"]["name"]
+            + "&storeType=INLINE"
         )
 
-        url_create_pipeline = url_create_pipeline.replace(" ", "%20")
-        response_create_pipeline = create_and_print_entity(url_create_pipeline, payload)
+        clone_payload = {
+            "sourceConfig" : {
+                "orgIdentifier":from_orgIdentifier,
+                "projectIdentifier":from_projectIdentifier,
+                "pipelineIdentifier":json.loads(payload)["pipeline"]["identifier"]
+            },
+            "destinationConfig" : {
+                "orgIdentifier":to_orgIdentifier,
+                "projectIdentifier":to_projectIdentifier,
+                "pipelineIdentifier":json.loads(payload)["pipeline"]["identifier"],
+                "pipelineName":json.loads(payload)["pipeline"]["name"],
+                "tags":{}
+            },
+            "cloneConfig" : {
+                "connectors":"false",
+                "inputSets":"false",
+                "templates":"false",
+                "triggers":"false"
+            }
+        }
+
+        response_create_pipeline = create_and_print_entity(url_create_pipeline, json.dumps(clone_payload))
         export_input_set(json.loads(payload)["pipeline"]["identifier"])
         return response_create_pipeline
 
