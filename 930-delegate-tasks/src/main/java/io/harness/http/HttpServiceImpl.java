@@ -199,7 +199,6 @@ public class HttpServiceImpl implements HttpService {
     HttpEntity entity = httpResponse.getEntity();
     httpInternalResponse.setHttpResponseBody(
         entity != null ? EntityUtils.toString(entity, StandardCharsets.UTF_8) : "");
-
     saveLogs(logCallback, "Finished processing response body");
 
     return httpInternalResponse;
