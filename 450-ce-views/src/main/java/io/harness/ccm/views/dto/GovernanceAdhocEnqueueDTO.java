@@ -7,7 +7,7 @@
 
 package io.harness.ccm.views.dto;
 
-import io.harness.ccm.views.entities.RecommendationAdhocDTO;
+import io.harness.ccm.governance.entities.RecommendationAdhocDTO;
 import io.harness.ccm.views.helper.RuleCloudProviderType;
 
 import java.util.List;

@@ -12,6 +12,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//970-api-services-beans/src/main/proto:970_api_services_beans_java_proto",
+        "//979-recaster/src/main/java/io/harness/annotation:module",
         "//980-commons/src/main/java/io/harness/serializer:module",
         "//980-commons/src/main/java/io/harness/serializer/kryo:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",

@@ -69,6 +69,7 @@ public class K8sDeleteTaskParameters extends K8sTaskParameters implements Manife
     if (isNotEmpty(delegateSelectors)) {
       capabilities.add(SelectorCapability.builder().selectors(delegateSelectors).build());
     }
+    capabilities.addAll(getSecretManagerExecutionCapabilities(maskingEvaluator, k8sDelegateManifestConfig));
     return capabilities;
   }
 

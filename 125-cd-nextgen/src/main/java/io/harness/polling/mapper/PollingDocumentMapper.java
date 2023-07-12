@@ -22,6 +22,7 @@ import io.harness.polling.contracts.Qualifier;
 
 import com.google.inject.Inject;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -30,8 +31,24 @@ public class PollingDocumentMapper {
 
   public PollingDocument toPollingDocument(PollingItem pollingItem) {
     PollingInfo pollingInfo;
-    PollingDocumentBuilder pollingDocumentBuilder = PollingDocument.builder();
+    PollingDocumentBuilder pollingDocumentBuilder = toBasePollingDocument(pollingItem);
     PollingPayloadData pollingPayloadData = pollingItem.getPollingPayloadData();
+    Optional<PollingInfoBuilder> pollingInfoBuilder =
+        pollingInfoBuilderRegistry.getPollingInfoBuilder(pollingPayloadData.getType());
+    if (pollingInfoBuilder.isPresent()) {
+      pollingInfo = pollingInfoBuilder.get().toPollingInfo(pollingPayloadData);
+    } else {
+      throw new InvalidRequestException("Unsupported polling payload type " + pollingPayloadData.getType());
+    }
+    return pollingDocumentBuilder.pollingInfo(pollingInfo).build();
+  }
+
+  public PollingDocument toPollingDocumentWithoutPollingInfo(PollingItem pollingItem) {
+    return toBasePollingDocument(pollingItem).build();
+  }
+
+  private PollingDocumentBuilder toBasePollingDocument(PollingItem pollingItem) {
+    PollingDocumentBuilder pollingDocumentBuilder = PollingDocument.builder();
     final Category category = pollingItem.getCategory();
     switch (category) {
       case MANIFEST:
@@ -47,22 +64,14 @@ public class PollingDocumentMapper {
         throw new InvalidRequestException("Unsupported category type " + category);
     }
 
-    Optional<PollingInfoBuilder> pollingInfoBuilder =
-        pollingInfoBuilderRegistry.getPollingInfoBuilder(pollingPayloadData.getType());
-    if (pollingInfoBuilder.isPresent()) {
-      pollingInfo = pollingInfoBuilder.get().toPollingInfo(pollingPayloadData);
-    } else {
-      throw new InvalidRequestException("Unsupported polling payload type " + pollingPayloadData.getType());
-    }
-
     Qualifier qualifier = pollingItem.getQualifier();
+    String signature = pollingItem.getSignature();
     return pollingDocumentBuilder.accountId(qualifier.getAccountId())
         .orgIdentifier(qualifier.getOrganizationId())
         .projectIdentifier(qualifier.getProjectId())
-        .signatures(Collections.singletonList(pollingItem.getSignature()))
-        .pollingInfo(pollingInfo)
+        .signatures(Collections.singletonList(signature))
+        .signaturesLock(Map.of(signature, pollingItem.getSignaturesToLockList()))
         .uuid(EmptyPredicate.isEmpty(pollingItem.getPollingDocId()) ? null : pollingItem.getPollingDocId())
-        .failedAttempts(0)
-        .build();
+        .failedAttempts(0);
   }
 }

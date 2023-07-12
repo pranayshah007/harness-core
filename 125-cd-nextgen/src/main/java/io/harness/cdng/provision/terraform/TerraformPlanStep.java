@@ -16,7 +16,6 @@ import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
 import io.harness.cdng.provision.terraform.functor.TerraformHumanReadablePlanFunctor;
 import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
-import io.harness.cdng.provision.terraform.outcome.TerraformGitRevisionOutcome;
 import io.harness.cdng.provision.terraform.outcome.TerraformPlanOutcome;
 import io.harness.cdng.provision.terraform.outcome.TerraformPlanOutcome.TerraformPlanOutcomeBuilder;
 import io.harness.common.ParameterFieldHelper;
@@ -294,17 +293,14 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
 
       Map<String, String> outputKeys = helper.getRevisionsMap(
           planStepParameters.getConfiguration().getVarFiles(), terraformTaskNGResponse.getCommitIdForConfigFilesMap());
+      helper.addTerraformRevisionOutcomeIfRequired(stepResponseBuilder, outputKeys);
 
-      stepResponseBuilder
-          .stepOutcome(StepResponse.StepOutcome.builder()
-                           .name(TerraformPlanOutcome.OUTCOME_NAME)
-                           .outcome(tfPlanOutcomeBuilder.build())
-                           .build())
-          .stepOutcome(StepResponse.StepOutcome.builder()
-                           .name(TerraformGitRevisionOutcome.OUTCOME_NAME)
-                           .outcome(TerraformGitRevisionOutcome.builder().revisions(outputKeys).build())
-                           .build());
+      stepResponseBuilder.stepOutcome(StepResponse.StepOutcome.builder()
+                                          .name(TerraformPlanOutcome.OUTCOME_NAME)
+                                          .outcome(tfPlanOutcomeBuilder.build())
+                                          .build());
     }
+
     return stepResponseBuilder.build();
   }
 }

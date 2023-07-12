@@ -50,6 +50,8 @@ public class DefaultPipelineStepMonitoredServiceResolutionServiceImpl
       ServiceEnvironmentParams serviceEnvironmentParams, MonitoredServiceNode monitoredServiceNode) {
     ResolvedCVConfigInfoBuilder resolvedCVConfigInfoBuilder = ResolvedCVConfigInfo.builder();
     Optional<MonitoredService> monitoredService = getMonitoredService(serviceEnvironmentParams);
+    resolvedCVConfigInfoBuilder.monitoredServiceIdentifier(MonitoredService.getIdentifier(
+        serviceEnvironmentParams.getServiceIdentifier(), serviceEnvironmentParams.getEnvironmentIdentifier()));
     monitoredService.ifPresent(service
         -> resolvedCVConfigInfoBuilder.monitoredServiceIdentifier(service.getIdentifier())
                .cvConfigs(getCVConfigs(serviceEnvironmentParams, service)));

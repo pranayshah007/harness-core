@@ -7,22 +7,23 @@
 
 package io.harness.event.timeseries.processor;
 
-import io.harness.exception.WingsException;
 import io.harness.timescaledb.TimeScaleDBService;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 public class TimescaleDataCleanup {
   @Inject private TimeScaleDBService timeScaleDBService;
   private static final int MAX_RETRY_COUNT = 5;
+  private static final String DELETE_TABLE_ACCOUNT_ID_UNDERLINE = "DELETE FROM table_name WHERE ACCOUNT_ID=?";
   private String deleteStatement = "DELETE FROM table_name WHERE ACCOUNTID=?";
   private String errorMessage = "Error while deleting the timescale data for account: {}";
 
@@ -33,9 +34,9 @@ public class TimescaleDataCleanup {
       try {
         Connection connection = timeScaleDBService.getDBConnection();
         List<PreparedStatement> queriesToExecute = prepareQueriesForDeletion(connection, accountId);
-        queriesToExecute.forEach(deleteStatement -> {
+        queriesToExecute.forEach(statement -> {
           try {
-            deleteStatement.execute();
+            statement.execute();
           } catch (SQLException e) {
             log.error(errorMessage, accountId, e);
           }
@@ -49,37 +50,49 @@ public class TimescaleDataCleanup {
     }
   }
 
-  private List<PreparedStatement> prepareQueriesForDeletion(Connection connection, String accountId)
-      throws SQLException {
-    List<String> tablesToBeDeleted = initialiseTables();
-    return tablesToBeDeleted.stream()
-        .map(tableName -> {
-          try {
-            PreparedStatement statement = connection.prepareStatement(deleteStatement.replace("table_name", tableName));
-            statement.setString(1, accountId);
-            return statement;
-          } catch (SQLException e) {
-            log.error(errorMessage, accountId, e);
-            throw new WingsException(e);
-          }
-        })
-        .collect(Collectors.toList());
+  @VisibleForTesting
+  List<PreparedStatement> prepareQueriesForDeletion(Connection connection, String accountId) throws SQLException {
+    List<PreparedStatement> forDeletion = new ArrayList<>();
+    Pair<List<String>, List<String>> toDelete = initialiseTables();
+
+    for (String tableName : toDelete.getLeft()) {
+      forDeletion.add(createPreparedStatement(connection, accountId, DELETE_TABLE_ACCOUNT_ID_UNDERLINE, tableName));
+    }
+    for (String tableName : toDelete.getRight()) {
+      forDeletion.add(createPreparedStatement(connection, accountId, deleteStatement, tableName));
+    }
+
+    return forDeletion;
   }
 
-  private List<String> initialiseTables() {
-    // Add the TimeScale Tables here, once added here data will be deleted if the account is churned.
-    List<String> tablesToBeDeleted = new ArrayList<>();
-    tablesToBeDeleted.add("deployment");
-    tablesToBeDeleted.add("deployment_step");
-    tablesToBeDeleted.add("deployment_stage");
-    tablesToBeDeleted.add("deployment_parent");
-    tablesToBeDeleted.add("execution_interrupt");
-    tablesToBeDeleted.add("instance_stats");
-    tablesToBeDeleted.add("instance_stats_day");
-    tablesToBeDeleted.add("instance_stats_hour");
-    tablesToBeDeleted.add("ng_instance_stats");
-    tablesToBeDeleted.add("ng_instance_stats_day");
-    tablesToBeDeleted.add("ng_instance_stats_hour");
-    return tablesToBeDeleted;
+  private PreparedStatement createPreparedStatement(
+      Connection connection, String accountId, String templateStatement, String tableName) throws SQLException {
+    PreparedStatement statement = connection.prepareStatement(templateStatement.replace("table_name", tableName));
+    statement.setString(1, accountId);
+    return statement;
+  }
+
+  @VisibleForTesting
+  Pair<List<String>, List<String>> initialiseTables() {
+    // ADD THE TIMESCALE TABLES HERE, ONCE ADDED HERE DATA WILL BE DELETED IF THE ACCOUNT IS CHURNED.
+    //
+    // WE HAVE TABLES WITH ACCOUNT_ID COLUMN AND OTHERS WITH ACCOUNTID, THEN WE NEED TWO ROUNDS OF DELETE OPERATIONS.
+    //
+    List<String> tablesAccount_Id = new ArrayList<>();
+    tablesAccount_Id.add("deployment_step");
+    tablesAccount_Id.add("execution_interrupt");
+
+    List<String> tablesAccountId = new ArrayList<>();
+    tablesAccountId.add("deployment");
+    tablesAccountId.add("deployment_stage");
+    tablesAccountId.add("deployment_parent");
+    tablesAccountId.add("instance_stats");
+    tablesAccountId.add("instance_stats_day");
+    tablesAccountId.add("instance_stats_hour");
+    tablesAccountId.add("ng_instance_stats");
+    tablesAccountId.add("ng_instance_stats_day");
+    tablesAccountId.add("ng_instance_stats_hour");
+
+    return Pair.of(tablesAccount_Id, tablesAccountId);
   }
 }

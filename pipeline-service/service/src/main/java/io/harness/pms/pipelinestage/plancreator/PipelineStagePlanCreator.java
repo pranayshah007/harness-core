@@ -9,7 +9,6 @@ package io.harness.pms.pipelinestage.plancreator;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
@@ -30,7 +29,6 @@ import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipelinestage.PipelineStageStepParameters;
-import io.harness.pms.pipelinestage.PipelineStageStepParameters.PipelineStageStepParametersBuilder;
 import io.harness.pms.pipelinestage.helper.PipelineStageHelper;
 import io.harness.pms.pipelinestage.step.PipelineStageStep;
 import io.harness.pms.sdk.core.plan.PlanNode;
@@ -88,21 +86,15 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
 
   public PipelineStageStepParameters getStepParameter(PipelineStageConfig config, YamlField pipelineInputs,
       String stageNodeId, String childPipelineVersion, String accountIdentifier) {
-    PipelineStageStepParametersBuilder builder =
-        PipelineStageStepParameters.builder()
-            .pipeline(config.getPipeline())
-            .org(config.getOrg())
-            .project(config.getProject())
-            .stageNodeId(stageNodeId)
-            .inputSetReferences(config.getInputSetReferences())
-            .outputs(ParameterField.createValueField(PipelineStageOutputs.getMapOfString(config.getOutputs())));
-    if (pmsFeatureFlagService.isEnabled(accountIdentifier, FeatureName.PIE_PROCESS_ON_JSON_NODE)) {
-      return builder
-          .pipelineInputsJsonNode(pipelineStageHelper.getInputSetJsonNode(pipelineInputs, childPipelineVersion))
-          .build();
-    } else {
-      return builder.pipelineInputs(pipelineStageHelper.getInputSetYaml(pipelineInputs, childPipelineVersion)).build();
-    }
+    return PipelineStageStepParameters.builder()
+        .pipeline(config.getPipeline())
+        .org(config.getOrg())
+        .project(config.getProject())
+        .stageNodeId(stageNodeId)
+        .inputSetReferences(config.getInputSetReferences())
+        .outputs(ParameterField.createValueField(PipelineStageOutputs.getMapOfString(config.getOutputs())))
+        .pipelineInputsJsonNode(pipelineStageHelper.getInputSetJsonNode(pipelineInputs, childPipelineVersion))
+        .build();
   }
 
   public void setSourcePrincipal(PlanCreationContextValue executionMetadata) {

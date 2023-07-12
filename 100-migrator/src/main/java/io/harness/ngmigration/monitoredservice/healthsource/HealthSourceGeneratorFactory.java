@@ -16,6 +16,8 @@ public class HealthSourceGeneratorFactory {
 
   @Inject private ELKHealthSourceGenerator elkHealthSourceGenerator;
 
+  @Inject private SplunkHealthSourceGenerator splunkHealthSourceGenerator;
+
   public Optional<HealthSourceGenerator> getHealthSourceGenerator(String stepType) {
     switch (stepType) {
       case "PROMETHEUS":
@@ -24,6 +26,8 @@ public class HealthSourceGeneratorFactory {
         return Optional.of(dataDogMetricHealthSourceGenerator);
       case "ELK":
         return Optional.of(elkHealthSourceGenerator);
+      case "SPLUNKV2":
+        return Optional.of(splunkHealthSourceGenerator);
       default:
         return Optional.empty();
     }

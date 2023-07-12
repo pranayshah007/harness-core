@@ -14,6 +14,6 @@ import java.util.function.Function;
 
 public interface SMPLicenseValidationTaskFactory {
   SMPLicenseValidationTask create(@Assisted("accountId") String accountIdentifier,
-      @Assisted("licenseSign") String licenseSign,
+      @Assisted("license") SMPLicense smpLicense,
       @Assisted("licenseProvider") Function<String, SMPLicense> licenseProvider);
 }

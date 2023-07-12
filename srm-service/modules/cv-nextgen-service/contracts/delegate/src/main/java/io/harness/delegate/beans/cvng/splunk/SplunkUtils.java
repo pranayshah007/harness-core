@@ -12,8 +12,11 @@ import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkAuthType;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectorDTO;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import lombok.experimental.UtilityClass;
+
 @UtilityClass
 public class SplunkUtils {
   private static final String HEADER_PREFIX_BASIC_AUTH = "Basic ";
@@ -32,5 +35,14 @@ public class SplunkUtils {
           HEADER_PREFIX_BEARER_TOKEN + String.copyValueOf(splunkConnectorDTO.getTokenRef().getDecryptedValue());
     }
     return authHeader;
+  }
+
+  public static Map<String, String> collectionHeaders(SplunkConnectorDTO splunkConnectorDTO) {
+    Map<String, String> headers = new HashMap<>();
+    if (splunkConnectorDTO.getAuthType() == SplunkAuthType.BEARER_TOKEN
+        || splunkConnectorDTO.getAuthType() == SplunkAuthType.USER_PASSWORD) {
+      headers.put("Authorization", SplunkUtils.getAuthorizationHeader(splunkConnectorDTO));
+    }
+    return headers;
   }
 }

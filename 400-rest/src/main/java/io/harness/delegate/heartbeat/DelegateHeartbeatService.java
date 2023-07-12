@@ -13,7 +13,6 @@ import static io.harness.delegate.message.ManagerMessageConstants.SELF_DESTRUCT;
 import static io.harness.delegate.utils.DelegateServiceConstants.HEARTBEAT_EXPIRY_TIME;
 import static io.harness.delegate.utils.DelegateServiceConstants.STREAM_DELEGATE;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_DESTROYED;
-import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_RESTARTED;
 
 import io.harness.beans.DelegateHeartbeatParams;
 import io.harness.delegate.beans.Delegate;
@@ -73,7 +72,6 @@ public abstract class DelegateHeartbeatService<T extends Object> {
         if (DelegateType.SHELL_SCRIPT.equals(existingDelegate.getDelegateType())) {
           shellScriptDelegateLocationCheck(existingDelegate, params);
         }
-        delegateMetricsService.recordDelegateMetrics(existingDelegate, DELEGATE_RESTARTED);
         log.debug("Delegate restarted");
       }
     }

@@ -118,8 +118,9 @@ public class ApprovalResourceServiceImpl implements ApprovalResourceService {
     String projectId = instance.getProjectIdentifier();
     String pipelineId = instance.getPipelineIdentifier();
     String approvalKey = instance.getApprovalKey();
+    Long createdAt = instance.getCreatedAt();
     List<String> rejectedApprovalIds = approvalInstanceService.findAllPreviousWaitingApprovals(
-        accountId, orgId, projectId, pipelineId, approvalKey, ambiance);
+        accountId, orgId, projectId, pipelineId, approvalKey, ambiance, createdAt);
     final long[] cnt = {0};
     rejectedApprovalIds.forEach(id -> {
       boolean unauthorized = !getHarnessApprovalInstanceAuthorization(id, true).isAuthorized();

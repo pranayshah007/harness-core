@@ -31,6 +31,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.client.result.UpdateResult;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -49,7 +50,8 @@ public class PollingServiceImpl implements PollingService {
     validatePollingDocument(pollingDocument);
     PollingDocument savedPollingDoc = pollingRepository.addSubscribersToExistingPollingDoc(
         pollingDocument.getAccountId(), pollingDocument.getOrgIdentifier(), pollingDocument.getProjectIdentifier(),
-        pollingDocument.getPollingType(), pollingDocument.getPollingInfo(), pollingDocument.getSignatures());
+        pollingDocument.getPollingType(), pollingDocument.getPollingInfo(), pollingDocument.getSignatures(),
+        pollingDocument.getSignaturesLock());
     // savedPollingDoc will be null if we couldn't find polling doc with the same entries as pollingDocument.
     if (savedPollingDoc == null) {
       // Setting uuid as null so that on saving database generates a new uuid and does not use the old one as some other
@@ -73,6 +75,19 @@ public class PollingServiceImpl implements PollingService {
   @Override
   public PollingDocument get(String accountId, String pollingDocId) {
     return pollingRepository.findByUuidAndAccountId(pollingDocId, accountId);
+  }
+
+  @Override
+  public List<PollingDocument> getMany(String accountId, List<String> pollingDocIds) {
+    return pollingRepository.findManyByUuidsAndAccountId(pollingDocIds, accountId);
+  }
+
+  @Override
+  public List<String> getUuidsBySignatures(String accountId, List<String> signatures) {
+    return pollingRepository.findUuidsBySignaturesAndAccountId(signatures, accountId)
+        .stream()
+        .map(PollingDocument::getUuid)
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -139,7 +154,9 @@ public class PollingServiceImpl implements PollingService {
 
   @Override
   public boolean unsubscribe(PollingItem pollingItem) {
-    PollingDocument pollingDocument = pollingDocumentMapper.toPollingDocument(pollingItem);
+    /* Here we create the PollingDocument without PollingInfo, since MultiRegionArtifact triggers don't send
+     this data when making an `unsubscribe` request - and this data is not needed anyway for unsubscription. */
+    PollingDocument pollingDocument = pollingDocumentMapper.toPollingDocumentWithoutPollingInfo(pollingItem);
     delete(pollingDocument);
     return true;
   }

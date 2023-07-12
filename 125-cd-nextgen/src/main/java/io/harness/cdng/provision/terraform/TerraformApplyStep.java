@@ -17,7 +17,6 @@ import io.harness.beans.IdentifierRef;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.provision.ProvisionerOutputHelper;
-import io.harness.cdng.provision.terraform.outcome.TerraformGitRevisionOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.TaskData;
@@ -360,13 +359,9 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
 
     Map<String, String> outputKeys = helper.getRevisionsMap(stepParameters.getConfiguration().getSpec().getVarFiles(),
         terraformTaskNGResponse.getCommitIdForConfigFilesMap());
+    helper.addTerraformRevisionOutcomeIfRequired(stepResponseBuilder, outputKeys);
 
-    return stepResponseBuilder
-        .stepOutcome(StepResponse.StepOutcome.builder()
-                         .name(TerraformGitRevisionOutcome.OUTCOME_NAME)
-                         .outcome(TerraformGitRevisionOutcome.builder().revisions(outputKeys).build())
-                         .build())
-        .build();
+    return stepResponseBuilder.build();
   }
 
   private StepResponse handleTaskResultInherited(Ambiance ambiance, TerraformApplyStepParameters stepParameters,
@@ -389,13 +384,8 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
 
     Map<String, String> outputKeys =
         helper.getRevisionsMap(Collections.emptyList(), terraformTaskNGResponse.getCommitIdForConfigFilesMap());
-
-    return stepResponseBuilder
-        .stepOutcome(StepResponse.StepOutcome.builder()
-                         .name(TerraformGitRevisionOutcome.OUTCOME_NAME)
-                         .outcome(TerraformGitRevisionOutcome.builder().revisions(outputKeys).build())
-                         .build())
-        .build();
+    helper.addTerraformRevisionOutcomeIfRequired(stepResponseBuilder, outputKeys);
+    return stepResponseBuilder.build();
   }
 
   private void addStepOutcome(Ambiance ambiance, StepResponseBuilder stepResponseBuilder, String outputs,

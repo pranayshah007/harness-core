@@ -21,6 +21,7 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.git.GitCommandExecutionResponse;
 import io.harness.delegate.beans.git.GitCommandExecutionResponse.GitCommandStatus;
 import io.harness.delegate.beans.git.GitCommandParams;
@@ -72,9 +73,14 @@ public class NGGitCommandTask extends AbstractDelegateRunnableTask {
 
     switch (gitCommandType) {
       case VALIDATE:
-        GitCommandExecutionResponse delegateResponseData =
-            (GitCommandExecutionResponse) gitCommandTaskHandler.handleValidateTask(
-                gitConfig, scmConnector, getAccountId(), sshSessionConfig);
+        GitCommandExecutionResponse delegateResponseData;
+        if (gitCommandParams.isGithubAppAuthentication()) {
+          delegateResponseData = (GitCommandExecutionResponse) gitCommandTaskHandler.handleValidateTaskForGithubAppAuth(
+              (GithubConnectorDTO) scmConnector, gitCommandParams.getEncryptionDetails());
+        } else {
+          delegateResponseData = (GitCommandExecutionResponse) gitCommandTaskHandler.handleValidateTask(
+              gitConfig, scmConnector, getAccountId(), sshSessionConfig);
+        }
         delegateResponseData.setDelegateMetaInfo(DelegateMetaInfo.builder().id(getDelegateId()).build());
         return delegateResponseData;
       case LIST_REMOTE:

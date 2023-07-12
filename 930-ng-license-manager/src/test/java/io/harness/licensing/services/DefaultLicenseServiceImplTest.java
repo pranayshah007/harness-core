@@ -573,6 +573,8 @@ public class DefaultLicenseServiceImplTest extends CategoryTest {
     when(moduleLicenseRepository.findByAccountIdentifierAndModuleType(
              Mockito.eq(accountDTO.getIdentifier()), Mockito.any()))
         .thenReturn(moduleLicenses);
+    when(moduleLicenseRepository.findByAccountIdentifier(Mockito.eq(accountDTO.getIdentifier())))
+        .thenReturn(moduleLicenses);
     when(licenseGenerator.generateLicense(Mockito.any())).thenReturn("somelicense");
 
     SMPLicenseRequestDTO licenseRequestDTO = new SMPLicenseRequestDTO();

@@ -9,6 +9,8 @@ package io.harness.platform.audit;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.authorization.AuthorizationServiceHeader.AUDIT_SERVICE;
+import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_ENTITY;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
 import io.harness.AccessControlClientModule;
@@ -25,6 +27,7 @@ import io.harness.audit.api.streaming.StreamingService;
 import io.harness.audit.api.streaming.impl.AggregateStreamingServiceImpl;
 import io.harness.audit.api.streaming.impl.StreamingServiceImpl;
 import io.harness.audit.client.remote.AuditClientModule;
+import io.harness.audit.eventframework.AccountEntityCrudStreamListener;
 import io.harness.audit.repositories.streaming.StreamingBatchRepository;
 import io.harness.audit.repositories.streaming.StreamingBatchRepositoryImpl;
 import io.harness.connector.ConnectorResourceClientModule;
@@ -34,6 +37,7 @@ import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.ng.core.event.MessageListener;
 import io.harness.outbox.TransactionOutboxModule;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
@@ -54,6 +58,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import com.google.inject.name.Names;
 import dev.morphia.converters.TypeConverter;
 import java.util.Map;
 import java.util.Set;
@@ -153,6 +158,14 @@ public class AuditServiceModule extends AbstractModule {
         ClientMode.PRIVILEGED));
     install(new TokenClientModule(this.appConfig.getManagerServiceConfig(),
         this.appConfig.getPlatformSecrets().getNgManagerServiceSecret(), AUDIT_SERVICE.getServiceId()));
+    install(new EventsFrameworkModule(this.appConfig.getEventsFrameworkConfiguration()));
+    registerEventListeners();
+  }
+
+  private void registerEventListeners() {
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(ACCOUNT_ENTITY + ENTITY_CRUD))
+        .to(AccountEntityCrudStreamListener.class);
   }
 
   @Provides

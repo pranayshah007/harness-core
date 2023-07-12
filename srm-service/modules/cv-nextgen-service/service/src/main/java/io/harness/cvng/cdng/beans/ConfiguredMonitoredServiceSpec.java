@@ -10,9 +10,9 @@ package io.harness.cvng.cdng.beans;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
-import io.harness.cvng.cdng.beans.v2.DefaultAndConfiguredMonitoredServiceSpec;
 import io.harness.pms.yaml.ParameterField;
 
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
@@ -23,8 +23,7 @@ import lombok.experimental.SuperBuilder;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-// if in future we want configured field, uncomment this.
-//@JsonTypeName("Configured")
+@JsonTypeName("Configured")
 @OwnedBy(HarnessTeam.CV)
 @SuperBuilder
 public class ConfiguredMonitoredServiceSpec extends DefaultAndConfiguredMonitoredServiceSpec {

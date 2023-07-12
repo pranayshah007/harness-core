@@ -9,14 +9,9 @@ package io.harness.servicenow;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
-import static org.apache.commons.lang3.StringUtils.isBlank;
-
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.jackson.JsonNodeUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.util.ArrayList;
 import java.util.List;
 import javax.validation.constraints.NotNull;
@@ -26,6 +21,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 
+/**
+ * Use ServiceNowFieldNGUtils to parse ServiceNowFieldNG from jsonNode.
+ *
+ * Ref: 125-cd-nextgen/src/main/java/io/harness/cdng/servicenow/utils/ServiceNowFieldNGUtils.java
+ * */
 @OwnedBy(CDC)
 @Data
 @Builder
@@ -44,28 +44,5 @@ public class ServiceNowFieldNG {
 
   public ServiceNowFieldNG() {
     this.allowedValues = new ArrayList<>();
-  }
-
-  private ServiceNowFieldNG(String key, JsonNode node) {
-    this.key = JsonNodeUtils.getString(node, "key", key);
-    this.name = JsonNodeUtils.mustGetString(node, "name");
-    this.required = JsonNodeUtils.getBoolean(node, "required", false);
-    this.isCustom = this.key.startsWith("customfield_");
-    this.schema = new ServiceNowFieldSchemaNG(node.get("schema"));
-    this.allowedValues = new ArrayList<>();
-    addAllowedValues(node.get("allowedValues"));
-    this.internalType = JsonNodeUtils.getString(node, "internalType");
-    if (isBlank(this.internalType)) {
-      this.internalType = JsonNodeUtils.getString(node, "type");
-    }
-  }
-
-  private void addAllowedValues(JsonNode node) {
-    if (node == null || !node.isArray()) {
-      return;
-    }
-
-    ArrayNode allowedValues = (ArrayNode) node;
-    allowedValues.forEach(av -> this.allowedValues.add(new ServiceNowFieldAllowedValueNG(av)));
   }
 }

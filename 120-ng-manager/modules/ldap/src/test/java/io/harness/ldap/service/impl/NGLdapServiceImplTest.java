@@ -102,10 +102,12 @@ public class NGLdapServiceImplTest extends CategoryTest {
   @Before
   public void setup() {
     initMocks(this);
-    ldapSettingsWithEncryptedDataDetail = LdapSettingsWithEncryptedDataDetail.builder()
-                                              .ldapSettings(LdapSettings.builder().uuid(LDAP_SETTINGS_ID).build())
-                                              .encryptedDataDetail(EncryptedDataDetail.builder().build())
-                                              .build();
+    LdapConnectionSettings settings = new LdapConnectionSettings();
+    ldapSettingsWithEncryptedDataDetail =
+        LdapSettingsWithEncryptedDataDetail.builder()
+            .ldapSettings(LdapSettings.builder().uuid(LDAP_SETTINGS_ID).connectionSettings(settings).build())
+            .encryptedDataDetail(EncryptedDataDetail.builder().build())
+            .build();
   }
 
   @Test

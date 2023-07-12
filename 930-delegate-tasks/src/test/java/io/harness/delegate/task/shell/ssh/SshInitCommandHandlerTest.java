@@ -8,6 +8,7 @@
 package io.harness.delegate.task.shell.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.AZURE_CLI_INSTALLATION_CHECK_HINT;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.VITALIE;
@@ -15,6 +16,8 @@ import static io.harness.rule.OwnerRule.VITALIE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -37,6 +40,8 @@ import io.harness.delegate.task.ssh.NgDownloadArtifactCommandUnit;
 import io.harness.delegate.task.ssh.NgInitCommandUnit;
 import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.ScriptCommandUnit;
+import io.harness.delegate.task.ssh.artifact.AzureArtifactDelegateConfig;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -401,5 +406,33 @@ public class SshInitCommandHandlerTest extends CategoryTest {
     assertThat(evaluatedDownloadArtifactCommandUnit.getDestinationPath()).isEqualTo(downloadDestinationPath);
 
     assertThat(ngCommandUnits.get(4)).isInstanceOf(NgCleanupCommandUnit.class);
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testShouldCheckIfForAzureUniversalPackageCLI_isInstalled_Fails() {
+    NgDownloadArtifactCommandUnit downloadArtifactCommandUnit = NgDownloadArtifactCommandUnit.builder().build();
+    AzureArtifactDelegateConfig azureArtifactDelegateConfig =
+        AzureArtifactDelegateConfig.builder().packageType("upack").build();
+
+    SshCommandTaskParameters parameters = SshCommandTaskParameters.builder()
+                                              .executeOnDelegate(false)
+                                              .executionId("test")
+                                              .sshInfraDelegateConfig(PdcSshInfraDelegateConfig.builder().build())
+                                              .artifactDelegateConfig(azureArtifactDelegateConfig)
+                                              .commandUnits(Arrays.asList(initCommandUnit, downloadArtifactCommandUnit))
+                                              .build();
+
+    doReturn(scriptProcessExecutor).when(sshScriptExecutorFactory).getExecutor(any());
+    when(scriptProcessExecutor.executeCommandString(anyString(), anyBoolean()))
+        .thenReturn(CommandExecutionStatus.FAILURE);
+    when(scriptProcessExecutor.getLogCallback()).thenReturn(logCallback);
+
+    assertThatThrownBy(()
+                           -> sshInitCommandHandler.handle(
+                               parameters, initCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext))
+        .isInstanceOf(HintException.class)
+        .hasMessage(AZURE_CLI_INSTALLATION_CHECK_HINT);
   }
 }

@@ -5,6 +5,7 @@
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 set +e
+set -xe
 # Define colors
 RED="\e[1m\e[91m"
 GREEN='\033[1;32m'
@@ -30,6 +31,10 @@ function check_bug_ticket(){
   if [ "$2" = "null" ]; then
     echo -e "${RED}JIRA FIELD: The Jira Resolved As field is not selected. Please select a resolution option${NC}" >>/tmp/error_fields
   fi
+  # release note summary 
+   if [[ "$3" == "Yes"  &&  "$4" == "null" ]]; then 
+    echo -e ${RED}ERROR: The 'public_release_notes_summary' field is empty. Please provide a summary for the public release notes.${NC} >>/tmp/error_fields
+  fi
   if [ -f /tmp/error_fields ]; then
     cat /tmp/error_fields
     exit 1
@@ -40,7 +45,10 @@ function check_bug_ticket(){
 function check_story_ticket(){
   if [ $1 = "null" ]; then
     echo -e "${RED}ERROR: The JIRA field 'FF Added' has not been updated. Please ensure that 'FF Added' is updated before proceeding${NC}">> /tmp/error_fields
-
+  fi
+  # release note summary 
+  if [[  "$2" == "Yes"  &&  "$3" == "null" ]]; then 
+    echo -e ${RED}ERROR: The 'public_release_notes_summary' field is empty. Please provide a summary for the public release notes.${NC} >>/tmp/error_fields
   fi
 
   if [ -f /tmp/error_fields ]; then
@@ -66,7 +74,7 @@ fi
 
 echo -e "${YELLOW}JIRA Key is : $KEY ${NC}"
 
-jira_response=`curl -X GET -H "Content-Type: application/json" https://harness.atlassian.net/rest/api/2/issue/${KEY}?fields=issuetype,customfield_10687,customfield_10709,customfield_10748,customfield_10763,customfield_10785,priority --user $JIRA_USERNAME:$JIRA_PASSWORD`
+jira_response=`curl -X GET -H "Content-Type: application/json" https://harness.atlassian.net/rest/api/2/issue/${KEY}?fields=issuetype,customfield_10687,customfield_10709,customfield_10748,customfield_10763,customfield_10785,priority,customfield_10669,customfield_10719 --user $JIRA_USERNAME:$JIRA_PASSWORD`
 
 errorsFound=`echo "${jira_response}" | jq ".errorMessages" | tr -d '"'`
 if [[ ! $errorsFound == "null" ]]; then
@@ -77,6 +85,8 @@ fi
 
 issuetype=`echo "${jira_response}" | jq ".fields.issuetype.name" | tr -d '"'`
 prioritytype=`echo "${jira_response}" | jq ".fields.priority.name" | tr -d '"'`
+release_notes_candidate=`echo "${jira_response}" | jq ".fields.customfield_10669[0].value" | tr -d '"'`
+public_release_notes_summary=`echo "${jira_response}" | jq ".fields.customfield_10719" | tr -d '"'`
 
 # No longer require what changed or phase injected in fields BT-950
 # Once again remove the check for what changed or phase injected BT-3453
@@ -117,9 +127,8 @@ echo -e "${YELLOW}ISSUETYPE is ${issuetype}${NC}"
 echo -e "${YELLOW}INFO: Checking JIRA STATUS OF issueType ${issuetype}${NC}"
 
 if [ "${issuetype}" = "Bug" ]; then
-  check_bug_ticket "${bug_resolution}" "${jira_resolved_as}"
+  check_bug_ticket "${bug_resolution}" "${jira_resolved_as}" "${release_notes_candidate}" "${public_release_notes_summary}"
 elif [ "${issuetype}" = "Story" ]; then
-  check_story_ticket "${ff_added}"
+  check_story_ticket "${ff_added}" "${release_notes_candidate}" "${public_release_notes_summary}"
 fi
-
 echo -e "${GREEN}JIRA Key is : $KEY has all the mandatory details${NC}"

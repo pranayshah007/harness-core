@@ -11,6 +11,7 @@ import static io.harness.ConnectorConstants.CONNECTOR_TYPES;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.NGEntityName;
@@ -34,10 +35,12 @@ import org.hibernate.validator.constraints.NotBlank;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(DX)
+@RecasterAlias("io.harness.connector.ConnectorInfoOutcomeDTO")
 public class ConnectorInfoOutcomeDTO {
   @NotNull @NotBlank @NGEntityName String name;
   @NotNull @NotBlank @EntityIdentifier String identifier;
   String description;
+  String accountIdentifier;
   String orgIdentifier;
   String projectIdentifier;
   Map<String, String> tags;

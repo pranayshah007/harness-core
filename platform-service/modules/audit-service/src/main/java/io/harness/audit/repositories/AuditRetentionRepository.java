@@ -20,4 +20,5 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 @HarnessRepo
 public interface AuditRetentionRepository extends PagingAndSortingRepository<AuditSettings, String> {
   Optional<AuditSettings> findByAccountIdentifier(String accountIdentifier);
+  void deleteByAccountIdentifier(String accountIdentifier);
 }

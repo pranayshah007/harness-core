@@ -15,6 +15,7 @@ import io.harness.delegate.beans.connector.ConnectorValidationParams;
 import io.harness.delegate.beans.connector.scm.ScmValidationParams;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.shell.SshSessionConfig;
 
 import com.google.inject.Inject;
@@ -37,6 +38,10 @@ public class GitValidationHandler implements ConnectorValidationHandler {
           scmValidationParams.getScmConnector(), scmValidationParams.getEncryptedDataDetails());
     }
 
+    if (scmValidationParams.isGithubAppAuthentication()) {
+      return gitCommandTaskHandler.validateGitCredentialsForGithubAppAuth(
+          (GithubConnectorDTO) scmValidationParams.getScmConnector(), scmValidationParams.getEncryptedDataDetails());
+    }
     return gitCommandTaskHandler.validateGitCredentials(
         gitConfig, scmValidationParams.getScmConnector(), accountIdentifier, sshSessionConfig);
   }

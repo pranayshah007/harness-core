@@ -9,6 +9,7 @@ package io.harness.cvng.core.services.impl.monitoredService;
 
 import static io.harness.cvng.core.utils.DateTimeUtils.roundDownTo5MinBoundary;
 import static io.harness.cvng.dashboard.entities.HeatMap.HeatMapResolution.FIVE_MIN;
+import static io.harness.cvng.notification.beans.NotificationRuleConditionType.DEPLOYMENT_IMPACT_REPORT;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.ANJAN;
@@ -61,6 +62,7 @@ import io.harness.cvng.beans.cvnglog.CVNGLogType;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
 import io.harness.cvng.beans.cvnglog.TraceableType;
+import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
 import io.harness.cvng.client.FakeNotificationClient;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.client.NextGenServiceImpl;
@@ -127,6 +129,7 @@ import io.harness.cvng.events.monitoredservice.MonitoredServiceToggleEvent;
 import io.harness.cvng.events.monitoredservice.MonitoredServiceUpdateEvent;
 import io.harness.cvng.models.VerificationType;
 import io.harness.cvng.notification.beans.ChangeObservedConditionSpec;
+import io.harness.cvng.notification.beans.DeploymentImpactReportConditionSpec;
 import io.harness.cvng.notification.beans.NotificationRuleCondition;
 import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleDTO;
@@ -222,6 +225,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Mock ChangeSourceService changeSourceServiceMock;
   @Mock FakeNotificationClient notificationClient;
   @Mock private PersistentLocker mockedPersistentLocker;
+
+  @Mock SRMAnalysisStepService srmAnalysisStepService;
   @Mock private EnforcementClientService enforcementClientService;
   @Mock private FeatureFlagService featureFlagService;
 
@@ -300,6 +305,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     FieldUtils.writeField(monitoredServiceService, "notificationClient", notificationClient, true);
     FieldUtils.writeField(monitoredServiceService, "featureFlagService", featureFlagService, true);
     FieldUtils.writeField(monitoredServiceService, "ngLicenseHttpClient", ngLicenseHttpClient, true);
+    FieldUtils.writeField(monitoredServiceService, "srmAnalysisStepService", srmAnalysisStepService, true);
   }
 
   @Test
@@ -1239,6 +1245,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
                    builderFactory.getContext().getMonitoredServiceParams(), Arrays.asList(changeSourceIdentifier)))
         .isEmpty();
     assertThat(cvConfigs.size()).isEqualTo(0);
+    verify(srmAnalysisStepService).abortRunningStepsForMonitoredService(projectParams, monitoredServiceIdentifier);
   }
 
   @Test
@@ -3310,6 +3317,35 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(notificationRuleResponsePageResponse.getContent().get(0).isEnabled()).isTrue();
     assertThat(notificationRuleResponsePageResponse.getContent().get(0).getNotificationRule().getIdentifier())
         .isEqualTo(notificationRuleDTO.getIdentifier());
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetNotificationRuleConditions() {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
+    notificationRuleDTO.getConditions().add(NotificationRuleCondition.builder()
+                                                .type(DEPLOYMENT_IMPACT_REPORT)
+                                                .spec(DeploymentImpactReportConditionSpec.builder().build())
+                                                .build());
+    NotificationRuleResponse notificationRuleResponse =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
+        "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
+    monitoredServiceDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponse.getNotificationRule().getIdentifier())
+                          .enabled(true)
+                          .build()));
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    PageResponse<NotificationRuleCondition> notificationRuleConditions =
+        monitoredServiceService.getNotificationRuleConditions(projectParams, monitoredServiceDTO.getIdentifier(),
+            PageParams.builder().page(0).size(10).build(), List.of(DEPLOYMENT_IMPACT_REPORT));
+    assertThat(notificationRuleConditions.getTotalPages()).isEqualTo(1);
+    assertThat(notificationRuleConditions.getTotalItems()).isEqualTo(1);
+    assertThat(notificationRuleConditions.getContent().get(0).getType()).isEqualTo(DEPLOYMENT_IMPACT_REPORT);
   }
 
   @Test

@@ -12,8 +12,15 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
@@ -48,7 +55,7 @@ public interface NgManagerProxyApi {
       String harnessAccount);
 
   @POST
-  @Consumes({"application/json"})
+  @Consumes({"application/json", "text/plain; charset=utf-8"})
   @Produces({"text/plain", "application/json"})
   @Operation(operationId = "postProxyNgManager", summary = "Forward POST calls to NG Manager",
       description = "Forward POST calls to NG Manager", security = { @SecurityRequirement(name = "x-api-key") },

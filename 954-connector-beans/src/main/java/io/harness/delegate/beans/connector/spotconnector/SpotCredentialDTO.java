@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.connector.spotconnector;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotation.RecasterFieldName;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -30,6 +31,7 @@ import lombok.experimental.FieldDefaults;
 @ApiModel("SpotCredential")
 @JsonDeserialize(using = SpotCredentialDTODeserializer.class)
 @Schema(name = "SpotCredential", description = "This contains details of the Spot connector credential")
+@RecasterAlias("io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO")
 public class SpotCredentialDTO {
   @NotNull @RecasterFieldName(name = "type") @JsonProperty("type") SpotCredentialType spotCredentialType;
   @RecasterFieldName(name = "spec")

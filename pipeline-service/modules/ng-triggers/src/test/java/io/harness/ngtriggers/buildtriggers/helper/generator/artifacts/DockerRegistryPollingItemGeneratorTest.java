@@ -9,6 +9,7 @@ package io.harness.ngtriggers.buildtriggers.helper.generator.artifacts;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ADWAIT;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -28,6 +29,7 @@ import io.harness.rule.Owner;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Objects;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,6 +46,7 @@ public class DockerRegistryPollingItemGeneratorTest extends CategoryTest {
   String dockerregistry_pipeline_artifact_snippet_runtime_all;
   String dockerregistry_pipeline_artifact_snippet_runtime_tagonly;
   String ngTriggerYaml_artifact_dockerregistry;
+  String ngTriggerYaml_multi_region_artifact_dockerregistry;
 
   @Before
   public void setUp() throws IOException {
@@ -60,6 +63,9 @@ public class DockerRegistryPollingItemGeneratorTest extends CategoryTest {
 
     ngTriggerYaml_artifact_dockerregistry =
         Resources.toString(Objects.requireNonNull(classLoader.getResource("ng-trigger-artifact-dockerregistry.yaml")),
+            StandardCharsets.UTF_8);
+    ngTriggerYaml_multi_region_artifact_dockerregistry =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource("ng-trigger-multi-region-artifact.yaml")),
             StandardCharsets.UTF_8);
   }
 
@@ -107,5 +113,35 @@ public class DockerRegistryPollingItemGeneratorTest extends CategoryTest {
 
     // As All data is already prepared, Testing buildTriggerHelper.validateBuildType
     PollingItemGeneratorTestHelper.validateBuildType(buildTriggerOpsData, buildTriggerHelper);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testPollingItemGenerationForMultiRegionArtifactTrigger() throws Exception {
+    TriggerDetails triggerDetails = ngTriggerElementMapper.toTriggerDetails(
+        "acc", "org", "proj", ngTriggerYaml_multi_region_artifact_dockerregistry, true);
+    triggerDetails.getNgTriggerEntity().getMetadata().getMultiBuildMetadata().get(0).setPollingConfig(
+        PollingConfig.builder().signature("sig1").build());
+    triggerDetails.getNgTriggerEntity().getMetadata().getMultiBuildMetadata().get(1).setPollingConfig(
+        PollingConfig.builder().signature("sig1").build());
+    List<BuildTriggerOpsData> buildTriggerOpsDataList =
+        buildTriggerHelper.generateBuildTriggerOpsDataForMultiArtifact(triggerDetails);
+
+    PollingItem pollingItem1 = dockerRegistryPollingItemGenerator.generatePollingItem(buildTriggerOpsDataList.get(0));
+    PollingItemGeneratorTestHelper.baseAssert(pollingItem1, io.harness.polling.contracts.Category.ARTIFACT);
+    assertThat(pollingItem1.getPollingPayloadData()).isNotNull();
+    assertThat(pollingItem1.getPollingPayloadData().getConnectorRef()).isEqualTo("DockerConnectorUs");
+    assertThat(pollingItem1.getPollingPayloadData().getDockerHubPayload()).isNotNull();
+    assertThat(pollingItem1.getPollingPayloadData().getDockerHubPayload().getImagePath())
+        .isEqualTo("v2/hello-world-us");
+
+    PollingItem pollingItem2 = dockerRegistryPollingItemGenerator.generatePollingItem(buildTriggerOpsDataList.get(1));
+    PollingItemGeneratorTestHelper.baseAssert(pollingItem2, io.harness.polling.contracts.Category.ARTIFACT);
+    assertThat(pollingItem2.getPollingPayloadData()).isNotNull();
+    assertThat(pollingItem2.getPollingPayloadData().getConnectorRef()).isEqualTo("DockerConnectorApac");
+    assertThat(pollingItem2.getPollingPayloadData().getDockerHubPayload()).isNotNull();
+    assertThat(pollingItem2.getPollingPayloadData().getDockerHubPayload().getImagePath())
+        .isEqualTo("v2/hello-world-apac");
   }
 }

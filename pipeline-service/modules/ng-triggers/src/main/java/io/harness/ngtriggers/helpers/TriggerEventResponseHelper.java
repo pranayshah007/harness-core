@@ -116,7 +116,7 @@ public class TriggerEventResponseHelper {
             .triggerIdentifier(ngTriggerEntity == null ? null : ngTriggerEntity.getIdentifier())
             .message(message)
             .targetExecutionSummary(targetExecutionSummary)
-            .ngTriggerType(ngTriggerEntity.getType())
+            .ngTriggerType(ngTriggerEntity == null ? null : ngTriggerEntity.getType())
             .build();
     response.setExceptionOccurred(false);
     return response;
@@ -138,7 +138,7 @@ public class TriggerEventResponseHelper {
             .triggerIdentifier(ngTriggerEntity == null ? null : ngTriggerEntity.getIdentifier())
             .message(message)
             .targetExecutionSummary(targetExecutionSummary)
-            .ngTriggerType(ngTriggerEntity.getType())
+            .ngTriggerType(ngTriggerEntity == null ? null : ngTriggerEntity.getType())
             .pollingDocId(pollingDocId)
             .build();
     response.setExceptionOccurred(false);
@@ -149,7 +149,7 @@ public class TriggerEventResponseHelper {
       String message, TargetExecutionSummary targetExecutionSummary) {
     TriggerEventResponse response =
         TriggerEventResponse.builder()
-            .accountId(ngTriggerEntity.getAccountId())
+            .accountId(ngTriggerEntity == null ? null : ngTriggerEntity.getAccountId())
             .orgIdentifier(ngTriggerEntity == null ? null : ngTriggerEntity.getOrgIdentifier())
             .projectIdentifier(ngTriggerEntity == null ? null : ngTriggerEntity.getProjectIdentifier())
             .targetIdentifier(ngTriggerEntity == null ? null : ngTriggerEntity.getTargetIdentifier())
@@ -158,7 +158,7 @@ public class TriggerEventResponseHelper {
             .triggerIdentifier(ngTriggerEntity == null ? null : ngTriggerEntity.getIdentifier())
             .message(message)
             .targetExecutionSummary(targetExecutionSummary)
-            .ngTriggerType(ngTriggerEntity.getType())
+            .ngTriggerType(ngTriggerEntity == null ? null : ngTriggerEntity.getType())
             .build();
     response.setExceptionOccurred(false);
     return response;
@@ -193,9 +193,9 @@ public class TriggerEventResponseHelper {
         .build();
   }
 
-  public TriggerEventResponse prepareResponseForScmException(ParsePayloadResponse parsePayloadReponse) {
+  public TriggerEventResponse prepareResponseForScmException(ParsePayloadResponse parsePayloadResponse) {
     TriggerEventResponse.FinalStatus status = INVALID_PAYLOAD;
-    Exception exception = parsePayloadReponse.getException();
+    Exception exception = parsePayloadResponse.getException();
     if (StatusRuntimeException.class.isAssignableFrom(exception.getClass())) {
       StatusRuntimeException e = (StatusRuntimeException) exception;
 
@@ -203,7 +203,7 @@ public class TriggerEventResponseHelper {
         status = SCM_SERVICE_CONNECTION_FAILED;
       }
     }
-    return toResponse(status, parsePayloadReponse.getWebhookPayloadData().getOriginalEvent(), null, null,
+    return toResponse(status, parsePayloadResponse.getWebhookPayloadData().getOriginalEvent(), null, null,
         exception.getMessage(), null);
   }
 

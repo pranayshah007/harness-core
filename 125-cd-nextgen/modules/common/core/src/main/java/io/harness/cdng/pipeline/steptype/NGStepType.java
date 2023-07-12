@@ -278,7 +278,8 @@ public enum NGStepType {
   AWS_SAM_DEPLOY(
       "AWS SAM Deploy", Arrays.asList(ServiceDefinitionType.AWS_SAM), "AWS SAM", StepSpecTypeConstants.AWS_SAM_DEPLOY),
   @JsonProperty(StepSpecTypeConstants.DOWNLOAD_MANIFESTS)
-  DOWNLOAD_MANIFESTS("Download Manifests", Arrays.asList(ServiceDefinitionType.AWS_SAM), "AWS SAM",
+  DOWNLOAD_MANIFESTS("Download Manifests",
+      Arrays.asList(ServiceDefinitionType.AWS_SAM, ServiceDefinitionType.SERVERLESS_AWS_LAMBDA), "DOWNLOAD MANIFESTS",
       StepSpecTypeConstants.DOWNLOAD_MANIFESTS),
   @JsonProperty(StepSpecTypeConstants.AWS_SAM_BUILD)
   AWS_SAM_BUILD(
@@ -318,7 +319,11 @@ public enum NGStepType {
   @JsonProperty(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2)
   SERVERLESS_AWS_LAMBDA_DEPLOY_V2("Serverless Aws Lambda Deploy V2",
       Collections.singletonList(ServiceDefinitionType.SERVERLESS_AWS_LAMBDA), "Serverless Aws Lambda",
-      StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2);
+      StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2),
+  @JsonProperty(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PACKAGE_V2)
+  SERVERLESS_AWS_LAMBDA_PACKAGE_V2("Serverless Aws Lambda Package V2",
+      Collections.singletonList(ServiceDefinitionType.SERVERLESS_AWS_LAMBDA), "Serverless Aws Lambda",
+      StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PACKAGE_V2);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

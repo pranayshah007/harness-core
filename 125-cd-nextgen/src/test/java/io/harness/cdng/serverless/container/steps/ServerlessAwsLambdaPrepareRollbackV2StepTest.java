@@ -119,6 +119,6 @@ public class ServerlessAwsLambdaPrepareRollbackV2StepTest extends CategoryTest {
     doReturn(logKey).when(unitStep).getLogKey();
     doReturn(unitStep)
         .when(serverlessAwsLambdaPrepareRollbackV2Step)
-        .getUnitStep(any(), any(), any(), any(), any(), any());
+        .getUnitStep(any(), any(), any(), any(), any(), any(), any());
   }
 }

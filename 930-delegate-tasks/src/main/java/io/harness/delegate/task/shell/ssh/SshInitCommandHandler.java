@@ -17,6 +17,7 @@ import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifacts.azureartifacts.beans.AzureArtifactsProtocolType;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.shell.CommandTaskParameters;
@@ -28,8 +29,13 @@ import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.delegate.task.ssh.NgDownloadArtifactCommandUnit;
 import io.harness.delegate.task.ssh.NgInitCommandUnit;
 import io.harness.delegate.task.ssh.ScriptCommandUnit;
+import io.harness.delegate.task.ssh.artifact.AzureArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.exception.SshExceptionConstants;
 import io.harness.exception.CommandExecutionException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.runtime.SshCommandExecutionException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.shell.AbstractScriptExecutor;
@@ -52,6 +58,8 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(CDP)
 @Singleton
 public class SshInitCommandHandler implements CommandHandler {
+  private static final String AZURE_CLI_CHECK_SCRIPT = "az devops -h";
+
   @Inject private SshScriptExecutorFactory sshScriptExecutorFactory;
 
   @Override
@@ -87,9 +95,17 @@ public class SshInitCommandHandler implements CommandHandler {
             .build();
 
     AbstractScriptExecutor executor = sshScriptExecutorFactory.getExecutor(context);
-    CommandExecutionStatus commandExecutionStatus =
-        initAndGenerateScriptCommand(sshCommandTaskParameters, executor, context, taskContext);
-    return ExecuteCommandResponse.builder().status(commandExecutionStatus).build();
+
+    try {
+      checkIfDownloadAzureUniversalArtifactSupported(executor, sshCommandTaskParameters);
+      CommandExecutionStatus commandExecutionStatus =
+          initAndGenerateScriptCommand(sshCommandTaskParameters, executor, context, taskContext);
+      return ExecuteCommandResponse.builder().status(commandExecutionStatus).build();
+    } catch (Exception e) {
+      executor.getLogCallback().saveExecutionLog("Command finished with status " + CommandExecutionStatus.FAILURE,
+          LogLevel.ERROR, CommandExecutionStatus.FAILURE);
+      throw e;
+    }
   }
 
   private CommandExecutionStatus initAndGenerateScriptCommand(SshCommandTaskParameters taskParameters,
@@ -213,5 +229,31 @@ public class SshInitCommandHandler implements CommandHandler {
             context.evaluateVariable(downloadArtifactCommandUnit.getDestinationPath()));
       }
     });
+  }
+
+  private void checkIfDownloadAzureUniversalArtifactSupported(
+      AbstractScriptExecutor executor, SshCommandTaskParameters sshCommandTaskParameters) {
+    SshWinRmArtifactDelegateConfig artifactDelegateConfig = sshCommandTaskParameters.getArtifactDelegateConfig();
+    if (artifactDelegateConfig instanceof AzureArtifactDelegateConfig) {
+      AzureArtifactDelegateConfig azureArtifactDelegateConfig = (AzureArtifactDelegateConfig) artifactDelegateConfig;
+      if (AzureArtifactsProtocolType.upack.name().equals(azureArtifactDelegateConfig.getPackageType())) {
+        for (NgCommandUnit cu : sshCommandTaskParameters.getCommandUnits()) {
+          if (NGCommandUnitType.DOWNLOAD_ARTIFACT.equals(cu.getCommandUnitType())) {
+            checkIfAzureCliInstalled(executor);
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  private void checkIfAzureCliInstalled(AbstractScriptExecutor executor) {
+    CommandExecutionStatus status = executor.executeCommandString(AZURE_CLI_CHECK_SCRIPT, true);
+
+    if (!CommandExecutionStatus.SUCCESS.equals(status)) {
+      throw NestedExceptionUtils.hintWithExplanationException(SshExceptionConstants.AZURE_CLI_INSTALLATION_CHECK_HINT,
+          SshExceptionConstants.AZURE_CLI_INSTALLATION_CHECK_EXPLANATION,
+          new SshCommandExecutionException(SshExceptionConstants.AZURE_CLI_INSTALLATION_CHECK_FAILED));
+    }
   }
 }

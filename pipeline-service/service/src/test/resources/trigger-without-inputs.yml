@@ -15,5 +15,3 @@ trigger:
       spec:
         payloadConditions: []
         headerConditions: []
-  inputYaml: |
-    pipeline: {}

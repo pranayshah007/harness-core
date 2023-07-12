@@ -103,6 +103,7 @@ import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.springdata.TransactionHelper;
+import io.harness.telemetry.TelemetryReporter;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.helpers.InputsValidator;
@@ -137,6 +138,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -158,6 +160,8 @@ import retrofit2.Response;
 
 @OwnedBy(CDC)
 public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
+  @Mock TelemetryReporter telemetryReporter;
+  @Mock ExecutorService executorService;
   @Mock EnforcementClientService enforcementClientService;
   @Spy @InjectMocks private NGTemplateServiceHelper templateServiceHelper;
   @Mock private GitSyncSdkService gitSyncSdkService;
@@ -702,7 +706,8 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
                            -> templateService.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "templatex",
                                "versionxy", entity2.getVersion(), "", false))
         .isInstanceOf(UnexpectedException.class)
-        .hasMessage("Error while checking references for template templatex with version label: versionxy : null");
+        .hasMessageContainingAll(
+            "Error while checking references for template templatex with version label: versionxy :", "null");
 
     Call<ResponseDTO<Boolean>> request2 = mock(Call.class);
     String fqn2 = String.format("%s/orgId/projId/templateStable/versionxy/", ACCOUNT_ID);
@@ -1477,13 +1482,8 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThatThrownBy(
         () -> templateService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "zxcv", "as", false, false, false))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("[Error while retrieving template with identifier [zxcv] and versionLabel [as]]: INVALID_REQUEST");
-    /*
-    TODO:- Fix error message here Jira CDS-72694
-      "Template version from remote template file [%s] does not match with template version in request [%s]. Each
-    template version maps to a unique file on Git. Create a new version through harness or import a new version if the
-    file is already created on Git" Above message should have been thrown
-     */
+        .hasMessage(
+            "[Error while retrieving template with identifier [zxcv] and versionLabel [as]]: Template version from remote template file [version1] does not match with template version in request [as]. Each template version maps to a unique file on Git. Create a new version through harness or import a new version if the file is already created on Git");
   }
 
   @Test

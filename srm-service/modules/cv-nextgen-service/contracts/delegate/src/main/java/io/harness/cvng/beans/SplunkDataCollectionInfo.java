@@ -41,9 +41,7 @@ public class SplunkDataCollectionInfo extends LogDataCollectionInfo<SplunkConnec
 
   @Override
   public Map<String, String> collectionHeaders(SplunkConnectorDTO splunkConnectorDTO) {
-    Map<String, String> headers = new HashMap<>();
-    headers.put("Authorization", SplunkUtils.getAuthorizationHeader(splunkConnectorDTO));
-    return headers;
+    return SplunkUtils.collectionHeaders(splunkConnectorDTO);
   }
 
   @Override

@@ -92,6 +92,7 @@ public class GovernanceServiceHelper {
               .setAccountId(HarnessStringUtils.emptyIfNull(setEvaluationResponse.getAccount_id()))
               .setOrgId(HarnessStringUtils.emptyIfNull(setEvaluationResponse.getOrg_id()))
               .setProjectId(HarnessStringUtils.emptyIfNull(setEvaluationResponse.getProject_id()))
+              .setDescription(HarnessStringUtils.emptyIfNull(setEvaluationResponse.getDescription()))
               .build());
     }
     return policySetMetadataList;

@@ -17,6 +17,7 @@ import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
+import io.harness.pms.plan.execution.beans.dto.PipelineExecutionIdentifierSummaryDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionSummaryDTO;
 import io.harness.pms.stages.BasicStageInfo;
 import io.harness.pms.stages.StageExecutionSelectorHelper;
@@ -87,6 +88,17 @@ public class PipelineExecutionSummaryDtoMapper {
                 : pipelineExecutionSummaryEntity.getConnectorRef())
         .abortedBy(pipelineExecutionSummaryEntity.getAbortedBy())
         .executionMode(pipelineExecutionSummaryEntity.getExecutionMode())
+        .build();
+  }
+
+  public PipelineExecutionIdentifierSummaryDTO toExecutionIdentifierDto(
+      PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity) {
+    return PipelineExecutionIdentifierSummaryDTO.builder()
+        .orgIdentifier(pipelineExecutionSummaryEntity.getOrgIdentifier())
+        .projectIdentifier(pipelineExecutionSummaryEntity.getProjectIdentifier())
+        .planExecutionId(pipelineExecutionSummaryEntity.getPlanExecutionId())
+        .pipelineIdentifier(pipelineExecutionSummaryEntity.getPipelineIdentifier())
+        .runSequence(pipelineExecutionSummaryEntity.getRunSequence())
         .build();
   }
 

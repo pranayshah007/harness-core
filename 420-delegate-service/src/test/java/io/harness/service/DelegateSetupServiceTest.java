@@ -42,6 +42,7 @@ import io.harness.delegate.beans.DelegateGroupTags;
 import io.harness.delegate.beans.DelegateInsightsBarDetails;
 import io.harness.delegate.beans.DelegateInsightsDetails;
 import io.harness.delegate.beans.DelegateInstanceStatus;
+import io.harness.delegate.beans.DelegateListResponse;
 import io.harness.delegate.beans.DelegateProfile;
 import io.harness.delegate.beans.DelegateSize;
 import io.harness.delegate.beans.DelegateSizeDetails;
@@ -66,6 +67,7 @@ import com.google.inject.Inject;
 import io.fabric8.utils.Lists;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -263,6 +265,32 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
     delegateSetupService.deleteByAccountId(accountId);
     delegateGroupListing = delegateSetupService.listDelegateGroupDetails(accountId, null, null);
     assertThat(delegateGroupListing.getDelegateGroupDetails().size()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = ANUPAM)
+  @Category(UnitTests.class)
+  public void listDelegateShouldReturnDelegateGroups() {
+    prepareInitialData();
+
+    List<DelegateListResponse> delegateListResponses =
+        delegateSetupService.listDelegates(TEST_ACCOUNT_ID, null, null, DelegateFilterPropertiesDTO.builder().build());
+
+    assertThat(delegateListResponses).hasSize(3);
+    assertThat(delegateListResponses).extracting(DelegateListResponse::getName).containsOnly("grp1", "grp2", "grp4");
+  }
+
+  @Test
+  @Owner(developers = ANUPAM)
+  @Category(UnitTests.class)
+  public void listDelegateShouldReturnDelegateGroupsFilteredByTags() {
+    prepareInitialData();
+
+    List<DelegateListResponse> delegateListResponses = delegateSetupService.listDelegates(TEST_ACCOUNT_ID, null, null,
+        DelegateFilterPropertiesDTO.builder().delegateTags(new HashSet<>(List.of("taggroup1"))).build());
+
+    assertThat(delegateListResponses).hasSize(1);
+    assertThat(delegateListResponses.get(0).getName()).isEqualTo("grp1");
   }
 
   @Test

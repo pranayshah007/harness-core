@@ -40,6 +40,7 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   public static final String DELEGATE_TASK_VALIDATION = "delegate_task_validation";
   public static final String DELEGATE_TASK_NO_FIRST_WHITELISTED = "delegate_task_no_first_whitelisted";
   public static final String DELEGATE_REGISTRATION_FAILED = "delegate_registration_failed";
+  public static final String DELEGATE_REGISTRATION = "delegate_registration";
   public static final String DELEGATE_RESTARTED = "delegate_restarted";
   public static final String DELEGATE_DISCONNECTED = "delegate_disconnected";
   public static final String DELEGATE_DESTROYED = "destroy_delegate";
@@ -73,6 +74,7 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   public static final String PERPETUAL_TASKS_PAUSED = "perpetual_tasks_paused_num";
   public static final String PERPETUAL_TASKS_NON_ASSIGNABLE = "perpetual_tasks_non_assignable_num";
   public static final String PERPETUAL_TASKS_INVALID = "perpetual_invalid_tasks";
+  public static final String PERPETUAL_ASSIGNMENT_DELAY = "perpetual_tasks_assignment_delay";
 
   private final MetricService metricService;
   private final DelegateTaskMetricContextBuilder metricContextBuilder;

@@ -40,6 +40,7 @@ import io.harness.expression.VariableResolverTracker;
 import io.harness.expression.XmlFunctor;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.expression.functors.NGJsonFunctor;
+import io.harness.expression.functors.NGShellScriptFunctor;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.ProcessorResult;
@@ -49,6 +50,7 @@ import io.harness.pms.yaml.ParameterDocumentField;
 import io.harness.pms.yaml.ParameterDocumentFieldMapper;
 import io.harness.pms.yaml.ParameterFieldProcessor;
 import io.harness.pms.yaml.validation.InputSetValidatorFactory;
+import io.harness.shell.ScriptType;
 import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.common.collect.ImmutableList;
@@ -129,6 +131,7 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
     if (!refObjectSpecific) {
       // Add basic functors.
       addToContext("regex", new RegexFunctor());
+      addToContext("shell", new NGShellScriptFunctor(ScriptType.BASH));
       // Todo(Archit): revisit NGJsonFunctor(PIE-9772)
       if (contextMapProvided) {
         addToContext("json", new JsonFunctor(getContextMap()));

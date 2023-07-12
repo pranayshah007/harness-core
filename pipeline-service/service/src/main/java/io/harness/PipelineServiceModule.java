@@ -208,6 +208,7 @@ import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.template.TemplateResourceClientModule;
 import io.harness.threading.ThreadPool;
+import io.harness.threading.ThreadPoolConfig;
 import io.harness.time.TimeModule;
 import io.harness.timescaledb.JooqModule;
 import io.harness.timescaledb.TimeScaleDBConfig;
@@ -552,6 +553,19 @@ public class PipelineServiceModule extends AbstractModule {
     return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
         .addAll(PipelineServiceModuleRegistrars.morphiaRegistrars)
         .build();
+  }
+
+  @Provides
+  @Singleton
+  @Named("logStreamingClientThreadPool")
+  public ThreadPoolExecutor logStreamingClientThreadPool() {
+    ThreadPoolConfig threadPoolConfig = configuration != null && configuration.getLogStreamingServiceConfig() != null
+            && configuration.getLogStreamingServiceConfig().getThreadPoolConfig() != null
+        ? configuration.getLogStreamingServiceConfig().getThreadPoolConfig()
+        : ThreadPoolConfig.builder().corePoolSize(1).maxPoolSize(50).idleTime(30).timeUnit(TimeUnit.SECONDS).build();
+    return ThreadPool.create(threadPoolConfig.getCorePoolSize(), threadPoolConfig.getMaxPoolSize(),
+        threadPoolConfig.getIdleTime(), threadPoolConfig.getTimeUnit(),
+        new ThreadFactoryBuilder().setNameFormat("log-client-pool-%d").build());
   }
 
   @Provides

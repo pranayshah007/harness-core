@@ -627,7 +627,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
             })
             .collect(Collectors.toList());
 
-    Set<String> delegateSelectors = retrieveDelegateGroupImplicitSelectors(delegateGroup).keySet();
+    Set<String> delegateSelectors = new HashSet<>(retrieveDelegateGroupImplicitSelectors(delegateGroup).keySet());
     if (groupCustomSelectors != null) {
       delegateSelectors.addAll(groupCustomSelectors);
     }

@@ -315,7 +315,10 @@ public class ImagePullSecretUtils {
       if (githubTokenSpecDTO.getTokenRef() != null) {
         password = EmptyPredicate.isNotEmpty(githubTokenSpecDTO.getTokenRef().getDecryptedValue())
             ? new String(githubTokenSpecDTO.getTokenRef().getDecryptedValue())
-            : getPasswordExpression(githubTokenSpecDTO.getTokenRef().getIdentifier(), ambiance);
+            : getPasswordExpression(githubTokenSpecDTO.getTokenRef().toSecretRefStringValue() == null
+                    ? ""
+                    : githubTokenSpecDTO.getTokenRef().toSecretRefStringValue(),
+                ambiance);
 
       } else {
         throw new InvalidRequestException("The token reference for the Github Connector is null");

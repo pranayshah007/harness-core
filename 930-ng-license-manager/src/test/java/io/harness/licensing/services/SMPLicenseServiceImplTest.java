@@ -116,6 +116,7 @@ public class SMPLicenseServiceImplTest extends CategoryTest {
     when(accountService.getAccount("accountId")).thenReturn(mockAccount);
     when(moduleLicenseRepository.findByAccountIdentifierAndModuleType(Mockito.any(), Mockito.any()))
         .thenReturn(new ArrayList<>());
+    when(moduleLicenseRepository.findByAccountIdentifier(Mockito.any())).thenReturn(new ArrayList<>());
     when(moduleLicenseRepository.save(Mockito.any())).thenReturn(getModuleLicenses().get(0));
 
     licenseService.applySMPLicense(licenseDTO);
@@ -144,6 +145,7 @@ public class SMPLicenseServiceImplTest extends CategoryTest {
     when(accountService.getAccount("accountId")).thenReturn(mockAccount);
     when(moduleLicenseRepository.findByAccountIdentifierAndModuleType(Mockito.any(), Mockito.any()))
         .thenReturn(new ArrayList<>());
+    when(moduleLicenseRepository.findByAccountIdentifier("accountId")).thenReturn(new ArrayList<>());
     when(moduleLicenseRepository.save(Mockito.any())).thenReturn(getModuleLicenses().get(0));
 
     licenseService.applySMPLicense(licenseDTO);
@@ -172,6 +174,7 @@ public class SMPLicenseServiceImplTest extends CategoryTest {
     when(accountService.getAccount("accountId")).thenReturn(mockAccount);
     when(moduleLicenseRepository.findByAccountIdentifierAndModuleType("accountId", ModuleType.CD))
         .thenReturn(getModuleLicenses());
+    when(moduleLicenseRepository.findByAccountIdentifier("accountId")).thenReturn(getModuleLicenses());
     when(moduleLicenseRepository.findById(Mockito.eq(getModuleLicenses().get(0).getId())))
         .thenReturn(Optional.of(getModuleLicenses().get(0)));
     when(moduleLicenseRepository.save(Mockito.any())).thenReturn(getModuleLicenses().get(0));

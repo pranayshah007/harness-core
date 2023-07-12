@@ -18,7 +18,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.contracts.plan.ExpressionMode;
@@ -51,7 +50,6 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -75,11 +73,6 @@ public class PipelineStagePlanCreatorTest {
   private String PROJ = "proj";
   private String PIPELINE = "pipeline";
   private String ACC = "acc";
-
-  @Before
-  public void setup() {
-    doReturn(false).when(pmsFeatureFlagService).isEnabled(ACC, FeatureName.PIE_PROCESS_ON_JSON_NODE);
-  }
 
   @Test
   @Owner(developers = PRASHANTSHARMA)
@@ -116,7 +109,7 @@ public class PipelineStagePlanCreatorTest {
                                      .project(PROJ)
                                      .inputSetReferences(Collections.singletonList("ref"))
                                      .build();
-    doReturn("inputYaml").when(pipelineStageHelper).getInputSetYaml(yamlField, PipelineVersion.V0);
+    doReturn(null).when(pipelineStageHelper).getInputSetJsonNode(yamlField, PipelineVersion.V0);
 
     PipelineStageStepParameters stepParameters =
         pipelineStagePlanCreator.getStepParameter(config, yamlField, "planNodeId", PipelineVersion.V0, "acc");
@@ -124,7 +117,7 @@ public class PipelineStagePlanCreatorTest {
     assertThat(stepParameters.getOrg()).isEqualTo(ORG);
     assertThat(stepParameters.getProject()).isEqualTo(PROJ);
     assertThat(stepParameters.getStageNodeId()).isEqualTo("planNodeId");
-    assertThat(stepParameters.getPipelineInputs()).isEqualTo("inputYaml");
+    assertThat(stepParameters.getPipelineInputsJsonNode()).isEqualTo(null);
     assertThat(stepParameters.getInputSetReferences().size()).isEqualTo(1);
     assertThat(stepParameters.getInputSetReferences().get(0)).isEqualTo("ref");
   }

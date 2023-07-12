@@ -8,6 +8,7 @@
 package io.harness.logstreaming;
 
 import io.harness.secret.ConfigSecret;
+import io.harness.threading.ThreadPoolConfig;
 
 import lombok.Builder;
 import lombok.Value;
@@ -19,4 +20,5 @@ import lombok.experimental.FieldDefaults;
 public class LogStreamingServiceConfiguration {
   private String baseUrl;
   @ConfigSecret private String serviceToken;
+  private ThreadPoolConfig threadPoolConfig;
 }

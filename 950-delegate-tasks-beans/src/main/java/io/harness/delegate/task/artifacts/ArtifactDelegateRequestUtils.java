@@ -185,7 +185,7 @@ public class ArtifactDelegateRequestUtils {
         artifactDirectory = "/";
       }
       return getArtifactoryGenericArtifactDelegateRequest(repositoryName, repositoryFormat, artifactDirectory, null,
-          null, null, artifactoryConnectorDTO, encryptedDataDetails, ArtifactSourceType.ARTIFACTORY_REGISTRY);
+          tagRegex, null, artifactoryConnectorDTO, encryptedDataDetails, ArtifactSourceType.ARTIFACTORY_REGISTRY);
     }
     return ArtifactoryArtifactDelegateRequest.builder()
         .repositoryName(repositoryName)

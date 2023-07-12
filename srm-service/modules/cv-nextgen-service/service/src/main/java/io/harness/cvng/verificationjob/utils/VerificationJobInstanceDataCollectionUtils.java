@@ -11,10 +11,12 @@ import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 @UtilityClass
 public class VerificationJobInstanceDataCollectionUtils {
@@ -27,14 +29,39 @@ public class VerificationJobInstanceDataCollectionUtils {
     }
     if (verificationJobInstance.getResolvedJob().getType().equals(VerificationJobType.AUTO)) {
       return !VerificationJobInstanceServiceInstanceUtils.isValidCanaryDeployment(
-          verificationJobInstance.getServiceInstanceDetailsFromCD());
+          verificationJobInstance.getServiceInstanceDetails());
     }
     return true;
   }
 
+  public List<String> validPreDeploymentNodePatterns(VerificationJobInstance verificationJobInstance) {
+    if (!shouldCollectPreDeploymentData(verificationJobInstance)
+        || verificationJobInstance.getServiceInstanceDetails() == null
+        || StringUtils.isEmpty(verificationJobInstance.getServiceInstanceDetails().getControlNodeRegExPattern())) {
+      return null;
+    }
+    return Arrays.asList(verificationJobInstance.getServiceInstanceDetails().getControlNodeRegExPattern());
+  }
+
+  public List<String> validPostDeploymentNodePatterns(VerificationJobInstance verificationJobInstance) {
+    if (verificationJobInstance.getServiceInstanceDetails() == null
+        || StringUtils.isEmpty(verificationJobInstance.getServiceInstanceDetails().getTestNodeRegExPattern())) {
+      return null;
+    }
+    if (verificationJobInstance.getResolvedJob().getType().equals(VerificationJobType.ROLLING)
+        || verificationJobInstance.getResolvedJob().getType().equals(VerificationJobType.BLUE_GREEN)) {
+      return Arrays.asList(verificationJobInstance.getServiceInstanceDetails().getTestNodeRegExPattern());
+    }
+    if (StringUtils.isEmpty(verificationJobInstance.getServiceInstanceDetails().getControlNodeRegExPattern())) {
+      return null;
+    }
+    return Arrays.asList(verificationJobInstance.getServiceInstanceDetails().getTestNodeRegExPattern(),
+        verificationJobInstance.getServiceInstanceDetails().getControlNodeRegExPattern());
+  }
+
   public boolean shouldCollectUsingNodesFromCD(VerificationJobInstance verificationJobInstance) {
-    return verificationJobInstance.getServiceInstanceDetailsFromCD() != null
-        && verificationJobInstance.getServiceInstanceDetailsFromCD().isValid();
+    return verificationJobInstance.getServiceInstanceDetails() != null
+        && verificationJobInstance.getServiceInstanceDetails().isShouldUseNodesFromCD();
   }
 
   public List<String> getPreDeploymentNodesToCollect(VerificationJobInstance verificationJobInstance) {
@@ -48,7 +75,7 @@ public class VerificationJobInstanceDataCollectionUtils {
     if (verificationJobInstance.getResolvedJob().getType().equals(VerificationJobType.CANARY)
         || (verificationJobInstance.getResolvedJob().getType().equals(VerificationJobType.AUTO)
             && VerificationJobInstanceServiceInstanceUtils.isValidCanaryDeployment(
-                verificationJobInstance.getServiceInstanceDetailsFromCD()))) {
+                verificationJobInstance.getServiceInstanceDetails()))) {
       List<String> postDeploymentNodes = new ArrayList<>();
       postDeploymentNodes.addAll(CollectionUtils.emptyIfNull(
           VerificationJobInstanceServiceInstanceUtils.getSampledTestNodes(verificationJobInstance)));

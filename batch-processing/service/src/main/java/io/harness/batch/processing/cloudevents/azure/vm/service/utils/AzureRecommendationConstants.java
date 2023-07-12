@@ -99,8 +99,8 @@ public final class AzureRecommendationConstants {
     REGION_ID_TO_REGION.put("chinanorth3", "chinanorth3");
     REGION_ID_TO_REGION.put("chinaeast3", "chinaeast3");
     REGION_ID_TO_REGION.put("germanywc", "germanywestcentral");
-    REGION_ID_TO_REGION.put("germanycentral", "germanycentral");
-    REGION_ID_TO_REGION.put("germanynortheast", "germanynortheast");
-    REGION_ID_TO_REGION.put("germanynorth", "germanynorth");
+    REGION_ID_TO_REGION.put("germanyc", "germanycentral");
+    REGION_ID_TO_REGION.put("germanyne", "germanynortheast");
+    REGION_ID_TO_REGION.put("germanyn", "germanynorth");
   }
 }

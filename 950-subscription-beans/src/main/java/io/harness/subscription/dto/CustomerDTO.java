@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
 import lombok.Data;
+import org.jvnet.hk2.annotations.Optional;
 
 @Data
 @Builder
@@ -20,4 +21,5 @@ public class CustomerDTO {
   private String billingEmail;
   private String companyName;
   private AddressDto address;
+  @Optional private String defaultPaymentMethod;
 }

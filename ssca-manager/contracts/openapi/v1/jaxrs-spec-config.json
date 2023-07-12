@@ -1,0 +1,24 @@
+{
+  "skipOverwrite": false,
+  "java11": true,
+  "typeMappings": {
+  },
+  "importMappings": {
+  },
+  "hideGenerationTimestamp": true,
+  "oas3": true,
+  "apiPackage": "io.harness.spec.server.ssca.v1",
+  "modelPackage": "io.harness.spec.server.ssca.v1.model",
+  "groupId": "io.harness",
+  "artifactId": "ssca-manager-server-spec",
+  "artifactVersion": "1.0.0",
+  "interfaceOnly": true,
+  "returnResponse": true,
+  "sourceFolder": "src/main/java",
+  "dateLibrary": "java8",
+  "ignoreImportMapping": [
+  ],
+  "additionalProperties": {
+    "useTags": true
+  }
+}

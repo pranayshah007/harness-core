@@ -62,6 +62,7 @@ public enum FeatureRestrictionName {
 
   // CV Features
   SRM_SERVICES("SRM_SERVICES"),
+  ANALYZE_DEPLOYMENT_STEP("ANALYZE_DEPLOYMENT_STEP"),
 
   // CD Step Palette
   K8S_BG_SWAP_SERVICES("K8S_BG_SWAP_SERVICES"),

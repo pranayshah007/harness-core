@@ -10,6 +10,7 @@ package io.harness.connector.mappers.githubconnector;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.entities.embedded.githubconnector.GithubApiAccess;
+import io.harness.connector.entities.embedded.githubconnector.GithubApp;
 import io.harness.connector.entities.embedded.githubconnector.GithubAppApiAccess;
 import io.harness.connector.entities.embedded.githubconnector.GithubAuthentication;
 import io.harness.connector.entities.embedded.githubconnector.GithubConnector;
@@ -25,6 +26,7 @@ import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
+import io.harness.delegate.beans.connector.scm.github.GithubAppDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAppSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
@@ -109,6 +111,15 @@ public class GithubDTOToEntity implements ConnectorDTOToEntityMapper<GithubConne
         final GithubOauthDTO githubOauthDTO = (GithubOauthDTO) httpCredentialsDTO.getHttpCredentialsSpec();
         return GithubOauth.builder()
             .tokenRef(SecretRefHelper.getSecretConfigString(githubOauthDTO.getTokenRef()))
+            .build();
+      case GITHUB_APP:
+        final GithubAppDTO githubAppDTO = (GithubAppDTO) httpCredentialsDTO.getHttpCredentialsSpec();
+        return GithubApp.builder()
+            .applicationId(githubAppDTO.getApplicationId())
+            .installationId(githubAppDTO.getInstallationId())
+            .privateKeyRef(SecretRefHelper.getSecretConfigString(githubAppDTO.getPrivateKeyRef()))
+            .installationIdRef(SecretRefHelper.getSecretConfigString(githubAppDTO.getInstallationIdRef()))
+            .applicationIdRef(SecretRefHelper.getSecretConfigString(githubAppDTO.getApplicationIdRef()))
             .build();
       default:
         throw new UnknownEnumTypeException("Github Http Auth Type", type == null ? null : type.getDisplayName());

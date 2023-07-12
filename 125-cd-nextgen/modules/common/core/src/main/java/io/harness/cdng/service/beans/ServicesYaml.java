@@ -7,7 +7,7 @@
 
 package io.harness.cdng.service.beans;
 
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.beans.SwaggerConstants;
@@ -41,7 +41,7 @@ public class ServicesYaml implements Visitable {
 
   @VariableExpression(skipVariableExpression = true)
   @ApiModelProperty(dataType = SwaggerConstants.SERVICE_YAML_LIST_CLASSPATH)
-  @YamlSchemaTypes(value = {expression})
+  @YamlSchemaTypes(value = {runtime})
   ParameterField<List<ServiceYamlV2>> values;
 
   @JsonProperty("metadata") ServicesMetadata servicesMetadata;

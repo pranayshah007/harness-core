@@ -13,6 +13,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cvng.cdng.beans.CVNGStepParameter.CVNGStepParameterBuilder;
 import io.harness.cvng.cdng.services.impl.CVNGStep;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.contracts.steps.StepType;
@@ -89,16 +90,21 @@ public class CVNGStepInfo implements CVStepInfoBase {
 
   @Override
   public SpecParameters getSpecParameters() {
-    return CVNGStepParameter.builder()
-        .serviceIdentifier(createExpressionField(SERVICE_IDENTIFIER_EXPRESSION))
-        .envIdentifier(createExpressionField(ENV_IDENTIFIER_EXPRESSION))
-        .deploymentTag(spec.getDeploymentTag())
-        .failOnNoAnalysis(spec.getFailOnNoAnalysis())
-        .shouldUseCDNodes(spec.getShouldUseCDNodes())
-        .sensitivity(spec.getSensitivity())
-        .baseline(spec.getBaseline())
-        .spec(spec)
-        .monitoredService(monitoredService)
-        .build();
+    CVNGStepParameterBuilder cvngStepParameterBuilder =
+        CVNGStepParameter.builder()
+            .serviceIdentifier(createExpressionField(SERVICE_IDENTIFIER_EXPRESSION))
+            .envIdentifier(createExpressionField(ENV_IDENTIFIER_EXPRESSION))
+            .deploymentTag(spec.getDeploymentTag())
+            .failOnNoAnalysis(spec.getFailOnNoAnalysis())
+            .sensitivity(spec.getSensitivity())
+            .baseline(spec.getBaseline())
+            .spec(spec)
+            .monitoredService(monitoredService);
+    if (spec instanceof HostLevelVerificationJobSpec) {
+      cvngStepParameterBuilder.shouldUseCDNodes(((HostLevelVerificationJobSpec) spec).shouldUseCDNodes);
+      cvngStepParameterBuilder.controlNodeRegExPattern(((HostLevelVerificationJobSpec) spec).controlNodeRegExPattern);
+      cvngStepParameterBuilder.testNodeRegExPattern(((HostLevelVerificationJobSpec) spec).testNodeRegExPattern);
+    }
+    return cvngStepParameterBuilder.build();
   }
 }

@@ -87,4 +87,15 @@ public class GitDefaultBranchCacheHelper {
     String repoUrl = gitRepoHelper.getRepoUrl(scmConnector, repoName);
     return new GitDefaultBranchCacheKey(accountIdentifier, repoUrl, repoName);
   }
+
+  public boolean isGitDefaultBranch(String accountIdentifier, ScmConnector scmConnector, String repoName,
+      String requestBranch, String responseBranch) {
+    if (isEmpty(requestBranch)) {
+      return true;
+    }
+    if (isEmpty(responseBranch)) {
+      return false;
+    }
+    return responseBranch.equals(getDefaultBranchFromCache(accountIdentifier, repoName, scmConnector));
+  }
 }

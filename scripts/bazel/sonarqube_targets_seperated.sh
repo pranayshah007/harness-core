@@ -37,6 +37,11 @@ elif [[ "$MODULES" == "Indivi" ]]; then
   modules=$(cat indivi.log)
   echo "$modules"
 
+elif [[ "$MODULES" == "go_modules" ]]; then
+
+  bazel query 'attr(tags, "sonarqube", //...:*)' | cut -c 3- | rev | cut -c 11- | rev |\
+    awk ' { print "        \"//"$1":sonarqube\": \""$1"\"," } ' | grep '//product\|//commons\|//queue-service'
+
 else
   echo "No Module Range Provided...Exiting"; exit 1
 fi

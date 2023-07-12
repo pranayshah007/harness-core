@@ -76,6 +76,11 @@ public class NGServiceOverridesEntity implements PersistentEntity, ScopeAware {
   @Trimmed String clusterIdentifier; // will infer scope of the cluster from environment
   ServiceOverridesSpec spec;
   ServiceOverridesType type;
+  /*
+  yamlInternal - This field is only used for create and update API calls via terraform provider.
+  We take overrides spec yaml from user and then convert it to the spec object for further processing.
+   */
+  String yamlInternal;
 
   @Builder.Default Boolean isV2 = Boolean.FALSE;
 

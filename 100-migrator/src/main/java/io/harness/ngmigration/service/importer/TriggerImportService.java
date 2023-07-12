@@ -130,7 +130,7 @@ public class TriggerImportService implements ImportService {
                                                              .id(yamlFile.getCgBasicInfo().getId())
                                                              .type(yamlFile.getCgBasicInfo().getType())
                                                              .build(),
-                                                      yamlFile -> yamlFile));
+                                                      yamlFile -> yamlFile, (yamlFile1, yamlFile2) -> yamlFile1));
 
     MigrationInputDTO inputDTO = MigratorUtility.getMigrationInput(authToken, importDTO);
     PmsClient pmsClient = MigratorUtility.getRestClient(inputDTO, pipelineServiceClientConfig, PmsClient.class);
