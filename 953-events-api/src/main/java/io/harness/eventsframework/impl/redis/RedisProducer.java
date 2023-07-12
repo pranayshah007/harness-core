@@ -142,6 +142,8 @@ public class RedisProducer extends AbstractProducer {
         Map<String, String> contextMap = MDC.getCopyOfContextMap();
         if (contextMap != null && contextMap.containsKey(REDIS_STREAM_TRACE_ID_KEY)) {
           redisData.put(REDIS_STREAM_TRACE_ID_KEY, contextMap.get(REDIS_STREAM_TRACE_ID_KEY));
+        } else {
+          log.debug("Unable to find trace id from span and context");
         }
       }
     } catch (Exception e) {
