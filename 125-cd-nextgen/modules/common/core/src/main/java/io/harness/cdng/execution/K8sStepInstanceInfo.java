@@ -16,6 +16,11 @@ import lombok.Data;
 @Data
 @Builder
 @RecasterAlias("io.harness.cdng.execution.K8sStepInstanceInfo")
-public class K8sStepInstanceInfo extends StepInstanceInfo {
+public class K8sStepInstanceInfo implements StepInstanceInfo {
   String podName;
+
+  @Override
+  public String getName() {
+    return podName;
+  }
 }
