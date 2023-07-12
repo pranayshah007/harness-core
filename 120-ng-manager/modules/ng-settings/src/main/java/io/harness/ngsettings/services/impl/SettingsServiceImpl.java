@@ -514,14 +514,13 @@ public class SettingsServiceImpl implements SettingsService {
       eventProducer.send(
           Message.newBuilder()
               .putAllMetadata(ImmutableMap.of(ACCOUNT_IDENTIFIER_METRICS_KEY, accountIdentifier,
-                                  EventsFrameworkMetadataConstants.ENTITY_TYPE,
-                                  EventsFrameworkMetadataConstants.SETTINGS, EventsFrameworkMetadataConstants.ACTION,
-                                  action, EventsFrameworkMetadataConstants.SETTINGS_GROUP_IDENTIFIER, groupIdentifier),
-                  EventsFrameworkMetadataConstants.SETTINGS_CATEGORY, category)
+                  EventsFrameworkMetadataConstants.ENTITY_TYPE, EventsFrameworkMetadataConstants.SETTINGS,
+                  EventsFrameworkMetadataConstants.ACTION, action, EventsFrameworkMetadataConstants.SETTINGS_CATEGORY,
+                  category.name(), EventsFrameworkMetadataConstants.SETTINGS_GROUP_IDENTIFIER, groupIdentifier))
               .setData(settingsEntityChangeDTOBuilder.build().toByteString())
               .build());
     } catch (Exception ex) {
-      log.error("Exception while publishing the event of settings update for {}",
+      log.error("Exception while publishing the event of settings {} for {}", action,
           String.format(SETTINGS_STRING, identifier, accountIdentifier, orgIdentifier, projectIdentifier));
     }
   }
