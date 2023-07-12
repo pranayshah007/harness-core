@@ -165,7 +165,12 @@ public class PerpetualTaskRecordHandler extends IteratorPumpAndRedisModeHandler 
         DelegateResponseData response = delegateService.executeTaskV2(validationTask);
 
         if (response instanceof ErrorNotifyResponseData) {
-          log.info("Perpetual validation task {} failed, unable to assign delegate.", validationTask.getUuid());
+          String errorMessage = ((ErrorNotifyResponseData) response).getErrorMessage();
+          String exception = ((ErrorNotifyResponseData) response).getException().toString();
+
+          log.info(
+              "Perpetual validation task {} failed, unable to assign delegate. With error message: {} exception: {}",
+              validationTask.getUuid(), errorMessage, exception);
           if (CONTAINER_INSTANCE_SYNC.equals(taskRecord.getPerpetualTaskType())) {
             perpetualTaskService.markStateAndNonAssignedReason_OnAssignTryCount(taskRecord,
                 PerpetualTaskUnassignedReason.PT_TASK_FAILED, PerpetualTaskState.TASK_INVALID,
