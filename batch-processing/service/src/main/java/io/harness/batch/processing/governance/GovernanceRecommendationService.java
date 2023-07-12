@@ -235,6 +235,13 @@ public class GovernanceRecommendationService {
     filters.add(QLCEViewFilterWrapper.builder()
                     .idFilter(QLCEViewFilter.builder()
                                   .field(regionQlceViewFieldInputBuilder.build())
+                                  .operator(QLCEViewFilterOperator.NOT_IN)
+                                  .values(new String[] {"global"})
+                                  .build())
+                    .build());
+    filters.add(QLCEViewFilterWrapper.builder()
+                    .idFilter(QLCEViewFilter.builder()
+                                  .field(regionQlceViewFieldInputBuilder.build())
                                   .operator(QLCEViewFilterOperator.NOT_NULL)
                                   .values(new String[] {""})
                                   .build())
