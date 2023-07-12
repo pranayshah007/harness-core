@@ -6,11 +6,13 @@ import io.harness.persistence.HPersistence;
 import io.harness.selection.log.DelegateSelectionLog;
 import io.harness.service.intfc.DelegateCache;
 
+import software.wings.service.intfc.DMSDataStoreService;
 import software.wings.service.intfc.DMSDelegateSelectionLogService;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -29,7 +31,7 @@ public class DMSDelegateSelectionLogServiceImpl implements DMSDelegateSelectionL
   private static final String TASK_ASSIGNED = "Delegate assigned for task execution";
   private static final String ASSIGNED = "Assigned";
 
-  //  @Inject private DataStoreService dataStoreService;
+  @Inject private DMSDataStoreService dataStoreService;
   private Cache<String, List<DelegateSelectionLog>> cache =
       Caffeine.newBuilder()
           .executor(Executors.newSingleThreadExecutor(
@@ -37,6 +39,16 @@ public class DMSDelegateSelectionLogServiceImpl implements DMSDelegateSelectionL
           .expireAfterWrite(1000, TimeUnit.MILLISECONDS)
           .removalListener(this::dispatchSelectionLogs)
           .build();
+
+  public DMSDelegateSelectionLogServiceImpl() {
+    // caffeine cache doesn't evict solely on time, it does it lazily only when new entries are added.
+    // adding this executor to continuously purge so that the records are written
+    Executors
+        .newSingleThreadScheduledExecutor(
+            new ThreadFactoryBuilder().setNameFormat("delegate-selection-log-cleanup").build())
+        .scheduleAtFixedRate(
+            this::purgeSelectionLogs, 5000, 1000, TimeUnit.MILLISECONDS); // periodic cleanup for expired keys
+  }
   @Override
   public void logTaskAssigned(String delegateId, DelegateTask delegateTask) {
     if (!delegateTask.isSelectionLogsTrackingEnabled()) {
@@ -58,6 +70,7 @@ public class DMSDelegateSelectionLogServiceImpl implements DMSDelegateSelectionL
 
   @Override
   public synchronized void save(DelegateSelectionLog selectionLog) {
+    log.info("Saving logs to cache to save it later");
     Optional.ofNullable(cache.get(selectionLog.getAccountId(), log -> new ArrayList<>()))
         .ifPresent(logs -> logs.add(selectionLog));
   }
@@ -68,15 +81,20 @@ public class DMSDelegateSelectionLogServiceImpl implements DMSDelegateSelectionL
   }
 
   private void dispatchSelectionLogs(String accountId, List<DelegateSelectionLog> logs, RemovalCause removalCause) {
-    //    try {
-    //      dataStoreService.save(DelegateSelectionLog.class, logs, true);
-    //      // TODO: remove this once reading from datastore is operational
-    ////      if (dataStoreService instanceof GoogleDataStoreServiceImpl) {
-    ////        persistence.save(logs);
-    ////      }
-    //    } catch (Exception exception) {
-    //      log.error("Error while saving into Database ", exception);
-    //    }
+    try {
+      dataStoreService.save(DelegateSelectionLog.class, logs, true);
+      // TODO: remove this once reading from datastore is operational
+      //      if (dataStoreService instanceof GoogleDataStoreServiceImpl) {
+      //        persistence.save(logs);
+      //      }
+    } catch (Exception exception) {
+      log.error("Error while saving into Database ", exception);
+    }
     return;
+  }
+
+  @VisibleForTesting
+  void purgeSelectionLogs() {
+    this.cache.cleanUp();
   }
 }

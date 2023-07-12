@@ -288,7 +288,7 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
   @Override
   public Optional<DelegateSelectionLogParams> fetchSelectedDelegateForTask(String accountId, String taskId) {
     DelegateSelectionLog delegateSelectionLog = null;
-    if (featureFlagService.isEnabled(FeatureName.DEL_SELECTION_LOGS_READ_FROM_GOOGLE_DATA_STORE, accountId)) {
+    if (false) {
       List<DelegateSelectionLog> logs =
           dataStoreService
               .list(DelegateSelectionLog.class,

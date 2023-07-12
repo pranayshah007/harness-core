@@ -20,6 +20,8 @@ import io.harness.service.intfc.DMSAssignDelegateService;
 import io.harness.service.intfc.DMSTaskServiceClassic;
 import io.harness.service.intfc.DelegateRingService;
 
+import software.wings.service.impl.DMSMongoDataStoreServiceImpl;
+import software.wings.service.intfc.DMSDataStoreService;
 import software.wings.service.intfc.DMSDelegateSelectionLogService;
 
 import com.google.inject.AbstractModule;
@@ -50,6 +52,7 @@ public class DmsModule extends AbstractModule {
         .toProvider(NGLogStreamingClientFactory.builder()
                         .logStreamingServiceBaseUrl(config.getLogStreamingServiceConfig().getBaseUrl())
                         .build());
+    bind(DMSDataStoreService.class).to(DMSMongoDataStoreServiceImpl.class);
     //    install(new EventsFrameworkModule(config.getEventsFrameworkConfiguration(),
     //            configuration.isEventsFrameworkAvailableInOnPrem(),
     //            StartupMode.DELEGATE_SERVICE.equals(startupMode)));

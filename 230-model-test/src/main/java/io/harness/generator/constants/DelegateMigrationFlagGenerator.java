@@ -29,7 +29,8 @@ public class DelegateMigrationFlagGenerator {
           "software.wings.beans.DelegateSequenceConfig", "io.harness.delegate.beans.DelegateToken",
           "io.harness.delegate.beans.Delegate", "io.harness.perpetualtask.internal.PerpetualTaskRecord",
           "io.harness.delegate.beans.perpetualtask.PerpetualTaskScheduleConfig",
-          "io.harness.delegate.beans.VersionOverride", "io.harness.delegate.beans.TaskSelectorMap", "delegateTask");
+          "io.harness.delegate.beans.VersionOverride", "io.harness.delegate.beans.TaskSelectorMap",
+          "io.harness.selection.log.DelegateSelectionLog", "delegateTask");
 
   @Inject
   public DelegateMigrationFlagGenerator(HPersistence persistence) {
