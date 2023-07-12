@@ -60,6 +60,7 @@ message FetchParkedTaskStatusResponse {
 message HTTPTaskResponse {
   string httpResponseBody = 1;
   int32 httpResponseCode = 2;
+  bytes httpResponseBodyInBytes = 3;
 }
 
 // Jira Task Response data
