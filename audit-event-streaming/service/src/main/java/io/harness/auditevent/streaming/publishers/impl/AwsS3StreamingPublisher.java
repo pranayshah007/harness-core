@@ -15,8 +15,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.NgSetupFields.NG;
 import static io.harness.delegate.beans.NgSetupFields.OWNER;
 
-import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REGION;
-
 import io.harness.audit.entities.streaming.AwsS3StreamingDestination;
 import io.harness.audit.entities.streaming.StreamingDestination;
 import io.harness.audit.streaming.dtos.AuditBatchDTO;
@@ -174,7 +172,7 @@ public class AwsS3StreamingPublisher implements StreamingPublisher {
         .awsTaskType(AwsTaskType.PUT_AUDIT_BATCH_TO_BUCKET)
         .awsConnector(connector)
         .encryptionDetails(encryptionDetails)
-        .region(AWS_DEFAULT_REGION)
+        .region(connector.getCredential().getTestRegion())
         .bucketName(((AwsS3StreamingDestination) streamingDestination).getBucket())
         .auditBatch(AuditBatchDTO.builder()
                         .batchId(streamingBatch.getId())
