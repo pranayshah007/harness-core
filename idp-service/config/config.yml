@@ -239,3 +239,187 @@ enableAudit: false
 
 internalAccounts:
   - kmpySmUISimoRrJL6NL73w
+
+
+
+logServiceConfig:
+  baseUrl: http://localhost-inc:8079
+  globalToken: "c76e567a-b341-404d-a8dd-d9738714eb82"
+
+
+sscaServiceConfig:
+  httpClientConfig:
+    baseUrl: http://localhost:8186
+    connectTimeOutSeconds: 40
+    readTimeOutSeconds: 40
+  serviceSecret: secret
+
+stoServiceConfig:
+  baseUrl: http://localhost:8078
+  globalToken: "78d16b66-4b4c-11eb-8377-acde48001122"
+
+apiUrl: https://localhost:8181/#/
+
+scmConnectionConfig:
+  url: localhost:8091
+
+pmsSdkExecutionPoolConfig:
+  corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}
+  maxPoolSize: ${PMS_SDK_EXECUTION_POOL_MAX_SIZE:-300}
+  idleTime: ${PMS_SDK_EXECUTION_POOL_IDLE_TIME:-120}
+  timeUnit: ${PMS_SDK_EXECUTION_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
+
+pmsSdkOrchestrationEventPoolConfig:
+  corePoolSize: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_CORE_SIZE:-50}
+  maxPoolSize: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_MAX_SIZE:-300}
+  idleTime: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME:-120}
+  timeUnit: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
+
+pmsPlanCreatorServicePoolConfig:
+  corePoolSize: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_CORE_SIZE:-2}
+  maxPoolSize: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_MAX_SIZE:-3}
+  idleTime: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_IDLE_TIME:-30}
+  timeUnit: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
+
+opaClientConfig:
+  baseUrl: http://localhost:3000
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
+policyManagerSecret: secret
+
+ciExecutionServiceConfig:
+  miningPatternConfig:
+    gcsCreds: null
+    projectId: null
+    bucketName: null
+  queueServiceClientConfig:
+    httpClientConfig:
+      baseUrl: http://localhost:9091/
+      connectTimeOutSeconds: 15
+      readTimeOutSeconds: 15
+    queueServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+    envNamespace: ${EVENTS_FRAMEWORK_ENV_NAMESPACE:-localhost}
+  addonImageTag: v1.4-alpha
+  liteEngineImageTag: v1.4-alpha
+  defaultMemoryLimit: 200
+  defaultCPULimit: 200
+  defaultInternalImageConnector: "account.harnessimage"
+  executionLimits:
+    free:
+      defaultTotalExecutionCount: 20
+      defaultMacExecutionCount: 5
+    team:
+      defaultTotalExecutionCount: 50
+      defaultMacExecutionCount: 10
+    enterprise:
+      defaultTotalExecutionCount: 100
+      defaultMacExecutionCount: 10
+    overrideConfig:
+      - "kmpySmUISimoRrJL6NL73w:1:1"
+  pvcDefaultStorageSize: 25600
+  delegateServiceEndpointVariableValue: "delegate-service:8080"
+  addonImage: harness/ci-addon:1.16.3
+  liteEngineImage: harness/ci-lite-engine:1.16.3
+  isLocal: false
+  hostedVmConfig:
+    splitLinuxAmd64Pool: false
+    splitLinuxArm64Pool: false
+    splitWindowsAmd64Pool: false
+  stepConfig:
+    # The below config is for K8 steps
+    gitCloneConfig:
+      # Use rootless image only for K8 git clone
+      image: harness/drone-git:1.2.7-rootless
+      entrypoint:
+        - /usr/local/bin/clone
+      windowsEntrypoint:
+        - "pwsh"
+        - "C:\\bin\\clone.ps1"
+    buildAndPushDockerRegistryConfig:
+      image: plugins/kaniko:1.7.0
+      entrypoint:
+        - /kaniko/kaniko-docker
+    buildAndPushECRConfig:
+      image: plugins/kaniko-ecr:1.7.0
+      entrypoint:
+        - /kaniko/kaniko-ecr
+    buildAndPushGCRConfig:
+      image: plugins/kaniko-gcr:1.7.0
+      entrypoint:
+        - /kaniko/kaniko-gcr
+    buildAndPushACRConfig:
+      image: plugins/kaniko-acr:1.7.0
+      entrypoint:
+        - /kaniko/kaniko-acr
+    gcsUploadConfig:
+      image: plugins/gcs:1.3.0
+      entrypoint:
+        - /bin/drone-gcs
+      windowsEntrypoint:
+        - "C:\\drone-gcs.exe"
+    s3UploadConfig:
+      image: plugins/s3:1.2.0
+      entrypoint:
+        - /bin/drone-s3
+      windowsEntrypoint:
+        - "C:\\drone-s3.exe"
+    securityConfig:
+      image: harness/sto-plugin:dev
+      entrypoint:
+        - /bin/sh
+        - -c
+        - python3 ${DOCKER_ENTRYPOINT}
+    artifactoryUploadConfig:
+      image: plugins/artifactory:1.2.0
+      entrypoint:
+        - /bin/plugin
+      windowsEntrypoint:
+        - "C:\\bin\\drone-artifactory.exe"
+    cacheGCSConfig:
+      image: plugins/cache:1.4.6
+      entrypoint:
+        - /bin/drone-cache
+      windowsEntrypoint:
+        - "C:\\drone-cache.exe"
+    cacheS3Config:
+      image: plugins/cache:1.4.6
+      entrypoint:
+        - /bin/drone-cache
+      windowsEntrypoint:
+        - "C:\\drone-cache.exe"
+    iacmTerraform:
+      image: plugins/harness_terraform:dev
+      entrypoint:
+        - /bin/harness-terraform
+      windowsEntrypoint:
+        - "C:\\harness-terraform.exe"
+    vmImageConfig:
+      # Use root image for VM git clone
+      gitClone: harness/drone-git:1.2.7
+      buildAndPushDockerRegistry: plugins/docker:20.13.0
+      buildAndPushACR: plugins/acr:20.13.0
+      buildAndPushECR: plugins/ecr:20.13.0
+      buildAndPushGCR: plugins/gcr:20.13.0
+      gcsUpload: plugins/gcs:1.3.0
+      s3Upload: plugins/s3:1.2.0
+      security: harness/sto-plugin:dev
+      artifactoryUpload: plugins/artifactory:1.2.0
+      cacheGCS: plugins/cache:1.4.6
+      cacheS3: plugins/cache:1.4.6
+      iacmTerraform: plugins/harness_terraform:dev
+
+
+segmentConfiguration:
+  enabled: false
+  url: "segment_url_place_holder"
+  apiKey: "segment_api_key"
+  certValidationRequired: false
+
+iacmServiceConfig:
+  baseUrl: http://localhost:8080
+  externalUrl: http://localhost:8080
+  globalToken: "551715ea-ca71-11ec-9d64-0242ac120002"
+
+enforcementClientConfiguration:
+  enforcementCheckEnabled: false

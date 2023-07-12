@@ -9,6 +9,8 @@ package io.harness.idp.serializer.kryo;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.idp.pipeline.stages.node.IDPStageConfigImpl;
+import io.harness.idp.pipeline.stages.node.IDPStageNode;
 import io.harness.serializer.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
@@ -16,5 +18,9 @@ import com.esotericsoftware.kryo.Kryo;
 @OwnedBy(HarnessTeam.IDP)
 public class IdpServiceKryoRegistrar implements KryoRegistrar {
   @Override
-  public void register(Kryo kryo) {}
+  public void register(Kryo kryo) {
+    kryo.register(IDPStageNode.class, 1234567);
+    kryo.register(IDPStageConfigImpl.class, 1234568);
+    kryo.register(IDPStageNode.StepType.class, 1234569);
+  }
 }

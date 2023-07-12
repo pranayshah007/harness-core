@@ -405,6 +405,7 @@ java_library(
         "//315-sto-manager/app:__subpackages__",
         "//332-ci-manager/app:__subpackages__",
         "//idp-service/src/main/java/io/harness/idp/scorecard/datapointsdata:__subpackages__",
+        "//idp-service/src/main/java/io/harness/idp/pipeline:__subpackages__"
     ],
     deps = shared_dependencies + [
         "//:lombok",

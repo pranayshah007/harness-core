@@ -150,6 +150,7 @@ public class EntityYamlRootNames {
   public static final String ZAP = "Zap";
 
   public static final String SECURITY_STAGE = "securityStage";
+  public static final String IDP_STAGE = "idpStage";
   public static final String SECURITY_STEP = "securitySteps";
   public static final String GIT_CLONE = "GitClone";
   public static final String RESTORE_CACHE_GCS = "RestoreCacheGCS";
