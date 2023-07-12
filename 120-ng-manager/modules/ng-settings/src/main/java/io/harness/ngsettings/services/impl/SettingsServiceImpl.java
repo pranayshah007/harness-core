@@ -7,15 +7,24 @@
 
 package io.harness.ngsettings.services.impl;
 
+import static io.harness.NGConstants.SETTINGS_STRING;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_IDENTIFIER_METRICS_KEY;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
+
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
 import io.harness.enforcement.constants.FeatureRestrictionName;
+import io.harness.eventsframework.EventsFrameworkConstants;
+import io.harness.eventsframework.EventsFrameworkMetadataConstants;
+import io.harness.eventsframework.api.Producer;
+import io.harness.eventsframework.entity_crud.EntityChangeDTO;
+import io.harness.eventsframework.producer.Message;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.Edition;
@@ -43,8 +52,10 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.repositories.ngsettings.spring.SettingConfigurationRepository;
 import io.harness.repositories.ngsettings.spring.SettingRepository;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.google.protobuf.StringValue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -72,13 +83,15 @@ public class SettingsServiceImpl implements SettingsService {
   private final Map<String, SettingValidator> settingValidatorMap;
   private final Map<String, SettingEnforcementValidator> settingEnforcementValidatorMap;
   private final LicenseService licenseService;
+  private final Producer eventProducer;
 
   @Inject
   public SettingsServiceImpl(SettingConfigurationRepository settingConfigurationRepository,
       SettingRepository settingRepository, SettingsMapper settingsMapper,
       @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, OutboxService outboxService,
       Map<String, SettingValidator> settingValidatorMap,
-      Map<String, SettingEnforcementValidator> settingEnforcementValidatorMap, LicenseService licenseService) {
+      Map<String, SettingEnforcementValidator> settingEnforcementValidatorMap, LicenseService licenseService,
+      @Named(EventsFrameworkConstants.ENTITY_CRUD) Producer eventProducer) {
     this.settingConfigurationRepository = settingConfigurationRepository;
     this.settingRepository = settingRepository;
     this.settingsMapper = settingsMapper;
@@ -87,6 +100,7 @@ public class SettingsServiceImpl implements SettingsService {
     this.settingValidatorMap = settingValidatorMap;
     this.settingEnforcementValidatorMap = settingEnforcementValidatorMap;
     this.licenseService = licenseService;
+    this.eventProducer = eventProducer;
   }
 
   @Override
@@ -136,6 +150,9 @@ public class SettingsServiceImpl implements SettingsService {
           settingResponseDTO = updateSetting(accountIdentifier, orgIdentifier, projectIdentifier, settingRequestDTO);
         }
         settingResponses.add(settingsMapper.writeBatchResponseDTO(settingResponseDTO));
+        publishEvent(accountIdentifier, orgIdentifier, projectIdentifier,
+            settingResponseDTO.getSetting().getIdentifier(), settingResponseDTO.getSetting().getCategory(),
+            settingResponseDTO.getSetting().getGroupIdentifier(), EventsFrameworkMetadataConstants.UPDATE_ACTION);
       } catch (Exception exception) {
         log.error("Error when updating setting:", exception);
         settingResponses.add(settingsMapper.writeBatchResponseDTO(settingRequestDTO.getIdentifier(), exception));
@@ -478,6 +495,34 @@ public class SettingsServiceImpl implements SettingsService {
     if (!SettingUtils.isSettingEditableForAccountEdition(edition, settingConfiguration)) {
       throw new InvalidRequestException(String.format(
           "Your current account plan does not support editing the setting- %s", settingConfiguration.getIdentifier()));
+    }
+  }
+
+  private void publishEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier,
+      SettingCategory category, String groupIdentifier, String action) {
+    try {
+      EntityChangeDTO.Builder settingsEntityChangeDTOBuilder =
+          EntityChangeDTO.newBuilder()
+              .setAccountIdentifier(StringValue.of(accountIdentifier))
+              .setIdentifier(StringValue.of(identifier));
+      if (isNotBlank(orgIdentifier)) {
+        settingsEntityChangeDTOBuilder.setOrgIdentifier(StringValue.of(orgIdentifier));
+      }
+      if (isNotBlank(projectIdentifier)) {
+        settingsEntityChangeDTOBuilder.setProjectIdentifier(StringValue.of(projectIdentifier));
+      }
+      eventProducer.send(
+          Message.newBuilder()
+              .putAllMetadata(ImmutableMap.of(ACCOUNT_IDENTIFIER_METRICS_KEY, accountIdentifier,
+                                  EventsFrameworkMetadataConstants.ENTITY_TYPE,
+                                  EventsFrameworkMetadataConstants.SETTINGS, EventsFrameworkMetadataConstants.ACTION,
+                                  action, EventsFrameworkMetadataConstants.SETTINGS_GROUP_IDENTIFIER, groupIdentifier),
+                  EventsFrameworkMetadataConstants.SETTINGS_CATEGORY, category)
+              .setData(settingsEntityChangeDTOBuilder.build().toByteString())
+              .build());
+    } catch (Exception ex) {
+      log.error("Exception while publishing the event of settings update for {}",
+          String.format(SETTINGS_STRING, identifier, accountIdentifier, orgIdentifier, projectIdentifier));
     }
   }
 }
