@@ -28,6 +28,7 @@ import io.harness.serializer.kryo.WatcherBeansKryoRegister;
 import io.harness.serializer.morphia.CommonEntitiesMorphiaRegister;
 import io.harness.serializer.morphia.DelegateServiceBeansMorphiaRegistrar;
 import io.harness.serializer.morphia.DelegateServiceMorphiaRegistrar;
+import io.harness.serializer.morphia.DelegateTaskPackageConverter;
 import io.harness.serializer.morphia.EventEntitiesMorphiaRegister;
 import io.harness.serializer.morphia.EventMorphiaRegistrar;
 import io.harness.serializer.morphia.LimitsMorphiaRegistrar;
@@ -115,6 +116,7 @@ public class ManagerRegistrars {
           .addAll(PersistenceRegistrars.morphiaConverters)
           .addAll(DelegateTasksBeansRegistrars.morphiaConverters)
           .add(TaskDataV2Convertor.class)
+          .add(DelegateTaskPackageConverter.class)
           .build();
 
   public static final ImmutableList<Class<? extends Converter<?, ?>>> springConverters =

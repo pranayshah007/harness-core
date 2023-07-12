@@ -20,6 +20,7 @@ public class DelegateAgentConfig extends Configuration {
   @JsonProperty private final String accountId;
   @JsonProperty private final String delegateToken;
   @JsonProperty private final String managerUrl;
+  @JsonProperty private final String dmsUrl;
   @JsonProperty private final String verificationServiceUrl;
   @JsonProperty private final String cvNextGenUrl;
   @JsonProperty private final long heartbeatIntervalMs;

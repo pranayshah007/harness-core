@@ -12,8 +12,10 @@ import static io.harness.annotations.dev.HarnessTeam.DEL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheConfig;
 import io.harness.cf.CfClientConfig;
+import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.ff.FeatureFlagConfig;
 import io.harness.lock.DistributedLockImplementation;
+import io.harness.logstreaming.LogStreamingServiceConfig;
 import io.harness.mongo.MongoConfig;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
@@ -50,6 +52,11 @@ public class DelegateServiceConfiguration extends Configuration {
   @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
   @JsonProperty("distributedLockImplementation") private DistributedLockImplementation distributedLockImplementation;
   @JsonProperty("redisLockConfig") @ConfigSecret private RedisConfig redisLockConfig;
+  @JsonProperty("logStreamingServiceConfig") @ConfigSecret private LogStreamingServiceConfig logStreamingServiceConfig;
+  @JsonProperty("eventsFramework") @ConfigSecret private EventsFrameworkConfiguration eventsFrameworkConfiguration;
+  @JsonProperty(value = "enableRedisForDelegateService", defaultValue = "false")
+  private boolean enableRedisForDelegateService;
+  @JsonProperty("redisDelegateConfig") @ConfigSecret private RedisConfig delegateServiceRedisConfig;
 
   public DelegateServiceConfiguration() {
     DefaultServerFactory defaultServerFactory = new DefaultServerFactory();

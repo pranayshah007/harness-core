@@ -136,6 +136,7 @@ import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.common.DelegateRunnableTask;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
 import io.harness.delegate.task.validation.DelegateConnectionResultDetail;
+import io.harness.dmsclient.DelegateAgentDMSClient;
 import io.harness.event.client.impl.tailer.ChronicleEventTailer;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.UnexpectedException;
@@ -334,6 +335,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
 
+  @Inject private DelegateAgentDMSClient delegateAgentDMSClient;
+
   @Inject @Named("healthMonitorExecutor") private ScheduledExecutorService healthMonitorExecutor;
   @Inject @Named("watcherMonitorExecutor") private ScheduledExecutorService watcherMonitorExecutor;
   @Inject @Named("inputExecutor") private ScheduledExecutorService inputExecutor;
@@ -502,12 +505,12 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private void initDelegateProcess(final boolean watched) {
     try {
-      if (delegateConfiguration.isLocalNgDelegate()) {
+      if (true) {
         delegateNg = true;
-        DELEGATE_GROUP_NAME = "localDelegate";
+        //    DELEGATE_GROUP_NAME = "localDelegateAcquire";
         // Setting delegate type as kubernetes, as NG doesn't allow shell delegates.
         DELEGATE_TYPE = KUBERNETES;
-        DELEGATE_NAME = "LocalDelegate";
+        DELEGATE_NAME = "localDelegateAcquire";
       }
       accountId = delegateConfiguration.getAccountId();
       if (perpetualTaskWorker != null) {
@@ -2057,11 +2060,15 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         currentlyAcquiringTasks.add(delegateTaskId);
 
         log.debug("Try to acquire DelegateTask - accountId: {}", accountId);
-        Call<DelegateTaskPackage> acquireCall =
-            delegateAgentManagerClient.acquireTask(delegateId, delegateTaskId, accountId, delegateInstanceId);
 
+        // How to make it configurable? As base url for dms and manager would be different.
+        // We can make it default to hit manager and add a variable to hit DMS
+        Call<DelegateTaskPackage> acquireCall =
+            delegateAgentDMSClient.acquireTask(delegateId, delegateTaskId, accountId, delegateInstanceId);
+        //
         DelegateTaskPackage delegateTaskPackage = executeAcquireCallWithRetry(
             acquireCall, String.format("Failed acquiring delegate task %s by delegate %s", delegateTaskId, delegateId));
+        log.info("Printing Delegate task package : {}", delegateTaskPackage.toString());
 
         if (delegateTaskPackage == null || delegateTaskPackage.getData() == null) {
           if (delegateTaskPackage == null) {

@@ -70,8 +70,11 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(DEL)
 public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsService {
   @Inject private HPersistence persistence;
+
+  // If we can take care of below two, then we can this class to 420-delegate-service entirely.
   @Inject private DelegateService delegateService;
   @Inject private DelegateTaskServiceClassic delegateTaskServiceClassic;
+
   @Inject private DelegateCache delegateCache;
   @Inject private FeatureFlagService featureFlagService;
   @Inject private DataStoreService dataStoreService;
