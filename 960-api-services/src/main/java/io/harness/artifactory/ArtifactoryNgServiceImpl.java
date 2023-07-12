@@ -52,8 +52,11 @@ public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
   }
 
   @Override
-  public List<BuildDetails> getArtifactList(
-      ArtifactoryConfigRequest artifactoryConfig, String repositoryName, String artifactPath, int maxVersions) {
+  public List<BuildDetails> getArtifactList(ArtifactoryConfigRequest artifactoryConfig, String repositoryName,
+      String artifactPath, int maxVersions, String artifactPathFilter, String artifactDirectory) {
+    if (EmptyPredicate.isNotEmpty(artifactPathFilter)) {
+      return getArtifactList(artifactoryConfig, repositoryName, artifactDirectory, artifactPathFilter, maxVersions);
+    }
     return artifactoryClient.getArtifactList(artifactoryConfig, repositoryName, artifactPath, maxVersions);
   }
 
@@ -71,8 +74,8 @@ public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
     return buildDetails;
   }
 
-  private List<BuildDetails> getLatestArtifactForArtifactPathFilter(ArtifactoryConfigRequest artifactoryConfig,
-      String repositoryName, String artifactDirectory, String artifactPathFilter, int maxVersions) {
+  private List<BuildDetails> getArtifactList(ArtifactoryConfigRequest artifactoryConfig, String repositoryName,
+      String artifactDirectory, String artifactPathFilter, int maxVersions) {
     Pattern artifactPathRegexPattern = null;
     try {
       artifactPathRegexPattern = Pattern.compile(artifactPathFilter);
@@ -112,8 +115,8 @@ public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
       buildDetails = getLatestArtifactForArtifactPath(
           artifactoryConfig, repositoryName, artifactDirectory, artifactPath, maxVersions);
     } else {
-      buildDetails = getLatestArtifactForArtifactPathFilter(
-          artifactoryConfig, repositoryName, artifactDirectory, artifactPathFilter, maxVersions);
+      buildDetails =
+          getArtifactList(artifactoryConfig, repositoryName, artifactDirectory, artifactPathFilter, maxVersions);
     }
 
     if (buildDetails.isEmpty()) {
