@@ -227,8 +227,8 @@ public class GovernanceRuleResource {
       ruleEnforcementDAO.updateCount(ruleEnforcementUpdate);
       RuleCloudProviderType ruleCloudProviderType = ruleEnforcement.getCloudProvider();
       accountId = ruleEnforcement.getAccountId();
-      if (ruleEnforcement.getCloudProvider() != RuleCloudProviderType.AWS) {
-        log.error("Support for non AWS cloud providers is not present atm. Skipping enqueuing in faktory");
+      if (ruleCloudProviderType != RuleCloudProviderType.AWS && ruleCloudProviderType != RuleCloudProviderType.AZURE) {
+        log.error("Support for non AWS/AZURE cloud providers is not present atm. Skipping enqueuing in faktory");
         // TO DO: Return simple response to dkron instead of empty for debugging purposes
         return ResponseDTO.newResponse();
       }
