@@ -377,6 +377,7 @@ public class AccountServiceImpl implements AccountService {
   }
 
   private void publishAccountChangeEventViaEventFramework(String accountId, String action) {
+    log.info("testDeletionLog: producing event to events framework for account {}, action {}", accountId, action);
     try {
       eventProducer.send(
           Message.newBuilder()
@@ -745,12 +746,19 @@ public class AccountServiceImpl implements AccountService {
 
   @Override
   public boolean delete(String accountId) {
-    boolean success = accountId != null && deleteAccountHelper.deleteAccount(accountId);
-    accountLicenseObserverSubject.fireInform(AccountLicenseObserver::onLicenseChange, accountId);
-    if (success) {
-      publishAccountChangeEventViaEventFramework(accountId, DELETE_ACTION);
+    try {
+      boolean success = accountId != null && deleteAccountHelper.deleteAccount(accountId);
+      log.info("testDeletionLog: success value is {}", success);
+      accountLicenseObserverSubject.fireInform(AccountLicenseObserver::onLicenseChange, accountId);
+      log.info("testDeletionLog: success value after fireInform is {}", success);
+      if (success) {
+        publishAccountChangeEventViaEventFramework(accountId, DELETE_ACTION);
+      }
+      return success;
+    } catch (Exception ex) {
+      log.info("testDeletionLog: some exception occurred - {}", ex);
+      return false;
     }
-    return success;
   }
 
   @Override

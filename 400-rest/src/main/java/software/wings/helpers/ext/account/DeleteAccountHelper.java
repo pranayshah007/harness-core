@@ -260,8 +260,15 @@ public class DeleteAccountHelper {
     timescaleDataCleanup.cleanupChurnedAccountData(accountId);
     if (isEmpty(entitiesRemainingForDeletion)) {
       log.info("Deleting account entry {}", accountId);
-      hPersistence.delete(Account.class, accountId);
+      log.info("testDeletionLog: trying to remove the entry from accounts collection.");
+      try {
+        hPersistence.delete(Account.class, accountId);
+      } catch (Exception ex) {
+        log.info("testDeletionLog: caught exception while deleting entry from accounts collections");
+      }
+      log.info("testDeletionLog: deleted the entry from accounts collection.");
       upsertDeletedEntity(accountId, CURRENT_DELETION_ALGO_NUM);
+      log.info("testDeletionLog: upserted this account details to DeletedEntity class.");
       return true;
     } else {
       log.info("Not all entities are deleted for account {}", accountId);
