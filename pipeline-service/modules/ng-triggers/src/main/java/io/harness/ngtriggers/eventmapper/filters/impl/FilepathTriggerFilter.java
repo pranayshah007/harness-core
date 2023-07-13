@@ -37,6 +37,7 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.delegate.task.scm.ScmChangedFilesEvaluationTaskResponse;
 import io.harness.delegate.task.scm.ScmPathFilterEvaluationTaskResponse;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
@@ -57,6 +58,8 @@ import io.harness.ngtriggers.helpers.TriggerEventResponseHelper;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.ngtriggers.utils.SCMFilePathEvaluator;
 import io.harness.ngtriggers.utils.SCMFilePathEvaluatorFactory;
+import io.harness.ngtriggers.utils.ScmChangedFilesEvaluator;
+import io.harness.ngtriggers.utils.ScmChangedFilesEvaluatorFactory;
 import io.harness.ngtriggers.utils.WebhookTriggerFilterUtils;
 import io.harness.product.ci.scm.proto.ParseWebhookResponse;
 import io.harness.utils.ConnectorUtils;
@@ -79,6 +82,7 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(PIPELINE)
 public class FilepathTriggerFilter implements TriggerFilter {
   private SCMFilePathEvaluatorFactory scmFilePathEvaluatorFactory;
+  private ScmChangedFilesEvaluatorFactory scmChangedFilesEvaluatorFactory;
   private NGTriggerElementMapper ngTriggerElementMapper;
   private ConnectorUtils connectorUtils;
 
@@ -92,6 +96,14 @@ public class FilepathTriggerFilter implements TriggerFilter {
           .parseWebhookResponse(filterRequestData.getWebhookPayloadData().getParseWebhookResponse())
           .triggers(filterRequestData.getDetails())
           .build();
+    }
+
+    Set<String> changedFiles = new HashSet<>();
+    if (shouldEvaluateOnSCM(filterRequestData)) {
+      changedFiles =
+          initiateSCMTaskForChangedFilesAndEvaluate(filterRequestData, filterRequestData.getDetails().get(0));
+    } else {
+      changedFiles = getFilesFromPushPayload(filterRequestData);
     }
 
     List<TriggerDetails> matchedTriggers = new ArrayList<>();
@@ -169,14 +181,19 @@ public class FilepathTriggerFilter implements TriggerFilter {
         return true;
       }
 
-      if (shouldEvaluateOnSCM(filterRequestData)) {
-        return initiateSCMTaskAndEvaluate(filterRequestData, triggerDetails, pathCondition);
-      } else {
-        return evaluateFromPushPayload(filterRequestData, pathCondition);
-      }
+      return evaluateFilePathCondition(filterRequestData, triggerDetails, pathCondition);
     } catch (Exception e) {
       log.error(getTriggerSkipMessage(triggerDetails.getNgTriggerEntity()), e);
       return false;
+    }
+  }
+
+  private boolean evaluateFilePathCondition(
+      FilterRequestData filterRequestData, TriggerDetails triggerDetails, TriggerEventDataCondition pathCondition) {
+    if (shouldEvaluateOnSCM(filterRequestData)) {
+      return initiateSCMTaskAndEvaluate(filterRequestData, triggerDetails, pathCondition);
+    } else {
+      return evaluateFromPushPayload(filterRequestData, pathCondition);
     }
   }
 
@@ -218,34 +235,84 @@ public class FilepathTriggerFilter implements TriggerFilter {
     }
   }
 
+  @VisibleForTesting
+  Set<String> initiateSCMTaskForChangedFilesAndEvaluate(
+      FilterRequestData filterRequestData, TriggerDetails triggerDetails) {
+    ScmChangedFilesEvaluationTaskResponse scmPathFilterEvaluationTaskResponse =
+        performScmChangedFilesEvaluation(triggerDetails.getNgTriggerEntity(), filterRequestData);
+    if (scmPathFilterEvaluationTaskResponse == null) {
+      log.warn(getTriggerSkipMessage(triggerDetails.getNgTriggerEntity()) + ", Null response from Delegate Task: ");
+      return new HashSet<>();
+    } else {
+      if (isNotEmpty(scmPathFilterEvaluationTaskResponse.getErrorMessage())) {
+        log.warn(getTriggerSkipMessage(triggerDetails.getNgTriggerEntity())
+            + ", Error Message from Delegate Task: " + scmPathFilterEvaluationTaskResponse.getErrorMessage());
+      }
+      return scmPathFilterEvaluationTaskResponse.getChangedFiles();
+    }
+  }
+
   private ScmPathFilterEvaluationTaskResponse performScmPathFilterEvaluation(
       NGTriggerEntity ngTriggerEntity, FilterRequestData filterRequestData, TriggerEventDataCondition pathCondition) {
     try {
       WebhookMetadata webhook = ngTriggerEntity.getMetadata().getWebhook();
-      ConnectorDetails connectorDetails =
-          connectorUtils.getConnectorDetails(IdentifierRef.builder()
-                                                 .accountIdentifier(ngTriggerEntity.getAccountId())
-                                                 .orgIdentifier(ngTriggerEntity.getOrgIdentifier())
-                                                 .projectIdentifier(ngTriggerEntity.getProjectIdentifier())
-                                                 .build(),
-              webhook.getGit().getConnectorIdentifier());
-
+      ConnectorDetails connectorDetails = getConnectorDetails(ngTriggerEntity, webhook);
       ScmConnector scmConnector = getSCMConnector(connectorDetails, webhook);
 
       if (scmConnector == null) {
         return null;
       }
 
-      boolean executeOnDelegate =
-          connectorDetails.getExecuteOnDelegate() == null || connectorDetails.getExecuteOnDelegate();
-
-      SCMFilePathEvaluator scmFilePathEvaluator = scmFilePathEvaluatorFactory.getEvaluator(executeOnDelegate);
+      SCMFilePathEvaluator scmFilePathEvaluator = getScmEvaluator(connectorDetails);
       return scmFilePathEvaluator.execute(filterRequestData, pathCondition, connectorDetails, scmConnector);
     } catch (Exception e) {
       log.error(getTriggerSkipMessage(ngTriggerEntity) + ". Filed in executing delegate task", e);
     }
-
     return null;
+  }
+
+  private ScmChangedFilesEvaluationTaskResponse performScmChangedFilesEvaluation(
+      NGTriggerEntity ngTriggerEntity, FilterRequestData filterRequestData) {
+    try {
+      WebhookMetadata webhook = ngTriggerEntity.getMetadata().getWebhook();
+      ConnectorDetails connectorDetails = getConnectorDetails(ngTriggerEntity, webhook);
+      ScmConnector scmConnector = getSCMConnector(connectorDetails, webhook);
+
+      if (scmConnector == null) {
+        return null;
+      }
+
+      ScmChangedFilesEvaluator scmChangedFilesEvaluator = getScmEvaluatorForChangedFiles(connectorDetails);
+      return scmChangedFilesEvaluator.execute(filterRequestData, connectorDetails, scmConnector);
+    } catch (Exception e) {
+      log.error(getTriggerSkipMessage(ngTriggerEntity) + ". Filed in executing delegate task", e);
+    }
+    return null;
+  }
+
+  private ConnectorDetails getConnectorDetails(NGTriggerEntity ngTriggerEntity, WebhookMetadata webhook) {
+    return connectorUtils.getConnectorDetails(IdentifierRef.builder()
+                                                  .accountIdentifier(ngTriggerEntity.getAccountId())
+                                                  .orgIdentifier(ngTriggerEntity.getOrgIdentifier())
+                                                  .projectIdentifier(ngTriggerEntity.getProjectIdentifier())
+                                                  .build(),
+        webhook.getGit().getConnectorIdentifier());
+  }
+
+  private SCMFilePathEvaluator getScmEvaluator(ConnectorDetails connectorDetails) {
+    boolean executeOnDelegate =
+        connectorDetails.getExecuteOnDelegate() == null || connectorDetails.getExecuteOnDelegate();
+
+    SCMFilePathEvaluator scmFilePathEvaluator = scmFilePathEvaluatorFactory.getEvaluator(executeOnDelegate);
+    return scmFilePathEvaluator;
+  }
+
+  private ScmChangedFilesEvaluator getScmEvaluatorForChangedFiles(ConnectorDetails connectorDetails) {
+    boolean executeOnDelegate =
+        connectorDetails.getExecuteOnDelegate() == null || connectorDetails.getExecuteOnDelegate();
+
+    ScmChangedFilesEvaluator scmChangedFilesEvaluator = scmChangedFilesEvaluatorFactory.getEvaluator(executeOnDelegate);
+    return scmChangedFilesEvaluator;
   }
 
   private ScmConnector getSCMConnector(ConnectorDetails connectorDetails, WebhookMetadata webhookMetadata) {

@@ -123,7 +123,7 @@ public class ArtifactJexlConditionsTriggerFilter implements TriggerFilter {
     }
 
     TriggerExpressionEvaluator triggerExpressionEvaluator =
-        new TriggerExpressionEvaluator(null, artifactData, Collections.emptyList(), payload);
+        new TriggerExpressionEvaluator(null, artifactData, Collections.emptyList(), payload, null);
     Object result = triggerExpressionEvaluator.evaluateExpression(jexlExpression);
     if (result != null && Boolean.class.isAssignableFrom(result.getClass())) {
       return (Boolean) result;

@@ -884,6 +884,8 @@ import io.harness.delegate.task.scm.GitWebhookTaskType;
 import io.harness.delegate.task.scm.PushTaskType;
 import io.harness.delegate.task.scm.ScmBatchGetFileTaskParams;
 import io.harness.delegate.task.scm.ScmBatchGetFileTaskResponseData;
+import io.harness.delegate.task.scm.ScmChangedFilesEvaluationTaskParams;
+import io.harness.delegate.task.scm.ScmChangedFilesEvaluationTaskResponse;
 import io.harness.delegate.task.scm.ScmGitFileTaskParams;
 import io.harness.delegate.task.scm.ScmGitRefTaskParams;
 import io.harness.delegate.task.scm.ScmGitRefTaskResponseData;
@@ -1990,6 +1992,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AzureHostResponse.class, 543525);
     kryo.register(AzureHostsResponse.class, 543527);
     kryo.register(AzureImageGalleriesResponse.class, 543528);
+    kryo.register(ScmChangedFilesEvaluationTaskParams.class, 543529);
+    kryo.register(ScmChangedFilesEvaluationTaskResponse.class, 543530);
     kryo.register(HostValidationResponse.class, 5167);
     kryo.register(HostReachabilityInfo.class, 5172);
     kryo.register(HttpHelmRepoConfig.class, 7159);

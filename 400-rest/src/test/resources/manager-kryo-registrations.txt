@@ -2719,6 +2719,8 @@
 543526:io.harness.delegate.beans.WinRmTaskParams
 543527:io.harness.delegate.beans.azure.response.AzureHostsResponse
 543528:io.harness.delegate.beans.azure.response.AzureImageGalleriesResponse
+543529:io.harness.delegate.task.scm.ScmChangedFilesEvaluationTaskParams
+543530:io.harness.delegate.task.scm.ScmChangedFilesEvaluationTaskResponse
 549966:io.harness.secretmanagerclient.dto.EncryptedDataMigrationDTO
 553286:io.harness.delegate.task.scm.ScmPushTaskParams
 553287:io.harness.delegate.task.scm.ScmPushTaskResponseData

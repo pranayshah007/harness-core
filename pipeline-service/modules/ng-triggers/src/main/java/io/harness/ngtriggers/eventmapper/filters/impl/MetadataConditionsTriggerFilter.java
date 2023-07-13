@@ -121,7 +121,7 @@ public class MetadataConditionsTriggerFilter implements TriggerFilter {
     String jsonMetadata = "";
     jsonMetadata = JsonPipelineUtils.getJsonString(metadata);
     TriggerExpressionEvaluator expressionEvaluator =
-        new TriggerExpressionEvaluator(null, artifactData, Collections.emptyList(), jsonMetadata);
+        new TriggerExpressionEvaluator(null, artifactData, Collections.emptyList(), jsonMetadata, null);
     for (TriggerEventDataCondition condition : triggerMetadataConditions) {
       input = condition.getKey();
       standard = condition.getValue();

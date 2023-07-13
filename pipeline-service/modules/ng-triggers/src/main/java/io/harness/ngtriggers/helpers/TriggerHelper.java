@@ -15,6 +15,7 @@ import static io.harness.ngtriggers.Constants.ARTIFACT_METADATA_EXPR;
 import static io.harness.ngtriggers.Constants.ARTIFACT_TYPE;
 import static io.harness.ngtriggers.Constants.BASE_COMMIT_SHA;
 import static io.harness.ngtriggers.Constants.BRANCH;
+import static io.harness.ngtriggers.Constants.CHANGED_FILES;
 import static io.harness.ngtriggers.Constants.COMMIT_SHA;
 import static io.harness.ngtriggers.Constants.CUSTOM_TYPE;
 import static io.harness.ngtriggers.Constants.EVENT;
@@ -121,6 +122,9 @@ public class TriggerHelper {
 
     setSourceType(jsonObject, triggerPayload);
     jsonObject.put(HEADER, triggerPayload.getHeadersMap());
+    if (triggerPayload.getChangedFilesList() != null) {
+      jsonObject.put(CHANGED_FILES, triggerPayload.getChangedFilesList());
+    }
 
     if (triggerPayload.hasArtifactData() || triggerPayload.hasManifestData()) {
       addBuildData(jsonObject, triggerPayload);

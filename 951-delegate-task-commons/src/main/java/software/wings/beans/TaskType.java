@@ -352,6 +352,7 @@ public enum TaskType {
   TERRAFORM_TASK_NG(TaskGroup.TERRAFORM_NG, "Terraform Task"),
   SCM_PUSH_TASK(TaskGroup.GIT, "SCM Push Task"),
   SCM_PATH_FILTER_EVALUATION_TASK(TaskGroup.GIT, "SCM Path Filter Evaluation Task"),
+  SCM_CHANGED_FILES_EVALUATION_TASK(TaskGroup.GIT, "SCM Changed Files Evaluation Task"),
   SCM_GIT_REF_TASK(TaskGroup.GIT, "SCM Git Ref Task"),
   SCM_GIT_FILE_TASK(TaskGroup.GIT, "SCM Git File Task"),
   SCM_PULL_REQUEST_TASK(TaskGroup.GIT, "SCM Git PR Task"),

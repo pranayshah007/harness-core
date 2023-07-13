@@ -26,6 +26,7 @@ import io.harness.product.ci.scm.proto.ParseWebhookResponse;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -36,7 +37,7 @@ public class TriggerExpressionEvaluator extends EngineExpressionEvaluator {
   private final TriggerPayload triggerPayload;
 
   public TriggerExpressionEvaluator(ParseWebhookResponse parseWebhookResponse, ArtifactData artifactData,
-      List<HeaderConfig> headerConfigs, String payload) {
+      List<HeaderConfig> headerConfigs, String payload, Set<String> changedFiles) {
     super(null);
     TriggerPayload.Builder builder = TriggerPayload.newBuilder();
     if (parseWebhookResponse != null) {
@@ -58,6 +59,10 @@ public class TriggerExpressionEvaluator extends EngineExpressionEvaluator {
           builder.putHeaders(config.getKey().toLowerCase(), config.getValues().get(0));
         }
       }
+    }
+
+    if (changedFiles != null) {
+      builder.addAllChangedFiles(changedFiles);
     }
     this.triggerPayload = builder.build();
     Ambiance.newBuilder().setMetadata(ExecutionMetadata.newBuilder().build()).build();

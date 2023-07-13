@@ -384,6 +384,7 @@ import io.harness.delegate.task.pdc.HostConnectivityValidationDelegateTask;
 import io.harness.delegate.task.rancher.RancherListClustersDelegateTask;
 import io.harness.delegate.task.rancher.RancherTestConnectionDelegateTask;
 import io.harness.delegate.task.scm.ScmBatchGetFileTask;
+import io.harness.delegate.task.scm.ScmChangedFilesEvaluationTask;
 import io.harness.delegate.task.scm.ScmDelegateClientImpl;
 import io.harness.delegate.task.scm.ScmGitFileTask;
 import io.harness.delegate.task.scm.ScmGitPRTask;
@@ -2076,6 +2077,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG_V6).toInstance(TerraformTaskNG.class);
     mapBinder.addBinding(TaskType.SCM_PUSH_TASK).toInstance(ScmPushTask.class);
     mapBinder.addBinding(TaskType.SCM_PATH_FILTER_EVALUATION_TASK).toInstance(ScmPathFilterEvaluationTask.class);
+    mapBinder.addBinding(TaskType.SCM_CHANGED_FILES_EVALUATION_TASK).toInstance(ScmChangedFilesEvaluationTask.class);
     mapBinder.addBinding(TaskType.SCM_GIT_REF_TASK).toInstance(ScmGitRefTask.class);
     mapBinder.addBinding(TaskType.SCM_GIT_FILE_TASK).toInstance(ScmGitFileTask.class);
     mapBinder.addBinding(TaskType.SCM_BATCH_GET_FILE_TASK).toInstance(ScmBatchGetFileTask.class);
