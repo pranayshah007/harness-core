@@ -40,10 +40,10 @@ def sonarqube_test(
         language,
         targets,
         test_targets,
+        sonarqube_srcs,
         name = None,
         project_key = None,
         project_name = None,
-        srcs = ["src/main/java/**/*.java"],
         source_encoding = None,
         test_srcs = [],
         test_reports = [],
@@ -57,7 +57,7 @@ def sonarqube_test(
         test_srcs = native.glob(["*_test.go"])
         test_targets = test_targets
     else:
-        srcs = native.glob(srcs)
+        srcs = sonarqube_srcs
         targets = [":module"]
         test_srcs = native.glob(["src/test/**/*.java"])
         test_targets = run_tests_targets()
@@ -102,7 +102,6 @@ def run_analysis_per_module(
 def run_analysis(
         checkstyle_srcs = ["src/**/*"],
         pmd_srcs = ["src/main/**/*"],
-        sonarqube_srcs = ["src/main/java/**/*.java"],
         run_checkstyle = True,
         run_pmd = True,
         run_sonar = True,
@@ -113,6 +112,7 @@ def run_analysis(
         language = "java"
         targets = []
         test_targets = []
+        sonarqube_srcs = kwargs.get("sonarqube_srcs")
         if run_checkstyle:
             checkstyle(checkstyle_srcs)
 
@@ -120,7 +120,7 @@ def run_analysis(
             pmd(pmd_srcs)
 
         if run_sonar:
-            sonarqube_test(language, targets, test_targets)
+            sonarqube_test(language, targets, test_targets, sonarqube_srcs)
 
         if run_duplicated:
             report_duplicated()
@@ -128,7 +128,7 @@ def run_analysis(
         language = kwargs.get("language")
         targets = kwargs.get("targets")
         test_targets = kwargs.get("test_targets")
-        sonarqube_test(language, targets, test_targets)
+        sonarqube_test(language, targets, test_targets, sonarqube_srcs)
 
 def maven_test_artifact(artifact):
     entities = artifact.split(":")
