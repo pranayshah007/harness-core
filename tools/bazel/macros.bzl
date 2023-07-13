@@ -128,6 +128,7 @@ def run_analysis(
         language = kwargs.get("language")
         targets = kwargs.get("targets")
         test_targets = kwargs.get("test_targets")
+        sonarqube_srcs = []
         sonarqube_test(language, targets, test_targets, sonarqube_srcs)
 
 def maven_test_artifact(artifact):
