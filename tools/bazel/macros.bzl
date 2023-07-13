@@ -44,6 +44,7 @@ def sonarqube_test(
         name = None,
         project_key = None,
         project_name = None,
+        srcs = ["src/main/java/**/*.java"],
         source_encoding = None,
         test_srcs = [],
         test_reports = [],
@@ -57,10 +58,12 @@ def sonarqube_test(
         test_srcs = native.glob(["*_test.go"])
         test_targets = test_targets
     else:
-        srcs = sonarqube_srcs
+        srcs = native.glob(srcs)
         targets = [":module"]
         test_srcs = native.glob(["src/test/**/*.java"])
         test_targets = run_tests_targets()
+        if sonarqube_srcs != None:
+            srcs = sonarqube_srcs
     if name == None:
         name = "sonarqube"
     if project_key == None:
@@ -106,7 +109,6 @@ def run_analysis(
         run_pmd = True,
         run_sonar = True,
         run_duplicated = True,
-        test_targets = [],
         **kwargs):
     if not "language" in kwargs:
         language = "java"
