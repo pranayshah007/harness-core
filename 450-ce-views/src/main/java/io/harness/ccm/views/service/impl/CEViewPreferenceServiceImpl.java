@@ -1,11 +1,11 @@
 /*
- * Copyright 2022 Harness Inc. All rights reserved.
+ * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Shield 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.ccm.views.utils;
+package io.harness.ccm.views.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -26,6 +26,7 @@ import io.harness.ccm.views.graphql.QLCEViewFilter;
 import io.harness.ccm.views.graphql.QLCEViewFilterOperator;
 import io.harness.ccm.views.graphql.QLCEViewPreferenceAggregation;
 import io.harness.ccm.views.helper.ViewParametersHelper;
+import io.harness.ccm.views.service.CEViewPreferenceService;
 import io.harness.ngsettings.SettingCategory;
 import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
@@ -33,6 +34,7 @@ import io.harness.ngsettings.dto.SettingDTO;
 import io.harness.ngsettings.dto.SettingResponseDTO;
 import io.harness.remote.client.NGRestUtils;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
@@ -49,7 +51,7 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @Slf4j
 @OwnedBy(CE)
-public class CEViewPreferenceUtils {
+public class CEViewPreferenceServiceImpl implements CEViewPreferenceService {
   // Columns
   private static final String COST = "cost";
   private static final String CLOUD_PROVIDER = "cloudProvider";
@@ -63,7 +65,9 @@ public class CEViewPreferenceUtils {
   private static final String GCP_COST_TYPE = "gcpCostType";
 
   // AWS and GCP different type values
-  private static final String AWS_LINE_ITEM_TYPE_DISCOUNT = "Discount";
+  private static final String AWS_LINE_ITEM_TYPE_BUNDLED_DISCOUNT = "BundledDiscount";
+  private static final String AWS_LINE_ITEM_TYPE_PRIVATE_RATE_DISCOUNT = "PrivateRateDiscount";
+  private static final String AWS_LINE_ITEM_TYPE_EDP_DISCOUNT = "EdpDiscount";
   private static final String AWS_LINE_ITEM_TYPE_CREDIT = "Credit";
   private static final String AWS_LINE_ITEM_TYPE_REFUND = "Refund";
   private static final String AWS_LINE_ITEM_TYPE_TAX = "Tax";
@@ -78,12 +82,9 @@ public class CEViewPreferenceUtils {
   @Inject @Named("PRIVILEGED") private NGSettingsClient settingsClient;
   @Inject private ViewParametersHelper viewParametersHelper;
 
-  public ViewPreferences getCEViewPreferencesForMigration(final CEView ceView) {
-    return getCEViewPreferences(ceView, false);
-  }
-
+  @Override
   public ViewPreferences getCEViewPreferences(
-      final CEView ceView, final boolean updateWithViewPreferenceDefaultSettings) {
+      final CEView ceView, final Set<String> viewPreferencesFieldsToUpdateWithDefaultSettings) {
     ViewPreferences viewPreferences = ceView.getViewPreferences();
     final List<SettingResponseDTO> settingsResponse = getDefaultSettingResponse(ceView.getAccountId());
     if (!isEmpty(settingsResponse)) {
@@ -91,7 +92,7 @@ public class CEViewPreferenceUtils {
           settingsResponse.stream().map(SettingResponseDTO::getSetting).collect(Collectors.toList());
       final Map<String, String> settingsMap =
           settingsDTO.stream().collect(Collectors.toMap(SettingDTO::getIdentifier, SettingDTO::getValue));
-      viewPreferences = getViewPreferences(ceView, settingsMap, updateWithViewPreferenceDefaultSettings);
+      viewPreferences = getViewPreferences(ceView, settingsMap, viewPreferencesFieldsToUpdateWithDefaultSettings);
     } else {
       log.error(
           "Unable to fetch perspective preferences account default settings for account: {}", ceView.getAccountId());
@@ -111,12 +112,12 @@ public class CEViewPreferenceUtils {
   }
 
   private ViewPreferences getViewPreferences(final CEView ceView, final Map<String, String> settingsMap,
-      final boolean updateWithViewPreferenceDefaultSettings) {
+      final Set<String> viewPreferencesFieldsToUpdateWithDefaultSettings) {
     ViewPreferences viewPreferences;
     final Set<ViewFieldIdentifier> dataSources = viewParametersHelper.getDataSourcesFromCEView(ceView);
     if (Objects.nonNull(ceView.getViewPreferences())) {
-      viewPreferences =
-          getViewPreferencesFromCEView(ceView, settingsMap, dataSources, updateWithViewPreferenceDefaultSettings);
+      viewPreferences = getViewPreferencesFromCEView(
+          ceView, settingsMap, dataSources, viewPreferencesFieldsToUpdateWithDefaultSettings);
     } else {
       viewPreferences = getDefaultViewPreferences(ceView, settingsMap, dataSources);
     }
@@ -124,20 +125,20 @@ public class CEViewPreferenceUtils {
   }
 
   private ViewPreferences getViewPreferencesFromCEView(final CEView ceView, final Map<String, String> settingsMap,
-      final Set<ViewFieldIdentifier> dataSources, final boolean updateWithViewPreferenceDefaultSettings) {
+      final Set<ViewFieldIdentifier> dataSources, final Set<String> viewPreferencesFieldsToUpdateWithDefaultSettings) {
     return ViewPreferences.builder()
         .includeOthers(getBooleanSettingValue(ceView.getViewPreferences().getIncludeOthers(), settingsMap,
-            SettingIdentifiers.SHOW_OTHERS_IDENTIFIER, updateWithViewPreferenceDefaultSettings))
-        .includeUnallocatedCost(
-            getBooleanSettingValue(ceView.getViewPreferences().getIncludeOthers(), settingsMap,
-                SettingIdentifiers.SHOW_UNALLOCATED_CLUSTER_COST_IDENTIFIER, updateWithViewPreferenceDefaultSettings)
+            SettingIdentifiers.SHOW_OTHERS_IDENTIFIER, viewPreferencesFieldsToUpdateWithDefaultSettings))
+        .includeUnallocatedCost(getBooleanSettingValue(ceView.getViewPreferences().getIncludeOthers(), settingsMap,
+                                    SettingIdentifiers.SHOW_UNALLOCATED_CLUSTER_COST_IDENTIFIER,
+                                    viewPreferencesFieldsToUpdateWithDefaultSettings)
             && viewParametersHelper.isClusterDataSources(dataSources))
         .showAnomalies(getBooleanSettingValue(ceView.getViewPreferences().getShowAnomalies(), settingsMap,
-            SettingIdentifiers.SHOW_ANOMALIES_IDENTIFIER, updateWithViewPreferenceDefaultSettings))
+            SettingIdentifiers.SHOW_ANOMALIES_IDENTIFIER, viewPreferencesFieldsToUpdateWithDefaultSettings))
         .awsPreferences(
-            getAWSViewPreferences(ceView, settingsMap, dataSources, updateWithViewPreferenceDefaultSettings))
+            getAWSViewPreferences(ceView, settingsMap, dataSources, viewPreferencesFieldsToUpdateWithDefaultSettings))
         .gcpPreferences(
-            getGCPViewPreferences(ceView, settingsMap, dataSources, updateWithViewPreferenceDefaultSettings))
+            getGCPViewPreferences(ceView, settingsMap, dataSources, viewPreferencesFieldsToUpdateWithDefaultSettings))
         .build();
   }
 
@@ -149,19 +150,32 @@ public class CEViewPreferenceUtils {
             getBooleanSettingValue(settingsMap, SettingIdentifiers.SHOW_UNALLOCATED_CLUSTER_COST_IDENTIFIER)
             && viewParametersHelper.isClusterDataSources(new HashSet<>(dataSources)))
         .showAnomalies(getBooleanSettingValue(settingsMap, SettingIdentifiers.SHOW_ANOMALIES_IDENTIFIER))
-        .awsPreferences(getAWSViewPreferences(ceView, settingsMap, dataSources, true))
-        .gcpPreferences(getGCPViewPreferences(ceView, settingsMap, dataSources, true))
+        .awsPreferences(
+            getAWSViewPreferences(ceView, settingsMap, dataSources, getAWSViewPreferencesSettingIdentifiers()))
+        .gcpPreferences(
+            getGCPViewPreferences(ceView, settingsMap, dataSources, getGCPViewPreferencesSettingIdentifiers()))
         .build();
   }
 
+  private Set<String> getAWSViewPreferencesSettingIdentifiers() {
+    return ImmutableSet.of(SettingIdentifiers.INCLUDE_AWS_DISCOUNTS_IDENTIFIER,
+        SettingIdentifiers.INCLUDE_AWS_CREDIT_IDENTIFIER, SettingIdentifiers.INCLUDE_AWS_REFUNDS_IDENTIFIER,
+        SettingIdentifiers.INCLUDE_AWS_TAXES_IDENTIFIER, SettingIdentifiers.SHOW_AWS_COST_AS_IDENTIFIER);
+  }
+
+  private Set<String> getGCPViewPreferencesSettingIdentifiers() {
+    return ImmutableSet.of(
+        SettingIdentifiers.INCLUDE_GCP_DISCOUNTS_IDENTIFIER, SettingIdentifiers.INCLUDE_GCP_TAXES_IDENTIFIER);
+  }
+
   private GCPViewPreferences getGCPViewPreferences(final CEView ceView, final Map<String, String> settingsMap,
-      final Set<ViewFieldIdentifier> dataSources, final boolean updateWithViewPreferenceDefaultSettings) {
+      final Set<ViewFieldIdentifier> dataSources, final Set<String> viewPreferencesFieldsToUpdateWithDefaultSettings) {
     GCPViewPreferences gcpViewPreferences = null;
     if (Objects.nonNull(ceView) && Objects.nonNull(dataSources) && dataSources.contains(ViewFieldIdentifier.GCP)) {
       if (Objects.nonNull(ceView.getViewPreferences())
           && Objects.nonNull(ceView.getViewPreferences().getGcpPreferences())) {
         gcpViewPreferences =
-            getGCPViewPreferencesFromCEView(ceView, settingsMap, updateWithViewPreferenceDefaultSettings);
+            getGCPViewPreferencesFromCEView(ceView, settingsMap, viewPreferencesFieldsToUpdateWithDefaultSettings);
       } else {
         gcpViewPreferences = getDefaultGCPViewPreferences(settingsMap);
       }
@@ -170,13 +184,13 @@ public class CEViewPreferenceUtils {
   }
 
   private GCPViewPreferences getGCPViewPreferencesFromCEView(final CEView ceView, final Map<String, String> settingsMap,
-      final boolean updateWithViewPreferenceDefaultSettings) {
+      final Set<String> viewPreferencesFieldsToUpdateWithDefaultSettings) {
     final GCPViewPreferences gcpViewPreferences = ceView.getViewPreferences().getGcpPreferences();
     return GCPViewPreferences.builder()
         .includeDiscounts(getBooleanSettingValue(gcpViewPreferences.getIncludeDiscounts(), settingsMap,
-            SettingIdentifiers.INCLUDE_GCP_DISCOUNTS_IDENTIFIER, updateWithViewPreferenceDefaultSettings))
+            SettingIdentifiers.INCLUDE_GCP_DISCOUNTS_IDENTIFIER, viewPreferencesFieldsToUpdateWithDefaultSettings))
         .includeTaxes(getBooleanSettingValue(gcpViewPreferences.getIncludeDiscounts(), settingsMap,
-            SettingIdentifiers.INCLUDE_GCP_TAXES_IDENTIFIER, updateWithViewPreferenceDefaultSettings))
+            SettingIdentifiers.INCLUDE_GCP_TAXES_IDENTIFIER, viewPreferencesFieldsToUpdateWithDefaultSettings))
         .build();
   }
 
@@ -188,13 +202,13 @@ public class CEViewPreferenceUtils {
   }
 
   private AWSViewPreferences getAWSViewPreferences(final CEView ceView, final Map<String, String> settingsMap,
-      final Set<ViewFieldIdentifier> dataSources, final boolean updateWithViewPreferenceDefaultSettings) {
+      final Set<ViewFieldIdentifier> dataSources, final Set<String> viewPreferencesFieldsToUpdateWithDefaultSettings) {
     AWSViewPreferences awsViewPreferences = null;
     if (Objects.nonNull(ceView) && Objects.nonNull(dataSources) && dataSources.contains(ViewFieldIdentifier.AWS)) {
       if (Objects.nonNull(ceView.getViewPreferences())
           && Objects.nonNull(ceView.getViewPreferences().getAwsPreferences())) {
         awsViewPreferences =
-            getAWSViewPreferencesFromCEView(ceView, settingsMap, updateWithViewPreferenceDefaultSettings);
+            getAWSViewPreferencesFromCEView(ceView, settingsMap, viewPreferencesFieldsToUpdateWithDefaultSettings);
       } else {
         awsViewPreferences = getDefaultAWSViewPreferences(settingsMap);
       }
@@ -203,19 +217,19 @@ public class CEViewPreferenceUtils {
   }
 
   private AWSViewPreferences getAWSViewPreferencesFromCEView(final CEView ceView, final Map<String, String> settingsMap,
-      final boolean updateWithViewPreferenceDefaultSettings) {
+      final Set<String> viewPreferencesFieldsToUpdateWithDefaultSettings) {
     final AWSViewPreferences awsViewPreferences = ceView.getViewPreferences().getAwsPreferences();
     return AWSViewPreferences.builder()
         .includeDiscounts(getBooleanSettingValue(awsViewPreferences.getIncludeDiscounts(), settingsMap,
-            SettingIdentifiers.INCLUDE_AWS_DISCOUNTS_IDENTIFIER, updateWithViewPreferenceDefaultSettings))
+            SettingIdentifiers.INCLUDE_AWS_DISCOUNTS_IDENTIFIER, viewPreferencesFieldsToUpdateWithDefaultSettings))
         .includeCredits(getBooleanSettingValue(awsViewPreferences.getIncludeCredits(), settingsMap,
-            SettingIdentifiers.INCLUDE_AWS_CREDIT_IDENTIFIER, updateWithViewPreferenceDefaultSettings))
+            SettingIdentifiers.INCLUDE_AWS_CREDIT_IDENTIFIER, viewPreferencesFieldsToUpdateWithDefaultSettings))
         .includeRefunds(getBooleanSettingValue(awsViewPreferences.getIncludeRefunds(), settingsMap,
-            SettingIdentifiers.INCLUDE_AWS_REFUNDS_IDENTIFIER, updateWithViewPreferenceDefaultSettings))
+            SettingIdentifiers.INCLUDE_AWS_REFUNDS_IDENTIFIER, viewPreferencesFieldsToUpdateWithDefaultSettings))
         .includeTaxes(getBooleanSettingValue(awsViewPreferences.getIncludeTaxes(), settingsMap,
-            SettingIdentifiers.INCLUDE_AWS_TAXES_IDENTIFIER, updateWithViewPreferenceDefaultSettings))
+            SettingIdentifiers.INCLUDE_AWS_TAXES_IDENTIFIER, viewPreferencesFieldsToUpdateWithDefaultSettings))
         .awsCost(getAWSCostSettingValue(awsViewPreferences.getAwsCost(), settingsMap,
-            SettingIdentifiers.SHOW_AWS_COST_AS_IDENTIFIER, updateWithViewPreferenceDefaultSettings))
+            SettingIdentifiers.SHOW_AWS_COST_AS_IDENTIFIER, viewPreferencesFieldsToUpdateWithDefaultSettings))
         .build();
   }
 
@@ -230,16 +244,16 @@ public class CEViewPreferenceUtils {
   }
 
   private Boolean getBooleanSettingValue(final Boolean value, final Map<String, String> settingsMap,
-      final String settingIdentifier, final boolean updateWithViewPreferenceDefaultSettings) {
-    return Objects.nonNull(value) && !updateWithViewPreferenceDefaultSettings
+      final String settingIdentifier, final Set<String> viewPreferencesFieldsToUpdateWithDefaultSettings) {
+    return Objects.nonNull(value) && !viewPreferencesFieldsToUpdateWithDefaultSettings.contains(settingIdentifier)
         ? value
         : getBooleanSettingValue(settingsMap, settingIdentifier);
   }
 
   private AWSViewPreferenceCost getAWSCostSettingValue(final AWSViewPreferenceCost value,
       final Map<String, String> settingsMap, final String settingIdentifier,
-      final boolean updateWithViewPreferenceDefaultSettings) {
-    return Objects.nonNull(value) && !updateWithViewPreferenceDefaultSettings
+      final Set<String> viewPreferencesFieldsToUpdateWithDefaultSettings) {
+    return Objects.nonNull(value) && !viewPreferencesFieldsToUpdateWithDefaultSettings.contains(settingIdentifier)
         ? value
         : getAWSCostSettingValue(settingsMap, settingIdentifier);
   }
@@ -263,6 +277,7 @@ public class CEViewPreferenceUtils {
     return AWSViewPreferenceCost.fromString(settingValue);
   }
 
+  @Override
   public List<QLCEViewPreferenceAggregation> getViewPreferenceAggregations(
       final CEView ceView, final ViewPreferences viewPreferences) {
     if (Objects.isNull(ceView) || Objects.isNull(viewPreferences)) {
@@ -283,7 +298,7 @@ public class CEViewPreferenceUtils {
       if (dataSources.contains(ViewFieldIdentifier.GCP)) {
         viewPreferenceAggregations.addAll(getQLCEGCPViewPreferenceAggregation(viewPreferences));
       }
-      dataSources.removeAll(Set.of(ViewFieldIdentifier.AWS, ViewFieldIdentifier.GCP));
+      dataSources.removeAll(ImmutableSet.of(ViewFieldIdentifier.AWS, ViewFieldIdentifier.GCP));
       if (!dataSources.isEmpty()) {
         viewPreferenceAggregations.add(getQLCEOthersViewPreferenceAggregation());
       }
@@ -337,16 +352,19 @@ public class CEViewPreferenceUtils {
         QLCEViewAggregateArithmeticOperation.ADD,
         getCloudProviderFilter(new String[] {ViewFieldIdentifier.AWS.getDisplayName()}, QLCEViewFilterOperator.IN)));
     if (!Boolean.TRUE.equals(awsViewPreferences.getIncludeCredits())) {
-      awsViewPreferenceAggregations.add(getQLCEViewPreferenceAggregation(awsCostTypeColumnName,
-          QLCEViewAggregateArithmeticOperation.SUBTRACT, getAWSLineItemTypeFilter(AWS_LINE_ITEM_TYPE_CREDIT)));
+      awsViewPreferenceAggregations.add(
+          getQLCEViewPreferenceAggregation(awsCostTypeColumnName, QLCEViewAggregateArithmeticOperation.SUBTRACT,
+              getAWSLineItemTypeFilter(new String[] {AWS_LINE_ITEM_TYPE_CREDIT})));
     }
     if (!Boolean.TRUE.equals(awsViewPreferences.getIncludeRefunds())) {
-      awsViewPreferenceAggregations.add(getQLCEViewPreferenceAggregation(awsCostTypeColumnName,
-          QLCEViewAggregateArithmeticOperation.SUBTRACT, getAWSLineItemTypeFilter(AWS_LINE_ITEM_TYPE_REFUND)));
+      awsViewPreferenceAggregations.add(
+          getQLCEViewPreferenceAggregation(awsCostTypeColumnName, QLCEViewAggregateArithmeticOperation.SUBTRACT,
+              getAWSLineItemTypeFilter(new String[] {AWS_LINE_ITEM_TYPE_REFUND})));
     }
     if (!Boolean.TRUE.equals(awsViewPreferences.getIncludeTaxes())) {
-      awsViewPreferenceAggregations.add(getQLCEViewPreferenceAggregation(awsCostTypeColumnName,
-          QLCEViewAggregateArithmeticOperation.SUBTRACT, getAWSLineItemTypeFilter(AWS_LINE_ITEM_TYPE_TAX)));
+      awsViewPreferenceAggregations.add(
+          getQLCEViewPreferenceAggregation(awsCostTypeColumnName, QLCEViewAggregateArithmeticOperation.SUBTRACT,
+              getAWSLineItemTypeFilter(new String[] {AWS_LINE_ITEM_TYPE_TAX})));
     }
     return awsViewPreferenceAggregations;
   }
@@ -361,8 +379,7 @@ public class CEViewPreferenceUtils {
     final List<QLCEViewPreferenceAggregation> awsAmortisedViewPreferenceAggregations =
         new ArrayList<>(getAWSCommonViewPreferenceAggregations(awsViewPreferences, AWS_AMORTISED_COST));
     if (!Boolean.TRUE.equals(awsViewPreferences.getIncludeDiscounts())) {
-      awsAmortisedViewPreferenceAggregations.add(getQLCEViewPreferenceAggregation(AWS_AMORTISED_COST,
-          QLCEViewAggregateArithmeticOperation.SUBTRACT, getAWSLineItemTypeFilter(AWS_LINE_ITEM_TYPE_DISCOUNT)));
+      awsAmortisedViewPreferenceAggregations.add(getQLCEAWSDiscountViewPreferenceAggregation(AWS_AMORTISED_COST));
     }
     return awsAmortisedViewPreferenceAggregations;
   }
@@ -385,10 +402,15 @@ public class CEViewPreferenceUtils {
     final List<QLCEViewPreferenceAggregation> awsUnblendedViewPreferenceAggregations =
         new ArrayList<>(getAWSCommonViewPreferenceAggregations(awsViewPreferences, AWS_UNBLENDED_COST));
     if (!Boolean.TRUE.equals(awsViewPreferences.getIncludeDiscounts())) {
-      awsUnblendedViewPreferenceAggregations.add(getQLCEViewPreferenceAggregation(AWS_UNBLENDED_COST,
-          QLCEViewAggregateArithmeticOperation.SUBTRACT, getAWSLineItemTypeFilter(AWS_LINE_ITEM_TYPE_DISCOUNT)));
+      awsUnblendedViewPreferenceAggregations.add(getQLCEAWSDiscountViewPreferenceAggregation(AWS_UNBLENDED_COST));
     }
     return awsUnblendedViewPreferenceAggregations;
+  }
+
+  private QLCEViewPreferenceAggregation getQLCEAWSDiscountViewPreferenceAggregation(String awsCostType) {
+    return getQLCEViewPreferenceAggregation(awsCostType, QLCEViewAggregateArithmeticOperation.SUBTRACT,
+        getAWSLineItemTypeFilter(new String[] {AWS_LINE_ITEM_TYPE_BUNDLED_DISCOUNT,
+            AWS_LINE_ITEM_TYPE_PRIVATE_RATE_DISCOUNT, AWS_LINE_ITEM_TYPE_EDP_DISCOUNT}));
   }
 
   private List<QLCEViewPreferenceAggregation> getQLCEGCPViewPreferenceAggregation(
@@ -436,7 +458,7 @@ public class CEViewPreferenceUtils {
         .build();
   }
 
-  private QLCEViewFilter getAWSLineItemTypeFilter(final String value) {
+  private QLCEViewFilter getAWSLineItemTypeFilter(final String[] values) {
     return QLCEViewFilter.builder()
         .field(QLCEViewFieldInput.builder()
                    .fieldId(AWS_LINE_ITEM_TYPE)
@@ -445,7 +467,7 @@ public class CEViewPreferenceUtils {
                    .identifierName(ViewFieldIdentifier.AWS.getDisplayName())
                    .build())
         .operator(QLCEViewFilterOperator.IN)
-        .values(new String[] {value})
+        .values(values)
         .build();
   }
 

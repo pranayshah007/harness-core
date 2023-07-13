@@ -60,8 +60,8 @@ import io.harness.ccm.views.graphql.ViewCostData;
 import io.harness.ccm.views.graphql.ViewsQueryBuilder;
 import io.harness.ccm.views.graphql.ViewsQueryHelper;
 import io.harness.ccm.views.graphql.ViewsQueryMetadata;
+import io.harness.ccm.views.service.CEViewPreferenceService;
 import io.harness.ccm.views.service.CEViewService;
-import io.harness.ccm.views.utils.CEViewPreferenceUtils;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
@@ -100,7 +100,7 @@ public class ViewBillingServiceHelper {
   @Inject private BusinessMappingDataSourceHelper businessMappingDataSourceHelper;
   @Inject private CEMetadataRecordDao ceMetadataRecordDao;
   @Inject private ViewParametersHelper viewParametersHelper;
-  @Inject private CEViewPreferenceUtils ceViewPreferenceUtils;
+  @Inject private CEViewPreferenceService ceViewPreferenceService;
   @Inject @Named("isClickHouseEnabled") private boolean isClickHouseEnabled;
 
   private static final String COST_DESCRIPTION = "of %s - %s";
@@ -568,7 +568,7 @@ public class ViewBillingServiceHelper {
       final String viewId = metadataFilter.getViewId();
       if (!metadataFilter.isPreview()) {
         CEView ceView = viewService.get(viewId);
-        viewPreferenceAggregations = ceViewPreferenceUtils.getViewPreferenceAggregations(
+        viewPreferenceAggregations = ceViewPreferenceService.getViewPreferenceAggregations(
             ceView, firstNonNull(viewPreferences, ceView.getViewPreferences()));
         viewRuleList = ceView.getViewRules();
         if (ceView.getViewVisualization() != null) {

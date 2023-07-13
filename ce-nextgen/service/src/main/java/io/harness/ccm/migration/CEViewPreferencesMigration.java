@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Harness Inc. All rights reserved.
+ * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Shield 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
@@ -14,7 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.views.dao.CEViewDao;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ViewType;
-import io.harness.ccm.views.utils.CEViewPreferenceUtils;
+import io.harness.ccm.views.service.CEViewPreferenceService;
 import io.harness.migration.NGMigration;
 import io.harness.persistence.HPersistence;
 
@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CE)
 public class CEViewPreferencesMigration implements NGMigration {
   @Inject private CEViewDao ceViewDao;
-  @Inject private CEViewPreferenceUtils ceViewPreferenceUtils;
+  @Inject private CEViewPreferenceService ceViewPreferenceService;
   @Inject private HPersistence hPersistence;
 
   @Override
@@ -55,7 +55,7 @@ public class CEViewPreferencesMigration implements NGMigration {
   }
 
   private void modifyCEView(final CEView ceView) {
-    ceView.setViewPreferences(ceViewPreferenceUtils.getCEViewPreferencesForMigration(ceView));
+    ceView.setViewPreferences(ceViewPreferenceService.getCEViewPreferences(ceView, Collections.emptySet()));
     if (Objects.isNull(ceView.getViewRules())) {
       ceView.setViewRules(Collections.emptyList());
     }
