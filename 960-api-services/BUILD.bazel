@@ -268,9 +268,9 @@ run_tests()
 
 run_analysis(
     sonarqube_srcs = [
-      "//960-api-services/src/main/java/io/harness/adfs:java_srcs",
-      "//960-api-services/src/main/java/io/harness/artifactory:java_srcs",
-      "//960-api-services/src/main/java/io/harness/artifactory/service:java_srcs",
-      "//960-api-services/src/main/java/io/harness/artifacts/ami/beans:java_srcs",
+        "//960-api-services/src/main/java/io/harness/adfs:java_srcs",
+        "//960-api-services/src/main/java/io/harness/artifactory:java_srcs",
+        "//960-api-services/src/main/java/io/harness/artifactory/service:java_srcs",
+        "//960-api-services/src/main/java/io/harness/artifacts/ami/beans:java_srcs",
     ],
 )
