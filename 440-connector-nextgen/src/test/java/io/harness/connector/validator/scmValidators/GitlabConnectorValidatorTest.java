@@ -94,7 +94,7 @@ public class GitlabConnectorValidatorTest extends CategoryTest {
     ConnectorValidationResult connectorValidationResult =
         ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build();
 
-    when(gitCommandTaskHandler.validateGitCredentials(any(), any(), any(), any()))
+    when(gitCommandTaskHandler.validateGitCredentials(any(), any(), any(), any(), eq(false)))
         .thenReturn(connectorValidationResult);
     ScmConnectorValidationParamsProvider scmConnectorValidationParamsProvider =
         new ScmConnectorValidationParamsProvider();

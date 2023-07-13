@@ -14,7 +14,6 @@ import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
 import io.harness.delegate.beans.connector.scm.GitCapabilityHelper;
-import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.executioncapability.AwsCliInstallationCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
@@ -78,8 +77,7 @@ public interface ServerlessCommandRequest extends TaskParameters, ExecutionCapab
         if (serverlessAwsLambdaManifestConfig.getGitStoreDelegateConfig() != null) {
           GitStoreDelegateConfig gitStoreDelegateConfig = serverlessAwsLambdaManifestConfig.getGitStoreDelegateConfig();
           capabilities.addAll(GitCapabilityHelper.fetchRequiredExecutionCapabilities(
-              ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO()),
-              gitStoreDelegateConfig.getEncryptedDataDetails(), gitStoreDelegateConfig.getSshKeySpecDTO()));
+              gitStoreDelegateConfig, gitStoreDelegateConfig.getEncryptedDataDetails()));
           capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
               gitStoreDelegateConfig.getEncryptedDataDetails(), maskingEvaluator));
         }
