@@ -158,9 +158,11 @@ public class BambooServiceImpl implements BambooService {
         }
         List<ArtifactFileMetadata> artifactFileMetadata = new ArrayList<>();
         if (isNotEmpty(artifactPaths)) {
+          Map<String, Artifact> artifactPathMap =
+              getBuildArtifactsUrlMap(bambooConfig, encryptionDetails, planKey, buildNumber.asText());
           for (String artifactPath : artifactPaths) {
             artifactFileMetadata.addAll(
-                getArtifactFileMetadata(bambooConfig, encryptionDetails, planKey, buildNumber.asText(), artifactPath));
+                getArtifactFileMetadata(bambooConfig, planKey, buildNumber.asText(), artifactPath, artifactPathMap));
           }
         }
         return aBuildDetails()
@@ -288,7 +290,7 @@ public class BambooServiceImpl implements BambooService {
   public List<BuildDetails> getBuilds(BambooConfig bambooConfig, List<EncryptedDataDetail> encryptionDetails,
       String planKey, List<String> artifactPaths, int maxNumberOfBuilds) {
     try {
-      return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(60), () -> {
+      return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(120), () -> {
         List<BuildDetails> buildDetailsList = new ArrayList<>();
         Call<JsonNode> request =
             getBambooClient(bambooConfig, encryptionDetails)
@@ -303,9 +305,11 @@ public class BambooServiceImpl implements BambooService {
                 List<ArtifactFileMetadata> artifactFileMetadata = new ArrayList<>();
                 Map<String, String> metadata = new HashMap<>();
                 if (isNotEmpty(artifactPaths)) {
+                  Map<String, Artifact> artifactPathMap = getBuildArtifactsUrlMap(
+                      bambooConfig, encryptionDetails, planKey, jsonNode.get("buildNumber").asText());
                   for (String artifactPath : artifactPaths) {
                     artifactFileMetadata.addAll(getArtifactFileMetadata(
-                        bambooConfig, encryptionDetails, planKey, jsonNode.get("buildNumber").asText(), artifactPath));
+                        bambooConfig, planKey, jsonNode.get("buildNumber").asText(), artifactPath, artifactPathMap));
                   }
                 }
                 if (jsonNode.get(ArtifactMetadataKeys.id) != null) {
@@ -522,12 +526,10 @@ public class BambooServiceImpl implements BambooService {
     return null;
   }
 
-  private List<ArtifactFileMetadata> getArtifactFileMetadata(BambooConfig bambooConfig,
-      List<EncryptedDataDetail> encryptionDetails, String planKey, String buildNumber, String artifactPathRegex) {
+  private List<ArtifactFileMetadata> getArtifactFileMetadata(BambooConfig bambooConfig, String planKey,
+      String buildNumber, String artifactPathRegex, Map<String, Artifact> artifactPathMap) {
     List<ArtifactFileMetadata> artifactFileMetadata = new ArrayList<>();
     if (isNotEmpty(artifactPathRegex.trim())) {
-      Map<String, Artifact> artifactPathMap =
-          getBuildArtifactsUrlMap(bambooConfig, encryptionDetails, planKey, buildNumber);
       Set<Entry<String, Artifact>> artifactPathSet = artifactPathMap.entrySet();
 
       String artifactSourcePath = artifactPathRegex;
@@ -593,9 +595,11 @@ public class BambooServiceImpl implements BambooService {
       // for backward compatibility, get all artifact paths
       List<String> artifactPaths = artifactStreamAttributes.getArtifactPaths();
       if (isNotEmpty(artifactPaths)) {
+        Map<String, Artifact> artifactPathMap = getBuildArtifactsUrlMap(
+            bambooConfig, encryptionDetails, artifactStreamAttributes.getJobName(), buildNumber);
         for (String artifactPathRegex : artifactPaths) {
           artifactFileMetadata.addAll(getArtifactFileMetadata(
-              bambooConfig, encryptionDetails, artifactStreamAttributes.getJobName(), buildNumber, artifactPathRegex));
+              bambooConfig, artifactStreamAttributes.getJobName(), buildNumber, artifactPathRegex, artifactPathMap));
         }
       }
     }
@@ -614,9 +618,11 @@ public class BambooServiceImpl implements BambooService {
     List<ArtifactFileMetadata> artifactFileMetadata = new ArrayList<>();
     // for backward compatibility, get all artifact paths
     if (isNotEmpty(artifactPaths)) {
+      Map<String, Artifact> artifactPathMap =
+          getBuildArtifactsUrlMap(bambooConfig, encryptionDetails, planKey, buildNumber);
       for (String artifactPathRegex : artifactPaths) {
         artifactFileMetadata.addAll(
-            getArtifactFileMetadata(bambooConfig, encryptionDetails, planKey, buildNumber, artifactPathRegex));
+            getArtifactFileMetadata(bambooConfig, planKey, buildNumber, artifactPathRegex, artifactPathMap));
       }
     }
 
