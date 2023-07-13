@@ -29,6 +29,25 @@ function copy_common_files(){
 	fi
 }
 
+function copy_event_server_jars(){
+	mkdir -p dist/event-server ;
+	cd dist/event-server
+
+	cp ${BAZEL_BIN}/350-event-server/module_deploy.jar event-server-capsule.jar
+	cp ../../350-event-server/keystore.jks .
+	cp ../../350-event-server/key.pem .
+	cp ../../350-event-server/cert.pem .
+	cp ../../350-event-server/event-service-config.yml .
+	cp ../../dockerization/event-server/Dockerfile-event-server-cie-jdk Dockerfile-cie-jdk
+	cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
+  cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
+	cp -r ../../dockerization/event-server/scripts/ .
+
+	copy_common_files
+
+	cd ../..
+}
+
 mkdir -p dist/$SERVICE_NAME
 cd dist/$SERVICE_NAME
 
@@ -195,6 +214,8 @@ if [ "${SERVICE_NAME}" == "manager" ]; then
     copy_cg_manager_jars
 elif [ "${SERVICE_NAME}" == "migrator" ]; then
     copy_migrator_jars
+elif [ "${SERVICE_NAME}" == "event-server" ]; then
+    copy_event_server_jars
 elif [ "${SERVICE_NAME}" == "change-data-capture" ]; then
     copy_change_data_capture_jars
 elif [ "${SERVICE_NAME}" == "idp-service" ]; then

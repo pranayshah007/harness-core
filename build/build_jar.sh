@@ -24,7 +24,7 @@ modify_service_name() {
     ["sto-manager"]="315-sto-manager"
     ["ci-manager"]="332-ci-manager"
     ["verification-service"]="270-verification"
-    ["event-service"]="350-event-server"
+    ["event-server"]="350-event-server"
   )
   declare -A modified_service_name_with_app=(
     ["310-iacm-manager"]=1
