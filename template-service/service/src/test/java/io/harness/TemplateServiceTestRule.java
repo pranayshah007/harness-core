@@ -21,6 +21,7 @@ import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
 import io.harness.callback.DelegateCallbackToken;
+import io.harness.customDeployment.remote.CustomDeploymentResourceClient;
 import io.harness.delegate.DelegateServiceGrpc;
 import io.harness.factory.ClosingFactory;
 import io.harness.filter.FiltersModule;
@@ -33,6 +34,7 @@ import io.harness.gitsync.persistance.testing.NoOpGitAwarePersistenceImpl;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
+import io.harness.manage.ManagedExecutorService;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
@@ -51,6 +53,7 @@ import io.harness.serializer.jackson.TemplateServiceJacksonModule;
 import io.harness.service.intfc.DelegateAsyncService;
 import io.harness.service.intfc.DelegateSyncService;
 import io.harness.springdata.HTransactionTemplate;
+import io.harness.telemetry.TelemetryReporter;
 import io.harness.template.services.NoOpTemplateGitXServiceImpl;
 import io.harness.template.services.TemplateGitXService;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
@@ -71,6 +74,7 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Named;
+import com.google.inject.name.Names;
 import dev.morphia.converters.TypeConverter;
 import io.dropwizard.jackson.Jackson;
 import io.grpc.inprocess.InProcessChannelBuilder;
@@ -82,6 +86,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.rules.MethodRule;
@@ -196,10 +202,15 @@ public class TemplateServiceTestRule implements InjectorRuleMixin, MethodRule, M
         bind(GitAwarePersistence.class).to(NoOpGitAwarePersistenceImpl.class);
         bind(GitSyncSdkService.class).to(NoOpGitSyncSdkServiceImpl.class);
         bind(TemplateGitXService.class).to(NoOpTemplateGitXServiceImpl.class);
+        bind(TelemetryReporter.class).toInstance(mock(TelemetryReporter.class));
         bind(HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceBlockingStub.class)
             .toInstance(Mockito.mock(HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceBlockingStub.class));
         bind(AccountClient.class).toInstance(mock(AccountClient.class));
+        bind(CustomDeploymentResourceClient.class).toInstance(mock(CustomDeploymentResourceClient.class));
         bind(NGTemplateFeatureFlagHelperService.class).toInstance(mock(NGTemplateFeatureFlagHelperService.class));
+        bind(ExecutorService.class)
+            .annotatedWith(Names.named("TemplateServiceHelperExecutorService"))
+            .toInstance(new ManagedExecutorService(Executors.newFixedThreadPool(5)));
       }
     });
 

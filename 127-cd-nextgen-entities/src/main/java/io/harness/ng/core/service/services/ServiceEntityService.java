@@ -15,6 +15,7 @@ import io.harness.ng.core.service.entity.ServiceInputsMergedResponseDto;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.repositories.UpsertOptions;
+import io.harness.spec.server.ng.v1.model.ManifestsResponseDTO;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
@@ -105,4 +106,6 @@ public interface ServiceEntityService {
       String accountId, String orgId, String projectId, String serviceIdentifier, String loadFromCache);
 
   String resolveArtifactSourceTemplateRefs(String accountId, String orgId, String projectId, String yaml);
+
+  ManifestsResponseDTO getManifestIdentifiers(String yaml, String serviceIdentifier);
 }

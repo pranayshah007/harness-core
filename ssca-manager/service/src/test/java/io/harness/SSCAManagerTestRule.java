@@ -16,6 +16,8 @@ import io.harness.rule.InjectorRuleMixin;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.SSCAManagerModuleRegistrars;
+import io.harness.spec.server.ssca.v1.SbomProcessorApi;
+import io.harness.ssca.api.SbomProcessorApiImpl;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
 import io.harness.threading.CurrentThreadExecutor;
@@ -98,6 +100,7 @@ public class SSCAManagerTestRule implements InjectorRuleMixin, MethodRule, Mongo
       @Override
       protected void configure() {
         bind(HPersistence.class).to(MongoPersistence.class);
+        bind(SbomProcessorApi.class).to(SbomProcessorApiImpl.class);
       }
     });
     modules.add(TimeModule.getInstance());

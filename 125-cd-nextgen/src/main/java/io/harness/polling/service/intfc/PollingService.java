@@ -25,6 +25,10 @@ public interface PollingService {
 
   PollingDocument get(String accountId, String pollingDocId);
 
+  List<PollingDocument> getMany(String accountId, List<String> pollingDocId);
+
+  List<String> getUuidsBySignatures(String accountId, List<String> signatures);
+
   List<PollingDocument> getByConnectorRef(String accountId, String connectorRef);
 
   void delete(PollingDocument pollingDocument);

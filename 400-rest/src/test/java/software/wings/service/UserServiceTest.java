@@ -1613,6 +1613,11 @@ public class UserServiceTest extends WingsBaseTest {
     assertThatThrownBy(() -> userService.validateName(null)).isInstanceOf(InvalidRequestException.class);
     assertThatThrownBy(() -> userService.validateName("<a href='http://authorization.site'>Click ME</a>"))
         .isInstanceOf(InvalidRequestException.class);
+    assertThatThrownBy(
+        ()
+            -> userService.validateName(
+                "fghjkl78cfgvbhnjmdrfghjkldfcgvhbjnkwertyuiodgfhjkrtyuicvbndcfvbjdfghjdfghjdfghjkdfghjkdfghbjnkmdrtfyghujkrtfgyhujikldfghjkldfghjkfghjkl78cfgvbhnjmdrfghjkldfcgvhbjnkmdxfcvbnmdfghjdcfghcvbndcfvbjdfghjdfghjdfghjkdfghjkdfghbjnkmdrtfyghujkrtfgyhujikldfghjkldfghjk"))
+        .isInstanceOf(InvalidRequestException.class);
     final String nameWithBraces = "firstName lastName (firstName.lastName)";
     assertDoesNotThrow(() -> userService.validateName(nameWithBraces));
   }

@@ -9,6 +9,7 @@ package io.harness.ng.core.dto.secrets;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.models.BaseSSHSpec;
 import io.harness.ng.core.models.SSHConfig;
@@ -29,6 +30,7 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(name = "SSHConfig", description = "This is the SSH configuration details defined in Harness.")
 @OwnedBy(CDP)
+@RecasterAlias("io.harness.ng.core.dto.secrets.SSHConfigDTO")
 public class SSHConfigDTO implements BaseSSHSpecDTO {
   @Schema(description = "This specifies SSH credential type as Password, KeyPath or KeyReference")
   @NotNull

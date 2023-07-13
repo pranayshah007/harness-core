@@ -18,6 +18,8 @@ import io.harness.timescaledb.tables.PipelineExecutionSummary;
 import io.harness.timescaledb.tables.PipelineExecutionSummaryCd;
 import io.harness.timescaledb.tables.PipelineExecutionSummaryCi;
 import io.harness.timescaledb.tables.ServiceInfraInfo;
+import io.harness.timescaledb.tables.ServiceInstancesLicenseDailyReport;
+import io.harness.timescaledb.tables.ServicesLicenseDailyReport;
 import io.harness.timescaledb.tables.WorkloadInfo;
 import io.harness.timescaledb.tables.records.CeRecommendationsRecord;
 import io.harness.timescaledb.tables.records.ModuleLicensesRecord;
@@ -27,6 +29,8 @@ import io.harness.timescaledb.tables.records.PipelineExecutionSummaryCdRecord;
 import io.harness.timescaledb.tables.records.PipelineExecutionSummaryCiRecord;
 import io.harness.timescaledb.tables.records.PipelineExecutionSummaryRecord;
 import io.harness.timescaledb.tables.records.ServiceInfraInfoRecord;
+import io.harness.timescaledb.tables.records.ServiceInstancesLicenseDailyReportRecord;
+import io.harness.timescaledb.tables.records.ServicesLicenseDailyReportRecord;
 import io.harness.timescaledb.tables.records.WorkloadInfoRecord;
 
 import org.jooq.TableField;
@@ -50,6 +54,18 @@ public class Keys {
   public static final UniqueKey<ModuleLicensesRecord> MODULE_LICENSES_PKEY =
       Internal.createUniqueKey(ModuleLicenses.MODULE_LICENSES, DSL.name("module_licenses_pkey"),
           new TableField[] {ModuleLicenses.MODULE_LICENSES.ID}, true);
+  public static final UniqueKey<ServiceInstancesLicenseDailyReportRecord> SERVICE_INSTANCES_LICENSE_DAILY_REPORT_PKEY =
+      Internal.createUniqueKey(ServiceInstancesLicenseDailyReport.SERVICE_INSTANCES_LICENSE_DAILY_REPORT,
+          DSL.name("service_instances_license_daily_report_pkey"),
+          new TableField[] {ServiceInstancesLicenseDailyReport.SERVICE_INSTANCES_LICENSE_DAILY_REPORT.ACCOUNT_ID,
+              ServiceInstancesLicenseDailyReport.SERVICE_INSTANCES_LICENSE_DAILY_REPORT.REPORTED_DAY},
+          true);
+  public static final UniqueKey<ServicesLicenseDailyReportRecord> SERVICES_LICENSE_DAILY_REPORT_PKEY =
+      Internal.createUniqueKey(ServicesLicenseDailyReport.SERVICES_LICENSE_DAILY_REPORT,
+          DSL.name("services_license_daily_report_pkey"),
+          new TableField[] {ServicesLicenseDailyReport.SERVICES_LICENSE_DAILY_REPORT.ACCOUNT_ID,
+              ServicesLicenseDailyReport.SERVICES_LICENSE_DAILY_REPORT.REPORTED_DAY},
+          true);
   public static final UniqueKey<NodeInfoRecord> NODE_INFO_UNIQUE_RECORD_INDEX =
       Internal.createUniqueKey(NodeInfo.NODE_INFO, DSL.name("node_info_unique_record_index"),
           new TableField[] {NodeInfo.NODE_INFO.ACCOUNTID, NodeInfo.NODE_INFO.CLUSTERID, NodeInfo.NODE_INFO.INSTANCEID},

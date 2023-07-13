@@ -55,6 +55,7 @@ public interface CVConstants {
   String SLO_TARGET_TYPE = "type";
   String SLI_METRIC_TYPE = "type";
   String METRIC_THRESHOLD_METRIC_TYPE = "type";
+  String MONITORED_SERVICE_SPEC_TYPE = "type";
   String LIVE_MONITORING = "live_monitoring";
   String DEPLOYMENT = "deployment";
 

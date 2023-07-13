@@ -64,6 +64,7 @@ message ChildrenExecutableResponse {
   int64 maxConcurrency = 2;
   bool shouldProceedIfFailed = 4;
   repeated string logKeys = 3;
+  repeated string units = 5;
 }
 
 message StrategyMetadata {

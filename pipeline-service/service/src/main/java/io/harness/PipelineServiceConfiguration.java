@@ -158,6 +158,7 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty(value = "orchestrationRestrictionConfiguration")
   OrchestrationRestrictionConfiguration orchestrationRestrictionConfiguration;
   @JsonProperty("yamlSchemaExecutorServiceConfig") private ThreadPoolConfig yamlSchemaExecutorServiceConfig;
+  @JsonProperty("dashboardExecutorServiceConfig") private ThreadPoolConfig dashboardExecutorServiceConfig;
   @JsonProperty(value = "containerStepConfig") ContainerExecutionConfig containerExecutionConfig;
   @JsonProperty(value = "grpcNegotiationType") NegotiationType grpcNegotiationType;
   // If flag is enabled, only one thread does Notify response cleanup.
@@ -174,7 +175,7 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty("podCleanUpThreadPoolConfig") private ThreadPoolConfig podCleanUpThreadPoolConfig;
 
   @JsonProperty("staticSchemaFileURL") private String staticSchemaFileURL;
-
+  @JsonProperty("timeoutIteratorMode") private String timeoutIteratorMode;
   private String managerServiceSecret;
   private String managerTarget;
   private String managerAuthority;

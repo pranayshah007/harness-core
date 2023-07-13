@@ -22,6 +22,8 @@ import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class PrometheusDataCollectionInfoMapper
     extends MetricDataCollectionInfoMapper<PrometheusDataCollectionInfo, PrometheusCVConfig> {
@@ -33,6 +35,30 @@ public class PrometheusDataCollectionInfoMapper
     List<MetricCollectionInfo> metricCollectionInfoList =
         cvConfig.getMetricInfos().stream().map(this::getMetricCollectionInfo).collect(Collectors.toList());
     return getDataCollectionInfo(metricCollectionInfoList, cvConfig);
+  }
+
+  @Override
+  public PrometheusDataCollectionInfo toDeploymentDataCollectionInfo(
+      PrometheusCVConfig cvConfig, List<String> serviceInstances) {
+    PrometheusDataCollectionInfo dataCollectionInfo = this.toDataCollectionInfo(cvConfig);
+    if (CollectionUtils.isNotEmpty(serviceInstances)) {
+      dataCollectionInfo.getMetricCollectionInfoList().forEach(metricCollectionInfo -> {
+        StringBuilder serviceInstanceFilterAdditionBuilder = new StringBuilder();
+        if (StringUtils.isNotEmpty(metricCollectionInfo.getFilters())) {
+          serviceInstanceFilterAdditionBuilder.append(",");
+        }
+        serviceInstanceFilterAdditionBuilder.append(metricCollectionInfo.getServiceInstanceField())
+            .append("=~\"")
+            .append(StringUtils.joinWith("|", serviceInstances.toArray()))
+            .append("\"");
+        metricCollectionInfo.setFilters(
+            metricCollectionInfo.getFilters() + serviceInstanceFilterAdditionBuilder.toString());
+        metricCollectionInfo.setQuery(metricCollectionInfo.getQuery().replaceAll(
+            "}", serviceInstanceFilterAdditionBuilder.append("}").toString()));
+      });
+    }
+    dataCollectionInfo.setServiceInstances(serviceInstances);
+    return dataCollectionInfo;
   }
 
   private MetricCollectionInfo getMetricCollectionInfo(MetricInfo metricInfo) {
@@ -62,11 +88,15 @@ public class PrometheusDataCollectionInfoMapper
             cvConfig.getAccountId(), FeatureName.SRM_ENABLE_AGGREGATION_USING_BY_IN_PROMETHEUS.name())) {
       if (dataCollectionInfo.isCollectHostData()) {
         dataCollectionInfo.setDataCollectionDsl(DataCollectionDSLFactory.readMetricDSL(DataSourceType.PROMETHEUS));
-        // wrong as filters are already added. TODO
-        for (MetricCollectionInfo metricCollectionInfo : dataCollectionInfo.getMetricCollectionInfoList()) {
-          metricCollectionInfo.setQuery(PrometheusQueryUtils.formGroupByQuery(
-              metricCollectionInfo.getQuery(), metricCollectionInfo.getServiceInstanceField()));
-        }
+        List<MetricCollectionInfo> metricCollectionInfoList =
+            cvConfig.getMetricInfos()
+                .stream()
+                .map(this::getMetricCollectionInfo)
+                .peek(metricCollectionInfo
+                    -> metricCollectionInfo.setQuery(PrometheusQueryUtils.formGroupByQuery(
+                        metricCollectionInfo.getQuery(), metricCollectionInfo.getServiceInstanceField())))
+                .collect(Collectors.toList());
+        dataCollectionInfo.setMetricCollectionInfoList(metricCollectionInfoList);
       }
     }
   }

@@ -1,0 +1,18 @@
+{
+  "filterable": true,
+  "canmatch": true,
+  "cangroup": true,
+  "label": "Knowledge",
+  "type": "boolean",
+  "max_unit": "days",
+  "mandatory": false,
+  "default": "false",
+  "base_type": "boolean",
+  "read_only": false,
+  "hint": "If checked, will automatically create a Draft knowledge article upon closure",
+  "name": "knowledge",
+  "column_type": "element",
+  "internal_type": "boolean",
+  "cansort": true,
+  "max_length": 40
+}

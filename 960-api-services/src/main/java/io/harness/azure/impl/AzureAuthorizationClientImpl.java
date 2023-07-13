@@ -140,8 +140,6 @@ public class AzureAuthorizationClientImpl extends AzureClient implements AzureAu
                            .block()
                            .getToken();
 
-        log.trace(format("%s user access token: %s", azureCredentialType.name(), token));
-
         return AzureIdentityAccessTokenResponse.builder().accessToken(token).build();
       }
 
@@ -168,9 +166,6 @@ public class AzureAuthorizationClientImpl extends AzureClient implements AzureAu
       if (response != null) {
         if (response.isSuccessful()) {
           AzureIdentityAccessTokenResponse azureIdentityAccessTokenResponse = response.body();
-
-          log.trace(format("%s user access token: %s", azureCredentialType.name(),
-              azureIdentityAccessTokenResponse.getAccessToken()));
 
           return azureIdentityAccessTokenResponse;
         }

@@ -10,6 +10,12 @@ package io.harness.delegate.task.shell.ssh;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.ARTIFACT_CONFIGURATION_NOT_FOUND;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.ARTIFACT_CONFIGURATION_NOT_FOUND_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.ARTIFACT_CONFIGURATION_NOT_FOUND_HINT;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_AND_DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_GITHUB_PACKAGE_ARTIFACT_EXPLANATION;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_AND_DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_GITHUB_PACKAGE_ARTIFACT_FAILED;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_AND_DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_GITHUB_PACKAGE_ARTIFACT_HINT;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_AZURE_UNIVERSAL_PACKAGE_ARTIFACT_EXPLANATION;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_AZURE_UNIVERSAL_PACKAGE_ARTIFACT_FAILED;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_AZURE_UNIVERSAL_PACKAGE_ARTIFACT_HINT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT;
@@ -33,6 +39,7 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifacts.azureartifacts.beans.AzureArtifactsProtocolType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
@@ -45,10 +52,14 @@ import io.harness.delegate.task.shell.FileBasedAbstractScriptExecutorNG;
 import io.harness.delegate.task.shell.SshCommandTaskParameters;
 import io.harness.delegate.task.ssh.CopyCommandUnit;
 import io.harness.delegate.task.ssh.NgCommandUnit;
+import io.harness.delegate.task.ssh.artifact.AzureArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.GithubPackagesArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SkipCopyArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
 import io.harness.delegate.task.ssh.config.SecretConfigFile;
+import io.harness.delegate.utils.GithubPackageUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
@@ -120,21 +131,14 @@ public class SshCopyCommandHandler implements CommandHandler {
         (FileBasedAbstractScriptExecutorNG) sshScriptExecutorFactory.getFileBasedExecutor(context);
     if (FileSourceType.ARTIFACT.equals(copyCommandUnit.getSourceType())) {
       log.info("About to copy artifact");
-      if (sshCommandTaskParameters.getArtifactDelegateConfig() == null) {
-        throw NestedExceptionUtils.hintWithExplanationException(ARTIFACT_CONFIGURATION_NOT_FOUND_HINT,
-            ARTIFACT_CONFIGURATION_NOT_FOUND_EXPLANATION,
-            new SshCommandExecutionException(ARTIFACT_CONFIGURATION_NOT_FOUND));
-      }
+
+      verifyIfCopyArtifactIsSupported(sshCommandTaskParameters.getArtifactDelegateConfig());
+
       if (context.getArtifactDelegateConfig() instanceof SkipCopyArtifactDelegateConfig) {
         log.info(
             "Docker {} registry found, skipping copy artifact.", context.getArtifactDelegateConfig().getArtifactType());
         executor.getLogCallback().saveExecutionLog("Command finished with status " + result, LogLevel.INFO, result);
         return ExecuteCommandResponse.builder().status(result).build();
-      }
-      if (sshCommandTaskParameters.getArtifactDelegateConfig() instanceof CustomArtifactDelegateConfig) {
-        throw NestedExceptionUtils.hintWithExplanationException(COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT,
-            COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_EXPLANATION,
-            new SshCommandExecutionException(COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT));
       }
 
       result = executor.copyFiles(context);
@@ -188,6 +192,44 @@ public class SshCopyCommandHandler implements CommandHandler {
     }
 
     return ExecuteCommandResponse.builder().status(result).build();
+  }
+
+  private void verifyIfCopyArtifactIsSupported(SshWinRmArtifactDelegateConfig artifactDelegateConfig) {
+    if (artifactDelegateConfig == null) {
+      throw NestedExceptionUtils.hintWithExplanationException(ARTIFACT_CONFIGURATION_NOT_FOUND_HINT,
+          ARTIFACT_CONFIGURATION_NOT_FOUND_EXPLANATION,
+          new SshCommandExecutionException(ARTIFACT_CONFIGURATION_NOT_FOUND));
+    }
+
+    if (artifactDelegateConfig instanceof CustomArtifactDelegateConfig) {
+      throw NestedExceptionUtils.hintWithExplanationException(COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT,
+          COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_EXPLANATION,
+          new SshCommandExecutionException(COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT));
+    }
+
+    if (artifactDelegateConfig instanceof GithubPackagesArtifactDelegateConfig) {
+      GithubPackagesArtifactDelegateConfig githubPackagesArtifactDelegateConfig =
+          (GithubPackagesArtifactDelegateConfig) artifactDelegateConfig;
+      if (!GithubPackageUtils.MAVEN_PACKAGE_TYPE.equals(githubPackagesArtifactDelegateConfig.getPackageType())) {
+        throw NestedExceptionUtils.hintWithExplanationException(
+            COPY_AND_DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_GITHUB_PACKAGE_ARTIFACT_HINT,
+            format(COPY_AND_DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_GITHUB_PACKAGE_ARTIFACT_EXPLANATION,
+                githubPackagesArtifactDelegateConfig.getPackageType()),
+            new SshCommandExecutionException(
+                format(COPY_AND_DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_GITHUB_PACKAGE_ARTIFACT_FAILED,
+                    githubPackagesArtifactDelegateConfig.getPackageType())));
+      }
+    }
+
+    if (artifactDelegateConfig instanceof AzureArtifactDelegateConfig) {
+      AzureArtifactDelegateConfig azureArtifactDelegateConfig = (AzureArtifactDelegateConfig) artifactDelegateConfig;
+      if (AzureArtifactsProtocolType.upack.name().equals(azureArtifactDelegateConfig.getPackageType())) {
+        throw NestedExceptionUtils.hintWithExplanationException(
+            COPY_ARTIFACT_NOT_SUPPORTED_FOR_AZURE_UNIVERSAL_PACKAGE_ARTIFACT_HINT,
+            COPY_ARTIFACT_NOT_SUPPORTED_FOR_AZURE_UNIVERSAL_PACKAGE_ARTIFACT_EXPLANATION,
+            new SshCommandExecutionException(COPY_ARTIFACT_NOT_SUPPORTED_FOR_AZURE_UNIVERSAL_PACKAGE_ARTIFACT_FAILED));
+      }
+    }
   }
 
   private List<ConfigFileParameters> getConfigFileParameters(

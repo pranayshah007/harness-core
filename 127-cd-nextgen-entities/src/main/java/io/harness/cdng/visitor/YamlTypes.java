@@ -17,7 +17,6 @@ import io.harness.walktree.visitor.utilities.VisitorParentPathUtils;
 
 @OwnedBy(CDC)
 public interface YamlTypes {
-  String GITOPS_CREATE_PR = StepSpecTypeConstants.GITOPS_CREATE_PR;
   String GITOPS_MERGE_PR = StepSpecTypeConstants.GITOPS_MERGE_PR;
   String UPDATE_RELEASE_REPO = StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO;
   String GITOPS_SYNC = StepSpecTypeConstants.GITOPS_SYNC;
@@ -111,7 +110,7 @@ public interface YamlTypes {
   String SERVICE_SECTION = "serviceSection";
   String SERVICE_ENTITY = "service";
   String SERVICE_REF = "serviceRef";
-  String SERVICE_USE_FROM_STAGE = "useFromStage";
+  String USE_FROM_STAGE = "useFromStage";
   String SERVICE_DEFINITION = "serviceDefinition";
   String SERVICE_SPEC = "spec";
   String SERVICE_OVERRIDE = "serviceOverrides";

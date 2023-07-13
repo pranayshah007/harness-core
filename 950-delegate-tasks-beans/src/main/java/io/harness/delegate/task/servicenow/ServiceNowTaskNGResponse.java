@@ -43,4 +43,5 @@ public class ServiceNowTaskNGResponse implements DelegateTaskNotifyResponseData 
   ServiceNowImportSetResponseNG serviceNowImportSetResponseNG;
   List<ServiceNowStagingTable> serviceNowStagingTableList;
   List<ServiceNowTicketTypeDTO> serviceNowTicketTypeList;
+  String serviceNowFieldJsonNGListAsString;
 }

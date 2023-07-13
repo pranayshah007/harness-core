@@ -26,3 +26,11 @@ go_test(
     embed = [":middleware"],
     deps = ["@com_github_stretchr_testify//assert"],
 )
+
+load("//:tools/bazel/macros.bzl", "run_analysis")
+
+run_analysis(
+    language = "go",
+    targets = [":middleware"],
+    test_targets = [":middleware_test"],
+)

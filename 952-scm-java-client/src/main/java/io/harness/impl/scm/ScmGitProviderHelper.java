@@ -64,10 +64,9 @@ public class ScmGitProviderHelper {
     return ownerName + "/" + repoName;
   }
 
+  // An unclean method which might change/mature with time but we need to maintain bg compatibilty.
   private String getSlugFromHarnessUrl(String url) {
-    String repoName = gitClientHelper.getGitRepo(url);
-    String ownerName = gitClientHelper.getGitOwner(url, true);
-    return ownerName + "/" + repoName + "/+";
+    return gitClientHelper.getHarnessRepoName(url);
   }
 
   private String getSlugFromUrlForGitlab(GitlabConnectorDTO gitlabConnectorDTO) {

@@ -6,9 +6,11 @@
  */
 
 package io.harness.artifacts.jenkins.client;
-
 import static software.wings.helpers.ext.jenkins.JenkinsJobPathBuilder.getJenkinsJobPath;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.jenkins.beans.JenkinsInternalConfig;
 
 import software.wings.helpers.ext.jenkins.model.JobWithExtendedDetails;
@@ -24,6 +26,7 @@ import java.io.IOException;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 public class JenkinsCustomServer extends JenkinsServer {
   private JenkinsHttpClient client;
 

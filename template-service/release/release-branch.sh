@@ -43,6 +43,28 @@ function check_file_present(){
      fi
 }
 
+function perform_curl_with_retry() {
+    local url="$1"
+    local output_file="$2"
+    local max_attempts=3
+    local attempt=1
+
+    while [ $attempt -le $max_attempts ]; do
+        echo "Attempt $attempt: curling $url"
+        if curl -o "$output_file" -s -w "%{http_code}" "$url" | grep -q -E "^[23]..$"; then
+            echo "Curl succeeded, updating file: $output_file"
+            return 0
+        else
+            echo "Curl attempt $attempt failed"
+            attempt=$((attempt + 1))
+            sleep 1
+        fi
+    done
+
+    echo "All curl attempts failed. File not updated: $output_file"
+    return 1
+}
+
 export PURPOSE=template-service
 export STATUS_ID_TO_MOVE=151
 
@@ -139,7 +161,7 @@ if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
     sed -i "s:build.staticSchemaCommitId=${staticVersion}:build.staticSchemaCommitId=${head_static_commit}:g" ${VERSION_FILE}
 
     # Updating static-schema for template.json
-    TEMPLATE_JSON="../../template-service/service/src/main/resources/static-schema/template.json"
+    TEMPLATE_JSON="template-service/service/src/main/resources/static-schema/template.json"
     perform_curl_with_retry "https://raw.githubusercontent.com/harness/harness-schema/${head_static_commit}/v0/template.json" ${TEMPLATE_JSON}
     template_curl_result=$?
 
@@ -164,9 +186,26 @@ if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
     git checkout ${SHA}
     git checkout -b release/${PURPOSE}/${newBranch}
 
+
+    # Updating static-schema for template.json
+    TEMPLATE_JSON="template-service/service/src/main/resources/static-schema/template.json"
+    perform_curl_with_retry "https://raw.githubusercontent.com/harness/harness-schema/${head_static_commit}/v0/template.json" ${TEMPLATE_JSON}
+    template_curl_result=$?
+
+    if [ $template_curl_result -eq 0 ]; then
+        git add ${TEMPLATE_JSON}
+        echo "Template file was updated"
+    else
+        echo "Template file was not updated"
+    fi
+
+    # Continue with the rest of the script
+    echo "Curl commands completed"
+
     sed -i "s:build.majorVersion=${major}:build.majorVersion=${major}:g" ${VERSION_FILE}
     sed -i "s:build.minorVersion=${minor}:build.minorVersion=${minor}:g" ${VERSION_FILE}
     sed -i "s:build.patchVersion=${patchVersion}:build.patchVersion=${patchVersion}:g" ${VERSION_FILE}
+    sed -i "s:build.staticSchemaCommitId=${staticVersion}:build.staticSchemaCommitId=${head_static_commit}:g" ${VERSION_FILE}
 
     git add ${VERSION_FILE}
     git commit --allow-empty -m "Set the proper version branch release/${PURPOSE}/${newBranch}"
@@ -179,27 +218,5 @@ template-service/release/release-branch-create-template-versions.sh
 
 chmod +x template-service/release/release-branch-update-jiras.sh
 template-service/release/release-branch-update-jiras.sh
-
-perform_curl_with_retry() {
-    local url="$1"
-    local output_file="$2"
-    local max_attempts=3
-    local attempt=1
-
-    while [ $attempt -le $max_attempts ]; do
-        echo "Attempt $attempt: curling $url"
-        if curl -o "$output_file" -s -w "%{http_code}" "$url" | grep -q -E "^[23]..$"; then
-            echo "Curl succeeded, updating file: $output_file"
-            return 0
-        else
-            echo "Curl attempt $attempt failed"
-            attempt=$((attempt + 1))
-            sleep 1
-        fi
-    done
-
-    echo "All curl attempts failed. File not updated: $output_file"
-    return 1
-}
 
 

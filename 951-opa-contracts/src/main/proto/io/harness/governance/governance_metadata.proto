@@ -37,6 +37,7 @@ message PolicySetMetadata {
   string accountId = 8;
   string orgId = 9;
   string projectId = 10;
+  string description = 11;
 }
 
 // next ID: 14

@@ -10,6 +10,7 @@ package io.harness.connector.apis.resource;
 import static io.harness.connector.accesscontrol.ConnectorsAccessControlPermissions.VIEW_CONNECTOR_PERMISSION;
 import static io.harness.delegate.beans.connector.ConnectorType.KUBERNETES_CLUSTER;
 import static io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType.INHERIT_FROM_DELEGATE;
+import static io.harness.rule.OwnerRule.ANMOL;
 import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 
 import static com.google.common.base.Predicates.alwaysTrue;
@@ -40,6 +41,7 @@ import io.harness.connector.ConnectorCategory;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.ConnectorInternalFilterPropertiesDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.accesscontrol.ResourceTypes;
@@ -55,6 +57,7 @@ import io.harness.connector.utils.ConnectorAllowedFieldValues;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -380,6 +383,38 @@ public class ConnectorResourceTest extends CategoryTest {
             searchTerm, Boolean.FALSE, Boolean.FALSE,
             org.springframework.data.domain.PageRequest.of(pageIndex, pageSize, Sort.by(orders)));
     assertThat(connectorListResponse.getData()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void allConnectors() {
+    List<Sort.Order> orders = List.of(new Sort.Order(Sort.Direction.DESC, "lastModifiedAt"));
+    int pageIndex = 0;
+    int pageSize = 1;
+    final Page<ConnectorResponseDTO> page =
+        PageTestUtils.getPage(Arrays.asList(ConnectorResponseDTO.builder().build()), 1);
+    ConnectorInternalFilterPropertiesDTO connectorInternalFilterPropertiesDTO =
+        ConnectorInternalFilterPropertiesDTO.builder().accountIdentifiers(Arrays.asList("accountId")).build();
+
+    when(connectorService.list(connectorInternalFilterPropertiesDTO,
+             org.springframework.data.domain.PageRequest.of(pageIndex, pageSize, Sort.by(orders))))
+        .thenReturn(page);
+    ResponseDTO<PageResponse<ConnectorResponseDTO>> connectorListResponse = connectorResource.allConnectors(
+        connectorInternalFilterPropertiesDTO, PageRequest.builder().pageSize(1).build());
+
+    verify(connectorService, times(1))
+        .list(connectorInternalFilterPropertiesDTO,
+            org.springframework.data.domain.PageRequest.of(pageIndex, pageSize, Sort.by(orders)));
+    assertThat(connectorListResponse.getData()).isNotNull();
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void allConnectors_accountIdsMissing() {
+    connectorResource.allConnectors(
+        ConnectorInternalFilterPropertiesDTO.builder().build(), PageRequest.builder().pageSize(1).build());
   }
 
   @Test

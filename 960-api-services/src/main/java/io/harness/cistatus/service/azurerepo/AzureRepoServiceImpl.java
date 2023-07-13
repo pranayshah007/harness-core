@@ -27,6 +27,7 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
+import org.apache.logging.log4j.util.Strings;
 import org.json.JSONObject;
 import retrofit2.Response;
 import retrofit2.Retrofit;
@@ -46,8 +47,8 @@ public class AzureRepoServiceImpl implements AzureRepoService {
   private static final int MAX_ATTEMPTS = 10;
 
   @Override
-  public boolean sendStatus(AzureRepoConfig azureRepoConfig, String userName, String token, String sha, String org,
-      String project, String repo, Map<String, Object> bodyObjectMap) {
+  public boolean sendStatus(AzureRepoConfig azureRepoConfig, String userName, String token, String sha, String prNumber,
+      String org, String project, String repo, Map<String, Object> bodyObjectMap) {
     log.info("Sending status {} for sha {}", bodyObjectMap.get(STATE), sha);
 
     try {
@@ -56,8 +57,21 @@ public class AzureRepoServiceImpl implements AzureRepoService {
               .createStatus(getAuthToken(token), org, project, repo, sha, bodyObjectMap)
               .execute();
 
+      if (Strings.isNotBlank(prNumber)) {
+        Response<StatusCreationResponse> prStatusCreationResponseResponse =
+            getAzureRepoRestClient(azureRepoConfig)
+                .createPRStatus(getAuthToken(token), org, project, repo, prNumber, bodyObjectMap)
+                .execute();
+
+        if (!prStatusCreationResponseResponse.isSuccessful()) {
+          log.error("Failed to send status for AzureRepo url {} and prNumber {} error {}, message {}",
+              azureRepoConfig.getAzureRepoUrl(), prNumber, statusCreationResponseResponse.errorBody().string(),
+              statusCreationResponseResponse.message());
+        }
+      }
+
       if (!statusCreationResponseResponse.isSuccessful()) {
-        log.error("Failed to send status for gitlab url {} and sha {} error {}, message {}",
+        log.error("Failed to send status for AzureRepo url {} and sha {} error {}, message {}",
             azureRepoConfig.getAzureRepoUrl(), sha, statusCreationResponseResponse.errorBody().string(),
             statusCreationResponseResponse.message());
       }

@@ -11,7 +11,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
 
 import io.harness.NGCommonEntityConstants;
-import io.harness.beans.FeatureName;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactSource;
@@ -46,6 +45,7 @@ import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
+import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.service.entity.ServiceEntity;
@@ -57,7 +57,7 @@ import io.harness.ng.core.serviceoverride.mapper.NGServiceOverrideEntityConfigMa
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
-import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ng.core.utils.ServiceOverrideV2ValidationHelper;
 import io.harness.persistence.HIterator;
 import io.harness.pms.contracts.plan.YamlExtraProperties;
 import io.harness.pms.contracts.plan.YamlProperties;
@@ -70,11 +70,9 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.remote.client.NGRestUtils;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.utils.IdentifierRefHelper;
-import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.utils.NGVariablesUtils;
 
@@ -102,8 +100,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
   @Inject private ServiceOverrideService serviceOverrideService;
   @Inject private InfrastructureEntityService infrastructureEntityService;
   @Inject private InfrastructureMapper infrastructureMapper;
-  @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
-  @Inject private NGSettingsClient ngSettingsClient;
+  @Inject private ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
   @Inject private ServiceOverridesServiceV2 serviceOverridesServiceV2;
   @Override
   public LinkedHashMap<String, VariableCreationResponse> createVariablesForChildrenNodes(
@@ -290,8 +287,10 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
       }
       outputProperties.addAll(handleManifestProperties(specField, ngServiceConfig));
       outputProperties.addAll(handleArtifactProperties(specField, ngServiceConfig));
-      handleServiceOverridesV2(ctx, environmentRef, serviceRef, serviceVariables, infraIdentifier, accountIdentifier,
-          orgIdentifier, projectIdentifier, optionalService);
+      if (optionalService.isPresent()) {
+        handleServiceOverridesV2(ctx, environmentRef, serviceRef, serviceVariables, infraIdentifier, accountIdentifier,
+            orgIdentifier, projectIdentifier, optionalService.get());
+      }
       outputProperties.addAll(handleServiceVariables(specField, serviceVariables, ngServiceConfig));
     } else {
       outputProperties.addAll(handleServiceStepOutcome(serviceField));
@@ -306,9 +305,9 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
 
   private void handleServiceOverridesV2(VariableCreationContext ctx, ParameterField<String> environmentRef,
       ParameterField<String> serviceRef, Set<String> serviceVariables, String infraIdentifier, String accountIdentifier,
-      String orgIdentifier, String projectIdentifier, Optional<ServiceEntity> optionalService) {
-    if (environmentRef != null && !environmentRef.isExpression() && optionalService.isPresent()) {
-      if (isOverridesV2Enabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
+      String orgIdentifier, String projectIdentifier, ServiceEntity serviceEntity) {
+    if (environmentRef != null && !environmentRef.isExpression()) {
+      if (overrideV2ValidationHelper.isOverridesV2Enabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
         Map<Scope, NGServiceOverridesEntity> envServiceOverride =
             serviceOverridesServiceV2.getEnvServiceOverride(accountIdentifier, orgIdentifier, projectIdentifier,
                 environmentRef.getValue(), serviceRef.getValue(), null);
@@ -320,7 +319,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
           addOverrideVariablesToSet(serviceVariables, infraServiceOverride);
         }
       } else {
-        serviceVariables.addAll(getServiceOverridesVariables(ctx, environmentRef, optionalService.get()));
+        serviceVariables.addAll(getServiceOverridesVariables(ctx, environmentRef, serviceEntity));
       }
     }
   }
@@ -338,7 +337,12 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     List<NGVariable> ngVariableList = new ArrayList<>();
     if (isNotEmpty(serviceOverride)) {
       List<NGServiceOverridesEntity> serviceOverridesEntities = new ArrayList<>(serviceOverride.values());
-      serviceOverridesEntities.forEach(entity -> ngVariableList.addAll(entity.getSpec().getVariables()));
+      serviceOverridesEntities.forEach(entity -> {
+        List<NGVariable> ngVariables = entity.getSpec().getVariables();
+        if (isNotEmpty(ngVariables)) {
+          ngVariableList.addAll(ngVariables);
+        }
+      });
     }
     return ngVariableList;
   }
@@ -465,7 +469,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
       Optional<Environment> optionalEnvironment =
           environmentService.get(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef.getValue(), false);
       if (optionalEnvironment.isPresent()) {
-        if (isOverridesV2Enabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
+        if (overrideV2ValidationHelper.isOverridesV2Enabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
           // add all env global overrides
           Map<Scope, NGServiceOverridesEntity> envOverride = serviceOverridesServiceV2.getEnvOverride(
               accountIdentifier, orgIdentifier, projectIdentifier, environmentRef.getValue(), null);
@@ -504,7 +508,13 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
               EnvironmentMapper.toNGEnvironmentConfig(optionalEnvironment.get());
           // all env.variables also accessed by serviceVariables
           if (ngEnvironmentConfig != null) {
-            envVariables.addAll(ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables());
+            NGEnvironmentInfoConfig ngEnvironmentInfoConfig = ngEnvironmentConfig.getNgEnvironmentInfoConfig();
+            if (ngEnvironmentInfoConfig != null) {
+              List<NGVariable> ngVariables = ngEnvironmentInfoConfig.getVariables();
+              if (isNotEmpty(ngVariables)) {
+                envVariables.addAll(ngVariables);
+              }
+            }
           }
         }
         outputProperties.addAll(handleEnvironmentOutcome(specField, envVariables));
@@ -771,17 +781,5 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
   @Override
   public Class<DeploymentStageNode> getFieldClass() {
     return DeploymentStageNode.class;
-  }
-
-  private boolean isOverridesV2Enabled(String accountId, String orgId, String projectId) {
-    return ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.CDS_SERVICE_OVERRIDES_2_0)
-        && isOverridesV2SettingEnabled(accountId, orgId, projectId);
-  }
-
-  private boolean isOverridesV2SettingEnabled(String accountId, String orgId, String projectId) {
-    return NGRestUtils
-        .getResponse(ngSettingsClient.getSetting(OVERRIDE_PROJECT_SETTING_IDENTIFIER, accountId, orgId, projectId))
-        .getValue()
-        .equals("true");
   }
 }

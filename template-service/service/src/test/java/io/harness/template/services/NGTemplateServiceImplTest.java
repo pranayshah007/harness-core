@@ -51,6 +51,9 @@ import io.harness.encryption.Scope;
 import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.engine.GovernanceService;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
+import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.eventsframework.schemas.entity.ScopeProtoEnum;
+import io.harness.eventsframework.schemas.entity.TemplateReferenceProtoDTO;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
@@ -72,9 +75,11 @@ import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitx.GitXSettingsHelper;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.manage.GlobalContextManager;
+import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.OrganizationResponse;
 import io.harness.ng.core.dto.ProjectResponse;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateListType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
@@ -92,11 +97,13 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.project.remote.ProjectClient;
 import io.harness.reconcile.remote.NgManagerReconcileClient;
 import io.harness.remote.client.CGRestUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.springdata.TransactionHelper;
+import io.harness.telemetry.TelemetryReporter;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.helpers.InputsValidator;
@@ -121,6 +128,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.Sets;
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
+import com.google.protobuf.StringValue;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -130,6 +138,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -151,6 +160,8 @@ import retrofit2.Response;
 
 @OwnedBy(CDC)
 public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
+  @Mock TelemetryReporter telemetryReporter;
+  @Mock ExecutorService executorService;
   @Mock EnforcementClientService enforcementClientService;
   @Spy @InjectMocks private NGTemplateServiceHelper templateServiceHelper;
   @Mock private GitSyncSdkService gitSyncSdkService;
@@ -695,7 +706,8 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
                            -> templateService.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "templatex",
                                "versionxy", entity2.getVersion(), "", false))
         .isInstanceOf(UnexpectedException.class)
-        .hasMessage("Error while checking references for template templatex with version label: versionxy : null");
+        .hasMessageContainingAll(
+            "Error while checking references for template templatex with version label: versionxy :", "null");
 
     Call<ResponseDTO<Boolean>> request2 = mock(Call.class);
     String fqn2 = String.format("%s/orgId/projId/templateStable/versionxy/", ACCOUNT_ID);
@@ -1470,13 +1482,8 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThatThrownBy(
         () -> templateService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "zxcv", "as", false, false, false))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("[Error while retrieving template with identifier [zxcv] and versionLabel [as]]: INVALID_REQUEST");
-    /*
-    TODO:- Fix error message here Jira CDS-72694
-      "Template version from remote template file [%s] does not match with template version in request [%s]. Each
-    template version maps to a unique file on Git. Create a new version through harness or import a new version if the
-    file is already created on Git" Above message should have been thrown
-     */
+        .hasMessage(
+            "[Error while retrieving template with identifier [zxcv] and versionLabel [as]]: Template version from remote template file [version1] does not match with template version in request [as]. Each template version maps to a unique file on Git. Create a new version through harness or import a new version if the file is already created on Git");
   }
 
   @Test
@@ -1970,5 +1977,99 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
                                         .build();
     doNothing().when(templateAsyncSetupUsageService).populateAsyncSetupUsage(any());
     templateService.populateSetupUsageAsync(templateEntity);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testDeleteTemplateHelperThrowsException() {
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(ACCOUNT_ID)
+                                        .orgIdentifier(ORG_IDENTIFIER)
+                                        .projectIdentifier(PROJ_IDENTIFIER)
+                                        .identifier("template-movetogit1")
+                                        .name("templatemovetogit")
+                                        .versionLabel(TEMPLATE_VERSION_LABEL)
+                                        .templateScope(Scope.PROJECT)
+                                        .templateEntityType(TemplateEntityType.SECRET_MANAGER_TEMPLATE)
+                                        .yaml(yaml)
+                                        .isStableTemplate(true)
+                                        .storeType(StoreType.REMOTE)
+                                        .build();
+    assertThatThrownBy(()
+                           -> templateService.deleteSingleTemplateHelper(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               "template-movetogit1", templateEntity, null, false, "", false))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "Template with identifier [template-movetogit1] and versionLabel [version1], under Project[projId], Organization [orgId] is a stable template, thus cannot delete it.");
+
+    doThrow(new ScmException("Message", REVOKED_TOKEN))
+        .when(templateServiceHelper)
+        .deleteTemplate(anyString(), anyString(), anyString(), anyString(), any(TemplateEntity.class), anyString(),
+            anyString(), anyBoolean());
+
+    assertThatThrownBy(()
+                           -> templateService.deleteSingleTemplateHelper(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               "template-movetogit1", templateEntity, null, true, "", true))
+        .isInstanceOf(ScmException.class)
+        .hasMessage("Message");
+
+    doThrow(new InvalidRequestException("Message"))
+        .when(templateServiceHelper)
+        .deleteTemplate(anyString(), anyString(), anyString(), anyString(), any(TemplateEntity.class), anyString(),
+            anyString(), anyBoolean());
+
+    assertThatThrownBy(()
+                           -> templateService.deleteSingleTemplateHelper(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               "template-movetogit1", templateEntity, null, true, "", true))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "Error while deleting template with identifier [template-movetogit1] and versionLabel [version1]: Message");
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testMarkEntityInvalidForDeletedTemplate() {
+    boolean markEntityInvalid = templateService.markEntityInvalid(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "ds", TEMPLATE_VERSION_LABEL, "INVALID_YAML");
+    assertThat(markEntityInvalid).isFalse();
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testFullSyncTemplate() {
+    TemplateReferenceProtoDTO templateReferenceProtoDTO =
+        TemplateReferenceProtoDTO.newBuilder()
+            .setIdentifier(StringValue.of("identifier"))
+            .setAccountIdentifier(StringValue.of("accountIdentifier"))
+            .setScope(ScopeProtoEnum.valueOf(Scope.PROJECT.toString()))
+            .setOrgIdentifier(StringValue.of("orgIdentifier"))
+            .setVersionLabel(StringValue.of("v1"))
+            .build();
+    EntityDetailProtoDTO entityDetailProtoDTO =
+        EntityDetailProtoDTO.newBuilder().setTemplateRef(templateReferenceProtoDTO).build();
+    assertThatThrownBy(() -> templateService.fullSyncTemplate(entityDetailProtoDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "Error while saving template [identifier] of versionLabel [v1]: Template with identifier [accountIdentifier] and versionLabel [v1] under Project[], Organization [orgIdentifier] doesn't exist.");
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testListReferredEntities() {
+    Call<ResponseDTO<PageResponse<EntitySetupUsageDTO>>> requestCall = mock(Call.class);
+    MockedStatic<NGRestUtils> mockStatic = Mockito.mockStatic(NGRestUtils.class);
+    PageResponse<EntitySetupUsageDTO> pageResponse = mock(PageResponse.class);
+    when(NGRestUtils.getResponse(requestCall)).thenReturn(pageResponse);
+    mockStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(pageResponse);
+    templateService.listTemplateReferences(
+        100, 25, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "identifier", "version", "", true);
+
+    templateService.listTemplateReferences(
+        100, 25, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "identifier", "version", "", false);
+    mockStatic.close();
   }
 }

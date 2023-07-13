@@ -7,17 +7,12 @@
 
 package io.harness.ng.core.refresh.helper;
 
-import static io.harness.beans.FeatureName.CDS_SERVICE_OVERRIDES_2_0;
-
-import static java.lang.Boolean.parseBoolean;
-
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.dto.NoInputMergeInputAction;
@@ -26,8 +21,7 @@ import io.harness.ng.core.refresh.bean.EntityRefreshContext;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
 import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
-import io.harness.ngsettings.SettingIdentifiers;
-import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ng.core.utils.ServiceOverrideV2ValidationHelper;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.RuntimeInputsValidator;
@@ -37,9 +31,6 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlNodeUtils;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.remote.client.NGRestUtils;
-import io.harness.scope.ScopeHelper;
-import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -62,18 +53,17 @@ public class EnvironmentRefreshHelper {
   ServiceOverrideService serviceOverrideService;
 
   ServiceOverridesServiceV2 serviceOverridesServiceV2;
-
-  NGFeatureFlagHelperService ngFeatureFlagHelperService;
   AccountClient accountClient;
 
-  NGSettingsClient settingsClient;
+  ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
   private static final String STAGES_KEY = "stages";
   private static final String DUMMY_NODE = "dummy";
 
   public boolean isEnvironmentField(String fieldName, JsonNode envValue) {
     return YamlTypes.ENVIRONMENT_YAML.equals(fieldName) && envValue.isObject()
         && (envValue.get(YamlTypes.ENVIRONMENT_REF) != null || envValue.get(YamlTypes.INFRASTRUCTURE_DEFS) != null
-            || isNodeNotNullAndValueRuntime(envValue.get(YamlTypes.SERVICE_OVERRIDE_INPUTS)));
+            || isNodeNotNullAndValueRuntime(envValue.get(YamlTypes.SERVICE_OVERRIDE_INPUTS))
+            || envValue.get(YamlTypes.USE_FROM_STAGE) != null);
   }
 
   public void validateEnvironmentInputs(
@@ -84,6 +74,7 @@ public class EnvironmentRefreshHelper {
     ObjectMapper mapper = new ObjectMapper();
     JsonNode infraDefsNode = envJsonNode.get(YamlTypes.INFRASTRUCTURE_DEFS);
     JsonNode serviceOverrideInputs = envJsonNode.get(YamlTypes.SERVICE_OVERRIDE_INPUTS);
+    validateEnvironmentYamlWithUseFromStage(envJsonNode, errorNodeSummary);
     if (envRefJsonNode != null) {
       envRefValue = envRefJsonNode.asText();
       JsonNode envInputsNode = envJsonNode.get(YamlTypes.ENVIRONMENT_INPUTS);
@@ -130,6 +121,18 @@ public class EnvironmentRefreshHelper {
       if (serviceOverrideInputs != null) {
         validateServiceOverrideInputsWithoutEnvRef(
             context, errorNodeSummary, mapper, serviceOverrideInputs, stageYamlNodeInResolvedTemplatesYaml);
+      }
+    }
+  }
+
+  private void validateEnvironmentYamlWithUseFromStage(
+      JsonNode envJsonNode, InputsValidationResponse errorNodeSummary) {
+    JsonNode environmentInputs = envJsonNode.get(YamlTypes.ENVIRONMENT_INPUTS);
+    JsonNode serviceOverrideInputs = envJsonNode.get(YamlTypes.SERVICE_OVERRIDE_INPUTS);
+    JsonNode infraDefs = envJsonNode.get(YamlTypes.INFRASTRUCTURE_DEFS);
+    if (envJsonNode.get(YamlTypes.USE_FROM_STAGE) != null) {
+      if (environmentInputs != null || serviceOverrideInputs != null || infraDefs != null) {
+        errorNodeSummary.setValid(false);
       }
     }
   }
@@ -203,8 +206,8 @@ public class EnvironmentRefreshHelper {
       return;
     }
 
-    String serviceOverrideInputsYaml =
-        isOverridesV2Enabled(context.getAccountId(), context.getOrgId(), context.getProjectId())
+    String serviceOverrideInputsYaml = overrideV2ValidationHelper.isOverridesV2Enabled(
+                                           context.getAccountId(), context.getOrgId(), context.getProjectId())
         ? serviceOverridesServiceV2.createServiceOverrideInputsYaml(context.getAccountId(), context.getOrgId(),
             context.getProjectId(), envRefInResolvedTemplatesYaml.asText(), serviceRefInResolvedTemplatesYaml.asText())
         : serviceOverrideService.createServiceOverrideInputsYaml(context.getAccountId(), context.getOrgId(),
@@ -260,6 +263,9 @@ public class EnvironmentRefreshHelper {
     ObjectMapper mapper = new ObjectMapper();
     JsonNode infraDefsNode = envObjectNode.get(YamlTypes.INFRASTRUCTURE_DEFS);
     JsonNode serviceOverrideInputs = envObjectNode.get(YamlTypes.SERVICE_OVERRIDE_INPUTS);
+    if (refreshEnvironmentYamlWithUseFromStage(envObjectNode)) {
+      return envObjectNode;
+    }
     if (envRefJsonNode != null) {
       envRefValue = envRefJsonNode.asText();
       JsonNode envInputsNode = envObjectNode.get(YamlTypes.ENVIRONMENT_INPUTS);
@@ -302,6 +308,15 @@ public class EnvironmentRefreshHelper {
     return envObjectNode;
   }
 
+  private boolean refreshEnvironmentYamlWithUseFromStage(ObjectNode envObjectNode) {
+    if (envObjectNode.get(YamlTypes.USE_FROM_STAGE) != null) {
+      envObjectNode.remove(YamlTypes.ENVIRONMENT_INPUTS);
+      envObjectNode.remove(YamlTypes.SERVICE_OVERRIDE_INPUTS);
+      envObjectNode.remove(YamlTypes.INFRASTRUCTURE_DEFS);
+      return true;
+    }
+    return false;
+  }
   private void refreshServiceOverrideInputsWithEnvRef(YamlNode entityNode, EntityRefreshContext context,
       ObjectNode envObjectNode, JsonNode envRefJsonNode, ObjectMapper mapper, JsonNode serviceOverrideInputs) {
     YamlNode stageYamlNodeInResolvedTemplatesYaml =
@@ -347,8 +362,8 @@ public class EnvironmentRefreshHelper {
       return;
     }
 
-    String serviceOverrideInputsYaml =
-        isOverridesV2Enabled(context.getAccountId(), context.getOrgId(), context.getProjectId())
+    String serviceOverrideInputsYaml = overrideV2ValidationHelper.isOverridesV2Enabled(
+                                           context.getAccountId(), context.getOrgId(), context.getProjectId())
         ? serviceOverridesServiceV2.createServiceOverrideInputsYaml(context.getAccountId(), context.getOrgId(),
             context.getProjectId(), envRefInResolvedTemplatesYaml.asText(), serviceRefInResolvedTemplatesYaml.asText())
         : serviceOverrideService.createServiceOverrideInputsYaml(context.getAccountId(), context.getOrgId(),
@@ -463,7 +478,8 @@ public class EnvironmentRefreshHelper {
 
   private void refreshEnvInputs(EntityRefreshContext context, String envRefValue, ObjectMapper mapper,
       ObjectNode envObjectNode, JsonNode linkedEnvInputsValue) {
-    String envInputsYaml = isOverridesV2Enabled(context.getAccountId(), context.getOrgId(), context.getProjectId())
+    String envInputsYaml = overrideV2ValidationHelper.isOverridesV2Enabled(
+                               context.getAccountId(), context.getOrgId(), context.getProjectId())
         ? serviceOverridesServiceV2.createEnvOverrideInputsYaml(
             context.getAccountId(), context.getOrgId(), context.getProjectId(), envRefValue)
         : environmentService.createEnvironmentInputsYaml(
@@ -532,7 +548,8 @@ public class EnvironmentRefreshHelper {
 
   private boolean validateEnvInputs(EntityRefreshContext context, InputsValidationResponse errorNodeSummary,
       String envRefValue, ObjectMapper mapper, JsonNode envInputsNode) {
-    String envInputsYaml = isOverridesV2Enabled(context.getAccountId(), context.getOrgId(), context.getProjectId())
+    String envInputsYaml = overrideV2ValidationHelper.isOverridesV2Enabled(
+                               context.getAccountId(), context.getOrgId(), context.getProjectId())
         ? serviceOverridesServiceV2.createEnvOverrideInputsYaml(
             context.getAccountId(), context.getOrgId(), context.getProjectId(), envRefValue)
         : environmentService.createEnvironmentInputsYaml(
@@ -664,33 +681,5 @@ public class EnvironmentRefreshHelper {
 
   private boolean isNodeNotNullAndValueRuntime(JsonNode node) {
     return node != null && node.isValueNode() && NGExpressionUtils.matchesInputSetPattern(node.asText());
-  }
-
-  private boolean isOverridesV2Enabled(String accountId, String orgId, String projectId) {
-    boolean isOverrideV2SettingEnabled = false;
-
-    boolean isOverrideV2FlagEnabled = ngFeatureFlagHelperService.isEnabled(accountId, CDS_SERVICE_OVERRIDES_2_0);
-    Scope scope = ScopeHelper.getScope(accountId, orgId, projectId);
-    if (Scope.PROJECT.equals(scope)) {
-      isOverrideV2SettingEnabled =
-          parseBoolean(NGRestUtils
-                           .getResponse(settingsClient.getSetting(
-                               SettingIdentifiers.SERVICE_OVERRIDE_V2_IDENTIFIER, accountId, orgId, projectId))
-                           .getValue());
-
-    } else if (Scope.ORG.equals(scope)) {
-      isOverrideV2SettingEnabled = parseBoolean(
-          NGRestUtils
-              .getResponse(
-                  settingsClient.getSetting(SettingIdentifiers.SERVICE_OVERRIDE_V2_IDENTIFIER, accountId, orgId, null))
-              .getValue());
-    } else {
-      isOverrideV2SettingEnabled = parseBoolean(
-          NGRestUtils
-              .getResponse(
-                  settingsClient.getSetting(SettingIdentifiers.SERVICE_OVERRIDE_V2_IDENTIFIER, accountId, null, null))
-              .getValue());
-    }
-    return isOverrideV2FlagEnabled && isOverrideV2SettingEnabled;
   }
 }

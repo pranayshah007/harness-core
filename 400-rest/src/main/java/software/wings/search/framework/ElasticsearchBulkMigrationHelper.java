@@ -8,6 +8,7 @@
 package software.wings.search.framework;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.persistence.HIterator;
@@ -77,7 +78,8 @@ class ElasticsearchBulkMigrationHelper {
     try (HIterator<T> iterator = new HIterator<>(wingsPersistence.createQuery(sourceEntityClass)
                                                      .fetch(new FindOptions()
                                                                 .maxTime(Integer.MAX_VALUE, TimeUnit.MILLISECONDS)
-                                                                .batchSize(getIteratorBatchSize())))) {
+                                                                .batchSize(getIteratorBatchSize())
+                                                                .limit(NO_LIMIT)))) {
       while (iterator.hasNext()) {
         final T object = iterator.next();
         SearchEntityBulkMigrationTask<T> searchEntityBulkMigrationTask =

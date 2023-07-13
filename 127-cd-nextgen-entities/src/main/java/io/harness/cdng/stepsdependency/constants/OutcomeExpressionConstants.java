@@ -16,12 +16,12 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(CDP)
 @UtilityClass
 public class OutcomeExpressionConstants {
-  public final String CREATE_PR_OUTCOME = "createPROutcome";
   public final String MERGE_PR_OUTCOME = "mergePROutcome";
   public final String SERVICE = "service";
   public final String ARTIFACTS = "artifacts";
   public final String ARTIFACT = "artifact";
   public final String MANIFESTS = "manifests";
+  public final String UNRESOLVED_MANIFESTS = "_unresolved_manifests";
   public final String INFRASTRUCTURE_OUTCOME = "stage.spec.infrastructure.output";
   public final String INFRASTRUCTURE_GROUP = "infrastructureGroup";
   public final String K8S_ROLL_OUT = "rollingOutcome";
@@ -86,4 +86,5 @@ public class OutcomeExpressionConstants {
   public final String SSH_WINRM_PREPARE_ROLLBACK_DATA_OUTCOME = "sshWinRmPrepareRollbackDataOutcome";
   public final String AWS_SAM_VALUES_YAML_DATA_OUTCOME = "AwsSamValuesYamlDataOutcome";
   public final String SERVERLESS_VALUES_YAML_DATA_OUTCOME = "ServerlessValuesYamlDataOutcome";
+  public final String SERVERLESS_V2_DIRECTORY_PATH_OUTCOME = "serverlessV2";
 }

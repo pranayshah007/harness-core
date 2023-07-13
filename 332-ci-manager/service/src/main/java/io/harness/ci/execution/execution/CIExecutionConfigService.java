@@ -566,6 +566,9 @@ public class CIExecutionConfigService {
         return ciExecutionServiceConfig.getStepConfig().getSscaOrchestrationConfig();
       case SSCA_ENFORCEMENT:
         return ciExecutionServiceConfig.getStepConfig().getSscaEnforcementConfig();
+      case IACM_TERRAFORM_PLUGIN:
+      case IACM_APPROVAL:
+        return ciExecutionServiceConfig.getStepConfig().getIacmTerraform();
       default:
         throw new BadRequestException(format(UNEXPECTED_ERR_FORMAT, stepInfoType));
     }

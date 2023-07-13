@@ -59,6 +59,21 @@ iacmmanager-mongo:
   indexManagerMode: AUTO
   aliasDBName: iacm-harness
 
+redisLockConfig:
+  sentinel: false
+  masterName: "test"
+  redisUrl: "redis://localhost:6379"
+  sentinelUrls:
+    - "redis://redis1:26379"
+    - "redis://redis2:26379"
+    - "redis://redis3:26379"
+  envNamespace: ""
+  readMode: MASTER
+  nettyThreads: 16
+  useScriptCache: true
+  userName: ""
+  password: ""
+
 enableAuth: false
 
 distributedLockImplementation: MONGO
@@ -203,6 +218,12 @@ ciExecutionServiceConfig:
         - /bin/drone-cache
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
+    iacmTerraform:
+      image: plugins/harness_terraform:dev
+      entrypoint:
+        - /bin/harness-terraform
+      windowsEntrypoint:
+        - "C:\\harness-terraform.exe"
     vmImageConfig:
       # Use root image for VM git clone
       gitClone: harness/drone-git:1.2.7

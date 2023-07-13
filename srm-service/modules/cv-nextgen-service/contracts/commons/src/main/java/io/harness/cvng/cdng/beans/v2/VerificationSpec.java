@@ -9,7 +9,7 @@ package io.harness.cvng.cdng.beans.v2;
 
 import io.harness.cvng.beans.job.Sensitivity;
 import io.harness.cvng.beans.job.VerificationJobType;
-import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
+import io.harness.cvng.cdng.beans.MonitoredServiceSpecType;
 
 import lombok.AccessLevel;
 import lombok.Data;

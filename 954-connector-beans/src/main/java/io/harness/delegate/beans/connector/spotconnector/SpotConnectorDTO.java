@@ -9,6 +9,7 @@ package io.harness.delegate.beans.connector.spotconnector;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
@@ -34,6 +35,7 @@ import lombok.EqualsAndHashCode;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @ApiModel("SpotConnector")
 @Schema(name = "SpotConnector", description = "This contains details of the Spot connector")
+@RecasterAlias("io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO")
 public class SpotConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable, ManagerExecutable {
   @Valid @NotNull SpotCredentialDTO credential;
   Set<String> delegateSelectors;

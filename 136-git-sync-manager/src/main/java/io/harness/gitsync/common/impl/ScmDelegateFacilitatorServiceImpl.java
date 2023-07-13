@@ -1084,6 +1084,9 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
     }
 
     if (delegateResponseData instanceof ErrorNotifyResponseData) {
+      ErrorNotifyResponseData errorNotifyResponseData = (ErrorNotifyResponseData) delegateResponseData;
+      log.error("Got Error Response from Delegate. {}", errorNotifyResponseData.getErrorMessage(),
+          errorNotifyResponseData.getException());
       throw new ScmDelegateException(defaultDelegateErrorMessage);
     }
     return delegateResponseData;

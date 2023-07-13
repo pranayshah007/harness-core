@@ -30,4 +30,7 @@ public class CDLicenseUsageConstants {
   public static final String LICENSE_DATE_USAGE_PARAMS_MESSAGE = "License Date Usage params";
   public static final List<String> ACTIVE_SERVICES_SORT_QUERY_PROPERTIES =
       Arrays.asList(SERVICE_INSTANCES_QUERY_PROPERTY, LAST_DEPLOYED_SERVICE_PROPERTY, LICENSES_CONSUMED_QUERY_PROPERTY);
+  public static final String NOT_SUPPORTED_LICENSE_TYPE_MESSAGE =
+      "License usage report is only applicable to service and service instance license types. "
+      + "Provided license type is not supported, %s";
 }

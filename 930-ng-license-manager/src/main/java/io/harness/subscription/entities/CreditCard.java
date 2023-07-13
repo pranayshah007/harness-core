@@ -41,6 +41,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class CreditCard implements PersistentEntity, NGAccountAccess {
   @Id @dev.morphia.annotations.Id protected String id;
   @Trimmed protected String accountIdentifier;
+  protected String creditCardIdentifier;
   protected String fingerprint;
   @CreatedBy protected EmbeddedUser createdBy;
   @LastModifiedBy protected EmbeddedUser lastUpdatedBy;

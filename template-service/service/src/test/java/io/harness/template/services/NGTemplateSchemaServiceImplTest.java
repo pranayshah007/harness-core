@@ -21,10 +21,12 @@ import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.TemplateServiceConfiguration;
 import io.harness.TemplateServiceTestBase;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
@@ -61,7 +63,6 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.stubbing.Answer;
@@ -80,6 +81,7 @@ public class NGTemplateSchemaServiceImplTest extends TemplateServiceTestBase {
   @Mock YamlSchemaProvider yamlSchemaProvider;
 
   @Mock YamlSchemaValidator yamlSchemaValidator;
+  @Mock TemplateServiceConfiguration templateServiceConfiguration;
   private final String ACCOUNT_ID = RandomStringUtils.randomAlphanumeric(6);
   private final String ORG_IDENTIFIER = "orgId";
   private final String PROJ_IDENTIFIER = "projId";
@@ -123,7 +125,7 @@ public class NGTemplateSchemaServiceImplTest extends TemplateServiceTestBase {
     on(ngTemplateSchemaService).set("allowedParallelStages", 1);
 
     MockedStatic<TemplateYamlSchemaMergeHelper> templateYamlSchemaMergeHelperMockedStatic =
-        Mockito.mockStatic(TemplateYamlSchemaMergeHelper.class);
+        mockStatic(TemplateYamlSchemaMergeHelper.class);
     when(TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(any(), anyString(), any())).thenReturn(false);
     templateYamlSchemaMergeHelperMockedStatic
         .when(() -> TemplateYamlSchemaMergeHelper.mergeYamlSchema(any(), any(), any(), any()))
@@ -174,7 +176,7 @@ public class NGTemplateSchemaServiceImplTest extends TemplateServiceTestBase {
   public void getTemplateSchemaWithException() {
     Call<ResponseDTO<YamlSchemaResponse>> requestCall = mock(Call.class);
     doReturn(requestCall).when(pipelineYamlSchemaServiceClient).getYamlSchema(any(), any(), any(), any(), any(), any());
-    try (MockedStatic<NGRestUtils> mockStatic = Mockito.mockStatic(NGRestUtils.class)) {
+    try (MockedStatic<NGRestUtils> mockStatic = mockStatic(NGRestUtils.class)) {
       mockStatic.when(() -> NGRestUtils.getResponse(requestCall)).thenThrow(new JsonSchemaException("Exception"));
 
       assertThatThrownBy(() -> {
@@ -192,7 +194,7 @@ public class NGTemplateSchemaServiceImplTest extends TemplateServiceTestBase {
         .thenReturn(Collections.emptySet());
     Call<ResponseDTO<YamlSchemaResponse>> requestCall = mock(Call.class);
     doReturn(requestCall).when(pipelineYamlSchemaServiceClient).getYamlSchema(any(), any(), any(), any(), any(), any());
-    try (MockedStatic<NGRestUtils> mockStatic = Mockito.mockStatic(NGRestUtils.class)) {
+    try (MockedStatic<NGRestUtils> mockStatic = mockStatic(NGRestUtils.class)) {
       YamlSchemaResponse yamlSchemaResponse =
           YamlSchemaResponse.builder().schema(null).schemaErrorResponse(null).build();
       mockStatic.when(() -> NGRestUtils.getResponse(requestCall)).thenReturn(yamlSchemaResponse);
@@ -209,7 +211,7 @@ public class NGTemplateSchemaServiceImplTest extends TemplateServiceTestBase {
         .thenReturn(Collections.emptySet());
     Call<ResponseDTO<YamlSchemaResponse>> requestCall = mock(Call.class);
     doReturn(requestCall).when(pipelineYamlSchemaServiceClient).getYamlSchema(any(), any(), any(), any(), any(), any());
-    try (MockedStatic<NGRestUtils> mockStatic = Mockito.mockStatic(NGRestUtils.class)) {
+    try (MockedStatic<NGRestUtils> mockStatic = mockStatic(NGRestUtils.class)) {
       YamlSchemaResponse yamlSchemaResponse =
           YamlSchemaResponse.builder().schema(null).schemaErrorResponse(null).build();
       mockStatic.when(() -> NGRestUtils.getResponse(requestCall)).thenReturn(yamlSchemaResponse);
@@ -226,7 +228,7 @@ public class NGTemplateSchemaServiceImplTest extends TemplateServiceTestBase {
         .thenReturn(Collections.emptySet());
     Call<ResponseDTO<YamlSchemaResponse>> requestCall = mock(Call.class);
     doReturn(requestCall).when(pipelineYamlSchemaServiceClient).getYamlSchema(any(), any(), any(), any(), any(), any());
-    try (MockedStatic<NGRestUtils> mockStatic = Mockito.mockStatic(NGRestUtils.class)) {
+    try (MockedStatic<NGRestUtils> mockStatic = mockStatic(NGRestUtils.class)) {
       YamlSchemaResponse yamlSchemaResponse =
           YamlSchemaResponse.builder().schema(null).schemaErrorResponse(null).build();
       mockStatic.when(() -> NGRestUtils.getResponse(requestCall)).thenReturn(yamlSchemaResponse);
@@ -243,7 +245,7 @@ public class NGTemplateSchemaServiceImplTest extends TemplateServiceTestBase {
         .thenThrow(new InvalidYamlException("msg", null, null));
     Call<ResponseDTO<YamlSchemaResponse>> requestCall = mock(Call.class);
     doReturn(requestCall).when(pipelineYamlSchemaServiceClient).getYamlSchema(any(), any(), any(), any(), any(), any());
-    try (MockedStatic<NGRestUtils> mockStatic = Mockito.mockStatic(NGRestUtils.class)) {
+    try (MockedStatic<NGRestUtils> mockStatic = mockStatic(NGRestUtils.class)) {
       YamlSchemaResponse yamlSchemaResponse =
           YamlSchemaResponse.builder().schema(null).schemaErrorResponse(null).build();
       mockStatic.when(() -> NGRestUtils.getResponse(requestCall)).thenReturn(yamlSchemaResponse);
@@ -263,7 +265,7 @@ public class NGTemplateSchemaServiceImplTest extends TemplateServiceTestBase {
         .thenThrow(new InvalidYamlException("msg", null, null));
     Call<ResponseDTO<YamlSchemaResponse>> requestCall = mock(Call.class);
     doReturn(requestCall).when(pipelineYamlSchemaServiceClient).getYamlSchema(any(), any(), any(), any(), any(), any());
-    try (MockedStatic<NGRestUtils> mockStatic = Mockito.mockStatic(NGRestUtils.class)) {
+    try (MockedStatic<NGRestUtils> mockStatic = mockStatic(NGRestUtils.class)) {
       YamlSchemaResponse yamlSchemaResponse =
           YamlSchemaResponse.builder().schema(null).schemaErrorResponse(null).build();
       mockStatic.when(() -> NGRestUtils.getResponse(requestCall)).thenReturn(yamlSchemaResponse);
@@ -282,7 +284,7 @@ public class NGTemplateSchemaServiceImplTest extends TemplateServiceTestBase {
         .thenThrow(new InvalidYamlException("msg", null, null));
     Call<ResponseDTO<YamlSchemaResponse>> requestCall = mock(Call.class);
     doReturn(requestCall).when(pipelineYamlSchemaServiceClient).getYamlSchema(any(), any(), any(), any(), any(), any());
-    try (MockedStatic<NGRestUtils> mockStatic = Mockito.mockStatic(NGRestUtils.class)) {
+    try (MockedStatic<NGRestUtils> mockStatic = mockStatic(NGRestUtils.class)) {
       YamlSchemaResponse yamlSchemaResponse =
           YamlSchemaResponse.builder().schema(null).schemaErrorResponse(null).build();
       mockStatic.when(() -> NGRestUtils.getResponse(requestCall)).thenReturn(yamlSchemaResponse);
@@ -307,7 +309,7 @@ public class NGTemplateSchemaServiceImplTest extends TemplateServiceTestBase {
     YamlSchemaClient mockClient = mock(YamlSchemaClient.class);
     when(yamlSchemaClientMapper.get("cd")).thenReturn(mockClient);
     doReturn(requestCall2).when(mockClient).getEntityYaml(any(), any(), any(), any(), any());
-    try (MockedStatic<NGRestUtils> mockStatic = Mockito.mockStatic(NGRestUtils.class)) {
+    try (MockedStatic<NGRestUtils> mockStatic = mockStatic(NGRestUtils.class)) {
       ObjectMapper mapper = new ObjectMapper();
       JsonNode jsonNode = mapper.createObjectNode();
       mockStatic.when(() -> NGRestUtils.getResponse(requestCall2)).thenReturn(jsonNode);
@@ -332,7 +334,7 @@ public class NGTemplateSchemaServiceImplTest extends TemplateServiceTestBase {
     YamlSchemaClient mockClient = mock(YamlSchemaClient.class);
     when(yamlSchemaClientMapper.get("cd")).thenReturn(mockClient);
     doReturn(requestCall2).when(mockClient).getEntityYaml(any(), any(), any(), any(), any());
-    try (MockedStatic<NGRestUtils> mockStatic = Mockito.mockStatic(NGRestUtils.class)) {
+    try (MockedStatic<NGRestUtils> mockStatic = mockStatic(NGRestUtils.class)) {
       ObjectMapper mapper = new ObjectMapper();
       JsonNode jsonNode = mapper.createObjectNode();
       mockStatic.when(() -> NGRestUtils.getResponse(requestCall2)).thenReturn(jsonNode);
@@ -365,7 +367,7 @@ public class NGTemplateSchemaServiceImplTest extends TemplateServiceTestBase {
                                         .build();
     Call<ResponseDTO<YamlSchemaResponse>> requestCall = mock(Call.class);
     doReturn(requestCall).when(pipelineYamlSchemaServiceClient).getYamlSchema(any(), any(), any(), any(), any(), any());
-    try (MockedStatic<NGRestUtils> mockStatic = Mockito.mockStatic(NGRestUtils.class)) {
+    try (MockedStatic<NGRestUtils> mockStatic = mockStatic(NGRestUtils.class)) {
       YamlSchemaResponse yamlSchemaResponse =
           YamlSchemaResponse.builder().schema(null).schemaErrorResponse(null).build();
       mockStatic.when(() -> NGRestUtils.getResponse(requestCall)).thenReturn(yamlSchemaResponse);
@@ -398,7 +400,7 @@ public class NGTemplateSchemaServiceImplTest extends TemplateServiceTestBase {
         .thenReturn(true);
     Call<ResponseDTO<YamlSchemaResponse>> requestCall = mock(Call.class);
     doReturn(requestCall).when(pipelineYamlSchemaServiceClient).getYamlSchema(any(), any(), any(), any(), any(), any());
-    try (MockedStatic<NGRestUtils> mockStatic = Mockito.mockStatic(NGRestUtils.class)) {
+    try (MockedStatic<NGRestUtils> mockStatic = mockStatic(NGRestUtils.class)) {
       YamlSchemaResponse yamlSchemaResponse =
           YamlSchemaResponse.builder().schema(null).schemaErrorResponse(null).build();
       mockStatic.when(() -> NGRestUtils.getResponse(requestCall)).thenReturn(yamlSchemaResponse);
@@ -412,5 +414,18 @@ public class NGTemplateSchemaServiceImplTest extends TemplateServiceTestBase {
   public void testGetStaticSchema() throws Exception {
     ngTemplateSchemaService.getStaticYamlSchema(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "shellscript", TemplateEntityType.STEP_TEMPLATE, Scope.ORG, "v0");
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testCalculateFileURL() throws Exception {
+    String path = "https://raw.githubusercontent.com/harness/harness-schema/main/%s/%s";
+    when(templateServiceConfiguration.getStaticSchemaFileURL()).thenReturn(path);
+    String value = ngTemplateSchemaService.calculateFileURL(TemplateEntityType.ARTIFACT_SOURCE_TEMPLATE, "v0");
+    assertThat(value).isEqualTo("https://raw.githubusercontent.com/harness/harness-schema/main/v0/template.json");
+
+    value = ngTemplateSchemaService.calculateFileURL(TemplateEntityType.MONITORED_SERVICE_TEMPLATE, "v0");
+    assertThat(value).isEqualTo("https://raw.githubusercontent.com/harness/harness-schema/main/v0/template.json");
   }
 }

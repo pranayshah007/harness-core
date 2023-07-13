@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
+import io.harness.delegate.beans.logstreaming.CommandUnitProgress;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
@@ -50,10 +51,14 @@ public class TerraformTaskNG extends AbstractDelegateRunnableTask {
   public DelegateResponseData run(TaskParameters parameters) {
     log.info("Started executing Terraform Task NG");
     TerraformTaskNGParameters taskParameters = (TerraformTaskNGParameters) parameters;
-    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
 
-    LogCallback logCallback = getLogCallback(
-        getLogStreamingTaskClient(), taskParameters.getTerraformCommandUnit().name(), true, commandUnitsProgress);
+    CommandUnitsProgress commandUnitsProgress = taskParameters.getCommandUnitsProgress() != null
+        ? taskParameters.getCommandUnitsProgress()
+        : CommandUnitsProgress.builder().build();
+
+    LogCallback logCallback = getLogCallback(getLogStreamingTaskClient(),
+        taskParameters.getTerraformCommandUnit().name(),
+        shouldOpenStream(taskParameters.getTerraformCommandUnit().name(), commandUnitsProgress), commandUnitsProgress);
 
     if (!tfTaskTypeToHandlerMap.containsKey(taskParameters.getTaskType())) {
       throw new UnexpectedTypeException(
@@ -70,6 +75,18 @@ public class TerraformTaskNG extends AbstractDelegateRunnableTask {
       throw new TaskNGDataException(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress),
           ExceptionMessageSanitizer.sanitizeException(e));
     }
+  }
+
+  private boolean shouldOpenStream(String commandUnitName, CommandUnitsProgress commandUnitsProgress) {
+    if (commandUnitsProgress.getCommandUnitProgressMap() == null) {
+      return true;
+    }
+
+    CommandUnitProgress unitProgress = commandUnitsProgress.getCommandUnitProgressMap().get(commandUnitName);
+    if (unitProgress != null) {
+      return false;
+    }
+    return true;
   }
 
   public LogCallback getLogCallback(ILogStreamingTaskClient logStreamingTaskClient, String commandUnitName,

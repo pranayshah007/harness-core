@@ -99,8 +99,7 @@ public class NGTriggerYamlSchemaServiceTest extends CategoryTest {
     realYamlSchemaValidator.initializeValidatorWithSchema(schemas);
     yamlSchemaHelper.initializeSchemaMaps(schemas);
     YamlSchemaProvider realYamlSchemaProvider = new YamlSchemaProvider(yamlSchemaHelper);
-    ngTriggerYamlSchemaService =
-        new NGTriggerYamlSchemaServiceImpl(realYamlSchemaProvider, realYamlSchemaValidator, objectMapper);
+    ngTriggerYamlSchemaService = new NGTriggerYamlSchemaServiceImpl(realYamlSchemaProvider, realYamlSchemaValidator);
   }
 
   @Test

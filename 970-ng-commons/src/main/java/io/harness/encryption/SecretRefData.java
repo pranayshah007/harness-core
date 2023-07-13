@@ -13,6 +13,7 @@ import static io.harness.encryption.Scope.PROJECT;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.UnknownEnumTypeException;
@@ -35,6 +36,7 @@ import lombok.Setter;
 @EqualsAndHashCode
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(name = "SecretRefData", description = "This entity contains the details of the Secret Referenced")
+@RecasterAlias("io.harness.encryption.SecretRefData")
 public class SecretRefData {
   private String identifier;
   private Scope scope;

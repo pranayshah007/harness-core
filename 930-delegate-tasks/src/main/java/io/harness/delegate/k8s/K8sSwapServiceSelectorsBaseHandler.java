@@ -14,6 +14,7 @@ import static io.harness.k8s.model.HarnessLabelValues.bgPrimaryEnv;
 import static io.harness.k8s.model.HarnessLabelValues.bgStageEnv;
 
 import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.KubernetesTaskException;
@@ -130,6 +131,9 @@ public class K8sSwapServiceSelectorsBaseHandler {
 
   public String getColorOfService(KubernetesConfig kubernetesConfig, String service) {
     V1Service primaryService = kubernetesContainerService.getService(kubernetesConfig, service);
+    if (primaryService == null) {
+      return EMPTY;
+    }
     return primaryService.getSpec().getSelector().get(HarnessLabels.color);
   }
 }

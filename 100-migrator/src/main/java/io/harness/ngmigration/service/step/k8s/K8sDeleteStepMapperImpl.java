@@ -9,9 +9,12 @@ package io.harness.ngmigration.service.step.k8s;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.cdng.k8s.DeleteManifestPathSpec;
 import io.harness.cdng.k8s.DeleteResourceNameSpec;
 import io.harness.cdng.k8s.DeleteResourcesWrapper;
+import io.harness.cdng.k8s.K8sCanaryDeleteStepInfo;
+import io.harness.cdng.k8s.K8sCanaryDeleteStepNode;
 import io.harness.cdng.k8s.K8sDeleteStepInfo;
 import io.harness.cdng.k8s.K8sDeleteStepNode;
 import io.harness.delegate.task.k8s.DeleteResourcesType;
@@ -51,10 +54,28 @@ public class K8sDeleteStepMapperImpl extends StepMapper {
     return state;
   }
 
+  private AbstractStepNode getCanaryDeleteSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+    K8sDelete state = (K8sDelete) getState(graphNode);
+    K8sCanaryDeleteStepNode k8sCanaryDeleteStepNode = new K8sCanaryDeleteStepNode();
+    baseSetup(graphNode, k8sCanaryDeleteStepNode, context.getIdentifierCaseFormat());
+    K8sCanaryDeleteStepInfo k8sCanaryDeleteStepInfo = new K8sCanaryDeleteStepInfo();
+    k8sCanaryDeleteStepInfo.setDelegateSelectors(MigratorUtility.getDelegateSelectors(state.getDelegateSelectors()));
+    k8sCanaryDeleteStepNode.setK8sCanaryDeleteStepInfo(k8sCanaryDeleteStepInfo);
+    return k8sCanaryDeleteStepNode;
+  }
+
+  private boolean matchesK8sCanaryWorkoadPatterns(K8sDelete state) {
+    return isNotBlank(state.getResources()) && state.getResources().endsWith("output.canaryWorkload>");
+  }
+
   @Override
   public AbstractStepNode getSpec(
       MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     K8sDelete state = (K8sDelete) getState(graphNode);
+    if (OrchestrationWorkflowType.CANARY.equals(context.getWorkflow().getOrchestration().getOrchestrationWorkflowType())
+        && matchesK8sCanaryWorkoadPatterns(state)) {
+      return getCanaryDeleteSpec(context, graphNode);
+    }
     K8sDeleteStepNode k8sDeleteStepNode = new K8sDeleteStepNode();
     baseSetup(graphNode, k8sDeleteStepNode, context.getIdentifierCaseFormat());
     K8sDeleteStepInfo k8sDeleteStepInfo =

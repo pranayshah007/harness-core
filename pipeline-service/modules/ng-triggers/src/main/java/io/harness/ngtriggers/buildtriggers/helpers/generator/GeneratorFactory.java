@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.ngtriggers.beans.source.ManifestType.HELM_MANIFEST;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
+import static io.harness.ngtriggers.beans.source.NGTriggerType.MULTI_REGION_ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.WEBHOOK;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.ACR;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.AMAZON_S3;
@@ -31,6 +32,7 @@ import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.NEXUS3_RE
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
+import io.harness.ngtriggers.beans.source.NGTriggerType;
 import io.harness.ngtriggers.beans.source.artifact.BuildStoreType;
 import io.harness.ngtriggers.buildtriggers.helpers.BuildTriggerHelper;
 import io.harness.ngtriggers.buildtriggers.helpers.dtos.BuildTriggerOpsData;
@@ -67,11 +69,12 @@ public class GeneratorFactory {
 
   public PollingItemGenerator retrievePollingItemGenerator(BuildTriggerOpsData buildTriggerOpsData) {
     NGTriggerEntity ngTriggerEntity = buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity();
-    if (ngTriggerEntity.getType() == MANIFEST) {
+    NGTriggerType triggerType = ngTriggerEntity.getType();
+    if (triggerType == MANIFEST) {
       return retrievePollingItemGeneratorForManifest(buildTriggerOpsData);
-    } else if (ngTriggerEntity.getType() == ARTIFACT) {
+    } else if (triggerType == ARTIFACT || triggerType == MULTI_REGION_ARTIFACT) {
       return retrievePollingItemGeneratorForArtifact(buildTriggerOpsData);
-    } else if (ngTriggerEntity.getType() == WEBHOOK) {
+    } else if (triggerType == WEBHOOK) {
       return retrievePollingItemGeneratorForGitPolling(buildTriggerOpsData);
     }
 

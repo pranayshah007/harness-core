@@ -6,7 +6,9 @@
  */
 
 package io.harness.delegate.task.artifacts.mappers;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesInternalConfig;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
@@ -31,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @UtilityClass
 public class GithubPackagesRequestResponseMapper {
   public GithubPackagesInternalConfig toGithubPackagesInternalConfig(GithubPackagesArtifactDelegateRequest request) {

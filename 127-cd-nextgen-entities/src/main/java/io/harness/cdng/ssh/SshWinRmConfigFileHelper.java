@@ -89,14 +89,14 @@ public class SshWinRmConfigFileHelper {
   }
 
   public FileDelegateConfig getFileDelegateConfig(
-      Map<String, ConfigFileOutcome> configFilesOutcome, Ambiance ambiance, boolean shouldRenderConfigFiles) {
+      Map<String, ConfigFileOutcome> configFilesOutcome, Ambiance ambiance) {
     List<StoreDelegateConfig> stores = new ArrayList<>(configFilesOutcome.size());
     for (ConfigFileOutcome configFileOutcome : configFilesOutcome.values()) {
       StoreConfig storeConfig = configFileOutcome.getStore();
       if (storeConfig != null) {
         switch (storeConfig.getKind()) {
           case HARNESS_STORE_TYPE:
-            stores.add(buildHarnessStoreDelegateConfig(ambiance, (HarnessStore) storeConfig, shouldRenderConfigFiles));
+            stores.add(buildHarnessStoreDelegateConfig(ambiance, (HarnessStore) storeConfig));
             break;
           case GITHUB:
           case GIT:
@@ -114,8 +114,7 @@ public class SshWinRmConfigFileHelper {
     return FileDelegateConfig.builder().stores(stores).build();
   }
 
-  private HarnessStoreDelegateConfig buildHarnessStoreDelegateConfig(
-      Ambiance ambiance, HarnessStore harnessStore, boolean shouldRenderConfigFiles) {
+  private HarnessStoreDelegateConfig buildHarnessStoreDelegateConfig(Ambiance ambiance, HarnessStore harnessStore) {
     harnessStore = (HarnessStore) cdExpressionResolver.updateExpressions(ambiance, harnessStore);
     List<String> files = ParameterFieldHelper.getParameterFieldValue(harnessStore.getFiles());
     List<String> secretFiles = ParameterFieldHelper.getParameterFieldValue(harnessStore.getSecretFiles());
@@ -141,9 +140,7 @@ public class SshWinRmConfigFileHelper {
       });
     }
 
-    if (shouldRenderConfigFiles) {
-      renderConfigFilesParameters(ambiance, configFileParameters);
-    }
+    renderConfigFilesParameters(ambiance, configFileParameters);
 
     return HarnessStoreDelegateConfig.builder().configFiles(configFileParameters).build();
   }

@@ -34,6 +34,7 @@ import static software.wings.service.impl.security.AbstractSecretServiceImpl.enc
 import static dev.morphia.aggregation.Group.grouping;
 import static dev.morphia.aggregation.Projection.projection;
 import static java.util.Objects.isNull;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.trim;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -811,8 +812,14 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
 
   @Override
   public String fetchSecretValue(String accountId, String secretRecordId) {
-    EncryptedData encryptedData = getSecretById(accountId, secretRecordId);
-    return String.valueOf(secretService.fetchSecretValue(encryptedData));
+    // this flow doesn't need any permission as it's used only internally to fetch encrypted records
+    // adding permission will break download delegate flow
+    Optional<EncryptedData> encryptedDataOptional = secretsDao.getSecretById(accountId, secretRecordId);
+    if (encryptedDataOptional.isPresent()) {
+      EncryptedData encryptedData = encryptedDataOptional.get();
+      return String.valueOf(secretService.fetchSecretValue(encryptedData));
+    }
+    return EMPTY;
   }
 
   @Override

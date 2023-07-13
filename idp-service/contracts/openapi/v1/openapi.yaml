@@ -162,6 +162,22 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
       tags:
         - BackstageEnvVariable
+  /v1/backstage-env-variables/resolve:
+    get:
+      summary: Resolve Backstage Environment Variables
+      tags:
+        - BackstageEnvVariable
+      responses:
+        '200':
+          $ref: '#/components/responses/ResolvedEnvVariableResponse'
+      operationId: resolve-backstage-env-variables
+      description: Returns a list of backstage env variables with their decrypted values for the given account
+      x-internal: true
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Namespace'
+      security:
+        - x-api-key: []
   /v1/backstage-permissions:
     get:
       summary: Get Backstage Permissions
@@ -357,23 +373,6 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
       requestBody:
         $ref: '#/components/requestBodies/ImportHarnessEntitiesRequest'
-      tags:
-        - OnboardingResource
-      responses:
-        '200':
-          $ref: '#/components/responses/ImportEntitiesResponse'
-      x-internal: true
-  /v1/onboarding/manual-import:
-    post:
-      summary: Manually import entity to IDP
-      operationId: manual-import-entity
-      description: Manually import entity to IDP
-      security:
-        - x-api-key: []
-      parameters:
-        - $ref: '#/components/parameters/AccountHeader'
-      requestBody:
-        $ref: '#/components/requestBodies/ManualImportEntityRequest'
       tags:
         - OnboardingResource
       responses:
@@ -770,6 +769,7 @@ paths:
       description: Get backend url allow list
     post:
       summary: Save backend url allow list
+      description: Save backend url allow list
       tags:
         - AllowList
       operationId: save-allow-list
@@ -1269,25 +1269,6 @@ components:
           required:
             - env_variables
             - saved
-    ManualImportEntityRequest:
-      title: ManualImportEntityRequest
-      x-stoplight:
-        id: ssbm06g65ld8t
-      type: object
-      description: Details of entity to import manually to IDP
-      properties:
-        yaml:
-          type: string
-          x-stoplight:
-            id: g8wygfate3kph
-          description: yaml in form on json
-        entity_name:
-          type: string
-          x-stoplight:
-            id: 2axpvz6rwf0ds
-      required:
-        - yaml
-        - entity_name
     LayoutRequest:
       title: LayoutRequest
       x-stoplight:
@@ -1852,6 +1833,37 @@ components:
       required:
         - env_variables
         - proxy
+    ResolvedEnvVariable:
+      title: ResolvedEnvVariable
+      x-stoplight:
+        id: 1p2e5wdpnmac2
+      type: object
+      x-examples:
+        Example 1:
+          env_name: GITHUB_TOKEN
+          decrypted_value: abc
+      properties:
+        env_name:
+          type: string
+          x-stoplight:
+            id: 9xmh541xavavh
+        decrypted_value:
+          type: string
+          x-stoplight:
+            id: 4rb955gwxdpgt
+    ResolvedEnvVariableResponse:
+      title: ResolvedEnvVariableResponse
+      x-stoplight:
+        id: kemf8ikjwhko7
+      type: object
+      x-examples:
+        Example 1:
+          resolved_env_variable:
+            env_name: GITHUB_TOKEN
+            decrypted_value: abc
+      properties:
+        resolved_env_variables:
+          type: string
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -1964,6 +1976,13 @@ components:
         enum:
           - github-auth
           - google-auth
+    Namespace:
+      name: namespace
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Namespace from where the request is being made
   requestBodies:
     BackstageEnvVariableRequest:
       content:
@@ -2023,13 +2042,6 @@ components:
             $ref: '#/components/schemas/ImportEntitiesBase'
           examples: {}
       description: Details of Harness Entities and Catalog Location info
-    ManualImportEntityRequest:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ManualImportEntityRequest'
-      description: Details of entity to import manually to IDP
     LayoutRequest:
       content:
         application/json:
@@ -2319,6 +2331,17 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ConfigurationEntities'
+    ResolvedEnvVariableResponse:
+      description: Returns encrypted string of list of env variables with the decrypted value
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ResolvedEnvVariableResponse'
+          examples: {}
+        application/yaml:
+          schema:
+            type: string
+          examples: {}
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -2349,3 +2372,7 @@ tags:
     description: Status Information
   - name: MergedPluginsConfig
     description: Merged Plugins Configurations
+  - name: AllowList
+    description: Backstage Allow List
+  - name: AuthInfo
+    description: Auth Information

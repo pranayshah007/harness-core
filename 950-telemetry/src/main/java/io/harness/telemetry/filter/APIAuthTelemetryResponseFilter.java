@@ -107,7 +107,7 @@ public class APIAuthTelemetryResponseFilter implements ContainerResponseFilter {
                 properties, Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL,
                 TelemetryOption.builder().sendForCommunity(false).build()));
       } catch (RequestNotPermitted requestNotPermitted) {
-        log.info("Dropping X-API-key telemetry data due to rate limiting : account={}, endpoint={}",
+        log.debug("Dropping X-API-key telemetry data due to rate limiting : account={}, endpoint={}",
             properties.get(ACCOUNT_IDENTIFIER), properties.get(API_ENDPOINT));
       } catch (Exception exception) {
         log.error("Error occurred while sending X-API-key telemetry data : account={}, endpoint={}, exception={}",

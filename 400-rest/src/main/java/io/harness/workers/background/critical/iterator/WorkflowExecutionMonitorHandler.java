@@ -225,7 +225,7 @@ public class WorkflowExecutionMonitorHandler
                 .get();
 
         if (stateExecutionInstance == null) {
-          log.error("Workflow execution stuck, but we cannot find good state to callback from. This is so wrong!");
+          log.info("Workflow execution stuck, but we cannot find good state to callback from.");
           return;
         }
 

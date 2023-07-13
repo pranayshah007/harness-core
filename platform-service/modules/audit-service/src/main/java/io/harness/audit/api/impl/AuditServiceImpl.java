@@ -46,6 +46,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.Action;
 import io.harness.audit.StaticAuditFilter;
 import io.harness.audit.api.AuditService;
+import io.harness.audit.api.AuditSettingsService;
 import io.harness.audit.api.AuditYamlService;
 import io.harness.audit.beans.AuditEventDTO;
 import io.harness.audit.beans.AuditFilterPropertiesDTO;
@@ -91,6 +92,7 @@ public class AuditServiceImpl implements AuditService {
 
   private final AuditRepository auditRepository;
   private final AuditYamlService auditYamlService;
+  private final AuditSettingsService auditSettingsService;
   private final AuditFilterPropertiesValidator auditFilterPropertiesValidator;
 
   public static List<Action> entityChangeEvents = List.of(CREATE, UPDATE, RESTORE, DELETE, FORCE_DELETE, UPSERT, INVITE,
@@ -101,11 +103,13 @@ public class AuditServiceImpl implements AuditService {
 
   @Inject
   public AuditServiceImpl(AuditRepository auditRepository, AuditYamlService auditYamlService,
-      AuditFilterPropertiesValidator auditFilterPropertiesValidator, TransactionTemplate transactionTemplate) {
+      AuditFilterPropertiesValidator auditFilterPropertiesValidator, TransactionTemplate transactionTemplate,
+      AuditSettingsService auditSettingsService) {
     this.auditRepository = auditRepository;
     this.auditYamlService = auditYamlService;
     this.auditFilterPropertiesValidator = auditFilterPropertiesValidator;
     this.transactionTemplate = transactionTemplate;
+    this.auditSettingsService = auditSettingsService;
   }
 
   @Override
@@ -335,5 +339,14 @@ public class AuditServiceImpl implements AuditService {
       criteriaList.add(criteria);
     });
     return new Criteria().orOperator(criteriaList.toArray(new Criteria[0]));
+  }
+
+  @Override
+  public void deleteAuditInfo(String accountId) {
+    log.info("Starting the process to delete Audit Events, Yaml Diff and Audit settings for account: " + accountId);
+    auditYamlService.deleteByAccount(accountId);
+    auditRepository.delete(Criteria.where(AuditEventKeys.ACCOUNT_IDENTIFIER_KEY).is(accountId));
+    auditSettingsService.deleteByAccountIdentifier(accountId);
+    log.info("Cleaned Audit Events, Yaml Diff and Audit settings for account: " + accountId);
   }
 }

@@ -20,6 +20,7 @@ import (
 	delegatepb "github.com/harness/harness-core/955-delegate-beans/src/main/proto/io/harness/delegate"
 	"github.com/harness/harness-core/commons/go/lib/delegate-task-grpc-service/grpc"
 	"github.com/harness/harness-core/commons/go/lib/utils"
+	"github.com/harness/harness-core/product/ci/common/external"
 	"github.com/harness/harness-core/product/ci/engine/output"
 	enginepb "github.com/harness/harness-core/product/ci/engine/proto"
 	"github.com/harness/harness-core/product/ci/engine/status/payloads"
@@ -241,7 +242,9 @@ func sendStatusHTTP(ctx context.Context, stepID, delegateID, accountKey, account
 		}
 	}
 
-	httpClient := delegate.New(managerSvcEndpoint, accountID, accountKey, false)
+	additionalCertsDir := external.GetAdditionalCertsDir()
+
+	httpClient := delegate.New(managerSvcEndpoint, accountID, accountKey, false, additionalCertsDir)
 
 	stepStatusTaskResponseData := getStepStatusPayload(ctx, stepID, accountID, delegateID, delegateSvcEndpoint, taskID, status, numRetries, timeTaken, errMsg, stepOutput, artifact)
 

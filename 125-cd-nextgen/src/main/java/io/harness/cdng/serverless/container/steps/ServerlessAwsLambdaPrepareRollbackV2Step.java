@@ -69,7 +69,6 @@ public class ServerlessAwsLambdaPrepareRollbackV2Step extends AbstractContainerS
   @Override
   public UnitStep getSerialisedStep(Ambiance ambiance, StepElementParameters stepElementParameters, String accountId,
       String logKey, long timeout, String parkedTaskId) {
-    // Todo: Add entrypoint
     ServerlessAwsLambdaPrepareRollbackV2StepParameters serverlessAwsLambdaPrepareRollbackV2StepParameters =
         (ServerlessAwsLambdaPrepareRollbackV2StepParameters) stepElementParameters.getSpec();
 
@@ -82,16 +81,17 @@ public class ServerlessAwsLambdaPrepareRollbackV2Step extends AbstractContainerS
         ambiance, serverlessAwsLambdaPrepareRollbackV2StepParameters, envVarMap);
 
     return getUnitStep(ambiance, stepElementParameters, accountId, logKey, parkedTaskId,
-        serverlessAwsLambdaPrepareRollbackV2StepParameters);
+        serverlessAwsLambdaPrepareRollbackV2StepParameters, envVarMap);
   }
 
   public UnitStep getUnitStep(Ambiance ambiance, StepElementParameters stepElementParameters, String accountId,
       String logKey, String parkedTaskId,
-      ServerlessAwsLambdaPrepareRollbackV2StepParameters serverlessAwsLambdaPrepareRollbackV2StepParameters) {
+      ServerlessAwsLambdaPrepareRollbackV2StepParameters serverlessAwsLambdaPrepareRollbackV2StepParameters,
+      Map envVarMap) {
     return ContainerUnitStepUtils.serializeStepWithStepParameters(
         getPort(ambiance, stepElementParameters.getIdentifier()), parkedTaskId, logKey,
         stepElementParameters.getIdentifier(), getTimeout(ambiance, stepElementParameters), accountId,
-        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, new HashMap<>(),
+        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, envVarMap,
         serverlessAwsLambdaPrepareRollbackV2StepParameters.getImage().getValue(), Collections.EMPTY_LIST);
   }
 

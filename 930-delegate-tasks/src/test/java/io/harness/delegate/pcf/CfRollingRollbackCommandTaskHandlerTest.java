@@ -8,13 +8,19 @@
 package io.harness.delegate.pcf;
 
 import static io.harness.delegate.cf.CfTestConstants.STOPPED;
+import static io.harness.pcf.CfCommandUnitConstants.Rollback;
+import static io.harness.rule.OwnerRule.ANIL;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
@@ -51,11 +57,13 @@ import io.harness.security.encryption.SecretDecryptionService;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.List;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
 import org.cloudfoundry.operations.applications.ApplicationSummary;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
@@ -273,6 +281,7 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
                                                                 .tasArtifactConfig(tasArtifactConfig)
                                                                 .tasManifestsPackage(tasManifestsPackage)
                                                                 .timeoutIntervalInMin(5)
+                                                                .isFirstDeployment(false)
                                                                 .routeMaps(emptyList())
                                                                 .build();
 
@@ -339,6 +348,7 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
         cfRollingRollbackRequestNG, logStreamingTaskClient, commandUnitsProgress);
 
     assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    verify(cfDeploymentManager, times(1)).createRollingApplicationWithSteadyStateCheck(any(), any());
   }
 
   @Test
@@ -1120,5 +1130,130 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
         cfRollingRollbackRequestNG, logStreamingTaskClient, commandUnitsProgress);
 
     assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testRollingRollbackForFirstTime() throws Exception {
+    TasInfraConfig tasInfraConfig = TasInfraConfig.builder().build();
+    char[] password = {'a'};
+    char[] username = {'b'};
+    CloudFoundryConfig cfConfig = CloudFoundryConfig.builder().userName(username).password(password).build();
+    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+
+    File file = new File("/gs");
+    doReturn(file).when(pcfCommandTaskBaseHelper).generateWorkingDirectoryForDeployment();
+
+    doReturn(executionLogCallback)
+        .when(tasTaskHelperBase)
+        .getLogCallback(logStreamingTaskClient, CfCommandUnitConstants.Rollback, true, commandUnitsProgress);
+
+    doReturn(executionLogCallback)
+        .when(tasTaskHelperBase)
+        .getLogCallback(logStreamingTaskClient, CfCommandUnitConstants.Wrapup, true, commandUnitsProgress);
+
+    doReturn(cfConfig)
+        .when(tasNgConfigMapper)
+        .mapTasConfigWithDecryption(tasInfraConfig.getTasConnectorDTO(), tasInfraConfig.getEncryptionDataDetails());
+
+    TasArtifactConfig tasArtifactConfig = TasPackageArtifactConfig.builder().build();
+    String variableYamls = "\n"
+        + "\n"
+        + "APP_MEMORY: 350M\n"
+        + "INSTANCES: 1\n"
+        + "APP_NAME: rolling_rollback_locallyyyyw_rediessre";
+    String manifestsYaml = "applications:\n"
+        + "- name: ((APP_NAME))\n"
+        + "  instances: ((INSTANCES))\n"
+        + "  memory: ((APP_MEMORY))\n"
+        + "  routes:\n"
+        + "    - route: rishabh_basic_app_addt.apps.pcf-harness.com\n"
+        + "  services:\n"
+        + "    - myautoscaler";
+    String autoscalarYaml = "---\n"
+        + "instance_limits:\n"
+        + "  min: 1\n"
+        + "  max: 2\n"
+        + "rules: []\n"
+        + "scheduled_limit_changes:\n"
+        + "- recurrence: 10\n"
+        + "  executes_at: \"2032-01-01T00:00:00Z\"\n"
+        + "  instance_limits:\n"
+        + "    min: 1\n"
+        + "    max: 2";
+    TasManifestsPackage tasManifestsPackage = TasManifestsPackage.builder()
+                                                  .manifestYml(manifestsYaml)
+                                                  .autoscalarManifestYml(autoscalarYaml)
+                                                  .variableYmls(List.of(variableYamls))
+                                                  .build();
+
+    CfRollingRollbackRequestNG cfRollingRollbackRequestNG = CfRollingRollbackRequestNG.builder()
+                                                                .tasInfraConfig(tasInfraConfig)
+                                                                .tasArtifactConfig(tasArtifactConfig)
+                                                                .tasManifestsPackage(tasManifestsPackage)
+                                                                .isFirstDeployment(true)
+                                                                .timeoutIntervalInMin(5)
+                                                                .routeMaps(emptyList())
+                                                                .build();
+
+    doReturn(file).when(pcfCommandTaskBaseHelper).createManifestYamlFileLocally(any());
+
+    doReturn("cfCliPath")
+        .when(pcfCommandTaskHelper)
+        .getCfCliPathOnDelegate(true, cfRollingRollbackRequestNG.getCfCliVersion());
+
+    String name = "name";
+    String id = "id";
+    ApplicationSummary applicationSummary = ApplicationSummary.builder()
+                                                .id(id)
+                                                .diskQuota(1)
+                                                .instances(0)
+                                                .memoryLimit(1)
+                                                .name(name)
+                                                .requestedState(STOPPED)
+                                                .runningInstances(0)
+                                                .build();
+    doReturn(List.of(applicationSummary)).when(cfDeploymentManager).getPreviousReleasesForRolling(any(), any());
+
+    int instances = 1;
+    ApplicationDetail applicationDetail = ApplicationDetail.builder()
+                                              .id(id)
+                                              .diskQuota(1)
+                                              .instances(instances)
+                                              .memoryLimit(1)
+                                              .name(name)
+                                              .requestedState(STOPPED)
+                                              .stack("")
+                                              .runningInstances(instances)
+                                              .build();
+    doReturn(applicationDetail).when(pcfCommandTaskHelper).getApplicationDetails(any(), any());
+
+    doReturn(true).when(cfDeploymentManager).checkIfAppHasAutoscalarEnabled(any(), any());
+
+    File fileArtifact = new File("/gs");
+    TasArtifactDownloadResponse tasArtifactDownloadResponse =
+        TasArtifactDownloadResponse.builder().artifactFile(fileArtifact).build();
+    doReturn(tasArtifactDownloadResponse).when(pcfCommandTaskHelper).downloadPackageArtifact(any(), any());
+
+    doReturn(applicationDetail).when(cfDeploymentManager).createRollingApplicationWithSteadyStateCheck(any(), any());
+
+    LogCallback logCallback = mock(LogCallback.class);
+    doReturn(logCallback)
+        .when(tasTaskHelperBase)
+        .getLogCallback(eq(logStreamingTaskClient), eq(Rollback), eq(true), eq(commandUnitsProgress));
+
+    CfCommandResponseNG cfCommandExecutionResponse = cfRollingRollbackCommandTaskHandlerNG.executeTaskInternal(
+        cfRollingRollbackRequestNG, logStreamingTaskClient, commandUnitsProgress);
+
+    assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+
+    ArgumentCaptor<String> logCallbackCaptor = ArgumentCaptor.forClass(String.class);
+    verify(logCallback, times(2)).saveExecutionLog(logCallbackCaptor.capture(), any(), any());
+    List<String> allValues = logCallbackCaptor.getAllValues();
+    assertThat(allValues.size()).isEqualTo(2);
+    assertThat(allValues.get(0)).contains("This is first rolling deployment hence skipping rollback");
+    assertThat(allValues.get(1)).contains("PCF Rolling Rollback completed successfully");
+    verify(cfDeploymentManager, times(0)).createRollingApplicationWithSteadyStateCheck(any(), any());
   }
 }

@@ -203,6 +203,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
           accountId, extractOrganization(owner), extractProject(owner));
       return getDelegateTokenDetails(token.get(), true);
     }
+    String tokenValue = encodeBase64(Misc.generateSecretKey());
     UpdateOperations<DelegateToken> updateOperations =
         persistence.createUpdateOperations(DelegateToken.class)
             .setOnInsert(DelegateTokenKeys.uuid, UUIDGenerator.generateUuid())
@@ -210,7 +211,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
             .set(DelegateTokenKeys.name, getDefaultTokenName(owner))
             .set(DelegateTokenKeys.status, DelegateTokenStatus.ACTIVE)
             .set(DelegateTokenKeys.isNg, true)
-            .set(DelegateTokenKeys.value, encodeBase64(Misc.generateSecretKey()));
+            .set(DelegateTokenKeys.value, tokenValue);
     String tokenIdentifier = getDefaultTokenName(owner);
     if (owner != null) {
       updateOperations.set(DelegateTokenKeys.owner, owner);
@@ -220,7 +221,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
     }
     String tokenNameSanitized = StringUtils.replaceAll(tokenIdentifier, TOKEN_NAME_ILLEGAL_CHARACTERS, "_");
     updateOperations.set(DelegateTokenKeys.encryptedTokenId,
-        delegateSecretManager.encrypt(accountId, getDefaultTokenName(owner), tokenNameSanitized.trim()));
+        delegateSecretManager.encrypt(accountId, tokenValue, tokenNameSanitized.trim()));
 
     DelegateToken delegateToken = persistence.upsert(query, updateOperations, HPersistence.upsertReturnNewOptions);
     log.info("Default Delegate NG Token inserted/updated for account {}, organization {} and project {}", accountId,
@@ -297,7 +298,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
                                                                   .status(delegateToken.getStatus());
 
     if (includeTokenValue) {
-      delegateTokenDetailsBuilder.value(delegateSecretManager.getBase64EncodedTokenValue(delegateToken));
+      delegateTokenDetailsBuilder.value(delegateSecretManager.decrypt(delegateToken));
     }
 
     if (delegateToken.getOwner() != null) {

@@ -11,10 +11,9 @@
   "self": {
     "type": "string"
   },
-  "url":
-      {
-        "type": "string"
-      },
+  "url": {
+    "type": "string"
+  },
   "id": {
     "type": "string"
   },

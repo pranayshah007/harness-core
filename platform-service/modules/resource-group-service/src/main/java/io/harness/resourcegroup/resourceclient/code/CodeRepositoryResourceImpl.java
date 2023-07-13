@@ -8,13 +8,19 @@
 package io.harness.resourcegroup.resourceclient.code;
 
 import static io.harness.annotations.dev.HarnessTeam.CODE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_TYPE;
 import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_TYPE_INCLUDING_CHILD_SCOPES;
+
+import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
+import io.harness.code.CodeRepoResponseDTO;
+import io.harness.code.CodeResourceClient;
 import io.harness.eventsframework.consumer.Message;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.resourcegroup.beans.ValidatorType;
 import io.harness.resourcegroup.framework.v1.service.Resource;
 import io.harness.resourcegroup.framework.v1.service.ResourceInfo;
@@ -27,6 +33,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -37,8 +44,8 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(access = AccessLevel.PUBLIC, onConstructor = @__({ @Inject }))
 @Slf4j
 public class CodeRepositoryResourceImpl implements Resource {
+  CodeResourceClient codeViewRepoClient;
   public static final String CODE_REPOSITORY = "CODE_REPOSITORY";
-
   @Override
   public String getType() {
     return CODE_REPOSITORY;
@@ -61,7 +68,15 @@ public class CodeRepositoryResourceImpl implements Resource {
 
   @Override
   public List<Boolean> validate(List<String> resourceIds, Scope scope) {
-    return Collections.emptyList();
+    if (isEmpty(resourceIds)) {
+      return Collections.emptyList();
+    }
+
+    List<CodeRepoResponseDTO> codeViewRepos = NGRestUtils.getResponse(codeViewRepoClient.getRepos(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier()));
+    Set<Object> validResourceIds = codeViewRepos.stream().map(e -> e.getUid()).collect(Collectors.toSet());
+
+    return resourceIds.stream().map(validResourceIds::contains).collect(toList());
   }
 
   @Override

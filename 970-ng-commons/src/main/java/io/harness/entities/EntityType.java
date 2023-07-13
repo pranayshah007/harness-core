@@ -612,7 +612,13 @@ public enum EntityType {
   COVERITY(ModuleType.STO, EntityTypeConstants.COVERITY, IdentifierRef.class, EntityYamlRootNames.COVERITY),
   @JsonProperty(EntityTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2)
   SERVERLESS_AWS_LAMBDA_DEPLOY_V2(ModuleType.CD, EntityTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2,
-      IdentifierRef.class, EntityYamlRootNames.SERVERLESS_AWS_LAMBDA_DEPLOY_V2);
+      IdentifierRef.class, EntityYamlRootNames.SERVERLESS_AWS_LAMBDA_DEPLOY_V2),
+  @JsonProperty(EntityTypeConstants.ANALYZE_DEPLOYMENT_IMPACT)
+  ANALYZE_DEPLOYMENT_IMPACT_STEP(ModuleType.CV, EntityTypeConstants.ANALYZE_DEPLOYMENT_IMPACT, IdentifierRef.class,
+      EntityYamlRootNames.ANALYZE_DEPLOYMENT_IMPACT),
+  @JsonProperty(EntityTypeConstants.SERVERLESS_AWS_LAMBDA_PACKAGE_V2)
+  SERVERLESS_AWS_LAMBDA_PACKAGE_V2(ModuleType.CD, EntityTypeConstants.SERVERLESS_AWS_LAMBDA_PACKAGE_V2,
+      IdentifierRef.class, EntityYamlRootNames.SERVERLESS_AWS_LAMBDA_PACKAGE_V2);
 
   private final ModuleType moduleType;
   String yamlName;

@@ -128,6 +128,7 @@ import io.harness.delegate.logging.DelegateStackdriverLogAppender;
 import io.harness.delegate.message.Message;
 import io.harness.delegate.message.MessageService;
 import io.harness.delegate.service.common.DelegateTaskExecutionData;
+import io.harness.delegate.service.handlermapping.context.Context;
 import io.harness.delegate.task.ActivityAccess;
 import io.harness.delegate.task.Cd1ApplicationAccess;
 import io.harness.delegate.task.TaskParameters;
@@ -361,6 +362,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   @Inject private KryoSerializer kryoSerializer;
   @Nullable @Inject(optional = true) private ChronicleEventTailer chronicleEventTailer;
   @Inject HarnessMetricRegistry metricRegistry;
+  @Inject private Context context;
 
   private final AtomicBoolean waiter = new AtomicBoolean(true);
 
@@ -724,6 +726,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           delegateLogService.registerLogSanitizer(new GenericLogSanitizer(new HashSet<>(localSecrets.values())));
         }
       }
+      // TODO: we need to refactor configuration related codes. All static configs abtained from DelegateConfiguration
+      context.set(Context.DELEGATE_ID, delegateId);
     } catch (RuntimeException | IOException e) {
       log.error("Exception while starting/running delegate", e);
     }
@@ -1779,7 +1783,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       return;
     }
     log.info("Last heartbeat received at {} and sent to manager at {}", lastHeartbeatReceivedAt.get(),
-        lastHeartbeatReceivedAt.get());
+        lastHeartbeatSentAt.get());
     long now = clock.millis();
     boolean heartbeatReceivedTimeExpired = lastHeartbeatReceivedAt.get() != 0
         && (now - lastHeartbeatReceivedAt.get()) > HEARTBEAT_SOCKET_TIMEOUT && !closingSocket.get();

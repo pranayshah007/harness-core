@@ -47,6 +47,13 @@ public final class TerraformCloudExceptionConstants {
     public static final String WORKSPACE_OR_RUN_MUST_BE_PROVIDED =
         "Workspace or run id must be provided to fetch last applied run";
     public static final String ERROR_PLAN = "Error while executing Plan";
+    public static final String POLICY_CHECK_FAILURE_MESSAGE = "Policy check failed with hard-failed status";
+    public static final String POLICY_CHECK_HARD_FAILURE_HINT =
+        "Please check terraform configuration changes which resulted in hard-fail policy check";
+    public static final String POLICY_CHECK_ISSUE_WITH_POLICIES =
+        "Terraform changes didn't pass the policy checks for the following policies: %s";
+    public static final String POLICY_CHECK_FAILURE_SUMMARY =
+        "Policy with hard mandatory policy enforcement level failed";
   }
 
   public static final class Message {

@@ -35,8 +35,8 @@ import io.harness.cdng.serverless.beans.ServerlessGitFetchFailurePassThroughData
 import io.harness.cdng.serverless.beans.ServerlessS3FetchFailurePassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExceptionPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExecutorParams;
+import io.harness.cdng.serverless.beans.ServerlessV2ValuesYamlDataOutcome;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepParameters;
-import io.harness.cdng.serverless.container.steps.ServerlessValuesYamlDataOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.EmptyPredicate;
@@ -724,11 +724,11 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
                 + OutcomeExpressionConstants.SERVERLESS_VALUES_YAML_DATA_OUTCOME));
 
     if (serverlessValuesYamlDataOptionalOutput.isFound()) {
-      ServerlessValuesYamlDataOutcome awsSamValuesYamlDataOutcome =
-          (ServerlessValuesYamlDataOutcome) serverlessValuesYamlDataOptionalOutput.getOutput();
+      ServerlessV2ValuesYamlDataOutcome serverlessV2ValuesYamlDataOutcome =
+          (ServerlessV2ValuesYamlDataOutcome) serverlessValuesYamlDataOptionalOutput.getOutput();
 
-      String valuesYamlContent = awsSamValuesYamlDataOutcome.getValuesYamlContent();
-      String valuesYamlPath = awsSamValuesYamlDataOutcome.getValuesYamlPath();
+      String valuesYamlContent = serverlessV2ValuesYamlDataOutcome.getValuesYamlContent();
+      String valuesYamlPath = serverlessV2ValuesYamlDataOutcome.getValuesYamlPath();
 
       if (StringUtils.isNotBlank(valuesYamlContent) && StringUtils.isNotBlank(valuesYamlPath)) {
         envVarMap.put("PLUGIN_VALUES_YAML_CONTENT", valuesYamlContent);

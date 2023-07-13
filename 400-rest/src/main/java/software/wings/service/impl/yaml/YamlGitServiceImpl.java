@@ -7,6 +7,7 @@
 
 package software.wings.service.impl.yaml;
 
+import static io.harness.beans.FeatureName.CDS_QUERY_OPTIMIZATION;
 import static io.harness.beans.FeatureName.NOTIFY_GIT_SYNC_ERRORS_PER_APP;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageRequest.UNLIMITED;
@@ -161,6 +162,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.ReadPreference;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import java.util.ArrayList;
@@ -1387,8 +1389,14 @@ public class YamlGitServiceImpl implements YamlGitService {
       // Perform fullsync for account level entities
       fullSync(accountId, accountId, EntityType.ACCOUNT, false);
 
-      try (HIterator<Application> apps = new HIterator<>(
-               wingsPersistence.createQuery(Application.class).filter(ApplicationKeys.accountId, accountId).fetch())) {
+      FindOptions findOptions = new FindOptions();
+      if (featureFlagService.isEnabled(CDS_QUERY_OPTIMIZATION, accountId)) {
+        findOptions.readPreference(ReadPreference.secondaryPreferred());
+      }
+
+      try (HIterator<Application> apps = new HIterator<>(wingsPersistence.createQuery(Application.class)
+                                                             .filter(ApplicationKeys.accountId, accountId)
+                                                             .fetch(findOptions))) {
         for (Application application : apps) {
           fullSync(accountId, application.getUuid(), APPLICATION, false);
         }

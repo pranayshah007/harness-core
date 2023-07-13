@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.VITALIE;
 
 import static software.wings.beans.TaskType.COMMAND_TASK_NG;
 import static software.wings.beans.TaskType.COMMAND_TASK_NG_WITH_AZURE_ARTIFACT;
+import static software.wings.beans.TaskType.COMMAND_TASK_NG_WITH_AZURE_UNIVERSAL_PACKAGE_ARTIFACT;
 import static software.wings.beans.TaskType.COMMAND_TASK_NG_WITH_GITHUB_PACKAGE_ARTIFACT;
 import static software.wings.beans.TaskType.COMMAND_TASK_NG_WITH_GIT_CONFIGS;
 import static software.wings.beans.TaskType.COMMAND_TASK_NG_WITH_OUTPUT_VARIABLE_SECRETS;
@@ -77,6 +78,23 @@ public class CommandTaskDataFactoryTest extends CategoryTest {
             .build();
     TaskData taskData = commandTaskDataFactory.create(sshCommandTaskParameters, ParameterField.createValueField("5"));
     assertThat(taskData.getTaskType()).isEqualTo(COMMAND_TASK_NG_WITH_AZURE_ARTIFACT.name());
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testCreateTaskData_AZURE_UPACK() {
+    SshCommandTaskParameters sshCommandTaskParameters =
+        SshCommandTaskParameters.builder()
+            .sshInfraDelegateConfig(PdcSshInfraDelegateConfig.builder().build())
+            .artifactDelegateConfig(AzureArtifactDelegateConfig.builder().packageType("upack").build())
+            .executeOnDelegate(false)
+            .accountId("accountId")
+            .commandUnits(Arrays.asList(NgInitCommandUnit.builder().build(),
+                ScriptCommandUnit.builder().name("test").build(), NgCleanupCommandUnit.builder().build()))
+            .build();
+    TaskData taskData = commandTaskDataFactory.create(sshCommandTaskParameters, ParameterField.createValueField("5"));
+    assertThat(taskData.getTaskType()).isEqualTo(COMMAND_TASK_NG_WITH_AZURE_UNIVERSAL_PACKAGE_ARTIFACT.name());
   }
 
   @Test

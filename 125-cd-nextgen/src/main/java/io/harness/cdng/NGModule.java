@@ -54,6 +54,8 @@ import io.harness.cdng.environment.EnvironmentFilterPropertiesMapper;
 import io.harness.cdng.events.StageExecutionInfoEventListener;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.execution.service.StageExecutionInfoServiceImpl;
+import io.harness.cdng.execution.service.StageExecutionInstanceInfoService;
+import io.harness.cdng.execution.service.StageExecutionInstanceInfoServiceImpl;
 import io.harness.cdng.gitops.ClusterServiceImpl;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -66,13 +68,19 @@ import io.harness.cdng.k8s.resources.azure.service.AzureResourceService;
 import io.harness.cdng.k8s.resources.azure.service.AzureResourceServiceImpl;
 import io.harness.cdng.k8s.resources.gcp.service.GcpResourceService;
 import io.harness.cdng.k8s.resources.gcp.service.impl.GcpResourceServiceImpl;
+import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.resources.HelmChartService;
 import io.harness.cdng.manifest.resources.HelmChartServiceImpl;
+import io.harness.cdng.manifest.steps.task.HelmChartManifestTaskHandler;
+import io.harness.cdng.manifest.steps.task.ManifestTaskHandler;
+import io.harness.cdng.manifest.steps.task.ManifestTaskService;
+import io.harness.cdng.manifest.steps.task.ManifestTaskServiceImpl;
 import io.harness.cdng.plugininfoproviders.AwsSamBuildPluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.AwsSamDeployPluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.DownloadManifestsPluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.GitClonePluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.ServerlessAwsLambdaDeployV2PluginInfoProvider;
+import io.harness.cdng.plugininfoproviders.ServerlessAwsLambdaPackageV2PluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.ServerlessPrepareRollbackPluginInfoProvider;
 import io.harness.cdng.provision.terraform.executions.TerraformApplyExecutionDetailsService;
 import io.harness.cdng.provision.terraform.executions.TerraformApplyExecutionDetailsServiceImpl;
@@ -93,7 +101,9 @@ import io.harness.cdng.servicenow.resources.service.ServiceNowResourceService;
 import io.harness.cdng.servicenow.resources.service.ServiceNowResourceServiceImpl;
 import io.harness.cdng.tas.service.TasResourceService;
 import io.harness.cdng.tas.service.TasResourceServiceImpl;
+import io.harness.cdng.usage.CDLicenseUsageReportService;
 import io.harness.cdng.usage.impl.CDLicenseUsageImpl;
+import io.harness.cdng.usage.impl.CDLicenseUsageReportServiceImpl;
 import io.harness.cdng.yaml.CdYamlSchemaService;
 import io.harness.cdng.yaml.CdYamlSchemaServiceImpl;
 import io.harness.filter.FilterType;
@@ -161,6 +171,7 @@ public class NGModule extends AbstractModule {
     bind(S3ResourceService.class).to(S3ResourceServiceImpl.class);
     bind(GcsResourceService.class).to(GcsResourceServiceImpl.class);
     bind(InstanceInfoService.class).to(InstanceInfoServiceImpl.class);
+    bind(StageExecutionInstanceInfoService.class).to(StageExecutionInstanceInfoServiceImpl.class);
     bind(LicenseUsageInterface.class).to(CDLicenseUsageImpl.class);
     bind(InstanceService.class).to(InstanceServiceImpl.class);
     bind(ServiceEntityService.class).to(ServiceEntityServiceImpl.class);
@@ -204,6 +215,8 @@ public class NGModule extends AbstractModule {
     bind(ServiceOverrideValidatorService.class).to(ServiceOverrideValidatorServiceImpl.class);
     bind(ServiceOverrideV2MigrationService.class).to(ServiceOverrideV2MigrationServiceImpl.class);
     bind(ServiceOverrideV2SettingsUpdateService.class).to(ServiceOverrideV2SettingsUpdateServiceImpl.class);
+    bind(CDLicenseUsageReportService.class).to(CDLicenseUsageReportServiceImpl.class);
+    bind(ManifestTaskService.class).to(ManifestTaskServiceImpl.class);
 
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);
@@ -219,5 +232,10 @@ public class NGModule extends AbstractModule {
     pluginInfoProviderMultibinder.addBinding().to(GitClonePluginInfoProvider.class);
     pluginInfoProviderMultibinder.addBinding().to(ServerlessPrepareRollbackPluginInfoProvider.class);
     pluginInfoProviderMultibinder.addBinding().to(ServerlessAwsLambdaDeployV2PluginInfoProvider.class);
+    pluginInfoProviderMultibinder.addBinding().to(ServerlessAwsLambdaPackageV2PluginInfoProvider.class);
+
+    MapBinder<String, ManifestTaskHandler> manifestTaskHandlerMapper =
+        MapBinder.newMapBinder(binder(), String.class, ManifestTaskHandler.class);
+    manifestTaskHandlerMapper.addBinding(ManifestType.HelmChart).to(HelmChartManifestTaskHandler.class);
   }
 }

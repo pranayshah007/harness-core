@@ -1,0 +1,25 @@
+# Copyright 2023 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("//:tools/bazel/harness.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "openapi_stub_generator")
+
+openapi_stub_generator(
+    name = "ssca-manager-server-spec-gen",
+)
+
+java_library(
+    name = "ssca-manager-server-spec-module",
+    srcs = [":ssca-manager-server-spec-gen"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:javax_validation_validation_api",
+        "@maven//:javax_ws_rs_javax_ws_rs_api",
+        "@maven//:org_glassfish_jersey_media_jersey_media_multipart",
+    ],
+)

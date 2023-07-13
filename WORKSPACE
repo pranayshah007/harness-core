@@ -751,8 +751,8 @@ go_repository(
 go_repository(
     name = "com_github_wings_software_dlite",
     importpath = "github.com/wings-software/dlite",
-    sum = "h1:143lMB7T+9OqU9VYSpm71B4DzIONQOUvWWGsmreTpHI=",
-    version = "v0.0.0-20220915141325-eb8c295a2189",
+    sum = "h1:POHuMFn5nQpZjN2Ql1maNabDO6r/8ZOargRA6uzAOuo=",
+    version = "v1.0.0-rc.5",
 )
 
 go_repository(
@@ -4608,13 +4608,13 @@ go_repository(
 go_repository(
     name = "com_github_harness_ti_client",
     importpath = "github.com/harness/ti-client",
-    sum = "h1:Ep30TUGSR+TlhMe8Ez0P9awmBUga0KEapfV438hzpP8=",
-    version = "v0.0.0-20230625231222-263e215b8017",
+    sum = "h1:5bAthnUBEV3zE9utLY4b6AKs/ZQ5y188uv2GkVJeetI=",
+    version = "v0.0.0-20230628234729-894f996b3046",
 )
 
 go_rules_dependencies()
 
-go_register_toolchains(version = "1.20.4")
+go_register_toolchains(version = "1.20.5")
 
 gazelle_dependencies()
 
@@ -4814,7 +4814,7 @@ plain_artifacts = [
     "com.google.code.findbugs:jsr305:3.0.2",
     "com.google.code.gson:gson:2.8.9",
     "com.google.errorprone:error_prone_annotations:2.3.4",
-    "com.google.guava:guava:31.1-jre",
+    "com.google.guava:guava:32.0.1-jre",
     "com.google.http-client:google-http-client-apache-v2:1.38.0",
     "com.google.http-client:google-http-client-appengine:1.34.1",
     "com.google.http-client:google-http-client-jackson2:1.34.1",
@@ -5009,17 +5009,17 @@ plain_artifacts = [
     "io.kubernetes:client-java:18.0.0",
     "io.kubernetes:client-java-api-fluent:18.0.0",
     "io.leangen.graphql:spqr:0.11.2",
-    "io.netty:netty-all:4.1.86.Final",
-    "io.netty:netty-buffer:4.1.86.Final",
-    "io.netty:netty-handler-proxy:4.1.86.Final",
-    "io.netty:netty-common:4.1.86.Final",
-    "io.netty:netty-handler:4.1.86.Final",
-    "io.netty:netty-resolver-dns:4.1.86.Final",
-    "io.netty:netty-resolver:4.1.86.Final",
-    "io.netty:netty-transport-native-epoll:linux-x86_64:4.1.86.Final",
-    "io.netty:netty-transport-native-kqueue:4.1.86.Final",
-    "io.netty:netty-transport-native-unix-common:4.1.86.Final",
-    "io.netty:netty-transport:4.1.86.Final",
+    "io.netty:netty-all:4.1.94.Final",
+    "io.netty:netty-buffer:4.1.94.Final",
+    "io.netty:netty-handler-proxy:4.1.94.Final",
+    "io.netty:netty-common:4.1.94.Final",
+    "io.netty:netty-handler:4.1.94.Final",
+    "io.netty:netty-resolver-dns:4.1.94.Final",
+    "io.netty:netty-resolver:4.1.94.Final",
+    "io.netty:netty-transport-native-epoll:linux-x86_64:4.1.94.Final",
+    "io.netty:netty-transport-native-kqueue:4.1.94.Final",
+    "io.netty:netty-transport-native-unix-common:4.1.94.Final",
+    "io.netty:netty-transport:4.1.94.Final",
     "io.opencensus:opencensus-api:0.24.0",
     "io.opencensus:opencensus-contrib-http-util:0.24.0",
     "io.opencensus:opencensus-exporter-stats-stackdriver:0.28.0",

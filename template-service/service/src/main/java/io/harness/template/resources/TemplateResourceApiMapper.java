@@ -10,6 +10,7 @@ package io.harness.template.resources;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
@@ -113,7 +114,9 @@ public class TemplateResourceApiMapper {
     templateMetadataSummaryResponse.setEntityType(templateEntityType);
     templateMetadataSummaryResponse.setChildType(templateMetadataSummaryResponseDTO.getChildType());
     TemplateMetadataSummaryResponse.ScopeEnum scopeEnum = TemplateMetadataSummaryResponse.ScopeEnum.fromValue(
-        templateMetadataSummaryResponseDTO.getTemplateScope().getYamlRepresentation());
+        templateMetadataSummaryResponseDTO.getTemplateScope() != null
+            ? templateMetadataSummaryResponseDTO.getTemplateScope().getYamlRepresentation()
+            : Scope.UNKNOWN.toString());
     templateMetadataSummaryResponse.setScope(scopeEnum);
     templateMetadataSummaryResponse.setVersion(templateMetadataSummaryResponseDTO.getVersion());
     templateMetadataSummaryResponse.setGitDetails(
@@ -121,7 +124,9 @@ public class TemplateResourceApiMapper {
     templateMetadataSummaryResponse.setUpdated(templateMetadataSummaryResponseDTO.getLastUpdatedAt());
     TemplateMetadataSummaryResponse.StoreTypeEnum storeTypeEnum =
         TemplateMetadataSummaryResponse.StoreTypeEnum.fromValue(
-            templateMetadataSummaryResponseDTO.getStoreType().toString());
+            templateMetadataSummaryResponseDTO.getStoreType() != null
+                ? templateMetadataSummaryResponseDTO.getStoreType().toString()
+                : null);
     templateMetadataSummaryResponse.setStoreType(storeTypeEnum);
     templateMetadataSummaryResponse.setConnectorRef(templateMetadataSummaryResponseDTO.getConnectorRef());
     templateMetadataSummaryResponse.setStableTemplate(templateMetadataSummaryResponseDTO.getStableTemplate());

@@ -29,6 +29,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorCategory;
 import io.harness.connector.ConnectorConnectivityMode;
 import io.harness.connector.ConnectorFilterPropertiesDTO;
+import io.harness.connector.ConnectorInternalFilterPropertiesDTO;
 import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.connector.entities.embedded.ceawsconnector.CEAwsConfig.CEAwsConfigKeys;
 import io.harness.connector.entities.embedded.ceazure.CEAzureConfig.CEAzureConfigKeys;
@@ -116,6 +117,24 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
       criteria.andOperator(criteriaListForAndOperator.toArray(new Criteria[0]));
     }
 
+    return criteria;
+  }
+
+  @Override
+  public Criteria createCriteriaFromCcmConnectorFilter(FilterPropertiesDTO filterPropertiesDTO) {
+    ConnectorInternalFilterPropertiesDTO connectorInternalFilterPropertiesDTO =
+        (ConnectorInternalFilterPropertiesDTO) filterPropertiesDTO;
+    Criteria criteria =
+        where(ConnectorKeys.accountIdentifier).in(connectorInternalFilterPropertiesDTO.getAccountIdentifiers());
+    if (isNotEmpty(connectorInternalFilterPropertiesDTO.getTypes())) {
+      criteria.and(ConnectorKeys.type).in(connectorInternalFilterPropertiesDTO.getTypes());
+    }
+    if (isNotEmpty(connectorInternalFilterPropertiesDTO.getConnectivityStatuses())) {
+      criteria.and(ConnectorKeys.connectionStatus).in(connectorInternalFilterPropertiesDTO.getConnectivityStatuses());
+    }
+    if (connectorInternalFilterPropertiesDTO.getCcmConnectorFilter() != null) {
+      populateCcmFilters(criteria, connectorInternalFilterPropertiesDTO.getCcmConnectorFilter());
+    }
     return criteria;
   }
 

@@ -7,8 +7,13 @@
 
 package io.harness.connector.heartbeat;
 
+import static io.harness.remote.client.CGRestUtils.getResponse;
+
+import io.harness.account.AccountClient;
+import io.harness.beans.FeatureName;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
+import io.harness.connector.helper.GitAuthenticationDecryptionHelper;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;
@@ -29,6 +34,7 @@ import java.util.List;
 @Singleton
 public class ScmConnectorValidationParamsProvider implements ConnectorValidationParamsProvider {
   @Inject GitConfigAuthenticationInfoHelper gitConfigAuthenticationInfoHelper;
+  @Inject private AccountClient accountClient;
 
   @Override
   public ConnectorValidationParams getConnectorValidationParams(ConnectorInfoDTO connectorInfoDTO, String connectorName,
@@ -50,11 +56,20 @@ public class ScmConnectorValidationParamsProvider implements ConnectorValidation
       encryptedDataDetails.addAll(
           gitConfigAuthenticationInfoHelper.getApiAccessEncryptedDataDetail(scmConnector, ngAccess));
     }
+
+    final boolean githubAppAuthentication = GitAuthenticationDecryptionHelper.isGitHubAppAuthentication(scmConnector)
+        && getResponse(
+            accountClient.isFeatureFlagEnabled(FeatureName.CDS_GITHUB_APP_AUTHENTICATION.name(), accountIdentifier));
+    if (githubAppAuthentication) {
+      encryptedDataDetails.addAll(
+          gitConfigAuthenticationInfoHelper.getGithubAppEncryptedDataDetail(scmConnector, ngAccess));
+    }
     return ScmValidationParams.builder()
         .scmConnector(scmConnector)
         .encryptedDataDetails(encryptedDataDetails)
         .gitConfigDTO(gitConfigDTO)
         .connectorName(connectorName)
+        .githubAppAuthentication(githubAppAuthentication)
         .sshKeySpecDTO(sshKeySpecDTO)
         .build();
   }

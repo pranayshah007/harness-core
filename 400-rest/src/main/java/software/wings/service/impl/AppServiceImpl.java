@@ -9,6 +9,7 @@ package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.CDS_QUERY_OPTIMIZATION;
 import static io.harness.beans.FeatureName.GITHUB_WEBHOOK_AUTHENTICATION;
 import static io.harness.beans.FeatureName.PURGE_DANGLING_APP_ENV_REFS;
 import static io.harness.beans.FeatureName.SPG_ALLOW_DISABLE_TRIGGERS;
@@ -116,6 +117,8 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import com.mongodb.ReadPreference;
+import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
 import java.util.List;
@@ -498,14 +501,24 @@ public class AppServiceImpl implements AppService {
 
   @Override
   public List<Application> getAppsByAccountId(String accountId) {
-    return wingsPersistence.createQuery(Application.class).filter(ApplicationKeys.accountId, accountId).asList();
+    FindOptions findOptions = new FindOptions();
+    if (featureFlagService.isEnabled(CDS_QUERY_OPTIMIZATION, accountId)) {
+      findOptions.readPreference(ReadPreference.secondaryPreferred());
+    }
+    return wingsPersistence.createQuery(Application.class)
+        .filter(ApplicationKeys.accountId, accountId)
+        .asList(findOptions);
   }
 
   @Override
   public List<String> getAppIdsByAccountId(String accountId) {
+    FindOptions findOptions = new FindOptions();
+    if (featureFlagService.isEnabled(CDS_QUERY_OPTIMIZATION, accountId)) {
+      findOptions.readPreference(ReadPreference.secondaryPreferred());
+    }
     return wingsPersistence.createQuery(Application.class)
         .filter(ApplicationKeys.accountId, accountId)
-        .asKeyList()
+        .asKeyList(findOptions)
         .stream()
         .map(applicationKey -> applicationKey.getId().toString())
         .collect(toList());
@@ -513,9 +526,13 @@ public class AppServiceImpl implements AppService {
 
   @Override
   public Set<String> getAppIdsAsSetByAccountId(String accountId) {
+    FindOptions findOptions = new FindOptions();
+    if (featureFlagService.isEnabled(CDS_QUERY_OPTIMIZATION, accountId)) {
+      findOptions.readPreference(ReadPreference.secondaryPreferred());
+    }
     return wingsPersistence.createQuery(Application.class)
         .filter(ApplicationKeys.accountId, accountId)
-        .asKeyList()
+        .asKeyList(findOptions)
         .stream()
         .map(applicationKey -> applicationKey.getId().toString())
         .collect(Collectors.toSet());
@@ -523,10 +540,14 @@ public class AppServiceImpl implements AppService {
 
   @Override
   public List<String> getAppNamesByAccountId(String accountId) {
+    FindOptions findOptions = new FindOptions();
+    if (featureFlagService.isEnabled(CDS_QUERY_OPTIMIZATION, accountId)) {
+      findOptions.readPreference(ReadPreference.secondaryPreferred());
+    }
     return wingsPersistence.createQuery(Application.class)
         .project(ApplicationKeys.name, true)
         .filter(ApplicationKeys.accountId, accountId)
-        .asList()
+        .asList(findOptions)
         .stream()
         .map(Application::getName)
         .collect(toList());
@@ -534,9 +555,13 @@ public class AppServiceImpl implements AppService {
 
   @Override
   public void deleteByAccountId(String accountId) {
+    FindOptions findOptions = new FindOptions();
+    if (featureFlagService.isEnabled(CDS_QUERY_OPTIMIZATION, accountId)) {
+      findOptions.readPreference(ReadPreference.secondaryPreferred());
+    }
     wingsPersistence.createQuery(Application.class)
         .filter(Application.ACCOUNT_ID_KEY2, accountId)
-        .asKeyList()
+        .asKeyList(findOptions)
         .forEach(key -> delete(key.getId().toString()));
   }
 

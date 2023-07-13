@@ -1,0 +1,59 @@
+{
+  "data" : {
+    "pairs" : [ {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/api/v2/query/timeseries"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "POST"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "api.datadoghq.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : "{\"data\":{\"attributes\":{\"formulas\":[{\"formula\":\"query1\"}],\"from\":1687849960000,\"interval\":1000,\"to\":1687853560000,\"queries\":[{\"query\":\"system.cpu.user{*}.rollup(avg, 60)\",\"name\":\"query1\",\"data_source\":\"metrics\"}]},\"type\":\"timeseries_request\"}}"
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAEA1SU3W7bMAyF38XXhiGSEkXmVYKiyFCjCJClWeIUK4q8+47kNTB9ZYr0x8Mf+Xt4OyyHYfc9LF+XedgNy/H3fJuvx/n2ep1vl4/zbR7G4bAs1+Ov+zLfWujqH3b77+HPfb5+vR7Pb/PfYZfG4f36cb+8Lod3BO5fxuF+Pi7D7nw/nR6wOhwOUquW3S3hGbtVUspbi5rx9JFuLeZgBYoESjeelBwoJVBKoGig1JbuSamBYoFigeJbylrQD4XSlkK0pRBtKcSBIlstJIGSAyUHSgmU/tlTiwZKDZQaKBYoHrT4lsJpS+G0pTBtKeswf7QwB4oEigRKDhTsD57/u8QlUDRQNFBqoHTXk2KB4oESdlfC7krYXQm7K2F3hbdaJOzuavxokbC7su4ubtTn4XRvl3K/5zQZi7uMZFMhL8wj+SRckuLMJ0poSx2ZJ1cXKS3OcQsRZhMWSZRHpinBm/CWJlxRVYQBQgni2plJwjctzipzteYtlY20vSWXWta37KWsAjIZrRT0mn2kOmWTkmsXihYjB3iepYvTRAVFIFcCVXPjanLKXWfCLNVHLq0coe6tbpUaVsSqd6xT7akcgoVQK3DUOrFKQlxLmibWguagJeS1gIFUJo6k8GVBNV1IpqKu7UxyzmztLeVChmLQw+e3uO9ae+ukplJQDrJSskbWqTpZ7wNXVXQONWMeJnCi/5XxG+w9JFPEtWRqYLczjJObzjadItSLzRW/pT7ErLXSOruaXXqJmJwl9IkmSaiiSy5crM3TppzMMQnkcPfcJoFGKSn1RbFS0e+Xl8fj8Q8AAP//AwD/Z4MXHwYAAA==",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Connection" : [ "keep-alive" ],
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Security-Policy" : [ "frame-ancestors 'self'; report-uri https://logs.browser-intake-datadoghq.com/api/v2/logs?dd-api-key=pube4f163c23bbf91c16b8f57f56af9fc58&dd-evp-origin=content-security-policy&ddsource=csp-report&ddtags=site%3Adatadoghq.com" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Wed, 28 Jun 2023 12:35:39 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Strict-Transport-Security" : [ "max-age=31536000; includeSubDomains; preload" ],
+          "Vary" : [ "Accept-Encoding" ],
+          "X-Content-Type-Options" : [ "nosniff" ],
+          "X-Frame-Options" : [ "SAMEORIGIN" ],
+          "X-Ratelimit-Limit" : [ "60" ],
+          "X-Ratelimit-Name" : [ "query_timeseries_public" ],
+          "X-Ratelimit-Period" : [ "60" ],
+          "X-Ratelimit-Remaining" : [ "59" ],
+          "X-Ratelimit-Reset" : [ "21" ]
+        }
+      }
+    } ],
+    "globalActions" : {
+      "delays" : [ ]
+    }
+  },
+  "meta" : {
+    "schemaVersion" : "v5",
+    "hoverflyVersion" : "v1.1.5",
+    "timeExported" : "2023-06-28T12:35:39Z"
+  }
+}

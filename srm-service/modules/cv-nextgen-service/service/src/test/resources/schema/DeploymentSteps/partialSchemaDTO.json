@@ -1,963 +1,1235 @@
 {
-  "schema" : {
-    "type" : "object",
-    "required" : [ "identifier", "name", "spec", "type" ],
-    "properties" : {
-      "description" : {
-        "type" : "string"
+  "schema": {
+    "type": "object",
+    "required": [
+      "identifier",
+      "name",
+      "spec",
+      "type"
+    ],
+    "properties": {
+      "description": {
+        "type": "string"
       },
-      "enforce" : {
-        "$ref" : "#/definitions/cvng/PolicyConfig"
+      "enforce": {
+        "$ref": "#/definitions/cvng/PolicyConfig"
       },
-      "failureStrategies" : {
-        "oneOf" : [ {
-          "type" : "array",
-          "items" : {
-            "$ref" : "#/definitions/cvng/FailureStrategyConfig"
+      "failureStrategies": {
+        "oneOf": [
+          {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/cvng/FailureStrategyConfig"
+            }
+          },
+          {
+            "type": "string",
+            "pattern": "^<\\+input>$",
+            "minLength": 1
           }
-        }, {
-          "type" : "string",
-          "pattern" : "^<\\+input>$",
-          "minLength" : 1
-        } ]
+        ]
       },
-      "identifier" : {
-        "type" : "string",
-        "pattern" : "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
+      "identifier": {
+        "type": "string",
+        "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
       },
-      "name" : {
-        "type" : "string",
-        "pattern" : "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
+      "name": {
+        "type": "string",
+        "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
       },
-      "strategy" : {
-        "oneOf" : [ {
-          "$ref" : "#/definitions/cvng/StrategyConfig"
-        }, {
-          "type" : "string",
-          "pattern" : "^<\\+input>$",
-          "minLength" : 1
-        } ]
+      "strategy": {
+        "oneOf": [
+          {
+            "$ref": "#/definitions/cvng/StrategyConfig"
+          },
+          {
+            "type": "string",
+            "pattern": "^<\\+input>$",
+            "minLength": 1
+          }
+        ]
       },
-      "timeout" : {
-        "type" : "string",
-        "pattern" : "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(.*<\\+.*>(?!.*\\.executionInput\\(\\)).*)|(^$))$"
+      "timeout": {
+        "type": "string",
+        "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(.*<\\+.*>(?!.*\\.executionInput\\(\\)).*)|(^$))$"
       },
-      "type" : {
-        "type" : "string",
-        "enum" : [ "Verify" ]
+      "type": {
+        "type": "string",
+        "enum": [
+          "Verify"
+        ]
       },
-      "when" : {
-        "oneOf" : [ {
-          "$ref" : "#/definitions/cvng/StepWhenCondition"
-        }, {
-          "type" : "string",
-          "pattern" : "^<\\+input>$",
-          "minLength" : 1
-        } ]
+      "when": {
+        "oneOf": [
+          {
+            "$ref": "#/definitions/cvng/StepWhenCondition"
+          },
+          {
+            "type": "string",
+            "pattern": "^<\\+input>$",
+            "minLength": 1
+          }
+        ]
       }
     },
-    "$schema" : "http://json-schema.org/draft-07/schema#",
-    "allOf" : [ {
-      "if" : {
-        "properties" : {
-          "type" : {
-            "const" : "Verify"
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "allOf": [
+      {
+        "if": {
+          "properties": {
+            "type": {
+              "const": "Verify"
+            }
           }
-        }
-      },
-      "then" : {
-        "properties" : {
-          "spec" : {
-            "$ref" : "#/definitions/cvng/CVNGStepInfo"
+        },
+        "then": {
+          "properties": {
+            "spec": {
+              "$ref": "#/definitions/cvng/CVNGStepInfo"
+            }
           }
         }
       }
-    } ],
-    "definitions" : {
-      "cvng" : {
-        "AbortFailureActionConfig" : {
-          "allOf" : [ {
-            "$ref" : "#/definitions/cvng/FailureStrategyActionConfig"
-          }, {
-            "type" : "object",
-            "required" : [ "type" ],
-            "properties" : {
-              "type" : {
-                "type" : "string",
-                "enum" : [ "Abort" ]
-              }
-            }
-          } ],
-          "$schema" : "http://json-schema.org/draft-07/schema#"
-        },
-        "AutoVerificationJobSpec" : {
-          "allOf" : [ {
-            "$ref" : "#/definitions/cvng/VerificationJobSpec"
-          }, {
-            "type" : "object",
-            "properties" : {
-              "trafficSplitPercentage" : {
-                "type" : "string",
-                "description" : "Example: 50, You can put max upto 50."
-              }
-            }
-          } ],
-          "$schema" : "http://json-schema.org/draft-07/schema#"
-        },
-        "BlueGreenVerificationJobSpec" : {
-          "allOf" : [ {
-            "$ref" : "#/definitions/cvng/VerificationJobSpec"
-          }, {
-            "type" : "object",
-            "properties" : {
-              "trafficSplitPercentage" : {
-                "type" : "string",
-                "description" : "Example: 50, You can put max upto 50."
-              }
-            }
-          } ],
-          "$schema" : "http://json-schema.org/draft-07/schema#"
-        },
-        "CVNGStepInfo" : {
-          "type" : "object",
-          "required" : [ "spec", "type" ],
-          "properties" : {
-            "monitoredService" : {
-              "$ref" : "#/definitions/cvng/MonitoredServiceNode"
+    ],
+    "definitions": {
+      "cvng": {
+        "AbortFailureActionConfig": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/FailureStrategyActionConfig"
             },
-            "type" : {
-              "type" : "string"
+            {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "Abort"
+                  ]
+                }
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "AutoVerificationJobSpec": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/VerificationJobSpec"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "trafficSplitPercentage": {
+                  "type": "string",
+                  "description": "Example: 50, You can put max upto 50."
+                }
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "BlueGreenVerificationJobSpec": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/VerificationJobSpec"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "trafficSplitPercentage": {
+                  "type": "string",
+                  "description": "Example: 50, You can put max upto 50."
+                }
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "CVNGStepInfo": {
+          "type": "object",
+          "required": [
+            "spec",
+            "type"
+          ],
+          "properties": {
+            "monitoredService": {
+              "$ref": "#/definitions/cvng/MonitoredServiceNode"
+            },
+            "type": {
+              "type": "string"
             }
           },
-          "$schema" : "http://json-schema.org/draft-07/schema#",
-          "allOf" : [ {
-            "if" : {
-              "properties" : {
-                "type" : {
-                  "const" : "Auto"
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "Auto"
+                  }
                 }
-              }
-            },
-            "then" : {
-              "properties" : {
-                "spec" : {
-                  "$ref" : "#/definitions/cvng/AutoVerificationJobSpec"
-                }
-              }
-            }
-          }, {
-            "if" : {
-              "properties" : {
-                "type" : {
-                  "const" : "Bluegreen"
-                }
-              }
-            },
-            "then" : {
-              "properties" : {
-                "spec" : {
-                  "$ref" : "#/definitions/cvng/BlueGreenVerificationJobSpec"
-                }
-              }
-            }
-          }, {
-            "if" : {
-              "properties" : {
-                "type" : {
-                  "const" : "Canary"
-                }
-              }
-            },
-            "then" : {
-              "properties" : {
-                "spec" : {
-                  "$ref" : "#/definitions/cvng/CanaryVerificationJobSpec"
-                }
-              }
-            }
-          }, {
-            "if" : {
-              "properties" : {
-                "type" : {
-                  "const" : "LoadTest"
-                }
-              }
-            },
-            "then" : {
-              "properties" : {
-                "spec" : {
-                  "$ref" : "#/definitions/cvng/TestVerificationJobSpec"
-                }
-              }
-            }
-          }, {
-            "if" : {
-              "properties" : {
-                "type" : {
-                  "const" : "Rolling"
-                }
-              }
-            },
-            "then" : {
-              "properties" : {
-                "spec" : {
-                  "$ref" : "#/definitions/cvng/ImprovisedCanaryVerificationJobSpec"
-                }
-              }
-            }
-          }, {
-            "if" : {
-              "properties" : {
-                "type" : {
-                  "const" : "SimpleVerification"
-                }
-              }
-            },
-            "then" : {
-              "properties" : {
-                "spec" : {
-                  "$ref" : "#/definitions/cvng/SimpleVerificationJobSpec"
-                }
-              }
-            }
-          } ]
-        },
-        "CVVerifyStepNode" : {
-          "type" : "object",
-          "required" : [ "identifier", "name", "spec", "type" ],
-          "properties" : {
-            "description" : {
-              "type" : "string"
-            },
-            "enforce" : {
-              "$ref" : "#/definitions/cvng/PolicyConfig"
-            },
-            "failureStrategies" : {
-              "oneOf" : [ {
-                "type" : "array",
-                "items" : {
-                  "$ref" : "#/definitions/cvng/FailureStrategyConfig"
-                }
-              }, {
-                "type" : "string",
-                "pattern" : "^<\\+input>$",
-                "minLength" : 1
-              } ]
-            },
-            "identifier" : {
-              "type" : "string",
-              "pattern" : "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
-            },
-            "name" : {
-              "type" : "string",
-              "pattern" : "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
-            },
-            "strategy" : {
-              "oneOf" : [ {
-                "$ref" : "#/definitions/cvng/StrategyConfig"
-              }, {
-                "type" : "string",
-                "pattern" : "^<\\+input>$",
-                "minLength" : 1
-              } ]
-            },
-            "timeout" : {
-              "type" : "string",
-              "pattern" : "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(.*<\\+.*>(?!.*\\.executionInput\\(\\)).*)|(^$))$"
-            },
-            "type" : {
-              "type" : "string",
-              "enum" : [ "Verify" ]
-            },
-            "when" : {
-              "oneOf" : [ {
-                "$ref" : "#/definitions/cvng/StepWhenCondition"
-              }, {
-                "type" : "string",
-                "pattern" : "^<\\+input>$",
-                "minLength" : 1
-              } ]
-            }
-          },
-          "$schema" : "http://json-schema.org/draft-07/schema#",
-          "allOf" : [ {
-            "if" : {
-              "properties" : {
-                "type" : {
-                  "const" : "Verify"
-                }
-              }
-            },
-            "then" : {
-              "properties" : {
-                "spec" : {
-                  "$ref" : "#/definitions/cvng/CVNGStepInfo"
-                }
-              }
-            }
-          } ]
-        },
-        "CanaryVerificationJobSpec" : {
-          "allOf" : [ {
-            "$ref" : "#/definitions/cvng/VerificationJobSpec"
-          }, {
-            "type" : "object",
-            "properties" : {
-              "trafficSplitPercentage" : {
-                "type" : "string",
-                "description" : "Example: 50, You can put max upto 50."
-              }
-            }
-          } ],
-          "$schema" : "http://json-schema.org/draft-07/schema#"
-        },
-        "DefaultMonitoredServiceSpec" : {
-          "allOf" : [ {
-            "$ref" : "#/definitions/cvng/MonitoredServiceSpec"
-          }, {
-            "type" : "object",
-            "properties" : { }
-          } ],
-          "$schema" : "http://json-schema.org/draft-07/schema#"
-        },
-        "FailureStrategyActionConfig" : {
-          "type" : "object",
-          "required" : [ "type" ],
-          "discriminator" : "type",
-          "properties" : {
-            "type" : {
-              "type" : "string",
-              "enum" : [ "Ignore", "Retry", "MarkAsSuccess", "Abort", "StageRollback", "StepGroupRollback", "PipelineRollback", "ManualIntervention", "ProceedWithDefaultValues", "MarkAsFailure", "RetryStepGroup" ]
-            }
-          },
-          "$schema" : "http://json-schema.org/draft-07/schema#"
-        },
-        "FailureStrategyConfig" : {
-          "type" : "object",
-          "required" : [ "onFailure" ],
-          "properties" : {
-            "onFailure" : {
-              "$ref" : "#/definitions/cvng/OnFailureConfig"
-            }
-          },
-          "$schema" : "http://json-schema.org/draft-07/schema#"
-        },
-        "HarnessForConfig" : {
-          "type" : "object",
-          "properties" : {
-            "end" : {
-              "oneOf" : [ {
-                "type" : "integer",
-                "format" : "int32",
-                "minimum" : 0
-              }, {
-                "type" : "string",
-                "pattern" : "(<\\+.+>.*)",
-                "minLength" : 1
-              } ]
-            },
-            "items" : {
-              "oneOf" : [ {
-                "type" : "array",
-                "items" : {
-                  "type" : "string"
-                }
-              }, {
-                "type" : "string",
-                "pattern" : "(<\\+.+>.*)",
-                "minLength" : 1
-              } ]
-            },
-            "maxConcurrency" : {
-              "oneOf" : [ {
-                "type" : "integer",
-                "format" : "int32",
-                "minimum" : 0
-              }, {
-                "type" : "string",
-                "pattern" : "(<\\+.+>.*)",
-                "minLength" : 1
-              } ]
-            },
-            "partitionSize" : {
-              "oneOf" : [ {
-                "type" : "integer",
-                "format" : "int32",
-                "minimum" : 0
-              }, {
-                "type" : "string",
-                "pattern" : "(<\\+.+>.*)",
-                "minLength" : 1
-              } ]
-            },
-            "start" : {
-              "oneOf" : [ {
-                "type" : "integer",
-                "format" : "int32",
-                "minimum" : 0
-              }, {
-                "type" : "string",
-                "pattern" : "(<\\+.+>.*)",
-                "minLength" : 1
-              } ]
-            },
-            "times" : {
-              "oneOf" : [ {
-                "type" : "integer",
-                "format" : "int32",
-                "minimum" : 0
-              }, {
-                "type" : "string",
-                "pattern" : "(<\\+.+>.*)",
-                "minLength" : 1
-              } ]
-            },
-            "unit" : {
-              "type" : "string",
-              "enum" : [ "Percentage", "Count" ]
-            }
-          },
-          "$schema" : "http://json-schema.org/draft-07/schema#",
-          "allOf" : [ {
-            "oneOf" : [ {
-              "required" : [ "times" ]
-            }, {
-              "required" : [ "items" ]
-            } ]
-          } ]
-        },
-        "IgnoreFailureActionConfig" : {
-          "allOf" : [ {
-            "$ref" : "#/definitions/cvng/FailureStrategyActionConfig"
-          }, {
-            "type" : "object",
-            "required" : [ "type" ],
-            "properties" : {
-              "type" : {
-                "type" : "string",
-                "enum" : [ "Ignore" ]
-              }
-            }
-          } ],
-          "$schema" : "http://json-schema.org/draft-07/schema#"
-        },
-        "ImprovisedCanaryVerificationJobSpec" : {
-          "allOf" : [ {
-            "$ref" : "#/definitions/cvng/VerificationJobSpec"
-          }, {
-            "type" : "object",
-            "properties" : {
-              "trafficSplitPercentage" : {
-                "type" : "string",
-                "description" : "Example: 50, You can put max upto 50."
-              }
-            }
-          } ],
-          "$schema" : "http://json-schema.org/draft-07/schema#"
-        },
-        "InputSetValidator" : {
-          "type" : "object",
-          "properties" : {
-            "parameters" : {
-              "type" : "string"
-            },
-            "validatorType" : {
-              "type" : "string",
-              "enum" : [ "ALLOWED_VALUES", "REGEX" ]
-            }
-          },
-          "$schema" : "http://json-schema.org/draft-07/schema#"
-        },
-        "JsonNode" : {
-          "type" : "object",
-          "$schema" : "http://json-schema.org/draft-07/schema#"
-        },
-        "ManualFailureSpecConfig" : {
-          "type" : "object",
-          "required" : [ "onTimeout", "timeout" ],
-          "properties" : {
-            "onTimeout" : {
-              "$ref" : "#/definitions/cvng/OnTimeoutConfig"
-            },
-            "timeout" : {
-              "type" : "string"
-            }
-          },
-          "$schema" : "http://json-schema.org/draft-07/schema#"
-        },
-        "ManualInterventionFailureActionConfig" : {
-          "allOf" : [ {
-            "$ref" : "#/definitions/cvng/FailureStrategyActionConfig"
-          }, {
-            "type" : "object",
-            "required" : [ "spec", "type" ],
-            "properties" : {
-              "spec" : {
-                "readOnly" : true,
-                "$ref" : "#/definitions/cvng/ManualFailureSpecConfig"
               },
-              "type" : {
-                "type" : "string",
-                "enum" : [ "ManualIntervention" ]
-              }
-            }
-          } ],
-          "$schema" : "http://json-schema.org/draft-07/schema#"
-        },
-        "MarkAsFailFailureActionConfig" : {
-          "allOf" : [ {
-            "$ref" : "#/definitions/cvng/FailureStrategyActionConfig"
-          }, {
-            "type" : "object",
-            "required" : [ "type" ],
-            "properties" : {
-              "type" : {
-                "type" : "string",
-                "enum" : [ "MarkAsFailure" ]
-              }
-            }
-          } ],
-          "$schema" : "http://json-schema.org/draft-07/schema#"
-        },
-        "MarkAsSuccessFailureActionConfig" : {
-          "allOf" : [ {
-            "$ref" : "#/definitions/cvng/FailureStrategyActionConfig"
-          }, {
-            "type" : "object",
-            "required" : [ "type" ],
-            "properties" : {
-              "type" : {
-                "type" : "string",
-                "enum" : [ "MarkAsSuccess" ]
-              }
-            }
-          } ],
-          "$schema" : "http://json-schema.org/draft-07/schema#"
-        },
-        "MatrixConfigInterface" : {
-          "type" : "object",
-          "$schema" : "http://json-schema.org/draft-07/schema#"
-        },
-        "MonitoredServiceNode" : {
-          "type" : "object",
-          "required" : [ "spec", "type" ],
-          "properties" : {
-            "type" : {
-              "type" : "string"
-            }
-          },
-          "$schema" : "http://json-schema.org/draft-07/schema#",
-          "allOf" : [ {
-            "if" : {
-              "properties" : {
-                "type" : {
-                  "const" : "Default"
+              "then": {
+                "properties": {
+                  "spec": {
+                    "$ref": "#/definitions/cvng/AutoVerificationJobSpec"
+                  }
                 }
               }
             },
-            "then" : {
-              "properties" : {
-                "spec" : {
-                  "$ref" : "#/definitions/cvng/DefaultMonitoredServiceSpec"
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "Bluegreen"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "spec": {
+                    "$ref": "#/definitions/cvng/BlueGreenVerificationJobSpec"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "Canary"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "spec": {
+                    "$ref": "#/definitions/cvng/CanaryVerificationJobSpec"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "LoadTest"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "spec": {
+                    "$ref": "#/definitions/cvng/TestVerificationJobSpec"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "Rolling"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "spec": {
+                    "$ref": "#/definitions/cvng/ImprovisedCanaryVerificationJobSpec"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "SimpleVerification"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "spec": {
+                    "$ref": "#/definitions/cvng/SimpleVerificationJobSpec"
+                  }
                 }
               }
             }
-          }, {
-            "if" : {
-              "properties" : {
-                "type" : {
-                  "const" : "Template"
+          ]
+        },
+        "CVVerifyStepNode": {
+          "type": "object",
+          "required": [
+            "identifier",
+            "name",
+            "spec",
+            "type"
+          ],
+          "properties": {
+            "description": {
+              "type": "string"
+            },
+            "enforce": {
+              "$ref": "#/definitions/cvng/PolicyConfig"
+            },
+            "failureStrategies": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/cvng/FailureStrategyConfig"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "identifier": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
+            },
+            "name": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
+            },
+            "strategy": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/cvng/StrategyConfig"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "timeout": {
+              "type": "string",
+              "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(.*<\\+.*>(?!.*\\.executionInput\\(\\)).*)|(^$))$"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "Verify"
+              ]
+            },
+            "when": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/cvng/StepWhenCondition"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>$",
+                  "minLength": 1
+                }
+              ]
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "Verify"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "spec": {
+                    "$ref": "#/definitions/cvng/CVNGStepInfo"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "CanaryVerificationJobSpec": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/VerificationJobSpec"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "trafficSplitPercentage": {
+                  "type": "string",
+                  "description": "Example: 50, You can put max upto 50."
+                }
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "DefaultMonitoredServiceSpec": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/MonitoredServiceSpec"
+            },
+            {
+              "type": "object",
+              "properties": {}
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "FailureStrategyActionConfig": {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "discriminator": "type",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "Ignore",
+                "Retry",
+                "MarkAsSuccess",
+                "Abort",
+                "StageRollback",
+                "StepGroupRollback",
+                "PipelineRollback",
+                "ManualIntervention",
+                "ProceedWithDefaultValues",
+                "MarkAsFailure",
+                "RetryStepGroup"
+              ]
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "FailureStrategyConfig": {
+          "type": "object",
+          "required": [
+            "onFailure"
+          ],
+          "properties": {
+            "onFailure": {
+              "$ref": "#/definitions/cvng/OnFailureConfig"
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "HarnessForConfig": {
+          "type": "object",
+          "properties": {
+            "end": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "items": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "maxConcurrency": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "partitionSize": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "start": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "times": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "unit": {
+              "type": "string",
+              "enum": [
+                "Percentage",
+                "Count"
+              ]
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "allOf": [
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "times"
+                  ]
+                },
+                {
+                  "required": [
+                    "items"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "IgnoreFailureActionConfig": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/FailureStrategyActionConfig"
+            },
+            {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "Ignore"
+                  ]
+                }
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "ImprovisedCanaryVerificationJobSpec": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/VerificationJobSpec"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "trafficSplitPercentage": {
+                  "type": "string",
+                  "description": "Example: 50, You can put max upto 50."
+                }
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "InputSetValidator": {
+          "type": "object",
+          "properties": {
+            "parameters": {
+              "type": "string"
+            },
+            "validatorType": {
+              "type": "string",
+              "enum": [
+                "ALLOWED_VALUES",
+                "REGEX"
+              ]
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "JsonNode": {
+          "type": "object",
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "ManualFailureSpecConfig": {
+          "type": "object",
+          "required": [
+            "onTimeout",
+            "timeout"
+          ],
+          "properties": {
+            "onTimeout": {
+              "$ref": "#/definitions/cvng/OnTimeoutConfig"
+            },
+            "timeout": {
+              "type": "string"
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "ManualInterventionFailureActionConfig": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/FailureStrategyActionConfig"
+            },
+            {
+              "type": "object",
+              "required": [
+                "spec",
+                "type"
+              ],
+              "properties": {
+                "spec": {
+                  "readOnly": true,
+                  "$ref": "#/definitions/cvng/ManualFailureSpecConfig"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "ManualIntervention"
+                  ]
+                }
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "MarkAsFailFailureActionConfig": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/FailureStrategyActionConfig"
+            },
+            {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "MarkAsFailure"
+                  ]
+                }
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "MarkAsSuccessFailureActionConfig": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/FailureStrategyActionConfig"
+            },
+            {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "MarkAsSuccess"
+                  ]
+                }
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "MatrixConfigInterface": {
+          "type": "object",
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "MonitoredServiceNode": {
+          "type": "object",
+          "required": [
+            "spec",
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string"
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "Default"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "spec": {
+                    "$ref": "#/definitions/cvng/DefaultMonitoredServiceSpec"
+                  }
                 }
               }
             },
-            "then" : {
-              "properties" : {
-                "spec" : {
-                  "$ref" : "#/definitions/cvng/TemplateMonitoredServiceSpec"
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "Template"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "spec": {
+                    "$ref": "#/definitions/cvng/TemplateMonitoredServiceSpec"
+                  }
                 }
               }
             }
-          } ]
+          ]
         },
-        "MonitoredServiceSpec" : {
-          "type" : "object",
-          "discriminator" : "type",
-          "properties" : {
-            "type" : {
-              "type" : "string"
+        "MonitoredServiceSpec": {
+          "type": "object",
+          "discriminator": "type",
+          "properties": {
+            "type": {
+              "type": "string"
             }
           },
-          "$schema" : "http://json-schema.org/draft-07/schema#"
+          "$schema": "http://json-schema.org/draft-07/schema#"
         },
-        "OnFailureConfig" : {
-          "type" : "object",
-          "required" : [ "action", "errors" ],
-          "properties" : {
-            "action" : {
-              "$ref" : "#/definitions/cvng/FailureStrategyActionConfig"
+        "OnFailureConfig": {
+          "type": "object",
+          "required": [
+            "action",
+            "errors"
+          ],
+          "properties": {
+            "action": {
+              "$ref": "#/definitions/cvng/FailureStrategyActionConfig"
             },
-            "errors" : {
-              "type" : "array",
-              "items" : {
-                "type" : "string",
-                "enum" : [ "Unknown", "AllErrors", "Authentication", "Connectivity", "Timeout", "Authorization", "Verification", "DelegateProvisioning", "PolicyEvaluationFailure", "InputTimeoutError", "ApprovalRejection", "DelegateRestart", "UserMarkedFailure" ]
+            "errors": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "Unknown",
+                  "AllErrors",
+                  "Authentication",
+                  "Connectivity",
+                  "Timeout",
+                  "Authorization",
+                  "Verification",
+                  "DelegateProvisioning",
+                  "PolicyEvaluationFailure",
+                  "InputTimeoutError",
+                  "ApprovalRejection",
+                  "DelegateRestart",
+                  "UserMarkedFailure"
+                ]
               }
             }
           },
-          "$schema" : "http://json-schema.org/draft-07/schema#"
+          "$schema": "http://json-schema.org/draft-07/schema#"
         },
-        "OnRetryFailureConfig" : {
-          "type" : "object",
-          "properties" : {
-            "action" : {
-              "$ref" : "#/definitions/cvng/FailureStrategyActionConfig"
+        "OnRetryFailureConfig": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "$ref": "#/definitions/cvng/FailureStrategyActionConfig"
             }
           },
-          "$schema" : "http://json-schema.org/draft-07/schema#"
+          "$schema": "http://json-schema.org/draft-07/schema#"
         },
-        "OnTimeoutConfig" : {
-          "type" : "object",
-          "properties" : {
-            "action" : {
-              "$ref" : "#/definitions/cvng/FailureStrategyActionConfig"
+        "OnTimeoutConfig": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "$ref": "#/definitions/cvng/FailureStrategyActionConfig"
             }
           },
-          "$schema" : "http://json-schema.org/draft-07/schema#"
+          "$schema": "http://json-schema.org/draft-07/schema#"
         },
-        "ParameterField" : {
-          "type" : "object",
-          "properties" : {
-            "defaultValue" : {
-              "type" : "object"
+        "ParameterField": {
+          "type": "object",
+          "properties": {
+            "defaultValue": {
+              "type": "object"
             },
-            "executionInput" : {
-              "type" : "boolean"
+            "executionInput": {
+              "type": "boolean"
             },
-            "expression" : {
-              "type" : "boolean"
+            "expression": {
+              "type": "boolean"
             },
-            "expressionValue" : {
-              "type" : "string"
+            "expressionValue": {
+              "type": "string"
             },
-            "inputSetValidator" : {
-              "$ref" : "#/definitions/cvng/InputSetValidator"
+            "inputSetValidator": {
+              "$ref": "#/definitions/cvng/InputSetValidator"
             },
-            "jsonResponseField" : {
-              "type" : "boolean"
+            "jsonResponseField": {
+              "type": "boolean"
             },
-            "responseField" : {
-              "type" : "string"
+            "responseField": {
+              "type": "string"
             },
-            "typeString" : {
-              "type" : "boolean"
+            "typeString": {
+              "type": "boolean"
             },
-            "value" : {
-              "type" : "object"
+            "value": {
+              "type": "object"
             }
           },
-          "$schema" : "http://json-schema.org/draft-07/schema#"
+          "$schema": "http://json-schema.org/draft-07/schema#"
         },
-        "ParameterFieldMatrixConfigInterface" : {
-          "type" : "object",
-          "properties" : {
-            "defaultValue" : {
-              "$ref" : "#/definitions/cvng/MatrixConfigInterface"
+        "ParameterFieldMatrixConfigInterface": {
+          "type": "object",
+          "properties": {
+            "defaultValue": {
+              "$ref": "#/definitions/cvng/MatrixConfigInterface"
             },
-            "executionInput" : {
-              "type" : "boolean"
+            "executionInput": {
+              "type": "boolean"
             },
-            "expression" : {
-              "type" : "boolean"
+            "expression": {
+              "type": "boolean"
             },
-            "expressionValue" : {
-              "type" : "string"
+            "expressionValue": {
+              "type": "string"
             },
-            "inputSetValidator" : {
-              "$ref" : "#/definitions/cvng/InputSetValidator"
+            "inputSetValidator": {
+              "$ref": "#/definitions/cvng/InputSetValidator"
             },
-            "jsonResponseField" : {
-              "type" : "boolean"
+            "jsonResponseField": {
+              "type": "boolean"
             },
-            "responseField" : {
-              "type" : "string"
+            "responseField": {
+              "type": "string"
             },
-            "typeString" : {
-              "type" : "boolean"
+            "typeString": {
+              "type": "boolean"
             },
-            "value" : {
-              "$ref" : "#/definitions/cvng/MatrixConfigInterface"
+            "value": {
+              "$ref": "#/definitions/cvng/MatrixConfigInterface"
             }
           },
-          "$schema" : "http://json-schema.org/draft-07/schema#"
+          "$schema": "http://json-schema.org/draft-07/schema#"
         },
-        "PipelineRollbackFailureActionConfig" : {
-          "allOf" : [ {
-            "$ref" : "#/definitions/cvng/FailureStrategyActionConfig"
-          }, {
-            "type" : "object",
-            "required" : [ "type" ],
-            "properties" : {
-              "type" : {
-                "type" : "string",
-                "enum" : [ "PipelineRollback" ]
-              }
-            }
-          } ],
-          "$schema" : "http://json-schema.org/draft-07/schema#"
-        },
-        "PolicyConfig" : {
-          "type" : "object",
-          "required" : [ "policySets" ],
-          "properties" : {
-            "policySets" : {
-              "oneOf" : [ {
-                "type" : "array",
-                "items" : {
-                  "type" : "string"
+        "PipelineRollbackFailureActionConfig": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/FailureStrategyActionConfig"
+            },
+            {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "PipelineRollback"
+                  ]
                 }
-              }, {
-                "type" : "string",
-                "pattern" : "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                "minLength" : 1
-              } ]
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "PolicyConfig": {
+          "type": "object",
+          "required": [
+            "policySets"
+          ],
+          "properties": {
+            "policySets": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             }
           },
-          "$schema" : "http://json-schema.org/draft-07/schema#"
+          "$schema": "http://json-schema.org/draft-07/schema#"
         },
-        "ProceedWithDefaultValuesFailureActionConfig" : {
-          "allOf" : [ {
-            "$ref" : "#/definitions/cvng/FailureStrategyActionConfig"
-          }, {
-            "type" : "object",
-            "required" : [ "type" ],
-            "properties" : {
-              "type" : {
-                "type" : "string",
-                "enum" : [ "ProceedWithDefaultValues" ]
+        "ProceedWithDefaultValuesFailureActionConfig": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/FailureStrategyActionConfig"
+            },
+            {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "ProceedWithDefaultValues"
+                  ]
+                }
               }
             }
-          } ],
-          "$schema" : "http://json-schema.org/draft-07/schema#"
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
         },
-        "RetryFailureActionConfig" : {
-          "allOf" : [ {
-            "$ref" : "#/definitions/cvng/FailureStrategyActionConfig"
-          }, {
-            "type" : "object",
-            "required" : [ "spec", "type" ],
-            "properties" : {
-              "spec" : {
-                "readOnly" : true,
-                "$ref" : "#/definitions/cvng/RetryFailureSpecConfig"
-              },
-              "type" : {
-                "type" : "string",
-                "enum" : [ "Retry" ]
+        "RetryFailureActionConfig": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/FailureStrategyActionConfig"
+            },
+            {
+              "type": "object",
+              "required": [
+                "spec",
+                "type"
+              ],
+              "properties": {
+                "spec": {
+                  "readOnly": true,
+                  "$ref": "#/definitions/cvng/RetryFailureSpecConfig"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "Retry"
+                  ]
+                }
               }
             }
-          } ],
-          "$schema" : "http://json-schema.org/draft-07/schema#"
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
         },
-        "RetryFailureSpecConfig" : {
-          "type" : "object",
-          "required" : [ "onRetryFailure", "retryCount", "retryIntervals" ],
-          "properties" : {
-            "onRetryFailure" : {
-              "$ref" : "#/definitions/cvng/OnRetryFailureConfig"
+        "RetryFailureSpecConfig": {
+          "type": "object",
+          "required": [
+            "onRetryFailure",
+            "retryCount",
+            "retryIntervals"
+          ],
+          "properties": {
+            "onRetryFailure": {
+              "$ref": "#/definitions/cvng/OnRetryFailureConfig"
             },
-            "retryCount" : {
-              "type" : "integer",
-              "format" : "int32"
+            "retryCount": {
+              "type": "integer",
+              "format": "int32"
             },
-            "retryIntervals" : {
-              "type" : "array",
-              "items" : {
-                "type" : "string"
+            "retryIntervals": {
+              "type": "array",
+              "items": {
+                "type": "string"
               },
-              "maxItems" : 2147483647,
-              "minItems" : 1
+              "maxItems": 2147483647,
+              "minItems": 1
             }
           },
-          "$schema" : "http://json-schema.org/draft-07/schema#"
+          "$schema": "http://json-schema.org/draft-07/schema#"
         },
-        "RetrySGFailureActionConfig" : {
-          "allOf" : [ {
-            "$ref" : "#/definitions/cvng/FailureStrategyActionConfig"
-          }, {
-            "type" : "object",
-            "required" : [ "spec", "type" ],
-            "properties" : {
-              "spec" : {
-                "readOnly" : true,
-                "$ref" : "#/definitions/cvng/RetryFailureSpecConfig"
-              },
-              "type" : {
-                "type" : "string",
-                "enum" : [ "RetryStepGroup" ]
-              }
-            }
-          } ],
-          "$schema" : "http://json-schema.org/draft-07/schema#"
-        },
-        "SimpleVerificationJobSpec" : {
-          "allOf" : [ {
-            "$ref" : "#/definitions/cvng/VerificationJobSpec"
-          }, {
-            "type" : "object",
-            "properties" : { }
-          } ],
-          "$schema" : "http://json-schema.org/draft-07/schema#"
-        },
-        "StageRollbackFailureActionConfig" : {
-          "allOf" : [ {
-            "$ref" : "#/definitions/cvng/FailureStrategyActionConfig"
-          }, {
-            "type" : "object",
-            "required" : [ "type" ],
-            "properties" : {
-              "type" : {
-                "type" : "string",
-                "enum" : [ "StageRollback" ]
-              }
-            }
-          } ],
-          "$schema" : "http://json-schema.org/draft-07/schema#"
-        },
-        "StepGroupFailureActionConfig" : {
-          "allOf" : [ {
-            "$ref" : "#/definitions/cvng/FailureStrategyActionConfig"
-          }, {
-            "type" : "object",
-            "required" : [ "type" ],
-            "properties" : {
-              "type" : {
-                "type" : "string",
-                "enum" : [ "StepGroupRollback" ]
-              }
-            }
-          } ],
-          "$schema" : "http://json-schema.org/draft-07/schema#"
-        },
-        "StepWhenCondition" : {
-          "type" : "object",
-          "required" : [ "stageStatus" ],
-          "properties" : {
-            "condition" : {
-              "type" : "string",
-              "pattern" : "^(?!<\\+input>.*\\.executionInput\\(\\)(.*)$)"
+        "RetrySGFailureActionConfig": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/FailureStrategyActionConfig"
             },
-            "stageStatus" : {
-              "type" : "string",
-              "enum" : [ "Success", "Failure", "All" ]
+            {
+              "type": "object",
+              "required": [
+                "spec",
+                "type"
+              ],
+              "properties": {
+                "spec": {
+                  "readOnly": true,
+                  "$ref": "#/definitions/cvng/RetryFailureSpecConfig"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "RetryStepGroup"
+                  ]
+                }
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "SimpleVerificationJobSpec": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/VerificationJobSpec"
+            },
+            {
+              "type": "object",
+              "properties": {}
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "StageRollbackFailureActionConfig": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/FailureStrategyActionConfig"
+            },
+            {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "StageRollback"
+                  ]
+                }
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "StepGroupFailureActionConfig": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/FailureStrategyActionConfig"
+            },
+            {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "StepGroupRollback"
+                  ]
+                }
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "StepWhenCondition": {
+          "type": "object",
+          "required": [
+            "stageStatus"
+          ],
+          "properties": {
+            "condition": {
+              "type": "string",
+              "pattern": "^(?!<\\+input>.*\\.executionInput\\(\\)(.*)$)"
+            },
+            "stageStatus": {
+              "type": "string",
+              "enum": [
+                "Success",
+                "Failure",
+                "All"
+              ]
             }
           },
-          "$schema" : "http://json-schema.org/draft-07/schema#"
+          "$schema": "http://json-schema.org/draft-07/schema#"
         },
-        "StrategyConfig" : {
-          "type" : "object",
-          "properties" : {
-            "matrix" : {
-              "oneOf" : [ {
-                "$ref" : "#/definitions/cvng/ParameterFieldMatrixConfigInterface"
-              }, {
-                "type" : "string",
-                "pattern" : "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                "minLength" : 1
-              } ]
+        "StrategyConfig": {
+          "type": "object",
+          "properties": {
+            "matrix": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/cvng/ParameterFieldMatrixConfigInterface"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
-            "parallelism" : {
-              "oneOf" : [ {
-                "type" : "integer",
-                "format" : "int32",
-                "minimum" : 0
-              }, {
-                "type" : "string",
-                "pattern" : "(<\\+.+>.*)",
-                "minLength" : 1
-              } ]
+            "parallelism": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
             },
-            "repeat" : {
-              "$ref" : "#/definitions/cvng/HarnessForConfig"
+            "repeat": {
+              "$ref": "#/definitions/cvng/HarnessForConfig"
             }
           },
-          "$schema" : "http://json-schema.org/draft-07/schema#",
-          "allOf" : [ {
-            "oneOf" : [ {
-              "required" : [ "repeat" ]
-            }, {
-              "required" : [ "parallelism" ]
-            }, {
-              "required" : [ "matrix" ]
-            } ]
-          } ]
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "allOf": [
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "repeat"
+                  ]
+                },
+                {
+                  "required": [
+                    "parallelism"
+                  ]
+                },
+                {
+                  "required": [
+                    "matrix"
+                  ]
+                }
+              ]
+            }
+          ]
         },
-        "TemplateMonitoredServiceSpec" : {
-          "allOf" : [ {
-            "$ref" : "#/definitions/cvng/MonitoredServiceSpec"
-          }, {
-            "type" : "object",
-            "required" : [ "monitoredServiceTemplateRef", "templateInputs", "versionLabel" ],
-            "properties" : {
-              "monitoredServiceTemplateRef" : {
-                "type" : "string"
-              },
-              "templateInputs" : {
-                "$ref" : "#/definitions/cvng/JsonNode"
-              },
-              "versionLabel" : {
-                "type" : "string"
+        "TemplateMonitoredServiceSpec": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/MonitoredServiceSpec"
+            },
+            {
+              "type": "object",
+              "required": [
+                "monitoredServiceTemplateRef",
+                "templateInputs",
+                "versionLabel"
+              ],
+              "properties": {
+                "monitoredServiceTemplateRef": {
+                  "type": "string"
+                },
+                "templateInputs": {
+                  "$ref": "#/definitions/cvng/JsonNode"
+                },
+                "versionLabel": {
+                  "type": "string"
+                }
               }
             }
-          } ],
-          "$schema" : "http://json-schema.org/draft-07/schema#"
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
         },
-        "TestVerificationJobSpec" : {
-          "allOf" : [ {
-            "$ref" : "#/definitions/cvng/VerificationJobSpec"
-          }, {
-            "type" : "object",
-            "properties" : {
-              "baseline" : {
-                "type" : "string",
-                "description" : "Possible values: [LAST, PINNED]"
+        "TestVerificationJobSpec": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/VerificationJobSpec"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "baseline": {
+                  "type": "string",
+                  "description": "Possible values: [LAST, PINNED]"
+                }
               }
             }
-          } ],
-          "$schema" : "http://json-schema.org/draft-07/schema#"
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
         },
-        "VerificationJobSpec" : {
-          "type" : "object",
-          "required" : [ "deploymentTag", "duration" ],
-          "discriminator" : "type",
-          "properties" : {
-            "deploymentTag" : {
-              "type" : "string",
-              "description" : "You can put expression <+serviceConfig.artifacts.primary.tag> to resolve primary tag"
+        "VerificationJobSpec": {
+          "type": "object",
+          "required": [
+            "deploymentTag",
+            "duration"
+          ],
+          "discriminator": "type",
+          "properties": {
+            "deploymentTag": {
+              "type": "string",
+              "description": "You can put expression <+serviceConfig.artifacts.primary.tag> to resolve primary tag"
             },
-            "duration" : {
-              "type" : "string",
-              "description" : "Format example: 5m, 30m, please put multiple of 5"
+            "duration": {
+              "type": "string",
+              "description": "Format example: 5m, 30m, please put multiple of 5"
             },
-            "sensitivity" : {
-              "type" : "string",
-              "description" : "Possible values: [Low, Medium, High]"
+            "sensitivity": {
+              "type": "string",
+              "description": "Possible values: [Low, Medium, High]"
             },
-            "supportedDataTypesForVerification" : {
-              "type" : "array",
-              "items" : {
-                "type" : "string",
-                "enum" : [ "TIME_SERIES", "LOG" ]
+            "shouldUseCDNodes": {
+              "type": "boolean",
+              "description": "Possible values: [true, false]"
+            },
+            "supportedDataTypesForVerification": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "TIME_SERIES",
+                  "LOG"
+                ]
               }
             }
           },
-          "$schema" : "http://json-schema.org/draft-07/schema#"
+          "$schema": "http://json-schema.org/draft-07/schema#"
         }
       }
     }
   },
-  "nodeType" : "Verify",
-  "nodeName" : "CVNGStageInfo",
-  "namespace" : "cvng",
-  "skipStageSchema" : true,
-  "moduleType" : "CV"
+  "nodeType": "Verify",
+  "nodeName": "CVNGStageInfo",
+  "namespace": "cvng",
+  "skipStageSchema": true,
+  "moduleType": "CV"
 }

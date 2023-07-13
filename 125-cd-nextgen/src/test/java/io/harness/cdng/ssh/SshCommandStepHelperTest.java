@@ -296,9 +296,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
     doReturn(Arrays.asList(encryptedDataDetail)).when(ngEncryptedDataService).getEncryptionDetails(any(), any());
     doReturn(harnessStore).when(cdExpressionResolver).updateExpressions(any(), any());
     doNothing().when(cdExpressionResolver).updateStoreConfigExpressions(any(), any());
-    doReturn(fileDelegateConfig)
-        .when(sshWinRmConfigFileHelper)
-        .getFileDelegateConfig(any(), eq(ambiance), anyBoolean());
+    doReturn(fileDelegateConfig).when(sshWinRmConfigFileHelper).getFileDelegateConfig(any(), eq(ambiance));
   }
 
   @After
@@ -338,7 +336,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
     PowerMockito.when(CommandStepUtils.getWorkingDirectory(eq(workingDirParam), any(ScriptType.class), anyBoolean()))
         .thenReturn(workingDir);
     PowerMockito.when(CommandStepUtils.mergeEnvironmentVariables(eq(env), any())).thenReturn(taskEnv);
-    CommandTaskParameters taskParameters = helper.buildCommandTaskParameters(ambiance, stepParameters);
+    CommandTaskParameters taskParameters = helper.buildCommandTaskParameters(ambiance, stepParameters, null);
     assertThat(taskParameters).isInstanceOf(SshCommandTaskParameters.class);
     SshCommandTaskParameters sshTaskParameters = (SshCommandTaskParameters) taskParameters;
 
@@ -369,7 +367,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
                 OutputExpressionConstants.SSH_INFRA_DELEGATE_CONFIG_OUTPUT_NAME)));
     doReturn(pdcSshInfraDelegateConfig).when(sshEntityHelper).getSshInfraDelegateConfig(pdcInfrastructure, ambiance);
     PowerMockito.when(CommandStepUtils.mergeEnvironmentVariables(eq(env), any())).thenReturn(taskEnv);
-    CommandTaskParameters taskParameters = helper.buildCommandTaskParameters(ambiance, stepParameters);
+    CommandTaskParameters taskParameters = helper.buildCommandTaskParameters(ambiance, stepParameters, null);
     assertThat(taskParameters).isInstanceOf(SshCommandTaskParameters.class);
     SshCommandTaskParameters sshTaskParameters = (SshCommandTaskParameters) taskParameters;
 
@@ -403,7 +401,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
     PowerMockito.when(CommandStepUtils.getWorkingDirectory(eq(workingDirParam), any(ScriptType.class), anyBoolean()))
         .thenReturn(workingDir);
     PowerMockito.when(CommandStepUtils.mergeEnvironmentVariables(eq(env), any())).thenReturn(taskEnv);
-    CommandTaskParameters taskParameters = helper.buildCommandTaskParameters(ambiance, stepParameters);
+    CommandTaskParameters taskParameters = helper.buildCommandTaskParameters(ambiance, stepParameters, null);
     assertThat(taskParameters).isInstanceOf(WinrmTaskParameters.class);
     WinrmTaskParameters winrmTaskParameters = (WinrmTaskParameters) taskParameters;
 
@@ -436,10 +434,10 @@ public class SshCommandStepHelperTest extends CategoryTest {
         .when(sshEntityHelper)
         .getWinRmInfraDelegateConfig(pdcInfrastructure, ambiance);
     PowerMockito.when(CommandStepUtils.mergeEnvironmentVariables(eq(env), any())).thenReturn(taskEnv);
-    CommandTaskParameters taskParameters = helper.buildCommandTaskParameters(ambiance, stepParameters);
+    CommandTaskParameters taskParameters = helper.buildCommandTaskParameters(ambiance, stepParameters, "45m");
     assertThat(taskParameters).isInstanceOf(WinrmTaskParameters.class);
     WinrmTaskParameters winRmTaskParameters = (WinrmTaskParameters) taskParameters;
-
+    assertThat(taskParameters.getSessionTimeout()).isEqualTo(2700000);
     assertCopyTaskParameters(taskParameters, taskEnv);
     assertThat(winRmTaskParameters.getWinRmInfraDelegateConfig()).isEqualTo(pdcWinRmInfraDelegateConfig);
   }
@@ -509,7 +507,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
             eq(RefObjectUtils.getSweepingOutputRefObject(
                 OutputExpressionConstants.SSH_INFRA_DELEGATE_CONFIG_OUTPUT_NAME)));
     PowerMockito.when(CommandStepUtils.mergeEnvironmentVariables(eq(env), any())).thenReturn(taskEnv);
-    CommandTaskParameters taskParameters = helper.buildCommandTaskParameters(ambiance, stepParameters);
+    CommandTaskParameters taskParameters = helper.buildCommandTaskParameters(ambiance, stepParameters, null);
     assertThat(taskParameters).isInstanceOf(SshCommandTaskParameters.class);
     SshCommandTaskParameters sshTaskParameters = (SshCommandTaskParameters) taskParameters;
     assertThat(sshTaskParameters.getSshInfraDelegateConfig()).isNotNull();

@@ -1,0 +1,34 @@
+service:
+  name: test-serv
+  identifier: testserv
+  tags:
+    first: ""
+  gitOpsEnabled: false
+  serviceDefinition:
+    spec:
+      artifacts:
+        primary:
+          primaryArtifactRef: <+input>
+          sources:
+            - identifier: i1
+              type: DockerRegistry
+              spec:
+                connectorRef: "https://registry.hub.docker.com/"
+                imagePath: "library/nginx"
+                tag: <+input>
+            - identifier: i2
+              type: DockerRegistry
+              spec:
+                connectorRef: "https://registry.hub.docker.com/"
+                imagePath: "library/nginx"
+                tag: <+input>
+      manifestConfigurations:
+        primaryManifestRef: <+input>
+      variables:
+        - name: variable1
+          type: String
+          value: <+input>
+        - name: memory
+          type: String
+          value: "8"
+    type: NativeHelm

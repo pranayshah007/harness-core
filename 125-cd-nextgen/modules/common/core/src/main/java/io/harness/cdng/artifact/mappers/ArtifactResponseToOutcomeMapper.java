@@ -602,6 +602,7 @@ public class ArtifactResponseToOutcomeMapper {
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
         .version(version)
         .image(version)
+        .tag(version)
         .displayName(useDelegateResponse ? customArtifactDelegateResponse.getBuildDetails().getUiDisplayName() : null)
         .metadata(useDelegateResponse ? customArtifactDelegateResponse.getMetadata() : null)
         .build();

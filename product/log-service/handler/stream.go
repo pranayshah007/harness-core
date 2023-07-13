@@ -188,7 +188,7 @@ func HandleWrite(s stream.Stream) http.HandlerFunc {
 				logger.FromRequest(r).
 					WithError(err).
 					WithField("key", key).
-					Errorln("api: cannot write to stream")
+					Warnln("api: cannot write to stream")
 				return
 			}
 		}

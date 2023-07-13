@@ -214,6 +214,7 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
   public JsonNode getStaticYamlSchema(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String templateChildType, TemplateEntityType entityType, Scope scope, String version) {
     String env = System.getenv("ENV");
+    log.info(String.format("Current Environment :- %s ", env));
     if (PRE_QA.equals(env)) {
       String fileUrl = calculateFileURL(entityType, version);
       try {
@@ -224,6 +225,7 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
         log.error(String.format("Not able to read template schema file from %s path for stress env", fileUrl));
       }
     }
+    log.info("Fetching static schema from resource file");
     return getStaticYamlSchemaFromResource(
         accountIdentifier, projectIdentifier, orgIdentifier, templateChildType, entityType, scope);
   }
@@ -267,8 +269,10 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
       case STEPGROUP_TEMPLATE:
       case PIPELINE_TEMPLATE:
       case STAGE_TEMPLATE:
-      case CUSTOM_DEPLOYMENT_TEMPLATE:
+      case MONITORED_SERVICE_TEMPLATE:
+      case SECRET_MANAGER_TEMPLATE:
       case ARTIFACT_SOURCE_TEMPLATE:
+      case CUSTOM_DEPLOYMENT_TEMPLATE:
         filePath = TEMPLATE_JSON_PATH;
         break;
       default:

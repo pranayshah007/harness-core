@@ -6,13 +6,15 @@
  */
 
 package io.harness.artifacts.gar.service;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.exception.WingsException.USER;
 
 import static java.util.stream.Collectors.toList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
@@ -50,6 +52,7 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDC)
 @Singleton
 @Slf4j

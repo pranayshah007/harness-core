@@ -20,6 +20,7 @@ import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
 import io.harness.ngtriggers.beans.source.NGTriggerSpecV2;
 import io.harness.ngtriggers.beans.source.artifact.ArtifactTriggerConfig;
 import io.harness.ngtriggers.beans.source.artifact.ManifestTriggerConfig;
+import io.harness.ngtriggers.beans.source.artifact.MultiRegionArtifactTriggerConfig;
 import io.harness.ngtriggers.beans.source.webhook.v2.TriggerEventDataCondition;
 import io.harness.ngtriggers.buildtriggers.helpers.BuildTriggerHelper;
 import io.harness.ngtriggers.conditionchecker.ConditionEvaluator;
@@ -74,30 +75,29 @@ public class BuildTriggerEventConditionsFilter implements TriggerFilter {
   boolean checkTriggerEligibility(FilterRequestData filterRequestData, TriggerDetails triggerDetails) {
     String version = filterRequestData.getPollingResponse().getBuildInfo().getVersions(0);
 
-    List<TriggerEventDataCondition> triggerEventConditios = null;
+    List<TriggerEventDataCondition> triggerEventConditions = null;
 
     NGTriggerConfigV2 ngTriggerConfigV2 = triggerDetails.getNgTriggerConfigV2();
     NGTriggerSourceV2 source = ngTriggerConfigV2.getSource();
     NGTriggerSpecV2 spec = source.getSpec();
     if (ManifestTriggerConfig.class.isAssignableFrom(spec.getClass())) {
       ManifestTriggerConfig manifestTriggerConfig = (ManifestTriggerConfig) spec;
-      triggerEventConditios = manifestTriggerConfig.getSpec().fetchEventDataConditions();
+      triggerEventConditions = manifestTriggerConfig.getSpec().fetchEventDataConditions();
     } else if (ArtifactTriggerConfig.class.isAssignableFrom(spec.getClass())) {
       ArtifactTriggerConfig artifactTriggerConfig = (ArtifactTriggerConfig) spec;
-      triggerEventConditios = artifactTriggerConfig.getSpec().fetchEventDataConditions();
+      triggerEventConditions = artifactTriggerConfig.getSpec().fetchEventDataConditions();
+    } else if (MultiRegionArtifactTriggerConfig.class.isAssignableFrom(spec.getClass())) {
+      MultiRegionArtifactTriggerConfig multiRegionArtifactTriggerConfig = (MultiRegionArtifactTriggerConfig) spec;
+      triggerEventConditions = multiRegionArtifactTriggerConfig.getEventConditions();
     }
 
-    if (isEmpty(triggerEventConditios)) {
+    if (isEmpty(triggerEventConditions)) {
       return true;
     }
 
-    TriggerEventDataCondition condition = triggerEventConditios.get(0);
+    TriggerEventDataCondition condition = triggerEventConditions.get(0);
 
-    if (("version".equals(condition.getKey()) || "build".equals(condition.getKey()))
-        && ConditionEvaluator.evaluate(version, condition.getValue(), condition.getOperator().getValue())) {
-      return true;
-    }
-
-    return false;
+    return ("version".equals(condition.getKey()) || "build".equals(condition.getKey()))
+        && ConditionEvaluator.evaluate(version, condition.getValue(), condition.getOperator().getValue());
   }
 }

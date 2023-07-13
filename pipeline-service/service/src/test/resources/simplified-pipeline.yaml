@@ -5,10 +5,10 @@ stages:
   - name: Build and test Node app
     type: ci
     spec:
-    steps:
-      - name: Build_test
-        type: exec
-        spec:
-          exec: |
-            echo "Welcome to Harness CI"
-            mvn -B package --file pom.xml
+      steps:
+        - name: Build_test
+          type: exec
+          spec:
+            exec: |-
+              echo "Welcome to Harness CI"
+              mvn -B package --file pom.xml

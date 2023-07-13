@@ -270,7 +270,7 @@ public class GitStatusCheckHelperTest extends CategoryTest {
     ConnectorDetails connectorDetails = ConnectorDetails.builder().connectorConfig(gitConnectorDTO).build();
 
     when(gitTokenRetriever.retrieveAuthToken(GitSCMType.AZURE_REPO, connectorDetails)).thenReturn(TOKEN);
-    when(azureRepoService.sendStatus(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(true);
+    when(azureRepoService.sendStatus(any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(true);
 
     boolean actual = gitStatusCheckHelper.sendStatus(GitStatusCheckParams.builder()
                                                          .sha(SHA)

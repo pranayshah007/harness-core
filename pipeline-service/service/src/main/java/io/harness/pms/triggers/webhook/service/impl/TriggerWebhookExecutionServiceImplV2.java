@@ -47,12 +47,13 @@ public class TriggerWebhookExecutionServiceImplV2 implements TriggerWebhookExecu
     try {
       WebhookEventProcessingResult result;
 
-      TriggerWebhookEvent event = ngTriggerElementMapper
-                                      .toNGTriggerWebhookEvent(webhookDTO.getAccountId(), null, null,
-                                          webhookDTO.getJsonPayload(), prepareHeaders(webhookDTO))
-                                      .uuid(webhookDTO.getEventId())
-                                      .createdAt(webhookDTO.getTime())
-                                      .build();
+      TriggerWebhookEvent event =
+          ngTriggerElementMapper
+              .toNGTriggerWebhookEvent(webhookDTO.getAccountId(), null, null, webhookDTO.getJsonPayload(),
+                  prepareHeaders(webhookDTO), webhookDTO.getPrincipal())
+              .uuid(webhookDTO.getEventId())
+              .createdAt(webhookDTO.getTime())
+              .build();
       log.info("Processing webhook event with id {}", webhookDTO.getEventId());
       if (event.isSubscriptionConfirmation()) {
         result = ngTriggerWebhookConfirmationHelper.handleTriggerWebhookConfirmationEvent(event);

@@ -8,7 +8,9 @@
 package io.harness.ccm.graphql.core.budget;
 
 import io.harness.ccm.budget.BudgetBreakdown;
+import io.harness.ccm.commons.entities.CCMSortOrder;
 import io.harness.ccm.commons.entities.billing.Budget;
+import io.harness.ccm.commons.entities.billing.BudgetSortType;
 import io.harness.ccm.commons.entities.budget.BudgetData;
 
 import java.util.List;
@@ -22,7 +24,7 @@ public interface BudgetService {
   void update(String budgetId, Budget budget);
   void updatePerspectiveName(String accountId, String perspectiveId, String perspectiveName);
 
-  List<Budget> list(String accountId);
+  List<Budget> list(String accountId, BudgetSortType budgetSortType, CCMSortOrder ccmSortOrder);
   List<Budget> list(String accountId, String viewId);
 
   boolean delete(String budgetId, String accountId);

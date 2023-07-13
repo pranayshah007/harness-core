@@ -109,7 +109,7 @@ public class NGTriggerWebhookRegistrationServiceImpl implements NGTriggerWebhook
             .orgIdentifier(ngTriggerEntity.getOrgIdentifier())
             .accountIdentifier(ngTriggerEntity.getAccountId())
             .repoURL(ngTriggerEntity.getMetadata().getWebhook().getGit().getRepoName())
-            .isHarnessCode(true)
+            .isHarnessScm(true)
             .hookEventType(HookEventType.TRIGGER_EVENTS)
             .build();
     return getWebhookRegistrationStatusData(upsertWebhookRequestDTO);

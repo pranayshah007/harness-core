@@ -12,6 +12,7 @@ java_library(
     visibility = ["//idp-service:__subpackages__"],
     deps = [
         "//:lombok",
+        "//970-ng-commons/src/main/java/io/harness/constants:module",
         "//idp-service/contracts/openapi/v1:idp-service-server-spec-module",
         "//idp-service/contracts/src/main/java/io/harness/idp/annotations:module",
         "//idp-service/modules/clients:module",

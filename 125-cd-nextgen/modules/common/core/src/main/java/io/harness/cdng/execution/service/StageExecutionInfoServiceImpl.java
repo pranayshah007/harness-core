@@ -18,6 +18,7 @@ import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.ExecutionInfoUtility;
 import io.harness.cdng.execution.ExecutionSummaryDetails;
 import io.harness.cdng.execution.ServiceExecutionSummaryDetails;
+import io.harness.cdng.execution.ServiceExecutionSummaryDetails.ServiceExecutionSummaryDetailsBuilder;
 import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoBuilder;
 import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
@@ -229,43 +230,19 @@ public class StageExecutionInfoServiceImpl implements StageExecutionInfoService 
     ExecutionSummaryDetails executionSummaryDetails = stageExecutionInfo.getExecutionSummaryDetails() == null
         ? ExecutionSummaryDetails.builder().build()
         : stageExecutionInfo.getExecutionSummaryDetails();
-    boolean executionSummaryDetailsUpdated = false;
-    if (stageExecutionInfoUpdateDTO.getServiceInfo() != null) {
-      ServiceExecutionSummaryDetails serviceExecutionSummaryDetails = stageExecutionInfoUpdateDTO.getServiceInfo();
-      if (executionSummaryDetails.getServiceInfo() != null
-          && executionSummaryDetails.getServiceInfo().getArtifacts() != null) {
-        serviceExecutionSummaryDetails.setArtifacts(executionSummaryDetails.getServiceInfo().getArtifacts());
-      }
-      executionSummaryDetailsUpdated = true;
-      executionSummaryDetails.setServiceInfo(serviceExecutionSummaryDetails);
-    }
-    if (stageExecutionInfoUpdateDTO.getArtifactsSummary() != null) {
-      ServiceExecutionSummaryDetails.ArtifactsSummary artifactsSummary =
-          stageExecutionInfoUpdateDTO.getArtifactsSummary();
-      executionSummaryDetailsUpdated = true;
-      if (executionSummaryDetails.getServiceInfo() != null) {
-        executionSummaryDetails.getServiceInfo().setArtifacts(artifactsSummary);
-      } else {
-        executionSummaryDetails.setServiceInfo(
-            ServiceExecutionSummaryDetails.builder().artifacts(artifactsSummary).build());
-      }
-    }
-    if (stageExecutionInfoUpdateDTO.getInfraExecutionSummary() != null) {
-      executionSummaryDetailsUpdated = true;
-      executionSummaryDetails.setInfraExecutionSummary(stageExecutionInfoUpdateDTO.getInfraExecutionSummary());
-    }
-    if (stageExecutionInfoUpdateDTO.getGitOpsExecutionSummary() != null) {
-      executionSummaryDetailsUpdated = true;
-      executionSummaryDetails.setGitOpsExecutionSummary(stageExecutionInfoUpdateDTO.getGitOpsExecutionSummary());
-    }
-    if (stageExecutionInfoUpdateDTO.getGitOpsAppSummary() != null) {
-      executionSummaryDetailsUpdated = true;
-      executionSummaryDetails.setGitOpsAppSummary(stageExecutionInfoUpdateDTO.getGitOpsAppSummary());
-    }
-    if (stageExecutionInfoUpdateDTO.getFailureInfo() != null) {
-      executionSummaryDetailsUpdated = true;
-      executionSummaryDetails.setFailureInfo(stageExecutionInfoUpdateDTO.getFailureInfo());
-    }
+    boolean executionSummaryDetailsUpdated = updateServiceInfo(stageExecutionInfoUpdateDTO, executionSummaryDetails);
+    executionSummaryDetailsUpdated =
+        executionSummaryDetailsUpdated || updateArtifactSummary(stageExecutionInfoUpdateDTO, executionSummaryDetails);
+    executionSummaryDetailsUpdated =
+        executionSummaryDetailsUpdated || updateManifestSummary(stageExecutionInfoUpdateDTO, executionSummaryDetails);
+    executionSummaryDetailsUpdated = executionSummaryDetailsUpdated
+        || updateInfraExecutionSummary(stageExecutionInfoUpdateDTO, executionSummaryDetails);
+    executionSummaryDetailsUpdated = executionSummaryDetailsUpdated
+        || updateGitOpsExecutionSummary(stageExecutionInfoUpdateDTO, executionSummaryDetails);
+    executionSummaryDetailsUpdated =
+        executionSummaryDetailsUpdated || updateGitOpsAppSummary(stageExecutionInfoUpdateDTO, executionSummaryDetails);
+    executionSummaryDetailsUpdated =
+        executionSummaryDetailsUpdated || updateFailureInfo(stageExecutionInfoUpdateDTO, executionSummaryDetails);
 
     if (executionSummaryDetailsUpdated) {
       updates.put(StageExecutionInfoKeys.executionSummaryDetails, executionSummaryDetails);
@@ -281,14 +258,111 @@ public class StageExecutionInfoServiceImpl implements StageExecutionInfoService 
     }
   }
 
+  private boolean updateInfraExecutionSummary(
+      StageExecutionInfoUpdateDTO stageExecutionInfoUpdateDTO, ExecutionSummaryDetails executionSummaryDetails) {
+    if (stageExecutionInfoUpdateDTO.getInfraExecutionSummary() != null) {
+      executionSummaryDetails.setInfraExecutionSummary(stageExecutionInfoUpdateDTO.getInfraExecutionSummary());
+      return true;
+    }
+    return false;
+  }
+
+  private boolean updateGitOpsExecutionSummary(
+      StageExecutionInfoUpdateDTO stageExecutionInfoUpdateDTO, ExecutionSummaryDetails executionSummaryDetails) {
+    if (stageExecutionInfoUpdateDTO.getGitOpsExecutionSummary() != null) {
+      executionSummaryDetails.setGitOpsExecutionSummary(stageExecutionInfoUpdateDTO.getGitOpsExecutionSummary());
+      return true;
+    }
+    return false;
+  }
+
+  private boolean updateGitOpsAppSummary(
+      StageExecutionInfoUpdateDTO stageExecutionInfoUpdateDTO, ExecutionSummaryDetails executionSummaryDetails) {
+    if (stageExecutionInfoUpdateDTO.getGitOpsAppSummary() != null) {
+      executionSummaryDetails.setGitOpsAppSummary(stageExecutionInfoUpdateDTO.getGitOpsAppSummary());
+      return true;
+    }
+    return false;
+  }
+
+  private boolean updateFailureInfo(
+      StageExecutionInfoUpdateDTO stageExecutionInfoUpdateDTO, ExecutionSummaryDetails executionSummaryDetails) {
+    if (stageExecutionInfoUpdateDTO.getFailureInfo() != null) {
+      executionSummaryDetails.setFailureInfo(stageExecutionInfoUpdateDTO.getFailureInfo());
+      return true;
+    }
+    return false;
+  }
+
+  private boolean updateServiceInfo(
+      StageExecutionInfoUpdateDTO stageExecutionInfoUpdateDTO, ExecutionSummaryDetails executionSummaryDetails) {
+    if (stageExecutionInfoUpdateDTO.getServiceInfo() != null) {
+      ServiceExecutionSummaryDetails serviceExecutionSummaryDetails = stageExecutionInfoUpdateDTO.getServiceInfo();
+      if (executionSummaryDetails.getServiceInfo() != null
+          && executionSummaryDetails.getServiceInfo().getArtifacts() != null) {
+        serviceExecutionSummaryDetails.setArtifacts(executionSummaryDetails.getServiceInfo().getArtifacts());
+      }
+      if (executionSummaryDetails.getServiceInfo() != null
+          && executionSummaryDetails.getServiceInfo().getManifests() != null) {
+        serviceExecutionSummaryDetails.setManifests(executionSummaryDetails.getServiceInfo().getManifests());
+      }
+      executionSummaryDetails.setServiceInfo(serviceExecutionSummaryDetails);
+      return true;
+    }
+    return false;
+  }
+
+  private boolean updateArtifactSummary(
+      StageExecutionInfoUpdateDTO stageExecutionInfoUpdateDTO, ExecutionSummaryDetails executionSummaryDetails) {
+    if (stageExecutionInfoUpdateDTO.getArtifactsSummary() != null) {
+      ServiceExecutionSummaryDetails.ArtifactsSummary artifactsSummary =
+          stageExecutionInfoUpdateDTO.getArtifactsSummary();
+      if (executionSummaryDetails.getServiceInfo() != null) {
+        executionSummaryDetails.getServiceInfo().setArtifacts(artifactsSummary);
+      } else {
+        executionSummaryDetails.setServiceInfo(
+            ServiceExecutionSummaryDetails.builder().artifacts(artifactsSummary).build());
+      }
+      return true;
+    }
+    return false;
+  }
+
+  private boolean updateManifestSummary(
+      StageExecutionInfoUpdateDTO stageExecutionInfoUpdateDTO, ExecutionSummaryDetails executionSummaryDetails) {
+    if (stageExecutionInfoUpdateDTO.getManifestsSummary() != null) {
+      ServiceExecutionSummaryDetails.ManifestsSummary manifestsSummary =
+          stageExecutionInfoUpdateDTO.getManifestsSummary();
+      if (executionSummaryDetails.getServiceInfo() != null) {
+        executionSummaryDetails.getServiceInfo().setManifests(manifestsSummary);
+      } else {
+        executionSummaryDetails.setServiceInfo(
+            ServiceExecutionSummaryDetails.builder().manifests(manifestsSummary).build());
+      }
+      return true;
+    }
+    return false;
+  }
+
   private StageExecutionInfo createStageExecutionInfoFromStageExecutionInfoUpdateDTO(
       Ambiance ambiance, StageExecutionInfoUpdateDTO stageExecutionInfoUpdateDTO) {
     ServiceExecutionSummaryDetails serviceExecutionSummaryDetails = stageExecutionInfoUpdateDTO.getServiceInfo();
-    if (stageExecutionInfoUpdateDTO.getArtifactsSummary() != null) {
-      if (serviceExecutionSummaryDetails == null) {
-        ServiceExecutionSummaryDetails.builder().artifacts(stageExecutionInfoUpdateDTO.getArtifactsSummary()).build();
-      } else {
+    if (serviceExecutionSummaryDetails == null) {
+      ServiceExecutionSummaryDetailsBuilder serviceExecutionSummaryDetailsBuilder =
+          ServiceExecutionSummaryDetails.builder();
+      if (stageExecutionInfoUpdateDTO.getArtifactsSummary() != null) {
+        serviceExecutionSummaryDetailsBuilder.artifacts(stageExecutionInfoUpdateDTO.getArtifactsSummary());
+      }
+      if (stageExecutionInfoUpdateDTO.getManifestsSummary() != null) {
+        serviceExecutionSummaryDetailsBuilder.manifests(stageExecutionInfoUpdateDTO.getManifestsSummary());
+      }
+      serviceExecutionSummaryDetails = serviceExecutionSummaryDetailsBuilder.build();
+    } else {
+      if (stageExecutionInfoUpdateDTO.getArtifactsSummary() != null) {
         serviceExecutionSummaryDetails.setArtifacts(stageExecutionInfoUpdateDTO.getArtifactsSummary());
+      }
+      if (stageExecutionInfoUpdateDTO.getManifestsSummary() != null) {
+        serviceExecutionSummaryDetails.setManifests(stageExecutionInfoUpdateDTO.getManifestsSummary());
       }
     }
     ExecutionSummaryDetails executionSummaryDetails =

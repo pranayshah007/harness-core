@@ -13,6 +13,8 @@ import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.Preconditions;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Builder;
@@ -61,11 +63,14 @@ public class ApiCallLogDTO extends CVNGLogDTO {
       this.requests = new ArrayList<>();
     }
     FieldType fieldType = ApiCallLogUtils.mapRequestBodyContentTypeToFieldType(request);
-    String jsonRequest = getCallObjectToLog(ApiCallLogUtils.requestBodyToString(request), fieldType);
+    String requestBody = getCallObjectToLog(ApiCallLogUtils.requestBodyToString(request), fieldType);
+    if (fieldType == FieldType.TEXT && ApiCallLogUtils.isFormEncoded(request)) {
+      requestBody = URLDecoder.decode(requestBody, StandardCharsets.UTF_8);
+    }
     this.requests.add(ApiCallLogDTOField.builder()
                           .type(fieldType)
                           .name(REQUEST_BODY)
-                          .value(jsonRequest.substring(0, Math.min(jsonRequest.length(), MAX_JSON_RESPONSE_LENGTH)))
+                          .value(requestBody.substring(0, Math.min(requestBody.length(), MAX_JSON_RESPONSE_LENGTH)))
                           .build());
   }
 
@@ -81,11 +86,8 @@ public class ApiCallLogDTO extends CVNGLogDTO {
                            .name(STATUS_CODE)
                            .value(Integer.toString(statusCode))
                            .build());
-    this.responses.add(ApiCallLogDTOField.builder()
-                           .type(fieldType)
-                           .name(RESPONSE_BODY)
-                           .value(jsonResponse.substring(0, Math.min(jsonResponse.length(), MAX_JSON_RESPONSE_LENGTH)))
-                           .build());
+    String trimmedResponse = jsonResponse.substring(0, Math.min(jsonResponse.length(), MAX_JSON_RESPONSE_LENGTH));
+    this.responses.add(ApiCallLogDTOField.builder().type(fieldType).name(RESPONSE_BODY).value(trimmedResponse).build());
   }
 
   public void addFieldToResponse(ApiCallLogDTOField field) {
@@ -107,7 +109,7 @@ public class ApiCallLogDTO extends CVNGLogDTO {
           if (entity instanceof String) {
             return entity.toString();
           }
-          return JsonUtils.asJson(entity);
+          return JsonUtils.asPrettyJson(entity);
         } catch (Exception e) {
           return entity.toString();
         }

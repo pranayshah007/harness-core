@@ -329,6 +329,8 @@ public class K8InitializeStepUtils {
       case GIT_CLONE:
       case SSCA_ORCHESTRATION:
       case SSCA_ENFORCEMENT:
+      case IACM_TERRAFORM_PLUGIN:
+      case IACM_APPROVAL:
         return createPluginCompatibleStepContainerDefinition((PluginCompatibleStep) ciStepInfo, stageNode,
             ciExecutionArgs, portFinder, stepIndex, stepElement.getIdentifier(), stepElement.getName(),
             stepElement.getType(), timeout, accountId, os, ambiance, extraMemoryPerStep, extraCPUPerStep);
@@ -1116,6 +1118,8 @@ public class K8InitializeStepUtils {
       case GIT_CLONE:
       case SSCA_ORCHESTRATION:
       case SSCA_ENFORCEMENT:
+      case IACM_TERRAFORM_PLUGIN:
+      case IACM_APPROVAL:
         return ((PluginCompatibleStep) ciStepInfo).getResources();
       default:
         throw new CIStageExecutionException(
