@@ -69,6 +69,7 @@ if [[ "" != "$REDIS_SENTINELS" ]]; then
   INDEX=0
   for REDIS_SENTINEL_URL in "${REDIS_SENTINEL_URLS[@]}"; do
     export REDIS_SENTINEL_URL; export INDEX; yq -i '.redisLockConfig.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
+    export REDIS_SENTINEL_URL; export INDEX; yq -i '.redisDelegateConfig.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
     export REDIS_SENTINEL_URL; export INDEX; yq -i '.sentinelServersConfig.sentinelAddresses.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $REDISSON_CACHE_FILE
     INDEX=$(expr $INDEX + 1)
   done
@@ -136,6 +137,18 @@ if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
   yq -i '.useScriptCache=false' $REDISSON_CACHE_FILE
 fi
 
+if [[ "" != "$LOG_STREAMING_SERVICE_BASEURL" ]]; then
+  export LOG_STREAMING_SERVICE_BASEURL; yq -i '.logStreamingServiceConfig.baseUrl=env(LOG_STREAMING_SERVICE_BASEURL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$LOG_STREAMING_SERVICE_EXTERNAL_URL" ]]; then
+  export LOG_STREAMING_SERVICE_EXTERNAL_URL; yq -i '.logStreamingServiceConfig.externalUrl=env(LOG_STREAMING_SERVICE_EXTERNAL_URL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$LOG_STREAMING_SERVICE_TOKEN" ]]; then
+  export LOG_STREAMING_SERVICE_TOKEN; yq -i '.logStreamingServiceConfig.serviceToken=env(LOG_STREAMING_SERVICE_TOKEN)' $CONFIG_FILE
+fi
+
 
 replace_key_value distributedLockImplementation $DISTRIBUTED_LOCK_IMPLEMENTATION
 
@@ -150,6 +163,11 @@ replace_key_value redisLockConfig.connectionPoolSize $REDIS_CONNECTION_POOL_SIZE
 replace_key_value redisLockConfig.retryInterval $REDIS_RETRY_INTERVAL
 replace_key_value redisLockConfig.retryAttempts $REDIS_RETRY_ATTEMPTS
 replace_key_value redisLockConfig.timeout $REDIS_TIMEOUT
+
+replace_key_value redisDelegateConfig.sentinel $LOCK_CONFIG_USE_SENTINEL
+replace_key_value redisDelegateConfig.envNamespace $LOCK_CONFIG_ENV_NAMESPACE
+replace_key_value redisDelegateConfig.redisUrl $LOCK_CONFIG_REDIS_URL
+replace_key_value redisDelegateConfig.masterName $LOCK_CONFIG_SENTINEL_MASTER_NAME
 
 #FF configs
 replace_key_value cfClientConfig.apiKey "$CF_CLIENT_API_KEY"
