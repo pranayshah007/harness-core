@@ -539,9 +539,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         AutoLogContext ignore2 = new AccountLogContext(task.getAccountId(), OVERRIDE_ERROR)) {
       processDelegateTaskV2(task, QUEUED);
 
-      //      // Insert Expression and secret evaluation here ??
-      //      DelegateTaskPackage delegateTaskPackage = resolvePreAssignmentExpressions(task, SecretManagerMode.APPLY);
-
       broadcastHelper.rebroadcastDelegateTaskV2(task);
     }
   }
@@ -763,7 +760,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
     try (AutoLogContext ignore = DelegateLogContextHelper.getLogContext(task)) {
       try {
-        log.info("Printing the task object before dry run {}", task.toString());
         // capabilities created,then appended to task.executionCapabilities to get eligible delegates
         generateCapabilitiesForTaskV2(task);
         convertToExecutionCapabilityV2(task);
@@ -818,14 +814,10 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
         task.setNextBroadcast(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(5));
 
-        log.info("Printing the task object after dry run {}", task.toString());
-
         copyTaskDataV2ToTaskData(task);
         DelegateTaskPackage delegateTaskPackage = resolvePreAssignmentExpressions(task, SecretManagerMode.APPLY);
         task.setDelegateTaskPackage(delegateTaskPackage);
         saveDelegateTask(task, task.getAccountId());
-
-        log.info("Printing the task object after applying secret manager {}", task.toString());
 
         delegateSelectionLogsService.logBroadcastToDelegate(Sets.newHashSet(task.getBroadcastToDelegateIds()), task);
         delegateMetricsService.recordDelegateTaskMetrics(task, DELEGATE_TASK_CREATION);
@@ -1054,7 +1046,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   private void generateCapabilitiesForTaskV2(DelegateTask task) {
     addMergedParamsForCapabilityCheckV2(task);
 
-    // I think expression is substituted with values and secrets are just analyzed and returned in encryption config.
     DelegateTaskPackage delegateTaskPackage = getDelegatePackageWithEncryptionConfigV2(task);
     embedCapabilitiesInDelegateTaskV2(task,
         delegateTaskPackage == null || isEmpty(delegateTaskPackage.getEncryptionConfigs())

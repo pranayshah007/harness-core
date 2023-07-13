@@ -505,12 +505,12 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private void initDelegateProcess(final boolean watched) {
     try {
-      if (true) {
+      if (delegateConfiguration.isLocalNgDelegate()) {
         delegateNg = true;
-        //    DELEGATE_GROUP_NAME = "localDelegateAcquire";
+        DELEGATE_GROUP_NAME = "localDelegate";
         // Setting delegate type as kubernetes, as NG doesn't allow shell delegates.
         DELEGATE_TYPE = KUBERNETES;
-        DELEGATE_NAME = "localDelegateAcquire";
+        DELEGATE_NAME = "LocalDelegate";
       }
       accountId = delegateConfiguration.getAccountId();
       if (perpetualTaskWorker != null) {
@@ -2061,11 +2061,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
         log.debug("Try to acquire DelegateTask - accountId: {}", accountId);
 
-        // How to make it configurable? As base url for dms and manager would be different.
-        // We can make it default to hit manager and add a variable to hit DMS
         Call<DelegateTaskPackage> acquireCall =
             delegateAgentDMSClient.acquireTask(delegateId, delegateTaskId, accountId, delegateInstanceId);
-        //
+
         DelegateTaskPackage delegateTaskPackage = executeAcquireCallWithRetry(
             acquireCall, String.format("Failed acquiring delegate task %s by delegate %s", delegateTaskId, delegateId));
         log.info("Printing Delegate task package : {}", delegateTaskPackage.toString());
