@@ -37,7 +37,6 @@ import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.model.K8sDelegateTaskParams;
-import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.k8s.releasehistory.IK8sRelease;
@@ -127,7 +126,7 @@ public class K8sBlueGreenStageScaleDownRequestHandler extends K8sRequestHandler 
       K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback) throws Exception {
     List<KubernetesResourceId> resourcesToDelete =
         resourceIdsToScale.stream()
-            .filter(resourceId -> BG_STAGE_DELETE_WORKLOAD_KINDS.contains(Kind.fromString(resourceId.getKind())))
+            .filter(resourceId -> BG_STAGE_DELETE_WORKLOAD_KINDS.contains(resourceId.getKind()))
             .collect(Collectors.toList());
     List<KubernetesResourceId> deletedResources = k8sTaskHelperBase.executeDeleteHandlingPartialExecution(
         client, k8sDelegateTaskParams, resourcesToDelete, executionLogCallback, false);
@@ -140,7 +139,7 @@ public class K8sBlueGreenStageScaleDownRequestHandler extends K8sRequestHandler 
   private void scaleDownStageEnvironmentResources(
       K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback) throws Exception {
     for (KubernetesResourceId resourceId : resourceIdsToScale) {
-      if (BG_STAGE_SCALE_DOWN_WORKLOAD_KINDS.contains(Kind.fromString(resourceId.getKind()))) {
+      if (BG_STAGE_SCALE_DOWN_WORKLOAD_KINDS.contains(resourceId.getKind())) {
         k8sTaskHelperBase.scale(
             client, k8sDelegateTaskParams, resourceId, TARGET_REPLICA_COUNT, executionLogCallback, true);
       }
@@ -169,7 +168,7 @@ public class K8sBlueGreenStageScaleDownRequestHandler extends K8sRequestHandler 
     return release.getResourceIds()
         .stream()
         .filter(k8sResourceId
-            -> BG_STAGE_WORKLOAD_KINDS.contains(Kind.fromString(k8sResourceId.getKind()))
+            -> BG_STAGE_WORKLOAD_KINDS.contains(k8sResourceId.getKind())
                 && k8sResourceId.getName().endsWith(primaryColor))
         .peek(k8sResourceId -> k8sResourceId.setName(k8sResourceId.getName().replaceAll(regex, stageColor)))
         .filter(k8sResourceId
