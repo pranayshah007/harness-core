@@ -7,6 +7,7 @@
 
 package io.harness.ccm.views.graphql;
 
+import static io.harness.ccm.commons.constants.ViewFieldConstants.GCP_INVOICE_MONTH_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.NONE_FIELD;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.AFTER;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.BEFORE;
@@ -40,6 +41,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -627,5 +629,15 @@ public class ViewsQueryHelper {
       }
     }
     return searchString;
+  }
+
+  public boolean isGcpInvoiceMonthFilterPresent(List<QLCEViewFilterWrapper> filters) {
+    if (Objects.isNull(filters)) {
+      return false;
+    }
+    return filters.stream().anyMatch(filter
+        -> Objects.nonNull(filter.getIdFilter()) && Objects.nonNull(filter.getIdFilter().getField())
+            && filter.getIdFilter().getField().getIdentifier() == ViewFieldIdentifier.GCP
+            && GCP_INVOICE_MONTH_FIELD_ID.equals(filter.getIdFilter().getField().getFieldId()));
   }
 }

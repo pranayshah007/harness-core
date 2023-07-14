@@ -90,6 +90,7 @@ import io.harness.ccm.views.helper.ViewParametersHelper;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.LabelFlattenedService;
 import io.harness.ccm.views.service.ViewsBillingService;
+import io.harness.ccm.views.utils.DateUtils;
 import io.harness.ccm.views.utils.ViewFieldUtils;
 
 import com.google.cloud.Timestamp;
@@ -170,6 +171,12 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     if (businessMappingId != null) {
       return businessMappingService.getCostTargetNames(businessMappingId, queryParams.getAccountId(),
           viewsQueryHelper.getSearchValueFromBusinessMappingFilter(filters, businessMappingId));
+    }
+    if (viewsQueryHelper.isGcpInvoiceMonthFilterPresent(filters)) {
+      return DateUtils.getLastTwelveMonthsFirstDayTimestamps()
+          .stream()
+          .map(timestamp -> Long.toString(timestamp))
+          .collect(Collectors.toList());
     }
 
     List<QLCEViewFilter> idFilters = awsAccountFieldHelper.addAccountIdsByAwsAccountNameFilter(

@@ -40,6 +40,7 @@ import io.harness.ccm.views.entities.ViewField;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.entities.ViewIdCondition;
 import io.harness.ccm.views.entities.ViewIdOperator;
+import io.harness.ccm.views.entities.ViewPreferences;
 import io.harness.ccm.views.entities.ViewQueryParams;
 import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.entities.ViewState;
@@ -228,11 +229,11 @@ public class CEViewServiceImpl implements CEViewService {
     if (views.size() >= VIEW_COUNT) {
       throw new InvalidRequestException(VIEW_LIMIT_REACHED_EXCEPTION);
     }
-    modifyCEViewAndSetDefaults(ceView, Collections.emptySet());
+    modifyCEViewAndSetDefaults(ceView);
     return true;
   }
 
-  private void modifyCEViewAndSetDefaults(CEView ceView, Set<String> viewPreferencesFieldsToUpdateWithDefaultSettings) {
+  private void modifyCEViewAndSetDefaults(CEView ceView) {
     Set<String> validBusinessMappingIds = null;
     if (ceView.getViewVisualization() == null || ceView.getViewVisualization().getGroupBy() == null) {
       ceView.setViewVisualization(getDefaultViewVisualization());
@@ -247,8 +248,7 @@ public class CEViewServiceImpl implements CEViewService {
 
     Set<ViewFieldIdentifier> viewFieldIdentifierSet = getViewFieldIdentifiers(ceView, validBusinessMappingIds);
     setDataSources(ceView, viewFieldIdentifierSet);
-    ceView.setViewPreferences(
-        ceViewPreferenceService.getCEViewPreferences(ceView, viewPreferencesFieldsToUpdateWithDefaultSettings));
+    ceView.setViewPreferences(ceViewPreferenceService.getCEViewPreferences(ceView, Collections.emptySet()));
   }
 
   private ViewVisualization getDefaultViewVisualization() {
@@ -401,7 +401,7 @@ public class CEViewServiceImpl implements CEViewService {
 
   @Override
   public CEView update(CEView ceView) {
-    modifyCEViewAndSetDefaults(ceView, Collections.emptySet());
+    modifyCEViewAndSetDefaults(ceView);
     // For now, we are not returning AWS account Name in case of AWS Account rules
     return ceViewDao.update(ceView);
   }
@@ -512,8 +512,14 @@ public class CEViewServiceImpl implements CEViewService {
   public void updateAllPerspectiveWithPerspectivePreferenceDefaultSettings(
       String accountId, Set<String> viewPreferencesFieldsToUpdateWithDefaultSettings) {
     for (CEView ceView : getAllViews(accountId)) {
-      modifyCEViewAndSetDefaults(ceView, viewPreferencesFieldsToUpdateWithDefaultSettings);
-      ceViewDao.update(ceView);
+      try {
+        ViewPreferences viewPreferences =
+            ceViewPreferenceService.getCEViewPreferences(ceView, viewPreferencesFieldsToUpdateWithDefaultSettings);
+        ceViewDao.updateViewPreferences(ceView.getUuid(), accountId, viewPreferences);
+      } catch (Exception ex) {
+        log.error("Unable to update view preferences with default settings for accountId {}, viewId {}, fields {}",
+            accountId, ceView.getUuid(), viewPreferencesFieldsToUpdateWithDefaultSettings, ex);
+      }
     }
   }
 
@@ -709,7 +715,7 @@ public class CEViewServiceImpl implements CEViewService {
       ViewRule rule = ViewRule.builder().viewConditions(Collections.singletonList(condition)).build();
       defaultView.setViewRules(Collections.singletonList(rule));
       defaultView.setViewVisualization(viewVisualization);
-      modifyCEViewAndSetDefaults(defaultView, Collections.emptySet());
+      modifyCEViewAndSetDefaults(defaultView);
       ceViewDao.save(defaultView);
     }
   }
