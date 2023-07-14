@@ -674,11 +674,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       outputObj = new VariablesSweepingOutput();
     }
 
-    // Passing empty string as groupName, As for group of step level, pipeline service handles it as empty string
-    // Also as level traversal goes from child to parent, first match is Service V3 step
-    // Reference :  io.harness.engine.pms.data.Resolver.consume
-    sweepingOutputService.consume(
-        ambiance, YAMLFieldNameConstants.SERVICE_VARIABLES, (VariablesSweepingOutput) outputObj, "");
+    sweepingOutputService.consume(ambiance, YAMLFieldNameConstants.SERVICE_VARIABLES,
+        (VariablesSweepingOutput) outputObj, StepCategory.STAGE.name());
 
     saveExecutionLog(logCallback, "Processed service variables");
   }
@@ -728,20 +725,6 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
                              ngServiceV2InfoConfig.getGitOpsEnabled()))
                          .group(StepCategory.STAGE.name())
                          .build());
-
-    final OptionalSweepingOutput optionalSvcVarsSweepingOutput = sweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getSweepingOutputRefObject(YAMLFieldNameConstants.SERVICE_VARIABLES));
-
-    if (optionalSvcVarsSweepingOutput.isFound()) {
-      VariablesSweepingOutput serviceVariablesOutcome =
-          (VariablesSweepingOutput) optionalSvcVarsSweepingOutput.getOutput();
-
-      stepOutcomes.add(StepResponse.StepOutcome.builder()
-                           .name(OutcomeExpressionConstants.SERVICE_VARIABLES_OUTCOME)
-                           .outcome(serviceVariablesOutcome)
-                           .group(StepCategory.STAGE.name())
-                           .build());
-    }
 
     final OptionalSweepingOutput manifestsOutput = sweepingOutputService.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.MANIFESTS));

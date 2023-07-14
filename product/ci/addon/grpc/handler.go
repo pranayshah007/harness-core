@@ -32,6 +32,7 @@ var (
 	newRunTask          = tasks.NewRunTask
 	newRunTestsTask     = tasks.NewRunTestsTask
 	newPluginTask       = tasks.NewPluginTask
+	newExecuteStep      = tasks.NewExecuteStep
 )
 
 // NewAddonHandler returns a GRPC handler that implements pb.AddonServer
@@ -96,6 +97,14 @@ func (h *handler) ExecuteStep(ctx context.Context, in *pb.ExecuteStepRequest) (*
 		}
 		err = close(rl.Writer, err)
 		return response, err
+	case *enginepb.UnitStep_ExecuteTask:
+ 	    _, err := newExecuteStep(in.GetStep(), rl.BaseLogger, rl.Writer, false, h.log).Run(ctx)
+ 	    response := &pb.ExecuteStepResponse{
+ 	        Output:     nil,
+ 	        NumRetries: 1,
+ 	    }
+ 	    err = close(rl.Writer, err)
+ 	    return response, err
 	case nil:
 		return &pb.ExecuteStepResponse{}, fmt.Errorf("UnitStep is not set")
 	default:

@@ -7,8 +7,11 @@
 
 package software.wings.beans.dto;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
+import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.delegate.task.mixin.SocketConnectivityCapabilityGenerator;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -19,6 +22,7 @@ import software.wings.beans.sso.LdapUserSettings;
 import software.wings.helpers.ext.ldap.LdapConstants;
 import software.wings.service.intfc.security.EncryptionService;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import javax.validation.Valid;
@@ -39,6 +43,7 @@ public class LdapSettings extends SSOSettings implements ExecutionCapabilityDema
   @Valid @Deprecated LdapUserSettings userSettings;
 
   @Valid @Deprecated LdapGroupSettings groupSettings;
+  public static final String TASK_SELECTORS = "Task Selectors";
 
   boolean disabled;
 
@@ -52,7 +57,18 @@ public class LdapSettings extends SSOSettings implements ExecutionCapabilityDema
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-    return Collections.singletonList(SocketConnectivityCapabilityGenerator.buildSocketConnectivityCapability(
+    if (connectionSettings == null) {
+      return Collections.EMPTY_LIST;
+    }
+    List<ExecutionCapability> executionCapabilities = new ArrayList<>();
+    executionCapabilities.add(SocketConnectivityCapabilityGenerator.buildSocketConnectivityCapability(
         connectionSettings.getHost(), Integer.toString(connectionSettings.getPort())));
+    if (isNotEmpty(connectionSettings.getDelegateSelectors())) {
+      executionCapabilities.add(SelectorCapability.builder()
+                                    .selectors(connectionSettings.getDelegateSelectors())
+                                    .selectorOrigin(TASK_SELECTORS)
+                                    .build());
+    }
+    return executionCapabilities;
   }
 }

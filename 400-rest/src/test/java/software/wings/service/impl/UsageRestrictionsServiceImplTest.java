@@ -38,6 +38,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -1216,6 +1217,7 @@ public class UsageRestrictionsServiceImplTest extends CategoryTest {
     when(query1.filter(anyString(), any())).thenReturn(query1);
     when(query1.field(any())).thenReturn(fieldEnd1);
     when(fieldEnd1.exists()).thenReturn(query1);
+    when(query1.limit(anyInt())).thenReturn(query1);
     when(query1.fetch()).thenReturn(iterator1);
     when(iterator1.hasNext()).thenReturn(true).thenReturn(false).thenReturn(true).thenReturn(false);
     when(iterator1.next()).thenReturn(settingAttribute);
@@ -1229,6 +1231,7 @@ public class UsageRestrictionsServiceImplTest extends CategoryTest {
     when(query2.field(any())).thenReturn(fieldEnd2);
     when(fieldEnd2.equal(any())).thenReturn(query2);
     when(fieldEnd2.exists()).thenReturn(query2);
+    when(query2.limit(anyInt())).thenReturn(query2);
     when(query2.fetch()).thenReturn(iterator2);
     doReturn(false).when(iterator2).hasNext();
 
@@ -1240,6 +1243,7 @@ public class UsageRestrictionsServiceImplTest extends CategoryTest {
     when(query3.filter(anyString(), anyString())).thenReturn(query3);
     when(query3.field(any())).thenReturn(fieldEnd3);
     when(fieldEnd3.equal(any())).thenReturn(query3);
+    when(query3.limit(anyInt())).thenReturn(query3);
     when(query3.fetch()).thenReturn(iterator3);
     doReturn(false).when(iterator3).hasNext();
 

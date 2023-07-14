@@ -9,6 +9,7 @@ package io.harness.expression;
 
 import static io.harness.rule.OwnerRule.AADITI;
 import static io.harness.rule.OwnerRule.ADWAIT;
+import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.HINGER;
@@ -23,6 +24,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.exception.FunctorException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.expression.functors.ExpressionFunctor;
 import io.harness.rule.Owner;
 
 import com.google.common.base.Charsets;
@@ -34,6 +36,7 @@ import java.util.HashMap;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
+import org.apache.commons.jexl3.JexlContext;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -49,6 +52,12 @@ public class ExpressionEvaluatorTest extends CategoryTest {
   @Builder
   public static class Address {
     private String city;
+  }
+
+  public class FunctionF1 implements ExpressionFunctor {
+    public Object encode(String content) {
+      return "encoded\n" + content;
+    }
   }
 
   Person sam = Person.builder().age(20).address(Address.builder().city("San Francisco").build()).build();
@@ -188,6 +197,23 @@ public class ExpressionEvaluatorTest extends CategoryTest {
     assertThat(retValue).isNotNull();
     assertThat(retValue).isInstanceOf(Boolean.class);
     assertThat(retValue).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void shouldEvaluateWithDefaultPrefixNewLine() {
+    ExpressionEvaluator expressionEvaluator = new ExpressionEvaluator();
+    String toEncode = "first\nsecond\nthird";
+    String expression = "f1.encode(\"" + toEncode + "\")";
+    JexlContext context = LateBindingContext.builder()
+                              .map(new HashMap<>() {
+                                { put("f1", new FunctionF1()); }
+                              })
+                              .recursive(false)
+                              .build();
+    Object retValue = expressionEvaluator.evaluate(expression, context);
+    assertThat(retValue).isEqualTo("encoded\n" + toEncode);
   }
 
   @Test

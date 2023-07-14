@@ -48,6 +48,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.Before;
@@ -95,7 +96,9 @@ public class ACLGeneratorServiceImplTest extends AggregatorTestBase {
                            .identifier(RESOURCEGROUP_RESOURCE_IDENTIFIER)
                            .permissionKey(RESOURCEGROUP_RESOURCE_NAME)
                            .build());
-    inMemoryPermissionRepository = new InMemoryPermissionRepository(mongoTemplate);
+
+    inMemoryPermissionRepository =
+        new InMemoryPermissionRepository(mongoTemplate, Map.of("ccm_perspective_view", Set.of("CCM_FOLDER")));
     aclGeneratorService = new ACLGeneratorServiceImpl(roleService, userGroupService, resourceGroupService, scopeService,
         new HashMap<>(), aclRepository, false, inMemoryPermissionRepository);
   }
@@ -169,10 +172,10 @@ public class ACLGeneratorServiceImplTest extends AggregatorTestBase {
 
     String allResourceSelector = "/*/*";
     String userGroupSelector = "/ACCOUNT/account-id$/USERGROUP/*";
-    Set<ResourceSelector> resourceSelectors = of(ResourceSelector.builder().selector(allResourceSelector).build(),
+    Set<ResourceSelector> resourceSelectors = Set.of(ResourceSelector.builder().selector(allResourceSelector).build(),
         ResourceSelector.builder().selector(userGroupSelector).build());
 
-    Set<String> permissions = of(CORE_USERGROUP_MANAGE_PERMISSION, CORE_RESOURCEGROUP_MANAGE_PERMISSION);
+    Set<String> permissions = Set.of(CORE_USERGROUP_MANAGE_PERMISSION, CORE_RESOURCEGROUP_MANAGE_PERMISSION);
 
     RoleAssignmentDBO roleAssignmentDBO = getRoleAssignment(PrincipalType.USER_GROUP);
 
@@ -205,10 +208,10 @@ public class ACLGeneratorServiceImplTest extends AggregatorTestBase {
 
     String allResourceSelector = "/*/*";
     String userGroupSelector = "/ACCOUNT/account-id$/USERGROUP/*";
-    Set<ResourceSelector> resourceSelectors = of(ResourceSelector.builder().selector(allResourceSelector).build(),
+    Set<ResourceSelector> resourceSelectors = Set.of(ResourceSelector.builder().selector(allResourceSelector).build(),
         ResourceSelector.builder().selector(userGroupSelector).build());
 
-    Set<String> permissions = of(CORE_USERGROUP_MANAGE_PERMISSION, CORE_RESOURCEGROUP_MANAGE_PERMISSION);
+    Set<String> permissions = Set.of(CORE_USERGROUP_MANAGE_PERMISSION, CORE_RESOURCEGROUP_MANAGE_PERMISSION);
 
     RoleAssignmentDBO roleAssignmentDBO = getRoleAssignment(PrincipalType.USER_GROUP);
 
@@ -246,7 +249,7 @@ public class ACLGeneratorServiceImplTest extends AggregatorTestBase {
 
     String allResourceSelector = "/*/*";
     String userGroupSelector = "/ACCOUNT/account-id$/USER/*";
-    Set<ResourceSelector> resourceSelectors = of(ResourceSelector.builder().selector(allResourceSelector).build(),
+    Set<ResourceSelector> resourceSelectors = Set.of(ResourceSelector.builder().selector(allResourceSelector).build(),
         ResourceSelector.builder().selector(userGroupSelector).build());
 
     Set<String> permissions = of(CORE_USERGROUP_MANAGE_PERMISSION);

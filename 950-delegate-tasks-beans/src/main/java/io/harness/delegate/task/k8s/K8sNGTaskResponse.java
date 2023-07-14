@@ -7,4 +7,17 @@
 
 package io.harness.delegate.task.k8s;
 
-public interface K8sNGTaskResponse {}
+import io.harness.k8s.model.K8sPod;
+
+import java.util.Collections;
+import java.util.List;
+
+public interface K8sNGTaskResponse {
+  default List<K8sPod> getPreviousK8sPodList() {
+    return Collections.emptyList();
+  }
+
+  default List<K8sPod> getTotalK8sPodList() {
+    return Collections.emptyList();
+  }
+}

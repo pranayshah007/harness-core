@@ -527,6 +527,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
           format("No manifests found in stage %s. %s step requires a manifest defined in stage service definition",
               stageName, stepType));
     }
+
     return (ManifestsOutcome) manifestsOutcome.getOutcome();
   }
 

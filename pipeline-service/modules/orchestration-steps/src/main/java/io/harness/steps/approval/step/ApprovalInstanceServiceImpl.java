@@ -301,7 +301,7 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
 
   @Override
   public List<String> findAllPreviousWaitingApprovals(String accountId, String orgId, String projectId,
-      @NotEmpty String pipelineId, String approvalKey, Ambiance ambiance) {
+      @NotEmpty String pipelineId, String approvalKey, Ambiance ambiance, Long createdAt) {
     Criteria criteria = Criteria.where("accountId").is(accountId);
     if (!isNull(orgId)) {
       criteria.and("orgIdentifier").is(orgId);
@@ -317,6 +317,7 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
     }
     criteria.and(ApprovalInstanceKeys.status).is(ApprovalStatus.WAITING);
     criteria.and("isAutoRejectEnabled").is(true);
+    criteria.and(ApprovalInstanceKeys.createdAt).lt(createdAt);
 
     List<ApprovalInstance> approvalInstances = approvalInstanceRepository.findAll(criteria);
     approvalInstances = filterOnService(approvalInstances, ambiance);
@@ -457,7 +458,7 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
     }
     List<String> rejectedApprovalIds = findAllPreviousWaitingApprovals(instance.getAccountId(),
         instance.getOrgIdentifier(), instance.getProjectIdentifier(), instance.getPipelineIdentifier(),
-        instance.getApprovalKey(), instance.getAmbiance());
+        instance.getApprovalKey(), instance.getAmbiance(), instance.getCreatedAt());
     rejectedApprovalIds.forEach(id -> rejectPreviousExecutions(id, user, false, instance.getAmbiance()));
     NGLogCallback logCallback =
         new NGLogCallback(logStreamingStepClientFactory, instance.getAmbiance(), COMMAND_UNIT, false);

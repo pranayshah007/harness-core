@@ -159,9 +159,11 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
       FilterCreationParams filterCreationParams, List<EntityDetailProtoDTO> referredEntities) {
     PipelineEntity pipelineEntity = filterCreationParams.getPipelineEntity();
     FilterCreationGitMetadata gitMetadata = filterCreationParams.getFilterCreationGitMetadata();
-    if (!shouldPublishSetupUsage(pipelineEntity)) {
+    if (!shouldPublishSetupUsage(pipelineEntity, gitMetadata)) {
       return;
     }
+    log.info(String.format("Publishing setup usages for pipeline [%s] in repo [%s] in default branch",
+        pipelineEntity.getIdentifier(), pipelineEntity.getRepo()));
     if (EmptyPredicate.isEmpty(referredEntities)) {
       deleteSetupUsagesForGivenPipeline(pipelineEntity);
       return;
@@ -224,14 +226,12 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
   }
 
   @VisibleForTesting
-  boolean shouldPublishSetupUsage(PipelineEntity pipelineEntity) {
-    //    TODO: Once the ticket https://harness.atlassian.net/browse/CDS-70970 is completed, we should be cleaning up
-    //    the second storeType check done from the Git context
+  boolean shouldPublishSetupUsage(PipelineEntity pipelineEntity, FilterCreationGitMetadata gitMetadata) {
     if (!StoreType.REMOTE.equals(pipelineEntity.getStoreType())
         && !StoreType.REMOTE.equals(GitAwareContextHelper.getStoreTypeFromGitContext())) {
       return true;
     } else {
-      return GitAwareContextHelper.isDefaultBranch();
+      return gitMetadata != null && gitMetadata.isGitDefaultBranch();
     }
   }
 

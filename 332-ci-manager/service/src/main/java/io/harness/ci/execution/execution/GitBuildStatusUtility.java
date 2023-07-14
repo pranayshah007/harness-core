@@ -127,6 +127,7 @@ public class GitBuildStatusUtility {
    */
   public void sendStatusToGit(Status status, StepParameters stepParameters, Ambiance ambiance, String accountId) {
     String commitSha = null;
+    String prNumber = null;
     OptionalSweepingOutput optionalSweepingOutput =
         executionSweepingOutputService.resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(CODEBASE));
     CodebaseSweepingOutput codebaseSweepingOutput = null;
@@ -134,6 +135,7 @@ public class GitBuildStatusUtility {
       codebaseSweepingOutput = (CodebaseSweepingOutput) optionalSweepingOutput.getOutput();
       if (codebaseSweepingOutput != null) {
         commitSha = codebaseSweepingOutput.getCommitSha();
+        prNumber = codebaseSweepingOutput.getPrNumber();
       }
     }
     BuildStatusUpdateParameter buildStatusUpdateParameter = fetchBuildStatusUpdateParameter(stepParameters, ambiance);
@@ -148,7 +150,7 @@ public class GitBuildStatusUtility {
 
     if (buildStatusUpdateParameter != null && isNotEmpty(commitSha)) {
       CIBuildStatusPushParameters ciBuildStatusPushParameters =
-          getCIBuildStatusPushParams(ambiance, buildStatusUpdateParameter, status, commitSha);
+          getCIBuildStatusPushParams(ambiance, buildStatusUpdateParameter, status, commitSha, prNumber);
 
       /* This check is require because delegate is not honouring the ordering and
          there are instances where we are overriding final status with prev state status i.e running specially in case
@@ -217,6 +219,7 @@ public class GitBuildStatusUtility {
         .repo(params.getRepo())
         .owner(params.getOwner())
         .sha(params.getSha())
+        .prNumber(params.getPrNumber())
         .identifier(params.getIdentifier())
         .target_url(params.getTarget_url())
         .userName(params.getUserName())
@@ -253,8 +256,8 @@ public class GitBuildStatusUtility {
     return null;
   }
 
-  public CIBuildStatusPushParameters getCIBuildStatusPushParams(
-      Ambiance ambiance, BuildStatusUpdateParameter buildStatusUpdateParameter, Status status, String commitSha) {
+  public CIBuildStatusPushParameters getCIBuildStatusPushParams(Ambiance ambiance,
+      BuildStatusUpdateParameter buildStatusUpdateParameter, Status status, String commitSha, String prNumber) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     ConnectorDetails gitConnector = getGitConnector(ngAccess, buildStatusUpdateParameter.getConnectorIdentifier());
     validateSCMType(gitConnector.getConnectorType());
@@ -282,6 +285,7 @@ public class GitBuildStatusUtility {
         .desc(generateDesc(ambiance.getMetadata().getPipelineIdentifier(), ambiance.getMetadata().getExecutionUuid(),
             buildStatusUpdateParameter.getName(), status.name()))
         .sha(commitSha)
+        .prNumber(prNumber)
         .gitSCMType(gitSCMType)
         .connectorDetails(gitConnector)
         .userName(connectorUtils.fetchUserName(gitConnector))

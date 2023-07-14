@@ -130,7 +130,8 @@ public class ResourceGroupFactory {
     Set<ResourceSelector> selectors = new HashSet<>();
     ResourceFilter resourceFilter = resourceGroupDTO.getResourceFilter();
     List<ScopeSelector> includedScopes = resourceGroupDTO.getIncludedScopes();
-    if (isEmpty(includedScopes) || resourceFilter == null) {
+    if (isEmpty(includedScopes) || resourceFilter == null
+        || (!resourceFilter.isIncludeAllResources() && isEmpty(resourceFilter.getResources()))) {
       return new HashSet<>();
     }
 

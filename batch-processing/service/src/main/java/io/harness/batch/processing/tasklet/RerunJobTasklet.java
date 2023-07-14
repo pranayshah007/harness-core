@@ -45,7 +45,7 @@ public class RerunJobTasklet implements Tasklet {
     Instant startInstant = Instant.ofEpochMilli(jobConstants.getJobStartTime()).minus(3, ChronoUnit.DAYS);
     CEMetadataRecord ceMetadataRecord = ceMetadataRecordDao.getByAccountId(accountId);
     if (null != ceMetadataRecord && isCloudDataPresent(ceMetadataRecord)) {
-      log.info("invalidate jobs for {}", accountId);
+      log.info("invalidating ANOMALY_DETECTION_CLOUD jobs for {} for last 3 days", accountId);
       ImmutableList<String> batchJobs = ImmutableList.of(BatchJobType.ANOMALY_DETECTION_CLOUD.toString());
       batchJobScheduledDataService.invalidateJobs(accountId, batchJobs, startInstant);
     }

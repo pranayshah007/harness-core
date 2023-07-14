@@ -84,33 +84,6 @@ public abstract class AbstractStageVariableCreator<T extends AbstractStageNode> 
     });
   }
 
-  protected void addVariablesForOutputVariables(
-      YamlField variablesField, Map<String, YamlProperties> yamlPropertiesMap, String original, String replacement) {
-    List<YamlNode> variableNodes = variablesField.getNode().asArray();
-    variableNodes.forEach(variableNode -> {
-      YamlField uuidNode = variableNode.getField(YAMLFieldNameConstants.UUID);
-      if (uuidNode != null) {
-        String fqn = YamlUtils.getFullyQualifiedName(uuidNode.getNode()).replace(original, replacement);
-        String localName = YamlUtils.getQualifiedNameTillGivenField(uuidNode.getNode(), YAMLFieldNameConstants.STAGES)
-                               .replace(original, replacement);
-        YamlField valueNode = variableNode.getField(YAMLFieldNameConstants.VALUE);
-        String variableName =
-            Objects.requireNonNull(variableNode.getField(YAMLFieldNameConstants.NAME)).getNode().asText();
-        if (valueNode == null) {
-          throw new InvalidRequestException(
-              "Variable with name \"" + variableName + "\" added without any value. Fqn: " + fqn);
-        }
-        yamlPropertiesMap.put(valueNode.getNode().getCurrJsonNode().textValue(),
-            YamlProperties.newBuilder()
-                .setLocalName(localName)
-                .setFqn(fqn)
-                .setVariableName(variableName)
-                .setVisible(true)
-                .build());
-      }
-    });
-  }
-
   private String getStageLocalName(String fqn) {
     String[] split = fqn.split("\\.");
     return fqn.replaceFirst(split[0], YAMLFieldNameConstants.STAGE);

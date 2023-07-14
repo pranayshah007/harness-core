@@ -145,6 +145,10 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
           deleteCIStageOutputs(ambiance);
           CICleanupTaskParams ciCleanupTaskParams = stageCleanupUtility.buildAndfetchCleanUpParameters(ambiance);
 
+          if (ciCleanupTaskParams == null) {
+            return;
+          }
+
           log.info("Received event with status {} to clean planExecutionId {}, stage {}", status,
               ambiance.getPlanExecutionId(), level.getIdentifier());
 

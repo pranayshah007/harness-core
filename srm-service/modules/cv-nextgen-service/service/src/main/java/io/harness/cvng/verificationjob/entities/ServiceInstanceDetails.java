@@ -15,8 +15,11 @@ import lombok.Data;
 @Builder
 public class ServiceInstanceDetails {
   // Determined by customer, whether these instances are valid for this analysis
-  private boolean valid;
+  private boolean shouldUseNodesFromCD;
   private List<String> deployedServiceInstances;
   private List<String> serviceInstancesBeforeDeployment;
   private List<String> serviceInstancesAfterDeployment;
+
+  private String testNodeRegExPattern;
+  private String controlNodeRegExPattern;
 }

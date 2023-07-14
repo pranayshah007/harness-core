@@ -29,14 +29,9 @@ import io.harness.ng.webhook.entities.WebhookEvent.WebhookEventsKeys;
 import io.harness.ng.webhook.services.api.WebhookEventProcessingService;
 import io.harness.product.ci.scm.proto.ParseWebhookResponse;
 import io.harness.repositories.ng.webhook.spring.WebhookEventRepository;
-import io.harness.service.WebhookParserSCMService;
 
-import com.google.common.base.Stopwatch;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
-import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -48,7 +43,6 @@ public class WebhookEventProcessingServiceImpl
     implements WebhookEventProcessingService, MongoPersistenceIterator.Handler<WebhookEvent> {
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private MongoTemplate mongoTemplate;
-  @Inject private WebhookParserSCMService webhookParserSCMService;
   @Inject private WebhookHelper webhookHelper;
   @Inject WebhookEventRepository webhookEventRepository;
 
@@ -79,7 +73,7 @@ public class WebhookEventProcessingServiceImpl
     ParseWebhookResponse parseWebhookResponse = null;
     SourceRepoType sourceRepoType = webhookHelper.getSourceRepoType(event);
     if (sourceRepoType != SourceRepoType.UNRECOGNIZED) {
-      parseWebhookResponse = invokeScmService(event);
+      parseWebhookResponse = webhookHelper.invokeScmService(event);
     }
 
     try {
@@ -94,38 +88,6 @@ public class WebhookEventProcessingServiceImpl
 
     } finally {
       webhookEventRepository.delete(event);
-    }
-  }
-
-  public ParseWebhookResponse invokeScmService(WebhookEvent event) {
-    try {
-      Stopwatch stopwatch = Stopwatch.createStarted();
-      ParseWebhookResponse parseWebhookResponse =
-          webhookParserSCMService.parseWebhookUsingSCMAPI(event.getHeaders(), event.getPayload());
-      log.info("Finished parsing webhook payload in {} ", stopwatch.elapsed(TimeUnit.SECONDS));
-      return parseWebhookResponse;
-    } catch (Exception exception) {
-      logIfScmUnavailableException(event, exception);
-    }
-
-    // This failure could also mean, SCM could not parse payload. This may be some event SCM does not yet support.
-    // We still need to continue, as someone might have configured Custom trigger on this.
-    return null;
-  }
-
-  private void logIfScmUnavailableException(WebhookEvent event, Exception exception) {
-    if (StatusRuntimeException.class.isAssignableFrom(exception.getClass())) {
-      StatusRuntimeException e = (StatusRuntimeException) exception;
-
-      if (e.getStatus().getCode() == Status.Code.UNAVAILABLE) {
-        // SCM service could not be accessed.
-        log.error(new StringBuilder(128)
-                      .append("SCM service unavailable for parsing webhook payload. EventId")
-                      .append(event.getUuid())
-                      .append(", Exception: ")
-                      .append(e)
-                      .toString());
-      }
     }
   }
 

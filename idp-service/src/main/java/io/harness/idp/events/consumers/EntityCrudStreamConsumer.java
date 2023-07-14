@@ -37,7 +37,8 @@ public class EntityCrudStreamConsumer extends RedisTraceConsumer implements IdpR
   private final Consumer redisConsumer;
   private final List<MessageListener> messageListenersList;
   private final QueueController queueController;
-  private final AtomicBoolean shouldStop;
+  final AtomicBoolean shouldStop;
+
   @Inject
   public EntityCrudStreamConsumer(@Named(ENTITY_CRUD) Consumer redisConsumer,
       @Named(ENTITY_CRUD) MessageListener crudListener, QueueController queueController) {
@@ -71,7 +72,7 @@ public class EntityCrudStreamConsumer extends RedisTraceConsumer implements IdpR
     }
   }
 
-  private void readEventsFrameworkMessages() throws InterruptedException {
+  void readEventsFrameworkMessages() throws InterruptedException {
     try {
       pollAndProcessMessages();
     } catch (EventsFrameworkDownException e) {
@@ -80,7 +81,7 @@ public class EntityCrudStreamConsumer extends RedisTraceConsumer implements IdpR
     }
   }
 
-  private void pollAndProcessMessages() {
+  void pollAndProcessMessages() {
     List<Message> messages;
     String messageId;
     boolean messageProcessed;

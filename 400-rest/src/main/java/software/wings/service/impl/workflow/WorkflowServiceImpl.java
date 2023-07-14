@@ -35,6 +35,7 @@ import static io.harness.expression.ExpressionEvaluator.DEFAULT_HELMCHART_VARIAB
 import static io.harness.expression.ExpressionEvaluator.matchesVariablePattern;
 import static io.harness.govern.Switch.noop;
 import static io.harness.govern.Switch.unhandled;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.provision.TerraformConstants.INHERIT_APPROVED_PLAN;
@@ -60,7 +61,7 @@ import static software.wings.beans.EntityType.SERVICE;
 import static software.wings.beans.EntityType.WORKFLOW;
 import static software.wings.beans.NotificationRule.NotificationRuleBuilder.aNotificationRule;
 import static software.wings.beans.PhaseStep.PhaseStepBuilder.aPhaseStep;
-import static software.wings.beans.WorkflowExecution.WFE_EXECUTIONS_SEARCH_WORKFLOWID;
+import static software.wings.beans.WorkflowExecution.ACCOUNTID_APPID_WORKFLOWID_CREATEDAT_CDPAGECANDIDATE_STATUS;
 import static software.wings.common.InfrastructureConstants.INFRA_ID_EXPRESSION;
 import static software.wings.common.ProvisionerConstants.GENERIC_ROLLBACK_NAME_FORMAT;
 import static software.wings.common.WorkflowConstants.WORKFLOW_INFRAMAPPING_VALIDATION_MESSAGE;
@@ -475,6 +476,7 @@ public class WorkflowServiceImpl implements WorkflowService {
     if (isNotEmpty(queryHint)) {
       findOptions.hint(BasicDBUtils.getIndexObject(Workflow.mongoIndexes(), queryHint));
     }
+    findOptions.limit(NO_LIMIT);
     return emptyIfNull(workflowQuery.asList(findOptions));
   }
 
@@ -700,8 +702,8 @@ public class WorkflowServiceImpl implements WorkflowService {
           List<WorkflowExecution> workflowExecutions;
 
           FindOptions findOptions = new FindOptions();
-          findOptions.hint(
-              BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), WFE_EXECUTIONS_SEARCH_WORKFLOWID));
+          findOptions.hint(BasicDBUtils.getIndexObject(
+              WorkflowExecution.mongoIndexes(), ACCOUNTID_APPID_WORKFLOWID_CREATEDAT_CDPAGECANDIDATE_STATUS));
           findOptions.limit(previousExecutionsCount);
           workflowExecutions = wingsPersistence.createAnalyticsQuery(WorkflowExecution.class)
                                    .filter(WorkflowExecutionKeys.workflowId, workflow.getUuid())

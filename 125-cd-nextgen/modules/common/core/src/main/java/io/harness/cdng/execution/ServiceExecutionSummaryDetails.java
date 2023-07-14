@@ -9,6 +9,7 @@ package io.harness.cdng.execution;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.cdng.artifact.ArtifactSummary;
+import io.harness.cdng.manifest.yaml.summary.ManifestSummary;
 
 import java.util.List;
 import lombok.Builder;
@@ -24,6 +25,7 @@ public class ServiceExecutionSummaryDetails {
   String deploymentType;
   boolean gitOpsEnabled;
   ArtifactsSummary artifacts;
+  ManifestsSummary manifests;
 
   @Data
   @Builder
@@ -32,5 +34,12 @@ public class ServiceExecutionSummaryDetails {
     private ArtifactSummary primary;
     private String artifactDisplayName;
     @Singular private List<ArtifactSummary> sidecars;
+  }
+
+  @Data
+  @Builder
+  @RecasterAlias("io.harness.cdng.execution.ServiceExecutionSummaryDetails$ManifestsSummary")
+  public static class ManifestsSummary {
+    @Singular private List<ManifestSummary> manifestSummaries;
   }
 }

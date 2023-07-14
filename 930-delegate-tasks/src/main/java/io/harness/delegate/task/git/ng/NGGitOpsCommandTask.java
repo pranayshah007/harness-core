@@ -57,6 +57,8 @@ import io.harness.git.model.CommitAndPushResult;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
 import io.harness.git.model.GitFileChange;
+import io.harness.git.model.RevertAndPushRequest;
+import io.harness.git.model.RevertAndPushResult;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -105,7 +107,9 @@ import org.jose4j.lang.JoseException;
 @OwnedBy(GITOPS)
 public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
   private static final String PR_TITLE = "Harness: Updating config overrides";
+  private static final String REVERT_PR_TITLE = "Harness: Reverting config overrides";
   private static final String COMMIT_MSG = "Updating Config files";
+  private static final String REVERT_COMMIT_MSG = "Reverting Config files";
   @Inject private SecretDecryptionService secretDecryptionService;
   @Inject private ScmFetchFilesHelperNG scmFetchFilesHelper;
   @Inject private GitFetchFilesTaskHelper gitFetchFilesTaskHelper;
@@ -124,6 +128,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
   public static final String CommitAndPush = "Commit and Push";
   public static final String CreatePR = "Create PR";
   public static final String MergePR = "Merge PR";
+  public static final String RevertPR = "Revert PR";
   public static final String PullRequestMessage = "Pull Request successfully merged";
 
   private LogCallback logCallback;
@@ -147,6 +152,8 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
         return handleMergePR(gitOpsTaskParams);
       case UPDATE_RELEASE_REPO:
         return handleUpdateReleaseRepo(gitOpsTaskParams);
+      case REVERT_PR:
+        return handleRevertPR(gitOpsTaskParams);
       default:
         return NGGitOpsResponse.builder()
             .taskStatus(TaskStatus.FAILURE)
@@ -214,6 +221,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
           .taskStatus(TaskStatus.SUCCESS)
           .commitId(sha)
           .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+          .isRevertPR(gitOpsTaskParams.isRevertPR())
           .build();
     } catch (Exception e) {
       logCallback.saveExecutionLog(e.getMessage(), ERROR, CommandExecutionStatus.FAILURE);
@@ -313,7 +321,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       logCallback.saveExecutionLog(sb.toString(), INFO);
       logCallback = markDoneAndStartNew(logCallback, CreatePR, commandUnitsProgress);
 
-      String prTitle = resolvePRTitle(gitOpsTaskParams);
+      String prTitle = resolvePRTitle(gitOpsTaskParams, false);
 
       CreatePRResponse createPRResponse =
           createPullRequest(scmConnector, newBranch, baseBranch, prTitle, gitOpsTaskParams.getAccountId());
@@ -342,8 +350,54 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     }
   }
 
-  public String resolvePRTitle(NGGitOpsTaskParams ngGitOpsTaskParams) {
-    return (StringUtils.isEmpty(ngGitOpsTaskParams.getPrTitle())) ? PR_TITLE : ngGitOpsTaskParams.getPrTitle();
+  public DelegateResponseData handleRevertPR(NGGitOpsTaskParams gitOpsTaskParams) {
+    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+    try {
+      log.info("Running Revert PR Task for activityId {}", gitOpsTaskParams.getActivityId());
+      logCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(), RevertPR, true, commandUnitsProgress);
+
+      // need this to set the auth mechanisms for the repo
+      gitOpsTaskHelper.setGitConfigCred(gitOpsTaskParams.getGitFetchFilesConfig(), logCallback);
+
+      String baseBranch = gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getBranch();
+      String newBranch = baseBranch + "_revert_" + RandomStringUtils.randomAlphabetic(12);
+      ScmConnector scmConnector =
+          gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getGitConfigDTO();
+
+      createNewBranch(scmConnector, newBranch, baseBranch);
+      RevertAndPushResult revertAndPushResult = revert(gitOpsTaskParams, REVERT_COMMIT_MSG, newBranch);
+
+      String prTitle = resolvePRTitle(gitOpsTaskParams, true);
+
+      CreatePRResponse createPRResponse =
+          createPullRequest(scmConnector, newBranch, baseBranch, prTitle, gitOpsTaskParams.getAccountId());
+
+      String prLink = getPRLink(createPRResponse.getNumber(), scmConnector, scmConnector.getConnectorType());
+
+      logCallback.saveExecutionLog("Created revert PR " + prLink, INFO);
+      logCallback.saveExecutionLog("Done.", INFO, CommandExecutionStatus.SUCCESS);
+
+      return NGGitOpsResponse.builder()
+          .commitId(revertAndPushResult.getGitCommitResult().getCommitId())
+          .prNumber(createPRResponse.getNumber())
+          .prLink(prLink)
+          .ref(newBranch)
+          .taskStatus(TaskStatus.SUCCESS)
+          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+          .build();
+    } catch (Exception e) {
+      log.error("Failed to execute NGGitOpsCommandTask", e);
+      logCallback.saveExecutionLog(Objects.toString(e.getMessage(), ""), ERROR, CommandExecutionStatus.FAILURE);
+      return NGGitOpsResponse.builder()
+          .taskStatus(TaskStatus.FAILURE)
+          .errorMessage(e.getMessage())
+          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+          .build();
+    }
+  }
+  public String resolvePRTitle(NGGitOpsTaskParams ngGitOpsTaskParams, boolean isRevertPR) {
+    return (StringUtils.isEmpty(ngGitOpsTaskParams.getPrTitle())) ? isRevertPR ? REVERT_PR_TITLE : PR_TITLE
+                                                                  : ngGitOpsTaskParams.getPrTitle();
   }
 
   public String getPRLink(int prNumber, ScmConnector scmConnector, ConnectorType connectorType) {
@@ -406,6 +460,41 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     return ngGitService.commitAndPush(gitConfig, gitCommitRequest, getAccountId(), sshSessionConfig, true);
   }
 
+  /**
+   *  Method which calls the git client to revert a commit.
+   *
+   * @param gitOpsTaskParams
+   * @param commitMessage
+   * @param newBranch
+   * @return
+   */
+  public RevertAndPushResult revert(NGGitOpsTaskParams gitOpsTaskParams, String commitMessage, String newBranch) {
+    GitStoreDelegateConfig gitStoreDelegateConfig =
+        gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig();
+    ScmConnector scmConnector = gitStoreDelegateConfig.getGitConfigDTO();
+    SSHKeySpecDTO sshKeySpecDTO = gitStoreDelegateConfig.getSshKeySpecDTO();
+    GitConfigDTO gitConfig = ScmConnectorMapper.toGitConfigDTO(scmConnector);
+
+    gitConfig.setBranchName(newBranch);
+    List<EncryptedDataDetail> encryptionDetails = gitStoreDelegateConfig.getEncryptedDataDetails();
+    String commitId = gitStoreDelegateConfig.getCommitId();
+
+    gitDecryptionHelper.decryptGitConfig(gitConfig, encryptionDetails);
+    SshSessionConfig sshSessionConfig = gitDecryptionHelper.getSSHSessionConfig(sshKeySpecDTO, encryptionDetails);
+
+    RevertAndPushRequest gitRevertRequest = RevertAndPushRequest.builder()
+                                                .branch(newBranch)
+                                                .commitId(commitId)
+                                                .repoUrl(gitConfig.getUrl())
+                                                .accountId(gitOpsTaskParams.getAccountId())
+                                                .connectorId(gitOpsTaskParams.getConnectorInfoDTO().getName())
+                                                .pushOnlyIfHeadSeen(false)
+                                                .forcePush(true)
+                                                .commitMessage(commitMessage)
+                                                .build();
+
+    return ngGitService.revertCommitAndPush(gitConfig, gitRevertRequest, getAccountId(), sshSessionConfig, true);
+  }
   private LogCallback markDoneAndStartNew(
       LogCallback logCallback, String newName, CommandUnitsProgress commandUnitsProgress) {
     logCallback.saveExecutionLog("\nDone", LogLevel.INFO, CommandExecutionStatus.SUCCESS);

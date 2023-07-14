@@ -78,8 +78,9 @@ public class SetupUsageProducer {
                     EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
                 .setData(entityReferenceDTO.toByteString())
                 .build());
-        log.info("Emitted environment secret event with id {} for entityreference {} and accountId {}", messageId,
-            entityReferenceDTO, accountIdentifier);
+        log.info("Emitted environment secret event with id {} for env name {}, secret identifier {} and accountId {}",
+            messageId, envSecretVariable.getEnvName(), envSecretVariable.getHarnessSecretIdentifier(),
+            accountIdentifier);
       } catch (EventsFrameworkDownException e) {
         log.error("Failed to send event to events framework for env secret: {}, accountId: {} ",
             envVariable.getEnvName(), accountIdentifier, e);

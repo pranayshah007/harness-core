@@ -10,6 +10,7 @@ package io.harness.cvng.statemachine.services.impl;
 import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_MINUTES_DEFAULT;
 
 import io.harness.cvng.analysis.beans.LogClusterLevel;
+import io.harness.cvng.beans.cvnglog.CVNGLogTag;
 import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.entities.CVConfig;
@@ -18,6 +19,7 @@ import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.ExecutionLogService;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.core.utils.CVNGTaskMetadataUtils;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
@@ -75,8 +77,9 @@ public class DeploymentStateMachineServiceImpl extends AnalysisStateMachineServi
     stateMachine.setAccountId(verificationTask.getAccountId());
     stateMachine.setStateMachineIgnoreMinutes(STATE_MACHINE_IGNORE_MINUTES_DEFAULT);
     createDeploymentAnalysisState(stateMachine, inputForAnalysis, verificationJobInstance, cvConfigForDeployment);
+    List<CVNGLogTag> cvngLogTags = CVNGTaskMetadataUtils.getCvngLogTagsForTask(stateMachine.getUuid());
     executionLogService.getLogger(stateMachine)
-        .log(stateMachine.getLogLevel(), "Analysis state machine status: " + stateMachine.getStatus());
+        .log(stateMachine.getLogLevel(), cvngLogTags, "Analysis state machine status: " + stateMachine.getStatus());
     return stateMachine;
   }
 

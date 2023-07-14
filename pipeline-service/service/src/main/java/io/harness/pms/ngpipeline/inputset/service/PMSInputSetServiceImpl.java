@@ -473,7 +473,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
     String repoUrl = getRepoUrlAndCheckForFileUniqueness(
         accountIdentifier, orgIdentifier, projectIdentifier, inputSetIdentifier, isForceImport);
     String importedInputSetYAML =
-        gitAwareEntityHelper.fetchYAMLFromRemote(accountIdentifier, orgIdentifier, projectIdentifier);
+        gitAwareEntityHelper.fetchYAMLFromRemote(accountIdentifier, orgIdentifier, projectIdentifier, true);
     String inputSetVersion = inputSetsApiUtils.inputSetVersion(accountIdentifier, importedInputSetYAML);
     InputSetEntity inputSetEntity;
     switch (inputSetVersion) {

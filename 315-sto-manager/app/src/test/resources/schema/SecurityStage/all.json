@@ -159,6 +159,32 @@
                 }
               ]
             },
+            "cacheFrom": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheTo": {
+              "type": "string"
+            },
+            "caching": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "connectorRef": {
               "type": "string"
             },
@@ -4711,16 +4737,6 @@
         {
           "type": "object",
           "properties": {
-            "env": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/ParameterFieldMapStringString"
-                },
-                {
-                  "type": "string"
-                }
-              ]
-            },
             "image": {
               "type": "string"
             }
@@ -4753,16 +4769,6 @@
           "properties": {
             "command": {
               "type": "string"
-            },
-            "env": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/ParameterFieldMapStringString"
-                },
-                {
-                  "type": "string"
-                }
-              ]
             },
             "image": {
               "type": "string"

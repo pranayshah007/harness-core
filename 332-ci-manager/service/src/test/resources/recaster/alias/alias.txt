@@ -405,7 +405,7 @@ io.harness.delegate.beans.pcf.TasApplicationInfo
 io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO
 io.harness.delegate.beans.connector.docker.DockerUserNamePasswordDTO
 io.harness.delegate.beans.connector.docker.outcome.DockerConnectorOutcomeDTO
-io.harness.logging.UnitProgress
+io.harness.logging.serializer.kryo.UnitProgressKryoSerializer
 io.harness.delegate.beans.instancesync.info.SpotServerInstanceInfo
 io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig
 io.harness.k8s.model.K8sContainer
@@ -413,3 +413,5 @@ io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO
 io.harness.delegate.beans.logstreaming.UnitProgressData
 io.harness.steps.SectionStepSweepingOutput
 io.harness.spotinst.model.ElastiGroup
+io.harness.delegate.cdng.execution.StepExecutionInstanceInfo
+io.harness.delegate.cdng.execution.K8sStepInstanceInfo

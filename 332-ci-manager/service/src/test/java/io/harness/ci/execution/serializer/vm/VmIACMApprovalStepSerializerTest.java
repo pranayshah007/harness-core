@@ -73,23 +73,25 @@ public class VmIACMApprovalStepSerializerTest {
     Map<String, String> env = new HashMap<>();
     env.put("command", "Apply");
     IACMApprovalInfo stepInfo = IACMApprovalInfo.builder()
-                                    .env(ParameterField.createValueField(env))
+                                    .envVariables(ParameterField.createValueField(env))
                                     .identifier("id")
                                     .name("name")
                                     .image(ParameterField.<String>builder().build())
+                                    .envVariables(ParameterField.createValueField(new HashMap<>() {
+                                      {
+                                        put("ENV_SECRETS_keytest1", "${ngSecretManager.obtain");
+                                        put("PLUGIN_keytest2", "keyValue2");
+                                        put("TFVARS_SECRETS_keytest3", "${ngSecretManager.obtain");
+                                        put("TF_keytest4", "keyValue4");
+                                        put("PLUGIN_COMMAND", "approval");
+                                        put("PLUGIN_CONNECTOR_REF", "connectorRef");
+                                        put("PLUGIN_PROVISIONER", "provisioner");
+                                      }
+                                    }))
                                     .build();
 
     Mockito.mockStatic(CIStepInfoUtils.class);
     when(CIStepInfoUtils.getPluginCustomStepImage(any(), any(), any(), any())).thenReturn("imageName");
-    when(iacmStepsUtils.getIACMEnvVariables(any(), any(), any())).thenReturn(new HashMap<>() {
-      {
-        put("ENV_SECRETS_keytest1", "${ngSecretManager.obtain");
-        put("PLUGIN_keytest2", "keyValue2");
-        put("TFVARS_SECRETS_keytest3", "${ngSecretManager.obtain");
-        put("TF_keytest4", "keyValue4");
-        put("PLUGIN_COMMAND", "approval");
-      }
-    });
 
     Mockito.mockStatic(IntegrationStageUtils.class);
     when(IntegrationStageUtils.getFullyQualifiedImageName(any(), any())).thenReturn("imageName");
@@ -98,7 +100,7 @@ public class VmIACMApprovalStepSerializerTest {
     when(connectorUtils.getConnectorDetails(any(), any())).thenReturn(ConnectorDetails.builder().build());
 
     VmPluginStep vmPluginStep = vmIACMApprovalStepSerializer.serialize(ambiance, stepInfo, null, null);
-    assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(5);
+    assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(6);
     assertThat(vmPluginStep.getEnvVariables().get("ENV_SECRETS_keytest1")).contains("${ngSecretManager.obtain");
     assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_keytest2")).isEqualTo("keyValue2");
     assertThat(vmPluginStep.getEnvVariables().get("TFVARS_SECRETS_keytest3")).contains("${ngSecretManager.obtain");

@@ -390,6 +390,7 @@ public class PipelineMigrationService extends NgMigrationService {
                               .flowControl(
                                   FlowControlConfig.builder()
                                       .barriers(barrierNames.stream()
+                                                    .distinct()
                                                     .map(barrierName
                                                         -> BarrierInfoConfig.builder()
                                                                .name(barrierName)

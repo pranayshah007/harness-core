@@ -45,6 +45,7 @@ import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
+import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.service.entity.ServiceEntity;
@@ -286,8 +287,10 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
       }
       outputProperties.addAll(handleManifestProperties(specField, ngServiceConfig));
       outputProperties.addAll(handleArtifactProperties(specField, ngServiceConfig));
-      handleServiceOverridesV2(ctx, environmentRef, serviceRef, serviceVariables, infraIdentifier, accountIdentifier,
-          orgIdentifier, projectIdentifier, optionalService);
+      if (optionalService.isPresent()) {
+        handleServiceOverridesV2(ctx, environmentRef, serviceRef, serviceVariables, infraIdentifier, accountIdentifier,
+            orgIdentifier, projectIdentifier, optionalService.get());
+      }
       outputProperties.addAll(handleServiceVariables(specField, serviceVariables, ngServiceConfig));
     } else {
       outputProperties.addAll(handleServiceStepOutcome(serviceField));
@@ -302,8 +305,8 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
 
   private void handleServiceOverridesV2(VariableCreationContext ctx, ParameterField<String> environmentRef,
       ParameterField<String> serviceRef, Set<String> serviceVariables, String infraIdentifier, String accountIdentifier,
-      String orgIdentifier, String projectIdentifier, Optional<ServiceEntity> optionalService) {
-    if (environmentRef != null && !environmentRef.isExpression() && optionalService.isPresent()) {
+      String orgIdentifier, String projectIdentifier, ServiceEntity serviceEntity) {
+    if (environmentRef != null && !environmentRef.isExpression()) {
       if (overrideV2ValidationHelper.isOverridesV2Enabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
         Map<Scope, NGServiceOverridesEntity> envServiceOverride =
             serviceOverridesServiceV2.getEnvServiceOverride(accountIdentifier, orgIdentifier, projectIdentifier,
@@ -316,7 +319,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
           addOverrideVariablesToSet(serviceVariables, infraServiceOverride);
         }
       } else {
-        serviceVariables.addAll(getServiceOverridesVariables(ctx, environmentRef, optionalService.get()));
+        serviceVariables.addAll(getServiceOverridesVariables(ctx, environmentRef, serviceEntity));
       }
     }
   }
@@ -334,7 +337,12 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     List<NGVariable> ngVariableList = new ArrayList<>();
     if (isNotEmpty(serviceOverride)) {
       List<NGServiceOverridesEntity> serviceOverridesEntities = new ArrayList<>(serviceOverride.values());
-      serviceOverridesEntities.forEach(entity -> ngVariableList.addAll(entity.getSpec().getVariables()));
+      serviceOverridesEntities.forEach(entity -> {
+        List<NGVariable> ngVariables = entity.getSpec().getVariables();
+        if (isNotEmpty(ngVariables)) {
+          ngVariableList.addAll(ngVariables);
+        }
+      });
     }
     return ngVariableList;
   }
@@ -500,7 +508,13 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
               EnvironmentMapper.toNGEnvironmentConfig(optionalEnvironment.get());
           // all env.variables also accessed by serviceVariables
           if (ngEnvironmentConfig != null) {
-            envVariables.addAll(ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables());
+            NGEnvironmentInfoConfig ngEnvironmentInfoConfig = ngEnvironmentConfig.getNgEnvironmentInfoConfig();
+            if (ngEnvironmentInfoConfig != null) {
+              List<NGVariable> ngVariables = ngEnvironmentInfoConfig.getVariables();
+              if (isNotEmpty(ngVariables)) {
+                envVariables.addAll(ngVariables);
+              }
+            }
           }
         }
         outputProperties.addAll(handleEnvironmentOutcome(specField, envVariables));

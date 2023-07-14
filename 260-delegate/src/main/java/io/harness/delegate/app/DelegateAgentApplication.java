@@ -26,6 +26,8 @@ import io.harness.serializer.YamlUtils;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 
+import software.wings.jersey.KryoFeature;
+
 import ch.qos.logback.classic.LoggerContext;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -163,6 +165,8 @@ public class DelegateAgentApplication extends Application<DelegateAgentConfig> {
 
   private void registerResources(final Environment environment, final Injector injector) {
     environment.jersey().register(injector.getInstance(HealthResource.class));
+    environment.jersey().register(injector.getInstance(ExecutionResponseResource.class));
     environment.jersey().register(injector.getInstance(DelegateAgentMetricResource.class));
+    environment.jersey().register(injector.getInstance(KryoFeature.class));
   }
 }

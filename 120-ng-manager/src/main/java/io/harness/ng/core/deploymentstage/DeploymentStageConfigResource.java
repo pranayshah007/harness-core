@@ -90,7 +90,19 @@ public class DeploymentStageConfigResource {
       serviceRefs = getServiceRefs(actualStage.getDeploymentStageConfig());
     }
 
-    final List<String> environmentRefs = getEnvironmentRefs(actualStage.getDeploymentStageConfig());
+    List<String> environmentRefs = null;
+    final Optional<String> referredStageForEnvironmentOptional = getReferredStageForEnvironment(actualStage);
+    if (referredStageForEnvironmentOptional.isPresent()) {
+      final String referredStageIdentifier = referredStageForEnvironmentOptional.get();
+      DeploymentStageNode referredStage = getDeploymentStageNode(referredStageIdentifier, stageYamlNodes);
+      if (referredStage == null) {
+        throw new InvalidRequestException(
+            format("Could not find referred stage %s in pipeline yaml", referredStageIdentifier));
+      }
+      environmentRefs = getEnvironmentRefs(referredStage.getDeploymentStageConfig());
+    } else {
+      environmentRefs = getEnvironmentRefs(actualStage.getDeploymentStageConfig());
+    }
     if (serviceRefs.size() == 1 && environmentRefs.size() == 1) {
       CDStageMetaDataDTOBuilder.environmentRef(environmentRefs.get(0));
       CDStageMetaDataDTOBuilder.serviceRef(serviceRefs.get(0));
@@ -114,6 +126,15 @@ public class DeploymentStageConfigResource {
     } else if (deploymentStageConfig.getService() != null
         && deploymentStageConfig.getService().getUseFromStage() != null) {
       return Optional.of(deploymentStageConfig.getService().getUseFromStage().getStage());
+    }
+    return Optional.empty();
+  }
+
+  private Optional<String> getReferredStageForEnvironment(DeploymentStageNode deploymentStageNode) {
+    final DeploymentStageConfig deploymentStageConfig = deploymentStageNode.getDeploymentStageConfig();
+    if (deploymentStageConfig.getEnvironment() != null
+        && deploymentStageConfig.getEnvironment().getUseFromStage() != null) {
+      return Optional.of(deploymentStageConfig.getEnvironment().getUseFromStage().getStage());
     }
     return Optional.empty();
   }

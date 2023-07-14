@@ -17,6 +17,7 @@ import static io.harness.delegate.beans.TaskData.DEFAULT_ASYNC_CALL_TIMEOUT;
 import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
 import static io.harness.delegate.task.TaskFailureReason.EXPIRED;
 import static io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability;
+import static io.harness.delegate.utils.DelegateServiceConstants.HEARTBEAT_EXPIRY_TIME;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.ARPIT;
 import static io.harness.rule.OwnerRule.ARVIND;
@@ -37,7 +38,6 @@ import static software.wings.beans.Environment.Builder.anEnvironment;
 import static software.wings.beans.GcpKubernetesInfrastructureMapping.Builder.aGcpKubernetesInfrastructureMapping;
 import static software.wings.service.impl.AssignDelegateServiceImpl.BLACKLIST_TTL;
 import static software.wings.service.impl.AssignDelegateServiceImpl.ERROR_MESSAGE;
-import static software.wings.service.impl.AssignDelegateServiceImpl.MAX_DELEGATE_LAST_HEARTBEAT;
 import static software.wings.service.impl.AssignDelegateServiceImpl.SCOPE_WILDCARD;
 import static software.wings.service.impl.AssignDelegateServiceImpl.WHITELIST_TTL;
 import static software.wings.service.impl.AssignDelegateServiceImplTest.CriteriaType.MATCHING_CRITERIA;
@@ -137,7 +137,6 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.assertj.core.util.Lists;
 import org.assertj.core.util.Sets;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -282,7 +281,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
     for (DelegateScopeTestData test : tests) {
       Delegate delegate =
           delegateBuilder.includeScopes(test.getIncludeScopes()).excludeScopes(test.getExcludeScopes()).build();
-      when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID", false)).thenReturn(delegate);
+      when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID")).thenReturn(delegate);
 
       assertThat(assignDelegateService.canAssign("DELEGATE_ID", delegateTaskBuilder.build()))
           .isEqualTo(test.isAssignable());
@@ -312,7 +311,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                             .includeScopes(ImmutableList.of(
                                 DelegateScope.builder().applications(ImmutableList.of("APPLICATION_ID")).build()))
                             .build();
-    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID", false)).thenReturn(delegate);
+    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID")).thenReturn(delegate);
     when(featureFlagService.isEnabled(any(), anyString())).thenReturn(true);
 
     assertThat(assignDelegateService.canAssign("DELEGATE_ID", delegateTaskBuilder.build())).isEqualTo(true);
@@ -321,7 +320,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                    .includeScopes(ImmutableList.of(
                        DelegateScope.builder().environments(ImmutableList.of("ENVIRONMENT_ID")).build()))
                    .build();
-    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID", false)).thenReturn(delegate);
+    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID")).thenReturn(delegate);
 
     delegateTaskBuilder.setupAbstraction("envId", SCOPE_WILDCARD);
 
@@ -351,7 +350,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                             .excludeScopes(ImmutableList.of(
                                 DelegateScope.builder().applications(ImmutableList.of("APPLICATION_ID")).build()))
                             .build();
-    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID", false)).thenReturn(delegate);
+    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID")).thenReturn(delegate);
     when(featureFlagService.isEnabled(any(), anyString())).thenReturn(true);
 
     assertThat(assignDelegateService.canAssign("DELEGATE_ID", delegateTaskBuilder.build())).isEqualTo(true);
@@ -360,7 +359,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                    .excludeScopes(ImmutableList.of(
                        DelegateScope.builder().environments(ImmutableList.of("ENVIRONMENT_ID")).build()))
                    .build();
-    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID", false)).thenReturn(delegate);
+    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID")).thenReturn(delegate);
 
     delegateTaskBuilder.setupAbstraction("enviId", SCOPE_WILDCARD);
 
@@ -638,7 +637,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
             .build();
 
     for (DelegateProfileScopeTestData test : tests) {
-      when(delegateCache.get(accountId, test.getDelegate().getUuid(), false)).thenReturn(test.getDelegate());
+      when(delegateCache.get(accountId, test.getDelegate().getUuid())).thenReturn(test.getDelegate());
 
       DelegateProfile delegateProfile = DelegateProfile.builder()
                                             .uuid(test.getDelegate().getDelegateProfileId())
@@ -666,7 +665,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                                                   .delegateProfileId(generateUuid())
                                                   .supportedTaskTypes(Arrays.asList(TaskType.HTTP.name()))
                                                   .build();
-    when(delegateCache.get(accountId, delegateWithNonExistingProfile.getUuid(), false))
+    when(delegateCache.get(accountId, delegateWithNonExistingProfile.getUuid()))
         .thenReturn(delegateWithNonExistingProfile);
     assertThat(assignDelegateService.canAssign(delegateWithNonExistingProfile.getUuid(),
                    DelegateTask.builder()
@@ -857,7 +856,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
 
     for (TagTestData test : tests) {
       Delegate delegate = delegateBuilder.tags(test.getDelegateTags()).build();
-      when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID", false)).thenReturn(delegate);
+      when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID")).thenReturn(delegate);
       when(delegateService.retrieveDelegateSelectors(delegate, true))
           .thenReturn(delegate.getTags() == null ? new HashSet<>() : new HashSet<>(test.getDelegateTags()));
 
@@ -871,7 +870,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
 
     for (TagTestData test : tests) {
       Delegate delegate = delegateBuilder.tags(test.getDelegateTags()).build();
-      when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID", false)).thenReturn(delegate);
+      when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID")).thenReturn(delegate);
       when(delegateService.retrieveDelegateSelectors(delegate, true))
           .thenReturn(delegate.getTags() == null ? new HashSet<>() : new HashSet<>(test.getDelegateTags()));
 
@@ -945,7 +944,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
 
     for (NameTestData test : tests) {
       Delegate delegate = delegateBuilder.delegateName(test.getDelegateName()).hostName(test.getHostName()).build();
-      when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID", false)).thenReturn(delegate);
+      when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID")).thenReturn(delegate);
 
       DelegateTask delegateTask = delegateTaskBuilder.executionCapabilities(test.getExecutionCapabilities()).build();
       assertThat(assignDelegateService.canAssign("DELEGATE_ID", delegateTask)).isEqualTo(test.isAssignable());
@@ -1117,7 +1116,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                             .accountId("ACCOUNT_ID")
                             .uuid("DELEGATE_ID")
                             .status(ENABLED)
-                            .lastHeartBeat(clock.millis() - MAX_DELEGATE_LAST_HEARTBEAT - 1000)
+                            .lastHeartBeat(clock.millis() - HEARTBEAT_EXPIRY_TIME.toMillis() - 1000)
                             .build();
     persistence.save(delegate);
     persistence.save(DelegateConnectionResult.builder()
@@ -1197,7 +1196,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                             .excludeScopes(emptyList())
                             .supportedTaskTypes(Arrays.asList(TaskType.HTTP.name()))
                             .build();
-    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID", false)).thenReturn(delegate);
+    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID")).thenReturn(delegate);
     assertThat(assignDelegateService.canAssign("DELEGATE_ID", delegateTask)).isTrue();
   }
 
@@ -1223,7 +1222,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                             .excludeScopes(singletonList(null))
                             .supportedTaskTypes(Arrays.asList(TaskType.HTTP.name()))
                             .build();
-    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID", false)).thenReturn(delegate);
+    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID")).thenReturn(delegate);
     assertThat(assignDelegateService.canAssign("DELEGATE_ID", delegateTask)).isTrue();
   }
 
@@ -1253,7 +1252,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                             .excludeScopes(emptyList())
                             .supportedTaskTypes(Arrays.asList(TaskType.HTTP.name()))
                             .build();
-    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID", false)).thenReturn(delegate);
+    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID")).thenReturn(delegate);
     assertThat(assignDelegateService.canAssign("DELEGATE_ID", delegateTask)).isTrue();
   }
 
@@ -1313,7 +1312,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                             .supportedTaskTypes(Arrays.asList(TaskType.SCRIPT.name()))
                             .build();
     when(infrastructureMappingService.get("APP_ID", "infraMapping_Id")).thenReturn(infrastructureMapping);
-    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID", false)).thenReturn(delegate);
+    when(delegateCache.get("ACCOUNT_ID", "DELEGATE_ID")).thenReturn(delegate);
     assertThat(assignDelegateService.canAssign("DELEGATE_ID", delegateTask)).isTrue();
 
     assertThat(assignDelegateService.canAssign("DELEGATE_ID", delegateTask2)).isFalse();
@@ -1548,7 +1547,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
     Delegate activeDelegate1 =
         createDelegateBuilder().accountId(accountId).uuid(delegateId).hostName("hostname").build();
     when(accountDelegatesCache.get(accountId)).thenReturn(asList(activeDelegate1));
-    when(delegateCache.get(accountId, delegateId, false)).thenReturn(activeDelegate1);
+    when(delegateCache.get(accountId, delegateId)).thenReturn(activeDelegate1);
 
     DelegateTask delegateTask = DelegateTask.builder()
                                     .uuid(uuid)
@@ -1588,7 +1587,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
     Delegate activeDelegate1 =
         createDelegateBuilder().accountId(accountId).uuid(delegateId).hostName("hostname").build();
     when(accountDelegatesCache.get(accountId)).thenReturn(asList(activeDelegate1));
-    when(delegateCache.get(accountId, delegateId, false)).thenReturn(activeDelegate1);
+    when(delegateCache.get(accountId, delegateId)).thenReturn(activeDelegate1);
 
     DelegateTask delegateTask = DelegateTask.builder()
                                     .uuid(uuid)
@@ -1689,7 +1688,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                                     .supportedTaskTypes(Arrays.asList(TaskType.HTTP.name()))
                                     .build();
     when(accountDelegatesCache.get(accountId)).thenReturn(Arrays.asList(eligibleDelegate));
-    when(delegateCache.get(accountId, eligibleDelegateId, false)).thenReturn(eligibleDelegate);
+    when(delegateCache.get(accountId, eligibleDelegateId)).thenReturn(eligibleDelegate);
 
     DelegateTask taskWithCapability = DelegateTask.builder()
                                           .accountId(accountId)
@@ -1744,8 +1743,8 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                              .supportedTaskTypes(Arrays.asList(TaskType.HTTP.name()))
                              .build();
     when(accountDelegatesCache.get(accountId)).thenReturn(Arrays.asList(delegate1, delegate2));
-    when(delegateCache.get(accountId, delegate1Id, false)).thenReturn(delegate1);
-    when(delegateCache.get(accountId, delegate2Id, false)).thenReturn(delegate2);
+    when(delegateCache.get(accountId, delegate1Id)).thenReturn(delegate1);
+    when(delegateCache.get(accountId, delegate2Id)).thenReturn(delegate2);
 
     DelegateTask taskWithCapability = DelegateTask.builder()
                                           .accountId(accountId)
@@ -1782,12 +1781,12 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
   @Test
   @Owner(developers = MARKO)
   @Category(UnitTests.class)
-  @Ignore("Platform Team will fix later")
   public void testShouldValidate() throws ExecutionException {
     String accountId = generateUuid();
 
     DelegateTaskBuilder taskBuilder = DelegateTask.builder()
                                           .accountId(accountId)
+                                          .uuid(generateUuid())
                                           .description("HTTP task")
                                           .data(TaskData.builder().taskType(TaskType.HTTP.name()).build());
 
@@ -1904,7 +1903,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                             .supportedTaskTypes(Arrays.asList(TaskType.HTTP.name()))
                             .build();
 
-    when(delegateCache.get(accountId, delegateId, false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegateId)).thenReturn(delegate);
 
     // Test delegate cg and task cg
     canAssignCgNgAssert(delegateTask, delegate, false, null, true);
@@ -1956,7 +1955,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                             .build();
 
     // Test matching mustExecuteOnDelegateId
-    when(delegateCache.get(accountId, delegateId, false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegateId)).thenReturn(delegate);
 
     DelegateEntityOwner orgOwner = DelegateEntityOwner.builder().identifier("o1").build();
     DelegateEntityOwner projectOwner = DelegateEntityOwner.builder().identifier("o1/p1").build();
@@ -2082,8 +2081,8 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
 
     persistence.save(delegate1);
     persistence.save(delegate2);
-    when(delegateCache.get("accountId", delegateId1, false)).thenReturn(delegate1);
-    when(delegateCache.get("accountId", delegateId2, false)).thenReturn(delegate2);
+    when(delegateCache.get("accountId", delegateId1)).thenReturn(delegate1);
+    when(delegateCache.get("accountId", delegateId2)).thenReturn(delegate2);
     DelegateTask asyncTask = DelegateTask.builder()
                                  .uuid(generateUuid())
                                  .status(DelegateTask.Status.QUEUED)
@@ -2127,7 +2126,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
     Delegate delegate = createAccountDelegate();
     DelegateTask task = constructDelegateTask(false, Collections.emptySet(), DelegateTask.Status.QUEUED);
     when(accountDelegatesCache.get(ACCOUNT_ID)).thenReturn(asList(delegate));
-    when(delegateCache.get(ACCOUNT_ID, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(ACCOUNT_ID, delegate.getUuid())).thenReturn(delegate);
     assertThat(assignDelegateService.getEligibleDelegatesToExecuteTask(task)).isNotEmpty();
     assertThat(assignDelegateService.getEligibleDelegatesToExecuteTask(task)).contains(delegate.getUuid());
   }
@@ -2140,7 +2139,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
     DelegateTask task = constructDelegateTask(false, Collections.emptySet(), DelegateTask.Status.QUEUED);
 
     when(accountDelegatesCache.get(ACCOUNT_ID)).thenReturn(asList(delegate));
-    when(delegateCache.get(ACCOUNT_ID, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(ACCOUNT_ID, delegate.getUuid())).thenReturn(delegate);
     DelegateConnectionResult connectionResult = DelegateConnectionResult.builder()
                                                     .accountId(ACCOUNT_ID)
                                                     .delegateId(delegate.getUuid())
@@ -2221,7 +2220,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                                       .build())
                             .build();
     when(accountDelegatesCache.get(ACCOUNT_ID)).thenReturn(asList(delegate));
-    when(delegateCache.get(ACCOUNT_ID, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(ACCOUNT_ID, delegate.getUuid())).thenReturn(delegate);
 
     assertThat(assignDelegateService.getEligibleDelegatesToExecuteTask(task)).isNotEmpty();
     assertThat(assignDelegateService.getEligibleDelegatesToExecuteTask(task)).contains(delegate.getUuid());
@@ -2233,6 +2232,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
   public void testGetActiveCGEligibleDelegatesForTask() throws ExecutionException {
     Delegate delegate = createNGDelegate();
     delegate.setNg(false);
+    delegate.setLastHeartBeat(System.currentTimeMillis());
     persistence.save(delegate);
     delegate.setSupportedTaskTypes(Collections.singletonList(NGTaskType.JIRA_TASK_NG.name()));
     // DelegateTask task = constructDelegateTask(false, Collections.emptySet(), DelegateTask.Status.QUEUED);
@@ -2247,7 +2247,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                                       .build())
                             .build();
     when(accountDelegatesCache.get(ACCOUNT_ID)).thenReturn(asList(delegate));
-    when(delegateCache.get(ACCOUNT_ID, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(ACCOUNT_ID, delegate.getUuid())).thenReturn(delegate);
 
     assertThat(assignDelegateService.getEligibleDelegatesToExecuteTask(task)).isNotEmpty();
     assertThat(assignDelegateService.getEligibleDelegatesToExecuteTask(task)).contains(delegate.getUuid());
@@ -2375,8 +2375,8 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                                                     .build();
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate1.getUuid(), connectionResult.getCriteria())))
         .thenReturn(of(connectionResult));
-    when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
-    when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
+    when(delegateCache.get(accountId, delegate2.getUuid())).thenReturn(delegate2);
+    when(delegateCache.get(accountId, delegate1.getUuid())).thenReturn(delegate1);
     when(delegateCache.getDelegatesForGroup(accountId, delegate1.getDelegateGroupId()))
         .thenReturn(Lists.newArrayList(delegate1, delegate2));
     // verify delegate2 is not whitelisted by itself
@@ -2397,8 +2397,8 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
 
     DelegateTask delegateTask = getDelegateTaskWithCapabilities(accountId);
 
-    when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
-    when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
+    when(delegateCache.get(accountId, delegate2.getUuid())).thenReturn(delegate2);
+    when(delegateCache.get(accountId, delegate1.getUuid())).thenReturn(delegate1);
     when(delegateCache.getDelegatesForGroup(accountId, delegate1.getDelegateGroupId()))
         .thenReturn(Lists.newArrayList(delegate1, delegate2));
 
@@ -2469,8 +2469,8 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate1.getUuid(), connectionResult2.getCriteria())))
         .thenReturn(of(connectionResult2));
 
-    when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
-    when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
+    when(delegateCache.get(accountId, delegate2.getUuid())).thenReturn(delegate2);
+    when(delegateCache.get(accountId, delegate1.getUuid())).thenReturn(delegate1);
     when(delegateCache.getDelegatesForGroup(accountId, delegate1.getDelegateGroupId()))
         .thenReturn(Lists.newArrayList(delegate1, delegate2));
     // verify delegate2 is not whitelisted by itself
@@ -2512,8 +2512,8 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate2.getUuid(), connectionResult2.getCriteria())))
         .thenReturn(of(connectionResult2));
 
-    when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
-    when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
+    when(delegateCache.get(accountId, delegate2.getUuid())).thenReturn(delegate2);
+    when(delegateCache.get(accountId, delegate1.getUuid())).thenReturn(delegate1);
     when(delegateCache.getDelegatesForGroup(accountId, delegate1.getDelegateGroupId()))
         .thenReturn(Lists.newArrayList(delegate1, delegate2));
     // verify delegate2 is not whitelisted by itself

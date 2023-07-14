@@ -422,7 +422,7 @@ public class DelegateSetupResource {
       @PathParam("delegateId") @NotEmpty String delegateId, @QueryParam("accountId") @NotEmpty String accountId) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
-      return new RestResponse<>(delegateCache.get(accountId, delegateId, true));
+      return new RestResponse<>(delegateCache.get(accountId, delegateId));
     }
   }
 
@@ -489,6 +489,7 @@ public class DelegateSetupResource {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
       delegate.setAccountId(accountId);
+      delegate.setUuid(delegateId);
       delegate.setUuid(delegateId);
 
       Delegate existingDelegate = delegateCache.get(accountId, delegateId, true);

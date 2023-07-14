@@ -20,7 +20,6 @@ import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.YOGESH;
 import static io.harness.rule.OwnerRule.vivekveman;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -84,17 +83,17 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import junitparams.JUnitParamsRunner;
+import junitparams.Parameters;
 import org.joor.Reflect;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -107,7 +106,7 @@ import retrofit2.Call;
 import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDC)
-@RunWith(Parameterized.class)
+@RunWith(JUnitParamsRunner.class)
 public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Mock private OutboxService outboxService;
   @Mock private EntitySetupUsageServiceImpl entitySetupUsageService;
@@ -128,19 +127,6 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   private static final String PROJECT_ID = "PROJECT_ID";
   private static final String SERVICE_ID = "serviceId";
 
-  private String pipelineInputYamlPath;
-  private String actualEntityYamlPath;
-  private String mergedInputYamlPath;
-  private boolean isMergedYamlEmpty;
-
-  public ServiceEntityServiceImplTest(String pipelineInputYamlPath, String actualEntityYamlPath,
-      String mergedInputYamlPath, boolean isMergedYamlEmpty) {
-    this.pipelineInputYamlPath = pipelineInputYamlPath;
-    this.actualEntityYamlPath = actualEntityYamlPath;
-    this.mergedInputYamlPath = mergedInputYamlPath;
-    this.isMergedYamlEmpty = isMergedYamlEmpty;
-  }
-
   @Before
   public void setup() {
     entitySetupUsageService = mock(EntitySetupUsageServiceImpl.class);
@@ -153,15 +139,15 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     Reflect.on(serviceEntityService).set("overrideV2ValidationHelper", overrideV2ValidationHelper);
     when(serviceEntityValidatorFactory.getServiceEntityValidator(any())).thenReturn(noOpServiceEntityValidator);
   }
-  @Parameterized.Parameters
-  public static Collection<Object[]> data() {
-    return asList(new Object[][] {
+
+  private Object[][] data() {
+    return new Object[][] {
         {"service/serviceInputs-with-few-values-fixed.yaml", "service/service-with-primaryArtifactRef-runtime.yaml",
             "service/serviceInputs-merged.yaml", false},
         {"service/serviceInputs-with-few-values-fixed.yaml", "service/service-with-no-runtime-input.yaml",
             "infrastructure/empty-file.yaml", true},
         {"infrastructure/empty-file.yaml", "service/service-with-primaryArtifactRef-fixed.yaml",
-            "service/merged-service-input-fixed-prime-artifact.yaml", false}});
+            "service/merged-service-input-fixed-prime-artifact.yaml", false}};
   }
 
   @Test
@@ -786,7 +772,9 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Test
   @Owner(developers = INDER)
   @Category(UnitTests.class)
-  public void testMergeServiceInputs() {
+  @Parameters(method = "data")
+  public void testMergeServiceInputs(String pipelineInputYamlPath, String actualEntityYamlPath,
+      String mergedInputYamlPath, boolean isMergedYamlEmpty) {
     String yaml = readFile(actualEntityYamlPath);
     ServiceEntity createRequest = ServiceEntity.builder()
                                       .accountId(ACCOUNT_ID)

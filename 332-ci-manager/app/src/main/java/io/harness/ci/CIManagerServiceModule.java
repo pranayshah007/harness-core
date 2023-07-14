@@ -7,13 +7,15 @@
 
 package io.harness.app;
 
+import static io.harness.authorization.AuthorizationServiceHeader.CI_MANAGER;
 import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
+import static io.harness.eventsframework.EventsFrameworkConstants.CI_ORCHESTRATION_NOTIFY_EVENT;
 import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME;
 import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_READ_BATCH_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.OBSERVER_EVENT_CHANNEL;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELEGATE_ENTITY;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
-import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
+import static io.harness.pms.listener.NgOrchestrationNotifyEventListenerNonVersioned.NG_ORCHESTRATION;
 
 import io.harness.AccessControlClientModule;
 import io.harness.account.AccountClientModule;
@@ -26,6 +28,7 @@ import io.harness.aws.AwsClientImpl;
 import io.harness.beans.execution.license.CILicenseService;
 import io.harness.cache.CICacheManagementService;
 import io.harness.cache.CICacheManagementServiceImpl;
+import io.harness.cache.HarnessCacheManager;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
@@ -65,7 +68,9 @@ import io.harness.enforcement.client.EnforcementClientModule;
 import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.api.Consumer;
+import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.impl.noop.NoOpConsumer;
+import io.harness.eventsframework.impl.redis.GitAwareRedisProducer;
 import io.harness.eventsframework.impl.redis.RedisConsumer;
 import io.harness.ff.FeatureFlagModule;
 import io.harness.ff.FeatureFlagService;
@@ -106,6 +111,7 @@ import io.harness.timescaledb.TimeScaleDBService;
 import io.harness.timescaledb.TimeScaleDBServiceImpl;
 import io.harness.token.TokenClientModule;
 import io.harness.user.UserClientModule;
+import io.harness.version.VersionInfoManager;
 import io.harness.waiter.AsyncWaitEngineImpl;
 import io.harness.waiter.WaitNotifyEngine;
 import io.harness.yaml.core.StepSpecType;
@@ -132,6 +138,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import javax.cache.Cache;
+import javax.cache.expiry.AccessedExpiryPolicy;
+import javax.cache.expiry.Duration;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RedissonClient;
 
@@ -206,9 +215,15 @@ public class CIManagerServiceModule extends AbstractModule {
   @Provides
   @Singleton
   public AsyncWaitEngine asyncWaitEngine(WaitNotifyEngine waitNotifyEngine) {
-    return new AsyncWaitEngineImpl(waitNotifyEngine, NG_ORCHESTRATION);
+    return new AsyncWaitEngineImpl(waitNotifyEngine, "ci_orchestration");
   }
 
+  @Provides
+  @Singleton
+  @Named("queueAsyncWaitEngine")
+  public AsyncWaitEngine asyncWaitEngineQueue(WaitNotifyEngine waitNotifyEngine) {
+    return new AsyncWaitEngineImpl(waitNotifyEngine, NG_ORCHESTRATION);
+  }
   @Provides
   @Singleton
   public TimeLimiter timeLimiter(ExecutorService executorService) {
@@ -229,7 +244,15 @@ public class CIManagerServiceModule extends AbstractModule {
   RedisConfig redisConfig() {
     return ciManagerConfiguration.getRedisLockConfig();
   }
-
+  @Provides
+  @Singleton
+  @Named("ciEventsCache")
+  public Cache<String, Integer> sdkEventsCache(
+      HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
+    return harnessCacheManager.getCache("ciEventsCache", String.class, Integer.class,
+        AccessedExpiryPolicy.factoryOf(Duration.THIRTY_MINUTES), versionInfoManager.getVersionInfo().getBuildNo(),
+        true);
+  }
   @Override
   protected void configure() {
     if (this.configurationOverride.isUsePrimaryVersionController()) {
@@ -417,6 +440,16 @@ public class CIManagerServiceModule extends AbstractModule {
       bind(MessageListener.class)
           .annotatedWith(Names.named(DELEGATE_ENTITY + OBSERVER_EVENT_CHANNEL))
           .to(DelegateTaskEventListener.class);
+      bind(Producer.class)
+          .annotatedWith(Names.named(CI_ORCHESTRATION_NOTIFY_EVENT))
+          .toInstance(GitAwareRedisProducer.of(CI_ORCHESTRATION_NOTIFY_EVENT, redissonClient, 5000,
+              CI_MANAGER.getServiceId(), redisConfig.getEnvNamespace()));
+
+      bind(Consumer.class)
+          .annotatedWith(Names.named(CI_ORCHESTRATION_NOTIFY_EVENT))
+          .toInstance(RedisConsumer.of(CI_ORCHESTRATION_NOTIFY_EVENT, CI_MANAGER.getServiceId(), redissonClient,
+              EventsFrameworkConstants.PLAN_NOTIFY_EVENT_MAX_PROCESSING_TIME,
+              EventsFrameworkConstants.PMS_ORCHESTRATION_NOTIFY_EVENT_BATCH_SIZE, redisConfig.getEnvNamespace()));
     }
   }
 }

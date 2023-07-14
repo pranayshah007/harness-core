@@ -49,6 +49,7 @@ import io.harness.cdng.elastigroup.rollback.ElastigroupRollbackStepNode;
 import io.harness.cdng.gitops.MergePRStepNode;
 import io.harness.cdng.gitops.UpdateReleaseRepoStepNode;
 import io.harness.cdng.gitops.beans.FetchLinkedAppsStepNode;
+import io.harness.cdng.gitops.revertpr.RevertPRStepNode;
 import io.harness.cdng.gitops.syncstep.SyncStepNode;
 import io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployStepNode;
 import io.harness.cdng.googlefunctions.deployWithoutTraffic.GoogleFunctionsDeployWithoutTrafficStepNode;
@@ -91,6 +92,7 @@ import io.harness.cdng.provision.terragrunt.TerragruntRollbackStepNode;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepNode;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepNode;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2StepNode;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPackageV2StepNode;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepNode;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaRollbackV2StepNode;
 import io.harness.cdng.ssh.CommandStepNode;
@@ -140,6 +142,7 @@ public class CDNGRegistrars {
           .addAll(NGCommonModuleRegistrars.kryoRegistrars)
           .addAll(FileStoreRegistrars.kryoRegistrars)
           .addAll(ContainerRegistrars.kryoRegistrars)
+          .addAll(LicenseManagerRegistrars.kryoRegistrars)
           .build();
 
   public final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
@@ -159,6 +162,7 @@ public class CDNGRegistrars {
           .addAll(FileStoreRegistrars.morphiaRegistrars)
           .addAll(FreezeRegistrars.morphiaRegistrars)
           .addAll(ContainerRegistrars.morphiaRegistrars)
+          .addAll(LicenseManagerRegistrars.morphiaRegistrars)
           .build();
 
   public static final ImmutableList<YamlSchemaRootClass> yamlSchemaRegistrars =
@@ -200,6 +204,18 @@ public class CDNGRegistrars {
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
                    .clazz(MergePRStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.GITOPS_REVERT_PR)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(RevertPRStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
                                            .modulesSupported(Collections.singletonList(ModuleType.CD))
@@ -1280,6 +1296,18 @@ public class CDNGRegistrars {
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
                    .clazz(ServerlessAwsLambdaDeployV2StepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.SERVERLESS_AWS_LAMBDA_PACKAGE_V2)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(ServerlessAwsLambdaPackageV2StepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
                                            .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))

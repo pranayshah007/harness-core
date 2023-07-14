@@ -20,8 +20,10 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.rule.Owner;
 import io.harness.steps.StepUtils;
 
+import java.util.concurrent.ThreadPoolExecutor;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mockito;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class LogStreamingStepClientFactoryTest extends CategoryTest {
@@ -35,6 +37,7 @@ public class LogStreamingStepClientFactoryTest extends CategoryTest {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void getLogStreamingStepClient() throws Exception {
+    logStreamingStepClientFactory.logStreamingClientThreadPool = Mockito.mock(ThreadPoolExecutor.class);
     Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", ACCOUNT_ID).build();
 
     logStreamingStepClientFactory.accountIdToTokenCache.put(ACCOUNT_ID, TOKEN);

@@ -1210,7 +1210,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   public Optional<AcquireTasksResponse> acquireTask(
       String accountId, String delegateId, String taskId, String delegateInstanceId) {
     try {
-      Delegate delegate = delegateCache.get(accountId, delegateId, false);
+      Delegate delegate = delegateCache.get(accountId, delegateId);
       if (delegate == null || DelegateInstanceStatus.ENABLED != delegate.getStatus()) {
         log.warn("Delegate rejected to acquire task, because it was not found to be in {} status.",
             DelegateInstanceStatus.ENABLED);
@@ -1234,8 +1234,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         var builder = TaskPayload.newBuilder()
                           .setId(taskId)
                           .setExecutionInfraId(delegateTask.getInfraId())
-                          .setResourceUri(delegateTask.getRequestUri())
-                          .setResourceMethod(delegateTask.getRequestMethod());
+                          .setEventType(delegateTask.getEventType())
+                          .setRunnerType(delegateTask.getRunnerType());
         if (Objects.nonNull(delegateTask.getRunnerData())) {
           builder.setInfraData(
               InputData.newBuilder().setBinaryData(ByteString.copyFrom(delegateTask.getRunnerData())).build());
@@ -1256,7 +1256,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   public DelegateTaskPackage acquireDelegateTask(
       String accountId, String delegateId, String taskId, String delegateInstanceId) {
     try {
-      Delegate delegate = delegateCache.get(accountId, delegateId, false);
+      Delegate delegate = delegateCache.get(accountId, delegateId);
       if (delegate == null || DelegateInstanceStatus.ENABLED != delegate.getStatus()) {
         log.warn("Delegate rejected to acquire task, because it was not found to be in {} status.",
             DelegateInstanceStatus.ENABLED);
@@ -2188,8 +2188,9 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     }
     log.warn("Marking delegate tasks {} failed since delegate went down before completion.",
         delegateTasks.stream().map(DelegateTask::getUuid).collect(Collectors.toList()));
-    Delegate delegate = delegateCache.get(accountId, delegateId, false);
-    final String delegateName = isNotEmpty(delegate.getHostName()) ? delegate.getHostName() : delegate.getUuid();
+    Optional<Delegate> delegate = Optional.ofNullable(delegateCache.get(accountId, delegateId, false));
+    final String delegateName =
+        delegate.filter(d -> isNotEmpty(d.getHostName())).map(Delegate::getHostName).orElse(delegateId);
     final String errorMessage = "Delegate [" + delegateName + "] disconnected while executing the task";
     final DelegateTaskResponse delegateTaskResponse =
         DelegateTaskResponse.builder()

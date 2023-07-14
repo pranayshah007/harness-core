@@ -74,6 +74,7 @@ public class HttpTaskNG extends AbstractDelegateRunnableTask {
                                    .encryptedDataDetails(httpTaskParametersNg.getEncryptedDataDetails())
                                    .isCertValidationRequired(httpTaskParametersNg.isCertValidationRequired())
                                    .throwErrorIfNoProxySetWithDelegateProxy(false)
+                                   .supportNonTextResponse(httpTaskParametersNg.isSupportNonTextResponse())
                                    .build(),
             executionLogCallback);
     return HttpStepResponse.builder()
@@ -84,6 +85,7 @@ public class HttpTaskNG extends AbstractDelegateRunnableTask {
         .httpUrl(httpInternalResponse.getHttpUrl())
         .httpResponseCode(httpInternalResponse.getHttpResponseCode())
         .httpResponseBody(httpInternalResponse.getHttpResponseBody())
+        .httpResponseBodyInBytes(httpInternalResponse.getHttpResponseBodyInBytes())
         .build();
   }
 

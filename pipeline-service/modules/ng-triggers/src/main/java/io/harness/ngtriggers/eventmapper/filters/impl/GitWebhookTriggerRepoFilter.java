@@ -79,6 +79,7 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
   private final NGTriggerService ngTriggerService;
   private final GitProviderDataObtainmentManager additionalDataObtainmentManager;
   @Inject PmsFeatureFlagService featureFlagService;
+  private final GitClientHelper gitClientHelper;
 
   @Override
   public WebhookEventMappingResponse applyFilter(FilterRequestData filterRequestData) {
@@ -107,7 +108,6 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
       }
     }
 
-    // check for harness scm triggers
     if (featureFlagService.isEnabled(originalEvent.getAccountId(), FeatureName.CODE_ENABLED)) {
       evaluateWrapperForSCMConnector(urls, eligibleTriggers, filterRequestData);
     }
@@ -301,6 +301,10 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
   }
 
   public String getCompleteHarnessRepoName(NGTriggerEntity ngTriggerEntity, String repo) {
+    if (repo.startsWith("http")) {
+      String harnessRepoName = gitClientHelper.getHarnessRepoName(repo);
+      return harnessRepoName.substring(0, harnessRepoName.length() - 2);
+    }
     repo = stripStart(repo, "/");
     repo = stripEnd(repo, "/");
     String parts[] = repo.split("/");
@@ -348,6 +352,7 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
       } else if (urlType == AwsCodeCommitUrlType.REPO) {
         wrapper.setGitConnectionType(GitConnectionType.REPO);
       }
+      // todo(abhinav): work here
     }
   }
 

@@ -43,6 +43,7 @@ public class TerraformCloudConfigSerializationDeserializationTest extends Catego
   String url = "https://some.io";
   String name = "name";
   String description = "description";
+  String accountIdentifier = "accountIdentifier";
   String projectIdentifier = "projectIdentifier";
   String orgIdentifier = "orgIdentifier";
   String connectorIdentifier = "identifier";
@@ -75,6 +76,7 @@ public class TerraformCloudConfigSerializationDeserializationTest extends Catego
         .name(name)
         .identifier(connectorIdentifier)
         .description(description)
+        .accountIdentifier(accountIdentifier)
         .projectIdentifier(projectIdentifier)
         .orgIdentifier(orgIdentifier)
         .tags(tags)

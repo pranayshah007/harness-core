@@ -53,31 +53,52 @@ def _build_sonar_project_properties(ctx, sq_properties_file):
         coverage_report_path = ""
         coverage_runfiles = []
 
-    java_files = _get_java_files([t for t in ctx.attr.targets if t[JavaInfo]])
+    if ctx.attr.language != "go":
+        java_files = _get_java_files([t for t in ctx.attr.targets if t[JavaInfo]])
 
-    ctx.actions.expand_template(
-        template = ctx.file.sq_properties_template,
-        output = sq_properties_file,
-        substitutions = {
-            "{PROJECT_KEY}": ctx.attr.project_key,
-            "{PROJECT_NAME}": ctx.attr.project_name,
-            "{SOURCES}": ",".join([parent_path + f.short_path for f in ctx.files.srcs]),
-            "{TEST_SOURCES}": ",".join([parent_path + f.short_path for f in ctx.files.test_srcs]),
-            "{SOURCE_ENCODING}": ctx.attr.source_encoding,
-            "{JAVA_BINARIES}": ",".join([parent_path + j.short_path for j in java_files["output_jars"].to_list()]),
-            "{JAVA_LIBRARIES}": ",".join([parent_path + j.short_path for j in java_files["deps_jars"].to_list()]),
-            "{MODULES}": ",".join(ctx.attr.modules.values()),
-            "{TEST_REPORTS}": test_reports_path,
-            "{COVERAGE_REPORT}": coverage_report_path,
-            "{CHECKSTYLE_REPORT_PATH}": ctx.attr.checkstyle_report_path,
-        },
-        is_executable = False,
-    )
+        ctx.actions.expand_template(
+            template = ctx.file.sq_properties_template,
+            output = sq_properties_file,
+            substitutions = {
+                "{PROJECT_KEY}": ctx.attr.project_key,
+                "{PROJECT_NAME}": ctx.attr.project_name,
+                "{SOURCES}": ",".join([parent_path + f.short_path for f in ctx.files.srcs]),
+                "{TEST_SOURCES}": ",".join([parent_path + f.short_path for f in ctx.files.test_srcs]),
+                "{SOURCE_ENCODING}": ctx.attr.source_encoding,
+                "{JAVA_BINARIES}": ",".join([parent_path + j.short_path for j in java_files["output_jars"].to_list()]),
+                "{JAVA_LIBRARIES}": ",".join([parent_path + j.short_path for j in java_files["deps_jars"].to_list()]),
+                "{MODULES}": ",".join(ctx.attr.modules.values()),
+                "{TEST_REPORTS}": test_reports_path,
+                "{COVERAGE_REPORT}": coverage_report_path,
+                "{CHECKSTYLE_REPORT_PATH}": ctx.attr.checkstyle_report_path,
+            },
+            is_executable = False,
+        )
 
-    return ctx.runfiles(
-        files = [sq_properties_file] + ctx.files.srcs + ctx.files.test_srcs + test_reports_runfiles + coverage_runfiles,
-        transitive_files = depset(transitive = [java_files["output_jars"], java_files["deps_jars"]]),
-    )
+        return ctx.runfiles(
+            files = [sq_properties_file] + ctx.files.srcs + ctx.files.test_srcs + test_reports_runfiles + coverage_runfiles,
+            transitive_files = depset(transitive = [java_files["output_jars"], java_files["deps_jars"]]),
+        )
+    else:
+        ctx.actions.expand_template(
+            template = ctx.file.sq_properties_template,
+            output = sq_properties_file,
+            substitutions = {
+                "{PROJECT_KEY}": ctx.attr.project_key,
+                "{PROJECT_NAME}": ctx.attr.project_name,
+                "{SOURCES}": ",".join([parent_path + f.short_path for f in ctx.files.srcs]),
+                "{TEST_SOURCES}": ",".join([parent_path + f.short_path for f in ctx.files.test_srcs]),
+                "{SOURCE_ENCODING}": ctx.attr.source_encoding,
+                "{MODULES}": ",".join(ctx.attr.modules.values()),
+                "{TEST_REPORTS}": test_reports_path,
+                "{COVERAGE_REPORT}": coverage_report_path,
+            },
+            is_executable = False,
+        )
+
+        return ctx.runfiles(
+            files = [sq_properties_file] + ctx.files.srcs + ctx.files.test_srcs + test_reports_runfiles + coverage_runfiles,
+        )
 
 def _get_java_files(java_targets):
     return {
@@ -114,6 +135,9 @@ def _sonarqube_impl(ctx):
     )]
 
 _COMMON_ATTRS = dict(dict(), **{
+    "language": attr.string(
+        mandatory = True,
+    ),
     "project_key": attr.string(
         mandatory = True,
         doc = """SonarQube project key, e.g. `com.example.project:module`.""",
@@ -207,12 +231,23 @@ def sonarqube(
         test_reports = [],
         modules = {},
         sonar_scanner = None,
-        sq_properties_template = None,
+        sq_properties_template = "//tools/bazel/sonarqube:sonar-project.properties.tpl",
         sq_properties_filename = None,
         tags = [],
         visibility = [],
-        checkstyle_report_path = ""):
+        checkstyle_report_path = "",
+        **kwargs):
+    if not "language" in kwargs:
+        language = "java"
+    else:
+        language = kwargs.get("language")
+    if language == "go":
+        sq_properties_template = "//tools/bazel/sonarqube:sonar-project-go.properties.tpl"
+        sq_properties_filename = "sonar-project-go.properties"
+    else:
+        sq_properties_filename = "sonar-project.properties"
     _sonarqube(
+        language = language,
         name = name,
         project_key = project_key,
         project_name = project_name,
@@ -246,6 +281,7 @@ _sq_project = rule(
 )
 
 def sq_project(
+        language,
         name,
         project_key,
         project_name = None,
@@ -256,11 +292,14 @@ def sq_project(
         test_targets = [],
         test_reports = [],
         modules = {},
-        sq_properties_template = None,
+        sq_properties_template = "//tools/bazel/sonarqube:sonar-project.properties.tpl",
         tags = [],
         visibility = [],
         checkstyle_report_path = ""):
+    if language == "go":
+        sq_properties_template = "//tools/bazel/sonarqube:sonar-project-go.properties.tpl"
     _sq_project(
+        language = language,
         name = name,
         project_key = project_key,
         project_name = project_name,

@@ -373,8 +373,13 @@ public class K8sTaskHelperBase {
          ByteArrayOutputStream errorCaptureStream = new ByteArrayOutputStream(1024);
          LogOutputStream logErrorStream =
              getExecutionLogOutputStream(executionLogCallback, errorLogLevel, errorCaptureStream)) {
-      return getProcessResponse(command, logOutputStream, logErrorStream, errorCaptureStream,
-          k8sDelegateTaskParams.getWorkingDirectory(), k8sDelegateTaskParams.getKubectlPath(), true);
+      return Retry
+          .decorateCallable(buildRetryAndRegisterListeners(retryConditionForTimeout(),
+                                K8sTaskHelperBase.class.getSimpleName() + ".executeCommand"),
+              ()
+                  -> getProcessResponse(command, logOutputStream, logErrorStream, errorCaptureStream,
+                      k8sDelegateTaskParams.getWorkingDirectory(), k8sDelegateTaskParams.getKubectlPath(), true))
+          .call();
     }
   }
 
@@ -384,8 +389,13 @@ public class K8sTaskHelperBase {
     try (ByteArrayOutputStream errorCaptureStream = new ByteArrayOutputStream(1024);
          LogOutputStream logErrorStream =
              getExecutionLogOutputStream(executionLogCallback, errorLogLevel, errorCaptureStream)) {
-      return getProcessResponse(command, null, logErrorStream, errorCaptureStream,
-          k8sDelegateTaskParams.getWorkingDirectory(), k8sDelegateTaskParams.getKubectlPath(), false);
+      return Retry
+          .decorateCallable(buildRetryAndRegisterListeners(retryConditionForTimeout(),
+                                K8sTaskHelperBase.class.getSimpleName() + ".executeCommandSilentlyWithErrorCapture"),
+              ()
+                  -> getProcessResponse(command, null, logErrorStream, errorCaptureStream,
+                      k8sDelegateTaskParams.getWorkingDirectory(), k8sDelegateTaskParams.getKubectlPath(), false))
+          .call();
     }
   }
 
@@ -2352,7 +2362,8 @@ public class K8sTaskHelperBase {
     final Map<String, Object> evaluatorResponseContext = new HashMap<>(1);
 
     Predicate<Object> retryCondition = retryConditionForProcessResult();
-    Retry retry = buildRetryAndRegisterListeners(retryCondition);
+    Retry retry = buildRetryAndRegisterListeners(
+        retryCondition, K8sTaskHelperBase.class.getSimpleName() + ".doStatusCheckForCustomResources");
 
     while (true) {
       Callable<ProcessResult> callable = Retry.decorateCallable(retry,
@@ -2396,8 +2407,16 @@ public class K8sTaskHelperBase {
     };
   }
 
-  private Retry buildRetryAndRegisterListeners(Predicate<Object> retryCondition) {
-    Retry exponentialRetry = RetryHelper.getExponentialRetry(this.getClass().getSimpleName(), retryCondition);
+  private static Predicate<Object> retryConditionForTimeout() {
+    return o -> {
+      ProcessResponse p = (ProcessResponse) o;
+      return p.getProcessResult().getExitValue() != 0 && p.getErrorMessage() != null
+          && p.getErrorMessage().contains("Unable to connect to the server");
+    };
+  }
+
+  private static Retry buildRetryAndRegisterListeners(Predicate<Object> retryCondition, String listenerName) {
+    Retry exponentialRetry = RetryHelper.getExponentialRetry(listenerName, retryCondition);
     RetryHelper.registerEventListeners(exponentialRetry);
     return exponentialRetry;
   }

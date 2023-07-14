@@ -53,6 +53,8 @@ import io.harness.cdng.provision.terraform.functor.TerraformHumanReadablePlanFun
 import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
 import io.harness.cdng.provision.terraformcloud.functor.TerraformCloudPlanJsonFunctor;
 import io.harness.cdng.provision.terraformcloud.functor.TerraformCloudPolicyChecksJsonFunctor;
+import io.harness.cdng.usage.jobs.CDLicenseDailyReportIteratorHandler;
+import io.harness.cdng.usage.task.CDLicenseDailyReportTask;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.cf.AbstractCfModule;
 import io.harness.cf.CfClientConfig;
@@ -657,6 +659,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     injector.getInstance(CICreditExpiryIteratorHandler.class).registerIterator(2);
     injector.getInstance(CreditProvisioningIteratorHandler.class).registerIterator(2);
     injector.getInstance(SendProvisionedCICreditsToSegmentHandler.class).registerIterator(2);
+    injector.getInstance(CDLicenseDailyReportIteratorHandler.class)
+        .registerIterator(ngIteratorsConfig.getCdLicenseDailyReportIteratorConfig());
   }
 
   public void registerJobs(Injector injector) {
@@ -972,6 +976,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
 
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
         .scheduleWithFixedDelay(injector.getInstance(ModuleVersionsMaintenanceTask.class), 0, 3, TimeUnit.HOURS);
+    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
+        .scheduleWithFixedDelay(injector.getInstance(CDLicenseDailyReportTask.class), 0, 3, TimeUnit.HOURS);
   }
 
   private void registerAuthFilters(NextGenConfiguration configuration, Environment environment, Injector injector) {

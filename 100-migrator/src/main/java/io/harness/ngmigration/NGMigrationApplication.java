@@ -92,7 +92,6 @@ import io.harness.service.impl.DelegateCacheImpl;
 import io.harness.service.impl.DelegateTokenServiceImpl;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateProfileObserver;
-import io.harness.springdata.SpringPersistenceModule;
 import io.harness.state.inspection.StateInspectionListener;
 import io.harness.state.inspection.StateInspectionServiceImpl;
 import io.harness.stream.AtmosphereBroadcaster;
@@ -503,7 +502,7 @@ public class NGMigrationApplication extends Application<MigratorConfig> {
       }
     });
 
-    modules.add(new SpringPersistenceModule());
+    //    modules.add(new SpringPersistenceModule());
 
     ValidatorFactory validatorFactory = Validation.byDefaultProvider()
                                             .configure()

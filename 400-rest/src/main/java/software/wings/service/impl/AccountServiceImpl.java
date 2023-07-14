@@ -508,7 +508,6 @@ public class AccountServiceImpl implements AccountService {
   private void enableFeatureFlags(@NotNull Account account, boolean fromDataGen) {
     if (fromDataGen) {
       updateNextGenEnabled(account.getUuid(), true);
-      featureFlagService.enableAccount(FeatureName.CENG_ENABLED, account.getUuid());
       featureFlagService.enableAccount(FeatureName.CFNG_ENABLED, account.getUuid());
       featureFlagService.enableAccount(FeatureName.CVNG_ENABLED, account.getUuid());
     } else if (account.isCreatedFromNG()) {
@@ -2014,7 +2013,8 @@ public class AccountServiceImpl implements AccountService {
   @Override
   public boolean isSSOEnabled(Account account) {
     return (account.getAuthenticationMechanism() != null)
-        && (account.getAuthenticationMechanism() != AuthenticationMechanism.USER_PASSWORD);
+        && ((account.getAuthenticationMechanism() != AuthenticationMechanism.USER_PASSWORD)
+            || (account.isOauthEnabled()));
   }
 
   /**

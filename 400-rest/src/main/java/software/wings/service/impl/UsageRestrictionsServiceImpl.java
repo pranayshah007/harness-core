@@ -11,6 +11,7 @@ import static io.harness.beans.SearchFilter.Operator.EQ;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 
@@ -1478,8 +1479,10 @@ public class UsageRestrictionsServiceImpl implements UsageRestrictionsService {
   }
 
   private HIterator<SettingAttribute> getSettingAttributesWithUsageRestrictionsIterator(String accountId) {
-    return new HIterator<>(
-        wingsPersistence.createQuery(SettingAttribute.class).filter(SettingAttributeKeys.accountId, accountId).fetch());
+    return new HIterator<>(wingsPersistence.createQuery(SettingAttribute.class)
+                               .filter(SettingAttributeKeys.accountId, accountId)
+                               .limit(NO_LIMIT)
+                               .fetch());
   }
 
   private HIterator<EncryptedData> getEncryptedDataWithUsageRestrictionsIterator(String accountId) {
@@ -1487,6 +1490,7 @@ public class UsageRestrictionsServiceImpl implements UsageRestrictionsService {
                                .filter(EncryptedDataKeys.accountId, accountId)
                                .field(EncryptedDataKeys.ngMetadata)
                                .equal(null)
+                               .limit(NO_LIMIT)
                                .fetch());
   }
 
@@ -1495,6 +1499,7 @@ public class UsageRestrictionsServiceImpl implements UsageRestrictionsService {
                                .filter(SecretManagerConfigKeys.accountId, accountId)
                                .field(SecretManagerConfigKeys.ngMetadata)
                                .equal(null)
+                               .limit(NO_LIMIT)
                                .fetch());
   }
 

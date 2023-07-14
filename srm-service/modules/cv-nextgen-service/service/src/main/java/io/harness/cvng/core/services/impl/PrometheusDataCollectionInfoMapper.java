@@ -88,11 +88,15 @@ public class PrometheusDataCollectionInfoMapper
             cvConfig.getAccountId(), FeatureName.SRM_ENABLE_AGGREGATION_USING_BY_IN_PROMETHEUS.name())) {
       if (dataCollectionInfo.isCollectHostData()) {
         dataCollectionInfo.setDataCollectionDsl(DataCollectionDSLFactory.readMetricDSL(DataSourceType.PROMETHEUS));
-        // wrong as filters are already added. TODO
-        for (MetricCollectionInfo metricCollectionInfo : dataCollectionInfo.getMetricCollectionInfoList()) {
-          metricCollectionInfo.setQuery(PrometheusQueryUtils.formGroupByQuery(
-              metricCollectionInfo.getQuery(), metricCollectionInfo.getServiceInstanceField()));
-        }
+        List<MetricCollectionInfo> metricCollectionInfoList =
+            cvConfig.getMetricInfos()
+                .stream()
+                .map(this::getMetricCollectionInfo)
+                .peek(metricCollectionInfo
+                    -> metricCollectionInfo.setQuery(PrometheusQueryUtils.formGroupByQuery(
+                        metricCollectionInfo.getQuery(), metricCollectionInfo.getServiceInstanceField())))
+                .collect(Collectors.toList());
+        dataCollectionInfo.setMetricCollectionInfoList(metricCollectionInfoList);
       }
     }
   }

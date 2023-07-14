@@ -1,0 +1,2 @@
+DOCKER_FILE_PATH: /harness/harness-core/dist/event-server/Dockerfile-cie-jdk
+HELM_CHART_SOURCE_DIRECTORY: harness-core/350-event-server/chart

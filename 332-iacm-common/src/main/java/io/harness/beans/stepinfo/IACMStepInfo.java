@@ -11,21 +11,24 @@ import static io.harness.annotations.dev.HarnessTeam.IACM;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.steps.CIStepInfo;
+import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.TypeInfo;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.yaml.core.VariableExpression;
+import io.harness.yaml.extended.ci.container.ContainerResource;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
@@ -41,7 +44,19 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("iacmStepInfo")
 @OwnedBy(IACM)
 @RecasterAlias("io.harness.beans.stepinfo.IACMStepInfo")
-public class IACMStepInfo implements CIStepInfo {
+public abstract class IACMStepInfo implements PluginCompatibleStep {
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  private ParameterField<String> connectorRef;
+
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  private ContainerResource resources;
+
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  private ParameterField<Integer> runAsUser;
+
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -78,5 +93,10 @@ public class IACMStepInfo implements CIStepInfo {
   @Override
   public String getFacilitatorType() {
     return OrchestrationFacilitatorType.ASYNC;
+  }
+
+  @ApiModelProperty(hidden = true)
+  public ParameterField<List<String>> getBaseImageConnectorRefs() {
+    return new ParameterField<>();
   }
 }

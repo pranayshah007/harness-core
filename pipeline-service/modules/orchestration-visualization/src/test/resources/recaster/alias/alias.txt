@@ -78,7 +78,7 @@ io.harness.delegate.beans.pcf.CfInternalInstanceElement
 io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO
 io.harness.delegate.beans.pcf.CfServiceData
 io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo
-io.harness.logging.UnitProgress
+io.harness.logging.serializer.kryo.UnitProgressKryoSerializer
 io.harness.delegate.beans.connector.k8Connector.KubernetesClusterDetailsDTO
 io.harness.delegate.beans.connector.k8Connector.KubernetesServiceAccountDTO
 io.harness.encryption.SecretRefData
@@ -107,3 +107,5 @@ io.harness.steps.SectionStepSweepingOutput
 io.harness.beans.Scope
 io.harness.spotinst.model.ElastiGroup
 io.harness.ng.core.dto.secrets.SSHConfigDTO
+io.harness.delegate.cdng.execution.StepExecutionInstanceInfo
+io.harness.delegate.cdng.execution.K8sStepInstanceInfo
