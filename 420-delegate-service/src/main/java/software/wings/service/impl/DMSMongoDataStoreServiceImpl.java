@@ -4,6 +4,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.persistence.GoogleDataStoreAware;
 import io.harness.persistence.HPersistence;
+import io.harness.persistence.store.Store;
 
 import software.wings.service.intfc.DMSDataStoreService;
 
@@ -17,7 +18,7 @@ public class DMSMongoDataStoreServiceImpl implements DMSDataStoreService {
 
   @Override
   public <T extends GoogleDataStoreAware> void save(Class<T> clazz, List<T> records, boolean ignoreDuplicate) {
-    log.info("saving records into seelction log collection");
+    log.info("saving records into selection log collection");
     if (isEmpty(records)) {
       return;
     }
@@ -25,6 +26,19 @@ public class DMSMongoDataStoreServiceImpl implements DMSDataStoreService {
       persistence.saveIgnoringDuplicateKeys(records);
     } else {
       persistence.save(records);
+    }
+  }
+
+  @Override
+  public <T extends GoogleDataStoreAware> void saveInStore(
+      Class<T> clazz, List<T> records, boolean ignoreDuplicate, Store store) {
+    if (isEmpty(records)) {
+      return;
+    }
+    if (ignoreDuplicate) {
+      persistence.saveIgnoringDuplicateKeys(records, store);
+    } else {
+      persistence.save(records, store);
     }
   }
 }

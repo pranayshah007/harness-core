@@ -29,8 +29,8 @@ import javax.ws.rs.core.MediaType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@Api("/dms/health")
-@Path("/dms/health")
+@Api("/health")
+@Path("/health")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @OwnedBy(DEL)

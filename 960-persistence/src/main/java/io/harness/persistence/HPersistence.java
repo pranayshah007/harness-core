@@ -303,6 +303,15 @@ public interface HPersistence extends HealthMonitor {
    */
   <T extends PersistentEntity> String save(T entity);
 
+  /**
+   * Save.
+   *
+   * @param entity   the entity
+   * @param store DataStore to save entities
+   * @return the key of the entity
+   */
+  <T extends PersistentEntity> String save(T entity, Store store);
+
   <T extends PersistentEntity> String save(T entity, boolean isMigrationEnabled);
 
   /**
@@ -312,6 +321,15 @@ public interface HPersistence extends HealthMonitor {
    * @return list of keys
    */
   <T extends PersistentEntity> List<String> save(List<T> entityList);
+
+  /**
+   * Save.
+   *
+   * @param entityList list of entities to save
+   * @param store DataStore to save entities
+   * @return list of keys
+   */
+  <T extends PersistentEntity> List<String> save(List<T> entityList, Store store);
 
   /**
    * Save list in one go using a batch.
@@ -328,6 +346,15 @@ public interface HPersistence extends HealthMonitor {
    * @param entityList list of entities to save
    */
   <T extends PersistentEntity> void saveIgnoringDuplicateKeys(List<T> entityList);
+
+  /**
+   * Save ignoring duplicate key errors.
+   * This saves any new records and skips existing records
+   *
+   * @param entityList list of entities to save
+   * @param store DataStore to save data
+   */
+  <T extends PersistentEntity> void saveIgnoringDuplicateKeys(List<T> entityList, Store store);
 
   /**
    * Insert.

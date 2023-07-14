@@ -43,6 +43,7 @@ public class DelegateServiceConfiguration extends Configuration {
   @JsonProperty("commonPoolConfig") private ThreadPoolConfig commonPoolConfig;
   @JsonProperty("agentMtlsSubdomain") private String agentMtlsSubdomain;
   @JsonProperty("mongo") @ConfigSecret private MongoConfig mongoConfig = MongoConfig.builder().build();
+  @JsonProperty("manager-mongo") @ConfigSecret MongoConfig mongoConnectionFactory = MongoConfig.builder().build();
 
   @JsonProperty("cacheConfig") private CacheConfig cacheConfig;
   @JsonProperty("managerServiceSecret") @ConfigSecret private String managerConfigSecret;
@@ -60,7 +61,7 @@ public class DelegateServiceConfiguration extends Configuration {
 
   public DelegateServiceConfiguration() {
     DefaultServerFactory defaultServerFactory = new DefaultServerFactory();
-    defaultServerFactory.setJerseyRootPath("/api");
+    defaultServerFactory.setJerseyRootPath("/dms");
     defaultServerFactory.setRegisterDefaultExceptionMappers(false);
     super.setServerFactory(defaultServerFactory);
   }
@@ -79,6 +80,9 @@ public class DelegateServiceConfiguration extends Configuration {
     List<String> dbAliases = new ArrayList<>();
     if (mongoConfig != null) {
       dbAliases.add(mongoConfig.getAliasDBName());
+    }
+    if (mongoConnectionFactory != null) {
+      dbAliases.add(mongoConnectionFactory.getAliasDBName());
     }
     return dbAliases;
   }

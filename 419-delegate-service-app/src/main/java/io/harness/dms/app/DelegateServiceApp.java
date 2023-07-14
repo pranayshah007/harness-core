@@ -10,6 +10,7 @@ package io.harness.dms.app;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.ng.DbAliases.DMS;
+import static io.harness.ng.DbAliases.HARNESS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -104,6 +105,10 @@ public class DelegateServiceApp extends Application<DelegateServiceConfiguration
     mongoPersistence.setOverrideDelegateMigration(true);
     if (isNotEmpty(configuration.getMongoConfig().getUri())) {
       mongoPersistence.register(Store.builder().name(DMS).build(), configuration.getMongoConfig().getUri());
+    }
+    if (isNotEmpty(configuration.getMongoConnectionFactory().getUri())) {
+      mongoPersistence.register(
+          Store.builder().name(HARNESS).build(), configuration.getMongoConnectionFactory().getUri());
     }
   }
 

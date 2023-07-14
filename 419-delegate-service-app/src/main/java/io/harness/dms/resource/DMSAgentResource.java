@@ -28,8 +28,8 @@ import javax.ws.rs.QueryParam;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
 
-@Api("/agent/delegates/dms")
-@Path("/agent/delegates/dms")
+@Api("/agent/delegates")
+@Path("/agent/delegates")
 @Produces("application/json")
 @Scope(DELEGATE)
 @Slf4j

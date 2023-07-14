@@ -10,12 +10,16 @@ package software.wings.service.intfc;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.persistence.GoogleDataStoreAware;
+import io.harness.persistence.store.Store;
 
 import java.util.List;
 import java.util.Map;
 
 public interface DataStoreService {
   <T extends GoogleDataStoreAware> void save(Class<T> clazz, List<T> records, boolean ignoreDuplicate);
+
+  <T extends GoogleDataStoreAware> void saveInStore(
+      Class<T> clazz, List<T> records, boolean ignoreDuplicate, Store store);
 
   <T extends GoogleDataStoreAware> int getNumberOfResults(Class<T> clazz, PageRequest<T> pageRequest);
 

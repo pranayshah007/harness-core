@@ -1,8 +1,12 @@
 package io.harness.service.impl;
 
+import static io.harness.ng.DbAliases.DMS;
+import static io.harness.ng.DbAliases.HARNESS;
+
 import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.Delegate;
 import io.harness.persistence.HPersistence;
+import io.harness.persistence.store.Store;
 import io.harness.selection.log.DelegateSelectionLog;
 import io.harness.service.intfc.DelegateCache;
 
@@ -30,6 +34,8 @@ public class DMSDelegateSelectionLogServiceImpl implements DMSDelegateSelectionL
   @Inject private DelegateCache delegateCache;
   private static final String TASK_ASSIGNED = "Delegate assigned for task execution";
   private static final String ASSIGNED = "Assigned";
+  private static final Store harnessStore = Store.builder().name(HARNESS).build();
+  private static final Store dmsStore = Store.builder().name(DMS).build();
 
   @Inject private DMSDataStoreService dataStoreService;
   private Cache<String, List<DelegateSelectionLog>> cache =
@@ -82,11 +88,9 @@ public class DMSDelegateSelectionLogServiceImpl implements DMSDelegateSelectionL
 
   private void dispatchSelectionLogs(String accountId, List<DelegateSelectionLog> logs, RemovalCause removalCause) {
     try {
-      dataStoreService.save(DelegateSelectionLog.class, logs, true);
-      // TODO: remove this once reading from datastore is operational
-      //      if (dataStoreService instanceof GoogleDataStoreServiceImpl) {
-      //        persistence.save(logs);
-      //      }
+      // Always save in mongo store irrespective of GCP enabled or not.
+      dataStoreService.saveInStore(DelegateSelectionLog.class, logs, true, harnessStore);
+      dataStoreService.saveInStore(DelegateSelectionLog.class, logs, true, dmsStore);
     } catch (Exception exception) {
       log.error("Error while saving into Database ", exception);
     }

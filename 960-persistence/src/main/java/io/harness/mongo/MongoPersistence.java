@@ -413,6 +413,13 @@ public class MongoPersistence implements HPersistence {
   }
 
   @Override
+  public <T extends PersistentEntity> String save(T entity, Store store) {
+    onSave(entity);
+    AdvancedDatastore datastore = getDatastore(store);
+    return HPersistence.retry(() -> datastore.save(entity).getId().toString());
+  }
+
+  @Override
   public <T extends PersistentEntity> String save(T entity, boolean isMigrationEnabled) {
     onSave(entity);
     AdvancedDatastore datastore = getDatastore(entity, isMigrationEnabled);
@@ -421,6 +428,16 @@ public class MongoPersistence implements HPersistence {
 
   @Override
   public <T extends PersistentEntity> List<String> save(List<T> ts) {
+    ts.removeIf(Objects::isNull);
+    List<String> ids = new ArrayList<>();
+    for (T entity : ts) {
+      ids.add(save(entity));
+    }
+    return ids;
+  }
+
+  @Override
+  public <T extends PersistentEntity> List<String> save(List<T> ts, Store store) {
     ts.removeIf(Objects::isNull);
     List<String> ids = new ArrayList<>();
     for (T entity : ts) {
@@ -461,6 +478,32 @@ public class MongoPersistence implements HPersistence {
     }
 
     AdvancedDatastore datastore = getDatastore(ts.get(0));
+
+    InsertOptions insertOptions = new InsertOptions();
+    insertOptions.continueOnError(true);
+    try {
+      HPersistence.retry(() -> datastore.insert(ts, insertOptions));
+    } catch (DuplicateKeyException ignore) {
+      // ignore
+    }
+  }
+
+  @Override
+  public <T extends PersistentEntity> void saveIgnoringDuplicateKeys(List<T> ts, Store store) {
+    for (Iterator<T> iterator = ts.iterator(); iterator.hasNext();) {
+      T entity = iterator.next();
+      if (entity == null) {
+        iterator.remove();
+        continue;
+      }
+      onSave(entity);
+    }
+
+    if (isEmpty(ts)) {
+      return;
+    }
+
+    AdvancedDatastore datastore = getDatastore(store);
 
     InsertOptions insertOptions = new InsertOptions();
     insertOptions.continueOnError(true);

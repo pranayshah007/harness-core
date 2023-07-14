@@ -56,6 +56,27 @@ mongo:
   indexManagerMode: AUTO
   aliasDBName: dms-harness
 
+manager-mongo:
+  uri: mongodb://localhost:27017/harness
+  #uri: mongodb://mongo1:30001,mongo2:30002,mongo3:30003
+  #locksUri: mongodb://localhost:27017/impermanent
+  connectTimeout: 30000
+  serverSelectionTimeout: 90000
+  socketTimeout: 360000
+  maxConnectionIdleTime: 600000
+  connectionsPerHost: 300
+  indexManagerMode: AUTO
+  traceMode: DISABLED
+  mongoSSLConfig:
+    mongoSSLEnabled: false
+    mongoTrustStorePath:
+    mongoTrustStorePassword:
+  analyticNodeConfig:
+    mongoTagKey: none
+    mongoTagValue: none
+  aliasDBName: harness
+  maxOperationTimeInMillis: 300000
+
 cacheConfig:
   cacheBackend: HAZELCAST
   cacheNamespace: ""
