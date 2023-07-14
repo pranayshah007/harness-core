@@ -34,6 +34,7 @@ import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.Account.DEFAULT_SESSION_TIMEOUT_IN_MINUTES;
 import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
+import static software.wings.beans.AccountStatus.MARKED_FOR_DELETION;
 import static software.wings.beans.Base.ID_KEY2;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.NotificationGroup.NotificationGroupBuilder.aNotificationGroup;
@@ -746,21 +747,23 @@ public class AccountServiceImpl implements AccountService {
 
   @Override
   public boolean delete(String accountId) {
+    if (accountId == null) {
+      return true;
+    }
+    updateAccountStatus(accountId, MARKED_FOR_DELETION);
     try {
-      boolean success = accountId != null && deleteAccountHelper.deleteAccount(accountId, false);
-      log.info("testDeletionLog: vaule of success is {}", success);
+      publishAccountChangeEventViaEventFramework(accountId, DELETE_ACTION);
       try {
         accountLicenseObserverSubject.fireInform(AccountLicenseObserver::onLicenseChange, accountId);
       } catch (Exception ex) {
-        log.info("testDeletionLog: exception occurred for fire");
+        log.info("testDeletionLog: exception occurred for accountLicenseObserverSubject {}", ex.getMessage());
       }
-      deleteAccountHelper.deleteAccountFromAccountsCollection(accountId);
-      log.info("testDeletionLog: vaule of success is {}", success);
-      if (success) {
-        log.info("testDeletionLog: publishing the event for delete.");
-        publishAccountChangeEventViaEventFramework(accountId, DELETE_ACTION);
+      boolean isCgEntitiesDeleted = deleteAccountHelper.deleteAccount(accountId, false);
+      if (isCgEntitiesDeleted) {
+        deleteAccountHelper.deleteAccountFromAccountsCollection(accountId);
+        return true;
       }
-      return success;
+      return false;
     } catch (Exception ex) {
       log.info("testDeletionLog: some exception occurred - {}", ex);
       return false;

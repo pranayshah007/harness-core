@@ -258,8 +258,10 @@ public class DeleteAccountHelper {
     churnedAuditFilesAndChunksCleanup.deleteAuditFilesAndChunks(accountId);
     churnedConfigFilesAndChunksCleanup.deleteConfigFilesAndChunks(accountId);
     timescaleDataCleanup.cleanupChurnedAccountData(accountId);
-    if (isEmpty(entitiesRemainingForDeletion) && deleteAccountFromAccountsCollection) {
-      deleteAccountFromAccountsCollection(accountId);
+    if (isEmpty(entitiesRemainingForDeletion)) {
+      if (deleteAccountFromAccountsCollection) {
+        deleteAccountFromAccountsCollection(accountId);
+      }
       return true;
     } else {
       log.info("Not all entities are deleted for account {}", accountId);
