@@ -405,8 +405,8 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   }
 
   @Override
-  public ListBranchesWithDefaultResponse listBranchesWithDefault(
-      ScmConnector scmConnector, PageRequestDTO pageRequest, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+  public ListBranchesWithDefaultResponse listBranchesWithDefault(ScmConnector scmConnector, PageRequestDTO pageRequest,
+      String searchTerm, SCMGrpc.SCMBlockingStub scmBlockingStub) {
     final String slug = scmGitProviderHelper.getSlug(scmConnector);
     final Provider provider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
     int pageNumber = 1;
@@ -415,6 +415,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
             .setSlug(slug)
             .setProvider(provider)
             .setPagination(PageRequest.newBuilder().setPage(pageNumber).build())
+            .setSearchTerm(searchTerm)
             .build();
     ListBranchesWithDefaultResponse listBranchesWithDefaultResponse = ScmGrpcClientUtils.retryAndProcessException(
         scmBlockingStub::listBranchesWithDefault, listBranchesWithDefaultRequest);

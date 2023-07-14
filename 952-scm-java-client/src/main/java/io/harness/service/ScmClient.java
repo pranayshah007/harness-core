@@ -81,7 +81,8 @@ public interface ScmClient {
 
   ListBranchesResponse listBranches(ScmConnector scmConnector);
 
-  ListBranchesWithDefaultResponse listBranchesWithDefault(ScmConnector scmConnector, PageRequestDTO pageRequest);
+  ListBranchesWithDefaultResponse listBranchesWithDefault(
+      ScmConnector scmConnector, PageRequestDTO pageRequest, String searchTerm);
 
   ListCommitsResponse listCommits(ScmConnector scmConnector, String branchName);
 

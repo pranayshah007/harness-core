@@ -244,7 +244,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
                 PageRequestDTO.builder()
                     .pageIndex(pageRequest.getPageIndex())
                     .pageSize(pageRequest.getPageSize())
-                    .build()),
+                    .build(),
+                searchTerm),
             scmConnector);
 
     if (ScmApiErrorHandlingHelper.isFailureResponse(
@@ -255,7 +256,12 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
           ErrorMetadata.builder().connectorRef(connectorRef).repoName(repoName).build());
     }
 
-    List<GitBranchDetailsDTO> gitBranches = prepareGitBranchList(listBranchesWithDefaultResponse);
+    List<GitBranchDetailsDTO> gitBranches =
+        emptyIfNull(listBranchesWithDefaultResponse.getBranchesList())
+            .stream()
+            .map(branchName -> GitBranchDetailsDTO.builder().name(branchName).build())
+            .distinct()
+            .collect(Collectors.toList());
     return GitBranchesResponseDTO.builder()
         .branches(gitBranches)
         .defaultBranch(GitBranchDetailsDTO.builder().name(listBranchesWithDefaultResponse.getDefaultBranch()).build())

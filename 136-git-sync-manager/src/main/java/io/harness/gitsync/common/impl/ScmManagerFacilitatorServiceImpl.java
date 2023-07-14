@@ -329,10 +329,10 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
 
   @Override
   public ListBranchesWithDefaultResponse listBranches(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, ScmConnector scmConnector, PageRequestDTO pageRequest) {
+      String projectIdentifier, ScmConnector scmConnector, PageRequestDTO pageRequest, String searchTerm) {
     final ScmConnector decryptedConnector = gitSyncConnectorHelper.getDecryptedConnectorForNewGitX(
         accountIdentifier, orgIdentifier, projectIdentifier, scmConnector);
-    return scmClient.listBranchesWithDefault(decryptedConnector, pageRequest);
+    return scmClient.listBranchesWithDefault(decryptedConnector, pageRequest, searchTerm);
   }
 
   private CreateBranchResponse createBranch(String branch, String baseBranch, ScmConnector scmConnector) {

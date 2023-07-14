@@ -106,7 +106,7 @@ public interface ScmClientFacilitatorService {
       ScmConnector scmConnector, PageRequestDTO pageRequest);
 
   ListBranchesWithDefaultResponse listBranches(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      ScmConnector scmConnector, PageRequestDTO pageRequest);
+      ScmConnector scmConnector, PageRequestDTO pageRequest, String searchTerm);
 
   GetUserRepoResponse getRepoDetails(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, ScmConnector scmConnector);

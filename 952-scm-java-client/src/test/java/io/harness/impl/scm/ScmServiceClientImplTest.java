@@ -191,7 +191,7 @@ public class ScmServiceClientImplTest extends CategoryTest {
     ArgumentCaptor<ListBranchesWithDefaultRequest> listBranchesRequestCaptor =
         ArgumentCaptor.forClass(ListBranchesWithDefaultRequest.class);
     ListBranchesWithDefaultResponse responseFromService = scmServiceClient.listBranchesWithDefault(
-        scmConnector, PageRequestDTO.builder().pageSize(5).build(), scmBlockingStub);
+        scmConnector, PageRequestDTO.builder().pageSize(5).build(), "", scmBlockingStub);
     verify(scmBlockingStub, times(1)).listBranchesWithDefault(listBranchesRequestCaptor.capture());
     assertThat(responseFromService.getStatus()).isEqualTo(200);
     assertThat(responseFromService.getBranchesList()).isEqualTo(listBranchesWithDefaultResponse.getBranchesList());

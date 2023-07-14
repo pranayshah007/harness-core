@@ -130,8 +130,8 @@ public class ScmOrchestratorServiceImpl implements ScmOrchestratorService {
 
   @Override
   public ListBranchesWithDefaultResponse listBranchesWithDefault(
-      ScmConnector scmConnector, PageRequestDTO pageRequest) {
-    return scmServiceGitClient.listBranchesWithDefault(scmConnector, pageRequest);
+      ScmConnector scmConnector, PageRequestDTO pageRequest, String searchTerm) {
+    return scmServiceGitClient.listBranchesWithDefault(scmConnector, pageRequest, "");
   }
 
   @Override

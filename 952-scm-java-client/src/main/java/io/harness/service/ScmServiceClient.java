@@ -98,8 +98,8 @@ public interface ScmServiceClient {
 
   ListBranchesResponse listBranches(ScmConnector scmConnector, SCMGrpc.SCMBlockingStub scmBlockingStub);
 
-  ListBranchesWithDefaultResponse listBranchesWithDefault(
-      ScmConnector scmConnector, PageRequestDTO pageRequest, SCMGrpc.SCMBlockingStub scmBlockingStub);
+  ListBranchesWithDefaultResponse listBranchesWithDefault(ScmConnector scmConnector, PageRequestDTO pageRequest,
+      String searchTerm, SCMGrpc.SCMBlockingStub scmBlockingStub);
 
   ListCommitsResponse listCommits(ScmConnector scmConnector, String branch, SCMGrpc.SCMBlockingStub scmBlockingStub);
 

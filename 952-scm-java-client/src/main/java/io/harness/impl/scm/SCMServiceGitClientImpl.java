@@ -132,8 +132,8 @@ public class SCMServiceGitClientImpl implements ScmClient {
 
   @Override
   public ListBranchesWithDefaultResponse listBranchesWithDefault(
-      ScmConnector scmConnector, PageRequestDTO pageRequest) {
-    return scmServiceClient.listBranchesWithDefault(scmConnector, pageRequest, scmBlockingStub);
+      ScmConnector scmConnector, PageRequestDTO pageRequest, String searchTerm) {
+    return scmServiceClient.listBranchesWithDefault(scmConnector, pageRequest, searchTerm, scmBlockingStub);
   }
 
   @Override

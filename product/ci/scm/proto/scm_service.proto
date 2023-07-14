@@ -552,6 +552,7 @@ message ListBranchesWithDefaultRequest {
   string slug = 1;
   PageRequest pagination = 2;
   Provider provider = 3;
+  string searchTerm = 4;
 }
 
 message ListBranchesResponse {

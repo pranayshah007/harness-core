@@ -103,7 +103,7 @@ public class ScmGitRefManager {
     PageRequestDTO pageRequestDTO = PageRequestDTO.builder().build();
     final ListBranchesWithDefaultResponse listBranchesWithDefaultResponse =
         Failsafe.with(retryPolicy)
-            .get(() -> scmServiceClient.listBranchesWithDefault(scmConnector, pageRequestDTO, scmBlockingStub));
+            .get(() -> scmServiceClient.listBranchesWithDefault(scmConnector, pageRequestDTO, "", scmBlockingStub));
     ScmResponseStatusUtils.checkScmResponseStatusAndThrowException(
         listBranchesWithDefaultResponse.getStatus(), listBranchesWithDefaultResponse.getError());
     return listBranchesWithDefaultResponse.getDefaultBranch();
