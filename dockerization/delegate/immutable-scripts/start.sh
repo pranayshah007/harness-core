@@ -51,7 +51,7 @@ else
 fi
 echo "delegateName: $DELEGATE_NAME" >> config.yml
 echo "managerUrl: $MANAGER_HOST_AND_PORT/api/" >> config.yml
-echo "dmsUrl: $MANAGER_HOST_AND_PORT/api/dms/" >> config.yml
+echo "dmsUrl: $MANAGER_HOST_AND_PORT/dms/" >> config.yml
 echo "verificationServiceUrl: $MANAGER_HOST_AND_PORT/verification/" >> config.yml
 echo "cvNextGenUrl: $MANAGER_HOST_AND_PORT/cv/api/" >> config.yml
 if [ ! -e $LOG_STREAMING_SERVICE_URL ]; then

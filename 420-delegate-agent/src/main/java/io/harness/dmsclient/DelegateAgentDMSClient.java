@@ -10,7 +10,7 @@ import retrofit2.http.Query;
 
 public interface DelegateAgentDMSClient {
   @KryoResponse
-  @PUT("agent/delegates/dms/{delegateId}/tasks/{taskId}/acquire/v2")
+  @PUT("agent/delegates/{delegateId}/tasks/{taskId}/acquire/v2")
   Call<DelegateTaskPackage> acquireTask(@Path("delegateId") String delegateId, @Path("taskId") String uuid,
       @Query("accountId") String accountId, @Query("delegateInstanceId") String delegateInstanceId);
 }
