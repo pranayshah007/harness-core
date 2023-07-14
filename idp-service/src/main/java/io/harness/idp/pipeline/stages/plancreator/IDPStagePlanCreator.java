@@ -126,7 +126,7 @@ public class IDPStagePlanCreator extends AbstractStagePlanCreator<IDPStageNode> 
 
   @Override
   public StepType getStepType(IDPStageNode stageNode) {
-    return IntegrationStageStepPMS.STEP_TYPE;
+    return IDPStageStepPMS.STEP_TYPE;
   }
 
   @Override
@@ -228,7 +228,7 @@ public class IDPStagePlanCreator extends AbstractStagePlanCreator<IDPStageNode> 
     return PlanNode.builder()
         .uuid(specField.getNode().getUuid())
         .identifier(YAMLFieldNameConstants.SPEC)
-        .stepType(CISpecStep.STEP_TYPE)
+        .stepType(IDPSpecStep.STEP_TYPE)
         .name(YAMLFieldNameConstants.SPEC)
         .stepParameters(stepParameters)
         .facilitatorObtainment(

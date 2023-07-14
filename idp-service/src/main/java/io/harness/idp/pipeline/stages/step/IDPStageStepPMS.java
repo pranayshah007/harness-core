@@ -21,6 +21,7 @@ import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.K8PodDetails;
 import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
+import io.harness.ci.states.IntegrationStageStepPMS;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -49,125 +50,16 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.IDP)
-public class IDPStageStepPMS implements ChildExecutable<StageElementParameters> {
-  public static final StepType STEP_TYPE =
-      StepType.newBuilder().setType("IDPStageStepPMS").setStepCategory(StepCategory.STAGE).build();
-
-  @Inject ExecutionSweepingOutputService executionSweepingOutputResolver;
-  @Inject OutcomeService outcomeService;
-
-  @Override
-  public Class<StageElementParameters> getStepParametersClass() {
-    return StageElementParameters.class;
-  }
-
+public class IDPStageStepPMS extends IntegrationStageStepPMS {
   @Override
   public ChildExecutableResponse obtainChild(
-      Ambiance ambiance, StageElementParameters stepParameters, StepInputPackage inputPackage) {
-    String accountId = AmbianceUtils.getAccountId(ambiance);
-    String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
-
-    log.info("Executing integration stage with params accountId {} projectId {} [{}]", accountId, projectIdentifier,
-        stepParameters);
-
-    IntegrationStageStepParametersPMS integrationStageStepParametersPMS =
-        (IntegrationStageStepParametersPMS) stepParameters.getSpecConfig();
-
-    Infrastructure infrastructure = integrationStageStepParametersPMS.getInfrastructure();
-
-    if (infrastructure == null) {
-      throw new CIStageExecutionException("Input infrastructure can not be empty");
-    }
-
-    StageDetails stageDetails =
-        StageDetails.builder()
-            .stageID(stepParameters.getIdentifier())
-            .stageRuntimeID(AmbianceUtils.obtainCurrentRuntimeId(ambiance))
-            .buildStatusUpdateParameter(integrationStageStepParametersPMS.getBuildStatusUpdateParameter())
-            .accountId(AmbianceUtils.getAccountId(ambiance))
-            .build();
-
-    K8PodDetails k8PodDetails = K8PodDetails.builder()
-                                    .stageID(stepParameters.getIdentifier())
-                                    .stageName(stepParameters.getName())
-                                    .accountId(AmbianceUtils.getAccountId(ambiance))
-                                    .build();
-
-    executionSweepingOutputResolver.consume(
-        ambiance, ContextElement.podDetails, k8PodDetails, StepOutcomeGroup.STAGE.name());
-
-    executionSweepingOutputResolver.consume(
-        ambiance, ContextElement.stageDetails, stageDetails, StepOutcomeGroup.STAGE.name());
-
-    final String executionNodeId = integrationStageStepParametersPMS.getChildNodeID();
-    return ChildExecutableResponse.newBuilder().setChildNodeId(executionNodeId).build();
+          Ambiance ambiance, StageElementParameters stepParameters, StepInputPackage inputPackage) {
+    return super.obtainChild(ambiance, stepParameters, inputPackage);
   }
 
   @Override
   public StepResponse handleChildResponse(
-      Ambiance ambiance, StageElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
-    long startTime = AmbianceUtils.getCurrentLevelStartTs(ambiance);
-    long currentTime = System.currentTimeMillis();
-    StepResponseNotifyData stepResponseNotifyData = filterStepResponse(responseDataMap);
-
-    Status stageStatus = stepResponseNotifyData.getStatus();
-    log.info("Executed integration stage {} in {} milliseconds with status {} ", stepParameters.getIdentifier(),
-        (currentTime - startTime) / 1000, stageStatus);
-
-    IntegrationStageStepParametersPMS integrationStageStepParametersPMS =
-        (IntegrationStageStepParametersPMS) stepParameters.getSpecConfig();
-    StepResponse.StepResponseBuilder stepResponseBuilder =
-        createStepResponseFromChildResponse(responseDataMap).toBuilder();
-    List<String> stepIdentifiers = integrationStageStepParametersPMS.getStepIdentifiers();
-    if (isNotEmpty(stepIdentifiers)) {
-      List<Outcome> outcomes = stepIdentifiers.stream()
-                                   .map(stepIdentifier
-                                       -> outcomeService.resolveOptional(
-                                           ambiance, RefObjectUtils.getOutcomeRefObject("artifact-" + stepIdentifier)))
-                                   .filter(OptionalOutcome::isFound)
-                                   .map(OptionalOutcome::getOutcome)
-                                   .collect(Collectors.toList());
-      if (isNotEmpty(outcomes)) {
-        IntegrationStageOutcome.IntegrationStageOutcomeBuilder integrationStageOutcomeBuilder =
-            IntegrationStageOutcome.builder();
-        for (Outcome outcome : outcomes) {
-          if (outcome instanceof CIStepArtifactOutcome) {
-            CIStepArtifactOutcome ciStepArtifactOutcome = (CIStepArtifactOutcome) outcome;
-
-            if (ciStepArtifactOutcome.getStepArtifacts() != null) {
-              if (isNotEmpty(ciStepArtifactOutcome.getStepArtifacts().getPublishedFileArtifacts())) {
-                ciStepArtifactOutcome.getStepArtifacts().getPublishedFileArtifacts().forEach(
-                    integrationStageOutcomeBuilder::fileArtifact);
-              }
-              if (isNotEmpty(ciStepArtifactOutcome.getStepArtifacts().getPublishedImageArtifacts())) {
-                ciStepArtifactOutcome.getStepArtifacts().getPublishedImageArtifacts().forEach(
-                    integrationStageOutcomeBuilder::imageArtifact);
-              }
-              if (isNotEmpty(ciStepArtifactOutcome.getStepArtifacts().getPublishedSbomArtifacts())) {
-                ciStepArtifactOutcome.getStepArtifacts().getPublishedSbomArtifacts().forEach(
-                    integrationStageOutcomeBuilder::sbomArtifact);
-              }
-            }
-          }
-        }
-
-        stepResponseBuilder.stepOutcome(StepResponse.StepOutcome.builder()
-                                            .name(INTEGRATION_STAGE_OUTCOME)
-                                            .outcome(integrationStageOutcomeBuilder.build())
-                                            .build());
-      }
-    }
-
-    return stepResponseBuilder.build();
-  }
-
-  private StepResponseNotifyData filterStepResponse(Map<String, ResponseData> responseDataMap) {
-    // Filter final response from step
-    return responseDataMap.entrySet()
-        .stream()
-        .filter(entry -> entry.getValue() instanceof StepResponseNotifyData)
-        .findFirst()
-        .map(obj -> (StepResponseNotifyData) obj.getValue())
-        .orElse(null);
+          Ambiance ambiance, StageElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
+    return super.handleChildResponse(ambiance, stepParameters, responseDataMap);
   }
 }
