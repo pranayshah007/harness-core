@@ -100,7 +100,7 @@ public class NGLdapServiceImpl implements NGLdapService {
 
   @Override
   public LdapTestResponse validateLdapConnectionSettings(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, software.wings.beans.sso.LdapSettings settings) {
+                                                         String projectIdentifier, software.wings.beans.sso.LdapSettings settings) {
     log.info(
         "Validate ldap connection in NG LDAP case for account: {}, organization: {}, project: {} with ldap settings id {}",
         accountIdentifier, orgIdentifier, projectIdentifier, settings.getUuid());
@@ -117,7 +117,7 @@ public class NGLdapServiceImpl implements NGLdapService {
 
   @Override
   public LdapTestResponse validateLdapUserSettings(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, software.wings.beans.sso.LdapSettings settings) {
+                                                   String projectIdentifier, software.wings.beans.sso.LdapSettings settings) {
     log.info(
         "Validate ldap user query in NG LDAP case for account: {}, organization: {}, project: {} with ldap settings id {}",
         accountIdentifier, orgIdentifier, projectIdentifier, settings.getUuid());
@@ -134,7 +134,7 @@ public class NGLdapServiceImpl implements NGLdapService {
 
   @Override
   public LdapTestResponse validateLdapGroupSettings(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, software.wings.beans.sso.LdapSettings settings) {
+                                                    String projectIdentifier, software.wings.beans.sso.LdapSettings settings) {
     log.info(
         "NGLDAP: Validate ldap group query in NG LDAP case for account: {}, organization: {}, project: {} with ldap settings id {}",
         accountIdentifier, orgIdentifier, projectIdentifier, settings.getUuid());
@@ -190,7 +190,7 @@ public class NGLdapServiceImpl implements NGLdapService {
         getLdapSettingsWithEncryptedDataInternal(accountIdentifier);
 
     if (checkAndLogIfLDAPAuthorizationIsEnabled(
-            accountIdentifier, orgIdentifier, projectIdentifier, settingsWithEncryptedDataDetail)) {
+        accountIdentifier, orgIdentifier, projectIdentifier, settingsWithEncryptedDataDetail)) {
       return;
     }
 
@@ -238,7 +238,7 @@ public class NGLdapServiceImpl implements NGLdapService {
         getLdapSettingsWithEncryptedDataInternal(accountIdentifier);
 
     if (checkAndLogIfLDAPAuthorizationIsEnabled(
-            accountIdentifier, orgIdentifier, projectIdentifier, settingsWithEncryptedDataDetail)) {
+        accountIdentifier, orgIdentifier, projectIdentifier, settingsWithEncryptedDataDetail)) {
       return;
     }
 
@@ -259,7 +259,7 @@ public class NGLdapServiceImpl implements NGLdapService {
   }
 
   private boolean checkAndLogIfLDAPAuthorizationIsEnabled(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, LdapSettingsWithEncryptedDataDetail settingsWithEncryptedDataDetail) {
+                                                          String projectIdentifier, LdapSettingsWithEncryptedDataDetail settingsWithEncryptedDataDetail) {
     if (null != settingsWithEncryptedDataDetail && null != settingsWithEncryptedDataDetail.getLdapSettings()
         && settingsWithEncryptedDataDetail.getLdapSettings().isDisabled()) {
       log.info(
@@ -271,7 +271,7 @@ public class NGLdapServiceImpl implements NGLdapService {
   }
 
   private void syncUserGroupsJobInternal(String accountIdentifier,
-      LdapSettingsWithEncryptedDataDetail settingsWithEncryptedDataDetail, List<UserGroup> userGroupsToSync) {
+                                         LdapSettingsWithEncryptedDataDetail settingsWithEncryptedDataDetail, List<UserGroup> userGroupsToSync) {
     if (isEmpty(userGroupsToSync)) {
       log.info("NGLDAP: No User groups to sync for acccountIdentifer:{}", accountIdentifier);
       return;
@@ -363,7 +363,7 @@ public class NGLdapServiceImpl implements NGLdapService {
   }
 
   private DelegateResponseData getDelegateResponseData(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, TaskParameters parameters, TaskType taskType, LdapSettings ldapSettings) {
+                                                       String projectIdentifier, TaskParameters parameters, TaskType taskType, LdapSettings ldapSettings) {
     DelegateTaskRequest delegateTaskRequest =
         DelegateTaskRequest.builder()
             .taskType(taskType.name())
@@ -380,7 +380,7 @@ public class NGLdapServiceImpl implements NGLdapService {
 
   private Set<String> getDelegateSelectors(LdapSettings ldapSettings) {
     return null != ldapSettings && null != ldapSettings.getConnectionSettings()
-            && isNotEmpty(ldapSettings.getConnectionSettings().getDelegateSelectors())
+        && isNotEmpty(ldapSettings.getConnectionSettings().getDelegateSelectors())
         ? ldapSettings.getConnectionSettings().getDelegateSelectors()
         : new HashSet<>();
   }
