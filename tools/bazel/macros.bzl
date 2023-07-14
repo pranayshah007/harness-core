@@ -114,7 +114,7 @@ def run_analysis(
         language = "java"
         targets = []
         test_targets = []
-        sonarqube_srcs = kwargs.get("sonarqube_srcs") if kwargs.get("sonarqube_srcs") != None else None
+        sonarqube_srcs = kwargs.get("sonarqube_srcs")
         if run_checkstyle:
             checkstyle(checkstyle_srcs)
 
@@ -130,7 +130,7 @@ def run_analysis(
         language = kwargs.get("language")
         targets = kwargs.get("targets")
         test_targets = kwargs.get("test_targets")
-        sonarqube_srcs = None if kwargs.get("sonarqube_srcs") == None else kwargs.get("sonarqube_srcs")
+        sonarqube_srcs = kwargs.get("sonarqube_srcs")
         sonarqube_test(language, targets, test_targets, sonarqube_srcs)
 
 def maven_test_artifact(artifact):
