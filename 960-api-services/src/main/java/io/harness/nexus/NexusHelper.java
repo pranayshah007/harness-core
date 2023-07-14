@@ -20,7 +20,6 @@ import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.NexusRegistryException;
 import io.harness.network.Http;
 
-import java.io.IOException;
 import javax.net.ssl.SSLHandshakeException;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +32,7 @@ import retrofit2.Retrofit;
 @UtilityClass
 @Slf4j
 public class NexusHelper {
-  public static void handleException(IOException e) {
+  public static void handleException(Exception e) {
     throw NestedExceptionUtils.hintWithExplanationException(
         "Ensure that the Nexus server is up and running. Retry the action in sometime or Report the issue with delegate logs",
         "Failed to perform the operation", new InvalidArtifactServerException(ExceptionUtils.getMessage(e), USER));
@@ -67,6 +66,10 @@ public class NexusHelper {
           "SSL certificate is invalid",
           new ArtifactServerException("Certificate validation failed:" + getRootCauseMessage(e), e));
     }
+  }
+
+  public static boolean is500(Response<?> response) {
+    return response != null && !response.isSuccessful() && response.code() == 500;
   }
 
   public static boolean isSuccessful(Response<?> response) {

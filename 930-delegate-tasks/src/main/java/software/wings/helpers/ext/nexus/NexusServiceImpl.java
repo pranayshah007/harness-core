@@ -69,7 +69,7 @@ public class NexusServiceImpl implements NexusService {
     return new Retrofit.Builder()
         .baseUrl(baseUrl)
         .addConverterFactory(converterFactory)
-        .client(Http.getOkHttpClient(baseUrl, nexusConfig.isCertValidationRequired()))
+        .client(Http.getOkHttpClientBuilder(baseUrl, 15, 30, nexusConfig.isCertValidationRequired()).build())
         .build();
   }
 
@@ -209,7 +209,7 @@ public class NexusServiceImpl implements NexusService {
       if (repositoryFormat.equals(RepositoryFormat.raw.name())) {
         return nexusThreeService.getPackageNamesBuildDetails(nexusConfig, repoId, packageName);
       }
-    } catch (final IOException e) {
+    } catch (final Exception e) {
       log.error(
           format(
               "Error occurred while retrieving package names from Nexus server %s for Repository %s and package name %s",
