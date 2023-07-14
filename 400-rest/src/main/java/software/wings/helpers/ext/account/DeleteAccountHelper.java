@@ -248,7 +248,7 @@ public class DeleteAccountHelper {
   }
 
   /** With any change of deletion logic CURRENT_DELETION_ALGO_NUM value should be incremented **/
-  public boolean deleteAccount(String accountId) {
+  public boolean deleteAccount(String accountId, boolean deleteAccountFromAccountsCollection) {
     log.info("Deleting data for account {}. Deletion algo version: {}", accountId, CURRENT_DELETION_ALGO_NUM);
     deleteQuartzJobsForAccount(accountId);
     deletePerpetualTasksForAccount(accountId);
@@ -258,17 +258,8 @@ public class DeleteAccountHelper {
     churnedAuditFilesAndChunksCleanup.deleteAuditFilesAndChunks(accountId);
     churnedConfigFilesAndChunksCleanup.deleteConfigFilesAndChunks(accountId);
     timescaleDataCleanup.cleanupChurnedAccountData(accountId);
-    if (isEmpty(entitiesRemainingForDeletion)) {
-      log.info("Deleting account entry {}", accountId);
-      log.info("testDeletionLog: trying to remove the entry from accounts collection.");
-      try {
-        hPersistence.delete(Account.class, accountId);
-      } catch (Exception ex) {
-        log.info("testDeletionLog: caught exception while deleting entry from accounts collections");
-      }
-      log.info("testDeletionLog: deleted the entry from accounts collection.");
-      upsertDeletedEntity(accountId, CURRENT_DELETION_ALGO_NUM);
-      log.info("testDeletionLog: upserted this account details to DeletedEntity class.");
+    if (isEmpty(entitiesRemainingForDeletion) && deleteAccountFromAccountsCollection) {
+      deleteAccountFromAccountsCollection(accountId);
       return true;
     } else {
       log.info("Not all entities are deleted for account {}", accountId);
@@ -276,9 +267,14 @@ public class DeleteAccountHelper {
     }
   }
 
+  public void deleteAccountFromAccountsCollection(String accountId) {
+    hPersistence.delete(Account.class, accountId);
+    upsertDeletedEntity(accountId, CURRENT_DELETION_ALGO_NUM);
+  }
+
   public void handleDeletedAccount(DeletedEntity deletedAccount) {
     if (CURRENT_DELETION_ALGO_NUM > deletedAccount.getDeletionAlgoNum()) {
-      deleteAccount(deletedAccount.getEntityId());
+      deleteAccount(deletedAccount.getEntityId(), true);
     }
   }
 

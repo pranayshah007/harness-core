@@ -747,11 +747,17 @@ public class AccountServiceImpl implements AccountService {
   @Override
   public boolean delete(String accountId) {
     try {
-      boolean success = accountId != null && deleteAccountHelper.deleteAccount(accountId);
-      log.info("testDeletionLog: success value is {}", success);
-      accountLicenseObserverSubject.fireInform(AccountLicenseObserver::onLicenseChange, accountId);
-      log.info("testDeletionLog: success value after fireInform is {}", success);
+      boolean success = accountId != null && deleteAccountHelper.deleteAccount(accountId, false);
+      log.info("testDeletionLog: vaule of success is {}", success);
+      try {
+        accountLicenseObserverSubject.fireInform(AccountLicenseObserver::onLicenseChange, accountId);
+      } catch (Exception ex) {
+        log.info("testDeletionLog: exception occurred for fire");
+      }
+      deleteAccountHelper.deleteAccountFromAccountsCollection(accountId);
+      log.info("testDeletionLog: vaule of success is {}", success);
       if (success) {
+        log.info("testDeletionLog: publishing the event for delete.");
         publishAccountChangeEventViaEventFramework(accountId, DELETE_ACTION);
       }
       return success;
