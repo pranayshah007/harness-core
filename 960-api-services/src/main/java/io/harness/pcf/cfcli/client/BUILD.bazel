@@ -31,4 +31,8 @@ java_library(
     ],
 )
 
-run_analysis_per_module()
+filegroup(
+    name = "java_srcs",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+)

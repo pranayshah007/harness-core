@@ -229,6 +229,19 @@ sonarqube(
     targets = [],
 )
 
+sonarqube(
+    name = "api-services",
+    srcs = [],
+    coverage_report = ":coverage_report",
+    modules = {"//960-api-services:sonarqube": "960-api-services",},
+    project_key = "960-api-services",
+    project_name = "960-api-services",
+    scm_info = [":git"],
+    sq_properties_filename = "sonar-project-960-api-services.properties",
+    tags = ["manual"],
+    targets = [],
+)
+
 filegroup(
     name = "resource",
     srcs = [
