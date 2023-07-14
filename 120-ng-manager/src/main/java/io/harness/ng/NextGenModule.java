@@ -70,6 +70,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.audit.ResourceTypeConstants;
 import io.harness.audit.client.remote.AuditClientModule;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.HarnessCacheManager;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
@@ -600,6 +601,8 @@ public class NextGenModule extends AbstractModule {
   @Override
   protected void configure() {
     install(VersionModule.getInstance());
+    install(new io.harness.hsqs.client.HsqsServiceClientModule(
+        appConfig.getQueueServiceClientConfig(), AuthorizationServiceHeader.BEARER.getServiceId()));
     install(PrimaryVersionManagerModule.getInstance());
     install(new NGSettingModule(appConfig));
     install(new AbstractPersistenceTracerModule() {

@@ -2258,6 +2258,9 @@
         "type"
       ],
       "properties": {
+        "accountIdentifier": {
+          "type": "string"
+        },
         "description": {
           "type": "string"
         },

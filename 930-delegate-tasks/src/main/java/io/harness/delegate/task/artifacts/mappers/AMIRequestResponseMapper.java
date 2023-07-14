@@ -6,7 +6,9 @@
  */
 
 package io.harness.delegate.task.artifacts.mappers;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateResponse;
@@ -15,6 +17,7 @@ import software.wings.helpers.ext.jenkins.BuildDetails;
 
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @UtilityClass
 public class AMIRequestResponseMapper {
   public static AMIArtifactDelegateResponse toAMIArtifactResponse(

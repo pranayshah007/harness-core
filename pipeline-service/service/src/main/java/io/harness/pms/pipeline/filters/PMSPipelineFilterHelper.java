@@ -109,6 +109,9 @@ public class PMSPipelineFilterHelper {
     if (isNotEmpty(updateGitDetailsParams.getFilePath())) {
       update.set(PipelineEntityKeys.filePath, updateGitDetailsParams.getFilePath());
     }
+    if (!update.getUpdateObject().isEmpty()) {
+      update.set(PipelineEntityKeys.lastUpdatedAt, System.currentTimeMillis());
+    }
     return update;
   }
 }

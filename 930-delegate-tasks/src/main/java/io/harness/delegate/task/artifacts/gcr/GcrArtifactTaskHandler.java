@@ -6,11 +6,13 @@
  */
 
 package io.harness.delegate.task.artifacts.gcr;
-
 import static io.harness.exception.WingsException.USER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
 import io.harness.artifacts.gcr.beans.GcrInternalConfig;
@@ -40,6 +42,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))

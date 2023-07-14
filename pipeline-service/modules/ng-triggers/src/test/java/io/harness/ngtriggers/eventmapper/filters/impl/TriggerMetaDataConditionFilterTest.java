@@ -7,6 +7,7 @@
 package io.harness.ngtriggers.eventmapper.filters.impl;
 
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.NO_MATCHING_TRIGGER_FOR_METADATA_CONDITIONS;
+import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.TRIGGER_DID_NOT_MATCH_METADATA_CONDITION;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
@@ -142,5 +143,12 @@ public class TriggerMetaDataConditionFilterTest extends CategoryTest {
     assertThat(webhookEventMappingResponse1.getWebhookEventResponse()).isNotNull();
     assertThat(webhookEventMappingResponse1.getWebhookEventResponse().getFinalStatus())
         .isEqualTo(NO_MATCHING_TRIGGER_FOR_METADATA_CONDITIONS);
+    assertThat(
+        webhookEventMappingResponse1.getUnMatchedTriggerInfoList().get(0).getUnMatchedTriggers().getNgTriggerConfigV2())
+        .isEqualTo(ngTriggerConfig);
+    assertThat(webhookEventMappingResponse1.getUnMatchedTriggerInfoList().get(0).getFinalStatus())
+        .isEqualTo(TRIGGER_DID_NOT_MATCH_METADATA_CONDITION);
+    assertThat(webhookEventMappingResponse1.getUnMatchedTriggerInfoList().get(0).getMessage())
+        .isEqualTo(ngTriggerConfig.getIdentifier() + " didn't match conditions for metadata");
   }
 }

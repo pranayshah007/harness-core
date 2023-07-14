@@ -6,5 +6,13 @@
  */
 
 package io.harness.artifacts.azureartifacts.beans;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
-public enum AzureArtifactsProtocolType { maven, nuget, upack }
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
+public enum AzureArtifactsProtocolType {
+  maven,
+  nuget,
+  upack
+}

@@ -54,8 +54,7 @@ import org.apache.commons.lang3.StringUtils;
 @UtilityClass
 @Slf4j
 public class WebhookTriggerFilterUtils {
-  public boolean checkIfEventTypeMatchesHarnessScm(
-      io.harness.beans.WebhookEvent.Type eventTypeFromPayload, WebhookTriggerSpecV2 webhookTriggerSpec) {
+  public boolean checkIfEventTypeMatchesHarnessScm(WebhookTriggerSpecV2 webhookTriggerSpec) {
     if (webhookTriggerSpec.fetchGitAware() == null) {
       throw new TriggerException(
           "Invalid Filter used. Event Filter is not compatible with class: " + webhookTriggerSpec.getClass(), USER_SRE);
@@ -67,7 +66,7 @@ public class WebhookTriggerFilterUtils {
   public boolean evaluateEventAndActionFilters(
       WebhookPayloadData webhookPayloadData, WebhookTriggerSpecV2 webhookTriggerConfigSpec) {
     if (webhookTriggerConfigSpec instanceof HarnessSpec) {
-      return checkIfEventTypeMatchesHarnessScm(webhookPayloadData.getWebhookEvent().getType(), webhookTriggerConfigSpec)
+      return checkIfEventTypeMatchesHarnessScm(webhookTriggerConfigSpec)
           && checkIfActionMatches(webhookPayloadData, webhookTriggerConfigSpec);
     }
     return checkIfEventTypeMatches(webhookPayloadData.getWebhookEvent().getType(), webhookTriggerConfigSpec)
@@ -114,9 +113,9 @@ public class WebhookTriggerFilterUtils {
       return true;
     }
 
-    Set<String> parsedActionValueSet = actions.stream().map(action -> action.getParsedValue()).collect(toSet());
+    Set<String> parsedActionValueSet = actions.stream().map(GitAction::getParsedValue).collect(toSet());
     if (actions.contains(BT_PULL_REQUEST_UPDATED)) {
-      specialHandlingForBBSPullReqUpdate(webhookPayloadData, actions, parsedActionValueSet);
+      specialHandlingForBBSPullReqUpdate(webhookPayloadData, parsedActionValueSet);
     }
     String eventActionReceived = webhookPayloadData.getWebhookEvent().getBaseAttributes().getAction();
 
@@ -136,12 +135,9 @@ public class WebhookTriggerFilterUtils {
   // So, For BT_PULL_REQUEST_UPDATED, we have associated "sync" as parsedValue,
   // So, here are adding "open" in case, it was bitbucker server payload
   private static void specialHandlingForBBSPullReqUpdate(
-      WebhookPayloadData webhookPayloadData, List<GitAction> actions, Set<String> parsedActionValueSet) {
-    Set<String> headerKeys = webhookPayloadData.getOriginalEvent()
-                                 .getHeaders()
-                                 .stream()
-                                 .map(headerConfig -> headerConfig.getKey())
-                                 .collect(toSet());
+      WebhookPayloadData webhookPayloadData, Set<String> parsedActionValueSet) {
+    Set<String> headerKeys =
+        webhookPayloadData.getOriginalEvent().getHeaders().stream().map(HeaderConfig::getKey).collect(toSet());
 
     if (!headerKeys.contains(BITBUCKET_CLOUD_HEADER_KEY)
         && !headerKeys.contains(BITBUCKET_CLOUD_HEADER_KEY.toLowerCase())

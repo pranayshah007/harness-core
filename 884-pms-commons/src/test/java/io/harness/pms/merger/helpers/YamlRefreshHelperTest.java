@@ -9,6 +9,7 @@ package io.harness.pms.merger.helpers;
 
 import static io.harness.pms.merger.helpers.YamlRefreshHelper.refreshNodeFromSourceNode;
 import static io.harness.pms.merger.helpers.YamlRefreshHelper.refreshYamlFromSourceYaml;
+import static io.harness.rule.OwnerRule.ABHINAV_MITTAL;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.VED;
@@ -197,6 +198,52 @@ public class YamlRefreshHelperTest extends CategoryTest {
                 "type: Deployment\nspec:\n  service:\n    serviceRef: fixedService\n    serviceInputs: <+input>\n"))))
         .isEqualTo(
             "type: Deployment\nspec:\n  service:\n    serviceInputs:\n      serviceDefinition:\n        type: Kubernetes\n        spec:\n          variables:\n            - name: ghcgh\n              type: String\n              value: ewfrvgdbgr");
+  }
+
+  @Test
+  @Owner(developers = ABHINAV_MITTAL)
+  @Category(UnitTests.class)
+  public void testRefreshNodeFromSourceNodeWithUseFromStageForEnvironment() throws IOException {
+    assertThat(
+        convertToYaml(refreshNodeFromSourceNode(
+            convertYamlToJsonNode(
+                "type: \"Deployment\"\nspec:\n  environment:\n    environmentRef: \"<+input>\"\n    environmentInputs: \"<+input>\"\n"),
+            convertYamlToJsonNode(
+                "type: \"Deployment\"\nspec:\n  environment:\n    environmentRef: \"<+input>\"\n    environmentInputs: \"<+input>\"\n"))))
+        .isEqualTo(
+            "type: Deployment\nspec:\n  environment:\n    environmentRef: <+input>\n    environmentInputs: <+input>");
+
+    assertThat(
+        convertToYaml(refreshNodeFromSourceNode(
+            convertYamlToJsonNode("type: Deployment\nspec:\n  environment:\n    environmentRef: prod_environment\n"),
+            convertYamlToJsonNode(
+                "type: Deployment\nspec:\n  environment:\n    environmentRef: <+input>\n    environmentInputs: <+input>\n"))))
+        .isEqualTo(
+            "type: Deployment\nspec:\n  environment:\n    environmentRef: prod_environment\n    environmentInputs: <+input>");
+    assertThat(
+        convertToYaml(refreshNodeFromSourceNode(
+            convertYamlToJsonNode(
+                "type: Deployment\nspec:\n  environment:\n    environmentInputs:\n      identifier: env_2\n      type: Production\n      variables:\n        - name: ghcgh\n          type: String\n          value: ewfrvgdbgr\n    environmentRef: two\n"),
+            convertYamlToJsonNode(
+                "type: Deployment\nspec:\n  environment:\n    environmentRef: <+input>\n    environmentInputs: <+input>\n"))))
+        .isEqualTo(
+            "type: Deployment\nspec:\n  environment:\n    environmentRef: two\n    environmentInputs:\n      identifier: env_2\n      type: Production\n      variables:\n        - name: ghcgh\n          type: String\n          value: ewfrvgdbgr");
+
+    assertThat(
+        convertToYaml(refreshNodeFromSourceNode(
+            convertYamlToJsonNode("type: Deployment\nspec:\n  environment:\n    useFromStage:\n      stage: s1\n"),
+            convertYamlToJsonNode(
+                "type: Deployment\nspec:\n  environment:\n    environmentRef: <+input>\n    environmentInputs: <+input>\n"))))
+        .isEqualTo("type: Deployment\nspec:\n  environment:\n    useFromStage:\n      stage: s1");
+
+    assertThat(
+        convertToYaml(refreshNodeFromSourceNode(
+            convertYamlToJsonNode(
+                "type: Deployment\nspec:\n  environment:\n    environmentInputs:\n      identifier: env_2\n      type: Production\n      variables:\n        - name: ghcgh\n          type: String\n          value: ewfrvgdbgr\n"),
+            convertYamlToJsonNode(
+                "type: Deployment\nspec:\n  environment:\n    environmentRef: fixedService\n    environmentInputs: <+input>\n"))))
+        .isEqualTo(
+            "type: Deployment\nspec:\n  environment:\n    environmentInputs:\n      identifier: env_2\n      type: Production\n      variables:\n        - name: ghcgh\n          type: String\n          value: ewfrvgdbgr");
   }
 
   @Test

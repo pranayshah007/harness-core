@@ -68,7 +68,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
@@ -89,11 +89,12 @@ public class NGTemplateServiceHelper {
   private final GitAwareEntityHelper gitAwareEntityHelper;
 
   private final TelemetryReporter telemetryReporter;
-  private final Executor executor;
+  private final ExecutorService executorService;
 
   public static String TEMPLATE_SAVE = "template_save";
   public static String TEMPLATE_SAVE_ACTION_TYPE = "action";
   public static String TEMPLATE_NAME = "templateName";
+  public static String TEMPLATE_ID = "templateId";
   public static String ORG_ID = "orgId";
   public static String PROJECT_ID = "projectId";
   public static String MODULE_NAME = "moduleName";
@@ -102,20 +103,21 @@ public class NGTemplateServiceHelper {
   public NGTemplateServiceHelper(FilterService filterService, NGTemplateRepository templateRepository,
       GitSyncSdkService gitSyncSdkService, TemplateGitXService templateGitXService,
       GitAwareEntityHelper gitAwareEntityHelper, TelemetryReporter telemetryReporter,
-      @Named("TemplateServiceHelperExecutorService") Executor executor) {
+      @Named("TemplateServiceHelperExecutorService") ExecutorService executorService) {
     this.filterService = filterService;
     this.templateRepository = templateRepository;
     this.gitSyncSdkService = gitSyncSdkService;
     this.templateGitXService = templateGitXService;
     this.gitAwareEntityHelper = gitAwareEntityHelper;
     this.telemetryReporter = telemetryReporter;
-    this.executor = executor;
+    this.executorService = executorService;
   }
 
   public void sendTemplatesSaveTelemetryEvent(TemplateEntity entity, String actionType) {
-    executor.execute(() -> {
+    executorService.submit(() -> {
       try {
         HashMap<String, Object> properties = new HashMap<>();
+        properties.put(TEMPLATE_ID, entity.getIdentifier());
         properties.put(TEMPLATE_NAME, entity.getName());
         properties.put(ORG_ID, entity.getOrgIdentifier());
         properties.put(PROJECT_ID, entity.getProjectIdentifier());

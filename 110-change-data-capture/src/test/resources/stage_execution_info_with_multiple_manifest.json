@@ -1,0 +1,169 @@
+{
+  "_id" : "64480d2a4102c515925a1c7f",
+  "createdAt" : 1682443562059,
+  "lastModifiedAt" : 1682443562059,
+  "accountIdentifier" : "kmpySmUISimoRrJL6NL73w",
+  "orgIdentifier" : "default",
+  "projectIdentifier" : "testProject",
+  "stageExecutionId" : "WGorBC7tTFStlQshsrAgYA",
+  "planExecutionId" : "DF6TmeGYTOa-ZLTQj8yuww",
+  "pipelineIdentifier" : "pipelineNewDesign_Clone",
+  "stageName" : "s2",
+  "stageIdentifier" : "s2",
+  "stageStatus" : "FAILED",
+  "status" : "FAILED",
+  "executionSummaryDetails" : {
+    "serviceInfo" : {
+      "identifier" : "serNewDesign",
+      "displayName" : "serNewDesign",
+      "deploymentType" : "Kubernetes",
+      "gitOpsEnabled" : false,
+      "artifacts" : {
+        "primary" : {
+          "imagePath" : "library/nginx",
+          "tag" : "stable-perl",
+          "_class" : "io.harness.cdng.artifact.DockerArtifactSummary"
+        },
+        "artifactDisplayName" : "library/nginx:stable-perl",
+        "sidecars" : [
+
+        ]
+      },
+      "manifests" : {
+        "manifestSummaries" : [
+          {
+            "identifier" : "manifest1",
+            "type" : "HelmChart",
+            "store" : {
+              "files" : {
+                "expression" : false,
+                "value" : [
+                  "/helmManifest.yaml"
+                ],
+                "typeString" : false,
+                "isExecutionInput" : false,
+                "jsonResponseField" : false
+              },
+              "secretFiles" : {
+                "expression" : false,
+                "typeString" : false,
+                "isExecutionInput" : false,
+                "jsonResponseField" : false
+              },
+              "_class" : "harnessStore"
+            },
+            "chartVersion" : "0.1.0",
+            "_class" : "HelmChartManifestSummary"
+          },
+          {
+            "identifier" : "manifest2",
+            "type" : "HelmChart",
+            "store" : {
+              "files" : {
+                "expression" : false,
+                "value" : [
+                  "/helmManifest2.yaml"
+                ],
+                "typeString" : false,
+                "isExecutionInput" : false,
+                "jsonResponseField" : false
+              },
+              "secretFiles" : {
+                "expression" : false,
+                "typeString" : false,
+                "isExecutionInput" : false,
+                "jsonResponseField" : false
+              },
+              "_class" : "harnessStore"
+            },
+            "chartVersion" : "0.2.0",
+            "_class" : "HelmChartManifestSummary"
+          },
+          {
+            "identifier" : "manifest3",
+            "type" : "K8sManifest",
+            "store" : {
+              "files" : {
+                "expression" : false,
+                "value" : [
+                  "/k8sManifest.yaml"
+                ],
+                "typeString" : false,
+                "isExecutionInput" : false,
+                "jsonResponseField" : false
+              },
+              "secretFiles" : {
+                "expression" : false,
+                "typeString" : false,
+                "isExecutionInput" : false,
+                "jsonResponseField" : false
+              },
+              "_class" : "harnessStore"
+            },
+            "_class" : "K8sManifestSummary"
+          }
+        ]
+      }
+    },
+    "infraExecutionSummary" : {
+      "identifier" : "envRedesign",
+      "name" : "envRedesign",
+      "type" : "Production",
+      "infrastructureIdentifier" : "infraName",
+      "infrastructureName" : "infraName",
+      "connectorRef" : "account.localCLuster"
+    },
+    "failureInfo" : {
+      "errorMessage_" : "Shell Script execution failed. Please check execution logs.",
+      "failureTypes_" : [
+
+      ],
+      "failureTypesMemoizedSerializedSize" : 0,
+      "failureData_" : [
+
+      ],
+      "memoizedIsInitialized" : 1,
+      "unknownFields" : {
+        "fields" : {
+
+        }
+      },
+      "memoizedSize" : -1,
+      "memoizedHashCode" : 0
+    }
+  },
+  "rollbackDuration" : 25728,
+  "startts" : 1682443561960,
+  "_class" : "stageExecutionInfo",
+  "envIdentifier" : "envRedesign",
+  "executionDetails" : {
+    "artifactsOutcome" : [
+      {
+        "connectorRef" : "docker_tests",
+        "imagePath" : "library/nginx",
+        "tag" : "stable-perl",
+        "identifier" : "primary",
+        "type" : "DockerRegistry",
+        "primaryArtifact" : true,
+        "image" : "registry.hub.docker.com/library/nginx:stable-perl",
+        "imagePullSecret" : "<+imagePullSecret.primary>",
+        "label" : {
+          "maintainer" : "NGINX Docker Maintainers <docker-maint@nginx.com>"
+        },
+        "displayName" : "Tag# stable-perl",
+        "metadata" : {
+          "image" : "registry.hub.docker.com/library/nginx:stable-perl",
+          "tag" : "stable-perl",
+          "SHA" : "sha256:c1e4d0ed812ff5f508d1ed4f1a3a6c61df78379844ac3949fe3720362a97499e",
+          "url" : "https://registry.hub.docker.com/library/nginx/tags/stable-perl"
+        },
+        "dockerConfigJsonSecret" : "<+dockerConfigJsonSecret.primary>",
+        "_class" : "dockerArtifactOutcome"
+      }
+    ],
+    "_class" : "io.harness.cdng.execution.DefaultExecutionDetails"
+  },
+  "infraIdentifier" : "infraName",
+  "serviceIdentifier" : "serNewDesign",
+  "endts" : 1682443607608
+}

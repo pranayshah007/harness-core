@@ -765,6 +765,19 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     }
   }
 
+  @Override
+  public void validateRepo(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef, String repoName) {
+    ScmConnector scmConnector =
+        gitSyncConnectorHelper.getScmConnector(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef);
+    gitRepoAllowlistHelper.validateRepo(Scope.builder()
+                                            .accountIdentifier(accountIdentifier)
+                                            .orgIdentifier(orgIdentifier)
+                                            .projectIdentifier(projectIdentifier)
+                                            .build(),
+        scmConnector, repoName);
+  }
+
   @VisibleForTesting
   protected List<GitBranchDetailsDTO> prepareGitBranchList(
       ListBranchesWithDefaultResponse listBranchesWithDefaultResponse) {

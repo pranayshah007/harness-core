@@ -302,12 +302,15 @@ public class MatrixConfigServiceHelper {
 
     int i = 0;
     for (Object val : (List<Object>) value) {
-      if (val instanceof Map) {
-        currentCombinationRef.put(key, JsonUtils.asJson(val));
-      } else if (val instanceof String) {
+      if (val instanceof String) {
         currentCombinationRef.put(key, (String) val);
       } else {
-        throw new InvalidRequestException("Either Map or String expected. Found unknown");
+        try {
+          currentCombinationRef.put(key, JsonUtils.asJson(val));
+        } catch (Exception ex) {
+          throw new InvalidRequestException(
+              String.format("Either Map or String expected. Found value: [%s] for this key [%s]", key, val.toString()));
+        }
       }
       indexPath.add(i);
       fetchCombinations(currentCombinationRef, axes, expressionAxisConfigMap, combinationsRef, exclude,

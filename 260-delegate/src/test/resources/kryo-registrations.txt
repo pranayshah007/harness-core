@@ -2837,4 +2837,7 @@
 20000614:io.harness.delegate.beans.serverless.RollbackConfiguration
 20000615:io.harness.delegate.beans.serverless.RollbackTrigger
 20000616:io.harness.delegate.beans.serverless.Tag
+20000617:io.harness.delegate.task.helm.request.HelmFetchChartManifestTaskParameters
+20000618:io.harness.delegate.task.helm.response.HelmFetchChartManifestResponse
+20000619:io.harness.delegate.task.helm.response.HelmChartManifest
 20001000:io.harness.delegate.beans.connector.scm.github.GithubAppDTO

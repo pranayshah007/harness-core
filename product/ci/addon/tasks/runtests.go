@@ -277,6 +277,53 @@ instrPackages: [%s]`, cgdir, strings.Join(namespaceArray, ","))
 	return outputFile, nil
 }
 
+/*
+Creates config.ini file for Python agent to consume and returns the path to config.ini file on successful creation.
+Args:
+
+	None
+
+Returns:
+
+	configPath (string): Path to the config.ini file. Empty string on errors.
+	err (error): Error if there's one, nil otherwise.
+*/
+func (r *runTestsTask) createPythonConfigFile() (string, error) {
+	// Create config file
+	dir := filepath.Join(r.tmpFilePath, outDir)
+	cgdir := filepath.Join(r.tmpFilePath, cgDir)
+	err := r.fs.MkdirAll(dir, os.ModePerm)
+	if err != nil {
+		r.log.Errorw(fmt.Sprintf("could not create nested directory %s", dir), zap.Error(err))
+		return "", err
+	}
+	var data string
+	var outputFile string
+
+	outputFile = filepath.Join(r.tmpFilePath, "config.ini")
+	namespaceArray := strings.Split(r.namespaces, ",")
+	for idx, s := range namespaceArray {
+		namespaceArray[idx] = fmt.Sprintf("'%s'", s)
+	}
+	data = fmt.Sprintf(`outDir: '%s'
+logLevel: 0`, cgdir)
+
+	r.log.Infow(fmt.Sprintf("attempting to write %s to %s", data, outputFile))
+	f, err := r.fs.Create(outputFile)
+	if err != nil {
+		r.log.Errorw(fmt.Sprintf("could not create file %s", outputFile), zap.Error(err))
+		return "", err
+	}
+	_, err = f.Write([]byte(data))
+	defer f.Close()
+	if err != nil {
+		r.log.Errorw(fmt.Sprintf("could not write %s to file %s", data, outputFile), zap.Error(err))
+		return "", err
+	}
+	// Return path to the config.ini file
+	return outputFile, nil
+}
+
 func valid(tests []types.RunnableTest) bool {
 	for _, t := range tests {
 		if t.Class == "" {
@@ -561,6 +608,13 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 				return "", err
 			}
 		}
+	case "python":
+    		{
+    			iniFilePath, err = r.createPythonConfigFile()
+    			if err != nil {
+    				return "", err
+            }
+        }
 	}
 
 	// Test splitting: only when parallelism is enabled

@@ -6,7 +6,9 @@
  */
 
 package io.harness.artifacts.beans;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.ArtifactMetaInfo;
 import io.harness.delegate.beans.artifact.ArtifactFileMetadataInternal;
 
@@ -17,6 +19,7 @@ import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Value
 @Builder
 public class BuildDetailsInternal {

@@ -276,3 +276,5 @@ featureFlagConfig:
   syncFeaturesToCF: false
 
 disableRedundantACLs: ${DISABLE_REDUNDANT_ACLS:-false}
+
+enableParallelProcessingOfUserGroupUpdates: ${ENABLE_PARALLEL_PROCESSING_OF_USERGROUP_UPDATES:-false}

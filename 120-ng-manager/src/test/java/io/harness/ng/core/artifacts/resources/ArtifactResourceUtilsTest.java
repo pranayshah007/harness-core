@@ -392,6 +392,30 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
     verify(pipelineServiceClient)
         .getMergeInputSetFromPipelineTemplate(any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
   }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testResolveParameterFieldValuesWithInvalidPipelineIdentifier() throws IOException {
+    Call<ResponseDTO<MergeInputSetResponseDTOPMS>> mergeInputSetCall = mock(Call.class);
+    when(pipelineServiceClient.getMergeInputSetFromPipelineTemplate(
+             any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(mergeInputSetCall);
+    when(mergeInputSetCall.execute())
+        .thenThrow(new InvalidRequestException(
+            "Pipeline [-1] under Project[s], Organization [default] doesn't exist or has been deleted"));
+    ParameterField<String> paramWithExpression = new ParameterField<>();
+    paramWithExpression.updateWithExpression("<+pipeline.variables.image_path>");
+    ParameterField<String> paramWithoutExpression = new ParameterField<>();
+    paramWithoutExpression.updateWithValue("value");
+    List<ParameterField<String>> paramFields = Arrays.asList(paramWithExpression, paramWithoutExpression);
+    artifactResourceUtils.resolveParameterFieldValues(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", paramFields,
+        "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
+        GitEntityFindInfoDTO.builder().build(), "");
+    assertThat(paramWithExpression.getExpressionValue()).isEqualTo("<+pipeline.variables.image_path>");
+    assertThat(paramWithoutExpression.getValue()).isEqualTo("value");
+    verify(pipelineServiceClient)
+        .getMergeInputSetFromPipelineTemplate(any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
+  }
 
   @Test
   @Owner(developers = INDER)

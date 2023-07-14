@@ -22,7 +22,16 @@ import lombok.Value;
 public class K8sCanaryDeployResponse implements K8sNGTaskResponse {
   Integer releaseNumber;
   List<K8sPod> k8sPodList;
+  List<K8sPod> previousK8sPodList;
   Integer currentInstances;
   String canaryWorkload;
   boolean canaryWorkloadDeployed;
+
+  public List<K8sPod> getPreviousK8sPodList() {
+    return previousK8sPodList;
+  }
+
+  public List<K8sPod> getTotalK8sPodList() {
+    return k8sPodList;
+  }
 }

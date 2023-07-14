@@ -6,13 +6,16 @@
  */
 
 package io.harness.artifacts.comparator;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 
 import java.util.Comparator;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(HarnessTeam.CDC)
 public class BuildDetailsInternalComparatorDateDescending implements Comparator<BuildDetailsInternal> {
   @Override

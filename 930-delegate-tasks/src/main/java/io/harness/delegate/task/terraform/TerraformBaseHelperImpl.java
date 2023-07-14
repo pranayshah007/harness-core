@@ -342,12 +342,11 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
           terraformExecuteStepRequest.getLogCallback());
 
       if (terraformExecuteStepRequest.isSaveTerraformJson() && !terraformExecuteStepRequest.isTerraformCloudCli()) {
-        response =
-            executeTerraformShowCommandWithTfClient(terraformExecuteStepRequest.isTfPlanDestroy() ? DESTROY : APPLY,
-                terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
-                terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback(),
-                terraformExecuteStepRequest.getPlanJsonLogOutputStream(),
-                terraformExecuteStepRequest.isUseOptimizedTfPlan());
+        executeTerraformShowCommandWithTfClient(terraformExecuteStepRequest.isTfPlanDestroy() ? DESTROY : APPLY,
+            terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
+            terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback(),
+            terraformExecuteStepRequest.getPlanJsonLogOutputStream(),
+            terraformExecuteStepRequest.isUseOptimizedTfPlan());
       }
 
       // Generating Human Readable Representation of the tfplan

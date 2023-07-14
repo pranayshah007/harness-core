@@ -26,6 +26,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.NGInstanceUnitType;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.execution.service.StageExecutionInstanceInfoService;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
@@ -42,6 +43,7 @@ import io.harness.delegate.task.k8s.data.K8sCanaryDataException;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.k8s.model.K8sPod;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
@@ -71,6 +73,7 @@ public class K8sCanaryStepTest extends AbstractK8sStepExecutorTestBase {
   @Mock InstanceInfoService instanceInfoService;
   @InjectMocks private K8sCanaryStep k8sCanaryStep;
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
+  @Mock StageExecutionInstanceInfoService stageExecutionInstanceInfoService;
 
   @Test
   @Owner(developers = ABOSII)
@@ -210,18 +213,21 @@ public class K8sCanaryStepTest extends AbstractK8sStepExecutorTestBase {
     K8sCanaryStepParameters stepParameters = new K8sCanaryStepParameters();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
 
-    K8sDeployResponse k8sDeployResponse = K8sDeployResponse.builder()
-                                              .k8sNGTaskResponse(K8sCanaryDeployResponse.builder()
-                                                                     .canaryWorkload("canaryWorkload")
-                                                                     .releaseNumber(1)
-                                                                     .k8sPodList(new ArrayList<>())
-                                                                     .build())
-                                              .commandUnitsProgress(UnitProgressData.builder().build())
-                                              .commandExecutionStatus(SUCCESS)
-                                              .build();
+    K8sDeployResponse k8sDeployResponse =
+        K8sDeployResponse.builder()
+            .k8sNGTaskResponse(K8sCanaryDeployResponse.builder()
+                                   .canaryWorkload("canaryWorkload")
+                                   .releaseNumber(1)
+                                   .k8sPodList(List.of(K8sPod.builder().name("pod1").newPod(true).build()))
+                                   .previousK8sPodList(Collections.emptyList())
+                                   .k8sPodList(new ArrayList<>())
+                                   .build())
+            .commandUnitsProgress(UnitProgressData.builder().build())
+            .commandExecutionStatus(SUCCESS)
+            .build();
     when(cdStepHelper.getReleaseName(any(), any())).thenReturn("releaseName");
 
-    StepResponse response = k8sCanaryStep.finalizeExecutionWithSecurityContext(
+    StepResponse response = k8sCanaryStep.finalizeExecutionWithSecurityContextAndNodeInfo(
         ambiance, stepElementParameters, K8sExecutionPassThroughData.builder().build(), () -> k8sDeployResponse);
     assertThat(response.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(response.getStepOutcomes()).hasSize(1);
@@ -250,7 +256,7 @@ public class K8sCanaryStepTest extends AbstractK8sStepExecutorTestBase {
 
     doReturn(stepResponse).when(k8sStepHelper).handleTaskException(ambiance, executionPassThroughData, thrownException);
 
-    StepResponse response = k8sCanaryStep.finalizeExecutionWithSecurityContext(
+    StepResponse response = k8sCanaryStep.finalizeExecutionWithSecurityContextAndNodeInfo(
         ambiance, stepElementParameters, executionPassThroughData, () -> { throw thrownException; });
 
     assertThat(response).isEqualTo(stepResponse);
@@ -271,7 +277,7 @@ public class K8sCanaryStepTest extends AbstractK8sStepExecutorTestBase {
 
     doThrow(taskException).when(k8sStepHelper).handleTaskException(ambiance, executionPassThroughData, taskException);
     try {
-      k8sCanaryStep.finalizeExecutionWithSecurityContext(
+      k8sCanaryStep.finalizeExecutionWithSecurityContextAndNodeInfo(
           ambiance, stepElementParameters, executionPassThroughData, () -> { throw taskException; });
 
     } catch (Exception e) {

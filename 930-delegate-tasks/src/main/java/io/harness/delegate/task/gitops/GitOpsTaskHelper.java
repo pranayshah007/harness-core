@@ -107,4 +107,27 @@ public class GitOpsTaskHelper {
 
     return gitFetchFilesResult;
   }
+
+  /**
+   * Sets the credentials after decrypting them.
+   *
+   * @param gitFetchFilesConfig
+   * @param executionLogCallback
+   */
+  public void setGitConfigCred(GitFetchFilesConfig gitFetchFilesConfig, LogCallback executionLogCallback) {
+    executionLogCallback.saveExecutionLog("Setting git configs");
+    GitStoreDelegateConfig gitStoreDelegateConfig = gitFetchFilesConfig.getGitStoreDelegateConfig();
+    if (gitStoreDelegateConfig.isOptimizedFilesFetch()) {
+      executionLogCallback.saveExecutionLog("Using optimized file fetch");
+      secretDecryptionService.decrypt(
+          GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(gitStoreDelegateConfig.getGitConfigDTO()),
+          gitStoreDelegateConfig.getApiAuthEncryptedDataDetails());
+      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
+          GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(gitStoreDelegateConfig.getGitConfigDTO()),
+          gitStoreDelegateConfig.getApiAuthEncryptedDataDetails());
+    } else {
+      GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());
+      gitDecryptionHelper.decryptGitConfig(gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());
+    }
+  }
 }

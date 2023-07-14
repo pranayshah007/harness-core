@@ -137,6 +137,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 import javax.validation.Validation;
@@ -423,7 +424,7 @@ public class TemplateServiceModule extends AbstractModule {
   @Provides
   @Singleton
   @Named("TemplateServiceHelperExecutorService")
-  public Executor templateServiceHelperExecutorService() {
+  public ExecutorService templateServiceHelperExecutorService() {
     return new ManagedExecutorService(
         ThreadPool.create(templateServiceConfiguration.getTemplateServiceHelperPoolConfig().getCorePoolSize(),
             templateServiceConfiguration.getTemplateServiceHelperPoolConfig().getMaxPoolSize(),

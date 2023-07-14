@@ -252,7 +252,7 @@ public class ScimUserServiceImpl implements ScimUserService {
                                 .equal(true);
 
     if (StringUtils.isNotEmpty(searchQuery)) {
-      userQuery.field(UserKeys.email).equalIgnoreCase(searchQuery);
+      userQuery.field(UserKeys.email).equal(searchQuery);
     }
     List<User> userList = userQuery.asList(new FindOptions().skip(startIndex).limit(count));
     return userList.stream().map(user -> buildUserResponse(user, accountId)).collect(Collectors.toList());

@@ -23,8 +23,8 @@ import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.Producer;
-import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.eventsframework.producer.Message;
+import io.harness.eventsframework.schemas.entity_crud.settings.SettingsEntityChangeDTO;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.Edition;
@@ -52,13 +52,13 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.repositories.ngsettings.spring.SettingConfigurationRepository;
 import io.harness.repositories.ngsettings.spring.SettingRepository;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.google.protobuf.StringValue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -139,6 +139,7 @@ public class SettingsServiceImpl implements SettingsService {
   public List<SettingUpdateResponseDTO> update(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       List<SettingRequestDTO> settingRequestDTOList) {
     List<SettingUpdateResponseDTO> settingResponses = new ArrayList<>();
+    Map<Pair<SettingCategory, String>, Map<String, String>> settingEventData = new HashMap<>();
     Scope currentScope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
     settingRequestDTOList.forEach(settingRequestDTO -> {
       try {
@@ -150,14 +151,14 @@ public class SettingsServiceImpl implements SettingsService {
           settingResponseDTO = updateSetting(accountIdentifier, orgIdentifier, projectIdentifier, settingRequestDTO);
         }
         settingResponses.add(settingsMapper.writeBatchResponseDTO(settingResponseDTO));
-        publishEvent(accountIdentifier, orgIdentifier, projectIdentifier,
-            settingResponseDTO.getSetting().getIdentifier(), settingResponseDTO.getSetting().getCategory(),
-            settingResponseDTO.getSetting().getGroupIdentifier(), EventsFrameworkMetadataConstants.UPDATE_ACTION);
+        addSettingEventData(settingEventData, settingResponseDTO);
       } catch (Exception exception) {
         log.error("Error when updating setting:", exception);
         settingResponses.add(settingsMapper.writeBatchResponseDTO(settingRequestDTO.getIdentifier(), exception));
       }
     });
+    publishSettingEventData(accountIdentifier, orgIdentifier, projectIdentifier, settingEventData,
+        EventsFrameworkMetadataConstants.UPDATE_ACTION);
     return settingResponses;
   }
 
@@ -498,30 +499,70 @@ public class SettingsServiceImpl implements SettingsService {
     }
   }
 
-  private void publishEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier,
-      SettingCategory category, String groupIdentifier, String action) {
+  private void addSettingEventData(
+      Map<Pair<SettingCategory, String>, Map<String, String>> settingEventData, SettingResponseDTO settingResponseDTO) {
     try {
-      EntityChangeDTO.Builder settingsEntityChangeDTOBuilder =
-          EntityChangeDTO.newBuilder()
-              .setAccountIdentifier(StringValue.of(accountIdentifier))
-              .setIdentifier(StringValue.of(identifier));
-      if (isNotBlank(orgIdentifier)) {
-        settingsEntityChangeDTOBuilder.setOrgIdentifier(StringValue.of(orgIdentifier));
-      }
-      if (isNotBlank(projectIdentifier)) {
-        settingsEntityChangeDTOBuilder.setProjectIdentifier(StringValue.of(projectIdentifier));
-      }
+      SettingDTO settingDTO = settingResponseDTO.getSetting();
+      Pair<SettingCategory, String> settingEventDataKey =
+          new ImmutablePair<>(settingDTO.getCategory(), settingDTO.getGroupIdentifier());
+      Map<String, String> settingEventDataValue = settingEventData.getOrDefault(settingEventDataKey, new HashMap<>());
+      settingEventDataValue.put(settingDTO.getIdentifier(), settingDTO.getValue());
+      settingEventData.put(settingEventDataKey, settingEventDataValue);
+    } catch (Exception ex) {
+      log.error(
+          "Exception while collecting setting data for redis event. SettingResponseDTO: {}", settingResponseDTO, ex);
+    }
+  }
+
+  private void publishSettingEventData(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      Map<Pair<SettingCategory, String>, Map<String, String>> settingEventData, String updateAction) {
+    for (Map.Entry<Pair<SettingCategory, String>, Map<String, String>> settingEventDataEntry :
+        settingEventData.entrySet()) {
+      publishEvent(accountIdentifier, orgIdentifier, projectIdentifier, settingEventDataEntry.getValue(),
+          settingEventDataEntry.getKey().getLeft(), settingEventDataEntry.getKey().getRight(), updateAction);
+    }
+  }
+
+  private void publishEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      Map<String, String> settingIdentifiers, SettingCategory category, String groupIdentifier, String action) {
+    try {
+      SettingsEntityChangeDTO settingEntityChangeDTO =
+          getSettingEntityChangeDTO(accountIdentifier, orgIdentifier, projectIdentifier, settingIdentifiers);
       eventProducer.send(
           Message.newBuilder()
-              .putAllMetadata(ImmutableMap.of(ACCOUNT_IDENTIFIER_METRICS_KEY, accountIdentifier,
-                  EventsFrameworkMetadataConstants.ENTITY_TYPE, EventsFrameworkMetadataConstants.SETTINGS,
-                  EventsFrameworkMetadataConstants.ACTION, action, EventsFrameworkMetadataConstants.SETTINGS_CATEGORY,
-                  category.name(), EventsFrameworkMetadataConstants.SETTINGS_GROUP_IDENTIFIER, groupIdentifier))
-              .setData(settingsEntityChangeDTOBuilder.build().toByteString())
+              .putAllMetadata(getSettingsEventMetadata(accountIdentifier, category, groupIdentifier, action))
+              .setData(settingEntityChangeDTO.toByteString())
               .build());
     } catch (Exception ex) {
       log.error("Exception while publishing the event of settings {} for {}", action,
-          String.format(SETTINGS_STRING, identifier, accountIdentifier, orgIdentifier, projectIdentifier));
+          String.format(SETTINGS_STRING, settingIdentifiers, accountIdentifier, orgIdentifier, projectIdentifier), ex);
     }
+  }
+
+  private SettingsEntityChangeDTO getSettingEntityChangeDTO(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, Map<String, String> settingIdentifiers) {
+    SettingsEntityChangeDTO.Builder settingEntityChangeDTOBuilder =
+        SettingsEntityChangeDTO.newBuilder()
+            .putAllSettingIdentifiers(settingIdentifiers)
+            .setAccountIdentifier(StringValue.of(accountIdentifier));
+    if (isNotBlank(orgIdentifier)) {
+      settingEntityChangeDTOBuilder.setOrgIdentifier(StringValue.of(orgIdentifier));
+    }
+    if (isNotBlank(projectIdentifier)) {
+      settingEntityChangeDTOBuilder.setProjectIdentifier(StringValue.of(projectIdentifier));
+    }
+    return settingEntityChangeDTOBuilder.build();
+  }
+
+  private Map<String, String> getSettingsEventMetadata(
+      String accountIdentifier, SettingCategory category, String groupIdentifier, String action) {
+    Map<String, String> settingsEventMetadata = new HashMap<>(
+        Map.of(ACCOUNT_IDENTIFIER_METRICS_KEY, accountIdentifier, EventsFrameworkMetadataConstants.ENTITY_TYPE,
+            EventsFrameworkMetadataConstants.SETTINGS, EventsFrameworkMetadataConstants.ACTION, action,
+            EventsFrameworkMetadataConstants.SETTINGS_CATEGORY, category.name()));
+    if (isNotBlank(groupIdentifier)) {
+      settingsEventMetadata.put(EventsFrameworkMetadataConstants.SETTINGS_GROUP_IDENTIFIER, groupIdentifier);
+    }
+    return settingsEventMetadata;
   }
 }

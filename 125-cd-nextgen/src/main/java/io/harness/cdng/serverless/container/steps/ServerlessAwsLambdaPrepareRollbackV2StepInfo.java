@@ -80,6 +80,7 @@ public class ServerlessAwsLambdaPrepareRollbackV2StepInfo
   @Override
   public SpecParameters getSpecParameters() {
     return ServerlessAwsLambdaPrepareRollbackV2StepParameters.infoBuilder()
+        .downloadManifestsFqn(downloadManifestsFqn)
         .image(getImage())
         .envVariables(getEnvVariables())
         .delegateSelectors(this.getDelegateSelectors())

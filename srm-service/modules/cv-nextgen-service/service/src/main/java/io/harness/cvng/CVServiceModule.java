@@ -73,12 +73,14 @@ import io.harness.cvng.cdng.services.api.CDStageMetaDataService;
 import io.harness.cvng.cdng.services.api.CVNGStepService;
 import io.harness.cvng.cdng.services.api.CVNGStepTaskService;
 import io.harness.cvng.cdng.services.api.PipelineStepMonitoredServiceResolutionService;
+import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
 import io.harness.cvng.cdng.services.api.VerifyStepDemoService;
 import io.harness.cvng.cdng.services.impl.CDStageMetaDataServiceImpl;
 import io.harness.cvng.cdng.services.impl.CVNGStepServiceImpl;
 import io.harness.cvng.cdng.services.impl.CVNGStepTaskServiceImpl;
 import io.harness.cvng.cdng.services.impl.ConfiguredPipelineStepMonitoredServiceResolutionServiceImpl;
 import io.harness.cvng.cdng.services.impl.DefaultPipelineStepMonitoredServiceResolutionServiceImpl;
+import io.harness.cvng.cdng.services.impl.SRMAnalysisStepServiceImpl;
 import io.harness.cvng.cdng.services.impl.TemplatePipelineStepMonitoredServiceResolutionServiceImpl;
 import io.harness.cvng.cdng.services.impl.VerifyStepDemoServiceImpl;
 import io.harness.cvng.client.ErrorTrackingService;
@@ -281,6 +283,7 @@ import io.harness.cvng.core.transformer.changeEvent.HarnessCDCurrentGenChangeEve
 import io.harness.cvng.core.transformer.changeEvent.InternalChangeEventTransformer;
 import io.harness.cvng.core.transformer.changeEvent.KubernetesClusterChangeEventMetadataTransformer;
 import io.harness.cvng.core.transformer.changeEvent.PagerDutyChangeEventTransformer;
+import io.harness.cvng.core.transformer.changeEvent.SRMStepAnalysisChangeEventTransformer;
 import io.harness.cvng.core.transformer.changeSource.ChangeSourceEntityAndDTOTransformer;
 import io.harness.cvng.core.transformer.changeSource.ChangeSourceSpecTransformer;
 import io.harness.cvng.core.transformer.changeSource.CustomChangeSourceSpecTransformer;
@@ -1212,8 +1215,12 @@ public class CVServiceModule extends AbstractModule {
     changeTypeMetaDataTransformerMapBinder.addBinding(ChangeSourceType.CUSTOM_FF)
         .to(CustomChangeEventTransformer.class)
         .in(Scopes.SINGLETON);
+    changeTypeMetaDataTransformerMapBinder.addBinding(ChangeSourceType.SRM_STEP_ANALYSIS)
+        .to(SRMStepAnalysisChangeEventTransformer.class)
+        .in(Scopes.SINGLETON);
 
     bind(StateMachineMessageProcessor.class).to(StateMachineMessageProcessorImpl.class);
+    bind(SRMAnalysisStepService.class).to(SRMAnalysisStepServiceImpl.class);
 
     MapBinder<SLIMetricType, SLIAnalyserService> sliAnalyserServiceMapBinder =
         MapBinder.newMapBinder(binder(), SLIMetricType.class, SLIAnalyserService.class);

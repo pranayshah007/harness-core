@@ -13,6 +13,9 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.shell.CommandTaskParameters;
 import io.harness.delegate.task.ssh.NgCommandUnit;
+import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.shell.ExecuteCommandResponse;
 
 import java.util.Map;
@@ -27,4 +30,36 @@ public interface CommandHandler {
   ExecuteCommandResponse handle(CommandTaskParameters parameters, NgCommandUnit commandUnit,
       ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress,
       Map<String, Object> taskContext);
+
+  default void closeLogStream(LogCallback logCallback, CommandExecutionStatus commandExecutionStatus, String msg) {
+    LogLevel logLevel = LogLevel.ERROR;
+    CommandExecutionStatus status = CommandExecutionStatus.FAILURE;
+    if (CommandExecutionStatus.SUCCESS.equals(commandExecutionStatus)) {
+      logLevel = LogLevel.INFO;
+      status = CommandExecutionStatus.SUCCESS;
+    }
+
+    logCallback.saveExecutionLog(msg, logLevel, status);
+  }
+
+  default void closeLogStream(LogCallback logCallback, CommandExecutionStatus commandExecutionStatus) {
+    String msg = "Command finished with status " + commandExecutionStatus;
+    closeLogStream(logCallback, commandExecutionStatus, msg);
+  }
+
+  default void closeLogStreamWithSuccess(LogCallback logCallback) {
+    closeLogStream(logCallback, CommandExecutionStatus.SUCCESS);
+  }
+
+  default void closeLogStreamWithError(LogCallback logCallback) {
+    closeLogStream(logCallback, CommandExecutionStatus.FAILURE);
+  }
+
+  default void closeLogStreamEmptyMsg(LogCallback logCallback, CommandExecutionStatus commandExecutionStatus) {
+    closeLogStream(logCallback, commandExecutionStatus, "");
+  }
+
+  default void closeLogStreamWithSuccessEmptyMsg(LogCallback logCallback) {
+    closeLogStreamEmptyMsg(logCallback, CommandExecutionStatus.SUCCESS);
+  }
 }

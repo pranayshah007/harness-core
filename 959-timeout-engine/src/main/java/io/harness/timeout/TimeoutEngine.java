@@ -122,6 +122,22 @@ public class TimeoutEngine extends IteratorLoopModeHandler implements Handler<Ti
   }
 
   @Override
+  public void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<TimeoutInstance, SpringFilterExpander>)
+                   persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions,
+                       TimeoutEngine.class,
+                       MongoPersistenceIterator.<TimeoutInstance, SpringFilterExpander>builder()
+                           .clazz(TimeoutInstance.class)
+                           .fieldName(TimeoutInstanceKeys.nextIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ofSeconds(10))
+                           .acceptableExecutionTime(ofSeconds(10))
+                           .handler(this)
+                           .persistenceProvider(new SpringPersistenceRequiredProvider<>(mongoTemplate)));
+  }
+
+  @Override
   public void createAndStartIterator(
       PersistenceIteratorFactory.PumpExecutorOptions executorOptions, Duration targetInterval) {
     executor =

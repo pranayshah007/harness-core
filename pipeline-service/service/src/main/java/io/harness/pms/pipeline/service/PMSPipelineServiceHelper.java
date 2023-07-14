@@ -23,6 +23,7 @@ import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.engine.governance.PolicyEvaluationFailureException;
+import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.DuplicateFileImportException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
@@ -76,11 +77,13 @@ import io.harness.yaml.validator.InvalidYamlException;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -105,6 +108,7 @@ public class PMSPipelineServiceHelper {
   @Inject private final GitAwareEntityHelper gitAwareEntityHelper;
   @Inject private final PMSPipelineRepository pmsPipelineRepository;
   @Inject private final PipelineSetupUsageCreationHelper pipelineSetupUsageCreationHelper;
+  @Inject @Named("PipelineExecutorService") ExecutorService executorService;
 
   public static String PIPELINE_SAVE = "pipeline_save";
   public static String PIPELINE_SAVE_ACTION_TYPE = "action";
@@ -113,6 +117,9 @@ public class PMSPipelineServiceHelper {
   public static String ORG_ID = "orgId";
   public static String PROJECT_ID = "projectId";
   public static String PIPELINE_ID = "pipelineId";
+  public static String TEMPLATE_REF_PIPELINE = "template_ref_by_pipeline";
+  public static String TEMPLATE_ID = "templateIdentifier";
+  public static String MODULE_NAME = "moduleName";
 
   public static void validatePresenceOfRequiredFields(PipelineEntity pipelineEntity) {
     HashMap<String, String> requiredFieldMap = new HashMap<>();
@@ -442,27 +449,60 @@ public class PMSPipelineServiceHelper {
     return criteria;
   }
 
-  // TODO(Brijesh): Make this async.
   public void sendPipelineSaveTelemetryEvent(PipelineEntity entity, String actionType) {
-    try {
-      HashMap<String, Object> properties = new HashMap<>();
-      properties.put(PIPELINE_NAME, entity.getName());
-      properties.put(ORG_ID, entity.getOrgIdentifier());
-      properties.put(PROJECT_ID, entity.getProjectIdentifier());
-      properties.put(PIPELINE_SAVE_ACTION_TYPE, actionType);
-      properties.put(PipelineInstrumentationConstants.MODULE_NAME,
-          PipelineEntityUtils.getModuleNameFromPipelineEntity(entity, "cd"));
-      properties.put(PipelineInstrumentationConstants.STAGE_TYPES, PipelineInstrumentationUtils.getStageTypes(entity));
-      telemetryReporter.sendTrackEvent(PIPELINE_SAVE, null, entity.getAccountId(), properties,
-          Collections.singletonMap(AMPLITUDE, true), io.harness.telemetry.Category.GLOBAL);
-    } catch (Exception ex) {
-      log.error(
-          format(
-              "Exception while sending telemetry event for pipeline save. accountId: %s, orgId: %s, projectId: %s, pipelineId: %s",
-              entity.getAccountIdentifier(), entity.getOrgIdentifier(), entity.getProjectIdentifier(),
-              entity.getIdentifier()),
-          ex);
-    }
+    executorService.submit(() -> {
+      try {
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(PIPELINE_NAME, entity.getName());
+        properties.put(ORG_ID, entity.getOrgIdentifier());
+        properties.put(PROJECT_ID, entity.getProjectIdentifier());
+        properties.put(PIPELINE_SAVE_ACTION_TYPE, actionType);
+        properties.put(PipelineInstrumentationConstants.MODULE_NAME,
+            PipelineEntityUtils.getModuleNameFromPipelineEntity(entity, "cd"));
+        properties.put(
+            PipelineInstrumentationConstants.STAGE_TYPES, PipelineInstrumentationUtils.getStageTypes(entity));
+        telemetryReporter.sendTrackEvent(PIPELINE_SAVE, null, entity.getAccountId(), properties,
+            Collections.singletonMap(AMPLITUDE, true), io.harness.telemetry.Category.GLOBAL);
+      } catch (Exception ex) {
+        log.error(
+            format(
+                "Exception while sending telemetry event for pipeline save. accountId: %s, orgId: %s, projectId: %s, pipelineId: %s",
+                entity.getAccountIdentifier(), entity.getOrgIdentifier(), entity.getProjectIdentifier(),
+                entity.getIdentifier()),
+            ex);
+      }
+    });
+  }
+
+  public void sendTemplatesUsedInPipelinesTelemetryEvent(PipelineEntity pipelineEntity, String actionType) {
+    String accountId = pipelineEntity.getAccountId();
+    String orgId = pipelineEntity.getOrgIdentifier();
+    String projectId = pipelineEntity.getProjectIdentifier();
+    executorService.submit(() -> {
+      try {
+        List<EntityDetailProtoDTO> templateReferences = pipelineTemplateHelper.getTemplateReferencesForGivenYaml(
+            accountId, orgId, projectId, pipelineEntity.getYaml());
+        for (EntityDetailProtoDTO reference : templateReferences) {
+          if (reference.hasTemplateRef()) {
+            HashMap<String, Object> properties = new HashMap<>();
+            properties.put(TEMPLATE_ID, reference.getTemplateRef().getIdentifier().getValue());
+            properties.put(PIPELINE_ID, accountId);
+            properties.put(ORG_ID, orgId);
+            properties.put(PROJECT_ID, projectId);
+            properties.put(TEMPLATE_REF_PIPELINE, actionType);
+            properties.put(MODULE_NAME, "cd");
+            telemetryReporter.sendTrackEvent(TEMPLATE_REF_PIPELINE, null, accountId, properties,
+                Collections.singletonMap(AMPLITUDE, true), io.harness.telemetry.Category.GLOBAL);
+          }
+        }
+      } catch (Exception ex) {
+        log.error(
+            format(
+                "Exception while sending telemetry event for template ref by pipeline. accountId: %s, orgId: %s, projectId: %s, pipelineId: %s",
+                accountId, orgId, projectId, pipelineEntity.getIdentifier()),
+            ex);
+      }
+    });
   }
 
   public static InvalidYamlException buildInvalidYamlException(String errorMessage, String pipelineYaml) {

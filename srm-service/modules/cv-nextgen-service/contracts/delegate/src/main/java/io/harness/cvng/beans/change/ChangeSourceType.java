@@ -41,7 +41,7 @@ public enum ChangeSourceType {
   CUSTOM_INFRA("CustomInfrastructure", ChangeCategory.INFRASTRUCTURE, ActivityType.CUSTOM_INFRA, false),
   @JsonProperty("CustomFF") CUSTOM_FF("CustomFF", ChangeCategory.FEATURE_FLAG, ActivityType.CUSTOM_FF, false),
   @JsonProperty("SrmStepAnalysis")
-  SRM_STEP_ANALYSIS("SRM_STEP_ANALYSIS", ChangeCategory.DEPLOYMENT, ActivityType.SRM_STEP_ANALYSIS, true);
+  SRM_STEP_ANALYSIS("SrmStepAnalysis", ChangeCategory.DEPLOYMENT, ActivityType.SRM_STEP_ANALYSIS, true);
   private static Map<ActivityType, ChangeSourceType> ACTIVITY_TO_CHANGE_SOURCE_TYPE_MAP;
   private static Map<ChangeCategory, List<ChangeSourceType>> CATEGORY_TO_CHANGE_SOURCE_TYPES_MAP;
 

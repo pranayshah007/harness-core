@@ -26,6 +26,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
+import java.time.Duration;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -48,12 +49,12 @@ public class SRMAnalysisStepExecutionDetail
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("query_idx")
+                 .name("account_org_project_monitoredService_status_idx")
                  .field(SRMAnalysisStepExecutionDetailsKeys.accountId)
                  .field(SRMAnalysisStepExecutionDetailsKeys.orgIdentifier)
                  .field(SRMAnalysisStepExecutionDetailsKeys.projectIdentifier)
-                 .field(SRMAnalysisStepExecutionDetailsKeys.planExecutionId)
-                 .field(SRMAnalysisStepExecutionDetailsKeys.stageStepId)
+                 .field(SRMAnalysisStepExecutionDetailsKeys.monitoredServiceIdentifier)
+                 .field(SRMAnalysisStepExecutionDetailsKeys.analysisStatus)
                  .build())
         .build();
   }
@@ -61,6 +62,8 @@ public class SRMAnalysisStepExecutionDetail
 
   @NotNull private long analysisStartTime;
   @NotNull private long analysisEndTime;
+
+  private Duration analysisDuration;
 
   @NotNull private SRMAnalysisStatus analysisStatus;
 

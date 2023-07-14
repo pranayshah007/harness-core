@@ -119,7 +119,7 @@ public class VmInitializeTaskParamsBuilderTest extends CIExecutionTestBase {
 
     Map<String, String> m = new HashMap<>();
     when(codebaseUtils.getGitConnector(AmbianceUtils.getNgAccess(ambiance), initializeStepInfo.getCiCodebase(),
-             initializeStepInfo.isSkipGitClone()))
+             initializeStepInfo.isSkipGitClone(), ambiance))
         .thenReturn(null);
     when(codebaseUtils.getCodebaseVars(any(), any(), any())).thenReturn(m);
     when(
@@ -165,7 +165,7 @@ public class VmInitializeTaskParamsBuilderTest extends CIExecutionTestBase {
 
     Map<String, String> m = new HashMap<>();
     when(codebaseUtils.getGitConnector(AmbianceUtils.getNgAccess(ambiance), initializeStepInfo.getCiCodebase(),
-             initializeStepInfo.isSkipGitClone()))
+             initializeStepInfo.isSkipGitClone(), null))
         .thenReturn(null);
     when(codebaseUtils.getCodebaseVars(any(), any(), any())).thenReturn(m);
     when(
@@ -283,7 +283,7 @@ public class VmInitializeTaskParamsBuilderTest extends CIExecutionTestBase {
 
     Map<String, String> m = new HashMap<>();
     when(codebaseUtils.getGitConnector(AmbianceUtils.getNgAccess(ambiance), initializeStepInfo.getCiCodebase(),
-             initializeStepInfo.isSkipGitClone()))
+             initializeStepInfo.isSkipGitClone(), null))
         .thenReturn(null);
     when(codebaseUtils.getCodebaseVars(any(), any(), any())).thenReturn(m);
     when(

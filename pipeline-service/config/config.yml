@@ -289,6 +289,13 @@ iteratorsConfig:
     threadPoolCount: 5
     enabled: true
     targetIntervalInSeconds: 10
+  timeoutEngineRedisMode:
+    threadPoolSize: ${TIMEOUT_ITERATOR_REDIS_MODE_THREAD_POOL_SIZE:-5}
+    enabled: true
+    targetIntervalInSeconds: 10
+    threadPoolIntervalInSeconds: 2
+    redisLockTimeout: 5
+    redisBatchSize: ${TIMEOUT_ITERATOR_REDIS_BATCH_SIZE:-10}
   barrier:
     threadPoolCount: 2
     enabled: true
@@ -644,3 +651,4 @@ expandedJsonConfig:
   lockTimeOutInMinutes: 2
 
 staticSchemaFileURL: ${STATIC_SCHEMA_FILE_URL:-"https://raw.githubusercontent.com/harness/harness-schema/main/%s/%s"}
+timeoutIteratorMode : ${TIMEOUT_ITERATOR_MODE:-LOOP}

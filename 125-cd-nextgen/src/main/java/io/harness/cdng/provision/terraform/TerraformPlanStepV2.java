@@ -159,7 +159,7 @@ public class TerraformPlanStepV2 extends CdTaskChainExecutable {
   }
 
   @Override
-  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance,
+  public TaskChainResponse executeNextLinkWithSecurityContextAndNodeInfo(Ambiance ambiance,
       StepElementParameters stepElementParameters, StepInputPackage inputPackage, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     TerraformPlanStepParameters planStepParameters = (TerraformPlanStepParameters) stepElementParameters.getSpec();
@@ -169,7 +169,7 @@ public class TerraformPlanStepV2 extends CdTaskChainExecutable {
   }
 
   @Override
-  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance,
+  public StepResponse finalizeExecutionWithSecurityContextAndNodeInfo(Ambiance ambiance,
       StepElementParameters stepElementParameters, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     if (passThroughData instanceof StepExceptionPassThroughData) {

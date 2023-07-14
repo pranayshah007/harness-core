@@ -63,6 +63,7 @@ import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStep;
 import io.harness.cdng.elastigroup.rollback.ElastigroupRollbackStep;
 import io.harness.cdng.gitops.MergePRStep;
 import io.harness.cdng.gitops.UpdateReleaseRepoStep;
+import io.harness.cdng.gitops.revertpr.RevertPRStep;
 import io.harness.cdng.gitops.steps.FetchLinkedAppsStep;
 import io.harness.cdng.gitops.steps.GitopsClustersStep;
 import io.harness.cdng.gitops.syncstep.SyncStep;
@@ -170,6 +171,7 @@ public class NgStepRegistrar {
 
     // Add CDNG steps here
     engineSteps.put(MergePRStep.STEP_TYPE, MergePRStep.class);
+    engineSteps.put(RevertPRStep.STEP_TYPE, RevertPRStep.class);
     engineSteps.put(UpdateReleaseRepoStep.STEP_TYPE, UpdateReleaseRepoStep.class);
     engineSteps.put(FetchLinkedAppsStep.STEP_TYPE, FetchLinkedAppsStep.class);
     engineSteps.put(SyncStep.STEP_TYPE, SyncStep.class);

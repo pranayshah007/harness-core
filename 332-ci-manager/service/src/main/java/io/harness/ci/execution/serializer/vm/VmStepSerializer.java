@@ -112,9 +112,9 @@ public class VmStepSerializer {
       case DOCKER:
       case ECR:
       case GCR:
+      case ACR:
         return vmPluginCompatibleStepSerializer.preProcessStep(
             ambiance, (PluginCompatibleStep) stepInfo, stageInfraDetails, identifier);
-      case ACR:
       default:
         return new HashSet<>();
     }

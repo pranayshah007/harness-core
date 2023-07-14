@@ -8,6 +8,7 @@
 package io.harness.cdng.creator.filters;
 
 import static io.harness.cdng.service.beans.ServiceDefinitionType.KUBERNETES;
+import static io.harness.rule.OwnerRule.ABHINAV_MITTAL;
 import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.YOGESH;
@@ -22,6 +23,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
+import io.harness.cdng.environment.yaml.EnvironmentInfraUseFromStage;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.gitops.yaml.ClusterYaml;
@@ -182,6 +184,25 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining(
             "Only one of serviceRef and useFromStage fields are allowed in service. Please remove one and try again");
+  }
+
+  @Test
+  @Owner(developers = ABHINAV_MITTAL)
+  @Category(UnitTests.class)
+  @Parameters(method = "getDeploymentStageConfigUseFromStageForEnvironmentInvalid")
+  public void getFiltersWithUseFromStageForEnvironmentInvalid(DeploymentStageNode node) {
+    FilterCreationContext ctx = FilterCreationContext.builder()
+                                    .currentField(new YamlField(new YamlNode(null)))
+                                    .setupMetadata(SetupMetadata.newBuilder()
+                                                       .setAccountId("accountId")
+                                                       .setOrgId("orgId")
+                                                       .setProjectId("projectId")
+                                                       .build())
+                                    .build();
+    assertThatThrownBy(() -> filterCreator.getFilter(ctx, node))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining(
+            "Only one of environmentRef and useFromStage fields are allowed in environment. Please remove one and try again");
   }
 
   @Test
@@ -363,6 +384,37 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = ABHINAV_MITTAL)
+  @Category(UnitTests.class)
+  public void testSaveStageTemplateWithUseFromStageFromEnvironment() throws IOException {
+    final DeploymentStageNode node = new DeploymentStageNode();
+    node.setDeploymentStageConfig(
+        DeploymentStageConfig.builder()
+            .service(ServiceYamlV2.builder()
+                         .serviceRef(ParameterField.<String>builder().value(serviceEntity.getIdentifier()).build())
+                         .build())
+            .environment(EnvironmentYamlV2.builder()
+                             .useFromStage(EnvironmentInfraUseFromStage.builder().stage("stageId").build())
+                             .build())
+            .deploymentType(KUBERNETES)
+            .build());
+    YamlField fullYamlField =
+        new YamlField(YamlNode.fromYamlPath(getYaml("stageTemplateSpecWithUsageFromStageFromEnvironment.yaml"), ""));
+    YamlField currentField = fullYamlField.fromYamlPath("spec");
+    FilterCreationContext ctx = FilterCreationContext.builder()
+                                    .setupMetadata(SetupMetadata.newBuilder()
+                                                       .setAccountId("accountId")
+                                                       .setOrgId("orgId")
+                                                       .setProjectId("projectId")
+                                                       .build())
+                                    .currentField(currentField)
+                                    .build();
+    assertThatExceptionOfType(InvalidYamlRuntimeException.class)
+        .isThrownBy(() -> filterCreator.getFilter(ctx, node))
+        .withMessageContaining("cannot save a stage template that propagates environment from another stage");
+  }
+
+  @Test
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
   public void testValidationEnvironmentProvisioners() throws IOException {
@@ -503,6 +555,23 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
                                  InfraStructureDefinitionYaml.builder()
                                      .identifier(ParameterField.createValueField(infra.getIdentifier()))
                                      .build()))
+                             .build())
+            .deploymentType(KUBERNETES)
+            .build());
+
+    return new Object[][] {{node1}};
+  }
+
+  private Object[][] getDeploymentStageConfigUseFromStageForEnvironmentInvalid() {
+    final DeploymentStageNode node1 = new DeploymentStageNode();
+    node1.setDeploymentStageConfig(
+        DeploymentStageConfig.builder()
+            .service(ServiceYamlV2.builder()
+                         .serviceRef(ParameterField.createValueField(serviceEntity.getIdentifier()))
+                         .build())
+            .environment(EnvironmentYamlV2.builder()
+                             .useFromStage(EnvironmentInfraUseFromStage.builder().stage("stageId").build())
+                             .environmentRef(ParameterField.<String>builder().value(envEntity.getIdentifier()).build())
                              .build())
             .deploymentType(KUBERNETES)
             .build());

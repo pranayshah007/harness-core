@@ -357,7 +357,7 @@ public class ExecutionDetailsResource {
     return ResponseDTO.newResponse(executionDetailDTO);
   }
 
-  @GET
+  @POST
   @Path("/{planExecutionId}/evaluateExpression")
   @ApiOperation(value = "Gets Execution Expression evaluated", nickname = "getExpressionEvaluated")
   @Operation(operationId = "getExpressionEvaluated", description = "Returns the Map of evaluated Expression",

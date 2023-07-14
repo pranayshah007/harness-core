@@ -58,6 +58,7 @@ import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent;
+import io.harness.ngtriggers.beans.scm.WebhookPayloadData;
 import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
 import io.harness.ngtriggers.beans.source.WebhookTriggerType;
@@ -70,6 +71,7 @@ import io.harness.ngtriggers.beans.source.webhook.v2.github.event.GithubPRSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.github.event.GithubTriggerEvent;
 import io.harness.ngtriggers.beans.target.TargetType;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
+import io.harness.ngtriggers.utils.WebhookEventPayloadParser;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -164,6 +166,7 @@ public class TriggerExecutionHelperTest extends CategoryTest {
   @Mock PmsFeatureFlagHelper pmsFeatureFlagHelper;
   @Mock PMSPipelineTemplateHelper pipelineTemplateHelper;
   @Mock PMSYamlSchemaService pmsYamlSchemaService;
+  @Mock WebhookEventPayloadParser webhookEventPayloadParser;
   @Before
   public void setUp() {
     triggerWebhookEvent =
@@ -775,5 +778,31 @@ public class TriggerExecutionHelperTest extends CategoryTest {
     triggerExecutionHelper.setPrincipal(triggerWebhookEventWithPrincipal);
     assertThat(SecurityContextBuilder.getPrincipal()).isEqualToComparingFieldByField(userPrincipal);
     assertThat(SourcePrincipalContextBuilder.getSourcePrincipal()).isEqualToComparingFieldByField(userPrincipal);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testResolveBranchExpressionForCustomTriggerSuccess() {
+    String payload = "{\"branch\":\"branchValue\"}";
+    TriggerWebhookEvent event = TriggerWebhookEvent.builder().sourceRepoType("CUSTOM").payload(payload).build();
+    when(webhookEventPayloadParser.parseEvent(event))
+        .thenReturn(
+            WebhookPayloadData.builder().originalEvent(TriggerWebhookEvent.builder().payload(payload).build()).build());
+    assertThat(triggerExecutionHelper.resolveBranchExpression("<+trigger.branch>", event)).isEqualTo("branchValue");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testResolveBranchExpressionForCustomTriggerFailure() {
+    String payload = "{}";
+    TriggerWebhookEvent event = TriggerWebhookEvent.builder().sourceRepoType("CUSTOM").payload(payload).build();
+    when(webhookEventPayloadParser.parseEvent(event))
+        .thenReturn(
+            WebhookPayloadData.builder().originalEvent(TriggerWebhookEvent.builder().payload(payload).build()).build());
+    assertThatThrownBy(() -> triggerExecutionHelper.resolveBranchExpression("<+trigger.branch>", event))
+        .isInstanceOf(TriggerException.class)
+        .hasMessage("Please ensure the expression <+trigger.branch> has the right branch information");
   }
 }

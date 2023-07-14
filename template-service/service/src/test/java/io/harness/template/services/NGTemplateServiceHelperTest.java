@@ -56,7 +56,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.regex.Pattern;
 import org.bson.Document;
 import org.junit.Before;
@@ -82,7 +82,7 @@ public class NGTemplateServiceHelperTest extends CategoryTest {
 
   @Mock TelemetryReporter telemetryReporter;
 
-  @Mock @Named("TemplateServiceHelperExecutorService") Executor executor;
+  @Mock @Named("TemplateServiceHelperExecutorService") ExecutorService executorService;
 
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
@@ -96,7 +96,7 @@ public class NGTemplateServiceHelperTest extends CategoryTest {
   public void setUp() {
     MockitoAnnotations.initMocks(this);
     templateServiceHelper = new NGTemplateServiceHelper(filterService, templateRepository, gitSyncSdkService,
-        templateGitXService, gitAwareEntityHelper, telemetryReporter, executor);
+        templateGitXService, gitAwareEntityHelper, telemetryReporter, executorService);
   }
 
   @Test

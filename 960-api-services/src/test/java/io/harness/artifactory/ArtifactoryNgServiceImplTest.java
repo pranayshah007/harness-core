@@ -120,7 +120,7 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
     assertThat(result).isEqualTo(buildDetails);
   }
   @Test
-  @Owner(developers = vivekveman)
+  @Owner(developers = SARTHAK_KASAT)
   @Category(UnitTests.class)
   public void testGetArtifactListWithArtifactFilter() {
     ArtifactoryConfigRequest artifactoryConfigRequest = ArtifactoryConfigRequest.builder().build();

@@ -113,6 +113,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         executorService.submit(this::process);
         break;
       case LOOP:
+      case REDIS_BATCH:
         notifyAll();
         break;
       default:
@@ -376,7 +377,13 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
       // If there were no docs available then sleep for
       // the configured threadPool interval duration.
       if (docIds.isEmpty()) {
-        sleep(threadPoolIntervalInSeconds);
+        synchronized (this) {
+          try {
+            wait(threadPoolIntervalInSeconds.toMillis());
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+          }
+        }
       }
     }
   }

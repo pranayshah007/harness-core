@@ -165,6 +165,11 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
       throw new InvalidYamlRuntimeException(
           "cannot save a stage template that propagates service from another stage. Please remove useFromStage and set the serviceRef to fixed value or runtime or an expression and try again");
     }
+    if (usesEnvironmentFromAnotherStage(deploymentStageConfig)
+        & hasNoSiblingStages(filterCreationContext.getCurrentField())) {
+      throw new InvalidYamlRuntimeException(
+          "cannot save a stage template that propagates environment from another stage. Please remove useFromStage and set the environmentRef to fixed value or runtime or an expression and try again");
+    }
     if (deploymentStageConfig.getInfrastructure() != null) {
       throw new InvalidYamlRuntimeException(format(
           "infrastructure should not be present in stage [%s]. Please add environment or environment group instead",
@@ -191,6 +196,12 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
   private boolean usesServiceFromAnotherStage(DeploymentStageConfig deploymentStageConfig) {
     return deploymentStageConfig.getService() != null && deploymentStageConfig.getService().getUseFromStage() != null
         && isNotEmpty(deploymentStageConfig.getService().getUseFromStage().getStage());
+  }
+
+  private boolean usesEnvironmentFromAnotherStage(DeploymentStageConfig deploymentStageConfig) {
+    return deploymentStageConfig.getEnvironment() != null
+        && deploymentStageConfig.getEnvironment().getUseFromStage() != null
+        && isNotEmpty(deploymentStageConfig.getEnvironment().getUseFromStage().getStage());
   }
 
   private void addServiceFilters(FilterCreationContext filterCreationContext, CdFilterBuilder filterBuilder,
@@ -238,6 +249,20 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
 
   private void addFiltersFromEnvironment(FilterCreationContext filterCreationContext, CdFilterBuilder filterBuilder,
       EnvironmentYamlV2 env, boolean gitOpsEnabled) {
+    if (env.getEnvironmentRef() != null && isNotBlank(env.getEnvironmentRef().getValue())
+        && env.getUseFromStage() != null) {
+      throw new InvalidRequestException(
+          "Only one of environmentRef and useFromStage fields are allowed in environment. Please remove one and try again");
+    }
+
+    if (env.getUseFromStage() != null) {
+      if (isEmpty(env.getUseFromStage().getStage())) {
+        throw new InvalidYamlRuntimeException(format(
+            "stage identifier should be present in stage [%s] when propagating environment from a different stage. Please add it and try again",
+            YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
+      }
+      return;
+    }
     final ParameterField<String> environmentRef = env.getEnvironmentRef();
     if (ParameterField.isNull(environmentRef)) {
       throw new InvalidYamlRuntimeException(

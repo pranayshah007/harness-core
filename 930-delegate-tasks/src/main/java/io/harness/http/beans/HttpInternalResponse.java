@@ -26,6 +26,7 @@ public class HttpInternalResponse {
   private CommandExecutionStatus commandExecutionStatus;
   private String errorMessage;
   private String httpResponseBody;
+  private byte[] httpResponseBodyInBytes;
   private int httpResponseCode;
   private String httpMethod;
   private String httpUrl;

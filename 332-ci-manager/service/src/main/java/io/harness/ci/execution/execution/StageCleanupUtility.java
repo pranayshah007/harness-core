@@ -67,8 +67,8 @@ public class StageCleanupUtility {
       OptionalSweepingOutput optionalCleanupSweepingOutput = executionSweepingOutputResolver.resolveOptional(
           ambiance, RefObjectUtils.getSweepingOutputRefObject(CLEANUP_DETAILS));
       if (!optionalCleanupSweepingOutput.isFound()) {
-        log.warn("Sweeping Output PodCleanupDetails is not set, pod might not be created");
-        throw new CIStageExecutionException("Unable to do cleanup as PodCleanupDetails was not set");
+        log.warn("Sweeping Output PodCleanupDetails is not set, unable to do cleanup since pod might not be created");
+        return null;
       } else {
         PodCleanupDetails podCleanupDetails = (PodCleanupDetails) optionalCleanupSweepingOutput.getOutput();
         stageInfraDetails = K8StageInfraDetails.builder()
