@@ -87,6 +87,9 @@ public class GitWebhookEventToTriggerMapper implements WebhookEventToTriggerMapp
         } else {
           // update with updated filter list for next filter
           filterRequestData.setDetails(webhookEventMappingResponse.getTriggers());
+          if (webhookEventMappingResponse.getChangedFiles() != null) {
+            filterRequestData.setChangedFiles(webhookEventMappingResponse.getChangedFiles());
+          }
         }
       }
     } catch (Exception e) {

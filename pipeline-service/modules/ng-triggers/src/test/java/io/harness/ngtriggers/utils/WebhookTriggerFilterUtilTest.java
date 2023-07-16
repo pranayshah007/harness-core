@@ -25,6 +25,7 @@ import static io.harness.rule.OwnerRule.SRIDHAR;
 import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
@@ -79,7 +80,7 @@ public class WebhookTriggerFilterUtilTest extends CategoryTest {
   @Category(UnitTests.class)
   public void parseEventTest() {
     TriggerExpressionEvaluator triggerExpressionEvaluator =
-        WebhookTriggerFilterUtils.generatorPMSExpressionEvaluator(null, emptyList(), payload);
+        WebhookTriggerFilterUtils.generatorPMSExpressionEvaluator(null, emptyList(), payload, null);
     assertThat(WebhookTriggerFilterUtils.readFromPayload("<+trigger.payload.event_type>", triggerExpressionEvaluator))
         .isEqualTo("merge_request");
     assertThat(WebhookTriggerFilterUtils.readFromPayload("<+trigger.payload.object_kind>", triggerExpressionEvaluator))
@@ -284,8 +285,9 @@ public class WebhookTriggerFilterUtilTest extends CategoryTest {
 
     assertThat(WebhookTriggerFilterUtils.checkIfEventTypeMatches(Type.PR, webhookTriggerSpec)).isTrue();
     assertThat(checkIfActionMatches(webhookPayloadData, webhookTriggerSpec)).isTrue();
-    assertThat(WebhookTriggerFilterUtils.checkIfJexlConditionsMatch(webhookPayloadData.getParseWebhookResponse(),
-                   Collections.emptyList(), payload, webhookTriggerSpec.fetchPayloadAware().fetchJexlCondition()))
+    assertThat(
+        WebhookTriggerFilterUtils.checkIfJexlConditionsMatch(webhookPayloadData.getParseWebhookResponse(),
+            Collections.emptyList(), payload, webhookTriggerSpec.fetchPayloadAware().fetchJexlCondition(), emptySet()))
         .isTrue();
   }
 

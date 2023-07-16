@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.MATT;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
@@ -120,7 +121,7 @@ public class JexlScenarioTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testSimplePayload() {
     assertThat(WebhookTriggerFilterUtils.checkIfJexlConditionsMatch(
-                   null, emptyList(), smallPayload, "<+trigger.payload.arr>.contains(\"abc\")"))
+                   null, emptyList(), smallPayload, "<+trigger.payload.arr>.contains(\"abc\")", emptySet()))
         .isTrue();
   }
 
@@ -128,7 +129,8 @@ public class JexlScenarioTest extends CategoryTest {
   @Owner(developers = MATT)
   @Category(UnitTests.class)
   public void testSimpleNegative() {
-    assertThat(WebhookTriggerFilterUtils.checkIfJexlConditionsMatch(null, emptyList(), smallPayload, "false"))
+    assertThat(
+        WebhookTriggerFilterUtils.checkIfJexlConditionsMatch(null, emptyList(), smallPayload, "false", emptySet()))
         .isFalse();
   }
 
@@ -136,8 +138,9 @@ public class JexlScenarioTest extends CategoryTest {
   @Owner(developers = MATT)
   @Category(UnitTests.class)
   public void testJexlAnd() {
-    assertThat(WebhookTriggerFilterUtils.checkIfJexlConditionsMatch(null, emptyList(), bigPayload,
-                   "<+trigger.payload.Type> == \"Notification\" && <+trigger.payload.SignatureVersion> == 1"))
+    assertThat(
+        WebhookTriggerFilterUtils.checkIfJexlConditionsMatch(null, emptyList(), bigPayload,
+            "<+trigger.payload.Type> == \"Notification\" && <+trigger.payload.SignatureVersion> == 1", emptySet()))
         .isTrue();
   }
 
@@ -145,8 +148,9 @@ public class JexlScenarioTest extends CategoryTest {
   @Owner(developers = MATT)
   @Category(UnitTests.class)
   public void testJexlOr() {
-    assertThat(WebhookTriggerFilterUtils.checkIfJexlConditionsMatch(null, emptyList(), bigPayload,
-                   "<+trigger.payload.Subject>.contains(\"GIT\") || <+trigger.payload.SignatureVersion> == 1"))
+    assertThat(
+        WebhookTriggerFilterUtils.checkIfJexlConditionsMatch(null, emptyList(), bigPayload,
+            "<+trigger.payload.Subject>.contains(\"GIT\") || <+trigger.payload.SignatureVersion> == 1", emptySet()))
         .isTrue();
   }
 
@@ -155,7 +159,7 @@ public class JexlScenarioTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testJexlArithmetic() {
     assertThat(WebhookTriggerFilterUtils.checkIfJexlConditionsMatch(null, emptyList(), bigPayload,
-                   "size(<+trigger.payload.Signature>) + size(<+trigger.payload.MessageId>) > 300"))
+                   "size(<+trigger.payload.Signature>) + size(<+trigger.payload.MessageId>) > 300", emptySet()))
         .isTrue();
   }
 
@@ -165,7 +169,8 @@ public class JexlScenarioTest extends CategoryTest {
   public void testJexlParens() {
     assertThat(
         WebhookTriggerFilterUtils.checkIfJexlConditionsMatch(null, emptyList(), bigPayload,
-            "(size(<+trigger.payload.Signature>) + size(<+trigger.payload.MessageId>) > 300) && (<+trigger.payload.Subject>.contains(\"GIT\") || <+trigger.payload.SignatureVersion> == 1)"))
+            "(size(<+trigger.payload.Signature>) + size(<+trigger.payload.MessageId>) > 300) && (<+trigger.payload.Subject>.contains(\"GIT\") || <+trigger.payload.SignatureVersion> == 1)",
+            emptySet()))
         .isTrue();
   }
 

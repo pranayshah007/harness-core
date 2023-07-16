@@ -74,7 +74,7 @@ public class TriggerWebhookEventExecutionServiceImpl implements TriggerWebhookEv
                                             .build();
         ngTriggerWebhookExecutionHelper.updateWebhookRegistrationStatusAndTriggerPipelineExecution(
             triggerExecutionDTO.getWebhookDto().getParsedResponse(), triggerWebhookEvent, eventResponses,
-            triggerDetails);
+            triggerDetails, triggerExecutionDTO.getChangedFilesList());
       }
 
       if (isNotEmpty(eventResponses)) {

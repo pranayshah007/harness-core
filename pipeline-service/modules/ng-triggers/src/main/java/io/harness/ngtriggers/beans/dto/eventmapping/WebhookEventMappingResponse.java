@@ -12,6 +12,7 @@ import io.harness.ngtriggers.beans.response.TriggerEventResponse;
 import io.harness.product.ci.scm.proto.ParseWebhookResponse;
 
 import java.util.List;
+import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Builder.Default;
@@ -28,4 +29,5 @@ public class WebhookEventMappingResponse {
   @Default boolean failedToFindTrigger = true;
   boolean isCustomTrigger;
   @Singular List<TriggerDetails> triggers;
+  Set<String> changedFiles;
 }

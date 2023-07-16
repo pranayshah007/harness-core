@@ -28,6 +28,8 @@ import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITLAB;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.HARNESS;
 import static io.harness.pms.contracts.triggers.Type.WEBHOOK;
 
+import static java.util.Collections.emptySet;
+
 import io.harness.NgAutoLogContext;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.authorization.AuthorizationServiceHeader;
@@ -162,6 +164,10 @@ public class TriggerEventExecutionHelper {
                   triggerWebhookEvent, triggerDetails, triggerDetails.getNgTriggerEntity()));
               continue;
             }
+            List<String> changedFiles = new ArrayList<>();
+            if (webhookEventMappingResponse.getChangedFiles() != null) {
+              changedFiles.addAll(webhookEventMappingResponse.getChangedFiles());
+            }
             if (pmsFeatureFlagService.isEnabled(triggerDetails.getNgTriggerEntity().getAccountId(),
                     FeatureName.SPG_SEND_TRIGGER_PIPELINE_FOR_WEBHOOKS_ASYNC)
                 && mappingRequestData.getWebhookDTO() != null) {
@@ -178,12 +184,13 @@ public class TriggerEventExecutionHelper {
                       .setTriggerIdentifier(triggerDetails.getNgTriggerEntity().getIdentifier())
                       .setAuthenticated(
                           triggerDetails.getAuthenticated() != null ? triggerDetails.getAuthenticated() : Boolean.TRUE)
+                      .addAllChangedFiles(changedFiles)
                       .build();
               triggerWebhookEventPublisher.publishTriggerWebhookEvent(triggerExecutionDTO);
             } else {
               updateWebhookRegistrationStatusAndTriggerPipelineExecution(
                   webhookEventMappingResponse.getParseWebhookResponse(), triggerWebhookEvent, eventResponses,
-                  triggerDetails);
+                  triggerDetails, changedFiles);
             }
           }
         }
@@ -197,8 +204,8 @@ public class TriggerEventExecutionHelper {
   }
 
   public void updateWebhookRegistrationStatusAndTriggerPipelineExecution(ParseWebhookResponse parseWebhookResponse,
-      TriggerWebhookEvent triggerWebhookEvent, List<TriggerEventResponse> eventResponses,
-      TriggerDetails triggerDetails) {
+      TriggerWebhookEvent triggerWebhookEvent, List<TriggerEventResponse> eventResponses, TriggerDetails triggerDetails,
+      List<String> changedFiles) {
     long yamlVersion = triggerDetails.getNgTriggerEntity().getYmlVersion() == null
         ? 3
         : triggerDetails.getNgTriggerEntity().getYmlVersion();
@@ -226,13 +233,13 @@ public class TriggerEventExecutionHelper {
     }
     ngTriggerRepository.updateValidationStatus(criteria, triggerEntity);
     eventResponses.add(triggerPipelineExecution(triggerWebhookEvent, triggerDetails,
-        getTriggerPayloadForWebhookTrigger(parseWebhookResponse, triggerWebhookEvent, yamlVersion),
+        getTriggerPayloadForWebhookTrigger(parseWebhookResponse, triggerWebhookEvent, yamlVersion, changedFiles),
         triggerWebhookEvent.getPayload()));
   }
 
   @VisibleForTesting
-  TriggerPayload getTriggerPayloadForWebhookTrigger(
-      ParseWebhookResponse parseWebhookResponse, TriggerWebhookEvent triggerWebhookEvent, long version) {
+  TriggerPayload getTriggerPayloadForWebhookTrigger(ParseWebhookResponse parseWebhookResponse,
+      TriggerWebhookEvent triggerWebhookEvent, long version, List<String> changedFiles) {
     Builder builder = TriggerPayload.newBuilder().setType(Type.WEBHOOK);
 
     if (CUSTOM.getEntityMetadataName().equalsIgnoreCase(triggerWebhookEvent.getSourceRepoType())) {
@@ -262,6 +269,9 @@ public class TriggerEventExecutionHelper {
       }
     }
     builder.setVersion(version);
+    if (!isEmpty(changedFiles)) {
+      builder.addAllChangedFiles(changedFiles);
+    }
 
     return builder.setType(WEBHOOK).build();
   }
@@ -554,7 +564,7 @@ public class TriggerEventExecutionHelper {
       log.warn("Secret with identifier [" + secretRefData.getIdentifier()
           + "] either does not exist or is not of Text type. Attempting to authenticate trigger [" + triggerIdentifier
           + "] with no delegate selectors.");
-      return Collections.emptySet();
+      return emptySet();
     }
     String secretManagerIdentifier = ((SecretTextSpecDTO) secret.getSecret().getSpec()).getSecretManagerIdentifier();
     SecretManagerConfigDTO secretManagerDTO = ngSecretService.getSecretManager(secretNGAccess.getAccountIdentifier(),

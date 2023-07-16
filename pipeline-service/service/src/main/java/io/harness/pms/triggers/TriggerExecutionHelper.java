@@ -782,12 +782,13 @@ public class TriggerExecutionHelper {
     try {
       if (!triggerWebhookEvent.getSourceRepoType().equals("CUSTOM")) {
         WebhookPayloadData webhookPayloadData = webhookEventPayloadParser.parseEvent(triggerWebhookEvent);
-        triggerExpressionEvaluator = WebhookTriggerFilterUtils.generatorPMSExpressionEvaluator(webhookPayloadData);
+        triggerExpressionEvaluator =
+            WebhookTriggerFilterUtils.generatorPMSExpressionEvaluator(webhookPayloadData, null);
         return (String) triggerExpressionEvaluator.evaluateExpressionWithExpressionMode(
             expression, ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
       } else {
         triggerExpressionEvaluator = WebhookTriggerFilterUtils.generatorPMSExpressionEvaluator(
-            null, triggerWebhookEvent.getHeaders(), triggerWebhookEvent.getPayload());
+            null, triggerWebhookEvent.getHeaders(), triggerWebhookEvent.getPayload(), null);
         return (String) triggerExpressionEvaluator.evaluateExpressionWithExpressionMode(
             TRIGGER_PAYLOAD_BRANCH, ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
       }

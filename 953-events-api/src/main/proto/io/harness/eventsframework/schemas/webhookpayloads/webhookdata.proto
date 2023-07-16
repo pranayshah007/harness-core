@@ -20,6 +20,7 @@ message TriggerExecutionDTO {
   string triggerIdentifier = 5;
   bool authenticated = 6;
   WebhookDTO webhookDto = 7;
+  repeated string changedFiles = 8;
 }
 
 message WebhookDTO {

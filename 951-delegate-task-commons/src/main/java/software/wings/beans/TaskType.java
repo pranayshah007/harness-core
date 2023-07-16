@@ -352,7 +352,6 @@ public enum TaskType {
   TERRAFORM_TASK_NG(TaskGroup.TERRAFORM_NG, "Terraform Task"),
   SCM_PUSH_TASK(TaskGroup.GIT, "SCM Push Task"),
   SCM_PATH_FILTER_EVALUATION_TASK(TaskGroup.GIT, "SCM Path Filter Evaluation Task"),
-  SCM_CHANGED_FILES_EVALUATION_TASK(TaskGroup.GIT, "SCM Changed Files Evaluation Task"),
   SCM_GIT_REF_TASK(TaskGroup.GIT, "SCM Git Ref Task"),
   SCM_GIT_FILE_TASK(TaskGroup.GIT, "SCM Git File Task"),
   SCM_PULL_REQUEST_TASK(TaskGroup.GIT, "SCM Git PR Task"),
@@ -495,7 +494,8 @@ public enum TaskType {
   HELM_FETCH_CHART_MANIFEST_TASK(TaskGroup.HELM, "Fetch helm chart"),
   COMMAND_TASK_NG_WITH_GITHUB_PACKAGE_ARTIFACT(TaskGroup.COMMAND_TASK_NG, "Command Task"),
   INSTANCE_SYNC_V2_NG_SUPPORT(TaskGroup.K8S_NG, "Instance sync V2 support for NG"),
-  COMMAND_TASK_NG_WITH_AZURE_UNIVERSAL_PACKAGE_ARTIFACT(TaskGroup.COMMAND_TASK_NG, "Command Task");
+  COMMAND_TASK_NG_WITH_AZURE_UNIVERSAL_PACKAGE_ARTIFACT(TaskGroup.COMMAND_TASK_NG, "Command Task"),
+  SCM_CHANGED_FILES_EVALUATION_TASK(TaskGroup.GIT, "SCM Changed Files Evaluation Task");
 
   private final TaskGroup taskGroup;
   private final String displayName;

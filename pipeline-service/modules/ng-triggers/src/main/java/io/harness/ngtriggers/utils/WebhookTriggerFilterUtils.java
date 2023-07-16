@@ -181,7 +181,7 @@ public class WebhookTriggerFilterUtils {
         input = webhookPayloadData.getWebhookEvent().getBaseAttributes().getTarget();
       } else {
         if (triggerExpressionEvaluator == null) {
-          triggerExpressionEvaluator = generatorPMSExpressionEvaluator(webhookPayloadData);
+          triggerExpressionEvaluator = generatorPMSExpressionEvaluator(webhookPayloadData, null);
         }
         input = readFromPayload(triggerEventDataCondition.getKey(), triggerExpressionEvaluator);
       }
@@ -195,8 +195,8 @@ public class WebhookTriggerFilterUtils {
     return allConditionsMatched;
   }
 
-  public boolean checkIfJexlConditionsMatch(
-      ParseWebhookResponse parseWebhookResponse, List<HeaderConfig> headers, String payload, String jexlExpression) {
+  public boolean checkIfJexlConditionsMatch(ParseWebhookResponse parseWebhookResponse, List<HeaderConfig> headers,
+      String payload, String jexlExpression, Set<String> changedFiles) {
     if (isBlank(jexlExpression)) {
       return true;
     }
@@ -204,7 +204,7 @@ public class WebhookTriggerFilterUtils {
     jexlExpression = sanitiseHeaderConditionsForJexl(jexlExpression);
 
     TriggerExpressionEvaluator triggerExpressionEvaluator =
-        generatorPMSExpressionEvaluator(parseWebhookResponse, headers, payload);
+        generatorPMSExpressionEvaluator(parseWebhookResponse, headers, payload, changedFiles);
     Object result = triggerExpressionEvaluator.evaluateExpression(jexlExpression);
     if (result != null && Boolean.class.isAssignableFrom(result.getClass())) {
       return (Boolean) result;
@@ -258,7 +258,7 @@ public class WebhookTriggerFilterUtils {
     String input;
     String standard;
     String operator;
-    TriggerExpressionEvaluator triggerExpressionEvaluator = generatorPMSExpressionEvaluator(null, headers, "{}");
+    TriggerExpressionEvaluator triggerExpressionEvaluator = generatorPMSExpressionEvaluator(null, headers, "{}", null);
 
     for (TriggerEventDataCondition webhookHeaderCondition : headerConditions) {
       String headerConditionKey = webhookHeaderCondition.getKey();
@@ -279,13 +279,15 @@ public class WebhookTriggerFilterUtils {
     return triggerExpressionEvaluator.renderExpression(key, true);
   }
 
-  public TriggerExpressionEvaluator generatorPMSExpressionEvaluator(WebhookPayloadData webhookPayloadData) {
+  public TriggerExpressionEvaluator generatorPMSExpressionEvaluator(
+      WebhookPayloadData webhookPayloadData, Set<String> changedFiles) {
     return generatorPMSExpressionEvaluator(webhookPayloadData.getParseWebhookResponse(),
-        webhookPayloadData.getOriginalEvent().getHeaders(), webhookPayloadData.getOriginalEvent().getPayload());
+        webhookPayloadData.getOriginalEvent().getHeaders(), webhookPayloadData.getOriginalEvent().getPayload(),
+        changedFiles);
   }
 
-  public TriggerExpressionEvaluator generatorPMSExpressionEvaluator(
-      ParseWebhookResponse parseWebhookResponse, List<HeaderConfig> headerConfigs, String payload) {
-    return new TriggerExpressionEvaluator(parseWebhookResponse, null, headerConfigs, payload, null);
+  public TriggerExpressionEvaluator generatorPMSExpressionEvaluator(ParseWebhookResponse parseWebhookResponse,
+      List<HeaderConfig> headerConfigs, String payload, Set<String> changedFiles) {
+    return new TriggerExpressionEvaluator(parseWebhookResponse, null, headerConfigs, payload, changedFiles);
   }
 }

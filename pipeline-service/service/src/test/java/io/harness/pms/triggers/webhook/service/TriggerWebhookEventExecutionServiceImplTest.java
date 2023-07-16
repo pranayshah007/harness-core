@@ -83,7 +83,7 @@ public class TriggerWebhookEventExecutionServiceImplTest extends CategoryTest {
     doReturn(NGTriggerEntity.builder().build()).when(ngTriggerRepository).updateValidationStatus(any(), any());
     doNothing()
         .when(ngTriggerWebhookExecutionHelper)
-        .updateWebhookRegistrationStatusAndTriggerPipelineExecution(any(), any(), any(), any());
+        .updateWebhookRegistrationStatusAndTriggerPipelineExecution(any(), any(), any(), any(), any());
     triggerWebhookEventExecutionService.processEvent(triggerExecutionDTO);
   }
 }

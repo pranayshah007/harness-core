@@ -15,6 +15,7 @@ import io.harness.ngtriggers.beans.scm.WebhookPayloadData;
 import io.harness.polling.contracts.PollingResponse;
 
 import java.util.List;
+import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -28,6 +29,7 @@ public class FilterRequestData {
   String accountId;
   boolean isCustomTrigger;
   List<TriggerDetails> details;
+  Set<String> changedFiles;
   WebhookPayloadData webhookPayloadData;
   PollingResponse pollingResponse;
 }

@@ -323,7 +323,7 @@ public class ScmFacilitatorResource {
   }
 
   @GET
-  @Path("list-repos-by-connector")
+  @Path("xlist-repos-by-connector")
   @ApiOperation(
       value = "Lists Git Repos corresponding to given reference connector", nickname = "getListOfReposByRefConnector")
   @Hidden
