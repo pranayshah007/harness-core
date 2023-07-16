@@ -258,8 +258,10 @@ public class DeleteAccountHelper {
     churnedAuditFilesAndChunksCleanup.deleteAuditFilesAndChunks(accountId);
     churnedConfigFilesAndChunksCleanup.deleteConfigFilesAndChunks(accountId);
     timescaleDataCleanup.cleanupChurnedAccountData(accountId);
+    log.info("testDeletionLog: entitiesRemainingForDeletion: " + entitiesRemainingForDeletion);
     if (isEmpty(entitiesRemainingForDeletion)) {
       if (deleteAccountFromAccountsCollection) {
+        log.info("testDeletionLog: trigger deleteAccountFromAccountsCollection for " + accountId);
         deleteAccountFromAccountsCollection(accountId);
       }
       return true;
@@ -287,6 +289,7 @@ public class DeleteAccountHelper {
                                                            .set(DeletedEntityKeys.entityId, accountId)
                                                            .set(DeletedEntityKeys.entityType, DeletedEntityType.ACCOUNT)
                                                            .set(DeletedEntityKeys.deletionAlgoNum, deletionAlgoNum);
+    log.info("testDeletionLog: query to perform upsertion operation: " + query);
     hPersistence.upsert(query, updateOperations);
   }
 
