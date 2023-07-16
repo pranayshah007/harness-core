@@ -5,17 +5,18 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.execution;
+package io.harness.ci.config;
 
 import io.harness.annotation.RecasterAlias;
-import io.harness.delegate.cdng.execution.StepInstanceInfo;
 
 import lombok.Builder;
-import lombok.Data;
+import lombok.Value;
+import org.springframework.data.annotation.TypeAlias;
 
-@Data
+@Value
 @Builder
-@RecasterAlias("io.harness.cdng.execution.K8sStepInstanceInfo")
-public class K8sStepInstanceInfo extends StepInstanceInfo {
-  String podName;
+@TypeAlias("gitnessConfig")
+@RecasterAlias("io.harness.ci.config.GitnessConfig")
+public class GitnessConfig {
+  String jwtSecret;
 }

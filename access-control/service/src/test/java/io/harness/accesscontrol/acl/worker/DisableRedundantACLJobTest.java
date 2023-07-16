@@ -11,6 +11,7 @@ import static io.harness.accesscontrol.acl.worker.DisableRedundantACLJob.REFEREN
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 
+import static java.util.Map.of;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.accesscontrol.AccessControlTestBase;
@@ -30,6 +31,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -84,7 +86,8 @@ public class DisableRedundantACLJobTest extends AccessControlTestBase {
     mongoTemplate.save(
         ResourceTypeDBO.builder().identifier(SERVICE_RESOURCE_IDENTIFIER).permissionKey(SERVICE_RESOURCE_NAME).build());
 
-    inMemoryPermissionRepository = new InMemoryPermissionRepository(mongoTemplate);
+    inMemoryPermissionRepository =
+        new InMemoryPermissionRepository(mongoTemplate, of("ccm_perspective_view", Set.of("CCM_FOLDER")));
     disableRedundantACLJob = new DisableRedundantACLJob(mongoTemplate, persistentLocker, inMemoryPermissionRepository);
   }
 

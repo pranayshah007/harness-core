@@ -146,10 +146,12 @@ public class MetricPackServiceImpl implements MetricPackService {
       MetricPackServiceImpl.class.getResource("/signalfx/dsl/metric-collection.datacollection");
   private static final URL SIGNALFX_METRIC_SAMPLE_DSL_PATH =
       MetricPackServiceImpl.class.getResource("/signalfx/dsl/signalfx-metric-sample-data.datacollection");
-
   public static final String SIGNALFX_DSL;
-
   public static final String SIGNALFX_METRIC_SAMPLE_DSL;
+
+  private static final URL AZURE_LOGS_SAMPLE_DATA_DSL_PATH =
+      MetricPackServiceImpl.class.getResource("/azure/dsl/azure-logs-sample-data.datacollection");
+  public static final String AZURE_LOGS_SAMPLE_DATA_DSL;
   static {
     String appDPeformancePackDsl = null;
     String appDqualityPackDsl = null;
@@ -171,6 +173,7 @@ public class MetricPackServiceImpl implements MetricPackService {
     String signalfxMetricSampleDsl = null;
     String signalFXDsl = null;
     String grafanaLokiLogSampleDataDsl = null;
+    String azureLogsSampleDataDsl = null;
     try {
       appDPeformancePackDsl = Resources.toString(APPDYNAMICS_PERFORMANCE_PACK_DSL_PATH, Charsets.UTF_8);
       appDqualityPackDsl = Resources.toString(APPDYNAMICS_QUALITY_PACK_DSL_PATH, Charsets.UTF_8);
@@ -192,6 +195,7 @@ public class MetricPackServiceImpl implements MetricPackService {
       signalfxMetricSampleDsl = Resources.toString(SIGNALFX_METRIC_SAMPLE_DSL_PATH, Charsets.UTF_8);
       signalFXDsl = Resources.toString(SIGNALFX_METRIC_DSL_PATH, Charsets.UTF_8);
       grafanaLokiLogSampleDataDsl = Resources.toString(GRAFANA_LOKI_LOG_SAMPLE_DATA_DSL_PATH, Charsets.UTF_8);
+      azureLogsSampleDataDsl = Resources.toString(AZURE_LOGS_SAMPLE_DATA_DSL_PATH, Charsets.UTF_8);
     } catch (Exception e) {
       // TODO: this should throw an exception but we risk delegate not starting up. We can remove this log term and
       // throw and exception once things stabilize
@@ -217,6 +221,7 @@ public class MetricPackServiceImpl implements MetricPackService {
     SIGNALFX_DSL = signalFXDsl;
     SIGNALFX_METRIC_SAMPLE_DSL = signalfxMetricSampleDsl;
     GRAFANA_LOKI_LOG_SAMPLE_DATA_DSL = grafanaLokiLogSampleDataDsl;
+    AZURE_LOGS_SAMPLE_DATA_DSL = azureLogsSampleDataDsl;
   }
 
   @Inject private HPersistence hPersistence;

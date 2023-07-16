@@ -221,8 +221,8 @@ public class GovernanceRuleResource {
       ruleEnforcementDAO.updateCount(ruleEnforcementUpdate);
       RuleCloudProviderType ruleCloudProviderType = ruleEnforcement.getCloudProvider();
       accountId = ruleEnforcement.getAccountId();
-      if (ruleEnforcement.getCloudProvider() != RuleCloudProviderType.AWS) {
-        log.error("Support for non AWS cloud providers is not present atm. Skipping enqueuing in faktory");
+      if (ruleCloudProviderType != RuleCloudProviderType.AWS && ruleCloudProviderType != RuleCloudProviderType.AZURE) {
+        log.error("Support for non AWS/AZURE cloud providers is not present atm. Skipping enqueuing in faktory");
         // TO DO: Return simple response to dkron instead of empty for debugging purposes
         return ResponseDTO.newResponse();
       }
@@ -267,7 +267,7 @@ public class GovernanceRuleResource {
           faktoryQueueName = configuration.getGovernanceConfig().getAzureFaktoryQueueName();
         }
         List<RuleExecution> ruleExecutions = governanceRuleService.enqueue(accountId, ruleEnforcement, rulesList,
-            connectorInfoDTO.getConnectorConfig(), faktoryJobType, faktoryQueueName);
+            connectorInfoDTO.getConnectorConfig(), connectorInfoDTO.getIdentifier(), faktoryJobType, faktoryQueueName);
         enqueuedRuleExecutionIds.addAll(ruleExecutionService.save(ruleExecutions));
       }
     }
@@ -632,7 +632,7 @@ public class GovernanceRuleResource {
     for (String targetAccount : governanceAdhocEnqueueDTO.getTargetAccountDetails().keySet()) {
       RecommendationAdhocDTO recommendationAdhocDTO =
           governanceAdhocEnqueueDTO.getTargetAccountDetails().get(targetAccount);
-      rbacHelper.checkAccountExecutePermission(accountId, null, null, recommendationAdhocDTO.getIdentifier());
+      rbacHelper.checkAccountExecutePermission(accountId, null, null, recommendationAdhocDTO.getCloudConnectorId());
       for (String targetRegion : governanceAdhocEnqueueDTO.getTargetRegions()) {
         GovernanceJobEnqueueDTO governanceJobEnqueueDTO =
             GovernanceJobEnqueueDTO.builder()

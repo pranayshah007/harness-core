@@ -2739,3 +2739,4 @@ a713baa1078b711fa78817ef316247e41e47804a:batch-processing/chart/templates/config
 cb04e6dfddaf18a45690bdc194f5b93fa562a6e4:120-ng-manager/config.yml:generic-api-key:59
 fdc9b219d20135e79d5754237912ac7f0d7911e9:platform-service/config/config.yml:generic-api-key:173
 fdc9b219d20135e79d5754237912ac7f0d7911e9:platform-service/service/src/test/resources/test-config.yml:generic-api-key:155
+463b1add0d690ce82c21566f262a5102b780652a:332-ci-manager/config/ci-manager-config.yml:generic-api-key:395

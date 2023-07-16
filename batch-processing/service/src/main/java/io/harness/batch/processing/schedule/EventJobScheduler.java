@@ -71,7 +71,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -121,6 +120,9 @@ public class EventJobScheduler {
   public void orderJobs() {
     jobs.sort(Comparator.comparingInt(job -> BatchJobType.valueOf(job.getName()).getOrder()));
   }
+
+  @Value(value = "${batchJobRepository.dataRetentionPeriodInDays}") private int days;
+  @Value(value = "${batchJobRepository.timescaleEnabled}") private boolean timescaleEnabled;
 
   // this job runs every 1 hours "0 0 * ? * *". For debugging, run every minute "* * * ? * *"
   @Scheduled(cron = "0 */20 * * * ?")
@@ -479,17 +481,15 @@ public class EventJobScheduler {
     }
   }
 
-  @Value(value = "${batchJobRepository.dataRetentionPeriodInDays}") private int days;
-
-  //  @Scheduled(cron = "0 */2 * * * ?")
   @Scheduled(cron = "${batchJobRepository.metadataCleanupSchedule}") // Every 30 minutes for testing
-  @ConditionalOnProperty(value = "batchJobRepository.timescaleEnabled", havingValue = "true")
   public void processBatchJobMetadataCleanUp() {
-    batchJobMetadataCleanupService.deleteOldBatchStepExecutionContext(days);
-    batchJobMetadataCleanupService.deleteOldBatchStepExecution(days);
-    batchJobMetadataCleanupService.deleteOldBatchJobExecutionContext(days);
-    batchJobMetadataCleanupService.deleteOldBatchJobExecutionParams(days);
-    batchJobMetadataCleanupService.deleteOldBatchJobExecution(days);
-    batchJobMetadataCleanupService.deleteOldBatchJobInstance(days);
+    if (timescaleEnabled) {
+      batchJobMetadataCleanupService.deleteOldBatchStepExecutionContext(days);
+      batchJobMetadataCleanupService.deleteOldBatchStepExecution(days);
+      batchJobMetadataCleanupService.deleteOldBatchJobExecutionContext(days);
+      batchJobMetadataCleanupService.deleteOldBatchJobExecutionParams(days);
+      batchJobMetadataCleanupService.deleteOldBatchJobExecution(days);
+      batchJobMetadataCleanupService.deleteOldBatchJobInstance(days);
+    }
   }
 }

@@ -18,6 +18,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -45,6 +46,7 @@ import io.harness.product.ci.scm.proto.CreateWebhookResponse;
 import io.harness.product.ci.scm.proto.WebhookResponse;
 import io.harness.repositories.ng.webhook.spring.WebhookEventRepository;
 import io.harness.rule.Owner;
+import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import java.net.MalformedURLException;
 import java.util.Optional;
@@ -63,6 +65,7 @@ public class WebhookServiceImplTest extends CategoryTest {
   @Mock ConnectorService connectorService;
   @Mock ScmClientFacilitatorService scmClientFacilitatorService;
   @Mock ScmOrchestratorService scmOrchestratorService;
+  @Mock NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @InjectMocks WebhookServiceImpl webhookServiceImpl;
   private String accountId = "accountId";
@@ -72,6 +75,7 @@ public class WebhookServiceImplTest extends CategoryTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
+    doReturn(false).when(ngFeatureFlagHelperService).isEnabled("acc", FeatureName.CDS_QUEUE_SERVICE_FOR_TRIGGERS);
   }
 
   @Test
@@ -92,7 +96,7 @@ public class WebhookServiceImplTest extends CategoryTest {
   @Owner(developers = MEET)
   @Category(UnitTests.class)
   public void testAddEventToQueue() {
-    WebhookEvent webhookEvent = WebhookEvent.builder().build();
+    WebhookEvent webhookEvent = WebhookEvent.builder().accountId("acc").build();
     when(webhookEventRepository.save(webhookEvent)).thenReturn(webhookEvent);
     assertThat(webhookServiceImpl.addEventToQueue(webhookEvent)).isEqualTo(webhookEvent);
 

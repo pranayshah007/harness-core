@@ -25,6 +25,7 @@ import io.harness.delegate.task.winrm.WinRmSessionConfig;
 import io.harness.delegate.task.winrm.WinRmSessionConfig.WinRmSessionConfigBuilder;
 import io.harness.exception.ExceptionUtils;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogLevel;
 import io.harness.ng.core.dto.secrets.WinRmCommandParameter;
 import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
 import io.harness.shell.AbstractScriptExecutor;
@@ -115,17 +116,23 @@ public class WinRmShellScriptTaskNG extends AbstractDelegateRunnableTask {
     AbstractScriptExecutor executor =
         shellExecutorFactory.getExecutor(config, getLogStreamingTaskClient(), commandUnitsProgress);
 
-    ExecuteCommandResponse executeCommandResponse =
-        executor.executeCommandString(getInitCommand(taskParameters.getWorkingDirectory()), Collections.emptyList());
+    try {
+      ExecuteCommandResponse executeCommandResponse =
+          executor.executeCommandString(getInitCommand(taskParameters.getWorkingDirectory()), Collections.emptyList());
 
-    updateStatus(commandUnitsProgress, INIT_UNIT, executeCommandResponse);
+      updateStatus(commandUnitsProgress, INIT_UNIT, executeCommandResponse);
 
-    return ShellScriptTaskResponseNG.builder()
-        .executeCommandResponse(executeCommandResponse)
-        .status(getStatus(executeCommandResponse))
-        .errorMessage(getErrorMessage(getStatus(executeCommandResponse)))
-        .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
-        .build();
+      return ShellScriptTaskResponseNG.builder()
+          .executeCommandResponse(executeCommandResponse)
+          .status(getStatus(executeCommandResponse))
+          .errorMessage(getErrorMessage(getStatus(executeCommandResponse)))
+          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+          .build();
+    } catch (Exception e) {
+      executor.getLogCallback().saveExecutionLog("Command finished with status " + CommandExecutionStatus.FAILURE,
+          LogLevel.ERROR, CommandExecutionStatus.FAILURE);
+      throw e;
+    }
   }
 
   private ShellScriptTaskResponseNG executeCommandOnDelegate(
@@ -142,17 +149,23 @@ public class WinRmShellScriptTaskNG extends AbstractDelegateRunnableTask {
     AbstractScriptExecutor executor =
         shellExecutorFactory.getExecutor(config, getLogStreamingTaskClient(), commandUnitsProgress);
 
-    ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(
-        taskParameters.getScript(), taskParameters.getOutputVars(), taskParameters.getSecretOutputVars(), null);
+    try {
+      ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(
+          taskParameters.getScript(), taskParameters.getOutputVars(), taskParameters.getSecretOutputVars(), null);
 
-    updateStatus(commandUnitsProgress, COMMAND_UNIT, executeCommandResponse);
+      updateStatus(commandUnitsProgress, COMMAND_UNIT, executeCommandResponse);
 
-    return ShellScriptTaskResponseNG.builder()
-        .executeCommandResponse(executeCommandResponse)
-        .status(getStatus(executeCommandResponse))
-        .errorMessage(getErrorMessage(getStatus(executeCommandResponse)))
-        .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
-        .build();
+      return ShellScriptTaskResponseNG.builder()
+          .executeCommandResponse(executeCommandResponse)
+          .status(getStatus(executeCommandResponse))
+          .errorMessage(getErrorMessage(getStatus(executeCommandResponse)))
+          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+          .build();
+    } catch (Exception e) {
+      executor.getLogCallback().saveExecutionLog("Command finished with status " + CommandExecutionStatus.FAILURE,
+          LogLevel.ERROR, CommandExecutionStatus.FAILURE);
+      throw e;
+    }
   }
 
   private ShellScriptTaskResponseNG executeInit(WinRmShellScriptTaskParametersNG taskParameters,
@@ -174,14 +187,20 @@ public class WinRmShellScriptTaskNG extends AbstractDelegateRunnableTask {
     WinRmExecutor executor = winRmExecutorFactoryNG.getExecutor(config, taskParameters.isDisableCommandEncoding(),
         taskParameters.isWinrmScriptCommandSplit(), logStreamingTaskClient, commandUnitsProgress);
 
-    CommandExecutionStatus commandExecutionStatus =
-        executor.executeCommandString(getInitCommand(taskParameters.getWorkingDirectory()));
+    try {
+      CommandExecutionStatus commandExecutionStatus =
+          executor.executeCommandString(getInitCommand(taskParameters.getWorkingDirectory()));
 
-    return ShellScriptTaskResponseNG.builder()
-        .status(commandExecutionStatus)
-        .errorMessage(getErrorMessage(commandExecutionStatus))
-        .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
-        .build();
+      return ShellScriptTaskResponseNG.builder()
+          .status(commandExecutionStatus)
+          .errorMessage(getErrorMessage(commandExecutionStatus))
+          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+          .build();
+    } catch (Exception e) {
+      executor.getLogCallback().saveExecutionLog("Command finished with status " + CommandExecutionStatus.FAILURE,
+          LogLevel.ERROR, CommandExecutionStatus.FAILURE);
+      throw e;
+    }
   }
 
   private ShellScriptTaskResponseNG executeCommand(WinRmShellScriptTaskParametersNG taskParameters,
@@ -203,15 +222,21 @@ public class WinRmShellScriptTaskNG extends AbstractDelegateRunnableTask {
     WinRmExecutor executor = winRmExecutorFactoryNG.getExecutor(config, taskParameters.isDisableCommandEncoding(),
         taskParameters.isWinrmScriptCommandSplit(), logStreamingTaskClient, commandUnitsProgress);
 
-    ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(
-        taskParameters.getScript(), taskParameters.getOutputVars(), taskParameters.getSecretOutputVars(), null);
+    try {
+      ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(
+          taskParameters.getScript(), taskParameters.getOutputVars(), taskParameters.getSecretOutputVars(), null);
 
-    return ShellScriptTaskResponseNG.builder()
-        .executeCommandResponse(executeCommandResponse)
-        .status(getStatus(executeCommandResponse))
-        .errorMessage(getErrorMessage(getStatus(executeCommandResponse)))
-        .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
-        .build();
+      return ShellScriptTaskResponseNG.builder()
+          .executeCommandResponse(executeCommandResponse)
+          .status(getStatus(executeCommandResponse))
+          .errorMessage(getErrorMessage(getStatus(executeCommandResponse)))
+          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+          .build();
+    } catch (Exception e) {
+      executor.getLogCallback().saveExecutionLog("Command finished with status " + CommandExecutionStatus.FAILURE,
+          LogLevel.ERROR, CommandExecutionStatus.FAILURE);
+      throw e;
+    }
   }
 
   private List<WinRmCommandParameter> getCommandParameters(WinRmShellScriptTaskParametersNG taskParameters) {

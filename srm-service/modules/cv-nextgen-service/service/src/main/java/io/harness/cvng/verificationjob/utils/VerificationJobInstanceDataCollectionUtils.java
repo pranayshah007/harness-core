@@ -21,10 +21,9 @@ import org.apache.commons.lang3.StringUtils;
 @UtilityClass
 public class VerificationJobInstanceDataCollectionUtils {
   public boolean shouldCollectPreDeploymentData(VerificationJobInstance verificationJobInstance) {
-    if (!shouldCollectUsingNodesFromCD(verificationJobInstance)) {
-      return true;
-    }
-    if (verificationJobInstance.getResolvedJob().getType().equals(VerificationJobType.CANARY)) {
+    if (verificationJobInstance.getResolvedJob().getType().equals(VerificationJobType.CANARY)
+        && (shouldCollectUsingNodesFromCD(verificationJobInstance)
+            || VerificationJobInstanceServiceInstanceUtils.isNodeRegExEnabled(verificationJobInstance))) {
       return false;
     }
     if (verificationJobInstance.getResolvedJob().getType().equals(VerificationJobType.AUTO)) {

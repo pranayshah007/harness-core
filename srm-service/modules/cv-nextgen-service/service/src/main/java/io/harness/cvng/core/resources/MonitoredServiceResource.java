@@ -7,6 +7,9 @@
 
 package io.harness.cvng.core.resources;
 
+import static io.harness.cvng.core.utils.ValidationUtils.validateOneOfDurationOrStartTimeIsPresent;
+import static io.harness.cvng.core.utils.ValidationUtils.validateTheDifferenceBetweenStartAndEndTimeAndGetStartTime;
+import static io.harness.cvng.core.utils.ValidationUtils.validationIfBothDurationAndStartTimeIsPresent;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.NGCommonEntityConstants;
@@ -45,8 +48,6 @@ import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.LiveMonitoringLogsFilter;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
-import io.harness.cvng.notification.beans.NotificationRuleCondition;
-import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.utils.NGAccessControlClientCheck;
 import io.harness.ng.beans.PageResponse;
@@ -69,7 +70,9 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
 import javax.validation.Valid;
@@ -233,9 +236,14 @@ public class MonitoredServiceResource {
   public ResponseDTO<HistoricalTrend>
   getOverAllHealthScore(@NotNull @Valid @BeanParam ProjectScopedProjectParams projectParams,
       @NotNull @NotEmpty @PathParam("identifier") @ResourceIdentifier String identifier,
-      @NotNull @QueryParam("duration") DurationDTO durationDTO, @NotNull @QueryParam("endTime") Long endTime) {
+      @QueryParam("duration") DurationDTO durationDTO, @NotNull @QueryParam("endTime") Long endTime,
+      @QueryParam("startTime") Long startTime) {
+    validateOneOfDurationOrStartTimeIsPresent(durationDTO, startTime);
+    validationIfBothDurationAndStartTimeIsPresent(durationDTO, startTime, endTime);
+    Instant startTimeInstant = validateTheDifferenceBetweenStartAndEndTimeAndGetStartTime(
+        durationDTO, startTime, endTime, Duration.of(5, ChronoUnit.MINUTES));
     return ResponseDTO.newResponse(monitoredServiceService.getOverAllHealthScore(
-        projectParams.getProjectParams(), identifier, durationDTO, Instant.ofEpochMilli(endTime)));
+        projectParams.getProjectParams(), identifier, startTimeInstant, Instant.ofEpochMilli(endTime)));
   }
 
   @GET
@@ -586,29 +594,6 @@ public class MonitoredServiceResource {
       @BeanParam PageParams pageParams) {
     return ResponseDTO.newResponse(monitoredServiceService.getNotificationRules(
         projectParams.getProjectParams(), monitoredServiceIdentifier, pageParams));
-  }
-
-  @GET
-  @Timed
-  @ExceptionMetered
-  @Path("{identifier}/notification-rule-conditions")
-  @ApiOperation(value = "get notification rule conditions for MonitoredService",
-      nickname = "getNotificationRuleConditionsForMonitoredService")
-  @Operation(operationId = "getNotificationRuleConditionsForMonitoredService",
-      summary = "Get notification rule conditions for MonitoredService",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Get notification rule conditions for MonitoredService")
-      })
-  @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
-  public ResponseDTO<PageResponse<NotificationRuleCondition>>
-  getNotificationRuleConditionsForMonitoredService(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
-      @Parameter(description = NGCommonEntityConstants.IDENTIFIER_PARAM_MESSAGE) @ApiParam(
-          required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String monitoredServiceIdentifier,
-      @NotNull @QueryParam("types") List<NotificationRuleConditionType> types, @BeanParam PageParams pageParams) {
-    return ResponseDTO.newResponse(monitoredServiceService.getNotificationRuleConditions(
-        projectParams.getProjectParams(), monitoredServiceIdentifier, pageParams, types));
   }
 
   @POST

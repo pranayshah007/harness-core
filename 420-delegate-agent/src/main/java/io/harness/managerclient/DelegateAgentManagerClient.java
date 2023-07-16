@@ -30,6 +30,8 @@ import io.harness.delegate.beans.DelegateUnregisterRequest;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.connector.ConnectorHeartbeatDelegateResponse;
 import io.harness.delegate.beans.instancesync.InstanceSyncPerpetualTaskResponse;
+import io.harness.delegate.core.beans.AcquireTasksResponse;
+import io.harness.delegate.core.beans.SetupInfraResponse;
 import io.harness.delegate.task.validation.DelegateConnectionResultDetail;
 import io.harness.logging.AccessTokenBean;
 import io.harness.perpetualtask.HeartbeatRequest;
@@ -265,4 +267,15 @@ public interface DelegateAgentManagerClient {
   @PUT("agent/delegates/task-progress/status/v2")
   Call<SendTaskStatusResponse> sendTaskStatusV2(
       @Body SendTaskStatusRequest sendTaskStatusRequest, @Query("accountId") String accountId);
+
+  @Consumes({"application/x-protobuf"})
+  @GET("executions/payload/{executionId}")
+  Call<AcquireTasksResponse> acquireTaskPayload(@Path("executionId") String uuid,
+      @Query("delegateId") String delegateId, @Query("accountId") String accountId,
+      @Query("delegateInstanceId") String delegateInstanceId);
+
+  @Consumes({"application/x-protobuf"})
+  @POST("executions/response/{executionId}/executionInfra")
+  Call<ResponseBody> sendSetupInfraResponse(@Path("executionId") String uuid, @Query("delegateId") String delegateId,
+      @Query("accountId") String accountId, @Body SetupInfraResponse response);
 }

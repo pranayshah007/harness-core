@@ -355,6 +355,18 @@ replace_key_value redisLockConfig.retryInterval $REDIS_RETRY_INTERVAL
 replace_key_value redisLockConfig.retryAttempts $REDIS_RETRY_ATTEMPTS
 replace_key_value redisLockConfig.timeout $REDIS_TIMEOUT
 
+if [[ "" != "$HSQS_BASE_URL" ]]; then
+  export HSQS_BASE_URL; yq -i '.queueServiceClientConfig.httpClientConfig.baseUrl=env(HSQS_BASE_URL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$HSQS_TOPIC" ]]; then
+  export HSQS_TOPIC; yq -i '.queueServiceClientConfig.topic=env(HSQS_TOPIC)' $CONFIG_FILE
+fi
+
+if [[ "" != "$HSQS_AUTH_TOKEN" ]]; then
+  export HSQS_AUTH_TOKEN; yq -i '.queueServiceClientConfig.queueServiceSecret=env(HSQS_AUTH_TOKEN)' $CONFIG_FILE
+fi
+
 if [[ "" != "$LOCK_CONFIG_REDIS_URL" ]]; then
   export LOCK_CONFIG_REDIS_URL; yq -i '.singleServerConfig.address=env(LOCK_CONFIG_REDIS_URL)' $REDISSON_CACHE_FILE
 fi

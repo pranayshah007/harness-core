@@ -65,8 +65,8 @@ func (b *pytestRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, u
 		if ignoreInstr {
 			return strings.TrimSpace(fmt.Sprintf("%s -m %s %s", pythonCmd, pytestCmd, userArgs)), nil
 		}
-		testCmd = strings.TrimSpace(fmt.Sprintf("%s %s %s --test_harness %s",
-			pythonCmd, scriptPath, currentDir, userCmd))
+		testCmd = strings.TrimSpace(fmt.Sprintf("%s %s %s --test_harness %s --config_file %s",
+			pythonCmd, scriptPath, currentDir, userCmd, agentConfigPath))
 		return testCmd, nil
 	}
 	if len(tests) == 0 {
@@ -91,7 +91,7 @@ func (b *pytestRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, u
 	}
 
 	testStr := strings.Join(ut, ",")
-	testCmd = fmt.Sprintf("%s %s %s --test_harness %s --test_files %s",
-		pythonCmd, scriptPath, currentDir, userCmd, testStr)
+	testCmd = fmt.Sprintf("%s %s %s --test_harness %s --test_files %s --config_file %s",
+		pythonCmd, scriptPath, currentDir, userCmd, testStr, agentConfigPath)
 	return testCmd, nil
 }

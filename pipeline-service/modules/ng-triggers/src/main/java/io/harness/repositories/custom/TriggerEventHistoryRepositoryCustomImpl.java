@@ -25,6 +25,7 @@ import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -41,6 +42,12 @@ public class TriggerEventHistoryRepositoryCustomImpl implements TriggerEventHist
 
   @Override
   public List<TriggerEventHistory> findAll(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.find(query, TriggerEventHistory.class);
+  }
+
+  @Override
+  public List<TriggerEventHistory> findAllWithSort(Criteria criteria, Sort sort) {
     Query query = new Query(criteria);
     return mongoTemplate.find(query, TriggerEventHistory.class);
   }

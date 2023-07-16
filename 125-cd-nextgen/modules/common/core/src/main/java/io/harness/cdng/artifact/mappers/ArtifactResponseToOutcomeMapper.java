@@ -93,6 +93,10 @@ public class ArtifactResponseToOutcomeMapper {
 
   private final String IMAGE_PULL_SECRET_END = ">";
 
+  static final String ARTIFACT_ID = "artifactId";
+  static final String ARTIFACT_FILE_NAME = "fileName";
+  static final String PACKAGE_NAME = "package";
+
   public ArtifactOutcome toArtifactOutcome(
       ArtifactConfig artifactConfig, ArtifactDelegateResponse artifactDelegateResponse, boolean useDelegateResponse) {
     switch (artifactConfig.getSourceType()) {
@@ -494,6 +498,23 @@ public class ArtifactResponseToOutcomeMapper {
         && isNotEmpty(artifactDelegateResponse.getBuildDetails().getUiDisplayName())) {
       displayName = artifactDelegateResponse.getBuildDetails().getUiDisplayName();
     }
+
+    Map<String, String> metadata = useDelegateResponse ? getMetadata(artifactDelegateResponse) : null;
+
+    String artifactPath = null;
+    if (isNotEmpty(metadata)) {
+      String artifactId = metadata.get(ARTIFACT_ID);
+      String packageName = metadata.get(PACKAGE_NAME);
+      String artifactFileName = metadata.get(ARTIFACT_FILE_NAME);
+      if (isNotEmpty(artifactId)) {
+        artifactPath = artifactId;
+      } else if (isNotEmpty(packageName)) {
+        artifactPath = packageName;
+      } else if (isNotEmpty(artifactFileName)) {
+        artifactPath = artifactFileName;
+      }
+    }
+
     return NexusArtifactOutcome.builder()
         .repositoryName(artifactConfig.getRepository().getValue())
         .image(getImageValue(artifactDelegateResponse))
@@ -508,7 +529,8 @@ public class ArtifactResponseToOutcomeMapper {
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(artifactConfig)))
         .registryHostname(getRegistryHostnameValue(artifactDelegateResponse))
         .displayName(displayName)
-        .metadata(useDelegateResponse ? getMetadata(artifactDelegateResponse) : null)
+        .metadata(metadata)
+        .artifactPath(artifactPath)
         .build();
   }
 

@@ -791,7 +791,8 @@ class Pipeline(ImportExport):
             + "&orgIdentifier="
             + from_orgIdentifier
             + "&projectIdentifier="
-            + from_projectIdentifier            
+            + from_projectIdentifier
+            + "&loadFromFallbackBranch=true"
         )
         return get_response_data("GET", url_get_pipeline, "")
 

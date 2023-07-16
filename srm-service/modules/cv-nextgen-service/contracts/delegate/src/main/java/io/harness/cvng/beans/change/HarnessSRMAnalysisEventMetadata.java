@@ -8,6 +8,7 @@
 package io.harness.cvng.beans.change;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.time.Duration;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -25,6 +26,8 @@ public class HarnessSRMAnalysisEventMetadata extends ChangeEventMetadata {
   long analysisStartTime;
 
   long analysisEndTime;
+
+  Duration analysisDuration;
   String planExecutionId;
   String pipelineId;
   String stageStepId;

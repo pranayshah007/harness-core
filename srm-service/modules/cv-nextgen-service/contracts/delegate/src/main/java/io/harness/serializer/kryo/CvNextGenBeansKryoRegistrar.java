@@ -65,6 +65,7 @@ import io.harness.cvng.beans.appd.AppDynamicsFetchTiersRequest;
 import io.harness.cvng.beans.appd.AppDynamicsFileDefinition;
 import io.harness.cvng.beans.appd.AppDynamicsMetricDataValidationRequest;
 import io.harness.cvng.beans.aws.AwsDataCollectionRequest;
+import io.harness.cvng.beans.azure.AzureLogsSampleDataRequest;
 import io.harness.cvng.beans.cloudwatch.CloudWatchMetricFetchSampleDataRequest;
 import io.harness.cvng.beans.customhealth.CustomHealthFetchSampleDataRequest;
 import io.harness.cvng.beans.customhealth.TimestampInfo;
@@ -234,5 +235,6 @@ public class CvNextGenBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(SignalFXMetricDataCollectionInfo.MetricCollectionInfo.class, 9148);
     kryo.register(GrafanaLokiLogSampleDataRequest.class, 9149);
     kryo.register(GrafanaLokiLogDataCollectionInfo.class, 9150);
+    kryo.register(AzureLogsSampleDataRequest.class, 9151);
   }
 }

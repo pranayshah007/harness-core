@@ -22,12 +22,20 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.StringUtils;
 
 @UtilityClass
 public class VerificationJobInstanceServiceInstanceUtils {
   public static Integer MAX_TEST_NODE_COUNT = 50;
   public static Integer MAX_CONTROL_NODE_COUNT = 50;
+
+  public boolean isNodeRegExEnabled(VerificationJobInstance verificationJobInstance) {
+    return verificationJobInstance != null && verificationJobInstance.getServiceInstanceDetails() != null
+        && (StringUtils.isNotEmpty(verificationJobInstance.getServiceInstanceDetails().getTestNodeRegExPattern())
+            || StringUtils.isNoneBlank(
+                verificationJobInstance.getServiceInstanceDetails().getControlNodeRegExPattern()));
+  }
 
   public List<String> getSampledTestNodes(VerificationJobInstance verificationJobInstance) {
     return getRandomElement(getTestNodes(verificationJobInstance), MAX_TEST_NODE_COUNT);
@@ -44,15 +52,14 @@ public class VerificationJobInstanceServiceInstanceUtils {
       return new HashSet<>(testNodes);
     }
     Set<String> filteredTestNodes =
-        testNodes.stream()
+        CollectionUtils.emptyIfNull(testNodes)
+            .stream()
             .filter(str
                 -> Pattern.matches(verificationJobInstance.getServiceInstanceDetails().getTestNodeRegExPattern(), str))
             .collect(Collectors.toSet());
-    if (filteredTestNodes.size() < testNodes.size()) {
-      executionLogger.log(ExecutionLogDTO.LogLevel.INFO,
-          "Following test nodes were filtered out of testNodes because of regex match failure: "
-              + String.join(",", Sets.difference(testNodes, filteredTestNodes)));
-    }
+    executionLogger.log(ExecutionLogDTO.LogLevel.INFO,
+        "Regex matched test nodes: " + String.join(",", filteredTestNodes) + ", Filtered out nodes:"
+            + String.join(",", Sets.difference(SetUtils.emptyIfNull(testNodes), filteredTestNodes)));
     return filteredTestNodes;
   }
 
@@ -63,16 +70,15 @@ public class VerificationJobInstanceServiceInstanceUtils {
       return new HashSet<>(controlNodes);
     }
     Set<String> filteredControlNodes =
-        controlNodes.stream()
+        SetUtils.emptyIfNull(controlNodes)
+            .stream()
             .filter(str
                 -> Pattern.matches(
                     verificationJobInstance.getServiceInstanceDetails().getControlNodeRegExPattern(), str))
             .collect(Collectors.toSet());
-    if (filteredControlNodes.size() < controlNodes.size()) {
-      executionLogger.log(ExecutionLogDTO.LogLevel.INFO,
-          "Following control nodes were filtered out of testNodes because of regex match failure: "
-              + String.join(",", Sets.difference(controlNodes, filteredControlNodes)));
-    }
+    executionLogger.log(ExecutionLogDTO.LogLevel.INFO,
+        "Regex matched control nodes: " + String.join(",", filteredControlNodes) + ", Filtered out nodes:"
+            + String.join(",", Sets.difference(SetUtils.emptyIfNull(controlNodes), filteredControlNodes)));
     return filteredControlNodes;
   }
 

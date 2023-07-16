@@ -81,7 +81,7 @@ public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourc
   }
 
   public Delegate getDelegateFromCache(String delegateId, String accountId) {
-    return delegateCache.get(accountId, delegateId, false);
+    return delegateCache.get(accountId, delegateId);
   }
 
   public List<DelegateTask> getTotalNumberOfTaskAssignedInDelegate(

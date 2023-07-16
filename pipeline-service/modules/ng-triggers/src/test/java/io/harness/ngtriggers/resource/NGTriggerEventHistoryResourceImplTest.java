@@ -202,7 +202,7 @@ public class NGTriggerEventHistoryResourceImplTest extends CategoryTest {
     assertThat(responseDto.getProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
     assertThat(responseDto.getTargetIdentifier()).isEqualTo(PIPELINE_IDENTIFIER);
     assertThat(responseDto.getFinalStatus()).isNull();
-    assertThat(responseDto.getTriggerEventStatus().getStatus()).isEqualTo(TriggerEventStatus.FinalResponse.FAILURE);
+    assertThat(responseDto.getTriggerEventStatus().getStatus()).isEqualTo(TriggerEventStatus.FinalResponse.FAILED);
     assertThat(responseDto.getTriggerEventStatus().getMessage()).isEqualTo("Unknown status");
   }
 
@@ -271,7 +271,7 @@ public class NGTriggerEventHistoryResourceImplTest extends CategoryTest {
 
     NGTriggerEventHistoryBaseDTO responseDto = content.toList().get(0);
     assertThat(responseDto.getFinalStatus()).isNull();
-    assertThat(responseDto.getTriggerEventStatus().getStatus()).isEqualTo(TriggerEventStatus.FinalResponse.FAILURE);
+    assertThat(responseDto.getTriggerEventStatus().getStatus()).isEqualTo(TriggerEventStatus.FinalResponse.FAILED);
     assertThat(responseDto.getTriggerEventStatus().getMessage()).isEqualTo("Unknown status");
   }
 }

@@ -14,6 +14,7 @@ import io.harness.cdng.visitor.YamlTypes;
 @OwnedBy(HarnessTeam.CDP)
 public enum ExecutionNodeType {
   GITOPS_MERGE_PR("GITOPS_MERGE_PR", StepSpecTypeConstants.GITOPS_MERGE_PR),
+  GITOPS_REVERT_PR("GITOPS_REVERT_PR", StepSpecTypeConstants.GITOPS_REVERT_PR),
   GITOPS_SYNC("GITOPS_SYNC", StepSpecTypeConstants.GITOPS_SYNC),
   SERVICE("SERVICE", YamlTypes.SERVICE_ENTITY),
   SERVICE_V2("SERVICE_V2", YamlTypes.SERVICE_ENTITY),

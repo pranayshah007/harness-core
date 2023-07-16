@@ -107,5 +107,5 @@ io.harness.steps.SectionStepSweepingOutput
 io.harness.beans.Scope
 io.harness.spotinst.model.ElastiGroup
 io.harness.ng.core.dto.secrets.SSHConfigDTO
-io.harness.delegate.cdng.execution.StepInstanceInfo
 io.harness.delegate.cdng.execution.StepExecutionInstanceInfo
+io.harness.delegate.cdng.execution.K8sStepInstanceInfo

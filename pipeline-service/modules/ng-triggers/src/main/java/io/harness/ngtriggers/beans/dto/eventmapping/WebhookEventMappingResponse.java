@@ -30,4 +30,5 @@ public class WebhookEventMappingResponse {
   boolean isCustomTrigger;
   @Singular List<TriggerDetails> triggers;
   Set<String> changedFiles;
+  @Singular("unMatchedTriggerInfo") List<UnMatchedTriggerInfo> unMatchedTriggerInfoList;
 }

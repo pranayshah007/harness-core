@@ -165,6 +165,13 @@ public class StageCleanupUtility {
         .stageRuntimeId(stageDetails.getStageRuntimeID())
         .poolId(stageInfraDetails.getPoolId())
         .logKey(liteEngineLogKey)
+        .context(DliteVmCleanupTaskParams.Context.builder()
+                     .accountID(AmbianceUtils.getAccountId(ambiance))
+                     .orgID(AmbianceUtils.getOrgIdentifier(ambiance))
+                     .projectID(AmbianceUtils.getProjectIdentifier(ambiance))
+                     .pipelineID(AmbianceUtils.getPipelineIdentifier(ambiance))
+                     .runSequence(ambiance.getMetadata().getRunSequence())
+                     .build())
         .build();
   }
 }

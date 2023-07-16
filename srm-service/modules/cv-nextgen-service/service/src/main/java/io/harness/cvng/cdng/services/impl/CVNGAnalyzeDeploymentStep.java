@@ -10,6 +10,8 @@ package io.harness.cvng.cdng.services.impl;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
+import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cvng.activity.entities.SRMStepAnalysisActivity;
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.beans.activity.ActivityType;
@@ -37,7 +39,10 @@ import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.data.Outcome;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -49,6 +54,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -73,6 +79,8 @@ public class CVNGAnalyzeDeploymentStep extends SyncExecutableWithCapabilities {
   @Inject SRMAnalysisStepService srmAnalysisStepService;
 
   @Inject MonitoredServiceService monitoredServiceService;
+
+  @Inject OutcomeService outcomeService;
 
   @Inject Clock clock;
   @Override
@@ -137,6 +145,11 @@ public class CVNGAnalyzeDeploymentStep extends SyncExecutableWithCapabilities {
       String executionDetailsId = srmAnalysisStepService.createSRMAnalysisStepExecution(
           ambiance, monitoredServiceIdentifier, serviceEnvironmentParams, getDurationFromString(duration));
       activity.setExecutionNotificationDetailsId(executionDetailsId);
+      Optional<ArtifactsOutcome> optionalArtifactsOutcome = getArtifactOutcomeFromAmbiance(ambiance);
+      if (optionalArtifactsOutcome.isPresent()) {
+        activity.setArtifactType(optionalArtifactsOutcome.get().getPrimary().getArtifactType());
+        activity.setArtifactTag(optionalArtifactsOutcome.get().getPrimary().getTag());
+      }
       String activityId = activityService.upsert(activity);
       log.info("Saved Step Analysis Activity {}", activityId);
       return StepResponse.builder()
@@ -209,5 +222,14 @@ public class CVNGAnalyzeDeploymentStep extends SyncExecutableWithCapabilities {
                                              .build())
                          .build())
         .build();
+  }
+
+  private Optional<ArtifactsOutcome> getArtifactOutcomeFromAmbiance(Ambiance ambiance) {
+    OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS));
+    if (optionalOutcome.isFound()) {
+      return Optional.of((ArtifactsOutcome) optionalOutcome.getOutcome());
+    }
+    return Optional.empty();
   }
 }

@@ -50,14 +50,19 @@ import io.harness.ng.webhook.entities.WebhookEvent;
 import io.harness.ng.webhook.entities.WebhookEvent.WebhookEventBuilder;
 import io.harness.product.ci.scm.proto.Action;
 import io.harness.product.ci.scm.proto.ParseWebhookResponse;
+import io.harness.service.WebhookParserSCMService;
 
+import com.google.common.base.Stopwatch;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.MultivaluedMap;
 import lombok.extern.slf4j.Slf4j;
@@ -70,6 +75,7 @@ public class WebhookHelper {
   @Inject @Named(GIT_PUSH_EVENT_STREAM) private Producer gitPushEventProducer;
   @Inject @Named(GIT_PR_EVENT_STREAM) private Producer gitPrEventProducer;
   @Inject @Named(GIT_BRANCH_HOOK_EVENT_STREAM) private Producer gitBranchHookEventProducer;
+  @Inject private WebhookParserSCMService webhookParserSCMService;
 
   public WebhookEvent toNGTriggerWebhookEvent(
       String accountIdentifier, String payload, MultivaluedMap<String, String> httpHeaders) {
@@ -188,5 +194,37 @@ public class WebhookHelper {
     }
 
     return producers;
+  }
+
+  public ParseWebhookResponse invokeScmService(WebhookEvent event) {
+    try {
+      Stopwatch stopwatch = Stopwatch.createStarted();
+      ParseWebhookResponse parseWebhookResponse =
+          webhookParserSCMService.parseWebhookUsingSCMAPI(event.getHeaders(), event.getPayload());
+      log.info("Finished parsing webhook payload in {} ", stopwatch.elapsed(TimeUnit.SECONDS));
+      return parseWebhookResponse;
+    } catch (Exception exception) {
+      logIfScmUnavailableException(event, exception);
+    }
+
+    // This failure could also mean, SCM could not parse payload. This may be some event SCM does not yet support.
+    // We still need to continue, as someone might have configured Custom trigger on this.
+    return null;
+  }
+
+  private void logIfScmUnavailableException(WebhookEvent event, Exception exception) {
+    if (StatusRuntimeException.class.isAssignableFrom(exception.getClass())) {
+      StatusRuntimeException e = (StatusRuntimeException) exception;
+
+      if (e.getStatus().getCode() == Status.Code.UNAVAILABLE) {
+        // SCM service could not be accessed.
+        log.error(new StringBuilder(128)
+                      .append("SCM service unavailable for parsing webhook payload. EventId")
+                      .append(event.getUuid())
+                      .append(", Exception: ")
+                      .append(e)
+                      .toString());
+      }
+    }
   }
 }

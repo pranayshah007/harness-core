@@ -34,7 +34,8 @@ public enum DataSourceType {
   SUMOLOGIC_METRICS("SumologicMetrics", VerificationType.TIME_SERIES, DEMO_TEMPLATE_PROMETHEUS, true),
   SUMOLOGIC_LOG("SumologicLog", VerificationType.LOG, DEMO_TEMPLATE_SPLUNK, true),
   SPLUNK_SIGNALFX_METRICS("SplunkSignalFXMetrics", VerificationType.TIME_SERIES, DEMO_TEMPLATE_PROMETHEUS, true),
-  GRAFANA_LOKI_LOGS("GrafanaLokiLogs", VerificationType.LOG, DEMO_TEMPLATE_SPLUNK, true);
+  GRAFANA_LOKI_LOGS("GrafanaLokiLogs", VerificationType.LOG, DEMO_TEMPLATE_SPLUNK, true),
+  AZURE_LOGS("AzureLogs", VerificationType.LOG, DEMO_TEMPLATE_SPLUNK, true);
 
   private String displayName;
   private VerificationType verificationType;

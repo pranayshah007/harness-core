@@ -9,11 +9,13 @@ package io.harness.cdng.ecs;
 
 import static io.harness.pms.contracts.execution.failure.FailureType.APPLICATION_FAILURE;
 import static io.harness.rule.OwnerRule.ALLU_VAMSI;
+import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.SAINATH;
 
 import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
@@ -127,6 +129,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -134,6 +137,7 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -169,7 +173,6 @@ public class EcsStepCommonHelperTest extends CategoryTest {
   @Mock private EcsCanaryDeployStep ecsCanaryDeployStep;
   @Mock private TaskRequestsUtils TaskRequestsUtils;
   @Mock private CDExpressionResolver cdExpressionResolver;
-
   @Spy @InjectMocks private EcsStepCommonHelper ecsStepCommonHelper;
 
   @Test
@@ -1451,5 +1454,86 @@ public class EcsStepCommonHelperTest extends CategoryTest {
       assertThat(taskChainResponse.isChainEnd()).isFalse();
       assertThat(taskChainResponse.getPassThroughData()).isEqualTo(ecsGitFetchPassThroughData);
     }
+  }
+
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void testGetEcsManifestOutcomeWithValidInput() {
+    List<ManifestOutcome> manifestOutcomes = Mockito.mock(List.class);
+    ManifestOutcome ecsTaskDefinitionManifest = EcsTaskDefinitionManifestOutcome.builder().order(1).build();
+    ManifestOutcome ecsServiceDefinitionManifest = EcsServiceDefinitionManifestOutcome.builder().order(2).build();
+    when(manifestOutcomes.stream()).thenReturn(Stream.of(ecsTaskDefinitionManifest, ecsServiceDefinitionManifest));
+
+    List<ManifestOutcome> result = ecsStepHelper.getEcsManifestOutcome(manifestOutcomes);
+
+    assertThat(result).isNotNull();
+    assertThat(result.size()).isEqualTo(2);
+
+    assertTrue(result.contains(ecsTaskDefinitionManifest));
+    assertTrue(result.contains(ecsServiceDefinitionManifest));
+
+    verify(manifestOutcomes, times(1)).stream();
+  }
+
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void testGetEcsManifestOutcomeWithEmptyInput() {
+    List<ManifestOutcome> manifestOutcomes = Mockito.mock(List.class);
+    when(manifestOutcomes.stream()).thenReturn(Stream.empty());
+
+    assertThatThrownBy(() -> ecsStepHelper.getEcsManifestOutcome(manifestOutcomes))
+        .isInstanceOf(InvalidRequestException.class);
+
+    verify(manifestOutcomes, times(1)).stream();
+  }
+
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void testGetEcsManifestOutcomeWithMultipleEcsTaskDefinitions() {
+    List<ManifestOutcome> manifestOutcomes = Mockito.mock(List.class);
+    ManifestOutcome ecsTaskDefinitionManifest1 = EcsTaskDefinitionManifestOutcome.builder().order(1).build();
+    ManifestOutcome ecsTaskDefinitionManifest2 = EcsTaskDefinitionManifestOutcome.builder().order(2).build();
+    ManifestOutcome ecsServiceDefinitionManifest = EcsServiceDefinitionManifestOutcome.builder().order(3).build();
+    when(manifestOutcomes.stream())
+        .thenReturn(Stream.of(ecsTaskDefinitionManifest1, ecsTaskDefinitionManifest2, ecsServiceDefinitionManifest));
+
+    List<ManifestOutcome> ecsManifestOutcome = ecsStepHelper.getEcsManifestOutcome(manifestOutcomes);
+    assertThat(ecsManifestOutcome.size()).isEqualTo(2);
+
+    verify(manifestOutcomes, times(1)).stream();
+  }
+
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void testGetEcsManifestOutcomeWithMissingEcsServiceDefinition() {
+    List<ManifestOutcome> manifestOutcomes = Mockito.mock(List.class);
+    ManifestOutcome ecsTaskDefinitionManifest = EcsTaskDefinitionManifestOutcome.builder().order(1).build();
+    when(manifestOutcomes.stream()).thenReturn(Stream.of(ecsTaskDefinitionManifest));
+
+    assertThatThrownBy(() -> ecsStepHelper.getEcsManifestOutcome(manifestOutcomes))
+        .isInstanceOf(InvalidRequestException.class);
+
+    verify(manifestOutcomes, times(1)).stream();
+  }
+
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void testGetEcsManifestOutcomeWithMultipleEcsServiceDefinitions() {
+    List<ManifestOutcome> manifestOutcomes = Mockito.mock(List.class);
+    ManifestOutcome ecsTaskDefinitionManifest = EcsTaskDefinitionManifestOutcome.builder().order(1).build();
+    ManifestOutcome ecsServiceDefinitionManifest1 = EcsServiceDefinitionManifestOutcome.builder().order(2).build();
+    ManifestOutcome ecsServiceDefinitionManifest2 = EcsServiceDefinitionManifestOutcome.builder().order(3).build();
+    when(manifestOutcomes.stream())
+        .thenReturn(Stream.of(ecsTaskDefinitionManifest, ecsServiceDefinitionManifest1, ecsServiceDefinitionManifest2));
+
+    List<ManifestOutcome> ecsManifestOutcome = ecsStepHelper.getEcsManifestOutcome(manifestOutcomes);
+    assertThat(ecsManifestOutcome.size()).isEqualTo(2);
+
+    verify(manifestOutcomes, times(1)).stream();
   }
 }

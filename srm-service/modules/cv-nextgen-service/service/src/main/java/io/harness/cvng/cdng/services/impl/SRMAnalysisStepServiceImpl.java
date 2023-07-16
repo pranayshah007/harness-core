@@ -7,8 +7,13 @@
 
 package io.harness.cvng.cdng.services.impl;
 
+import io.harness.cvng.activity.entities.Activity;
+import io.harness.cvng.activity.entities.SRMStepAnalysisActivity;
+import io.harness.cvng.activity.services.api.ActivityService;
+import io.harness.cvng.analysis.entities.SRMAnalysisStepDetailDTO;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail.SRMAnalysisStepExecutionDetailsKeys;
+import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.SRMAnalysisStatus;
 import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
 import io.harness.cvng.core.beans.params.ProjectParams;
@@ -17,6 +22,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 
+import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
@@ -29,6 +35,8 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService {
   @Inject HPersistence hPersistence;
 
   @Inject Clock clock;
+
+  @Inject ActivityService activityService;
   @Override
   public String createSRMAnalysisStepExecution(Ambiance ambiance, String monitoredServiceIdentifier,
       ServiceEnvironmentParams serviceEnvironmentParams, Duration duration) {
@@ -47,6 +55,7 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService {
             .analysisStartTime(instant.toEpochMilli())
             .analysisStatus(SRMAnalysisStatus.RUNNING)
             .analysisEndTime(instant.plus(duration).toEpochMilli())
+            .analysisDuration(duration)
             .build();
     return hPersistence.save(executionDetails);
   }
@@ -71,5 +80,39 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService {
             .set(SRMAnalysisStepExecutionDetailsKeys.analysisStatus, SRMAnalysisStatus.ABORTED)
             .set(SRMAnalysisStepExecutionDetailsKeys.analysisEndTime, clock.millis());
     hPersistence.update(updateQuery, updateOperations);
+  }
+
+  @Override
+  public SRMAnalysisStepDetailDTO abortRunningSrmAnalysisStep(String executionDetailId) {
+    SRMAnalysisStepExecutionDetail stepExecutionDetail = getSRMAnalysisStepExecutionDetail(executionDetailId);
+
+    Preconditions.checkArgument(
+        !stepExecutionDetail.equals(null), String.format("Step Execution Id %s is not present.", executionDetailId));
+    Preconditions.checkArgument(stepExecutionDetail.getAnalysisStatus().equals(SRMAnalysisStatus.RUNNING),
+        String.format("Step Execution Id %s is not RUNNING, the current status is %s", executionDetailId,
+            stepExecutionDetail.getAnalysisStatus()));
+
+    UpdateOperations<SRMAnalysisStepExecutionDetail> updateOperations =
+        hPersistence.createUpdateOperations(SRMAnalysisStepExecutionDetail.class)
+            .set(SRMAnalysisStepExecutionDetailsKeys.analysisStatus, SRMAnalysisStatus.ABORTED)
+            .set(SRMAnalysisStepExecutionDetailsKeys.analysisEndTime, clock.millis());
+    hPersistence.update(stepExecutionDetail, updateOperations);
+    return SRMAnalysisStepDetailDTO.getDTOFromEntity(getSRMAnalysisStepExecutionDetail(executionDetailId));
+  }
+
+  @Override
+  public SRMAnalysisStepDetailDTO getSRMAnalysisSummary(String activityId) {
+    Activity activity = activityService.get(activityId);
+    Preconditions.checkArgument(!activity.equals(null), String.format("Activity Id %s is not present.", activityId));
+    Preconditions.checkArgument(activity.getType().equals(ActivityType.SRM_STEP_ANALYSIS),
+        String.format("Activity is not of the type SRM_STEP_ANALYSIS, the type is %s", activity.getType()));
+    SRMStepAnalysisActivity stepAnalysisActivity = (SRMStepAnalysisActivity) activity;
+
+    SRMAnalysisStepExecutionDetail stepExecutionDetail =
+        getSRMAnalysisStepExecutionDetail(stepAnalysisActivity.getExecutionNotificationDetailsId());
+    Preconditions.checkArgument(!stepExecutionDetail.equals(null),
+        String.format(
+            "Step Execution Details %s is not present.", stepAnalysisActivity.getExecutionNotificationDetailsId()));
+    return SRMAnalysisStepDetailDTO.getDTOFromEntity(stepExecutionDetail);
   }
 }

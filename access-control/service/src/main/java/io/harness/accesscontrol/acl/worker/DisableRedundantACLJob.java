@@ -7,7 +7,6 @@
 
 package io.harness.accesscontrol.acl.worker;
 
-import static io.harness.accesscontrol.resources.resourcegroups.ResourceSelector.validateResourceType;
 import static io.harness.authorization.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
 
 import static java.time.Duration.ofSeconds;
@@ -91,30 +90,36 @@ public class DisableRedundantACLJob implements Runnable {
     try {
       try (CloseableIterator<ACL> iterator = runQueryWithBatch()) {
         String offset = REFERENCE_TIMESTAMP;
-        int updated = 0;
+        int totalUpdated = 0;
+        int totalDisabled = 0;
+        int totalEnabled = 0;
         BulkOperations bulkOperations = mongoTemplate.bulkOps(UNORDERED, ACL.class);
         while (iterator.hasNext()) {
           ACL acl = iterator.next();
           offset = acl.getId();
-
-          if (!validateResourceType(inMemoryPermissionRepository.getResourceTypeBy(acl.getPermissionIdentifier()),
-                  acl.getResourceSelector())) {
-            Query query = new Query();
-            query.addCriteria(where(ACLKeys.id).is(acl.getId()));
+          Query query = new Query();
+          query.addCriteria(where(ACLKeys.id).is(acl.getId()));
+          if (!inMemoryPermissionRepository.isPermissionCompatibleWithResourceSelector(
+                  acl.getPermissionIdentifier(), acl.getResourceSelector())) {
             bulkOperations.updateOne(query, update(ACLKeys.enabled, false));
+            totalDisabled++;
+          } else {
+            bulkOperations.updateOne(query, update(ACLKeys.enabled, true));
+            totalEnabled++;
+          }
 
-            updated++;
-
-            if (updated >= BATCH_SIZE) {
-              log.info("Disabled {} redundant ACLs : {}", updated, bulkOperations.execute());
-              bulkOperations = mongoTemplate.bulkOps(UNORDERED, ACL.class);
-              updated = 0;
-              updateOffset(offset);
-            }
+          totalUpdated++;
+          if (totalUpdated >= BATCH_SIZE) {
+            log.info("Updated total {} ACLs. disabled: {}, enabled: {}", bulkOperations.execute(), totalDisabled,
+                totalEnabled);
+            bulkOperations = mongoTemplate.bulkOps(UNORDERED, ACL.class);
+            totalUpdated = 0;
+            updateOffset(offset);
           }
         }
-        if (updated != 0) {
-          log.info("Disabled {} redundant ACLs : {}", updated, bulkOperations.execute());
+        if (totalUpdated != 0) {
+          log.info(
+              "Updated total {} ACLs disabled: {}, enabled: {}", bulkOperations.execute(), totalDisabled, totalEnabled);
           updateOffset(offset);
         }
       }

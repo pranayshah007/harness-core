@@ -10,7 +10,7 @@ package io.harness.accesscontrol.persistence;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 
-import static java.util.List.of;
+import static java.util.Map.of;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -24,6 +24,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -55,15 +58,15 @@ public class InMemoryPermissionRepositoryTest {
     mongoTemplate = mock(MongoTemplate.class);
 
     when(mongoTemplate.findAll(PermissionDBO.class))
-        .thenReturn(of(PermissionDBO.builder().identifier(CORE_USERGROUP_MANAGE_PERMISSION).build(),
+        .thenReturn(List.of(PermissionDBO.builder().identifier(CORE_USERGROUP_MANAGE_PERMISSION).build(),
             PermissionDBO.builder().identifier(CORE_RESOURCEGROUP_MANAGE_PERMISSION).build(),
             PermissionDBO.builder().identifier(CORE_ENVIRONMENT_GROUP_VIEW_PERMISSION).build(),
             PermissionDBO.builder().identifier(CORE_GOVERNANCEPOLICYSETS_VIEW_PERMISSION).build()));
     when(mongoTemplate.findAll(ResourceTypeDBO.class))
-        .thenReturn(of(ResourceTypeDBO.builder()
-                           .identifier(USERGROUP_RESOURCE_IDENTIFIER)
-                           .permissionKey(USERGROUP_RESOURCE_NAME)
-                           .build(),
+        .thenReturn(List.of(ResourceTypeDBO.builder()
+                                .identifier(USERGROUP_RESOURCE_IDENTIFIER)
+                                .permissionKey(USERGROUP_RESOURCE_NAME)
+                                .build(),
             ResourceTypeDBO.builder()
                 .identifier(RESOURCEGROUP_RESOURCE_IDENTIFIER)
                 .permissionKey(RESOURCEGROUP_RESOURCE_NAME)
@@ -82,46 +85,102 @@ public class InMemoryPermissionRepositoryTest {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testPermissionToResourceTypeMapping() {
-    inMemoryPermissionRepository = new InMemoryPermissionRepository(mongoTemplate);
+    inMemoryPermissionRepository =
+        new InMemoryPermissionRepository(mongoTemplate, getExplicitPermissionToResourceTypeMapping());
 
-    assertThat(inMemoryPermissionRepository.getResourceTypeBy(CORE_USERGROUP_MANAGE_PERMISSION))
-        .isEqualToIgnoringCase(USERGROUP_RESOURCE_IDENTIFIER);
-    assertThat(inMemoryPermissionRepository.getResourceTypeBy(CORE_RESOURCEGROUP_MANAGE_PERMISSION))
-        .isEqualToIgnoringCase(RESOURCEGROUP_RESOURCE_IDENTIFIER);
-    assertThat(inMemoryPermissionRepository.getResourceTypeBy(CORE_ENVIRONMENT_GROUP_VIEW_PERMISSION))
-        .isEqualToIgnoringCase(ENVIRONMENT_GROUP_RESOURCE_IDENTIFIER);
-    assertThat(inMemoryPermissionRepository.getResourceTypeBy(CORE_GOVERNANCEPOLICYSETS_VIEW_PERMISSION))
-        .isEqualToIgnoringCase(GOVERNANCEPOLICYSETS_RESOURCE_IDENTIFIER);
+    assertThat(inMemoryPermissionRepository.getResourceTypesApplicableToPermission(CORE_USERGROUP_MANAGE_PERMISSION))
+        .contains(USERGROUP_RESOURCE_IDENTIFIER);
+    assertThat(
+        inMemoryPermissionRepository.getResourceTypesApplicableToPermission(CORE_RESOURCEGROUP_MANAGE_PERMISSION))
+        .contains(RESOURCEGROUP_RESOURCE_IDENTIFIER);
+    assertThat(
+        inMemoryPermissionRepository.getResourceTypesApplicableToPermission(CORE_ENVIRONMENT_GROUP_VIEW_PERMISSION))
+        .contains(ENVIRONMENT_GROUP_RESOURCE_IDENTIFIER);
+    assertThat(
+        inMemoryPermissionRepository.getResourceTypesApplicableToPermission(CORE_GOVERNANCEPOLICYSETS_VIEW_PERMISSION))
+        .contains(GOVERNANCEPOLICYSETS_RESOURCE_IDENTIFIER);
   }
 
   @Test
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testEmptyPermissionToResourceTypeMapping() {
-    when(mongoTemplate.findAll(PermissionDBO.class)).thenReturn(of());
+    when(mongoTemplate.findAll(PermissionDBO.class)).thenReturn(List.of());
 
-    inMemoryPermissionRepository = new InMemoryPermissionRepository(mongoTemplate);
+    inMemoryPermissionRepository =
+        new InMemoryPermissionRepository(mongoTemplate, getExplicitPermissionToResourceTypeMapping());
 
-    assertThat(inMemoryPermissionRepository.getResourceTypeBy(CORE_USERGROUP_MANAGE_PERMISSION)).isNull();
-    assertThat(inMemoryPermissionRepository.getResourceTypeBy(CORE_RESOURCEGROUP_MANAGE_PERMISSION)).isNull();
+    assertThat(inMemoryPermissionRepository.getResourceTypesApplicableToPermission(CORE_USERGROUP_MANAGE_PERMISSION))
+        .isNull();
+    assertThat(
+        inMemoryPermissionRepository.getResourceTypesApplicableToPermission(CORE_RESOURCEGROUP_MANAGE_PERMISSION))
+        .isNull();
   }
 
   @Test
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testMultipleInvocationShouldMakeOnlyOneDBCall() {
-    inMemoryPermissionRepository = new InMemoryPermissionRepository(mongoTemplate);
+    inMemoryPermissionRepository =
+        new InMemoryPermissionRepository(mongoTemplate, getExplicitPermissionToResourceTypeMapping());
 
-    assertThat(inMemoryPermissionRepository.getResourceTypeBy(CORE_USERGROUP_MANAGE_PERMISSION))
-        .isEqualToIgnoringCase(USERGROUP_RESOURCE_IDENTIFIER);
-    assertThat(inMemoryPermissionRepository.getResourceTypeBy(CORE_RESOURCEGROUP_MANAGE_PERMISSION))
-        .isEqualToIgnoringCase(RESOURCEGROUP_RESOURCE_IDENTIFIER);
-    assertThat(inMemoryPermissionRepository.getResourceTypeBy(CORE_ENVIRONMENT_GROUP_VIEW_PERMISSION))
-        .isEqualToIgnoringCase(ENVIRONMENT_GROUP_RESOURCE_IDENTIFIER);
-    assertThat(inMemoryPermissionRepository.getResourceTypeBy(CORE_GOVERNANCEPOLICYSETS_VIEW_PERMISSION))
-        .isEqualToIgnoringCase(GOVERNANCEPOLICYSETS_RESOURCE_IDENTIFIER);
+    assertThat(inMemoryPermissionRepository.getResourceTypesApplicableToPermission(CORE_USERGROUP_MANAGE_PERMISSION))
+        .contains(USERGROUP_RESOURCE_IDENTIFIER);
+    assertThat(
+        inMemoryPermissionRepository.getResourceTypesApplicableToPermission(CORE_RESOURCEGROUP_MANAGE_PERMISSION))
+        .contains(RESOURCEGROUP_RESOURCE_IDENTIFIER);
+    assertThat(
+        inMemoryPermissionRepository.getResourceTypesApplicableToPermission(CORE_ENVIRONMENT_GROUP_VIEW_PERMISSION))
+        .contains(ENVIRONMENT_GROUP_RESOURCE_IDENTIFIER);
+    assertThat(
+        inMemoryPermissionRepository.getResourceTypesApplicableToPermission(CORE_GOVERNANCEPOLICYSETS_VIEW_PERMISSION))
+        .contains(GOVERNANCEPOLICYSETS_RESOURCE_IDENTIFIER);
 
     verify(mongoTemplate, times(1)).findAll(PermissionDBO.class);
     verify(mongoTemplate, times(1)).findAll(ResourceTypeDBO.class);
+  }
+
+  private Map<String, Set<String>> getExplicitPermissionToResourceTypeMapping() {
+    return of(
+        ENVIRONMENT_GROUP_RESOURCE_NAME, Set.of(USERGROUP_RESOURCE_IDENTIFIER, RESOURCEGROUP_RESOURCE_IDENTIFIER));
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testPermissionApplicableToResourceType() {
+    inMemoryPermissionRepository =
+        new InMemoryPermissionRepository(mongoTemplate, getExplicitPermissionToResourceTypeMapping());
+
+    assertThat(inMemoryPermissionRepository.isPermissionCompatibleWithResourceSelector(
+                   CORE_USERGROUP_MANAGE_PERMISSION, "/*/*"))
+        .isTrue();
+    assertThat(inMemoryPermissionRepository.isPermissionCompatibleWithResourceSelector(
+                   CORE_USERGROUP_MANAGE_PERMISSION, "/ACCOUNT/account-id$/USERGROUP/*"))
+        .isTrue();
+    assertThat(inMemoryPermissionRepository.isPermissionCompatibleWithResourceSelector(
+                   CORE_USERGROUP_MANAGE_PERMISSION, "/ACCOUNT/account-id$/USERGROUP/user-group-id-1"))
+        .isTrue();
+    assertThat(inMemoryPermissionRepository.isPermissionCompatibleWithResourceSelector(
+                   ENVIRONMENT_GROUP_RESOURCE_NAME, "/ACCOUNT/account-id$/RESOURCEGROUP/user-group-id-2"))
+        .isTrue();
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testPermissionNotApplicableToResourceTypes() {
+    inMemoryPermissionRepository =
+        new InMemoryPermissionRepository(mongoTemplate, getExplicitPermissionToResourceTypeMapping());
+
+    assertThat(inMemoryPermissionRepository.isPermissionCompatibleWithResourceSelector(
+                   CORE_USERGROUP_MANAGE_PERMISSION, "/ACCOUNT/account-id$/USER/*"))
+        .isFalse();
+    assertThat(inMemoryPermissionRepository.isPermissionCompatibleWithResourceSelector(
+                   CORE_USERGROUP_MANAGE_PERMISSION, "/ACCOUNT/account-id$/SERVICE/*"))
+        .isFalse();
+    assertThat(inMemoryPermissionRepository.isPermissionCompatibleWithResourceSelector(
+                   CORE_USERGROUP_MANAGE_PERMISSION, "/ACCOUNT/account-id$/SERVICE/user-id"))
+        .isFalse();
   }
 }

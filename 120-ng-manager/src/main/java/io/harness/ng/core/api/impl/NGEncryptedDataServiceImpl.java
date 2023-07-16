@@ -157,7 +157,6 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     validateSecretDoesNotExist(
         accountIdentifier, dto.getOrgIdentifier(), dto.getProjectIdentifier(), dto.getIdentifier());
     SecretTextSpecDTO secret = (SecretTextSpecDTO) dto.getSpec();
-
     SecretManagerConfigDTO secretManager = getSecretManagerOrThrow(accountIdentifier, dto.getOrgIdentifier(),
         dto.getProjectIdentifier(), secret.getSecretManagerIdentifier(), false);
 
@@ -282,12 +281,21 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
   private NGEncryptedData buildNGEncryptedData(
       String accountIdentifier, SecretDTOV2 dto, SecretManagerConfigDTO secretManager) {
     NGEncryptedDataBuilder builder = NGEncryptedData.builder();
+    String secretManagerIdentifierRef = secretManager.getIdentifier();
+    if (dto.getSpec() instanceof SecretTextSpecDTO) {
+      SecretTextSpecDTO secretTextSpecDTO = (SecretTextSpecDTO) dto.getSpec();
+      secretManagerIdentifierRef = secretTextSpecDTO.getSecretManagerIdentifier();
+    }
+    if (dto.getSpec() instanceof SecretFileSpecDTO) {
+      SecretFileSpecDTO secretTextSpecDTO = (SecretFileSpecDTO) dto.getSpec();
+      secretManagerIdentifierRef = secretTextSpecDTO.getSecretManagerIdentifier();
+    }
     builder.accountIdentifier(accountIdentifier)
         .orgIdentifier(dto.getOrgIdentifier())
         .projectIdentifier(dto.getProjectIdentifier())
         .identifier(dto.getIdentifier())
         .name(dto.getName());
-    builder.secretManagerIdentifier(secretManager.getIdentifier()).encryptionType(secretManager.getEncryptionType());
+    builder.secretManagerIdentifier(secretManagerIdentifierRef).encryptionType(secretManager.getEncryptionType());
     if (SecretText.equals(dto.getType())) {
       SecretTextSpecDTO secret = (SecretTextSpecDTO) dto.getSpec();
       if (Reference.equals(secret.getValueType()) || CustomSecretManagerValues.equals(secret.getValueType())) {
