@@ -12,6 +12,8 @@ import static io.harness.annotations.dev.HarnessTeam.IDP;
 import io.harness.EntityType;
 import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.steps.nodes.GitCloneStepNode;
+import io.harness.beans.steps.nodes.PluginStepNode;
 import io.harness.beans.steps.nodes.RunStepNode;
 import io.harness.cimanager.serializer.CIContractsKryoRegistrar;
 import io.harness.idp.pipeline.stages.node.IDPStageNode;
@@ -28,6 +30,7 @@ import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import java.util.Collections;
 import lombok.experimental.UtilityClass;
 @UtilityClass
@@ -81,35 +84,29 @@ public class IdpServiceRegistrars {
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STAGE.name()).build())
                                            .build())
                    .build())
-          //                  .add(YamlSchemaRootClass.builder()
-          //                          .entityType(EntityType.PLUGIN)
-          //                          .availableAtProjectLevel(true)
-          //                          .availableAtOrgLevel(false)
-          //                          .yamlSchemaMetadata(YamlSchemaMetadata.builder()
-          //                                  .modulesSupported(ImmutableList.of(ModuleType.IACM))
-          //                                  .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
-          //                                  .build())
-          //                          .availableAtAccountLevel(false)
-          //                          .clazz(PluginStepNode.class)
-          //                          .build())
-          //                  .add(YamlSchemaRootClass.builder()
-          //                          .entityType(EntityType.ACTION_STEP)
-          //                          .availableAtProjectLevel(true)
-          //                          .availableAtOrgLevel(false)
-          //                          .yamlSchemaMetadata(YamlSchemaMetadata.builder()
-          //                                  .modulesSupported(Collections.singletonList(ModuleType.IACM))
-          //                                  .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
-          //                                  .build())
-          //                          .availableAtAccountLevel(false)
-          //                          .clazz(ActionStepNode.class)
-          //                          .build())
-          //                  .add(YamlSchemaRootClass.builder()
-          //                          .entityType(EntityType.IACM_STEPS)
-          //                          .availableAtProjectLevel(true)
-          //                          .availableAtOrgLevel(false)
-          //                          .availableAtAccountLevel(false)
-          //                          .clazz(IACMStepInfo.class)
-          //                          .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.PLUGIN)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .modulesSupported(ImmutableList.of(ModuleType.IDP))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .availableAtAccountLevel(false)
+                   .clazz(PluginStepNode.class)
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.GIT_CLONE)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .modulesSupported(Lists.newArrayList(ModuleType.IDP))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .namespace(SchemaNamespaceConstants.IDP)
+                                           .build())
+                   .availableAtAccountLevel(false)
+                   .clazz(GitCloneStepNode.class)
+                   .build())
           .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.RUN_STEP)
                    .availableAtProjectLevel(true)
