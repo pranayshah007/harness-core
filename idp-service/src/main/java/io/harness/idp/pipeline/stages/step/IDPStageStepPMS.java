@@ -53,13 +53,13 @@ import lombok.extern.slf4j.Slf4j;
 public class IDPStageStepPMS extends IntegrationStageStepPMS {
   @Override
   public ChildExecutableResponse obtainChild(
-          Ambiance ambiance, StageElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StageElementParameters stepParameters, StepInputPackage inputPackage) {
     return super.obtainChild(ambiance, stepParameters, inputPackage);
   }
 
   @Override
   public StepResponse handleChildResponse(
-          Ambiance ambiance, StageElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
+      Ambiance ambiance, StageElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     return super.handleChildResponse(ambiance, stepParameters, responseDataMap);
   }
 }

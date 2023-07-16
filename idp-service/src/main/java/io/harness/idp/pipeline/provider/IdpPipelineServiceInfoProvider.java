@@ -12,14 +12,20 @@ import static io.harness.steps.plugin.ContainerStepConstants.PLUGIN;
 
 
 import io.harness.idp.pipeline.step.StepSpecTypeConstants;
+import static io.harness.steps.plugin.ContainerStepConstants.PLUGIN;
+
+import io.harness.beans.steps.StepSpecTypeConstants;
+import io.harness.ci.creator.variables.GitCloneStepVariableCreator;
+import io.harness.ci.creator.variables.PluginStepVariableCreator;
 import io.harness.ci.creator.variables.RunStepVariableCreator;
 import io.harness.ci.plan.creator.steps.CIStepsPlanCreator;
+import io.harness.ci.plancreator.GitCloneStepPlanCreator;
+import io.harness.ci.plancreator.PluginStepPlanCreator;
 import io.harness.ci.plancreator.RunStepPlanCreator;
 import io.harness.idp.pipeline.stages.filtercreator.IDPStageFilterCreator;
 import io.harness.idp.pipeline.stages.filtercreator.IDPStepFilterJsonCreator;
 import io.harness.idp.pipeline.stages.plancreator.IDPStagePlanCreator;
 import io.harness.idp.pipeline.stages.variablecreator.IDPStageVariableCreator;
-import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
@@ -41,6 +47,8 @@ public class IdpPipelineServiceInfoProvider implements PipelineServiceInfoProvid
     List<PartialPlanCreator<?>> planCreators = new LinkedList<>();
     planCreators.add(new IDPStagePlanCreator());
     planCreators.add(new RunStepPlanCreator());
+    planCreators.add(new PluginStepPlanCreator());
+    planCreators.add(new GitCloneStepPlanCreator());
     //    planCreators.add(new InitializeStepPlanCreator());
 
     //    planCreators.add(new RunStepPlanCreatorV1());
@@ -65,6 +73,8 @@ public class IdpPipelineServiceInfoProvider implements PipelineServiceInfoProvid
     List<VariableCreator> variableCreators = new ArrayList<>();
     variableCreators.add(new IDPStageVariableCreator());
     variableCreators.add(new RunStepVariableCreator());
+    variableCreators.add(new PluginStepVariableCreator());
+    variableCreators.add(new GitCloneStepVariableCreator());
     return variableCreators;
   }
 
@@ -77,8 +87,23 @@ public class IdpPipelineServiceInfoProvider implements PipelineServiceInfoProvid
                                .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
                                .build();
 
+    StepInfo pluginStepInfo = StepInfo.newBuilder()
+                                  .setName("Plugin")
+                                  .setType(StepSpecTypeConstants.PLUGIN)
+                                  .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
+                                  .build();
+
+    StepInfo gitCloneStepInfo =
+        StepInfo.newBuilder()
+            .setName("Git Clone")
+            .setType(StepSpecTypeConstants.GIT_CLONE)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(PLUGIN).addFolderPaths("Build").build())
+            .build();
+
     ArrayList<StepInfo> stepInfos = new ArrayList<>();
     stepInfos.add(runStepInfo);
+    stepInfos.add(pluginStepInfo);
+    stepInfos.add(gitCloneStepInfo);
     return stepInfos;
   }
 }
