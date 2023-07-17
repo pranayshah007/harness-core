@@ -54,6 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -69,6 +70,7 @@ public class GitIntegrationServiceImplTest {
       "https://gitlab.com/sathish1293/sathish/-/blob/main/sathish/Organization/default.yaml";
   private static final String GITHUB_IDENTIFIER = "testGithub";
   private static final String TEST_GITHUB_URL = "https://github.com/harness/harness-core";
+  private static final String TEST_GITHUB_HOST = "github.com";
   @InjectMocks GitIntegrationServiceImpl gitIntegrationServiceImpl;
   AutoCloseable openMocks;
   @Mock private CatalogConnectorRepository catalogConnectorRepository;
@@ -77,7 +79,7 @@ public class GitIntegrationServiceImplTest {
   @Mock ConfigManagerService configManagerService;
   @Mock DelegateSelectorsCache delegateSelectorsCache;
   @Mock ProxyEnvVariableUtils proxyEnvVariableUtils;
-  @Captor private ArgumentCaptor<Map<String, Boolean>> hostProxyMapCaptor;
+  @Captor private ArgumentCaptor<JSONObject> hostProxyMapCaptor;
 
   String ACCOUNT_IDENTIFIER = "test-secret-identifier";
   String TOKEN_SECRET_IDENTIFIER = "test-secret-identifier";
@@ -142,10 +144,12 @@ public class GitIntegrationServiceImplTest {
     when(processor.getInfraConnectorType(any())).thenReturn("DIRECT");
     CatalogConnectorEntity catalogConnectorEntity = getGitlabConnectorEntity(delegateSelectors);
     when(catalogConnectorRepository.saveOrUpdate(any())).thenReturn(catalogConnectorEntity);
+    when(proxyEnvVariableUtils.getHostProxyMap(ACCOUNT_IDENTIFIER)).thenReturn(new JSONObject());
+
     CatalogConnectorEntity result =
         gitIntegrationServiceImpl.saveConnectorDetails(ACCOUNT_IDENTIFIER, connectorDetails);
+
     verify(delegateSelectorsCache).put(eq(ACCOUNT_IDENTIFIER), any(), any());
-    verify(proxyEnvVariableUtils).createOrUpdateHostProxyEnvVariable(eq(ACCOUNT_IDENTIFIER), any());
     assertEquals("testGitlab", result.getConnectorIdentifier());
     assertEquals(delegateSelectors, result.getDelegateSelectors());
     gitIntegrationUtilsMockedStatic.close();
@@ -187,14 +191,14 @@ public class GitIntegrationServiceImplTest {
     when(catalogConnectorRepository.findByAccountIdentifierAndConnectorProviderType(ACCOUNT_IDENTIFIER, "Github"))
         .thenReturn(Optional.ofNullable(catalogConnectorEntity));
     doNothing().when(delegateSelectorsCache).remove(any(), any());
-    doNothing().when(proxyEnvVariableUtils).removeFromHostProxyEnvVariable(any(), any());
-    doNothing().when(proxyEnvVariableUtils).createOrUpdateHostProxyEnvVariable(any(), any());
+    JSONObject hostProxyMap = new JSONObject();
+    hostProxyMap.put("github.com", false);
+    when(proxyEnvVariableUtils.getHostProxyMap(ACCOUNT_IDENTIFIER)).thenReturn(hostProxyMap);
     when(catalogConnectorRepository.saveOrUpdate(any())).thenReturn(catalogConnectorEntity);
 
     gitIntegrationServiceImpl.processConnectorUpdate(message, entityChangeDTO);
-    Map<String, Boolean> hostProxyMap = new HashMap<>();
-    hostProxyMap.put("github.com", false);
-    verify(proxyEnvVariableUtils).createOrUpdateHostProxyEnvVariable(any(), hostProxyMapCaptor.capture());
+
+    verify(proxyEnvVariableUtils).setHostProxyMap(eq(ACCOUNT_IDENTIFIER), hostProxyMapCaptor.capture());
     assertEquals(hostProxyMap, hostProxyMapCaptor.getValue());
   }
 
@@ -220,6 +224,7 @@ public class GitIntegrationServiceImplTest {
     return CatalogConnectorEntity.builder()
         .accountIdentifier(ACCOUNT_IDENTIFIER)
         .connectorIdentifier(GITHUB_IDENTIFIER)
+        .host(TEST_GITHUB_HOST)
         .connectorProviderType(ConnectorType.GITHUB.toString())
         .type(CatalogInfraConnectorType.DIRECT)
         .build();

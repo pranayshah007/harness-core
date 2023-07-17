@@ -16,6 +16,7 @@ import io.harness.spec.server.idp.v1.model.BackstageEnvConfigVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -26,6 +27,25 @@ import org.json.JSONObject;
 @OwnedBy(HarnessTeam.IDP)
 public class ProxyEnvVariableUtils {
   BackstageEnvVariableService backstageEnvVariableService;
+
+  public JSONObject getHostProxyMap(String accountIdentifier) {
+    Optional<BackstageEnvVariable> envVariableOpt =
+        backstageEnvVariableService.findByEnvNameAndAccountIdentifier(PROXY_ENV_NAME, accountIdentifier);
+    if (envVariableOpt.isPresent()) {
+      BackstageEnvConfigVariable envVariable = (BackstageEnvConfigVariable) envVariableOpt.get();
+      String hostProxyString = envVariable.getValue();
+      return new JSONObject(hostProxyString);
+    }
+    return new JSONObject();
+  }
+
+  public void setHostProxyMap(String accountIdentifier, JSONObject hostProxyMap) {
+    BackstageEnvConfigVariable envVariable = new BackstageEnvConfigVariable();
+    envVariable.setType(BackstageEnvVariable.TypeEnum.CONFIG);
+    envVariable.setEnvName(PROXY_ENV_NAME);
+    envVariable.setValue(hostProxyMap.toString());
+    backstageEnvVariableService.createOrUpdate(Collections.singletonList(envVariable), accountIdentifier);
+  }
 
   public void createOrUpdateHostProxyEnvVariable(String accountIdentifier, Map<String, Boolean> hostProxyMap) {
     Optional<BackstageEnvVariable> envVariableOpt =
