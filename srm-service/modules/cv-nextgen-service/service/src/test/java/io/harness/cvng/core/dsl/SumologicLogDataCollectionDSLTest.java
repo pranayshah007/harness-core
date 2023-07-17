@@ -18,7 +18,7 @@ import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.SumologicLogDataCollectionInfo;
 import io.harness.cvng.beans.sumologic.SumologicLogSampleDataRequest;
 import io.harness.cvng.core.entities.NextGenLogCVConfig;
-import io.harness.cvng.core.services.impl.DataCollectionDSLFactory;
+import io.harness.cvng.core.services.impl.DataCollectionDSLBundleFactory;
 import io.harness.datacollection.DataCollectionDSLService;
 import io.harness.datacollection.entity.CallDetails;
 import io.harness.datacollection.entity.LogDataRecord;
@@ -64,7 +64,7 @@ public class SumologicLogDataCollectionDSLTest extends HoverflyTestBase {
   @Category(UnitTests.class)
   public void testExecute_SumoLogic_DSL_getSampleData() {
     String sampleDataRequestDSL =
-        DataCollectionDSLFactory.readDSL(DataSourceType.SUMOLOGIC_LOG).getSampleDataCollectionDSL();
+        DataCollectionDSLBundleFactory.readDSL(DataSourceType.SUMOLOGIC_LOG).getSampleDataCollectionDSL();
     SumologicLogSampleDataRequest sumologicLogSampleDataRequest =
         SumologicLogSampleDataRequest.builder()
             .query("_sourceCategory=windows/performance")

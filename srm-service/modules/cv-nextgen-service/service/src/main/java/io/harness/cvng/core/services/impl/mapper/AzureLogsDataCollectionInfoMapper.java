@@ -12,7 +12,7 @@ import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.entities.NextGenLogCVConfig;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.services.api.DataCollectionInfoMapper;
-import io.harness.cvng.core.services.impl.DataCollectionDSLFactory;
+import io.harness.cvng.core.services.impl.DataCollectionDSLBundleFactory;
 
 public class AzureLogsDataCollectionInfoMapper
     implements DataCollectionInfoMapper<AzureLogsDataCollectionInfo, NextGenLogCVConfig> {
@@ -28,7 +28,7 @@ public class AzureLogsDataCollectionInfoMapper
             .query(cvConfig.getQuery())
             .build();
     azureLogsDataCollectionInfo.setDataCollectionDsl(
-        DataCollectionDSLFactory.readDSL(DataSourceType.AZURE_LOGS).getActualDataCollectionDSL());
+        DataCollectionDSLBundleFactory.readDSL(DataSourceType.AZURE_LOGS).getActualDataCollectionDSL());
     return azureLogsDataCollectionInfo;
   }
 }

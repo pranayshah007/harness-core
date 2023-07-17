@@ -13,7 +13,7 @@ import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.sumologic.SumologicMetricSampleDataRequest;
 import io.harness.cvng.core.beans.healthsource.HealthSourceRecordsRequest;
 import io.harness.cvng.core.services.api.NextGenHealthSourceHelper;
-import io.harness.cvng.core.services.impl.DataCollectionDSLFactory;
+import io.harness.cvng.core.services.impl.DataCollectionDSLBundleFactory;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.sumologic.SumoLogicConnectorDTO;
 
@@ -22,13 +22,14 @@ public class SumologicMetricNextGenHealthSourceHelper implements NextGenHealthSo
   public DataCollectionRequest<? extends ConnectorConfigDTO> getDataCollectionRequest(
       HealthSourceRecordsRequest healthSourceRecordsRequest) {
     DataCollectionRequest<SumoLogicConnectorDTO> request;
-    request = SumologicMetricSampleDataRequest.builder()
-                  .from(healthSourceRecordsRequest.getStartTime())
-                  .to(healthSourceRecordsRequest.getEndTime())
-                  .dsl(DataCollectionDSLFactory.readDSL(DataSourceType.SUMOLOGIC_METRICS).getSampleDataCollectionDSL())
-                  .query(healthSourceRecordsRequest.getQuery().trim())
-                  .type(DataCollectionRequestType.SUMOLOGIC_METRIC_SAMPLE_DATA)
-                  .build();
+    request =
+        SumologicMetricSampleDataRequest.builder()
+            .from(healthSourceRecordsRequest.getStartTime())
+            .to(healthSourceRecordsRequest.getEndTime())
+            .dsl(DataCollectionDSLBundleFactory.readDSL(DataSourceType.SUMOLOGIC_METRICS).getSampleDataCollectionDSL())
+            .query(healthSourceRecordsRequest.getQuery().trim())
+            .type(DataCollectionRequestType.SUMOLOGIC_METRIC_SAMPLE_DATA)
+            .build();
     return request;
   }
 }

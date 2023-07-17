@@ -16,7 +16,7 @@ import io.harness.cvng.core.entities.PrometheusCVConfig.MetricInfo;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.MetricDataCollectionInfoMapper;
-import io.harness.cvng.core.services.impl.DataCollectionDSLFactory;
+import io.harness.cvng.core.services.impl.DataCollectionDSLBundleFactory;
 import io.harness.cvng.utils.PrometheusQueryUtils;
 
 import com.google.common.base.Preconditions;
@@ -89,7 +89,7 @@ public class PrometheusDataCollectionInfoMapper
             cvConfig.getAccountId(), FeatureName.SRM_ENABLE_AGGREGATION_USING_BY_IN_PROMETHEUS.name())) {
       if (dataCollectionInfo.isCollectHostData()) {
         dataCollectionInfo.setDataCollectionDsl(
-            DataCollectionDSLFactory.readDSL(DataSourceType.PROMETHEUS).getActualDataCollectionDSL());
+            DataCollectionDSLBundleFactory.readDSL(DataSourceType.PROMETHEUS).getActualDataCollectionDSL());
         List<MetricCollectionInfo> metricCollectionInfoList =
             cvConfig.getMetricInfos()
                 .stream()

@@ -33,7 +33,7 @@ import io.harness.cvng.core.entities.PrometheusCVConfig;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.MetricPackService;
-import io.harness.cvng.core.services.impl.DataCollectionDSLFactory;
+import io.harness.cvng.core.services.impl.DataCollectionDSLBundleFactory;
 import io.harness.cvng.core.services.impl.mapper.DatadogMetricDataCollectionInfoMapper;
 import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.utils.DatadogQueryUtils;
@@ -210,7 +210,7 @@ public class DatadogMetricDataCollectionDSLV2Test extends HoverflyCVNextGenTestB
     DataCollectionDSLService dataCollectionDSLService = new DataCollectionServiceImpl();
     dataCollectionDSLService.registerDatacollectionExecutorService(executorService);
     String metricSampleDataRequestDSL =
-        DataCollectionDSLFactory.readDSL(DataSourceType.DATADOG_METRICS).getSampleDataCollectionDSL();
+        DataCollectionDSLBundleFactory.readDSL(DataSourceType.DATADOG_METRICS).getSampleDataCollectionDSL();
     String query =
         "kubernetes.memory.usage{cluster-name:chi-play}.rollup(avg, 60) ; kubernetes.memory.usage{cluster-name:chi-play};(a / b) * 100";
     Instant instant = Instant.parse("2023-07-09T10:30:38.498Z");
@@ -269,7 +269,7 @@ public class DatadogMetricDataCollectionDSLV2Test extends HoverflyCVNextGenTestB
             .type(DataCollectionRequestType.DATADOG_TIME_SERIES_POINTS)
             .from(now.minus(1, ChronoUnit.HOURS).toEpochMilli())
             .to(now.toEpochMilli())
-            .DSL(DataCollectionDSLFactory.readDSL(DataSourceType.DATADOG_METRICS).getSampleDataCollectionDSL())
+            .DSL(DataCollectionDSLBundleFactory.readDSL(DataSourceType.DATADOG_METRICS).getSampleDataCollectionDSL())
             .formula(formula)
             .formulaQueriesList(formulaQueries)
             .query(query)

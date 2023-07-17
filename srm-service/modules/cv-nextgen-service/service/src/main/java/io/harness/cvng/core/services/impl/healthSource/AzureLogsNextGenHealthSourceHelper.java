@@ -13,7 +13,7 @@ import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.azure.AzureLogsSampleDataRequest;
 import io.harness.cvng.core.beans.healthsource.HealthSourceRecordsRequest;
 import io.harness.cvng.core.services.api.NextGenHealthSourceHelper;
-import io.harness.cvng.core.services.impl.DataCollectionDSLFactory;
+import io.harness.cvng.core.services.impl.DataCollectionDSLBundleFactory;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 
 import java.time.Instant;
@@ -25,7 +25,7 @@ public class AzureLogsNextGenHealthSourceHelper implements NextGenHealthSourceHe
   public DataCollectionRequest<? extends ConnectorConfigDTO> getDataCollectionRequest(
       HealthSourceRecordsRequest healthSourceRecordsRequest) {
     return AzureLogsSampleDataRequest.builder()
-        .dsl(DataCollectionDSLFactory.readDSL(DataSourceType.AZURE_LOGS).getSampleDataCollectionDSL())
+        .dsl(DataCollectionDSLBundleFactory.readDSL(DataSourceType.AZURE_LOGS).getSampleDataCollectionDSL())
         .from(Instant.ofEpochMilli(healthSourceRecordsRequest.getStartTime()))
         .to(Instant.ofEpochMilli(healthSourceRecordsRequest.getEndTime()))
         .query(healthSourceRecordsRequest.getQuery().trim())

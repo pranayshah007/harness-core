@@ -10,9 +10,10 @@ package io.harness.cvng.core.services.impl;
 import lombok.Builder;
 import lombok.Value;
 
-@Builder
 @Value
-public class DataCollectionDSL {
+@Builder
+public class DataCollectionDSLBundle {
   String sampleDataCollectionDSL;
   String actualDataCollectionDSL;
+  String serviceInstanceIdentifierDSL;
 }

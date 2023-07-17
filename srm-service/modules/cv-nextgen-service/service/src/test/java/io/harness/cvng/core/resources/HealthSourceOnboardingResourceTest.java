@@ -47,8 +47,8 @@ import io.harness.cvng.core.beans.healthsource.TimeSeriesDataPoint;
 import io.harness.cvng.core.services.api.HealthSourceOnboardingService;
 import io.harness.cvng.core.services.api.NextGenHealthSourceHelper;
 import io.harness.cvng.core.services.api.OnboardingService;
-import io.harness.cvng.core.services.impl.DataCollectionDSL;
-import io.harness.cvng.core.services.impl.DataCollectionDSLFactory;
+import io.harness.cvng.core.services.impl.DataCollectionDSLBundle;
+import io.harness.cvng.core.services.impl.DataCollectionDSLBundleFactory;
 import io.harness.cvng.core.services.impl.healthSource.ElasticSearchLogNextGenHealthSourceHelper;
 import io.harness.datacollection.entity.LogDataRecord;
 import io.harness.datacollection.entity.TimeSeriesRecord;
@@ -104,7 +104,7 @@ public class HealthSourceOnboardingResourceTest extends CvNextGenTestBase {
   private String projectIdentifier;
   private String connectorIdentifier;
 
-  private DataCollectionDSL sumologicMetricdataCollectionDSL;
+  private DataCollectionDSLBundle sumologicMetricdataCollectionDSLBundle;
   private String baseURL;
   private ObjectMapper objectMapper;
 
@@ -122,7 +122,7 @@ public class HealthSourceOnboardingResourceTest extends CvNextGenTestBase {
     tracingId = "tracingId";
     baseURL = TEST_BASE_URL + accountIdentifier + "/org/" + orgIdentifier + "/project/" + projectIdentifier;
     CorrelationContext.setCorrelationId(tracingId);
-    sumologicMetricdataCollectionDSL = DataCollectionDSLFactory.readDSL(DataSourceType.SUMOLOGIC_METRICS);
+    sumologicMetricdataCollectionDSLBundle = DataCollectionDSLBundleFactory.readDSL(DataSourceType.SUMOLOGIC_METRICS);
     objectMapper = new ObjectMapper();
   }
 
@@ -186,13 +186,14 @@ public class HealthSourceOnboardingResourceTest extends CvNextGenTestBase {
   }
 
   private OnboardingRequestDTO getOnboardingRequestDTOMetric(long startTime, long endTime, String metricQuery) {
-    SumologicMetricSampleDataRequest request = SumologicMetricSampleDataRequest.builder()
-                                                   .type(DataCollectionRequestType.SUMOLOGIC_METRIC_SAMPLE_DATA)
-                                                   .from(startTime)
-                                                   .to(endTime)
-                                                   .query(metricQuery)
-                                                   .dsl(sumologicMetricdataCollectionDSL.getSampleDataCollectionDSL())
-                                                   .build();
+    SumologicMetricSampleDataRequest request =
+        SumologicMetricSampleDataRequest.builder()
+            .type(DataCollectionRequestType.SUMOLOGIC_METRIC_SAMPLE_DATA)
+            .from(startTime)
+            .to(endTime)
+            .query(metricQuery)
+            .dsl(sumologicMetricdataCollectionDSLBundle.getSampleDataCollectionDSL())
+            .build();
 
     return OnboardingRequestDTO.builder()
         .dataCollectionRequest(request)
@@ -228,7 +229,7 @@ public class HealthSourceOnboardingResourceTest extends CvNextGenTestBase {
             .from(startTimeInLDT.format(formatter))
             .to(endTimeInLDT.format(formatter))
             .query(logQuery)
-            .dsl(DataCollectionDSLFactory.readDSL(DataSourceType.SUMOLOGIC_LOG).getSampleDataCollectionDSL())
+            .dsl(DataCollectionDSLBundleFactory.readDSL(DataSourceType.SUMOLOGIC_LOG).getSampleDataCollectionDSL())
             .build();
     OnboardingRequestDTO onboardingRequestDTO = OnboardingRequestDTO.builder()
                                                     .dataCollectionRequest(request)
@@ -332,7 +333,8 @@ public class HealthSourceOnboardingResourceTest extends CvNextGenTestBase {
                                              .build()))
               .build();
       metricDataCollectionInfo.setCollectHostData(false);
-      metricDataCollectionInfo.setDataCollectionDsl(sumologicMetricdataCollectionDSL.getActualDataCollectionDSL());
+      metricDataCollectionInfo.setDataCollectionDsl(
+          sumologicMetricdataCollectionDSLBundle.getActualDataCollectionDSL());
     }
     if (type == DataSourceType.SPLUNK_SIGNALFX_METRICS) {
       metricDataCollectionInfo =
@@ -346,7 +348,7 @@ public class HealthSourceOnboardingResourceTest extends CvNextGenTestBase {
               .build();
       metricDataCollectionInfo.setCollectHostData(false);
       metricDataCollectionInfo.setDataCollectionDsl(
-          DataCollectionDSLFactory.readDSL(DataSourceType.SPLUNK_SIGNALFX_METRICS).getActualDataCollectionDSL());
+          DataCollectionDSLBundleFactory.readDSL(DataSourceType.SPLUNK_SIGNALFX_METRICS).getActualDataCollectionDSL());
     }
 
     DataCollectionRequest<?> request = SyncDataCollectionRequest.builder()
@@ -459,7 +461,7 @@ public class HealthSourceOnboardingResourceTest extends CvNextGenTestBase {
         SumologicLogDataCollectionInfo.builder().query(logQuery).serviceInstanceIdentifier("_sourceHost").build();
     sumologicLogDataCollectionInfo.setCollectHostData(false);
     sumologicLogDataCollectionInfo.setDataCollectionDsl(
-        DataCollectionDSLFactory.readDSL(DataSourceType.SUMOLOGIC_LOG).getActualDataCollectionDSL());
+        DataCollectionDSLBundleFactory.readDSL(DataSourceType.SUMOLOGIC_LOG).getActualDataCollectionDSL());
 
     DataCollectionRequest<?> request = SyncDataCollectionRequest.builder()
                                            .type(DataCollectionRequestType.SYNC_DATA_COLLECTION)

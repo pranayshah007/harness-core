@@ -13,7 +13,7 @@ import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.grafanaloki.GrafanaLokiLogSampleDataRequest;
 import io.harness.cvng.core.beans.healthsource.HealthSourceRecordsRequest;
 import io.harness.cvng.core.services.api.NextGenHealthSourceHelper;
-import io.harness.cvng.core.services.impl.DataCollectionDSLFactory;
+import io.harness.cvng.core.services.impl.DataCollectionDSLBundleFactory;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 
 import java.net.URLEncoder;
@@ -31,7 +31,7 @@ public class GrafanaLokiLogNextGenHealthSourceHelper implements NextGenHealthSou
     return GrafanaLokiLogSampleDataRequest.builder()
         .startTimeInSeconds(startTime)
         .endTimeInSeconds(endTime)
-        .dsl(DataCollectionDSLFactory.readDSL(DataSourceType.GRAFANA_LOKI_LOGS).getSampleDataCollectionDSL())
+        .dsl(DataCollectionDSLBundleFactory.readDSL(DataSourceType.GRAFANA_LOKI_LOGS).getSampleDataCollectionDSL())
         .query(encodeValue(healthSourceRecordsRequest.getQuery().trim()))
         .type(DataCollectionRequestType.GRAFANA_LOKI_LOG_SAMPLE_DATA)
         .build();

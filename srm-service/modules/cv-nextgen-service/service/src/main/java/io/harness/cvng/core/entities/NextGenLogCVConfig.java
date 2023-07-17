@@ -13,7 +13,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.healthsource.QueryParamsDTO;
-import io.harness.cvng.core.services.impl.DataCollectionDSLFactory;
+import io.harness.cvng.core.services.impl.DataCollectionDSLBundleFactory;
 import io.harness.cvng.exception.NotImplementedForHealthSourceException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -56,7 +56,7 @@ public class NextGenLogCVConfig extends LogCVConfig {
 
   @Override
   public String getDataCollectionDsl() {
-    return DataCollectionDSLFactory.readDSL(dataSourceType).getActualDataCollectionDSL();
+    return DataCollectionDSLBundleFactory.readDSL(dataSourceType).getActualDataCollectionDSL();
   }
 
   @JsonIgnore

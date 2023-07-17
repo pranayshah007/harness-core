@@ -14,9 +14,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.cvng.HoverflyTestBase;
+import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.azure.AzureMetricsSampleDataRequest;
 import io.harness.cvng.beans.azure.AzureServiceInstanceFieldDataRequest;
-import io.harness.cvng.core.services.impl.MetricPackServiceImpl;
+import io.harness.cvng.core.services.impl.DataCollectionDSLBundleFactory;
 import io.harness.datacollection.DataCollectionDSLService;
 import io.harness.datacollection.entity.CallDetails;
 import io.harness.datacollection.entity.RuntimeParameters;
@@ -86,7 +87,8 @@ public class AzureMetricsDataCollectionDSLTest extends HoverflyTestBase {
   @Owner(developers = KARAN_SARASWAT)
   @Category(UnitTests.class)
   public void testExecute_AzureMetrics_DSL_getSampleData() {
-    String sampleDataRequestDSL = MetricPackServiceImpl.AZURE_METRICS_SAMPLE_DATA_DSL;
+    String sampleDataRequestDSL =
+        DataCollectionDSLBundleFactory.readDSL(DataSourceType.AZURE_METRICS).getSampleDataCollectionDSL();
     AzureMetricsSampleDataRequest azureMetricsSampleDataRequest = AzureMetricsSampleDataRequest.builder()
                                                                       .metricNamespace(metricNamespace)
                                                                       .metricName(metricName)
@@ -113,7 +115,8 @@ public class AzureMetricsDataCollectionDSLTest extends HoverflyTestBase {
   @Owner(developers = KARAN_SARASWAT)
   @Category(UnitTests.class)
   public void testExecute_AzureMetrics_DSL_getServiceInstanceFieldData() {
-    String serviceInstanceFieldDsl = MetricPackServiceImpl.AZURE_SERVICE_INSTANCE_FIELD_DSL;
+    String serviceInstanceFieldDsl =
+        DataCollectionDSLBundleFactory.readDSL(DataSourceType.AZURE_METRICS).getServiceInstanceIdentifierDSL();
     AzureServiceInstanceFieldDataRequest azureServiceInstanceFieldDataRequest =
         AzureServiceInstanceFieldDataRequest.builder()
             .connectorInfoDTO(connectorInfoDTO)

@@ -16,7 +16,7 @@ import io.harness.cvng.core.entities.DatadogMetricCVConfig.MetricInfo;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.MetricDataCollectionInfoMapper;
-import io.harness.cvng.core.services.impl.DataCollectionDSLFactory;
+import io.harness.cvng.core.services.impl.DataCollectionDSLBundleFactory;
 import io.harness.cvng.utils.DatadogQueryUtils;
 
 import com.google.inject.Inject;
@@ -61,7 +61,7 @@ public class DatadogMetricDataCollectionInfoMapper
     if (featureFlagService.isFeatureFlagEnabled(
             cvConfig.getAccountId(), FeatureName.SRM_DATADOG_METRICS_FORMULA_SUPPORT.name())) {
       dataCollectionInfo.setDataCollectionDsl(
-          DataCollectionDSLFactory.readDSL(DataSourceType.DATADOG_METRICS).getActualDataCollectionDSL());
+          DataCollectionDSLBundleFactory.readDSL(DataSourceType.DATADOG_METRICS).getActualDataCollectionDSL());
       for (MetricCollectionInfo metricCollectionInfo : dataCollectionInfo.getMetricDefinitions()) {
         // composite query the base query is considered and not the grouping query formed by the UI
         Pair<String, List<String>> formulaQueriesPair =

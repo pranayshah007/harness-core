@@ -32,7 +32,7 @@ import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.DatadogService;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.OnboardingService;
-import io.harness.cvng.core.services.impl.DataCollectionDSLFactory;
+import io.harness.cvng.core.services.impl.DataCollectionDSLBundleFactory;
 import io.harness.cvng.core.services.impl.MetricPackServiceImpl;
 import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.exception.OnboardingException;
@@ -149,15 +149,16 @@ public class DatadogServiceImpl implements DatadogService {
       Pair<String, List<String>> formulaQueriesPair = DatadogQueryUtils.processCompositeQuery(query, null, false);
       String formula = formulaQueriesPair.getLeft();
       List<String> formulaQueries = formulaQueriesPair.getRight();
-      request = DatadogTimeSeriesPointsRequest.builder()
-                    .type(DataCollectionRequestType.DATADOG_TIME_SERIES_POINTS)
-                    .from(now.minus(1, ChronoUnit.HOURS).toEpochMilli())
-                    .to(now.toEpochMilli())
-                    .DSL(DataCollectionDSLFactory.readDSL(DataSourceType.DATADOG_METRICS).getSampleDataCollectionDSL())
-                    .formula(formula)
-                    .formulaQueriesList(formulaQueries)
-                    .query(query)
-                    .build();
+      request =
+          DatadogTimeSeriesPointsRequest.builder()
+              .type(DataCollectionRequestType.DATADOG_TIME_SERIES_POINTS)
+              .from(now.minus(1, ChronoUnit.HOURS).toEpochMilli())
+              .to(now.toEpochMilli())
+              .DSL(DataCollectionDSLBundleFactory.readDSL(DataSourceType.DATADOG_METRICS).getSampleDataCollectionDSL())
+              .formula(formula)
+              .formulaQueriesList(formulaQueries)
+              .query(query)
+              .build();
     } else {
       request = DatadogTimeSeriesPointsRequest.builder()
                     .type(DataCollectionRequestType.DATADOG_TIME_SERIES_POINTS)

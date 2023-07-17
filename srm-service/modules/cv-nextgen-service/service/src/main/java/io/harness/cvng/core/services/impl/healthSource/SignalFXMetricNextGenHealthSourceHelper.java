@@ -13,7 +13,7 @@ import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.signalfx.SignalFXMetricSampleDataRequest;
 import io.harness.cvng.core.beans.healthsource.HealthSourceRecordsRequest;
 import io.harness.cvng.core.services.api.NextGenHealthSourceHelper;
-import io.harness.cvng.core.services.impl.DataCollectionDSLFactory;
+import io.harness.cvng.core.services.impl.DataCollectionDSLBundleFactory;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.signalfxconnector.SignalFXConnectorDTO;
 
@@ -22,14 +22,14 @@ public class SignalFXMetricNextGenHealthSourceHelper implements NextGenHealthSou
   public DataCollectionRequest<? extends ConnectorConfigDTO> getDataCollectionRequest(
       HealthSourceRecordsRequest healthSourceRecordsRequest) {
     DataCollectionRequest<SignalFXConnectorDTO> request;
-    request =
-        SignalFXMetricSampleDataRequest.builder()
-            .from(healthSourceRecordsRequest.getStartTime())
-            .to(healthSourceRecordsRequest.getEndTime())
-            .dsl(DataCollectionDSLFactory.readDSL(DataSourceType.SPLUNK_SIGNALFX_METRICS).getSampleDataCollectionDSL())
-            .query(healthSourceRecordsRequest.getQuery().trim())
-            .type(DataCollectionRequestType.SIGNALFX_METRIC_SAMPLE_DATA)
-            .build();
+    request = SignalFXMetricSampleDataRequest.builder()
+                  .from(healthSourceRecordsRequest.getStartTime())
+                  .to(healthSourceRecordsRequest.getEndTime())
+                  .dsl(DataCollectionDSLBundleFactory.readDSL(DataSourceType.SPLUNK_SIGNALFX_METRICS)
+                           .getSampleDataCollectionDSL())
+                  .query(healthSourceRecordsRequest.getQuery().trim())
+                  .type(DataCollectionRequestType.SIGNALFX_METRIC_SAMPLE_DATA)
+                  .build();
     return request;
   }
 }

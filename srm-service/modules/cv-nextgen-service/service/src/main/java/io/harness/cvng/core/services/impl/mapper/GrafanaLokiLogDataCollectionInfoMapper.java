@@ -12,7 +12,7 @@ import io.harness.cvng.beans.GrafanaLokiLogDataCollectionInfo;
 import io.harness.cvng.core.entities.NextGenLogCVConfig;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.services.api.DataCollectionInfoMapper;
-import io.harness.cvng.core.services.impl.DataCollectionDSLFactory;
+import io.harness.cvng.core.services.impl.DataCollectionDSLBundleFactory;
 import io.harness.cvng.core.services.impl.healthSource.GrafanaLokiLogNextGenHealthSourceHelper;
 
 public class GrafanaLokiLogDataCollectionInfoMapper
@@ -26,7 +26,7 @@ public class GrafanaLokiLogDataCollectionInfoMapper
             .serviceInstanceIdentifier(cvConfig.getQueryParams().getServiceInstanceField())
             .build();
     grafanaLokiLogDataCollectionInfo.setDataCollectionDsl(
-        DataCollectionDSLFactory.readDSL(DataSourceType.GRAFANA_LOKI_LOGS).getActualDataCollectionDSL());
+        DataCollectionDSLBundleFactory.readDSL(DataSourceType.GRAFANA_LOKI_LOGS).getActualDataCollectionDSL());
     return grafanaLokiLogDataCollectionInfo;
   }
 }

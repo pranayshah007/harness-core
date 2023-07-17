@@ -13,7 +13,7 @@ import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.sumologic.SumologicLogSampleDataRequest;
 import io.harness.cvng.core.beans.healthsource.HealthSourceRecordsRequest;
 import io.harness.cvng.core.services.api.NextGenHealthSourceHelper;
-import io.harness.cvng.core.services.impl.DataCollectionDSLFactory;
+import io.harness.cvng.core.services.impl.DataCollectionDSLBundleFactory;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.sumologic.SumoLogicConnectorDTO;
 
@@ -35,13 +35,14 @@ public class SumologicLogNextGenHealthSourceHelper implements NextGenHealthSourc
     LocalDateTime endTime =
         Instant.ofEpochMilli(healthSourceRecordsRequest.getEndTime()).atZone(ZoneId.systemDefault()).toLocalDateTime();
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_FORMAT_STRING);
-    request = SumologicLogSampleDataRequest.builder()
-                  .from(startTime.format(formatter))
-                  .to(endTime.format(formatter))
-                  .dsl(DataCollectionDSLFactory.readDSL(DataSourceType.SUMOLOGIC_LOG).getSampleDataCollectionDSL())
-                  .query(healthSourceRecordsRequest.getQuery().trim())
-                  .type(DataCollectionRequestType.SUMOLOGIC_LOG_SAMPLE_DATA)
-                  .build();
+    request =
+        SumologicLogSampleDataRequest.builder()
+            .from(startTime.format(formatter))
+            .to(endTime.format(formatter))
+            .dsl(DataCollectionDSLBundleFactory.readDSL(DataSourceType.SUMOLOGIC_LOG).getSampleDataCollectionDSL())
+            .query(healthSourceRecordsRequest.getQuery().trim())
+            .type(DataCollectionRequestType.SUMOLOGIC_LOG_SAMPLE_DATA)
+            .build();
     return request;
   }
 }

@@ -17,7 +17,7 @@ import io.harness.cvng.HoverflyTestBase;
 import io.harness.cvng.beans.AzureLogsDataCollectionInfo;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.azure.AzureLogsSampleDataRequest;
-import io.harness.cvng.core.services.impl.DataCollectionDSLFactory;
+import io.harness.cvng.core.services.impl.DataCollectionDSLBundleFactory;
 import io.harness.datacollection.DataCollectionDSLService;
 import io.harness.datacollection.entity.CallDetails;
 import io.harness.datacollection.entity.LogDataRecord;
@@ -92,7 +92,7 @@ public class AzureLogsDataCollectionDSLTest extends HoverflyTestBase {
   @Category(UnitTests.class)
   public void testExecute_AzureLogs_DSL_getSampleData() {
     String sampleDataRequestDSL =
-        DataCollectionDSLFactory.readDSL(DataSourceType.AZURE_LOGS).getSampleDataCollectionDSL();
+        DataCollectionDSLBundleFactory.readDSL(DataSourceType.AZURE_LOGS).getSampleDataCollectionDSL();
     AzureLogsSampleDataRequest azureLogsSampleDataRequest = AzureLogsSampleDataRequest.builder()
                                                                 .query(query)
                                                                 .from(startTime)
@@ -117,7 +117,8 @@ public class AzureLogsDataCollectionDSLTest extends HoverflyTestBase {
   @Owner(developers = KARAN_SARASWAT)
   @Category(UnitTests.class)
   public void testExecute_AzureLogs_DSL_getLogRecords() {
-    String dataCollectionDsl = DataCollectionDSLFactory.readDSL(DataSourceType.AZURE_LOGS).getActualDataCollectionDSL();
+    String dataCollectionDsl =
+        DataCollectionDSLBundleFactory.readDSL(DataSourceType.AZURE_LOGS).getActualDataCollectionDSL();
     AzureConnectorDTO azureConnectorDTO = (AzureConnectorDTO) connectorInfoDTO.getConnectorConfig();
     AzureLogsDataCollectionInfo azureLogsDataCollectionInfo = AzureLogsDataCollectionInfo.builder()
                                                                   .query(query)

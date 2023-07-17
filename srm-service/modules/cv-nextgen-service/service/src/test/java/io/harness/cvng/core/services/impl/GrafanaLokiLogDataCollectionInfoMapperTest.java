@@ -51,6 +51,7 @@ public class GrafanaLokiLogDataCollectionInfoMapperTest extends CvNextGenTestBas
         .isEqualTo(GrafanaLokiLogNextGenHealthSourceHelper.encodeValue(MOCKED_QUERY));
     assertThat(grafanaLokiLogDataCollectionInfo.getServiceInstanceIdentifier()).isEqualTo(MOCKED_INSTANCE_IDENTIFIER);
     assertThat(grafanaLokiLogDataCollectionInfo.getDataCollectionDsl())
-        .isEqualTo(DataCollectionDSLFactory.readDSL(DataSourceType.GRAFANA_LOKI_LOGS).getActualDataCollectionDSL());
+        .isEqualTo(
+            DataCollectionDSLBundleFactory.readDSL(DataSourceType.GRAFANA_LOKI_LOGS).getActualDataCollectionDSL());
   }
 }

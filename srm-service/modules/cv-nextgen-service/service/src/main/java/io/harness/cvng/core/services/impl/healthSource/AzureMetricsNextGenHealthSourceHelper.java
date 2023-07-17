@@ -5,10 +5,11 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cvng.core.services.impl;
+package io.harness.cvng.core.services.impl.healthSource;
 
 import io.harness.cvng.beans.DataCollectionRequest;
 import io.harness.cvng.beans.DataCollectionRequestType;
+import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.azure.AzureMetricsSampleDataRequest;
 import io.harness.cvng.beans.azure.AzureServiceInstanceFieldDataRequest;
 import io.harness.cvng.core.beans.OnboardingRequestDTO;
@@ -20,6 +21,7 @@ import io.harness.cvng.core.beans.healthsource.QueryParamsDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.NextGenHealthSourceHelper;
 import io.harness.cvng.core.services.api.OnboardingService;
+import io.harness.cvng.core.services.impl.DataCollectionDSLBundleFactory;
 import io.harness.cvng.utils.AggregationType;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
@@ -44,7 +46,7 @@ public class AzureMetricsNextGenHealthSourceHelper implements NextGenHealthSourc
   public DataCollectionRequest<? extends ConnectorConfigDTO> getDataCollectionRequest(
       HealthSourceRecordsRequest healthSourceRecordsRequest) {
     return AzureMetricsSampleDataRequest.builder()
-        .dsl(MetricPackServiceImpl.AZURE_METRICS_SAMPLE_DATA_DSL)
+        .dsl(DataCollectionDSLBundleFactory.readDSL(DataSourceType.AZURE_METRICS).getSampleDataCollectionDSL())
         .from(Instant.ofEpochMilli(healthSourceRecordsRequest.getStartTime()))
         .to(Instant.ofEpochMilli(healthSourceRecordsRequest.getEndTime()))
         .metricName(healthSourceRecordsRequest.getHealthSourceQueryParams().getHealthSourceMetricName())
@@ -69,7 +71,8 @@ public class AzureMetricsNextGenHealthSourceHelper implements NextGenHealthSourc
               .metricName(healthSourceParamValuesRequest.getHealthSourceQueryParams().getHealthSourceMetricName())
               .resourceId(healthSourceParamValuesRequest.getHealthSourceQueryParams().getIndex())
               .type(DataCollectionRequestType.AZURE_SERVICE_INSTANCE_FIELD_DATA)
-              .dsl(MetricPackServiceImpl.AZURE_SERVICE_INSTANCE_FIELD_DSL)
+              .dsl(DataCollectionDSLBundleFactory.readDSL(DataSourceType.AZURE_METRICS)
+                       .getServiceInstanceIdentifierDSL())
               .build();
       OnboardingRequestDTO onboardingRequestDTO =
           OnboardingRequestDTO.builder()

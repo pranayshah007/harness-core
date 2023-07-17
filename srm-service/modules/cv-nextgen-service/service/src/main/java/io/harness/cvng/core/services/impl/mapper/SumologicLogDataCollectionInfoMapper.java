@@ -12,7 +12,7 @@ import io.harness.cvng.beans.SumologicLogDataCollectionInfo;
 import io.harness.cvng.core.entities.NextGenLogCVConfig;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.services.api.DataCollectionInfoMapper;
-import io.harness.cvng.core.services.impl.DataCollectionDSLFactory;
+import io.harness.cvng.core.services.impl.DataCollectionDSLBundleFactory;
 
 public class SumologicLogDataCollectionInfoMapper
     implements DataCollectionInfoMapper<SumologicLogDataCollectionInfo, NextGenLogCVConfig> {
@@ -26,7 +26,7 @@ public class SumologicLogDataCollectionInfoMapper
             .serviceInstanceIdentifier(cvConfig.getQueryParams().getServiceInstanceField())
             .build();
     sumologicLogDataCollectionInfo.setDataCollectionDsl(
-        DataCollectionDSLFactory.readDSL(DataSourceType.SUMOLOGIC_LOG).getActualDataCollectionDSL());
+        DataCollectionDSLBundleFactory.readDSL(DataSourceType.SUMOLOGIC_LOG).getActualDataCollectionDSL());
     return sumologicLogDataCollectionInfo;
   }
 }

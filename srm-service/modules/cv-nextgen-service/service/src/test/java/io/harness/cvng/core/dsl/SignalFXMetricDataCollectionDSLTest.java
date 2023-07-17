@@ -27,7 +27,7 @@ import io.harness.cvng.core.entities.NextGenMetricInfo;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.services.api.MetricPackService;
-import io.harness.cvng.core.services.impl.DataCollectionDSLFactory;
+import io.harness.cvng.core.services.impl.DataCollectionDSLBundleFactory;
 import io.harness.cvng.core.services.impl.mapper.SignalFXMetricDataCollectionInfoMapper;
 import io.harness.datacollection.DataCollectionDSLService;
 import io.harness.datacollection.entity.CallDetails;
@@ -178,7 +178,7 @@ public class SignalFXMetricDataCollectionDSLTest extends HoverflyCVNextGenTestBa
   @Category(UnitTests.class)
   public void testExecuteSignalFXMetricSampleData() throws IOException {
     String metricSampleDataRequestDSL =
-        DataCollectionDSLFactory.readDSL(DataSourceType.SPLUNK_SIGNALFX_METRICS).getSampleDataCollectionDSL();
+        DataCollectionDSLBundleFactory.readDSL(DataSourceType.SPLUNK_SIGNALFX_METRICS).getSampleDataCollectionDSL();
     SignalFXMetricSampleDataRequest signalFXMetricSampleDataRequest =
         SignalFXMetricSampleDataRequest.builder()
             .query("data(\"k8s.container.memory_request\")")
