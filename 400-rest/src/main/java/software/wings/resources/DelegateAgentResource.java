@@ -190,6 +190,24 @@ public class DelegateAgentResource {
   }
 
   @DelegateAuth
+  @GET
+  @Path("jreVersion")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<String> getJREVersion(
+          @QueryParam("accountId") @NotEmpty String accountId, @QueryParam("isDelegate") boolean isDelegate) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      String jreVersion = accountService.getJREVersion(accountId, isDelegate);
+      if(isNotEmpty(jreVersion)) {
+        return new RestResponse<>(jreVersion);
+      }
+    } catch (Exception ex) {
+      log.error("Unable to fetch jre version from ring for accountId {}", accountId, ex);
+    }
+    return null;
+  }
+
+  @DelegateAuth
   @POST
   @Path("properties")
   @Timed

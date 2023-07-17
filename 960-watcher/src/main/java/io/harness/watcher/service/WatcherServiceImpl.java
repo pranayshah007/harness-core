@@ -231,6 +231,8 @@ public class WatcherServiceImpl implements WatcherService {
 
   private final AtomicBoolean frozen = new AtomicBoolean(false);
 
+  private final String defaultJREVersion="11.0.19+7";
+
   @Override
   public void run(boolean upgrade) {
     WatcherStackdriverLogAppender.setTimeLimiter(timeLimiter);
@@ -1149,13 +1151,13 @@ public class WatcherServiceImpl implements WatcherService {
       working.set(false);
       return;
     }
-
+    final String jreVersion = getDelegateJREVersion();
     executorService.submit(() -> {
       StartedProcess newDelegate = null;
       try {
         newDelegate =
             new ProcessExecutor()
-                .command("nohup", versionFolder + File.separator + DELEGATE_SCRIPT, watcherProcess, versionFolder)
+                .command("nohup", versionFolder + File.separator + DELEGATE_SCRIPT, watcherProcess, versionFolder, isEmpty(jreVersion)?defaultJREVersion:jreVersion)
                 .redirectError(Slf4jStream.of(scriptName).asError())
                 .setMessageLogger((log, format, arguments) -> log.info(format, arguments))
                 .start();
@@ -1255,6 +1257,26 @@ public class WatcherServiceImpl implements WatcherService {
         working.set(false);
       }
     });
+  }
+
+  private String getDelegateJREVersion() {
+    try {
+      if (multiVersion) {
+        RestResponse<String> restResponse = callInterruptible21(timeLimiter, ofSeconds(30),
+                () -> SafeHttpCall.execute(managerClient.getJREVersion(watcherConfiguration.getAccountId(), true)));
+        if (restResponse != null) {
+          return restResponse.getResource();
+        }
+      } else {
+        // need to fix for smp
+        String delegateMetadata =
+                Http.getResponseStringFromUrl(watcherConfiguration.getDelegateCheckLocation(), 10, 10);
+        cachedDelegateVersion.set(singletonList(substringBefore(delegateMetadata, " ").trim()));
+      }
+    } catch (Exception ex) {
+      log.warn("Failed to fetch jre version from Manager ", ex);
+    }
+    return "";
   }
 
   private void shutdownDelegate(String delegateProcess) {

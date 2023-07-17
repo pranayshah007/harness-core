@@ -1177,6 +1177,10 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
+  public String getJREVersion(String accountId, boolean isDelegate) {
+    return delegateVersionService.getJREVersion(accountId, isDelegate);
+  }
+  @Override
   public String getAccountPrimaryDelegateVersion(String accountId) {
     if (licenseService.isAccountDeleted(accountId)) {
       throw new InvalidRequestException("Deleted AccountId: " + accountId);
