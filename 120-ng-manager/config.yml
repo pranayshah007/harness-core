@@ -323,6 +323,11 @@ notificationClient:
 logStreamingServiceConfig:
   baseUrl: http://localhost:8079
   serviceToken: token
+  threadPoolConfig:
+    corePoolSize: ${LOG_STREAMING_CLIENT_POOL_CORE_SIZE:-1}
+    maxPoolSize: ${LOG_STREAMING_CLIENT_POOL_MAX_SIZE:-50}
+    idleTime: ${LOG_STREAMING_CLIENT_POOL_IDLE_TIME:-30}
+    timeUnit: ${LOG_STREAMING_CLIENT_POOL_TIME_UNIT:-SECONDS}
 
 outboxPollConfig:
   initialDelayInSeconds: 5
@@ -392,7 +397,8 @@ baseUrls:
   nextGenUiUrl: https://localhost:8181/ng/#/
   nextGenAuthUiUrl: http://localhost:8181/auth/#/
   webhookBaseUrl: http://localhost:7457/
-  ngManagerScmBaseUrl: ${HARNESS_SCM_BASE_URL:-http://localhost:7457/}
+  ngManagerInternalBaseUrl: ${HARNESS_NG_MANAGER_INTERNAL_URL:-http://localhost:7457/}
+  scmServiceBaseUrl: ${HARNESS_SCM_API_INTERNAL_URL:-http://localhost:3000/}
 
 ngAuthUIEnabled: false
 
@@ -525,5 +531,14 @@ signupDomainDenylistConfig:
   gcsCreds: null
   projectId: null
   bucketName: null
+
+queueServiceClientConfig:
+  httpClientConfig:
+    baseUrl: http://localhost:9091/
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  queueServiceSecret: ThisIsMyUniqueJwtQueueServiceSecret
+  envNamespace: ${EVENTS_FRAMEWORK_ENV_NAMESPACE:-localhost}
+  topic: ${HSQS_TOPIC:-ng}
 
 

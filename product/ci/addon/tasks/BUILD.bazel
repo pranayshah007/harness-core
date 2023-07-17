@@ -9,6 +9,7 @@ go_library(
     name = "tasks",
     srcs = [
         "common.go",
+        "execute_task.go",
         "plugin.go",
         "run.go",
         "runtests.go",

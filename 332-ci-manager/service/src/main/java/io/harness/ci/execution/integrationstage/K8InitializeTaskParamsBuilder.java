@@ -169,7 +169,7 @@ public class K8InitializeTaskParamsBuilder {
     String namespace = "account-" + getAccountIdentifier(ngAccess.getAccountIdentifier());
 
     ConnectorDetails gitConnector = codebaseUtils.getGitConnector(
-        ngAccess, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone());
+        ngAccess, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone(), ambiance);
     Pair<CIK8ContainerParams, List<CIK8ContainerParams>> podContainers = getStageContainers(
         initializeStepInfo, k8PodDetails, k8sHostedInfraYaml, ambiance, volumes, logPrefix, gitConnector);
     saveSweepingOutput(podName, k8sHostedInfraYaml, podContainers, ambiance);
@@ -215,7 +215,7 @@ public class K8InitializeTaskParamsBuilder {
 
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     ConnectorDetails gitConnector = codebaseUtils.getGitConnector(
-        ngAccess, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone());
+        ngAccess, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone(), ambiance);
     List<PodVolume> volumes = k8InitializeTaskUtils.convertDirectK8Volumes(k8sDirectInfraYaml);
     Pair<CIK8ContainerParams, List<CIK8ContainerParams>> podContainers = getStageContainers(
         initializeStepInfo, k8PodDetails, k8sDirectInfraYaml, ambiance, volumes, logPrefix, gitConnector);

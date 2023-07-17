@@ -228,7 +228,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     }
   }
 
-  private void checkForAccessForHarnessScm(NGTriggerEntity ngTriggerEntity) {
+  @VisibleForTesting
+  void checkForAccessForHarnessScm(NGTriggerEntity ngTriggerEntity) {
     if (ngTriggerEntity.getMetadata().getWebhook() != null
         && ngTriggerEntity.getMetadata().getWebhook().getGit() != null
         && Boolean.TRUE.equals(ngTriggerEntity.getMetadata().getWebhook().getGit().getIsHarnessScm())) {

@@ -1,0 +1,60 @@
+Var timeSeriesUrl = concat(Env:baseUrl, "v2/query/timeseries")
+
+Var nullObject = null
+Var one = 1
+Var zero = 0
+Var thousand = 1000
+
+Var requests = []
+Var params = {}
+Var requestBody = {}
+Var data = {}
+Var:requestBody.put("data", Var:data)
+Var attributes = {}
+Var:data.put("type", "timeseries_request")
+Var:data.put("attributes", Var:attributes)
+Var:attributes.put("from", Env:from)
+Var:attributes.put("to", Env:to)
+Var:attributes.put("interval", Var:thousand)
+Var formulaQueriesObj = []
+Var charIdx = 1
+foreach formulaQuery in Env:formulaQueriesList{
+    Var queryObj = {}
+    Var:queryObj.put("data_source", "metrics")
+    Var:queryObj.put("query", Var:formulaQuery)
+    Var finalName = concat("query", Var:charIdx)
+    Var:queryObj.put("name", Var:finalName)
+    Var:formulaQueriesObj.append(Var:queryObj)
+    charIdx = Var:charIdx + Var:one
+ }
+Var:attributes.put("queries", Var:formulaQueriesObj)
+Var formulas = []
+Var formulaObj = {}
+Var:formulaObj.put("formula", Env:formula)
+Var:formulas.append(Var:formulaObj)
+Var:attributes.put("formulas", Var:formulas)
+Request metricRequest = new Request(url=Var:timeSeriesUrl, header=Env:commonHeaders, options=Var:params, body=Var:requestBody)
+Var:requests.append(Var:metricRequest)
+
+Var metricResponses = execute-parallel(Var:requests)
+Var returnList = []
+
+Var index = 0
+foreach metricResponse in Var:metricResponses {
+  Var groupByArray = extract(Var:metricResponse, $.data.attributes)
+  Var timeSeries = extract(Var:groupByArray, $.times)
+  Var timeSeriesValues = extract(Var:groupByArray, $.values)
+  Var points = Var:timeSeriesValues[Var:zero]
+  Var timeIdx = 0
+  foreach point in Var:points {
+    Var timestamp = Var:timeSeries[Var:timeIdx]
+    if Var:point != Var:nullObject {
+       Var tsRecord = new TimeseriesRecord(txnName="group", metricIdentifier="metric", metricName="metric", metricValue=Var:point, timestamp=Var:timestamp)
+       Var:returnList.append(Var:tsRecord)
+    }
+      timeIdx = Var:timeIdx + Var:one
+  }
+  index = Var:index + Var:one
+}
+
+return Var:returnList

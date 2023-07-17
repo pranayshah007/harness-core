@@ -19,6 +19,7 @@ import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.expressions.step.ApprovalFunctor;
 import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngmigration.utils.NGMigrationConstants;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepSpecTypeConstants;
@@ -72,6 +73,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -95,6 +97,15 @@ public class ApprovalStepMapperImpl extends StepMapper {
                    .id(params.getServiceNowApprovalParams().getSnowConnectorId())
                    .type(NGMigrationEntityType.CONNECTOR)
                    .build());
+    }
+    if (ApprovalStateType.USER_GROUP.equals(state.getApprovalStateType())
+        && CollectionUtils.isNotEmpty(state.getUserGroups())) {
+      List<CgEntityId> userGroupRefs =
+          state.getUserGroups()
+              .stream()
+              .map(userGroupId -> CgEntityId.builder().type(NGMigrationEntityType.USER_GROUP).id(userGroupId).build())
+              .collect(Collectors.toList());
+      refs.addAll(userGroupRefs);
     }
     refs.addAll(secretRefUtils.getSecretRefFromExpressions(accountId, getExpressions(graphNode)));
     return refs;
@@ -206,12 +217,11 @@ public class ApprovalStepMapperImpl extends StepMapper {
     HarnessApprovalStepInfoBuilder harnessApprovalStepInfoBuilder =
         HarnessApprovalStepInfo.builder().includePipelineExecutionHistory(ParameterField.createValueField(true));
 
-    harnessApprovalStepInfoBuilder.approvers(
-        Approvers.builder()
-            .disallowPipelineExecutor(ParameterField.createValueField(false))
-            .minimumCount(ParameterField.createValueField(1))
-            .userGroups(ParameterField.createExpressionField(true, "<+input>", null, false))
-            .build());
+    harnessApprovalStepInfoBuilder.approvers(Approvers.builder()
+                                                 .disallowPipelineExecutor(ParameterField.createValueField(false))
+                                                 .minimumCount(ParameterField.createValueField(1))
+                                                 .userGroups(getUserGroups(context, state))
+                                                 .build());
 
     if (EmptyPredicate.isNotEmpty(state.getVariables())) {
       harnessApprovalStepInfoBuilder.approverInputs(
@@ -359,5 +369,18 @@ public class ApprovalStepMapperImpl extends StepMapper {
                                                       .build()))
             .build());
     return criteria;
+  }
+
+  private ParameterField<List<String>> getUserGroups(MigrationContext context, ApprovalState state) {
+    if (CollectionUtils.isNotEmpty(state.getUserGroups())) {
+      return ParameterField.createValueField(
+          state.getUserGroups()
+              .stream()
+              .map(userGroupId
+                  -> MigratorUtility.getIdentifierWithScopeDefaults(context.getMigratedEntities(), userGroupId,
+                      NGMigrationEntityType.USER_GROUP, NGMigrationConstants.RUNTIME_INPUT))
+              .collect(Collectors.toList()));
+    }
+    return ParameterField.createExpressionField(true, "<+input>", null, false);
   }
 }

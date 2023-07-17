@@ -23,7 +23,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.runtime.SshCommandExecutionException;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.logging.LogLevel;
 import io.harness.shell.AbstractScriptExecutor;
 import io.harness.shell.ExecuteCommandResponse;
 
@@ -69,24 +68,21 @@ public class SshScriptCommandHandler implements CommandHandler {
 
     AbstractScriptExecutor executor = sshScriptExecutorFactory.getExecutor(context);
 
-    ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(scriptCommandUnit.getCommand(),
-        sshCommandTaskParameters.getOutputVariables(), sshCommandTaskParameters.getSecretOutputVariables(), null);
-    if (executeCommandResponse == null) {
-      if (parameters.isExecuteOnDelegate()) {
-        executor.getLogCallback().saveExecutionLog("Command finished with status " + CommandExecutionStatus.FAILURE,
-            LogLevel.ERROR, CommandExecutionStatus.FAILURE);
+    try {
+      ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(scriptCommandUnit.getCommand(),
+          sshCommandTaskParameters.getOutputVariables(), sshCommandTaskParameters.getSecretOutputVariables(), null);
+      if (executeCommandResponse == null) {
+        closeLogStreamWithError(executor.getLogCallback());
+        throw NestedExceptionUtils.hintWithExplanationException(SCRIPT_EXECUTION_FAILED_HINT,
+            SCRIPT_EXECUTION_FAILED_EXPLANATION, new SshCommandExecutionException(SCRIPT_EXECUTION_FAILED));
       }
 
-      throw NestedExceptionUtils.hintWithExplanationException(SCRIPT_EXECUTION_FAILED_HINT,
-          SCRIPT_EXECUTION_FAILED_EXPLANATION, new SshCommandExecutionException(SCRIPT_EXECUTION_FAILED));
+      CommandExecutionStatus commandExecutionStatus = executeCommandResponse.getStatus();
+      closeLogStreamEmptyMsg(executor.getLogCallback(), commandExecutionStatus);
+      return executeCommandResponse;
+    } catch (Exception e) {
+      closeLogStreamWithError(executor.getLogCallback());
+      throw e;
     }
-
-    CommandExecutionStatus commandExecutionStatus = executeCommandResponse.getStatus();
-    if (parameters.isExecuteOnDelegate()) {
-      executor.getLogCallback().saveExecutionLog(
-          "Command finished with status " + commandExecutionStatus, LogLevel.INFO, commandExecutionStatus);
-    }
-
-    return executeCommandResponse;
   }
 }

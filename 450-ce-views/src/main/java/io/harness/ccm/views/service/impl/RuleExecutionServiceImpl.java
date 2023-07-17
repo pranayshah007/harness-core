@@ -10,6 +10,8 @@ package io.harness.ccm.views.service.impl;
 import static io.harness.NGCommonEntityConstants.MONGODB_ID;
 import static io.harness.ccm.commons.entities.CCMField.RULE_NAME;
 import static io.harness.ccm.commons.entities.CCMField.RULE_SET_NAME;
+import static io.harness.ccm.views.helper.RuleCloudProviderType.AWS;
+import static io.harness.ccm.views.helper.RuleCloudProviderType.AZURE;
 import static io.harness.ccm.views.helper.RuleCostType.POTENTIAL;
 import static io.harness.ccm.views.helper.RuleCostType.REALIZED;
 import static io.harness.ccm.views.helper.RuleExecutionType.INTERNAL;
@@ -22,6 +24,7 @@ import static org.springframework.data.mongodb.core.aggregation.Aggregation.sort
 import io.harness.ccm.commons.entities.CCMSort;
 import io.harness.ccm.commons.entities.CCMSortOrder;
 import io.harness.ccm.commons.entities.CCMTimeFilter;
+import io.harness.ccm.governance.dto.OverviewExecutionCostDetails;
 import io.harness.ccm.views.dao.RuleDAO;
 import io.harness.ccm.views.dao.RuleExecutionDAO;
 import io.harness.ccm.views.dao.RuleSetDAO;
@@ -159,7 +162,8 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
     return overviewExecutionDetails;
   }
 
-  public Map<String, Double> getExecutionCostDetails(String accountId, RuleExecutionFilter ruleExecutionFilter) {
+  public OverviewExecutionCostDetails getExecutionCostDetails(
+      String accountId, RuleExecutionFilter ruleExecutionFilter) {
     return getResourcePotentialCost(accountId, ruleExecutionFilter);
   }
 
@@ -167,7 +171,17 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
     return mongoTemplate.aggregate(aggregation, RuleExecution.class, classToFillResultIn);
   }
 
-  public Map<String, Double> getResourcePotentialCost(String accountId, RuleExecutionFilter ruleExecutionFilter) {
+  private OverviewExecutionCostDetails getResourcePotentialCost(
+      String accountId, RuleExecutionFilter ruleExecutionFilter) {
+    return OverviewExecutionCostDetails.builder()
+        .awsExecutionCostDetails(getResourcePotentialCostPerCloudProvider(accountId, ruleExecutionFilter, AWS.name()))
+        .azureExecutionCostDetails(
+            getResourcePotentialCostPerCloudProvider(accountId, ruleExecutionFilter, AZURE.name()))
+        .build();
+  }
+
+  private Map<String, Double> getResourcePotentialCostPerCloudProvider(
+      String accountId, RuleExecutionFilter ruleExecutionFilter, String cloudProvider) {
     Criteria criteria = Criteria.where(RuleExecutionKeys.accountId)
                             .is(accountId)
                             .and(RuleExecutionKeys.cost)
@@ -175,7 +189,9 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
                             .and(RuleExecutionKeys.costType)
                             .is(POTENTIAL)
                             .and(RuleExecutionKeys.executionType)
-                            .is(INTERNAL);
+                            .is(INTERNAL)
+                            .and(RuleExecutionKeys.cloudProvider)
+                            .is(cloudProvider);
     if (ruleExecutionFilter.getTime() != null) {
       for (CCMTimeFilter time : ruleExecutionFilter.getTime()) {
         switch (time.getOperator()) {

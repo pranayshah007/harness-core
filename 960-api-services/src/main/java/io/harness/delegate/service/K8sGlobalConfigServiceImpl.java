@@ -20,7 +20,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.clienttools.ChartmuseumVersion;
 import io.harness.delegate.clienttools.ClientTool;
 import io.harness.delegate.clienttools.ClientToolVersion;
-import io.harness.delegate.clienttools.GoTemplateVersion;
 import io.harness.delegate.clienttools.InstallUtils;
 import io.harness.delegate.clienttools.KubectlVersion;
 import io.harness.delegate.clienttools.KustomizeVersion;
@@ -47,11 +46,7 @@ public class K8sGlobalConfigServiceImpl implements K8sGlobalConfigService {
 
   @Override
   public String getGoTemplateClientPath() {
-    try {
-      return getToolPath(GO_TEMPLATE, GoTemplateVersion.V0_4_2);
-    } catch (IllegalArgumentException e) {
-      return getToolPath(GO_TEMPLATE, GoTemplateVersion.V0_4);
-    }
+    return getToolPath(GO_TEMPLATE, GO_TEMPLATE.getLatestVersion());
   }
 
   /*

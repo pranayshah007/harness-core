@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.harness.batch.processing.cloudevents.azure.vm.service.AzureRecommendationService;
+import io.harness.batch.processing.cloudevents.azure.vm.service.AzureHelperService;
 import io.harness.batch.processing.cloudevents.azure.vm.service.helper.AzureConfigHelper;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.commons.dao.recommendation.AzureRecommendationDAO;
@@ -41,7 +41,7 @@ import org.springframework.batch.repeat.RepeatStatus;
 @RunWith(MockitoJUnitRunner.class)
 public class AzureRecommendationTaskletTest extends BaseTaskletTest {
   @Mock private AzureConfigHelper mockAzureConfigHelper;
-  @Mock private AzureRecommendationService mockAzureRecommendationService;
+  @Mock private AzureHelperService mockAzureHelperService;
   @Mock private AzureRecommendationDAO mockAzureRecommendationDAO;
   @InjectMocks private AzureRecommendationTasklet azureRecommendationTaskletUnderTest;
 
@@ -66,7 +66,7 @@ public class AzureRecommendationTaskletTest extends BaseTaskletTest {
   public void testExecute() throws Exception {
     when(mockAzureConfigHelper.getAzureAccountAttributes(ACCOUNT_ID)).thenReturn(stringAzureAccountAttributesMap);
     azureRecommendations = getMockedAzureRecommendations();
-    when(mockAzureRecommendationService.getRecommendations(ACCOUNT_ID, AzureAccountAttributes.builder().build()))
+    when(mockAzureHelperService.getRecommendations(ACCOUNT_ID, AzureAccountAttributes.builder().build()))
         .thenReturn(azureRecommendations);
 
     azureRecommendation = getMockedAzureRecommendationWithUuid();
@@ -87,7 +87,7 @@ public class AzureRecommendationTaskletTest extends BaseTaskletTest {
   public void testExecute_AzureRecommendationDAOThrowsException() throws Exception {
     when(mockAzureConfigHelper.getAzureAccountAttributes(ACCOUNT_ID)).thenReturn(stringAzureAccountAttributesMap);
     azureRecommendations = getMockedAzureRecommendations();
-    when(mockAzureRecommendationService.getRecommendations(ACCOUNT_ID, AzureAccountAttributes.builder().build()))
+    when(mockAzureHelperService.getRecommendations(ACCOUNT_ID, AzureAccountAttributes.builder().build()))
         .thenReturn(azureRecommendations);
 
     when(mockAzureRecommendationDAO.saveRecommendation(
@@ -112,7 +112,7 @@ public class AzureRecommendationTaskletTest extends BaseTaskletTest {
   @Category(UnitTests.class)
   public void testExecute_AzureRecommendationServiceReturnsNoItems() throws Exception {
     when(mockAzureConfigHelper.getAzureAccountAttributes(ACCOUNT_ID)).thenReturn(stringAzureAccountAttributesMap);
-    when(mockAzureRecommendationService.getRecommendations(ACCOUNT_ID, AzureAccountAttributes.builder().build()))
+    when(mockAzureHelperService.getRecommendations(ACCOUNT_ID, AzureAccountAttributes.builder().build()))
         .thenReturn(Collections.emptyList());
     final RepeatStatus result = azureRecommendationTaskletUnderTest.execute(null, chunkContext);
     assertThat(result).isNull();

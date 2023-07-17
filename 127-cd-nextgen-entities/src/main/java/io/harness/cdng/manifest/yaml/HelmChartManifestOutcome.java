@@ -13,6 +13,7 @@ import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.ManifestType;
+import io.harness.cdng.manifest.outcome.HelmChartOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.pms.yaml.ParameterField;
@@ -26,7 +27,7 @@ import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.TypeAlias;
 
 @Value
-@Builder
+@Builder(toBuilder = true)
 @OwnedBy(CDP)
 @JsonTypeName(ManifestType.HelmChart)
 @TypeAlias("helmChartManifestOutcome")
@@ -44,6 +45,8 @@ public class HelmChartManifestOutcome implements ManifestOutcome {
   List<HelmManifestCommandFlag> commandFlags;
   ParameterField<List<String>> valuesPaths;
   ParameterField<String> subChartPath;
+  ParameterField<Boolean> fetchHelmChartMetadata;
+  HelmChartOutcome helm;
 
   public ParameterField<List<String>> getValuesPaths() {
     if (!(getParameterFieldValue(this.valuesPaths) instanceof List)) {

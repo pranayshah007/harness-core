@@ -14,6 +14,7 @@ shared_dependencies = [
     "@maven//:io_netty_netty_all",
 ] + [
     "//:lombok",
+    "//127-cd-nextgen-entities:module",
     "//440-connector-nextgen:module",
     "//878-ng-common-utilities:module",
     "//930-ng-core-clients:module",

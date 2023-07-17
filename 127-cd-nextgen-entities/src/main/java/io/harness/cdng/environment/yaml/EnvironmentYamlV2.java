@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import lombok.Builder;
 import lombok.Data;
@@ -54,7 +53,6 @@ public class EnvironmentYamlV2 implements Visitable {
   @ApiModelProperty(hidden = true)
   private String uuid;
 
-  @NotNull
   @Pattern(regexp = NGRegexValidatorConstants.NON_EMPTY_STRING_PATTERN)
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   private ParameterField<String> environmentRef;
@@ -79,6 +77,8 @@ public class EnvironmentYamlV2 implements Visitable {
   ParameterField<InfraStructureDefinitionYaml> infrastructureDefinition;
 
   @Nullable @VariableExpression(skipVariableExpression = true) ExecutionElementConfig provisioner;
+
+  @VariableExpression(skipVariableExpression = true) private EnvironmentInfraUseFromStage useFromStage;
 
   // environmentInputs
   @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH)

@@ -737,6 +737,8 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
                   VerificationJobInstanceDataCollectionUtils.getPreDeploymentNodesToCollect(verificationJobInstance));
           preDeploymentDataCollectionInfo.setDataCollectionDsl(cvConfig.getDataCollectionDsl());
           preDeploymentDataCollectionInfo.setCollectHostData(verificationJob.collectHostData());
+          preDeploymentDataCollectionInfo.setValidServiceInstanceRegExPatterns(
+              VerificationJobInstanceDataCollectionUtils.validPreDeploymentNodePatterns(verificationJobInstance));
           dataCollectionInfoMapper.postProcessDataCollectionInfo(
               preDeploymentDataCollectionInfo, cvConfig, TaskType.DEPLOYMENT);
           preDeploymentDataCollectionTimeRanges.forEach(timeRange -> {
@@ -761,15 +763,16 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
           });
         }
       }
-
       DataCollectionInfo dataCollectionInfo = dataCollectionInfoMapper.toDeploymentDataCollectionInfo(cvConfig,
           VerificationJobInstanceDataCollectionUtils.getPostDeploymentNodesToCollect(verificationJobInstance));
+      dataCollectionInfo.setDataCollectionDsl(cvConfig.getDataCollectionDsl());
+      dataCollectionInfo.setCollectHostData(verificationJob.collectHostData());
+      dataCollectionInfo.setValidServiceInstanceRegExPatterns(
+          VerificationJobInstanceDataCollectionUtils.validPostDeploymentNodePatterns(verificationJobInstance));
+      dataCollectionInfoMapper.postProcessDataCollectionInfo(dataCollectionInfo, cvConfig, TaskType.DEPLOYMENT);
       timeRanges.forEach(timeRange -> {
         // TODO: For Now the DSL is same for both. We need to see how this evolves when implementation other provider.
         // Keeping this simple for now.
-        dataCollectionInfo.setDataCollectionDsl(cvConfig.getDataCollectionDsl());
-        dataCollectionInfo.setCollectHostData(verificationJob.collectHostData());
-        dataCollectionInfoMapper.postProcessDataCollectionInfo(dataCollectionInfo, cvConfig, TaskType.DEPLOYMENT);
         Map<String, String> dataCollectionMetadata =
             CVNGTaskMetadataUtils.getDataCollectionInfoMetadata(cvConfig, verificationJobInstance, verificationTaskId);
         dataCollectionTasks.add(

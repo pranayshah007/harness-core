@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DurationFormatUtils;
 
 @UtilityClass
 @Slf4j
@@ -57,7 +58,7 @@ public class CVNGTaskMetadataUtils {
   }
 
   public static String humanReadableFormat(Duration duration) {
-    return duration.toString().substring(2).replaceAll("(\\d[HMS])(?!$)", "$1 ").toLowerCase();
+    return DurationFormatUtils.formatDurationHMS(Math.abs(duration.toMillis()));
   }
 
   public static List<CVNGLogTag> getTaskDurationTags(DurationType durationType, Duration duration) {

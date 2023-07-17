@@ -14,6 +14,7 @@ import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -22,6 +23,8 @@ import io.harness.pms.sdk.core.plugin.AbstractContainerStepV2;
 import io.harness.pms.sdk.core.plugin.ContainerUnitStepUtils;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.product.ci.engine.proto.UnitStep;
+import io.harness.serializer.KryoSerializer;
+import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ResponseData;
 import io.harness.yaml.core.timeout.Timeout;
 
@@ -41,6 +44,10 @@ public class AwsSamDeployStep extends AbstractContainerStepV2<StepElementParamet
   @Inject AwsSamStepHelper awsSamStepHelper;
 
   @Inject private InstanceInfoService instanceInfoService;
+
+  @Inject private SerializedResponseDataHelper serializedResponseDataHelper;
+
+  @Inject private KryoSerializer referenceFalseKryoSerializer;
 
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.AWS_SAM_DEPLOY.getYamlType())
@@ -80,6 +87,16 @@ public class AwsSamDeployStep extends AbstractContainerStepV2<StepElementParamet
   @Override
   public StepResponse.StepOutcome getAnyOutComeForStep(
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
+    // If any of the responses are in serialized format, deserialize them
+    for (Map.Entry<String, ResponseData> entry : responseDataMap.entrySet()) {
+      log.info(String.format("AWS SAM Deploy: ResponseData with class %s received", entry.getValue().getClass()));
+      entry.setValue(serializedResponseDataHelper.deserialize(entry.getValue()));
+      if (entry.getValue() instanceof BinaryResponseData) {
+        entry.setValue((ResponseData) referenceFalseKryoSerializer.asInflatedObject(
+            ((BinaryResponseData) entry.getValue()).getData()));
+      }
+    }
+
     StepResponse.StepOutcome stepOutcome = null;
 
     List<ServerInstanceInfo> serverInstanceInfoList =

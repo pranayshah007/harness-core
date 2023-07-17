@@ -707,7 +707,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
     when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any())).thenReturn(getUserReposResponse);
     List<GitRepositoryResponseDTO> repositoryResponseDTOList = scmFacilitatorService.listReposByRefConnector(
         accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, pageRequest, "", false);
-    assertThat(repositoryResponseDTOList.get(0).getName()).isNull();
+    assertThat(repositoryResponseDTOList.get(0).getName()).isEqualTo("test-repo");
   }
 
   private Scope getDefaultScope() {

@@ -76,20 +76,22 @@ public class GitAwareEntityHelper {
     boolean getFileContentOnly = gitContextRequestParams.isGetOnlyFileContent();
 
     log.info(String.format("Fetching Remote Entity : %s , %s , %s , %s", entityType, repoName, branch, filePath));
-    ScmGetFileResponse scmGetFileResponse = scmGitSyncHelper.getFileByBranch(
-        Scope.builder()
-            .accountIdentifier(scope.getAccountIdentifier())
-            .orgIdentifier(scope.getOrgIdentifier())
-            .projectIdentifier(scope.getProjectIdentifier())
-            .build(),
-        repoName, branch, commitId, filePath, connectorRef, loadFromCache, entityType, contextMap, getFileContentOnly);
+    ScmGetFileResponse scmGetFileResponse =
+        scmGitSyncHelper.getFileByBranch(Scope.builder()
+                                             .accountIdentifier(scope.getAccountIdentifier())
+                                             .orgIdentifier(scope.getOrgIdentifier())
+                                             .projectIdentifier(scope.getProjectIdentifier())
+                                             .build(),
+            repoName, branch, commitId, filePath, connectorRef, loadFromCache, entityType, contextMap,
+            getFileContentOnly, gitContextRequestParams.isApplyRepoAllowListFilter());
     entity.setData(scmGetFileResponse.getFileContent());
     GitAwareContextHelper.updateScmGitMetaData(scmGetFileResponse.getGitMetaData());
     return entity;
   }
 
   // todo: make pipeline import call this method too
-  public String fetchYAMLFromRemote(String accountId, String orgIdentifier, String projectIdentifier) {
+  public String fetchYAMLFromRemote(
+      String accountId, String orgIdentifier, String projectIdentifier, boolean applyRepoAllowListFilter) {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     Scope scope = Scope.of(accountId, orgIdentifier, projectIdentifier);
     GitContextRequestParams gitContextRequestParams = GitContextRequestParams.builder()
@@ -97,6 +99,7 @@ public class GitAwareEntityHelper {
                                                           .connectorRef(gitEntityInfo.getConnectorRef())
                                                           .filePath(gitEntityInfo.getFilePath())
                                                           .repoName(gitEntityInfo.getRepoName())
+                                                          .applyRepoAllowListFilter(applyRepoAllowListFilter)
                                                           .build();
     return fetchYAMLFromRemote(scope, gitContextRequestParams, Collections.emptyMap());
   }
@@ -128,7 +131,8 @@ public class GitAwareEntityHelper {
                                              .orgIdentifier(scope.getOrgIdentifier())
                                              .projectIdentifier(scope.getProjectIdentifier())
                                              .build(),
-            repoName, branch, commitId, filePath, connectorRef, loadFromCache, entityType, contextMap, false);
+            repoName, branch, commitId, filePath, connectorRef, loadFromCache, entityType, contextMap, false,
+            gitContextRequestParams.isApplyRepoAllowListFilter());
     GitAwareContextHelper.updateScmGitMetaData(scmGetFileResponse.getGitMetaData());
     return scmGetFileResponse.getFileContent();
   }

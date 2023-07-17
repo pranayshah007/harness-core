@@ -214,7 +214,7 @@ public class ExecutionHelper {
       String originalExecutionId, RetryExecutionParameters retryExecutionParameters, boolean notifyOnlyUser,
       boolean isDebug) {
     JsonNode mergedRuntimeInputJsonNode = null;
-    if (!isNotEmpty(mergedRuntimeInputYaml)) {
+    if (isNotEmpty(mergedRuntimeInputYaml)) {
       mergedRuntimeInputJsonNode = YamlUtils.readAsJsonNode(mergedRuntimeInputYaml);
     }
     return buildExecutionArgs(pipelineEntity, moduleType, stagesToRun, expressionValues, triggerInfo,

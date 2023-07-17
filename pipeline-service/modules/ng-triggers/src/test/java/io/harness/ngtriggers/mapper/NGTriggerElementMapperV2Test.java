@@ -510,6 +510,16 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
     assertThat(actualTriggerWebhookEvent.getTriggerIdentifier()).isEqualTo("custom");
     assertThat(actualTriggerWebhookEvent.getPrincipal()).isEqualToComparingFieldByField(principalDTO);
 
+    // Test case where Principal is empty
+    Principal emptyPrincipal = Principal.newBuilder().build();
+    actualTriggerWebhookEvent =
+        ngTriggerElementMapper
+            .toNGTriggerWebhookEvent("account", "org", "project", "payload", headerConfigs, emptyPrincipal)
+            .build();
+    assertThat(actualTriggerWebhookEvent.getSourceRepoType()).isEqualTo("CUSTOM");
+    assertThat(actualTriggerWebhookEvent.getTriggerIdentifier()).isEqualTo("custom");
+    assertThat(actualTriggerWebhookEvent.getPrincipal()).isNull();
+
     assertThatThrownBy(
         () -> ngTriggerElementMapper.toNGTriggerWebhookEvent("account", "org", "", "payload", headerConfigs, null))
         .isInstanceOf(InvalidRequestException.class)

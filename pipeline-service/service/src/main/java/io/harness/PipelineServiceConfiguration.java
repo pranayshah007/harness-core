@@ -175,7 +175,7 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty("podCleanUpThreadPoolConfig") private ThreadPoolConfig podCleanUpThreadPoolConfig;
 
   @JsonProperty("staticSchemaFileURL") private String staticSchemaFileURL;
-
+  @JsonProperty("timeoutIteratorMode") private String timeoutIteratorMode;
   private String managerServiceSecret;
   private String managerTarget;
   private String managerAuthority;

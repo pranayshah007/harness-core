@@ -849,6 +849,28 @@ if [[ "" != "$REDIS_SENTINELS" ]]; then
   done
 fi
 
+if [[ "" != "$REDIS_USERNAME" ]]; then
+  export REDIS_USERNAME; yq -i '.redisLockConfig.username=env(REDIS_USERNAME)' $CONFIG_FILE
+  export REDIS_USERNAME; yq -i '.redisDelegateConfig.username=env(REDIS_USERNAME)' $CONFIG_FILE
+  export REDIS_USERNAME; yq -i '.redisAtmosphereConfig.username=env(REDIS_USERNAME)' $CONFIG_FILE
+  if [[ "$REDIS_SENTINEL" == "true" ]]; then
+    export REDIS_USERNAME; yq -i '.sentinelServersConfig.username=env(REDIS_USERNAME)' $REDISSON_CACHE_FILE
+  else
+    export REDIS_USERNAME; yq -i '.singleServerConfig.username=env(REDIS_USERNAME)' $REDISSON_CACHE_FILE
+  fi
+fi
+
+if [[ "" != "$REDIS_PASSWORD" ]]; then
+  export REDIS_PASSWORD; yq -i '.redisLockConfig.password=env(REDIS_PASSWORD)' $CONFIG_FILE
+  export REDIS_PASSWORD; yq -i '.redisDelegateConfig.password=env(REDIS_PASSWORD)' $CONFIG_FILE
+  export REDIS_PASSWORD; yq -i '.redisAtmosphereConfig.password=env(REDIS_PASSWORD)' $CONFIG_FILE
+  if [[ "$REDIS_SENTINEL" == "true" ]]; then
+    export REDIS_PASSWORD; yq -i '.sentinelServersConfig.password=env(REDIS_PASSWORD)' $REDISSON_CACHE_FILE
+  else
+    export REDIS_PASSWORD; yq -i '.singleServerConfig.password=env(REDIS_PASSWORD)' $REDISSON_CACHE_FILE
+  fi
+fi
+
 if [[ "" != "$REDIS_ENV_NAMESPACE" ]]; then
     export REDIS_ENV_NAMESPACE; yq -i '.redisLockConfig.envNamespace=env(REDIS_ENV_NAMESPACE)' $CONFIG_FILE
     export REDIS_ENV_NAMESPACE; yq -i 'redisDelegateConfig.envNamespace=env(REDIS_ENV_NAMESPACE)' $CONFIG_FILE
@@ -1133,6 +1155,7 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
     INDEX=$(expr $INDEX + 1)
   done
 fi
+
 
 replace_key_value eventsFramework.redis.sentinel $EVENTS_FRAMEWORK_USE_SENTINEL
 replace_key_value eventsFramework.redis.envNamespace $EVENTS_FRAMEWORK_ENV_NAMESPACE

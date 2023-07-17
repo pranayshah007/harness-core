@@ -103,6 +103,7 @@ import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.springdata.TransactionHelper;
+import io.harness.telemetry.TelemetryReporter;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.helpers.InputsValidator;
@@ -137,6 +138,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -158,6 +160,8 @@ import retrofit2.Response;
 
 @OwnedBy(CDC)
 public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
+  @Mock TelemetryReporter telemetryReporter;
+  @Mock ExecutorService executorService;
   @Mock EnforcementClientService enforcementClientService;
   @Spy @InjectMocks private NGTemplateServiceHelper templateServiceHelper;
   @Mock private GitSyncSdkService gitSyncSdkService;
@@ -702,7 +706,8 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
                            -> templateService.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "templatex",
                                "versionxy", entity2.getVersion(), "", false))
         .isInstanceOf(UnexpectedException.class)
-        .hasMessage("Error while checking references for template templatex with version label: versionxy : null");
+        .hasMessageContainingAll(
+            "Error while checking references for template templatex with version label: versionxy :", "null");
 
     Call<ResponseDTO<Boolean>> request2 = mock(Call.class);
     String fqn2 = String.format("%s/orgId/projId/templateStable/versionxy/", ACCOUNT_ID);
@@ -1477,13 +1482,8 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThatThrownBy(
         () -> templateService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "zxcv", "as", false, false, false))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("[Error while retrieving template with identifier [zxcv] and versionLabel [as]]: INVALID_REQUEST");
-    /*
-    TODO:- Fix error message here Jira CDS-72694
-      "Template version from remote template file [%s] does not match with template version in request [%s]. Each
-    template version maps to a unique file on Git. Create a new version through harness or import a new version if the
-    file is already created on Git" Above message should have been thrown
-     */
+        .hasMessage(
+            "[Error while retrieving template with identifier [zxcv] and versionLabel [as]]: Template version from remote template file [version1] does not match with template version in request [as]. Each template version maps to a unique file on Git. Create a new version through harness or import a new version if the file is already created on Git");
   }
 
   @Test
@@ -1790,8 +1790,9 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     templateService.applyGitXSettingsIfApplicable(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
     InOrder inOrder = inOrder(gitXSettingsHelper);
     inOrder.verify(gitXSettingsHelper).enforceGitExperienceIfApplicable(any(), any(), any());
-    inOrder.verify(gitXSettingsHelper).setConnectorRefForRemoteEntity(any(), any(), any());
     inOrder.verify(gitXSettingsHelper).setDefaultStoreTypeForEntities(any(), any(), any(), any());
+    inOrder.verify(gitXSettingsHelper).setConnectorRefForRemoteEntity(any(), any(), any());
+    inOrder.verify(gitXSettingsHelper).setDefaultRepoForRemoteEntity(any(), any(), any());
   }
 
   @Test
@@ -2071,5 +2072,35 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     templateService.listTemplateReferences(
         100, 25, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "identifier", "version", "", false);
     mockStatic.close();
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void updateTemplateEntityException() {
+    TemplateEntity createdEntity = templateService.create(entity, false, "", false);
+    assertThat(createdEntity).isNotNull();
+    assertThat(createdEntity.getAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(createdEntity.getOrgIdentifier()).isEqualTo(ORG_IDENTIFIER);
+    assertThat(createdEntity.getProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
+    assertThat(createdEntity.getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
+    assertThat(createdEntity.getVersion()).isZero();
+
+    Optional<TemplateEntity> optionalTemplateEntity = templateService.get(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, false);
+    assertThat(optionalTemplateEntity).isPresent();
+    assertThat(optionalTemplateEntity.get().getAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(optionalTemplateEntity.get().getOrgIdentifier()).isEqualTo(ORG_IDENTIFIER);
+    assertThat(optionalTemplateEntity.get().getProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
+    assertThat(optionalTemplateEntity.get().getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
+    assertThat(optionalTemplateEntity.get().getVersionLabel()).isEqualTo(TEMPLATE_VERSION_LABEL);
+    assertThat(optionalTemplateEntity.get().getVersion()).isZero();
+    doThrow(InvalidRequestException.class).when(templateServiceHelper).isOldGitSync(any());
+
+    String description = "Updated Description";
+    TemplateEntity updateTemplate = entity.withDescription(description);
+    assertThatThrownBy(() -> templateService.updateTemplateEntity(updateTemplate, ChangeType.MODIFY, false, ""))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Error while saving template [template1] of versionLabel [version1] : [null]");
   }
 }

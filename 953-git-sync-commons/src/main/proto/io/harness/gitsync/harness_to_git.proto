@@ -121,6 +121,7 @@ message GetFileRequest {
   CacheRequestParams cacheRequestParams = 9;
   EntityType entityType = 10;
   bool getOnlyFileContent = 11;
+  GitSettings gitSettings = 12;
 }
 
 message GetFileResponse {
@@ -357,6 +358,10 @@ message CacheResponseParams {
   CacheState cacheState = 1;
   uint64 lastUpdateAt = 2;
   uint64 ttlLeft = 3;
+}
+
+message GitSettings {
+  bool applyRepoAllowListFilter = 1;
 }
 
 enum ContentType {

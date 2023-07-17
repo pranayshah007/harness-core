@@ -10,6 +10,7 @@ package io.harness.ngtriggers.expressions;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.HeaderConfig;
+import io.harness.exception.CriticalExpressionEvaluationException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.EngineJexlContext;
 import io.harness.expression.common.ExpressionMode;
@@ -86,6 +87,24 @@ public class TriggerExpressionEvaluator extends EngineExpressionEvaluator {
       return result == null ? "null" : result;
     } catch (Exception e) {
       log.warn("Failed to evaluated Trigger expression", e);
+      return "null";
+    }
+  }
+
+  public Object evaluateExpressionWithExpressionMode(String expression, ExpressionMode expressionMode) {
+    try {
+      Object result = evaluateExpression(expression, (Map<String, Object>) null);
+      if (result == null && ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED.equals(expressionMode)) {
+        throw new CriticalExpressionEvaluationException(
+            String.format("Failed to evaluate trigger expression %s", expression), expression);
+      }
+      return result == null ? "null" : result;
+    } catch (Exception e) {
+      log.warn("Failed to evaluated Trigger expression", e);
+      if (ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED.equals(expressionMode)) {
+        throw new CriticalExpressionEvaluationException(
+            String.format("Failed to evaluate trigger expression %s", expression), expression, e);
+      }
       return "null";
     }
   }

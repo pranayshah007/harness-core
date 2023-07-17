@@ -11,7 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.execution.StageExecutionInstanceInfo;
 import io.harness.cdng.execution.StageExecutionInstanceInfo.StageExecutionInstanceInfoKeys;
-import io.harness.cdng.execution.StepExecutionInstanceInfo;
+import io.harness.delegate.cdng.execution.StepExecutionInstanceInfo;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;

@@ -40,6 +40,7 @@ public class HttpTaskParametersNg implements TaskParameters, ExecutionCapability
   boolean isCertValidationRequired;
   boolean shouldAvoidHeadersInCapability;
   boolean isIgnoreResponseCode;
+  boolean supportNonTextResponse;
 
   // New type for supporting NG secret resolution
   @Expression(ALLOW_SECRETS) HttpCertificateNG certificateNG;

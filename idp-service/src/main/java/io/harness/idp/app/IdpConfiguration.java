@@ -83,6 +83,7 @@ public class IdpConfiguration extends Configuration {
   @JsonProperty("backstageAppBaseUrl") private String backstageAppBaseUrl;
   @JsonProperty("backstagePostgresHost") private String backstagePostgresHost;
   @JsonProperty("delegateSelectorsCacheMode") private String delegateSelectorsCacheMode;
+  @JsonProperty("idpEncryptionSecret") private String idpEncryptionSecret;
   private String managerTarget;
   private String managerAuthority;
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();

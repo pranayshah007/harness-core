@@ -33,8 +33,10 @@ public class NgManifestFactory {
   @Inject TanzuManifestRemoteStoreService tanzuManifestRemoteStoreService;
   @Inject K8sManifestHelmSourceRepoStoreService k8sManifestHelmSourceRepoStoreService;
   @Inject K8sManifestHelmChartRepoStoreService k8sManifestHelmChartRepoStoreService;
+  @Inject K8sManifestCustomStoreService k8sManifestCustomStoreService;
   @Inject ValuesManifestRemoteStoreService valuesManifestRemoteStoreService;
   @Inject ValuesManifestLocalStoreService valuesManifestLocalStoreService;
+  @Inject ValuesManifestCustomStoreService valuesManifestCustomStoreService;
   @Inject OpenshiftParamRemoteStoreService openshiftParamRemoteStoreService;
   @Inject OpenshiftParamLocalStoreService openshiftParamLocalStoreService;
   @Inject K8sManifestLocalStoreService k8sManifestLocalStoreService;
@@ -81,7 +83,7 @@ public class NgManifestFactory {
           case OC_TEMPLATES:
             return openshiftSourceRepoStoreService;
           case CUSTOM:
-            return tanzuManifestCustomStoreService;
+            return k8sManifestCustomStoreService;
           default:
             throw new InvalidRequestException(String.format(ERROR_STRING, storeType, appManifestKind));
         }
@@ -93,6 +95,8 @@ public class NgManifestFactory {
             return valuesManifestLocalStoreService;
           case VALUES_YAML_FROM_HELM_REPO:
             return valuesYamlFromHelmRepoManifestService;
+          case CUSTOM:
+            return valuesManifestCustomStoreService;
           default:
             throw new InvalidRequestException(String.format(ERROR_STRING, storeType, appManifestKind));
         }

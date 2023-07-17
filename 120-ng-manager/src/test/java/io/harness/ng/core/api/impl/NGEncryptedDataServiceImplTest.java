@@ -13,6 +13,7 @@ import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.BOOPESH;
+import static io.harness.rule.OwnerRule.JENNY;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.RAGHAV_MURALI;
@@ -161,6 +162,8 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     String identifier = randomAlphabetic(10);
     SecretDTOV2 secretDTOV2 = SecretDTOV2.builder()
                                   .type(SecretType.SecretText)
+                                  .orgIdentifier(orgIdentifier)
+                                  .projectIdentifier(projectIdentifier)
                                   .spec(SecretTextSpecDTO.builder()
                                             .secretManagerIdentifier(identifier)
                                             .valueType(ValueType.Inline)
@@ -209,6 +212,8 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     String identifier = randomAlphabetic(10);
     SecretDTOV2 secretDTOV2 = SecretDTOV2.builder()
                                   .type(SecretType.SecretText)
+                                  .projectIdentifier(projectIdentifier)
+                                  .orgIdentifier(orgIdentifier)
                                   .spec(SecretTextSpecDTO.builder()
                                             .secretManagerIdentifier(identifier)
                                             .valueType(ValueType.Inline)
@@ -257,6 +262,8 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     String identifier = randomAlphabetic(10);
     SecretDTOV2 secretDTOV2 = SecretDTOV2.builder()
                                   .type(SecretType.SecretText)
+                                  .orgIdentifier(orgIdentifier)
+                                  .projectIdentifier(projectIdentifier)
                                   .spec(SecretTextSpecDTO.builder()
                                             .secretManagerIdentifier(identifier)
                                             .valueType(ValueType.Inline)
@@ -480,8 +487,109 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     String identifier = randomAlphabetic(10);
     SecretDTOV2 secretDTOV2 = SecretDTOV2.builder()
                                   .type(SecretType.SecretText)
+                                  .orgIdentifier(orgIdentifier)
+                                  .projectIdentifier(projectIdentifier)
                                   .spec(SecretTextSpecDTO.builder()
                                             .secretManagerIdentifier(identifier)
+                                            .valueType(ValueType.Inline)
+                                            .value("value")
+                                            .build())
+                                  .build();
+    NGEncryptedData encryptedDataDTO = NGEncryptedData.builder()
+                                           .accountIdentifier(accountIdentifier)
+                                           .orgIdentifier(orgIdentifier)
+                                           .projectIdentifier(projectIdentifier)
+                                           .type(SettingVariableTypes.SECRET_TEXT)
+                                           .build();
+    when(encryptedDataDao.get(any(), any(), any(), any())).thenReturn(null);
+    when(encryptedDataDao.save(any())).thenReturn(encryptedDataDTO);
+    AzureKeyVaultConfigDTO vaultConfigDTO = AzureKeyVaultConfigDTO.builder()
+                                                .clientId("cliendId")
+                                                .secretKey("secretKey")
+                                                .tenantId("tenantId")
+                                                .subscription("subscription")
+                                                .build();
+    vaultConfigDTO.setEncryptionType(AZURE_VAULT);
+    when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean()))
+        .thenReturn(vaultConfigDTO);
+    ArgumentCaptor<SecretManagerConfig> argumentCaptor = ArgumentCaptor.forClass(SecretManagerConfig.class);
+    when(vaultEncryptor.createSecret(any(), any(), argumentCaptor.capture()))
+        .thenReturn(NGEncryptedData.builder()
+                        .name("name")
+                        .encryptedValue("encryptedValue".toCharArray())
+                        .encryptionKey("encryptionKey")
+                        .build());
+    NGEncryptedData result = ngEncryptedDataService.createSecretText(accountIdentifier, secretDTOV2);
+    assertThat(result).isNotNull();
+    verify(ngFeatureFlagHelperService, times(0)).isEnabled(any(), any());
+    SecretManagerConfig secretManagerConfig = argumentCaptor.getValue();
+    assertThat(secretManagerConfig instanceof AzureVaultConfig).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testCreateSecret_withAccountScopedSecretIdentifier_azureVault() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String identifier = "account." + randomAlphabetic(10);
+    SecretDTOV2 secretDTOV2 = SecretDTOV2.builder()
+                                  .type(SecretType.SecretText)
+                                  .orgIdentifier(orgIdentifier)
+                                  .projectIdentifier(projectIdentifier)
+                                  .spec(SecretTextSpecDTO.builder()
+                                            .secretManagerIdentifier(identifier)
+                                            .valueType(ValueType.Inline)
+                                            .value("value")
+                                            .build())
+                                  .build();
+    NGEncryptedData encryptedDataDTO = NGEncryptedData.builder()
+                                           .accountIdentifier(accountIdentifier)
+                                           .orgIdentifier(orgIdentifier)
+                                           .projectIdentifier(projectIdentifier)
+                                           .type(SettingVariableTypes.SECRET_TEXT)
+                                           .build();
+    when(encryptedDataDao.get(any(), any(), any(), any())).thenReturn(null);
+    when(encryptedDataDao.save(any())).thenReturn(encryptedDataDTO);
+    AzureKeyVaultConfigDTO vaultConfigDTO = AzureKeyVaultConfigDTO.builder()
+                                                .clientId("cliendId")
+                                                .secretKey("secretKey")
+                                                .tenantId("tenantId")
+                                                .subscription("subscription")
+                                                .build();
+    vaultConfigDTO.setEncryptionType(AZURE_VAULT);
+    when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean()))
+        .thenReturn(vaultConfigDTO);
+    ArgumentCaptor<SecretManagerConfig> argumentCaptor = ArgumentCaptor.forClass(SecretManagerConfig.class);
+    when(vaultEncryptor.createSecret(any(), any(), argumentCaptor.capture()))
+        .thenReturn(NGEncryptedData.builder()
+                        .name("name")
+                        .encryptedValue("encryptedValue".toCharArray())
+                        .encryptionKey("encryptionKey")
+                        .build());
+    NGEncryptedData result = ngEncryptedDataService.createSecretText(accountIdentifier, secretDTOV2);
+    assertThat(result).isNotNull();
+    verify(ngFeatureFlagHelperService, times(0)).isEnabled(any(), any());
+    SecretManagerConfig secretManagerConfig = argumentCaptor.getValue();
+    assertThat(secretManagerConfig instanceof AzureVaultConfig).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testCreateSecret_withParentSMAzureVault() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String identifier = "org." + randomAlphabetic(10);
+    String scopedIdentifier = identifier;
+    SecretDTOV2 secretDTOV2 = SecretDTOV2.builder()
+                                  .type(SecretType.SecretText)
+                                  .orgIdentifier(orgIdentifier)
+                                  .projectIdentifier(projectIdentifier)
+                                  .spec(SecretTextSpecDTO.builder()
+                                            .secretManagerIdentifier(scopedIdentifier)
                                             .valueType(ValueType.Inline)
                                             .value("value")
                                             .build())

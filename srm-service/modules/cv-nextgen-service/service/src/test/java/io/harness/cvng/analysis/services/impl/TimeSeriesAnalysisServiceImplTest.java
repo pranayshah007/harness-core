@@ -11,8 +11,10 @@ import static io.harness.cvng.CVNGTestConstants.TIME_FOR_TESTS;
 import static io.harness.cvng.analysis.CVAnalysisConstants.TIMESERIES_SERVICE_GUARD_DATA_LENGTH;
 import static io.harness.cvng.analysis.CVAnalysisConstants.TIMESERIES_SERVICE_GUARD_WINDOW_SIZE;
 import static io.harness.cvng.beans.DataSourceType.APP_DYNAMICS;
+import static io.harness.cvng.core.utils.DateTimeUtils.roundDownTo5MinBoundary;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ABHIJITH;
+import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KANHAIYA;
 import static io.harness.rule.OwnerRule.NAVEEN;
@@ -28,6 +30,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.CVConstants;
 import io.harness.cvng.analysis.beans.DeploymentTimeSeriesAnalysisDTO;
+import io.harness.cvng.analysis.beans.Risk;
 import io.harness.cvng.analysis.beans.ServiceGuardTimeSeriesAnalysisDTO;
 import io.harness.cvng.analysis.beans.ServiceGuardTimeSeriesAnalysisDTO.ServiceGuardTimeSeriesAnalysisDTOBuilder;
 import io.harness.cvng.analysis.beans.ServiceGuardTxnMetricAnalysisDataDTO;
@@ -55,6 +58,7 @@ import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.MetricPack;
 import io.harness.cvng.core.entities.TimeSeriesRecord;
+import io.harness.cvng.core.entities.TimeSeriesRecord.TimeSeriesRecordKeys;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
@@ -89,6 +93,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
@@ -113,6 +118,7 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
   private long deploymentStartTimeMs;
   private Instant instant;
   private BuilderFactory builderFactory;
+  static List<String> metricList = Arrays.asList("metric1", "metric2", "metric3");
 
   @Before
   public void setUp() throws Exception {
@@ -362,6 +368,33 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testSaveAnalysis_serviceGuard_customerDefinedUnhealthy() throws Exception {
+    List<TimeSeriesRecord> timeSeriesRecords = getTimeSeriesRecords_forServiceGuard();
+    hPersistence.save(timeSeriesRecords);
+    timeSeriesAnalysisService.saveAnalysis(
+        learningEngineTaskId, generateServiceGuardMetricAnalysisDTOBuilder_customerDefinedUnhealthy().build());
+
+    TimeSeriesAnomalousPatterns anomalousPatterns = hPersistence.createQuery(TimeSeriesAnomalousPatterns.class)
+                                                        .filter("verificationTaskId", verificationTaskId)
+                                                        .get();
+    assertThat(anomalousPatterns).isNotNull();
+    TimeSeriesShortTermHistory shortTermHistory = hPersistence.createQuery(TimeSeriesShortTermHistory.class)
+                                                      .filter("verificationTaskId", verificationTaskId)
+                                                      .get();
+    assertThat(shortTermHistory).isNotNull();
+    List<TimeSeriesRecord> timeSeriesRecords1 = hPersistence.createQuery(TimeSeriesRecord.class)
+                                                    .filter(TimeSeriesRecordKeys.verificationTaskId, verificationTaskId)
+                                                    .field(TimeSeriesRecordKeys.metricIdentifier)
+                                                    .in(metricList)
+                                                    .asList();
+    timeSeriesRecords1.forEach(timeSeriesRecord
+        -> assertThat(timeSeriesRecord.getTimeSeriesGroupValues().iterator().next().getRiskScore())
+               .isEqualTo(Risk.CUSTOMER_DEFINED_UNHEALTHY.getValue()));
+  }
+
+  @Test
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
   public void testSaveAnalysis_deploymentVerification() {
@@ -381,7 +414,6 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
     overallMetricScores.put("Calls Per Minute", 0.0);
 
     List<String> transactions = Arrays.asList("txn1", "txn2", "txn3");
-    List<String> metricList = Arrays.asList("metric1", "metric2", "metric3");
     Map<String, Map<String, ServiceGuardTxnMetricAnalysisDataDTO>> txnMetricMap = new HashMap<>();
     transactions.forEach(txn -> {
       txnMetricMap.put(txn, new HashMap<>());
@@ -401,6 +433,46 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
                 .lastSeenTime(0)
                 .metricType(TimeSeriesMetricType.ERROR)
                 .risk(2)
+                .build();
+        metricMap.put(metric, txnMetricData);
+      });
+    });
+
+    return ServiceGuardTimeSeriesAnalysisDTO.builder()
+        .verificationTaskId(verificationTaskId)
+        .analysisStartTime(Instant.now().minus(10, ChronoUnit.MINUTES))
+        .analysisEndTime(Instant.now().minus(5, ChronoUnit.MINUTES))
+        .overallMetricScores(overallMetricScores)
+        .txnMetricAnalysisData(txnMetricMap);
+  }
+
+  private ServiceGuardTimeSeriesAnalysisDTOBuilder
+  generateServiceGuardMetricAnalysisDTOBuilder_customerDefinedUnhealthy() {
+    Map<String, Double> overallMetricScores = new HashMap<>();
+    overallMetricScores.put("Errors per Minute", 0.872);
+    overallMetricScores.put("Average Response Time", 0.212);
+    overallMetricScores.put("Calls Per Minute", 0.0);
+
+    List<String> transactions = Arrays.asList("txn1", "txn2", "txn3");
+    Map<String, Map<String, ServiceGuardTxnMetricAnalysisDataDTO>> txnMetricMap = new HashMap<>();
+    transactions.forEach(txn -> {
+      txnMetricMap.put(txn, new HashMap<>());
+      metricList.forEach(metric -> {
+        Map<String, ServiceGuardTxnMetricAnalysisDataDTO> metricMap = txnMetricMap.get(txn);
+        ServiceGuardTxnMetricAnalysisDataDTO txnMetricData =
+            ServiceGuardTxnMetricAnalysisDataDTO.builder()
+                .isKeyTransaction(false)
+                .cumulativeSums(ServiceGuardTxnMetricAnalysisDataDTO.MetricSumDTO.builder().risk(0.5).data(0.9).build())
+                .shortTermHistory(Arrays.asList(0.1, 0.2, 0.3, 0.4))
+                .anomalousPatterns(Arrays.asList(TimeSeriesAnomaliesDTO.builder()
+                                                     .transactionName(txn)
+                                                     .metricIdentifier(metric)
+                                                     .testData(Arrays.asList(0.1, 0.2, 0.3, 0.4))
+                                                     .anomalousTimestamps(Arrays.asList(12345l, 12346l, 12347l))
+                                                     .build()))
+                .lastSeenTime(0)
+                .metricType(TimeSeriesMetricType.ERROR)
+                .risk(4)
                 .build();
         metricMap.put(metric, txnMetricData);
       });
@@ -462,7 +534,6 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
     overallMetricScores.put("Calls Per Minute", 0.0);
 
     List<String> transactions = Arrays.asList("txn1", "txn2", "txn3");
-    List<String> metricList = Arrays.asList("metric1", "metric2", "metric3");
     Map<String, Map<String, ServiceGuardTxnMetricAnalysisDataDTO>> txnMetricMap = new HashMap<>();
     transactions.forEach(txn -> {
       txnMetricMap.put(txn, new HashMap<>());
@@ -859,6 +930,38 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
       });
       return timeSeriesMLAnalysisRecords;
     }
+  }
+
+  private List<TimeSeriesRecord> getTimeSeriesRecords_forServiceGuard() throws Exception {
+    List<TimeSeriesRecord> timeSeriesMLAnalysisRecords = new ArrayList<>();
+    Instant now = roundDownTo5MinBoundary(Instant.now().plus(Duration.ofMinutes(5)));
+    Set<TimeSeriesRecord.TimeSeriesGroupValue> timeSeriesGroupValues = new HashSet<>();
+    int i = 0;
+    while (i < 5) {
+      int k = 1;
+      while (k < 4) {
+        timeSeriesGroupValues.add(TimeSeriesRecord.TimeSeriesGroupValue.builder()
+                                      .groupName("txn" + k)
+                                      .metricValue(231)
+                                      .riskScore(-1.0)
+                                      .timeStamp(now.plus(i, ChronoUnit.MINUTES))
+                                      .build());
+        k++;
+      }
+      i++;
+    }
+    int j = 0;
+    while (j < 3) {
+      timeSeriesMLAnalysisRecords.add(TimeSeriesRecord.builder()
+                                          .bucketStartTime(now)
+                                          .verificationTaskId(verificationTaskId)
+                                          .metricIdentifier(metricList.get(j))
+                                          .timeSeriesGroupValues(timeSeriesGroupValues)
+                                          .build());
+
+      j++;
+    }
+    return timeSeriesMLAnalysisRecords;
   }
 
   private CVConfig newCVConfig() {

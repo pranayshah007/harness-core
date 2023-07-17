@@ -41,6 +41,7 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -54,6 +55,7 @@ import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.redisson.api.LocalCachedMapOptions;
 import org.redisson.api.RLocalCachedMap;
 
 @Singleton
@@ -169,11 +171,12 @@ public class DelegateCacheImpl implements DelegateCache {
       if (enableRedisForDelegateService) {
         return getDelegateFromRedisCache(delegateId, forceRefresh);
       }
+      Delegate delegate = delegateCache.get(delegateId).orElse(null);
 
-      if (forceRefresh) {
+      if (forceRefresh || delegate == null) {
         delegateCache.refresh(delegateId);
       }
-      Delegate delegate = delegateCache.get(delegateId).orElse(null);
+
       if (delegate != null && (delegate.getAccountId() == null || !delegate.getAccountId().equals(accountId))) {
         // TODO: this is serious, we should not return the delegate if the account is not the expected one
         //       just to be on the safe side, make sure that all such scenarios are first fixed
@@ -186,6 +189,11 @@ public class DelegateCacheImpl implements DelegateCache {
       log.error("Delegate not found exception", e);
     }
     return null;
+  }
+
+  @Override
+  public Delegate get(String accountId, String delegateId) {
+    return get(accountId, delegateId, false);
   }
 
   // only for task assignment logic we should fetch from cache, since we process very heavy number of tasks per minute.
@@ -301,6 +309,13 @@ public class DelegateCacheImpl implements DelegateCache {
     if (abortedTaskListCache.get(accountId) != null) {
       abortedTaskListCache.get(accountId).remove(delegateTaskId);
     }
+  }
+
+  @Override
+  public List<Delegate> getAllDelegatesFromRedisCache() {
+    RLocalCachedMap<String, Delegate> delegates = delegateRedissonCacheManager.getCache(
+        DELEGATE_CACHE, String.class, Delegate.class, LocalCachedMapOptions.defaults());
+    return new ArrayList<>(delegates.values());
   }
 
   private Set<String> getIntersectionOfSupportedTaskTypes(@NotNull String accountId) {

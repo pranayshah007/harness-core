@@ -23,6 +23,7 @@ import io.harness.exception.HintException;
 import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.expression.functors.ExpressionFunctor;
+import io.harness.expression.functors.NGJsonFunctor;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableList;
@@ -382,6 +383,7 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
             .put("var1", "'archit' + <+company>")
             .put("var2", "'archit<+f>' + <+company>")
             .put("var3", "concatenate1")
+            .put("var4", "[\"abc\", \"def\"]")
             .put(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY, Arrays.asList("PIE_EXPRESSION_CONCATENATION"))
             .build());
     // concat expressions
@@ -404,6 +406,9 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     assertThat(evaluator.resolve("'expression' + <+var2>-<+g>", true)).isEqualTo("'expression' + architabcharness-def");
     assertThat(evaluator.evaluateExpression("'expression' + <+var2> + '-<+g>'"))
         .isEqualTo("expressionarchitabcharness-def");
+
+    // : concatenation expression
+    assertThat(evaluator.resolve("expression-<+var2>: <+g>", true)).isEqualTo("expression-architabcharness: def");
 
     // Complex concatenate expressions
     assertThat(evaluator.resolve("<+variables.v1>", true)).isEqualTo("abcdef");
@@ -434,7 +439,7 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     assertThat(evaluator.evaluateExpression("harness<+variables.v4><+variables.v3>"))
         .isEqualTo("harnessabcdefabcdefharness");
 
-    // Functors having concat expressions should work
+    // Functors having concatenation expressions should work
     assertThat(evaluator.resolve("<+secrets.getValue(\"abc\")>", true))
         .isEqualTo("${ngSecretManager.obtain(\"abc\", 123)}");
     assertThat(evaluator.resolve("<+secrets.getValue(\"<+f>\")>", true))
@@ -449,6 +454,9 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
         .isEqualTo("${ngSecretManager.obtain(\"abc_india_def\", 123)}");
     assertThat(evaluator.resolve("<+secrets.getValue(\"<+f>_india_<+g>\")>", true))
         .isEqualTo("${ngSecretManager.obtain(\"abc_india_def\", 123)}");
+
+    // Functors having 2nd param as expression shouldn't cause issue in evaluation
+    assertThat(evaluator.resolve("<+json.list(\"$\", <+var4>)>", true)).isEqualTo("[\"abc\",\"def\"]");
 
     // Ternary operators
     assertThat(evaluator.resolve("<+ <+a>==5?<+f>:<+g> >", true)).isEqualTo("abc");
@@ -525,6 +533,7 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
             .put("var1", "'archit' + <+company>")
             .put("var2", "'archit<+f>' + <+company>")
             .put("var3", "concatenate1")
+            .put("var4", "[\"abc\", \"def\"]")
             .put(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY,
                 Arrays.asList("PIE_EXPRESSION_CONCATENATION", "PIE_EXECUTION_JSON_SUPPORT"))
             .build());
@@ -549,6 +558,9 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     assertThat(evaluator.evaluateExpression("'expression' + <+var2> + '-<+g>'"))
         .isEqualTo("expressionarchitabcharness-def");
 
+    // : concatenation expression
+    assertThat(evaluator.resolve("expression-<+var2>: <+g>", true)).isEqualTo("expression-architabcharness: def");
+
     // Complex concatenate expressions
     assertThat(evaluator.resolve("<+variables.v1>", true)).isEqualTo("abcdef");
     assertThat(evaluator.evaluateExpression("<+variables.v1>")).isEqualTo("abcdef");
@@ -572,7 +584,7 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
                    + "                          traverse(<+variableValues>)  >"))
         .isEqualTo("v1abcdefv2abcdefv3abcdef");
 
-    // Functors having concat expressions should work
+    // Functors having concatenation expressions should work
     assertThat(evaluator.resolve("<+secrets.getValue(\"<+f>\")>", true))
         .isEqualTo("${ngSecretManager.obtain(\"abc\", 123)}");
     assertThat(evaluator.resolve("<+secrets.getValue(\"harness_<+f>_india\")>", true))
@@ -585,6 +597,9 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
         .isEqualTo("${ngSecretManager.obtain(\"abc_india_def\", 123)}");
     assertThat(evaluator.resolve("<+secrets.getValue(\"<+f>_india_<+g>\")>", true))
         .isEqualTo("${ngSecretManager.obtain(\"abc_india_def\", 123)}");
+
+    // Functors having 2nd param as expression shouldn't cause issue in evaluation
+    assertThat(evaluator.resolve("<+json.list(\"$\", <+var4>)>", true)).isEqualTo("[\"abc\",\"def\"]");
 
     // Ternary operators
     assertThat(evaluator.resolve("<+ <+a>==5?<+f>:<+g> >", true)).isEqualTo("abc");
@@ -846,6 +861,7 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
                       .put("anotherStatus", "IGNORE_FAILED")
                       .build())
               .build());
+      addToContext("json", new NGJsonFunctor());
     }
 
     @NotNull

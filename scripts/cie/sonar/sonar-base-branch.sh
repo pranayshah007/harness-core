@@ -8,7 +8,7 @@
 
 trap 'clean_up_files' EXIT
 
-trap 'report_error' ERR
+#trap 'report_error' ERR
 
 function clean_temp_files() {
   local_files=( $1 )
@@ -56,7 +56,7 @@ function get_info_from_file(){
 
 BAZEL_ARGS="--announce_rc --keep_going --show_timestamps --jobs=auto"
 BAZEL_OUTPUT_PATH="/tmp/execroot/harness_monorepo/bazel-out/k8-fastbuild/bin"
-#COVERAGE_ARGS="--collect_code_coverage --combined_report=lcov --coverage_report_generator=//tools/bazel/sonarqube:sonarqube_coverage_generator"
+COVERAGE_ARGS="--collect_code_coverage --combined_report=lcov --coverage_report_generator=//tools/bazel/sonarqube:sonarqube_coverage_generator"
 COVERAGE_REPORT_PATH='/tmp/execroot/harness_monorepo/bazel-out/_coverage/_coverage_report.dat'
 JARS_ARRAY=("libmodule-hjar.jar" "libmodule.jar" "module.jar")
 JARS_FILE="modules_jars.txt"
@@ -65,8 +65,8 @@ MODULES_FILE="modules.txt"
 MODULES_TESTS_FILE="modules_tests.txt"
 PR_SRCS_FILE="pr_srcs.txt"
 SONAR_CONFIG_FILE='sonar-project.properties'
-#STARTUP_ARGS="--output_base=/tmp"
-#TEST_ARGS="--discard_analysis_cache --notrack_incremental_state --nokeep_state_after_build --test_verbose_timeout_warnings --test_output=errors"
+STARTUP_ARGS="--output_base=/tmp"
+TEST_ARGS="--discard_analysis_cache --notrack_incremental_state --nokeep_state_after_build"
 
 # This script is required to generate the test util bzl file in root directory.
 scripts/bazel/generate_credentials.sh
@@ -94,8 +94,8 @@ check_cmd_status "$?" "Failed to list harness core modules."
 echo "SONAR PROP FILE: ${SONAR_PROP_FILE_PATH}"
 
 # Running Bazel Coverage
-echo "INFO: BAZEL COMMAND: bazel ${STARTUP_ARGS} coverage ${BAZEL_ARGS} ${COVERAGE_ARGS} ${TEST_ARGS} -- ${BAZEL_COMPILE_MODULES[@]}"
-bazel ${STARTUP_ARGS} coverage ${BAZEL_ARGS} ${COVERAGE_ARGS} ${TEST_ARGS} -- "${BAZEL_COMPILE_MODULES[@]}" || true
+echo "INFO: BAZEL COMMAND: bazel ${STARTUP_ARGS} test ${BAZEL_ARGS} ${COVERAGE_ARGS} ${TEST_ARGS} -- ${BAZEL_COMPILE_MODULES[@]}"
+bazel ${STARTUP_ARGS} test ${BAZEL_ARGS} ${COVERAGE_ARGS} ${TEST_ARGS} -- "${BAZEL_COMPILE_MODULES[@]}" || true
 check_cmd_status "$?" "Failed to run coverage."
 
 MODULE_SOURCE_PATH=$(grep -inr "sonar.sources" ${SONAR_PROP_FILE_PATH} | awk -F= '{print $2}' | sed 's|\/src\/main||')

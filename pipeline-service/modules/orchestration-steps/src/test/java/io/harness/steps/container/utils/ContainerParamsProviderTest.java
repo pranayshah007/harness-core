@@ -11,6 +11,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import io.harness.CategoryTest;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
@@ -26,10 +27,15 @@ import io.harness.delegate.beans.ci.pod.ContainerSecrets;
 import io.harness.delegate.beans.ci.pod.ContainerSecurityContext;
 import io.harness.delegate.beans.ci.pod.ImageDetailsWithConnector;
 import io.harness.delegate.beans.ci.pod.SecretParams;
+import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.docker.DockerAuthType;
+import io.harness.delegate.beans.connector.docker.DockerAuthenticationDTO;
+import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.rule.Owner;
+import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.steps.container.execution.ContainerDetailsSweepingOutput;
 import io.harness.steps.container.execution.ContainerExecutionConfig;
 import io.harness.utils.PmsFeatureFlagHelper;
@@ -87,6 +93,49 @@ public class ContainerParamsProviderTest extends CategoryTest {
   @Test
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
+  public void getLiteEngineContainerParamsWithOverridenConnector() {
+    String OverridenDockerRegistryUrl = "my-docker-registry-url";
+    ConnectorDetails connectorDetails =
+        ConnectorDetails.builder()
+            .connectorType(ConnectorType.DOCKER)
+            .connectorConfig(DockerConnectorDTO.builder()
+                                 .auth(DockerAuthenticationDTO.builder().authType(DockerAuthType.ANONYMOUS).build())
+                                 .dockerRegistryUrl("https://" + OverridenDockerRegistryUrl)
+                                 .build())
+            .build();
+    CIK8ContainerParams resultParams = containerParamsProvider.getLiteEngineContainerParams(connectorDetails,
+        ContainerDetailsSweepingOutput.builder().build(), 1, 1, Map.of("k1", "v1"), Map.of("path", "/volume"), "/work",
+        ContainerSecurityContext.builder().build(), "test", testAmbiance, null, "");
+
+    verifyContainerParams(resultParams, OverridenDockerRegistryUrl + "/" + HARNESS_DEFAULT_LITE_ENGINE_IMAGE);
+    assertThat(resultParams.getImageDetailsWithConnector().getImageConnectorDetails()).isEqualTo(connectorDetails);
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void getLiteEngineContainerParamsWithOverridenConnectorException() {
+    String malformedRegistryURL = "-123/#ia";
+    ConnectorDetails connectorDetails =
+        ConnectorDetails.builder()
+            .connectorType(ConnectorType.DOCKER)
+            .connectorConfig(DockerConnectorDTO.builder()
+                                 .auth(DockerAuthenticationDTO.builder().authType(DockerAuthType.ANONYMOUS).build())
+                                 .dockerRegistryUrl(malformedRegistryURL)
+                                 .build())
+            .build();
+    assertThatExceptionOfType(ContainerStepExecutionException.class)
+        .isThrownBy(()
+                        -> containerParamsProvider.getLiteEngineContainerParams(connectorDetails,
+                            ContainerDetailsSweepingOutput.builder().build(), 1, 1, Map.of("k1", "v1"),
+                            Map.of("path", "/volume"), "/work", ContainerSecurityContext.builder().build(), "test",
+                            testAmbiance, null, ""))
+        .withMessageContaining("Malformed registryUrl " + malformedRegistryURL);
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
   public void getLiteEngineContainerParamsOverriden() {
     String overridenLiteEngineTag = "harness/my_le_tag";
     ConnectorDetails connectorDetails = ConnectorDetails.builder().build();
@@ -115,11 +164,8 @@ public class ContainerParamsProviderTest extends CategoryTest {
                        .resourceLimitMilliCpu(101)
                        .resourceRequestMilliCpu(101)
                        .build());
-    assertThat(resultParams.getImageDetailsWithConnector())
-        .isEqualTo(ImageDetailsWithConnector.builder()
-                       .imageConnectorDetails(ConnectorDetails.builder().build())
-                       .imageDetails(ImageDetails.builder().name(imageName).build())
-                       .build());
+    assertThat(resultParams.getImageDetailsWithConnector().getImageDetails())
+        .isEqualTo(ImageDetails.builder().name(imageName).build());
   }
 
   @Test

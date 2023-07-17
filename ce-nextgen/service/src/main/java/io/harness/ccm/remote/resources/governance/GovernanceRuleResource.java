@@ -43,10 +43,8 @@ import io.harness.ccm.views.entities.RuleClone;
 import io.harness.ccm.views.entities.RuleEnforcement;
 import io.harness.ccm.views.entities.RuleExecution;
 import io.harness.ccm.views.entities.RuleSet;
-import io.harness.ccm.views.helper.GovernanceJobDetailsAWS;
 import io.harness.ccm.views.helper.GovernanceRuleFilter;
 import io.harness.ccm.views.helper.RuleCloudProviderType;
-import io.harness.ccm.views.helper.RuleExecutionStatusType;
 import io.harness.ccm.views.helper.RuleExecutionType;
 import io.harness.ccm.views.helper.RuleList;
 import io.harness.ccm.views.helper.RuleStoreType;
@@ -59,9 +57,7 @@ import io.harness.connector.ConnectorResourceClient;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.delegate.beans.connector.CEFeatures;
 import io.harness.delegate.beans.connector.ConnectorType;
-import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
 import io.harness.exception.InvalidRequestException;
-import io.harness.faktory.FaktoryProducer;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -77,8 +73,6 @@ import io.harness.yaml.validator.YamlSchemaValidator;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
@@ -227,8 +221,8 @@ public class GovernanceRuleResource {
       ruleEnforcementDAO.updateCount(ruleEnforcementUpdate);
       RuleCloudProviderType ruleCloudProviderType = ruleEnforcement.getCloudProvider();
       accountId = ruleEnforcement.getAccountId();
-      if (ruleEnforcement.getCloudProvider() != RuleCloudProviderType.AWS) {
-        log.error("Support for non AWS cloud providers is not present atm. Skipping enqueuing in faktory");
+      if (ruleCloudProviderType != RuleCloudProviderType.AWS && ruleCloudProviderType != RuleCloudProviderType.AZURE) {
+        log.error("Support for non AWS/AZURE cloud providers is not present atm. Skipping enqueuing in faktory");
         // TO DO: Return simple response to dkron instead of empty for debugging purposes
         return ResponseDTO.newResponse();
       }
@@ -260,65 +254,20 @@ public class GovernanceRuleResource {
       }
       // Step-3 Figure out roleArn and externalId from the connector listv2 api call for all target accounts.
       Set<ConnectorInfoDTO> nextGenConnectorResponses = governanceRuleService.getConnectorResponse(
-          accountId, ruleEnforcement.getTargetAccounts().stream().collect(Collectors.toSet()));
+          accountId, new HashSet<>(ruleEnforcement.getTargetAccounts()), ruleEnforcement.getCloudProvider());
       log.info(
           "For rule enforcement setting {}: Got connector data: {}", ruleEnforcementUuid, nextGenConnectorResponses);
 
       // Step-4 Enqueue in faktory
       for (ConnectorInfoDTO connectorInfoDTO : nextGenConnectorResponses) {
-        CEAwsConnectorDTO ceAwsConnectorDTO = (CEAwsConnectorDTO) connectorInfoDTO.getConnectorConfig();
-        List<RuleExecution> ruleExecutions = new ArrayList<>();
-        for (String region : ruleEnforcement.getTargetRegions()) {
-          for (Rule rule : rulesList) {
-            try {
-              GovernanceJobDetailsAWS governanceJobDetailsAWS =
-                  GovernanceJobDetailsAWS.builder()
-                      .accountId(accountId)
-                      .awsAccountId(ceAwsConnectorDTO.getAwsAccountId())
-                      .externalId(ceAwsConnectorDTO.getCrossAccountAccess().getExternalId())
-                      .roleArn(ceAwsConnectorDTO.getCrossAccountAccess().getCrossAccountRoleArn())
-                      .isDryRun(ruleEnforcement.getIsDryRun())
-                      .ruleId(rule.getUuid())
-                      .region(region)
-                      .ruleEnforcementId(ruleEnforcementUuid)
-                      .policy(rule.getRulesYaml())
-                      .executionType(RuleExecutionType.EXTERNAL)
-                      .build();
-              Gson gson = new GsonBuilder().create();
-              String json = gson.toJson(governanceJobDetailsAWS);
-              log.info("For rule enforcement setting {}: Enqueuing job in Faktory {}", ruleEnforcementUuid, json);
-              // Bulk enqueue in faktory can lead to difficulties in error handling and retry.
-              // order: jobType, jobQueue, json
-              String jid = FaktoryProducer.push(configuration.getGovernanceConfig().getAwsFaktoryJobType(),
-                  configuration.getGovernanceConfig().getAwsFaktoryQueueName(), json);
-              log.info("For rule enforcement setting {}: Pushed job in Faktory: {}", ruleEnforcementUuid, jid);
-              // Make a record in Mongo
-              // TO DO: We can bulk insert in mongo for all successful faktory job pushes
-              ruleExecutions.add(RuleExecution.builder()
-                                     .accountId(accountId)
-                                     .jobId(jid)
-                                     .cloudProvider(ruleCloudProviderType)
-                                     .executionLogPath("") // Updated by worker when execution finishes
-                                     .isDryRun(ruleEnforcement.getIsDryRun())
-                                     .ruleEnforcementIdentifier(ruleEnforcementUuid)
-                                     .ruleEnforcementName(ruleEnforcement.getName())
-                                     .executionCompletedAt(null) // Updated by worker when execution finishes
-                                     .ruleIdentifier(rule.getUuid())
-                                     .targetAccount(ceAwsConnectorDTO.getAwsAccountId())
-                                     .targetRegions(Arrays.asList(region))
-                                     .executionLogBucketType("")
-                                     .ruleName(rule.getName())
-                                     .OOTB(rule.getIsOOTB())
-                                     .executionStatus(RuleExecutionStatusType.ENQUEUED)
-                                     .executionType(RuleExecutionType.EXTERNAL)
-                                     .build());
-            } catch (Exception e) {
-              log.warn(
-                  "Exception enqueueing job for ruleEnforcementUuid: {} for targetAccount: {} for targetRegions: {}, {}",
-                  ruleEnforcementUuid, ceAwsConnectorDTO.getAwsAccountId(), region, e);
-            }
-          }
+        String faktoryJobType = configuration.getGovernanceConfig().getAwsFaktoryJobType();
+        String faktoryQueueName = configuration.getGovernanceConfig().getAwsFaktoryQueueName();
+        if (ruleEnforcement.getCloudProvider() == RuleCloudProviderType.AZURE) {
+          faktoryJobType = configuration.getGovernanceConfig().getAzureFaktoryJobType();
+          faktoryQueueName = configuration.getGovernanceConfig().getAzureFaktoryQueueName();
         }
+        List<RuleExecution> ruleExecutions = governanceRuleService.enqueue(accountId, ruleEnforcement, rulesList,
+            connectorInfoDTO.getConnectorConfig(), connectorInfoDTO.getIdentifier(), faktoryJobType, faktoryQueueName);
         enqueuedRuleExecutionIds.addAll(ruleExecutionService.save(ruleExecutions));
       }
     }
@@ -627,11 +576,15 @@ public class GovernanceRuleResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @Parameter(description = "View governance connector list") @QueryParam("view") boolean view,
       @QueryParam("connectorType") ConnectorType connectorType) {
+    List<ConnectorType> connectorTypes = new ArrayList<>();
     if (connectorType == null) {
-      connectorType = ConnectorType.CE_AWS;
+      connectorTypes.add(ConnectorType.CE_AWS);
+      connectorTypes.add(ConnectorType.CE_AZURE);
+    } else {
+      connectorTypes.add(connectorType);
     }
-    List<ConnectorResponseDTO> nextGenConnectorResponses = connectorDetailsService.listNgConnectors(
-        accountId, Arrays.asList(connectorType), Arrays.asList(CEFeatures.GOVERNANCE), null);
+    List<ConnectorResponseDTO> nextGenConnectorResponses =
+        connectorDetailsService.listNgConnectors(accountId, connectorTypes, Arrays.asList(CEFeatures.GOVERNANCE), null);
     Set<String> allowedAccountIds = null;
     List<ConnectorResponseDTO> connectorResponse = new ArrayList<>();
     if (nextGenConnectorResponses != null) {
@@ -679,7 +632,7 @@ public class GovernanceRuleResource {
     for (String targetAccount : governanceAdhocEnqueueDTO.getTargetAccountDetails().keySet()) {
       RecommendationAdhocDTO recommendationAdhocDTO =
           governanceAdhocEnqueueDTO.getTargetAccountDetails().get(targetAccount);
-      rbacHelper.checkAccountExecutePermission(accountId, null, null, recommendationAdhocDTO.getIdentifier());
+      rbacHelper.checkAccountExecutePermission(accountId, null, null, recommendationAdhocDTO.getCloudConnectorId());
       for (String targetRegion : governanceAdhocEnqueueDTO.getTargetRegions()) {
         GovernanceJobEnqueueDTO governanceJobEnqueueDTO =
             GovernanceJobEnqueueDTO.builder()

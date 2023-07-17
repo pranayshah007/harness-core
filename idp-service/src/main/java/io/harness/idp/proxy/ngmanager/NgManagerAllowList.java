@@ -13,4 +13,6 @@ import lombok.experimental.UtilityClass;
 public class NgManagerAllowList {
   public static final String USERS = "/user/aggregate";
   public static final String USER_GROUPS = "/aggregate/acl/usergroups";
+  public static final String TOKEN_VALIDATE = "/token/validate";
+  public static final String V2_SECRETS = "/v2/secrets";
 }

@@ -974,4 +974,14 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     query.fields().include(NodeExecutionKeys.id);
     return nodeExecutionReadHelper.fetchNodeExecutionsFromSecondaryTemplate(query);
   }
+
+  @Override
+  public List<NodeExecution> fetchAllWithPlanExecutionId(String planExecutionId, Set<String> fieldsToBeIncluded) {
+    Criteria criteria = Criteria.where(NodeExecutionKeys.planExecutionId).is(planExecutionId);
+    Query query = query(criteria);
+    for (String field : fieldsToBeIncluded) {
+      query.fields().include(field);
+    }
+    return nodeExecutionReadHelper.fetchNodeExecutionsWithoutProjections(query);
+  }
 }

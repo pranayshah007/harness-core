@@ -40,6 +40,7 @@ import io.harness.connector.ConnectorCatalogueResponseDTO;
 import io.harness.connector.ConnectorCategory;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorFilterPropertiesDTO;
+import io.harness.connector.ConnectorInternalFilterPropertiesDTO;
 import io.harness.connector.ConnectorRegistryFactory;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
@@ -382,6 +383,26 @@ public class ConnectorResource {
     return ResponseDTO.newResponse(getNGPageResponse(connectorService.listCcmK8S(accountIdentifier, connectorListFilter,
         orgIdentifier, projectIdentifier, filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope,
         getDistinctFromBranches, getPageRequest(pageRequest))));
+  }
+
+  @POST
+  @Path("/allConnectors")
+  @Hidden
+  @InternalApi
+  @ApiOperation(value = "Gets all connectors list", nickname = "getAllConnectorsList", hidden = true)
+  public ResponseDTO<PageResponse<ConnectorResponseDTO>> allConnectors(
+      @RequestBody(required = true, description = "Details of the Connector Internal filters applied")
+      @Body ConnectorInternalFilterPropertiesDTO connectorInternalFilterPropertiesDTO,
+      @BeanParam PageRequest pageRequest) {
+    if (isEmpty(connectorInternalFilterPropertiesDTO.getAccountIdentifiers())) {
+      throw new InvalidRequestException("accountIds missing in payload");
+    }
+    if (isEmpty(pageRequest.getSortOrders())) {
+      SortOrder order = SortOrder.Builder.aSortOrder().withField(ConnectorKeys.lastModifiedAt, OrderType.DESC).build();
+      pageRequest.setSortOrders(List.of(order));
+    }
+    return ResponseDTO.newResponse(
+        getNGPageResponse(connectorService.list(connectorInternalFilterPropertiesDTO, getPageRequest(pageRequest))));
   }
 
   @POST

@@ -52,6 +52,8 @@ import io.harness.beans.steps.stepinfo.DockerStepInfo;
 import io.harness.beans.steps.stepinfo.ECRStepInfo;
 import io.harness.beans.steps.stepinfo.GCRStepInfo;
 import io.harness.beans.steps.stepinfo.GitCloneStepInfo;
+import io.harness.beans.steps.stepinfo.IACMApprovalInfo;
+import io.harness.beans.steps.stepinfo.IACMTerraformPluginInfo;
 import io.harness.beans.steps.stepinfo.RestoreCacheGCSStepInfo;
 import io.harness.beans.steps.stepinfo.RestoreCacheS3StepInfo;
 import io.harness.beans.steps.stepinfo.SaveCacheGCSStepInfo;
@@ -69,6 +71,7 @@ import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
+import io.harness.iacm.execution.IACMStepsUtils;
 import io.harness.ng.core.NGAccess;
 import io.harness.plugin.service.PluginServiceImpl;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -143,6 +146,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
   @Inject private CodebaseUtils codebaseUtils;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private SscaOrchestrationPluginUtils sscaOrchestrationPluginUtils;
+  @Inject private IACMStepsUtils iacmStepsUtils;
 
   @Override
   public Map<String, String> getPluginCompatibleEnvVariables(PluginCompatibleStep stepInfo, String identifier,
@@ -152,7 +156,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
         return getECRStepInfoEnvVariables(
             ambiance, (ECRStepInfo) stepInfo, identifier, infraType, isContainerizedPlugin);
       case ACR:
-        return getACRStepInfoEnvVariables((ACRStepInfo) stepInfo, identifier, infraType);
+        return getACRStepInfoEnvVariables((ACRStepInfo) stepInfo, identifier, infraType, isContainerizedPlugin);
       case GCR:
         return getGCRStepInfoEnvVariables((GCRStepInfo) stepInfo, identifier, infraType, isContainerizedPlugin);
       case DOCKER:
@@ -176,7 +180,8 @@ public class PluginSettingUtils extends PluginServiceImpl {
       case GIT_CLONE:
         final String connectorRef = stepInfo.getConnectorRef().getValue();
         final NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-        final ConnectorDetails gitConnector = codebaseUtils.getGitConnector(ngAccess, connectorRef);
+        final ConnectorDetails gitConnector = codebaseUtils.getGitConnector(
+            ngAccess, connectorRef, ambiance, ((GitCloneStepInfo) stepInfo).getRepoName().getValue());
         return getGitCloneStepInfoEnvVariables((GitCloneStepInfo) stepInfo, ambiance, gitConnector, identifier);
       case SSCA_ORCHESTRATION:
         return sscaOrchestrationPluginUtils.getSscaOrchestrationStepEnvVariables(
@@ -184,8 +189,13 @@ public class PluginSettingUtils extends PluginServiceImpl {
       case SSCA_ENFORCEMENT:
         return SscaEnforcementPluginHelper.getSscaEnforcementStepEnvVariables(
             (SscaEnforcementStepInfo) stepInfo, identifier, ambiance, infraType);
+      case IACM_TERRAFORM_PLUGIN:
+        return iacmStepsUtils.getVariablesForKubernetes(ambiance, (IACMTerraformPluginInfo) stepInfo);
+      case IACM_APPROVAL:
+        return iacmStepsUtils.getVariablesForKubernetes(ambiance, (IACMApprovalInfo) stepInfo);
       default:
-        throw new IllegalStateException("Unexpected value: " + stepInfo.getNonYamlInfo().getStepInfoType());
+        throw new IllegalStateException(
+            "Unexpected value in getPluginCompatibleEnvVariables: " + stepInfo.getNonYamlInfo().getStepInfoType());
     }
   }
 
@@ -197,6 +207,8 @@ public class PluginSettingUtils extends PluginServiceImpl {
       case SSCA_ENFORCEMENT:
         return SscaEnforcementPluginHelper.getSscaEnforcementSecretVariables(
             (SscaEnforcementStepInfo) step, identifier);
+      case IACM_TERRAFORM_PLUGIN:
+        return iacmStepsUtils.getSecretVariablesForKubernetes((IACMTerraformPluginInfo) step);
       default:
         return new HashMap<>();
     }
@@ -360,7 +372,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
   }
 
   private static Map<String, String> getACRStepInfoEnvVariables(
-      ACRStepInfo stepInfo, String identifier, Type infraType) {
+      ACRStepInfo stepInfo, String identifier, Type infraType, boolean isContainerizedPlugin) {
     Map<String, String> map = new HashMap<>();
     String pluginRepo =
         resolveStringParameter(REPOSITORY, "BuildAndPushACR", identifier, stepInfo.getRepository(), true);
@@ -408,6 +420,23 @@ public class PluginSettingUtils extends PluginServiceImpl {
       getACRStepInfoVariablesForK8s(stepInfo, identifier, map);
     } else if (infraType == Type.VM) {
       PluginServiceImpl.setMandatoryEnvironmentVariable(map, PLUGIN_DAEMON_OFF, "true");
+      if (!isContainerizedPlugin) {
+        // Only populate cache-from and cache-to if we're using the buildx plugin
+        List<String> cacheFromList =
+            resolveListParameter("cacheFrom", "BuildAndPushACR", identifier, stepInfo.getCacheFrom(), false);
+        if (!isEmpty(cacheFromList)) {
+          setOptionalEnvironmentVariable(map, PLUGIN_CACHE_FROM, listToCustomStringSlice(cacheFromList));
+        }
+        String cacheTo =
+            resolveStringParameterV2("cacheTo", "BuildAndPushACR", identifier, stepInfo.getCacheTo(), false);
+        if (!isEmpty(cacheTo)) {
+          setOptionalEnvironmentVariable(map, PLUGIN_CACHE_TO, cacheTo);
+        }
+        if (resolveBooleanParameter(stepInfo.getCaching(), false)) {
+          setOptionalEnvironmentVariable(
+              map, PLUGIN_BUILDER_DRIVER_OPTS, String.format("image=%s", DOCKER_BUILDKIT_IMAGE));
+        }
+      }
     }
     return map;
   }
@@ -905,6 +934,11 @@ public class PluginSettingUtils extends PluginServiceImpl {
         cacheTo = resolveStringParameter("cacheTo", "BuildAndPushGCR", "", gcrStepInfo.getCacheTo(), false);
         break;
       case ACR:
+        ACRStepInfo acrStepInfo = (ACRStepInfo) stepInfo;
+        caching = resolveBooleanParameter(acrStepInfo.getCaching(), false);
+        cacheFrom = resolveListParameter("cacheFrom", "BuildAndPushACR", "", acrStepInfo.getCacheFrom(), false);
+        cacheTo = resolveStringParameter("cacheTo", "BuildAndPushACR", "", acrStepInfo.getCacheTo(), false);
+        break;
       default:
         return false;
     }
@@ -923,6 +957,8 @@ public class PluginSettingUtils extends PluginServiceImpl {
         GCRStepInfo gcrStepInfo = (GCRStepInfo) stepInfo;
         return resolveBooleanParameter(gcrStepInfo.getCaching(), false);
       case ACR:
+        ACRStepInfo acrStepInfo = (ACRStepInfo) stepInfo;
+        return resolveBooleanParameter(acrStepInfo.getCaching(), false);
       default:
         return false;
     }
@@ -944,6 +980,9 @@ public class PluginSettingUtils extends PluginServiceImpl {
         repo = resolveStringParameter("imageName", "BuildAndPushGCR", identifier, gcrStepInfo.getImageName(), true);
         return String.format("%s/%s/", accountId, repo);
       case ACR:
+        ACRStepInfo acrStepInfo = (ACRStepInfo) stepInfo;
+        repo = resolveStringParameter("imageName", "BuildAndPushACR", identifier, acrStepInfo.getRepository(), true);
+        return String.format("%s/%s/", accountId, repo);
       default:
         return "";
     }
@@ -1002,6 +1041,21 @@ public class PluginSettingUtils extends PluginServiceImpl {
         gcrStepInfo.setCacheTo(ParameterField.createValueField(cacheToArg));
         return;
       case ACR:
+        ACRStepInfo acrStepInfo = (ACRStepInfo) stepInfo;
+
+        // Append cacheFromArg to the list
+        cacheFrom = resolveListParameter("cacheFrom", "BuildAndPushACR", identifier, acrStepInfo.getCacheFrom(), false);
+        if (isEmpty(cacheFrom)) {
+          cacheFrom = new ArrayList<>();
+        } else {
+          cacheFrom = new ArrayList(cacheFrom);
+        }
+        cacheFrom.add(cacheFromArg);
+        acrStepInfo.setCacheFrom(ParameterField.createValueField(cacheFrom));
+
+        // Overwrite cacheTo with cacheToArg
+        acrStepInfo.setCacheTo(ParameterField.createValueField(cacheToArg));
+        return;
       default:
         return;
     }

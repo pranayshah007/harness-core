@@ -618,9 +618,13 @@ public class K8InitializeTaskUtils {
     List<EntityDetail> entityDetails =
         secretVariableDetails.stream()
             .map(secretVariableDetail -> {
+              if (secretVariableDetail == null) {
+                return null;
+              }
               return createEntityDetails(secretVariableDetail.getSecretVariableDTO().getSecret().getIdentifier(),
                   accountIdentifier, projectIdentifier, orgIdentifier);
             })
+            .filter(Objects::nonNull)
             .collect(Collectors.toList());
 
     if (isNotEmpty(entityDetails) && featureFlagService.isEnabled(CIE_ENABLED_RBAC, accountIdentifier)) {

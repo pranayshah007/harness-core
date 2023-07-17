@@ -37,7 +37,6 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateProgressServiceImpl implements DelegateProgressService {
   @Inject private HPersistence persistence;
-  @Inject private KryoSerializer kryoSerializer;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject @Named("disableDeserialization") private boolean disableDeserialization;
@@ -74,10 +73,8 @@ public class DelegateProgressServiceImpl implements DelegateProgressService {
                      .usingKryoWithoutReference(lockedTaskProgressResponse.isUsingKryoWithoutReference())
                      .build();
         } else {
-          data = lockedTaskProgressResponse.isUsingKryoWithoutReference()
-              ? (ProgressData) referenceFalseKryoSerializer.asInflatedObject(
-                  lockedTaskProgressResponse.getProgressData())
-              : (ProgressData) kryoSerializer.asInflatedObject(lockedTaskProgressResponse.getProgressData());
+          data = (ProgressData) referenceFalseKryoSerializer.asInflatedObject(
+              lockedTaskProgressResponse.getProgressData());
         }
 
         waitNotifyEngine.progressOn(lockedTaskProgressResponse.getCorrelationId(), data,

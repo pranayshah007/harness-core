@@ -128,6 +128,11 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
 
     prepareForCanary(k8sCanaryDeployRequest, k8sDelegateTaskParams,
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Prepare, true, commandUnitsProgress));
+
+    List<K8sPod> existingPodList = k8sTaskHelperBase.getPodDetails(k8sCanaryHandlerConfig.getKubernetesConfig(),
+        k8sCanaryHandlerConfig.getKubernetesConfig().getNamespace(), k8sCanaryDeployRequest.getReleaseName(),
+        timeoutInMillis);
+
     // Apply Command Flag
     Map<String, String> k8sCommandFlag = k8sCanaryDeployRequest.getK8sCommandFlags();
     String commandFlags = K8sCommandFlagsUtils.getK8sCommandFlags(K8sCliCommandType.Apply.name(), k8sCommandFlag);
@@ -198,6 +203,7 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
     return K8sDeployResponse.builder()
         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
         .k8sNGTaskResponse(K8sCanaryDeployResponse.builder()
+                               .previousK8sPodList(existingPodList)
                                .canaryWorkload(canaryObjectsNames)
                                .k8sPodList(allPods)
                                .releaseNumber(k8sCanaryHandlerConfig.getCurrentRelease().getReleaseNumber())

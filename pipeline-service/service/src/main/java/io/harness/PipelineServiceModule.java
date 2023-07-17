@@ -149,6 +149,8 @@ import io.harness.pms.plan.creation.NodeTypeLookupServiceImpl;
 import io.harness.pms.plan.execution.PlanExecutionResource;
 import io.harness.pms.plan.execution.PlanExecutionResourceImpl;
 import io.harness.pms.plan.execution.mapper.PipelineExecutionFilterPropertiesMapper;
+import io.harness.pms.plan.execution.service.ExpressionEvaluatorService;
+import io.harness.pms.plan.execution.service.ExpressionEvaluatorServiceImpl;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.plan.execution.service.PMSExecutionServiceImpl;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
@@ -208,6 +210,7 @@ import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.template.TemplateResourceClientModule;
 import io.harness.threading.ThreadPool;
+import io.harness.threading.ThreadPoolConfig;
 import io.harness.time.TimeModule;
 import io.harness.timescaledb.JooqModule;
 import io.harness.timescaledb.TimeScaleDBConfig;
@@ -410,6 +413,7 @@ public class PipelineServiceModule extends AbstractModule {
     bind(PipelineRbacService.class).to(PipelineRbacServiceImpl.class);
     bind(PMSInputSetService.class).to(PMSInputSetServiceImpl.class);
     bind(PMSExecutionService.class).to(PMSExecutionServiceImpl.class);
+    bind(ExpressionEvaluatorService.class).to(ExpressionEvaluatorServiceImpl.class);
     bind(PMSYamlSchemaService.class).to(PMSYamlSchemaServiceImpl.class);
     bind(ApprovalNotificationHandler.class).to(ApprovalNotificationHandlerImpl.class);
     bind(PMSOpaService.class).to(PMSOpaServiceImpl.class);
@@ -552,6 +556,19 @@ public class PipelineServiceModule extends AbstractModule {
     return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
         .addAll(PipelineServiceModuleRegistrars.morphiaRegistrars)
         .build();
+  }
+
+  @Provides
+  @Singleton
+  @Named("logStreamingClientThreadPool")
+  public ThreadPoolExecutor logStreamingClientThreadPool() {
+    ThreadPoolConfig threadPoolConfig = configuration != null && configuration.getLogStreamingServiceConfig() != null
+            && configuration.getLogStreamingServiceConfig().getThreadPoolConfig() != null
+        ? configuration.getLogStreamingServiceConfig().getThreadPoolConfig()
+        : ThreadPoolConfig.builder().corePoolSize(1).maxPoolSize(50).idleTime(30).timeUnit(TimeUnit.SECONDS).build();
+    return ThreadPool.create(threadPoolConfig.getCorePoolSize(), threadPoolConfig.getMaxPoolSize(),
+        threadPoolConfig.getIdleTime(), threadPoolConfig.getTimeUnit(),
+        new ThreadFactoryBuilder().setNameFormat("log-client-pool-%d").build());
   }
 
   @Provides

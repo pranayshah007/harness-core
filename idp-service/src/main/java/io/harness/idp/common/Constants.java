@@ -50,4 +50,5 @@ public class Constants {
       "LAST_UPDATED_TIMESTAMP_FOR_PLUGIN_WITH_NO_CONFIG";
   public static final String SLASH_DELIMITER = "/";
   public static final String SOURCE_FORMAT = "blob";
+  public static final String LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES = "LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES";
 }

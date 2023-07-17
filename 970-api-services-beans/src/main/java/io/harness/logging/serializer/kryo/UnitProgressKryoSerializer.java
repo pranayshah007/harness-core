@@ -14,7 +14,7 @@ import io.harness.logging.UnitProgress;
 import io.harness.serializer.kryo.ProtobufKryoSerializer;
 
 @OwnedBy(HarnessTeam.DEL)
-@RecasterAlias("io.harness.logging.UnitProgress")
+@RecasterAlias("io.harness.logging.serializer.kryo.UnitProgressKryoSerializer")
 public class UnitProgressKryoSerializer extends ProtobufKryoSerializer<UnitProgress> {
   private static UnitProgressKryoSerializer instance;
 

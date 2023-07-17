@@ -307,9 +307,9 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
     VerificationJobInstance verificationJobInstance =
         verificationJobInstanceService.getVerificationJobInstance(verificationJobInstanceId);
     verificationJobInstance.setResolvedJob(job);
-    verificationJobInstance.setServiceInstanceDetailsFromCD(
+    verificationJobInstance.setServiceInstanceDetails(
         ServiceInstanceDetails.builder()
-            .valid(true)
+            .shouldUseNodesFromCD(true)
             .deployedServiceInstances(Arrays.asList("c1", "c2"))
             .serviceInstancesBeforeDeployment(Arrays.asList("p1", "p2", "p3"))
             .serviceInstancesAfterDeployment(Arrays.asList("p1", "p2", "c1", "c2"))
@@ -338,9 +338,9 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
     VerificationJobInstance verificationJobInstance =
         verificationJobInstanceService.getVerificationJobInstance(verificationJobInstanceId);
     verificationJobInstance.setResolvedJob(job);
-    verificationJobInstance.setServiceInstanceDetailsFromCD(
+    verificationJobInstance.setServiceInstanceDetails(
         ServiceInstanceDetails.builder()
-            .valid(true)
+            .shouldUseNodesFromCD(true)
             .deployedServiceInstances(Arrays.asList("c1", "c2"))
             .serviceInstancesBeforeDeployment(Arrays.asList("p1", "p2", "p3"))
             .serviceInstancesAfterDeployment(Arrays.asList("c1", "c2"))
@@ -864,7 +864,7 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
               .executionStatus(ExecutionStatus.QUEUED)
               .planExecutionId("planExecutionId")
               .nodeExecutionId("nodeExecutionId")
-              .serviceInstanceDetailsFromCD(ServiceInstanceDetails.builder().valid(false).build())
+              .serviceInstanceDetails(ServiceInstanceDetails.builder().shouldUseNodesFromCD(false).build())
               .stageStepId("stageStepId")
               .monitoredServiceType(MonitoredServiceSpecType.DEFAULT)
               .planExecutionId("")

@@ -133,7 +133,7 @@ public class StagesExpressionExtractor {
                   return false;
                 }
                 String stageInExpression = getStageIdentifierInExpression(expression);
-                return !stageIdentifiers.contains(stageInExpression);
+                return stageInExpression != null && !stageIdentifiers.contains(stageInExpression);
               })
               .collect(Collectors.toList());
       expressionsToOtherStages.addAll(otherStageExpressions);
@@ -148,6 +148,9 @@ public class StagesExpressionExtractor {
 
   boolean isReferringToNonStageValue(String expression) {
     String[] wordsInExpression = expression.replace(EXPR_START, "").replace(EXPR_END, "").split("\\.");
+    if (wordsInExpression.length < 2) {
+      return true;
+    }
     return wordsInExpression[0].equals("pipeline") && !wordsInExpression[1].equals("stages");
   }
 
@@ -155,9 +158,17 @@ public class StagesExpressionExtractor {
     String firstKeyOfExpression = NGExpressionUtils.getFirstKeyOfExpression(expression);
     String[] wordsInExpression = expression.replace(EXPR_START, "").replace(EXPR_END, "").split("\\.");
     if (firstKeyOfExpression.equals("pipeline")) {
-      return wordsInExpression[2];
+      if (wordsInExpression.length > 2) {
+        return wordsInExpression[2];
+      } else {
+        return null;
+      }
     } else if (firstKeyOfExpression.equals("stages")) {
-      return wordsInExpression[1];
+      if (wordsInExpression.length > 1) {
+        return wordsInExpression[1];
+      } else {
+        return null;
+      }
     }
     throw new InvalidRequestException(expression + " is not a pipeline level or stages level expression");
   }

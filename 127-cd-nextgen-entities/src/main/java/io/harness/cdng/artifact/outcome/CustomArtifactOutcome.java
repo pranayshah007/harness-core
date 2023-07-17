@@ -45,6 +45,9 @@ public class CustomArtifactOutcome implements ArtifactOutcome {
   /** Custom Artifact metadata */
   Map<String, String> metadata;
 
+  /* Field for adding support for <artifact.tag> */
+  String tag;
+
   @Override
   public ArtifactSummary getArtifactSummary() {
     return CustomArtifactSummary.builder().version(version).build();

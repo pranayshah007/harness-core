@@ -40,6 +40,7 @@ public class ConnectorInfoOutcomeDTO {
   @NotNull @NotBlank @NGEntityName String name;
   @NotNull @NotBlank @EntityIdentifier String identifier;
   String description;
+  String accountIdentifier;
   String orgIdentifier;
   String projectIdentifier;
   Map<String, String> tags;

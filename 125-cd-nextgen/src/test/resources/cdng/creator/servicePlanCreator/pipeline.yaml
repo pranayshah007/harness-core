@@ -18,9 +18,10 @@ pipeline:
           services:
             values:
               - serviceRef: service1
-          environment:
-            environmentRef: my_env_dev
-            infrastructureDefinitions: <+input>
+          environments:
+            values:
+              - environmentRef: my_env_dev
+                infrastructureDefinitions: <+input>
           execution:
             steps:
               - step:
@@ -148,3 +149,43 @@ pipeline:
                               timeout: 100s
                               method: GET
                               url: http://httpstat.us/200
+    - stage:
+        name: stage2
+        identifier: stage2
+        type: Deployment
+        spec:
+          service:
+            useFromStage:
+              stage: stage1
+          environment:
+            useFromStage:
+              stage: stage1
+          execution:
+            steps:
+              - step:
+                  name: Rollout Deployment
+                  identifier: rolloutDeployment
+                  type: K8sRollingDeploy
+                  spec:
+                    timeout: 120000
+                    skipDryRun: false
+    - stage:
+        identifier: stage3
+        name: stage3
+        type: Deployment
+        spec:
+          service:
+            serviceRef :
+              stage: service1
+          environment:
+            useFromStage:
+              stage: stage1
+          execution:
+            steps:
+              - step:
+                  name: Rollout Deployment
+                  identifier: rolloutDeployment
+                  type: K8sRollingDeploy
+                  spec:
+                    timeout: 120000
+                    skipDryRun: false

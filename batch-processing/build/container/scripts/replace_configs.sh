@@ -320,6 +320,15 @@ if [[ "" != "$BATCH_JOB_REPOSITORY_TIMESCALE_ENABLE" ]]; then
   export BATCH_JOB_REPOSITORY_TIMESCALE_ENABLE; yq -i '.batchJobRepository.timescaleEnabled=env(BATCH_JOB_REPOSITORY_TIMESCALE_ENABLE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$BATCH_JOB_METADATA_CLEANUP_SCHEDULE" ]]; then
+  export BATCH_JOB_METADATA_CLEANUP_SCHEDULE; yq -i '.batchJobRepository.metadataCleanupSchedule=env(BATCH_JOB_METADATA_CLEANUP_SCHEDULE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$BATCH_JOB_METADATA_RETENTION_PERIOD" ]]; then
+  export BATCH_JOB_METADATA_RETENTION_PERIOD; yq -i '.batchJobRepository.dataRetentionPeriodInDays=env(BATCH_JOB_METADATA_RETENTION_PERIOD)' $CONFIG_FILE
+fi
+
+
 replace_key_value cfClientConfig.apiKey "$CF_CLIENT_API_KEY"
 replace_key_value cfClientConfig.configUrl "$CF_CLIENT_CONFIG_URL"
 replace_key_value cfClientConfig.eventUrl "$CF_CLIENT_EVENT_URL"
@@ -349,3 +358,12 @@ replace_key_value clickHouseConfig.username "$CLICKHOUSE_USERNAME"
 replace_key_value clickHouseConfig.password "$CLICKHOUSE_PASSWORD"
 
 replace_key_value isClickHouseEnabled "$CLICKHOUSE_ENABLED"
+
+replace_key_value governanceConfig.useDkron "$GOVERNANCE_USE_DKRON"
+replace_key_value governanceConfig.callbackApiEndpoint "$GOVERNANCE_CALLBACK_API_ENDPOINT"
+replace_key_value governanceConfig.dkronJobEnabled "$GOVERNANCE_DKRON_JOB_ENABLED"
+replace_key_value governanceConfig.awsFaktoryJobType "$GOVERNANCE_AWS_FAKTORY_JOB_TYPE"
+replace_key_value governanceConfig.awsFaktoryQueueName "$GOVERNANCE_AWS_FAKTORY_QUEUE_NAME"
+replace_key_value governanceConfig.azureFaktoryJobType "$GOVERNANCE_AZURE_FAKTORY_JOB_TYPE"
+replace_key_value governanceConfig.azureFaktoryQueueName "$GOVERNANCE_AZURE_FAKTORY_QUEUE_NAME"
+replace_key_value governanceConfig.OOTBAccount "$GOVERNANCE_OOTB_ACCOUNT"

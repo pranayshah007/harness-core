@@ -893,22 +893,6 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
   @Test
   @Owner(developers = DEV_MITTAL)
   @Category(UnitTests.class)
-  public void testGetCompleteHarnessRepoName() {
-    NGTriggerEntity ngTriggerEntity =
-        NGTriggerEntity.builder().accountId("acc").orgIdentifier("org").projectIdentifier("proj").build();
-    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "repo")).isEqualTo("acc/org/proj/repo");
-    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "repo/")).isEqualTo("acc/org/proj/repo");
-    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "/repo/")).isEqualTo("acc/org/proj/repo");
-    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "proj/repo")).isEqualTo("acc/org/proj/repo");
-    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "proj/repo/")).isEqualTo("acc/org/proj/repo");
-    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "org/proj/repo")).isEqualTo("acc/org/proj/repo");
-    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "org/proj/repo/")).isEqualTo("acc/org/proj/repo");
-    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "/org/proj/repo")).isEqualTo("acc/org/proj/repo");
-  }
-
-  @Test
-  @Owner(developers = DEV_MITTAL)
-  @Category(UnitTests.class)
   public void testEvaluateWrapperForSCMConnector() {
     NGTriggerEntity ngTriggerEntity =
         NGTriggerEntity.builder().accountId("acc").orgIdentifier("org").projectIdentifier("proj").build();

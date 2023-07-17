@@ -53,6 +53,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
@@ -75,11 +76,12 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
   }
 
   public Optional<DataCollectionTask> getNextTask(String accountId, String dataCollectionWorkerId) {
+    Instant instant = clock.instant();
     Query<DataCollectionTask> query = hPersistence.createQuery(DataCollectionTask.class)
                                           .filter(DataCollectionTaskKeys.accountId, accountId)
                                           .filter(DataCollectionTaskKeys.dataCollectionWorkerId, dataCollectionWorkerId)
                                           .field(DataCollectionTaskKeys.validAfter)
-                                          .lessThanOrEq(clock.instant())
+                                          .lessThanOrEq(instant)
                                           .order(Sort.ascending(VerificationTaskBaseKeys.lastUpdatedAt));
     query.or(query.criteria(DataCollectionTaskKeys.status).equal(DataCollectionExecutionStatus.QUEUED),
         query.and(query.criteria(DataCollectionTaskKeys.status).equal(DataCollectionExecutionStatus.RUNNING),
@@ -95,11 +97,28 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
         hPersistence.createUpdateOperations(DataCollectionTask.class)
             .set(DataCollectionTaskKeys.status, DataCollectionExecutionStatus.RUNNING)
             .inc(DataCollectionTaskKeys.retryCount)
-            .set(DataCollectionTaskKeys.lastPickedAt, clock.instant())
+            .set(DataCollectionTaskKeys.lastPickedAt, instant)
             .set(VerificationTaskBaseKeys.lastUpdatedAt, clock.millis());
 
     DataCollectionTask task = hPersistence.findAndModify(query, updateOperations, new FindAndModifyOptions());
+    updateFirstPickedAt(accountId, dataCollectionWorkerId, instant, task);
     return Optional.ofNullable(task);
+  }
+
+  private void updateFirstPickedAt(
+      String accountId, String dataCollectionWorkerId, Instant instant, DataCollectionTask task) {
+    if (Objects.nonNull(task) && task.getFirstPickedAt() == null) {
+      Query<DataCollectionTask> updateTaskUUIDFilter =
+          hPersistence.createQuery(DataCollectionTask.class)
+              .filter(DataCollectionTaskKeys.accountId, accountId)
+              .filter(DataCollectionTaskKeys.dataCollectionWorkerId, dataCollectionWorkerId)
+              .filter(DataCollectionTaskKeys.status, DataCollectionExecutionStatus.RUNNING)
+              .filter(DataCollectionTaskKeys.uuid, task.getUuid());
+      UpdateOperations<DataCollectionTask> updateFirstPickedAt =
+          hPersistence.createUpdateOperations(DataCollectionTask.class)
+              .set(DataCollectionTaskKeys.firstPickedAt, instant);
+      hPersistence.update(updateTaskUUIDFilter, updateFirstPickedAt);
+    }
   }
 
   @Override
@@ -197,14 +216,16 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
         cvngLogTags.add(CVNGTaskMetadataUtils.getCvngLogTag(
             CVNGTaskMetadataConstants.RETRY_COUNT, String.valueOf(dataCollectionTask.getRetryCount())));
       }
-      if (dataCollectionTask.getLastPickedAt() != null) {
+      if (dataCollectionTask.getFirstPickedAt() != null) {
         cvngLogTags.addAll(CVNGTaskMetadataUtils.getTaskDurationTags(
             CVNGTaskMetadataUtils.DurationType.WAIT_DURATION, dataCollectionTask.waitTime()));
+      }
+      if (dataCollectionTask.getLastPickedAt() != null) {
         cvngLogTags.addAll(CVNGTaskMetadataUtils.getTaskDurationTags(
-            CVNGTaskMetadataUtils.DurationType.RUNNING_DURATION, dataCollectionTask.runningTime(Instant.now())));
+            CVNGTaskMetadataUtils.DurationType.RUNNING_DURATION, dataCollectionTask.runningTime(clock.instant())));
       } else {
         cvngLogTags.addAll(CVNGTaskMetadataUtils.getTaskDurationTags(
-            CVNGTaskMetadataUtils.DurationType.TOTAL_DURATION, dataCollectionTask.totalTime(Instant.now())));
+            CVNGTaskMetadataUtils.DurationType.TOTAL_DURATION, dataCollectionTask.totalTime(clock.instant())));
       }
     }
     cvngLogTags.addAll(CVNGTaskMetadataUtils.getDataCollectionMetadataTags(result));

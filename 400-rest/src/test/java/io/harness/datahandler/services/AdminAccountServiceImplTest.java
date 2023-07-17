@@ -10,10 +10,11 @@ package io.harness.datahandler.services;
 import static io.harness.rule.OwnerRule.HANTANG;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 
-import static software.wings.beans.AccountStatus.MARKED_FOR_DELETION;
-
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
@@ -48,7 +49,8 @@ public class AdminAccountServiceImplTest extends CategoryTest {
   @Owner(developers = VIKAS_M)
   @Category(UnitTests.class)
   public void deleteAccountShouldMarkTheAccountStatusDeleted() {
+    when(accountService.delete(any())).thenReturn(true);
     adminAccountService.delete(accountId);
-    verify(accountService).updateAccountStatus(eq(accountId), eq(MARKED_FOR_DELETION));
+    verify(accountService, times(1)).delete(accountId);
   }
 }

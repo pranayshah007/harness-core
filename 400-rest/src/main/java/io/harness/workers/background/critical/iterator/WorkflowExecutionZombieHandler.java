@@ -34,6 +34,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Sort;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -58,7 +59,7 @@ public class WorkflowExecutionZombieHandler implements MongoPersistenceIterator.
   @Inject private FeatureFlagService featureFlagService;
 
   public WorkflowExecutionZombieHandler() {
-    this.zombieStatus = ExecutionStatus.flowingStatuses();
+    this.zombieStatus = new HashSet<>(ExecutionStatus.flowingStatuses());
     this.zombieStatus.remove(ExecutionStatus.PAUSED);
   }
 

@@ -86,9 +86,9 @@ public class K8SLegacyReleaseHistory implements IK8sReleaseHistory {
   }
 
   @Override
-  public IK8sRelease getLatestSuccessfulBlueGreenRelease() {
+  public IK8sRelease getBlueGreenStageRelease() {
     if (isNotEmpty(releaseHistory.getReleases())) {
-      return releaseHistory.getLatestSuccessfulBlueGreenRelease();
+      return releaseHistory.getBlueGreenStageRelease();
     }
     return null;
   }

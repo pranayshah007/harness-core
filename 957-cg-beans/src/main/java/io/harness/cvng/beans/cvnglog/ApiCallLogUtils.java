@@ -48,4 +48,15 @@ public class ApiCallLogUtils {
     }
     return fieldType;
   }
+
+  public static boolean isFormEncoded(Request request) {
+    boolean isFormEncoded = false;
+    try {
+      String mediaType = Objects.requireNonNull(Objects.requireNonNull(request.body()).contentType()).toString();
+      isFormEncoded =
+          Pattern.compile(Pattern.quote("x-www-form-urlencoded"), Pattern.CASE_INSENSITIVE).matcher(mediaType).find();
+    } catch (Exception ignored) {
+    }
+    return isFormEncoded;
+  }
 }

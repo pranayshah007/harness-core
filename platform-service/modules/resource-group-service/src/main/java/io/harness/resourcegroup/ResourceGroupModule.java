@@ -18,6 +18,8 @@ import io.harness.ccm.ceviewfolder.CEViewFolderClient;
 import io.harness.ccm.ceviewfolder.CEViewFolderClientModule;
 import io.harness.ccm.governance.GovernanceRuleClient;
 import io.harness.ccm.governance.GovernanceRuleClientModule;
+import io.harness.code.CodeResourceClient;
+import io.harness.code.CodeResourceClientModule;
 import io.harness.connector.ConnectorResourceClient;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.delegate.DelegateServiceResourceClient;
@@ -119,6 +121,7 @@ public class ResourceGroupModule extends AbstractModule {
     requireBinding(GitopsResourceClient.class);
     requireBinding(EnvironmentGroupResourceClient.class);
     requireBinding(CEViewFolderClient.class);
+    requireBinding(CodeResourceClient.class);
     requireBinding(GovernanceRuleClient.class);
   }
 
@@ -165,6 +168,9 @@ public class ResourceGroupModule extends AbstractModule {
     install(new CEViewFolderClientModule(
         ServiceHttpClientConfig.builder().baseUrl(resourceClients.getCeNextGen().getBaseUrl()).build(),
         resourceClients.getCeNextGen().getSecret(), RESOUCE_GROUP_SERVICE.toString(), ClientMode.PRIVILEGED));
+    install(new CodeResourceClientModule(
+        ServiceHttpClientConfig.builder().baseUrl(resourceClients.getCode().getBaseUrl()).build(),
+        resourceClients.getCode().getSecret(), RESOUCE_GROUP_SERVICE.toString(), ClientMode.PRIVILEGED));
     install(new GovernanceRuleClientModule(
         ServiceHttpClientConfig.builder().baseUrl(resourceClients.getCeNextGen().getBaseUrl()).build(),
         resourceClients.getCeNextGen().getSecret(), RESOUCE_GROUP_SERVICE.toString(), ClientMode.PRIVILEGED));

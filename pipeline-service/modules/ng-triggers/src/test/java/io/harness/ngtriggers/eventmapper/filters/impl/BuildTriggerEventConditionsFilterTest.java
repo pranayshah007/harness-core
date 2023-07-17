@@ -8,6 +8,7 @@
 package io.harness.ngtriggers.eventmapper.filters.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.TRIGGER_DID_NOT_MATCH_EVENT_CONDITION;
 import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static java.util.Arrays.asList;
@@ -151,6 +152,7 @@ public class BuildTriggerEventConditionsFilterTest extends CategoryTest {
                     .accountId("acc")
                     .orgIdentifier("org")
                     .projectIdentifier("proj")
+                    .identifier("first_trigger")
                     .metadata(NGTriggerMetadata.builder()
                                   .webhook(WebhookMetadata.builder()
                                                .type("GITHUB")
@@ -189,6 +191,13 @@ public class BuildTriggerEventConditionsFilterTest extends CategoryTest {
     assertThat(webhookEventMappingResponse.getWebhookEventResponse().getMessage())
         .isEqualTo("No Trigger matched conditions for payload event for Event: BuildTrigger");
     assertThat(webhookEventMappingResponse.isFailedToFindTrigger()).isTrue();
+    assertThat(
+        webhookEventMappingResponse.getUnMatchedTriggerInfoList().get(0).getUnMatchedTriggers().getNgTriggerConfigV2())
+        .isEqualTo(ngTriggerConfigV2);
+    assertThat(webhookEventMappingResponse.getUnMatchedTriggerInfoList().get(0).getFinalStatus())
+        .isEqualTo(TRIGGER_DID_NOT_MATCH_EVENT_CONDITION);
+    assertThat(webhookEventMappingResponse.getUnMatchedTriggerInfoList().get(0).getMessage())
+        .isEqualTo("first_trigger didn't match conditions for payload event");
   }
 
   @Test
