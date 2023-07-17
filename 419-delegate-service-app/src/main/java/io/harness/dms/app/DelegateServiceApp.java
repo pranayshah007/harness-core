@@ -106,9 +106,8 @@ public class DelegateServiceApp extends Application<DelegateServiceConfiguration
     if (isNotEmpty(configuration.getMongoConfig().getUri())) {
       mongoPersistence.register(Store.builder().name(DMS).build(), configuration.getMongoConfig().getUri());
     }
-    if (isNotEmpty(configuration.getMongoConnectionFactory().getUri())) {
-      mongoPersistence.register(
-          Store.builder().name(HARNESS).build(), configuration.getMongoConnectionFactory().getUri());
+    if (isNotEmpty(configuration.getManagerMongoConfig().getUri())) {
+      mongoPersistence.register(Store.builder().name(HARNESS).build(), configuration.getManagerMongoConfig().getUri());
     }
   }
 

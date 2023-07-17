@@ -1023,9 +1023,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         return DelegateTaskPackage.builder().build();
       }
 
-      String taskType = delegateTask.getData() != null ? delegateTask.getData().getTaskType()
-                                                       : delegateTask.getTaskDataV2().getTaskType();
-
       try (AutoLogContext ignore = DelegateLogContextHelper.getLogContext(delegateTask)) {
         if (assignDelegateService.shouldValidate(delegateTask, delegateId)) {
           setValidationStarted(delegateId, delegateTask);
@@ -1618,7 +1615,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     task.getData().setParameters(delegateTask.getData().getParameters());
     log.info("Returning previously assigned task to delegate");
     return buildDelegateTaskPackage(task);
-    // return resolvePreAssignmentExpressions(task, SecretManagerMode.APPLY);
   }
 
   @Override

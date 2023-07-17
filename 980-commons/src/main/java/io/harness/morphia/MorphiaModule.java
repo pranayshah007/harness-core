@@ -78,7 +78,6 @@ public class MorphiaModule extends AbstractModule {
     Set<Class> classes = ConcurrentHashMap.newKeySet();
     registrars.forEach(registrar -> {
       try {
-        log.info("Name of registrar is {}", registrar.getName());
         Constructor<?> constructor = registrar.getConstructor();
         final MorphiaRegistrar morphiaRegistrar = (MorphiaRegistrar) constructor.newInstance();
         morphiaRegistrar.registerClasses(classes);
@@ -86,8 +85,6 @@ public class MorphiaModule extends AbstractModule {
         throw new GeneralException("Failed initializing morphia", e);
       }
     });
-    //  classes.forEach(clazz -> System.out.println(clazz.getName()));
-
     if (dbAliases.isEmpty()) {
       return classes;
     }
@@ -162,10 +159,8 @@ public class MorphiaModule extends AbstractModule {
     }
     morphia.map(classesCopy);
 
-    morphiaConverters.forEach(converter -> {
-      System.out.println(converter.getName());
-      morphia.getMapper().getConverters().addConverter(injector.getInstance(converter));
-    });
+    morphiaConverters.forEach(
+        converter -> { morphia.getMapper().getConverters().addConverter(injector.getInstance(converter)); });
     return morphia;
   }
 

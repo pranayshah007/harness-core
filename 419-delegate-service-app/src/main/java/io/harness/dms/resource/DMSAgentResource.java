@@ -54,7 +54,6 @@ public class DMSAgentResource {
     try (AutoLogContext ignore1 = new TaskLogContext(taskId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore3 = new DelegateLogContext(accountId, delegateId, delegateInstanceId, OVERRIDE_ERROR)) {
-      log.info("Received call inside DMS from Delegate");
       return dmsTaskServiceClassic.acquireDelegateTask(accountId, delegateId, taskId, delegateInstanceId);
     }
   }

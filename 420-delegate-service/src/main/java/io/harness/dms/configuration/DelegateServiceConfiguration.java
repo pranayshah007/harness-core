@@ -43,7 +43,7 @@ public class DelegateServiceConfiguration extends Configuration {
   @JsonProperty("commonPoolConfig") private ThreadPoolConfig commonPoolConfig;
   @JsonProperty("agentMtlsSubdomain") private String agentMtlsSubdomain;
   @JsonProperty("mongo") @ConfigSecret private MongoConfig mongoConfig = MongoConfig.builder().build();
-  @JsonProperty("manager-mongo") @ConfigSecret MongoConfig mongoConnectionFactory = MongoConfig.builder().build();
+  @JsonProperty("manager-mongo") @ConfigSecret MongoConfig managerMongoConfig = MongoConfig.builder().build();
 
   @JsonProperty("cacheConfig") private CacheConfig cacheConfig;
   @JsonProperty("managerServiceSecret") @ConfigSecret private String managerConfigSecret;
@@ -81,8 +81,8 @@ public class DelegateServiceConfiguration extends Configuration {
     if (mongoConfig != null) {
       dbAliases.add(mongoConfig.getAliasDBName());
     }
-    if (mongoConnectionFactory != null) {
-      dbAliases.add(mongoConnectionFactory.getAliasDBName());
+    if (managerMongoConfig != null) {
+      dbAliases.add(managerMongoConfig.getAliasDBName());
     }
     return dbAliases;
   }

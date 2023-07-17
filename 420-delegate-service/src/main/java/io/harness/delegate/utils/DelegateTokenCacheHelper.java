@@ -40,7 +40,7 @@ public class DelegateTokenCacheHelper {
     if (delegateId != null && delegateTokenCache != null) {
       return delegateTokenCache.getIfPresent(delegateId);
     }
-    log.info(
+    log.debug(
         "Not able to get delegateToken from cache, either delegateId is null or delegateTokenCache is null. Value of delegateId {}",
         delegateId);
     return null;

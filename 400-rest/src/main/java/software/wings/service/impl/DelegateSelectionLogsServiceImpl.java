@@ -290,31 +290,11 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
   @Override
   public Optional<DelegateSelectionLogParams> fetchSelectedDelegateForTask(String accountId, String taskId) {
     DelegateSelectionLog delegateSelectionLog = null;
-    if (false) {
-      List<DelegateSelectionLog> logs =
-          dataStoreService
-              .list(DelegateSelectionLog.class,
-                  aPageRequest()
-                      .withLimit(UNLIMITED)
-                      .addFilter(DelegateSelectionLogKeys.accountId, SearchFilter.Operator.EQ, accountId)
-                      .addFilter(DelegateSelectionLogKeys.taskId, SearchFilter.Operator.EQ, taskId)
-                      .addFilter(DelegateSelectionLogKeys.conclusion, SearchFilter.Operator.EQ, ASSIGNED)
-                      .build(),
-                  false)
-              .getResponse();
-      if (isNotEmpty(logs)) {
-        delegateSelectionLog = logs.stream()
-                                   .filter(selectionLog -> ASSIGNED.equals(selectionLog.getConclusion()))
-                                   .findFirst()
-                                   .orElse(null);
-      }
-    } else {
-      delegateSelectionLog = persistence.createQuery(DelegateSelectionLog.class)
-                                 .filter(DelegateSelectionLogKeys.accountId, accountId)
-                                 .filter(DelegateSelectionLogKeys.taskId, taskId)
-                                 .filter(DelegateSelectionLogKeys.conclusion, ASSIGNED)
-                                 .get();
-    }
+    delegateSelectionLog = persistence.createQuery(DelegateSelectionLog.class)
+                               .filter(DelegateSelectionLogKeys.accountId, accountId)
+                               .filter(DelegateSelectionLogKeys.taskId, taskId)
+                               .filter(DelegateSelectionLogKeys.conclusion, ASSIGNED)
+                               .get();
     if (delegateSelectionLog == null) {
       log.warn("Delegate selection log is null, returning empty optional for taskId {}", taskId);
       return Optional.empty();
