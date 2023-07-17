@@ -76,9 +76,8 @@ public class CVNGDataCollectionDelegateServiceImpl implements CVNGDataCollection
                                                         .build();
         dataCollectionDSLService.registerDatacollectionExecutorService(cvngSyncCallExecutor);
         log.info("Starting execution of DSL ");
-        Consumer<CallDetails> callDetailsConsumer = getCallDetailsConsumer(accountId, dataCollectionRequest, now);
-        String response =
-            JsonUtils.asJson(dataCollectionDSLService.execute(dsl, runtimeParameters, callDetailsConsumer));
+        Consumer<CallDetails> callDetailsLogger = getCallDetailsLogger(accountId, dataCollectionRequest, now);
+        String response = JsonUtils.asJson(dataCollectionDSLService.execute(dsl, runtimeParameters, callDetailsLogger));
         log.info("Returning DSL result of length : " + response.length());
         return response;
       } catch (Exception exception) {
@@ -114,7 +113,7 @@ public class CVNGDataCollectionDelegateServiceImpl implements CVNGDataCollection
     }
   }
 
-  private Consumer<CallDetails> getCallDetailsConsumer(
+  private Consumer<CallDetails> getCallDetailsLogger(
       String accountId, DataCollectionRequest dataCollectionRequest, Instant now) {
     return callDetails -> {
       // TODO: write unit test case for this lambda expression.
