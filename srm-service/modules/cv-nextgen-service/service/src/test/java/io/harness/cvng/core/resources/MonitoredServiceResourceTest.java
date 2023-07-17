@@ -1397,7 +1397,7 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
     Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).get();
     assertThat(response.getStatus()).isEqualTo(500);
     assertThat(response.readEntity(String.class))
-        .contains("Start time and endTime should have atleast 5 minutes difference");
+        .contains("Start time and endTime should have at least 5 minutes difference");
   }
   @Test
   @Owner(developers = VARSHA_LALWANI)

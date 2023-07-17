@@ -123,6 +123,8 @@ public class AccessControlConfiguration extends Configuration {
   @JsonProperty("cfClientConfig") @ConfigSecret private CfClientConfig cfClientConfig;
   @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
   @JsonProperty("disableRedundantACLs") private boolean disableRedundantACLs;
+  @JsonProperty("enableParallelProcessingOfUserGroupUpdates")
+  private boolean enableParallelProcessingOfUserGroupUpdates;
 
   public static final Collection<Class<?>> ALL_ACCESS_CONTROL_RESOURCES = getResourceClasses();
 

@@ -100,6 +100,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import javax.validation.executable.ValidateOnExecution;
@@ -131,6 +132,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
   @Inject private SSOServiceHelper ssoServiceHelper;
   @Inject private FeatureFlagService featureFlagService;
   @Inject private OutboxService outboxService;
+  @Inject private ExecutorService executorService;
   @Inject @Named("PRIVILEGED") private UserGroupClient userGroupClient;
   static final int ONE_DAY = 86400000;
 
@@ -593,7 +595,10 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     settings.getConnectionSettings().setEncryptedBindSecret(
         oldSettings.getConnectionSettings().getEncryptedBindSecret());
     oldSettings.getConnectionSettings().setAccountId(settings.getAccountId());
-    oldSettings.getConnectionSettings().setDelegateSelectors(settings.getConnectionSettings().getDelegateSelectors());
+    if (null == settings.getConnectionSettings().getDelegateSelectors()) {
+      // setting to old value when new value comes as null, this happens from CG UI
+      settings.getConnectionSettings().setDelegateSelectors(oldSettings.getConnectionSettings().getDelegateSelectors());
+    }
     oldSettings.setUrl(settings.getUrl());
     oldSettings.setDisplayName(settings.getDisplayName());
     oldSettings.setConnectionSettings(settings.getConnectionSettings());
@@ -612,7 +617,8 @@ public class SSOSettingServiceImpl implements SSOSettingService {
         settings.getAccountId(), oldSettings, savedSettings, Event.Type.UPDATE);
     ngAuditLoginSettingsForLdapUpdate(settings.getAccountId(), currentLdapSettings, savedSettings);
     log.info("Auditing updation of LDAP for account={}", savedSettings.getAccountId());
-    ldapGroupScheduledHandler.handle(savedSettings);
+    // handle in async manner
+    executorService.submit(() -> ldapGroupScheduledHandler.handle(savedSettings));
     return savedSettings;
   }
 

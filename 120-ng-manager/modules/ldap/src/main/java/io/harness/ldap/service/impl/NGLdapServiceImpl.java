@@ -65,6 +65,7 @@ import software.wings.beans.sso.LdapTestResponse;
 import software.wings.helpers.ext.ldap.LdapConstants;
 import software.wings.helpers.ext.ldap.LdapResponse;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
@@ -418,7 +419,8 @@ public class NGLdapServiceImpl implements NGLdapService {
     return abstractions;
   }
 
-  private Duration getLdapDelegateTaskResponseTimeout(
+  @VisibleForTesting
+  Duration getLdapDelegateTaskResponseTimeout(
       int responseTimeout, final String taskType, final String accountIdentifier) {
     Duration duration;
     if (responseTimeout < LDAP_TASK_DEFAULT_MINIMUM_TIMEOUT_MILLIS) {

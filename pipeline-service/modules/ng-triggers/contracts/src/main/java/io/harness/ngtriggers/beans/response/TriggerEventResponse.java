@@ -29,6 +29,9 @@ public class TriggerEventResponse {
   public enum FinalStatus {
     SCM_SERVICE_CONNECTION_FAILED("Scm service connection failed"),
     INVALID_PAYLOAD("Invalid payload"),
+    TRIGGER_DID_NOT_MATCH_EVENT_CONDITION("Trigger did not match event condition"),
+    TRIGGER_DID_NOT_MATCH_METADATA_CONDITION("Trigger did not match metadata condition"),
+    TRIGGER_DID_NOT_MATCH_ARTIFACT_JEXL_CONDITION("Trigger did not match artifact jexl condition"),
     NO_MATCHING_TRIGGER_FOR_REPO("No matching trigger for repo"),
     NO_MATCHING_TRIGGER_FOR_EVENT_ACTION("No matching trigger for event action"),
     NO_MATCHING_TRIGGER_FOR_METADATA_CONDITIONS("No matching trigger for metadata conditions"),

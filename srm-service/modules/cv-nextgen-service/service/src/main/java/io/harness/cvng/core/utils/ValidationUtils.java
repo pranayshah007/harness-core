@@ -34,7 +34,7 @@ public class ValidationUtils {
   public static Instant validateTheDifferenceBetweenStartAndEndTimeAndGetStartTime(
       DurationDTO durationDTO, Long startTime, Long endTime, Duration minDurationDifference) {
     Instant startTimeInstant = getStartTimeInstant(durationDTO, startTime, endTime);
-    Duration duration = Duration.ofSeconds(endTime - startTimeInstant.getEpochSecond());
+    Duration duration = Duration.ofMillis(endTime - startTimeInstant.toEpochMilli());
     if (duration.toSeconds() < minDurationDifference.toSeconds()) {
       throw new InvalidRequestException("Start time and endTime should have at least 5 minutes difference");
     }

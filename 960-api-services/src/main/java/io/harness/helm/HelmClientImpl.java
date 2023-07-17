@@ -620,7 +620,11 @@ public class HelmClientImpl implements HelmClient {
     @Getter private String output;
     @Override
     protected void processLine(String s) {
-      output = s;
+      if (isEmpty(output)) {
+        output = "\n" + s;
+      } else {
+        output = output + "\n" + s;
+      }
       logCallback.saveExecutionLog(s, ERROR);
     }
   }
@@ -629,7 +633,11 @@ public class HelmClientImpl implements HelmClient {
     @Getter private String output;
     @Override
     protected void processLine(String s) {
-      output = s;
+      if (isEmpty(output)) {
+        output = "\n" + s;
+      } else {
+        output = output + "\n" + s;
+      }
       log.error(s);
     }
   }

@@ -20,8 +20,6 @@ import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.apache.commons.lang3.StringUtils.stripEnd;
-import static org.apache.commons.lang3.StringUtils.stripStart;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -265,7 +263,8 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
       }
 
       if (StringUtil.isBlank(webhook.getGit().getConnectorIdentifier())) {
-        String completeHarnessRepoName = getCompleteHarnessRepoName(ngTriggerEntity, webhook.getGit().getRepoName());
+        String completeHarnessRepoName = GitClientHelper.convertToHarnessRepoName(ngTriggerEntity.getAccountId(),
+            ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(), webhook.getGit().getRepoName());
         String finalUrl =
             urls.stream().filter(u -> u.contains(completeHarnessRepoName.toLowerCase())).findAny().orElse(null);
 
@@ -298,24 +297,6 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
     }
 
     return modifiedUrl;
-  }
-
-  public String getCompleteHarnessRepoName(NGTriggerEntity ngTriggerEntity, String repo) {
-    if (repo.startsWith("http")) {
-      String harnessRepoName = gitClientHelper.getHarnessRepoName(repo);
-      return harnessRepoName.substring(0, harnessRepoName.length() - 2);
-    }
-    repo = stripStart(repo, "/");
-    repo = stripEnd(repo, "/");
-    String parts[] = repo.split("/");
-    if (parts.length == 3) {
-      return ngTriggerEntity.getAccountId() + "/" + repo;
-    } else if (parts.length == 2) {
-      return ngTriggerEntity.getAccountId() + "/" + ngTriggerEntity.getOrgIdentifier() + "/" + repo;
-    } else {
-      return ngTriggerEntity.getAccountId() + "/" + ngTriggerEntity.getOrgIdentifier() + "/"
-          + ngTriggerEntity.getProjectIdentifier() + "/" + repo;
-    }
   }
 
   @VisibleForTesting

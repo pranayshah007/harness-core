@@ -325,7 +325,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
       CfRequestConfig cfRequestConfig, LogCallback logCallback, File workingDirectory, int timeoutInMins)
       throws PivotalClientApiException {
     ApplicationSummary currentActiveApplication =
-        pcfCommandTaskBaseHelper.findCurrentActiveApplication(previousReleases, cfRequestConfig, logCallback);
+        pcfCommandTaskBaseHelper.findCurrentActiveApplicationNG(previousReleases, cfRequestConfig, logCallback);
     if (currentActiveApplication == null) {
       return null;
     }
@@ -356,6 +356,9 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
   private TasApplicationInfo getInActiveApplicationInfo(TasApplicationInfo activeApplicationInfo,
       List<ApplicationSummary> previousReleases, CfRequestConfig cfRequestConfig, LogCallback logCallback,
       File workingDirectory, int timeoutInMins) throws PivotalClientApiException {
+    if (activeApplicationInfo == null) {
+      return null;
+    }
     ApplicationSummary inActiveApplication =
         findCurrentInActiveApplication(activeApplicationInfo, previousReleases, cfRequestConfig, logCallback);
     if (inActiveApplication == null) {
@@ -451,7 +454,17 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
   void deleteOlderApplications(List<ApplicationSummary> previousReleases, CfRequestConfig cfRequestConfig,
       CfBlueGreenSetupRequestNG setupRequestNG, CfAppAutoscalarRequestData appAutoscalarRequestData,
       LogCallback logCallback, TasApplicationInfo currentProdInfo, TasApplicationInfo inActiveApplicationInfo) {
-    if (isEmpty(previousReleases) || previousReleases.size() == 1) {
+    if (isEmpty(previousReleases)) {
+      return;
+    }
+    if (previousReleases.size() == 1) {
+      ApplicationSummary applicationSummary = previousReleases.get(0);
+      if (PcfConstants.isInterimApp(applicationSummary.getName())) {
+        logCallback.saveExecutionLog(
+            "# Deleting previous deployment interim app: " + encodeColor(applicationSummary.getName()));
+        deleteApplication(applicationSummary, cfRequestConfig, logCallback);
+        previousReleases.remove(applicationSummary);
+      }
       return;
     }
 

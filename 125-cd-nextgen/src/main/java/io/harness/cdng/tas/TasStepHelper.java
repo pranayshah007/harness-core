@@ -180,7 +180,6 @@ import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
-import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.yaml.ParameterField;
@@ -238,7 +237,6 @@ public class TasStepHelper {
   @Inject private StepHelper stepHelper;
   @Inject private StageExecutionInfoService stageExecutionInfoService;
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
-  @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
   private static final Splitter lineSplitter = Splitter.onPattern("\\r?\\n").trimResults().omitEmptyStrings();
 
@@ -322,7 +320,7 @@ public class TasStepHelper {
     String rawScript = removeCommentedLineFromScript(scriptString);
     String repoRoot = "/";
 
-    TasStepPassThroughData tasStepPassThroughData = null;
+    TasStepPassThroughData tasStepPassThroughData;
     OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.MANIFESTS));
     if (optionalOutcome.isFound()) {
@@ -543,12 +541,12 @@ public class TasStepHelper {
     }
   }
 
-  List<String> findPathFromScript(String rendredScript, String repoRoot) {
+  List<String> findPathFromScript(String rendredscript, String repoRoot) {
     final Set<String> finalPathLists = new HashSet<>();
     final List<String> repoRootPrefixPathList =
-        findPathFromScript(rendredScript, PATH_REGEX_REPO_ROOT_PATTERN, FILE_START_REPO_ROOT_REGEX, FILE_END_REGEX);
+        findPathFromScript(rendredscript, PATH_REGEX_REPO_ROOT_PATTERN, FILE_START_REPO_ROOT_REGEX, FILE_END_REGEX);
     List<String> serviceManifestPrefixPathList = findPathFromScript(
-        rendredScript, FILE_START_SERVICE_MANIFEST_PATTERN, FILE_START_SERVICE_MANIFEST_REGEX, FILE_END_REGEX);
+        rendredscript, FILE_START_SERVICE_MANIFEST_PATTERN, FILE_START_SERVICE_MANIFEST_REGEX, FILE_END_REGEX);
 
     if (!(isEmpty(repoRoot) || "/".equals(repoRoot))) {
       serviceManifestPrefixPathList = serviceManifestPrefixPathList.stream()
@@ -1617,6 +1615,33 @@ public class TasStepHelper {
     return name;
   }
 
+  List<Map<String, String>> finalizeRouteSubstitution(TasManifestsPackage tasManifestsPackage, Object routeMaps) {
+    if (!(routeMaps instanceof String)) {
+      return (List<Map<String, String>>) routeMaps;
+    }
+    String routes = routeMaps.toString().trim();
+    if (routes.startsWith("((") && routes.endsWith("))")) {
+      if (isEmpty(tasManifestsPackage.getVariableYmls())) {
+        throw new InvalidRequestException(
+            "No Valid Variable file Found, please verify var file is present and has valid structure");
+      }
+      String varName;
+      Matcher m = Pattern.compile("\\(\\(([^)]+)\\)\\)").matcher(routes);
+      List<String> varFiles = tasManifestsPackage.getVariableYmls();
+      while (m.find()) {
+        varName = m.group(1);
+        for (int i = varFiles.size() - 1; i >= 0; i--) {
+          Object value = getVariableValue(varFiles.get(i), varName);
+          if (value != null) {
+            return (List<Map<String, String>>) value;
+          }
+        }
+      }
+    }
+    throw new InvalidRequestException(
+        format("Invalid format of routes, provided in the manifest, please provide correct format: %s", routeMaps));
+  }
+
   @VisibleForTesting
   Map<String, Object> getApplicationYamlMap(String applicationManifestYmlContent) {
     Map<String, Object> yamlMap;
@@ -1709,8 +1734,8 @@ public class TasStepHelper {
     return maxCount;
   }
 
-  public List<String> getRouteMaps(String applicationManifestYmlContent, List<String> additionalRoutesFromStep) {
-    Map<String, Object> applicationConfigMap = getApplicationYamlMap(applicationManifestYmlContent);
+  public List<String> getRouteMaps(TasManifestsPackage tasManifestsPackage, List<String> additionalRoutesFromStep) {
+    Map<String, Object> applicationConfigMap = getApplicationYamlMap(tasManifestsPackage.getManifestYml());
     if (applicationConfigMap.containsKey(NO_ROUTE_MANIFEST_YML_ELEMENT)
         && (boolean) applicationConfigMap.get(NO_ROUTE_MANIFEST_YML_ELEMENT)) {
       return emptyList();
@@ -1720,13 +1745,12 @@ public class TasStepHelper {
     try {
       Object routeMaps = applicationConfigMap.get(ROUTES_MANIFEST_YML_ELEMENT);
       if (routeMaps != null) {
-        allRoutes.addAll(((List<Map<String, String>>) routeMaps)
-                             .stream()
-                             .map(route -> route.get(ROUTE_MANIFEST_YML_ELEMENT))
-                             .collect(Collectors.toList()));
+        List<Map<String, String>> routeList = finalizeRouteSubstitution(tasManifestsPackage, routeMaps);
+        allRoutes.addAll(
+            routeList.stream().map(route -> route.get(ROUTE_MANIFEST_YML_ELEMENT)).collect(Collectors.toList()));
       }
     } catch (Exception e) {
-      throw new InvalidRequestException("Invalid Route Format In Manifest");
+      throw new InvalidRequestException(format("Invalid Route Format In Manifest: %s", e.getMessage()));
     }
     if (!isNull(additionalRoutesFromStep)) {
       allRoutes.addAll(additionalRoutesFromStep);

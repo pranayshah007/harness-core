@@ -140,6 +140,7 @@ public class GovernanceRecommendationService {
                                            .targetAccountId(ceAwsConnectorDTO.getAwsAccountId())
                                            .roleArn(ceAwsConnectorDTO.getCrossAccountAccess().getCrossAccountRoleArn())
                                            .externalId(ceAwsConnectorDTO.getCrossAccountAccess().getExternalId())
+                                           .cloudConnectorId(connectorInfoDTO.getIdentifier())
                                            .build());
       } else if (ruleCloudProviderType == RuleCloudProviderType.AZURE) {
         CEAzureConnectorDTO ceAzureConnectorDTO = (CEAzureConnectorDTO) connectorInfoDTO.getConnectorConfig();
@@ -147,6 +148,7 @@ public class GovernanceRecommendationService {
         recommendationAdhocDTOList.add(AzureRecommendationAdhocDTO.builder()
                                            .tenantId(ceAzureConnectorDTO.getTenantId())
                                            .subscriptionId(ceAzureConnectorDTO.getSubscriptionId())
+                                           .cloudConnectorId(connectorInfoDTO.getIdentifier())
                                            .build());
       }
     }

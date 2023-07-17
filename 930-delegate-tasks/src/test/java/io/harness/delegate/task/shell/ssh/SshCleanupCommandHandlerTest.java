@@ -86,6 +86,7 @@ public class SshCleanupCommandHandlerTest extends CategoryTest {
     doReturn(scriptSshExecutor).when(sshScriptExecutorFactory).getExecutor(any());
     when(scriptSshExecutor.executeCommandString("rm -rf /tmp/testExecution"))
         .thenReturn(CommandExecutionStatus.SUCCESS);
+    when(scriptSshExecutor.getLogCallback()).thenReturn(logCallback);
 
     CommandExecutionStatus status =
         sshCleanupCommandHandler

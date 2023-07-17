@@ -50,6 +50,7 @@ import io.harness.beans.steps.stepinfo.security.shared.STOYamlInstance;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlJavaParameters;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlLog;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlMendToolData;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlSBOM;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlSonarqubeToolData;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlTarget;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlVeracodeToolData;
@@ -62,6 +63,7 @@ import io.harness.yaml.sto.variables.STOYamlGenericConfig;
 import io.harness.yaml.sto.variables.STOYamlImageType;
 import io.harness.yaml.sto.variables.STOYamlLogLevel;
 import io.harness.yaml.sto.variables.STOYamlLogSerializer;
+import io.harness.yaml.sto.variables.STOYamlSBOMFormat;
 import io.harness.yaml.sto.variables.STOYamlScanMode;
 import io.harness.yaml.sto.variables.STOYamlTargetType;
 
@@ -197,6 +199,21 @@ public final class STOSettingsUtils {
           resolveStringParameter("auth.region", stepType, identifier, authData.getRegion(), false));
     }
 
+    return map;
+  }
+
+  private static Map<String, String> processSTOSBOMFields(STOYamlSBOM sbom) {
+    Map<String, String> map = new HashMap<>();
+
+    if (sbom != null) {
+      Boolean sbomGenerate = resolveBooleanParameter(sbom.getGenerate(), Boolean.FALSE);
+      map.put(getSTOKey("generate_sbom"), String.valueOf(sbomGenerate));
+
+      ParameterField<STOYamlSBOMFormat> sbomFormat = sbom.getFormat();
+
+      map.put(getSTOKey("sbom_type"),
+          sbomFormat != null ? sbomFormat.fetchFinalValue().toString() : STOYamlSBOMFormat.SPDX.toString());
+    }
     return map;
   }
 
@@ -338,6 +355,7 @@ public final class STOSettingsUtils {
 
     map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepInfo.getTarget(), stepType, identifier));
     map.putAll(processSTOImageFields(stepInfo.getImage(), stepType, identifier));
+    map.putAll(processSTOSBOMFields(stepInfo.getSbom()));
 
     STOYamlBlackduckToolData toolData = stepInfo.getTool();
 

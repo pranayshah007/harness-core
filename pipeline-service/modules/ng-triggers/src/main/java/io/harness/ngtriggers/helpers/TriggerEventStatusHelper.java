@@ -20,12 +20,12 @@ public class TriggerEventStatusHelper {
     if (!isSuccessResponse(finalStatus)) {
       if (finalStatus != null) {
         return TriggerEventStatus.builder()
-            .status(TriggerEventStatus.FinalResponse.FAILURE)
+            .status(TriggerEventStatus.FinalResponse.FAILED)
             .message(finalStatus.getMessage())
             .build();
       } else {
         return TriggerEventStatus.builder()
-            .status(TriggerEventStatus.FinalResponse.FAILURE)
+            .status(TriggerEventStatus.FinalResponse.FAILED)
             .message("Unknown status")
             .build();
       }

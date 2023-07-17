@@ -163,6 +163,9 @@ public class PMSInputSetFilterHelper {
     if (isNotEmpty(updateGitDetailsParams.getFilePath())) {
       update.set(InputSetEntityKeys.filePath, updateGitDetailsParams.getFilePath());
     }
+    if (!update.getUpdateObject().isEmpty()) {
+      update.set(InputSetEntityKeys.lastUpdatedAt, System.currentTimeMillis());
+    }
     return update;
   }
 }
