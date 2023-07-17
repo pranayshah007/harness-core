@@ -18,7 +18,6 @@ import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.GrafanaLokiLogDataCollectionInfo;
 import io.harness.cvng.beans.grafanaloki.GrafanaLokiLogSampleDataRequest;
 import io.harness.cvng.core.services.impl.DataCollectionDSLFactory;
-import io.harness.cvng.core.services.impl.MetricPackServiceImpl;
 import io.harness.datacollection.DataCollectionDSLService;
 import io.harness.datacollection.entity.CallDetails;
 import io.harness.datacollection.entity.LogDataRecord;
@@ -60,7 +59,8 @@ public class GrafanaLokiLogDSLTest extends HoverflyTestBase {
   @Category(UnitTests.class)
   @Ignore("Hoverfly is not capturing data and failing in SIMULATE mode.")
   public void testExecute_GrafanaLokiLogDsl_getSampleData() {
-    String sampleDataRequestDSL = MetricPackServiceImpl.GRAFANA_LOKI_LOG_SAMPLE_DATA_DSL;
+    String sampleDataRequestDSL =
+        DataCollectionDSLFactory.readDSL(DataSourceType.GRAFANA_LOKI_LOGS).getSampleDataCollectionDSL();
     GrafanaLokiLogSampleDataRequest grafanaLokiLogSampleDataRequest =
         GrafanaLokiLogSampleDataRequest.builder()
             .query(encodedQuery)
@@ -89,7 +89,8 @@ public class GrafanaLokiLogDSLTest extends HoverflyTestBase {
   @Category(UnitTests.class)
   @Ignore("Hoverfly is not capturing data and failing in SIMULATE mode.")
   public void testExecute_GrafanaLokiLogDsl_getLogRecords() {
-    String dataCollectionDsl = DataCollectionDSLFactory.readLogDSL(DataSourceType.GRAFANA_LOKI_LOGS);
+    String dataCollectionDsl =
+        DataCollectionDSLFactory.readDSL(DataSourceType.GRAFANA_LOKI_LOGS).getActualDataCollectionDSL();
     GrafanaLokiLogDataCollectionInfo grafanaLokiLogDataCollectionInfo = GrafanaLokiLogDataCollectionInfo.builder()
                                                                             .urlEncodedQuery(encodedQuery)
                                                                             .serviceInstanceIdentifier("job")

@@ -24,7 +24,7 @@ import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.CloudWatchMet
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.MetricResponseMapping;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.CloudWatchMetricCVConfig;
-import io.harness.cvng.core.services.impl.datacollectioninfomapper.CloudWatchMetricDataCollectionInfoMapper;
+import io.harness.cvng.core.services.impl.mapper.CloudWatchMetricDataCollectionInfoMapper;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;

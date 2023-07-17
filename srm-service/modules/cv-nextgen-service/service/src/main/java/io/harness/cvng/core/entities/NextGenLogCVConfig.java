@@ -56,7 +56,7 @@ public class NextGenLogCVConfig extends LogCVConfig {
 
   @Override
   public String getDataCollectionDsl() {
-    return DataCollectionDSLFactory.readLogDSL(dataSourceType);
+    return DataCollectionDSLFactory.readDSL(dataSourceType).getActualDataCollectionDSL();
   }
 
   @JsonIgnore

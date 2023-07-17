@@ -17,7 +17,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cvng.beans.SplunkDataCollectionInfo;
 import io.harness.cvng.core.entities.SplunkCVConfig;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
-import io.harness.cvng.core.services.impl.datacollectioninfomapper.SplunkDataCollectionInfoMapper;
+import io.harness.cvng.core.services.impl.mapper.SplunkDataCollectionInfoMapper;
 import io.harness.cvng.models.VerificationType;
 import io.harness.rule.Owner;
 

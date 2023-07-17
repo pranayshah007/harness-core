@@ -17,38 +17,66 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@UtilityClass
 public class DataCollectionDSLFactory {
-  private static final String SUMOLOGIC_LOG_DATACOLLECTION_FILE = "sumologic-log.datacollection";
-  private static final String ELK_LOG_DATACOLLECTION_FILE = "elk-log-fetch-data.datacollection";
-  private static final String GRAFANA_LOKI_LOG_DATACOLLECTION_FILE = "grafana-loki-log-fetch-data.datacollection";
-  private static final String PROMETHEUS_METRIC_DATACOLLECTION_FILE = "prometheus-v2-dsl-metric.datacollection";
-  private static final String DATADOG_METRIC_DATACOLLECTION_FILE = "datadog-v2-dsl-metric.datacollection";
-  private static final String AZURE_LOGS_DATACOLLECTION_FILE = "azure-logs-fetch-data.datacollection";
-  private static final Map<DataSourceType, String> dataSourceTypeToDslScriptMap = new HashMap<>();
-  private static final Map<DataSourceType, String> dataSourceTypeToDslScriptPathMap = new HashMap<>();
+  private static final String SUMOLOGIC_LOG_PATH = "sumologic-log.datacollection";
+  private static final String ELK_LOG_PATH = "elk-log-fetch-data.datacollection";
+  private static final String GRAFANA_LOKI_LOG_PATH = "grafana-loki-log-fetch-data.datacollection";
+  private static final String PROMETHEUS_METRIC_PATH = "prometheus-v2-dsl-metric.datacollection";
+  private static final String DATADOG_METRIC_PATH = "datadog-v2-dsl-metric.datacollection";
+  private static final String AZURE_LOGS_PATH = "azure-logs-fetch-data.datacollection";
+  private static final String SUMOLOGIC_METRIC_PATH = "/sumologic/dsl/metric-collection.datacollection";
+  private static final String SIGNALFX_METRIC_PATH = "/signalfx/dsl/metric-collection.datacollection";
 
+  private static final String DATADOG_SAMPLE_V2_PATH = "/datadog/dsl/datadog-time-series-points-v2.datacollection";
+  private static final String GRAFANA_LOKI_LOG_SAMPLE_PATH =
+      "/grafanaloki/dsl/grafana-loki-log-sample-data.datacollection";
+  private static final String ELK_LOG_SAMPLE_PATH = "/elk/dsl/elk-sample-data.datacollection";
+  private static final String PROMETHEUS_SAMPLE_PATH = "/prometheus/dsl/prometheus-sample-data.datacollection";
+  private static final String SIGNALFX_METRIC_SAMPLE_PATH = "/signalfx/dsl/signalfx-metric-sample-data.datacollection";
+  private static final String SUMOLOGIC_METRIC_SAMPLE_PATH =
+      "/sumologic/dsl/sumologic-metric-sample-data.datacollection";
+  private static final String SUMOLOGIC_LOG_SAMPLE_PATH = "/sumologic/dsl/sumologic-log-sample-data.datacollection";
+  private static final String AZURE_LOGS_SAMPLE_PATH = "/azure/dsl/azure-logs-sample-data.datacollection";
+
+  private static final Map<DataSourceType, DataCollectionDSL> dataSourceTypeToDslScriptMap = new HashMap<>();
   static {
-    dataSourceTypeToDslScriptPathMap.put(DataSourceType.SUMOLOGIC_LOG, SUMOLOGIC_LOG_DATACOLLECTION_FILE);
-    dataSourceTypeToDslScriptPathMap.put(DataSourceType.ELASTICSEARCH, ELK_LOG_DATACOLLECTION_FILE);
-    dataSourceTypeToDslScriptPathMap.put(DataSourceType.GRAFANA_LOKI_LOGS, GRAFANA_LOKI_LOG_DATACOLLECTION_FILE);
-    dataSourceTypeToDslScriptPathMap.put(DataSourceType.PROMETHEUS, PROMETHEUS_METRIC_DATACOLLECTION_FILE);
-    dataSourceTypeToDslScriptPathMap.put(DataSourceType.DATADOG_METRICS, DATADOG_METRIC_DATACOLLECTION_FILE);
-    dataSourceTypeToDslScriptPathMap.put(DataSourceType.AZURE_LOGS, AZURE_LOGS_DATACOLLECTION_FILE);
+    dataSourceTypeToDslScriptMap.put(
+        DataSourceType.SUMOLOGIC_LOG, createDataCollectionDSL(SUMOLOGIC_LOG_PATH, SUMOLOGIC_LOG_SAMPLE_PATH));
+    dataSourceTypeToDslScriptMap.put(
+        DataSourceType.ELASTICSEARCH, createDataCollectionDSL(ELK_LOG_PATH, ELK_LOG_SAMPLE_PATH));
+    dataSourceTypeToDslScriptMap.put(
+        DataSourceType.GRAFANA_LOKI_LOGS, createDataCollectionDSL(GRAFANA_LOKI_LOG_PATH, GRAFANA_LOKI_LOG_SAMPLE_PATH));
+    dataSourceTypeToDslScriptMap.put(
+        DataSourceType.PROMETHEUS, createDataCollectionDSL(PROMETHEUS_METRIC_PATH, PROMETHEUS_SAMPLE_PATH));
+    dataSourceTypeToDslScriptMap.put(
+        DataSourceType.DATADOG_METRICS, createDataCollectionDSL(DATADOG_METRIC_PATH, DATADOG_SAMPLE_V2_PATH));
+    dataSourceTypeToDslScriptMap.put(
+        DataSourceType.AZURE_LOGS, createDataCollectionDSL(AZURE_LOGS_PATH, AZURE_LOGS_SAMPLE_PATH));
+    dataSourceTypeToDslScriptMap.put(DataSourceType.SPLUNK_SIGNALFX_METRICS,
+        createDataCollectionDSL(SIGNALFX_METRIC_PATH, SIGNALFX_METRIC_SAMPLE_PATH));
+    dataSourceTypeToDslScriptMap.put(
+        DataSourceType.SUMOLOGIC_METRICS, createDataCollectionDSL(SUMOLOGIC_METRIC_PATH, SUMOLOGIC_METRIC_SAMPLE_PATH));
   }
 
-  public static String readLogDSL(DataSourceType dataSourceType) {
+  public static DataCollectionDSL readDSL(DataSourceType dataSourceType) {
     if (dataSourceTypeToDslScriptMap.containsKey(dataSourceType)) {
       return dataSourceTypeToDslScriptMap.get(dataSourceType);
-    } else if (dataSourceTypeToDslScriptPathMap.containsKey(dataSourceType)) {
-      String dslScript = readFile(dataSourceTypeToDslScriptPathMap.get(dataSourceType));
-      dataSourceTypeToDslScriptMap.put(dataSourceType, dslScript);
-      return dslScript;
     } else {
       throw new NotImplementedForHealthSourceException("Not Implemented for DataSourceType " + dataSourceType.name());
     }
+  }
+
+  private static DataCollectionDSL createDataCollectionDSL(
+      String actualDataCollectionDSLPath, String sampleDataCollectionDSLPath) {
+    return DataCollectionDSL.builder()
+        .actualDataCollectionDSL(readFile(actualDataCollectionDSLPath))
+        .sampleDataCollectionDSL(readFile(sampleDataCollectionDSLPath))
+        .build();
   }
 
   private static String readFile(String fileName) {
@@ -60,5 +88,4 @@ public class DataCollectionDSLFactory {
       throw new RuntimeException(e);
     }
   }
-  private DataCollectionDSLFactory() {}
 }

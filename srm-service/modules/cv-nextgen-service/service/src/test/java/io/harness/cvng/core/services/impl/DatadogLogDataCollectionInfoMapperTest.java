@@ -17,7 +17,7 @@ import io.harness.cvng.beans.DatadogLogDataCollectionInfo;
 import io.harness.cvng.beans.datadog.DatadogLogDefinition;
 import io.harness.cvng.core.entities.DatadogLogCVConfig;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
-import io.harness.cvng.core.services.impl.datacollectioninfomapper.DatadogLogDataCollectionInfoMapper;
+import io.harness.cvng.core.services.impl.mapper.DatadogLogDataCollectionInfoMapper;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;

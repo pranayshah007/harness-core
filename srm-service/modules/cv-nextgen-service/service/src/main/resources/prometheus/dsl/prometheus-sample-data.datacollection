@@ -1,0 +1,6 @@
+Var dataQuery = "api/v1/query_range?"
+Var fullQuery = concat(Env:baseUrl, Var:dataQuery, "start=", Env:startTime, "&end=", Env:endTime, "&step=60s&query=", Env:query)
+Var result = sync-call(url=Var:fullQuery, header=Env:commonHeaders)
+print Var:fullQuery
+print Var:result
+return Var:result

@@ -29,7 +29,7 @@ import io.harness.cvng.core.beans.OnboardingResponseDTO;
 import io.harness.cvng.core.beans.dynatrace.DynatraceMetricDTO;
 import io.harness.cvng.core.beans.dynatrace.DynatraceServiceDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
-import io.harness.cvng.core.services.impl.healthsource.DynatraceServiceImpl;
+import io.harness.cvng.core.services.impl.healthSource.DynatraceServiceImpl;
 import io.harness.delegate.beans.connector.dynatrace.DynatraceConnectorDTO;
 import io.harness.rule.Owner;
 import io.harness.serializer.JsonUtils;

@@ -26,8 +26,8 @@ import io.harness.cvng.core.entities.NextGenMetricInfo;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.services.api.MetricPackService;
-import io.harness.cvng.core.services.impl.MetricPackServiceImpl;
-import io.harness.cvng.core.services.impl.datacollectioninfomapper.SumologicMetricDataCollectionInfoMapper;
+import io.harness.cvng.core.services.impl.DataCollectionDSLFactory;
+import io.harness.cvng.core.services.impl.mapper.SumologicMetricDataCollectionInfoMapper;
 import io.harness.datacollection.DataCollectionDSLService;
 import io.harness.datacollection.entity.CallDetails;
 import io.harness.datacollection.entity.RuntimeParameters;
@@ -183,7 +183,8 @@ public class SumologicMetricDataCollectionDSLTest extends HoverflyCVNextGenTestB
   @Owner(developers = ANSUMAN)
   @Category(UnitTests.class)
   public void testExecute_SumologicMetricSampleData() {
-    String metricSampleDataRequestDSL = MetricPackServiceImpl.SUMOLOGIC_METRIC_SAMPLE_DSL;
+    String metricSampleDataRequestDSL =
+        DataCollectionDSLFactory.readDSL(DataSourceType.SUMOLOGIC_METRICS).getSampleDataCollectionDSL();
     SumologicMetricSampleDataRequest sumologicMetricSampleDataRequest =
         SumologicMetricSampleDataRequest.builder()
             .query("metric=Mem_UsedPercent")

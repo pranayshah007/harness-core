@@ -131,35 +131,16 @@ public class MetricPackServiceImpl implements MetricPackService {
       MetricPackServiceImpl.class.getResource("/prometheus/aws/dsl/metric-collection.datacollection");
   public static final String CLOUDWATCH_METRICS_DSL;
   public static final String AWS_PROMETHEUS_DSL;
-  private static final URL SUMOLOGIC_METRIC_DSL_PATH =
-      MetricPackServiceImpl.class.getResource("/sumologic/dsl/metric-collection.datacollection");
-  private static final URL SUMOLOGIC_METRIC_SAMPLE_DSL_PATH =
-      MetricPackServiceImpl.class.getResource("/sumologic/dsl/sumologic-metric-sample-data.datacollection");
-  private static final URL SUMOLOGIC_LOG_SAMPLE_DSL_PATH =
-      MetricPackServiceImpl.class.getResource("/sumologic/dsl/sumologic-log-sample-data.datacollection");
-  public static final String SUMOLOGIC_DSL;
-  public static final String SUMOLOGIC_LOG_SAMPLE_DSL;
-  public static final String SUMOLOGIC_METRIC_SAMPLE_DSL;
-  private static final URL GRAFANA_LOKI_LOG_SAMPLE_DATA_DSL_PATH =
-      MetricPackServiceImpl.class.getResource("/grafanaloki/dsl/grafana-loki-log-sample-data.datacollection");
-  public static final String GRAFANA_LOKI_LOG_SAMPLE_DATA_DSL;
-
-  private static final URL SIGNALFX_METRIC_DSL_PATH =
-      MetricPackServiceImpl.class.getResource("/signalfx/dsl/metric-collection.datacollection");
-  private static final URL SIGNALFX_METRIC_SAMPLE_DSL_PATH =
-      MetricPackServiceImpl.class.getResource("/signalfx/dsl/signalfx-metric-sample-data.datacollection");
-  public static final String SIGNALFX_DSL;
-  public static final String SIGNALFX_METRIC_SAMPLE_DSL;
-
   private static final URL AZURE_LOGS_SAMPLE_DATA_DSL_PATH =
-      MetricPackServiceImpl.class.getResource("/azure/dsl/azure-logs-sample-data.datacollection");
+          MetricPackServiceImpl.class.getResource("/azure/dsl/azure-logs-sample-data.datacollection");
   private static final URL AZURE_METRICS_SAMPLE_DSL_PATH =
-      MetricPackServiceImpl.class.getResource("/azure/dsl/azure-metrics-sample-data.datacollection");
+          MetricPackServiceImpl.class.getResource("/azure/dsl/azure-metrics-sample-data.datacollection");
   private static final URL AZURE_SERVICE_INSTANCE_FIELD_DSL_PATH =
-      MetricPackServiceImpl.class.getResource("/azure/dsl/azure-service-instance-field-data.datacollection");
+          MetricPackServiceImpl.class.getResource("/azure/dsl/azure-service-instance-field-data.datacollection");
   public static final String AZURE_LOGS_SAMPLE_DATA_DSL;
   public static final String AZURE_METRICS_SAMPLE_DATA_DSL;
   public static final String AZURE_SERVICE_INSTANCE_FIELD_DSL;
+
   static {
     String appDPeformancePackDsl = null;
     String appDqualityPackDsl = null;
@@ -175,12 +156,6 @@ public class MetricPackServiceImpl implements MetricPackService {
     String splunkMetricDsl = null;
     String cloudWatchMetricsDsl = null;
     String awsPrometheusDsl = null;
-    String sumologicDsl = null;
-    String sumologicLogSampleDsl = null;
-    String sumologicMetricSampleDsl = null;
-    String signalfxMetricSampleDsl = null;
-    String signalFXDsl = null;
-    String grafanaLokiLogSampleDataDsl = null;
     String azureLogsSampleDataDsl = null;
     String azureMetricsSampleDataDsl = null;
     String azureServiceInstanceFieldDataDsl = null;
@@ -199,12 +174,6 @@ public class MetricPackServiceImpl implements MetricPackService {
       splunkMetricDsl = Resources.toString(SPLUNK_METRIC_HEALTH_DSL_PATH, Charsets.UTF_8);
       cloudWatchMetricsDsl = Resources.toString(CLOUDWATCH_METRICS_DSL_PATH, Charsets.UTF_8);
       awsPrometheusDsl = Resources.toString(AWS_PROMETHEUS_DSL_PATH, Charsets.UTF_8);
-      sumologicDsl = Resources.toString(SUMOLOGIC_METRIC_DSL_PATH, Charsets.UTF_8);
-      sumologicLogSampleDsl = Resources.toString(SUMOLOGIC_LOG_SAMPLE_DSL_PATH, Charsets.UTF_8);
-      sumologicMetricSampleDsl = Resources.toString(SUMOLOGIC_METRIC_SAMPLE_DSL_PATH, Charsets.UTF_8);
-      signalfxMetricSampleDsl = Resources.toString(SIGNALFX_METRIC_SAMPLE_DSL_PATH, Charsets.UTF_8);
-      signalFXDsl = Resources.toString(SIGNALFX_METRIC_DSL_PATH, Charsets.UTF_8);
-      grafanaLokiLogSampleDataDsl = Resources.toString(GRAFANA_LOKI_LOG_SAMPLE_DATA_DSL_PATH, Charsets.UTF_8);
       azureLogsSampleDataDsl = Resources.toString(AZURE_LOGS_SAMPLE_DATA_DSL_PATH, Charsets.UTF_8);
       azureMetricsSampleDataDsl = Resources.toString(AZURE_METRICS_SAMPLE_DSL_PATH, Charsets.UTF_8);
       azureServiceInstanceFieldDataDsl = Resources.toString(AZURE_SERVICE_INSTANCE_FIELD_DSL_PATH, Charsets.UTF_8);
@@ -227,15 +196,9 @@ public class MetricPackServiceImpl implements MetricPackService {
     SPLUNK_METRIC_HEALTH_DSL = splunkMetricDsl;
     CLOUDWATCH_METRICS_DSL = cloudWatchMetricsDsl;
     AWS_PROMETHEUS_DSL = awsPrometheusDsl;
-    SUMOLOGIC_DSL = sumologicDsl;
-    SUMOLOGIC_LOG_SAMPLE_DSL = sumologicLogSampleDsl;
-    SUMOLOGIC_METRIC_SAMPLE_DSL = sumologicMetricSampleDsl;
-    SIGNALFX_DSL = signalFXDsl;
-    SIGNALFX_METRIC_SAMPLE_DSL = signalfxMetricSampleDsl;
-    GRAFANA_LOKI_LOG_SAMPLE_DATA_DSL = grafanaLokiLogSampleDataDsl;
     AZURE_LOGS_SAMPLE_DATA_DSL = azureLogsSampleDataDsl;
     AZURE_METRICS_SAMPLE_DATA_DSL = azureMetricsSampleDataDsl;
-    AZURE_SERVICE_INSTANCE_FIELD_DSL = azureServiceInstanceFieldDataDsl;
+    AZURE_LOGS_SAMPLE_DATA_DSL = azureLogsSampleDataDsl;
   }
 
   @Inject private HPersistence hPersistence;
@@ -504,10 +467,8 @@ public class MetricPackServiceImpl implements MetricPackService {
         metricPack.setDataCollectionDsl(AWS_PROMETHEUS_DSL);
         break;
       case SUMOLOGIC_METRICS:
-        metricPack.setDataCollectionDsl(SUMOLOGIC_DSL);
-        break;
       case SPLUNK_SIGNALFX_METRICS:
-        metricPack.setDataCollectionDsl(SIGNALFX_DSL);
+        metricPack.setDataCollectionDsl(DataCollectionDSLFactory.readDSL(dataSourceType).getActualDataCollectionDSL());
         break;
       default:
         throw new IllegalArgumentException("Invalid type " + dataSourceType);

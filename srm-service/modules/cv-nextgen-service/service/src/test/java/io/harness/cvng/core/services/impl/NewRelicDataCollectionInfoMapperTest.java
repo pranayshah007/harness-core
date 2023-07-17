@@ -27,7 +27,7 @@ import io.harness.cvng.core.entities.NewRelicCVConfig;
 import io.harness.cvng.core.entities.NewRelicCVConfig.NewRelicMetricInfo;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
 import io.harness.cvng.core.services.CVNextGenConstants;
-import io.harness.cvng.core.services.impl.datacollectioninfomapper.NewRelicDataCollectionInfoMapper;
+import io.harness.cvng.core.services.impl.mapper.NewRelicDataCollectionInfoMapper;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.delegate.beans.connector.newrelic.NewRelicConnectorDTO;
 import io.harness.rule.Owner;

@@ -18,8 +18,8 @@ import io.harness.cvng.beans.GrafanaLokiLogDataCollectionInfo;
 import io.harness.cvng.core.entities.NextGenLogCVConfig;
 import io.harness.cvng.core.entities.QueryParams;
 import io.harness.cvng.core.entities.VerificationTask;
-import io.harness.cvng.core.services.impl.datacollectioninfomapper.GrafanaLokiLogDataCollectionInfoMapper;
-import io.harness.cvng.core.services.impl.healthsource.GrafanaLokiLogNextGenHealthSourceHelper;
+import io.harness.cvng.core.services.impl.healthSource.GrafanaLokiLogNextGenHealthSourceHelper;
+import io.harness.cvng.core.services.impl.mapper.GrafanaLokiLogDataCollectionInfoMapper;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -51,6 +51,6 @@ public class GrafanaLokiLogDataCollectionInfoMapperTest extends CvNextGenTestBas
         .isEqualTo(GrafanaLokiLogNextGenHealthSourceHelper.encodeValue(MOCKED_QUERY));
     assertThat(grafanaLokiLogDataCollectionInfo.getServiceInstanceIdentifier()).isEqualTo(MOCKED_INSTANCE_IDENTIFIER);
     assertThat(grafanaLokiLogDataCollectionInfo.getDataCollectionDsl())
-        .isEqualTo(DataCollectionDSLFactory.readLogDSL(DataSourceType.GRAFANA_LOKI_LOGS));
+        .isEqualTo(DataCollectionDSLFactory.readDSL(DataSourceType.GRAFANA_LOKI_LOGS).getActualDataCollectionDSL());
   }
 }

@@ -45,7 +45,7 @@ import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
-import io.harness.cvng.core.services.impl.datacollectioninfomapper.PrometheusDataCollectionInfoMapper;
+import io.harness.cvng.core.services.impl.mapper.PrometheusDataCollectionInfoMapper;
 import io.harness.cvng.downtime.beans.EntityType;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
 import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;

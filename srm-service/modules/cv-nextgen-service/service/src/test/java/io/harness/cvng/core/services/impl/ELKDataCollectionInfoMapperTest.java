@@ -16,7 +16,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cvng.beans.ELKDataCollectionInfo;
 import io.harness.cvng.core.entities.ELKCVConfig;
 import io.harness.cvng.core.entities.VerificationTask;
-import io.harness.cvng.core.services.impl.datacollectioninfomapper.ELKDataCollectionInfoMapper;
+import io.harness.cvng.core.services.impl.mapper.ELKDataCollectionInfoMapper;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;

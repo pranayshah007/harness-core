@@ -26,7 +26,7 @@ import io.harness.cvng.core.entities.AppDynamicsCVConfig.MetricInfo.MetricInfoBu
 import io.harness.cvng.core.entities.MetricPack;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
 import io.harness.cvng.core.services.CVNextGenConstants;
-import io.harness.cvng.core.services.impl.datacollectioninfomapper.AppDynamicsDataCollectionInfoMapper;
+import io.harness.cvng.core.services.impl.mapper.AppDynamicsDataCollectionInfoMapper;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;

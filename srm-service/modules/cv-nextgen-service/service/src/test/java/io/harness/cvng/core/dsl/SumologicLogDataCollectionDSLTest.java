@@ -14,10 +14,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.cvng.HoverflyTestBase;
+import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.SumologicLogDataCollectionInfo;
 import io.harness.cvng.beans.sumologic.SumologicLogSampleDataRequest;
 import io.harness.cvng.core.entities.NextGenLogCVConfig;
-import io.harness.cvng.core.services.impl.MetricPackServiceImpl;
+import io.harness.cvng.core.services.impl.DataCollectionDSLFactory;
 import io.harness.datacollection.DataCollectionDSLService;
 import io.harness.datacollection.entity.CallDetails;
 import io.harness.datacollection.entity.LogDataRecord;
@@ -62,7 +63,8 @@ public class SumologicLogDataCollectionDSLTest extends HoverflyTestBase {
   @Owner(developers = ANSUMAN)
   @Category(UnitTests.class)
   public void testExecute_SumoLogic_DSL_getSampleData() {
-    String sampleDataRequestDSL = MetricPackServiceImpl.SUMOLOGIC_LOG_SAMPLE_DSL;
+    String sampleDataRequestDSL =
+        DataCollectionDSLFactory.readDSL(DataSourceType.SUMOLOGIC_LOG).getSampleDataCollectionDSL();
     SumologicLogSampleDataRequest sumologicLogSampleDataRequest =
         SumologicLogSampleDataRequest.builder()
             .query("_sourceCategory=windows/performance")
