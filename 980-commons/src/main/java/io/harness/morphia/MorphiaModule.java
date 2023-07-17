@@ -43,7 +43,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -156,8 +158,9 @@ public class MorphiaModule extends AbstractModule {
       throw new UnexpectedException("We cannot add morphia MappedClass", e);
     }
     morphia.map(classesCopy);
+
     morphiaConverters.forEach(
-        converter -> morphia.getMapper().getConverters().addConverter(injector.getInstance(converter)));
+        converter -> { morphia.getMapper().getConverters().addConverter(injector.getInstance(converter)); });
     return morphia;
   }
 

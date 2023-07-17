@@ -62,6 +62,7 @@ public class DelegateAgentModule extends AbstractModule {
     install(new MetricRegistryModule(new MetricRegistry()));
 
     install(new DelegateManagerClientModule());
+    install(new DelegateDMSClientModule());
     install(new VerificationServiceClientModule(configuration.getCvNextGenUrl(),
         configuration.getClientCertificateFilePath(), configuration.getClientCertificateKeyFilePath(),
         configuration.isTrustAllCertificates()));

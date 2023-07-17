@@ -73,7 +73,7 @@ public class DelegateServiceTokenAuthenticatorImpl implements DelegateTokenAuthe
   @Inject private DelegateJWTCache delegateJWTCache;
   @Inject private DelegateMetricsService delegateMetricsService;
   @Inject private AgentMtlsVerifier agentMtlsVerifier;
-  @Inject private DelegateSecretManager delegateSecretManager;
+  @Inject private io.harness.delegate.authenticator.DelegateSecretManager delegateSecretManager;
 
   public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
 
@@ -111,6 +111,7 @@ public class DelegateServiceTokenAuthenticatorImpl implements DelegateTokenAuthe
     }
 
     DelegateToken delegateTokenFromCache = delegateTokenCacheHelper.getDelegateToken(delegateId);
+
     boolean decryptedWithTokenFromCache =
         decryptWithTokenFromCache(encryptedJWT, delegateTokenFromCache, shouldSetTokenNameInGlobalContext);
 

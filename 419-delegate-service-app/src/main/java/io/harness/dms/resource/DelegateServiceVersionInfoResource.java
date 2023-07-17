@@ -30,8 +30,8 @@ import org.apache.commons.collections.CollectionUtils;
 /*
 Pending: Move apis using api-key auth
  */
-@Api("dms/version")
-@Path("/dms/version")
+@Api("version")
+@Path("/version")
 @Produces(MediaType.APPLICATION_JSON)
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 public class DelegateServiceVersionInfoResource {

@@ -17,6 +17,7 @@ import static dev.morphia.mapping.Mapper.ID_KEY;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.persistence.GoogleDataStoreAware;
+import io.harness.persistence.store.Store;
 
 import software.wings.beans.Log;
 import software.wings.beans.Log.LogKeys;
@@ -52,6 +53,19 @@ public class MongoDataStoreServiceImpl implements DataStoreService {
       wingsPersistence.saveIgnoringDuplicateKeys(records);
     } else {
       wingsPersistence.save(records);
+    }
+  }
+
+  @Override
+  public <T extends GoogleDataStoreAware> void saveInStore(
+      Class<T> clazz, List<T> records, boolean ignoreDuplicate, Store store) {
+    if (isEmpty(records)) {
+      return;
+    }
+    if (ignoreDuplicate) {
+      wingsPersistence.saveIgnoringDuplicateKeys(records, store);
+    } else {
+      wingsPersistence.save(records, store);
     }
   }
 

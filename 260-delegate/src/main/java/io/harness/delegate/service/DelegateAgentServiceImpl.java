@@ -142,6 +142,7 @@ import io.harness.delegate.task.common.DelegateRunnableTask;
 import io.harness.delegate.task.tasklogging.ExecutionLogContext;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
 import io.harness.delegate.task.validation.DelegateConnectionResultDetail;
+import io.harness.dmsclient.DelegateAgentDMSClient;
 import io.harness.event.client.impl.tailer.ChronicleEventTailer;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.UnexpectedException;
@@ -340,6 +341,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   @Inject private RestartableServiceManager restartableServiceManager;
 
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
+
+  @Inject private DelegateAgentDMSClient delegateAgentDMSClient;
 
   @Inject @Named("healthMonitorExecutor") private ScheduledExecutorService healthMonitorExecutor;
   @Inject @Named("watcherMonitorExecutor") private ScheduledExecutorService watcherMonitorExecutor;
@@ -2105,8 +2108,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         currentlyAcquiringTasks.add(delegateTaskId);
 
         log.debug("Try to acquire DelegateTask - accountId: {}", accountId);
+
         Call<DelegateTaskPackage> acquireCall =
-            delegateAgentManagerClient.acquireTask(delegateId, delegateTaskId, accountId, delegateInstanceId);
+            delegateAgentDMSClient.acquireTask(delegateId, delegateTaskId, accountId, delegateInstanceId);
 
         DelegateTaskPackage delegateTaskPackage = ManagerCallHelper.executeAcquireCallWithRetry(acquireCall,
             String.format("Failed acquiring delegate task %s by delegate %s", delegateTaskId, delegateId),

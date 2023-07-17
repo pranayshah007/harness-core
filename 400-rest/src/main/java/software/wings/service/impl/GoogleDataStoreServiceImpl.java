@@ -20,6 +20,7 @@ import io.harness.beans.SearchFilter;
 import io.harness.dataretention.AccountDataRetentionEntity;
 import io.harness.exception.WingsException;
 import io.harness.persistence.GoogleDataStoreAware;
+import io.harness.persistence.store.Store;
 import io.harness.reflection.HarnessReflections;
 
 import software.wings.beans.Log;
@@ -53,6 +54,7 @@ import org.jetbrains.annotations.Nullable;
 @Slf4j
 public class GoogleDataStoreServiceImpl implements DataStoreService {
   private static int DATA_STORE_BATCH_SIZE = 500;
+  private WingsPersistence wingsPersistence;
 
   private static final String GOOGLE_APPLICATION_CREDENTIALS_PATH = "GOOGLE_APPLICATION_CREDENTIALS";
   private static final String ENV_VARIABLE_WORKLOAD_IDENTITY = "USE_WORKLOAD_IDENTITY";
@@ -80,6 +82,19 @@ public class GoogleDataStoreServiceImpl implements DataStoreService {
       batch.forEach(record -> logList.add(record.convertToCloudStorageEntity(datastore)));
       datastore.put(logList.stream().toArray(Entity[] ::new));
     });
+  }
+
+  @Override
+  public <T extends GoogleDataStoreAware> void saveInStore(
+      Class<T> clazz, List<T> records, boolean ignoreDuplicate, Store store) {
+    if (isEmpty(records)) {
+      return;
+    }
+    if (ignoreDuplicate) {
+      wingsPersistence.saveIgnoringDuplicateKeys(records, store);
+    } else {
+      wingsPersistence.save(records, store);
+    }
   }
 
   @Override

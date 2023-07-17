@@ -10,6 +10,7 @@ package io.harness.dms.app;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.ng.DbAliases.DMS;
+import static io.harness.ng.DbAliases.HARNESS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -19,14 +20,18 @@ import io.harness.cf.CfMigrationConfig;
 import io.harness.dms.configuration.DelegateServiceConfiguration;
 import io.harness.dms.health.DelegateServiceHealthResource;
 import io.harness.dms.module.DelegateServiceModule;
+import io.harness.dms.resource.DMSAgentResource;
 import io.harness.dms.resource.DelegateServiceVersionInfoResource;
 import io.harness.ff.FeatureFlagConfig;
 import io.harness.health.HealthService;
 import io.harness.mongo.MongoPersistence;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.store.Store;
+import io.harness.redis.DelegateServiceCacheModule;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
+
+import software.wings.jersey.KryoFeature;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -69,6 +74,8 @@ public class DelegateServiceApp extends Application<DelegateServiceConfiguration
 
     List<Module> modules = new ArrayList<>();
     modules.add(new DelegateServiceModule(delegateServiceConfig));
+    modules.add(new DelegateServiceCacheModule(delegateServiceConfig.getDelegateServiceRedisConfig(),
+        delegateServiceConfig.isEnableRedisForDelegateService()));
     modules.add(new AbstractCfModule() {
       @Override
       public CfClientConfig cfClientConfig() {
@@ -99,15 +106,20 @@ public class DelegateServiceApp extends Application<DelegateServiceConfiguration
     if (isNotEmpty(configuration.getMongoConfig().getUri())) {
       mongoPersistence.register(Store.builder().name(DMS).build(), configuration.getMongoConfig().getUri());
     }
+    if (isNotEmpty(configuration.getManagerMongoConfig().getUri())) {
+      mongoPersistence.register(Store.builder().name(HARNESS).build(), configuration.getManagerMongoConfig().getUri());
+    }
   }
 
   private void registerAuthenticationFilter(Environment environment, Injector injector) {
     environment.jersey().register(injector.getInstance(DelegateServiceAuthFilter.class));
+    environment.jersey().register(injector.getInstance(KryoFeature.class));
   }
 
   private void registerResources(Environment environment, Injector injector) {
     environment.jersey().register(injector.getInstance(DelegateServiceVersionInfoResource.class));
     environment.jersey().register(injector.getInstance(DelegateServiceHealthResource.class));
+    environment.jersey().register(injector.getInstance(DMSAgentResource.class));
   }
 
   private void registerHealthCheck(Environment environment, Injector injector) {
