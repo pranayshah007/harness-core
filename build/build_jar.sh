@@ -89,7 +89,7 @@ fi
 
 
 service=$(echo "$modified_service_name" | cut -d'/' -f1)
-if [[ $SERVICE_NAME == "manager" || $SERVICE_NAME == "migrator" || $SERVICE_NAME == "change-data-capture" || $SERVICE_NAME == "verification-service" || $SERVICE_NAME == "event-server" ]]; then
+if [[ $SERVICE_NAME == "manager" || $SERVICE_NAME == "migrator" || $SERVICE_NAME == "change-data-capture" || $SERVICE_NAME == "verification-service" ]]; then
     chmod +x build/build_dist.sh
     build/build_dist.sh || true
 else
