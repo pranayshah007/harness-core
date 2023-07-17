@@ -100,40 +100,6 @@ public class ProxyEnvVariableUtilsTest extends CategoryTest {
   @Test
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
-  public void testCreateOrUpdateHostProxyEnvVariable() {
-    BackstageEnvConfigVariable variable = new BackstageEnvConfigVariable();
-    variable.type(BackstageEnvVariable.TypeEnum.CONFIG);
-    variable.envName(PROXY_ENV_NAME);
-    variable.value(PROXY_MAP1);
-    when(backstageEnvVariableService.findByEnvNameAndAccountIdentifier(PROXY_ENV_NAME, ACCOUNT_IDENTIFIER))
-        .thenReturn(Optional.of(variable));
-    Map<String, Boolean> hostProxyMap = new HashMap<>();
-    hostProxyMap.put(GITHUB_HOST, false);
-    proxyEnvVariableUtils.createOrUpdateHostProxyEnvVariable(ACCOUNT_IDENTIFIER, hostProxyMap);
-    variable.setValue(PROXY_MAP2);
-    verify(backstageEnvVariableService).update(variable, ACCOUNT_IDENTIFIER);
-  }
-
-  @Test
-  @Owner(developers = VIKYATH_HAREKAL)
-  @Category(UnitTests.class)
-  public void testCreateOrUpdateHostProxyEnvVariableWhenNotPresent() {
-    when(backstageEnvVariableService.findByEnvNameAndAccountIdentifier(PROXY_ENV_NAME, ACCOUNT_IDENTIFIER))
-        .thenReturn(Optional.empty());
-    Map<String, Boolean> hostProxyMap = new HashMap<>();
-    hostProxyMap.put(GITHUB_HOST, true);
-    hostProxyMap.put(GITLAB_HOST, false);
-    proxyEnvVariableUtils.createOrUpdateHostProxyEnvVariable(ACCOUNT_IDENTIFIER, hostProxyMap);
-    BackstageEnvConfigVariable variable = new BackstageEnvConfigVariable();
-    variable.type(BackstageEnvVariable.TypeEnum.CONFIG);
-    variable.envName(PROXY_ENV_NAME);
-    variable.setValue(PROXY_MAP1);
-    verify(backstageEnvVariableService).create(variable, ACCOUNT_IDENTIFIER);
-  }
-
-  @Test
-  @Owner(developers = VIKYATH_HAREKAL)
-  @Category(UnitTests.class)
   public void testRemoveFromHostProxyEnvVariable() {
     BackstageEnvConfigVariable variable = new BackstageEnvConfigVariable();
     variable.type(BackstageEnvVariable.TypeEnum.CONFIG);

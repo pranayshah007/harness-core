@@ -47,27 +47,6 @@ public class ProxyEnvVariableUtils {
     backstageEnvVariableService.createOrUpdate(Collections.singletonList(envVariable), accountIdentifier);
   }
 
-  public void createOrUpdateHostProxyEnvVariable(String accountIdentifier, Map<String, Boolean> hostProxyMap) {
-    Optional<BackstageEnvVariable> envVariableOpt =
-        backstageEnvVariableService.findByEnvNameAndAccountIdentifier(PROXY_ENV_NAME, accountIdentifier);
-    if (envVariableOpt.isPresent()) {
-      BackstageEnvConfigVariable envVariable = (BackstageEnvConfigVariable) envVariableOpt.get();
-      String hostProxyString = envVariable.getValue();
-      JSONObject hostProxyObj = new JSONObject(hostProxyString);
-      hostProxyMap.forEach(hostProxyObj::put);
-      envVariable.setValue(hostProxyObj.toString());
-      backstageEnvVariableService.update(envVariable, accountIdentifier);
-    } else {
-      BackstageEnvConfigVariable envVariable = new BackstageEnvConfigVariable();
-      JSONObject proxyIntegrationObj = new JSONObject();
-      hostProxyMap.forEach(proxyIntegrationObj::put);
-      envVariable.setType(BackstageEnvVariable.TypeEnum.CONFIG);
-      envVariable.setEnvName(PROXY_ENV_NAME);
-      envVariable.setValue(proxyIntegrationObj.toString());
-      backstageEnvVariableService.create(envVariable, accountIdentifier);
-    }
-  }
-
   public void removeFromHostProxyEnvVariable(String accountIdentifier, Set<String> hostsToBeRemoved) {
     Optional<BackstageEnvVariable> envVariableOpt =
         backstageEnvVariableService.findByEnvNameAndAccountIdentifier(PROXY_ENV_NAME, accountIdentifier);
