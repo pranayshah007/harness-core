@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.client.ServiceCallException;
+import io.harness.cvng.exception.mapper.ServiceCallExceptionMapper;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ResponseMessage;
 import io.harness.ng.core.Status;
@@ -47,7 +48,8 @@ public class ServiceCallExceptionMapperTest extends CategoryTest {
     assertThat(response.getEntity()).isInstanceOf(ErrorDTO.class);
     ErrorDTO errorDTO = (ErrorDTO) response.getEntity();
     assertThat(errorDTO.getCode()).isEqualTo(ErrorCode.DATA_COLLECTION_ERROR);
-    assertThat(errorDTO.getMessage()).isEqualTo("error message");
+    assertThat(errorDTO.getMessage())
+        .isEqualTo("ServiceCallException: Response code: 400, Message: error message, Error: error body");
     assertThat(errorDTO.getMetadata()).isNull();
     assertThat(errorDTO.getStatus()).isEqualTo(Status.ERROR);
     assertThat(errorDTO.getResponseMessages()).hasSize(1);
@@ -66,7 +68,8 @@ public class ServiceCallExceptionMapperTest extends CategoryTest {
     assertThat(response.getEntity()).isInstanceOf(ErrorDTO.class);
     ErrorDTO errorDTO = (ErrorDTO) response.getEntity();
     assertThat(errorDTO.getCode()).isEqualTo(ErrorCode.UNKNOWN_ERROR);
-    assertThat(errorDTO.getMessage()).isEqualTo("error message");
+    assertThat(errorDTO.getMessage())
+        .isEqualTo("ServiceCallException: Response code: 500, Message: error message, Error: error body");
     assertThat(errorDTO.getMetadata()).isNull();
     assertThat(errorDTO.getStatus()).isEqualTo(Status.ERROR);
     assertThat(errorDTO.getResponseMessages()).hasSize(1);
@@ -82,7 +85,8 @@ public class ServiceCallExceptionMapperTest extends CategoryTest {
     assertThat(response.getEntity()).isInstanceOf(ErrorDTO.class);
     ErrorDTO errorDTO = (ErrorDTO) response.getEntity();
     assertThat(errorDTO.getCode()).isEqualTo(ErrorCode.UNKNOWN_ERROR);
-    assertThat(errorDTO.getMessage()).isEqualTo("error message");
+    assertThat(errorDTO.getMessage())
+        .isEqualTo("ServiceCallException: Response code: 400, Message: error message, Error: error body");
     assertThat(errorDTO.getMetadata()).isNull();
     assertThat(errorDTO.getStatus()).isEqualTo(Status.ERROR);
     assertThat(errorDTO.getResponseMessages()).isNull();

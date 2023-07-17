@@ -31,7 +31,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateBuilder;
 import io.harness.delegate.beans.DelegateInstanceStatus;
-import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapability;
 import io.harness.iterator.DelegateDisconnectDetectorIterator;
 import io.harness.iterator.PersistenceIteratorFactory;
@@ -176,12 +176,12 @@ public class DelegateDisconnectDetectorIteratorTest extends WingsBaseTest {
             .accountId(ACCOUNT_ID)
             .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, InstanceSyncTestConstants.APP_ID)
             .tags(isNotEmpty(request.getAwsConfig().getTag()) ? singletonList(request.getAwsConfig().getTag()) : null)
-            .data(TaskData.builder()
-                      .async(false)
-                      .taskType(TaskType.AWS_IAM_TASK.name())
-                      .parameters(new Object[] {request})
-                      .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
-                      .build())
+            .taskDataV2(TaskDataV2.builder()
+                            .async(false)
+                            .taskType(TaskType.AWS_IAM_TASK.name())
+                            .parameters(new Object[] {request})
+                            .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
+                            .build())
             .build();
 
     HttpConnectionExecutionCapability matchingExecutionCapability =
@@ -195,11 +195,11 @@ public class DelegateDisconnectDetectorIteratorTest extends WingsBaseTest {
                                                     .build();
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), connectionResult.getCriteria())))
         .thenReturn(of(connectionResult));
-    when(assignDelegateService.getEligibleDelegatesToExecuteTask(delegateTask))
+    when(assignDelegateService.getEligibleDelegatesToExecuteTaskV2(delegateTask))
         .thenReturn(Arrays.asList(delegate.getUuid()));
     when(assignDelegateService.getConnectedDelegateList(Arrays.asList(delegate.getUuid()), delegateTask))
         .thenReturn(Arrays.asList(delegate.getUuid()));
-    delegateTaskServiceClassic.processDelegateTask(delegateTask, QUEUED);
+    delegateTaskServiceClassic.processDelegateTaskV2(delegateTask, QUEUED);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     return task;
   }

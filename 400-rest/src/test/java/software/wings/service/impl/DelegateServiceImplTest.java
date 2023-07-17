@@ -14,7 +14,6 @@ import static io.harness.delegate.beans.TaskData.DEFAULT_ASYNC_CALL_TIMEOUT;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ANUPAM;
 import static io.harness.rule.OwnerRule.ARPIT;
-import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.BOJAN;
 import static io.harness.rule.OwnerRule.BRETT;
 import static io.harness.rule.OwnerRule.DEEPAK;
@@ -243,8 +242,8 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   public void shouldExecuteTask() {
     Delegate delegate = createDelegateBuilder().build();
     persistence.save(delegate);
-    DelegateTask delegateTask = getDelegateTask();
-    when(assignDelegateService.getEligibleDelegatesToExecuteTask(any()))
+    DelegateTask delegateTask = getDelegateTaskV2();
+    when(assignDelegateService.getEligibleDelegatesToExecuteTaskV2(any()))
         .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
     when(assignDelegateService.getConnectedDelegateList(any(), any()))
         .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
@@ -272,69 +271,6 @@ public class DelegateServiceImplTest extends WingsBaseTest {
     when(assignDelegateService.getEligibleDelegatesToExecuteTask(any(DelegateTask.class)))
         .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
 
-    DelegateResponseData responseData = delegateTaskServiceClassic.executeTask(delegateTask);
-    assertThat(responseData).isInstanceOf(HttpStateExecutionResponse.class);
-    HttpStateExecutionResponse httpResponse = (HttpStateExecutionResponse) responseData;
-    assertThat(httpResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
-  }
-
-  @Test
-  @Owner(developers = ASHISHSANODIA)
-  @Category(UnitTests.class)
-  @HarnessAlwaysRun
-  public void shouldExecuteTaskV2() {
-    Delegate delegate = createDelegateBuilder().build();
-    persistence.save(delegate);
-    DelegateTask delegateTask =
-        DelegateTask.builder()
-            .uuid(generateUuid())
-            .accountId(ACCOUNT_ID)
-            .waitId(generateUuid())
-            .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
-            .version(VERSION)
-            .data(TaskData.builder()
-                      .async(false)
-                      .taskType(TaskType.HTTP.name())
-                      .parameters(new Object[] {HttpTaskParameters.builder().url("https://www.google.com").build()})
-                      .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
-                      .build())
-            .taskDataV2(
-                TaskDataV2.builder()
-                    .async(false)
-                    .taskType(TaskType.HTTP.name())
-                    .parameters(new Object[] {HttpTaskParameters.builder().url("https://www.google.com").build()})
-                    .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
-                    .build())
-            .tags(new ArrayList<>())
-            .build();
-    when(assignDelegateService.getEligibleDelegatesToExecuteTaskV2(any()))
-        .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
-    when(assignDelegateService.getConnectedDelegateList(any(), any()))
-        .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
-    when(assignDelegateService.canAssignTaskV2(eq(delegateTask.getDelegateId()), any())).thenReturn(true);
-    when(assignDelegateService.retrieveActiveDelegates(eq(delegateTask.getAccountId()), any()))
-        .thenReturn(Collections.singletonList(delegate.getUuid()));
-
-    RetryDelegate retryDelegate = RetryDelegate.builder().retryPossible(true).delegateTask(delegateTask).build();
-    when(retryObserverSubject.fireProcess(any(), any())).thenReturn(retryDelegate);
-
-    Thread thread = new Thread(() -> {
-      await().atMost(5L, TimeUnit.SECONDS).until(() -> isNotEmpty(delegateSyncService.syncTaskWaitMap));
-      DelegateTask task =
-          persistence.createQuery(DelegateTask.class).filter("accountId", delegateTask.getAccountId()).get();
-
-      delegateTaskService.processDelegateResponse(task.getAccountId(), delegate.getUuid(), task.getUuid(),
-          DelegateTaskResponse.builder()
-              .accountId(task.getAccountId())
-              .response(HttpStateExecutionResponse.builder().executionStatus(ExecutionStatus.SUCCESS).build())
-              .responseCode(ResponseCode.OK)
-              .build());
-      new Thread(delegateSyncService).start();
-    });
-    thread.start();
-    when(assignDelegateService.getEligibleDelegatesToExecuteTaskV2(any(DelegateTask.class)))
-        .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
-
     DelegateResponseData responseData = delegateTaskServiceClassic.executeTaskV2(delegateTask);
     assertThat(responseData).isInstanceOf(HttpStateExecutionResponse.class);
     HttpStateExecutionResponse httpResponse = (HttpStateExecutionResponse) responseData;
@@ -345,10 +281,10 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void shouldSaveDelegateTaskWithPreAssignedDelegateId_Sync() {
-    DelegateTask delegateTask = getDelegateTask();
+    DelegateTask delegateTask = getDelegateTaskV2();
     delegateTask.getData().setAsync(false);
     thrown.expect(NoEligibleDelegatesInAccountException.class);
-    delegateTaskServiceClassic.processDelegateTask(delegateTask, DelegateTask.Status.QUEUED);
+    delegateTaskServiceClassic.processDelegateTaskV2(delegateTask, DelegateTask.Status.QUEUED);
     assertThat(delegateTask.getBroadcastCount()).isZero();
     verify(broadcastHelper, times(0)).rebroadcastDelegateTask(any());
   }
@@ -357,9 +293,9 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void shouldSaveDelegateTaskWithPreAssignedDelegateId_Async() {
-    DelegateTask delegateTask = getDelegateTask();
+    DelegateTask delegateTask = getDelegateTaskV2();
     delegateTask.getData().setAsync(true);
-    delegateTaskServiceClassic.processDelegateTask(delegateTask, DelegateTask.Status.QUEUED);
+    delegateTaskServiceClassic.processDelegateTaskV2(delegateTask, DelegateTask.Status.QUEUED);
     assertThat(delegateTask.getBroadcastCount()).isZero();
     verify(broadcastHelper, times(0)).rebroadcastDelegateTask(any());
   }
@@ -370,18 +306,18 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   public void shouldSaveDelegateTaskWithoutPreAssignedDelegateIdSetToMustExecuteOn() {
     String delegateId = generateUuid();
     String taskId = generateUuid();
-    when(assignDelegateService.getEligibleDelegatesToExecuteTask(any(DelegateTask.class)))
+    when(assignDelegateService.getEligibleDelegatesToExecuteTaskV2(any(DelegateTask.class)))
         .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
     when(assignDelegateService.getConnectedDelegateList(any(), any()))
         .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
 
-    DelegateTask delegateTask = getDelegateTask();
-    delegateTask.getData().setAsync(false);
+    DelegateTask delegateTask = getDelegateTaskV2();
+    delegateTask.getTaskDataV2().setAsync(false);
     delegateTask.setUuid(taskId);
-    when(assignDelegateService.getEligibleDelegatesToExecuteTask(any(DelegateTask.class)))
+    when(assignDelegateService.getEligibleDelegatesToExecuteTaskV2(any(DelegateTask.class)))
         .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
 
-    delegateTaskServiceClassic.processDelegateTask(delegateTask, DelegateTask.Status.QUEUED);
+    delegateTaskServiceClassic.processDelegateTaskV2(delegateTask, DelegateTask.Status.QUEUED);
     assertThat(persistence.get(DelegateTask.class, taskId).getPreAssignedDelegateId()).isNotEqualTo(delegateId);
   }
 
@@ -423,37 +359,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
     final String taskId = "XYZ";
     final Delegate delegate = createDelegateBuilder().build();
     when(delegateCache.get(ACCOUNT_ID, delegate.getUuid())).thenReturn(delegate);
-    when(assignDelegateService.getEligibleDelegatesToExecuteTask(any(DelegateTask.class)))
-        .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
-    when(assignDelegateService.getConnectedDelegateList(any(), any()))
-        .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
-
-    final DelegateTask delegateTask = getDelegateTask();
-    doReturn(delegateTask)
-        .when(spydelegateTaskServiceClassic)
-        .getUnassignedDelegateTask(ACCOUNT_ID, "XYZ", delegate.getUuid());
-
-    doReturn(getDelegateTaskPackage())
-        .when(spydelegateTaskServiceClassic)
-        .assignTask(delegate.getUuid(), taskId, delegateTask, null);
-
-    when(assignDelegateService.canAssign(delegate.getUuid(), delegateTask)).thenReturn(true);
-    when(assignDelegateService.isWhitelisted(delegateTask, delegate.getUuid())).thenReturn(true);
-    when(assignDelegateService.shouldValidate(delegateTask, delegate.getUuid())).thenReturn(false);
-
-    spydelegateTaskServiceClassic.acquireDelegateTask(ACCOUNT_ID, delegate.getUuid(), taskId, null);
-
-    verify(spydelegateTaskServiceClassic).assignTask(delegate.getUuid(), taskId, delegateTask, null);
-  }
-
-  @Test
-  @Owner(developers = ASHISHSANODIA)
-  @Category(UnitTests.class)
-  public void shouldAcquireDelegateTaskWithTaskDataV2WhitelistedDelegateAndFFisOFF() {
-    final String taskId = "XYZ";
-    final Delegate delegate = createDelegateBuilder().build();
-    when(delegateCache.get(ACCOUNT_ID, delegate.getUuid())).thenReturn(delegate);
-    when(assignDelegateService.getEligibleDelegatesToExecuteTask(any(DelegateTask.class)))
+    when(assignDelegateService.getEligibleDelegatesToExecuteTaskV2(any(DelegateTask.class)))
         .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
     when(assignDelegateService.getConnectedDelegateList(any(), any()))
         .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
@@ -838,15 +744,18 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void testEmbedCapabilitiesInDelegateTask_HTTP_VaultConfig() {
-    TaskData taskData =
-        TaskData.builder().parameters(new Object[] {HttpTaskParameters.builder().url(GOOGLE_COM).build()}).build();
-    DelegateTask task = DelegateTask.builder().data(taskData).build();
+    DelegateTask task =
+        DelegateTask.builder()
+            .taskDataV2(TaskDataV2.builder()
+                            .parameters(new Object[] {HttpTaskParameters.builder().url(GOOGLE_COM).build()})
+                            .build())
+            .build();
 
     Collection<EncryptionConfig> encryptionConfigs = new ArrayList<>();
     EncryptionConfig encryptionConfig = VaultConfig.builder().vaultUrl(HTTP_VAUTL_URL).build();
     encryptionConfigs.add(encryptionConfig);
 
-    DelegateTaskServiceClassicImpl.embedCapabilitiesInDelegateTask(task, encryptionConfigs, null);
+    DelegateTaskServiceClassicImpl.embedCapabilitiesInDelegateTaskV2(task, encryptionConfigs, null);
     assertThat(task.getExecutionCapabilities()).isNotNull();
     assertThat(task.getExecutionCapabilities()).hasSize(2);
 
@@ -859,15 +768,15 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void testEmbedCapabilitiesInDelegateTask_HTTP_KmsConfig() {
-    TaskData taskData =
-        TaskData.builder().parameters(new Object[] {HttpTaskParameters.builder().url(GOOGLE_COM).build()}).build();
-    DelegateTask task = DelegateTask.builder().data(taskData).build();
+    TaskDataV2 taskData =
+        TaskDataV2.builder().parameters(new Object[] {HttpTaskParameters.builder().url(GOOGLE_COM).build()}).build();
+    DelegateTask task = DelegateTask.builder().taskDataV2(taskData).build();
 
     Collection<EncryptionConfig> encryptionConfigs = new ArrayList<>();
     EncryptionConfig encryptionConfig = KmsConfig.builder().region(US_EAST_2).build();
     encryptionConfigs.add(encryptionConfig);
 
-    DelegateTaskServiceClassicImpl.embedCapabilitiesInDelegateTask(task, encryptionConfigs, null);
+    DelegateTaskServiceClassicImpl.embedCapabilitiesInDelegateTaskV2(task, encryptionConfigs, null);
     assertThat(task.getExecutionCapabilities()).isNotNull();
     assertThat(task.getExecutionCapabilities()).hasSize(2);
 
@@ -880,13 +789,16 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Owner(developers = INDER)
   @Category(UnitTests.class)
   public void testEmbedCapabilitiesInDelegateTask_HTTP_SecretInUrl() {
-    TaskData taskData =
-        TaskData.builder().parameters(new Object[] {HttpTaskParameters.builder().url(SECRET_URL).build()}).build();
-    DelegateTask task = DelegateTask.builder().data(taskData).build();
+    DelegateTask task =
+        DelegateTask.builder()
+            .taskDataV2(TaskDataV2.builder()
+                            .parameters(new Object[] {HttpTaskParameters.builder().url(SECRET_URL).build()})
+                            .build())
+            .build();
 
     Collection<EncryptionConfig> encryptionConfigs = new ArrayList<>();
 
-    DelegateTaskServiceClassicImpl.embedCapabilitiesInDelegateTask(
+    DelegateTaskServiceClassicImpl.embedCapabilitiesInDelegateTaskV2(
         task, encryptionConfigs, new ManagerPreviewExpressionEvaluator());
     assertThat(task.getExecutionCapabilities()).isNotNull().hasSize(1);
 
@@ -1743,18 +1655,19 @@ public class DelegateServiceImplTest extends WingsBaseTest {
             .executeOnHarnessHostedDelegates(true)
             .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
             .version(VERSION)
-            .data(TaskData.builder()
-                      .async(false)
-                      .taskType(TaskType.HTTP.name())
-                      .parameters(new Object[] {HttpTaskParameters.builder().url("https://www.google.com").build()})
-                      .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
-                      .build())
+            .taskDataV2(
+                TaskDataV2.builder()
+                    .async(false)
+                    .taskType(TaskType.HTTP.name())
+                    .parameters(new Object[] {HttpTaskParameters.builder().url("https://www.google.com").build()})
+                    .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
+                    .build())
             .tags(new ArrayList<>())
             .build();
     Account globalAccount = testUtils.createAccount();
     globalAccount.setGlobalDelegateAccount(true);
     persistence.save(globalAccount);
-    when(assignDelegateService.getEligibleDelegatesToExecuteTask(any()))
+    when(assignDelegateService.getEligibleDelegatesToExecuteTaskV2(any()))
         .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
     when(assignDelegateService.getConnectedDelegateList(any(), any()))
         .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
@@ -1779,10 +1692,10 @@ public class DelegateServiceImplTest extends WingsBaseTest {
       new Thread(delegateSyncService).start();
     });
     thread.start();
-    when(assignDelegateService.getEligibleDelegatesToExecuteTask(any(DelegateTask.class)))
+    when(assignDelegateService.getEligibleDelegatesToExecuteTaskV2(any(DelegateTask.class)))
         .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
 
-    DelegateResponseData responseData = delegateTaskServiceClassic.executeTask(delegateTask);
+    DelegateResponseData responseData = delegateTaskServiceClassic.executeTaskV2(delegateTask);
     assertThat(responseData).isInstanceOf(HttpStateExecutionResponse.class);
     HttpStateExecutionResponse httpResponse = (HttpStateExecutionResponse) responseData;
     assertThat(httpResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);

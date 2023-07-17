@@ -17,25 +17,31 @@ import static io.harness.interrupts.Interrupt.State.PROCESSING;
 
 import io.harness.OrchestrationPublisherName;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.interrupts.InterruptHandler;
 import io.harness.engine.interrupts.InterruptService;
 import io.harness.engine.interrupts.helpers.UserMarkedFailAllHelper;
 import io.harness.exception.InvalidRequestException;
+import io.harness.execution.ExecutionModeUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.interrupts.Interrupt;
 import io.harness.logging.AutoLogContext;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.validation.Valid;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.util.CloseableIterator;
 
 @Slf4j
 @OwnedBy(PIPELINE)
@@ -45,6 +51,7 @@ public class UserMarkedFailAllInterruptHandler extends InterruptPropagatorHandle
   @Inject @Named(OrchestrationPublisherName.PUBLISHER_NAME) String publisherName;
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject private PlanExecutionService planExecutionService;
+  @Inject private NodeExecutionService nodeExecutionService;
 
   @Override
   public Interrupt registerInterrupt(Interrupt interrupt) {
@@ -105,6 +112,42 @@ public class UserMarkedFailAllInterruptHandler extends InterruptPropagatorHandle
       log.info("Starting to handle interrupt for Plan Execution");
       return handleAllNodes(interrupt);
     }
+  }
+
+  public Interrupt handleChildNodes(Interrupt interrupt, String nodeExecutionId) {
+    Interrupt updatedInterrupt = interruptService.markProcessing(interrupt.getUuid());
+    // Find all the nodeExecutions for this plan
+    List<NodeExecution> allExecutions = new LinkedList<>();
+    try (
+        CloseableIterator<NodeExecution> iterator =
+            nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesAndStatusInIterator(interrupt.getPlanExecutionId(),
+                StatusUtils.userMarkedFailureStatuses(), NodeProjectionUtils.fieldsForInterruptPropagatorHandler)) {
+      while (iterator.hasNext()) {
+        allExecutions.add(iterator.next());
+      }
+    }
+
+    List<NodeExecution> finalList = new ArrayList<>();
+    // Extract all the running leaf nodes and queued nodeswith the parent id as nodeExecutionId passed in as param
+    nodeExecutionService.extractChildExecutions(nodeExecutionId, true, finalList, allExecutions, true);
+
+    List<String> targetIds = finalList.stream()
+                                 .filter(ne
+                                     -> ExecutionModeUtils.isLeafMode(ne.getMode())
+                                         || StatusUtils.abortingStatuses().contains(ne.getStatus()))
+                                 .map(NodeExecution::getUuid)
+                                 .collect(Collectors.toList());
+
+    long updatedCount = nodeExecutionService.markLeavesDiscontinuing(targetIds);
+    return handleDiscontinuingNodes(updatedInterrupt, updatedCount);
+  }
+
+  public Interrupt handleAllNodes(Interrupt interrupt) {
+    Interrupt updatedInterrupt = interruptService.markProcessing(interrupt.getUuid());
+    // Marking all finalizable leaf nodes as DISCONTINUING
+    long updatedCount = nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(
+        interrupt.getPlanExecutionId(), StatusUtils.userMarkedFailureStatuses());
+    return handleDiscontinuingNodes(updatedInterrupt, updatedCount);
   }
 
   protected Interrupt processDiscontinuedInstances(

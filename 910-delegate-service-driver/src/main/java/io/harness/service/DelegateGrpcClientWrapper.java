@@ -38,42 +38,8 @@ public class DelegateGrpcClientWrapper {
   @Inject private DelegateServiceGrpcClient delegateServiceGrpcClient;
   @Inject private Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
   @Inject @Named("disableDeserialization") private boolean disableDeserialization;
-  @Inject private KryoSerializer kryoSerializer;
 
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
-
-  public DelegateResponseData executeSyncTask(DelegateTaskRequest delegateTaskRequest) {
-    return executeSyncTaskReturnTaskId(delegateTaskRequest).getValue();
-  }
-
-  public Pair<String, DelegateResponseData> executeSyncTaskReturnTaskId(DelegateTaskRequest delegateTaskRequest) {
-    var responseEntry = delegateServiceGrpcClient.executeSyncTaskReturningResponseData(
-        delegateTaskRequest, delegateCallbackTokenSupplier.get());
-    final ResponseData responseData = responseEntry.getValue();
-    final String taskId = responseEntry.getKey();
-    DelegateResponseData delegateResponseData;
-    if (disableDeserialization) {
-      BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
-      delegateResponseData = (DelegateResponseData) (binaryResponseData.isUsingKryoWithoutReference()
-              ? referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData())
-              : kryoSerializer.asInflatedObject(binaryResponseData.getData()));
-      if (delegateResponseData instanceof ErrorNotifyResponseData) {
-        WingsException exception = ((ErrorNotifyResponseData) delegateResponseData).getException();
-        // if task registered to error handling framework on delegate, then exception won't be null
-        if (exception != null) {
-          throw exception;
-        }
-      } else if (delegateResponseData instanceof RemoteMethodReturnValueData) {
-        Throwable throwable = ((RemoteMethodReturnValueData) delegateResponseData).getException();
-        if (throwable != null) {
-          throw new InvalidRequestException(ExceptionUtils.getMessage(throwable), throwable);
-        }
-      }
-    } else {
-      delegateResponseData = (DelegateResponseData) responseData;
-    }
-    return Pair.of(taskId, delegateResponseData);
-  }
 
   public DelegateResponseData executeSyncTaskV2(DelegateTaskRequest delegateTaskRequest) {
     return executeSyncTaskV2ReturnTaskId(delegateTaskRequest).getValue();
@@ -87,9 +53,8 @@ public class DelegateGrpcClientWrapper {
     DelegateResponseData delegateResponseData;
     if (disableDeserialization) {
       BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
-      delegateResponseData = (DelegateResponseData) (binaryResponseData.isUsingKryoWithoutReference()
-              ? referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData())
-              : kryoSerializer.asInflatedObject(binaryResponseData.getData()));
+      delegateResponseData =
+          (DelegateResponseData) referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData());
       if (delegateResponseData instanceof ErrorNotifyResponseData) {
         WingsException exception = ((ErrorNotifyResponseData) delegateResponseData).getException();
         // if task registered to error handling framework on delegate, then exception won't be null
@@ -106,11 +71,6 @@ public class DelegateGrpcClientWrapper {
       delegateResponseData = (DelegateResponseData) responseData;
     }
     return Pair.of(taskId, delegateResponseData);
-  }
-
-  public String submitAsyncTask(DelegateTaskRequest delegateTaskRequest, Duration holdFor) {
-    return delegateServiceGrpcClient.submitAsyncTask(
-        delegateTaskRequest, delegateCallbackTokenSupplier.get(), holdFor, false);
   }
 
   public String submitAsyncTaskV2(DelegateTaskRequest delegateTaskRequest, Duration holdFor) {

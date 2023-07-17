@@ -547,6 +547,23 @@ public class PcfCommandTaskBaseHelper {
     return activeApplication;
   }
 
+  public ApplicationSummary findCurrentActiveApplicationNG(List<ApplicationSummary> previousReleases,
+      CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) throws PivotalClientApiException {
+    if (isEmpty(previousReleases)) {
+      return null;
+    }
+    String releaseNamePrefix = cfRequestConfig.getApplicationName();
+
+    ApplicationSummary activeApplication =
+        findActiveBasedOnEnvironmentVariable(previousReleases, cfRequestConfig, executionLogCallback);
+
+    if (activeApplication == null) {
+      activeApplication = findActiveBasedOnServiceName(previousReleases, releaseNamePrefix, executionLogCallback);
+    }
+
+    return activeApplication;
+  }
+
   private ApplicationSummary findActiveBasedOnEnvironmentVariable(List<ApplicationSummary> previousReleases,
       CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) throws PivotalClientApiException {
     // For existing

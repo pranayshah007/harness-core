@@ -374,6 +374,14 @@ public abstract class TerragruntProvisionState extends State {
       exportPlanToApplyStep = true;
     }
 
+    boolean encryptDecryptPlanForHarnessSMOnManager = terragruntStateHelper.isHarnessSecretManager(secretManagerConfig)
+        && featureFlagService.isEnabled(CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_CG, context.getAccountId());
+    if (secretManagerConfig != null) {
+      // We are overriding the secret manager account id to actual account id because in case of harness sm it
+      // comes out to be GOBAL_ACCOUNT_ID which fails to call the manager APIs due to authentication
+      secretManagerConfig.setAccountId(context.getAccountId());
+    }
+
     TerragruntProvisionParameters parameters =
         TerragruntProvisionParameters.builder()
             .accountId(executionContext.getApp().getAccountId())
@@ -410,10 +418,7 @@ public abstract class TerragruntProvisionState extends State {
             .planName(getPlanName(context))
             .pathToModule(pathToModule)
             .runAll(runAll)
-            .encryptDecryptPlanForHarnessSMOnManager(
-                featureFlagService.isEnabled(
-                    CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_CG, context.getAccountId())
-                && terragruntStateHelper.isHarnessSecretManager(secretManagerConfig))
+            .encryptDecryptPlanForHarnessSMOnManager(encryptDecryptPlanForHarnessSMOnManager)
             .useAutoApproveFlag(featureFlagService.isEnabled(TG_USE_AUTO_APPROVE_FLAG, context.getAccountId()))
             .build();
 
@@ -507,6 +512,14 @@ public abstract class TerragruntProvisionState extends State {
             terragruntProvisioner.getSecretManagerId(), context.getAccountId())
         : null;
 
+    boolean encryptDecryptPlanForHarnessSMOnManager = terragruntStateHelper.isHarnessSecretManager(secretManagerConfig)
+        && featureFlagService.isEnabled(CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_CG, context.getAccountId());
+    if (secretManagerConfig != null) {
+      // We are overriding the secret manager account id to actual account id because in case of harness sm it
+      // comes out to be GOBAL_ACCOUNT_ID which fails to call the manager APIs due to authentication
+      secretManagerConfig.setAccountId(context.getAccountId());
+    }
+
     ExecutionContextImpl executionContext = (ExecutionContextImpl) context;
     TerragruntProvisionParameters parameters =
         TerragruntProvisionParameters.builder()
@@ -543,10 +556,7 @@ public abstract class TerragruntProvisionState extends State {
             .planName(getPlanName(context))
             .pathToModule(pathToModule)
             .runAll(runAll)
-            .encryptDecryptPlanForHarnessSMOnManager(
-                featureFlagService.isEnabled(
-                    CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_CG, executionContext.getAccountId())
-                && terragruntStateHelper.isHarnessSecretManager(secretManagerConfig))
+            .encryptDecryptPlanForHarnessSMOnManager(encryptDecryptPlanForHarnessSMOnManager)
             .useAutoApproveFlag(featureFlagService.isEnabled(TG_USE_AUTO_APPROVE_FLAG, context.getAccountId()))
             .build();
     return createAndRunTask(activityId, executionContext, parameters, element.getDelegateTag());

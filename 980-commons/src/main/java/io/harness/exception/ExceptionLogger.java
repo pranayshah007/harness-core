@@ -71,12 +71,12 @@ public class ExceptionLogger {
                                             .failureTypes(exception.getFailureTypes())
                                             .build();
 
-      ResponseMessage finalResponseMessage = responseMessage;
-      if (list.stream().noneMatch(msg -> StringUtils.equals(finalResponseMessage.getMessage(), msg.getMessage()))) {
+      if (list.stream().noneMatch(msg -> StringUtils.equals(responseMessage.getMessage(), msg.getMessage()))) {
         list.add(responseMessage);
       }
-
-      list.addAll(exception.getResponseMessages());
+      if (exception.getResponseMessages() != null) {
+        list.addAll(exception.getResponseMessages());
+      }
     }
     return list;
   }

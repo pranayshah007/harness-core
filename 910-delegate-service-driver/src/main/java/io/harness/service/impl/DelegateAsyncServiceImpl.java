@@ -24,7 +24,6 @@ import io.harness.persistence.HPersistence;
 import io.harness.queue.QueueController;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.intfc.DelegateAsyncService;
-import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ResponseData;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -48,7 +47,6 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateAsyncServiceImpl implements DelegateAsyncService {
   @Inject private HPersistence persistence;
-  @Inject private KryoSerializer kryoSerializer;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject @Named("disableDeserialization") private boolean disableDeserialization;
@@ -98,18 +96,10 @@ public class DelegateAsyncServiceImpl implements DelegateAsyncService {
 
         loopStartTime = globalStopwatch.elapsed(TimeUnit.MILLISECONDS);
         ResponseData responseData;
-        if (disableDeserialization) {
-          responseData = BinaryResponseData.builder()
-                             .data(lockedAsyncTaskResponse.getResponseData())
-                             .usingKryoWithoutReference(lockedAsyncTaskResponse.isUsingKryoWithoutReference())
-                             .build();
-        } else {
-          ResponseData data = lockedAsyncTaskResponse.isUsingKryoWithoutReference()
-              ? (ResponseData) referenceFalseKryoSerializer.asInflatedObject(lockedAsyncTaskResponse.getResponseData())
-              : (ResponseData) kryoSerializer.asInflatedObject(lockedAsyncTaskResponse.getResponseData());
 
-          responseData = data instanceof SerializedResponseData ? data : (DelegateResponseData) data;
-        }
+        ResponseData data =
+            (ResponseData) referenceFalseKryoSerializer.asInflatedObject(lockedAsyncTaskResponse.getResponseData());
+        responseData = data instanceof SerializedResponseData ? data : (DelegateResponseData) data;
 
         long doneWithStartTime = stopwatch.elapsed(TimeUnit.MILLISECONDS);
         waitNotifyEngine.doneWith(lockedAsyncTaskResponse.getUuid(), responseData);

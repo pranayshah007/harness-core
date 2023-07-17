@@ -67,7 +67,6 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
   @Inject private VersionInfoManager versionInfoManager;
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject private DelegateCallbackRegistry delegateCallbackRegistry;
-  @Inject private KryoSerializer kryoSerializer;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Getter private Subject<DelegateTaskRetryObserver> retryObserverSubject = new Subject<>();
@@ -272,37 +271,6 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
   }
 
   @VisibleForTesting
-  void handleDriverResponse(DelegateTask delegateTask, DelegateTaskResponse response) {
-    if (delegateTask == null || response == null) {
-      return;
-    }
-
-    try (DelegateDriverLogContext driverLogContext =
-             new DelegateDriverLogContext(delegateTask.getDriverId(), OVERRIDE_ERROR);
-         TaskLogContext taskLogContext = new TaskLogContext(delegateTask.getUuid(), OVERRIDE_ERROR)) {
-      log.debug("Processing task response...");
-
-      DelegateCallbackService delegateCallbackService =
-          delegateCallbackRegistry.obtainDelegateCallbackService(delegateTask.getDriverId());
-      if (delegateCallbackService == null) {
-        log.info(
-            "Failed to obtain Delegate callback service for the given task. Skipping processing of task response.");
-        return;
-      }
-
-      if (delegateTask.getData().isAsync()) {
-        delegateCallbackService.publishAsyncTaskResponse(
-            delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()));
-      } else {
-        delegateCallbackService.publishSyncTaskResponse(
-            delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()));
-      }
-    } catch (Exception ex) {
-      log.error("Failed publishing task response", ex);
-    }
-  }
-
-  @VisibleForTesting
   void handleDriverResponseV2(DelegateTask delegateTask, DelegateTaskResponse response) {
     if (delegateTask == null || response == null) {
       return;
@@ -335,22 +303,6 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
       }
     } catch (Exception ex) {
       log.error("Failed publishing task response", ex);
-    }
-  }
-
-  private void handleInprocResponse(DelegateTask delegateTask, DelegateTaskResponse response) {
-    if (delegateTask.getData().isAsync()) {
-      String waitId = delegateTask.getWaitId();
-      if (waitId != null) {
-        waitNotifyEngine.doneWith(waitId, response.getResponse());
-      } else {
-        log.error("Async task has no wait ID");
-      }
-    } else {
-      persistence.save(DelegateSyncTaskResponse.builder()
-                           .uuid(delegateTask.getUuid())
-                           .responseData(kryoSerializer.asDeflatedBytes(response.getResponse()))
-                           .build());
     }
   }
 

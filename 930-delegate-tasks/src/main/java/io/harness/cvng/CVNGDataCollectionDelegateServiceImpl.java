@@ -44,6 +44,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -61,28 +62,7 @@ public class CVNGDataCollectionDelegateServiceImpl implements CVNGDataCollection
   public String getDataCollectionResult(String accountId, DataCollectionRequest dataCollectionRequest,
       List<List<EncryptedDataDetail>> encryptedDataDetails) {
     try (DataCollectionLogContext ignored = new DataCollectionLogContext(accountId, dataCollectionRequest)) {
-      if (dataCollectionRequest.getConnectorConfigDTO() instanceof DecryptableEntity) {
-        List<DecryptableEntity> decryptableEntities =
-            dataCollectionRequest.getConnectorConfigDTO().getDecryptableEntities();
-
-        if (isNotEmpty(decryptableEntities)) {
-          if (decryptableEntities.size() != encryptedDataDetails.size()) {
-            log.warn("Size of decryptableEntities is not same as size of encryptedDataDetails. "
-                + "Probably it is because of version difference between delegate and manager and decyptable entities got added/removed.");
-          }
-          // using min of encryptedDataDetails, decryptableEntities size to avoid index out of bound exception because
-          // of comparability issues. This allows us to add/remove decryptableEntities without breaking this. This can
-          // still cause issues if not done carefully.
-          for (int decryptableEntityIndex = 0;
-               decryptableEntityIndex < Math.min(decryptableEntities.size(), encryptedDataDetails.size());
-               decryptableEntityIndex++) {
-            DecryptableEntity decryptableEntity = decryptableEntities.get(decryptableEntityIndex);
-            List<EncryptedDataDetail> encryptedDataDetail = encryptedDataDetails.get(decryptableEntityIndex);
-            secretDecryptionService.decrypt(decryptableEntity, encryptedDataDetail);
-          }
-        }
-      }
-
+      decryptEncryptedEntities(dataCollectionRequest, encryptedDataDetails);
       try {
         String dsl = dataCollectionRequest.getDSL();
         Instant now = clock.instant();
@@ -96,46 +76,9 @@ public class CVNGDataCollectionDelegateServiceImpl implements CVNGDataCollection
                                                         .build();
         dataCollectionDSLService.registerDatacollectionExecutorService(cvngSyncCallExecutor);
         log.info("Starting execution of DSL ");
-        String response = JsonUtils.asJson(dataCollectionDSLService.execute(dsl, runtimeParameters, callDetails -> {
-          // TODO: write unit test case for this lambda expression.
-          // TODO : Add a test case asserting entries in the cvngLog
-          if (dataCollectionRequest.getTracingId() != null) {
-            final ApiCallLogDTO cvngLogDTO = ApiCallLogDTO.builder()
-                                                 .traceableId(dataCollectionRequest.getTracingId())
-                                                 .traceableType(TraceableType.ONBOARDING)
-                                                 .accountId(accountId)
-                                                 .startTime(dataCollectionRequest.getStartTime(now).toEpochMilli())
-                                                 .endTime(dataCollectionRequest.getEndTime(now).toEpochMilli())
-                                                 .requestTime(callDetails.getRequestTime().toEpochMilli())
-                                                 .responseTime(callDetails.getResponseTime().toEpochMilli())
-                                                 .build();
-            String encodedURL = callDetails.getRequest().request().url().toString();
-            cvngLogDTO.addFieldToRequest(ApiCallLogDTOField.builder()
-                                             .name(REQUEST_URL)
-                                             .type(ApiCallLogDTO.FieldType.URL)
-                                             .value(URLDecoder.decode(encodedURL, StandardCharsets.UTF_8))
-                                             .build());
-            String method = callDetails.getRequest().request().method();
-            cvngLogDTO.addFieldToRequest(ApiCallLogDTOField.builder()
-                                             .type(ApiCallLogDTO.FieldType.TEXT)
-                                             .name(REQUEST_METHOD)
-                                             .value(method)
-                                             .build());
-            Set<String> headerNames = callDetails.getRequest().request().headers().names();
-            if (headerNames.size() > 0) {
-              cvngLogDTO.addFieldToRequest(ApiCallLogDTOField.builder()
-                                               .type(ApiCallLogDTO.FieldType.TEXT)
-                                               .name(REQUEST_HEADERS)
-                                               .value(JsonUtils.asJson(headerNames))
-                                               .build());
-            }
-            if (callDetails.getRequest().request().body() != null) {
-              cvngLogDTO.addCallDetailsBodyFieldToRequest(callDetails.getRequest().request());
-            }
-            setApiCallLogDTOWithResponse(callDetails, cvngLogDTO);
-            delegateLogService.save(accountId, cvngLogDTO);
-          }
-        }));
+        Consumer<CallDetails> callDetailsConsumer = getCallDetailsConsumer(accountId, dataCollectionRequest, now);
+        String response =
+            JsonUtils.asJson(dataCollectionDSLService.execute(dsl, runtimeParameters, callDetailsConsumer));
         log.info("Returning DSL result of length : " + response.length());
         return response;
       } catch (Exception exception) {
@@ -144,6 +87,72 @@ public class CVNGDataCollectionDelegateServiceImpl implements CVNGDataCollection
         throw new DataCollectionException(errorMessage);
       }
     }
+  }
+
+  private void decryptEncryptedEntities(
+      DataCollectionRequest dataCollectionRequest, List<List<EncryptedDataDetail>> encryptedDataDetails) {
+    if (dataCollectionRequest.getConnectorConfigDTO() instanceof DecryptableEntity) {
+      List<DecryptableEntity> decryptableEntities =
+          dataCollectionRequest.getConnectorConfigDTO().getDecryptableEntities();
+
+      if (isNotEmpty(decryptableEntities)) {
+        if (decryptableEntities.size() != encryptedDataDetails.size()) {
+          log.warn("Size of decryptableEntities is not same as size of encryptedDataDetails. "
+              + "Probably it is because of version difference between delegate and manager and decyptable entities got added/removed.");
+        }
+        // using min of encryptedDataDetails, decryptableEntities size to avoid index out of bound exception because
+        // of comparability issues. This allows us to add/remove decryptableEntities without breaking this. This can
+        // still cause issues if not done carefully.
+        for (int decryptableEntityIndex = 0;
+             decryptableEntityIndex < Math.min(decryptableEntities.size(), encryptedDataDetails.size());
+             decryptableEntityIndex++) {
+          DecryptableEntity decryptableEntity = decryptableEntities.get(decryptableEntityIndex);
+          List<EncryptedDataDetail> encryptedDataDetail = encryptedDataDetails.get(decryptableEntityIndex);
+          secretDecryptionService.decrypt(decryptableEntity, encryptedDataDetail);
+        }
+      }
+    }
+  }
+
+  private Consumer<CallDetails> getCallDetailsConsumer(
+      String accountId, DataCollectionRequest dataCollectionRequest, Instant now) {
+    return callDetails -> {
+      // TODO: write unit test case for this lambda expression.
+      // TODO : Add a test case asserting entries in the cvngLog
+      if (dataCollectionRequest.getTracingId() != null) {
+        final ApiCallLogDTO cvngLogDTO = ApiCallLogDTO.builder()
+                                             .traceableId(dataCollectionRequest.getTracingId())
+                                             .traceableType(TraceableType.ONBOARDING)
+                                             .accountId(accountId)
+                                             .startTime(dataCollectionRequest.getStartTime(now).toEpochMilli())
+                                             .endTime(dataCollectionRequest.getEndTime(now).toEpochMilli())
+                                             .requestTime(callDetails.getRequestTime().toEpochMilli())
+                                             .responseTime(callDetails.getResponseTime().toEpochMilli())
+                                             .build();
+        String encodedURL = callDetails.getRequest().request().url().toString();
+        cvngLogDTO.addFieldToRequest(ApiCallLogDTOField.builder()
+                                         .name(REQUEST_URL)
+                                         .type(ApiCallLogDTO.FieldType.URL)
+                                         .value(URLDecoder.decode(encodedURL, StandardCharsets.UTF_8))
+                                         .build());
+        String method = callDetails.getRequest().request().method();
+        cvngLogDTO.addFieldToRequest(
+            ApiCallLogDTOField.builder().type(ApiCallLogDTO.FieldType.TEXT).name(REQUEST_METHOD).value(method).build());
+        Set<String> headerNames = callDetails.getRequest().request().headers().names();
+        if (headerNames.size() > 0) {
+          cvngLogDTO.addFieldToRequest(ApiCallLogDTOField.builder()
+                                           .type(ApiCallLogDTO.FieldType.TEXT)
+                                           .name(REQUEST_HEADERS)
+                                           .value(JsonUtils.asJson(headerNames))
+                                           .build());
+        }
+        if (callDetails.getRequest().request().body() != null) {
+          cvngLogDTO.addCallDetailsBodyFieldToRequest(callDetails.getRequest().request());
+        }
+        setApiCallLogDTOWithResponse(callDetails, cvngLogDTO);
+        delegateLogService.save(accountId, cvngLogDTO);
+      }
+    };
   }
 
   private static void setApiCallLogDTOWithResponse(CallDetails callDetails, ApiCallLogDTO cvngLogDTO) {

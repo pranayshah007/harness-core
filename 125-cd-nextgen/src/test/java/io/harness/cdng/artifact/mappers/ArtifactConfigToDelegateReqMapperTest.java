@@ -189,6 +189,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(jenkinsArtifactDelegateRequest.getJobName()).isEqualTo(jenkinsArtifactConfig.getJobName().getValue());
     assertThat(jenkinsArtifactDelegateRequest.getConnectorRef()).isEqualTo("");
     assertThat(jenkinsArtifactDelegateRequest.getBuildNumber()).isEqualTo("build");
+    assertThat(jenkinsArtifactDelegateRequest.getBuildRegex()).isNull();
   }
 
   @Test
@@ -1069,7 +1070,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     JenkinsArtifactConfig jenkinsArtifactConfig = JenkinsArtifactConfig.builder()
                                                       .artifactPath(ParameterField.createValueField("ARTIFACT"))
                                                       .jobName(ParameterField.createValueField("JOB"))
-                                                      .build(ParameterField.createValueField(LAST_PUBLISHED_EXPRESSION))
+                                                      .build(LAST_PUBLISHED_EXPRESSION_PARAMETER)
                                                       .build();
     JenkinsConnectorDTO connectorDTO = JenkinsConnectorDTO.builder().build();
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
@@ -1085,6 +1086,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(jenkinsArtifactDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.JENKINS);
     assertThat(jenkinsArtifactDelegateRequest.getJobName()).isEqualTo(jenkinsArtifactConfig.getJobName().getValue());
     assertThat(jenkinsArtifactDelegateRequest.getConnectorRef()).isEqualTo("");
+    assertThat(jenkinsArtifactDelegateRequest.getBuildRegex()).isEqualTo("");
     assertThat(jenkinsArtifactDelegateRequest.getBuildNumber()).isEqualTo("");
   }
 
@@ -1117,13 +1119,11 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
   public void testGetJenkinsDelegateRequestTagAsInputValidator() {
-    JenkinsArtifactConfig jenkinsArtifactConfig =
-        JenkinsArtifactConfig.builder()
-            .artifactPath(ParameterField.createValueField("ARTIFACT"))
-            .jobName(ParameterField.createValueField("JOB"))
-            .build(ParameterField.createValueFieldWithInputSetValidator(
-                LAST_PUBLISHED_EXPRESSION, new InputSetValidator(InputSetValidatorType.REGEX, "stable*"), true))
-            .build();
+    JenkinsArtifactConfig jenkinsArtifactConfig = JenkinsArtifactConfig.builder()
+                                                      .artifactPath(ParameterField.createValueField("ARTIFACT"))
+                                                      .jobName(ParameterField.createValueField("JOB"))
+                                                      .build(LAST_PUBLISHED_EXPRESSION_REGEX)
+                                                      .build();
     JenkinsConnectorDTO connectorDTO = JenkinsConnectorDTO.builder().build();
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
 
@@ -1137,7 +1137,8 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
         .isEqualTo(Arrays.asList(jenkinsArtifactConfig.getArtifactPath().getValue()));
     assertThat(jenkinsArtifactDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.JENKINS);
     assertThat(jenkinsArtifactDelegateRequest.getJobName()).isEqualTo(jenkinsArtifactConfig.getJobName().getValue());
-    assertThat(jenkinsArtifactDelegateRequest.getBuildNumber()).isEqualTo("stable*");
+    assertThat(jenkinsArtifactDelegateRequest.getBuildNumber()).isEqualTo(TAG);
+    assertThat(jenkinsArtifactDelegateRequest.getBuildRegex()).isEqualTo(TAG);
   }
 
   @Test

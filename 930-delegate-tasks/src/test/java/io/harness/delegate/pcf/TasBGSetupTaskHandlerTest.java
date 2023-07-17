@@ -573,8 +573,8 @@ public class TasBGSetupTaskHandlerTest extends CategoryTest {
         .when(tasRegistrySettingsAdapter)
         .getContainerSettings(any());
     when(cfDeploymentManager.getPreviousReleases(any(), any()))
-        .thenReturn(List.of(
-            getApplicationSummary(APP_NAME_INACTIVE, APP_ID), getApplicationSummary(APP_NAME_INACTIVE, APP_ID)));
+        .thenReturn(List.of(getApplicationSummary(APP_NAME, APP_ID), getApplicationSummary(APP_NAME_INACTIVE, APP_ID),
+            getApplicationSummary(APP_NAME_INACTIVE, APP_ID)));
 
     CfBlueGreenSetupResponseNG cfBlueGreenSetupResponseNG =
         (CfBlueGreenSetupResponseNG) tasBlueGreenSetupTaskHandler.executeTaskInternal(
