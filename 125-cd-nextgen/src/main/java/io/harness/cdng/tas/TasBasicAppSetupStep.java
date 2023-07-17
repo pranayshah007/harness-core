@@ -18,11 +18,11 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
-import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.tas.outcome.TasSetupDataOutcome;
+import io.harness.cdng.tas.outcome.TasSetupDataOutcome.TasSetupDataOutcomeBuilder;
 import io.harness.cdng.tas.outcome.TasSetupVariablesOutcome;
 import io.harness.cdng.tas.outcome.TasSetupVariablesOutcome.TasSetupVariablesOutcomeBuilder;
 import io.harness.delegate.beans.TaskData;
@@ -41,7 +41,6 @@ import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
-import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.pcf.CfCommandUnitConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -83,8 +82,6 @@ public class TasBasicAppSetupStep extends TaskChainExecutableWithRollbackAndRbac
                                                .build();
   @Inject private TasStepHelper tasStepHelper;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
-  @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
-  @Inject private InstanceInfoService instanceInfoService;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private CDStepHelper cdStepHelper;
   @Inject private StepHelper stepHelper;
@@ -109,33 +106,44 @@ public class TasBasicAppSetupStep extends TaskChainExecutableWithRollbackAndRbac
   @Override
   public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
+    if (passThroughData instanceof StepExceptionPassThroughData) {
+      StepExceptionPassThroughData stepExceptionPassThroughData = (StepExceptionPassThroughData) passThroughData;
+      return StepResponse.builder()
+          .status(Status.FAILED)
+          .unitProgressList(stepExceptionPassThroughData.getUnitProgressData().getUnitProgresses())
+          .failureInfo(FailureInfo.newBuilder().setErrorMessage(stepExceptionPassThroughData.getErrorMessage()).build())
+          .build();
+    }
+    CfBasicSetupResponseNG response;
+    TasSetupDataOutcomeBuilder tasSetupDataOutcomeBuilder = TasSetupDataOutcome.builder();
     try {
-      if (passThroughData instanceof StepExceptionPassThroughData) {
-        StepExceptionPassThroughData stepExceptionPassThroughData = (StepExceptionPassThroughData) passThroughData;
-        return StepResponse.builder()
-            .status(Status.FAILED)
-            .unitProgressList(stepExceptionPassThroughData.getUnitProgressData().getUnitProgresses())
-            .failureInfo(
-                FailureInfo.newBuilder().setErrorMessage(stepExceptionPassThroughData.getErrorMessage()).build())
-            .build();
-      }
-      CfBasicSetupResponseNG response;
-      try {
-        response = (CfBasicSetupResponseNG) responseDataSupplier.get();
-      } catch (Exception ex) {
-        log.error("Error while processing Tas response: {}", ExceptionUtils.getMessage(ex), ex);
-        throw ex;
-      }
-      if (!response.getCommandExecutionStatus().equals(CommandExecutionStatus.SUCCESS)) {
-        return StepResponse.builder()
-            .status(Status.FAILED)
-            .failureInfo(FailureInfo.newBuilder().setErrorMessage(response.getErrorMessage()).build())
-            .unitProgressList(response.getUnitProgressData().getUnitProgresses())
-            .build();
-      }
+      response = (CfBasicSetupResponseNG) responseDataSupplier.get();
+    } catch (Exception ex) {
+      log.error("Error while processing Tas Basic App Setup response: {}", ExceptionUtils.getMessage(ex), ex);
+      throw ex;
+    }
+    if (!response.getCommandExecutionStatus().equals(CommandExecutionStatus.SUCCESS)) {
+      return StepResponse.builder()
+          .status(Status.FAILED)
+          .failureInfo(FailureInfo.newBuilder().setErrorMessage(response.getErrorMessage()).build())
+          .unitProgressList(response.getUnitProgressData().getUnitProgresses())
+          .build();
+    }
+    try {
       TasExecutionPassThroughData tasExecutionPassThroughData = (TasExecutionPassThroughData) passThroughData;
       TasBasicAppSetupStepParameters tasBasicAppSetupStepParameters =
           (TasBasicAppSetupStepParameters) stepParameters.getSpec();
+      tasSetupDataOutcomeBuilder.routeMaps(response.getNewApplicationInfo().getAttachedRoutes())
+          .cfCliVersion(tasStepHelper.cfCliVersionNGMapper(tasExecutionPassThroughData.getCfCliVersion()))
+          .timeoutIntervalInMinutes(CDStepHelper.getTimeoutInMin(stepParameters))
+          .resizeStrategy(TasResizeStrategyType.DOWNSCALE_OLD_FIRST)
+          .useAppAutoScalar(!isNull(tasExecutionPassThroughData.getTasManifestsPackage().getAutoscalarManifestYml()))
+          .newReleaseName(response.getNewApplicationInfo().getApplicationName())
+          .activeApplicationDetails(response.getCurrentProdInfo())
+          .newApplicationDetails(response.getNewApplicationInfo())
+          .manifestsPackage(tasExecutionPassThroughData.getTasManifestsPackage())
+          .cfAppNamePrefix(tasExecutionPassThroughData.getApplicationName())
+          .instanceCountType(tasBasicAppSetupStepParameters.getTasInstanceCountType());
       Integer desiredCount = 0;
       if (tasBasicAppSetupStepParameters.getTasInstanceCountType().equals(
               TasInstanceCountType.MATCH_RUNNING_INSTANCES)) {
@@ -147,25 +155,9 @@ public class TasBasicAppSetupStep extends TaskChainExecutableWithRollbackAndRbac
       } else {
         desiredCount = tasStepHelper.fetchMaxCountFromManifest(tasExecutionPassThroughData.getTasManifestsPackage());
       }
-
+      tasSetupDataOutcomeBuilder.maxCount(desiredCount).desiredActualFinalCount(desiredCount);
       executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.TAS_APP_SETUP_OUTCOME,
-          TasSetupDataOutcome.builder()
-              .routeMaps(response.getNewApplicationInfo().getAttachedRoutes())
-              .cfCliVersion(tasStepHelper.cfCliVersionNGMapper(tasExecutionPassThroughData.getCfCliVersion()))
-              .timeoutIntervalInMinutes(CDStepHelper.getTimeoutInMin(stepParameters))
-              .resizeStrategy(TasResizeStrategyType.DOWNSCALE_OLD_FIRST)
-              .maxCount(desiredCount)
-              .useAppAutoScalar(
-                  !isNull(tasExecutionPassThroughData.getTasManifestsPackage().getAutoscalarManifestYml()))
-              .desiredActualFinalCount(desiredCount)
-              .newReleaseName(response.getNewApplicationInfo().getApplicationName())
-              .activeApplicationDetails(response.getCurrentProdInfo())
-              .newApplicationDetails(response.getNewApplicationInfo())
-              .manifestsPackage(tasExecutionPassThroughData.getTasManifestsPackage())
-              .cfAppNamePrefix(tasExecutionPassThroughData.getApplicationName())
-              .instanceCountType(tasBasicAppSetupStepParameters.getTasInstanceCountType())
-              .build(),
-          StepCategory.STEP.name());
+          tasSetupDataOutcomeBuilder.build(), StepCategory.STEP.name());
       TasSetupVariablesOutcomeBuilder tasSetupVariablesOutcome =
           TasSetupVariablesOutcome.builder()
               .newAppName(response.getNewApplicationInfo().getApplicationName())
@@ -186,8 +178,15 @@ public class TasBasicAppSetupStep extends TaskChainExecutableWithRollbackAndRbac
                            .group(StepCategory.STAGE.name())
                            .build())
           .build();
-    } finally {
-      tasStepHelper.closeLogStream(ambiance);
+    } catch (Exception e) {
+      log.error("Error while processing Tas Basic App Setup response: {}", ExceptionUtils.getMessage(e), e);
+      executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.TAS_APP_SETUP_OUTCOME,
+          tasSetupDataOutcomeBuilder.build(), StepCategory.STEP.name());
+      return StepResponse.builder()
+          .status(Status.FAILED)
+          .unitProgressList(response.getUnitProgressData().getUnitProgresses())
+          .failureInfo(FailureInfo.newBuilder().setErrorMessage(ExceptionUtils.getMessage(e)).build())
+          .build();
     }
   }
 
@@ -211,9 +210,8 @@ public class TasBasicAppSetupStep extends TaskChainExecutableWithRollbackAndRbac
     ArtifactOutcome artifactOutcome = cdStepHelper.resolveArtifactsOutcome(ambiance).orElseThrow(
         () -> new InvalidArgumentsException(Pair.of("artifacts", "Primary artifact is required for TAS")));
     InfrastructureOutcome infrastructureOutcome = cdStepHelper.getInfrastructureOutcome(ambiance);
-    List<String> routeMaps =
-        tasStepHelper.getRouteMaps(executionPassThroughData.getTasManifestsPackage().getManifestYml(),
-            getParameterFieldValue(tasBasicAppSetupStepParameters.getAdditionalRoutes()));
+    List<String> routeMaps = tasStepHelper.getRouteMaps(executionPassThroughData.getTasManifestsPackage(),
+        getParameterFieldValue(tasBasicAppSetupStepParameters.getAdditionalRoutes()));
 
     Integer olderActiveVersionCountToKeep =
         new BigDecimal(getParameterFieldValue(tasBasicAppSetupStepParameters.getExistingVersionToKeep()))
