@@ -238,6 +238,9 @@ resourceGroupServiceConfig:
 
   enableOpentelemetry: false
 
+slackServiceConfig:
+  enableSlackModule: false
+
 hostname: ${HOSTNAME:-localhost}
 
 basePathPrefix: ${BASE_PATH_PREFIX:-""}

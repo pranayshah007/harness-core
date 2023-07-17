@@ -27,6 +27,7 @@ import io.harness.resourcegroup.ResourceGroupServiceConfig;
 import io.harness.resourcegroup.v1.remote.dto.ZendeskConfig;
 import io.harness.secret.ConfigSecret;
 import io.harness.secret.SecretsConfiguration;
+import io.harness.slack.SlackModuleConfig;
 import io.harness.threading.ThreadPoolConfig;
 
 import ch.qos.logback.access.spi.IAccessEvent;
@@ -75,6 +76,7 @@ public class PlatformConfiguration extends Configuration {
   public static final String AUDIT_RESOURCE_PACKAGE = "io.harness.audit.remote";
   public static final String FILTER_RESOURCE_PACKAGE = "io.harness.filter";
   public static final String RESOURCEGROUP_PACKAGE = "io.harness.resourcegroup";
+  public static final String SLACK_PACKAGE = "io.harness.slack";
   public static final String ENFORCEMENT_PACKAGE = "io.harness.enforcement.client.resources";
   RedisSSLConfig redisSSLConfig =
       RedisSSLConfig.builder().CATrustStorePassword("").CATrustStorePath("").enabled(false).build();
@@ -104,6 +106,10 @@ public class PlatformConfiguration extends Configuration {
   private ResourceGroupServiceConfig resoureGroupServiceConfig =
       ResourceGroupServiceConfig.builder().hostname("localhost").basePathPrefix("").enableResourceGroup(true).build();
 
+  @JsonProperty("slackServiceConfig")
+  @ConfigSecret
+  private SlackModuleConfig slackModuleConfig = SlackModuleConfig.builder().build();
+
   @JsonProperty("allowedOrigins") private List<String> allowedOrigins = Lists.newArrayList();
   @JsonProperty("managerClientConfig") private ServiceHttpClientConfig managerServiceConfig;
   @JsonProperty("ngManagerClientConfig") private ServiceHttpClientConfig ngManagerServiceConfig;
@@ -128,6 +134,7 @@ public class PlatformConfiguration extends Configuration {
   public static final Collection<Class<?>> NOTIFICATION_SERVICE_RESOURCES = getNotificationServiceResourceClasses();
   public static final Collection<Class<?>> AUDIT_SERVICE_RESOURCES = getAuditServiceResourceClasses();
   public static final Collection<Class<?>> RESOURCE_GROUP_RESOURCES = getResourceGroupServiceResourceClasses();
+  public static final Collection<Class<?>> SLACK_RESOURCES = getSlackResourceClasses();
 
   private static Collection<Class<?>> getAllResources() {
     return HarnessReflections.get().getTypesAnnotatedWith(Path.class);
@@ -151,6 +158,12 @@ public class PlatformConfiguration extends Configuration {
         .collect(Collectors.toSet());
   }
 
+  private static Collection<Class<?>> getSlackResourceClasses() {
+    return ALL_HARNESS_RESOURCES.stream()
+        .filter(clazz -> StringUtils.startsWithAny(clazz.getPackage().getName(), SLACK_PACKAGE))
+        .collect(Collectors.toSet());
+  }
+
   public static Collection<Class<?>> getPlatformServiceCombinedResourceClasses(PlatformConfiguration appConfig) {
     Collection<Class<?>> resources = new HashSet<>(NOTIFICATION_SERVICE_RESOURCES);
     if (appConfig.getAuditServiceConfig().isEnableAuditService()) {
@@ -158,6 +171,9 @@ public class PlatformConfiguration extends Configuration {
     }
     if (appConfig.getResoureGroupServiceConfig().isEnableResourceGroup()) {
       resources.addAll(RESOURCE_GROUP_RESOURCES);
+    }
+    if (appConfig.getSlackModuleConfig().isEnableSlackModule()) {
+      resources.addAll(SLACK_RESOURCES);
     }
     resources.addAll(ALL_HARNESS_RESOURCES.stream()
                          .filter(clazz -> StringUtils.startsWithAny(clazz.getPackage().getName(), ENFORCEMENT_PACKAGE))

@@ -16,6 +16,7 @@ import static io.harness.platform.PlatformConfiguration.getPlatformServiceCombin
 import static io.harness.platform.audit.AuditServiceSetup.AUDIT_SERVICE;
 import static io.harness.platform.notification.NotificationServiceSetup.NOTIFICATION_SERVICE;
 import static io.harness.platform.resourcegroup.ResourceGroupServiceSetup.RESOURCE_GROUP_SERVICE;
+import static io.harness.platform.slack.SlackServiceSetup.SLACK_SERVICE;
 
 import static com.google.common.collect.ImmutableMap.of;
 import static java.util.stream.Collectors.toSet;
@@ -39,12 +40,14 @@ import io.harness.platform.notification.NotificationServiceSetup;
 import io.harness.platform.remote.HealthResource;
 import io.harness.platform.resourcegroup.ResourceGroupServiceModule;
 import io.harness.platform.resourcegroup.ResourceGroupServiceSetup;
+import io.harness.platform.slack.SlackServiceSetup;
 import io.harness.request.RequestContextFilter;
 import io.harness.secret.ConfigSecretUtils;
 import io.harness.security.InternalApiAuthFilter;
 import io.harness.security.NextGenAuthenticationFilter;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.PublicApi;
+import io.harness.slack.SlackModule;
 import io.harness.swagger.SwaggerBundleConfigurationFactory;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
@@ -164,6 +167,11 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
           Guice.createInjector(
               new AuditServiceModule(appConfig), new MetricRegistryModule(metricRegistry), providerModule));
     }
+    if (appConfig.getSlackModuleConfig().isEnableSlackModule()) {
+      godInjector.put(SLACK_SERVICE,
+          Guice.createInjector(new SlackModule(appConfig.getSlackModuleConfig()),
+              new MetricRegistryModule(metricRegistry), providerModule));
+    }
 
     godInjector.put(PLATFORM_SERVICE,
         Guice.createInjector(new TokenClientModule(appConfig.getRbacServiceConfig(),
@@ -189,6 +197,10 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
 
     if (appConfig.getAuditServiceConfig().isEnableAuditService()) {
       new AuditServiceSetup().setup(appConfig.getAuditServiceConfig(), environment, godInjector.get(AUDIT_SERVICE));
+    }
+
+    if (appConfig.getSlackModuleConfig().isEnableSlackModule()) {
+      new SlackServiceSetup().setup(appConfig.getSlackModuleConfig(), environment, godInjector.get(SLACK_SERVICE));
     }
 
     if (appConfig.getResoureGroupServiceConfig().isEnableResourceGroup()) {
