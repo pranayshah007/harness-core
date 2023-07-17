@@ -231,7 +231,8 @@ public class WatcherServiceImpl implements WatcherService {
 
   private final AtomicBoolean frozen = new AtomicBoolean(false);
 
-  private final String defaultJREVersion="11.0.19+7";
+  private final String defaultJREDelegateVersion="11.0.19+7";
+  private final String defaultJREWatcherVersion="11.0.19+7";
 
   @Override
   public void run(boolean upgrade) {
@@ -1157,7 +1158,7 @@ public class WatcherServiceImpl implements WatcherService {
       try {
         newDelegate =
             new ProcessExecutor()
-                .command("nohup", versionFolder + File.separator + DELEGATE_SCRIPT, watcherProcess, versionFolder, isEmpty(jreVersion)?defaultJREVersion:jreVersion)
+                .command("nohup", versionFolder + File.separator + DELEGATE_SCRIPT, watcherProcess, versionFolder, isEmpty(jreVersion)?defaultJREDelegateVersion:jreVersion)
                 .redirectError(Slf4jStream.of(scriptName).asError())
                 .setMessageLogger((log, format, arguments) -> log.info(format, arguments))
                 .start();
@@ -1267,15 +1268,27 @@ public class WatcherServiceImpl implements WatcherService {
         if (restResponse != null) {
           return restResponse.getResource();
         }
-      } else {
-        // need to fix for smp
-        String delegateMetadata =
-                Http.getResponseStringFromUrl(watcherConfiguration.getDelegateCheckLocation(), 10, 10);
-        cachedDelegateVersion.set(singletonList(substringBefore(delegateMetadata, " ").trim()));
       }
     } catch (Exception ex) {
       log.warn("Failed to fetch jre version from Manager ", ex);
     }
+    // for smp it will return empty and take default value defined above
+    return "";
+  }
+
+  private String getWatcherJREVersion() {
+    try {
+      if (multiVersion) {
+        RestResponse<String> restResponse = callInterruptible21(timeLimiter, ofSeconds(30),
+                () -> SafeHttpCall.execute(managerClient.getJREVersion(watcherConfiguration.getAccountId(), false)));
+        if (restResponse != null) {
+          return restResponse.getResource();
+        }
+      }
+    } catch (Exception ex) {
+      log.warn("Failed to fetch jre version from Manager ", ex);
+    }
+    // for smp it will return empty and take default value defined above
     return "";
   }
 
@@ -1423,8 +1436,9 @@ public class WatcherServiceImpl implements WatcherService {
     StartedProcess process = null;
     try {
       log.info("[Old] Starting new watcher");
+      final String jreVersion = getWatcherJREVersion();
       process = new ProcessExecutor()
-                    .command("nohup", "./start.sh", "upgrade", WatcherApplication.getProcessId())
+                    .command("nohup", "./start.sh", "upgrade", WatcherApplication.getProcessId(), isEmpty(jreVersion)?defaultJREWatcherVersion:jreVersion)
                     .redirectError(Slf4jStream.of("UpgradeScript").asError())
                     .setMessageLogger((log, format, arguments) -> log.info(format, arguments))
                     .start();

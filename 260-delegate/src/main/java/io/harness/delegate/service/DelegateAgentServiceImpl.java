@@ -7,6 +7,7 @@
 
 package io.harness.delegate.service;
 
+import static io.harness.concurrent.HTimeLimiter.callInterruptible21;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateTimeBasedUuid;
@@ -73,6 +74,7 @@ import static io.harness.threading.Morpheus.sleep;
 import static io.harness.utils.MemoryPerformanceUtils.memoryUsage;
 import static io.harness.utils.SecretUtils.isBase64SecretIdentifier;
 
+import static java.util.Collections.singletonList;
 import static software.wings.beans.TaskType.SCRIPT;
 import static software.wings.beans.TaskType.SHELL_SCRIPT_TASK_NG;
 
@@ -154,6 +156,7 @@ import io.harness.logstreaming.LogStreamingSanitizer;
 import io.harness.logstreaming.LogStreamingTaskClient;
 import io.harness.logstreaming.LogStreamingTaskClient.LogStreamingTaskClientBuilder;
 import io.harness.managerclient.DelegateAgentManagerClient;
+import io.harness.managerclient.SafeHttpCall;
 import io.harness.metrics.HarnessMetricRegistry;
 import io.harness.network.FibonacciBackOff;
 import io.harness.network.Http;
@@ -333,6 +336,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private static volatile String delegateId;
   private static final String delegateInstanceId = generateUuid();
   private final int MAX_ATTEMPTS = 3;
+  private final String defaultJREWatcherVersion="11.0.19+7";
 
   @Inject
   @Getter(value = PACKAGE, onMethod = @__({ @VisibleForTesting }))
@@ -1686,8 +1690,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         // resetting version matched timestamp
         messageService.putData(WATCHER_DATA, WATCHER_HEARTBEAT, clock.millis());
         watcherVersionMatchedAt = clock.millis();
+        final String jreVersion = getWatcherJREVersion();
         StartedProcess newWatcher = new ProcessExecutor()
-                                        .command("nohup", "./start.sh")
+                                        .command("nohup", "./start.sh","","",isEmpty(jreVersion)?defaultJREWatcherVersion:jreVersion)
                                         .redirectError(Slf4jStream.of("RestartWatcherScript").asError())
                                         .redirectOutput(Slf4jStream.of("RestartWatcherScript").asInfo())
                                         .readOutput(true)
@@ -1703,6 +1708,21 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         log.error("Error restarting watcher {}", watcherProcess, e);
       }
     }
+  }
+
+  private String getWatcherJREVersion() {
+    try {
+      if (multiVersion) {
+        RestResponse<String> restResponse = ManagerCallHelper.executeRestCall(delegateAgentManagerClient.getJREVersion(delegateConfiguration.getAccountId(), false),this::handleErrorResponse);
+        if (restResponse != null) {
+          return restResponse.getResource();
+        }
+      }
+    } catch (Exception ex) {
+      log.warn("Failed to fetch jre version from Manager ", ex);
+    }
+    // for smp it will return empty and take default value defined above
+    return "";
   }
 
   private boolean downloadRunScriptsForWatcher(String version) {
