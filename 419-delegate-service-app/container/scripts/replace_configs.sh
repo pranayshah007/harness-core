@@ -190,6 +190,7 @@ fi
 
 if [[ "" != "$LOG_STREAMING_SERVICE_TOKEN" ]]; then
   export LOG_STREAMING_SERVICE_TOKEN; yq -i '.logStreamingServiceConfig.serviceToken=env(LOG_STREAMING_SERVICE_TOKEN)' $CONFIG_FILE
+fi
 
 
 replace_key_value distributedLockImplementation $DISTRIBUTED_LOCK_IMPLEMENTATION
