@@ -1152,6 +1152,7 @@ public class WatcherServiceImpl implements WatcherService {
       return;
     }
     final String jreVersion = getDelegateJREVersion();
+    System.out.println("Bharat JRE verision print " + jreVersion);
     executorService.submit(() -> {
       StartedProcess newDelegate = null;
       try {
