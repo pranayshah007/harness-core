@@ -14,6 +14,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.k8s.manifest.ManifestHelper.normalizeFolderPath;
 
 import static java.lang.String.format;
+import static java.util.Objects.isNull;
 
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
@@ -137,9 +138,7 @@ public class ServerlessV2PluginInfoProviderHelper {
       Ambiance ambiance, ServerlessAwsLambdaV2BaseStepInfo serverlessAwsLambdaV2BaseStepInfo) {
     ParameterField<Map<String, String>> envVariables = serverlessAwsLambdaV2BaseStepInfo.getEnvVariables();
 
-    ManifestsOutcome manifestsOutcome = resolveServerlessManifestsOutcome(ambiance);
-    ExpressionEvaluatorUtils.updateExpressions(
-        manifestsOutcome, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+    ManifestsOutcome manifestsOutcome = fetchManifestsOutcome(ambiance);
     ManifestOutcome serverlessManifestOutcome = pluginInfoProviderUtils.getServerlessManifestOutcome(
         manifestsOutcome.values(), ManifestType.ServerlessAwsLambda);
     StoreConfig storeConfig = serverlessManifestOutcome.getStore();
@@ -147,6 +146,10 @@ public class ServerlessV2PluginInfoProviderHelper {
       throw new InvalidRequestException("Invalid kind of storeConfig for Serverless step", USER);
     }
     String configOverridePath = getConfigOverridePath(serverlessManifestOutcome);
+    if (isNull(configOverridePath)) {
+      configOverridePath = "";
+    }
+
     GitStoreConfig gitStoreConfig = (GitStoreConfig) storeConfig;
     List<String> gitPaths = getFolderPathsForManifest(gitStoreConfig);
 
@@ -201,7 +204,7 @@ public class ServerlessV2PluginInfoProviderHelper {
 
     HashMap<String, String> environmentVariablesMap = new HashMap<>();
 
-    populateCommandOptions(serverlessAwsLambdaV2BaseStepInfo, environmentVariablesMap);
+    populateCommandOptions(ambiance, serverlessAwsLambdaV2BaseStepInfo, environmentVariablesMap);
 
     environmentVariablesMap.put("PLUGIN_SERVERLESS_DIR", serverlessDirectory);
     environmentVariablesMap.put("PLUGIN_SERVERLESS_YAML_CUSTOM_PATH", configOverridePath);
@@ -241,13 +244,15 @@ public class ServerlessV2PluginInfoProviderHelper {
     return removeTrailingSlashesInString(path);
   }
 
-  public void populateCommandOptions(ServerlessAwsLambdaV2BaseStepInfo serverlessAwsLambdaV2BaseStepInfo,
+  public void populateCommandOptions(Ambiance ambiance,
+      ServerlessAwsLambdaV2BaseStepInfo serverlessAwsLambdaV2BaseStepInfo,
       HashMap<String, String> serverlessPrepareRollbackEnvironmentVariablesMap) {
     if (serverlessAwsLambdaV2BaseStepInfo instanceof ServerlessAwsLambdaDeployV2StepInfo) {
       ServerlessAwsLambdaDeployV2StepInfo serverlessAwsLambdaDeployV2StepInfo =
           (ServerlessAwsLambdaDeployV2StepInfo) serverlessAwsLambdaV2BaseStepInfo;
       ParameterField<List<String>> deployCommandOptions = serverlessAwsLambdaDeployV2StepInfo.getDeployCommandOptions();
       if (deployCommandOptions != null) {
+        cdExpressionResolver.updateExpressions(ambiance, deployCommandOptions);
         serverlessPrepareRollbackEnvironmentVariablesMap.put(
             "PLUGIN_DEPLOY_COMMAND_OPTIONS", String.join(" ", deployCommandOptions.getValue()));
       }
@@ -257,6 +262,7 @@ public class ServerlessV2PluginInfoProviderHelper {
       ParameterField<List<String>> packageCommandOptions =
           serverlessAwsLambdaPackageV2StepInfo.getPackageCommandOptions();
       if (packageCommandOptions != null) {
+        cdExpressionResolver.updateExpressions(ambiance, packageCommandOptions);
         serverlessPrepareRollbackEnvironmentVariablesMap.put(
             "PLUGIN_PACKAGE_COMMAND_OPTIONS", String.join(" ", packageCommandOptions.getValue()));
       }
@@ -268,6 +274,7 @@ public class ServerlessV2PluginInfoProviderHelper {
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS));
     if (artifactsOutcomeOption.isFound()) {
       ArtifactsOutcome artifactsOutcome = (ArtifactsOutcome) artifactsOutcomeOption.getOutcome();
+      cdExpressionResolver.updateExpressions(ambiance, artifactsOutcome);
       return Optional.of(artifactsOutcome);
     }
     return Optional.empty();
@@ -278,7 +285,7 @@ public class ServerlessV2PluginInfoProviderHelper {
     return serverlessEntityHelper.getServerlessInfraConfig(infrastructure, ngAccess);
   }
 
-  public ManifestsOutcome resolveServerlessManifestsOutcome(Ambiance ambiance) {
+  public ManifestsOutcome fetchManifestsOutcome(Ambiance ambiance) {
     OptionalOutcome manifestsOutcome = outcomeService.resolveOptional(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.MANIFESTS));
 
@@ -291,7 +298,10 @@ public class ServerlessV2PluginInfoProviderHelper {
           format("No manifests found in stage %s. %s step requires a manifest defined in stage service definition",
               stageName, stepType));
     }
-    return (ManifestsOutcome) manifestsOutcome.getOutcome();
+    ManifestsOutcome outcome = (ManifestsOutcome) manifestsOutcome.getOutcome();
+    ExpressionEvaluatorUtils.updateExpressions(
+        outcome, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+    return outcome;
   }
 
   public void populateArtifactEnvironmentVariables(ArtifactOutcome artifactOutcome, Ambiance ambiance,
