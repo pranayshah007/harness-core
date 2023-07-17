@@ -7,7 +7,6 @@
 
 package io.harness.delegate.service;
 
-import static io.harness.concurrent.HTimeLimiter.callInterruptible21;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateTimeBasedUuid;
@@ -74,7 +73,6 @@ import static io.harness.threading.Morpheus.sleep;
 import static io.harness.utils.MemoryPerformanceUtils.memoryUsage;
 import static io.harness.utils.SecretUtils.isBase64SecretIdentifier;
 
-import static java.util.Collections.singletonList;
 import static software.wings.beans.TaskType.SCRIPT;
 import static software.wings.beans.TaskType.SHELL_SCRIPT_TASK_NG;
 
@@ -156,7 +154,6 @@ import io.harness.logstreaming.LogStreamingSanitizer;
 import io.harness.logstreaming.LogStreamingTaskClient;
 import io.harness.logstreaming.LogStreamingTaskClient.LogStreamingTaskClientBuilder;
 import io.harness.managerclient.DelegateAgentManagerClient;
-import io.harness.managerclient.SafeHttpCall;
 import io.harness.metrics.HarnessMetricRegistry;
 import io.harness.network.FibonacciBackOff;
 import io.harness.network.Http;
