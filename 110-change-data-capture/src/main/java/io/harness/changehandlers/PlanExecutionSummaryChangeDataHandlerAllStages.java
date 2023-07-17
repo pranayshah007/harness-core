@@ -95,8 +95,12 @@ public class PlanExecutionSummaryChangeDataHandlerAllStages extends AbstractChan
       if (ciExecutionInfo != null) {
         DBObject author = (DBObject) (ciExecutionInfo.get("author"));
         if (author != null) {
-          columnValueMapping.put("author_name", author.get("name").toString());
-          columnValueMapping.put("author_avatar", author.get("avatar").toString());
+          if (author.get("name") != null) {
+            columnValueMapping.put("author_name", author.get("name").toString());
+          }
+          if (author.get("avatar") != null) {
+            columnValueMapping.put("author_avatar", author.get("avatar").toString());
+          }
         }
       }
     }
