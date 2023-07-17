@@ -55,6 +55,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(CE)
 public class CEViewPreferenceServiceImpl implements CEViewPreferenceService {
+  private static final String EMPTY_STRING = "";
+
   // Columns
   private static final String COST = "cost";
   private static final String CLOUD_PROVIDER = "cloudProvider";
@@ -88,7 +90,7 @@ public class CEViewPreferenceServiceImpl implements CEViewPreferenceService {
   private final LoadingCache<String, List<SettingResponseDTO>> settingsResponseCache =
       Caffeine.newBuilder()
           .maximumSize(5)
-          .expireAfterWrite(1, TimeUnit.MINUTES)
+          .expireAfterWrite(30, TimeUnit.SECONDS)
           .build(accountId
               -> NGRestUtils.getResponse(settingsClient.listSettings(accountId, null, null, SettingCategory.CE,
                   SettingIdentifiers.PERSPECTIVE_PREFERENCES_GROUP_IDENTIFIER)));
@@ -490,6 +492,7 @@ public class CEViewPreferenceServiceImpl implements CEViewPreferenceService {
                    .identifierName(ViewFieldIdentifier.GCP.getDisplayName())
                    .build())
         .operator(QLCEViewFilterOperator.NOT_NULL)
+        .values(new String[] {EMPTY_STRING})
         .build();
   }
 

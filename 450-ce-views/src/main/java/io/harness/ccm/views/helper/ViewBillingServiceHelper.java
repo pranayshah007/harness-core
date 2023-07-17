@@ -603,6 +603,9 @@ public class ViewBillingServiceHelper {
         // Changes column name for cost to billingAmount
         aggregateFunction = viewParametersHelper.getModifiedAggregations(aggregateFunction);
         sort = viewParametersHelper.getModifiedSort(sort);
+        // Perspective preferences are supported only for AWS and GCP
+        // For cluster, we will still use the existing aggregateFunction
+        viewPreferenceAggregations = null;
       }
       cloudProviderTableName = getUpdatedCloudProviderTableName(filters, modifiedGroupBy, aggregateFunction,
           queryParams.getAccountId(), cloudProviderTableName, queryParams.isClusterQuery(), isPodQuery);
