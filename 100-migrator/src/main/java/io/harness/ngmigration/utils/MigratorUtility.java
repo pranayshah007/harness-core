@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.network.Http.getOkHttpClientBuilder;
 import static io.harness.ngmigration.utils.CaseFormat.CAMEL_CASE;
+import static io.harness.ngmigration.utils.CaseFormat.HARNESS_UI_FORMAT;
 import static io.harness.ngmigration.utils.CaseFormat.LOWER_CASE;
 import static io.harness.ngmigration.utils.CaseFormat.SNAKE_CASE;
 import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
@@ -178,11 +179,23 @@ public class MigratorUtility {
     String identifier = generateCamelCaseIdentifier(name);
     if (LOWER_CASE == caseFormat) {
       return identifier.toLowerCase();
-    }
-    if (SNAKE_CASE == caseFormat) {
+    } else if (SNAKE_CASE == caseFormat) {
       return generateSnakeCaseIdentifier(name);
+    } else if (HARNESS_UI_FORMAT == caseFormat) {
+      return generateHarnessUIFormatIdentifier(name);
     }
     return identifier;
+  }
+
+  public static String generateHarnessUIFormatIdentifier(String name) {
+    if (StringUtils.isBlank(name)) {
+      return "";
+    }
+    name = StringUtils.stripAccents(name);
+    return name.trim()
+        .replaceAll("^[0-9-$]*", "") // remove starting digits, dashes and $
+        .replaceAll("[^0-9a-zA-Z_$ ]", "") // remove special chars except _ and $
+        .replaceAll("\\s", "_"); // replace spaces with _
   }
 
   public static String generateCamelCaseIdentifier(String name) {
