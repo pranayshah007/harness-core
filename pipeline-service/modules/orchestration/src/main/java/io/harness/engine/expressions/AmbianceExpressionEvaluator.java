@@ -43,12 +43,13 @@ import io.harness.expression.functors.NGJsonFunctor;
 import io.harness.expression.functors.NGShellScriptFunctor;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.expression.EngineExpressionEvaluatorResolver;
 import io.harness.pms.expression.ProcessorResult;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterDocumentField;
 import io.harness.pms.yaml.ParameterDocumentFieldMapper;
-import io.harness.pms.yaml.ParameterFieldProcessor;
+import io.harness.pms.yaml.ParameterDocumentFieldProcessor;
 import io.harness.pms.yaml.validation.InputSetValidatorFactory;
 import io.harness.shell.ScriptType;
 import io.harness.utils.PmsFeatureFlagService;
@@ -241,13 +242,13 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
   }
 
   public static class AmbianceResolveFunctorImpl extends ResolveFunctorImpl {
-    private final ParameterFieldProcessor parameterFieldProcessor;
+    private final ParameterDocumentFieldProcessor parameterDocumentFieldProcessor;
 
     public AmbianceResolveFunctorImpl(AmbianceExpressionEvaluator expressionEvaluator,
         InputSetValidatorFactory inputSetValidatorFactory, ExpressionMode expressionMode) {
       super(expressionEvaluator, expressionMode);
-      this.parameterFieldProcessor =
-          new ParameterFieldProcessor(getExpressionEvaluator(), inputSetValidatorFactory, expressionMode);
+      this.parameterDocumentFieldProcessor = new ParameterDocumentFieldProcessor(
+          new EngineExpressionEvaluatorResolver(getExpressionEvaluator()), inputSetValidatorFactory, expressionMode);
     }
 
     @Override
@@ -266,7 +267,7 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
     }
 
     private void processObjectInternal(ParameterDocumentField documentField) {
-      ProcessorResult processorResult = parameterFieldProcessor.process(documentField);
+      ProcessorResult processorResult = parameterDocumentFieldProcessor.process(documentField);
       if (processorResult.isError()) {
         throw new EngineExpressionEvaluationException(processorResult.getMessage(), processorResult.getExpression());
       }

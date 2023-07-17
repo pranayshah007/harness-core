@@ -27,6 +27,8 @@ import io.harness.cvng.activity.entities.KubernetesClusterActivity.KubernetesClu
 import io.harness.cvng.activity.entities.KubernetesClusterActivity.RelatedAppMonitoredService;
 import io.harness.cvng.activity.entities.PagerDutyActivity;
 import io.harness.cvng.activity.entities.PagerDutyActivity.PagerDutyActivityBuilder;
+import io.harness.cvng.activity.entities.SRMStepAnalysisActivity;
+import io.harness.cvng.activity.entities.SRMStepAnalysisActivity.SRMStepAnalysisActivityBuilder;
 import io.harness.cvng.analysis.entities.CanaryLogAnalysisLearningEngineTask;
 import io.harness.cvng.analysis.entities.CanaryLogAnalysisLearningEngineTask.CanaryLogAnalysisLearningEngineTaskBuilder;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
@@ -269,6 +271,10 @@ import io.harness.eventsframework.schemas.deployment.ExecutionDetails;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO.EnvironmentResponseDTOBuilder;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.yaml.ParameterField;
 
 import com.google.common.collect.Sets;
@@ -1069,6 +1075,49 @@ public class BuilderFactory {
         .verificationJobInstanceIds(Arrays.asList(generateUuid()))
         .activityEndTime(clock.instant())
         .activityStartTime(clock.instant());
+  }
+
+  public SRMStepAnalysisActivityBuilder getSRMStepAnalysisActivityBuilder() {
+    return SRMStepAnalysisActivity.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .monitoredServiceIdentifier(context.getMonitoredServiceParams().getMonitoredServiceIdentifier())
+        .eventTime(clock.instant())
+        .changeSourceIdentifier("changeSourceID")
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .type(ChangeSourceType.HARNESS_CD.getActivityType())
+        .stageStepId("stageStepId")
+        .stageId("stageId")
+        .pipelineId("pipelineId")
+        .planExecutionId(generateUuid())
+        .artifactType("artifactType")
+        .artifactTag("artifactTag")
+        .activityName(generateUuid())
+        .activityEndTime(clock.instant())
+        .activityStartTime(clock.instant());
+  }
+
+  public Ambiance getAmbiance(ProjectParams projectParams) {
+    HashMap<String, String> setupAbstractions = new HashMap<>();
+    setupAbstractions.put("accountId", projectParams.getAccountIdentifier());
+    setupAbstractions.put("projectIdentifier", projectParams.getProjectIdentifier());
+    setupAbstractions.put("orgIdentifier", projectParams.getOrgIdentifier());
+    return Ambiance.newBuilder()
+        .setPlanExecutionId(generateUuid())
+        .setStageExecutionId(generateUuid())
+        .addLevels(Level.newBuilder()
+                       .setRuntimeId(generateUuid())
+                       .setStartTs(clock.millis())
+                       .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).build())
+                       .build())
+        .addLevels(Level.newBuilder()
+                       .setRuntimeId(generateUuid())
+                       .setIdentifier("identifier")
+                       .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
+                       .build())
+        .putAllSetupAbstractions(setupAbstractions)
+        .build();
   }
 
   public InternalChangeActivityBuilder<?, ?> getInternalChangeActivity_FFBuilder() {

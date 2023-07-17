@@ -160,36 +160,36 @@ ciExecutionServiceConfig:
     # The below config is for K8 steps
     gitCloneConfig:
       # Use rootless image only for K8 git clone
-      image: harness/drone-git:1.2.7-rootless
+      image: harness/drone-git:1.3.4-rootless
       entrypoint:
         - /usr/local/bin/clone
       windowsEntrypoint:
         - "pwsh"
         - "C:\\bin\\clone.ps1"
     buildAndPushDockerRegistryConfig:
-      image: plugins/kaniko:1.7.0
+      image: plugins/kaniko:1.7.5
       entrypoint:
         - /kaniko/kaniko-docker
     buildAndPushECRConfig:
-      image: plugins/kaniko-ecr:1.7.0
+      image: plugins/kaniko-ecr:1.7.5
       entrypoint:
         - /kaniko/kaniko-ecr
     buildAndPushGCRConfig:
-      image: plugins/kaniko-gcr:1.7.0
+      image: plugins/kaniko-gcr:1.7.5
       entrypoint:
         - /kaniko/kaniko-gcr
     buildAndPushACRConfig:
-      image: plugins/kaniko-acr:1.7.0
+      image: plugins/kaniko-acr:1.7.5
       entrypoint:
         - /kaniko/kaniko-acr
     gcsUploadConfig:
-      image: plugins/gcs:1.3.0
+      image: plugins/gcs:1.4.0
       entrypoint:
         - /bin/drone-gcs
       windowsEntrypoint:
         - "C:\\drone-gcs.exe"
     s3UploadConfig:
-      image: plugins/s3:1.2.0
+      image: plugins/s3:1.2.3
       entrypoint:
         - /bin/drone-s3
       windowsEntrypoint:
@@ -201,23 +201,31 @@ ciExecutionServiceConfig:
         - -c
         - python3 ${DOCKER_ENTRYPOINT}
     artifactoryUploadConfig:
-      image: plugins/artifactory:1.2.0
+      image: plugins/artifactory:1.4.4
       entrypoint:
         - /bin/plugin
       windowsEntrypoint:
         - "C:\\bin\\drone-artifactory.exe"
     cacheGCSConfig:
-      image: plugins/cache:1.4.6
+      image: plugins/cache:1.5.9
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
     cacheS3Config:
-      image: plugins/cache:1.4.6
+      image: plugins/cache:1.5.9
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
+    sscaOrchestrationConfig:
+      image: harness/ssca-plugin:0.3.0
+      entrypoint:
+        - /bin/ssca-plugin
+    sscaEnforcementConfig:
+      image: harness/ssca-plugin:0.3.0
+      entrypoint:
+        - /bin/ssca-plugin
     iacmTerraform:
       image: plugins/harness_terraform:dev
       entrypoint:
@@ -226,18 +234,37 @@ ciExecutionServiceConfig:
         - "C:\\harness-terraform.exe"
     vmImageConfig:
       # Use root image for VM git clone
-      gitClone: harness/drone-git:1.2.7
-      buildAndPushDockerRegistry: plugins/docker:20.13.0
-      buildAndPushACR: plugins/acr:20.13.0
-      buildAndPushECR: plugins/ecr:20.13.0
-      buildAndPushGCR: plugins/gcr:20.13.0
-      gcsUpload: plugins/gcs:1.3.0
-      s3Upload: plugins/s3:1.2.0
+      gitClone: harness/drone-git:1.3.3
+      buildAndPushDockerRegistry: plugins/docker:20.14.4
+      buildAndPushACR: plugins/acr:20.14.3
+      buildAndPushECR: plugins/ecr:20.14.3
+      buildAndPushGCR: plugins/gcr:20.14.3
+      gcsUpload: plugins/gcs:1.4.0
+      s3Upload: plugins/s3:1.2.3
       security: harness/sto-plugin:dev
-      artifactoryUpload: plugins/artifactory:1.2.0
-      cacheGCS: plugins/cache:1.4.6
-      cacheS3: plugins/cache:1.4.6
+      artifactoryUpload: plugins/artifactory:1.4.4
+      cacheGCS: plugins/cache:1.5.9
+      cacheS3: plugins/cache:1.5.9
+      sscaOrchestration: harness/ssca-plugin:0.3.0
+      sscaEnforcement: harness/ssca-plugin:0.3.0
       iacmTerraform: plugins/harness_terraform:dev
+    vmContainerlessStepConfig:
+      s3UploadConfig:
+        name: github.com/drone-plugins/drone-s3@refs/tags/v1.2.2
+      gcsUploadConfig:
+        name: github.com/drone-plugins/drone-gcs@refs/tags/v1.3.1
+      cacheS3Config:
+        name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.5.6
+      cacheGCSConfig:
+        name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.5.6
+      gitCloneConfig:
+        name: github.com/wings-software/drone-git@refs/tags/v1.3.9
+      dockerBuildxConfig:
+        name: github.com/drone-plugins/drone-buildx@refs/tags/v1.0.1
+      dockerBuildxEcrConfig:
+        name: github.com/drone-plugins/drone-buildx-ecr@refs/tags/v1.0.1
+      dockerBuildxGcrConfig:
+        name: github.com/drone-plugins/drone-buildx-gcr@refs/tags/v1.0.1
 
 scmConnectionConfig:
   url: localhost:8091

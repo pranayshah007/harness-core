@@ -209,6 +209,8 @@ governanceConfig:
   dkronJobEnabled: true
   awsFaktoryJobType: aws-governance # This should match with worker
   awsFaktoryQueueName: aws-governance # This should match with worker
+  azureFaktoryJobType: azure-governance # This should match with worker
+  azureFaktoryQueueName: azure-governance # This should match with worker
   OOTBAccount: wFHXHD0RRQWoO8tIZT5YVw
   tagsKey: dc
   tagsValue: dc1:1

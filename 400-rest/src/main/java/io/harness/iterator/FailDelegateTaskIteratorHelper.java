@@ -273,7 +273,7 @@ public class FailDelegateTaskIteratorHelper {
 
   private List<String> getHostNamesFromDelegateIds(String accountId, LinkedList<String> eligibleToExecuteDelegateIds) {
     return eligibleToExecuteDelegateIds.stream()
-        .map(id -> delegateCache.get(accountId, id, false))
+        .map(id -> delegateCache.get(accountId, id))
         .filter(Objects::nonNull)
         .map(Delegate::getHostName)
         .collect(Collectors.toList());

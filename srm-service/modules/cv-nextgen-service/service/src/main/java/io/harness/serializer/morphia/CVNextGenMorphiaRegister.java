@@ -18,7 +18,7 @@ import io.harness.cvng.activity.entities.InternalChangeActivity;
 import io.harness.cvng.activity.entities.KubernetesActivity;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity;
 import io.harness.cvng.activity.entities.PagerDutyActivity;
-import io.harness.cvng.activity.entities.SRMAnalysisActivity;
+import io.harness.cvng.activity.entities.SRMStepAnalysisActivity;
 import io.harness.cvng.analysis.entities.CanaryLogAnalysisLearningEngineTask;
 import io.harness.cvng.analysis.entities.ClusteredLog;
 import io.harness.cvng.analysis.entities.DeploymentLogAnalysis;
@@ -30,6 +30,7 @@ import io.harness.cvng.analysis.entities.LogAnalysisRecord;
 import io.harness.cvng.analysis.entities.LogAnalysisResult;
 import io.harness.cvng.analysis.entities.LogClusterLearningEngineTask;
 import io.harness.cvng.analysis.entities.LogFeedbackAnalysisLearningEngineTask;
+import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.analysis.entities.ServiceGuardLogAnalysisTask;
 import io.harness.cvng.analysis.entities.TestLogAnalysisLearningEngineTask;
 import io.harness.cvng.analysis.entities.TimeSeriesAnomalousPatterns;
@@ -257,7 +258,8 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(ActivityBucket.class);
     set.add(SLIRecordBucket.class);
     set.add(SimpleVerificationJob.class);
-    set.add(SRMAnalysisActivity.class);
+    set.add(SRMStepAnalysisActivity.class);
+    set.add(SRMAnalysisStepExecutionDetail.class);
   }
 
   @Override

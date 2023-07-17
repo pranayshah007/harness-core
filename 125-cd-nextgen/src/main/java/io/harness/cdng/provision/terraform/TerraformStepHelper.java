@@ -30,6 +30,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.beans.Scope;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -118,6 +119,7 @@ import io.harness.git.model.GitFile;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.mappers.SecretManagerConfigMapper;
+import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.api.NGEncryptedDataService;
@@ -1422,6 +1424,13 @@ public class TerraformStepHelper {
 
   private void runCleanupTerraformSecretTask(Ambiance ambiance, EncryptionConfig encryptionConfig,
       List<EncryptedRecordData> encryptedRecordDataList, String cleanupSecretUuid) {
+    BaseNGAccess ngAccess = BaseNGAccess.builder()
+                                .accountIdentifier(AmbianceUtils.getAccountId(ambiance))
+                                .orgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance))
+                                .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
+                                .build();
+    Map<String, String> abstractions = ArtifactUtils.getTaskSetupAbstractions(ngAccess);
+
     DelegateTaskRequest delegateTaskRequest =
         DelegateTaskRequest.builder()
             .accountId(AmbianceUtils.getAccountId(ambiance))
@@ -1432,7 +1441,7 @@ public class TerraformStepHelper {
                                 .build())
             .taskType(TaskType.TERRAFORM_SECRET_CLEANUP_TASK_NG.name())
             .executionTimeout(Duration.ofMinutes(10))
-            .taskSetupAbstraction(SetupAbstractionKeys.ng, "true")
+            .taskSetupAbstractions(abstractions)
             .logStreamingAbstractions(new LinkedHashMap<>() {
               { put(SetupAbstractionKeys.accountId, AmbianceUtils.getAccountId(ambiance)); }
             })

@@ -31,6 +31,7 @@ import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome;
+import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.serverless.ArtifactType;
 import io.harness.cdng.serverless.ServerlessEntityHelper;
@@ -90,13 +91,16 @@ public class ServerlessV2PluginInfoProviderHelper {
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
 
   @Inject PluginInfoProviderUtils pluginInfoProviderUtils;
+  private static final String PLUGIN_PATH_PREFIX = "harness";
 
-  // todo: merge with AwsSamPluginInfoProviderHelper
   public ManifestOutcome getServerlessAwsLambdaDirectoryManifestOutcome(Collection<ManifestOutcome> manifestOutcomes) {
     List<ManifestOutcome> manifestOutcomeList =
         manifestOutcomes.stream()
             .filter(manifestOutcome -> ManifestType.ServerlessAwsLambda.equals(manifestOutcome.getType()))
             .collect(Collectors.toList());
+    if (manifestOutcomeList.size() != 1) {
+      throw new InvalidRequestException("One ServerlessAwsLambda Manifest is Required in Service Step");
+    }
     return manifestOutcomeList.isEmpty() ? null : manifestOutcomeList.get(0);
   }
 
@@ -105,6 +109,9 @@ public class ServerlessV2PluginInfoProviderHelper {
         manifestOutcomes.stream()
             .filter(manifestOutcome -> ManifestType.VALUES.equals(manifestOutcome.getType()))
             .collect(Collectors.toList());
+    if (manifestOutcomeList.size() > 1) {
+      throw new InvalidRequestException("Not more than one Values Manifest should be configured in service step");
+    }
     return manifestOutcomeList.isEmpty() ? null : manifestOutcomeList.get(0);
   }
 
@@ -112,10 +119,18 @@ public class ServerlessV2PluginInfoProviderHelper {
       ServerlessAwsLambdaManifestOutcome serverlessAwsLambdaManifestOutcome) {
     GitStoreConfig gitStoreConfig = (GitStoreConfig) serverlessAwsLambdaManifestOutcome.getStore();
 
-    String path =
-        serverlessAwsLambdaManifestOutcome.getIdentifier() + "/" + gitStoreConfig.getPaths().getValue().get(0);
-    path = path.replaceAll("/$", "");
-    return path;
+    String path = String.format("/%s/%s/%s", PLUGIN_PATH_PREFIX,
+        removeExtraSlashesInString(serverlessAwsLambdaManifestOutcome.getIdentifier()),
+        removeExtraSlashesInString(gitStoreConfig.getPaths().getValue().get(0)));
+    return removeTrailingSlashesInString(path);
+  }
+
+  public String removeExtraSlashesInString(String path) {
+    return path.replaceAll("^/|/$", "");
+  }
+
+  public String removeTrailingSlashesInString(String path) {
+    return path.replaceAll("/$", "");
   }
 
   public Map<String, String> getEnvironmentVariables(
@@ -216,6 +231,14 @@ public class ServerlessV2PluginInfoProviderHelper {
     }
 
     return environmentVariablesMap;
+  }
+
+  public String getValuesPathFromValuesManifestOutcome(ValuesManifestOutcome valuesManifestOutcome) {
+    GitStoreConfig gitStoreConfig = (GitStoreConfig) valuesManifestOutcome.getStore();
+    String path = String.format("/%s/%s/%s", PLUGIN_PATH_PREFIX,
+        removeExtraSlashesInString(valuesManifestOutcome.getIdentifier()),
+        removeExtraSlashesInString(gitStoreConfig.getPaths().getValue().get(0)));
+    return removeTrailingSlashesInString(path);
   }
 
   public void populateCommandOptions(ServerlessAwsLambdaV2BaseStepInfo serverlessAwsLambdaV2BaseStepInfo,

@@ -6,7 +6,9 @@
  */
 
 package io.harness.delegate.task.docker;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.task.docker.DockerValidationHandler;
 import io.harness.delegate.beans.DelegateTaskPackage;
@@ -25,6 +27,7 @@ import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Slf4j
 public class DockerTestConnectionDelegateTask extends AbstractDelegateRunnableTask {
   private static final String EMPTY_STR = "";

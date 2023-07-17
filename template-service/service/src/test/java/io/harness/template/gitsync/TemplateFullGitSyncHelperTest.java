@@ -47,7 +47,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import org.joor.Reflect;
 import org.junit.Before;
 import org.junit.Test;
@@ -80,7 +80,7 @@ public class TemplateFullGitSyncHelperTest extends CategoryTest {
 
   @Mock TelemetryReporter telemetryReporter;
 
-  @Mock @Named("TemplateServiceHelperExecutorService") Executor executor;
+  @Mock @Named("TemplateServiceHelperExecutorService") ExecutorService executorService;
 
   private final String ACCOUNT_ID = "accountId";
   private final String ORG_IDENTIFIER = "orgId";
@@ -101,7 +101,7 @@ public class TemplateFullGitSyncHelperTest extends CategoryTest {
     yaml = Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
 
     templateServiceHelper = new NGTemplateServiceHelper(filterService, templateRepository, gitSyncSdkService,
-        templateGitXService, gitAwareEntityHelper, telemetryReporter, executor);
+        templateGitXService, gitAwareEntityHelper, telemetryReporter, executorService);
     Reflect.on(templateFullGitSyncHelper).set("templateServiceHelper", templateServiceHelper);
 
     entityDetailProtoDTO = EntityDetailProtoDTO.newBuilder().setType(EntityTypeProtoEnum.TEMPLATE).build();

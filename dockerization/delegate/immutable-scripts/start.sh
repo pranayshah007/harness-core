@@ -74,6 +74,9 @@ append_config "grpcAuthorityModificationDisabled" ${GRPC_AUTHORITY_MODIFICATION_
 # Intended for debugging, has to be set explicitly as its never set in generated yaml.
 append_config "trustAllCertificates" ${TRUST_ALL_CERTIFICATES:-false}
 
-# 3. Start the delegate
+# 3. check connectivity
+source ./connectivity_check.sh
+
+# 4. Start the delegate
 JAVA_OPTS=${JAVA_OPTS//UseCGroupMemoryLimitForHeap/UseContainerSupport}
 exec java $JAVA_OPTS $PROXY_SYS_PROPS -XX:MaxRAMPercentage=70.0 -XX:MinRAMPercentage=40.0 -XX:+IgnoreUnrecognizedVMOptions -XX:+HeapDumpOnOutOfMemoryError -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true -DLANG=en_US.UTF-8 -jar delegate.jar server config.yml

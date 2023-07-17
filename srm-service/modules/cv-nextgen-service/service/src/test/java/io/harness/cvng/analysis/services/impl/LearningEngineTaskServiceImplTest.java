@@ -14,6 +14,7 @@ import static io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngin
 import static io.harness.cvng.beans.DataSourceType.APP_DYNAMICS;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.persistence.HQuery.excludeAuthority;
+import static io.harness.rule.OwnerRule.ANSUMAN;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KANHAIYA;
 import static io.harness.rule.OwnerRule.PRAVEEN;
@@ -32,8 +33,10 @@ import io.harness.cvng.analysis.entities.LearningEngineTask;
 import io.harness.cvng.analysis.entities.LearningEngineTask.ExecutionStatus;
 import io.harness.cvng.analysis.entities.TimeSeriesLearningEngineTask;
 import io.harness.cvng.analysis.services.api.LearningEngineTaskService;
+import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.services.api.CVConfigService;
+import io.harness.cvng.core.services.api.CVNGLogService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
@@ -45,6 +48,7 @@ import dev.morphia.query.UpdateOperations;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
@@ -64,6 +68,8 @@ public class LearningEngineTaskServiceImplTest extends CvNextGenTestBase {
   @Mock Query<LearningEngineTask> mockLETaskQuery;
   @Mock UpdateOperations<LearningEngineTask> mockUpdateOperations;
   @Mock FieldEnd mockField;
+
+  @Inject private CVNGLogService cvngLogService;
 
   @Inject private LearningEngineTaskService learningEngineTaskService;
   @Inject private VerificationTaskService verificationTaskService;
@@ -281,6 +287,28 @@ public class LearningEngineTaskServiceImplTest extends CvNextGenTestBase {
 
     taskToSave = hPersistence.get(LearningEngineTask.class, taskToSave.getUuid());
 
+    assertThat(taskToSave.getTaskStatus().name()).isEqualTo(ExecutionStatus.SUCCESS.name());
+  }
+
+  @Test
+  @Owner(developers = ANSUMAN)
+  @Category(UnitTests.class)
+  public void testMarkCompletedCheckDuration() throws IllegalAccessException {
+    LearningEngineTask taskToSave = getTaskToSave(ExecutionStatus.RUNNING);
+    taskToSave.setCreatedAt(clock.millis());
+    hPersistence.save(taskToSave);
+    clock = Clock.fixed(clock.instant().plus(5, ChronoUnit.MINUTES), ZoneOffset.UTC);
+    FieldUtils.writeField(learningEngineTaskService, "clock", clock, true);
+    learningEngineTaskService.markCompleted(taskToSave.getUuid());
+    taskToSave = hPersistence.get(LearningEngineTask.class, taskToSave.getUuid());
+    List<ExecutionLogDTO> cvngLogs = cvngLogService.getExecutionLogDTOs(accountId, taskToSave.getVerificationTaskId());
+    ExecutionLogDTO executionLogDTO = cvngLogs.get(0);
+    assertThat(executionLogDTO.getTags().get(0).getKey()).isEqualTo("taskId");
+    assertThat(executionLogDTO.getTags().get(0).getValue()).isNotEmpty();
+    assertThat(executionLogDTO.getTags().get(1).getKey()).isEqualTo("waitDuration");
+    assertThat(executionLogDTO.getTags().get(1).getValue()).isEqualTo("00:03:00.000");
+    assertThat(executionLogDTO.getTags().get(2).getKey()).isEqualTo("runningDuration");
+    assertThat(executionLogDTO.getTags().get(2).getValue()).isEqualTo("00:02:00.000");
     assertThat(taskToSave.getTaskStatus().name()).isEqualTo(ExecutionStatus.SUCCESS.name());
   }
 

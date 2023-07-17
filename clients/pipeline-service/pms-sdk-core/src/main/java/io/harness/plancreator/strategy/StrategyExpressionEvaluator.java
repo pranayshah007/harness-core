@@ -12,11 +12,12 @@ import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.expression.ResolveObjectResponse;
 import io.harness.expression.common.ExpressionMode;
+import io.harness.pms.expression.EngineExpressionEvaluatorResolver;
 import io.harness.pms.expression.ProcessorResult;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterDocumentField;
 import io.harness.pms.yaml.ParameterDocumentFieldMapper;
-import io.harness.pms.yaml.ParameterFieldProcessor;
+import io.harness.pms.yaml.ParameterDocumentFieldProcessor;
 
 import java.util.Map;
 import java.util.Optional;
@@ -64,12 +65,13 @@ public class StrategyExpressionEvaluator extends EngineExpressionEvaluator {
 
   public static class StrategyResolveFunctorImpl extends ResolveFunctorImpl {
     // TODO: Combine this with AmbianceExpressionEvaluator. Extract out the common code to some commons.
-    private final ParameterFieldProcessor parameterFieldProcessor;
+    private final ParameterDocumentFieldProcessor parameterDocumentFieldProcessor;
 
     public StrategyResolveFunctorImpl(
         StrategyExpressionEvaluator strategyExpressionEvaluator, ExpressionMode expressionMode) {
       super(strategyExpressionEvaluator, expressionMode);
-      this.parameterFieldProcessor = new ParameterFieldProcessor(getExpressionEvaluator(), null, expressionMode);
+      this.parameterDocumentFieldProcessor = new ParameterDocumentFieldProcessor(
+          new EngineExpressionEvaluatorResolver(getExpressionEvaluator()), null, expressionMode);
     }
 
     @Override
@@ -88,7 +90,7 @@ public class StrategyExpressionEvaluator extends EngineExpressionEvaluator {
     }
 
     private void processObjectInternal(ParameterDocumentField documentField) {
-      ProcessorResult processorResult = parameterFieldProcessor.process(documentField);
+      ProcessorResult processorResult = parameterDocumentFieldProcessor.process(documentField);
       if (processorResult.isError()) {
         throw new EngineExpressionEvaluationException(processorResult.getMessage(), processorResult.getExpression());
       }

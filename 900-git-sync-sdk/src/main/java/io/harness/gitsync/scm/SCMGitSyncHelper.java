@@ -35,6 +35,7 @@ import io.harness.gitsync.GetFileResponse;
 import io.harness.gitsync.GetRepoUrlRequest;
 import io.harness.gitsync.GetRepoUrlResponse;
 import io.harness.gitsync.GitMetaData;
+import io.harness.gitsync.GitSettings;
 import io.harness.gitsync.HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceBlockingStub;
 import io.harness.gitsync.PushFileResponse;
 import io.harness.gitsync.UpdateFileRequest;
@@ -116,7 +117,7 @@ public class SCMGitSyncHelper {
 
   public ScmGetFileResponse getFileByBranch(Scope scope, String repoName, String branchName, String commitId,
       String filePath, String connectorRef, boolean loadFromCache, EntityType entityType,
-      Map<String, String> contextMap, boolean getOnlyFileContent) {
+      Map<String, String> contextMap, boolean getOnlyFileContent, boolean applyRepoAllowListFilter) {
     contextMap = GitSyncLogContextHelper.setContextMap(
         scope, repoName, branchName, commitId, filePath, GitOperation.GET_FILE, contextMap);
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
@@ -134,6 +135,7 @@ public class SCMGitSyncHelper {
               .setScopeIdentifiers(ScopeIdentifierMapper.getScopeIdentifiersFromScope(scope))
               .setPrincipal(getPrincipal())
               .setGetOnlyFileContent(getOnlyFileContent)
+              .setGitSettings(GitSettings.newBuilder().setApplyRepoAllowListFilter(applyRepoAllowListFilter).build())
               .build();
       final GetFileResponse getFileResponse = GitSyncGrpcClientUtils.retryAndProcessExceptionV2(
           harnessToGitPushInfoServiceBlockingStub::getFile, getFileRequest);

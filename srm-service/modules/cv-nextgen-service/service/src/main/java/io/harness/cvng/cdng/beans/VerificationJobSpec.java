@@ -19,6 +19,7 @@ import io.harness.cvng.verificationjob.entities.VerificationJob.VerificationJobB
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.base.Preconditions;
@@ -96,6 +97,7 @@ public abstract class VerificationJobSpec {
 
   protected abstract ParameterField<String> getBaseline();
 
+  @JsonIgnore
   public List<VerificationType> getSupportedDataTypesForVerification() {
     return List.of(VerificationType.values());
   }

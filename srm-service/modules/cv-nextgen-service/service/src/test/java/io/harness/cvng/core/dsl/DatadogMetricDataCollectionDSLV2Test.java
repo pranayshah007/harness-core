@@ -18,11 +18,15 @@ import static org.mockito.Mockito.when;
 
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
+import io.harness.connector.ConnectorInfoDTO;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.HoverflyCVNextGenTestBase;
+import io.harness.cvng.beans.DataCollectionRequest;
+import io.harness.cvng.beans.DataCollectionRequestType;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.DatadogMetricsDataCollectionInfo;
 import io.harness.cvng.beans.TimeSeriesMetricType;
+import io.harness.cvng.beans.datadog.DatadogTimeSeriesPointsRequest;
 import io.harness.cvng.core.entities.DatadogMetricCVConfig;
 import io.harness.cvng.core.entities.MetricPack;
 import io.harness.cvng.core.entities.PrometheusCVConfig;
@@ -30,7 +34,11 @@ import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.impl.DatadogMetricDataCollectionInfoMapper;
+import io.harness.cvng.core.services.impl.DatadogServiceImpl;
+import io.harness.cvng.core.utils.DateTimeUtils;
+import io.harness.cvng.utils.DatadogQueryUtils;
 import io.harness.datacollection.DataCollectionDSLService;
+import io.harness.datacollection.entity.CallDetails;
 import io.harness.datacollection.entity.RuntimeParameters;
 import io.harness.datacollection.entity.TimeSeriesRecord;
 import io.harness.datacollection.impl.DataCollectionServiceImpl;
@@ -38,12 +46,16 @@ import io.harness.delegate.beans.connector.datadog.DatadogConnectorDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.rule.Owner;
 
+import com.google.common.base.Charsets;
+import com.google.common.io.Resources;
 import com.google.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -52,6 +64,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -62,7 +75,6 @@ public class DatadogMetricDataCollectionDSLV2Test extends HoverflyCVNextGenTestB
   @Inject private MetricPackService metricPackService;
   @Inject private DatadogMetricDataCollectionInfoMapper dataCollectionInfoMapper;
   private ExecutorService executorService;
-
   FeatureFlagService featureFlagService;
 
   @Before
@@ -193,6 +205,30 @@ public class DatadogMetricDataCollectionDSLV2Test extends HoverflyCVNextGenTestB
     assertThat(timeSeriesRecords.get(59).getMetricValue()).isEqualTo(19.857091);
   }
 
+  @Test
+  @Owner(developers = ANSUMAN)
+  @Category(UnitTests.class)
+  public void testExecute_DatadogMetricSampleData() throws IOException {
+    DataCollectionDSLService dataCollectionDSLService = new DataCollectionServiceImpl();
+    dataCollectionDSLService.registerDatacollectionExecutorService(executorService);
+    String metricSampleDataRequestDSL =
+        Resources.toString(DatadogServiceImpl.DATADOG_SAMPLE_V2_DSL_PATH, Charsets.UTF_8);
+    String query =
+        "kubernetes.memory.usage{cluster-name:chi-play}.rollup(avg, 60) ; kubernetes.memory.usage{cluster-name:chi-play};(a / b) * 100";
+    Instant instant = Instant.parse("2023-07-09T10:30:38.498Z");
+    Instant now = DateTimeUtils.roundDownTo1MinBoundary(instant);
+    DataCollectionRequest<DatadogConnectorDTO> request = getDatadogConnectorDTODataCollectionRequest(query, now);
+    RuntimeParameters runtimeParameters = getRuntimeParameters(request, now);
+    ArrayList<TimeSeriesRecord> timeSeriesRecords = (ArrayList<TimeSeriesRecord>) dataCollectionDSLService.execute(
+        metricSampleDataRequestDSL, runtimeParameters, (CallDetails callDetails) -> {});
+    assertThat(timeSeriesRecords).hasSize(60);
+    assertThat(timeSeriesRecords.get(0).getMetricName()).isEqualTo("metric");
+    assertThat(timeSeriesRecords.get(0).getHostname()).isNull();
+    assertThat(timeSeriesRecords.get(0).getMetricIdentifier()).isEqualTo("metric");
+    assertThat(timeSeriesRecords.get(0).getMetricValue()).isEqualTo(100);
+    assertThat(timeSeriesRecords.get(0).getTxnName()).isEqualTo("group");
+  }
+
   private String readDSL(String name) throws IOException {
     return FileUtils.readFileToString(
         new File(getSourceResourceFile(PrometheusCVConfig.class, "/io/harness/cvng/core/entities/" + name)),
@@ -207,8 +243,40 @@ public class DatadogMetricDataCollectionDSLV2Test extends HoverflyCVNextGenTestB
   private DatadogConnectorDTO getDatadogConnectorDTO() {
     return DatadogConnectorDTO.builder()
         .url(BASE_URL)
-        .apiKeyRef(SecretRefData.builder().decryptedValue("**".toCharArray()).build()) // rollback TODO
+        .apiKeyRef(SecretRefData.builder().decryptedValue("**".toCharArray()).build())
         .applicationKeyRef(SecretRefData.builder().decryptedValue("**".toCharArray()).build())
         .build();
+  }
+
+  private RuntimeParameters getRuntimeParameters(DataCollectionRequest<DatadogConnectorDTO> request, Instant instant)
+      throws IOException {
+    return RuntimeParameters.builder()
+        .baseUrl(request.getBaseUrl())
+        .commonHeaders(request.collectionHeaders())
+        .commonOptions(request.collectionParams())
+        .otherEnvVariables(request.fetchDslEnvVariables())
+        .endTime(instant)
+        .startTime(instant.minus(Duration.ofMinutes(1)))
+        .build();
+  }
+
+  private DataCollectionRequest<DatadogConnectorDTO> getDatadogConnectorDTODataCollectionRequest(
+      String query, Instant now) throws IOException {
+    Pair<String, List<String>> formulaQueriesPair = DatadogQueryUtils.processCompositeQuery(query, null, false);
+    String formula = formulaQueriesPair.getLeft();
+    List<String> formulaQueries = formulaQueriesPair.getRight();
+    DatadogConnectorDTO datadogConnectorDTO = getDatadogConnectorDTO();
+    DataCollectionRequest<DatadogConnectorDTO> request =
+        DatadogTimeSeriesPointsRequest.builder()
+            .type(DataCollectionRequestType.DATADOG_TIME_SERIES_POINTS)
+            .from(now.minus(1, ChronoUnit.HOURS).toEpochMilli())
+            .to(now.toEpochMilli())
+            .DSL(Resources.toString(DatadogServiceImpl.DATADOG_SAMPLE_V2_DSL_PATH, Charsets.UTF_8))
+            .formula(formula)
+            .formulaQueriesList(formulaQueries)
+            .query(query)
+            .connectorInfoDTO(ConnectorInfoDTO.builder().connectorConfig(datadogConnectorDTO).build())
+            .build();
+    return request;
   }
 }

@@ -70,6 +70,8 @@ public final class EventsFrameworkMetadataConstants {
   public static final String INVITE = "invite";
 
   public static final String SETTINGS = "settings";
+  public static final String SETTINGS_GROUP_IDENTIFIER = "settingGroupIdentifier";
+  public static final String SETTINGS_CATEGORY = "settingCategory";
 
   public static final String SCM = "sourceCodeManager";
   public static final String STAGE_EXEC_INFO = "stageExecutionInfo";

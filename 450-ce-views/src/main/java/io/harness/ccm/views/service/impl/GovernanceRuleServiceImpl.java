@@ -8,6 +8,7 @@
 package io.harness.ccm.views.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.views.helper.RuleCloudProviderType.AZURE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -16,10 +17,14 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.views.dao.RuleDAO;
 import io.harness.ccm.views.dto.GovernanceJobEnqueueDTO;
 import io.harness.ccm.views.entities.Rule;
+import io.harness.ccm.views.entities.RuleEnforcement;
 import io.harness.ccm.views.entities.RuleExecution;
 import io.harness.ccm.views.helper.GovernanceJobDetailsAWS;
+import io.harness.ccm.views.helper.GovernanceJobDetailsAzure;
 import io.harness.ccm.views.helper.GovernanceRuleFilter;
+import io.harness.ccm.views.helper.RuleCloudProviderType;
 import io.harness.ccm.views.helper.RuleExecutionStatusType;
+import io.harness.ccm.views.helper.RuleExecutionType;
 import io.harness.ccm.views.helper.RuleList;
 import io.harness.ccm.views.service.GovernanceRuleService;
 import io.harness.ccm.views.service.RuleExecutionService;
@@ -29,8 +34,10 @@ import io.harness.connector.ConnectorResourceClient;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.delegate.beans.connector.CEFeatures;
 import io.harness.delegate.beans.connector.CcmConnectorFilter;
+import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
+import io.harness.delegate.beans.connector.ceazure.CEAzureConnectorDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.faktory.FaktoryProducer;
 import io.harness.filter.FilterType;
@@ -183,41 +190,16 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
   }
 
   @Override
-  public List<ConnectorResponseDTO> getAWSConnectorWithTargetAccounts(List<String> accounts, String accountId) {
-    List<ConnectorResponseDTO> nextGenConnectorResponses = new ArrayList<>();
-    PageResponse<ConnectorResponseDTO> response = null;
-    ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
-        ConnectorFilterPropertiesDTO.builder()
-            .types(Arrays.asList(ConnectorType.CE_AWS))
-            .ccmConnectorFilter(CcmConnectorFilter.builder()
-                                    .featuresEnabled(Arrays.asList(CEFeatures.GOVERNANCE))
-                                    .awsAccountIds(accounts)
-                                    .build())
-            .build();
-    connectorFilterPropertiesDTO.setFilterType(FilterType.CONNECTOR);
-    int page = 0;
-    int size = 1000;
-    do {
-      response = NGRestUtils.getResponse(connectorResourceClient.listConnectors(
-          accountId, null, null, page, size, connectorFilterPropertiesDTO, false));
-      if (response != null && isNotEmpty(response.getContent())) {
-        nextGenConnectorResponses.addAll(response.getContent());
-      }
-      page++;
-    } while (response != null && isNotEmpty(response.getContent()));
-
-    return nextGenConnectorResponses;
+  public Set<ConnectorInfoDTO> getConnectorResponse(
+      String accountId, Set<String> targets, RuleCloudProviderType cloudProvider) {
+    if (cloudProvider == AZURE) {
+      return getAzureConnectorResponse(accountId, targets);
+    } else {
+      return getAwsConnectorResponse(accountId, targets);
+    }
   }
 
-  ProcessExecutor getProcessExecutor() {
-    return new ProcessExecutor();
-  }
-
-  private final Cache<CacheKey, ConnectorInfoDTO> connectorCache =
-      Caffeine.newBuilder().maximumSize(2000).expireAfterWrite(15, TimeUnit.MINUTES).build();
-
-  @Override
-  public Set<ConnectorInfoDTO> getConnectorResponse(String accountId, Set<String> targetAccounts) {
+  public Set<ConnectorInfoDTO> getAwsConnectorResponse(String accountId, Set<String> targetAccounts) {
     Set<ConnectorInfoDTO> responseDTO = new HashSet<>();
     List<String> accounts = new ArrayList<>();
     for (String targetAccount : targetAccounts) {
@@ -245,6 +227,102 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
     return responseDTO;
   }
 
+  public Set<ConnectorInfoDTO> getAzureConnectorResponse(String accountId, Set<String> targetSubscriptions) {
+    Set<ConnectorInfoDTO> responseDTO = new HashSet<>();
+    List<String> subscriptions = new ArrayList<>();
+    for (String targetSubscription : targetSubscriptions) {
+      final CacheKey cacheKey = new CacheKey(accountId, targetSubscription);
+      ConnectorInfoDTO connectorInfoDTO = connectorCache.getIfPresent(cacheKey);
+      if (connectorInfoDTO != null) {
+        log.info("cache hit for key: {} value: {}", cacheKey, connectorInfoDTO);
+        responseDTO.add(connectorInfoDTO);
+      } else {
+        subscriptions.add(targetSubscription);
+        log.info("cache miss for key: {}", cacheKey);
+      }
+    }
+    if (!subscriptions.isEmpty()) {
+      log.info("subscriptions not cached: {}", subscriptions);
+      List<ConnectorResponseDTO> nextGenConnectorResponses =
+          getAzureConnectorWithTargetSubscriptions(subscriptions, accountId);
+      for (ConnectorResponseDTO connector : nextGenConnectorResponses) {
+        ConnectorInfoDTO connectorInfo = connector.getConnector();
+        CEAzureConnectorDTO ceAzureConnectorDTO = (CEAzureConnectorDTO) connectorInfo.getConnectorConfig();
+        responseDTO.add(connectorInfo);
+        final CacheKey cacheKey = new CacheKey(accountId, ceAzureConnectorDTO.getSubscriptionId());
+        connectorCache.put(cacheKey, connectorInfo);
+      }
+    }
+    return responseDTO;
+  }
+
+  @Override
+  public List<ConnectorResponseDTO> getAWSConnectorWithTargetAccounts(List<String> accounts, String accountId) {
+    List<ConnectorResponseDTO> nextGenConnectorResponses = new ArrayList<>();
+    PageResponse<ConnectorResponseDTO> response = null;
+    ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
+        ConnectorFilterPropertiesDTO.builder()
+            .types(Arrays.asList(ConnectorType.CE_AWS))
+            .ccmConnectorFilter(CcmConnectorFilter.builder()
+                                    .featuresEnabled(Arrays.asList(CEFeatures.GOVERNANCE))
+                                    .awsAccountIds(accounts)
+                                    .build())
+            .build();
+    connectorFilterPropertiesDTO.setFilterType(FilterType.CONNECTOR);
+    int page = 0;
+    int size = 1000;
+    do {
+      response = NGRestUtils.getResponse(connectorResourceClient.listConnectors(
+          accountId, null, null, page, size, connectorFilterPropertiesDTO, false));
+      if (response != null && isNotEmpty(response.getContent())) {
+        nextGenConnectorResponses.addAll(response.getContent());
+      }
+      page++;
+    } while (response != null && isNotEmpty(response.getContent()));
+
+    return nextGenConnectorResponses;
+  }
+
+  @Override
+  public List<ConnectorResponseDTO> getAzureConnectorWithTargetSubscriptions(
+      List<String> subscriptions, String accountId) {
+    List<ConnectorResponseDTO> nextGenConnectorResponses = new ArrayList<>();
+    List<ConnectorResponseDTO> connectorsForGivenSubscriptions = new ArrayList<>();
+    PageResponse<ConnectorResponseDTO> response = null;
+    ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
+        ConnectorFilterPropertiesDTO.builder()
+            .types(List.of(ConnectorType.CE_AZURE))
+            .ccmConnectorFilter(CcmConnectorFilter.builder().featuresEnabled(List.of(CEFeatures.GOVERNANCE)).build())
+            .build();
+    connectorFilterPropertiesDTO.setFilterType(FilterType.CONNECTOR);
+    int page = 0;
+    int size = 1000;
+    do {
+      response = NGRestUtils.getResponse(connectorResourceClient.listConnectors(
+          accountId, null, null, page, size, connectorFilterPropertiesDTO, false));
+      if (response != null && isNotEmpty(response.getContent())) {
+        nextGenConnectorResponses.addAll(response.getContent());
+      }
+      page++;
+    } while (response != null && isNotEmpty(response.getContent()));
+
+    for (ConnectorResponseDTO connector : nextGenConnectorResponses) {
+      CEAzureConnectorDTO ceAzureConnectorDTO = (CEAzureConnectorDTO) connector.getConnector().getConnectorConfig();
+      if (subscriptions.contains(ceAzureConnectorDTO.getSubscriptionId())) {
+        connectorsForGivenSubscriptions.add(connector);
+      }
+    }
+
+    return connectorsForGivenSubscriptions;
+  }
+
+  ProcessExecutor getProcessExecutor() {
+    return new ProcessExecutor();
+  }
+
+  private final Cache<CacheKey, ConnectorInfoDTO> connectorCache =
+      Caffeine.newBuilder().maximumSize(2000).expireAfterWrite(15, TimeUnit.MINUTES).build();
+
   @Override
   public String enqueueAdhoc(String accountId, GovernanceJobEnqueueDTO governanceJobEnqueueDTO) {
     // TO DO: Refactor and make this method smaller
@@ -263,28 +341,13 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
       return null;
     }
     try {
-      GovernanceJobDetailsAWS governanceJobDetailsAWS =
-          GovernanceJobDetailsAWS.builder()
-              .accountId(accountId)
-              .awsAccountId(governanceJobEnqueueDTO.getTargetAccountDetails().getTargetInfo())
-              .externalId(governanceJobEnqueueDTO.getTargetAccountDetails().getRoleId())
-              .roleArn(governanceJobEnqueueDTO.getTargetAccountDetails().getRoleInfo())
-              .isDryRun(governanceJobEnqueueDTO.getIsDryRun())
-              .ruleId(governanceJobEnqueueDTO.getRuleId())
-              .region(governanceJobEnqueueDTO.getTargetRegion())
-              .ruleEnforcementId("") // This is adhoc run
-              .policy(governanceJobEnqueueDTO.getPolicy())
-              .isOOTB(governanceJobEnqueueDTO.getIsOOTB())
-              .executionType(governanceJobEnqueueDTO.getExecutionType())
-              .build();
+      String jid;
+      if (governanceJobEnqueueDTO.getRuleCloudProviderType() == AZURE) {
+        jid = enqueueAdhocAzure(accountId, governanceJobEnqueueDTO);
+      } else {
+        jid = enqueueAdhocAws(accountId, governanceJobEnqueueDTO);
+      }
 
-      Gson gson = new GsonBuilder().create();
-      String json = gson.toJson(governanceJobDetailsAWS);
-      log.info("Enqueuing job in Faktory {}", json);
-      // jobType, jobQueue, json
-      String jid = FaktoryProducer.push(
-          governanceConfig.getAwsFaktoryJobType(), governanceConfig.getAwsFaktoryQueueName(), json);
-      log.info("Pushed job in Faktory: {}", jid);
       // Make a record in Mongo
       RuleExecution ruleExecution =
           RuleExecution.builder()
@@ -313,6 +376,186 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
     }
     return response;
   }
+
+  private String enqueueAdhocAzure(String accountId, GovernanceJobEnqueueDTO governanceJobEnqueueDTO)
+      throws IOException {
+    GovernanceJobDetailsAzure governanceJobDetailsAzure =
+        GovernanceJobDetailsAzure.builder()
+            .accountId(accountId)
+            .subscriptionId(governanceJobEnqueueDTO.getTargetAccountDetails().getTargetInfo())
+            .tenantId(governanceJobEnqueueDTO.getTargetAccountDetails().getTenantInfo())
+            .isDryRun(governanceJobEnqueueDTO.getIsDryRun())
+            .policyId(governanceJobEnqueueDTO.getRuleId())
+            .region(governanceJobEnqueueDTO.getTargetRegion())
+            .policyEnforcementId("") // This is adhoc run
+            .policy(governanceJobEnqueueDTO.getPolicy())
+            .isOOTB(governanceJobEnqueueDTO.getIsOOTB())
+            .executionType(governanceJobEnqueueDTO.getExecutionType())
+            .cloudConnectorID(governanceJobEnqueueDTO.getTargetAccountDetails().getCloudConnectorId())
+            .build();
+
+    Gson gson = new GsonBuilder().create();
+    String json = gson.toJson(governanceJobDetailsAzure);
+    log.info("Enqueuing Azure job in Faktory {}", json);
+    // jobType, jobQueue, json
+    String jid = FaktoryProducer.push(
+        governanceConfig.getAzureFaktoryJobType(), governanceConfig.getAzureFaktoryQueueName(), json);
+    log.info("Pushed Azure job in Faktory: {}", jid);
+    return jid;
+  }
+
+  private String enqueueAdhocAws(String accountId, GovernanceJobEnqueueDTO governanceJobEnqueueDTO) throws IOException {
+    GovernanceJobDetailsAWS governanceJobDetailsAWS =
+        GovernanceJobDetailsAWS.builder()
+            .accountId(accountId)
+            .awsAccountId(governanceJobEnqueueDTO.getTargetAccountDetails().getTargetInfo())
+            .externalId(governanceJobEnqueueDTO.getTargetAccountDetails().getRoleId())
+            .roleArn(governanceJobEnqueueDTO.getTargetAccountDetails().getRoleInfo())
+            .isDryRun(governanceJobEnqueueDTO.getIsDryRun())
+            .ruleId(governanceJobEnqueueDTO.getRuleId())
+            .region(governanceJobEnqueueDTO.getTargetRegion())
+            .ruleEnforcementId("") // This is adhoc run
+            .policy(governanceJobEnqueueDTO.getPolicy())
+            .isOOTB(governanceJobEnqueueDTO.getIsOOTB())
+            .executionType(governanceJobEnqueueDTO.getExecutionType())
+            .build();
+
+    Gson gson = new GsonBuilder().create();
+    String json = gson.toJson(governanceJobDetailsAWS);
+    log.info("Enqueuing Aws job in Faktory {}", json);
+    // jobType, jobQueue, json
+    String jid =
+        FaktoryProducer.push(governanceConfig.getAwsFaktoryJobType(), governanceConfig.getAwsFaktoryQueueName(), json);
+    log.info("Pushed Aws job in Faktory: {}", jid);
+    return jid;
+  }
+
+  @Override
+  public List<RuleExecution> enqueue(String accountId, RuleEnforcement ruleEnforcement, List<Rule> rulesList,
+      ConnectorConfigDTO connectorConfig, String cloudConnectorId, String faktoryJobType, String faktoryQueueName) {
+    if (ruleEnforcement.getCloudProvider() == AZURE) {
+      return enqueueAzure(
+          accountId, ruleEnforcement, rulesList, connectorConfig, cloudConnectorId, faktoryJobType, faktoryQueueName);
+    } else {
+      return enqueueAws(accountId, ruleEnforcement, rulesList, connectorConfig, faktoryJobType, faktoryQueueName);
+    }
+  }
+
+  private List<RuleExecution> enqueueAws(String accountId, RuleEnforcement ruleEnforcement, List<Rule> rulesList,
+      ConnectorConfigDTO connectorConfig, String faktoryJobType, String faktoryQueueName) {
+    CEAwsConnectorDTO ceAwsConnectorDTO = (CEAwsConnectorDTO) connectorConfig;
+    List<RuleExecution> ruleExecutions = new ArrayList<>();
+    for (String region : ruleEnforcement.getTargetRegions()) {
+      for (Rule rule : rulesList) {
+        try {
+          GovernanceJobDetailsAWS governanceJobDetailsAWS =
+              GovernanceJobDetailsAWS.builder()
+                  .accountId(accountId)
+                  .awsAccountId(ceAwsConnectorDTO.getAwsAccountId())
+                  .externalId(ceAwsConnectorDTO.getCrossAccountAccess().getExternalId())
+                  .roleArn(ceAwsConnectorDTO.getCrossAccountAccess().getCrossAccountRoleArn())
+                  .isDryRun(ruleEnforcement.getIsDryRun())
+                  .ruleId(rule.getUuid())
+                  .region(region)
+                  .ruleEnforcementId(ruleEnforcement.getUuid())
+                  .policy(rule.getRulesYaml())
+                  .executionType(RuleExecutionType.EXTERNAL)
+                  .build();
+          Gson gson = new GsonBuilder().create();
+          String json = gson.toJson(governanceJobDetailsAWS);
+          log.info("For rule enforcement setting {}: Enqueuing Aws job in Faktory {}", ruleEnforcement.getUuid(), json);
+          // Bulk enqueue in faktory can lead to difficulties in error handling and retry.
+          // order: jobType, jobQueue, json
+          String jid = FaktoryProducer.push(faktoryJobType, faktoryQueueName, json);
+          log.info("For rule enforcement setting {}: Pushed Aws job in Faktory: {}", ruleEnforcement.getUuid(), jid);
+          // Make a record in Mongo
+          // TO DO: We can bulk insert in mongo for all successful faktory job pushes
+          ruleExecutions.add(RuleExecution.builder()
+                                 .accountId(accountId)
+                                 .jobId(jid)
+                                 .cloudProvider(ruleEnforcement.getCloudProvider())
+                                 .executionLogPath("") // Updated by worker when execution finishes
+                                 .isDryRun(ruleEnforcement.getIsDryRun())
+                                 .ruleEnforcementIdentifier(ruleEnforcement.getUuid())
+                                 .ruleEnforcementName(ruleEnforcement.getName())
+                                 .executionCompletedAt(null) // Updated by worker when execution finishes
+                                 .ruleIdentifier(rule.getUuid())
+                                 .targetAccount(ceAwsConnectorDTO.getAwsAccountId())
+                                 .targetRegions(Arrays.asList(region))
+                                 .executionLogBucketType("")
+                                 .ruleName(rule.getName())
+                                 .OOTB(rule.getIsOOTB())
+                                 .executionStatus(RuleExecutionStatusType.ENQUEUED)
+                                 .executionType(RuleExecutionType.EXTERNAL)
+                                 .build());
+        } catch (Exception e) {
+          log.warn(
+              "Exception enqueueing Aws job for ruleEnforcementUuid: {} for targetAccount: {} for targetRegions: {}, {}",
+              ruleEnforcement.getUuid(), ceAwsConnectorDTO.getAwsAccountId(), region, e);
+        }
+      }
+    }
+    return ruleExecutions;
+  }
+
+  private List<RuleExecution> enqueueAzure(String accountId, RuleEnforcement ruleEnforcement, List<Rule> rulesList,
+      ConnectorConfigDTO connectorConfig, String cloudConnectorId, String faktoryJobType, String faktoryQueueName) {
+    CEAzureConnectorDTO ceAzureConnectorDTO = (CEAzureConnectorDTO) connectorConfig;
+    List<RuleExecution> ruleExecutions = new ArrayList<>();
+    for (String region : ruleEnforcement.getTargetRegions()) {
+      for (Rule rule : rulesList) {
+        try {
+          GovernanceJobDetailsAzure governanceJobDetailsAzure =
+              GovernanceJobDetailsAzure.builder()
+                  .accountId(accountId)
+                  .subscriptionId(ceAzureConnectorDTO.getSubscriptionId())
+                  .tenantId(ceAzureConnectorDTO.getTenantId())
+                  .isDryRun(ruleEnforcement.getIsDryRun())
+                  .policyId(rule.getUuid())
+                  .region(region)
+                  .policyEnforcementId("") // This is adhoc run
+                  .policy(rule.getRulesYaml())
+                  .executionType(RuleExecutionType.EXTERNAL)
+                  .cloudConnectorID(cloudConnectorId)
+                  .build();
+          Gson gson = new GsonBuilder().create();
+          String json = gson.toJson(governanceJobDetailsAzure);
+          log.info(
+              "For rule enforcement setting {}: Enqueuing Azure job in Faktory {}", ruleEnforcement.getUuid(), json);
+          // Bulk enqueue in faktory can lead to difficulties in error handling and retry.
+          // order: jobType, jobQueue, json
+          String jid = FaktoryProducer.push(faktoryJobType, faktoryQueueName, json);
+          log.info("For rule enforcement setting {}: Pushed Azure job in Faktory: {}", ruleEnforcement.getUuid(), jid);
+          // Make a record in Mongo
+          // TO DO: We can bulk insert in mongo for all successful faktory job pushes
+          ruleExecutions.add(RuleExecution.builder()
+                                 .accountId(accountId)
+                                 .jobId(jid)
+                                 .cloudProvider(ruleEnforcement.getCloudProvider())
+                                 .executionLogPath("") // Updated by worker when execution finishes
+                                 .isDryRun(ruleEnforcement.getIsDryRun())
+                                 .ruleEnforcementIdentifier(ruleEnforcement.getUuid())
+                                 .ruleEnforcementName(ruleEnforcement.getName())
+                                 .executionCompletedAt(null) // Updated by worker when execution finishes
+                                 .ruleIdentifier(rule.getUuid())
+                                 .targetAccount(ceAzureConnectorDTO.getSubscriptionId())
+                                 .targetRegions(List.of(region))
+                                 .executionLogBucketType("")
+                                 .ruleName(rule.getName())
+                                 .OOTB(rule.getIsOOTB())
+                                 .executionStatus(RuleExecutionStatusType.ENQUEUED)
+                                 .executionType(RuleExecutionType.EXTERNAL)
+                                 .build());
+        } catch (Exception e) {
+          log.warn(
+              "Exception enqueueing Azure job for ruleEnforcementUuid: {} for targetSubscription: {} for targetRegions: {}, {}",
+              ruleEnforcement.getUuid(), ceAzureConnectorDTO.getSubscriptionId(), region, e);
+        }
+      }
+    }
+    return ruleExecutions;
+  }
+
   @Value
   private static class CacheKey {
     String accountId;

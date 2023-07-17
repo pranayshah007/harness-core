@@ -20,6 +20,7 @@ public class NGArtifactConstants {
   public static final String REGISTRY = "registry";
   public static final String REGION = "region";
   public static final String TAG = "tag";
+  public static final String TAG_INPUT = "tagInput";
   public static final String TAG_REGEX = "tagRegex";
   public static final String VERSION = "version";
   public static final String VERSION_REGEX = "versionRegex";

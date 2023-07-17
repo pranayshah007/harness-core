@@ -131,6 +131,10 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
           analysisStateMachine.getNextAttemptTime());
       return analysisStateMachine.getCurrentState().getStatus();
     }
+    if (analysisStateMachine.getFirstPickedAt() == null) {
+      analysisStateMachine.setFirstPickedAt(clock.instant());
+      hPersistence.save(analysisStateMachine);
+    }
     log.info("Executing state machine {} for verificationTask {}", analysisStateMachine.getUuid(),
         analysisStateMachine.getVerificationTaskId());
     AnalysisState currentState = analysisStateMachine.getCurrentState();
@@ -216,24 +220,28 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
       }
     }
     hPersistence.save(analysisStateMachine);
-    List<CVNGLogTag> cvngLogTags = getCvngLogTags(analysisStateMachine, analysisStateMachine.getNextAttemptTime());
+    List<CVNGLogTag> cvngLogTags = getCvngLogTags(analysisStateMachine, clock);
     executionLogService.getLogger(analysisStateMachine)
         .log(analysisStateMachine.getLogLevel(), cvngLogTags,
             "Analysis state machine status: " + analysisStateMachine.getStatus());
     return analysisStateMachine.getCurrentState().getStatus();
   }
 
-  private static List<CVNGLogTag> getCvngLogTags(
-      AnalysisStateMachine analysisStateMachine, long nextAttemptTimeAtStart) {
+  private static List<CVNGLogTag> getCvngLogTags(AnalysisStateMachine analysisStateMachine, Clock clock) {
     List<CVNGLogTag> cvngLogTags = CVNGTaskMetadataUtils.getCvngLogTagsForTask(analysisStateMachine.getUuid());
     if (analysisStateMachine.getTotalRetryCount() > 0) {
       cvngLogTags.add(CVNGTaskMetadataUtils.getCvngLogTag(
           CVNGTaskMetadataConstants.RETRY_COUNT, String.valueOf(analysisStateMachine.getTotalRetryCount())));
     }
-    if (AnalysisStatus.getFinalStates().contains(analysisStateMachine.getStatus())) {
-      Duration timeDuration = Duration.between(Instant.ofEpochMilli(nextAttemptTimeAtStart), Instant.now());
+    if (AnalysisStatus.getFinalStates().contains(analysisStateMachine.getStatus())
+        && analysisStateMachine.getFirstPickedAt() != null) {
+      Duration totalRunningDuration = Duration.between(analysisStateMachine.getFirstPickedAt(), clock.instant());
+      cvngLogTags.addAll(CVNGTaskMetadataUtils.getTaskDurationTags(
+          CVNGTaskMetadataUtils.DurationType.RUNNING_DURATION, totalRunningDuration));
+      Duration waitDuration = Duration.between(
+          Instant.ofEpochMilli(analysisStateMachine.getCreatedAt()), analysisStateMachine.getFirstPickedAt());
       cvngLogTags.addAll(
-          CVNGTaskMetadataUtils.getTaskDurationTags(CVNGTaskMetadataUtils.DurationType.TOTAL_DURATION, timeDuration));
+          CVNGTaskMetadataUtils.getTaskDurationTags(CVNGTaskMetadataUtils.DurationType.WAIT_DURATION, waitDuration));
     }
     return cvngLogTags;
   }

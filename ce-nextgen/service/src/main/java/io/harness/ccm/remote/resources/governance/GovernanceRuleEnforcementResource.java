@@ -205,11 +205,12 @@ public class GovernanceRuleEnforcementResource {
           WingsException.USER, null);
     }
     Set<ConnectorInfoDTO> nextGenConnectorResponses = governanceRuleService.getConnectorResponse(
-        accountId, ruleEnforcement.getTargetAccounts().stream().collect(Collectors.toSet()));
+        accountId, new HashSet<>(ruleEnforcement.getTargetAccounts()), ruleEnforcement.getCloudProvider());
     Set<String> allowedAccountIds = null;
     if (nextGenConnectorResponses != null) {
       allowedAccountIds = rbacHelper.checkAccountIdsGivenPermission(accountId, null, null,
-          nextGenConnectorResponses.stream().map(e -> e.getIdentifier()).collect(Collectors.toSet()), RULE_EXECUTE);
+          nextGenConnectorResponses.stream().map(ConnectorInfoDTO::getIdentifier).collect(Collectors.toSet()),
+          RULE_EXECUTE);
     }
     if (allowedAccountIds == null || allowedAccountIds.size() != nextGenConnectorResponses.size()) {
       throw new NGAccessDeniedException(
@@ -390,11 +391,12 @@ public class GovernanceRuleEnforcementResource {
     }
     if (ruleEnforcement.getTargetAccounts() != null) {
       Set<ConnectorInfoDTO> nextGenConnectorResponses = governanceRuleService.getConnectorResponse(
-          accountId, ruleEnforcement.getTargetAccounts().stream().collect(Collectors.toSet()));
+          accountId, new HashSet<>(ruleEnforcement.getTargetAccounts()), ruleEnforcement.getCloudProvider());
       Set<String> allowedAccountIds = null;
       if (nextGenConnectorResponses != null) {
         allowedAccountIds = rbacHelper.checkAccountIdsGivenPermission(accountId, null, null,
-            nextGenConnectorResponses.stream().map(e -> e.getIdentifier()).collect(Collectors.toSet()), RULE_EXECUTE);
+            nextGenConnectorResponses.stream().map(ConnectorInfoDTO::getIdentifier).collect(Collectors.toSet()),
+            RULE_EXECUTE);
       }
       if (allowedAccountIds == null || allowedAccountIds.size() != nextGenConnectorResponses.size()) {
         throw new NGAccessDeniedException(

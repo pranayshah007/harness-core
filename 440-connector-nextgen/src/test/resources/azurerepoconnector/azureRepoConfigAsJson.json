@@ -3,6 +3,7 @@
     "name": "name_ph",
     "identifier": "identifier_ph",
     "description": "description_ph",
+    "accountIdentifier": "accountIdentifier_ph",
     "orgIdentifier": "orgIdentifier_ph",
     "projectIdentifier": "projectIdentifier_ph",
     "tags": {

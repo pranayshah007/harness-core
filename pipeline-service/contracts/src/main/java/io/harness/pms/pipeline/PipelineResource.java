@@ -406,11 +406,11 @@ public interface PipelineResource {
   @POST
   @Path("/import/{pipelineIdentifier}")
   @ApiOperation(value = "Get Pipeline YAML from Git Repository", nickname = "importPipeline")
-  @Operation(operationId = "importPipeline", summary = "Get Pipeline YAML from Git Repository",
+  @Operation(operationId = "importPipeline", summary = "Import and Create Pipeline from Git Repository",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
-            description = "Fetches Pipeline YAML from Git Repository and saves a record for it in Harness")
+            description = "Import and Create Pipeline from Git Repository and saves a record for it in Harness")
       })
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   ResponseDTO<PipelineSaveResponse>

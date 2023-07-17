@@ -10,6 +10,7 @@ package io.harness.cvng.cdng.beans;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
 
+import com.google.common.base.Preconditions;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -25,4 +26,18 @@ public class CVNGDeploymentImpactStepParameter implements SpecParameters {
   ParameterField<String> duration;
 
   DefaultAndConfiguredMonitoredServiceNode monitoredService;
+
+  public String getServiceIdentifier() {
+    Preconditions.checkNotNull(serviceIdentifier.getValue());
+    return serviceIdentifier.getValue();
+  }
+  public String getEnvIdentifier() {
+    Preconditions.checkNotNull(envIdentifier.getValue());
+    return envIdentifier.getValue();
+  }
+
+  public String getDuration() {
+    Preconditions.checkNotNull(duration.getValue());
+    return duration.getValue();
+  }
 }

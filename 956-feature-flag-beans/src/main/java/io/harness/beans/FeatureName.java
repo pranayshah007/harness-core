@@ -77,6 +77,8 @@ public enum FeatureName {
   CCM_SUNSETTING_CG("Sunsetting CCM CG Features", HarnessTeam.CE),
   CCM_SUSTAINABILITY("Sustainability Feature in CCM Module", HarnessTeam.CE),
   CCM_WORKLOAD_LABELS_OPTIMISATION("Use workload labels from instance data instead of k8sworkload", HarnessTeam.CE),
+  CCM_COST_CATEGORIES_DASHBOARD(
+      "Cost Categories will reflect in bigQuery and eventually in Looker Dashboards", HarnessTeam.CE),
   CDB_MFE_ENABLED("Feature flag is needed to test/control the microfrontend architecture for CDB UI", HarnessTeam.CDB),
   CDC_SERVICE_DASHBOARD_REVAMP_NG("Service Dashboard Revamp is behind this FF", HarnessTeam.CDC),
   CDP_AWS_SAM("FF for enabling AWS SAM deployments", HarnessTeam.CDP),
@@ -106,10 +108,13 @@ public enum FeatureName {
       HarnessTeam.CDP),
   CDS_DEBEZIUM_ENABLED_CG("This flag is enable sync using debezium in cg", HarnessTeam.CDC, Scope.GLOBAL),
   CDS_ENABLE_TRIGGER_YAML_VALIDATION("Enables trigger yaml validation", HarnessTeam.SPG),
-  CDS_ENCODE_HTTP_STEP_URL("Enables the encoding of HTTP Step URL if it is not already encoded", HarnessTeam.CDP),
   CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT(
       "FF for providing the terraform apply json output as a secret", HarnessTeam.CDP),
+  CDS_ENV_PROPAGATION("FF for enabling env infra propagation for CD", HarnessTeam.CDC),
   CDS_GIT_CONFIG_FILES("Enable config files from GIT repositories", HarnessTeam.CDP),
+  CDS_HELM_FETCH_CHART_METADATA_NG(
+      "Enables option to fetch helm chart details from the Chart.yaml and expose this as expressions. Epic: https://harness.atlassian.net/browse/CDS-58036",
+      HarnessTeam.CDP),
   CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG(
       "Enables multiple manifest support. We will be able to define multiple manifest and set only one as a primary. Epic: https://harness.atlassian.net/browse/CDS-58036",
       HarnessTeam.CDP),
@@ -128,8 +133,6 @@ public enum FeatureName {
       "Replace HTTP capability check for Kubernetes connector with Socket Capability", HarnessTeam.CDP),
   CDS_NEXUS_GROUPID_ARTIFACTID_DROPDOWN(
       "FF to enable dropdowns for groupId and artifactId in Nexus Artifact Source", HarnessTeam.CDC),
-  CDS_NG_CONFIG_FILE_EXPRESSION(
-      "Enable Harness variable rendering in Hanress config files (SSH/WinRM)", HarnessTeam.CDP),
   CDS_NG_TRIGGER_EXECUTION_REFACTOR(
       "Refactor trigger execution to use same logic used in manual execution", HarnessTeam.SPG),
   CDS_NG_TRIGGER_MULTI_ARTIFACTS("Allows creation of multi-region artifact triggers", HarnessTeam.CDC),
@@ -162,7 +165,6 @@ public enum FeatureName {
       "Allows landing users on the last step of manifest/artifact/config files, if these configs are in edit mode",
       HarnessTeam.CDP),
   CDS_SERVICE_OVERRIDES_2_0("Revamped experience service and environment overrides in NG", HarnessTeam.CDC),
-  CDS_SHOW_CREATE_PR("Start showing CreatePR step on the plan creator if enabled", HarnessTeam.GITOPS),
   CDS_SSH_CLIENT("Enable SSH new implementation via SSH Client", HarnessTeam.CDP),
   CDS_SSH_SSHJ("Enable SSH for Vault flow via SSHJ", HarnessTeam.CDP),
   CDS_STAGE_EXECUTION_DATA_SYNC(
@@ -176,7 +178,6 @@ public enum FeatureName {
       "Enabling support for skipping BG deployment if the manifest previously deployed is same as current manifest in NG",
       HarnessTeam.CDP),
   CDS_SUPPORT_TICKET_DEFLECTION("Enable api to create zendesk ticket and for generating coveo token", HarnessTeam.CDP),
-  CDS_TEMPLATE_ERROR_HANDLING("Enabling new Schema validation UI for template studio", PIPELINE),
   CDS_TERRAFORM_CLI_OPTIONS_NG("Enable terraform CLI Options", HarnessTeam.CDP),
   CDS_TERRAFORM_CONFIG_INSPECT_V1_2(
       "Enables usage of terraform-config-inspect v1.2 built from commit 7c9946b1df498f1b0634c7b33257790f01c819f3 of https://github.com/hashicorp/terraform-config-inspect and GO 1.19.6",
@@ -195,6 +196,7 @@ public enum FeatureName {
       "This is to diable checking for the HTTP status code and instead just check for a valid response",
       HarnessTeam.CDP),
   CDS_USE_OLD_SERVICE_V1("Feature flag to use service v1. NG_SVC_ENV_REDESIGN will be deprecated", HarnessTeam.CDC),
+  CDS_GITHUB_APP_AUTHENTICATION("This flag enables the github app authentication fo github connector", HarnessTeam.CDP),
   CDS_V1_EOL_BANNER("Display EOL banner for v1 CD entities", HarnessTeam.CDC),
   CD_AI_ENHANCED_REMEDIATIONS(
       "Enables use of generative AI to provide remediation information in CD step logs", HarnessTeam.CDP),
@@ -208,10 +210,11 @@ public enum FeatureName {
   CD_TRIGGER_CATALOG("Enables UI for Trigger catalog for Nexus ", HarnessTeam.CDC),
   CD_TRIGGER_CATALOG_API_ENABLED("Enable support for pipeline/api/triggers/catalog API in UI", HarnessTeam.CDC),
   CD_TRIGGER_V2("Enable support for nexus3, nexus2, azure, ami trigger", HarnessTeam.CDC),
-  CENG_ENABLED("Enable the CCM module on NG", HarnessTeam.CE),
   CET_ENABLED("Enable Continuous Error Tracking module in UI", HarnessTeam.CET),
   CET_EVENTS_CHART("Enable events chart in UI of Continuous Error Tracking module", HarnessTeam.CET),
   CET_CD_INTEGRATION("Enable Continuous Error Tracking events list in CD pipeline execution tab", HarnessTeam.CET),
+  CET_PLATFORM_MONITORED_SERVICE(
+      "Enable Continuous Error Tracking agent column and settings in platform Monitored Services", HarnessTeam.CET),
   CE_GCP_CUSTOM_PRICING("Use custom pricing data for k8s gcp from billing export", HarnessTeam.CE),
   CE_HARNESS_ENTITY_MAPPING("Internal FF to decide if harness entities mapping is needed", HarnessTeam.CE),
   CE_HARNESS_INSTANCE_QUERY("Internal FF to decide which table to use for querying mapping data", HarnessTeam.CE),
@@ -234,12 +237,9 @@ public enum FeatureName {
   CG_SECRET_MANAGER_DELEGATE_SELECTORS,
   CHANGE_INSTANCE_QUERY_OPERATOR_TO_NE("Change instance service query operator from $exists to $ne", HarnessTeam.SPG),
   CHAOS_DASHBOARD_ENABLED("Enables chaos dashboards in CHAOS module", HarnessTeam.CHAOS),
-  CHAOS_GAMEDAY_ENABLED("Enable gameday feature in CHAOS", HarnessTeam.CHAOS),
   CHAOS_IMAGE_REGISTRY_DEV("Enable image registry configuration in CHAOS", HarnessTeam.CHAOS),
   CHAOS_LINUX_ENABLED("Enable linux experiment and infrastructure integration in CHAOS", HarnessTeam.CHAOS),
   CHAOS_PROBE_ENABLED("Enable new probe ui and flow in CHAOS", HarnessTeam.CHAOS),
-  CHAOS_SRM_EVENT(
-      "Enables chaos events to be displayed as change source events in SRM monitored services.", HarnessTeam.CHAOS),
   CIE_ENABLED_RBAC("Enable rbac validationa at CI level", HarnessTeam.CI),
   CIE_HOSTED_VMS(
       "Enables hosted VMs in favor of hosted K8s for CIE. This flag will be deprecated once all the feature work has been checked in",
@@ -393,6 +393,8 @@ public enum FeatureName {
   FFM_6800_FF_MFE_ONBOARDING("Enable Feature Flag MFE Onboarding page", HarnessTeam.CF),
   FFM_7127_FF_MFE_ONBOARDING_DETAIL("Enable Feature Flag MFE Onboarding Detail page", HarnessTeam.CF),
   FFM_7921_ARCHIVING_FEATURE_FLAGS("Enable archiving feature flags instead of permanent deletion", HarnessTeam.CF),
+  FFM_7258_INTERCOM_VIDEO_LINKS("Enable links to launch Intercom window containing video tutorials", HarnessTeam.CF),
+  FFM_8261_EXPRESSIONS_IN_PIPELINE_STEP("Enable expressions support in the FF pipeline step", HarnessTeam.CF),
   FF_ALLOW_OPTIONAL_VARIABLE("Allow Optional Variable from UI in NG.", HarnessTeam.PIPELINE),
   FF_FLAG_SYNC_THROUGH_GITEX_ENABLED,
   FF_GITSYNC,
@@ -404,9 +406,7 @@ public enum FeatureName {
   GCP_WORKLOAD_IDENTITY,
   GITHUB_WEBHOOK_AUTHENTICATION,
   GITOPS_IAM("Support for connecting via IAM role in GitOps Clusters", HarnessTeam.GITOPS),
-  GITOPS_ONPREM_ENABLED("Enable the gitops tab in the UI in case of ONPREM/SMP", HarnessTeam.GITOPS),
   GITOPS_ORG_LEVEL("Support GitOps at Org level", HarnessTeam.GITOPS),
-  GITOPS_SYNC_STEP("Enable sync step in GitOps", HarnessTeam.GITOPS),
   GIT_HOST_CONNECTIVITY,
   GLOBAL_COMMAND_LIBRARY,
   GLOBAL_DISABLE_HEALTH_CHECK(Scope.GLOBAL),
@@ -510,6 +510,7 @@ public enum FeatureName {
       "To enable Retry Step Group Failure Strategy, under which if a step fails in a step group, the whole group is retried",
       PIPELINE),
   PIE_STATIC_YAML_SCHEMA("Enable support for static schema", PIPELINE),
+  PIE_EXPRESSION_PLAYGROUND("Enable support for dynamic expression evaluation", PIPELINE),
   PIE_STORE_USED_EXPRESSIONS(
       "FF to use store the expressions used during the pipeline executions", HarnessTeam.PIPELINE),
   PIE_USE_SECRET_FUNCTOR_WITH_RBAC("Perform Rbac on secrets when used in pipeline execution", HarnessTeam.PIPELINE),
@@ -703,6 +704,7 @@ public enum FeatureName {
       "This is used make prometheus Health source run with promQL by clause", HarnessTeam.CV),
   SRM_ENABLE_BASELINE_BASED_VERIFICATION("This is used to enable baseline based verification.", HarnessTeam.CV),
   SRM_ENABLE_GRAFANA_LOKI_LOGS("This is used to enable Grafana Loki logs health source.", HarnessTeam.CV),
+  SRM_ENABLE_AZURE_LOGS("Will enable Azure logs health source.", HarnessTeam.CV),
   SRM_ENABLE_JIRA_INTEGRATION("Enable Jira integration in CVNG Verify step UI", HarnessTeam.CV),
   SRM_ENABLE_REQUEST_SLO("Control Request Based SLO feature on UI", HarnessTeam.CV),
   SRM_ENABLE_SIMPLE_VERIFICATION("This is used to enable simple verification.", HarnessTeam.CV),
@@ -814,7 +816,11 @@ public enum FeatureName {
   YAML_GIT_CONNECTOR_NAME,
   CDS_STEP_EXECUTION_DATA_SYNC(
       "This flag controls if you want Step execution data saved in mongodb and eventually synced to timescale",
-      HarnessTeam.CDP);
+      HarnessTeam.CDP),
+  CDS_ENABLE_LOAD_FROM_CACHE_FOR_RETRY_FORM("Used for enabling load from cache on retry form", PIPELINE),
+  CDS_GITHUB_PACKAGES("Used for SSH/WinRm copy and download Github packages artifacts", HarnessTeam.CDP),
+  CDS_QUEUE_SERVICE_FOR_TRIGGERS(
+      "When this flag is enabled, triggers will be processed using queue service instead of mongo iterators", PIPELINE);
   // keep-sorted end
 
   @Deprecated

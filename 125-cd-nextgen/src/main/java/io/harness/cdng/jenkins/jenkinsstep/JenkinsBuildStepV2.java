@@ -71,9 +71,9 @@ public class JenkinsBuildStepV2 extends CdTaskChainExecutable {
   }
 
   @Override
-  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      StepInputPackage inputPackage, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier)
-      throws Exception {
+  public TaskChainResponse executeNextLinkWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepElementParameters stepParameters, StepInputPackage inputPackage, PassThroughData passThroughData,
+      ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
     try {
       JenkinsArtifactDelegateRequestBuilder paramBuilder = getJenkinsArtifactDelegateRequestBuilder(stepParameters);
       return jenkinsBuildStepHelperService.pollJenkinsJob(
@@ -86,8 +86,9 @@ public class JenkinsBuildStepV2 extends CdTaskChainExecutable {
   }
 
   @Override
-  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
+  public StepResponse finalizeExecutionWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepElementParameters stepParameters, PassThroughData passThroughData,
+      ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     try {
       return jenkinsBuildStepHelperService.prepareStepResponseV2(responseDataSupplier);
     } finally {

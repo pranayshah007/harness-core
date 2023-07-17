@@ -119,6 +119,28 @@ public class AzureArtifactDownloadHandlerTest extends CategoryTest {
             + "az artifacts universal download --organization \"https://dev.azure.com/test/\" --project=\"testProj\" --scope project --feed \"feed\" --name \"testPack\" --version \"1.0.0\" --path destinationPath");
   }
 
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testGetBashCommandStringUpackOrg() {
+    AzureArtifactDelegateConfig azureArtifactDelegateConfig = getArtifactDelegateConfig("upack");
+    String result = handler.getCommandString(azureArtifactDelegateConfig, "destinationPath", ScriptType.BASH);
+    assertThat(result.trim())
+        .isEqualTo("export AZURE_DEVOPS_EXT_PAT=decryptedValue\n"
+            + "az artifacts universal download --organization \"https://dev.azure.com/test/\" --feed \"feed\" --name \"testPack\" --version \"1.0.0\" --path destinationPath");
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testGetBashCommandStringUpackProj() {
+    AzureArtifactDelegateConfig azureArtifactDelegateConfig = getArtifactDelegateConfig("upack", "project", "testProj");
+    String result = handler.getCommandString(azureArtifactDelegateConfig, "destinationPath", ScriptType.BASH);
+    assertThat(result.trim())
+        .isEqualTo("export AZURE_DEVOPS_EXT_PAT=decryptedValue\n"
+            + "az artifacts universal download --organization \"https://dev.azure.com/test/\" --project=\"testProj\" --scope project --feed \"feed\" --name \"testPack\" --version \"1.0.0\" --path destinationPath");
+  }
+
   private AzureArtifactDelegateConfig getArtifactDelegateConfig(String packageType) {
     return getArtifactDelegateConfig(packageType, "org", "");
   }

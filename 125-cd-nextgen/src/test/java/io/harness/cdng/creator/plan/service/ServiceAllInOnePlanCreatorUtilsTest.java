@@ -16,6 +16,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.beans.InputSetValidatorType;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.environment.yaml.EnvironmentInfraUseFromStage;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.beans.ServiceUseFromStageV2;
@@ -194,6 +195,63 @@ public class ServiceAllInOnePlanCreatorUtilsTest extends CategoryTest {
                             ServiceDefinitionType.ECS, null))
         .withMessage(
             "Could not find service in stage [adhoc], hence not possible to propagate service from that stage");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ABHINAV_MITTAL)
+  @Category(UnitTests.class)
+  public void addServiceNodeUseFromStageFromEnvError_0() throws IOException {
+    String pipelineYaml = readFileIntoUTF8String("cdng/creator/servicePlanCreator/pipeline.yaml");
+    YamlField pipeline = new YamlField("pipeline", YamlNode.fromYamlPath(pipelineYaml, ""));
+    YamlField specField = new YamlField("spec", getStageNodeAtIndex(pipeline, 5));
+    assertThatExceptionOfType(InvalidArgumentsException.class)
+        .isThrownBy(()
+                        -> ServiceAllInOnePlanCreatorUtils.addServiceNode(specField, kryoSerializer,
+                            ServiceYamlV2.builder().serviceRef(ParameterField.createValueField("my_service")).build(),
+                            EnvironmentYamlV2.builder()
+                                .useFromStage(EnvironmentInfraUseFromStage.builder().stage("stage2").build())
+                                .build(),
+                            "serviceNodeId", "mextNodeId", ServiceDefinitionType.ECS, null))
+        .withMessage(
+            "Invalid identifier [stage2] given in useFromStage. Cannot reference a stage which also has useFromStage parameter");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ABHINAV_MITTAL)
+  @Category(UnitTests.class)
+  public void addServiceNodeUseFromStageFromEnvError_1() throws IOException {
+    String pipelineYaml = readFileIntoUTF8String("cdng/creator/servicePlanCreator/pipeline.yaml");
+    YamlField yamlField = new YamlField("", YamlNode.fromYamlPath(pipelineYaml, ""));
+    YamlField specField = new YamlField("spec", getStageNodeAtIndex(yamlField, 5));
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(()
+                        -> ServiceAllInOnePlanCreatorUtils.addServiceNode(specField, kryoSerializer,
+                            ServiceYamlV2.builder().serviceRef(ParameterField.createValueField("my_service")).build(),
+                            EnvironmentYamlV2.builder()
+                                .useFromStage(EnvironmentInfraUseFromStage.builder().stage("stage0").build())
+                                .build(),
+                            "serviceNodeId", "mextNodeId", ServiceDefinitionType.ECS, null))
+        .withMessage(
+            "Propagate from stage is not supported with multi environment deployments, hence not possible to propagate environment from that stage");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ABHINAV_MITTAL)
+  @Category(UnitTests.class)
+  public void addServiceNodeUseFromStageFromEnvError_2() throws IOException {
+    String pipelineYaml = readFileIntoUTF8String("cdng/creator/servicePlanCreator/pipeline.yaml");
+    YamlField yamlField = new YamlField("", YamlNode.fromYamlPath(pipelineYaml, ""));
+    YamlField specField = new YamlField("spec", getStageNodeAtIndex(yamlField, 5));
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(()
+                        -> ServiceAllInOnePlanCreatorUtils.addServiceNode(specField, kryoSerializer,
+                            ServiceYamlV2.builder().serviceRef(ParameterField.createValueField("my_service")).build(),
+                            EnvironmentYamlV2.builder()
+                                .useFromStage(EnvironmentInfraUseFromStage.builder().stage("adhoc").build())
+                                .build(),
+                            "serviceNodeId", "mextNodeId", ServiceDefinitionType.ECS, null))
+        .withMessage(
+            "Could not find environment in stage [adhoc], hence not possible to propagate environment from that stage");
   }
 
   private static YamlNode getStageNodeAtIndex(YamlField pipeline, int idx) {

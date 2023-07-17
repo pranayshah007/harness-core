@@ -203,7 +203,7 @@ public class LearningEngineTaskServiceImpl implements LearningEngineTaskService 
     incTaskStatusMetric(task.getAccountId(), ExecutionStatus.SUCCESS);
     addTimeToFinishMetrics(task);
     stateMachineEventPublisherService.registerTaskComplete(task.getAccountId(), task.getVerificationTaskId());
-    List<CVNGLogTag> cvngLogTags = getCvngLogTagsForFinalState(task);
+    List<CVNGLogTag> cvngLogTags = getCvngLogTagsForFinalState(task, clock);
     executionLogService.getLogger(task).log(
         task.getLogLevel(), cvngLogTags, "Learning engine task status: " + task.getTaskStatus());
   }
@@ -225,22 +225,22 @@ public class LearningEngineTaskServiceImpl implements LearningEngineTaskService 
     LearningEngineTask learningEngineTask = get(taskId);
     incTaskStatusMetric(learningEngineTask.getAccountId(), ExecutionStatus.FAILED);
     addTimeToFinishMetrics(learningEngineTask);
-    List<CVNGLogTag> cvngLogTags = getCvngLogTagsForFinalState(learningEngineTask);
+    List<CVNGLogTag> cvngLogTags = getCvngLogTagsForFinalState(learningEngineTask, clock);
     executionLogService.getLogger(learningEngineTask)
         .log(ExecutionLogDTO.LogLevel.ERROR, cvngLogTags,
             "Learning engine task failed. Exception: ", learningEngineTask.getException());
   }
 
-  private static List<CVNGLogTag> getCvngLogTagsForFinalState(LearningEngineTask learningEngineTask) {
+  private static List<CVNGLogTag> getCvngLogTagsForFinalState(LearningEngineTask learningEngineTask, Clock clock) {
     List<CVNGLogTag> cvngLogTags = CVNGTaskMetadataUtils.getCvngLogTagsForTask(learningEngineTask.getUuid());
     if (learningEngineTask.getPickedAt() != null) {
       cvngLogTags.addAll(CVNGTaskMetadataUtils.getTaskDurationTags(
           CVNGTaskMetadataUtils.DurationType.WAIT_DURATION, learningEngineTask.waitTime()));
       cvngLogTags.addAll(CVNGTaskMetadataUtils.getTaskDurationTags(
-          CVNGTaskMetadataUtils.DurationType.RUNNING_DURATION, learningEngineTask.runningTime(Instant.now())));
+          CVNGTaskMetadataUtils.DurationType.RUNNING_DURATION, learningEngineTask.runningTime(clock.instant())));
     } else {
       cvngLogTags.addAll(CVNGTaskMetadataUtils.getTaskDurationTags(
-          CVNGTaskMetadataUtils.DurationType.TOTAL_DURATION, learningEngineTask.totalTime(Instant.now())));
+          CVNGTaskMetadataUtils.DurationType.TOTAL_DURATION, learningEngineTask.totalTime(clock.instant())));
     }
     return cvngLogTags;
   }

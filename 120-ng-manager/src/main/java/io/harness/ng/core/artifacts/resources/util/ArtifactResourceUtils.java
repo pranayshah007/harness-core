@@ -22,6 +22,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.ResourceTypeConstants;
 import io.harness.beans.IdentifierRef;
+import io.harness.beans.InputSetValidatorType;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
@@ -185,6 +186,11 @@ public class ArtifactResourceUtils {
     return response.getMergedPipelineYaml();
   }
 
+  public boolean checkValidRegexType(ParameterField<String> artifactConfig) {
+    return artifactConfig.getExpressionValue() != null && artifactConfig.getInputSetValidator() != null
+        && artifactConfig.getInputSetValidator().getValidatorType() == InputSetValidatorType.REGEX;
+  }
+
   @Nullable
   public String getResolvedFieldValue(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String runtimeInputYaml, String imagePath, String fqnPath,
@@ -267,8 +273,17 @@ public class ArtifactResourceUtils {
     if (!shouldResolveExpression) {
       return;
     }
-    String mergedCompleteYaml = getMergedCompleteYaml(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml, gitEntityBasicInfo);
+    String mergedCompleteYaml = "";
+
+    try {
+      mergedCompleteYaml = getMergedCompleteYaml(
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml, gitEntityBasicInfo);
+    } catch (InvalidRequestException invalidRequestException) {
+      if (invalidRequestException.getMessage().contains("doesn't exist or has been deleted")) {
+        return;
+      }
+      throw invalidRequestException;
+    }
     if (isNotEmpty(mergedCompleteYaml) && TemplateRefHelper.hasTemplateRef(mergedCompleteYaml)) {
       mergedCompleteYaml = applyTemplatesOnGivenYaml(
           accountId, orgIdentifier, projectIdentifier, mergedCompleteYaml, gitEntityBasicInfo);

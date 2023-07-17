@@ -7,16 +7,16 @@
 
 package io.harness.cvng.activity.services.impl;
 
-import io.harness.cvng.activity.entities.SRMAnalysisActivity;
+import io.harness.cvng.activity.entities.SRMStepAnalysisActivity;
 import io.harness.cvng.activity.services.api.ActivityUpdateHandler;
 
-public class SRMAnalysisActivityUpdateHandler extends ActivityUpdateHandler<SRMAnalysisActivity> {
+public class SRMAnalysisActivityUpdateHandler extends ActivityUpdateHandler<SRMStepAnalysisActivity> {
   @Override
-  public void handleCreate(SRMAnalysisActivity activity) {}
+  public void handleCreate(SRMStepAnalysisActivity activity) {}
 
   @Override
-  public void handleDelete(SRMAnalysisActivity activity) {}
+  public void handleDelete(SRMStepAnalysisActivity activity) {}
 
   @Override
-  public void handleUpdate(SRMAnalysisActivity existingActivity, SRMAnalysisActivity newActivity) {}
+  public void handleUpdate(SRMStepAnalysisActivity existingActivity, SRMStepAnalysisActivity newActivity) {}
 }

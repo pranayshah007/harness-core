@@ -29,6 +29,9 @@ public final class EventsFrameworkConstants {
   public static final String TRIGGER_EXECUTION_EVENTS_STREAM = "trigger_execution_events_stream";
   public static final String GIT_PUSH_EVENT_STREAM = "git_push_event_stream";
   public static final String GIT_PR_EVENT_STREAM = "git_pr_event_stream";
+  public static final String WEBHOOK_PUSH_EVENT = "WebhookPushEvent";
+  public static final String WEBHOOK_BRANCH_HOOK_EVENT = "WebhookBranchHookEvent";
+  public static final String WEBHOOK_EVENT = "WebhookEvent";
   public static final String GIT_BRANCH_HOOK_EVENT_STREAM = "git_branch_hook_event_stream";
   public static final String USERMEMBERSHIP = "usermembership";
   public static final String ORCHESTRATION_LOG = "orchestration_log";
@@ -112,6 +115,7 @@ public final class EventsFrameworkConstants {
   public static final int PLAN_NOTIFY_EVENT_MAX_TOPIC_SIZE = 5000;
 
   public static final String PMS_ORCHESTRATION_NOTIFY_EVENT = "pms_orchestration_notify_event";
+  public static final String CI_ORCHESTRATION_NOTIFY_EVENT = "ci_orchestration_notify_event";
   public static final int PMS_ORCHESTRATION_NOTIFY_EVENT_BATCH_SIZE = 20;
   public static final int PMS_ORCHESTRATION_NOTIFY_EVENT_MAX_TOPIC_SIZE = 5000;
 

@@ -100,7 +100,7 @@ public class VmIACMApprovalStepSerializerTest {
     when(connectorUtils.getConnectorDetails(any(), any())).thenReturn(ConnectorDetails.builder().build());
 
     VmPluginStep vmPluginStep = vmIACMApprovalStepSerializer.serialize(ambiance, stepInfo, null, null);
-    assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(5);
+    assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(6);
     assertThat(vmPluginStep.getEnvVariables().get("ENV_SECRETS_keytest1")).contains("${ngSecretManager.obtain");
     assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_keytest2")).isEqualTo("keyValue2");
     assertThat(vmPluginStep.getEnvVariables().get("TFVARS_SECRETS_keytest3")).contains("${ngSecretManager.obtain");

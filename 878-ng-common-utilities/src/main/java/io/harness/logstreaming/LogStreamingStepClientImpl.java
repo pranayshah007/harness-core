@@ -43,7 +43,8 @@ public class LogStreamingStepClientImpl implements ILogStreamingStepClient {
       String logKey = generateLogKey(baseLogKey, logKeySuffix);
       SafeHttpCall.executeWithExceptions(logStreamingClient.openLogStream(token, accountId, logKey));
     } catch (Exception ex) {
-      log.error("Unable to open log stream for account {} and logKeySuffix {} ", accountId, logKeySuffix, ex);
+      log.warn(
+          String.format("Unable to open log stream for account %s and logKeySuffix %s ", accountId, logKeySuffix), ex);
     }
   }
 
@@ -55,7 +56,9 @@ public class LogStreamingStepClientImpl implements ILogStreamingStepClient {
         String logKey = generateLogKey(baseLogKey, logKeySuffix);
         SafeHttpCall.executeWithExceptions(logStreamingClient.closeLogStream(token, accountId, logKey, true));
       } catch (Exception ex) {
-        log.error("Unable to close log stream for account {} and logKeySuffix {} ", accountId, logKeySuffix, ex);
+        log.warn(
+            String.format("Unable to close log stream for account %s and logKeySuffix %s ", accountId, logKeySuffix),
+            ex);
       }
     });
   }
@@ -73,8 +76,9 @@ public class LogStreamingStepClientImpl implements ILogStreamingStepClient {
     } catch (Exception ex) {
       if (logKeyCache.getIfPresent(logKey) == null) {
         logKeyCache.put(logKey, true);
-        log.error(
-            "Unable to push message to log stream for account {} and logKeySuffix {}", accountId, logKeySuffix, ex);
+        log.warn(String.format("Unable to push message to log stream for account %s and logKeySuffix %s", accountId,
+                     logKeySuffix),
+            ex);
       }
       log.debug("Unable to push message to log stream for account {} and logKeySuffix {} with error {}", accountId,
           logKeySuffix, ex.getMessage());
@@ -89,7 +93,8 @@ public class LogStreamingStepClientImpl implements ILogStreamingStepClient {
         SafeHttpCall.executeWithExceptions(
             logStreamingClient.closeLogStreamWithPrefix(token, accountId, prefix, true, true));
       } catch (Exception ex) {
-        log.error("Unable to close log stream for account {} and logKeySuffix {} ", accountId, prefix, ex);
+        log.warn(
+            String.format("Unable to close log stream for account %s and logKeySuffix %s ", accountId, prefix), ex);
       }
     });
   }

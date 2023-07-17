@@ -47,20 +47,23 @@ public class CommandTaskDataFactory {
 
   private TaskType getTaskType(CommandTaskParameters taskParameters) {
     SshWinRmArtifactDelegateConfig artifactDelegateConfig = taskParameters.getArtifactDelegateConfig();
-    if (isNotEmpty(taskParameters.getSecretOutputVariables())) {
+
+    // Note the order of if/else is very important!!! The last FF goes first
+    if (artifactDelegateConfig != null && SshWinRmArtifactType.AZURE.equals(artifactDelegateConfig.getArtifactType())
+        && AZURE_UNIVERSAL_PACKAGE.equals(((AzureArtifactDelegateConfig) artifactDelegateConfig).getPackageType())) {
+      return TaskType.COMMAND_TASK_NG_WITH_AZURE_UNIVERSAL_PACKAGE_ARTIFACT;
+    } else if (artifactDelegateConfig != null
+        && SshWinRmArtifactType.GITHUB_PACKAGE.equals(artifactDelegateConfig.getArtifactType())) {
+      return TaskType.COMMAND_TASK_NG_WITH_GITHUB_PACKAGE_ARTIFACT;
+    } else if (isNotEmpty(taskParameters.getSecretOutputVariables())) {
       return TaskType.COMMAND_TASK_NG_WITH_OUTPUT_VARIABLE_SECRETS;
     } else if (gitConfigExists(taskParameters)) {
       return TaskType.COMMAND_TASK_NG_WITH_GIT_CONFIGS;
     } else if (artifactDelegateConfig != null
         && SshWinRmArtifactType.AZURE.equals(artifactDelegateConfig.getArtifactType())) {
-      if (AZURE_UNIVERSAL_PACKAGE.equals(((AzureArtifactDelegateConfig) artifactDelegateConfig).getPackageType())) {
-        return TaskType.COMMAND_TASK_NG_WITH_AZURE_UNIVERSAL_PACKAGE_ARTIFACT;
-      }
       return TaskType.COMMAND_TASK_NG_WITH_AZURE_ARTIFACT;
-    } else if (artifactDelegateConfig != null
-        && SshWinRmArtifactType.GITHUB_PACKAGE.equals(artifactDelegateConfig.getArtifactType())) {
-      return TaskType.COMMAND_TASK_NG_WITH_GITHUB_PACKAGE_ARTIFACT;
     }
+
     return TaskType.COMMAND_TASK_NG;
   }
 

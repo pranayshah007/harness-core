@@ -8,6 +8,7 @@
 package io.harness.delegate.task.shell.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.AZURE_CLI_INSTALLATION_CHECK_HINT;
 import static io.harness.rule.OwnerRule.BOJAN;
 import static io.harness.rule.OwnerRule.FILIP;
 import static io.harness.rule.OwnerRule.VITALIE;
@@ -17,7 +18,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -39,6 +43,7 @@ import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.rule.Owner;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ScriptProcessExecutor;
@@ -52,6 +57,7 @@ import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -85,6 +91,8 @@ public class WinRmInitCommandHandlerTest {
     WinRmExecutor executor = mock(WinRmExecutor.class);
     when(winRmExecutorFactoryNG.getExecutor(any(), anyBoolean(), anyBoolean(), any(), any())).thenReturn(executor);
     when(executor.executeCommandString(any())).thenReturn(CommandExecutionStatus.SUCCESS);
+    LogCallback logCallback = mock(LogCallback.class);
+    when(executor.getLogCallback()).thenReturn(logCallback);
     CommandExecutionStatus result = winRmInitCommandHandler
                                         .handle(winrmTaskParameters, initCommandUnit, iLogStreamingTaskClient,
                                             CommandUnitsProgress.builder().build(), taskContext)
@@ -169,6 +177,9 @@ public class WinRmInitCommandHandlerTest {
     WinRmExecutor executor = mock(WinRmExecutor.class);
     when(winRmExecutorFactoryNG.getExecutor(any(), anyBoolean(), anyBoolean(), any(), any())).thenReturn(executor);
     when(executor.executeCommandString(any())).thenReturn(CommandExecutionStatus.SUCCESS);
+    LogCallback logCallback = mock(LogCallback.class);
+    when(executor.getLogCallback()).thenReturn(logCallback);
+
     CommandExecutionStatus result = winRmInitCommandHandler
                                         .handle(winrmTaskParameters, initCommandUnit, iLogStreamingTaskClient,
                                             CommandUnitsProgress.builder().build(), taskContext)
@@ -200,13 +211,22 @@ public class WinRmInitCommandHandlerTest {
 
     WinRmExecutor executor = mock(WinRmExecutor.class);
     when(winRmExecutorFactoryNG.getExecutor(any(), anyBoolean(), anyBoolean(), any(), any())).thenReturn(executor);
-    when(executor.getLogCallback()).thenReturn(mock(LogCallback.class));
+    LogCallback logCallback = mock(LogCallback.class);
+    when(executor.getLogCallback()).thenReturn(logCallback);
     when(executor.executeCommandString(any())).thenReturn(CommandExecutionStatus.FAILURE);
 
     assertThatThrownBy(()
                            -> winRmInitCommandHandler.handle(winrmTaskParameters, initCommandUnit,
                                iLogStreamingTaskClient, CommandUnitsProgress.builder().build(), taskContext))
         .isInstanceOf(HintException.class)
-        .hasMessage("Please install Azure CLI in order to download Azure Universal packages");
+        .hasMessage(AZURE_CLI_INSTALLATION_CHECK_HINT);
+
+    ArgumentCaptor<LogLevel> logLevelArgCaptor = ArgumentCaptor.forClass(LogLevel.class);
+    ArgumentCaptor<CommandExecutionStatus> commandExecutionStatusArgCaptor =
+        ArgumentCaptor.forClass(CommandExecutionStatus.class);
+    verify(logCallback, times(1))
+        .saveExecutionLog(anyString(), logLevelArgCaptor.capture(), commandExecutionStatusArgCaptor.capture());
+    assertThat(logLevelArgCaptor.getValue()).isEqualTo(LogLevel.ERROR);
+    assertThat(commandExecutionStatusArgCaptor.getValue()).isEqualTo(CommandExecutionStatus.FAILURE);
   }
 }

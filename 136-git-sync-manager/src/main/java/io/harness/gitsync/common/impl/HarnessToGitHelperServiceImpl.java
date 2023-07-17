@@ -62,6 +62,7 @@ import io.harness.gitsync.beans.GitRepositoryDTO;
 import io.harness.gitsync.common.beans.BranchSyncStatus;
 import io.harness.gitsync.common.beans.GitBranch;
 import io.harness.gitsync.common.beans.GitSyncDirection;
+import io.harness.gitsync.common.beans.GitXSettingsParams;
 import io.harness.gitsync.common.beans.InfoForGitPush;
 import io.harness.gitsync.common.beans.ScmCacheDetails;
 import io.harness.gitsync.common.beans.ScmCacheState;
@@ -831,6 +832,9 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
         .scope(scope)
         .useCache(getFileRequest.getCacheRequestParams().getUseCache())
         .getOnlyFileContent(getFileRequest.getGetOnlyFileContent())
+        .gitXSettingsParams(GitXSettingsParams.builder()
+                                .applyRepoAllowListFilter(getFileRequest.getGitSettings().getApplyRepoAllowListFilter())
+                                .build())
         .build();
   }
 

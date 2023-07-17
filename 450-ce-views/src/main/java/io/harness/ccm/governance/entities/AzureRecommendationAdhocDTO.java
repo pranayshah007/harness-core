@@ -23,6 +23,7 @@ public class AzureRecommendationAdhocDTO implements RecommendationAdhocDTO {
   String tenantId;
   String subscriptionId;
   String clientId;
+  String cloudConnectorId;
 
   @Override
   public String getRoleInfo() {
@@ -32,11 +33,6 @@ public class AzureRecommendationAdhocDTO implements RecommendationAdhocDTO {
   @Override
   public String getRoleId() {
     return clientId;
-  }
-
-  @Override
-  public String getIdentifier() {
-    return null;
   }
 
   @Override

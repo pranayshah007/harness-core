@@ -65,6 +65,7 @@ import software.wings.beans.sso.LdapTestResponse;
 import software.wings.helpers.ext.ldap.LdapConstants;
 import software.wings.helpers.ext.ldap.LdapResponse;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
@@ -90,7 +91,8 @@ public class NGLdapServiceImpl implements NGLdapService {
   public static final String ISSUE_WITH_USER_QUERY_SETTINGS_PROVIDED = "Issue with User Query Settings provided";
   public static final String ISSUE_WITH_GROUP_QUERY_SETTINGS_PROVIDED = "Issue with Group Query Settings provided";
   public static final String ISSUE_WITH_LDAP_TEST_AUTHENTICATION = "Issue with Ldap Test Authentication";
-  public static final int LDAP_TASK_DEFAULT_TIMEOUT = 5;
+  public static final int LDAP_TASK_DEFAULT_MINIMUM_TIMEOUT_MILLIS = 60000; // 60 seconds
+  public static final int LDAP_TASK_DEFAULT_MAXIMUM_TIMEOUT_MILLIS = 180000; // 180 seconds
   private final AuthSettingsManagerClient managerClient;
   private final DelegateGrpcClientWrapper delegateService;
   private final TaskSetupAbstractionHelper taskSetupAbstractionHelper;
@@ -367,7 +369,8 @@ public class NGLdapServiceImpl implements NGLdapService {
         DelegateTaskRequest.builder()
             .taskType(taskType.name())
             .taskParameters(parameters)
-            .executionTimeout(Duration.ofMillis(ldapSettings.getConnectionSettings().getResponseTimeout()))
+            .executionTimeout(getLdapDelegateTaskResponseTimeout(
+                ldapSettings.getConnectionSettings().getResponseTimeout(), taskType.name(), accountIdentifier))
             .accountId(accountIdentifier)
             .taskSetupAbstractions(buildAbstractions(accountIdentifier, orgIdentifier, projectIdentifier))
             .taskSelectors(getDelegateSelectors(ldapSettings))
@@ -414,5 +417,22 @@ public class NGLdapServiceImpl implements NGLdapService {
     }
     abstractions.put(NG, "true");
     return abstractions;
+  }
+
+  @VisibleForTesting
+  Duration getLdapDelegateTaskResponseTimeout(
+      int responseTimeout, final String taskType, final String accountIdentifier) {
+    Duration duration;
+    if (responseTimeout < LDAP_TASK_DEFAULT_MINIMUM_TIMEOUT_MILLIS) {
+      duration = Duration.ofMillis(LDAP_TASK_DEFAULT_MINIMUM_TIMEOUT_MILLIS);
+    } else if (responseTimeout > LDAP_TASK_DEFAULT_MAXIMUM_TIMEOUT_MILLIS) {
+      duration = Duration.ofMillis(LDAP_TASK_DEFAULT_MAXIMUM_TIMEOUT_MILLIS);
+    } else {
+      duration = Duration.ofMillis(responseTimeout);
+    }
+    log.info(
+        "NG_LDAP_DELEGATE_TASK_RESPONSE_TIMEOUT: Setting delegate tasks response timeout of {} seconds for task type: {} in account: {}",
+        duration.getSeconds(), taskType, accountIdentifier);
+    return duration;
   }
 }

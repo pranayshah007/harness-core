@@ -29,7 +29,9 @@ public interface ManifestType {
           ManifestType.EcsScalableTargetDefinition, ManifestType.EcsScalingPolicyDefinition);
   Set<String> SERVICE_OVERRIDE_SUPPORTED_MANIFEST_TYPES =
       ImmutableSet.of(ManifestType.VALUES, ManifestType.KustomizePatches, ManifestType.OpenshiftParam,
-          ManifestType.TAS_MANIFEST, ManifestType.TAS_VARS, ManifestType.TAS_AUTOSCALER, ManifestType.HelmRepoOverride);
+          ManifestType.TAS_MANIFEST, ManifestType.TAS_VARS, ManifestType.TAS_AUTOSCALER, ManifestType.HelmRepoOverride,
+          ManifestType.EcsTaskDefinition, ManifestType.EcsServiceDefinition, ManifestType.EcsScalingPolicyDefinition,
+          ManifestType.EcsScalableTargetDefinition);
   Set<String> ASG_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(ManifestType.AsgLaunchTemplate,
       ManifestType.AsgConfiguration, ManifestType.AsgScalingPolicy, ManifestType.AsgScheduledUpdateGroupAction);
 

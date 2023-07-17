@@ -6,7 +6,9 @@
  */
 
 package io.harness.delegate.task.docker;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.ConnectorValidationResult.ConnectorValidationResultBuilder;
@@ -24,6 +26,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Collections;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Singleton
 public class DockerValidationHandler implements ConnectorValidationHandler {
   @Inject private DockerArtifactTaskHelper dockerArtifactTaskHelper;

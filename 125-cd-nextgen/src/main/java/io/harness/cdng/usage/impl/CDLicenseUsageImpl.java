@@ -7,6 +7,8 @@
 
 package io.harness.cdng.usage.impl;
 
+import static io.harness.NGDateUtils.YEAR_MONTH_DAY_DATE_PATTERN;
+import static io.harness.NGDateUtils.getLocalDateOrThrow;
 import static io.harness.cd.CDLicenseType.SERVICES;
 import static io.harness.cd.CDLicenseType.SERVICE_INSTANCES;
 import static io.harness.cdng.usage.mapper.ActiveServiceMapper.buildActiveServiceFetchData;
@@ -14,8 +16,10 @@ import static io.harness.cdng.usage.utils.LicenseUsageUtils.computeLicenseConsum
 import static io.harness.cdng.usage.utils.LicenseUsageUtils.getEpochMilliNDaysAgo;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.DISPLAY_NAME;
+import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.NOT_SUPPORTED_LICENSE_TYPE_MESSAGE;
 import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.SERVICE_INSTANCES_QUERY_PROPERTY;
 import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.TIME_PERIOD_IN_DAYS;
+import static io.harness.licensing.usage.params.filter.LicenseDateUsageReportType.MONTHLY;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -30,15 +34,15 @@ import io.harness.cd.CDLicenseType;
 import io.harness.cd.NgServiceInfraInfoUtils;
 import io.harness.cd.TimeScaleDAL;
 import io.harness.cdng.usage.CDLicenseUsageDAL;
+import io.harness.cdng.usage.CDLicenseUsageReportService;
 import io.harness.cdng.usage.dto.LicenseDateUsageDTO;
 import io.harness.cdng.usage.dto.LicenseDateUsageParams;
 import io.harness.cdng.usage.mapper.ActiveServiceMapper;
-import io.harness.cdng.usage.mapper.ServiceInstancesDateUsageMapper;
 import io.harness.cdng.usage.pojos.ActiveService;
 import io.harness.cdng.usage.pojos.ActiveServiceBase;
 import io.harness.cdng.usage.pojos.ActiveServiceFetchData;
 import io.harness.cdng.usage.pojos.ActiveServiceResponse;
-import io.harness.cdng.usage.pojos.LicenseDateUsageFetchData;
+import io.harness.cdng.usage.pojos.LicenseDailyUsage;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -71,6 +75,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -101,6 +106,7 @@ public class CDLicenseUsageImpl implements LicenseUsageInterface<CDLicenseUsageD
 
   @Inject TimeScaleDAL timeScaleDAL;
   @Inject CDLicenseUsageDAL licenseUsageDAL;
+  @Inject private CDLicenseUsageReportService cdLicenseUsageReportService;
 
   private final Cache<String, CDLicenseUsageDTO> serviceLicenseCache =
       Caffeine.newBuilder().expireAfterWrite(Duration.ofHours(6L)).maximumSize(600L).build();
@@ -160,18 +166,38 @@ public class CDLicenseUsageImpl implements LicenseUsageInterface<CDLicenseUsageD
     if (licenseType == null) {
       throw new InvalidArgumentsException("CD license type cannot be null");
     }
+    if (CDLicenseType.SERVICES != licenseType && CDLicenseType.SERVICE_INSTANCES != licenseType) {
+      throw new InvalidArgumentsException(format(NOT_SUPPORTED_LICENSE_TYPE_MESSAGE, licenseType));
+    }
 
-    LicenseDateUsageFetchData licenseDateUsageFetchData =
-        ServiceInstancesDateUsageMapper.buildServiceInstancesDateUsageFetchData(
-            accountIdentifier, licenseDateUsageParams, licenseType);
-    log.info("Start fetching license date usage, accountIdentifier: {}, fromDate: {}, toDate: {}, reportType: {}",
-        accountIdentifier, licenseDateUsageFetchData.getFromDate(), licenseDateUsageFetchData.getToDate(),
-        licenseDateUsageFetchData.getReportType());
-    Map<String, Integer> licenseUsage = licenseUsageDAL.fetchLicenseDateUsage(licenseDateUsageFetchData);
+    log.info(
+        "Start fetching license date usage, accountIdentifier: {}, fromDate: {}, toDate: {}, reportType: {}, licenseType: {}",
+        accountIdentifier, licenseDateUsageParams.getFromDate(), licenseDateUsageParams.getToDate(),
+        licenseDateUsageParams.getReportType(), licenseType);
+    Map<String, Integer> licenseUsage;
+    LocalDate fromDate = getLocalDateOrThrow(YEAR_MONTH_DAY_DATE_PATTERN, licenseDateUsageParams.getFromDate());
+    LocalDate toDate = getLocalDateOrThrow(YEAR_MONTH_DAY_DATE_PATTERN, licenseDateUsageParams.getToDate());
+    if (MONTHLY == licenseDateUsageParams.getReportType()) {
+      licenseUsage =
+          cdLicenseUsageReportService.getLicenseUsagePerMonthsReport(accountIdentifier, licenseType, fromDate, toDate);
+    } else {
+      licenseUsage =
+          cdLicenseUsageReportService.getLicenseUsagePerDaysReport(accountIdentifier, licenseType, fromDate, toDate);
+      if (isEmpty(licenseUsage)) {
+        log.warn(
+            "Not found daily license usage report created by job, generating it now, accountIdentifier: {}, fromDate: {}, toDate: {}, licenseType: {}",
+            accountIdentifier, fromDate, toDate, licenseType);
+        // fallback, in the case if the job haven't created report, trying to generate daily report now
+        List<LicenseDailyUsage> licenseDailyUsages = cdLicenseUsageReportService.generateLicenseDailyUsageReport(
+            accountIdentifier, licenseType, fromDate, toDate);
+        licenseUsage = licenseDailyUsages.stream().collect(Collectors.toMap(
+            licenseDailyUsage -> licenseDailyUsage.getReportedDay().toString(), LicenseDailyUsage::getLicenseCount));
+      }
+    }
 
     return LicenseDateUsageDTO.builder()
         .licenseUsage(licenseUsage)
-        .reportType(licenseDateUsageFetchData.getReportType())
+        .reportType(licenseDateUsageParams.getReportType())
         .licenseType(licenseType)
         .build();
   }

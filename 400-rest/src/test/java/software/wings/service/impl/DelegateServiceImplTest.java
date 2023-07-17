@@ -422,7 +422,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   public void shouldAcquireDelegateTaskWhitelistedDelegateAndFFisOFF() {
     final String taskId = "XYZ";
     final Delegate delegate = createDelegateBuilder().build();
-    when(delegateCache.get(ACCOUNT_ID, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(ACCOUNT_ID, delegate.getUuid())).thenReturn(delegate);
     when(assignDelegateService.getEligibleDelegatesToExecuteTask(any(DelegateTask.class)))
         .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
     when(assignDelegateService.getConnectedDelegateList(any(), any()))
@@ -452,7 +452,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   public void shouldAcquireDelegateTaskWithTaskDataV2WhitelistedDelegateAndFFisOFF() {
     final String taskId = "XYZ";
     final Delegate delegate = createDelegateBuilder().build();
-    when(delegateCache.get(ACCOUNT_ID, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(ACCOUNT_ID, delegate.getUuid())).thenReturn(delegate);
     when(assignDelegateService.getEligibleDelegatesToExecuteTask(any(DelegateTask.class)))
         .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
     when(assignDelegateService.getConnectedDelegateList(any(), any()))
@@ -908,7 +908,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
 
     String delegateId = persistence.save(delegate);
 
-    when(delegateCache.get(ACCOUNT_ID, delegateId, true)).thenReturn(delegate);
+    when(delegateCache.get(ACCOUNT_ID, delegateId)).thenReturn(delegate);
 
     DelegateInitializationDetails delegateInitializationDetails =
         delegateService.getDelegateInitializationDetails(ACCOUNT_ID, delegateId);
@@ -934,7 +934,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
 
     String delegateId = persistence.save(delegate);
 
-    when(delegateCache.get(ACCOUNT_ID, delegateId, true)).thenReturn(delegate);
+    when(delegateCache.get(ACCOUNT_ID, delegateId)).thenReturn(delegate);
 
     DelegateInitializationDetails delegateInitializationDetails =
         delegateService.getDelegateInitializationDetails(ACCOUNT_ID, delegateId);
@@ -966,7 +966,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
 
     when(delegateProfileService.get(ACCOUNT_ID, TEST_DELEGATE_PROFILE_ID)).thenReturn(delegateProfile);
 
-    when(delegateCache.get(ACCOUNT_ID, delegateId, true)).thenReturn(delegate);
+    when(delegateCache.get(ACCOUNT_ID, delegateId)).thenReturn(delegate);
 
     DelegateInitializationDetails delegateInitializationDetails =
         delegateService.getDelegateInitializationDetails(ACCOUNT_ID, delegateId);
@@ -1002,7 +1002,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
                                           .build();
 
     when(delegateProfileService.get(ACCOUNT_ID, TEST_DELEGATE_PROFILE_ID)).thenReturn(delegateProfile);
-    when(delegateCache.get(ACCOUNT_ID, delegateId, true)).thenReturn(delegate);
+    when(delegateCache.get(ACCOUNT_ID, delegateId)).thenReturn(delegate);
 
     DelegateInitializationDetails delegateInitializationDetails =
         delegateService.getDelegateInitializationDetails(ACCOUNT_ID, delegateId);
@@ -1889,10 +1889,10 @@ public class DelegateServiceImplTest extends WingsBaseTest {
     String delegateId_3 = persistence.save(delegate3);
     String delegateId_4 = persistence.save(delegate4);
 
-    when(delegateCache.get(ACCOUNT_ID, delegateId_1, true)).thenReturn(delegate1);
-    when(delegateCache.get(ACCOUNT_ID, delegateId_2, true)).thenReturn(delegate2);
-    when(delegateCache.get(ACCOUNT_ID, delegateId_3, true)).thenReturn(delegate3);
-    when(delegateCache.get(ACCOUNT_ID, delegateId_4, true)).thenReturn(delegate4);
+    when(delegateCache.get(ACCOUNT_ID, delegateId_1)).thenReturn(delegate1);
+    when(delegateCache.get(ACCOUNT_ID, delegateId_2)).thenReturn(delegate2);
+    when(delegateCache.get(ACCOUNT_ID, delegateId_3)).thenReturn(delegate3);
+    when(delegateCache.get(ACCOUNT_ID, delegateId_4)).thenReturn(delegate4);
 
     delegateIds.add(delegateId_1);
     delegateIds.add(delegateId_2);

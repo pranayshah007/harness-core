@@ -193,7 +193,12 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
         case IACMStepSpecTypeConstants.IACM_APPROVAL:
           ((ObjectNode) wrapperConfig.getStep().get("spec")).put("workspace", workspace);
           Map<String, String> envVarsCopy = new HashMap<>(envVars);
-          String command = wrapperConfig.getStep().get("spec").get("command").asText();
+          String command;
+          if (Objects.equals(wrapperConfig.getStep().get("type").asText(), IACMStepSpecTypeConstants.IACM_APPROVAL)) {
+            command = "approval";
+          } else {
+            command = wrapperConfig.getStep().get("spec").get("command").asText();
+          }
           envVarsCopy.put("PLUGIN_COMMAND", command);
           ObjectMapper objectMapper = new ObjectMapper();
           ((ObjectNode) wrapperConfig.getStep().get("spec")).set("envVariables", objectMapper.valueToTree(envVarsCopy));

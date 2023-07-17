@@ -12,7 +12,6 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cvng.cdng.beans.v2.DefaultAndConfiguredMonitoredServiceSpec;
 import io.harness.pms.yaml.YamlNode;
 
 import com.fasterxml.jackson.annotation.JsonProperty;

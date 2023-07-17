@@ -38,12 +38,14 @@ import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.retry.RetryExecutionParameters;
+import io.harness.exception.CriticalExpressionEvaluationException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.exception.TriggerException;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.expression.common.ExpressionConstants;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
@@ -777,14 +779,21 @@ public class TriggerExecutionHelper {
     }
 
     TriggerExpressionEvaluator triggerExpressionEvaluator;
-    if (!triggerWebhookEvent.getSourceRepoType().equals("CUSTOM")) {
-      WebhookPayloadData webhookPayloadData = webhookEventPayloadParser.parseEvent(triggerWebhookEvent);
-      triggerExpressionEvaluator = WebhookTriggerFilterUtils.generatorPMSExpressionEvaluator(webhookPayloadData);
-      return (String) triggerExpressionEvaluator.evaluateExpression(expression);
-    } else {
-      triggerExpressionEvaluator = WebhookTriggerFilterUtils.generatorPMSExpressionEvaluator(
-          null, triggerWebhookEvent.getHeaders(), triggerWebhookEvent.getPayload());
-      return (String) triggerExpressionEvaluator.evaluateExpression(TRIGGER_PAYLOAD_BRANCH);
+    try {
+      if (!triggerWebhookEvent.getSourceRepoType().equals("CUSTOM")) {
+        WebhookPayloadData webhookPayloadData = webhookEventPayloadParser.parseEvent(triggerWebhookEvent);
+        triggerExpressionEvaluator = WebhookTriggerFilterUtils.generatorPMSExpressionEvaluator(webhookPayloadData);
+        return (String) triggerExpressionEvaluator.evaluateExpressionWithExpressionMode(
+            expression, ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
+      } else {
+        triggerExpressionEvaluator = WebhookTriggerFilterUtils.generatorPMSExpressionEvaluator(
+            null, triggerWebhookEvent.getHeaders(), triggerWebhookEvent.getPayload());
+        return (String) triggerExpressionEvaluator.evaluateExpressionWithExpressionMode(
+            TRIGGER_PAYLOAD_BRANCH, ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
+      }
+    } catch (CriticalExpressionEvaluationException e) {
+      throw new TriggerException(
+          String.format("Please ensure the expression %s has the right branch information", expression), USER);
     }
   }
 

@@ -6,13 +6,15 @@
  */
 
 package io.harness.delegate.task.artifacts.bamboo;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.threading.Morpheus.sleep;
 
 import static java.time.Duration.ofSeconds;
 import static java.util.stream.Collectors.toList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
 import io.harness.beans.ExecutionStatus;
 import io.harness.delegate.task.artifacts.DelegateArtifactTaskHandler;
@@ -47,6 +49,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j

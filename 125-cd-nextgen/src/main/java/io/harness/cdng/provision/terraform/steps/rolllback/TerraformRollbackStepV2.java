@@ -216,7 +216,7 @@ public class TerraformRollbackStepV2 extends CdTaskChainExecutable {
   }
 
   @Override
-  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance,
+  public TaskChainResponse executeNextLinkWithSecurityContextAndNodeInfo(Ambiance ambiance,
       StepElementParameters stepElementParameters, StepInputPackage inputPackage, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
     TerraformRollbackStepParameters stepParameters = (TerraformRollbackStepParameters) stepElementParameters.getSpec();
@@ -226,8 +226,9 @@ public class TerraformRollbackStepV2 extends CdTaskChainExecutable {
   }
 
   @Override
-  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
+  public StepResponse finalizeExecutionWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepElementParameters stepParameters, PassThroughData passThroughData,
+      ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     log.info("Handling Task Result With Security Context for the Rollback Step");
     StepResponse stepResponse = null;
 

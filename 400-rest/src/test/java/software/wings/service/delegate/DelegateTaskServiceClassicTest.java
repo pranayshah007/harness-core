@@ -470,7 +470,7 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
     Delegate delegate = createDelegateBuilder().build();
     delegate.setUuid(DELEGATE_ID);
     persistence.save(delegate);
-    when(delegateCache.get(ACCOUNT_ID, DELEGATE_ID, false)).thenReturn(delegate);
+    when(delegateCache.get(ACCOUNT_ID, DELEGATE_ID)).thenReturn(delegate);
     DelegateTask delegateTask = saveDelegateTask(true, emptySet(), QUEUED);
     DelegateTaskPackage delegateTaskPackage =
         delegateTaskServiceClassic.acquireDelegateTask(ACCOUNT_ID, DELEGATE_ID, delegateTask.getUuid(), DELEGATE_ID);
@@ -493,7 +493,7 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
     Delegate delegate = createDelegateBuilder().build();
     delegate.setUuid(DELEGATE_ID);
     persistence.save(delegate);
-    when(delegateCache.get(ACCOUNT_ID, DELEGATE_ID, false)).thenReturn(delegate);
+    when(delegateCache.get(ACCOUNT_ID, DELEGATE_ID)).thenReturn(delegate);
     DelegateTask delegateTask = saveDelegateTask(true, emptySet(), QUEUED);
     String delegateInstanceId = generateUuid();
     DelegateTaskPackage delegateTaskPackage = delegateTaskServiceClassic.acquireDelegateTask(

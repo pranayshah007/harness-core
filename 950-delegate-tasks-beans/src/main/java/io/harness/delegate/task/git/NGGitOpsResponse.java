@@ -27,4 +27,5 @@ public class NGGitOpsResponse implements DelegateTaskNotifyResponseData {
   String errorMessage;
   UnitProgressData unitProgressData;
   @NonFinal @Setter DelegateMetaInfo delegateMetaInfo;
+  boolean isRevertPR;
 }
