@@ -129,6 +129,36 @@ if [[ "" != "$MONGO_LOCK_URI" ]]; then
   export MONGO_LOCK_URI=${MONGO_LOCK_URI//\\&/&}; yq -i '.mongo.locksUri=env(MONGO_LOCK_URI)' $CONFIG_FILE
 fi
 
+
+if [[ "" != "$MANAGER_MONGO_CONNECT_TIMEOUT" ]]; then
+  export MANAGER_MONGO_CONNECT_TIMEOUT; yq -i '.manager-mongo.connectTimeout=env(MANAGER_MONGO_CONNECT_TIMEOUT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$MANAGER_MONGO_SERVER_SELECTION_TIMEOUT" ]]; then
+  export MANAGER_MONGO_SERVER_SELECTION_TIMEOUT; yq -i '.manager-mongo.serverSelectionTimeout=env(MANAGER_MONGO_SERVER_SELECTION_TIMEOUT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$MANAGER_MONGO_SOCKET_TIMEOUT" ]]; then
+  export MANAGER_MONGO_SOCKET_TIMEOUT; yq -i '.manager-mongo.socketTimeout=env(MANAGER_MONGO_SOCKET_TIMEOUT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$MANAGER_MAX_CONNECTION_IDLE_TIME" ]]; then
+  export $MANAGER_MAX_CONNECTION_IDLE_TIME; yq -i '.manager-mongo.maxConnectionIdleTime=env($MANAGER_MAX_CONNECTION_IDLE_TIME)' $CONFIG_FILE
+fi
+
+if [[ "" != "$MANAGER_MONGO_INDEX_MANAGER_MODE" ]]; then
+  export MANAGER_MONGO_INDEX_MANAGER_MODE; yq -i '.manager-mongo.indexManagerMode=env(MANAGER_MONGO_INDEX_MANAGER_MODE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$MANAGER_MONGO_CONNECTIONS_PER_HOST" ]]; then
+  export MANAGER_MONGO_CONNECTIONS_PER_HOST; yq -i '.manager-mongo.connectionsPerHost=env(MANAGER_MONGO_CONNECTIONS_PER_HOST)' $CONFIG_FILE
+fi
+
+if [[ "" != "$MANAGER_MONGO_URI" ]]; then
+  export MANAGER_MONGO_URI; yq -i '.manager-mongo.uri=env(MANAGER_MONGO_URI)' $CONFIG_FILE
+fi
+
+
 # Redis replace configs.
 yq -i 'del(.codec)' $REDISSON_CACHE_FILE
 
