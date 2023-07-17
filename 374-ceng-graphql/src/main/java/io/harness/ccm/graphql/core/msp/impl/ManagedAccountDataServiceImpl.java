@@ -25,7 +25,6 @@ import io.harness.ccm.msp.entities.ManagedAccountsOverview;
 import io.harness.ccm.msp.entities.MarginDetails;
 import io.harness.ccm.msp.service.intf.MspValidationService;
 import io.harness.ccm.views.dto.TimeSeriesDataPoints;
-import io.harness.ccm.views.entities.ViewPreferences;
 import io.harness.ccm.views.graphql.QLCEViewFieldInput;
 import io.harness.ccm.views.graphql.QLCEViewFilter;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;

@@ -36,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(CE)
 public class CCMSettingsCRUDStreamListener implements MessageListener {
-  private @Inject CEViewService ceViewService;
+  @Inject private CEViewService ceViewService;
 
   @Override
   public boolean handleMessage(final Message message) {

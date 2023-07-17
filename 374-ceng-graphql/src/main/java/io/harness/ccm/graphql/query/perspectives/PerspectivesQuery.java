@@ -23,7 +23,6 @@ import io.harness.ccm.graphql.utils.annotations.GraphQLApi;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.views.dto.PerspectiveTimeSeriesData;
 import io.harness.ccm.views.entities.ViewPreferences;
-import io.harness.ccm.views.entities.ViewQueryParams;
 import io.harness.ccm.views.graphql.QLCEView;
 import io.harness.ccm.views.graphql.QLCEViewAggregation;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;

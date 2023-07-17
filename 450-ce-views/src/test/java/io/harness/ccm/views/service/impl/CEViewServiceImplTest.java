@@ -118,7 +118,7 @@ public class CEViewServiceImplTest extends CategoryTest {
     when(viewTimeRangeHelper.getStartEndTime(any())).thenReturn(ViewTimeRangeDto.builder().startTime(0L).build());
 
     when(viewsBillingService.getCostData(any(), any(), any())).thenReturn(getMockViewCostData());
-    when(viewsBillingService.getTrendStatsDataNg(any(), any(), any(), any())).thenReturn(getMockViewTrendData());
+    when(viewsBillingService.getTrendStatsDataNg(any(), any(), any(), any(), any())).thenReturn(getMockViewTrendData());
   }
 
   @Test
