@@ -161,7 +161,7 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
         if (isProxyOld != isProxyNew) {
           hostProxyMap.put(currentHost, isProxyNew);
         }
-        if (currentDelegateSelectors != newDelegateSelectors) {
+        if (!currentDelegateSelectors.equals(newDelegateSelectors)) {
           delegateSelectorsCache.put(accountIdentifier, currentHost, newDelegateSelectors);
         }
       }

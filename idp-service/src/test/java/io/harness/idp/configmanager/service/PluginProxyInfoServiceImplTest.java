@@ -7,6 +7,7 @@
 package io.harness.idp.configmanager.service;
 
 import static io.harness.rule.OwnerRule.DEVESH;
+import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
@@ -241,6 +242,21 @@ public class PluginProxyInfoServiceImplTest extends CategoryTest {
     // test if proxy details are not present
     appConfig.setProxy(null);
     assertEquals(0, pluginsProxyInfoServiceImpl.getPluginProxyInfoEntities(appConfig, TEST_ACCOUNT_IDENTIFIER).size());
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testDeleteProxyHostDetailsForPlugin() {
+    when(pluginsProxyInfoRepository.findAllByAccountIdentifierAndPluginId(any(), any()))
+        .thenReturn(Collections.singletonList(getTestPluginProxyInfoEntity()));
+
+    pluginsProxyInfoServiceImpl.deleteProxyHostDetailsForPlugin(TEST_ACCOUNT_IDENTIFIER, TEST_PLUGIN_ID);
+
+    verify(delegateSelectorsCache).remove(TEST_ACCOUNT_IDENTIFIER, Collections.singleton(TEST_HOST_VALUE));
+    verify(proxyEnvVariableUtils)
+        .removeFromHostProxyEnvVariable(TEST_ACCOUNT_IDENTIFIER, Collections.singleton(TEST_HOST_VALUE));
+    verify(pluginsProxyInfoRepository).deleteAllByAccountIdentifierAndPluginId(TEST_ACCOUNT_IDENTIFIER, TEST_PLUGIN_ID);
   }
 
   private PluginsProxyInfoEntity getTestPluginProxyInfoEntity() {

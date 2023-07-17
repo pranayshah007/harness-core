@@ -54,6 +54,8 @@ public class PluginsProxyInfoServiceImpl implements PluginsProxyInfoService {
     List<PluginsProxyInfoEntity> existingPluginProxies =
         pluginsProxyInfoRepository.findAllByAccountIdentifierAndPluginId(accountIdentifier, appConfig.getConfigId());
     JSONObject hostProxyMap = proxyEnvVariableUtils.getHostProxyMap(accountIdentifier);
+    JSONObject originalHostProxyMap = new JSONObject(hostProxyMap.toString());
+
     if (!existingPluginProxies.isEmpty()) {
       for (PluginsProxyInfoEntity existingPluginProxy : existingPluginProxies) {
         hostProxyMap.remove(existingPluginProxy.getHost());
@@ -75,7 +77,10 @@ public class PluginsProxyInfoServiceImpl implements PluginsProxyInfoService {
 
     List<PluginsProxyInfoEntity> savedPluginProxyDetails =
         (List<PluginsProxyInfoEntity>) pluginsProxyInfoRepository.saveAll(pluginsProxyInfoEntities);
-    proxyEnvVariableUtils.setHostProxyMap(accountIdentifier, hostProxyMap);
+
+    if (!originalHostProxyMap.similar(hostProxyMap)) {
+      proxyEnvVariableUtils.setHostProxyMap(accountIdentifier, hostProxyMap);
+    }
 
     return getPluginProxyHostDetailsFromEntities(savedPluginProxyDetails);
   }

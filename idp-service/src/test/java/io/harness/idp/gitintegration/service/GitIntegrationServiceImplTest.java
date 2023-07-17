@@ -49,6 +49,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.StringValue;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -98,7 +99,7 @@ public class GitIntegrationServiceImplTest {
   public void testGetAllConnectorDetails() {
     Set<String> delegateSelectors = new HashSet<>(Arrays.asList(DELEGATE_SELECTOR1, DELEGATE_SELECTOR2));
     List<CatalogConnectorEntity> catalogConnectorEntityList = new ArrayList<>();
-    catalogConnectorEntityList.add(getGithubConnectorEntity(TEST_GITHUB_HOST));
+    catalogConnectorEntityList.add(getGithubConnectorEntity(TEST_GITHUB_HOST, delegateSelectors));
     catalogConnectorEntityList.add(getGitlabConnectorEntity(delegateSelectors));
     when(catalogConnectorRepository.findAllByAccountIdentifier(ACCOUNT_IDENTIFIER))
         .thenReturn(catalogConnectorEntityList);
@@ -110,7 +111,8 @@ public class GitIntegrationServiceImplTest {
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testFindByAccountIdAndProviderType() {
-    CatalogConnectorEntity catalogConnectorEntity = getGithubConnectorEntity(TEST_GITHUB_HOST);
+    Set<String> delegateSelectors = new HashSet<>(Arrays.asList(DELEGATE_SELECTOR1, DELEGATE_SELECTOR2));
+    CatalogConnectorEntity catalogConnectorEntity = getGithubConnectorEntity(TEST_GITHUB_HOST, delegateSelectors);
     when(catalogConnectorRepository.findByAccountIdentifierAndConnectorProviderType(ACCOUNT_IDENTIFIER, "Github"))
         .thenReturn(Optional.ofNullable(catalogConnectorEntity));
     Optional<CatalogConnectorEntity> result =
@@ -163,7 +165,8 @@ public class GitIntegrationServiceImplTest {
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testFindDefaultConnectorDetails() {
-    CatalogConnectorEntity catalogConnectorEntity = getGithubConnectorEntity(TEST_GITHUB_HOST);
+    Set<String> delegateSelectors = new HashSet<>(Arrays.asList(DELEGATE_SELECTOR1, DELEGATE_SELECTOR2));
+    CatalogConnectorEntity catalogConnectorEntity = getGithubConnectorEntity(TEST_GITHUB_HOST, delegateSelectors);
     when(catalogConnectorRepository.findLastUpdated(ACCOUNT_IDENTIFIER)).thenReturn(catalogConnectorEntity);
     CatalogConnectorEntity result = gitIntegrationServiceImpl.findDefaultConnectorDetails(ACCOUNT_IDENTIFIER);
     assertEquals(catalogConnectorEntity, result);
@@ -173,6 +176,7 @@ public class GitIntegrationServiceImplTest {
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testProcessConnectorUpdate() throws Exception {
+    Set<String> delegateSelectors = new HashSet<>(Arrays.asList(DELEGATE_SELECTOR1, DELEGATE_SELECTOR2));
     EntityChangeDTO entityChangeDTO = EntityChangeDTO.newBuilder()
                                           .setAccountIdentifier(StringValue.of(ACCOUNT_IDENTIFIER))
                                           .setIdentifier(StringValue.of(GITHUB_IDENTIFIER))
@@ -181,18 +185,18 @@ public class GitIntegrationServiceImplTest {
                           .setMessage(io.harness.eventsframework.producer.Message.newBuilder().putAllMetadata(
                               ImmutableMap.of("connectorType", ConnectorType.GITHUB.toString())))
                           .build();
-    CatalogConnectorEntity catalogConnectorEntity = getGithubConnectorEntity(TEST_GITHUB_HOST);
+    CatalogConnectorEntity catalogConnectorEntity = getGithubConnectorEntity(TEST_GITHUB_HOST, delegateSelectors);
     when(
         catalogConnectorRepository.findByAccountIdentifierAndConnectorIdentifier(ACCOUNT_IDENTIFIER, GITHUB_IDENTIFIER))
         .thenReturn(Optional.ofNullable(catalogConnectorEntity));
-    Set<String> delegateSelectors = new HashSet<>(Arrays.asList(DELEGATE_SELECTOR1, DELEGATE_SELECTOR2));
-    GithubConnectorProcessor processor = mock(GithubConnectorProcessor.class);
-    when(connectorProcessorFactory.getConnectorProcessor(ConnectorType.GITHUB)).thenReturn(processor);
-    when(processor.getConnectorInfo(ACCOUNT_IDENTIFIER, GITHUB_IDENTIFIER))
-        .thenReturn(getGithubConnectorInfoDTO(TEST_GITHUB_URL, delegateSelectors));
-    when(processor.getInfraConnectorType(any())).thenReturn("PROXY");
     when(catalogConnectorRepository.findByAccountIdentifierAndConnectorProviderType(ACCOUNT_IDENTIFIER, "Github"))
         .thenReturn(Optional.ofNullable(catalogConnectorEntity));
+    GithubConnectorProcessor processor = mock(GithubConnectorProcessor.class);
+    when(connectorProcessorFactory.getConnectorProcessor(ConnectorType.GITHUB)).thenReturn(processor);
+    // update delegate selectors
+    when(processor.getConnectorInfo(ACCOUNT_IDENTIFIER, GITHUB_IDENTIFIER))
+        .thenReturn(getGithubConnectorInfoDTO(TEST_GITHUB_URL, Collections.singleton(DELEGATE_SELECTOR1)));
+    when(processor.getInfraConnectorType(any())).thenReturn("PROXY");
     doNothing().when(delegateSelectorsCache).remove(any(), any());
     JSONObject hostProxyMap = new JSONObject();
     hostProxyMap.put(TEST_GITHUB_HOST, false);
@@ -209,6 +213,7 @@ public class GitIntegrationServiceImplTest {
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testProcessConnectorUpdateHostUpdate() throws Exception {
+    Set<String> delegateSelectors = new HashSet<>(Arrays.asList(DELEGATE_SELECTOR1, DELEGATE_SELECTOR2));
     EntityChangeDTO entityChangeDTO = EntityChangeDTO.newBuilder()
                                           .setAccountIdentifier(StringValue.of(ACCOUNT_IDENTIFIER))
                                           .setIdentifier(StringValue.of(GITHUB_IDENTIFIER))
@@ -217,11 +222,10 @@ public class GitIntegrationServiceImplTest {
                           .setMessage(io.harness.eventsframework.producer.Message.newBuilder().putAllMetadata(
                               ImmutableMap.of("connectorType", ConnectorType.GITHUB.toString())))
                           .build();
-    CatalogConnectorEntity catalogConnectorEntity = getGithubConnectorEntity(TEST_GITHUB_HOST);
+    CatalogConnectorEntity catalogConnectorEntity = getGithubConnectorEntity(TEST_GITHUB_HOST, delegateSelectors);
     when(
         catalogConnectorRepository.findByAccountIdentifierAndConnectorIdentifier(ACCOUNT_IDENTIFIER, GITHUB_IDENTIFIER))
         .thenReturn(Optional.ofNullable(catalogConnectorEntity));
-    Set<String> delegateSelectors = new HashSet<>(Arrays.asList(DELEGATE_SELECTOR1, DELEGATE_SELECTOR2));
     GithubConnectorProcessor processor = mock(GithubConnectorProcessor.class);
     when(connectorProcessorFactory.getConnectorProcessor(ConnectorType.GITHUB)).thenReturn(processor);
     when(processor.getConnectorInfo(ACCOUNT_IDENTIFIER, GITHUB_IDENTIFIER))
@@ -259,11 +263,12 @@ public class GitIntegrationServiceImplTest {
     openMocks.close();
   }
 
-  private CatalogConnectorEntity getGithubConnectorEntity(String host) {
+  private CatalogConnectorEntity getGithubConnectorEntity(String host, Set<String> delegateSelectors) {
     return CatalogConnectorEntity.builder()
         .accountIdentifier(ACCOUNT_IDENTIFIER)
         .connectorIdentifier(GITHUB_IDENTIFIER)
         .host(host)
+        .delegateSelectors(delegateSelectors)
         .connectorProviderType(ConnectorType.GITHUB.toString())
         .type(CatalogInfraConnectorType.DIRECT)
         .build();

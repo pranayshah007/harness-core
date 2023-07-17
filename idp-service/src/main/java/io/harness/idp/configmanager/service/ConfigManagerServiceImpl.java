@@ -130,9 +130,6 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     AppConfigEntity appConfigEntity = AppConfigMapper.fromDTO(appConfig, accountIdentifier);
     appConfigEntity.setConfigType(configType);
 
-    List<ProxyHostDetail> proxyHostDetailList =
-        pluginsProxyInfoService.updateProxyHostDetailsForPlugin(appConfig, accountIdentifier);
-
     List<BackstageEnvSecretVariable> backstageEnvSecretVariableList =
         configEnvVariablesService.updateConfigEnvVariables(appConfig, accountIdentifier);
     AppConfigEntity updatedData = appConfigRepository.updateConfig(appConfigEntity, configType);
@@ -141,7 +138,13 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     }
     AppConfig returnedConfig = AppConfigMapper.toDTO(updatedData);
     returnedConfig.setEnvVariables(backstageEnvSecretVariableList);
-    returnedConfig.setProxy(proxyHostDetailList);
+
+    if (ConfigType.PLUGIN.equals(configType)) {
+      List<ProxyHostDetail> proxyHostDetailList =
+          pluginsProxyInfoService.updateProxyHostDetailsForPlugin(appConfig, accountIdentifier);
+      returnedConfig.setProxy(proxyHostDetailList);
+    }
+
     return returnedConfig;
   }
 
