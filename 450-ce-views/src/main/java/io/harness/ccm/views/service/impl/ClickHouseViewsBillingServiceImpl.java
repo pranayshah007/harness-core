@@ -159,10 +159,7 @@ public class ClickHouseViewsBillingServiceImpl implements ViewsBillingService {
           viewsQueryHelper.getSearchValueFromBusinessMappingFilter(filters, businessMappingId));
     }
     if (viewsQueryHelper.isGcpInvoiceMonthFilterPresent(filters)) {
-      return DateUtils.getLastTwelveMonthsFirstDayTimestamps()
-          .stream()
-          .map(timestamp -> Long.toString(timestamp))
-          .collect(Collectors.toList());
+      return DateUtils.getLastTwelveMonthsGCPInvoiceMonth();
     }
 
     List<QLCEViewFilter> idFilters = awsAccountFieldHelper.addAccountIdsByAwsAccountNameFilter(

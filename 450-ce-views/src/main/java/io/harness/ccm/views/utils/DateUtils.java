@@ -14,8 +14,6 @@ import io.harness.annotations.dev.OwnedBy;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,8 +22,6 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(CE)
 public class DateUtils {
-  private static final String UTC_ZONE_ID = "UTC";
-
   private List<LocalDateTime> getLastTwelveMonthsFirstDayLocalDateTime() {
     final List<LocalDateTime> localDateTimes = new ArrayList<>();
 
@@ -46,12 +42,12 @@ public class DateUtils {
     return localDateTimes;
   }
 
-  public List<Long> getLastTwelveMonthsFirstDayTimestamps() {
-    final ZoneId zoneId = ZoneId.of(UTC_ZONE_ID);
+  public List<String> getLastTwelveMonthsGCPInvoiceMonth() {
     return getLastTwelveMonthsFirstDayLocalDateTime()
         .stream()
-        .map(localDateTime -> ZonedDateTime.of(localDateTime, zoneId))
-        .map(zonedDateTime -> zonedDateTime.toInstant().toEpochMilli())
+        .map(localDateTime
+            -> String.format(
+                "%s%s", localDateTime.getYear(), String.format("%02d", localDateTime.getMonth().getValue())))
         .collect(Collectors.toList());
   }
 }
