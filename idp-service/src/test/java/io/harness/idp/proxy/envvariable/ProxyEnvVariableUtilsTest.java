@@ -10,6 +10,7 @@ package io.harness.idp.proxy.envvariable;
 import static io.harness.idp.common.Constants.PROXY_ENV_NAME;
 import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -20,11 +21,13 @@ import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.BackstageEnvConfigVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,6 +50,51 @@ public class ProxyEnvVariableUtilsTest extends CategoryTest {
   @Before
   public void setUp() {
     openMocks = MockitoAnnotations.openMocks(this);
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testGetHostProxyMap() {
+    BackstageEnvConfigVariable variable = new BackstageEnvConfigVariable();
+    variable.type(BackstageEnvVariable.TypeEnum.CONFIG);
+    variable.envName(PROXY_ENV_NAME);
+    variable.value(PROXY_MAP1);
+    JSONObject expectedHostProxyMap = new JSONObject();
+
+    when(backstageEnvVariableService.findByEnvNameAndAccountIdentifier(PROXY_ENV_NAME, ACCOUNT_IDENTIFIER))
+        .thenReturn(Optional.empty())
+        .thenReturn(Optional.of(variable));
+
+    JSONObject actualHostProxyMap = proxyEnvVariableUtils.getHostProxyMap(ACCOUNT_IDENTIFIER);
+
+    assertEquals(expectedHostProxyMap.length(), actualHostProxyMap.length());
+
+    expectedHostProxyMap.put(GITHUB_HOST, true);
+    expectedHostProxyMap.put(GITLAB_HOST, false);
+
+    actualHostProxyMap = proxyEnvVariableUtils.getHostProxyMap(ACCOUNT_IDENTIFIER);
+
+    assertEquals(expectedHostProxyMap.length(), actualHostProxyMap.length());
+    assertEquals(expectedHostProxyMap.get(GITHUB_HOST), actualHostProxyMap.get(GITHUB_HOST));
+    assertEquals(expectedHostProxyMap.get(GITLAB_HOST), actualHostProxyMap.get(GITLAB_HOST));
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testSetHostProxyMap() {
+    BackstageEnvConfigVariable variable = new BackstageEnvConfigVariable();
+    variable.type(BackstageEnvVariable.TypeEnum.CONFIG);
+    variable.envName(PROXY_ENV_NAME);
+    variable.value(PROXY_MAP1);
+    JSONObject hostProxyMap = new JSONObject();
+    hostProxyMap.put(GITHUB_HOST, true);
+    hostProxyMap.put(GITLAB_HOST, false);
+
+    proxyEnvVariableUtils.setHostProxyMap(ACCOUNT_IDENTIFIER, hostProxyMap);
+
+    verify(backstageEnvVariableService).createOrUpdate(Collections.singletonList(variable), ACCOUNT_IDENTIFIER);
   }
 
   @Test

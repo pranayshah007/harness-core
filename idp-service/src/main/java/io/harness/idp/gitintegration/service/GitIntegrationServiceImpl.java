@@ -103,8 +103,7 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
   }
 
   @Override
-  public CatalogConnectorEntity saveConnectorDetails(String accountIdentifier, ConnectorDetails connectorDetails)
-      throws Exception {
+  public CatalogConnectorEntity saveConnectorDetails(String accountIdentifier, ConnectorDetails connectorDetails) {
     connectorDetails.setIdentifier(
         GitIntegrationUtils.replaceAccountScopeFromConnectorId(connectorDetails.getIdentifier()));
     ConnectorProcessor connectorProcessor = connectorProcessorFactory.getConnectorProcessor(
