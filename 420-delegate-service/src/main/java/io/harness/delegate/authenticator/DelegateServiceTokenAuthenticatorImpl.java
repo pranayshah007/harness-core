@@ -73,7 +73,7 @@ public class DelegateServiceTokenAuthenticatorImpl implements DelegateTokenAuthe
   @Inject private DelegateJWTCache delegateJWTCache;
   @Inject private DelegateMetricsService delegateMetricsService;
   @Inject private AgentMtlsVerifier agentMtlsVerifier;
-  @Inject private DelegateSecretManager delegateSecretManager;
+  @Inject private io.harness.delegate.authenticator.DelegateSecretManager delegateSecretManager;
 
   public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
 
@@ -103,6 +103,8 @@ public class DelegateServiceTokenAuthenticatorImpl implements DelegateTokenAuthe
       return;
     }
 
+    log.info("value of token String {} token hash {} token name {} ", tokenString, tokenHash, delegateTokenName);
+
     EncryptedJWT encryptedJWT;
     try {
       encryptedJWT = EncryptedJWT.parse(tokenString);
@@ -110,9 +112,18 @@ public class DelegateServiceTokenAuthenticatorImpl implements DelegateTokenAuthe
       throw new InvalidTokenException("Invalid delegate token format", USER_ADMIN);
     }
 
+    log.info("Encrypted jwt {} ", encryptedJWT.toString());
+
     DelegateToken delegateTokenFromCache = delegateTokenCacheHelper.getDelegateToken(delegateId);
+
+    if (delegateTokenFromCache != null) {
+      log.info("Fetched delegate token corresponding to jwt from cache {}", delegateTokenFromCache.toString());
+    }
+
     boolean decryptedWithTokenFromCache =
         decryptWithTokenFromCache(encryptedJWT, delegateTokenFromCache, shouldSetTokenNameInGlobalContext);
+
+    log.info("decryptedWithTokenFromCache {}", decryptedWithTokenFromCache);
 
     boolean decryptedWithActiveTokenFromDB = false;
     boolean decryptedWithRevokedTokenFromDB = false;
@@ -127,6 +138,9 @@ public class DelegateServiceTokenAuthenticatorImpl implements DelegateTokenAuthe
             accountId, DelegateTokenStatus.REVOKED, encryptedJWT, delegateId, shouldSetTokenNameInGlobalContext);
       }
     }
+
+    log.info("decryptedWithActiveTokenFromDB {}  decryptedWithRevokedTokenFromDB {} ", decryptedWithActiveTokenFromDB,
+        decryptedWithRevokedTokenFromDB);
 
     if (decryptedWithRevokedTokenFromDB
         || (decryptedWithTokenFromCache && DelegateTokenStatus.REVOKED.equals(delegateTokenFromCache.getStatus()))) {
