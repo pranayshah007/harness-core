@@ -22,8 +22,12 @@ import io.harness.morphia.MorphiaRegistrar;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
+import io.harness.persistence.converters.DurationConverter;
+import io.harness.persistence.converters.ObjectArrayConverter;
 import io.harness.redis.RedisConfig;
 import io.harness.serializer.DelegateServiceRegistrars;
+import io.harness.serializer.morphia.DelegateTaskPackageConverter;
+import io.harness.serializer.morphia.TaskDataV2Convertor;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -65,7 +69,12 @@ public class DelegateServiceMongoModule extends ProviderModule {
   @Provides
   @Singleton
   Set<Class<? extends TypeConverter>> morphiaConverters() {
-    return ImmutableSet.<Class<? extends TypeConverter>>builder().build();
+    return ImmutableSet.<Class<? extends TypeConverter>>builder()
+        .add(TaskDataV2Convertor.class)
+        .add(DelegateTaskPackageConverter.class)
+        .add(DurationConverter.class)
+        .add(ObjectArrayConverter.class)
+        .build();
   }
 
   @Provides

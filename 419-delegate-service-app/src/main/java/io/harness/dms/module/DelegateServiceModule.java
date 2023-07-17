@@ -41,7 +41,7 @@ public class DelegateServiceModule extends AbstractModule {
     install(new DelegateServiceKryoModule());
     install(new DelegateServiceMongoModule(config));
     install(new DelegateAuthModule());
-    install(new DmsModule());
+    install(new DmsModule(config));
     install(new AgentMtlsModule(config.getAgentMtlsSubdomain()));
     install(ExecutorModule.getInstance());
     install(new CacheModule(config.getCacheConfig()));

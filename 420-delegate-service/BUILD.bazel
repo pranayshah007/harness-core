@@ -18,6 +18,7 @@ java_library(
         "//867-polling-contracts:module",
         "//870-cg-orchestration:module",
         "//940-feature-flag:module",
+        "//878-ng-common-utilities:module",
         "//952-remote-observers:module",
         "//955-outbox-sdk:module",
         "//clients/audit:module",
@@ -102,6 +103,8 @@ java_library(
         "@maven//:org_powermock_powermock_module_junit4",
         "@maven//:org_reflections_reflections",
         "@maven//:org_slf4j_slf4j_api",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:io_dropwizard_dropwizard_core",
     ],
 )
 

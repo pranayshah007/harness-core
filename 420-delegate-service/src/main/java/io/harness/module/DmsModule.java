@@ -7,12 +7,25 @@
 
 package io.harness.module;
 
+import io.harness.dms.configuration.DelegateServiceConfiguration;
+import io.harness.logstreaming.LogStreamingServiceRestClient;
+import io.harness.logstreaming.NGLogStreamingClientFactory;
 import io.harness.service.impl.AccountDataProviderImpl;
+import io.harness.service.impl.DMSAssignDelegateServiceImpl;
+import io.harness.service.impl.DMSDelegateSelectionLogServiceImpl;
+import io.harness.service.impl.DMSTaskServiceClassicImpl;
 import io.harness.service.impl.DelegateRingServiceImpl;
 import io.harness.service.intfc.AccountDataProvider;
+import io.harness.service.intfc.DMSAssignDelegateService;
+import io.harness.service.intfc.DMSTaskServiceClassic;
 import io.harness.service.intfc.DelegateRingService;
 
+import software.wings.service.impl.DMSMongoDataStoreServiceImpl;
+import software.wings.service.intfc.DMSDataStoreService;
+import software.wings.service.intfc.DMSDelegateSelectionLogService;
+
 import com.google.inject.AbstractModule;
+import java.time.Clock;
 
 /*
 Creating a separate Module for bindings to be used in DMS.
@@ -22,9 +35,26 @@ This file will serve binding services with DMS side implementations.
 Separate Module is needed because manager uses DelegateServiceModule already.
  */
 public class DmsModule extends AbstractModule {
+  private final DelegateServiceConfiguration config;
+
+  public DmsModule(DelegateServiceConfiguration config) {
+    this.config = config;
+  }
   @Override
   protected void configure() {
     bind(DelegateRingService.class).to(DelegateRingServiceImpl.class);
     bind(AccountDataProvider.class).to(AccountDataProviderImpl.class);
+    bind(DMSTaskServiceClassic.class).to(DMSTaskServiceClassicImpl.class);
+    bind(DMSAssignDelegateService.class).to(DMSAssignDelegateServiceImpl.class);
+    bind(DMSDelegateSelectionLogService.class).to(DMSDelegateSelectionLogServiceImpl.class);
+    bind(Clock.class).toInstance(Clock.systemUTC());
+    bind(LogStreamingServiceRestClient.class)
+        .toProvider(NGLogStreamingClientFactory.builder()
+                        .logStreamingServiceBaseUrl(config.getLogStreamingServiceConfig().getBaseUrl())
+                        .build());
+    bind(DMSDataStoreService.class).to(DMSMongoDataStoreServiceImpl.class);
+    //    install(new EventsFrameworkModule(config.getEventsFrameworkConfiguration(),
+    //            configuration.isEventsFrameworkAvailableInOnPrem(),
+    //            StartupMode.DELEGATE_SERVICE.equals(startupMode)));
   }
 }

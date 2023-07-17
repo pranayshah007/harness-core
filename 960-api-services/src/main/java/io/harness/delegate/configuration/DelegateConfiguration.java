@@ -28,6 +28,7 @@ public class DelegateConfiguration {
   @ToString.Exclude private String accountSecret;
   @ToString.Exclude private String delegateToken;
   private String managerUrl;
+  private String dmsUrl;
   private String verificationServiceUrl;
   private String cvNextGenUrl;
   private String watcherCheckLocation;
