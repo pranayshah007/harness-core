@@ -244,7 +244,6 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
 
     List<ModuleType> enabledModules = obtainEnabledModules(accountIdentifier);
     enabledModules.add(ModuleType.PMS);
-    enabledModules.add(ModuleType.IDP);
     List<YamlSchemaWithDetails> schemaWithDetailsList =
         fetchSchemaWithDetailsFromModules(accountIdentifier, enabledModules);
     List<YamlSchemaWithDetails> stepsSchemaWithDetails =

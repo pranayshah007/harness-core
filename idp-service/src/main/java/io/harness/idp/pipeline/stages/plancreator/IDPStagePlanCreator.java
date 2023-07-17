@@ -77,7 +77,7 @@ public class IDPStagePlanCreator extends AbstractStagePlanCreator<IDPStageNode> 
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
       PlanCreationContext ctx, IDPStageNode stageNode) {
-    log.info("Received plan creation request for security stage {}", stageNode.getIdentifier());
+    log.info("Received plan creation request for IDP stage {}", stageNode.getIdentifier());
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
     Map<String, ByteString> metadataMap = new HashMap<>();
 
@@ -115,7 +115,7 @@ public class IDPStagePlanCreator extends AbstractStagePlanCreator<IDPStageNode> 
     planCreationResponseMap.put(
         specPlanNode.getUuid(), PlanCreationResponse.builder().node(specPlanNode.getUuid(), specPlanNode).build());
 
-    log.info("Successfully created plan for security stage {}", stageNode.getIdentifier());
+    log.info("Successfully created plan for IDP Stage {}", stageNode.getIdentifier());
     return planCreationResponseMap;
   }
 
