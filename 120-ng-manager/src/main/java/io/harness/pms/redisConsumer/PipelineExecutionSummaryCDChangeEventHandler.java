@@ -176,7 +176,7 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends DebeziumAbstra
           }
           if (author.get(PipelineExecutionSummaryKeys.avatar) != null) {
             record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.AUTHOR_AVATAR,
-               author.get(PipelineExecutionSummaryKeys.avatar).toString());
+                author.get(PipelineExecutionSummaryKeys.avatar).toString());
           }
         }
         if (ciExecutionInfo.get(PipelineExecutionSummaryKeys.event) != null) {

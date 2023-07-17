@@ -105,8 +105,8 @@ public class PipelineExecutionSummaryChangeEventHandler extends DebeziumAbstract
                 author.get(PipelineExecutionSummaryKeys.commitId).toString());
           }
           if (author.get(PipelineExecutionSummaryKeys.name) != null) {
-            executionRecord.set(
-                Tables.PIPELINE_EXECUTION_SUMMARY.AUTHOR_NAME, author.get(PipelineExecutionSummaryKeys.name).toString());
+            executionRecord.set(Tables.PIPELINE_EXECUTION_SUMMARY.AUTHOR_NAME,
+                author.get(PipelineExecutionSummaryKeys.name).toString());
           }
           if (author.get(PipelineExecutionSummaryKeys.avatar) != null) {
             executionRecord.set(Tables.PIPELINE_EXECUTION_SUMMARY.AUTHOR_AVATAR,
