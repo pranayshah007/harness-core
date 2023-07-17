@@ -17,6 +17,7 @@ import io.harness.cvng.beans.StackdriverLogDataCollectionInfo;
 import io.harness.cvng.beans.stackdriver.StackdriverLogDefinition;
 import io.harness.cvng.core.entities.StackdriverLogCVConfig;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
+import io.harness.cvng.core.services.impl.datacollectioninfomapper.StackdriverLogDataCollectionInfoMapper;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;

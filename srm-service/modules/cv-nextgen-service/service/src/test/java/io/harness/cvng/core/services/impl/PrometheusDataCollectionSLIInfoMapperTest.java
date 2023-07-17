@@ -18,6 +18,7 @@ import io.harness.cvng.beans.PrometheusDataCollectionInfo;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.core.entities.MetricPack;
 import io.harness.cvng.core.entities.PrometheusCVConfig;
+import io.harness.cvng.core.services.impl.datacollectioninfomapper.PrometheusDataCollectionInfoMapper;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ThresholdServiceLevelIndicator;
 import io.harness.rule.Owner;

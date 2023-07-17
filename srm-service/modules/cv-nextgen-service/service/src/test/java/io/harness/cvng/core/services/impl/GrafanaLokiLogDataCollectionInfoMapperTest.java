@@ -18,6 +18,8 @@ import io.harness.cvng.beans.GrafanaLokiLogDataCollectionInfo;
 import io.harness.cvng.core.entities.NextGenLogCVConfig;
 import io.harness.cvng.core.entities.QueryParams;
 import io.harness.cvng.core.entities.VerificationTask;
+import io.harness.cvng.core.services.impl.datacollectioninfomapper.GrafanaLokiLogDataCollectionInfoMapper;
+import io.harness.cvng.core.services.impl.healthsource.GrafanaLokiLogNextGenHealthSourceHelper;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;

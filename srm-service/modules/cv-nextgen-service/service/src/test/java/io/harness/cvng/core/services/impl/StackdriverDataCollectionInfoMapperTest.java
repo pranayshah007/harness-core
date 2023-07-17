@@ -22,6 +22,7 @@ import io.harness.cvng.core.entities.StackdriverCVConfig;
 import io.harness.cvng.core.entities.StackdriverCVConfig.MetricInfo;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
 import io.harness.cvng.core.services.api.StackdriverServiceImplTest;
+import io.harness.cvng.core.services.impl.datacollectioninfomapper.StackdriverDataCollectionInfoMapper;
 import io.harness.rule.Owner;
 
 import com.google.common.base.Charsets;

@@ -22,7 +22,7 @@ import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.PrometheusCVConfig;
-import io.harness.cvng.core.services.DeeplinkURLService;
+import io.harness.cvng.core.services.api.DeeplinkURLService;
 import io.harness.cvng.models.VerificationType;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.prometheusconnector.PrometheusConnectorDTO;

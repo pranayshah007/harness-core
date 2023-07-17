@@ -51,10 +51,6 @@ public class DataCollectionDSLFactory {
     }
   }
 
-  public static String readMetricDSL(DataSourceType dataSourceType) {
-    // TODO check if we need a log and metric specific functions.
-    return readLogDSL(dataSourceType);
-  }
   private static String readFile(String fileName) {
     try {
       return Resources.toString(

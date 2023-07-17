@@ -23,6 +23,7 @@ import io.harness.cvng.core.beans.healthsource.QueryDefinition;
 import io.harness.cvng.core.beans.healthsource.QueryParamsDTO;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.NextGenMetricCVConfig;
+import io.harness.cvng.core.services.impl.datacollectioninfomapper.SignalFXMetricDataCollectionInfoMapper;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;

@@ -12,7 +12,7 @@ import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.entities.AwsPrometheusCVConfig;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.PrometheusCVConfig;
-import io.harness.cvng.core.services.DeeplinkURLService;
+import io.harness.cvng.core.services.api.DeeplinkURLService;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.beans.connector.prometheusconnector.PrometheusConnectorDTO;
 

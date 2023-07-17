@@ -19,6 +19,7 @@ import io.harness.cvng.beans.customhealthlog.CustomHealthLogInfo;
 import io.harness.cvng.core.beans.CustomHealthRequestDefinition;
 import io.harness.cvng.core.entities.CustomHealthLogCVConfig;
 import io.harness.cvng.core.entities.VerificationTask;
+import io.harness.cvng.core.services.impl.datacollectioninfomapper.CustomHealthLogDataCollectionInfoMapper;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthMethod;
 import io.harness.rule.Owner;
 

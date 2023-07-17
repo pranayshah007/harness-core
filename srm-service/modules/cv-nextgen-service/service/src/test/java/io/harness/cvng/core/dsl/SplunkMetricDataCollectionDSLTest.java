@@ -24,7 +24,7 @@ import io.harness.cvng.core.entities.SplunkMetricCVConfig;
 import io.harness.cvng.core.entities.SplunkMetricInfo;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.services.api.MetricPackService;
-import io.harness.cvng.core.services.impl.SplunkMetricDataCollectionInfoMapper;
+import io.harness.cvng.core.services.impl.datacollectioninfomapper.SplunkMetricDataCollectionInfoMapper;
 import io.harness.datacollection.DataCollectionDSLService;
 import io.harness.datacollection.entity.RuntimeParameters;
 import io.harness.datacollection.entity.TimeSeriesRecord;

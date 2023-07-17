@@ -7,7 +7,7 @@
 
 package io.harness.cvng.core.services.api;
 
-import static io.harness.cvng.core.services.impl.DatadogServiceImpl.MAX_METRIC_TAGS_COUNT;
+import static io.harness.cvng.core.services.impl.healthsource.DatadogServiceImpl.MAX_METRIC_TAGS_COUNT;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.PAVIC;

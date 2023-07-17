@@ -24,7 +24,7 @@ import io.harness.cvng.core.beans.OnboardingRequestDTO;
 import io.harness.cvng.core.beans.OnboardingResponseDTO;
 import io.harness.cvng.core.beans.stackdriver.StackdriverDashboardDTO;
 import io.harness.cvng.core.beans.stackdriver.StackdriverDashboardDetail;
-import io.harness.cvng.core.services.impl.StackdriverServiceImpl;
+import io.harness.cvng.core.services.impl.healthsource.StackdriverServiceImpl;
 import io.harness.ng.beans.PageResponse;
 import io.harness.rule.Owner;
 import io.harness.serializer.JsonUtils;
