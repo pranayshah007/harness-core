@@ -15,7 +15,7 @@ if [ ! -e start.sh ]; then
   echo
   exit 1
 fi
-JRE_VERSION="${3:-11.0.19+7}"
+JRE_VERSION=${3:-11.0.19+7}
 JRE_DIR=jdk-$JRE_VERSION-jre
 JRE_BINARY=$JRE_DIR/bin/java
 case "$OSTYPE" in
