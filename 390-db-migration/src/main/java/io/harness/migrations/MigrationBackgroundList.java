@@ -429,8 +429,8 @@ public class MigrationBackgroundList {
         .add(Pair.of(249, EncryptDelegateTokenMigration.class))
         .add(Pair.of(250, NoOpMigration.class))
         .add(Pair.of(251, EncryptDelegateTokenMigration.class))
-        .add(Pair.of(252, AddAccountIdToLearningEngineExperimentalAnalysisTask.class))
-        .add(Pair.of(253, SamlSSOSettingsConfiguredFromNGAuthenticationEnabledMigration.class))
+        .add(Pair.of(252, SamlSSOSettingsConfiguredFromNGAuthenticationEnabledMigration.class))
+        .add(Pair.of(253, AddAccountIdToLearningEngineExperimentalAnalysisTask.class))
         .build();
   }
 }
