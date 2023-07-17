@@ -13,7 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.views.dao.CEViewDao;
 import io.harness.ccm.views.entities.CEView;
-import io.harness.ccm.views.entities.ViewType;
+import io.harness.ccm.views.entities.ViewPreferences;
 import io.harness.ccm.views.service.CEViewPreferenceService;
 import io.harness.migration.NGMigration;
 import io.harness.persistence.HPersistence;
@@ -21,7 +21,6 @@ import io.harness.persistence.HPersistence;
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -50,20 +49,8 @@ public class CEViewPreferencesMigration implements NGMigration {
   }
 
   private void migrateCEViewPreferences(final CEView ceView) {
-    modifyCEView(ceView);
-    ceViewDao.update(ceView);
-  }
-
-  private void modifyCEView(final CEView ceView) {
-    ceView.setViewPreferences(ceViewPreferenceService.getCEViewPreferences(ceView, Collections.emptySet()));
-    if (Objects.isNull(ceView.getViewRules())) {
-      ceView.setViewRules(Collections.emptyList());
-    }
-    if (Objects.isNull(ceView.getDataSources())) {
-      ceView.setDataSources(Collections.emptyList());
-    }
-    if (Objects.isNull(ceView.getViewType())) {
-      ceView.setViewType(ViewType.CUSTOMER);
-    }
+    final ViewPreferences viewPreferences =
+        ceViewPreferenceService.getCEViewPreferences(ceView, Collections.emptySet());
+    ceViewDao.updateViewPreferences(ceView.getUuid(), ceView.getAccountId(), viewPreferences);
   }
 }

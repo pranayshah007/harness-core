@@ -8,7 +8,6 @@
 package io.harness.ccm.views.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.Boolean.parseBoolean;
 
@@ -34,10 +33,13 @@ import io.harness.ngsettings.dto.SettingDTO;
 import io.harness.ngsettings.dto.SettingResponseDTO;
 import io.harness.remote.client.NGRestUtils;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import io.fabric8.utils.Lists;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -45,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -82,12 +85,20 @@ public class CEViewPreferenceServiceImpl implements CEViewPreferenceService {
   @Inject @Named("PRIVILEGED") private NGSettingsClient settingsClient;
   @Inject private ViewParametersHelper viewParametersHelper;
 
+  private final LoadingCache<String, List<SettingResponseDTO>> settingsResponseCache =
+      Caffeine.newBuilder()
+          .maximumSize(5)
+          .expireAfterWrite(1, TimeUnit.MINUTES)
+          .build(accountId
+              -> NGRestUtils.getResponse(settingsClient.listSettings(accountId, null, null, SettingCategory.CE,
+                  SettingIdentifiers.PERSPECTIVE_PREFERENCES_GROUP_IDENTIFIER)));
+
   @Override
   public ViewPreferences getCEViewPreferences(
       final CEView ceView, final Set<String> viewPreferencesFieldsToUpdateWithDefaultSettings) {
     ViewPreferences viewPreferences = ceView.getViewPreferences();
     final List<SettingResponseDTO> settingsResponse = getDefaultSettingResponse(ceView.getAccountId());
-    if (!isEmpty(settingsResponse)) {
+    if (!Lists.isNullOrEmpty(settingsResponse)) {
       final List<SettingDTO> settingsDTO =
           settingsResponse.stream().map(SettingResponseDTO::getSetting).collect(Collectors.toList());
       final Map<String, String> settingsMap =
@@ -103,8 +114,7 @@ public class CEViewPreferenceServiceImpl implements CEViewPreferenceService {
   private List<SettingResponseDTO> getDefaultSettingResponse(final String accountId) {
     List<SettingResponseDTO> settings = null;
     try {
-      settings = NGRestUtils.getResponse(settingsClient.listSettings(
-          accountId, null, null, SettingCategory.CE, SettingIdentifiers.PERSPECTIVE_PREFERENCES_GROUP_IDENTIFIER));
+      settings = settingsResponseCache.get(accountId);
     } catch (final Exception exception) {
       log.error("Error when getting perspective preference list settings for account: {}", accountId, exception);
     }
