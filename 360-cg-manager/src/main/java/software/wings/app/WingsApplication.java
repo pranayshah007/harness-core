@@ -1387,11 +1387,13 @@ public class WingsApplication extends Application<MainConfiguration> {
               () -> injector.getInstance(DelegateNgTokenServiceImpl.class).autoRevokeExpiredTokens()),
           1L, 1L, TimeUnit.HOURS);
 
-      // DelegateHeartBeatSyncFromRedis
-      delegateExecutor.scheduleWithFixedDelay(
-          new Schedulable(
-              "Sync delegate HB from redis", () -> injector.getInstance(DelegateHeartBeatSyncFromRedis.class).run()),
-          2L, 2L, TimeUnit.MINUTES);
+      if (configuration.isEnableRedisForDelegateService()) {
+        // Sync HB from redis cache to mongo
+        delegateExecutor.scheduleWithFixedDelay(
+            new Schedulable(
+                "Sync delegate HB from redis", () -> injector.getInstance(DelegateHeartBeatSyncFromRedis.class).run()),
+            2L, 2L, TimeUnit.MINUTES);
+      }
     }
   }
 
