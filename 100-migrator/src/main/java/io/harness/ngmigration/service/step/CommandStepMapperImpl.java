@@ -7,11 +7,9 @@
 
 package io.harness.ngmigration.service.step;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
-import static io.harness.ngmigration.utils.NGMigrationConstants.SERVICE_COMMAND_TEMPLATE_SEPARATOR;
-import static io.harness.ngmigration.utils.NGMigrationConstants.UNKNOWN_SERVICE;
-
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -22,7 +20,9 @@ import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.service.workflow.WorkflowHandler;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.steps.template.TemplateStepNode;
-
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import software.wings.beans.GraphNode;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.Workflow;
@@ -33,14 +33,14 @@ import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.State;
 import software.wings.sm.states.CommandState;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
+
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
+import static io.harness.ngmigration.utils.NGMigrationConstants.SERVICE_COMMAND_TEMPLATE_SEPARATOR;
+import static io.harness.ngmigration.utils.NGMigrationConstants.UNKNOWN_SERVICE;
 
 @Slf4j
 public class CommandStepMapperImpl extends StepMapper {
@@ -138,7 +138,10 @@ public class CommandStepMapperImpl extends StepMapper {
   public void overrideTemplateInputs(MigrationContext migrationContext, WorkflowMigrationContext context,
       WorkflowPhase phase, GraphNode graphNode, NGYamlFile templateFile, JsonNode templateInputs) {
     CommandState state = new CommandState(graphNode.getName());
-    boolean shouldRunOnDelegate = state.isExecuteOnDelegate();
+    boolean shouldRunOnDelegate=false;
+    if( MapUtils.isNotEmpty(graphNode.getProperties())) {
+      shouldRunOnDelegate = (Boolean) graphNode.getProperties().getOrDefault("executeOnDelegate", false);
+    }
     JsonNode onDelegate = templateInputs.at("/spec/onDelegate");
     if (onDelegate instanceof TextNode) {
       if (RUNTIME_INPUT.equals(onDelegate.asText())) {
