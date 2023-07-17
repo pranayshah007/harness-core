@@ -226,6 +226,7 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
     K8sRollingDeployResponse rollingSetupResponse =
         K8sRollingDeployResponse.builder()
             .releaseNumber(currentReleaseNumber)
+            .previousK8sPodList(existingPodList)
             .k8sPodList(k8sTaskHelperBase.tagNewPods(
                 k8sRollingBaseHandler.getPods(steadyStateTimeoutInMillis, allWorkloads, kubernetesConfig, releaseName),
                 existingPodList))

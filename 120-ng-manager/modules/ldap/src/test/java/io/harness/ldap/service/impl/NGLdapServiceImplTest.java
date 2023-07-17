@@ -7,9 +7,12 @@
 
 package io.harness.ldap.service.impl;
 
+import static io.harness.ldap.service.impl.NGLdapServiceImpl.LDAP_TASK_DEFAULT_MAXIMUM_TIMEOUT_MILLIS;
+import static io.harness.ldap.service.impl.NGLdapServiceImpl.LDAP_TASK_DEFAULT_MINIMUM_TIMEOUT_MILLIS;
 import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.SHASHANK;
 
+import static software.wings.beans.TaskType.NG_LDAP_SEARCH_GROUPS;
 import static software.wings.beans.sso.LdapTestResponse.Status.FAILURE;
 import static software.wings.beans.sso.LdapTestResponse.Status.SUCCESS;
 
@@ -65,6 +68,7 @@ import software.wings.helpers.ext.ldap.LdapConstants;
 import software.wings.helpers.ext.ldap.LdapResponse;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -493,6 +497,37 @@ public class NGLdapServiceImplTest extends CategoryTest {
         .isInstanceOf(HintException.class)
         .getCause()
         .isInstanceOf(ExplanationException.class);
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testResponseTimeoutDurationFromLdapSettingsTimeout() {
+    software.wings.beans.sso.LdapSettings ldapSettings = getLdapSettings(ACCOUNT_ID);
+    ldapSettings.getConnectionSettings().setResponseTimeout(5000); // 5 seconds
+
+    Duration timeoutDuration = ngLdapService.getLdapDelegateTaskResponseTimeout(
+        ldapSettings.getConnectionSettings().getResponseTimeout(), NG_LDAP_SEARCH_GROUPS.name(), ACCOUNT_ID);
+
+    // Assert
+    assertNotNull(timeoutDuration);
+    assertThat(timeoutDuration.getSeconds() * 1000).isEqualTo((long) LDAP_TASK_DEFAULT_MINIMUM_TIMEOUT_MILLIS);
+
+    ldapSettings.getConnectionSettings().setResponseTimeout(125000); // 125 seconds
+    timeoutDuration = ngLdapService.getLdapDelegateTaskResponseTimeout(
+        ldapSettings.getConnectionSettings().getResponseTimeout(), NG_LDAP_SEARCH_GROUPS.name(), ACCOUNT_ID);
+
+    // Assert
+    assertNotNull(timeoutDuration);
+    assertThat(timeoutDuration.getSeconds() * 1000).isEqualTo((long) 125000);
+
+    ldapSettings.getConnectionSettings().setResponseTimeout(500000); // 500 seconds
+    timeoutDuration = ngLdapService.getLdapDelegateTaskResponseTimeout(
+        ldapSettings.getConnectionSettings().getResponseTimeout(), NG_LDAP_SEARCH_GROUPS.name(), ACCOUNT_ID);
+
+    // Assert
+    assertNotNull(timeoutDuration);
+    assertThat(timeoutDuration.getSeconds() * 1000).isEqualTo((long) LDAP_TASK_DEFAULT_MAXIMUM_TIMEOUT_MILLIS);
   }
 
   private software.wings.beans.sso.LdapSettings getLdapSettings(String accountId) {

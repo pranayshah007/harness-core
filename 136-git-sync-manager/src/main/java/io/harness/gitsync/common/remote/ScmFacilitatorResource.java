@@ -32,6 +32,7 @@ import io.harness.gitsync.common.dtos.GetFileResponseDTO;
 import io.harness.gitsync.common.dtos.GitBranchesResponseDTO;
 import io.harness.gitsync.common.dtos.GitFileContent;
 import io.harness.gitsync.common.dtos.GitRepositoryResponseDTO;
+import io.harness.gitsync.common.dtos.RepoValidationResponse;
 import io.harness.gitsync.common.dtos.SaasGitDTO;
 import io.harness.gitsync.common.dtos.ScmBatchGetFileRequestDTO;
 import io.harness.gitsync.common.dtos.ScmBatchGetFileResponseDTO;
@@ -543,5 +544,33 @@ public class ScmFacilitatorResource {
     });
     return ResponseDTO.newResponse(
         ScmBatchGetFileResponseDTO.builder().scmGetFileResponseV2DTOMap(scmGetFileResponseV2DTOMap).build());
+  }
+
+  @GET
+  @Path("validate-repo")
+  @ApiOperation(value = "Validates repos on the basis of repoAllowList in default settings", nickname = "validateRepo")
+  @Hidden
+  @Operation(operationId = "validateRepoByRefConnector",
+      summary = "Validates repos on the basis repoAllowList in default settings using referenced connector.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            description =
+                "Validates if the repo is accessible or not on the basis of repoAllowList in default settings using referenced connector.")
+      },
+      hidden = true)
+  public ResponseDTO<RepoValidationResponse>
+  validateRepo(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotBlank @QueryParam(
+                   NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = GitSyncApiConstants.GIT_CONNECTOR_REF_PARAM_MESSAGE) @NotBlank @QueryParam(
+          GitSyncApiConstants.CONNECTOR_REF) String connectorRef,
+      @Parameter(description = GitSyncApiConstants.REPO_NAME_PARAM_MESSAGE) @NotBlank @QueryParam(
+          NGCommonEntityConstants.REPO_NAME) String repoName) {
+    scmFacilitatorService.validateRepo(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, repoName);
+    return ResponseDTO.newResponse(RepoValidationResponse.builder().isValid(true).build());
   }
 }

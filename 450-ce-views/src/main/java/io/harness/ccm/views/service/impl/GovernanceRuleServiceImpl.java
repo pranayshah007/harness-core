@@ -391,6 +391,7 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
             .policy(governanceJobEnqueueDTO.getPolicy())
             .isOOTB(governanceJobEnqueueDTO.getIsOOTB())
             .executionType(governanceJobEnqueueDTO.getExecutionType())
+            .cloudConnectorID(governanceJobEnqueueDTO.getTargetAccountDetails().getCloudConnectorId())
             .build();
 
     Gson gson = new GsonBuilder().create();
@@ -431,9 +432,10 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
 
   @Override
   public List<RuleExecution> enqueue(String accountId, RuleEnforcement ruleEnforcement, List<Rule> rulesList,
-      ConnectorConfigDTO connectorConfig, String faktoryJobType, String faktoryQueueName) {
+      ConnectorConfigDTO connectorConfig, String cloudConnectorId, String faktoryJobType, String faktoryQueueName) {
     if (ruleEnforcement.getCloudProvider() == AZURE) {
-      return enqueueAzure(accountId, ruleEnforcement, rulesList, connectorConfig, faktoryJobType, faktoryQueueName);
+      return enqueueAzure(
+          accountId, ruleEnforcement, rulesList, connectorConfig, cloudConnectorId, faktoryJobType, faktoryQueueName);
     } else {
       return enqueueAws(accountId, ruleEnforcement, rulesList, connectorConfig, faktoryJobType, faktoryQueueName);
     }
@@ -497,7 +499,7 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
   }
 
   private List<RuleExecution> enqueueAzure(String accountId, RuleEnforcement ruleEnforcement, List<Rule> rulesList,
-      ConnectorConfigDTO connectorConfig, String faktoryJobType, String faktoryQueueName) {
+      ConnectorConfigDTO connectorConfig, String cloudConnectorId, String faktoryJobType, String faktoryQueueName) {
     CEAzureConnectorDTO ceAzureConnectorDTO = (CEAzureConnectorDTO) connectorConfig;
     List<RuleExecution> ruleExecutions = new ArrayList<>();
     for (String region : ruleEnforcement.getTargetRegions()) {
@@ -514,6 +516,7 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
                   .policyEnforcementId("") // This is adhoc run
                   .policy(rule.getRulesYaml())
                   .executionType(RuleExecutionType.EXTERNAL)
+                  .cloudConnectorID(cloudConnectorId)
                   .build();
           Gson gson = new GsonBuilder().create();
           String json = gson.toJson(governanceJobDetailsAzure);

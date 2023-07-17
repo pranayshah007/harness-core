@@ -39,6 +39,8 @@ import static io.harness.govern.Switch.unhandled;
 
 import static java.lang.String.format;
 import static org.apache.commons.codec.binary.Hex.encodeHexString;
+import static org.apache.commons.lang3.StringUtils.stripEnd;
+import static org.apache.commons.lang3.StringUtils.stripStart;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.GitClientException;
@@ -227,6 +229,23 @@ public class GitClientHelper {
   public static String getHarnessApiURL(String url) {
     String domain = GitClientHelper.getGitSCM(url);
     return getHttpProtocolPrefix(url) + domain;
+  }
+
+  public static String convertToHarnessRepoName(String accountId, String orgId, String projectId, String repo) {
+    repo = stripStart(repo, "/");
+    repo = stripEnd(repo, "/");
+    if (repo.endsWith(".git")) {
+      repo = repo.replaceAll("\\.git$", "");
+    }
+
+    String parts[] = repo.split("/");
+    if (parts.length == 3) {
+      return accountId + "/" + repo;
+    } else if (parts.length == 2) {
+      return accountId + "/" + orgId + "/" + repo;
+    } else {
+      return accountId + "/" + orgId + "/" + projectId + "/" + repo;
+    }
   }
 
   private static boolean isUrlHTTP(String url) {

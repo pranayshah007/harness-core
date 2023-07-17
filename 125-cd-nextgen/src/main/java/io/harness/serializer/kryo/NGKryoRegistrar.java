@@ -40,6 +40,8 @@ import io.harness.cdng.gitops.UpdateReleaseRepoStepInfo;
 import io.harness.cdng.gitops.UpdateReleaseRepoStepParams;
 import io.harness.cdng.gitops.beans.FetchLinkedAppsStepParams;
 import io.harness.cdng.gitops.beans.GitOpsLinkedAppsOutcome;
+import io.harness.cdng.gitops.revertpr.RevertPRStepInfo;
+import io.harness.cdng.gitops.revertpr.RevertPRStepParameters;
 import io.harness.cdng.gitops.syncstep.SyncResponse;
 import io.harness.cdng.gitops.syncstep.SyncStepOutcome;
 import io.harness.cdng.helm.HelmDeployStepInfo;
@@ -153,6 +155,8 @@ public class NGKryoRegistrar implements KryoRegistrar {
   public void register(Kryo kryo) {
     kryo.register(UpdateReleaseRepoStepInfo.class, 13009);
     kryo.register(UpdateReleaseRepoStepParams.class, 13010);
+    kryo.register(RevertPRStepInfo.class, 13011);
+    kryo.register(RevertPRStepParameters.class, 13012);
 
     kryo.register(ArtifactStepParameters.class, 8001);
     kryo.register(ServiceStepParameters.class, 8008);

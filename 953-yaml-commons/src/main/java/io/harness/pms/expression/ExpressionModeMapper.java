@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.plan;
+package io.harness.pms.expression;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -27,6 +27,20 @@ public class ExpressionModeMapper {
         return ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED;
       default:
         return ExpressionMode.RETURN_NULL_IF_UNRESOLVED;
+    }
+  }
+
+  public static io.harness.pms.contracts.plan.ExpressionMode toExpressionModeProto(ExpressionMode mode) {
+    if (mode == null || mode == ExpressionMode.UNKNOWN_MODE) {
+      return io.harness.pms.contracts.plan.ExpressionMode.RETURN_NULL_IF_UNRESOLVED;
+    }
+    switch (mode) {
+      case THROW_EXCEPTION_IF_UNRESOLVED:
+        return io.harness.pms.contracts.plan.ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED;
+      case RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED:
+        return io.harness.pms.contracts.plan.ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED;
+      default:
+        return io.harness.pms.contracts.plan.ExpressionMode.RETURN_NULL_IF_UNRESOLVED;
     }
   }
 }

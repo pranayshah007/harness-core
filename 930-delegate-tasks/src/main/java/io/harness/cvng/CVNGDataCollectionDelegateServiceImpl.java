@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @OwnedBy(CV)
@@ -161,13 +162,16 @@ public class CVNGDataCollectionDelegateServiceImpl implements CVNGDataCollection
   }
 
   private String parseDSLExceptionMessage(String message) {
-    String[] dslExceptionMsgs = new String[] {"io.harness.datacollection.exception.DataCollectionDSLException:",
-        "io.harness.datacollection.exception.DataCollectionException:",
-        "io.harness.datacollection.exception.DataCollectionRuntimeException:",
-        "io.harness.datacollection.exception.RateLimitExceededException:"};
-    for (String exceptionMsg : dslExceptionMsgs) {
-      message.replace(exceptionMsg, "");
+    if (StringUtils.isNotEmpty(message)) {
+      String[] dslExceptionMsgs = new String[] {"io.harness.datacollection.exception.DataCollectionDSLException:",
+          "io.harness.datacollection.exception.DataCollectionException:",
+          "io.harness.datacollection.exception.DataCollectionRuntimeException:",
+          "io.harness.datacollection.exception.RateLimitExceededException:"};
+      for (String exceptionMsg : dslExceptionMsgs) {
+        message = message.replace(exceptionMsg, "");
+      }
+      return message.strip();
     }
-    return message.stripTrailing();
+    return message;
   }
 }

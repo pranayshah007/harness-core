@@ -49,7 +49,7 @@ public class SRMStepAnalysisChangeEventTransformer
   protected HarnessSRMAnalysisEventMetadata getMetadata(SRMStepAnalysisActivity activity) {
     SRMAnalysisStepExecutionDetail executionDetails =
         srmAnalysisStepService.getSRMAnalysisStepExecutionDetail(activity.getExecutionNotificationDetailsId());
-    HarnessSRMAnalysisEventMetadataBuilder harnessCDEventMetadataBuilder =
+    HarnessSRMAnalysisEventMetadataBuilder harnessSRMAnalysisEventMetadataBuilder =
         HarnessSRMAnalysisEventMetadata.builder()
             .stageId(activity.getStageId())
             .planExecutionId(activity.getPlanExecutionId())
@@ -60,10 +60,17 @@ public class SRMStepAnalysisChangeEventTransformer
             .pipelinePath("/account/" + activity.getAccountId() + "/cd/orgs/" + activity.getOrgIdentifier()
                 + "/projects/" + activity.getProjectIdentifier() + "/pipelines/" + activity.getPipelineId()
                 + "/executions/" + activity.getPlanExecutionId() + "/pipeline?stage=" + activity.getStageStepId())
-            .artifactType(activity.getArtifactType())
-            .analysisStartTime(executionDetails.getAnalysisStartTime())
-            .analysisEndTime(executionDetails.getAnalysisEndTime())
-            .analysisStatus(executionDetails.getAnalysisStatus());
-    return harnessCDEventMetadataBuilder.build();
+            .artifactType(activity.getArtifactType());
+
+    if (executionDetails != null) {
+      harnessSRMAnalysisEventMetadataBuilder.analysisStartTime(executionDetails.getAnalysisStartTime());
+      harnessSRMAnalysisEventMetadataBuilder.analysisEndTime(executionDetails.getAnalysisEndTime());
+      harnessSRMAnalysisEventMetadataBuilder.analysisStatus(executionDetails.getAnalysisStatus());
+      if (executionDetails.getAnalysisDuration() != null) {
+        harnessSRMAnalysisEventMetadataBuilder.analysisDuration(executionDetails.getAnalysisDuration());
+      }
+    }
+
+    return harnessSRMAnalysisEventMetadataBuilder.build();
   }
 }

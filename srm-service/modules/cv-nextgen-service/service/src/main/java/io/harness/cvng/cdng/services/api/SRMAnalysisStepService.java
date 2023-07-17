@@ -7,6 +7,7 @@
 
 package io.harness.cvng.cdng.services.api;
 
+import io.harness.cvng.analysis.entities.SRMAnalysisStepDetailDTO;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
@@ -21,4 +22,8 @@ public interface SRMAnalysisStepService {
   SRMAnalysisStepExecutionDetail getSRMAnalysisStepExecutionDetail(String analysisStepExecutionDetailId);
 
   void abortRunningStepsForMonitoredService(ProjectParams projectParams, String monitoredServiceIdentifier);
+
+  SRMAnalysisStepDetailDTO abortRunningSrmAnalysisStep(String executionDetailId);
+
+  SRMAnalysisStepDetailDTO getSRMAnalysisSummary(String activityId);
 }

@@ -455,7 +455,7 @@ public class DynatraceStateTest extends APMStateVerificationTestBase {
                             .build();
     persistence.save(delegate);
     when(accountDelegatesCache.get(accountId)).thenReturn(singletonList(delegate));
-    when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegate.getUuid())).thenReturn(delegate);
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), "dynatrace-url")))
         .thenReturn(of(DelegateConnectionResult.builder()
                            .accountId(accountId)

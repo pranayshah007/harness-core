@@ -11,11 +11,15 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
+import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.entities.SRMStepAnalysisActivity;
@@ -34,12 +38,16 @@ import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.monitoredService.ChangeSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.sdk.core.data.OptionalOutcome;
+import io.harness.pms.sdk.core.resolver.outcome.OutcomeGrpcServiceImpl;
+import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -57,6 +65,7 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
 
 public class CVNGAnalyzeDeploymentStepTest extends CvNextGenTestBase {
   private CVNGAnalyzeDeploymentStep deploymentStep;
@@ -73,6 +82,9 @@ public class CVNGAnalyzeDeploymentStepTest extends CvNextGenTestBase {
   @Inject
   private ConfiguredPipelineStepMonitoredServiceResolutionServiceImpl
       configuredPipelineStepMonitoredServiceResolutionService;
+
+  @Mock OutcomeService outcomeService;
+
   private BuilderFactory builderFactory;
   private String accountId;
   private String projectIdentifier;
@@ -96,6 +108,7 @@ public class CVNGAnalyzeDeploymentStepTest extends CvNextGenTestBase {
       @Override
       protected void configure() {
         bind(ExecutionSweepingOutputService.class).toInstance(mock(ExecutionSweepingOutputService.class));
+        bind(OutcomeService.class).toInstance(mock(OutcomeGrpcServiceImpl.class));
       }
     });
     withPMSSDK.injectMembers(deploymentStep);
@@ -122,6 +135,17 @@ public class CVNGAnalyzeDeploymentStepTest extends CvNextGenTestBase {
         MonitoredServiceSpecType.DEFAULT, spiedDefaultVerifyStepMonitoredServiceResolutionService);
     verifyStepCvConfigServiceMap.put(
         MonitoredServiceSpecType.CONFIGURED, spiedConfiguredVerifyStepMonitoredServiceResolutionService);
+    doReturn(
+        OptionalOutcome.builder()
+            .found(true)
+            .outcome(
+                ArtifactsOutcome.builder()
+                    .primary(
+                        GcrArtifactOutcome.builder().tag("tag").type(ArtifactSourceType.GCR.getDisplayName()).build())
+                    .build())
+            .build())
+        .when(outcomeService)
+        .resolveOptional(any(), any());
     FieldUtils.writeField(changeSourceService, "changeSourceUpdateHandlerMap", new HashMap<>(), true);
     FieldUtils.writeField(monitoredServiceService, "changeSourceService", changeSourceService, true);
     FieldUtils.writeField(deploymentStep, "clock", builderFactory.getClock(), true);
@@ -129,6 +153,7 @@ public class CVNGAnalyzeDeploymentStepTest extends CvNextGenTestBase {
     FieldUtils.writeField(deploymentStep, "monitoredServiceService", monitoredServiceService, true);
     FieldUtils.writeField(deploymentStep, "srmAnalysisStepService", srmAnalysisStepService, true);
     FieldUtils.writeField(deploymentStep, "activityService", activityService, true);
+    FieldUtils.writeField(deploymentStep, "outcomeService", outcomeService, true);
   }
 
   @Test
@@ -202,6 +227,8 @@ public class CVNGAnalyzeDeploymentStepTest extends CvNextGenTestBase {
     assertThat(srmStepAnalysisActivity.getActivityStartTime()).isEqualTo(builderFactory.getClock().instant());
     assertThat(srmStepAnalysisActivity.getPlanExecutionId()).isEqualTo(ambiance.getPlanExecutionId());
     assertThat(srmStepAnalysisActivity.getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceDTO.getIdentifier());
+    assertThat(srmStepAnalysisActivity.getArtifactTag()).isEqualTo("tag");
+    assertThat(srmStepAnalysisActivity.getArtifactType()).isEqualTo(ArtifactSourceType.GCR.getDisplayName());
     assertThat(srmStepAnalysisActivity.getActivityName())
         .isEqualTo("SRM Step Analysis of " + monitoredServiceDTO.getIdentifier());
     SRMAnalysisStepExecutionDetail stepExecutionDetail = srmAnalysisStepService.getSRMAnalysisStepExecutionDetail(

@@ -135,7 +135,7 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
 
   // Helper function that will persist a delegate grpc request to task.
   private void sheduleTaskInternal(SchedulingConfig schedulingConfig, byte[] taskData, byte[] infraData,
-      SchedulingTaskEvent.Method method, String requestUri, Optional<String> executionInfraRef,
+      SchedulingTaskEvent.EventType eventType, Optional<String> executionInfraRef,
       StreamObserver<SubmitTaskResponse> responseObserver) {
     try {
       String taskId = delegateTaskMigrationHelper.generateDelegateTaskUUID();
@@ -164,8 +164,7 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
       DelegateTaskBuilder taskBuilder =
           DelegateTask.builder()
               .uuid(taskId)
-              .requestMethod(method.name())
-              .requestUri(requestUri)
+              .eventType(eventType.name())
               .runnerType(schedulingConfig.getRunnerType())
               .infraId(executionInfraRef.orElse(taskId))
               .driverId(schedulingConfig.hasCallbackToken() ? schedulingConfig.getCallbackToken().getToken() : null)

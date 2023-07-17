@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
+import io.harness.pms.expression.EngineExpressionResolver;
 import io.harness.pms.expression.ProcessorResult;
 import io.harness.pms.yaml.validation.InputSetValidator;
 import io.harness.pms.yaml.validation.InputSetValidatorFactory;
@@ -23,14 +24,15 @@ import org.apache.commons.lang3.ClassUtils;
 
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
-public class ParameterFieldProcessor {
-  private final EngineExpressionEvaluator engineExpressionEvaluator;
+public class ParameterDocumentFieldProcessor {
   private final InputSetValidatorFactory inputSetValidatorFactory;
   private final ExpressionMode expressionMode;
 
-  public ParameterFieldProcessor(EngineExpressionEvaluator engineExpressionEvaluator,
+  private final EngineExpressionResolver engineExpressionResolver;
+
+  public ParameterDocumentFieldProcessor(EngineExpressionResolver engineExpressionResolver,
       InputSetValidatorFactory inputSetValidatorFactory, ExpressionMode expressionMode) {
-    this.engineExpressionEvaluator = engineExpressionEvaluator;
+    this.engineExpressionResolver = engineExpressionResolver;
     this.inputSetValidatorFactory = inputSetValidatorFactory;
     this.expressionMode = expressionMode;
   }
@@ -44,9 +46,9 @@ public class ParameterFieldProcessor {
     InputSetValidator inputSetValidator = field.getInputSetValidator();
     if (field.isExpression()) {
       if (field.isTypeString()) {
-        newValue = engineExpressionEvaluator.renderExpression(field.getExpressionValue(), expressionMode);
+        newValue = engineExpressionResolver.renderExpression(field.getExpressionValue(), expressionMode);
       } else {
-        newValue = engineExpressionEvaluator.evaluateExpression(field.getExpressionValue(), expressionMode);
+        newValue = engineExpressionResolver.evaluateExpression(field.getExpressionValue(), expressionMode);
       }
 
       if (newValue instanceof String && EngineExpressionEvaluator.hasExpressions((String) newValue)) {
@@ -69,7 +71,7 @@ public class ParameterFieldProcessor {
     Map<String, Object> map = field.getValueDoc();
     Object valueField = map.get(ParameterFieldValueWrapper.VALUE_FIELD);
     if (valueField != null) {
-      Object finalValue = engineExpressionEvaluator.resolve(valueField, expressionMode);
+      Object finalValue = engineExpressionResolver.resolve(valueField, expressionMode);
       if (finalValue != null) {
         finalValue = getCastedFinalValueForPrimitiveTypesAndWrappers(finalValue, field);
         field.updateWithValue(finalValue);
@@ -89,7 +91,7 @@ public class ParameterFieldProcessor {
     }
 
     RuntimeValidator runtimeValidator =
-        inputSetValidatorFactory.obtainValidator(inputSetValidator, engineExpressionEvaluator, expressionMode);
+        inputSetValidatorFactory.obtainValidator(inputSetValidator, engineExpressionResolver, expressionMode);
     RuntimeValidatorResponse validatorResponse =
         runtimeValidator.isValidValue(value, inputSetValidator.getParameters());
     if (!validatorResponse.isValid()) {

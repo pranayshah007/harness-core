@@ -553,7 +553,7 @@ public class NGTemplateResourceImpl implements NGTemplateResource {
     templateService.updateGitDetails(accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier,
         versionLabel,
         UpdateGitDetailsParams.builder()
-            .filePath(request.getFilepath())
+            .filePath(request.getFilePath())
             .repoName(request.getRepoName())
             .connectorRef(request.getConnectorRef())
             .build());

@@ -194,7 +194,7 @@ public class CodebaseUtilsTest extends CIExecutionTestBase {
   public void testGetGitConnectorSkipClone() {
     NGAccess ngAccess = Mockito.mock(NGAccess.class);
     CodeBase codeBase = CodeBase.builder().build();
-    final ConnectorDetails gitConnector = codebaseUtils.getGitConnector(ngAccess, codeBase, true);
+    final ConnectorDetails gitConnector = codebaseUtils.getGitConnector(ngAccess, codeBase, true, null);
     assertThat(gitConnector).isNull();
   }
 
@@ -202,7 +202,7 @@ public class CodebaseUtilsTest extends CIExecutionTestBase {
   @Owner(developers = JAMES_RICKS)
   @Category(UnitTests.class)
   public void testGetGitConnectorNullCodeBase() {
-    codebaseUtils.getGitConnector(null, null, false);
+    codebaseUtils.getGitConnector(null, null, false, null);
   }
 
   @Test
@@ -211,9 +211,10 @@ public class CodebaseUtilsTest extends CIExecutionTestBase {
   public void testGetGitConnectorCodebase() {
     String connectorRefValue = "myConnectorRef";
     ConnectorDetails connectorDetails = ConnectorDetails.builder().connectorType(ConnectorType.GITHUB).build();
-    when(connectorUtils.getConnectorDetails(any(), eq(connectorRefValue), eq(true))).thenReturn(connectorDetails);
+    when(connectorUtils.getConnectorDetailsWithToken(any(), eq(connectorRefValue), eq(true), any(), any()))
+        .thenReturn(connectorDetails);
     CodeBase codeBase = CodeBase.builder().connectorRef(ParameterField.createValueField(connectorRefValue)).build();
-    final ConnectorDetails gitConnector = codebaseUtils.getGitConnector(null, codeBase, false);
+    final ConnectorDetails gitConnector = codebaseUtils.getGitConnector(null, codeBase, false, null);
     assertThat(gitConnector).isEqualTo(connectorDetails);
   }
 
@@ -223,8 +224,9 @@ public class CodebaseUtilsTest extends CIExecutionTestBase {
   public void testGetGitConnector() {
     String connectorRefValue = "myConnectorRef";
     ConnectorDetails connectorDetails = ConnectorDetails.builder().connectorType(ConnectorType.GITHUB).build();
-    when(connectorUtils.getConnectorDetails(any(), eq(connectorRefValue), eq(true))).thenReturn(connectorDetails);
-    final ConnectorDetails gitConnector = codebaseUtils.getGitConnector(null, connectorRefValue);
+    when(connectorUtils.getConnectorDetailsWithToken(any(), eq(connectorRefValue), eq(true), any(), any()))
+        .thenReturn(connectorDetails);
+    final ConnectorDetails gitConnector = codebaseUtils.getGitConnector(null, connectorRefValue, null, null);
     assertThat(gitConnector).isEqualTo(connectorDetails);
   }
 

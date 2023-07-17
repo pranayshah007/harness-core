@@ -179,8 +179,8 @@ ciExecutionServiceConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.16.20
-  liteEngineImage: harness/ci-lite-engine:1.16.20
+  addonImage: harness/ci-addon:1.16.21
+  liteEngineImage: harness/ci-lite-engine:1.16.21
   isLocal: false
   remoteDebugTimeout: 3600
   cacheIntelligenceConfig:
@@ -338,13 +338,13 @@ ciExecutionServiceConfig:
       windowsEntrypoint:
         - "C:\\bin\\drone-artifactory.exe"
     cacheGCSConfig:
-      image: plugins/cache:1.5.9
+      image: plugins/cache:1.5.10
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
     cacheS3Config:
-      image: plugins/cache:1.5.9
+      image: plugins/cache:1.5.10
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
@@ -368,8 +368,8 @@ ciExecutionServiceConfig:
       s3Upload: plugins/s3:1.2.3
       security: harness/sto-plugin:dev
       artifactoryUpload: plugins/artifactory:1.4.4
-      cacheGCS: plugins/cache:1.5.9
-      cacheS3: plugins/cache:1.5.9
+      cacheGCS: plugins/cache:1.5.10
+      cacheS3: plugins/cache:1.5.10
       sscaOrchestration: harness/ssca-plugin:0.3.0
       sscaEnforcement: harness/ssca-plugin:0.3.0
     vmContainerlessStepConfig:
@@ -389,6 +389,11 @@ ciExecutionServiceConfig:
         name: github.com/drone-plugins/drone-buildx-ecr@refs/tags/v1.0.1
       dockerBuildxGcrConfig:
         name: github.com/drone-plugins/drone-buildx-gcr@refs/tags/v1.0.1
+      dockerBuildxAcrConfig:
+        name: github.com/drone-plugins/drone-buildx-acr@refs/tags/v1.0.0
+  gitnessConfig:
+    jwtSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}

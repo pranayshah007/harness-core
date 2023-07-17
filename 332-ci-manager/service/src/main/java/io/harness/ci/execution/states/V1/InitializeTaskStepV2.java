@@ -540,7 +540,6 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
         getK8DependencyOutcome(ambiance, initializeStepInfo, k8sTaskExecutionResponse.getK8sTaskResponse());
     LiteEnginePodDetailsOutcome liteEnginePodDetailsOutcome =
         getPodDetailsOutcome(k8sTaskExecutionResponse.getK8sTaskResponse());
-
     StepResponse.StepOutcome stepOutcome =
         StepResponse.StepOutcome.builder().name(DEPENDENCY_OUTCOME).outcome(dependencyOutcome).build();
     if (k8sTaskExecutionResponse.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {
@@ -549,6 +548,8 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
       if (liteEnginePodDetailsOutcome == null) {
         throw new CIStageExecutionException("Failed to get pod local ipAddress details");
       }
+      log.info("ip address for pod {} is {}", k8sTaskExecutionResponse.getK8sTaskResponse().getPodName(),
+          liteEnginePodDetailsOutcome.getIpAddress());
       return StepResponse.builder()
           .status(Status.SUCCEEDED)
           .stepOutcome(stepOutcome)

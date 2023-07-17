@@ -26,6 +26,7 @@ import org.springframework.data.annotation.TypeAlias;
 public class CIExecutionServiceConfig extends ExecutionServiceConfig {
   String ciImageTag;
   CIStepConfig stepConfig;
+  GitnessConfig gitnessConfig;
   CICacheIntelligenceConfig cacheIntelligenceConfig;
   CICacheIntelligenceS3Config cacheIntelligenceS3Config;
   ExecutionLimits executionLimits;

@@ -321,6 +321,11 @@ public class PipelineMigrationService extends NgMigrationService {
           break;
       }
       for (PipelineStageElement stageElement : pipelineStage.getPipelineStageElements()) {
+        if (!StateType.ENV_STATE.name().equals(stageElement.getType())) {
+          // https://harness.atlassian.net/browse/CDS-74209 The naming is inconsistent in FirstGen for Approval Stages &
+          // ENV stages
+          stageElement.setName(pipelineStage.getName());
+        }
         StageElementWrapperConfig stage = null;
         // Render expressions from previous stage output
         String stageIdentifier =

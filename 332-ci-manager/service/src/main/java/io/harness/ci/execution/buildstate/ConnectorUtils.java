@@ -29,22 +29,28 @@ import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.exception.ConnectorNotFoundException;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.git.GitClientHelper;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
+import io.harness.security.JWTTokenServiceUtils;
+import io.harness.security.dto.PrincipalType;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -58,6 +64,8 @@ public class ConnectorUtils extends BaseConnectorUtils {
   private final CIExecutionServiceConfig cIExecutionServiceConfig;
   @Inject private CIFeatureFlagService featureFlagService;
   @Inject @Named("ngBaseUrl") private String ngBaseUrl;
+  private final long TEN_HOURS_IN_MS = TimeUnit.MILLISECONDS.convert(10, TimeUnit.HOURS);
+  private final String DOT_GIT = ".git";
 
   @Inject
   public ConnectorUtils(ConnectorResourceClient connectorResourceClient, SecretUtils secretUtils,
@@ -156,7 +164,8 @@ public class ConnectorUtils extends BaseConnectorUtils {
         && featureFlagService.isEnabled(FeatureName.CODE_ENABLED, ngAccess.getAccountIdentifier())) {
       log.info("fetching harness scm connector");
       String baseUrl = getSCMBaseUrl(ngBaseUrl);
-      return super.getHarnessConnectorDetails(ngAccess, baseUrl);
+      String authToken = "";
+      return super.getHarnessConnectorDetails(ngAccess, baseUrl, authToken);
     }
 
     if (isEmpty(connectorIdentifier)) {
@@ -164,5 +173,38 @@ public class ConnectorUtils extends BaseConnectorUtils {
     }
 
     return super.getConnectorDetails(ngAccess, connectorIdentifier);
+  }
+
+  public ConnectorDetails getConnectorDetailsWithToken(
+      NGAccess ngAccess, String connectorIdentifier, boolean isGitConnector, Ambiance ambiance, String repoName) {
+    if (isEmpty(connectorIdentifier)) {
+      if (isGitConnector && featureFlagService.isEnabled(FeatureName.CODE_ENABLED, ngAccess.getAccountIdentifier())) {
+        log.info("fetching harness scm connector");
+        String baseUrl = getSCMBaseUrl(ngBaseUrl);
+        String authToken = fetchAuthToken(ngAccess, ambiance, repoName);
+        return super.getHarnessConnectorDetails(ngAccess, baseUrl, authToken);
+      } else {
+        throw new CIStageExecutionException("Git connector is mandatory in case git clone is enabled");
+      }
+    }
+
+    return super.getConnectorDetails(ngAccess, connectorIdentifier);
+  }
+
+  private String fetchAuthToken(NGAccess ngAccess, Ambiance ambiance, String repoName) {
+    ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
+    String principal = executionPrincipalInfo.getPrincipal();
+
+    String completeRepoName = GitClientHelper.convertToHarnessRepoName(ngAccess.getAccountIdentifier(),
+                                  ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), repoName)
+        + DOT_GIT;
+
+    String[] allowedResources = {completeRepoName};
+
+    ImmutableMap<String, String> claims = ImmutableMap.of("name", principal, "type", PrincipalType.USER.toString());
+    ImmutableMap<String, String[]> arrayClaims = ImmutableMap.of("allowedResources", allowedResources);
+
+    return JWTTokenServiceUtils.generateJWTToken(
+        claims, arrayClaims, TEN_HOURS_IN_MS, cIExecutionServiceConfig.getGitnessConfig().getJwtSecret());
   }
 }
