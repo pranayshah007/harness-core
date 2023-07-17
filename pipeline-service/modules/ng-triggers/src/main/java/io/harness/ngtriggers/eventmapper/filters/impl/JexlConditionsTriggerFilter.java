@@ -143,12 +143,15 @@ public class JexlConditionsTriggerFilter implements TriggerFilter {
     if (CUSTOM.name().equals(filterRequestData.getWebhookPayloadData().getOriginalEvent().getSourceRepoType())) {
       return null;
     }
-    Set<String> changedFiles;
-    if (shouldEvaluateOnSCM(filterRequestData)) {
-      changedFiles =
-          initiateSCMTaskForChangedFilesAndEvaluate(filterRequestData, filterRequestData.getDetails().get(0));
-    } else {
-      changedFiles = getFilesFromPushPayload(filterRequestData);
+    Set<String> changedFiles = null;
+    for (TriggerDetails triggerDetails : filterRequestData.getDetails()) {
+      if (isEmpty(changedFiles)) {
+        if (shouldEvaluateOnSCM(filterRequestData)) {
+          changedFiles = initiateSCMTaskForChangedFilesAndEvaluate(filterRequestData, triggerDetails);
+        } else {
+          changedFiles = getFilesFromPushPayload(filterRequestData);
+        }
+      }
     }
 
     return changedFiles;
