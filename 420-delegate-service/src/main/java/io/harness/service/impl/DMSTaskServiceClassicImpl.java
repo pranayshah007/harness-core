@@ -5,6 +5,10 @@ import static io.harness.beans.DelegateTask.Status.STARTED;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.NgSetupFields.NG;
+import static io.harness.delegate.utils.DelegateServiceConstants.PIPELINE;
+import static io.harness.delegate.utils.DelegateServiceConstants.STAGE;
+import static io.harness.delegate.utils.DelegateServiceConstants.STEP;
+import static io.harness.delegate.utils.DelegateServiceConstants.STEP_GROUP;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_TASK_ACQUIRE;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_TASK_ACQUIRE_FAILED;
@@ -22,6 +26,7 @@ import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
+import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.utils.DelegateLogContextHelper;
 import io.harness.delegate.utils.DelegateTaskMigrationHelper;
@@ -40,7 +45,7 @@ import io.harness.service.intfc.DelegateCache;
 import software.wings.TaskTypeToRequestResponseMapper;
 import software.wings.beans.SerializationFormat;
 import software.wings.beans.TaskType;
-import software.wings.service.intfc.DMSDelegateSelectionLogService;
+import software.wings.service.intfc.DelegateSelectionLogsService;
 import software.wings.utils.Utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -56,8 +61,10 @@ import java.time.Clock;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 
@@ -77,7 +84,7 @@ public class DMSTaskServiceClassicImpl implements DMSTaskServiceClassic {
   @Inject private DMSAssignDelegateService assignDelegateService;
   @Inject private Clock clock;
   @Inject private DelegateServiceConfiguration mainConfiguration;
-  @Inject private DMSDelegateSelectionLogService delegateSelectionLogsService;
+  @Inject private DelegateSelectionLogsService delegateSelectionLogsService;
   //  @Inject private DmsObserverEventProducer dmsObserverEventProducer;
 
   private static final String ASYNC = "async";
@@ -111,9 +118,6 @@ public class DMSTaskServiceClassicImpl implements DMSTaskServiceClassic {
         return DelegateTaskPackage.builder().build();
       }
 
-      String taskType = delegateTask.getData() != null ? delegateTask.getData().getTaskType()
-                                                       : delegateTask.getTaskDataV2().getTaskType();
-
       try (AutoLogContext ignore = DelegateLogContextHelper.getLogContext(delegateTask)) {
         if (assignDelegateService.shouldValidate(delegateTask, delegateId)) {
           setValidationStarted(delegateId, delegateTask);
@@ -137,9 +141,6 @@ public class DMSTaskServiceClassicImpl implements DMSTaskServiceClassic {
             .get();
 
     if (delegateTask != null) {
-      // not needed we have already copied v2 data to data in processDelegateTask step
-      // copyTaskDataV2ToTaskData(delegateTask);
-
       if (delegateTask.getData() != null
           && SerializationFormat.JSON.equals(delegateTask.getData().getSerializationFormat())) {
         // CI's task data is in a json binary format in TaskData.data. But delegate hornors TaskData.parameters. This
@@ -246,9 +247,9 @@ public class DMSTaskServiceClassicImpl implements DMSTaskServiceClassic {
       return delegateTaskPackageBuilder.build();
     }
 
-    //    delegateTaskPackageBuilder.encryptionConfigs(delegateTask.getDelegateTaskPackage().getEncryptionConfigs());
-    //    delegateTaskPackageBuilder.secretDetails(delegateTask.getDelegateTaskPackage().getSecretDetails());
-    //    delegateTaskPackageBuilder.secrets(delegateTask.getDelegateTaskPackage().getSecrets());
+    delegateTaskPackageBuilder.encryptionConfigs(delegateTask.getDelegateTaskPackage().getEncryptionConfigs());
+    delegateTaskPackageBuilder.secretDetails(delegateTask.getDelegateTaskPackage().getSecretDetails());
+    delegateTaskPackageBuilder.secrets(delegateTask.getDelegateTaskPackage().getSecrets());
 
     return delegateTaskPackageBuilder.build();
   }
@@ -321,7 +322,6 @@ public class DMSTaskServiceClassicImpl implements DMSTaskServiceClassic {
     task.getData().setParameters(delegateTask.getData().getParameters());
     log.info("Returning previously assigned task to delegate");
     return buildDelegateTaskPackage(task);
-    // return resolvePreAssignmentExpressions(task, SecretManagerMode.APPLY);
   }
 
   private void clearFromValidationCache(DelegateTask delegateTask) {
@@ -366,5 +366,27 @@ public class DMSTaskServiceClassicImpl implements DMSTaskServiceClassic {
   protected String retrieveLogStreamingAccountToken(String accountId) throws IOException {
     return SafeHttpCall.executeWithExceptions(logStreamingServiceRestClient.retrieveAccountToken(
         mainConfiguration.getLogStreamingServiceConfig().getServiceToken(), accountId));
+  }
+
+  @Override
+  public List<SelectorCapability> fetchTaskSelectorCapabilities(List<ExecutionCapability> executionCapabilities) {
+    List<SelectorCapability> selectorCapabilities = executionCapabilities.stream()
+                                                        .filter(c -> c instanceof SelectorCapability)
+                                                        .map(c -> (SelectorCapability) c)
+                                                        .collect(Collectors.toList());
+    if (isEmpty(selectorCapabilities)) {
+      return selectorCapabilities;
+    }
+    List<SelectorCapability> selectors =
+        selectorCapabilities.stream()
+            .filter(sel -> Objects.nonNull(sel.getSelectorOrigin()))
+            .filter(c
+                -> c.getSelectorOrigin().equals(STEP) || c.getSelectorOrigin().equals(STEP_GROUP)
+                    || c.getSelectorOrigin().equals(STAGE) || c.getSelectorOrigin().equals(PIPELINE))
+            .collect(toList());
+    if (!isEmpty(selectors)) {
+      return selectors;
+    }
+    return selectorCapabilities;
   }
 }

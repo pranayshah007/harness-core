@@ -8,8 +8,6 @@
 package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
-import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
-import static io.harness.beans.PageRequest.UNLIMITED;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.DbAliases.DMS;
@@ -17,12 +15,8 @@ import static io.harness.ng.DbAliases.HARNESS;
 
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 
-import io.harness.annotations.dev.BreakDependencyOn;
-import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.DelegateTask;
-import io.harness.beans.SearchFilter;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateSelectionLogParams;
 import io.harness.delegate.beans.DelegateSelectionLogParams.DelegateSelectionLogParamsBuilder;
@@ -30,18 +24,16 @@ import io.harness.delegate.beans.DelegateSelectionLogResponse;
 import io.harness.delegate.beans.DelegateType;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
-import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.store.Store;
 import io.harness.selection.log.DelegateMetaData;
 import io.harness.selection.log.DelegateSelectionLog;
 import io.harness.selection.log.DelegateSelectionLog.DelegateSelectionLogKeys;
+import io.harness.service.intfc.DMSTaskServiceClassic;
 import io.harness.service.intfc.DelegateCache;
 
-import software.wings.service.intfc.DataStoreService;
+import software.wings.service.intfc.DMSDataStoreService;
 import software.wings.service.intfc.DelegateSelectionLogsService;
-import software.wings.service.intfc.DelegateService;
-import software.wings.service.intfc.DelegateTaskServiceClassic;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -66,22 +58,13 @@ import lombok.extern.slf4j.Slf4j;
 
 @Singleton
 @Slf4j
-@TargetModule(HarnessModule._420_DELEGATE_SERVICE)
-@BreakDependencyOn("io.harness.beans.Cd1SetupFields")
-@BreakDependencyOn("software.wings.beans.Application")
-@BreakDependencyOn("software.wings.beans.Environment")
-@BreakDependencyOn("software.wings.beans.Service")
 @OwnedBy(DEL)
 public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsService {
   @Inject private HPersistence persistence;
-
-  // If we can take care of below two, then we can this class to 420-delegate-service entirely.
-  @Inject private DelegateService delegateService;
-  @Inject private DelegateTaskServiceClassic delegateTaskServiceClassic;
+  @Inject private DMSTaskServiceClassic dmsTaskServiceClassic;
 
   @Inject private DelegateCache delegateCache;
-  @Inject private FeatureFlagService featureFlagService;
-  @Inject private DataStoreService dataStoreService;
+  @Inject private DMSDataStoreService dmsDataStoreService;
 
   private static final Store harnessStore = Store.builder().name(HARNESS).build();
   private static final Store dmsStore = Store.builder().name(DMS).build();
@@ -135,8 +118,8 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
   private void dispatchSelectionLogs(String accountId, List<DelegateSelectionLog> logs, RemovalCause removalCause) {
     try {
       // Always save in mongo store irrespective of GCP enabled or not.
-      dataStoreService.saveInStore(DelegateSelectionLog.class, logs, true, harnessStore);
-      dataStoreService.saveInStore(DelegateSelectionLog.class, logs, true, dmsStore);
+      dmsDataStoreService.saveInStore(DelegateSelectionLog.class, logs, true, harnessStore);
+      dmsDataStoreService.saveInStore(DelegateSelectionLog.class, logs, true, dmsStore);
     } catch (Exception exception) {
       log.error("Error while saving into Database ", exception);
     }
@@ -372,7 +355,7 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
     }
     List<String> taskSelectors = new ArrayList<>();
     List<SelectorCapability> selectorCapabilities =
-        delegateTaskServiceClassic.fetchTaskSelectorCapabilities(executionCapabilities);
+        dmsTaskServiceClassic.fetchTaskSelectorCapabilities(executionCapabilities);
     if (isEmpty(selectorCapabilities)) {
       return EMPTY;
     }

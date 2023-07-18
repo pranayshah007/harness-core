@@ -25,6 +25,10 @@ import static io.harness.delegate.beans.DelegateTaskEvent.DelegateTaskEventBuild
 import static io.harness.delegate.beans.NgSetupFields.NG;
 import static io.harness.delegate.beans.executioncapability.ExecutionCapability.EvaluationMode;
 import static io.harness.delegate.task.TaskFailureReason.EXPIRED;
+import static io.harness.delegate.utils.DelegateServiceConstants.PIPELINE;
+import static io.harness.delegate.utils.DelegateServiceConstants.STAGE;
+import static io.harness.delegate.utils.DelegateServiceConstants.STEP;
+import static io.harness.delegate.utils.DelegateServiceConstants.STEP_GROUP;
 import static io.harness.exception.FailureType.DELEGATE_RESTART;
 import static io.harness.govern.Switch.noop;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -38,10 +42,6 @@ import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_TASK_N
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_TASK_VALIDATION;
 
 import static software.wings.expression.SecretManagerModule.EXPRESSION_EVALUATOR_EXECUTOR;
-import static software.wings.service.impl.AssignDelegateServiceImpl.PIPELINE;
-import static software.wings.service.impl.AssignDelegateServiceImpl.STAGE;
-import static software.wings.service.impl.AssignDelegateServiceImpl.STEP;
-import static software.wings.service.impl.AssignDelegateServiceImpl.STEP_GROUP;
 import static software.wings.service.impl.DelegateSelectionLogsServiceImpl.NO_ELIGIBLE_DELEGATES;
 
 import static java.lang.String.format;

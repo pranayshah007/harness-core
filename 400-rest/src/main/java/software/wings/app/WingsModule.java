@@ -267,11 +267,15 @@ import io.harness.service.EventConfigServiceImpl;
 import io.harness.service.EventHelper;
 import io.harness.service.EventService;
 import io.harness.service.EventServiceImpl;
+import io.harness.service.impl.DMSAssignDelegateServiceImpl;
+import io.harness.service.impl.DMSTaskServiceClassicImpl;
 import io.harness.service.impl.DelegateNgTokenServiceImpl;
 import io.harness.service.impl.DelegateRingServiceImpl;
 import io.harness.service.impl.DelegateTokenServiceImpl;
 import io.harness.service.impl.stackdriver.DelegateStackdriverLogServiceImpl;
 import io.harness.service.intfc.AccountDataProvider;
+import io.harness.service.intfc.DMSAssignDelegateService;
+import io.harness.service.intfc.DMSTaskServiceClassic;
 import io.harness.service.intfc.DelegateRingService;
 import io.harness.service.intfc.DelegateStackdriverLogService;
 import io.harness.service.intfc.DelegateTokenService;
@@ -441,6 +445,7 @@ import software.wings.service.impl.CatalogServiceImpl;
 import software.wings.service.impl.CloudWatchServiceImpl;
 import software.wings.service.impl.CommandServiceImpl;
 import software.wings.service.impl.ConfigServiceImpl;
+import software.wings.service.impl.DMSMongoDataStoreServiceImpl;
 import software.wings.service.impl.DelegateProfileManagerServiceImpl;
 import software.wings.service.impl.DelegateProfileServiceImpl;
 import software.wings.service.impl.DelegateScopeServiceImpl;
@@ -659,6 +664,7 @@ import software.wings.service.intfc.CatalogService;
 import software.wings.service.intfc.CloudWatchService;
 import software.wings.service.intfc.CommandService;
 import software.wings.service.intfc.ConfigService;
+import software.wings.service.intfc.DMSDataStoreService;
 import software.wings.service.intfc.DataStoreService;
 import software.wings.service.intfc.DelegateProfileManagerService;
 import software.wings.service.intfc.DelegateProfileService;
@@ -1233,6 +1239,8 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(CeAccountExpirationChecker.class).to(CeAccountExpirationCheckerImpl.class);
     bind(AccessRequestService.class).to(AccessRequestServiceImpl.class);
     bind(DelegateTaskServiceClassic.class).to(DelegateTaskServiceClassicImpl.class);
+    bind(DMSTaskServiceClassic.class).to(DMSTaskServiceClassicImpl.class);
+    bind(DMSAssignDelegateService.class).to(DMSAssignDelegateServiceImpl.class);
     bind(DelegateNgTokenService.class).to(DelegateNgTokenServiceImpl.class);
 
     bind(CgCdLicenseUsageService.class).to(CgCdLicenseUsageServiceImpl.class);
@@ -1515,6 +1523,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
         throw new InvalidArgumentsException(
             Pair.of(configuration.getExecutionLogsStorageMode().toString(), "Invalid execution log data storage mode"));
     }
+    bind(DMSDataStoreService.class).to(DMSMongoDataStoreServiceImpl.class);
 
     // End of deployment trigger dependencies
 

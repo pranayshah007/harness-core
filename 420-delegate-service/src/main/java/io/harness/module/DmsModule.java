@@ -12,7 +12,6 @@ import io.harness.logstreaming.LogStreamingServiceRestClient;
 import io.harness.logstreaming.NGLogStreamingClientFactory;
 import io.harness.service.impl.AccountDataProviderImpl;
 import io.harness.service.impl.DMSAssignDelegateServiceImpl;
-import io.harness.service.impl.DMSDelegateSelectionLogServiceImpl;
 import io.harness.service.impl.DMSTaskServiceClassicImpl;
 import io.harness.service.impl.DelegateRingServiceImpl;
 import io.harness.service.intfc.AccountDataProvider;
@@ -21,8 +20,9 @@ import io.harness.service.intfc.DMSTaskServiceClassic;
 import io.harness.service.intfc.DelegateRingService;
 
 import software.wings.service.impl.DMSMongoDataStoreServiceImpl;
+import software.wings.service.impl.DelegateSelectionLogsServiceImpl;
 import software.wings.service.intfc.DMSDataStoreService;
-import software.wings.service.intfc.DMSDelegateSelectionLogService;
+import software.wings.service.intfc.DelegateSelectionLogsService;
 
 import com.google.inject.AbstractModule;
 import java.time.Clock;
@@ -46,7 +46,7 @@ public class DmsModule extends AbstractModule {
     bind(AccountDataProvider.class).to(AccountDataProviderImpl.class);
     bind(DMSTaskServiceClassic.class).to(DMSTaskServiceClassicImpl.class);
     bind(DMSAssignDelegateService.class).to(DMSAssignDelegateServiceImpl.class);
-    bind(DMSDelegateSelectionLogService.class).to(DMSDelegateSelectionLogServiceImpl.class);
+    bind(DelegateSelectionLogsService.class).to(DelegateSelectionLogsServiceImpl.class);
     bind(Clock.class).toInstance(Clock.systemUTC());
     bind(LogStreamingServiceRestClient.class)
         .toProvider(NGLogStreamingClientFactory.builder()
