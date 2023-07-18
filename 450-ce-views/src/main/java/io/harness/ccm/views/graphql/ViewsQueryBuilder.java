@@ -13,6 +13,7 @@ import static io.harness.ccm.views.entities.ViewFieldIdentifier.BUSINESS_MAPPING
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.COMMON;
 import static io.harness.ccm.views.graphql.QLCEViewAggregateOperation.SUM;
 import static io.harness.ccm.views.graphql.QLCEViewTimeGroupType.DAY;
+import static io.harness.ccm.views.graphql.ViewsMetaDataFields.COST;
 import static io.harness.ccm.views.graphql.ViewsMetaDataFields.LABEL_KEY;
 import static io.harness.ccm.views.graphql.ViewsMetaDataFields.LABEL_KEY_UN_NESTED;
 import static io.harness.ccm.views.graphql.ViewsMetaDataFields.LABEL_VALUE_UN_NESTED;
@@ -264,7 +265,9 @@ public class ViewsQueryBuilder {
     if (!Lists.isNullOrEmpty(viewPreferenceAggregations)) {
       decorateQueryWithViewPreferenceAggregations(
           selectQuery, viewPreferenceAggregations, tableIdentifier, viewLabelsFlattened);
-    } else if (!aggregations.isEmpty()) {
+      aggregations = removeCostAggregationColumn(aggregations);
+    }
+    if (!aggregations.isEmpty()) {
       decorateQueryWithAggregations(selectQuery, aggregations, tableIdentifier, false);
     }
 
@@ -1405,6 +1408,14 @@ public class ViewsQueryBuilder {
     String columnName = getColumnNameForField(tableIdentifier, aggregation.getColumnName());
     multiIfStatement.append(condition).append(String.format(", %s, 0)", new CustomSql(columnName)));
     return new CustomSql(multiIfStatement);
+  }
+
+  private List<QLCEViewAggregation> removeCostAggregationColumn(List<QLCEViewAggregation> aggregations) {
+    return Objects.nonNull(aggregations)
+        ? aggregations.stream()
+              .filter(aggregation -> !COST.getFieldName().equalsIgnoreCase(aggregation.getColumnName()))
+              .collect(Collectors.toList())
+        : Collections.emptyList();
   }
 
   private void decorateQueryWithAggregation(
