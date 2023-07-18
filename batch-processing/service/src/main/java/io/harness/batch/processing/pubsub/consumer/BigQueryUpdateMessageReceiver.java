@@ -119,6 +119,10 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
       log.info("Account doesn't belong to current cluster, skipping message");
       return true;
     }
+    if (!featureFlagService.isEnabled(FeatureName.CCM_COST_CATEGORIES_DASHBOARD, message.getAccountId())) {
+      log.info("CCM_COST_CATEGORIES_DASHBOARD Feature flag isn't enabled for account: {}", message.getAccountId());
+      return true;
+    }
     String tableName = bigQueryHelper.getCloudProviderTableName(message.getAccountId(), UNIFIED_TABLE);
     Instant startTime;
     Instant endTime;
