@@ -104,6 +104,7 @@ import io.harness.cdng.pipeline.steps.NGSectionStep;
 import io.harness.cdng.pipeline.steps.RollbackOptionalChildChainStep;
 import io.harness.cdng.pipeline.steps.RollbackOptionalChildrenStep;
 import io.harness.cdng.provision.awscdk.AwsCdkBootstrapStep;
+import io.harness.cdng.provision.awscdk.AwsCdkSynthStep;
 import io.harness.cdng.provision.azure.AzureARMRollbackStep;
 import io.harness.cdng.provision.azure.AzureCreateARMResourceStep;
 import io.harness.cdng.provision.azure.AzureCreateBPStep;
@@ -334,6 +335,7 @@ public class NgStepRegistrar {
 
     // AWS CDK
     engineSteps.put(AwsCdkBootstrapStep.STEP_TYPE, AwsCdkBootstrapStep.class);
+    engineSteps.put(AwsCdkSynthStep.STEP_TYPE, AwsCdkSynthStep.class);
 
     return engineSteps;
   }

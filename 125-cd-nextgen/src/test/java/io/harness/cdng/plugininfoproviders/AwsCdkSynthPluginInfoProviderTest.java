@@ -9,7 +9,8 @@ package io.harness.cdng.plugininfoproviders;
 
 import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_APP_PATH;
 import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_COMMAND_OPTIONS;
-import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_EXPORT_BOOTSTRAP_TEMPLATE;
+import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_EXPORT_SYNTH_TEMPLATE;
+import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_STACK_NAMES;
 import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -23,7 +24,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
-import io.harness.cdng.provision.awscdk.AwsCdkBootstrapStepInfo;
+import io.harness.cdng.provision.awscdk.AwsCdkSynthStepInfo;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
 import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
@@ -45,9 +46,9 @@ import org.mockito.junit.MockitoRule;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class AwsCdkBootstrapPluginInfoProviderTest extends CategoryTest {
+public class AwsCdkSynthPluginInfoProviderTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
-  @InjectMocks @Spy private AwsCdkBootstrapPluginInfoProvider awsCdkBootstrapPluginInfoProvider;
+  @InjectMocks @Spy private AwsCdkSynthPluginInfoProvider awsCdkSynthPluginInfoProvider;
 
   @Test
   @Owner(developers = TMACARI)
@@ -63,9 +64,9 @@ public class AwsCdkBootstrapPluginInfoProviderTest extends CategoryTest {
     doReturn("name").when(cdAbstractStepNode).getName();
     doReturn("uuid").when(cdAbstractStepNode).getUuid();
 
-    doReturn(cdAbstractStepNode).when(awsCdkBootstrapPluginInfoProvider).getCdAbstractStepNode(any(), any());
-    AwsCdkBootstrapStepInfo awsCdkBootstrapStepInfo =
-        AwsCdkBootstrapStepInfo.infoBuilder()
+    doReturn(cdAbstractStepNode).when(awsCdkSynthPluginInfoProvider).getCdAbstractStepNode(any(), any());
+    AwsCdkSynthStepInfo awsCdkSynthStepInfo =
+        AwsCdkSynthStepInfo.infoBuilder()
             .resources(ContainerResource.builder().build())
             .runAsUser(ParameterField.<Integer>builder().value(1).build())
             .imagePullPolicy(ParameterField.<ImagePullPolicy>builder().value(ImagePullPolicy.ALWAYS).build())
@@ -74,20 +75,24 @@ public class AwsCdkBootstrapPluginInfoProviderTest extends CategoryTest {
             .appPath(ParameterField.<String>builder().value("appPath").build())
             .commandOptions(ParameterField.<List<String>>builder().value(Arrays.asList("test")).build())
             .exportTemplate(ParameterField.<Boolean>builder().value(Boolean.TRUE).build())
+            .stackNames(ParameterField.<List<String>>builder().value(Arrays.asList("stack1", "stack2")).build())
             .build();
-    doReturn(awsCdkBootstrapStepInfo).when(cdAbstractStepNode).getStepSpecType();
+    doReturn(awsCdkSynthStepInfo).when(cdAbstractStepNode).getStepSpecType();
 
     PluginCreationResponseWrapper pluginCreationResponseWrapper =
-        awsCdkBootstrapPluginInfoProvider.getPluginInfo(pluginCreationRequest, new HashSet<>(), ambiance);
+        awsCdkSynthPluginInfoProvider.getPluginInfo(pluginCreationRequest, new HashSet<>(), ambiance);
     assertThat(pluginCreationResponseWrapper.getResponse().getPluginDetails().getEnvVariablesMap().get(
                    PLUGIN_AWS_CDK_APP_PATH))
         .isEqualTo("appPath");
     assertThat(pluginCreationResponseWrapper.getResponse().getPluginDetails().getEnvVariablesMap().get(
-                   PLUGIN_AWS_CDK_EXPORT_BOOTSTRAP_TEMPLATE))
+                   PLUGIN_AWS_CDK_EXPORT_SYNTH_TEMPLATE))
         .isEqualTo("true");
     assertThat(pluginCreationResponseWrapper.getResponse().getPluginDetails().getEnvVariablesMap().get(
                    PLUGIN_AWS_CDK_COMMAND_OPTIONS))
         .isEqualTo("test");
+    assertThat(pluginCreationResponseWrapper.getResponse().getPluginDetails().getEnvVariablesMap().get(
+                   PLUGIN_AWS_CDK_STACK_NAMES))
+        .isEqualTo("stack1 stack2");
 
     assertThat(pluginCreationResponseWrapper.getStepInfo().getIdentifier()).isEqualTo("identifier");
     assertThat(pluginCreationResponseWrapper.getStepInfo().getName()).isEqualTo("name");

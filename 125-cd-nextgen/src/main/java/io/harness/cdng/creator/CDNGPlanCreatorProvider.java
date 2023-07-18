@@ -144,6 +144,7 @@ import io.harness.cdng.creator.plan.steps.aws.sam.AwsSamDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.sam.AwsSamRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.sam.DownloadManifestsStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.awscdk.AwsCdkBootstrapStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.awscdk.AwsCdkSynthStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppSlotDeploymentStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppSlotSwapSlotPlanCreator;
@@ -252,6 +253,7 @@ import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepVariableCreator;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsCreateStepPlanCreator;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.provision.awscdk.variablecreator.AwsCdkBootstrapVariableCreator;
+import io.harness.cdng.provision.awscdk.variablecreator.AwsCdkSynthVariableCreator;
 import io.harness.cdng.provision.azure.variablecreator.AzureARMRollbackStepVariableCreator;
 import io.harness.cdng.provision.azure.variablecreator.AzureCreateARMResourceStepVariableCreator;
 import io.harness.cdng.provision.azure.variablecreator.AzureCreateBPStepVariableCreator;
@@ -325,7 +327,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final List<String> CLOUDFORMATION_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER,
       CLOUDFORMATION_STEP_METADATA, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG, ServiceSpecType.AWS_LAMBDA);
   private static final List<String> AWS_CDK_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER, AWS_CDK_STEP_METADATA,
-      HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG, ServiceSpecType.AWS_LAMBDA);
+      HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG, ServiceSpecType.AWS_LAMBDA, PLUGIN);
   private static final List<String> TERRAFORM_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS,
       SERVERLESS_AWS_LAMBDA, ASG, GOOGLE_CLOUD_FUNCTIONS, ServiceSpecType.AWS_LAMBDA, TAS);
   private static final List<String> TERRAGRUNT_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS,
@@ -516,6 +518,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     // AWS CDK
     planCreators.add(new AwsCdkBootstrapStepPlanCreator());
+    planCreators.add(new AwsCdkSynthStepPlanCreator());
 
     injectorUtils.injectMembers(planCreators);
     return planCreators;
@@ -667,6 +670,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     // AWS CDK
     variableCreators.add(new AwsCdkBootstrapVariableCreator());
+    variableCreators.add(new AwsCdkSynthVariableCreator());
 
     return variableCreators;
   }
@@ -1469,6 +1473,15 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setFeatureFlag(FeatureName.CDS_AWS_CDK.name())
             .build();
 
+    StepInfo awsCdkSynth =
+        StepInfo.newBuilder()
+            .setName("AWS CDK Synth")
+            .setType(StepSpecTypeConstants.AWS_CDK_SYNTH)
+            .setStepMetaData(
+                StepMetaData.newBuilder().addAllCategory(AWS_CDK_CATEGORY).setFolderPath(AWS_CDK_STEP_METADATA).build())
+            .setFeatureFlag(FeatureName.CDS_AWS_CDK.name())
+            .build();
+
     List<StepInfo> stepInfos = new ArrayList<>();
 
     stepInfos.add(gitOpsMergePR);
@@ -1565,6 +1578,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(serverlessAwsLambdaDeployV2);
     stepInfos.add(serverlessAwsLambdaPackageV2);
     stepInfos.add(awsCdkBootstrap);
+    stepInfos.add(awsCdkSynth);
     return stepInfos;
   }
 }

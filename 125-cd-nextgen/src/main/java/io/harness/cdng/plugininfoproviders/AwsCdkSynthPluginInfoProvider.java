@@ -9,7 +9,8 @@ package io.harness.cdng.plugininfoproviders;
 
 import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_APP_PATH;
 import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_COMMAND_OPTIONS;
-import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_EXPORT_BOOTSTRAP_TEMPLATE;
+import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_EXPORT_SYNTH_TEMPLATE;
+import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_STACK_NAMES;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -17,7 +18,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.pipeline.executions.CDPluginInfoProvider;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
-import io.harness.cdng.provision.awscdk.AwsCdkBootstrapStepInfo;
+import io.harness.cdng.provision.awscdk.AwsCdkSynthStepInfo;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ImageDetails;
@@ -38,7 +39,7 @@ import java.util.Map;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
-public class AwsCdkBootstrapPluginInfoProvider implements CDPluginInfoProvider {
+public class AwsCdkSynthPluginInfoProvider implements CDPluginInfoProvider {
   @Override
   public PluginCreationResponseWrapper getPluginInfo(
       PluginCreationRequest request, Set<Integer> usedPorts, Ambiance ambiance) {
@@ -47,22 +48,22 @@ public class AwsCdkBootstrapPluginInfoProvider implements CDPluginInfoProvider {
 
     cdAbstractStepNode = getCdAbstractStepNode(request, stepJsonNode);
 
-    AwsCdkBootstrapStepInfo awsCdkBootstrapStepInfo = (AwsCdkBootstrapStepInfo) cdAbstractStepNode.getStepSpecType();
+    AwsCdkSynthStepInfo awsCdkSynthStepInfo = (AwsCdkSynthStepInfo) cdAbstractStepNode.getStepSpecType();
 
     PluginDetails.Builder pluginDetailsBuilder = PluginInfoProviderHelper.buildPluginDetails(
-        awsCdkBootstrapStepInfo.getResources(), awsCdkBootstrapStepInfo.getRunAsUser(), usedPorts);
+        awsCdkSynthStepInfo.getResources(), awsCdkSynthStepInfo.getRunAsUser(), usedPorts);
 
     ImageDetails imageDetails = null;
 
-    if (ParameterField.isNotNull(awsCdkBootstrapStepInfo.getConnectorRef())
-        || isNotEmpty(awsCdkBootstrapStepInfo.getConnectorRef().getValue())) {
-      imageDetails = PluginInfoProviderHelper.getImageDetails(awsCdkBootstrapStepInfo.getConnectorRef(),
-          awsCdkBootstrapStepInfo.getImage(), awsCdkBootstrapStepInfo.getImagePullPolicy());
+    if (ParameterField.isNotNull(awsCdkSynthStepInfo.getConnectorRef())
+        || isNotEmpty(awsCdkSynthStepInfo.getConnectorRef().getValue())) {
+      imageDetails = PluginInfoProviderHelper.getImageDetails(awsCdkSynthStepInfo.getConnectorRef(),
+          awsCdkSynthStepInfo.getImage(), awsCdkSynthStepInfo.getImagePullPolicy());
     }
 
     pluginDetailsBuilder.setImageDetails(imageDetails);
 
-    pluginDetailsBuilder.putAllEnvVariables(getEnvironmentVariables(awsCdkBootstrapStepInfo));
+    pluginDetailsBuilder.putAllEnvVariables(getEnvironmentVariables(awsCdkSynthStepInfo));
 
     PluginCreationResponse response =
         PluginCreationResponse.newBuilder().setPluginDetails(pluginDetailsBuilder.build()).build();
@@ -88,22 +89,26 @@ public class AwsCdkBootstrapPluginInfoProvider implements CDPluginInfoProvider {
 
   @Override
   public boolean isSupported(String stepType) {
-    return stepType.equals(StepSpecTypeConstants.AWS_CDK_BOOTSTRAP);
+    return stepType.equals(StepSpecTypeConstants.AWS_CDK_SYNTH);
   }
 
-  private Map<String, String> getEnvironmentVariables(AwsCdkBootstrapStepInfo awsCdkBootstrapStepInfo) {
-    ParameterField<Map<String, String>> envVariables = awsCdkBootstrapStepInfo.getEnvVariables();
+  private Map<String, String> getEnvironmentVariables(AwsCdkSynthStepInfo awsCdkSynthStepInfo) {
+    ParameterField<Map<String, String>> envVariables = awsCdkSynthStepInfo.getEnvVariables();
 
     HashMap<String, String> environmentVariablesMap = new HashMap<>();
 
-    environmentVariablesMap.put(PLUGIN_AWS_CDK_APP_PATH, getParameterFieldValue(awsCdkBootstrapStepInfo.getAppPath()));
-    List<String> commandOptions = getParameterFieldValue(awsCdkBootstrapStepInfo.getCommandOptions());
+    environmentVariablesMap.put(PLUGIN_AWS_CDK_APP_PATH, getParameterFieldValue(awsCdkSynthStepInfo.getAppPath()));
+    List<String> commandOptions = getParameterFieldValue(awsCdkSynthStepInfo.getCommandOptions());
+    List<String> stackNames = getParameterFieldValue(awsCdkSynthStepInfo.getStackNames());
     if (isNotEmpty(commandOptions)) {
       environmentVariablesMap.put(PLUGIN_AWS_CDK_COMMAND_OPTIONS, String.join(" ", commandOptions));
     }
-    Boolean exportTemplate = getParameterFieldValue(awsCdkBootstrapStepInfo.getExportTemplate());
+    Boolean exportTemplate = getParameterFieldValue(awsCdkSynthStepInfo.getExportTemplate());
     if (exportTemplate != null && exportTemplate) {
-      environmentVariablesMap.put(PLUGIN_AWS_CDK_EXPORT_BOOTSTRAP_TEMPLATE, exportTemplate.toString());
+      environmentVariablesMap.put(PLUGIN_AWS_CDK_EXPORT_SYNTH_TEMPLATE, exportTemplate.toString());
+    }
+    if (isNotEmpty(getParameterFieldValue(awsCdkSynthStepInfo.getStackNames()))) {
+      environmentVariablesMap.put(PLUGIN_AWS_CDK_STACK_NAMES, String.join(" ", stackNames));
     }
 
     if (envVariables != null && envVariables.getValue() != null) {

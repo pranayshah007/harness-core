@@ -31,29 +31,27 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeName(StepSpecTypeConstants.AWS_CDK_BOOTSTRAP)
-@TypeAlias("awsCdkBootstrapStepNode")
-@RecasterAlias("io.harness.cdng.provision.awscdk.AwsCdkBootstrapStepNode")
-public class AwsCdkBootstrapStepNode extends CdAbstractStepNode {
-  @JsonProperty("type")
-  @NotNull
-  AwsCdkBootstrapStepNode.StepType type = AwsCdkBootstrapStepNode.StepType.AwsCdkBootstrap;
+@JsonTypeName(StepSpecTypeConstants.AWS_CDK_SYNTH)
+@TypeAlias("awsCdkSynthStepNode")
+@RecasterAlias("io.harness.cdng.provision.awscdk.AwsCdkSynthStepNode")
+public class AwsCdkSynthStepNode extends CdAbstractStepNode {
+  @JsonProperty("type") @NotNull AwsCdkSynthStepNode.StepType type = AwsCdkSynthStepNode.StepType.AwsCdkSynth;
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-  AwsCdkBootstrapStepInfo awsCdkBootstrapStepInfo;
+  AwsCdkSynthStepInfo awsCdkSynthStepInfo;
 
   @Override
   public String getType() {
-    return StepSpecTypeConstants.AWS_CDK_BOOTSTRAP;
+    return StepSpecTypeConstants.AWS_CDK_SYNTH;
   }
 
   @Override
   public StepSpecType getStepSpecType() {
-    return awsCdkBootstrapStepInfo;
+    return awsCdkSynthStepInfo;
   }
 
   enum StepType {
-    AwsCdkBootstrap(StepSpecTypeConstants.AWS_CDK_BOOTSTRAP);
+    AwsCdkSynth(StepSpecTypeConstants.AWS_CDK_SYNTH);
     @Getter String name;
     StepType(String name) {
       this.name = name;

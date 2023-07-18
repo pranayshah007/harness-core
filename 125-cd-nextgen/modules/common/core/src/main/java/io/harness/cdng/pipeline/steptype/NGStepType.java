@@ -330,7 +330,10 @@ public enum NGStepType {
       StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PACKAGE_V2),
   @JsonProperty(StepSpecTypeConstants.AWS_CDK_BOOTSTRAP)
   AWS_CDK_BOOTSTRAP("AWS CDK Bootstrap", Arrays.asList(ServiceDefinitionType.values()),
-      "Infrastructure Provisioners/AWS CDK Bootstrap", StepSpecTypeConstants.AWS_CDK_BOOTSTRAP);
+      "Infrastructure Provisioners/AWS CDK Bootstrap", StepSpecTypeConstants.AWS_CDK_BOOTSTRAP),
+  @JsonProperty(StepSpecTypeConstants.AWS_CDK_SYNTH)
+  AWS_CDK_SYNTH("AWS CDK Synth", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/AWS CDK Synth", StepSpecTypeConstants.AWS_CDK_SYNTH);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;
