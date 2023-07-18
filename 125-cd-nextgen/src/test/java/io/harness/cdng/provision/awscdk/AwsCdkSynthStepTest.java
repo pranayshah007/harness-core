@@ -148,7 +148,7 @@ public class AwsCdkSynthStepTest extends CategoryTest {
         StepStatusTaskResponseData.builder()
             .stepStatus(StepStatus.builder()
                             .stepExecutionStatus(StepExecutionStatus.SUCCESS)
-                            .output(StepMapOutput.builder().output("test", "dGVzdHZhbHVlCg--").build())
+                            .output(StepMapOutput.builder().output("test", "dGVzdHZhbHVlZQ--").build())
                             .build())
             .build();
     Map<String, ResponseData> responseDataMap = new HashMap<>();
@@ -165,7 +165,7 @@ public class AwsCdkSynthStepTest extends CategoryTest {
         ((StepMapOutput) ((StepStatusTaskResponseData) captor.getValue().get("test")).getStepStatus().getOutput())
             .getMap()
             .get("test"))
-        .isEqualTo("testvalue");
+        .isEqualTo("testvaluee");
   }
 
   private Ambiance getAmbiance() {
