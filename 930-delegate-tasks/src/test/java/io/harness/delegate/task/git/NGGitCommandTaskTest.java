@@ -88,7 +88,7 @@ public class NGGitCommandTaskTest extends CategoryTest {
         GitCommandExecutionResponse.builder().gitCommandStatus(GitCommandStatus.SUCCESS).build();
     doReturn(gitCommandExecutionResponse)
         .when(gitCommandTaskHandler)
-        .handleValidateTask(any(GitConfigDTO.class), any(), anyString(), any(), eq(false));
+        .handleValidateTask(any(GitConfigDTO.class), any(), anyString(), any());
     TaskParameters params = GitCommandParams.builder()
                                 .gitConfig(GitConfigDTO.builder().build())
                                 .gitCommandType(GitCommandType.VALIDATE)

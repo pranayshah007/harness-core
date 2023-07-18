@@ -21,7 +21,6 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.GitConnectionNGCapability;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
-import io.harness.product.ci.scm.proto.SCMGrpc;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.service.ScmServiceClient;
@@ -68,10 +67,9 @@ public class GitConnectionNGCapabilityChecker implements CapabilityCheck {
     String accountId = delegateConfiguration.getAccountId();
     try {
       if (capability.isGithubAppAuthentication()) {
-        /*     scmDelegateClient.processScmRequest(
-                     c -> scmServiceClient.listBranches(githubConnectorDTO, SCMGrpc.newBlockingStub(c)));
+        scmDelegateClient.processScmRequest(
+            c -> scmServiceClient.listBranches(githubConnectorDTO, SCMGrpc.newBlockingStub(c)));
 
-         */
       } else {
         gitService.validateOrThrow(gitConfig, accountId, sshSessionConfig);
       }

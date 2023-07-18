@@ -59,7 +59,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ScmFetchFilesHelperNG {
   @Inject private ScmDelegateClient scmDelegateClient;
-  @Inject private ScmServiceClient scmServxiceClient;
+  @Inject private ScmServiceClient scmServiceClient;
   private static final List<String> ROOT_DIRECTORY_PATHS = Arrays.asList(".", "/");
   private static final Pattern regexStartSlash = Pattern.compile("^/+");
 
