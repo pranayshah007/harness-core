@@ -8,6 +8,8 @@
 package io.harness.steps.jira.update;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.jira.JiraConstantsNG.ISSUE_TYPE_NAME;
+import static io.harness.jira.JiraConstantsNG.STATUS_NAME;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
@@ -17,7 +19,6 @@ import io.harness.delegate.task.jira.JiraTaskNGParameters.JiraTaskNGParametersBu
 import io.harness.delegate.task.jira.JiraTaskNGResponse;
 import io.harness.engine.executions.step.StepExecutionEntityService;
 import io.harness.execution.step.jira.update.JiraUpdateStepExecutionDetails;
-import io.harness.execution.step.jira.update.JiraUpdateStepExecutionDetails.JiraUpdateStepExecutionDetailsBuilder;
 import io.harness.jira.JiraActionNG;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -106,12 +107,11 @@ public class JiraUpdateStep extends PipelineTaskExecutable<JiraTaskNGResponse> {
     try {
       JiraTaskNGResponse taskResponse = responseSupplier.get();
       if (taskResponse != null && taskResponse.getIssue() != null) {
-        JiraUpdateStepExecutionDetailsBuilder builder =
-            JiraUpdateStepExecutionDetails.builder().url(taskResponse.getIssue().getUrl());
-        if (taskResponse.getIssue().getFields().containsKey("Status")) {
-          builder.ticketStatus(taskResponse.getIssue().getFields().get("Status").toString());
-        }
-        return builder.build();
+        return JiraUpdateStepExecutionDetails.builder()
+            .url(taskResponse.getIssue().getUrl())
+            .issueType(taskResponse.getIssue().getFields().getOrDefault(ISSUE_TYPE_NAME, "").toString())
+            .ticketStatus(taskResponse.getIssue().getFields().getOrDefault(STATUS_NAME, "").toString())
+            .build();
       }
     } catch (Exception ex) {
       log.error(

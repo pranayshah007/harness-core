@@ -21,6 +21,7 @@ import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data
@@ -29,13 +30,15 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @OwnedBy(CDP)
 @JsonTypeName("HarnessApproval")
+@FieldNameConstants(innerTypeName = "HarnessApprovalStepExecutionDetailsKeys")
 @TypeAlias("HarnessApprovalStepExecutionDetails")
 public class HarnessApprovalStepExecutionDetails implements StepExecutionDetails {
-  List<HarnessApprovalActivity> approvalActivities;
+  List<HarnessApprovalExecutionActivity> approvalActivities;
 
   @Data
   @Builder
-  public static class HarnessApprovalActivity {
+  @FieldNameConstants(innerTypeName = "HarnessApprovalExecutionActivityKeys")
+  public static class HarnessApprovalExecutionActivity {
     EmbeddedUser user;
     String approvalAction;
     Map<String, String> approverInputs;

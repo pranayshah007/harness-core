@@ -8,6 +8,8 @@
 package io.harness.steps.jira.create;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.jira.JiraConstantsNG.ISSUE_TYPE_NAME;
+import static io.harness.jira.JiraConstantsNG.STATUS_NAME;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
@@ -106,12 +108,11 @@ public class JiraCreateStep extends PipelineTaskExecutable<JiraTaskNGResponse> {
     try {
       JiraTaskNGResponse taskResponse = responseSupplier.get();
       if (taskResponse != null && taskResponse.getIssue() != null) {
-        JiraCreateStepExecutionDetailsBuilder builder =
-            JiraCreateStepExecutionDetails.builder().url(taskResponse.getIssue().getUrl());
-        if (taskResponse.getIssue().getFields().containsKey("Status")) {
-          builder.ticketStatus(taskResponse.getIssue().getFields().get("Status").toString());
-        }
-        return builder.build();
+        return JiraCreateStepExecutionDetails.builder()
+            .url(taskResponse.getIssue().getUrl())
+            .issueType(taskResponse.getIssue().getFields().getOrDefault(ISSUE_TYPE_NAME, "").toString())
+            .ticketStatus(taskResponse.getIssue().getFields().getOrDefault(STATUS_NAME, "").toString())
+            .build();
       }
     } catch (Exception ex) {
       log.error(
