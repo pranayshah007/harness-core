@@ -656,9 +656,8 @@ public class NexusThreeClientImpl {
     Map<String, List<ArtifactFileMetadataInternal>> nameToArtifactDownloadUrls = new HashMap<>();
     NexusThreeRestClient nexusThreeRestClient = getNexusThreeClient(nexusConfig);
     Response<Nexus3ComponentResponse> response;
-    String continuationToken;
+    String continuationToken = null;
     do {
-      continuationToken = null;
       if (nexusConfig.isHasCredentials()) {
         response = nexusThreeRestClient
                        .getGroupVersions(
