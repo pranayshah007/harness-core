@@ -41,11 +41,11 @@ public class NGGitOpsTaskParams implements TaskParameters, ExecutionCapabilityDe
   private GitApiTaskParams gitApiTaskParams;
   private String prTitle;
   private boolean isCloseLogStream;
-
+  private boolean isRevertPR;
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> capabilities = new ArrayList<>();
-    if (GitOpsTaskType.UPDATE_RELEASE_REPO.equals(gitOpsTaskType)) {
+    if (GitOpsTaskType.UPDATE_RELEASE_REPO.equals(gitOpsTaskType) || GitOpsTaskType.REVERT_PR.equals(gitOpsTaskType)) {
       GitStoreDelegateConfig gitStoreDelegateConfig = gitFetchFilesConfig.getGitStoreDelegateConfig();
       capabilities.addAll(GitCapabilityHelper.fetchRequiredExecutionCapabilities(
           gitStoreDelegateConfig, gitStoreDelegateConfig.getEncryptedDataDetails()));

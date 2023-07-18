@@ -797,11 +797,20 @@ public class NGTriggerElementMapper {
 
   public Optional<TriggerEventHistory> fetchLatestExecutionForTrigger(NGTriggerEntity ngTriggerEntity) {
     List<TriggerEventHistory> triggerEventHistoryList =
-        triggerEventHistoryRepository
-            .findFirst1ByAccountIdAndOrgIdentifierAndProjectIdentifierAndTargetIdentifierAndTriggerIdentifier(
-                ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
-                ngTriggerEntity.getProjectIdentifier(), ngTriggerEntity.getTargetIdentifier(),
-                ngTriggerEntity.getIdentifier(), Sort.by(TriggerEventHistoryKeys.createdAt).descending());
+        triggerEventHistoryRepository.findAllWithSort(Criteria.where(TriggerEventHistoryKeys.accountId)
+                                                          .is(ngTriggerEntity.getAccountId())
+                                                          .and(TriggerEventHistoryKeys.orgIdentifier)
+                                                          .is(ngTriggerEntity.getOrgIdentifier())
+                                                          .and(TriggerEventHistoryKeys.projectIdentifier)
+                                                          .is(ngTriggerEntity.getProjectIdentifier())
+                                                          .and(TriggerEventHistoryKeys.targetIdentifier)
+                                                          .is(ngTriggerEntity.getTargetIdentifier())
+                                                          .and(TriggerEventHistoryKeys.triggerIdentifier)
+                                                          .is(ngTriggerEntity.getIdentifier())
+                                                          .and(TriggerEventHistoryKeys.executionNotAttempted)
+                                                          .ne(true),
+            Sort.by(TriggerEventHistoryKeys.createdAt).descending());
+
     if (!isEmpty(triggerEventHistoryList)) {
       return Optional.of(triggerEventHistoryList.get(0));
     }

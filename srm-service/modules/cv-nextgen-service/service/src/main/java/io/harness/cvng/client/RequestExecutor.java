@@ -7,6 +7,7 @@
 
 package io.harness.cvng.client;
 
+import io.harness.datacollection.utils.DataCollectionUtils;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ResponseMessage;
 import io.harness.rest.RestResponse;
@@ -34,7 +35,7 @@ public class RequestExecutor {
         return response.body();
       } else {
         int code = response.code();
-        String errorBody = response.errorBody().string();
+        String errorBody = DataCollectionUtils.getErrorBodyString(response);
         tryParsingErrorFromRestResponse(code, errorBody);
         throw new ServiceCallException(response.code(), response.message(), errorBody);
       }

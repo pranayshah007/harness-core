@@ -24,6 +24,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.execution.service.StageExecutionInstanceInfoService;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.instance.outcome.DeploymentInfoOutcome;
@@ -65,6 +66,8 @@ public class K8sBlueGreenStepTest extends AbstractK8sStepExecutorTestBase {
   @InjectMocks private K8sBlueGreenStep k8sBlueGreenStep;
   @Mock private InstanceInfoService instanceInfoService;
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
+
+  @Mock StageExecutionInstanceInfoService stageExecutionInstanceInfoService;
 
   @Test
   @Owner(developers = ABOSII)
@@ -137,7 +140,7 @@ public class K8sBlueGreenStepTest extends AbstractK8sStepExecutorTestBase {
                                                .build();
     doReturn(stepOutcome).when(instanceInfoService).saveServerInstancesIntoSweepingOutput(any(), any());
     when(cdStepHelper.getReleaseName(any(), any())).thenReturn("releaseName");
-    StepResponse response = k8sBlueGreenStep.finalizeExecutionWithSecurityContext(
+    StepResponse response = k8sBlueGreenStep.finalizeExecutionWithSecurityContextAndNodeInfo(
         ambiance, stepElementParameters, K8sExecutionPassThroughData.builder().build(), () -> k8sDeployResponse);
     assertThat(response.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(response.getStepOutcomes()).hasSize(2);
@@ -171,7 +174,7 @@ public class K8sBlueGreenStepTest extends AbstractK8sStepExecutorTestBase {
 
     doReturn(stepResponse).when(k8sStepHelper).handleTaskException(ambiance, executionPassThroughData, thrownException);
 
-    StepResponse response = k8sBlueGreenStep.finalizeExecutionWithSecurityContext(
+    StepResponse response = k8sBlueGreenStep.finalizeExecutionWithSecurityContextAndNodeInfo(
         ambiance, stepElementParameters, executionPassThroughData, () -> { throw thrownException; });
 
     assertThat(response).isEqualTo(stepResponse);
@@ -194,7 +197,7 @@ public class K8sBlueGreenStepTest extends AbstractK8sStepExecutorTestBase {
             .commandExecutionStatus(SUCCESS)
             .build();
 
-    StepResponse response = k8sBlueGreenStep.finalizeExecutionWithSecurityContext(
+    StepResponse response = k8sBlueGreenStep.finalizeExecutionWithSecurityContextAndNodeInfo(
         ambiance, stepElementParameters, K8sExecutionPassThroughData.builder().build(), () -> k8sDeployResponse);
     assertThat(response.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(response.getStepOutcomes()).hasSize(1);

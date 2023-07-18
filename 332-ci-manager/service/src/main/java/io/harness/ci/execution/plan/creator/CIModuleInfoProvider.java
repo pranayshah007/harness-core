@@ -85,6 +85,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
@@ -287,12 +288,14 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
           repoName = getGitRepo(codebaseSweepingOutput.getRepoUrl());
         }
 
-        if (author == null) {
+        if (author == null && isNotEmpty(codebaseSweepingOutput.getGitUserId())
+            && isNotEmpty(codebaseSweepingOutput.getGitUser())
+            && isNotEmpty(codebaseSweepingOutput.getGitUserAvatar())) {
           author = CIBuildAuthor.builder()
                        .id(codebaseSweepingOutput.getGitUserId())
                        .name(codebaseSweepingOutput.getGitUser())
                        .avatar(codebaseSweepingOutput.getGitUserAvatar())
-                       .email(codebaseSweepingOutput.getGitUserEmail())
+                       .email(Optional.ofNullable(codebaseSweepingOutput.getGitUserEmail()).orElse(""))
                        .build();
         }
       }

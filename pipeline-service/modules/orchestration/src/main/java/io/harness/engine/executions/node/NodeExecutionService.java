@@ -350,4 +350,6 @@ public interface NodeExecutionService {
 
   NodeExecution fetchNodeExecutionForPlanNodeAndRetriedId(
       String planExecutionId, String planNode, boolean oldRetry, List<String> retriedId);
+
+  List<NodeExecution> fetchAllWithPlanExecutionId(String planExecutionId, Set<String> fieldsToBeIncluded);
 }

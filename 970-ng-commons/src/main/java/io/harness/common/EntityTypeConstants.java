@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 public interface EntityTypeConstants {
   String GITOPS_CREATE_PR = "CreatePR";
   String GITOPS_MERGE_PR = "MergePR";
+  String GITOPS_REVERT_PR = "RevertPR";
   String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
   String GITOPS_FETCH_LINKED_APPS = "GitOpsFetchLinkedApps";
   String GITOPS_SYNC = "GitOpsSync";

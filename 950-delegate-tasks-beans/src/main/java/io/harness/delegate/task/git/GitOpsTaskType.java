@@ -7,4 +7,4 @@
 
 package io.harness.delegate.task.git;
 
-public enum GitOpsTaskType { MERGE_PR, UPDATE_RELEASE_REPO }
+public enum GitOpsTaskType { MERGE_PR, UPDATE_RELEASE_REPO, REVERT_PR }

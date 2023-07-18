@@ -28,7 +28,7 @@ import lombok.experimental.FieldDefaults;
 @ApiModel("ExpressionEvaluation")
 @Schema(name = "ExpressionEvaluation", description = "This contains the Individual Evaluated Expression detail.")
 public class ExpressionEvaluationDetail {
-  String resolvedValue;
+  Object resolvedValue;
   String fqn;
   String originalExpression;
   String error;

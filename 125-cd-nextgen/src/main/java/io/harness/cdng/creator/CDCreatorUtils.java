@@ -70,6 +70,6 @@ public class CDCreatorUtils {
         StepSpecTypeConstants.K8S_BLUE_GREEN_STAGE_SCALE_DOWN,
         StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2,
         StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2, StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2,
-        StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PACKAGE_V2);
+        StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PACKAGE_V2, StepSpecTypeConstants.GITOPS_REVERT_PR);
   }
 }

@@ -10,7 +10,6 @@ package io.harness.service.impl;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.DelegateType.DOCKER;
-import static io.harness.delegate.utils.DelegateServiceConstants.HEARTBEAT_EXPIRY_TIME_FIVE_MINS;
 import static io.harness.filter.FilterType.DELEGATEPROFILE;
 import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.service.impl.DelegateConnectivityStatus.GROUP_STATUS_CONNECTED;
@@ -446,8 +445,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
     List<DelegateGroupListing.DelegateInner> delegateInstanceDetails =
         groupDelegates.stream()
             .map(delegate -> {
-              boolean isDelegateConnected =
-                  delegate.getLastHeartBeat() > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME_FIVE_MINS.toMillis();
+              boolean isDelegateConnected = delegateDao.isDelegateHeartBeatUpToDate(delegate);
               countOfDelegatesConnected.addAndGet(isDelegateConnected ? 1 : 0);
 
               String delegateTokenName = delegate.getDelegateTokenName();
@@ -617,8 +615,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
     List<DelegateListResponse.DelegateReplica> delegateReplicas =
         groupDelegates.stream()
             .map(delegate -> {
-              boolean isDelegateConnected =
-                  delegate.getLastHeartBeat() > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME_FIVE_MINS.toMillis();
+              boolean isDelegateConnected = delegateDao.isDelegateHeartBeatUpToDate(delegate);
               return DelegateListResponse.DelegateReplica.builder()
                   .uuid(delegate.getUuid())
                   .lastHeartbeat(delegate.getLastHeartBeat())
@@ -715,13 +712,11 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
       List<Delegate> delegateList, DelegateFilterPropertiesDTO filterProperties) {
     if (filterProperties.getStatus().equals(DelegateInstanceConnectivityStatus.DISCONNECTED)) {
       return delegateList.stream()
-          .filter(delegate
-              -> delegate.getLastHeartBeat() <= System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME_FIVE_MINS.toMillis())
+          .filter(delegate -> !delegateDao.isDelegateHeartBeatUpToDate(delegate))
           .collect(toList());
     } else if (filterProperties.getStatus().equals(DelegateInstanceConnectivityStatus.CONNECTED)) {
       return delegateList.stream()
-          .filter(delegate
-              -> delegate.getLastHeartBeat() > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME_FIVE_MINS.toMillis())
+          .filter(delegate -> delegateDao.isDelegateHeartBeatUpToDate(delegate))
           .collect(toList());
     }
     return delegateList;

@@ -20,6 +20,7 @@ import static io.harness.rule.OwnerRule.VITALIE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
@@ -56,6 +57,7 @@ import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -441,6 +443,14 @@ public class SshCopyCommandHandlerTest extends CategoryTest {
                 copyCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext))
         .isInstanceOf(HintException.class)
         .hasMessage(COPY_ARTIFACT_NOT_SUPPORTED_FOR_AZURE_UNIVERSAL_PACKAGE_ARTIFACT_HINT);
+
+    ArgumentCaptor<LogLevel> logLevelArgCaptor = ArgumentCaptor.forClass(LogLevel.class);
+    ArgumentCaptor<CommandExecutionStatus> commandExecutionStatusArgCaptor =
+        ArgumentCaptor.forClass(CommandExecutionStatus.class);
+    verify(logCallback)
+        .saveExecutionLog(anyString(), logLevelArgCaptor.capture(), commandExecutionStatusArgCaptor.capture());
+    assertThat(logLevelArgCaptor.getValue()).isEqualTo(LogLevel.ERROR);
+    assertThat(commandExecutionStatusArgCaptor.getValue()).isEqualTo(CommandExecutionStatus.FAILURE);
   }
 
   @Test

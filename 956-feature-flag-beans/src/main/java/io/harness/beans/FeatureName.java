@@ -77,6 +77,8 @@ public enum FeatureName {
   CCM_SUNSETTING_CG("Sunsetting CCM CG Features", HarnessTeam.CE),
   CCM_SUSTAINABILITY("Sustainability Feature in CCM Module", HarnessTeam.CE),
   CCM_WORKLOAD_LABELS_OPTIMISATION("Use workload labels from instance data instead of k8sworkload", HarnessTeam.CE),
+  CCM_COST_CATEGORIES_DASHBOARD(
+      "Cost Categories will reflect in bigQuery and eventually in Looker Dashboards", HarnessTeam.CE),
   CDB_MFE_ENABLED("Feature flag is needed to test/control the microfrontend architecture for CDB UI", HarnessTeam.CDB),
   CDC_SERVICE_DASHBOARD_REVAMP_NG("Service Dashboard Revamp is behind this FF", HarnessTeam.CDC),
   CDP_AWS_SAM("FF for enabling AWS SAM deployments", HarnessTeam.CDP),
@@ -211,6 +213,8 @@ public enum FeatureName {
   CET_ENABLED("Enable Continuous Error Tracking module in UI", HarnessTeam.CET),
   CET_EVENTS_CHART("Enable events chart in UI of Continuous Error Tracking module", HarnessTeam.CET),
   CET_CD_INTEGRATION("Enable Continuous Error Tracking events list in CD pipeline execution tab", HarnessTeam.CET),
+  CET_PLATFORM_MONITORED_SERVICE(
+      "Enable Continuous Error Tracking agent column and settings in platform Monitored Services", HarnessTeam.CET),
   CE_GCP_CUSTOM_PRICING("Use custom pricing data for k8s gcp from billing export", HarnessTeam.CE),
   CE_HARNESS_ENTITY_MAPPING("Internal FF to decide if harness entities mapping is needed", HarnessTeam.CE),
   CE_HARNESS_INSTANCE_QUERY("Internal FF to decide which table to use for querying mapping data", HarnessTeam.CE),
@@ -233,12 +237,9 @@ public enum FeatureName {
   CG_SECRET_MANAGER_DELEGATE_SELECTORS,
   CHANGE_INSTANCE_QUERY_OPERATOR_TO_NE("Change instance service query operator from $exists to $ne", HarnessTeam.SPG),
   CHAOS_DASHBOARD_ENABLED("Enables chaos dashboards in CHAOS module", HarnessTeam.CHAOS),
-  CHAOS_GAMEDAY_ENABLED("Enable gameday feature in CHAOS", HarnessTeam.CHAOS),
   CHAOS_IMAGE_REGISTRY_DEV("Enable image registry configuration in CHAOS", HarnessTeam.CHAOS),
   CHAOS_LINUX_ENABLED("Enable linux experiment and infrastructure integration in CHAOS", HarnessTeam.CHAOS),
   CHAOS_PROBE_ENABLED("Enable new probe ui and flow in CHAOS", HarnessTeam.CHAOS),
-  CHAOS_SRM_EVENT(
-      "Enables chaos events to be displayed as change source events in SRM monitored services.", HarnessTeam.CHAOS),
   CIE_ENABLED_RBAC("Enable rbac validationa at CI level", HarnessTeam.CI),
   CIE_HOSTED_VMS(
       "Enables hosted VMs in favor of hosted K8s for CIE. This flag will be deprecated once all the feature work has been checked in",
@@ -406,6 +407,7 @@ public enum FeatureName {
   GITHUB_WEBHOOK_AUTHENTICATION,
   GITOPS_IAM("Support for connecting via IAM role in GitOps Clusters", HarnessTeam.GITOPS),
   GITOPS_ORG_LEVEL("Support GitOps at Org level", HarnessTeam.GITOPS),
+  GITOPS_REVERT_PR("Support for Revert PR step in GitOps pipeline flow", HarnessTeam.GITOPS),
   GIT_HOST_CONNECTIVITY,
   GLOBAL_COMMAND_LIBRARY,
   GLOBAL_DISABLE_HEALTH_CHECK(Scope.GLOBAL),
@@ -452,7 +454,6 @@ public enum FeatureName {
   MOVE_AWS_SSH_INSTANCE_SYNC_TO_PERPETUAL_TASK,
   MOVE_CONTAINER_INSTANCE_SYNC_TO_PERPETUAL_TASK,
   MOVE_PCF_INSTANCE_SYNC_TO_PERPETUAL_TASK,
-  MULTI_SERVICE_INFRA("Enable multiple service/environment support in NG", HarnessTeam.CDP),
   NEW_DEPLOYMENT_FREEZE,
   NEW_EXECUTION_LIST_VIEW(
       "Enables the new UX for Executions list view for Pipelines and Projects", HarnessTeam.PIPELINE),
@@ -703,6 +704,7 @@ public enum FeatureName {
       "This is used make prometheus Health source run with promQL by clause", HarnessTeam.CV),
   SRM_ENABLE_BASELINE_BASED_VERIFICATION("This is used to enable baseline based verification.", HarnessTeam.CV),
   SRM_ENABLE_GRAFANA_LOKI_LOGS("This is used to enable Grafana Loki logs health source.", HarnessTeam.CV),
+  SRM_ENABLE_AZURE_LOGS("Will enable Azure logs health source.", HarnessTeam.CV),
   SRM_ENABLE_JIRA_INTEGRATION("Enable Jira integration in CVNG Verify step UI", HarnessTeam.CV),
   SRM_ENABLE_REQUEST_SLO("Control Request Based SLO feature on UI", HarnessTeam.CV),
   SRM_ENABLE_SIMPLE_VERIFICATION("This is used to enable simple verification.", HarnessTeam.CV),

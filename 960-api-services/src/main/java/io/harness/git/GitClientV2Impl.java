@@ -643,8 +643,15 @@ public class GitClientV2Impl implements GitClientV2 {
   }
 
   protected CommitResult revert(RevertRequest request) {
+    String localCommitId = request.getCommitId();
+
+    // Setting this null so the ensureRepoLocallyClonedAndUpdated method checkouts the branch instead of a commit which
+    // causes issues while reverting
+    request.setCommitId(null);
     ensureRepoLocallyClonedAndUpdated(request);
 
+    // setting the commitId back
+    request.setCommitId(localCommitId);
     try (Git git = openGit(new File(gitClientHelper.getRepoDirectory(request)), request.getDisableUserGitConfig())) {
       ObjectId commitId = git.getRepository().resolve(request.getCommitId());
       if (commitId == null) {
@@ -656,7 +663,7 @@ public class GitClientV2Impl implements GitClientV2 {
       return CommitResult.builder()
           .commitId(revertCommit.getName())
           .commitTime(revertCommit.getCommitTime())
-          .commitMessage("Harness revert of commit: " + commitToRevert.getId())
+          .commitMessage("Harness revert of " + commitToRevert.getId())
           .build();
     } catch (IOException | GitAPIException ex) {
       log.error(gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + EXCEPTION_STRING, ex);
@@ -943,7 +950,6 @@ public class GitClientV2Impl implements GitClientV2 {
                                              .setForce(forcePush)
                                              .setRefSpecs(new RefSpec(pushRequest.getBranch()))
                                              .call();
-
       RemoteRefUpdate remoteRefUpdate = pushResults.iterator().next().getRemoteUpdates().iterator().next();
       PushResultGit.RefUpdate refUpdate =
           PushResultGit.RefUpdate.builder()

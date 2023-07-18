@@ -197,6 +197,10 @@ public class AccessControlApplication extends Application<AccessControlConfigura
     });
     Injector injector = Guice.createInjector(modules);
     injector.getInstance(HPersistence.class);
+
+    AccessControlManagementJob accessControlManagementJob = injector.getInstance(AccessControlManagementJob.class);
+    accessControlManagementJob.run();
+
     registerCorsFilter(appConfig, environment);
     registerResources(environment, injector);
     registerJerseyProviders(environment);
@@ -217,8 +221,6 @@ public class AccessControlApplication extends Application<AccessControlConfigura
     }
 
     initializeEnforcementFramework(injector);
-    AccessControlManagementJob accessControlManagementJob = injector.getInstance(AccessControlManagementJob.class);
-    accessControlManagementJob.run();
 
     if (appConfig.getAggregatorConfiguration().isEnabled()) {
       environment.lifecycle().manage(injector.getInstance(AggregatorService.class));

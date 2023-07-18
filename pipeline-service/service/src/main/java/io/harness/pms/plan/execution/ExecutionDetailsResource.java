@@ -50,6 +50,7 @@ import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionFilterPropertiesDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionIdentifierSummaryDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionSummaryDTO;
+import io.harness.pms.plan.execution.service.ExpressionEvaluatorService;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.utils.PageUtils;
@@ -125,6 +126,7 @@ public class ExecutionDetailsResource {
   @Inject private final AccessControlClient accessControlClient;
   @Inject private final PmsGitSyncHelper pmsGitSyncHelper;
   @Inject private final ExecutionHelper executionHelper;
+  @Inject private final ExpressionEvaluatorService expressionEvaluatorService;
   @Inject private final PlanExecutionMetadataService planExecutionMetadataService;
 
   @POST
@@ -357,7 +359,7 @@ public class ExecutionDetailsResource {
     return ResponseDTO.newResponse(executionDetailDTO);
   }
 
-  @GET
+  @POST
   @Path("/{planExecutionId}/evaluateExpression")
   @ApiOperation(value = "Gets Execution Expression evaluated", nickname = "getExpressionEvaluated")
   @Operation(operationId = "getExpressionEvaluated", description = "Returns the Map of evaluated Expression",
@@ -382,8 +384,7 @@ public class ExecutionDetailsResource {
       @Parameter(description = "Plan Execution Id for which Expression have to be evaluated",
           required = true) @PathParam(NGCommonEntityConstants.PLAN_KEY) String planExecutionId,
       @RequestBody(required = true, description = "Pipeline YAML") @NotNull String yaml) {
-    return ResponseDTO.newResponse(
-        executionHelper.evaluateExpression(accountId, orgId, projectId, planExecutionId, yaml));
+    return ResponseDTO.newResponse(expressionEvaluatorService.evaluateExpression(planExecutionId, yaml));
   }
 
   @GET

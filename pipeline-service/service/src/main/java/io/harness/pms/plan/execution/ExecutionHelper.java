@@ -88,11 +88,8 @@ import io.harness.pms.plan.execution.beans.PipelineMetadataInternalDTO;
 import io.harness.pms.plan.execution.beans.ProcessStageExecutionInfoResult;
 import io.harness.pms.plan.execution.beans.StagesExecutionInfo;
 import io.harness.pms.plan.execution.beans.dto.ChildExecutionDetailDTO;
-import io.harness.pms.plan.execution.beans.dto.ExpressionEvaluationDetail;
-import io.harness.pms.plan.execution.beans.dto.ExpressionEvaluationDetailDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO;
 import io.harness.pms.plan.execution.helpers.InputSetMergeHelperV1;
-import io.harness.pms.plan.execution.mapper.ExpressionEvaluationDetailMapper;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.rbac.validator.PipelineRbacService;
@@ -769,12 +766,5 @@ public class ExecutionHelper {
       builder.putFeatureFlagToValueMap(
           featureName.name(), featureFlagService.isEnabled(accountIdentifier, featureName));
     }
-  }
-
-  public ExpressionEvaluationDetailDTO evaluateExpression(
-      String accountId, String orgId, String projectId, String planExecutionId, String yaml) {
-    Map<String, ExpressionEvaluationDetail> mapData = ExpressionEvaluationDetailMapper.toEvaluationDetailDto(yaml);
-
-    return ExpressionEvaluationDetailDTO.builder().mapExpression(mapData).compiledYaml(yaml).build();
   }
 }

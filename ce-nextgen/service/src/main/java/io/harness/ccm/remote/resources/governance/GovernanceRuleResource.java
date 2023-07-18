@@ -221,8 +221,8 @@ public class GovernanceRuleResource {
       ruleEnforcementDAO.updateCount(ruleEnforcementUpdate);
       RuleCloudProviderType ruleCloudProviderType = ruleEnforcement.getCloudProvider();
       accountId = ruleEnforcement.getAccountId();
-      if (ruleEnforcement.getCloudProvider() != RuleCloudProviderType.AWS) {
-        log.error("Support for non AWS cloud providers is not present atm. Skipping enqueuing in faktory");
+      if (ruleCloudProviderType != RuleCloudProviderType.AWS && ruleCloudProviderType != RuleCloudProviderType.AZURE) {
+        log.error("Support for non AWS/AZURE cloud providers is not present atm. Skipping enqueuing in faktory");
         // TO DO: Return simple response to dkron instead of empty for debugging purposes
         return ResponseDTO.newResponse();
       }
@@ -267,7 +267,7 @@ public class GovernanceRuleResource {
           faktoryQueueName = configuration.getGovernanceConfig().getAzureFaktoryQueueName();
         }
         List<RuleExecution> ruleExecutions = governanceRuleService.enqueue(accountId, ruleEnforcement, rulesList,
-            connectorInfoDTO.getConnectorConfig(), faktoryJobType, faktoryQueueName);
+            connectorInfoDTO.getConnectorConfig(), connectorInfoDTO.getIdentifier(), faktoryJobType, faktoryQueueName);
         enqueuedRuleExecutionIds.addAll(ruleExecutionService.save(ruleExecutions));
       }
     }
@@ -298,6 +298,9 @@ public class GovernanceRuleResource {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
     Rule rule = createRuleDTO.getRule();
+    if (rule.getCloudProvider() == null) {
+      throw new InvalidRequestException("cloudProvider is a required field.");
+    }
     if (!rule.getIsOOTB()) {
       rule.setAccountId(accountId);
     } else if (rule.getAccountId().equals(configuration.getGovernanceConfig().getOOTBAccount())) {
@@ -411,6 +414,7 @@ public class GovernanceRuleResource {
       governanceRuleService.validateAWSSchema(testSchema);
       governanceRuleService.custodianValidate(testSchema);
     }
+    rule.setForRecommendation(false);
     governanceRuleService.update(rule, accountId);
     Rule updatedRule = governanceRuleService.fetchById(accountId, rule.getUuid(), true);
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_UPDATED, null, accountId, properties,
@@ -632,7 +636,7 @@ public class GovernanceRuleResource {
     for (String targetAccount : governanceAdhocEnqueueDTO.getTargetAccountDetails().keySet()) {
       RecommendationAdhocDTO recommendationAdhocDTO =
           governanceAdhocEnqueueDTO.getTargetAccountDetails().get(targetAccount);
-      rbacHelper.checkAccountExecutePermission(accountId, null, null, recommendationAdhocDTO.getIdentifier());
+      rbacHelper.checkAccountExecutePermission(accountId, null, null, recommendationAdhocDTO.getCloudConnectorId());
       for (String targetRegion : governanceAdhocEnqueueDTO.getTargetRegions()) {
         GovernanceJobEnqueueDTO governanceJobEnqueueDTO =
             GovernanceJobEnqueueDTO.builder()

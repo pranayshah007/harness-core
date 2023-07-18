@@ -9,8 +9,7 @@ package io.harness.delegate.cdng.execution;
 
 import io.harness.annotation.RecasterAlias;
 
-import lombok.Data;
-
-@Data
 @RecasterAlias("io.harness.delegate.cdng.execution.StepInstanceInfo")
-public class StepInstanceInfo {}
+public interface StepInstanceInfo {
+  String getInstanceName();
+}

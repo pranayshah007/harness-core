@@ -20,7 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
-import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
@@ -72,7 +72,6 @@ import io.harness.delegate.task.serverless.response.ServerlessS3FetchResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.ng.core.NGAccess;
@@ -87,7 +86,6 @@ import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
@@ -129,7 +127,7 @@ import org.jetbrains.annotations.NotNull;
 @OwnedBy(HarnessTeam.CDP)
 @Singleton
 public class ServerlessStepCommonHelper extends ServerlessStepUtils {
-  @Inject private EngineExpressionService engineExpressionService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private ServerlessEntityHelper serverlessEntityHelper;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private StepHelper stepHelper;
@@ -145,8 +143,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
     ManifestsOutcome manifestsOutcome = resolveServerlessManifestsOutcome(ambiance);
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
-    ExpressionEvaluatorUtils.updateExpressions(
-        manifestsOutcome, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+    cdExpressionResolver.updateExpressions(ambiance, manifestsOutcome);
     validateManifestsOutcome(ambiance, manifestsOutcome);
     ManifestOutcome serverlessManifestOutcome =
         getServerlessManifestOutcome(manifestsOutcome.values(), serverlessStepHelper);
@@ -675,7 +672,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
         }
       }
     }
-    return engineExpressionService.renderExpression(ambiance, manifestFileContent);
+    return cdExpressionResolver.renderExpression(ambiance, manifestFileContent);
   }
 
   public ServerlessInfraConfig getServerlessInfraConfig(InfrastructureOutcome infrastructure, Ambiance ambiance) {

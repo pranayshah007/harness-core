@@ -26,6 +26,7 @@ import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -185,6 +186,19 @@ public class RuleDAO {
         .in(Arrays.asList(accountId, GLOBAL_ACCOUNT_ID))
         .field(RuleId.uuid)
         .in(rulesIdentifier)
+        .asList();
+  }
+
+  public List<Rule> validateCloudProvider(
+      String accountId, Set<String> rulesIdentifier, RuleCloudProviderType ruleCloudProviderType) {
+    return hPersistence.createQuery(Rule.class)
+        .project(RuleId.uuid, true)
+        .field(RuleId.accountId)
+        .in(Arrays.asList(accountId, GLOBAL_ACCOUNT_ID))
+        .field(RuleId.uuid)
+        .in(rulesIdentifier)
+        .field(RuleId.cloudProvider)
+        .equal(ruleCloudProviderType)
         .asList();
   }
 }

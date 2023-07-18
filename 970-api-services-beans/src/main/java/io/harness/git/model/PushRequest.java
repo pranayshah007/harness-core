@@ -30,6 +30,7 @@ public class PushRequest extends GitBaseRequest {
         .repoType(parent.getRepoType())
         .pushOnlyIfHeadSeen(parent.isPushOnlyIfHeadSeen())
         .forcePush(parent.isForcePush())
+        .repoUrl(parent.getRepoUrl())
         .build();
   }
 }

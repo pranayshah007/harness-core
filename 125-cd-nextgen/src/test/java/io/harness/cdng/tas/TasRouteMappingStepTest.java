@@ -27,6 +27,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
@@ -83,6 +84,7 @@ public class TasRouteMappingStepTest extends CDNGTestBase {
   @Mock private CDStepHelper cdStepHelper;
   @Mock private StepHelper stepHelper;
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
+  @Mock private CDExpressionResolver cdExpressionResolver;
   @Mock private TasStepHelper tasStepHelper;
   @Mock private KryoSerializer kryoSerializer;
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;

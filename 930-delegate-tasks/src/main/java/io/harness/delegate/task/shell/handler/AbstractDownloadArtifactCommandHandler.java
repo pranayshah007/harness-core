@@ -79,16 +79,16 @@ public abstract class AbstractDownloadArtifactCommandHandler implements CommandH
     BaseScriptExecutor executor =
         getExecutor(parameters, commandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext);
     LogCallback logCallback = executor.getLogCallback();
-    CommandExecutionStatus commandExecutionStatus = downloadArtifact(parameters, logCallback, commandUnit, executor);
 
-    if (FAILURE == commandExecutionStatus) {
-      logCallback.saveExecutionLog("Failed to download artifact.", ERROR, commandExecutionStatus);
+    try {
+      CommandExecutionStatus commandExecutionStatus = downloadArtifact(parameters, logCallback, commandUnit, executor);
+      closeLogStreamEmptyMsg(logCallback, commandExecutionStatus);
+      log.info("Download artifact command execution returned status: {}", commandExecutionStatus);
+      return ExecuteCommandResponse.builder().status(commandExecutionStatus).build();
+    } catch (Exception e) {
+      closeLogStreamWithError(logCallback);
+      throw e;
     }
-    logCallback.saveExecutionLog(
-        "Command execution finished with status " + commandExecutionStatus, INFO, commandExecutionStatus);
-
-    log.info("Download artifact command execution returned status: {}", commandExecutionStatus);
-    return ExecuteCommandResponse.builder().status(commandExecutionStatus).build();
   }
 
   private CommandExecutionStatus downloadArtifact(CommandTaskParameters commandTaskParameters, LogCallback logCallback,

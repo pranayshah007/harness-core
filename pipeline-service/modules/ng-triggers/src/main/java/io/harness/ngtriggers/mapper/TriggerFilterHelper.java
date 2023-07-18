@@ -186,6 +186,7 @@ public class TriggerFilterHelper {
     criteria.and(TriggerEventHistoryKeys.projectIdentifier).is(projectIdentifier);
     criteria.and(TriggerEventHistoryKeys.triggerIdentifier).is(triggerIdentifier);
     criteria.and(TriggerEventHistoryKeys.targetIdentifier).is(targetIdentifier);
+    criteria.and(TriggerEventHistoryKeys.executionNotAttempted).ne(true);
     criteria.and(TriggerEventHistoryKeys.createdAt).gte(startTime);
 
     return criteria;

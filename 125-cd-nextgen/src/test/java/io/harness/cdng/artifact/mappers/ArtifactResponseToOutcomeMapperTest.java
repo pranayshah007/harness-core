@@ -43,6 +43,7 @@ import io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScriptSou
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScripts;
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
 import io.harness.cdng.artifact.bean.yaml.customartifact.FetchAllArtifacts;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig;
 import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
@@ -251,6 +252,37 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
 
     assertThat(artifactOutcome).isInstanceOf(NexusArtifactOutcome.class);
     assertThat(artifactOutcome.getArtifactType()).isEqualTo(ArtifactSourceType.NEXUS3_REGISTRY.getDisplayName());
+    assertThat(((NexusArtifactOutcome) artifactOutcome).getArtifactPath()).isEqualTo("test");
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testToNexus2ArtifactOutcomeMaven() {
+    NexusRegistryDockerConfig nexusRegistryDockerConfig =
+        NexusRegistryDockerConfig.builder()
+            .artifactPath(ParameterField.createValueField("IMAGE"))
+            .repositoryPort(ParameterField.createValueField("TEST_REPO"))
+            .build();
+    ArtifactConfig artifactConfig =
+        Nexus2RegistryArtifactConfig.builder()
+            .connectorRef(ParameterField.createValueField("connector"))
+            .repository(ParameterField.createValueField("REPO_NAME"))
+            .nexusRegistryConfigSpec(nexusRegistryDockerConfig)
+            .repositoryFormat(ParameterField.createValueField(RepositoryFormat.maven.name()))
+            .build();
+    ArtifactDelegateResponse artifactDelegateResponse =
+        NexusArtifactDelegateResponse.builder()
+            .buildDetails(ArtifactBuildDetailsNG.builder()
+                              .metadata(Map.of(ArtifactResponseToOutcomeMapper.ARTIFACT_ID, "test"))
+                              .build())
+            .build();
+
+    ArtifactOutcome artifactOutcome =
+        ArtifactResponseToOutcomeMapper.toArtifactOutcome(artifactConfig, artifactDelegateResponse, true);
+
+    assertThat(artifactOutcome).isInstanceOf(NexusArtifactOutcome.class);
+    assertThat(artifactOutcome.getArtifactType()).isEqualTo(ArtifactSourceType.NEXUS2_REGISTRY.getDisplayName());
     assertThat(((NexusArtifactOutcome) artifactOutcome).getArtifactPath()).isEqualTo("test");
   }
 

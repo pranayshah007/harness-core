@@ -322,18 +322,21 @@ public class ArtifactConfigToDelegateReqMapper {
     String artifactPath = artifactConfig.getArtifactPath() != null ? artifactConfig.getArtifactPath().getValue() : "";
     String jobName = artifactConfig.getJobName() != null ? artifactConfig.getJobName().getValue() : "";
     String buildNumber = artifactConfig.getBuild() != null ? artifactConfig.getBuild().getValue() : "";
+    String buildRegex = null;
     if (isLastPublishedExpression(buildNumber)) {
       if (ParameterField.isNotNull(artifactConfig.getBuild())
           && tagHasInputValidator(artifactConfig.getBuild().getInputSetValidator(), buildNumber)) {
+        buildRegex = artifactConfig.getBuild().getInputSetValidator().getParameters();
         buildNumber = artifactConfig.getBuild().getInputSetValidator().getParameters();
       } else {
-        buildNumber = buildNumber.equals(LAST_PUBLISHED_EXPRESSION) ? "" : buildNumber;
+        buildRegex = "";
+        buildNumber = "";
       }
     }
 
     return ArtifactDelegateRequestUtils.getJenkinsDelegateArtifactRequest(connectorRef, connectorDTO,
-        encryptedDataDetails, ArtifactSourceType.JENKINS, null, null, jobName, Arrays.asList(artifactPath),
-        buildNumber);
+        encryptedDataDetails, ArtifactSourceType.JENKINS, null, null, jobName, Arrays.asList(artifactPath), buildNumber,
+        buildRegex);
   }
 
   public BambooArtifactDelegateRequest getBambooDelegateRequest(BambooArtifactConfig artifactConfig,

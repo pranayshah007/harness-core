@@ -1,0 +1,26 @@
+resourceToPermissionsExceptionMapping:
+  - resourceIdentifier: CCM_FOLDER
+    permissions:
+    - ccm_perspective_view
+    - ccm_perspective_edit
+    - ccm_perspective_delete
+    - ccm_budget_view
+    - ccm_budget_edit
+    - ccm_budget_delete
+  - resourceIdentifier: CCM_PERSPECTIVE
+    permissions:
+    - ccm_overview_view
+  - resourceIdentifier: ENVIRONMENT
+    permissions:
+    - ff_featureflag_edit
+    - ff_featureflag_delete
+    - ff_featureflag_toggle
+    - ff_targetgroup_edit
+    - ff_targetgroup_delete
+    - sto_ticket_view
+  - resourceIdentifier: GOVERNANCEPOLICY
+    permissions:
+    - core_governancePolicySets_edit
+  - resourceIdentifier: CONNECTOR
+    permissions:
+    - ccm_cloudAssetGovernanceRule_execute

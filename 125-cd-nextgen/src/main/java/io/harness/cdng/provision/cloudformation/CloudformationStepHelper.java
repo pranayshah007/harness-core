@@ -23,6 +23,7 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.k8s.K8sStepHelper;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
@@ -66,7 +67,6 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
-import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
 import io.harness.k8s.K8sCommandUnitConstants;
@@ -79,7 +79,6 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -129,7 +128,7 @@ import org.jetbrains.annotations.NotNull;
 @OwnedBy(CDP)
 @Singleton
 public class CloudformationStepHelper {
-  @Inject private EngineExpressionService engineExpressionService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private K8sStepHelper k8sStepHelper;
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
@@ -488,8 +487,7 @@ public class CloudformationStepHelper {
             .timeoutInMs(StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), DEFAULT_TIMEOUT))
             .commandUnitsProgress(commandUnitsProgress)
             .build();
-    ExpressionEvaluatorUtils.updateExpressions(
-        cloudformationTaskNGParameters, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+    cdExpressionResolver.updateExpressions(ambiance, cloudformationTaskNGParameters);
     return cloudformationTaskNGParameters;
   }
 
@@ -837,6 +835,6 @@ public class CloudformationStepHelper {
   }
 
   public String renderValue(Ambiance ambiance, @NonNull String valueFileContent) {
-    return engineExpressionService.renderExpression(ambiance, valueFileContent);
+    return cdExpressionResolver.renderExpression(ambiance, valueFileContent);
   }
 }

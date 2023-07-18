@@ -177,12 +177,16 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
     serviceHookHandler.execute(ServiceHookType.POST_HOOK, ServiceHookAction.FETCH_FILES,
         k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
     executionLogCallback.saveExecutionLog("Done.", INFO, SUCCESS);
+
     init(k8sBGDeployRequest, k8sDelegateTaskParams,
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Init, true, commandUnitsProgress), serviceHookHandler);
 
     prepareForBlueGreen(k8sDelegateTaskParams,
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Prepare, true, commandUnitsProgress),
         k8sBGDeployRequest.isSkipResourceVersioning(), k8sBGDeployRequest.isPruningEnabled());
+
+    List<K8sPod> existingPodList =
+        k8sBGBaseHandler.getExistingPods(timeoutInMillis, kubernetesConfig, releaseName, executionLogCallback);
 
     if (deploymentSkipped) {
       K8sBGDeployResponse k8sBGDeployResponse = K8sBGDeployResponse.builder().stageDeploymentSkipped(true).build();
@@ -247,8 +251,8 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, WrapUp, true, commandUnitsProgress);
 
     k8sBGBaseHandler.wrapUp(k8sDelegateTaskParams, wrapUpLogCallback, client);
-    final List<K8sPod> podList = k8sBGBaseHandler.getAllPods(
-        timeoutInMillis, kubernetesConfig, managedWorkload, primaryColor, stageColor, releaseName);
+    final List<K8sPod> podList = k8sBGBaseHandler.getAllPodsNG(
+        timeoutInMillis, kubernetesConfig, managedWorkload, primaryColor, stageColor, releaseName, existingPodList);
 
     if (!useDeclarativeRollback) {
       ((K8sLegacyRelease) release)
@@ -260,6 +264,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
     K8sBGDeployResponse k8sBGDeployResponse = K8sBGDeployResponse.builder()
                                                   .releaseNumber(release.getReleaseNumber())
                                                   .k8sPodList(podList)
+                                                  .previousK8sPodList(existingPodList)
                                                   .primaryServiceName(primaryService.getResourceId().getName())
                                                   .stageServiceName(stageService.getResourceId().getName())
                                                   .stageColor(stageColor)

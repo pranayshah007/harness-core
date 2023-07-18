@@ -661,8 +661,9 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     pmsPipelineService.applyGitXSettingsIfApplicable(accountId, ORG_IDENTIFIER, PROJ_IDENTIFIER);
     InOrder inOrder = inOrder(gitXSettingsHelper);
     inOrder.verify(gitXSettingsHelper).enforceGitExperienceIfApplicable(any(), any(), any());
-    inOrder.verify(gitXSettingsHelper).setConnectorRefForRemoteEntity(any(), any(), any());
     inOrder.verify(gitXSettingsHelper).setDefaultStoreTypeForEntities(any(), any(), any(), any());
+    inOrder.verify(gitXSettingsHelper).setConnectorRefForRemoteEntity(any(), any(), any());
+    inOrder.verify(gitXSettingsHelper).setDefaultRepoForRemoteEntity(any(), any(), any());
   }
 
   @Test

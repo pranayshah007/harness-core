@@ -9,6 +9,7 @@ package io.harness.gitx;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
@@ -55,11 +56,11 @@ public class GitXSettingsHelper {
     }
   }
 
-  public void setConnectorRefForRemoteEntity(String accountIdentifier, String orgIdentifier, String projIdentifier) {
+  public void setConnectorRefForRemoteEntity(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     if (GitAwareContextHelper.isRemoteEntity(gitEntityInfo)
         && GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getConnectorRef())) {
-      String defaultConnectorForGitX = getDefaultConnectorForGitX(accountIdentifier, orgIdentifier, projIdentifier);
+      String defaultConnectorForGitX = getDefaultConnectorForGitX(accountIdentifier, orgIdentifier, projectIdentifier);
 
       if (!isEmpty(defaultConnectorForGitX)) {
         gitEntityInfo.setConnectorRef(defaultConnectorForGitX);
@@ -88,6 +89,19 @@ public class GitXSettingsHelper {
 
       gitEntityInfo.setStoreType(defaultStoreTypeForEntities);
       GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
+    }
+  }
+
+  public void setDefaultRepoForRemoteEntity(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    if (GitAwareContextHelper.isRemoteEntity(gitEntityInfo)
+        && GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getRepoName())) {
+      String defaultRepoForGitX = getDefaultRepoForGitX(accountIdentifier, orgIdentifier, projectIdentifier);
+
+      if (isNotEmpty(defaultRepoForGitX)) {
+        gitEntityInfo.setRepoName(defaultRepoForGitX);
+        GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
+      }
     }
   }
 
@@ -133,5 +147,12 @@ public class GitXSettingsHelper {
 
     List<String> listOfRepos = List.of(repoAllowlist.split(","));
     return HarnessStringUtils.removeLeadingAndTrailingSpacesInListOfStrings(listOfRepos);
+  }
+
+  private String getDefaultRepoForGitX(String accountIdentifier, String orgIdentifier, String projIdentifier) {
+    return NGRestUtils
+        .getResponse(ngSettingsClient.getSetting(
+            GitSyncConstants.DEFAULT_REPO_FOR_GIT_EXPERIENCE, accountIdentifier, orgIdentifier, projIdentifier))
+        .getValue();
   }
 }

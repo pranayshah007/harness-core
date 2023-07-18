@@ -21,6 +21,7 @@ import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.advisers.AdvisorObtainmentList;
 import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.ExpressionMode;
+import io.harness.pms.expression.ExpressionModeMapper;
 import io.harness.rule.Owner;
 
 import java.util.HashMap;

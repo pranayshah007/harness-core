@@ -141,12 +141,13 @@ func HandleClose(logStream stream.Stream, store store.Store) http.HandlerFunc {
 		}
 
 		for _, k := range keys {
+
 			if err := logStream.Delete(ctx, k); err != nil {
 				WriteInternalError(w, err)
 				logger.FromRequest(r).
 					WithError(err).
 					WithField("key", k).
-					Errorln("api: cannot close stream")
+					Warnln("api: cannot close stream")
 				return
 			}
 		}
@@ -182,7 +183,15 @@ func HandleWrite(s stream.Stream) http.HandlerFunc {
 			return
 		}
 
+		// write to stream only if it exists
+		if err := s.Exists(ctx, key); err != nil {
+			return
+		}
 		if err := s.Write(ctx, key, in...); err != nil {
+			if err == stream.ErrNotFound {
+				WriteBadRequest(w, err)
+				return
+			}
 			if err != nil {
 				WriteInternalError(w, err)
 				logger.FromRequest(r).

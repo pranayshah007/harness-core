@@ -49,7 +49,6 @@ import org.junit.experimental.categories.Category;
 public class DelegateServicePerpetualTaskApiFunctionalTest extends AbstractFunctionalTest {
   @Inject private DelegateServiceBlockingStub delegateServiceBlockingStub;
   @Inject private DelegateAsyncService delegateAsyncService;
-  @Inject private KryoSerializer kryoSerializer;
 
   @Inject @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer;
   @Inject private WingsPersistence wingsPersistence;
@@ -61,7 +60,7 @@ public class DelegateServicePerpetualTaskApiFunctionalTest extends AbstractFunct
   @Ignore("We need to find better way to register if the task is executed")
   public void testPerpetualTaskExecution() throws InterruptedException {
     DelegateServiceGrpcClient delegateServiceGrpcClient = new DelegateServiceGrpcClient(delegateServiceBlockingStub,
-        delegateAsyncService, kryoSerializer, referenceFalseKryoSerializer, delegateSyncService, () -> false);
+        delegateAsyncService, referenceFalseKryoSerializer, delegateSyncService, () -> false);
 
     Map<String, String> clientParamMap = new HashMap<>();
     clientParamMap.put("countryName", "testCountry");
@@ -100,7 +99,7 @@ public class DelegateServicePerpetualTaskApiFunctionalTest extends AbstractFunct
     String countryName = "testCountry2";
 
     DelegateServiceGrpcClient delegateServiceGrpcClient = new DelegateServiceGrpcClient(delegateServiceBlockingStub,
-        delegateAsyncService, kryoSerializer, referenceFalseKryoSerializer, delegateSyncService, () -> false);
+        delegateAsyncService, referenceFalseKryoSerializer, delegateSyncService, () -> false);
 
     PerpetualTaskSchedule schedule = PerpetualTaskSchedule.newBuilder()
                                          .setInterval(Durations.fromSeconds(30))

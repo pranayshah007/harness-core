@@ -10,11 +10,13 @@ package io.harness.cvng.activity.entities;
 import io.harness.cvng.beans.activity.ActivityDTO;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.VerificationJobInstanceBuilder;
+import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdSparseIndex;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -34,7 +36,7 @@ public class SRMStepAnalysisActivity extends Activity {
   String stageId;
   String artifactType;
   String artifactTag;
-  String executionNotificationDetailsId;
+  @NotNull @FdIndex String executionNotificationDetailsId;
 
   @Override
   public ActivityType getType() {

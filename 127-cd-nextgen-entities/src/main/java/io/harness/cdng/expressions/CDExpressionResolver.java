@@ -13,8 +13,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.expression.ExpressionEvaluatorUtils;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.expression.EngineExpressionService;
+import io.harness.pms.expression.EngineExpressionServiceResolver;
+import io.harness.pms.expression.ParameterFieldResolverFunctor;
+import io.harness.pms.yaml.validation.InputSetValidatorFactory;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -26,6 +30,8 @@ import lombok.extern.slf4j.Slf4j;
 public class CDExpressionResolver {
   @Inject private EngineExpressionService engineExpressionService;
 
+  @Inject private InputSetValidatorFactory inputSetValidatorFactory;
+
   public void updateStoreConfigExpressions(Ambiance ambiance, StoreConfigWrapper storeConfigWrapper) {
     StoreConfig storeConfig = storeConfigWrapper.getSpec();
     storeConfig = (StoreConfig) updateExpressions(ambiance, storeConfig);
@@ -36,8 +42,18 @@ public class CDExpressionResolver {
     if (obj == null) {
       return obj;
     }
-    return ExpressionEvaluatorUtils.updateExpressions(
-        obj, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+    return ExpressionEvaluatorUtils.updateExpressions(obj,
+        new ParameterFieldResolverFunctor(new EngineExpressionServiceResolver(engineExpressionService, ambiance),
+            inputSetValidatorFactory, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED));
+  }
+
+  public Object updateExpressions(Ambiance ambiance, Object obj, ExpressionMode expressionMode) {
+    if (obj == null) {
+      return obj;
+    }
+    return ExpressionEvaluatorUtils.updateExpressions(obj,
+        new ParameterFieldResolverFunctor(new EngineExpressionServiceResolver(engineExpressionService, ambiance),
+            inputSetValidatorFactory, expressionMode));
   }
 
   public <T> T evaluateExpression(Ambiance ambiance, String expression, Class<T> type) {

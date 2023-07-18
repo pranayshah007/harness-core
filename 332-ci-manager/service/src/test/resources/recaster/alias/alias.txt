@@ -4,6 +4,7 @@ io.harness.plancreator.strategy.v1.MatrixConfigV1
 io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml
 io.harness.beans.steps.stepinfo.V1.BitriseStepInfoV1
 io.harness.sto.config.STOStepConfig
+io.harness.yaml.sto.variables.STOYamlSBOMFormat
 io.harness.beans.steps.stepinfo.security.NiktoStepInfo
 io.harness.beans.steps.stepinfo.security.NmapStepInfo
 io.harness.beans.yaml.extended.TILanguage
@@ -413,5 +414,6 @@ io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO
 io.harness.delegate.beans.logstreaming.UnitProgressData
 io.harness.steps.SectionStepSweepingOutput
 io.harness.spotinst.model.ElastiGroup
-io.harness.delegate.cdng.execution.StepInstanceInfo
 io.harness.delegate.cdng.execution.StepExecutionInstanceInfo
+io.harness.delegate.cdng.execution.K8sStepInstanceInfo
+io.harness.ci.config.GitnessConfig

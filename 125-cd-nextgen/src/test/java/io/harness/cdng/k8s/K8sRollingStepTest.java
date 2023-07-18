@@ -28,6 +28,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.execution.service.StageExecutionInstanceInfoService;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.instance.outcome.DeploymentInfoOutcome;
@@ -75,6 +76,7 @@ public class K8sRollingStepTest extends AbstractK8sStepExecutorTestBase {
   @Mock ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock private InstanceInfoService instanceInfoService;
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
+  @Mock StageExecutionInstanceInfoService stageExecutionInstanceInfoService;
 
   @InjectMocks private K8sRollingStep k8sRollingStep;
   final String canaryStepFqn = "canaryStep";
@@ -186,13 +188,15 @@ public class K8sRollingStepTest extends AbstractK8sStepExecutorTestBase {
     K8sRollingStepParameters stepParameters = new K8sRollingStepParameters();
     final StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
 
-    K8sDeployResponse k8sDeployResponse =
-        K8sDeployResponse.builder()
-            .k8sNGTaskResponse(
-                K8sRollingDeployResponse.builder().k8sPodList(Collections.emptyList()).releaseNumber(1).build())
-            .commandUnitsProgress(UnitProgressData.builder().build())
-            .commandExecutionStatus(SUCCESS)
-            .build();
+    K8sDeployResponse k8sDeployResponse = K8sDeployResponse.builder()
+                                              .k8sNGTaskResponse(K8sRollingDeployResponse.builder()
+                                                                     .k8sPodList(Collections.emptyList())
+                                                                     .previousK8sPodList(Collections.emptyList())
+                                                                     .releaseNumber(1)
+                                                                     .build())
+                                              .commandUnitsProgress(UnitProgressData.builder().build())
+                                              .commandExecutionStatus(SUCCESS)
+                                              .build();
     when(cdStepHelper.getReleaseName(any(), any())).thenReturn("releaseName");
     StepResponse.StepOutcome stepOutcome = StepResponse.StepOutcome.builder()
                                                .name(OutcomeExpressionConstants.DEPLOYMENT_INFO_OUTCOME)
@@ -200,7 +204,7 @@ public class K8sRollingStepTest extends AbstractK8sStepExecutorTestBase {
                                                .build();
     doReturn(stepOutcome).when(instanceInfoService).saveServerInstancesIntoSweepingOutput(any(), any());
 
-    StepResponse response = k8sRollingStep.finalizeExecutionWithSecurityContext(
+    StepResponse response = k8sRollingStep.finalizeExecutionWithSecurityContextAndNodeInfo(
         ambiance, stepElementParameters, K8sExecutionPassThroughData.builder().build(), () -> k8sDeployResponse);
     assertThat(response.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(response.getStepOutcomes()).hasSize(2);
@@ -232,7 +236,7 @@ public class K8sRollingStepTest extends AbstractK8sStepExecutorTestBase {
 
     doReturn(stepResponse).when(k8sStepHelper).handleTaskException(ambiance, executionPassThroughData, thrownException);
 
-    StepResponse response = k8sRollingStep.finalizeExecutionWithSecurityContext(
+    StepResponse response = k8sRollingStep.finalizeExecutionWithSecurityContextAndNodeInfo(
         ambiance, stepElementParameters, executionPassThroughData, () -> { throw thrownException; });
 
     assertThat(response).isEqualTo(stepResponse);
@@ -290,14 +294,14 @@ public class K8sRollingStepTest extends AbstractK8sStepExecutorTestBase {
                                                .build();
     doReturn(stepOutcome).when(instanceInfoService).saveServerInstancesIntoSweepingOutput(any(), any());
     when(cdStepHelper.handleGitTaskFailure(any())).thenReturn(StepResponse.builder().status(Status.SUCCEEDED).build());
-    StepResponse response = k8sRollingStep.finalizeExecutionWithSecurityContext(
+    StepResponse response = k8sRollingStep.finalizeExecutionWithSecurityContextAndNodeInfo(
         ambiance, stepElementParameters, GitFetchResponsePassThroughData.builder().build(), () -> k8sDeployResponse);
     assertThat(response.getStatus()).isEqualTo(Status.SUCCEEDED);
 
     when(k8sStepHelper.handleHelmValuesFetchFailure(any()))
         .thenReturn(StepResponse.builder().status(Status.SUCCEEDED).build());
     assertThat(k8sRollingStep
-                   .finalizeExecutionWithSecurityContext(ambiance, stepElementParameters,
+                   .finalizeExecutionWithSecurityContextAndNodeInfo(ambiance, stepElementParameters,
                        HelmValuesFetchResponsePassThroughData.builder().build(), () -> k8sDeployResponse)
                    .getStatus())
         .isEqualTo(Status.SUCCEEDED);
@@ -305,7 +309,7 @@ public class K8sRollingStepTest extends AbstractK8sStepExecutorTestBase {
     when(cdStepHelper.handleStepExceptionFailure(any()))
         .thenReturn(StepResponse.builder().status(Status.SUCCEEDED).build());
     assertThat(k8sRollingStep
-                   .finalizeExecutionWithSecurityContext(ambiance, stepElementParameters,
+                   .finalizeExecutionWithSecurityContextAndNodeInfo(ambiance, stepElementParameters,
                        StepExceptionPassThroughData.builder().build(), () -> k8sDeployResponse)
                    .getStatus())
         .isEqualTo(Status.SUCCEEDED);
@@ -318,7 +322,7 @@ public class K8sRollingStepTest extends AbstractK8sStepExecutorTestBase {
             .commandExecutionStatus(FAILURE)
             .build();
     assertThat(k8sRollingStep
-                   .finalizeExecutionWithSecurityContext(ambiance, stepElementParameters,
+                   .finalizeExecutionWithSecurityContextAndNodeInfo(ambiance, stepElementParameters,
                        K8sExecutionPassThroughData.builder().build(), () -> k8sDeployResponseFail)
                    .getStatus())
         .isEqualTo(Status.FAILED);

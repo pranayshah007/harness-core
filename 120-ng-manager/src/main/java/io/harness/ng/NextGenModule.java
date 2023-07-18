@@ -290,6 +290,7 @@ import io.harness.outbox.TransactionOutboxModule;
 import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.persistence.UserProvider;
 import io.harness.pipeline.remote.PipelineRemoteClientModule;
+import io.harness.pipeline.triggers.TriggersClientModule;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.expression.NoopEngineExpressionServiceImpl;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
@@ -755,6 +756,9 @@ public class NextGenModule extends AbstractModule {
         appConfig.getNextGenConfig().getManagerServiceSecret(), NG_MANAGER.getServiceId()));
     install(new AgentNgManagerCgManagerClientModule(appConfig.getManagerClientConfig(),
         appConfig.getNextGenConfig().getManagerServiceSecret(), NG_MANAGER.getServiceId()));
+    install(new TriggersClientModule(
+        ServiceHttpClientConfig.builder().baseUrl(appConfig.getPipelineServiceClientConfig().getBaseUrl()).build(),
+        appConfig.getNextGenConfig().getPipelineServiceSecret(), NG_MANAGER.toString()));
     bind(NgGlobalKmsService.class).to(NgGlobalKmsServiceImpl.class);
     bind(FreezeCRUDService.class).to(FreezeCRUDServiceImpl.class);
     bind(FreezeEvaluateService.class).to(FreezeEvaluateServiceImpl.class);
