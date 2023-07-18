@@ -143,6 +143,7 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
       CatalogInfraConnectorType catalogInfraConnectorType, String newHost, Set<String> newDelegateSelectors) {
     boolean isProxyNew = CatalogInfraConnectorType.PROXY.equals(catalogInfraConnectorType);
     JSONObject hostProxyMap = proxyEnvVariableServiceWrapper.getHostProxyMap(accountIdentifier);
+    JSONObject originalHostProxyMap = new JSONObject(hostProxyMap.toString());
     Optional<CatalogConnectorEntity> existingCatalogConnectorOpt =
         catalogConnectorRepository.findByAccountIdentifierAndConnectorProviderType(accountIdentifier, connectorType);
 
@@ -171,6 +172,8 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
         delegateSelectorsCache.put(accountIdentifier, newHost, newDelegateSelectors);
       }
     }
-    proxyEnvVariableServiceWrapper.setHostProxyMap(accountIdentifier, hostProxyMap);
+    if (!originalHostProxyMap.similar(hostProxyMap)) {
+      proxyEnvVariableServiceWrapper.setHostProxyMap(accountIdentifier, hostProxyMap);
+    }
   }
 }
