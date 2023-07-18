@@ -394,12 +394,41 @@ public class PollingResponseHandlerTest extends CategoryTest {
   @Owner(developers = OwnerRule.VINICIUS)
   @Category(UnitTests.class)
   public void testGetSignaturesWithLock() {
-    List<String> signatures = List.of("sig1", "sig2", "sig3");
-    Map<String, List<String>> signaturesLock = Map.of("sig1", List.of("sig3", "sig4"), "sig3", List.of("sig5"));
+    List<String> signatures = List.of("sig1", "sig2", "sig3", "sig4");
+    Map<String, List<String>> signaturesLock =
+        Map.of("sig1", List.of("sig3", "sig4"), "sig3", List.of("sig5"), "sig4", List.of());
     List<String> signaturesWithLock = pollingResponseHandler.getSignaturesWithLock(signatures, signaturesLock);
     assertThat(signaturesWithLock.size()).isEqualTo(2);
     assertThat(signaturesWithLock.contains("sig1")).isTrue();
+    assertThat(signaturesWithLock.contains("sig2")).isFalse();
     assertThat(signaturesWithLock.contains("sig3")).isTrue();
+    assertThat(signaturesWithLock.contains("sig4")).isFalse();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetSignaturesWithNoLock() {
+    List<String> signatures = List.of("sig1", "sig2", "sig3", "sig4");
+    Map<String, List<String>> signaturesLock =
+        Map.of("sig1", List.of("sig3", "sig4"), "sig3", List.of("sig5"), "sig4", List.of());
+    PollingDocument pollingDocument1 =
+        PollingDocument.builder()
+            .uuid(POLLING_DOC_ID)
+            .accountId(ACCOUNT_ID)
+            .perpetualTaskId(PERPETUAL_TASK_ID)
+            .signatures(signatures)
+            .signaturesLock(signaturesLock)
+            .pollingType(PollingType.ARTIFACT)
+            .pollingInfo(DockerHubArtifactInfo.builder().imagePath("imagePath").build())
+            .polledResponse(ArtifactPolledResponse.builder().allPolledKeys(new HashSet<>(Arrays.asList("1.0"))).build())
+            .build();
+    List<String> signaturesWithoutLock = pollingResponseHandler.getSignaturesWithNoLock(pollingDocument1);
+    assertThat(signaturesWithoutLock.size()).isEqualTo(2);
+    assertThat(signaturesWithoutLock.contains("sig1")).isFalse();
+    assertThat(signaturesWithoutLock.contains("sig2")).isTrue();
+    assertThat(signaturesWithoutLock.contains("sig3")).isFalse();
+    assertThat(signaturesWithoutLock.contains("sig4")).isTrue();
   }
 
   private void testSuccessResponse(Type type, PollingType pollingType) {
