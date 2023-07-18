@@ -17,7 +17,7 @@ if [ ! -e start.sh ]; then
 fi
 
 <#noparse>
-  JRE=${3:-"11.0.19+7"}
+JRE=${3:-"11.0.19+7"}
 </#noparse>
 JRE_DIR=jdk-$JRE-jre
 JRE_BINARY=$JRE_DIR/bin/java

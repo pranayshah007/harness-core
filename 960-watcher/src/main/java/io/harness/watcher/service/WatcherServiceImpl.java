@@ -231,8 +231,8 @@ public class WatcherServiceImpl implements WatcherService {
 
   private final AtomicBoolean frozen = new AtomicBoolean(false);
 
-  private final String defaultJREDelegateVersion="11.0.19+7";
-  private final String defaultJREWatcherVersion="11.0.19+7";
+  private final String defaultJREDelegateVersion = "11.0.19+7";
+  private final String defaultJREWatcherVersion = "11.0.19+7";
 
   @Override
   public void run(boolean upgrade) {
@@ -1156,12 +1156,12 @@ public class WatcherServiceImpl implements WatcherService {
     executorService.submit(() -> {
       StartedProcess newDelegate = null;
       try {
-        newDelegate =
-            new ProcessExecutor()
-                .command("nohup", versionFolder + File.separator + DELEGATE_SCRIPT, watcherProcess, versionFolder, isEmpty(jreVersion)?defaultJREDelegateVersion:jreVersion)
-                .redirectError(Slf4jStream.of(scriptName).asError())
-                .setMessageLogger((log, format, arguments) -> log.info(format, arguments))
-                .start();
+        newDelegate = new ProcessExecutor()
+                          .command("nohup", versionFolder + File.separator + DELEGATE_SCRIPT, watcherProcess,
+                              versionFolder, isEmpty(jreVersion) ? defaultJREDelegateVersion : jreVersion)
+                          .redirectError(Slf4jStream.of(scriptName).asError())
+                          .setMessageLogger((log, format, arguments) -> log.info(format, arguments))
+                          .start();
 
         boolean success = false;
         String newDelegateProcess = null;
@@ -1264,7 +1264,7 @@ public class WatcherServiceImpl implements WatcherService {
     try {
       if (multiVersion) {
         RestResponse<String> restResponse = callInterruptible21(timeLimiter, ofSeconds(30),
-                () -> SafeHttpCall.execute(managerClient.getJREVersion(watcherConfiguration.getAccountId(), true)));
+            () -> SafeHttpCall.execute(managerClient.getJREVersion(watcherConfiguration.getAccountId(), true)));
         if (restResponse != null) {
           return restResponse.getResource();
         }
@@ -1280,7 +1280,7 @@ public class WatcherServiceImpl implements WatcherService {
     try {
       if (multiVersion) {
         RestResponse<String> restResponse = callInterruptible21(timeLimiter, ofSeconds(30),
-                () -> SafeHttpCall.execute(managerClient.getJREVersion(watcherConfiguration.getAccountId(), false)));
+            () -> SafeHttpCall.execute(managerClient.getJREVersion(watcherConfiguration.getAccountId(), false)));
         if (restResponse != null) {
           return restResponse.getResource();
         }
@@ -1438,7 +1438,8 @@ public class WatcherServiceImpl implements WatcherService {
       log.info("[Old] Starting new watcher");
       final String jreVersion = getWatcherJREVersion();
       process = new ProcessExecutor()
-                    .command("nohup", "./start.sh", "upgrade", WatcherApplication.getProcessId(), isEmpty(jreVersion)?defaultJREWatcherVersion:jreVersion)
+                    .command("nohup", "./start.sh", "upgrade", WatcherApplication.getProcessId(),
+                        isEmpty(jreVersion) ? defaultJREWatcherVersion : jreVersion)
                     .redirectError(Slf4jStream.of("UpgradeScript").asError())
                     .setMessageLogger((log, format, arguments) -> log.info(format, arguments))
                     .start();
