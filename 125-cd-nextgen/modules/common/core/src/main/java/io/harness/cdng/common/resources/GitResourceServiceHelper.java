@@ -17,22 +17,31 @@ import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DecryptableEntity;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
+import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.helper.GitAuthenticationDecryptionHelper;
+import io.harness.connector.helper.GithubAppDTOToGithubAppSpecDTOMapper;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
+import io.harness.delegate.beans.connector.scm.github.GithubAppDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
+import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.utils.IdentifierRefHelper;
 
@@ -48,13 +57,16 @@ public class GitResourceServiceHelper {
   private final ConnectorService connectorService;
   private final GitConfigAuthenticationInfoHelper gitConfigAuthenticationInfoHelper;
   private final CDFeatureFlagHelper cdFeatureFlagHelper;
+  private final SecretManagerClientService ngSecretService;
 
   @Inject
   public GitResourceServiceHelper(@Named(DEFAULT_CONNECTOR_SERVICE) ConnectorService connectorService,
-      GitConfigAuthenticationInfoHelper gitConfigAuthenticationInfoHelper, CDFeatureFlagHelper cdFeatureFlagHelper) {
+      GitConfigAuthenticationInfoHelper gitConfigAuthenticationInfoHelper, CDFeatureFlagHelper cdFeatureFlagHelper,
+      SecretManagerClientService ngSecretService) {
     this.connectorService = connectorService;
     this.gitConfigAuthenticationInfoHelper = gitConfigAuthenticationInfoHelper;
     this.cdFeatureFlagHelper = cdFeatureFlagHelper;
+    this.ngSecretService = ngSecretService;
   }
 
   public ConnectorInfoDTO getConnectorInfoDTO(String connectorId, NGAccess ngAccess) {
@@ -97,12 +109,15 @@ public class GitResourceServiceHelper {
             (ScmConnector) connectorDTO.getConnectorConfig());
 
     if (githubAppAuthentication) {
+      GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDTO.getConnectorConfig();
+      githubConnectorDTO.setApiAccess(getGitAppAccessFromGithubAppAuth(githubConnectorDTO));
+      final DecryptableEntity apiAccessDecryptableEntity =
+          GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(githubConnectorDTO);
+      encryptedDataDetails = ngSecretService.getEncryptionDetails(ngAccess, apiAccessDecryptableEntity);
+      gitStoreDelegateConfigBuilder.optimizedFilesFetch(true);
+      gitStoreDelegateConfigBuilder.gitConfigDTO(githubConnectorDTO);
+      gitStoreDelegateConfigBuilder.apiAuthEncryptedDataDetails(encryptedDataDetails);
       gitStoreDelegateConfigBuilder.isGithubAppAuthentication(true);
-      ScmConnector scmConnector = (ScmConnector) connectorDTO.getConnectorConfig();
-      gitStoreDelegateConfigBuilder.gitConfigDTO(scmConnector);
-      encryptedDataDetails.addAll(
-          gitConfigAuthenticationInfoHelper.getGithubAppEncryptedDataDetail(scmConnector, ngAccess));
-      gitStoreDelegateConfigBuilder.encryptedDataDetails(encryptedDataDetails);
     }
 
     return gitStoreDelegateConfigBuilder.build();
@@ -122,5 +137,15 @@ public class GitResourceServiceHelper {
     String purgedRepoUrl = scmConnector.getUrl().replaceAll("/*$", "");
     String purgedRepoName = repoName.replaceAll("^/*", "");
     return purgedRepoUrl + "/" + purgedRepoName;
+  }
+
+  public GithubApiAccessDTO getGitAppAccessFromGithubAppAuth(GithubConnectorDTO githubConnectorDTO) {
+    GithubAppDTO githubAppDTO =
+        (GithubAppDTO) ((GithubHttpCredentialsDTO) githubConnectorDTO.getAuthentication().getCredentials())
+            .getHttpCredentialsSpec();
+    return GithubApiAccessDTO.builder()
+        .type(GithubApiAccessType.GITHUB_APP)
+        .spec(GithubAppDTOToGithubAppSpecDTOMapper.toGitHubSpec(githubAppDTO))
+        .build();
   }
 }

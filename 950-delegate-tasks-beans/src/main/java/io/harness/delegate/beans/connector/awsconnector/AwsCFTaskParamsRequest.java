@@ -49,6 +49,7 @@ public class AwsCFTaskParamsRequest extends AwsTaskParams {
         gitConnectionNGCapabilityBuilder.isGithubAppAuthentication(true);
         gitConnectionNGCapabilityBuilder.githubConnectorDTO(
             (GithubConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO());
+        gitConnectionNGCapabilityBuilder.encryptedDataDetails(gitStoreDelegateConfig.getApiAuthEncryptedDataDetails());
       }
       capabilityList.add(gitConnectionNGCapabilityBuilder.build());
 

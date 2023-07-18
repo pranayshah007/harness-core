@@ -28,6 +28,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.provision.azure.beans.AzureCreateARMResourcePassThroughData;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.helper.GitAuthenticationDecryptionHelper;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
 import io.harness.delegate.beans.TaskData;
@@ -36,6 +37,7 @@ import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
@@ -128,13 +130,18 @@ public class AzureCommonHelper {
     boolean githubAppAuthentication =
         GitAuthenticationDecryptionHelper.isGitHubAppAuthentication((ScmConnector) connectorDTO.getConnectorConfig())
         && cdFeatureFlagHelper.isEnabled(basicNGAccessObject.getAccountIdentifier(), CDS_GITHUB_APP_AUTHENTICATION);
+
     if (githubAppAuthentication) {
-      ScmConnector scmConnector = (ScmConnector) connectorDTO.getConnectorConfig();
-      encryptedDataDetails.addAll(
-          gitConfigAuthenticationInfoHelper.getGithubAppEncryptedDataDetail(scmConnector, basicNGAccessObject));
-      builder.gitConfigDTO(scmConnector);
+      GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDTO.getConnectorConfig();
+      githubConnectorDTO.setApiAccess(cdStepHelper.getGitAppAccessFromGithubAppAuth(githubConnectorDTO));
+      final DecryptableEntity apiAccessDecryptableEntity =
+          GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(githubConnectorDTO);
+      encryptedDataDetails =
+          secretManagerClientService.getEncryptionDetails(basicNGAccessObject, apiAccessDecryptableEntity);
+      builder.optimizedFilesFetch(true);
+      builder.gitConfigDTO(githubConnectorDTO);
+      builder.apiAuthEncryptedDataDetails(encryptedDataDetails);
       builder.isGithubAppAuthentication(true);
-      builder.encryptedDataDetails(encryptedDataDetails);
     }
     return builder.build();
   }

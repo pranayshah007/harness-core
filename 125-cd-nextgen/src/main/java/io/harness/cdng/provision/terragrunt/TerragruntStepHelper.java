@@ -29,6 +29,7 @@ import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DecryptableEntity;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.SecretManagerConfig;
@@ -52,6 +53,7 @@ import io.harness.cdng.provision.terragrunt.TerragruntConfig.TerragruntConfigKey
 import io.harness.cdng.provision.terragrunt.TerragruntInheritOutput.TerragruntInheritOutputBuilder;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.helper.GitAuthenticationDecryptionHelper;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
 import io.harness.data.structure.EmptyPredicate;
@@ -60,6 +62,7 @@ import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.InlineFileConfig;
@@ -322,12 +325,16 @@ public class TerragruntStepHelper {
         && cdFeatureFlagHelper.isEnabled(basicNGAccessObject.getAccountIdentifier(), CDS_GITHUB_APP_AUTHENTICATION);
 
     if (githubAppAuthentication) {
-      ScmConnector scmConnector = (ScmConnector) connectorDTO.getConnectorConfig();
-      encryptedDataDetails.addAll(
-          gitConfigAuthenticationInfoHelper.getGithubAppEncryptedDataDetail(scmConnector, basicNGAccessObject));
-      gitStoreDelegateConfigBuilder.gitConfigDTO(scmConnector);
+      GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDTO.getConnectorConfig();
+      githubConnectorDTO.setApiAccess(cdStepHelper.getGitAppAccessFromGithubAppAuth(githubConnectorDTO));
+      final DecryptableEntity apiAccessDecryptableEntity =
+          GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(githubConnectorDTO);
+      encryptedDataDetails =
+          secretManagerClientService.getEncryptionDetails(basicNGAccessObject, apiAccessDecryptableEntity);
+      gitStoreDelegateConfigBuilder.optimizedFilesFetch(true);
+      gitStoreDelegateConfigBuilder.gitConfigDTO(githubConnectorDTO);
+      gitStoreDelegateConfigBuilder.apiAuthEncryptedDataDetails(encryptedDataDetails);
       gitStoreDelegateConfigBuilder.isGithubAppAuthentication(true);
-      gitStoreDelegateConfigBuilder.encryptedDataDetails(encryptedDataDetails);
     }
     return gitStoreDelegateConfigBuilder.build();
   }

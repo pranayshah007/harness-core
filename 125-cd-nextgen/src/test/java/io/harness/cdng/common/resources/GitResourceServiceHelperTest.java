@@ -39,6 +39,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.rule.Owner;
+import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import com.google.inject.Inject;
@@ -54,14 +55,15 @@ import org.mockito.MockitoAnnotations;
 public class GitResourceServiceHelperTest extends CategoryTest {
   @Mock private ConnectorService connectorService;
   @Mock private GitConfigAuthenticationInfoHelper gitConfigAuthenticationInfoHelper;
+  @Mock private SecretManagerClientService secretManagerClientService;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   private GitResourceServiceHelper gitResourceServiceHelper;
 
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    gitResourceServiceHelper =
-        spy(new GitResourceServiceHelper(connectorService, gitConfigAuthenticationInfoHelper, cdFeatureFlagHelper));
+    gitResourceServiceHelper = spy(new GitResourceServiceHelper(
+        connectorService, gitConfigAuthenticationInfoHelper, cdFeatureFlagHelper, secretManagerClientService));
   }
 
   @Test

@@ -19,6 +19,7 @@ import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DecryptableEntity;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
@@ -34,6 +35,7 @@ import io.harness.cdng.provision.cloudformation.beans.CloudFormationInheritOutpu
 import io.harness.cdng.provision.cloudformation.beans.CloudformationConfig;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
+import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.helper.GitAuthenticationDecryptionHelper;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.utils.ConnectorUtils;
@@ -49,6 +51,7 @@ import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
@@ -692,12 +695,16 @@ public class CloudformationStepHelper {
         GitAuthenticationDecryptionHelper.isGitHubAppAuthentication((ScmConnector) connectorDTO.getConnectorConfig())
         && cdFeatureFlagHelper.isEnabled(basicNGAccessObject.getAccountIdentifier(), CDS_GITHUB_APP_AUTHENTICATION);
     if (githubAppAuthentication) {
-      ScmConnector scmConnector = (ScmConnector) connectorDTO.getConnectorConfig();
-      encryptedDataDetails.addAll(
-          gitConfigAuthenticationInfoHelper.getGithubAppEncryptedDataDetail(scmConnector, basicNGAccessObject));
-      gitStoreDelegateConfigBuilder.gitConfigDTO(scmConnector);
+      GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDTO.getConnectorConfig();
+      githubConnectorDTO.setApiAccess(cdStepHelper.getGitAppAccessFromGithubAppAuth(githubConnectorDTO));
+      final DecryptableEntity apiAccessDecryptableEntity =
+          GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(githubConnectorDTO);
+      encryptedDataDetails =
+          secretManagerClientService.getEncryptionDetails(basicNGAccessObject, apiAccessDecryptableEntity);
+      gitStoreDelegateConfigBuilder.optimizedFilesFetch(true);
+      gitStoreDelegateConfigBuilder.gitConfigDTO(githubConnectorDTO);
+      gitStoreDelegateConfigBuilder.apiAuthEncryptedDataDetails(encryptedDataDetails);
       gitStoreDelegateConfigBuilder.isGithubAppAuthentication(true);
-      gitStoreDelegateConfigBuilder.encryptedDataDetails(encryptedDataDetails);
     }
 
     return gitStoreDelegateConfigBuilder.build();

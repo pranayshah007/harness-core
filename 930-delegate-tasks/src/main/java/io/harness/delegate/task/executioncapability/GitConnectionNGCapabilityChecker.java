@@ -10,18 +10,21 @@ package io.harness.delegate.task.executioncapability;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.service.git.NGGitService;
-import io.harness.connector.task.git.GitHubAppAuthenticationHelper;
+import io.harness.connector.service.scm.ScmDelegateClient;
+import io.harness.connector.task.git.GitDecryptionHelper;
 import io.harness.connector.task.shell.SshSessionConfigMapper;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
-import io.harness.delegate.beans.connector.scm.genericgitconnector.GitHTTPAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.executioncapability.CapabilityResponse;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.GitConnectionNGCapability;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
+import io.harness.product.ci.scm.proto.SCMGrpc;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
+import io.harness.service.ScmServiceClient;
 import io.harness.shell.SshSessionConfig;
 
 import com.google.inject.Inject;
@@ -35,7 +38,9 @@ public class GitConnectionNGCapabilityChecker implements CapabilityCheck {
   @Inject private NGGitService gitService;
   @Inject private DelegateConfiguration delegateConfiguration;
   @Inject private SshSessionConfigMapper sshSessionConfigMapper;
-  @Inject private GitHubAppAuthenticationHelper gitHubAppAuthenticationHelper;
+  @Inject private GitDecryptionHelper gitDecryptionHelper;
+  @Inject private ScmDelegateClient scmDelegateClient;
+  @Inject private ScmServiceClient scmServiceClient;
 
   @Override
   public CapabilityResponse performCapabilityCheck(ExecutionCapability delegateCapability) {
@@ -43,14 +48,12 @@ public class GitConnectionNGCapabilityChecker implements CapabilityCheck {
     GitConfigDTO gitConfig = capability.getGitConfig();
     List<EncryptedDataDetail> encryptedDataDetails = capability.getEncryptedDataDetails();
     SshSessionConfig sshSessionConfig = null;
+    GithubConnectorDTO githubConnectorDTO = capability.getGithubConnectorDTO();
 
     try {
       if (gitConfig.getGitAuthType() == GitAuthType.HTTP) {
         if (capability.isGithubAppAuthentication()) {
-          GitHTTPAuthenticationDTO gitHTTPAuthenticationDTO = (GitHTTPAuthenticationDTO) gitConfig.getGitAuth();
-          gitHTTPAuthenticationDTO.setPasswordRef(gitHubAppAuthenticationHelper.getGithubAppSecretFromConnector(
-              capability.getGithubConnectorDTO(), encryptedDataDetails));
-          gitConfig.setGitAuth(gitHTTPAuthenticationDTO);
+          gitDecryptionHelper.decryptApiAccessConfig(githubConnectorDTO, capability.getEncryptedDataDetails());
         } else {
           decryptionService.decrypt(gitConfig.getGitAuth(), encryptedDataDetails);
         }
@@ -64,7 +67,14 @@ public class GitConnectionNGCapabilityChecker implements CapabilityCheck {
     }
     String accountId = delegateConfiguration.getAccountId();
     try {
-      gitService.validateOrThrow(gitConfig, accountId, sshSessionConfig);
+      if (capability.isGithubAppAuthentication()) {
+        /*     scmDelegateClient.processScmRequest(
+                     c -> scmServiceClient.listBranches(githubConnectorDTO, SCMGrpc.newBlockingStub(c)));
+
+         */
+      } else {
+        gitService.validateOrThrow(gitConfig, accountId, sshSessionConfig);
+      }
     } catch (Exception e) {
       return CapabilityResponse.builder().delegateCapability(capability).validated(false).build();
     }

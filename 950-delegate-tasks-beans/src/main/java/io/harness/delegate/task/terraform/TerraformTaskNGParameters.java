@@ -112,6 +112,7 @@ public class TerraformTaskNGParameters
         gitConnectionNGCapabilityBuilder.githubConnectorDTO(
             (GithubConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO());
         gitConnectionNGCapabilityBuilder.isGithubAppAuthentication(true);
+        gitConnectionNGCapabilityBuilder.encryptedDataDetails(gitStoreDelegateConfig.getApiAuthEncryptedDataDetails());
       }
       capabilities.add(gitConnectionNGCapabilityBuilder.build());
       if (isNotEmpty(gitConfigDTO.getDelegateSelectors())) {
@@ -174,6 +175,7 @@ public class TerraformTaskNGParameters
         gitConnectionNGCapabilityBuilder.githubConnectorDTO(
             (GithubConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO());
         gitConnectionNGCapabilityBuilder.isGithubAppAuthentication(true);
+        gitConnectionNGCapabilityBuilder.encryptedDataDetails(gitStoreDelegateConfig.getApiAuthEncryptedDataDetails());
       }
       capabilities.add(gitConnectionNGCapabilityBuilder.build());
       if (isNotEmpty(gitConfigDTO.getDelegateSelectors())) {

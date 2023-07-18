@@ -74,6 +74,7 @@ public class GitCapabilityHelper extends ConnectorCapabilityBaseHelper {
     if (gitStoreConfig.isGithubAppAuthentication()) {
       gitConnectionNGCapability.githubConnectorDTO((GithubConnectorDTO) gitStoreConfig.getGitConfigDTO());
       gitConnectionNGCapability.isGithubAppAuthentication(true);
+      gitConnectionNGCapability.encryptedDataDetails(gitStoreConfig.getApiAuthEncryptedDataDetails());
     }
 
     capabilityList.add(gitConnectionNGCapability.build());
