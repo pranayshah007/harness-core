@@ -10,6 +10,7 @@ package io.harness.delegate.heartbeat;
 import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
+import static java.lang.System.currentTimeMillis;
 import static java.time.Duration.ofMinutes;
 
 import io.harness.delegate.beans.Delegate;
@@ -33,7 +34,7 @@ public class DelegateHeartBeatSyncFromRedis implements Runnable {
   @Inject private HPersistence persistence;
   @Inject PersistentLocker persistentLocker;
   private final String lockName = "DelegateHeartBeatSyncFromRedis";
-  Duration MAX_HB_TIMEOUT = ofMinutes(5);
+  Duration HB_SYNC_TIMEOUT = ofMinutes(3);
 
   @Override
   public void run() {
@@ -43,10 +44,17 @@ public class DelegateHeartBeatSyncFromRedis implements Runnable {
         log.error("Unable to acquire lock while syncing delegate heartbeat from redis to mongo");
         return;
       }
-      List<Delegate> delegateList = delegateCache.getAllDelegatesFromRedisCache();
+
+      List<Delegate> delegateList = persistence.createQuery(Delegate.class)
+                                        .field(DelegateKeys.lastHeartBeat)
+                                        .greaterThan(currentTimeMillis() - HB_SYNC_TIMEOUT.toMillis())
+                                        .field(DelegateKeys.disconnected)
+                                        .notEqual(Boolean.TRUE)
+                                        .asList();
+
       List<String> delegates =
           delegateList.stream()
-              .filter(delegate -> delegate.getLastHeartBeat() > System.currentTimeMillis() - MAX_HB_TIMEOUT.toMillis())
+              .filter(delegate -> delegateCache.get(delegate.getAccountId(), delegate.getUuid()) != null)
               .map(Delegate::getUuid)
               .collect(Collectors.toList());
       // update DB with current time stamp
