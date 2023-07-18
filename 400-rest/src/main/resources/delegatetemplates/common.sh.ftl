@@ -16,18 +16,10 @@ if [ ! -e start.sh ]; then
   exit 1
 fi
 
-JRE_DIR=jdk-11.0.19+7-jre
-jre=$3
-<#if jre??>
-  <#noparse>
-    $JRE_VERSION=$3
-    JRE_DIR=jdk-$3-jre
-  </#noparse>
-<#else>
-  <#noparse>
-    $JRE_VERSION=11.0.19_7
-  </#noparse>
-</#if>
+<#noparse>
+  JRE=${3:-"11.0.19+7"}
+</#noparse>
+JRE_DIR=jdk-$JRE-jre
 JRE_BINARY=$JRE_DIR/bin/java
 case "$OSTYPE" in
   solaris*)
@@ -80,11 +72,11 @@ DELEGATE_STORAGE_URL=${delegateStorageUrl}
 
 <#if useCdn == "true">
   <#noparse>
-    JVM_URL=$DELEGATE_STORAGE_URL/public/shared/jre/openjdk-$JRE_VERSION/OpenJDK11U-jre_${ARCH}_${OS}_hotspot_$JRE_VERSION.tar.gz
+    JVM_URL=$DELEGATE_STORAGE_URL/public/shared/jre/openjdk-$JRE/OpenJDK11U-jre_${ARCH}_${OS}_hotspot_$JRE.tar.gz
   </#noparse>
 <#else>
   <#noparse>
-    JVM_URL=$DELEGATE_STORAGE_URL/jre/openjdk-$JRE_VERSION/OpenJDK11U-jre_${ARCH}_${OS}_hotspot_$JRE_VERSION.tar.gz
+    JVM_URL=$DELEGATE_STORAGE_URL/jre/openjdk-$JRE/OpenJDK11U-jre_${ARCH}_${OS}_hotspot_$JRE.tar.gz
   </#noparse>
 </#if>
 
