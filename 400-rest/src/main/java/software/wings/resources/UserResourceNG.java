@@ -437,6 +437,13 @@ public class UserResourceNG {
   public RestResponse<List<UserInfo>> listUsers(@QueryParam("accountId") String accountId, UserFilterNG userFilterNG) {
     Set<User> userSet = new HashSet<>();
 
+    if (isEmpty(accountId)) {
+      Set<String> userIds = new HashSet<>(userFilterNG.getUserIds());
+      if (!isEmpty(userIds)) {
+        return new RestResponse<>(convertUserToNgUser(userService.getUsers(userIds), false));
+      }
+    }
+
     if (!isEmpty(userFilterNG.getUserIds())) {
       userSet.addAll(userService.getUsers(userFilterNG.getUserIds(), accountId));
     }

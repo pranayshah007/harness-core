@@ -20,6 +20,7 @@ import io.harness.ng.core.migration.background.DeleteSoftDeletedConnectorsMigrat
 import io.harness.ng.core.migration.background.PopulateYamlAuthFieldInNGJiraConnectorMigration;
 import io.harness.ng.core.migration.background.PopulateYamlAuthFieldInNGServiceNowConnectorMigration;
 import io.harness.ng.core.migration.background.PopulateYamlFieldInNGServiceEntityMigration;
+import io.harness.ng.core.migration.background.StaleUserMetadataCleanupMigration;
 import io.harness.ng.core.migration.background.UpdateEnvironmentRefValueInServiceOverrideNGMigration;
 import io.harness.ng.core.migration.background.UserMetadataTwoFactorAuthenticationMigration;
 
@@ -55,6 +56,7 @@ public class NGCoreBackgroundMigrationDetails implements MigrationDetails {
         .add(Pair.of(12, PopulateYamlFieldInNGEnvironmentMigration.class))
         .add(Pair.of(13, PopulateYamlFieldInNGServiceEntityMigration.class))
         .add(Pair.of(14, AddServiceOverrideV2RelatedFieldsMigration.class))
+        .add(Pair.of(15, StaleUserMetadataCleanupMigration.class))
         .build();
   }
 }
