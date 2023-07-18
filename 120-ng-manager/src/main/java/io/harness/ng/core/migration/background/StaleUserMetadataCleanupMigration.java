@@ -17,6 +17,7 @@ import com.google.inject.Inject;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -40,6 +41,12 @@ public class StaleUserMetadataCleanupMigration implements NGMigration {
       int pageSize = 10;
 
       do {
+        try {
+          Thread.sleep(TimeUnit.SECONDS.toMillis(5));
+        } catch (Exception ex) {
+          log.error("[StaleUserMetadataCleanupMigration]: Error while waking up the thread.", ex);
+        }
+
         List<UserMetadata> userMetadataList;
         try {
           userMetadataList = userMetadataRepository.findAll(PageRequest.of(pageIndex++, pageSize)).getContent();
