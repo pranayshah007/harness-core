@@ -39,7 +39,7 @@ import io.harness.idp.gitintegration.processor.impl.GithubConnectorProcessor;
 import io.harness.idp.gitintegration.processor.impl.GitlabConnectorProcessor;
 import io.harness.idp.gitintegration.repositories.CatalogConnectorRepository;
 import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
-import io.harness.idp.proxy.envvariable.ProxyEnvVariableUtils;
+import io.harness.idp.proxy.envvariable.ProxyEnvVariableServiceWrapper;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
@@ -82,7 +82,7 @@ public class GitIntegrationServiceImplTest {
   @Mock private BackstageEnvVariableService backstageEnvVariableService;
   @Mock ConfigManagerService configManagerService;
   @Mock DelegateSelectorsCache delegateSelectorsCache;
-  @Mock ProxyEnvVariableUtils proxyEnvVariableUtils;
+  @Mock ProxyEnvVariableServiceWrapper proxyEnvVariableServiceWrapper;
   @Captor private ArgumentCaptor<JSONObject> hostProxyMapCaptor;
 
   String ACCOUNT_IDENTIFIER = "test-secret-identifier";
@@ -149,7 +149,7 @@ public class GitIntegrationServiceImplTest {
     when(processor.getInfraConnectorType(any())).thenReturn("DIRECT");
     CatalogConnectorEntity catalogConnectorEntity = getGitlabConnectorEntity(delegateSelectors);
     when(catalogConnectorRepository.saveOrUpdate(any())).thenReturn(catalogConnectorEntity);
-    when(proxyEnvVariableUtils.getHostProxyMap(ACCOUNT_IDENTIFIER)).thenReturn(new JSONObject());
+    when(proxyEnvVariableServiceWrapper.getHostProxyMap(ACCOUNT_IDENTIFIER)).thenReturn(new JSONObject());
 
     CatalogConnectorEntity result =
         gitIntegrationServiceImpl.saveConnectorDetails(ACCOUNT_IDENTIFIER, connectorDetails);
@@ -200,12 +200,12 @@ public class GitIntegrationServiceImplTest {
     doNothing().when(delegateSelectorsCache).remove(any(), any());
     JSONObject hostProxyMap = new JSONObject();
     hostProxyMap.put(TEST_GITHUB_HOST, false);
-    when(proxyEnvVariableUtils.getHostProxyMap(ACCOUNT_IDENTIFIER)).thenReturn(hostProxyMap);
+    when(proxyEnvVariableServiceWrapper.getHostProxyMap(ACCOUNT_IDENTIFIER)).thenReturn(hostProxyMap);
     when(catalogConnectorRepository.saveOrUpdate(any())).thenReturn(catalogConnectorEntity);
 
     gitIntegrationServiceImpl.processConnectorUpdate(message, entityChangeDTO);
 
-    verify(proxyEnvVariableUtils).setHostProxyMap(eq(ACCOUNT_IDENTIFIER), hostProxyMapCaptor.capture());
+    verify(proxyEnvVariableServiceWrapper).setHostProxyMap(eq(ACCOUNT_IDENTIFIER), hostProxyMapCaptor.capture());
     assertEquals(hostProxyMap, hostProxyMapCaptor.getValue());
   }
 
@@ -236,12 +236,12 @@ public class GitIntegrationServiceImplTest {
     doNothing().when(delegateSelectorsCache).remove(any(), any());
     JSONObject hostProxyMap = new JSONObject();
     hostProxyMap.put(TEST_GITHUB1_HOST, false);
-    when(proxyEnvVariableUtils.getHostProxyMap(ACCOUNT_IDENTIFIER)).thenReturn(hostProxyMap);
+    when(proxyEnvVariableServiceWrapper.getHostProxyMap(ACCOUNT_IDENTIFIER)).thenReturn(hostProxyMap);
     when(catalogConnectorRepository.saveOrUpdate(any())).thenReturn(catalogConnectorEntity);
 
     gitIntegrationServiceImpl.processConnectorUpdate(message, entityChangeDTO);
 
-    verify(proxyEnvVariableUtils).setHostProxyMap(eq(ACCOUNT_IDENTIFIER), hostProxyMapCaptor.capture());
+    verify(proxyEnvVariableServiceWrapper).setHostProxyMap(eq(ACCOUNT_IDENTIFIER), hostProxyMapCaptor.capture());
     assertEquals(hostProxyMap, hostProxyMapCaptor.getValue());
   }
 

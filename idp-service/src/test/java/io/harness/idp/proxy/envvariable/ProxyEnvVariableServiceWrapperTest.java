@@ -22,9 +22,7 @@ import io.harness.spec.server.idp.v1.model.BackstageEnvConfigVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.json.JSONObject;
@@ -36,7 +34,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-public class ProxyEnvVariableUtilsTest extends CategoryTest {
+public class ProxyEnvVariableServiceWrapperTest extends CategoryTest {
   private static final String PROXY_MAP1 = "{\"github.com\":true,\"gitlab.com\":false}";
   private static final String PROXY_MAP2 = "{\"github.com\":false,\"gitlab.com\":false}";
   private static final String PROXY_MAP3 = "{\"gitlab.com\":false}";
@@ -45,7 +43,7 @@ public class ProxyEnvVariableUtilsTest extends CategoryTest {
   private static final String GITLAB_HOST = "gitlab.com";
   private AutoCloseable openMocks;
   @Mock private BackstageEnvVariableService backstageEnvVariableService;
-  @InjectMocks private ProxyEnvVariableUtils proxyEnvVariableUtils;
+  @InjectMocks private ProxyEnvVariableServiceWrapper proxyEnvVariableServiceWrapper;
 
   @Before
   public void setUp() {
@@ -66,14 +64,14 @@ public class ProxyEnvVariableUtilsTest extends CategoryTest {
         .thenReturn(Optional.empty())
         .thenReturn(Optional.of(variable));
 
-    JSONObject actualHostProxyMap = proxyEnvVariableUtils.getHostProxyMap(ACCOUNT_IDENTIFIER);
+    JSONObject actualHostProxyMap = proxyEnvVariableServiceWrapper.getHostProxyMap(ACCOUNT_IDENTIFIER);
 
     assertEquals(expectedHostProxyMap.length(), actualHostProxyMap.length());
 
     expectedHostProxyMap.put(GITHUB_HOST, true);
     expectedHostProxyMap.put(GITLAB_HOST, false);
 
-    actualHostProxyMap = proxyEnvVariableUtils.getHostProxyMap(ACCOUNT_IDENTIFIER);
+    actualHostProxyMap = proxyEnvVariableServiceWrapper.getHostProxyMap(ACCOUNT_IDENTIFIER);
 
     assertEquals(expectedHostProxyMap.length(), actualHostProxyMap.length());
     assertEquals(expectedHostProxyMap.get(GITHUB_HOST), actualHostProxyMap.get(GITHUB_HOST));
@@ -92,7 +90,7 @@ public class ProxyEnvVariableUtilsTest extends CategoryTest {
     hostProxyMap.put(GITHUB_HOST, true);
     hostProxyMap.put(GITLAB_HOST, false);
 
-    proxyEnvVariableUtils.setHostProxyMap(ACCOUNT_IDENTIFIER, hostProxyMap);
+    proxyEnvVariableServiceWrapper.setHostProxyMap(ACCOUNT_IDENTIFIER, hostProxyMap);
 
     verify(backstageEnvVariableService).createOrUpdate(Collections.singletonList(variable), ACCOUNT_IDENTIFIER);
   }
@@ -109,7 +107,7 @@ public class ProxyEnvVariableUtilsTest extends CategoryTest {
         .thenReturn(Optional.of(variable));
     Set<String> hostsToBeRemoved = new HashSet<>();
     hostsToBeRemoved.add(GITHUB_HOST);
-    proxyEnvVariableUtils.removeFromHostProxyEnvVariable(ACCOUNT_IDENTIFIER, hostsToBeRemoved);
+    proxyEnvVariableServiceWrapper.removeFromHostProxyEnvVariable(ACCOUNT_IDENTIFIER, hostsToBeRemoved);
     variable.type(BackstageEnvVariable.TypeEnum.CONFIG);
     variable.envName(PROXY_ENV_NAME);
     variable.setValue(PROXY_MAP3);

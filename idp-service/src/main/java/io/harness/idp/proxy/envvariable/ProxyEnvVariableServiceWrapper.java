@@ -17,7 +17,6 @@ import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 
 import com.google.inject.Inject;
 import java.util.Collections;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import lombok.AllArgsConstructor;
@@ -25,7 +24,7 @@ import org.json.JSONObject;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.IDP)
-public class ProxyEnvVariableUtils {
+public class ProxyEnvVariableServiceWrapper {
   BackstageEnvVariableService backstageEnvVariableService;
 
   public JSONObject getHostProxyMap(String accountIdentifier) {

@@ -21,12 +21,11 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCache;
 import io.harness.idp.configmanager.beans.entity.PluginsProxyInfoEntity;
 import io.harness.idp.configmanager.repositories.PluginsProxyInfoRepository;
-import io.harness.idp.proxy.envvariable.ProxyEnvVariableUtils;
+import io.harness.idp.proxy.envvariable.ProxyEnvVariableServiceWrapper;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.ProxyHostDetail;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.json.JSONObject;
@@ -43,7 +42,7 @@ public class PluginProxyInfoServiceImplTest extends CategoryTest {
   AutoCloseable openMocks;
   @Mock PluginsProxyInfoRepository pluginsProxyInfoRepository;
   @Mock DelegateSelectorsCache delegateSelectorsCache;
-  @Mock ProxyEnvVariableUtils proxyEnvVariableUtils;
+  @Mock ProxyEnvVariableServiceWrapper proxyEnvVariableServiceWrapper;
 
   @Spy @InjectMocks PluginsProxyInfoServiceImpl pluginsProxyInfoServiceImpl;
 
@@ -82,9 +81,9 @@ public class PluginProxyInfoServiceImplTest extends CategoryTest {
     when(pluginsProxyInfoRepository.findAllByAccountIdentifierAndPluginId(any(), any()))
         .thenReturn(Collections.singletonList(getTestPluginProxyInfoEntity()));
     doNothing().when(delegateSelectorsCache).remove(any(), any());
-    doNothing().when(proxyEnvVariableUtils).removeFromHostProxyEnvVariable(any(), any());
+    doNothing().when(proxyEnvVariableServiceWrapper).removeFromHostProxyEnvVariable(any(), any());
     doNothing().when(pluginsProxyInfoRepository).deleteAllByAccountIdentifierAndPluginId(any(), any());
-    when(proxyEnvVariableUtils.getHostProxyMap(TEST_ACCOUNT_IDENTIFIER)).thenReturn(new JSONObject());
+    when(proxyEnvVariableServiceWrapper.getHostProxyMap(TEST_ACCOUNT_IDENTIFIER)).thenReturn(new JSONObject());
     assertEquals(
         pluginsProxyInfoServiceImpl.insertProxyHostDetailsForPlugin(appConfig, TEST_ACCOUNT_IDENTIFIER).size(), 0);
 
@@ -122,11 +121,11 @@ public class PluginProxyInfoServiceImplTest extends CategoryTest {
     when(pluginsProxyInfoRepository.findAllByAccountIdentifierAndPluginId(any(), any()))
         .thenReturn(Collections.singletonList(getTestPluginProxyInfoEntity()));
     doNothing().when(delegateSelectorsCache).remove(any(), any());
-    doNothing().when(proxyEnvVariableUtils).removeFromHostProxyEnvVariable(any(), any());
+    doNothing().when(proxyEnvVariableServiceWrapper).removeFromHostProxyEnvVariable(any(), any());
     doNothing().when(pluginsProxyInfoRepository).deleteAllByAccountIdentifierAndPluginId(any(), any());
     JSONObject hostProxyMap = new JSONObject();
     hostProxyMap.put(TEST_HOST_VALUE_OLD, false);
-    when(proxyEnvVariableUtils.getHostProxyMap(TEST_ACCOUNT_IDENTIFIER)).thenReturn(hostProxyMap);
+    when(proxyEnvVariableServiceWrapper.getHostProxyMap(TEST_ACCOUNT_IDENTIFIER)).thenReturn(hostProxyMap);
     when(pluginsProxyInfoServiceImpl.getPluginProxyInfoEntities(appConfig, TEST_ACCOUNT_IDENTIFIER))
         .thenReturn(Collections.emptyList());
 
@@ -254,7 +253,7 @@ public class PluginProxyInfoServiceImplTest extends CategoryTest {
     pluginsProxyInfoServiceImpl.deleteProxyHostDetailsForPlugin(TEST_ACCOUNT_IDENTIFIER, TEST_PLUGIN_ID);
 
     verify(delegateSelectorsCache).remove(TEST_ACCOUNT_IDENTIFIER, Collections.singleton(TEST_HOST_VALUE));
-    verify(proxyEnvVariableUtils)
+    verify(proxyEnvVariableServiceWrapper)
         .removeFromHostProxyEnvVariable(TEST_ACCOUNT_IDENTIFIER, Collections.singleton(TEST_HOST_VALUE));
     verify(pluginsProxyInfoRepository).deleteAllByAccountIdentifierAndPluginId(TEST_ACCOUNT_IDENTIFIER, TEST_PLUGIN_ID);
   }

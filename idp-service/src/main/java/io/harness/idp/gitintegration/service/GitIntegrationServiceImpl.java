@@ -26,7 +26,7 @@ import io.harness.idp.gitintegration.processor.base.ConnectorProcessor;
 import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory;
 import io.harness.idp.gitintegration.repositories.CatalogConnectorRepository;
 import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
-import io.harness.idp.proxy.envvariable.ProxyEnvVariableUtils;
+import io.harness.idp.proxy.envvariable.ProxyEnvVariableServiceWrapper;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 import io.harness.spec.server.idp.v1.model.ConnectorDetails;
 
@@ -49,7 +49,7 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
   CatalogConnectorRepository catalogConnectorRepository;
   ConfigManagerService configManagerService;
   DelegateSelectorsCache delegateSelectorsCache;
-  ProxyEnvVariableUtils proxyEnvVariableUtils;
+  ProxyEnvVariableServiceWrapper proxyEnvVariableServiceWrapper;
 
   @Override
   public void createConnectorSecretsEnvVariable(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO) {
@@ -142,7 +142,7 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
   private void updateHostProxyAndDelegateSelectorsCache(String accountIdentifier, String connectorType,
       CatalogInfraConnectorType catalogInfraConnectorType, String newHost, Set<String> newDelegateSelectors) {
     boolean isProxyNew = CatalogInfraConnectorType.PROXY.equals(catalogInfraConnectorType);
-    JSONObject hostProxyMap = proxyEnvVariableUtils.getHostProxyMap(accountIdentifier);
+    JSONObject hostProxyMap = proxyEnvVariableServiceWrapper.getHostProxyMap(accountIdentifier);
     Optional<CatalogConnectorEntity> existingCatalogConnectorOpt =
         catalogConnectorRepository.findByAccountIdentifierAndConnectorProviderType(accountIdentifier, connectorType);
 
@@ -171,6 +171,6 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
         delegateSelectorsCache.put(accountIdentifier, newHost, newDelegateSelectors);
       }
     }
-    proxyEnvVariableUtils.setHostProxyMap(accountIdentifier, hostProxyMap);
+    proxyEnvVariableServiceWrapper.setHostProxyMap(accountIdentifier, hostProxyMap);
   }
 }
