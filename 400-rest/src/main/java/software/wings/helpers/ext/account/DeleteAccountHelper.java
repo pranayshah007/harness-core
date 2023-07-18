@@ -248,7 +248,7 @@ public class DeleteAccountHelper {
   }
 
   /** With any change of deletion logic CURRENT_DELETION_ALGO_NUM value should be incremented **/
-  public boolean deleteAccount(String accountId, boolean deleteAccountFromAccountsCollection) {
+  public boolean deleteAccount(String accountId) {
     log.info("Deleting data for account {}. Deletion algo version: {}", accountId, CURRENT_DELETION_ALGO_NUM);
     deleteQuartzJobsForAccount(accountId);
     deletePerpetualTasksForAccount(accountId);
@@ -259,9 +259,9 @@ public class DeleteAccountHelper {
     churnedConfigFilesAndChunksCleanup.deleteConfigFilesAndChunks(accountId);
     timescaleDataCleanup.cleanupChurnedAccountData(accountId);
     if (isEmpty(entitiesRemainingForDeletion)) {
-      if (deleteAccountFromAccountsCollection) {
-        deleteAccountFromAccountsCollection(accountId);
-      }
+      log.info("Deleting account entry {}", accountId);
+      hPersistence.delete(Account.class, accountId);
+      upsertDeletedEntity(accountId, CURRENT_DELETION_ALGO_NUM);
       return true;
     } else {
       log.info("Not all entities are deleted for account {}", accountId);
@@ -269,14 +269,9 @@ public class DeleteAccountHelper {
     }
   }
 
-  public void deleteAccountFromAccountsCollection(String accountId) {
-    hPersistence.delete(Account.class, accountId);
-    upsertDeletedEntity(accountId, CURRENT_DELETION_ALGO_NUM);
-  }
-
   public void handleDeletedAccount(DeletedEntity deletedAccount) {
     if (CURRENT_DELETION_ALGO_NUM > deletedAccount.getDeletionAlgoNum()) {
-      deleteAccount(deletedAccount.getEntityId(), true);
+      deleteAccount(deletedAccount.getEntityId());
     }
   }
 
