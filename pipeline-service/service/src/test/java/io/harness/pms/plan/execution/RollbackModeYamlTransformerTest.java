@@ -54,10 +54,12 @@ public class RollbackModeYamlTransformerTest extends CategoryTest {
         + "      identifier: \"s1\"\n"
         + "  - stage:\n"
         + "      identifier: \"s2\"\n";
-    String transformedYaml = rollbackModeYamlTransformer.transformProcessedYaml(
-        original, POST_EXECUTION_ROLLBACK, null, Collections.singletonList("s1"));
+    String transformedYaml =
+        rollbackModeYamlTransformer.transformProcessedYaml(original, POST_EXECUTION_ROLLBACK, null);
     String expected = "pipeline:\n"
         + "  stages:\n"
+        + "    - stage:\n"
+        + "        identifier: s2\n"
         + "    - stage:\n"
         + "        identifier: s1\n";
     assertThat(transformedYaml).isEqualTo(expected);
@@ -76,10 +78,11 @@ public class RollbackModeYamlTransformerTest extends CategoryTest {
     doReturn(Collections.singletonList(RetryStageInfo.builder().identifier("s1").name("s1").build()))
         .when(nodeExecutionService)
         .getStageDetailFromPlanExecutionId("ogId");
-    String transformedYaml =
-        rollbackModeYamlTransformer.transformProcessedYaml(original, PIPELINE_ROLLBACK, "ogId", null);
+    String transformedYaml = rollbackModeYamlTransformer.transformProcessedYaml(original, PIPELINE_ROLLBACK, "ogId");
     String expected = "pipeline:\n"
         + "  stages:\n"
+        + "    - stage:\n"
+        + "        identifier: s2\n"
         + "    - stage:\n"
         + "        identifier: s1\n";
     assertThat(transformedYaml).isEqualTo(expected);
@@ -108,10 +111,14 @@ public class RollbackModeYamlTransformerTest extends CategoryTest {
                  RetryStageInfo.builder().identifier("s3").name("s3").build()))
         .when(nodeExecutionService)
         .getStageDetailFromPlanExecutionId("ogId");
-    String transformedYaml =
-        rollbackModeYamlTransformer.transformProcessedYaml(original, PIPELINE_ROLLBACK, "ogId", null);
+    String transformedYaml = rollbackModeYamlTransformer.transformProcessedYaml(original, PIPELINE_ROLLBACK, "ogId");
     String expected = "pipeline:\n"
         + "  stages:\n"
+        + "    - parallel:\n"
+        + "        - stage:\n"
+        + "            identifier: s4\n"
+        + "        - stage:\n"
+        + "            identifier: s5\n"
         + "    - stage:\n"
         + "        identifier: s3\n"
         + "    - parallel:\n"
@@ -136,8 +143,7 @@ public class RollbackModeYamlTransformerTest extends CategoryTest {
     doReturn(List.of(RetryStageInfo.builder().identifier("s2").name("s2").build()))
         .when(nodeExecutionService)
         .getStageDetailFromPlanExecutionId("ogId");
-    String transformedYaml =
-        rollbackModeYamlTransformer.transformProcessedYaml(original, PIPELINE_ROLLBACK, "ogId", null);
+    String transformedYaml = rollbackModeYamlTransformer.transformProcessedYaml(original, PIPELINE_ROLLBACK, "ogId");
     String expected = "pipeline:\n"
         + "  stages:\n"
         + "    - parallel:\n"
