@@ -28,6 +28,7 @@ import io.harness.delegate.task.stepstatus.StepStatus;
 import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.sdk.core.plugin.ContainerStepExecutionResponseHelper;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.product.ci.engine.proto.UnitStep;
@@ -55,6 +56,7 @@ public class ServerlessAwsLambdaPrepareRollbackV2StepTest extends CategoryTest {
 
   @Mock private ServerlessStepCommonHelper serverlessStepCommonHelper;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Mock private ContainerStepExecutionResponseHelper containerStepExecutionResponseHelper;
 
   @InjectMocks @Spy private ServerlessAwsLambdaPrepareRollbackV2Step serverlessAwsLambdaPrepareRollbackV2Step;
 
@@ -85,6 +87,7 @@ public class ServerlessAwsLambdaPrepareRollbackV2StepTest extends CategoryTest {
             .stepStatus(
                 StepStatus.builder().stepExecutionStatus(StepExecutionStatus.SUCCESS).output(stepMapOutput).build())
             .build();
+    doReturn(stepStatusTaskResponseData).when(containerStepExecutionResponseHelper).filterK8StepResponse(any());
     responseDataMap.put("key", stepStatusTaskResponseData);
 
     StackDetails stackDetails = StackDetails.builder().build();

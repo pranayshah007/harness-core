@@ -410,6 +410,7 @@ public enum FeatureName {
   GITHUB_WEBHOOK_AUTHENTICATION,
   GITOPS_IAM("Support for connecting via IAM role in GitOps Clusters", HarnessTeam.GITOPS),
   GITOPS_ORG_LEVEL("Support GitOps at Org level", HarnessTeam.GITOPS),
+  GITOPS_REVERT_PR("Support for Revert PR step in GitOps pipeline flow", HarnessTeam.GITOPS),
   GIT_HOST_CONNECTIVITY,
   GLOBAL_COMMAND_LIBRARY,
   GLOBAL_DISABLE_HEALTH_CHECK(Scope.GLOBAL),

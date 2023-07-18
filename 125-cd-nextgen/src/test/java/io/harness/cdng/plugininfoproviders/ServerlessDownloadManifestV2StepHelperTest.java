@@ -144,6 +144,7 @@ public class ServerlessDownloadManifestV2StepHelperTest extends CategoryTest {
     doReturn(pluginCreationResponseWrapper).when(gitClonePluginInfoProvider).getPluginInfo(any(), any(), any());
 
     doReturn(null).when(serverlessV2PluginInfoProviderHelper).getServerlessAwsLambdaValuesManifestOutcome(any());
+    doReturn(manifestsOutcome).when(serverlessV2PluginInfoProviderHelper).fetchManifestsOutcome(any());
 
     PluginCreationResponseList pluginCreationResponseList = serverlessDownloadManifestsV2StepHelper.getPluginInfoList(
         pluginCreationRequest, new HashSet<Integer>(), ambiance);
@@ -207,6 +208,7 @@ public class ServerlessDownloadManifestV2StepHelperTest extends CategoryTest {
     doReturn(valuesManifestOutcome)
         .when(serverlessV2PluginInfoProviderHelper)
         .getServerlessAwsLambdaValuesManifestOutcome(any());
+    doReturn(manifestsOutcome).when(serverlessV2PluginInfoProviderHelper).fetchManifestsOutcome(any());
 
     PluginCreationResponseList pluginCreationResponseList = serverlessDownloadManifestsV2StepHelper.getPluginInfoList(
         pluginCreationRequest, new HashSet<Integer>(), ambiance);
@@ -229,7 +231,7 @@ public class ServerlessDownloadManifestV2StepHelperTest extends CategoryTest {
     StepElementParameters stepElementParameters = StepElementParameters.builder().build();
 
     ManifestsOutcome manifestsOutcome = mock(ManifestsOutcome.class);
-    doReturn(manifestsOutcome).when(downloadManifestsCommonHelper).fetchManifestsOutcome(any());
+    doReturn(manifestsOutcome).when(serverlessV2PluginInfoProviderHelper).fetchManifestsOutcome(any());
 
     ServerlessAwsLambdaManifestOutcome serverlessAwsLambdaManifestOutcome =
         mock(ServerlessAwsLambdaManifestOutcome.class);
@@ -290,7 +292,7 @@ public class ServerlessDownloadManifestV2StepHelperTest extends CategoryTest {
     StepElementParameters stepElementParameters = StepElementParameters.builder().build();
 
     ManifestsOutcome manifestsOutcome = mock(ManifestsOutcome.class);
-    doReturn(manifestsOutcome).when(downloadManifestsCommonHelper).fetchManifestsOutcome(any());
+    doReturn(manifestsOutcome).when(serverlessV2PluginInfoProviderHelper).fetchManifestsOutcome(any());
 
     ServerlessAwsLambdaManifestOutcome serverlessAwsLambdaManifestOutcome =
         mock(ServerlessAwsLambdaManifestOutcome.class);
@@ -348,6 +350,7 @@ public class ServerlessDownloadManifestV2StepHelperTest extends CategoryTest {
     ManifestsOutcome manifestsOutcome = mock(ManifestsOutcome.class);
     OptionalOutcome optionalManifestsOutcome = OptionalOutcome.builder().found(true).outcome(manifestsOutcome).build();
     doReturn(optionalManifestsOutcome).when(outcomeService).resolveOptional(any(), any());
+    doReturn(manifestsOutcome).when(serverlessV2PluginInfoProviderHelper).fetchManifestsOutcome(any());
 
     ValuesManifestOutcome valuesManifestOutcome = mock(ValuesManifestOutcome.class);
     doReturn(valuesManifestOutcome)
@@ -384,6 +387,7 @@ public class ServerlessDownloadManifestV2StepHelperTest extends CategoryTest {
     ManifestsOutcome manifestsOutcome = mock(ManifestsOutcome.class);
     OptionalOutcome optionalManifestsOutcome = OptionalOutcome.builder().found(true).outcome(manifestsOutcome).build();
     doReturn(optionalManifestsOutcome).when(outcomeService).resolveOptional(any(), any());
+    doReturn(manifestsOutcome).when(serverlessV2PluginInfoProviderHelper).fetchManifestsOutcome(any());
 
     ValuesManifestOutcome valuesManifestOutcome = mock(ValuesManifestOutcome.class);
     doReturn(null).when(serverlessV2PluginInfoProviderHelper).getServerlessAwsLambdaValuesManifestOutcome(any());

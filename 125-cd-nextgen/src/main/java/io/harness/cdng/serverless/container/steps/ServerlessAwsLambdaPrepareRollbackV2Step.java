@@ -26,6 +26,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.plugin.AbstractContainerStepV2;
+import io.harness.pms.sdk.core.plugin.ContainerStepExecutionResponseHelper;
 import io.harness.pms.sdk.core.plugin.ContainerUnitStepUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -48,6 +49,7 @@ public class ServerlessAwsLambdaPrepareRollbackV2Step extends AbstractContainerS
   @Inject ServerlessStepCommonHelper serverlessStepCommonHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
+  @Inject private ContainerStepExecutionResponseHelper containerStepExecutionResponseHelper;
   @Inject private InstanceInfoService instanceInfoService;
 
   public static final StepType STEP_TYPE =
@@ -98,9 +100,21 @@ public class ServerlessAwsLambdaPrepareRollbackV2Step extends AbstractContainerS
   @Override
   public StepResponse.StepOutcome getAnyOutComeForStep(
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
-    String stackDetailsString = null;
+    // If any of the responses are in serialized format, deserialize them
+    containerStepExecutionResponseHelper.deserializeResponse(responseDataMap);
 
-    StepStatusTaskResponseData stepStatusTaskResponseData = null;
+    StepStatusTaskResponseData stepStatusTaskResponseData =
+        containerStepExecutionResponseHelper.filterK8StepResponse(responseDataMap);
+
+    if (stepStatusTaskResponseData == null) {
+      log.info("Serverless Aws Lambda Prepare Rollback V2:  Received stepStatusTaskResponseData as null");
+    } else {
+      log.info(String.format(
+          "Serverless Aws Lambda Prepare Rollback V2:  Received stepStatusTaskResponseData with status %s",
+          stepStatusTaskResponseData.getStepStatus().getStepExecutionStatus()));
+    }
+
+    String stackDetailsString = null;
 
     for (Map.Entry<String, ResponseData> entry : responseDataMap.entrySet()) {
       ResponseData responseData = entry.getValue();

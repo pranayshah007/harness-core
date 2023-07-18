@@ -27,6 +27,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.plugin.AbstractContainerStepV2;
+import io.harness.pms.sdk.core.plugin.ContainerStepExecutionResponseHelper;
 import io.harness.pms.sdk.core.plugin.ContainerUnitStepUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -53,6 +54,7 @@ public class ServerlessAwsLambdaDeployV2Step extends AbstractContainerStepV2<Ste
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
   @Inject private InstanceInfoService instanceInfoService;
+  @Inject private ContainerStepExecutionResponseHelper containerStepExecutionResponseHelper;
 
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.SERVERLESS_AWS_LAMBDA_DEPLOY_V2.getYamlType())
@@ -72,16 +74,11 @@ public class ServerlessAwsLambdaDeployV2Step extends AbstractContainerStepV2<Ste
   @Override
   public UnitStep getSerialisedStep(Ambiance ambiance, StepElementParameters stepElementParameters, String accountId,
       String logKey, long timeout, String parkedTaskId) {
-    // Todo: Add entrypoint
     ServerlessAwsLambdaDeployV2StepParameters serverlessAwsLambdaDeployV2StepParameters =
         (ServerlessAwsLambdaDeployV2StepParameters) stepElementParameters.getSpec();
 
     // Check if image exists
     serverlessStepCommonHelper.verifyPluginImageIsProvider(serverlessAwsLambdaDeployV2StepParameters.getImage());
-
-    Map<String, String> envVarMap = new HashMap<>();
-
-    awsSamStepHelper.putK8sServiceAccountEnvVars(ambiance, envVarMap);
 
     return getUnitStep(
         ambiance, stepElementParameters, accountId, logKey, parkedTaskId, serverlessAwsLambdaDeployV2StepParameters);
@@ -103,16 +100,20 @@ public class ServerlessAwsLambdaDeployV2Step extends AbstractContainerStepV2<Ste
     String instances = null;
     String serviceName = null;
 
-    StepStatusTaskResponseData stepStatusTaskResponseData = null;
+    // If any of the responses are in serialized format, deserialize them
+    containerStepExecutionResponseHelper.deserializeResponse(responseDataMap);
 
-    for (Map.Entry<String, ResponseData> entry : responseDataMap.entrySet()) {
-      ResponseData responseData = entry.getValue();
-      if (responseData instanceof StepStatusTaskResponseData) {
-        stepStatusTaskResponseData = (StepStatusTaskResponseData) responseData;
-      }
-    }
+    StepStatusTaskResponseData stepStatusTaskResponseData =
+        containerStepExecutionResponseHelper.filterK8StepResponse(responseDataMap);
 
     StepResponse.StepOutcome stepOutcome = null;
+
+    if (stepStatusTaskResponseData == null) {
+      log.info("Serverless Aws Lambda Deploy :  Received stepStatusTaskResponseData as null");
+    } else {
+      log.info(String.format("Serverless Aws Lambda Deploy V2:  Received stepStatusTaskResponseData with status %s",
+          stepStatusTaskResponseData.getStepStatus().getStepExecutionStatus()));
+    }
 
     if (stepStatusTaskResponseData != null
         && stepStatusTaskResponseData.getStepStatus().getStepExecutionStatus() == StepExecutionStatus.SUCCESS) {
@@ -121,11 +122,14 @@ public class ServerlessAwsLambdaDeployV2Step extends AbstractContainerStepV2<Ste
       if (stepOutput instanceof StepMapOutput) {
         StepMapOutput stepMapOutput = (StepMapOutput) stepOutput;
         String instancesByte64 = stepMapOutput.getMap().get("serverlessInstances");
+        log.info(String.format("Serverless Aws Lambda Deploy V2 instances byte64 %s", instancesByte64));
         instances = serverlessStepCommonHelper.convertByte64ToString(instancesByte64);
+        log.info(String.format("Serverless Aws Lambda Deploy V2 instances %s", instances));
       }
 
       List<ServerInstanceInfo> serverInstanceInfoList = null;
       try {
+        log.info(String.format("Serverless Aws Lambda Deploy V2: Parsing instances from JSON %s", instances));
         ServerlessAwsLambdaFunctionsWithServiceName serverlessAwsLambdaFunctionsWithServiceName =
             serverlessStepCommonHelper.getServerlessAwsLambdaFunctionsWithServiceName(instances);
         List<ServerlessAwsLambdaFunction> serverlessAwsLambdaFunctions =
@@ -137,11 +141,14 @@ public class ServerlessAwsLambdaDeployV2Step extends AbstractContainerStepV2<Ste
             serverlessAwsLambdaFunctions, infrastructureOutcome.getRegion(), infrastructureOutcome.getStage(),
             serviceName, infrastructureOutcome.getInfrastructureKey());
       } catch (Exception e) {
-        log.error("Error while parsing serverless instances", e);
+        log.error("Error while parsing Serverless Aws Lambda Deploy V2 instances", e);
       }
 
       if (serverInstanceInfoList != null) {
+        log.info("Saving Serverless Aws Lambda V2 server instances into sweeping output");
         stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
+      } else {
+        log.info("No instances were received in Serverless Aws Lambda Deploy V2 Response");
       }
     }
 
