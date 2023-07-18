@@ -45,7 +45,7 @@ public class StaleUserMetadataCleanupMigration implements NGMigration {
   public void migrate() {
     try {
       int pageIndex = 0;
-      int pageSize = 10;
+      int pageSize = 1000;
 
       do {
         try {
