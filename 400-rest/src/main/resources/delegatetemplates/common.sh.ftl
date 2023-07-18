@@ -17,7 +17,8 @@ if [ ! -e start.sh ]; then
 fi
 
 JRE_DIR=jdk-11.0.19+7-jre
-<#if $3>
+jre=$3
+<#if jre??>
   <#noparse>
     $JRE_VERSION=$3
     JRE_DIR=jdk-$3-jre
