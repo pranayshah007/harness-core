@@ -76,6 +76,7 @@ import io.harness.cdng.manifest.steps.task.ManifestTaskHandler;
 import io.harness.cdng.manifest.steps.task.ManifestTaskService;
 import io.harness.cdng.manifest.steps.task.ManifestTaskServiceImpl;
 import io.harness.cdng.plugininfoproviders.AwsCdkBootstrapPluginInfoProvider;
+import io.harness.cdng.plugininfoproviders.AwsCdkDiffPluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.AwsCdkSynthPluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.AwsSamBuildPluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.AwsSamDeployPluginInfoProvider;
@@ -237,6 +238,7 @@ public class NGModule extends AbstractModule {
     pluginInfoProviderMultibinder.addBinding().to(ServerlessAwsLambdaPackageV2PluginInfoProvider.class);
     pluginInfoProviderMultibinder.addBinding().to(AwsCdkBootstrapPluginInfoProvider.class);
     pluginInfoProviderMultibinder.addBinding().to(AwsCdkSynthPluginInfoProvider.class);
+    pluginInfoProviderMultibinder.addBinding().to(AwsCdkDiffPluginInfoProvider.class);
 
     MapBinder<String, ManifestTaskHandler> manifestTaskHandlerMapper =
         MapBinder.newMapBinder(binder(), String.class, ManifestTaskHandler.class);

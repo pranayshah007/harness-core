@@ -1087,3 +1087,6 @@ io.harness.cdng.provision.awscdk.AwsCdkBootstrapStepParameters
 io.harness.cdng.provision.awscdk.AwsCdkSynthStepInfo
 io.harness.cdng.provision.awscdk.AwsCdkSynthStepNode
 io.harness.cdng.provision.awscdk.AwsCdkSynthStepParameters
+io.harness.cdng.provision.awscdk.AwsCdkDiffStepInfo
+io.harness.cdng.provision.awscdk.AwsCdkDiffStepNode
+io.harness.cdng.provision.awscdk.AwsCdkDiffStepParameters

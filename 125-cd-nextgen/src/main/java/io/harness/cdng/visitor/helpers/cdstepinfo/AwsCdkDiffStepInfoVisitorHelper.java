@@ -7,14 +7,14 @@
 
 package io.harness.cdng.visitor.helpers.cdstepinfo;
 
-import io.harness.cdng.provision.awscdk.AwsCdkSynthStepInfo;
+import io.harness.cdng.provision.awscdk.AwsCdkDiffStepInfo;
 import io.harness.walktree.visitor.validation.ConfigValidator;
 import io.harness.walktree.visitor.validation.ValidationVisitor;
 
-public class AwsCdkSynthStepInfoVisitorHelper implements ConfigValidator {
+public class AwsCdkDiffStepInfoVisitorHelper implements ConfigValidator {
   @Override
   public Object createDummyVisitableElement(Object originalElement) {
-    return AwsCdkSynthStepInfo.infoBuilder().build();
+    return AwsCdkDiffStepInfo.infoBuilder().build();
   }
 
   @Override
