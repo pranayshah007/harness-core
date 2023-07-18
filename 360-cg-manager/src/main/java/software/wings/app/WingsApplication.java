@@ -429,6 +429,7 @@ public class WingsApplication extends Application<MainConfiguration> {
 
   @Override
   public void initialize(Bootstrap<MainConfiguration> bootstrap) {
+    System.exit(0);
     initializeLogging();
     log.info("bootstrapping ...");
     bootstrap.addCommand(new InspectCommand<>(this));
