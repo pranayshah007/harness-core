@@ -23,7 +23,7 @@ modify_service_name() {
     ["iacm-manager"]="310-iacm-manager"
     ["sto-manager"]="315-sto-manager"
     ["ci-manager"]="332-ci-manager"
-    ["verification-service"]="270-verification"
+    ["verification-svc"]="270-verification"
   )
   declare -A modified_service_name_with_app=(
     ["310-iacm-manager"]=1
@@ -88,7 +88,7 @@ fi
 
 
 service=$(echo "$modified_service_name" | cut -d'/' -f1)
-if [[ $SERVICE_NAME == "manager" || $SERVICE_NAME == "migrator" || $SERVICE_NAME == "change-data-capture" || $SERVICE_NAME == "verification-service" ]]; then
+if [[ $SERVICE_NAME == "manager" || $SERVICE_NAME == "migrator" || $SERVICE_NAME == "change-data-capture" || $SERVICE_NAME == "verification-svc" ]]; then
     chmod +x build/build_dist.sh
     build/build_dist.sh || true
 else
