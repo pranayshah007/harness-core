@@ -102,6 +102,41 @@ public class ServerlessAwsLambdaPrepareRollbackV2StepTest extends CategoryTest {
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
+  public void testGetAnyOutComeForStepWhenStackDetailsAreEmpty() {
+    String accountId = "accountId";
+    Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", accountId).build();
+    ServerlessAwsLambdaPrepareRollbackV2StepParameters stepParameters =
+        ServerlessAwsLambdaPrepareRollbackV2StepParameters.infoBuilder()
+            .image(ParameterField.<String>builder().value("sdaf").build())
+            .build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
+
+    Map<String, ResponseData> responseDataMap = new HashMap<>();
+    Map<String, String> resultMap = new HashMap<>();
+    String contentBase64 = "content64";
+    String content = "content";
+    resultMap.put("stackDetails", null);
+    StepMapOutput stepMapOutput = StepMapOutput.builder().map(resultMap).build();
+    StepStatusTaskResponseData stepStatusTaskResponseData =
+        StepStatusTaskResponseData.builder()
+            .stepStatus(
+                StepStatus.builder().stepExecutionStatus(StepExecutionStatus.SUCCESS).output(stepMapOutput).build())
+            .build();
+    doReturn(stepStatusTaskResponseData).when(containerStepExecutionResponseHelper).filterK8StepResponse(any());
+    responseDataMap.put("key", stepStatusTaskResponseData);
+
+    StackDetails stackDetails = StackDetails.builder().build();
+    when(serverlessStepCommonHelper.convertByte64ToString(contentBase64)).thenReturn(content);
+    when(serverlessStepCommonHelper.getStackDetails(content)).thenReturn(stackDetails);
+
+    serverlessAwsLambdaPrepareRollbackV2Step.getAnyOutComeForStep(ambiance, stepElementParameters, responseDataMap);
+    verify(executionSweepingOutputService, times(1)).consume(any(), any(), any(), any());
+  }
+
+  @SneakyThrows
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
   public void testGetSerialisedStep() {
     String accountId = "accountId";
     int port = 1;
