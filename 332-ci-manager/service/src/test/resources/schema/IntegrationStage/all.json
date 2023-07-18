@@ -1399,6 +1399,26 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "BlackduckSbomOrchestration": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/SbomOrchestrationSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "format": {
+              "type": "string",
+              "enum": [
+                "spdx-json",
+                "cyclonedx-json"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "BrakemanStepInfo": {
       "allOf": [
         {
@@ -9782,6 +9802,15 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "SbomFile": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "SbomOrchestrationSpec": {
       "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -9795,12 +9824,29 @@
         "type": {
           "type": "string",
           "enum": [
-            "Syft"
+            "Syft",
+            "Blackduck"
           ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Blackduck"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/BlackduckSbomOrchestration"
+              }
+            }
+          }
+        },
         {
           "if": {
             "properties": {
@@ -10834,6 +10880,9 @@
           "properties": {
             "attestation": {
               "$ref": "#/definitions/Attestation"
+            },
+            "ingestion": {
+              "$ref": "#/definitions/SbomFile"
             },
             "resources": {
               "$ref": "#/definitions/ContainerResource"

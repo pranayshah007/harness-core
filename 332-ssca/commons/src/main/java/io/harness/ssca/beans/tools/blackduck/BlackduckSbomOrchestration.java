@@ -5,8 +5,10 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ssca.beans.tools.syft;
+package io.harness.ssca.beans.tools.blackduck;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.ssca.beans.tools.SbomOrchestrationSpec;
 import io.harness.ssca.beans.tools.SbomToolConstants;
 
@@ -16,16 +18,17 @@ import lombok.Data;
 
 @Data
 @Builder
-public class SyftSbomOrchestration implements SbomOrchestrationSpec {
-  SyftOrchestrationFormat format;
+@OwnedBy(HarnessTeam.SSCA)
+public class BlackduckSbomOrchestration implements SbomOrchestrationSpec {
+  BlackduckOrchestrationFormat format;
 
-  public enum SyftOrchestrationFormat {
+  public enum BlackduckOrchestrationFormat {
     @JsonProperty(SbomToolConstants.SPDX_JSON) SPDX_JSON(SbomToolConstants.SPDX_JSON),
     @JsonProperty(SbomToolConstants.CYCLONEDX_JSON) CYCLONEDX_JSON(SbomToolConstants.CYCLONEDX_JSON);
 
-    private final String name;
+    final private String name;
 
-    SyftOrchestrationFormat(String name) {
+    BlackduckOrchestrationFormat(String name) {
       this.name = name;
     }
 

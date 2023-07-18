@@ -7,8 +7,6 @@
 
 package io.harness.ssca.execution;
 
-import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
@@ -18,12 +16,10 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.ssca.beans.OrchestrationStepEnvVariables;
 import io.harness.ssca.beans.OrchestrationStepSecretVariables;
-import io.harness.ssca.beans.SscaConstants;
 import io.harness.ssca.beans.attestation.AttestationType;
 import io.harness.ssca.beans.attestation.CosignAttestation;
-import io.harness.ssca.beans.source.ImageSbomSource;
-import io.harness.ssca.beans.source.SbomSourceType;
 import io.harness.ssca.beans.stepinfo.SscaOrchestrationStepInfo;
+import io.harness.ssca.beans.tools.blackduck.BlackduckSbomOrchestration;
 import io.harness.ssca.beans.tools.syft.SyftSbomOrchestration;
 import io.harness.ssca.client.SSCAServiceUtils;
 import io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils;
@@ -46,19 +42,16 @@ public class SscaOrchestrationPluginUtils {
       SscaOrchestrationStepInfo stepInfo, String identifier, Ambiance ambiance, Type type) {
     String tool = stepInfo.getTool().getType().toString();
     String format = getFormat(stepInfo);
-
-    String sbomSource = null;
-    if (stepInfo.getSource().getType().equals(SbomSourceType.IMAGE)) {
-      sbomSource = resolveStringParameter("source", SscaConstants.SSCA_ORCHESTRATION_STEP, identifier,
-          ((ImageSbomSource) stepInfo.getSource().getSbomSourceSpec()).getImage(), true);
+    String ingestion = null;
+    if (stepInfo.getIngestion() != null) {
+      ingestion = stepInfo.getIngestion().getFile().getValue();
     }
-
     String runtimeId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     OrchestrationStepEnvVariables envVariables =
         OrchestrationStepEnvVariables.builder()
             .sbomGenerationTool(tool)
             .sbomGenerationFormat(format)
-            .sbomSource(sbomSource)
+            .sbomDestination(ingestion)
             .sscaCoreUrl(sscaServiceUtils.getSscaServiceConfig().getHttpClientConfig().getBaseUrl())
             .stepExecutionId(runtimeId)
             .stepIdentifier(identifier)
@@ -106,6 +99,8 @@ public class SscaOrchestrationPluginUtils {
     switch (stepInfo.getTool().getType()) {
       case SYFT:
         return ((SyftSbomOrchestration) stepInfo.getTool().getSbomOrchestrationSpec()).getFormat().toString();
+      case BLACKDUCK:
+        return ((BlackduckSbomOrchestration) stepInfo.getTool().getSbomOrchestrationSpec()).getFormat().toString();
       default:
         throw new CIStageExecutionUserException(
             String.format("Unsupported tool type: %s", stepInfo.getTool().getType()));

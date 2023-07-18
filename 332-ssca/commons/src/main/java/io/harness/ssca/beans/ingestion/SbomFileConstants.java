@@ -5,12 +5,8 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ssca.beans.tools;
+package io.harness.ssca.beans.ingestion;
 
-public interface SbomToolConstants {
-  String SYFT = "Syft";
-
-  String BLACKDUCK = "Blackduck";
-  String SPDX_JSON = "spdx-json";
-  String CYCLONEDX_JSON = "cyclonedx-json";
+public interface SbomFileConstants {
+  String FILE = "file";
 }

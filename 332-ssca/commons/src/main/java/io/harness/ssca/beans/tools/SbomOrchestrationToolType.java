@@ -11,9 +11,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum SbomOrchestrationToolType {
-  @JsonProperty(SbomToolConstants.SYFT) SYFT(SbomToolConstants.SYFT);
+  @JsonProperty(SbomToolConstants.SYFT) SYFT(SbomToolConstants.SYFT),
+  @JsonProperty(SbomToolConstants.BLACKDUCK) BLACKDUCK(SbomToolConstants.BLACKDUCK);
 
-  private String name;
+  private final String name;
 
   SbomOrchestrationToolType(String name) {
     this.name = name;

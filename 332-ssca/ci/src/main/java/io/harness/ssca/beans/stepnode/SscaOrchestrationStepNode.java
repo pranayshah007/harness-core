@@ -56,7 +56,8 @@ public class SscaOrchestrationStepNode extends CIAbstractStepNode {
 
   enum StepType {
     SscaOrchestration(CIStepInfoType.SSCA_ORCHESTRATION.getDisplayName());
-    @Getter String name;
+    @Getter final String name;
+
     StepType(String name) {
       this.name = name;
     }

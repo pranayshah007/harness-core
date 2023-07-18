@@ -46,7 +46,11 @@ public class SscaOrchestrationStepPluginUtils {
     envMap.put(PLUGIN_FORMAT, envVariables.getSbomGenerationFormat());
     envMap.put(PLUGIN_SBOMSOURCE, envVariables.getSbomSource());
     envMap.put(PLUGIN_TYPE, "Orchestrate");
-    envMap.put(PLUGIN_SBOMDESTINATION, "harness/sbom");
+
+    String defaultSbomDestination = "harness/sbom";
+    String SbomDestination = envVariables.getSbomDestination();
+    envMap.put(PLUGIN_SBOMDESTINATION, SbomDestination == null ? defaultSbomDestination : SbomDestination);
+
     envMap.put(SKIP_NORMALISATION, "true");
     envMap.put(SSCA_CORE_URL, envVariables.getSscaCoreUrl());
     envMap.put(STEP_EXECUTION_ID, envVariables.getStepExecutionId());

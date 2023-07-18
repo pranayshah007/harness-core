@@ -20,6 +20,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.ssca.beans.Attestation;
 import io.harness.ssca.beans.SscaConstants;
+import io.harness.ssca.beans.ingestion.SbomFile;
 import io.harness.ssca.beans.source.ImageSbomSource;
 import io.harness.ssca.beans.source.SbomSource;
 import io.harness.ssca.beans.source.SbomSourceType;
@@ -33,6 +34,7 @@ import io.swagger.annotations.ApiModelProperty;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -67,6 +69,8 @@ public class SscaOrchestrationStepInfo implements PluginCompatibleStep, WithConn
   Attestation attestation;
   ContainerResource resources;
 
+  SbomFile ingestion;
+
   @Override
   public TypeInfo getNonYamlInfo() {
     return TypeInfo.builder().stepInfoType(CIStepInfoType.SSCA_ORCHESTRATION).build();
@@ -86,12 +90,10 @@ public class SscaOrchestrationStepInfo implements PluginCompatibleStep, WithConn
   @ApiModelProperty(hidden = true)
   public ParameterField<String> getConnectorRef() {
     if (source != null) {
-      switch (source.getType()) {
-        case IMAGE:
-          return ((ImageSbomSource) source.getSbomSourceSpec()).getConnector();
-        default:
-          return null;
+      if (Objects.requireNonNull(source.getType()) == SbomSourceType.IMAGE) {
+        return ((ImageSbomSource) source.getSbomSourceSpec()).getConnector();
       }
+      return null;
     }
     return null;
   }
