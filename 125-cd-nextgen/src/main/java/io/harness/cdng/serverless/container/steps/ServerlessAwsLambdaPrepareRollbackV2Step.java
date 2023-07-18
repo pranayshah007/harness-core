@@ -14,6 +14,7 @@ import io.harness.callback.DelegateCallbackToken;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.serverless.ServerlessStepCommonHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.serverless.StackDetails;
 import io.harness.delegate.task.stepstatus.StepExecutionStatus;
 import io.harness.delegate.task.stepstatus.StepMapOutput;
@@ -132,6 +133,10 @@ public class ServerlessAwsLambdaPrepareRollbackV2Step extends AbstractContainerS
       if (stepOutput instanceof StepMapOutput) {
         StepMapOutput stepMapOutput = (StepMapOutput) stepOutput;
         String stackDetailsByte64 = stepMapOutput.getMap().get("stackDetails");
+        if (EmptyPredicate.isEmpty(stackDetailsByte64)) {
+          log.info("No stack details was received in Serverless Aws Lambda Prepare Rollback V2 Response");
+          return stepOutcome;
+        }
         stackDetailsString = serverlessStepCommonHelper.convertByte64ToString(stackDetailsByte64);
       }
 
