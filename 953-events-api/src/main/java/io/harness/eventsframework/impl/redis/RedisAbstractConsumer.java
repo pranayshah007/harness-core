@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.PendingEntry;
 import org.redisson.api.RStream;
@@ -49,7 +50,7 @@ public abstract class RedisAbstractConsumer extends AbstractConsumer {
   protected RedissonClient redissonClient;
   protected Duration maxProcessingTime;
   protected Set<String> consumerGroupNames;
-  protected int batchSize;
+  @Getter protected int batchSize;
   private Retry retry;
   @Inject RedisEventMetricPublisher redisEventMetricPublisher;
 

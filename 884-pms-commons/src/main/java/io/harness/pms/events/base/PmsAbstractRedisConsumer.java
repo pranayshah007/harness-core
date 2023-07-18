@@ -8,7 +8,6 @@
 package io.harness.pms.events.base;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.eventsframework.EventsFrameworkConstants.SDK_RESPONSE_EVENT_BATCH_SIZE;
 import static io.harness.maintenance.MaintenanceController.getMaintenanceFlag;
 import static io.harness.threading.Morpheus.sleep;
 
@@ -20,6 +19,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
+import io.harness.eventsframework.impl.redis.RedisAbstractConsumer;
 import io.harness.eventsframework.impl.redis.RedisTraceConsumer;
 import io.harness.queue.QueueController;
 
@@ -117,7 +117,7 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
     }
     // Only checking the size for SDK_RESPONSE_EVENT_BATCH_SIZE now for testing. Will take the correct batch-size for
     // the various events.
-    if (messages.size() < SDK_RESPONSE_EVENT_BATCH_SIZE) {
+    if (messages.size() < ((RedisAbstractConsumer) this.redisConsumer).getBatchSize()) {
       // Adding thread sleep when the events read are less than the batch-size. This way when the load is high, consumer
       // will query the events quickly. And in case of low load, thread will sleep for sometime.
       TimeUnit.MILLISECONDS.sleep(THREAD_SLEEP_TIME_IN_MILLIS);

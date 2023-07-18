@@ -59,7 +59,7 @@ public final class EventsFrameworkConstants {
   public static final int SDK_RESPONSE_EVENT_BATCH_SIZE =
       EmptyPredicate.isNotEmpty(System.getenv("SDK_RESPONSE_EVENT_BATCH_SIZE"))
       ? Integer.parseInt(System.getenv("SDK_RESPONSE_EVENT_BATCH_SIZE"))
-      : 20;
+      : 50;
 
   public static final String INITIATE_NODE_EVENT_TOPIC = "pipeline_initiate_node";
   public static final int INITIATE_NODE_EVENT_BATCH_SIZE = 10;
