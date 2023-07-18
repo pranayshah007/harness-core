@@ -176,7 +176,7 @@ public class DelegateVersionService {
   public String getJREVersion(final String accountId, boolean isDelegate) {
     String JREVersionFromRing = "";
     try {
-      if (isDelegate){
+      if (isDelegate) {
         JREVersionFromRing = delegateRingService.getDelegateJREVersion(accountId);
       } else {
         JREVersionFromRing = delegateRingService.getWatcherJREVersion(accountId);

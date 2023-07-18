@@ -31,7 +31,8 @@ public interface ManagerClientV2 {
   Call<RestResponse<DelegateConfiguration>> getDelegateConfiguration(@Query("accountId") String accountId);
 
   @GET("agent/delegates/jreVersion")
-  Call<RestResponse<String>> getJREVersion(@Query("accountId") String accountId, @Query("isDelegate") boolean isDelegate);
+  Call<RestResponse<String>> getJREVersion(
+      @Query("accountId") String accountId, @Query("isDelegate") boolean isDelegate);
 
   @GET("agent/infra-download/delegate-auth/delegate/{version}")
   Call<RestResponse<String>> getDelegateDownloadUrl(

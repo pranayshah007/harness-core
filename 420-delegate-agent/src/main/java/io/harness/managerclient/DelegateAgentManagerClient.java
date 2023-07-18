@@ -280,5 +280,6 @@ public interface DelegateAgentManagerClient {
       @Query("accountId") String accountId, @Body SetupInfraResponse response);
 
   @GET("agent/delegates/jreVersion")
-  Call<RestResponse<String>> getJREVersion(@Query("accountId") String accountId, @Query("isDelegate") boolean isDelegate);
+  Call<RestResponse<String>> getJREVersion(
+      @Query("accountId") String accountId, @Query("isDelegate") boolean isDelegate);
 }
