@@ -793,4 +793,18 @@ public class GitClientHelperTest extends CategoryTest {
     assertThat(GitClientHelper.convertToHarnessRepoName("acc", "org", "proj", "/org/proj/repo"))
         .isEqualTo("acc/org/proj/repo");
   }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testGetHarnessRepoName() {
+    String repoName = GitClientHelper.getHarnessRepoName("https://qa.harness.io/code/git/acc/org/proj/repo");
+    assertThat(repoName).isEqualTo("acc/org/proj/repo/+");
+
+    repoName = GitClientHelper.getHarnessRepoName("https://qa.harness.io/code/git/acc/org/proj/repo.git");
+    assertThat(repoName).isEqualTo("acc/org/proj/repo/+");
+
+    repoName = GitClientHelper.getHarnessRepoName("https://app.harness.io/code/git/acc/org/proj/repo.git/");
+    assertThat(repoName).isEqualTo("acc/org/proj/repo/+");
+  }
 }
