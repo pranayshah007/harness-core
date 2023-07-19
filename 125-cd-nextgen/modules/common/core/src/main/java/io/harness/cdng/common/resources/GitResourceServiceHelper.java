@@ -104,9 +104,8 @@ public class GitResourceServiceHelper {
             .connectorName(connectorDTO.getName());
 
     boolean githubAppAuthentication =
-        cdFeatureFlagHelper.isEnabled(ngAccess.getAccountIdentifier(), CDS_GITHUB_APP_AUTHENTICATION)
-        && GitAuthenticationDecryptionHelper.isGitHubAppAuthentication(
-            (ScmConnector) connectorDTO.getConnectorConfig());
+        GitAuthenticationDecryptionHelper.isGitHubAppAuthentication((ScmConnector) connectorDTO.getConnectorConfig())
+        && cdFeatureFlagHelper.isEnabled(ngAccess.getAccountIdentifier(), CDS_GITHUB_APP_AUTHENTICATION);
 
     if (githubAppAuthentication) {
       GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDTO.getConnectorConfig();
