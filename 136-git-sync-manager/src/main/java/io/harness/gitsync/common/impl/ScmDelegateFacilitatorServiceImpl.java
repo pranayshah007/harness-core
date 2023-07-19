@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.BranchFilterParamsDTO;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.GetBatchFileRequestIdentifier;
@@ -700,7 +701,8 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
 
   @Override
   public ListBranchesWithDefaultResponse listBranches(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, ScmConnector scmConnector, PageRequestDTO pageRequest) {
+      String projectIdentifier, ScmConnector scmConnector, PageRequestDTO pageRequest,
+      BranchFilterParamsDTO branchFilterParamsDTO) {
     final List<EncryptedDataDetail> encryptionDetails =
         getEncryptedDataDetailsForNewGitX(accountIdentifier, orgIdentifier, projectIdentifier, scmConnector);
     final ScmGitRefTaskParams scmGitRefTaskParams = ScmGitRefTaskParams.builder()
@@ -708,6 +710,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
                                                         .scmConnector(scmConnector)
                                                         .encryptedDataDetails(encryptionDetails)
                                                         .pageRequest(pageRequest)
+                                                        .branchFilterParamsDTO(branchFilterParamsDTO)
                                                         .build();
     DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(accountIdentifier, orgIdentifier,
         projectIdentifier, scmGitRefTaskParams, TaskType.SCM_GIT_REF_TASK, DEFAULT_DELEGATE_TASK_TIMEOUT_In_SECONDS);

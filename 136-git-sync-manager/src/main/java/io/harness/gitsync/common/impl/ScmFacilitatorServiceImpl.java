@@ -16,6 +16,7 @@ import static software.wings.beans.TaskType.SCM_BATCH_GET_FILE_TASK;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.BranchFilterParamsDTO;
 import io.harness.beans.FeatureName;
 import io.harness.beans.GetBatchFileRequestIdentifier;
 import io.harness.beans.PageRequestDTO;
@@ -246,7 +247,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
                 PageRequestDTO.builder()
                     .pageIndex(pageRequest.getPageIndex())
                     .pageSize(pageRequest.getPageSize())
-                    .build()),
+                    .build(),
+                BranchFilterParamsDTO.builder().branchSearchTerm(searchTerm).build()),
             scmConnector);
 
     if (ScmApiErrorHandlingHelper.isFailureResponse(

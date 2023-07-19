@@ -17,6 +17,7 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.BranchFilterParamsDTO;
 import io.harness.beans.ContentType;
 import io.harness.beans.FileContentBatchResponse;
 import io.harness.beans.FileGitDetails;
@@ -50,72 +51,7 @@ import io.harness.impl.ScmResponseStatusUtils;
 import io.harness.logger.RepoBranchLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.logging.ResponseTimeRecorder;
-import io.harness.product.ci.scm.proto.Commit;
-import io.harness.product.ci.scm.proto.CompareCommitsRequest;
-import io.harness.product.ci.scm.proto.CompareCommitsResponse;
-import io.harness.product.ci.scm.proto.CreateBranchRequest;
-import io.harness.product.ci.scm.proto.CreateBranchResponse;
-import io.harness.product.ci.scm.proto.CreateFileResponse;
-import io.harness.product.ci.scm.proto.CreatePRRequest;
-import io.harness.product.ci.scm.proto.CreatePRResponse;
-import io.harness.product.ci.scm.proto.CreateWebhookRequest;
-import io.harness.product.ci.scm.proto.CreateWebhookResponse;
-import io.harness.product.ci.scm.proto.DeleteFileRequest;
-import io.harness.product.ci.scm.proto.DeleteFileResponse;
-import io.harness.product.ci.scm.proto.DeleteWebhookRequest;
-import io.harness.product.ci.scm.proto.DeleteWebhookResponse;
-import io.harness.product.ci.scm.proto.FileBatchContentResponse;
-import io.harness.product.ci.scm.proto.FileChange;
-import io.harness.product.ci.scm.proto.FileContent;
-import io.harness.product.ci.scm.proto.FileModifyRequest;
-import io.harness.product.ci.scm.proto.FindCommitRequest;
-import io.harness.product.ci.scm.proto.FindCommitResponse;
-import io.harness.product.ci.scm.proto.FindFilesInBranchRequest;
-import io.harness.product.ci.scm.proto.FindFilesInBranchResponse;
-import io.harness.product.ci.scm.proto.FindFilesInCommitRequest;
-import io.harness.product.ci.scm.proto.FindFilesInCommitResponse;
-import io.harness.product.ci.scm.proto.FindFilesInPRRequest;
-import io.harness.product.ci.scm.proto.FindFilesInPRResponse;
-import io.harness.product.ci.scm.proto.FindPRRequest;
-import io.harness.product.ci.scm.proto.FindPRResponse;
-import io.harness.product.ci.scm.proto.GenerateYamlRequest;
-import io.harness.product.ci.scm.proto.GenerateYamlResponse;
-import io.harness.product.ci.scm.proto.GetAuthenticatedUserRequest;
-import io.harness.product.ci.scm.proto.GetAuthenticatedUserResponse;
-import io.harness.product.ci.scm.proto.GetBatchFileRequest;
-import io.harness.product.ci.scm.proto.GetFileRequest;
-import io.harness.product.ci.scm.proto.GetLatestCommitOnFileRequest;
-import io.harness.product.ci.scm.proto.GetLatestCommitOnFileResponse;
-import io.harness.product.ci.scm.proto.GetLatestCommitRequest;
-import io.harness.product.ci.scm.proto.GetLatestCommitResponse;
-import io.harness.product.ci.scm.proto.GetLatestFileRequest;
-import io.harness.product.ci.scm.proto.GetUserRepoRequest;
-import io.harness.product.ci.scm.proto.GetUserRepoResponse;
-import io.harness.product.ci.scm.proto.GetUserReposRequest;
-import io.harness.product.ci.scm.proto.GetUserReposResponse;
-import io.harness.product.ci.scm.proto.IsLatestFileRequest;
-import io.harness.product.ci.scm.proto.IsLatestFileResponse;
-import io.harness.product.ci.scm.proto.ListBranchesRequest;
-import io.harness.product.ci.scm.proto.ListBranchesResponse;
-import io.harness.product.ci.scm.proto.ListBranchesWithDefaultRequest;
-import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
-import io.harness.product.ci.scm.proto.ListCommitsInPRRequest;
-import io.harness.product.ci.scm.proto.ListCommitsInPRResponse;
-import io.harness.product.ci.scm.proto.ListCommitsRequest;
-import io.harness.product.ci.scm.proto.ListCommitsResponse;
-import io.harness.product.ci.scm.proto.ListWebhooksRequest;
-import io.harness.product.ci.scm.proto.ListWebhooksResponse;
-import io.harness.product.ci.scm.proto.NativeEvents;
-import io.harness.product.ci.scm.proto.PRFile;
-import io.harness.product.ci.scm.proto.PageRequest;
-import io.harness.product.ci.scm.proto.Provider;
-import io.harness.product.ci.scm.proto.RefreshTokenRequest;
-import io.harness.product.ci.scm.proto.RefreshTokenResponse;
-import io.harness.product.ci.scm.proto.RepoFilterParams;
-import io.harness.product.ci.scm.proto.SCMGrpc;
-import io.harness.product.ci.scm.proto.Signature;
-import io.harness.product.ci.scm.proto.UpdateFileResponse;
-import io.harness.product.ci.scm.proto.WebhookResponse;
+import io.harness.product.ci.scm.proto.*;
 import io.harness.service.ScmServiceClient;
 import io.harness.utils.FilePathUtils;
 import io.harness.utils.ScmGrpcClientUtils;
@@ -407,17 +343,10 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   }
 
   @Override
-  public ListBranchesWithDefaultResponse listBranchesWithDefault(
-      ScmConnector scmConnector, PageRequestDTO pageRequest, SCMGrpc.SCMBlockingStub scmBlockingStub) {
-    final String slug = scmGitProviderHelper.getSlug(scmConnector);
-    final Provider provider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
-    int pageNumber = 1;
+  public ListBranchesWithDefaultResponse listBranchesWithDefault(ScmConnector scmConnector, PageRequestDTO pageRequest,
+      SCMGrpc.SCMBlockingStub scmBlockingStub, BranchFilterParamsDTO branchFilterParamsDTO) {
     ListBranchesWithDefaultRequest listBranchesWithDefaultRequest =
-        ListBranchesWithDefaultRequest.newBuilder()
-            .setSlug(slug)
-            .setProvider(provider)
-            .setPagination(PageRequest.newBuilder().setPage(pageNumber).build())
-            .build();
+        buildListBranchesWithDefaultRequest(scmConnector, branchFilterParamsDTO);
     ListBranchesWithDefaultResponse listBranchesWithDefaultResponse = ScmGrpcClientUtils.retryAndProcessException(
         scmBlockingStub::listBranchesWithDefault, listBranchesWithDefaultRequest);
     if (isNotEmpty(listBranchesWithDefaultResponse.getError())) {
@@ -1298,5 +1227,27 @@ public class ScmServiceClientImpl implements ScmServiceClient {
                                 .build();
     }
     return getUserReposRequest;
+  }
+
+  private ListBranchesWithDefaultRequest buildListBranchesWithDefaultRequest(
+      ScmConnector scmConnector, BranchFilterParamsDTO branchFilterParamsDTO) {
+    final String slug = scmGitProviderHelper.getSlug(scmConnector);
+    final Provider provider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
+    int pageNumber = 1;
+    ListBranchesWithDefaultRequest listBranchesWithDefaultRequest =
+        ListBranchesWithDefaultRequest.newBuilder()
+            .setSlug(slug)
+            .setProvider(provider)
+            .setPagination(PageRequest.newBuilder().setPage(pageNumber).build())
+            .build();
+    if (branchFilterParamsDTO != null) {
+      listBranchesWithDefaultRequest =
+          ListBranchesWithDefaultRequest.newBuilder(listBranchesWithDefaultRequest)
+              .setBranchFilterParams(BranchFilterParams.newBuilder()
+                                         .setBranchSearchTerm(branchFilterParamsDTO.getBranchSearchTerm())
+                                         .build())
+              .build();
+    }
+    return listBranchesWithDefaultRequest;
   }
 }

@@ -168,7 +168,8 @@ public class ScmGitRefTask extends AbstractDelegateRunnableTask {
       case BRANCH_LIST_WITH_DEFAULT_BRANCH: {
         final ListBranchesWithDefaultResponse listBranchesWithDefaultResponse = scmDelegateClient.processScmRequest(c
             -> scmServiceClient.listBranchesWithDefault(scmGitRefTaskParams.getScmConnector(),
-                scmGitRefTaskParams.getPageRequest(), SCMGrpc.newBlockingStub(c)));
+                scmGitRefTaskParams.getPageRequest(), SCMGrpc.newBlockingStub(c),
+                scmGitRefTaskParams.getBranchFilterParamsDTO()));
         return ScmGitRefTaskResponseData.builder()
             .gitRefType(scmGitRefTaskParams.getGitRefType())
             .getListBranchesWithDefaultResponse(listBranchesWithDefaultResponse.toByteArray())

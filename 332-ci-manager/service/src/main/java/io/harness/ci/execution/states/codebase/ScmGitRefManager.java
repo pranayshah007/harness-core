@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 
+import io.harness.beans.BranchFilterParamsDTO;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.PageRequestDTO;
 import io.harness.ci.buildstate.CodebaseUtils;
@@ -101,9 +102,12 @@ public class ScmGitRefManager {
         format("[Retrying failed call to get default branch for connector: [%s], attempt: {}", connectorIdentifier),
         format("Failed call to get default branch for connector: [%s] after retrying {} times", connectorIdentifier));
     PageRequestDTO pageRequestDTO = PageRequestDTO.builder().build();
+    BranchFilterParamsDTO branchFilterParamsDTO = BranchFilterParamsDTO.builder().build();
     final ListBranchesWithDefaultResponse listBranchesWithDefaultResponse =
         Failsafe.with(retryPolicy)
-            .get(() -> scmServiceClient.listBranchesWithDefault(scmConnector, pageRequestDTO, scmBlockingStub));
+            .get(()
+                     -> scmServiceClient.listBranchesWithDefault(
+                         scmConnector, pageRequestDTO, scmBlockingStub, branchFilterParamsDTO));
     ScmResponseStatusUtils.checkScmResponseStatusAndThrowException(
         listBranchesWithDefaultResponse.getStatus(), listBranchesWithDefaultResponse.getError());
     return listBranchesWithDefaultResponse.getDefaultBranch();

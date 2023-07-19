@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.PR_CREATION_ERROR;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.BranchFilterParamsDTO;
 import io.harness.beans.FileContentBatchResponse;
 import io.harness.beans.GetBatchFileRequestIdentifier;
 import io.harness.beans.IdentifierRef;
@@ -330,10 +331,11 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
 
   @Override
   public ListBranchesWithDefaultResponse listBranches(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, ScmConnector scmConnector, PageRequestDTO pageRequest) {
+      String projectIdentifier, ScmConnector scmConnector, PageRequestDTO pageRequest,
+      BranchFilterParamsDTO branchFilterParamsDTO) {
     final ScmConnector decryptedConnector = gitSyncConnectorHelper.getDecryptedConnectorForNewGitX(
         accountIdentifier, orgIdentifier, projectIdentifier, scmConnector);
-    return scmClient.listBranchesWithDefault(decryptedConnector, pageRequest);
+    return scmClient.listBranchesWithDefault(decryptedConnector, pageRequest, branchFilterParamsDTO);
   }
 
   private CreateBranchResponse createBranch(String branch, String baseBranch, ScmConnector scmConnector) {

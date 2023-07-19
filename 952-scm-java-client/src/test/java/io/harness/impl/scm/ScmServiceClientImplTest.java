@@ -38,6 +38,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.BranchFilterParamsDTO;
 import io.harness.beans.GetBatchFileRequestIdentifier;
 import io.harness.beans.PageRequestDTO;
 import io.harness.beans.Scope;
@@ -190,8 +191,8 @@ public class ScmServiceClientImplTest extends CategoryTest {
     when(scmBlockingStub.listBranchesWithDefault(any())).thenReturn(listBranchesWithDefaultResponse);
     ArgumentCaptor<ListBranchesWithDefaultRequest> listBranchesRequestCaptor =
         ArgumentCaptor.forClass(ListBranchesWithDefaultRequest.class);
-    ListBranchesWithDefaultResponse responseFromService = scmServiceClient.listBranchesWithDefault(
-        scmConnector, PageRequestDTO.builder().pageSize(5).build(), scmBlockingStub);
+    ListBranchesWithDefaultResponse responseFromService = scmServiceClient.listBranchesWithDefault(scmConnector,
+        PageRequestDTO.builder().pageSize(5).build(), scmBlockingStub, BranchFilterParamsDTO.builder().build());
     verify(scmBlockingStub, times(1)).listBranchesWithDefault(listBranchesRequestCaptor.capture());
     assertThat(responseFromService.getStatus()).isEqualTo(200);
     assertThat(responseFromService.getBranchesList()).isEqualTo(listBranchesWithDefaultResponse.getBranchesList());
