@@ -1920,6 +1920,7 @@
 83087:io.harness.delegate.beans.trigger.TriggerAuthenticationTaskResponse
 90001:software.wings.service.impl.apm.AWSPrometheusInfo
 95001:io.harness.delegate.beans.logstreaming.UnitProgressData
+95003:io.harness.delegate.beans.helm.HelmDeployProgressData
 97001:io.harness.jira.JiraActionNG
 97002:io.harness.jira.JiraCreateIssueRequestNG
 97003:io.harness.jira.JiraFieldAllowedValueNG

@@ -335,6 +335,7 @@ import io.harness.delegate.beans.gitapi.GitApiTaskParams;
 import io.harness.delegate.beans.gitapi.GitApiTaskResponse;
 import io.harness.delegate.beans.gitapi.GitRepoType;
 import io.harness.delegate.beans.helm.HelmChartVersionDetails;
+import io.harness.delegate.beans.helm.HelmDeployProgressData;
 import io.harness.delegate.beans.instancesync.info.AsgServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AwsSshWinrmServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo;
@@ -1725,6 +1726,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(HelmInstallationParameters.class, 10013);
     kryo.register(SmtpParameters.class, 10014);
     kryo.register(UnitProgressData.class, 95001);
+    kryo.register(HelmDeployProgressData.class, 95003);
     kryo.register(TerraformCommand.class, 5524);
     kryo.register(TerraformCommandUnit.class, 5525);
     kryo.register(DecryptGitAPiAccessTaskParams.class, 543266);

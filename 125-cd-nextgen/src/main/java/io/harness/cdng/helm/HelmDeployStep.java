@@ -27,6 +27,8 @@ import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.delegate.beans.helm.HelmDeployProgressData;
+import io.harness.delegate.beans.helm.HelmDeployProgressDataVersion;
 import io.harness.delegate.beans.instancesync.mapper.K8sContainerToHelmServiceInstanceInfoMapper;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
@@ -53,6 +55,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.supplier.ThrowingSupplier;
+import io.harness.tasks.ProgressData;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
@@ -96,6 +99,33 @@ public class HelmDeployStep extends CdTaskChainExecutable implements NativeHelmS
       StepElementParameters stepParameters, StepInputPackage inputPackage, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
     return nativeHelmStepHelper.executeNextLink(this, ambiance, stepParameters, passThroughData, responseSupplier);
+  }
+
+  @Override
+  public ProgressData handleProgress(
+      Ambiance ambiance, StepElementParameters stepParameters, ProgressData progressData) {
+    if (progressData instanceof HelmDeployProgressData) {
+      if (cdFeatureFlagHelper.isEnabled(
+              AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_SEND_TASK_PROGRESS_NG)) {
+        HelmDeployProgressData helmDeployProgressData = (HelmDeployProgressData) progressData;
+        if (HelmDeployProgressDataVersion.V1.getVersionName().equalsIgnoreCase(
+                helmDeployProgressData.getProgressDataVersion())) {
+          NativeHelmDeployOutcomeBuilder nativeHelmDeployOutcomeBuilder = NativeHelmDeployOutcome.builder();
+          nativeHelmDeployOutcomeBuilder.prevReleaseVersion(helmDeployProgressData.getPrevReleaseVersion());
+          nativeHelmDeployOutcomeBuilder.newReleaseVersion(helmDeployProgressData.getPrevReleaseVersion() + 1);
+          nativeHelmDeployOutcomeBuilder.hasInstallUpgradeStarted(helmDeployProgressData.isHasInstallUpgradeStarted());
+
+          executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.HELM_DEPLOY_RELEASE_OUTCOME,
+              nativeHelmDeployOutcomeBuilder.build(), StepOutcomeGroup.STEP.name());
+        } else {
+          log.error(
+              "Version {} of Helm Progress Data is not recognised", helmDeployProgressData.getProgressDataVersion());
+        }
+      }
+      return null;
+    }
+
+    return super.handleProgress(ambiance, stepParameters, progressData);
   }
 
   @Override
@@ -226,7 +256,9 @@ public class HelmDeployStep extends CdTaskChainExecutable implements NativeHelmS
             .ignoreReleaseHistFailStatus(ignoreHelmHistFailure)
             .useRefactorSteadyStateCheck(cdFeatureFlagHelper.isEnabled(
                 AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_STEADY_STATE_CHECK_1_16_V2_NG))
-            .skipSteadyStateCheck(skipSteadyStateCheck);
+            .skipSteadyStateCheck(skipSteadyStateCheck)
+            .sendTaskProgressEvents(cdFeatureFlagHelper.isEnabled(
+                AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_SEND_TASK_PROGRESS_NG));
 
     if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_K8S_SERVICE_HOOKS_NG)) {
       helmCommandRequestBuilder.serviceHooks(nativeHelmStepHelper.getServiceHooks(ambiance));

@@ -95,12 +95,14 @@ import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
+import io.harness.delegate.beans.progresstaskstreaming.NGDelegateTaskProgressCallback;
 import io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfigType;
+import io.harness.delegate.beans.taskprogress.TaskProgressCallback;
 import io.harness.delegate.clienttools.InstallUtils;
 import io.harness.delegate.expression.DelegateExpressionEvaluator;
 import io.harness.delegate.k8s.openshift.OpenShiftDelegateService;
@@ -2495,6 +2497,11 @@ public class K8sTaskHelperBase {
   public LogCallback getLogCallback(ILogStreamingTaskClient logStreamingTaskClient, String commandUnitName,
       boolean shouldOpenStream, CommandUnitsProgress commandUnitsProgress) {
     return new NGDelegateLogCallback(logStreamingTaskClient, commandUnitName, shouldOpenStream, commandUnitsProgress);
+  }
+
+  public TaskProgressCallback getTaskProgressCallback(
+      ILogStreamingTaskClient taskProgressStreamingTaskClient, String taskId) {
+    return new NGDelegateTaskProgressCallback(taskProgressStreamingTaskClient, taskId);
   }
 
   public List<FileData> renderTemplate(K8sDelegateTaskParams k8sDelegateTaskParams,

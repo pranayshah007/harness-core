@@ -327,6 +327,7 @@ io.harness.delegate.beans.connector.k8Connector.KubernetesAuthDTO
 io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO
 io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO
 io.harness.delegate.beans.logstreaming.UnitProgressData
+io.harness.delegate.beans.helm.HelmDeployProgressData
 io.harness.steps.SectionStepSweepingOutput
 io.harness.beans.Scope
 io.harness.spotinst.model.ElastiGroup

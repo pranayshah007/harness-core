@@ -52,6 +52,8 @@ import io.harness.connector.task.git.GitDecryptionHelper;
 import io.harness.container.ContainerInfo;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.helm.HelmDeployProgressData;
+import io.harness.delegate.beans.helm.HelmDeployProgressDataVersion;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
@@ -163,6 +165,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   @Inject private ScmFetchFilesHelperNG scmFetchFilesHelper;
   @Inject private SecretDecryptionService secretDecryptionService;
   private ILogStreamingTaskClient logStreamingTaskClient;
+  private ILogStreamingTaskClient taskProgressStreamingTaskClient;
+  private String taskId;
   @Inject private TimeLimiter timeLimiter;
   @Inject private CustomManifestFetchTaskHelper customManifestFetchTaskHelper;
   @Inject private HelmSteadyStateService helmSteadyStateService;
@@ -174,9 +178,20 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   private static final String NON_DIGITS_REGEX = "\\D+";
   private static final int VERSION_LENGTH = 3;
   private static final int KUBERNETESS_116_VERSION = 116;
+
+  @Override
+  public void setTaskId(String taskId) {
+    this.taskId = taskId;
+  }
+
   @Override
   public void setLogStreamingClient(ILogStreamingTaskClient iLogStreamingTaskClient) {
     this.logStreamingTaskClient = iLogStreamingTaskClient;
+  }
+
+  @Override
+  public void setTaskProgressStreamingClient(ILogStreamingTaskClient iLogStreamingTaskClient) {
+    this.taskProgressStreamingTaskClient = iLogStreamingTaskClient;
   }
 
   @Override
@@ -263,6 +278,18 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
       // list releases cmd passed
       isInstallUpgrade = true;
+
+      if (commandRequest.isSendTaskProgressEvents()) {
+        HelmDeployProgressData helmDeployProgressData =
+            HelmDeployProgressData.builder()
+                .progressDataVersion(HelmDeployProgressDataVersion.V1.getVersionName())
+                .prevReleaseVersion(prevVersion)
+                .hasInstallUpgradeStarted(isInstallUpgrade)
+                .build();
+        k8sTaskHelperBase.getTaskProgressCallback(taskProgressStreamingTaskClient, taskId)
+            .sendTaskProgressUpdate("Helm Install/Upgrade started", helmDeployProgressData);
+      }
+
       if (checkNewHelmInstall(helmListReleaseResponseNG)) {
         // install
         logCallback.saveExecutionLog("No previous deployment found for release. Installing chart");
