@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.cvng.exception;
+package io.harness.cvng.exception.mapper;
 
 import static io.harness.annotations.dev.HarnessTeam.CV;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
@@ -25,6 +25,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 @OwnedBy(CV)
 @Slf4j
@@ -38,7 +40,9 @@ public class ServiceCallExceptionMapper implements ExceptionMapper<ServiceCallEx
     List<ResponseMessage> responseMessages = exception.getResponseMessages();
     ErrorCode errorCode =
         Objects.nonNull(exception.getErrorCode()) ? exception.getErrorCode() : ErrorCode.UNKNOWN_ERROR;
-    String errorMessage = exception.getErrorMessage();
+    String errorMessage = StringUtils.isNotEmpty(ExceptionUtils.getMessage(exception))
+        ? ExceptionUtils.getMessage(exception)
+        : ExceptionUtils.getRootCauseMessage(exception);
     ErrorDTO errorBody = ErrorDTO.newError(Status.ERROR, errorCode, errorMessage);
     errorBody.setResponseMessages(responseMessages);
     return Response.status(resolveHttpStatus(errorCode)).entity(errorBody).build();
