@@ -346,7 +346,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   public ListBranchesWithDefaultResponse listBranchesWithDefault(ScmConnector scmConnector, PageRequestDTO pageRequest,
       SCMGrpc.SCMBlockingStub scmBlockingStub, BranchFilterParamsDTO branchFilterParamsDTO) {
     ListBranchesWithDefaultRequest listBranchesWithDefaultRequest =
-        buildListBranchesWithDefaultRequest(scmConnector, branchFilterParamsDTO);
+        buildListBranchesWithDefaultRequest(scmConnector, pageRequest, branchFilterParamsDTO);
     ListBranchesWithDefaultResponse listBranchesWithDefaultResponse = ScmGrpcClientUtils.retryAndProcessException(
         scmBlockingStub::listBranchesWithDefault, listBranchesWithDefaultRequest);
     if (isNotEmpty(listBranchesWithDefaultResponse.getError())) {
@@ -1230,7 +1230,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   }
 
   private ListBranchesWithDefaultRequest buildListBranchesWithDefaultRequest(
-      ScmConnector scmConnector, BranchFilterParamsDTO branchFilterParamsDTO) {
+      ScmConnector scmConnector, PageRequestDTO pageRequest, BranchFilterParamsDTO branchFilterParamsDTO) {
     final String slug = scmGitProviderHelper.getSlug(scmConnector);
     final Provider provider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
     int pageNumber = 1;
@@ -1238,7 +1238,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
         ListBranchesWithDefaultRequest.newBuilder()
             .setSlug(slug)
             .setProvider(provider)
-            .setPagination(PageRequest.newBuilder().setPage(pageNumber).build())
+            .setPagination(PageRequest.newBuilder().setPage(pageNumber).setSize(pageRequest.getPageSize()).build())
             .build();
     if (branchFilterParamsDTO != null) {
       listBranchesWithDefaultRequest =
