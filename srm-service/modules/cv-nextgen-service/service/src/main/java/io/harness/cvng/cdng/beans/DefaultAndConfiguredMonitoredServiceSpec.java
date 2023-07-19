@@ -13,6 +13,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -23,4 +24,8 @@ import lombok.experimental.SuperBuilder;
 @OwnedBy(HarnessTeam.CV)
 @SuperBuilder
 @NoArgsConstructor
+@JsonSubTypes({
+  @JsonSubTypes.Type(value = DefaultMonitoredServiceSpec.class, name = "Default")
+  , @JsonSubTypes.Type(value = ConfiguredMonitoredServiceSpec.class, name = "Configured"),
+})
 public abstract class DefaultAndConfiguredMonitoredServiceSpec extends MonitoredServiceSpec {}
