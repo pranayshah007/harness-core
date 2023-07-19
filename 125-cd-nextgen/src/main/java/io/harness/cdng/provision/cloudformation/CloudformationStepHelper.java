@@ -670,6 +670,7 @@ public class CloudformationStepHelper {
       gitConfigDTO.setUrl(repoUrl);
       gitConfigDTO.setGitConnectionType(GitConnectionType.REPO);
     }
+
     return GitStoreDelegateConfig.builder()
         .gitConfigDTO(gitConfigDTO)
         .sshKeySpecDTO(sshKeySpecDTO)

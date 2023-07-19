@@ -21,7 +21,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.expressions.CDExpressionResolver;
-import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.gitops.steps.GitOpsStepHelper;
 import io.harness.cdng.gitops.steps.GitopsClustersOutcome;
 import io.harness.cdng.k8s.K8sStepHelper;
@@ -94,7 +93,6 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
   @Inject protected OutcomeService outcomeService;
   @Inject private K8sStepHelper k8sStepHelper;
   @Inject private GitOpsStepHelper gitOpsStepHelper;
-  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}

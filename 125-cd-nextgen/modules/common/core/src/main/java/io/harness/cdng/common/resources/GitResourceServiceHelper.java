@@ -8,7 +8,6 @@
 package io.harness.cdng.common.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.beans.FeatureName.CDS_GITHUB_APP_AUTHENTICATION;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.validation.Validator.notEmptyCheck;
@@ -18,10 +17,8 @@ import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
-import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
-import io.harness.connector.helper.GitAuthenticationDecryptionHelper;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
@@ -47,14 +44,12 @@ import java.util.Optional;
 public class GitResourceServiceHelper {
   private final ConnectorService connectorService;
   private final GitConfigAuthenticationInfoHelper gitConfigAuthenticationInfoHelper;
-  private final CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Inject
   public GitResourceServiceHelper(@Named(DEFAULT_CONNECTOR_SERVICE) ConnectorService connectorService,
-      GitConfigAuthenticationInfoHelper gitConfigAuthenticationInfoHelper, CDFeatureFlagHelper cdFeatureFlagHelper) {
+      GitConfigAuthenticationInfoHelper gitConfigAuthenticationInfoHelper) {
     this.connectorService = connectorService;
     this.gitConfigAuthenticationInfoHelper = gitConfigAuthenticationInfoHelper;
-    this.cdFeatureFlagHelper = cdFeatureFlagHelper;
   }
 
   public ConnectorInfoDTO getConnectorInfoDTO(String connectorId, NGAccess ngAccess) {
@@ -79,33 +74,16 @@ public class GitResourceServiceHelper {
     SSHKeySpecDTO sshKeySpecDTO = getSshKeySpecDTO(gitConfigDTO, ngAccess);
     List<EncryptedDataDetail> encryptedDataDetails =
         gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(gitConfigDTO, sshKeySpecDTO, ngAccess);
-
-    GitStoreDelegateConfig.GitStoreDelegateConfigBuilder gitStoreDelegateConfigBuilder =
-        GitStoreDelegateConfig.builder()
-            .gitConfigDTO(gitConfigDTO)
-            .sshKeySpecDTO(sshKeySpecDTO)
-            .encryptedDataDetails(encryptedDataDetails)
-            .fetchType(fetchType)
-            .branch(branch)
-            .commitId(commitId)
-            .path(path)
-            .connectorName(connectorDTO.getName());
-
-    boolean githubAppAuthentication =
-        cdFeatureFlagHelper.isEnabled(ngAccess.getAccountIdentifier(), CDS_GITHUB_APP_AUTHENTICATION)
-        && GitAuthenticationDecryptionHelper.isGitHubAppAuthentication(
-            (ScmConnector) connectorDTO.getConnectorConfig());
-
-    if (githubAppAuthentication) {
-      gitStoreDelegateConfigBuilder.isGithubAppAuthentication(true);
-      ScmConnector scmConnector = (ScmConnector) connectorDTO.getConnectorConfig();
-      gitStoreDelegateConfigBuilder.gitConfigDTO(scmConnector);
-      encryptedDataDetails.addAll(
-          gitConfigAuthenticationInfoHelper.getGithubAppEncryptedDataDetail(scmConnector, ngAccess));
-      gitStoreDelegateConfigBuilder.encryptedDataDetails(encryptedDataDetails);
-    }
-
-    return gitStoreDelegateConfigBuilder.build();
+    return GitStoreDelegateConfig.builder()
+        .gitConfigDTO(gitConfigDTO)
+        .sshKeySpecDTO(sshKeySpecDTO)
+        .encryptedDataDetails(encryptedDataDetails)
+        .fetchType(fetchType)
+        .branch(branch)
+        .commitId(commitId)
+        .path(path)
+        .connectorName(connectorDTO.getName())
+        .build();
   }
 
   public SSHKeySpecDTO getSshKeySpecDTO(GitConfigDTO gitConfigDTO, NGAccess ngAccess) {
