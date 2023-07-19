@@ -1,4 +1,4 @@
-cs.yamlocs.yamlsite_name: 'platform-service'
+cs.yamlocs.yamlsite_name: 'ce-nextgen-service'
 
 nav:
   - Home: index.md
