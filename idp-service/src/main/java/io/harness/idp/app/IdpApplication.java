@@ -12,6 +12,9 @@ import static io.harness.annotations.dev.HarnessTeam.IDP;
 import static io.harness.authorization.AuthorizationServiceHeader.DEFAULT;
 import static io.harness.idp.app.IdpConfiguration.HARNESS_RESOURCE_CLASSES;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
+import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
+
+import static java.util.Collections.singletonList;
 
 import io.harness.Microservice;
 import io.harness.ModuleType;
@@ -65,6 +68,7 @@ import io.harness.notification.templates.PredefinedTemplate;
 import io.harness.outbox.OutboxEventPollService;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.events.base.PipelineEventConsumerController;
+import io.harness.pms.listener.NgOrchestrationNotifyEventListenerNonVersioned;
 import io.harness.pms.sdk.PmsSdkConfiguration;
 import io.harness.pms.sdk.PmsSdkInitHelper;
 import io.harness.pms.sdk.PmsSdkModule;
@@ -85,6 +89,8 @@ import io.harness.pms.sdk.execution.events.progress.NodeProgressEventRedisConsum
 import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
 import io.harness.request.RequestContextFilter;
 import io.harness.pms.serializer.json.PmsBeansJacksonModule;
+import io.harness.queue.QueueListenerController;
+import io.harness.queue.QueuePublisher;
 import io.harness.request.RequestLoggingFilter;
 import io.harness.security.InternalApiAuthFilter;
 import io.harness.security.NextGenAuthenticationFilter;
@@ -97,6 +103,8 @@ import io.harness.service.impl.DelegateSyncServiceImpl;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 import io.harness.token.remote.TokenClient;
+import io.harness.waiter.NotifyEvent;
+import io.harness.waiter.NotifyQueuePublisherRegister;
 import io.harness.yaml.YamlSdkConfiguration;
 import io.harness.yaml.YamlSdkInitHelper;
 
@@ -125,6 +133,7 @@ import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.logging.LogManager;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ResourceInfo;
 import lombok.extern.slf4j.Slf4j;
@@ -219,6 +228,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
     registerMigrations(injector);
     registerHealthCheck(environment, injector);
     registerYamlSdk(injector);
+    registerWaitEnginePublishers(injector);
     registerNotificationTemplates(configuration, injector);
     registerRequestContextFilter(environment);
     registerIterators(injector, configuration.getScorecardScoreComputationIteratorConfig());
@@ -252,6 +262,8 @@ public class IdpApplication extends Application<IdpConfiguration> {
     log.info("Initializing queue listeners...");
     IdpEventConsumerController controller = injector.getInstance(IdpEventConsumerController.class);
     controller.register(injector.getInstance(EntityCrudStreamConsumer.class), 1);
+    QueueListenerController queueListenerController = injector.getInstance(QueueListenerController.class);
+    queueListenerController.register(injector.getInstance(NgOrchestrationNotifyEventListenerNonVersioned.class), 1);
     controller.register(injector.getInstance(IdpModuleLicenseUsageCaptureEventConsumer.class), 2);
   }
 
@@ -394,7 +406,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
 
     pipelineEventConsumerController.register(injector.getInstance(InterruptEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(FacilitatorEventRedisConsumer.class), 1);
-    pipelineEventConsumerController.register(injector.getInstance(NodeStartEventRedisConsumer.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeStartEventRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(ProgressEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(NodeAdviseEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventRedisConsumer.class), 1);
@@ -407,6 +419,18 @@ public class IdpApplication extends Application<IdpConfiguration> {
     pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventConsumerV2.class), 1);
 
     pipelineEventConsumerController.register(injector.getInstance(CreatePartialPlanRedisConsumer.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeAdviseEventRedisConsumer.class), 2);
+    pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventRedisConsumer.class), 2);
+    pipelineEventConsumerController.register(injector.getInstance(CreatePartialPlanRedisConsumer.class), 2);
+  }
+
+  private void registerWaitEnginePublishers(Injector injector) {
+    final QueuePublisher<NotifyEvent> publisher =
+        injector.getInstance(Key.get(new TypeLiteral<QueuePublisher<NotifyEvent>>() {}));
+    final NotifyQueuePublisherRegister notifyQueuePublisherRegister =
+        injector.getInstance(NotifyQueuePublisherRegister.class);
+    notifyQueuePublisherRegister.register(
+        NG_ORCHESTRATION, payload -> publisher.send(singletonList(NG_ORCHESTRATION), payload));
   }
 
   private void registerHealthCheck(Environment environment, Injector injector) {

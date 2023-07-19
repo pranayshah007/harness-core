@@ -28,16 +28,17 @@ public class IdpStepRegistrar {
     Map<StepType, Class<? extends Step>> engineSteps = new HashMap<>();
 
     engineSteps.put(InitializeTaskStep.STEP_TYPE, InitializeTaskStepV2.class);
-    engineSteps.put(CleanupStep.STEP_TYPE, CleanupStep.class);
-    engineSteps.put(RunStep.STEP_TYPE, RunStep.class);
-    engineSteps.put(PluginStep.STEP_TYPE, PluginStep.class);
-    engineSteps.put(GitCloneStep.STEP_TYPE, GitCloneStep.class);
-    //    engineSteps.put(IntegrationStageStepPMS.STEP_TYPE, IntegrationStageStepPMS.class);
-    //    engineSteps.put(CISpecStep.STEP_TYPE, CISpecStep.class);
     engineSteps.put(IDPStageStepPMS.STEP_TYPE, IDPStageStepPMS.class);
     engineSteps.put(IDPSpecStep.STEP_TYPE, IDPSpecStep.class);
     engineSteps.put(CodeBaseStep.STEP_TYPE, CodeBaseStep.class);
     engineSteps.put(CodeBaseTaskStep.STEP_TYPE, CodeBaseTaskStep.class);
+    engineSteps.put(CleanupStep.STEP_TYPE, CleanupStep.class);
+    engineSteps.put(RunStep.STEP_TYPE, RunStep.class);
+    engineSteps.put(PluginStep.STEP_TYPE, PluginStep.class);
+    engineSteps.put(GitCloneStep.STEP_TYPE, GitCloneStep.class);
+    engineSteps.put(BackgroundStep.STEP_TYPE, BackgroundStep.class);
+    engineSteps.put(RunTestsStep.STEP_TYPE, RunTestsStep.class);
+
     engineSteps.putAll(NGCommonUtilStepsRegistrar.getEngineSteps());
     return engineSteps;
   }
