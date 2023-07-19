@@ -231,9 +231,6 @@ public class WatcherServiceImpl implements WatcherService {
 
   private final AtomicBoolean frozen = new AtomicBoolean(false);
 
-  private final String defaultJREDelegateVersion = "11.0.19+7";
-  private final String defaultJREWatcherVersion = "11.0.19+7";
-
   @Override
   public void run(boolean upgrade) {
     WatcherStackdriverLogAppender.setTimeLimiter(timeLimiter);

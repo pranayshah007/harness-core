@@ -333,7 +333,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private static volatile String delegateId;
   private static final String delegateInstanceId = generateUuid();
   private final int MAX_ATTEMPTS = 3;
-  private final String defaultJREWatcherVersion = "11.0.19+7";
 
   @Inject
   @Getter(value = PACKAGE, onMethod = @__({ @VisibleForTesting }))
@@ -1688,14 +1687,13 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         messageService.putData(WATCHER_DATA, WATCHER_HEARTBEAT, clock.millis());
         watcherVersionMatchedAt = clock.millis();
         final String jreVersion = getWatcherJREVersion();
-        StartedProcess newWatcher =
-            new ProcessExecutor()
-                .command("nohup", "./start.sh", "", "", isEmpty(jreVersion) ? defaultJREWatcherVersion : jreVersion)
-                .redirectError(Slf4jStream.of("RestartWatcherScript").asError())
-                .redirectOutput(Slf4jStream.of("RestartWatcherScript").asInfo())
-                .readOutput(true)
-                .setMessageLogger((log, format, arguments) -> log.info(format, arguments))
-                .start();
+        StartedProcess newWatcher = new ProcessExecutor()
+                                        .command("nohup", "./start.sh", "", "", jreVersion)
+                                        .redirectError(Slf4jStream.of("RestartWatcherScript").asError())
+                                        .redirectOutput(Slf4jStream.of("RestartWatcherScript").asInfo())
+                                        .readOutput(true)
+                                        .setMessageLogger((log, format, arguments) -> log.info(format, arguments))
+                                        .start();
         if (multiVersionRestartNeeded && newWatcher.getProcess().isAlive()) {
           sleep(ofSeconds(20L));
           FileUtils.forceDelete(new File("delegate.sh"));
@@ -1722,7 +1720,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       log.warn("Failed to fetch jre version from Manager ", ex);
     }
     // for smp it will return empty and take default value defined above
-    return "";
+    return "11.0.19+7";
   }
 
   private boolean downloadRunScriptsForWatcher(String version) {
