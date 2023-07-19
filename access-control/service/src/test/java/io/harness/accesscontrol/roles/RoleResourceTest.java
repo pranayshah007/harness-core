@@ -31,6 +31,7 @@ import io.harness.accesscontrol.AccessControlTestBase;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.accesscontrol.common.filter.ManagedFilter;
 import io.harness.accesscontrol.roles.api.RoleDTO;
 import io.harness.accesscontrol.roles.api.RoleDTOMapper;
 import io.harness.accesscontrol.roles.api.RoleResource;
@@ -252,6 +253,142 @@ public class RoleResourceTest extends AccessControlTestBase {
     verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
     verify(roleService, times(1)).get(any(), any(), any());
     verify(roleDTOMapper, times(1)).toResponseDTO(any());
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testGetToHideOrgLevelManagedRolesIfFFIsEnabled() {
+    String identifier = randomAlphabetic(10);
+    HarnessScopeParams scopeParams =
+        HarnessScopeParams.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build();
+    when(featureFlagService.isEnabled(FeatureName.PL_HIDE_ORGANIZATION_LEVEL_MANAGED_ROLE, accountIdentifier))
+        .thenReturn(true);
+    doNothing()
+        .when(accessControlClient)
+        .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, null), VIEW_ROLE_PERMISSION);
+    String scopeIdentifier = ScopeMapper.fromParams(scopeParams).toString();
+    Role role = Role.builder().scopeIdentifier(scopeIdentifier).identifier(identifier).build();
+    when(roleService.get(eq(identifier), eq(scopeIdentifier), any())).thenReturn(Optional.of(role));
+    RoleResponseDTO roleResponseDTO =
+        RoleResponseDTO.builder().role(RoleDTO.builder().identifier(identifier).build()).build();
+    when(roleDTOMapper.toResponseDTO(role)).thenReturn(roleResponseDTO);
+
+    roleResource.get(identifier, scopeParams);
+
+    ArgumentCaptor<ManagedFilter> captor = ArgumentCaptor.forClass(ManagedFilter.class);
+    verify(roleService, times(1)).get(any(), any(), captor.capture());
+    Assertions.assertThat(captor.getValue()).isEqualTo(ONLY_CUSTOM);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testGetToShowOrgLevelManagedRolesIfFFIsDisabled() {
+    String identifier = randomAlphabetic(10);
+    HarnessScopeParams scopeParams =
+        HarnessScopeParams.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build();
+    when(featureFlagService.isEnabled(FeatureName.PL_HIDE_ORGANIZATION_LEVEL_MANAGED_ROLE, accountIdentifier))
+        .thenReturn(false);
+    doNothing()
+        .when(accessControlClient)
+        .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, null), VIEW_ROLE_PERMISSION);
+    String scopeIdentifier = ScopeMapper.fromParams(scopeParams).toString();
+    Role role = Role.builder().scopeIdentifier(scopeIdentifier).identifier(identifier).build();
+    when(roleService.get(eq(identifier), eq(scopeIdentifier), any())).thenReturn(Optional.of(role));
+    RoleResponseDTO roleResponseDTO =
+        RoleResponseDTO.builder().role(RoleDTO.builder().identifier(identifier).build()).build();
+    when(roleDTOMapper.toResponseDTO(role)).thenReturn(roleResponseDTO);
+
+    roleResource.get(identifier, scopeParams);
+
+    ArgumentCaptor<ManagedFilter> captor = ArgumentCaptor.forClass(ManagedFilter.class);
+    verify(roleService, times(1)).get(any(), any(), captor.capture());
+    Assertions.assertThat(captor.getValue()).isEqualTo(NO_FILTER);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testGetToShowOrgLevelManagedRolesIfFFIsEnabledForProjectLevel() {
+    String identifier = randomAlphabetic(10);
+    HarnessScopeParams scopeParams =
+        HarnessScopeParams.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build();
+    when(featureFlagService.isEnabled(FeatureName.PL_HIDE_PROJECT_LEVEL_MANAGED_ROLE, accountIdentifier))
+        .thenReturn(true);
+    doNothing()
+        .when(accessControlClient)
+        .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, null), VIEW_ROLE_PERMISSION);
+    String scopeIdentifier = ScopeMapper.fromParams(scopeParams).toString();
+    Role role = Role.builder().scopeIdentifier(scopeIdentifier).identifier(identifier).build();
+    when(roleService.get(eq(identifier), eq(scopeIdentifier), any())).thenReturn(Optional.of(role));
+    RoleResponseDTO roleResponseDTO =
+        RoleResponseDTO.builder().role(RoleDTO.builder().identifier(identifier).build()).build();
+    when(roleDTOMapper.toResponseDTO(role)).thenReturn(roleResponseDTO);
+
+    roleResource.get(identifier, scopeParams);
+
+    ArgumentCaptor<ManagedFilter> captor = ArgumentCaptor.forClass(ManagedFilter.class);
+    verify(roleService, times(1)).get(any(), any(), captor.capture());
+    Assertions.assertThat(captor.getValue()).isEqualTo(NO_FILTER);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testGetToHideProjectLevelManagedRolesIfFFIsEnabled() {
+    String identifier = randomAlphabetic(10);
+    HarnessScopeParams scopeParams = HarnessScopeParams.builder()
+                                         .accountIdentifier(accountIdentifier)
+                                         .orgIdentifier(orgIdentifier)
+                                         .projectIdentifier(projectIdentifier)
+                                         .build();
+    when(featureFlagService.isEnabled(FeatureName.PL_HIDE_PROJECT_LEVEL_MANAGED_ROLE, accountIdentifier))
+        .thenReturn(true);
+    doNothing()
+        .when(accessControlClient)
+        .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, null), VIEW_ROLE_PERMISSION);
+    String scopeIdentifier = ScopeMapper.fromParams(scopeParams).toString();
+    Role role = Role.builder().scopeIdentifier(scopeIdentifier).identifier(identifier).build();
+    when(roleService.get(eq(identifier), eq(scopeIdentifier), any())).thenReturn(Optional.of(role));
+    RoleResponseDTO roleResponseDTO =
+        RoleResponseDTO.builder().role(RoleDTO.builder().identifier(identifier).build()).build();
+    when(roleDTOMapper.toResponseDTO(role)).thenReturn(roleResponseDTO);
+
+    roleResource.get(identifier, scopeParams);
+
+    ArgumentCaptor<ManagedFilter> captor = ArgumentCaptor.forClass(ManagedFilter.class);
+    verify(roleService, times(1)).get(any(), any(), captor.capture());
+    Assertions.assertThat(captor.getValue()).isEqualTo(ONLY_CUSTOM);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testGetToShowProjectLevelManagedRolesIfFFIsDisabled() {
+    String identifier = randomAlphabetic(10);
+    HarnessScopeParams scopeParams = HarnessScopeParams.builder()
+                                         .accountIdentifier(accountIdentifier)
+                                         .orgIdentifier(orgIdentifier)
+                                         .projectIdentifier(projectIdentifier)
+                                         .build();
+    when(featureFlagService.isEnabled(FeatureName.PL_HIDE_PROJECT_LEVEL_MANAGED_ROLE, accountIdentifier))
+        .thenReturn(false);
+    doNothing()
+        .when(accessControlClient)
+        .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, null), VIEW_ROLE_PERMISSION);
+    String scopeIdentifier = ScopeMapper.fromParams(scopeParams).toString();
+    Role role = Role.builder().scopeIdentifier(scopeIdentifier).identifier(identifier).build();
+    when(roleService.get(eq(identifier), eq(scopeIdentifier), any())).thenReturn(Optional.of(role));
+    RoleResponseDTO roleResponseDTO =
+        RoleResponseDTO.builder().role(RoleDTO.builder().identifier(identifier).build()).build();
+    when(roleDTOMapper.toResponseDTO(role)).thenReturn(roleResponseDTO);
+
+    roleResource.get(identifier, scopeParams);
+
+    ArgumentCaptor<ManagedFilter> captor = ArgumentCaptor.forClass(ManagedFilter.class);
+    verify(roleService, times(1)).get(any(), any(), captor.capture());
+    Assertions.assertThat(captor.getValue()).isEqualTo(NO_FILTER);
   }
 
   @Test(expected = NotFoundException.class)

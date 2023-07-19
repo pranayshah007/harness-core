@@ -23,6 +23,7 @@ import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.accesscontrol.common.filter.ManagedFilter;
 import io.harness.accesscontrol.roles.Role;
 import io.harness.accesscontrol.roles.RoleService;
 import io.harness.accesscontrol.roles.RoleUpdateResult;
@@ -123,8 +124,19 @@ public class RoleResourceImpl implements RoleResource {
             harnessScopeParams.getProjectIdentifier()),
         Resource.of(ROLE, identifier), VIEW_ROLE_PERMISSION);
     String scopeIdentifier = ScopeMapper.fromParams(harnessScopeParams).toString();
+    ManagedFilter managedFilter = NO_FILTER;
+    if (isNotEmpty(harnessScopeParams.getProjectIdentifier())
+        && featureFlagService.isEnabled(
+            FeatureName.PL_HIDE_PROJECT_LEVEL_MANAGED_ROLE, harnessScopeParams.getAccountIdentifier())) {
+      managedFilter = ONLY_CUSTOM;
+    } else if (isNotEmpty(harnessScopeParams.getOrgIdentifier())
+        && featureFlagService.isEnabled(
+            FeatureName.PL_HIDE_ORGANIZATION_LEVEL_MANAGED_ROLE, harnessScopeParams.getAccountIdentifier())) {
+      managedFilter = ONLY_CUSTOM;
+    }
+
     return ResponseDTO.newResponse(roleDTOMapper.toResponseDTO(
-        roleService.get(identifier, scopeIdentifier, NO_FILTER).<InvalidRequestException>orElseThrow(() -> {
+        roleService.get(identifier, scopeIdentifier, managedFilter).<InvalidRequestException>orElseThrow(() -> {
           throw new NotFoundException(
               String.format("Role with identifier [%s] is not found in the given scope", identifier));
         })));
