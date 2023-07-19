@@ -98,6 +98,7 @@ public final class VerificationTask implements UuidAware, CreatedAtAware, Accoun
   @Value
   @Builder
   @FieldNameConstants(innerTypeName = "DeploymentInfoKeys")
+  @Entity
   public static class DeploymentInfo extends TaskInfo {
     private final TaskType taskType = TaskType.DEPLOYMENT;
     @NonNull private String cvConfigId;

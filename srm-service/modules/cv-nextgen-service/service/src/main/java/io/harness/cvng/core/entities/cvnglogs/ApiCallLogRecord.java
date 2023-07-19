@@ -24,6 +24,7 @@ import io.harness.metrics.AutoMetricContext;
 import io.harness.metrics.service.api.MetricService;
 
 import com.google.common.base.Preconditions;
+import dev.morphia.annotations.Entity;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -38,6 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 @Builder
 @OwnedBy(HarnessTeam.CV)
 @Slf4j
+@Entity
 public class ApiCallLogRecord extends CVNGLogRecord {
   private List<ApiCallLogField> requests;
   private List<ApiCallLogField> responses;

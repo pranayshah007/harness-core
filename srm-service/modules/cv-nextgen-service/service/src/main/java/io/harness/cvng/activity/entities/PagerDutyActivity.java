@@ -14,6 +14,7 @@ import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.VerificationJobInstanceBuilder;
 import io.harness.mongo.index.FdSparseIndex;
 
+import dev.morphia.annotations.Entity;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
 import java.time.Instant;
@@ -27,6 +28,7 @@ import lombok.experimental.SuperBuilder;
 @Data
 @SuperBuilder
 @AllArgsConstructor
+@Entity
 @EqualsAndHashCode(callSuper = true)
 public class PagerDutyActivity extends Activity {
   @FdSparseIndex private String eventId;

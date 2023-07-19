@@ -10,6 +10,7 @@ package io.harness.cvng.core.entities.changeSource;
 import io.harness.mongo.index.FdIndex;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import dev.morphia.annotations.Entity;
 import dev.morphia.query.UpdateOperations;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
@@ -23,6 +24,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @FieldNameConstants(innerTypeName = "PagerDutyChangeSourceKeys")
+@Entity
 @EqualsAndHashCode(callSuper = true)
 public class PagerDutyChangeSource extends ChangeSource {
   @NotNull @FdIndex private String connectorIdentifier;

@@ -11,11 +11,13 @@ import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.SideKick.SideKickData;
 import io.harness.cvng.core.entities.SideKick.Type;
 
+import dev.morphia.annotations.Entity;
 import lombok.Builder;
 import lombok.Value;
 
 @Value
 @Builder
+@Entity
 public class VerificationTaskCleanupSideKickData implements SideKickData {
   String verificationTaskId;
   CVConfig cvConfig;

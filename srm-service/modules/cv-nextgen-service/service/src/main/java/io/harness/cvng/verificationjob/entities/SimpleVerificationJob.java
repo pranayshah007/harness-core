@@ -13,6 +13,7 @@ import io.harness.cvng.beans.job.Sensitivity;
 import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.core.beans.TimeRange;
 
+import dev.morphia.annotations.Entity;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -29,6 +30,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
+@Entity
 @OwnedBy(HarnessTeam.CV)
 public class SimpleVerificationJob extends VerificationJob {
   private RuntimeParameter sensitivity;

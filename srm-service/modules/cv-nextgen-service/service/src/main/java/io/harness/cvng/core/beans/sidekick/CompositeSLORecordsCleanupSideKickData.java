@@ -10,11 +10,13 @@ package io.harness.cvng.core.beans.sidekick;
 import io.harness.cvng.core.entities.SideKick.SideKickData;
 import io.harness.cvng.core.entities.SideKick.Type;
 
+import dev.morphia.annotations.Entity;
 import lombok.Builder;
 import lombok.Value;
 
 @Value
 @Builder
+@Entity
 public class CompositeSLORecordsCleanupSideKickData implements SideKickData {
   String sloId;
   int sloVersion;

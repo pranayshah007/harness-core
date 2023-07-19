@@ -16,6 +16,7 @@ import io.harness.cvng.verificationjob.entities.VerificationJobInstance.Verifica
 import io.harness.mongo.index.FdIndex;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import dev.morphia.annotations.Entity;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
 import lombok.AllArgsConstructor;
@@ -29,6 +30,7 @@ import lombok.experimental.SuperBuilder;
 @Data
 @SuperBuilder
 @AllArgsConstructor
+@Entity
 @EqualsAndHashCode(callSuper = true)
 public class CustomChangeActivity extends Activity {
   @FdIndex ActivityType activityType;

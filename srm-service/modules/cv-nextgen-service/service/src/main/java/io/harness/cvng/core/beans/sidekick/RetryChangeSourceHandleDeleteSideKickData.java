@@ -11,11 +11,13 @@ import io.harness.cvng.core.entities.SideKick.SideKickData;
 import io.harness.cvng.core.entities.SideKick.Type;
 import io.harness.cvng.core.entities.changeSource.ChangeSource;
 
+import dev.morphia.annotations.Entity;
 import lombok.Builder;
 import lombok.Value;
 
 @Value
 @Builder
+@Entity
 public class RetryChangeSourceHandleDeleteSideKickData implements SideKickData {
   ChangeSource changeSource;
   @Override

@@ -20,6 +20,7 @@ import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 
 import com.google.common.base.Preconditions;
+import dev.morphia.annotations.Entity;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -37,6 +38,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
+@Entity
 @OwnedBy(HarnessTeam.CV)
 public class TestVerificationJob extends VerificationJob {
   private RuntimeParameter sensitivity;

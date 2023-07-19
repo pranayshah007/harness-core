@@ -10,11 +10,13 @@ package io.harness.cvng.core.beans.sidekick;
 import io.harness.cvng.core.entities.SideKick.SideKickData;
 import io.harness.cvng.core.entities.SideKick.Type;
 
+import dev.morphia.annotations.Entity;
 import lombok.Builder;
 import lombok.Value;
 
 @Value
 @Builder
+@Entity
 public class DemoActivitySideKickData implements SideKickData {
   String deploymentActivityId;
   @Override

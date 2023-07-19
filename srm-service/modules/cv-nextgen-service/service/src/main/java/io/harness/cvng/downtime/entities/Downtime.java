@@ -104,6 +104,7 @@ public class Downtime
 
   @Value
   @SuperBuilder
+  @Entity
   @EqualsAndHashCode(callSuper = true)
   public static class OnetimeDurationBased extends OnetimeDowntimeDetails {
     @NotNull DowntimeDuration downtimeDuration;

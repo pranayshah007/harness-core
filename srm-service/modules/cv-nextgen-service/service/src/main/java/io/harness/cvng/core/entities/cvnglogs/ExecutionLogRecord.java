@@ -12,12 +12,14 @@ import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
 import io.harness.metrics.service.api.MetricService;
 
+import dev.morphia.annotations.Entity;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
+@Entity
 public class ExecutionLogRecord extends CVNGLogRecord {
   private String log;
   private LogLevel logLevel;

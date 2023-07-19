@@ -10,6 +10,7 @@ package io.harness.cvng.core.beans.sidekick;
 import io.harness.cvng.core.entities.SideKick.SideKickData;
 import io.harness.cvng.core.entities.SideKick.Type;
 
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -17,6 +18,7 @@ import lombok.Value;
 
 @Value
 @Builder
+@Entity
 public class VerificationJobInstanceCleanupSideKickData implements SideKickData {
   @NotNull String verificationJobInstanceIdentifier;
   List<String> sourceIdentifiers;

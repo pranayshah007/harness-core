@@ -7,6 +7,7 @@
 
 package io.harness.cvng.downtime.beans;
 
+import dev.morphia.annotations.Entity;
 import java.util.Map;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
@@ -18,6 +19,7 @@ import lombok.EqualsAndHashCode;
 @Builder
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@Entity
 public class AllEntitiesRule extends EntitiesRule {
   private static final String ALL_IDENTIFIER = "ALL";
   @Override

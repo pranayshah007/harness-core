@@ -12,6 +12,7 @@ import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import dev.morphia.annotations.Entity;
 import dev.morphia.query.UpdateOperations;
 import java.util.List;
 import lombok.Data;
@@ -25,6 +26,7 @@ import lombok.experimental.SuperBuilder;
 @Data
 @SuperBuilder
 @NoArgsConstructor
+@Entity
 @FieldNameConstants(innerTypeName = "SLONotificationRuleKeys")
 @EqualsAndHashCode(callSuper = true)
 public class SLONotificationRule extends NotificationRule {
@@ -43,6 +45,7 @@ public class SLONotificationRule extends NotificationRule {
 
   @SuperBuilder
   @Data
+  @Entity
   public static class SLOErrorBudgetRemainingPercentageCondition extends SLONotificationRuleCondition {
     public final NotificationRuleConditionType type = NotificationRuleConditionType.ERROR_BUDGET_REMAINING_PERCENTAGE;
     @NonNull Double threshold;
@@ -55,6 +58,7 @@ public class SLONotificationRule extends NotificationRule {
 
   @SuperBuilder
   @Data
+  @Entity
   public static class SLOErrorBudgetRemainingMinutesCondition extends SLONotificationRuleCondition {
     public final NotificationRuleConditionType type = NotificationRuleConditionType.ERROR_BUDGET_REMAINING_MINUTES;
     @NonNull Double threshold;
@@ -67,6 +71,7 @@ public class SLONotificationRule extends NotificationRule {
 
   @SuperBuilder
   @Data
+  @Entity
   public static class SLOErrorBudgetBurnRateCondition extends SLONotificationRuleCondition {
     public final NotificationRuleConditionType type = NotificationRuleConditionType.ERROR_BUDGET_BURN_RATE;
     @NonNull Double threshold;
