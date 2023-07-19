@@ -8,7 +8,6 @@
 package io.harness.cdng.provision.azure;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.beans.FeatureName.CDS_GITHUB_APP_AUTHENTICATION;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -21,15 +20,12 @@ import io.harness.azure.model.ARMScopeType;
 import io.harness.azure.model.AzureDeploymentMode;
 import io.harness.beans.DecryptableEntity;
 import io.harness.cdng.CDStepHelper;
-import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.provision.azure.beans.AzureCreateARMResourcePassThroughData;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
-import io.harness.connector.helper.GitApiAccessDecryptionHelper;
-import io.harness.connector.helper.GitAuthenticationDecryptionHelper;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
@@ -37,7 +33,6 @@ import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
@@ -82,7 +77,7 @@ import org.apache.commons.io.IOUtils;
 @OwnedBy(CDP)
 public class AzureCommonHelper {
   @Inject private CDStepHelper cdStepHelper;
-  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
+
   @Inject private GitConfigAuthenticationInfoHelper gitConfigAuthenticationInfoHelper;
 
   public static final String DEFAULT_TIMEOUT = "10m";
@@ -124,25 +119,9 @@ public class AzureCommonHelper {
         .branch(getParameterFieldValue(gitStoreConfig.getBranch()))
         .commitId(getParameterFieldValue(gitStoreConfig.getCommitId()))
         .connectorName(connectorDTO.getName())
-        .paths(paths)
         .build();
+    builder.paths(paths);
 
-    boolean githubAppAuthentication =
-        GitAuthenticationDecryptionHelper.isGitHubAppAuthentication((ScmConnector) connectorDTO.getConnectorConfig())
-        && cdFeatureFlagHelper.isEnabled(basicNGAccessObject.getAccountIdentifier(), CDS_GITHUB_APP_AUTHENTICATION);
-
-    if (githubAppAuthentication) {
-      GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDTO.getConnectorConfig();
-      githubConnectorDTO.setApiAccess(cdStepHelper.getGitAppAccessFromGithubAppAuth(githubConnectorDTO));
-      final DecryptableEntity apiAccessDecryptableEntity =
-          GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(githubConnectorDTO);
-      encryptedDataDetails =
-          secretManagerClientService.getEncryptionDetails(basicNGAccessObject, apiAccessDecryptableEntity);
-      builder.optimizedFilesFetch(true);
-      builder.gitConfigDTO(githubConnectorDTO);
-      builder.apiAuthEncryptedDataDetails(encryptedDataDetails);
-      builder.isGithubAppAuthentication(true);
-    }
     return builder.build();
   }
 

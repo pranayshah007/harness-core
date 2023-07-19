@@ -334,7 +334,6 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
             .manifestType(manifestOutcome.getType())
             .manifestId(manifestOutcome.getIdentifier())
             .optimizedFilesFetch(gitStoreDelegateConfig.isOptimizedFilesFetch())
-            .isGithubAppAuthentication(gitStoreDelegateConfig.isGithubAppAuthentication())
             .build();
 
     return GitFetchFilesConfig.builder()
