@@ -1,0 +1,7 @@
+cs.yamlocs.yamlsite_name: 'batch-processing'
+
+nav:
+  - Home: index.md
+
+plugins:
+  - techdocs-core
