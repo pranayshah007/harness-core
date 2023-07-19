@@ -7,6 +7,7 @@
 
 package io.harness.cvng.statemachine.entities;
 
+import dev.morphia.annotations.Entity;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @Builder
 @Slf4j
+@Entity
 public class ServiceGuardLogAnalysisState extends LogAnalysisState {
   private final StateType type = StateType.SERVICE_GUARD_LOG_ANALYSIS;
 }

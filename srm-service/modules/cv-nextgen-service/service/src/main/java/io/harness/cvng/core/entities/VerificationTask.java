@@ -89,6 +89,7 @@ public final class VerificationTask implements UuidAware, CreatedAtAware, Accoun
   @Value
   @Builder
   @FieldNameConstants(innerTypeName = "LiveMonitoringInfoKeys")
+  @Entity
   public static class LiveMonitoringInfo extends TaskInfo {
     private final TaskType taskType = TaskType.LIVE_MONITORING;
     private String cvConfigId;
@@ -106,6 +107,7 @@ public final class VerificationTask implements UuidAware, CreatedAtAware, Accoun
   @Value
   @Builder
   @FieldNameConstants(innerTypeName = "SLIInfoKeys")
+  @Entity
   public static class SLIInfo extends TaskInfo {
     private final TaskType taskType = TaskType.SLI;
     @NonNull private String sliId;
@@ -114,6 +116,7 @@ public final class VerificationTask implements UuidAware, CreatedAtAware, Accoun
   @Value
   @Builder
   @FieldNameConstants(innerTypeName = "CompositeSLOInfoKeys")
+  @Entity
   public static class CompositeSLOInfo extends TaskInfo {
     private final TaskType taskType = TaskType.COMPOSITE_SLO;
     @NonNull private String sloId;

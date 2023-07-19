@@ -7,6 +7,7 @@
 
 package io.harness.cvng.statemachine.entities;
 
+import dev.morphia.annotations.Entity;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 @Builder
 @NoArgsConstructor
 @Slf4j
+@Entity
 public class ServiceGuardTimeSeriesAnalysisState extends TimeSeriesAnalysisState {
   private final StateType type = StateType.SERVICE_GUARD_TIME_SERIES;
 }

@@ -28,6 +28,7 @@ import io.harness.cvng.core.utils.analysisinfo.SLIMetricTransformer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.Preconditions;
+import dev.morphia.annotations.Entity;
 import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -49,6 +50,7 @@ import lombok.experimental.SuperBuilder;
 @FieldNameConstants(innerTypeName = "NewRelicCVConfigKeys")
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@Entity
 public class NewRelicCVConfig extends MetricCVConfig<NewRelicMetricInfo> {
   private String applicationName;
   private long applicationId;
@@ -180,6 +182,7 @@ public class NewRelicCVConfig extends MetricCVConfig<NewRelicMetricInfo> {
   @Value
   @SuperBuilder
   @FieldDefaults(level = AccessLevel.PRIVATE)
+  @Entity
   public static class NewRelicMetricInfo extends AnalysisInfo {
     String nrql;
     TimeSeriesMetricType metricType;

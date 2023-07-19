@@ -10,6 +10,7 @@ package io.harness.cvng.servicelevelobjective.entities;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 
+import dev.morphia.annotations.Entity;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -22,6 +23,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @Data
 @EqualsAndHashCode(callSuper = true)
+@Entity
 public class RollingSLOTarget extends SLOTarget {
   int periodLengthDays;
   private final SLOTargetType type = SLOTargetType.ROLLING;

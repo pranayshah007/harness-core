@@ -9,6 +9,7 @@ package io.harness.cvng.core.entities.changeSource;
 
 import io.harness.mongo.index.FdIndex;
 
+import dev.morphia.annotations.Entity;
 import dev.morphia.query.UpdateOperations;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
@@ -20,6 +21,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@Entity
 public class KubernetesChangeSource extends ChangeSource {
   @NotNull @FdIndex String connectorIdentifier;
 

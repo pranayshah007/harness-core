@@ -9,6 +9,7 @@ package io.harness.cvng.verificationjob.entities;
 
 import io.harness.cvng.beans.job.VerificationJobType;
 
+import dev.morphia.annotations.Entity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -20,6 +21,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
+@Entity
 public class AutoVerificationJob extends CanaryBlueGreenVerificationJob {
   private final VerificationJobType type = VerificationJobType.AUTO;
 }

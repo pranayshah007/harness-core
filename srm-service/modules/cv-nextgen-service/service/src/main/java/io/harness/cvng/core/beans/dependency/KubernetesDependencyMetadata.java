@@ -13,6 +13,7 @@ import io.harness.cvng.beans.change.ChangeSourceType;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.collect.Sets;
+import dev.morphia.annotations.Entity;
 import java.util.Set;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -29,6 +30,7 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @FieldNameConstants(innerTypeName = "KubernetesDependencyMetadataKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@Entity
 public class KubernetesDependencyMetadata extends ServiceDependencyMetadata {
   String namespace;
   String workload;

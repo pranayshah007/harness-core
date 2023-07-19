@@ -27,6 +27,7 @@ import io.harness.serializer.JsonUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.Preconditions;
+import dev.morphia.annotations.Entity;
 import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -48,6 +49,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@Entity
 public class StackdriverCVConfig extends MetricCVConfig<MetricInfo> {
   private List<MetricInfo> metricInfoList;
   private String dashboardName;

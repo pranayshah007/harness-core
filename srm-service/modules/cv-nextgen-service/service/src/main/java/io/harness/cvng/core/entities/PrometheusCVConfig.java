@@ -26,6 +26,7 @@ import io.harness.cvng.core.utils.analysisinfo.SLIMetricTransformer;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.Preconditions;
+import dev.morphia.annotations.Entity;
 import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -47,6 +48,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@Entity
 public class PrometheusCVConfig extends MetricCVConfig<MetricInfo> {
   @NotNull private String groupName;
   @NotNull private List<MetricInfo> metricInfoList;
@@ -87,6 +89,7 @@ public class PrometheusCVConfig extends MetricCVConfig<MetricInfo> {
   @Data
   @SuperBuilder
   @FieldNameConstants(innerTypeName = "MetricInfoKeys")
+  @Entity
   public static class MetricInfo extends AnalysisInfo {
     private String query;
     private String prometheusMetricName;

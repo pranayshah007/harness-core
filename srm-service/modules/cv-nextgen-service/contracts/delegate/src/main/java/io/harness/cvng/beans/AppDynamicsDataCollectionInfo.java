@@ -11,6 +11,7 @@ import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.delegate.beans.connector.appdynamicsconnector.AppDynamicsConnectorDTO;
 import io.harness.delegate.beans.cvng.appd.AppDynamicsUtils;
 
+import dev.morphia.annotations.Entity;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -27,6 +28,7 @@ import org.apache.commons.lang3.ArrayUtils;
 @Data
 @Builder
 @EqualsAndHashCode(callSuper = true)
+@Entity
 public class AppDynamicsDataCollectionInfo extends TimeSeriesDataCollectionInfo<AppDynamicsConnectorDTO> {
   private String applicationName;
   private String tierName;

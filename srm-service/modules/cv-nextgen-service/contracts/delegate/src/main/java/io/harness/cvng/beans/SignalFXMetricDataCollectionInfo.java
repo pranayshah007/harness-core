@@ -11,6 +11,7 @@ import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.beans.connector.signalfxconnector.SignalFXConnectorDTO;
 import io.harness.delegate.beans.cvng.signalfx.SignalFXUtils;
 
+import dev.morphia.annotations.Entity;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,6 +28,7 @@ import lombok.experimental.FieldDefaults;
 @Value
 @Builder
 @EqualsAndHashCode(callSuper = true)
+@Entity
 public class SignalFXMetricDataCollectionInfo extends TimeSeriesDataCollectionInfo<SignalFXConnectorDTO> {
   private static final String GROUPING_CLAUSE_HOST = ".mean(by='%s').publish()";
   private static final String GROUPING_CLAUSE_NON_HOST = ".mean().publish()";

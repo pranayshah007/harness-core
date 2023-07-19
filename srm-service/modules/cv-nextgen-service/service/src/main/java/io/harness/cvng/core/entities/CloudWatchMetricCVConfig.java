@@ -26,6 +26,7 @@ import io.harness.cvng.core.utils.analysisinfo.SLIMetricTransformer;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import dev.morphia.annotations.Entity;
 import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -48,6 +49,7 @@ import lombok.experimental.SuperBuilder;
 @FieldNameConstants(innerTypeName = "CloudWatchMetricCVConfigKeys")
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@Entity
 public class CloudWatchMetricCVConfig extends MetricCVConfig<CloudWatchMetricInfo> {
   private String region;
   private String groupName;

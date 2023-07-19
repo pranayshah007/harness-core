@@ -11,6 +11,7 @@ import static io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngin
 
 import io.harness.cvng.analysis.beans.LogClusterLevel;
 
+import dev.morphia.annotations.Entity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,6 +23,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@Entity
 public class LogClusterLearningEngineTask extends LearningEngineTask {
   private String testDataUrl;
   private String host;

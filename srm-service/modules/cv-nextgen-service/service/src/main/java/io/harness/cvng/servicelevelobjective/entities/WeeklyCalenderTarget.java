@@ -11,6 +11,7 @@ import io.harness.cvng.servicelevelobjective.beans.DayOfWeek;
 import io.harness.cvng.servicelevelobjective.beans.SLOCalenderType;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
 
+import dev.morphia.annotations.Entity;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -22,6 +23,7 @@ import lombok.experimental.SuperBuilder;
 @Value
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
+@Entity
 public class WeeklyCalenderTarget extends CalenderSLOTarget {
   private DayOfWeek dayOfWeek;
   private final SLOCalenderType calenderType = SLOCalenderType.WEEKLY;

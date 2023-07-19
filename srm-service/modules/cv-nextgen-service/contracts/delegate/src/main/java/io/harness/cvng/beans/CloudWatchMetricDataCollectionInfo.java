@@ -10,6 +10,7 @@ package io.harness.cvng.beans;
 import io.harness.cvng.utils.CloudWatchUtils;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 
+import dev.morphia.annotations.Entity;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -25,6 +26,7 @@ import org.apache.commons.collections4.CollectionUtils;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@Entity
 public class CloudWatchMetricDataCollectionInfo extends TimeSeriesDataCollectionInfo<AwsConnectorDTO> {
   static final String SERVICE = "monitoring";
   static final String GROUPING_CLAUSE = " GROUP BY ";

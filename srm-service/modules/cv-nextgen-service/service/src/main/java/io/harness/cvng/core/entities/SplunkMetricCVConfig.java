@@ -22,6 +22,7 @@ import io.harness.cvng.core.utils.analysisinfo.LiveMonitoringTransformer;
 import io.harness.cvng.core.utils.analysisinfo.SLIMetricTransformer;
 
 import com.google.common.base.Preconditions;
+import dev.morphia.annotations.Entity;
 import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +40,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
+@Entity
 public class SplunkMetricCVConfig extends MetricCVConfig<SplunkMetricInfo> {
   @NotNull private String groupName;
   @NotNull private List<SplunkMetricInfo> metricInfos;

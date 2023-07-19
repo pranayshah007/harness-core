@@ -18,6 +18,7 @@ import io.harness.mongo.index.FdSparseIndex;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.Preconditions;
+import dev.morphia.annotations.Entity;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
 import java.time.Duration;
@@ -38,6 +39,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@Entity
 public class DeploymentActivity extends Activity {
   Long dataCollectionDelayMs;
   Set<String> oldVersionHosts;

@@ -11,6 +11,7 @@ import io.harness.delegate.beans.connector.prometheusconnector.PrometheusConnect
 import io.harness.delegate.beans.cvng.prometheus.PrometheusUtils;
 
 import com.google.common.base.Preconditions;
+import dev.morphia.annotations.Entity;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -22,6 +23,7 @@ import lombok.Data;
 
 @Data
 @Builder
+@Entity
 public class PrometheusDataCollectionInfo extends TimeSeriesDataCollectionInfo<PrometheusConnectorDTO> {
   private String groupName;
   private List<MetricCollectionInfo> metricCollectionInfoList;

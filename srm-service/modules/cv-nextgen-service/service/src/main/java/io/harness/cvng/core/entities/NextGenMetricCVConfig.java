@@ -28,6 +28,7 @@ import io.harness.data.structure.UUIDGenerator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.Preconditions;
 import com.google.inject.Singleton;
+import dev.morphia.annotations.Entity;
 import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -48,6 +49,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @FieldNameConstants(innerTypeName = "CVConfigKeys")
 @EqualsAndHashCode(callSuper = true)
+@Entity
 public class NextGenMetricCVConfig extends MetricCVConfig<NextGenMetricInfo> {
   @NotNull private String groupName;
 

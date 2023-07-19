@@ -25,6 +25,7 @@ import io.harness.cvng.core.utils.analysisinfo.LiveMonitoringTransformer;
 import io.harness.cvng.core.utils.analysisinfo.SLIMetricTransformer;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import dev.morphia.annotations.Entity;
 import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,6 +47,7 @@ import lombok.experimental.SuperBuilder;
 @FieldNameConstants(innerTypeName = "DynatraceCVConfigKeys")
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@Entity
 public class DynatraceCVConfig extends MetricCVConfig<DynatraceMetricInfo> {
   private String dynatraceServiceName;
   private String dynatraceServiceId;
@@ -172,6 +174,7 @@ public class DynatraceCVConfig extends MetricCVConfig<DynatraceMetricInfo> {
   @SuperBuilder
   @FieldDefaults(level = AccessLevel.PRIVATE)
   @EqualsAndHashCode(callSuper = true)
+  @Entity
   public static class DynatraceMetricInfo extends AnalysisInfo {
     TimeSeriesMetricType metricType;
     String metricSelector;

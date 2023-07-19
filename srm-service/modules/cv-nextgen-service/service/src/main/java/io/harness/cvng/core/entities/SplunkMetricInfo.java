@@ -7,6 +7,7 @@
 
 package io.harness.cvng.core.entities;
 
+import dev.morphia.annotations.Entity;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
@@ -14,6 +15,7 @@ import lombok.experimental.SuperBuilder;
 @Value
 @SuperBuilder
 @FieldNameConstants(innerTypeName = "SplunkMetricInfoKeys")
+@Entity
 // had to move it outside as lambok superbuilder is not working when this is a inner class.
 public class SplunkMetricInfo extends AnalysisInfo {
   private String query;

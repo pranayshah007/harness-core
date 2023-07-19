@@ -14,6 +14,7 @@ import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdType;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.Preconditions;
+import dev.morphia.annotations.Entity;
 import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +30,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @FieldNameConstants(innerTypeName = "RatioServiceLevelIndicatorKeys")
 @EqualsAndHashCode(callSuper = true)
+@Entity
 public class RatioServiceLevelIndicator extends ServiceLevelIndicator {
   RatioSLIMetricEventType eventType;
   String metric1;

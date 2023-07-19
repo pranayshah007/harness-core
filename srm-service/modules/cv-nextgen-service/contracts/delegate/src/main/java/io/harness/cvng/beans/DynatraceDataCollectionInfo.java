@@ -14,6 +14,7 @@ import io.harness.delegate.beans.connector.dynatrace.DynatraceConnectorDTO;
 import io.harness.delegate.beans.cvng.dynatrace.DynatraceUtils;
 
 import com.mongodb.lang.Nullable;
+import dev.morphia.annotations.Entity;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,6 +29,7 @@ import org.apache.commons.collections4.CollectionUtils;
 @Data
 @Builder
 @EqualsAndHashCode(callSuper = true)
+@Entity
 public class DynatraceDataCollectionInfo extends TimeSeriesDataCollectionInfo<DynatraceConnectorDTO> {
   public static final String DYNATRACE_SERVICE_INSTANCE_DEFAULT_PLACEHOLDER = "dynatrace-placeholder-host";
   public static final String METRIC_NAME_PARAM = "metricName";

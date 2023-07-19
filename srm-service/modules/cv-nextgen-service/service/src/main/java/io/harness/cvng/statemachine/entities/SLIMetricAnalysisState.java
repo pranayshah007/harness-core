@@ -9,6 +9,7 @@ package io.harness.cvng.statemachine.entities;
 
 import io.harness.cvng.statemachine.beans.AnalysisState;
 
+import dev.morphia.annotations.Entity;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -18,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 @Slf4j
+@Entity
 public class SLIMetricAnalysisState extends AnalysisState {
   @Override
   public StateType getType() {

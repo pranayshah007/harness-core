@@ -11,6 +11,7 @@ import io.harness.delegate.beans.connector.newrelic.NewRelicConnectorDTO;
 import io.harness.delegate.beans.cvng.newrelic.NewRelicUtils;
 
 import com.google.common.base.Preconditions;
+import dev.morphia.annotations.Entity;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -25,6 +26,7 @@ import lombok.experimental.FieldDefaults;
 @Data
 @Builder
 @EqualsAndHashCode(callSuper = true)
+@Entity
 public class NewRelicDataCollectionInfo extends TimeSeriesDataCollectionInfo<NewRelicConnectorDTO> {
   private static final String QUERIES_KEY = "queries";
   private static final String METRIC_IDENTIFIERS_KEY = "metricIdentifiers";

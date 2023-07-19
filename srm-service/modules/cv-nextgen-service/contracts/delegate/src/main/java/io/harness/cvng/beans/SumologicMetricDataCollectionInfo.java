@@ -11,6 +11,7 @@ import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.beans.connector.sumologic.SumoLogicConnectorDTO;
 import io.harness.delegate.beans.cvng.sumologic.SumoLogicUtils;
 
+import dev.morphia.annotations.Entity;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,6 +28,7 @@ import lombok.experimental.FieldDefaults;
 @Value
 @Builder
 @EqualsAndHashCode(callSuper = true)
+@Entity
 public class SumologicMetricDataCollectionInfo extends TimeSeriesDataCollectionInfo<SumoLogicConnectorDTO> {
   private static final String GROUPING_CLAUSE_HOST = " | avg by ";
   private static final String GROUPING_CLAUSE_NON_HOST = " | avg";

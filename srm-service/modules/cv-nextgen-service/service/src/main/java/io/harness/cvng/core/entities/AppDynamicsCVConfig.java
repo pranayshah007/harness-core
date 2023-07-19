@@ -24,6 +24,7 @@ import io.harness.cvng.core.utils.analysisinfo.SLIMetricTransformer;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import dev.morphia.annotations.Entity;
 import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,6 +47,7 @@ import org.apache.commons.lang3.StringUtils;
 @FieldNameConstants(innerTypeName = "AppDynamicsCVConfigKeys")
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@Entity
 public class AppDynamicsCVConfig extends MetricCVConfig<MetricInfo> {
   private String applicationName;
   private String tierName;
@@ -180,6 +182,7 @@ public class AppDynamicsCVConfig extends MetricCVConfig<MetricInfo> {
   @SuperBuilder
   @FieldDefaults(level = AccessLevel.PRIVATE)
   @FieldNameConstants(innerTypeName = "AppDynamicsMetricInfoKeys")
+  @Entity
   public static class MetricInfo extends AnalysisInfo {
     @Deprecated String baseFolder;
     @Deprecated String metricPath;

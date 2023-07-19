@@ -10,6 +10,7 @@ package io.harness.cvng.core.entities;
 import io.harness.cvng.core.utils.DateTimeUtils;
 
 import com.google.common.collect.Lists;
+import dev.morphia.annotations.Entity;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -20,6 +21,7 @@ import lombok.experimental.SuperBuilder;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
+@Entity
 public class ServiceGuardDataCollectionTask extends DataCollectionTask {
   public static final Duration SERVICE_GUARD_MAX_DATA_COLLECTION_DURATION = Duration.ofHours(2);
   private static final List<Duration> RETRY_WAIT_DURATIONS =

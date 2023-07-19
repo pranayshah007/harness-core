@@ -11,6 +11,7 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsR
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import dev.morphia.annotations.Entity;
 import dev.morphia.query.UpdateOperations;
 import java.util.List;
 import java.util.Optional;
@@ -26,6 +27,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @FieldNameConstants(innerTypeName = "CompositeServiceLevelObjectiveKeys")
 @EqualsAndHashCode(callSuper = true)
+@Entity
 public class CompositeServiceLevelObjective extends AbstractServiceLevelObjective {
   public CompositeServiceLevelObjective() {
     super.setType(ServiceLevelObjectiveType.COMPOSITE);

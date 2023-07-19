@@ -9,6 +9,7 @@ package io.harness.cvng.core.entities;
 
 import io.harness.cvng.beans.TimeSeriesMetricType;
 
+import dev.morphia.annotations.Entity;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
@@ -18,6 +19,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 @FieldNameConstants(innerTypeName = "NextGenMetricInfoKeys")
+@Entity
 public class NextGenMetricInfo extends AnalysisInfo {
   String query;
   TimeSeriesMetricType metricType;

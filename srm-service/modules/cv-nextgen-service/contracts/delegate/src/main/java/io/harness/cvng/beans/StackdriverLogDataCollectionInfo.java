@@ -13,6 +13,7 @@ import io.harness.cvng.beans.stackdriver.StackdriverLogDefinition;
 import io.harness.cvng.utils.StackdriverUtils;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 
+import dev.morphia.annotations.Entity;
 import java.util.Collections;
 import java.util.Map;
 import lombok.Builder;
@@ -22,6 +23,7 @@ import lombok.Value;
 @Value
 @Builder
 @EqualsAndHashCode(callSuper = true)
+@Entity
 public class StackdriverLogDataCollectionInfo extends LogDataCollectionInfo<GcpConnectorDTO> {
   private static final String timestampFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'";
   private static final String timestampFormatKey = "timestampFormat";

@@ -7,8 +7,10 @@
 
 package io.harness.cvng.statemachine.entities;
 
+import dev.morphia.annotations.Entity;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -16,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 @Builder
 @NoArgsConstructor
 @Slf4j
+@Entity
 public class CompositeSLOMetricAnalysisState extends TimeSeriesAnalysisState {
   private final StateType type = StateType.COMPOSOITE_SLO_METRIC_ANALYSIS;
 

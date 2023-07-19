@@ -10,6 +10,7 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import dev.morphia.annotations.Entity;
 import dev.morphia.query.UpdateOperations;
 import java.util.List;
 import java.util.Optional;
@@ -23,6 +24,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @FieldNameConstants(innerTypeName = "SimpleServiceLevelObjectiveKeys")
 @EqualsAndHashCode(callSuper = true)
+@Entity
 public class SimpleServiceLevelObjective extends AbstractServiceLevelObjective {
   public SimpleServiceLevelObjective() {
     super.setType(ServiceLevelObjectiveType.SIMPLE);

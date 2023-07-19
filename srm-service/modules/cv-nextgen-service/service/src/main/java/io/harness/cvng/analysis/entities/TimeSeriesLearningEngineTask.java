@@ -11,6 +11,7 @@ import static io.harness.cvng.analysis.CVAnalysisConstants.TIMESERIES_SERVICE_GU
 import static io.harness.cvng.analysis.CVAnalysisConstants.TIMESERIES_SERVICE_GUARD_WINDOW_SIZE;
 import static io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType.SERVICE_GUARD_TIME_SERIES;
 
+import dev.morphia.annotations.Entity;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.AllArgsConstructor;
@@ -25,6 +26,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@Entity
 public class TimeSeriesLearningEngineTask extends LearningEngineTask {
   private String testDataUrl;
   private String previousAnalysisUrl;

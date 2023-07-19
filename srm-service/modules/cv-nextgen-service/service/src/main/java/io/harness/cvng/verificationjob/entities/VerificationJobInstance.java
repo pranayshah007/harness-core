@@ -239,6 +239,7 @@ public final class VerificationJobInstance
   @Value
   @EqualsAndHashCode(callSuper = true)
   @SuperBuilder
+  @Entity
   public static class AnalysisProgressLog extends ProgressLog {
     AnalysisStatus analysisStatus;
 
@@ -255,6 +256,7 @@ public final class VerificationJobInstance
   @Value
   @EqualsAndHashCode(callSuper = true)
   @SuperBuilder
+  @Entity
   public static class DataCollectionProgressLog extends ProgressLog {
     DataCollectionExecutionStatus executionStatus;
 

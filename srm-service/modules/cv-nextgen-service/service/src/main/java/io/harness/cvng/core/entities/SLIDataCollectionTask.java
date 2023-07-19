@@ -14,6 +14,7 @@ import io.harness.cvng.core.utils.DateTimeUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+import dev.morphia.annotations.Entity;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -25,6 +26,7 @@ import lombok.experimental.SuperBuilder;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
+@Entity
 public class SLIDataCollectionTask extends DataCollectionTask {
   public static final Duration SLI_MAX_DATA_COLLECTION_DURATION = DATA_COLLECTION_TIME_RANGE_FOR_SLI;
 

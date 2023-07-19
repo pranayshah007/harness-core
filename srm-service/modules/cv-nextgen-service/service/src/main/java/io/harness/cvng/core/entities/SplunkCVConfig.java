@@ -17,6 +17,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.io.Resources;
+import dev.morphia.annotations.Entity;
 import dev.morphia.query.UpdateOperations;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -32,6 +33,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
+@Entity
 public class SplunkCVConfig extends LogCVConfig {
   @VisibleForTesting static final String DSL = readDSL("splunk.datacollection");
   static final String HOST_COLLECTION_DSL = readDSL("splunk_host_collection.datacollection");

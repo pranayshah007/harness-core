@@ -10,6 +10,7 @@ package io.harness.cvng.servicelevelobjective.entities;
 import io.harness.cvng.servicelevelobjective.beans.SLOCalenderType;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
 
+import dev.morphia.annotations.Entity;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.TemporalAdjusters;
@@ -22,6 +23,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @Data
 @EqualsAndHashCode(callSuper = true)
+@Entity
 public class QuarterlyCalenderTarget extends CalenderSLOTarget {
   private final SLOCalenderType calenderType = SLOCalenderType.QUARTERLY;
 

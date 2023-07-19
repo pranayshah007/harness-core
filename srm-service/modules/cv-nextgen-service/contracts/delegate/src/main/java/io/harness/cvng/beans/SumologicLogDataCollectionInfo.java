@@ -10,6 +10,7 @@ package io.harness.cvng.beans;
 import io.harness.delegate.beans.connector.sumologic.SumoLogicConnectorDTO;
 import io.harness.delegate.beans.cvng.sumologic.SumoLogicUtils;
 
+import dev.morphia.annotations.Entity;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,6 +21,7 @@ import lombok.Value;
 @Value
 @Builder
 @EqualsAndHashCode(callSuper = true)
+@Entity
 public class SumologicLogDataCollectionInfo extends LogDataCollectionInfo<SumoLogicConnectorDTO> {
   public static final long LOG_MAX_LIMIT = 100;
   String query;

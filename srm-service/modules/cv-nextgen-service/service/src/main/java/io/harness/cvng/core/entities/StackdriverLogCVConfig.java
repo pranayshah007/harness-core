@@ -16,6 +16,7 @@ import io.harness.cvng.beans.DataSourceType;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.io.Resources;
+import dev.morphia.annotations.Entity;
 import dev.morphia.query.UpdateOperations;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -33,6 +34,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@Entity
 public class StackdriverLogCVConfig extends LogCVConfig {
   static final String DSL = readDSL("stackdriver-log-fetch-data.datacollection");
 
