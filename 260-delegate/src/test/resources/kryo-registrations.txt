@@ -2689,6 +2689,7 @@
 9300122:io.harness.yaml.core.timeout.Timeout
 9300123:io.harness.beans.WebhookEncryptedSecretDTO
 9300130:io.harness.beans.RepoFilterDelegateTaskParams
+9300125:io.harness.beans.BranchFilterParamsDTO
 9800001:io.harness.beans.RecasterMap
 9800002:io.harness.licensing.beans.modules.ChaosModuleLicenseDTO
 9800003:io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig
