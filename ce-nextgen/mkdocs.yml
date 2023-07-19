@@ -1,4 +1,4 @@
-ocs.yamlsite_name: 'platform-service'
+cs.yamlocs.yamlsite_name: 'platform-service'
 
 nav:
   - Home: index.md
