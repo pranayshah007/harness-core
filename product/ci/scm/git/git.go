@@ -8,11 +8,11 @@ package git
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net/url"
+	"os"
 	"strings"
 	"time"
-	"io/ioutil"
-	"os"
 
 	"github.com/drone/go-scm/scm"
 	"github.com/drone/go-scm/scm/driver/github"
@@ -21,9 +21,9 @@ import (
 	"github.com/harness/harness-core/product/ci/scm/converter"
 	"github.com/harness/harness-core/product/ci/scm/gitclient"
 	pb "github.com/harness/harness-core/product/ci/scm/proto"
+	"github.com/wings-software/autogen-go/builder"
+	"github.com/wings-software/autogen-go/chroot"
 	"github.com/wings-software/autogen-go/cloner"
-    "github.com/wings-software/autogen-go/builder"
-    "github.com/wings-software/autogen-go/chroot"
 	"go.uber.org/zap"
 )
 
@@ -62,46 +62,46 @@ func RefreshToken(ctx context.Context, request *pb.RefreshTokenRequest, log *zap
 }
 
 func GenerateStageYamlForCI(ctx context.Context, request *pb.GenerateYamlRequest, log *zap.SugaredLogger) (out *pb.GenerateYamlResponse, err error) {
-    log.Infow("GenerateYaml starting")
-    path := request.Url
-    temp, err := ioutil.TempDir("", "")
-    log.Infow("temp dir" , "dir", temp)
-    if err != nil {
-        return nil, err
-    }
+	log.Infow("GenerateYaml starting")
+	path := request.Url
+	temp, err := ioutil.TempDir("", "")
+	log.Infow("temp dir", "dir", temp)
+	if err != nil {
+		return nil, err
+	}
 
-    params := cloner.Params{
-        Dir:        temp,
-        Repo:       path,
-    }
+	params := cloner.Params{
+		Dir:  temp,
+		Repo: path,
+	}
 
-    cloner := cloner.New(1, os.Stdout) // 1 depth, discard git clone logs
-    cloner.Clone(context.Background(), params)
+	cloner := cloner.New(1, os.Stdout) // 1 depth, discard git clone logs
+	cloner.Clone(context.Background(), params)
 
-    // change the path to the temp directory
-    path = temp
+	// change the path to the temp directory
+	path = temp
 
-    defer os.RemoveAll(temp)
+	defer os.RemoveAll(temp)
 
-    // create a chroot virtual filesystem that we
-    // pass to the builder for isolation purposes.
-    chroot, err := chroot.New(path)
-    if err != nil {
-        return nil, err
-    }
+	// create a chroot virtual filesystem that we
+	// pass to the builder for isolation purposes.
+	chroot, err := chroot.New(path)
+	if err != nil {
+		return nil, err
+	}
 
-    // builds the pipeline configuration based on
-    // the contents of the virtual filesystem.
-    builder := builder.New("harness", request.GetYamlVersion())
-    yml, err := builder.Build(chroot)
-    if err != nil {
-        return nil, err
-    }
+	// builds the pipeline configuration based on
+	// the contents of the virtual filesystem.
+	builder := builder.New("harness", request.GetYamlVersion())
+	yml, err := builder.Build(chroot)
+	if err != nil {
+		return nil, err
+	}
 
 	out = &pb.GenerateYamlResponse{
 		Yaml: string(yml[:]),
 	}
-    return out, nil
+	return out, nil
 }
 
 func CreatePR(ctx context.Context, request *pb.CreatePRRequest, log *zap.SugaredLogger) (out *pb.CreatePRResponse, err error) {
@@ -440,7 +440,7 @@ func ListBranchesWithDefault(ctx context.Context, request *pb.ListBranchesWithDe
 		return nil, err
 	}
 
-	branchesContent, response, err := client.Git.ListBranches(ctx, request.GetSlug(), scm.ListOptions{Page: int(request.GetPagination().GetPage()), Size: int(request.GetPagination().GetSize()})
+	branchesContent, response, err := client.Git.ListBranches(ctx, request.GetSlug(), scm.ListOptions{Page: int(request.GetPagination().GetPage()), Size: int(request.GetPagination().GetSize())})
 	if err != nil {
 		// this is an error from the git provider, e.g. authentication.
 		log.Errorw("ListBranchesWithDefault failure", "provider", gitclient.GetProvider(*request.GetProvider()), "slug", request.GetSlug(), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
@@ -585,13 +585,13 @@ func GetAuthenticatedUser(ctx context.Context, request *pb.GetAuthenticatedUserR
 	}
 	log.Infow("GetAuthenticatedUser success", "elapsed_time_ms", utils.TimeSince(start))
 
-	if (response.Email == "" && (request.GetProvider().GetBitbucketCloud() != nil || request.GetProvider().GetGithub() != nil)) {
-	    email, _, err := client.Users.FindEmail(ctx)
-	    if err != nil {
-	        log.Errorw("GetAuthenticatedUser email failure", "provider", gitclient.GetProvider(*request.GetProvider()), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
-	        return nil, err
-	    }
-	    response.Email = email
+	if response.Email == "" && (request.GetProvider().GetBitbucketCloud() != nil || request.GetProvider().GetGithub() != nil) {
+		email, _, err := client.Users.FindEmail(ctx)
+		if err != nil {
+			log.Errorw("GetAuthenticatedUser email failure", "provider", gitclient.GetProvider(*request.GetProvider()), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
+			return nil, err
+		}
+		response.Email = email
 	}
 	out = &pb.GetAuthenticatedUserResponse{
 		Username:  response.Name,
