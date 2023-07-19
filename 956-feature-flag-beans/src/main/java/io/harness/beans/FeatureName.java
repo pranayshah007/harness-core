@@ -821,6 +821,9 @@ public enum FeatureName {
   CDS_ENABLE_LOAD_FROM_CACHE_FOR_RETRY_FORM("Used for enabling load from cache on retry form", HarnessTeam.PIPELINE),
   CDS_STEP_EXECUTION_DATA_SYNC(
       "This flag controls if you want Step execution data saved in mongodb and eventually synced to timescale",
+      HarnessTeam.CDP),
+  CDS_HELM_SEND_TASK_PROGRESS_NG(
+      "For Helm tasks we will be sending task progress event via log streaming client which will be received and handled by handleProgress handler in the ng-manager step class",
       HarnessTeam.CDP);
   // keep-sorted end
 
