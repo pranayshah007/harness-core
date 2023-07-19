@@ -13,7 +13,12 @@ import java.io.IOException;
 import java.util.List;
 
 public interface HelmDeployServiceNG {
+  void setTaskId(String taskId);
+
   void setLogStreamingClient(ILogStreamingTaskClient iLogStreamingTaskClient);
+
+  void setTaskProgressStreamingClient(ILogStreamingTaskClient iLogStreamingTaskClient);
+
   HelmCommandResponseNG deploy(HelmInstallCommandRequestNG commandRequest) throws IOException;
 
   /**
