@@ -411,5 +411,6 @@ io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig
 io.harness.k8s.model.K8sContainer
 io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO
 io.harness.delegate.beans.logstreaming.UnitProgressData
+io.harness.delegate.beans.helm.HelmDeployProgressData
 io.harness.steps.SectionStepSweepingOutput
 io.harness.spotinst.model.ElastiGroup

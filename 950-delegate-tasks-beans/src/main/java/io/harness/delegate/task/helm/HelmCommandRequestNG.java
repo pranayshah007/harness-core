@@ -85,6 +85,7 @@ public class HelmCommandRequestNG implements TaskParameters, ExecutionCapability
   @Expression(ALLOW_SECRETS) List<ServiceHookDelegateConfig> serviceHooks;
   private boolean useRefactorSteadyStateCheck;
   private boolean skipSteadyStateCheck;
+  private boolean sendTaskProgressEvents;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
