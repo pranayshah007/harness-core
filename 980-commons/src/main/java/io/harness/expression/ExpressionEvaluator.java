@@ -90,6 +90,8 @@ public class ExpressionEvaluator {
     try {
       jexlExpression = engine.createExpression(expression);
     } catch (JexlException.Tokenization ex) {
+      // Ref: https://stackoverflow.com/q/66498157
+      // Line break in JEXL String
       if (expression.contains("\n")) {
         expression = expression.replaceAll("\n", "\\\\u000a");
         jexlExpression = engine.createExpression(expression);
