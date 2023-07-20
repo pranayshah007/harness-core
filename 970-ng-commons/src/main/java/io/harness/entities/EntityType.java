@@ -157,8 +157,7 @@ public enum EntityType {
       ModuleType.STO, EntityTypeConstants.SECURITY_STAGE, IdentifierRef.class, EntityYamlRootNames.SECURITY_STAGE),
 
   @JsonProperty(EntityTypeConstants.IDP_STAGE)
-  IDP_STAGE(
-          ModuleType.IDP, EntityTypeConstants.IDP_STAGE, IdentifierRef.class, EntityYamlRootNames.IDP_STAGE),
+  IDP_STAGE(ModuleType.IDP, EntityTypeConstants.IDP_STAGE, IdentifierRef.class, EntityYamlRootNames.IDP_STAGE),
   @JsonProperty(EntityTypeConstants.SECURITY_STEPS)
   SECURITY_STEPS(
       ModuleType.STO, EntityTypeConstants.SECURITY_STEPS, IdentifierRef.class, EntityYamlRootNames.SECURITY_STEP),
