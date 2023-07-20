@@ -14,6 +14,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.ngtriggers.Constants.COMMIT_SHA_STRING_LENGTH;
+import static io.harness.ngtriggers.Constants.EMAIL;
 import static io.harness.ngtriggers.Constants.EVENT_CORRELATION_ID;
 import static io.harness.ngtriggers.Constants.GIT_USER;
 import static io.harness.ngtriggers.Constants.PR;
@@ -110,7 +111,10 @@ import io.harness.product.ci.scm.proto.User;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.SourcePrincipalContextBuilder;
+import io.harness.security.dto.Principal;
+import io.harness.security.dto.ServiceAccountPrincipal;
 import io.harness.security.dto.ServicePrincipal;
+import io.harness.security.dto.UserPrincipal;
 import io.harness.serializer.ProtoUtils;
 import io.harness.utils.PmsFeatureFlagHelper;
 
@@ -168,7 +172,7 @@ public class TriggerExecutionHelper {
       TriggerPayload triggerPayload, TriggerWebhookEvent triggerWebhookEvent, String payload, String runTimeInputYaml) {
     String executionTagForGitEvent = generateExecutionTagForEvent(triggerDetails, triggerPayload);
     TriggeredBy embeddedUser = generateTriggerdBy(
-        executionTagForGitEvent, triggerDetails.getNgTriggerEntity(), triggerPayload, triggerWebhookEvent.getUuid());
+        executionTagForGitEvent, triggerDetails.getNgTriggerEntity(), triggerPayload, triggerWebhookEvent);
 
     TriggerType triggerType = findTriggerType(triggerPayload);
     ExecutionTriggerInfo triggerInfo =
@@ -537,12 +541,30 @@ public class TriggerExecutionHelper {
   }
 
   @VisibleForTesting
-  TriggeredBy generateTriggerdBy(
-      String executionTagForGitEvent, NGTriggerEntity ngTriggerEntity, TriggerPayload triggerPayload, String eventId) {
+  TriggeredBy generateTriggerdBy(String executionTagForGitEvent, NGTriggerEntity ngTriggerEntity,
+      TriggerPayload triggerPayload, TriggerWebhookEvent triggerWebhookEvent) {
+    String eventId = triggerWebhookEvent != null ? triggerWebhookEvent.getUuid() : null;
     TriggeredBy.Builder builder = TriggeredBy.newBuilder()
                                       .setIdentifier(ngTriggerEntity.getIdentifier())
                                       .setTriggerIdentifier(ngTriggerEntity.getIdentifier())
                                       .setUuid("systemUser");
+    if (triggerWebhookEvent != null && triggerWebhookEvent.getPrincipal() != null) {
+      /* If principal is available in `triggerWebhookEvent`, we set some information in `TriggeredBy` based on it,
+      because during creation of plan execution, `PipelineStagePlanCreator.setSourcePrincipal` actually uses information
+      from `TriggeredBy` in order to re-set the Principal in `SourcePrincipalContextBuilder` and
+      `SecurityContextBuilder`.
+      */
+      Principal principal = triggerWebhookEvent.getPrincipal();
+      if (principal instanceof UserPrincipal) {
+        UserPrincipal userPrincipal = (UserPrincipal) principal;
+        builder.setIdentifier(userPrincipal.getUsername());
+        builder.putExtraInfo(EMAIL, userPrincipal.getEmail());
+      } else if (principal instanceof ServiceAccountPrincipal) {
+        ServiceAccountPrincipal serviceAccountPrincipal = (ServiceAccountPrincipal) principal;
+        builder.setIdentifier(serviceAccountPrincipal.getUsername());
+        builder.putExtraInfo(EMAIL, serviceAccountPrincipal.getEmail());
+      }
+    }
     if (isNotBlank(executionTagForGitEvent)) {
       builder.putExtraInfo(PlanExecution.EXEC_TAG_SET_BY_TRIGGER, executionTagForGitEvent);
       builder.putExtraInfo(TRIGGER_REF, generateTriggerRef(ngTriggerEntity));
@@ -579,7 +601,7 @@ public class TriggerExecutionHelper {
         if (sender != null) {
           builder.putExtraInfo(GIT_USER, sender.getLogin());
           if (isNotEmpty(sender.getEmail())) {
-            builder.putExtraInfo("email", sender.getEmail());
+            builder.putExtraInfo(EMAIL, sender.getEmail());
           }
           if (isNotEmpty(sender.getLogin())) {
             builder.setIdentifier(sender.getLogin());
