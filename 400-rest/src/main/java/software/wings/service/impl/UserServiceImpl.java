@@ -590,26 +590,28 @@ public class UserServiceImpl implements UserService {
   @Override
   public List<Account> getUserAccounts(String userId, int pageIndex, int pageSize, String searchTerm) {
     Query<Account> query = getUserAccountsQuery(userId, searchTerm);
+
     List<Account> accounts = query.asList(new FindOptions().limit(pageSize).skip(pageIndex));
 
-    List<Account> accountsWithNGLicenseInfo = accounts.stream()
-                                                  .filter(account
-                                                      -> "FREE".equals(account.getLicenseInfo().getAccountType())
-                                                          || "TRIAL".equals(account.getLicenseInfo().getAccountType()))
-                                                  .collect(Collectors.toList());
+    List<Account> accountsWithNullLicenseInfo =
+        accounts.stream()
+            .filter(account
+                -> account.getLicenseInfo() == null || "FREE".equals(account.getLicenseInfo().getAccountType())
+                    || "TRIAL".equals(account.getLicenseInfo().getAccountType()))
+            .collect(Collectors.toList());
 
-    for (Account account : accountsWithNGLicenseInfo) {
-      if ("Global".equals(account.getAccountName())) {
-        continue;
-      } else {
-        String ngLicense = getNgLicense(account.getUuid());
-        if (ngLicense != null && !ngLicense.isEmpty()) {
-          account.getLicenseInfo().setAccountType(ngLicense);
+    if (!accountsWithNullLicenseInfo.isEmpty()) {
+      for (Account account : accountsWithNullLicenseInfo) {
+        if (!"Global".equals(account.getAccountName())) {
+          String ngLicense = getNgLicense(account.getUuid());
+          if (ngLicense != null && !ngLicense.isEmpty()) {
+            account.getLicenseInfo().setAccountType(ngLicense);
+          }
         }
       }
+      accounts.removeAll(accountsWithNullLicenseInfo);
+      accounts.addAll(accountsWithNullLicenseInfo);
     }
-    accounts.removeAll(accountsWithNGLicenseInfo);
-    accounts.addAll(accountsWithNGLicenseInfo);
 
     return accounts;
   }
@@ -617,6 +619,7 @@ public class UserServiceImpl implements UserService {
   private Query<Account> getUserAccountsQuery(String userId, String searchTerm) {
     Query<Account> query = wingsPersistence.createQuery(Account.class);
     List<String> accountIds = getUserAccountIds(userId);
+
     if (harnessUserGroupService.isHarnessSupportUser(userId)) {
       accountIds.addAll(accessRequestService.getAccountsHavingActiveAccessRequestForUser(userId));
       query.or(query.criteria(AccountKeys.isHarnessSupportAccessAllowed).equal(true),
@@ -627,6 +630,7 @@ public class UserServiceImpl implements UserService {
     }
     query.and(getSearchCriterion(query, AccountKeys.accountName, searchTerm));
     query.order(Sort.ascending(AccountKeys.accountName));
+
     return query;
   }
 
