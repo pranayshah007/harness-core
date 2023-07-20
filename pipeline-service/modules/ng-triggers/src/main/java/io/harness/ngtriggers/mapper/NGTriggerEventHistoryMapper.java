@@ -30,24 +30,8 @@ import org.apache.commons.lang3.EnumUtils;
 public class NGTriggerEventHistoryMapper {
   public NGTriggerEventHistoryDTO toTriggerEventHistoryDto(
       TriggerEventHistory triggerEventHistory, NGTriggerEntity triggerEntity) {
-    NGTriggerEventHistoryDTO ngTriggerEventHistoryDTO =
-        NGTriggerEventHistoryDTO.builder()
-            .triggerIdentifier(triggerEventHistory.getTriggerIdentifier())
-            .accountId(triggerEventHistory.getAccountId())
-            .orgIdentifier(triggerEventHistory.getOrgIdentifier())
-            .projectIdentifier(triggerEventHistory.getProjectIdentifier())
-            .targetIdentifier(triggerEventHistory.getTargetIdentifier())
-            .eventCorrelationId(triggerEventHistory.getEventCorrelationId())
-            .payload(triggerEventHistory.getPayload())
-            .eventCreatedAt(triggerEventHistory.getEventCreatedAt())
-            .finalStatus(
-                EnumUtils.getEnum(TriggerEventResponse.FinalStatus.class, triggerEventHistory.getFinalStatus(), null))
-            .triggerEventStatus(TriggerEventStatusHelper.toStatus(
-                EnumUtils.getEnum(TriggerEventResponse.FinalStatus.class, triggerEventHistory.getFinalStatus(), null)))
-            .message(triggerEventHistory.getMessage())
-            .targetExecutionSummary(triggerEventHistory.getTargetExecutionSummary())
-            .type(triggerEntity.getType())
-            .build();
+    NGTriggerEventHistoryDTO ngTriggerEventHistoryDTO = toTriggerEventHistoryDto(triggerEventHistory);
+    ngTriggerEventHistoryDTO.setType(triggerEntity.getType());
     if (ngTriggerEventHistoryDTO.getType().equals(NGTriggerType.ARTIFACT)) {
       ngTriggerEventHistoryDTO.setNgTriggerEventInfo(
           ArtifactTriggerEventInfo.builder()
@@ -62,5 +46,24 @@ public class NGTriggerEventHistoryMapper {
               .build());
     }
     return ngTriggerEventHistoryDTO;
+  }
+
+  public NGTriggerEventHistoryDTO toTriggerEventHistoryDto(TriggerEventHistory triggerEventHistory) {
+    return NGTriggerEventHistoryDTO.builder()
+        .triggerIdentifier(triggerEventHistory.getTriggerIdentifier())
+        .accountId(triggerEventHistory.getAccountId())
+        .orgIdentifier(triggerEventHistory.getOrgIdentifier())
+        .projectIdentifier(triggerEventHistory.getProjectIdentifier())
+        .targetIdentifier(triggerEventHistory.getTargetIdentifier())
+        .eventCorrelationId(triggerEventHistory.getEventCorrelationId())
+        .payload(triggerEventHistory.getPayload())
+        .eventCreatedAt(triggerEventHistory.getEventCreatedAt())
+        .finalStatus(
+            EnumUtils.getEnum(TriggerEventResponse.FinalStatus.class, triggerEventHistory.getFinalStatus(), null))
+        .triggerEventStatus(TriggerEventStatusHelper.toStatus(
+            EnumUtils.getEnum(TriggerEventResponse.FinalStatus.class, triggerEventHistory.getFinalStatus(), null)))
+        .message(triggerEventHistory.getMessage())
+        .targetExecutionSummary(triggerEventHistory.getTargetExecutionSummary())
+        .build();
   }
 }
