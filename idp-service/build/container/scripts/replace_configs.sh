@@ -189,6 +189,11 @@ if [[ "" != "$IDP_ENCRYPTION_SECRET" ]]; then
   export IDP_ENCRYPTION_SECRET; yq -i '.idpEncryptionSecret=env(IDP_ENCRYPTION_SECRET)' $CONFIG_FILE
 fi
 
+
+if [[ "" != "$IDP_ENCRYPTION_SECRET" ]]; then
+  export IDP_ENCRYPTION_SECRET; yq -i '.idpEncryptionSecret=env(IDP_ENCRYPTION_SECRET)' $CONFIG_FILE
+fi
+
 if [[ "" != "$JWT_EXTERNAL_SERVICE_SECRET" ]]; then
   export JWT_EXTERNAL_SERVICE_SECRET; yq -i '.jwtExternalServiceSecret=env(JWT_EXTERNAL_SERVICE_SECRET)' $CONFIG_FILE
 fi
@@ -208,6 +213,12 @@ fi
 if [[ "" != "$MANAGER_AUTHORITY" ]]; then
   export MANAGER_AUTHORITY; yq -i '.managerAuthority=env(MANAGER_AUTHORITY)' $CONFIG_FILE
 fi
+
+if [[ "" != "$PROXY_ALLOW_LIST_CONFIG_SERVICES" ]]; then
+  export PROXY_ALLOW_LIST_CONFIG_SERVICES; yq -i '.proxyAllowList.services=env(PROXY_ALLOW_LIST_CONFIG_SERVICES)' $CONFIG_FILE
+  sed -i '' 's/  services: |-/  services:/g' $CONFIG_FILE
+fi
+
 
 yq -i 'del(.codec)' $REDISSON_CACHE_FILE
 
@@ -436,6 +447,7 @@ replace_key_value backstageSaToken "$BACKSTAGE_SA_TOKEN"
 replace_key_value backstageSaCaCrt "$BACKSTAGE_SA_CA_CRT"
 replace_key_value backstageMasterUrl "$BACKSTAGE_MASTER_URL"
 replace_key_value backstagePodLabel "$BACKSTAGE_POD_LABEL"
+replace_key_value idpEncryptionSecret "$IDP_ENCRYPTION_SECRET"
 replace_key_value idpServiceSecret "$IDP_SERVICE_SECRET"
 replace_key_value idpEncryptionSecret "$IDP_ENCRYPTION_SECRET"
 replace_key_value jwtExternalServiceSecret "$JWT_EXTERNAL_SERVICE_SECRET"
@@ -454,6 +466,7 @@ replace_key_value prEnvDefaultBackstageNamespace "$DEFAULT_BACKSTAGE_NAMESPACE"
 replace_key_value backstageAppBaseUrl "$BACKSTAGE_APP_BASE_URL"
 replace_key_value backstagePostgresHost "$BACKSTAGE_POSTGRES_HOST"
 replace_key_value onboardingModuleConfig.useGitServiceGrpcForSingleEntityPush $ONBOARDING_MODULE_CONFIG_USE_GIT_SERVICE_GRPC_FOR_SINGLE_ENTITY_PUSH
+replace_key_value delegateSelectorsCacheMode "$DELEGATE_SELECTORS_CACHE_MODE"
 replace_key_value opaClientConfig.baseUrl "$OPA_SERVER_BASEURL"
 replace_key_value policyManagerSecret "$OPA_SERVER_SECRET"
 replace_key_value segmentConfiguration.enabled "$SEGMENT_ENABLED"

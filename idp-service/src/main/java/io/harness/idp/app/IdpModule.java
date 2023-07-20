@@ -542,10 +542,6 @@ public class IdpModule extends AbstractModule {
     bind(BitbucketService.class).to(BitbucketServiceImpl.class);
     bind(GitlabService.class).to(GitlabServiceImpl.class);
     bind(ScmServiceClient.class).to(ScmServiceClientImpl.class);
-    //    bind(IACMServiceConfig.class)
-    //            .toInstance(
-    //                    IACMServiceConfig.builder().baseUrl("http://localhost:4000").globalToken("api/v1/token").build());
-    //    bind(IACMServiceClient.class).toProvider(IACMServiceClientFactory.class).in(Scopes.SINGLETON);
 
     if (appConfig.getDelegateSelectorsCacheMode().equals(IN_MEMORY)) {
       bind(DelegateSelectorsCache.class).to(DelegateSelectorsInMemoryCache.class);
