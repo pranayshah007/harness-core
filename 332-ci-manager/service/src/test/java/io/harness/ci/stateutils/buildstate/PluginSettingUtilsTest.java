@@ -626,7 +626,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     Integer depth = 22;
 
     ConnectorDetails connectorDetails = ConnectorDetails.builder().build();
-    when(codebaseUtils.getGitConnector(any(), eq(connectorRef))).thenReturn(connectorDetails);
+    when(codebaseUtils.getGitConnector(any(), eq(connectorRef), any(), any())).thenReturn(connectorDetails);
 
     when(ciCodebaseUtils.getGitConnector(any(), eq(connectorRef))).thenReturn(connectorDetails);
     Map<String, String> gitEnvVars = new HashMap<>();
@@ -677,7 +677,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     Integer depth = 22;
 
     ConnectorDetails connectorDetails = ConnectorDetails.builder().build();
-    when(codebaseUtils.getGitConnector(any(), eq(connectorRef))).thenReturn(connectorDetails);
+    when(codebaseUtils.getGitConnector(any(), eq(connectorRef), any(), any())).thenReturn(connectorDetails);
     when(ciCodebaseUtils.getGitConnector(any(), eq(connectorRef))).thenReturn(connectorDetails);
 
     Map<String, String> gitEnvVars = new HashMap<>();
@@ -727,7 +727,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     Integer depth = 22;
 
     ConnectorDetails connectorDetails = ConnectorDetails.builder().build();
-    when(codebaseUtils.getGitConnector(any(), eq(connectorRef))).thenReturn(connectorDetails);
+    when(codebaseUtils.getGitConnector(any(), eq(connectorRef), any(), any())).thenReturn(connectorDetails);
 
     when(ciCodebaseUtils.getGitConnector(any(), eq(connectorRef))).thenReturn(connectorDetails);
     Map<String, String> gitEnvVars = new HashMap<>();

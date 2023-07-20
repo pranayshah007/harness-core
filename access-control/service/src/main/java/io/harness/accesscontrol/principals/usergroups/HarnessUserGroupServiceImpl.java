@@ -7,21 +7,28 @@
 
 package io.harness.accesscontrol.principals.usergroups;
 
+import static io.harness.aggregator.ACLEventProcessingConstants.UPDATE_ACTION;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
 import io.harness.accesscontrol.scopes.harness.ScopeMapper;
+import io.harness.aggregator.consumers.AccessControlChangeConsumer;
+import io.harness.aggregator.models.UserGroupUpdateEventData;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.usergroups.UserGroupClient;
 
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.Collections;
 import java.util.Optional;
+import java.util.Set;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 
@@ -32,12 +39,18 @@ import lombok.extern.slf4j.Slf4j;
 public class HarnessUserGroupServiceImpl implements HarnessUserGroupService {
   private final UserGroupClient userGroupClient;
   private final UserGroupService userGroupService;
+  private final AccessControlChangeConsumer<UserGroupUpdateEventData> accessControlChangeConsumer;
+  private final boolean enableParallelProcessingOfUserGroupUpdates;
 
   @Inject
-  public HarnessUserGroupServiceImpl(
-      @Named("PRIVILEGED") UserGroupClient userGroupClient, UserGroupService userGroupService) {
+  public HarnessUserGroupServiceImpl(@Named("PRIVILEGED") UserGroupClient userGroupClient,
+      UserGroupService userGroupService,
+      AccessControlChangeConsumer<UserGroupUpdateEventData> accessControlChangeConsumer,
+      @Named("enableParallelProcessingOfUserGroupUpdates") boolean enableParallelProcessingOfUserGroupUpdates) {
     this.userGroupClient = userGroupClient;
     this.userGroupService = userGroupService;
+    this.accessControlChangeConsumer = accessControlChangeConsumer;
+    this.enableParallelProcessingOfUserGroupUpdates = enableParallelProcessingOfUserGroupUpdates;
   }
 
   @Override
@@ -50,7 +63,33 @@ public class HarnessUserGroupServiceImpl implements HarnessUserGroupService {
                                       scopeParams.getOrgIdentifier(), scopeParams.getProjectIdentifier()),
               "Could not find the user group with the given identifier"));
       if (userGroupDTOOpt.isPresent()) {
-        userGroupService.upsert(UserGroupFactory.buildUserGroup(userGroupDTOOpt.get()));
+        UserGroup userGroup = UserGroupFactory.buildUserGroup(userGroupDTOOpt.get());
+        if (enableParallelProcessingOfUserGroupUpdates) {
+          Optional<UserGroup> userGroupOptional =
+              userGroupService.get(userGroup.getIdentifier(), userGroup.getScopeIdentifier());
+          if (userGroupOptional.isPresent()) {
+            UserGroup existingUserGroup = userGroupOptional.get();
+            if (!userGroup.equals(existingUserGroup)) {
+              Set<String> usersAddedToUserGroup =
+                  Sets.difference(isEmpty(userGroup.getUsers()) ? Collections.emptySet() : userGroup.getUsers(),
+                      isEmpty(existingUserGroup.getUsers()) ? Collections.emptySet() : existingUserGroup.getUsers());
+              Set<String> usersRemovedFromUserGroup = Sets.difference(
+                  isEmpty(existingUserGroup.getUsers()) ? Collections.emptySet() : existingUserGroup.getUsers(),
+                  isEmpty(userGroup.getUsers()) ? Collections.emptySet() : userGroup.getUsers());
+              UserGroupUpdateEventData userGroupUpdateEventData = UserGroupUpdateEventData.builder()
+                                                                      .usersAdded(usersAddedToUserGroup)
+                                                                      .usersRemoved(usersRemovedFromUserGroup)
+                                                                      .updatedUserGroup(userGroup)
+                                                                      .build();
+              accessControlChangeConsumer.consumeEvent(UPDATE_ACTION, null, userGroupUpdateEventData);
+              userGroupService.upsert(userGroup);
+            }
+          } else {
+            userGroupService.upsert(userGroup);
+          }
+        } else {
+          userGroupService.upsert(userGroup);
+        }
       }
     } catch (InvalidRequestException e) {
       if (userGroupDTOOpt.isEmpty()) {

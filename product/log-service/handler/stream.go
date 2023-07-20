@@ -188,6 +188,10 @@ func HandleWrite(s stream.Stream) http.HandlerFunc {
 			return
 		}
 		if err := s.Write(ctx, key, in...); err != nil {
+			if err == stream.ErrNotFound {
+				WriteBadRequest(w, err)
+				return
+			}
 			if err != nil {
 				WriteInternalError(w, err)
 				logger.FromRequest(r).

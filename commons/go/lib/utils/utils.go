@@ -52,6 +52,7 @@ var (
 	javaTestRegex   = fmt.Sprintf("^.*%s", JAVA_TEST_PATH)
 	scalaTestRegex  = fmt.Sprintf("^.*%s", SCALA_TEST_PATH)
 	kotlinTestRegex = fmt.Sprintf("^.*%s", KOTLIN_TEST_PATH)
+	PYTHON_TEST_PATTERN = []string{"test_*.py", "*_test.py"}
 )
 
 //Node holds data about a source code
@@ -288,7 +289,7 @@ func ParseFileNames(files []types.File) ([]Node, error) {
 			node, _ := ParseCsharpNode(file, []string{})
 			nodes = append(nodes, *node)
 		} else if strings.HasSuffix(path, ".py") {
-			node, _ := ParsePythonNode(file, []string{})
+			node, _ := ParsePythonNode(file, PYTHON_TEST_PATTERN)
 			nodes = append(nodes, *node)
 		} else {
 			node, _ := ParseJavaNode(file)

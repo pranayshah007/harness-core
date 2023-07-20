@@ -32,4 +32,5 @@ public class GovernanceJobDetailsAzure {
   Boolean isOOTB;
   String accountId;
   RuleExecutionType executionType;
+  String cloudConnectorID;
 }

@@ -117,7 +117,7 @@ public class CDStageHelmManifestInfoHandlerTest extends CategoryTest {
     final List<String> sqlQueries = queryCaptor.getAllValues();
     assertThat(sqlQueries.get(0))
         .isEqualTo(
-            "INSERT INTO cd_stage_helm_manifest_info (stage_execution_id,id,type,chart_version) VALUES('WGorBC7tTFStlQshsrAgYA','manifest1','HelmChart','0.1.0') ON CONFLICT (id,stage_execution_id) Do UPDATE  SET stage_execution_id='WGorBC7tTFStlQshsrAgYA',id='manifest1',type='HelmChart',chart_version='0.1.0'");
+            "INSERT INTO cd_stage_helm_manifest_info (stage_execution_id,id,type,chart_version,helm_version) VALUES('WGorBC7tTFStlQshsrAgYA','manifest1','HelmChart','0.1.0','V3') ON CONFLICT (id,stage_execution_id) Do UPDATE  SET stage_execution_id='WGorBC7tTFStlQshsrAgYA',id='manifest1',type='HelmChart',chart_version='0.1.0',helm_version='V3'");
   }
 
   @Test
@@ -139,10 +139,10 @@ public class CDStageHelmManifestInfoHandlerTest extends CategoryTest {
     final List<String> sqlQueries = queryCaptor.getAllValues();
     assertThat(sqlQueries.get(0))
         .isEqualTo(
-            "INSERT INTO cd_stage_helm_manifest_info (stage_execution_id,id,type,chart_version) VALUES('WGorBC7tTFStlQshsrAgYA','manifest1','HelmChart','0.1.0') ON CONFLICT (id,stage_execution_id) Do UPDATE  SET stage_execution_id='WGorBC7tTFStlQshsrAgYA',id='manifest1',type='HelmChart',chart_version='0.1.0'");
+            "INSERT INTO cd_stage_helm_manifest_info (stage_execution_id,id,type,chart_version,helm_version) VALUES('WGorBC7tTFStlQshsrAgYA','manifest1','HelmChart','0.1.0','V3') ON CONFLICT (id,stage_execution_id) Do UPDATE  SET stage_execution_id='WGorBC7tTFStlQshsrAgYA',id='manifest1',type='HelmChart',chart_version='0.1.0',helm_version='V3'");
     assertThat(sqlQueries.get(1))
         .isEqualTo(
-            "INSERT INTO cd_stage_helm_manifest_info (stage_execution_id,id,type,chart_version) VALUES('WGorBC7tTFStlQshsrAgYA','manifest2','HelmChart','0.2.0') ON CONFLICT (id,stage_execution_id) Do UPDATE  SET stage_execution_id='WGorBC7tTFStlQshsrAgYA',id='manifest2',type='HelmChart',chart_version='0.2.0'");
+            "INSERT INTO cd_stage_helm_manifest_info (stage_execution_id,id,type,chart_version,helm_version) VALUES('WGorBC7tTFStlQshsrAgYA','manifest2','HelmChart','0.2.0','V2') ON CONFLICT (id,stage_execution_id) Do UPDATE  SET stage_execution_id='WGorBC7tTFStlQshsrAgYA',id='manifest2',type='HelmChart',chart_version='0.2.0',helm_version='V2'");
   }
 
   private ChangeEvent<PersistentEntity> generateInsertChangeEvent(String fileName) throws IOException {

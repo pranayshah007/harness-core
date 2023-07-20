@@ -9,7 +9,6 @@ package io.harness.cvng.analysis.services.impl;
 
 import static io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ClusterType.BASELINE;
 import static io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ClusterType.KNOWN_EVENT;
-import static io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ClusterType.NO_BASELINE_AVAILABLE;
 import static io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ClusterType.UNEXPECTED_FREQUENCY;
 import static io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ClusterType.UNKNOWN_EVENT;
 import static io.harness.cvng.beans.DataSourceType.APP_DYNAMICS;
@@ -31,6 +30,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.activity.beans.DeploymentActivityResultDTO.LogsAnalysisSummary;
@@ -55,6 +55,7 @@ import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
 import io.harness.cvng.core.beans.LogFeedback;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentLogAnalysisFilter;
+import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.ticket.beans.TicketResponseDto;
 import io.harness.cvng.ticket.services.TicketService;
@@ -102,6 +103,8 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
   private String radarChartVerificationJobInstanceId;
   private String verificationTaskId;
 
+  @Mock FeatureFlagService featureFlagService;
+
   @Before
   public void setUp() throws IOException, IllegalAccessException {
     builderFactory = BuilderFactory.getDefault();
@@ -119,6 +122,8 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
     FieldUtils.writeField(deploymentLogAnalysisService, "ticketService", ticketService, true);
     when(ticketService.getTicketForFeedbackId(any()))
         .thenReturn(TicketResponseDto.builder().id("id").url("url").externalId("externalId").build());
+    when(featureFlagService.isFeatureFlagEnabled(accountId, FeatureName.SRM_ENABLE_BASELINE_BASED_VERIFICATION.name()))
+        .thenReturn(true);
   }
 
   @Test
@@ -1188,7 +1193,7 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
             DeploymentLogAnalysisFilter.builder().build(), PageParams.builder().page(0).size(20).build());
 
     assertThat(logAnalysisRadarChartListWithCountDTO.getTotalClusters()).isEqualTo(3);
-    assertThat(logAnalysisRadarChartListWithCountDTO.getEventCounts().size()).isEqualTo(5);
+    assertThat(logAnalysisRadarChartListWithCountDTO.getEventCounts().size()).isEqualTo(4);
     assertThat(logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getTotalPages()).isEqualTo(1);
     assertThat(logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getTotalItems()).isEqualTo(3);
     assertThat(logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getPageItemCount()).isEqualTo(3);
@@ -1233,7 +1238,7 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
             DeploymentLogAnalysisFilter.builder().build(), PageParams.builder().page(0).size(20).build());
 
     assertThat(logAnalysisRadarChartListWithCountDTO.getTotalClusters()).isEqualTo(3);
-    assertThat(logAnalysisRadarChartListWithCountDTO.getEventCounts().size()).isEqualTo(5);
+    assertThat(logAnalysisRadarChartListWithCountDTO.getEventCounts().size()).isEqualTo(4);
     assertThat(logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getTotalPages()).isEqualTo(1);
     assertThat(logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getTotalItems()).isEqualTo(3);
     assertThat(logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getPageItemCount()).isEqualTo(3);
@@ -1273,7 +1278,7 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
     expectedCount.put(KNOWN_EVENT, 1);
     expectedCount.put(UNKNOWN_EVENT, 1);
     expectedCount.put(BASELINE, 2);
-    assertThat(logAnalysisRadarChartListWithCountDTO.getEventCounts()).hasSize(5);
+    assertThat(logAnalysisRadarChartListWithCountDTO.getEventCounts()).hasSize(4);
 
     assertThat(logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getTotalPages()).isEqualTo(0);
     assertThat(logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getTotalItems()).isEqualTo(0);
@@ -1321,10 +1326,8 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
     assertThat(eventCounts.get(1).getCount()).isEqualTo(1);
     assertThat(eventCounts.get(2).getClusterType()).isEqualTo(UNKNOWN_EVENT);
     assertThat(eventCounts.get(2).getCount()).isEqualTo(1);
-    assertThat(eventCounts.get(3).getClusterType()).isEqualTo(NO_BASELINE_AVAILABLE);
-    assertThat(eventCounts.get(3).getCount()).isZero();
-    assertThat(eventCounts.get(4).getClusterType()).isEqualTo(BASELINE);
-    assertThat(eventCounts.get(4).getCount()).isEqualTo(2);
+    assertThat(eventCounts.get(3).getClusterType()).isEqualTo(BASELINE);
+    assertThat(eventCounts.get(3).getCount()).isEqualTo(2);
   }
 
   @Test
@@ -1394,7 +1397,7 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
     expectedCount.put(KNOWN_EVENT, 1);
     expectedCount.put(UNKNOWN_EVENT, 1);
     expectedCount.put(BASELINE, 1);
-    assertThat(logAnalysisRadarChartListWithCountDTO.getEventCounts()).hasSize(5);
+    assertThat(logAnalysisRadarChartListWithCountDTO.getEventCounts()).hasSize(4);
 
     assertThat(logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getTotalPages()).isEqualTo(1);
     assertThat(logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getTotalItems()).isEqualTo(3);

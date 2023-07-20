@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: resourceTypeConfiguration
-version: 31
+version: 32
 resourceTypes:
   - identifier: ACCOUNT
     permissionKey: account
@@ -136,3 +136,9 @@ resourceTypes:
     permissionKey: networkmap
   - identifier: CHAOS_SECURITY_GOVERNANCE
     permissionKey: chaossecuritygovernance
+  - identifier:  CET_AGENT
+    permissionKey: agents
+  - identifier:  CET_TOKEN
+    permissionKey: token
+  - identifier:  CET_CRITICAL_EVENT
+    permissionKey: criticalevent

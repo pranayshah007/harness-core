@@ -24,15 +24,21 @@ import static org.mockito.Mockito.when;
 
 import io.harness.accesscontrol.acl.persistence.ACL;
 import io.harness.accesscontrol.acl.persistence.repositories.ACLRepository;
+import io.harness.accesscontrol.common.filter.ManagedFilter;
 import io.harness.accesscontrol.permissions.persistence.PermissionDBO;
 import io.harness.accesscontrol.permissions.persistence.repositories.InMemoryPermissionRepository;
 import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.principals.usergroups.UserGroupService;
+import io.harness.accesscontrol.resources.resourcegroups.ResourceGroup;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceGroupService;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceSelector;
+import io.harness.accesscontrol.resources.resourcegroups.ScopeSelector;
 import io.harness.accesscontrol.resources.resourcetypes.persistence.ResourceTypeDBO;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
+import io.harness.accesscontrol.roles.Role;
 import io.harness.accesscontrol.roles.RoleService;
+import io.harness.accesscontrol.scopes.TestScopeLevels;
+import io.harness.accesscontrol.scopes.core.ScopeLevel;
 import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.aggregator.consumers.ACLGeneratorService;
 import io.harness.aggregator.consumers.ACLGeneratorServiceImpl;
@@ -44,13 +50,16 @@ import io.harness.rule.Owner;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -278,6 +287,60 @@ public class ACLGeneratorServiceImplTest extends AggregatorTestBase {
     ACL disabledACL = disabledACLs.get(0);
     assertThat(disabledACL.getPermissionIdentifier()).isEqualTo(CORE_USERGROUP_MANAGE_PERMISSION);
     assertThat(disabledACL.getResourceSelector()).isEqualTo("/ACCOUNT/account-id$/USER/*");
+  }
+
+  @Test
+  @Owner(developers = JIMIT_GANDHI)
+  @Category(UnitTests.class)
+  public void createImplicitACLs_NoScopeSelected_CreatesNoImplicitACLs() {
+    aclGeneratorService = new ACLGeneratorServiceImpl(roleService, userGroupService, resourceGroupService, scopeService,
+        new HashMap<>(), aclRepository, true, inMemoryPermissionRepository);
+    RoleAssignmentDBO roleAssignmentDBO = getRoleAssignment(PrincipalType.USER_GROUP);
+    Set<String> permissions = new HashSet<>();
+    Set<String> usersAdded = new HashSet<>();
+    Optional<Role> role = Optional.of(Role.builder().permissions(permissions).build());
+    when(roleService.get(
+             roleAssignmentDBO.getRoleIdentifier(), roleAssignmentDBO.getScopeIdentifier(), ManagedFilter.NO_FILTER))
+        .thenReturn(role);
+    Optional<ResourceGroup> resourceGroup = Optional.empty();
+    when(resourceGroupService.get(
+             roleAssignmentDBO.getRoleIdentifier(), roleAssignmentDBO.getScopeIdentifier(), ManagedFilter.NO_FILTER))
+        .thenReturn(resourceGroup);
+    long aclsCreated = aclGeneratorService.createImplicitACLs(roleAssignmentDBO, usersAdded);
+    assertEquals(aclsCreated, 0);
+  }
+
+  @Test
+  @Owner(developers = JIMIT_GANDHI)
+  @Category(UnitTests.class)
+  public void createImplicitACLs_ForSpecificUsers_CreatesOnlyForThoseUsers() {
+    Map<Pair<ScopeLevel, Boolean>, Set<String>> implicitPermissionsByScope = new HashMap<>();
+    implicitPermissionsByScope.put(
+        Pair.of(TestScopeLevels.TEST_SCOPE, false), new HashSet<>(Arrays.asList("core_account_view")));
+    aclGeneratorService = new ACLGeneratorServiceImpl(roleService, userGroupService, resourceGroupService, scopeService,
+        new HashMap<>(), aclRepository, true, inMemoryPermissionRepository);
+    RoleAssignmentDBO roleAssignmentDBO = getRoleAssignment(PrincipalType.USER_GROUP);
+    Set<String> permissions = new HashSet<>(Arrays.asList("core_account_view"));
+    Optional<Role> role = Optional.of(Role.builder().permissions(permissions).build());
+    Set<String> usersAdded = new HashSet<>();
+    when(roleService.get(
+             roleAssignmentDBO.getRoleIdentifier(), roleAssignmentDBO.getScopeIdentifier(), ManagedFilter.NO_FILTER))
+        .thenReturn(role);
+    HashSet<ScopeSelector> scopeSelectors =
+        new HashSet<>(Arrays.asList(ScopeSelector.builder().scopeIdentifier("").build()));
+    io.harness.accesscontrol.scopes.core.Scope accountScope = io.harness.accesscontrol.scopes.core.Scope.builder()
+                                                                  .level(TestScopeLevels.TEST_SCOPE)
+                                                                  .parentScope(null)
+                                                                  .instanceId("")
+                                                                  .build();
+    when(scopeService.buildScopeFromScopeIdentifier(any())).thenReturn(accountScope);
+    Optional<ResourceGroup> resourceGroup = Optional.of(ResourceGroup.builder().scopeSelectors(scopeSelectors).build());
+    when(resourceGroupService.get(
+             roleAssignmentDBO.getRoleIdentifier(), roleAssignmentDBO.getScopeIdentifier(), ManagedFilter.NO_FILTER))
+        .thenReturn(resourceGroup);
+    when(aclRepository.insertAllIgnoringDuplicates(any())).thenReturn(1L);
+    long aclsCreated = aclGeneratorService.createImplicitACLs(roleAssignmentDBO, usersAdded);
+    assertEquals(aclsCreated, 1L);
   }
 
   private Set<String> getRandomStrings(int count) {

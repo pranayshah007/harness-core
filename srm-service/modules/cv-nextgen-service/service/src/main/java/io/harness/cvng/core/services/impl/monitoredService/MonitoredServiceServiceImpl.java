@@ -1578,16 +1578,13 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
       ProjectParams projectParams, String identifier, Instant startTime, Instant endTime) {
     MonitoredService monitoredService = getMonitoredService(projectParams, identifier);
     Duration duration = Duration.ofSeconds(endTime.getEpochSecond() - startTime.getEpochSecond());
-    if (duration.toSeconds() < Duration.ofMinutes(5).toSeconds()) {
-      throw new InvalidArgumentsException("Start time and endTime should have atleast 5 minutes difference");
-    }
     DurationDTO bestFitDuration = DurationDTO.findClosestGreaterDurationDTO(duration);
     HistoricalTrend historicalTrend =
         getMonitoredServiceHistorialTrend(monitoredService, projectParams, bestFitDuration, endTime);
-    historicalTrend.getHealthScores()
-        .stream()
-        .filter(healthScore -> healthScore.getEndTime() >= startTime.toEpochMilli())
-        .collect(Collectors.toList());
+    historicalTrend.setHealthScores(historicalTrend.getHealthScores()
+                                        .stream()
+                                        .filter(healthScore -> healthScore.getEndTime() >= startTime.toEpochMilli())
+                                        .collect(Collectors.toList()));
     return historicalTrend;
   }
 

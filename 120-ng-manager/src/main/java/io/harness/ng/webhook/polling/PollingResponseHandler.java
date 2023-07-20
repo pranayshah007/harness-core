@@ -479,14 +479,16 @@ public class PollingResponseHandler {
     return polledResponseResultBuilder.build();
   }
 
-  private List<String> getSignaturesWithNoLock(PollingDocument pollingDocument) {
+  public List<String> getSignaturesWithNoLock(PollingDocument pollingDocument) {
     // Returns signatures for triggers which are NOT of type MultiRegionArtifact.
     List<String> signatures = pollingDocument.getSignatures();
     Map<String, List<String>> signaturesLock = pollingDocument.getSignaturesLock();
     if (isEmpty(signaturesLock) || isEmpty(signatures)) {
       return signatures;
     }
-    return signatures.stream().filter(signature -> !signaturesLock.containsKey(signature)).collect(Collectors.toList());
+    return signatures.stream()
+        .filter(signature -> !signaturesLock.containsKey(signature) || isEmpty(signaturesLock.get(signature)))
+        .collect(Collectors.toList());
   }
 
   public List<String> getSignaturesWithLock(List<String> signatures, Map<String, List<String>> signaturesLock) {
@@ -495,7 +497,10 @@ public class PollingResponseHandler {
     if (isEmpty(signaturesLock) || isEmpty(signatures)) {
       signaturesWithLock = null;
     } else {
-      signaturesWithLock = signatures.stream().filter(signaturesLock::containsKey).collect(Collectors.toList());
+      signaturesWithLock =
+          signatures.stream()
+              .filter(signature -> signaturesLock.containsKey(signature) && isNotEmpty(signaturesLock.get(signature)))
+              .collect(Collectors.toList());
     }
     return signaturesWithLock;
   }

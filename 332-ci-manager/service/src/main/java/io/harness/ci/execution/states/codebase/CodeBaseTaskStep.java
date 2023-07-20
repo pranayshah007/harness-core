@@ -163,7 +163,8 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
         "repoName", STEP_TYPE.getType(), ambiance.getStageExecutionId(), stepParameters.getRepoName(), false);
     if (executionSource.getType() == MANUAL) {
       NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-      ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorRef, true);
+      ConnectorDetails connectorDetails =
+          connectorUtils.getConnectorDetailsWithToken(ngAccess, connectorRef, true, ambiance, repoName);
       ManualExecutionSource manualExecutionSource = (ManualExecutionSource) executionSource;
       // fetch scm details via manager
       if (connectorUtils.hasApiAccess(connectorDetails)) {

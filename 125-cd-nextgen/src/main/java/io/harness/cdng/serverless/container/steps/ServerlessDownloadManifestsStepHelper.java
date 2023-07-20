@@ -74,7 +74,7 @@ public class ServerlessDownloadManifestsStepHelper {
 
   public AsyncExecutableResponse executeAsyncAfterRbac(
       Ambiance ambiance, StepInputPackage inputPackage, GitCloneStep gitCloneStep) {
-    ManifestsOutcome manifestsOutcome = downloadManifestsCommonHelper.fetchManifestsOutcome(ambiance);
+    ManifestsOutcome manifestsOutcome = serverlessV2PluginInfoProviderHelper.fetchManifestsOutcome(ambiance);
 
     AsyncExecutableResponse samDirectoryAsyncExecutableResponse =
         getAsyncExecutableResponseForServerlessAwsLambdaManifest(
@@ -137,8 +137,7 @@ public class ServerlessDownloadManifestsStepHelper {
   }
 
   public StepResponse handleAsyncResponse(Ambiance ambiance, Map<String, ResponseData> responseDataMap) {
-    ManifestsOutcome manifestsOutcome =
-        (ManifestsOutcome) outcomeService.resolveOptional(ambiance, getOutcomeRefObject()).getOutcome();
+    ManifestsOutcome manifestsOutcome = serverlessV2PluginInfoProviderHelper.fetchManifestsOutcome(ambiance);
 
     handleResponseForValuesManifest(ambiance, responseDataMap, manifestsOutcome);
 
@@ -226,10 +225,7 @@ public class ServerlessDownloadManifestsStepHelper {
 
     List<PluginCreationResponseWrapper> pluginCreationResponseWrapperList = new ArrayList<>();
 
-    ManifestsOutcome manifestsOutcome =
-        (ManifestsOutcome) outcomeService
-            .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.MANIFESTS))
-            .getOutcome();
+    ManifestsOutcome manifestsOutcome = serverlessV2PluginInfoProviderHelper.fetchManifestsOutcome(ambiance);
 
     PluginCreationResponseWrapper pluginCreationResponseWrapper =
         getPluginCreationResponseWrapperForServerlessAwsLambdaManifest(

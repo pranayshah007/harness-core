@@ -13,8 +13,10 @@ import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalSta
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
+import io.harness.ngtriggers.beans.dto.eventmapping.UnMatchedTriggerInfo;
 import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventMappingResponse;
 import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventMappingResponse.WebhookEventMappingResponseBuilder;
+import io.harness.ngtriggers.beans.response.TriggerEventResponse;
 import io.harness.ngtriggers.buildtriggers.helpers.BuildTriggerHelper;
 import io.harness.ngtriggers.eventmapper.filters.TriggerFilter;
 import io.harness.ngtriggers.eventmapper.filters.dto.FilterRequestData;
@@ -44,16 +46,28 @@ public class BuildTriggerValidationFilter implements TriggerFilter {
   public WebhookEventMappingResponse applyFilter(FilterRequestData filterRequestData) {
     WebhookEventMappingResponseBuilder mappingResponseBuilder = initWebhookEventMappingResponse(filterRequestData);
     List<TriggerDetails> matchedTriggers = new ArrayList<>();
+    List<UnMatchedTriggerInfo> unMatchedTriggersInfoList = new ArrayList<>();
 
     for (TriggerDetails trigger : filterRequestData.getDetails()) {
       try {
         if (checkTriggerEligibility(trigger)) {
           matchedTriggers.add(trigger);
+        } else {
+          UnMatchedTriggerInfo unMatchedTriggerInfo =
+              UnMatchedTriggerInfo.builder()
+                  .unMatchedTriggers(trigger)
+                  .finalStatus(TriggerEventResponse.FinalStatus.VALIDATION_FAILED_FOR_TRIGGER)
+                  .message(trigger.getNgTriggerEntity().getIdentifier()
+                      + " didn't match polling event after event condition evaluation")
+                  .build();
+          unMatchedTriggersInfoList.add(unMatchedTriggerInfo);
         }
       } catch (Exception e) {
         log.error(getTriggerSkipMessage(trigger.getNgTriggerEntity()), e);
       }
     }
+
+    mappingResponseBuilder.unMatchedTriggerInfoList(unMatchedTriggersInfoList);
 
     if (isEmpty(matchedTriggers)) {
       log.info("No trigger matched polling event after event condition evaluation:");
@@ -61,7 +75,7 @@ public class BuildTriggerValidationFilter implements TriggerFilter {
           .webhookEventResponse(
               TriggerEventResponseHelper.toResponse(ALL_MAPPED_TRIGGER_FAILED_VALIDATION_FOR_POLLING_EVENT,
                   filterRequestData.getWebhookPayloadData().getOriginalEvent(), null, null,
-                  "All Mapped Triggers failed validationfor Event: "
+                  "All Mapped Triggers failed validation for Event: "
                       + buildTriggerHelper.generatePollingDescriptor(filterRequestData.getPollingResponse()),
                   null))
           .build();

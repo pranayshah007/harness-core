@@ -57,6 +57,16 @@ public class TriggerEventHistory implements PersistentEntity {
                  .descSortField(TriggerEventHistoryKeys.createdAt)
                  .build())
         .add(SortCompoundMongoIndex.builder()
+                 .name("las_execution_not_attempted")
+                 .field(TriggerEventHistoryKeys.accountId)
+                 .field(TriggerEventHistoryKeys.orgIdentifier)
+                 .field(TriggerEventHistoryKeys.projectIdentifier)
+                 .field(TriggerEventHistoryKeys.triggerIdentifier)
+                 .field(TriggerEventHistoryKeys.targetIdentifier)
+                 .field(TriggerEventHistoryKeys.executionNotAttempted)
+                 .descSortField(TriggerEventHistoryKeys.createdAt)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
                  .name("accountId_createdAt_desc")
                  .field(TriggerEventHistoryKeys.accountId)
                  .descSortField(TriggerEventHistoryKeys.createdAt)
@@ -82,6 +92,7 @@ public class TriggerEventHistory implements PersistentEntity {
   String message;
   String planExecutionId;
   boolean exceptionOccurred;
+  @Nullable Boolean executionNotAttempted;
   String triggerIdentifier;
   @FdTtlIndex @Default Date validUntil = Date.from(OffsetDateTime.now().plusDays(7).toInstant());
   TargetExecutionSummary targetExecutionSummary;

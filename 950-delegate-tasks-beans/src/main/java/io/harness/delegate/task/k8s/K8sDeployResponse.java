@@ -7,6 +7,8 @@
 
 package io.harness.delegate.task.k8s;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.delegate.beans.CDDelegateTaskNotifyResponseData;
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
@@ -16,6 +18,7 @@ import io.harness.delegate.cdng.execution.StepInstanceInfo;
 import io.harness.k8s.model.K8sPod;
 import io.harness.logging.CommandExecutionStatus;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.Builder;
@@ -51,10 +54,16 @@ public class K8sDeployResponse implements CDDelegateTaskNotifyResponseData {
   }
 
   private List<K8sPod> filterNewK8sPods(List<K8sPod> k8sPods) {
+    if (isEmpty(k8sPods)) {
+      return Collections.emptyList();
+    }
     return k8sPods.stream().filter(K8sPod::isNewPod).collect(Collectors.toList());
   }
 
   private List<StepInstanceInfo> convertK8sPodsToK8sStepInstanceInfo(List<K8sPod> k8sPods) {
+    if (isEmpty(k8sPods)) {
+      return Collections.emptyList();
+    }
     return k8sPods.stream()
         .map(k8sPod -> K8sStepInstanceInfo.builder().podName(k8sPod.getName()).build())
         .collect(Collectors.toList());

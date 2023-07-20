@@ -1048,6 +1048,7 @@ io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo
 io.harness.delegate.beans.instancesync.info.SpotServerInstanceInfo
 io.harness.delegate.beans.instancesync.info.TasServerInstanceInfo
 io.harness.delegate.beans.logstreaming.UnitProgressData
+io.harness.delegate.beans.helm.HelmDeployProgressData
 io.harness.delegate.beans.pcf.CfInternalInstanceElement
 io.harness.delegate.beans.pcf.CfServiceData
 io.harness.delegate.beans.pcf.TasApplicationInfo

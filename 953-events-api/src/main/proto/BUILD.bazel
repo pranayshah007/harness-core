@@ -19,6 +19,7 @@ harness_grpc_library(
         "//953-events-api/src/main/proto/io/harness/eventsframework/schemas/entity_crud/organization:953_events_api_proto",
         "//953-events-api/src/main/proto/io/harness/eventsframework/schemas/entity_crud/project:953_events_api_proto",
         "//953-events-api/src/main/proto/io/harness/eventsframework/schemas/entity_crud/resourcegroup:953_events_api_proto",
+        "//953-events-api/src/main/proto/io/harness/eventsframework/schemas/entity_crud/settings:953_events_api_proto",
         "//953-events-api/src/main/proto/io/harness/eventsframework/schemas/entity_crud/user:953_events_api_proto",
         "//953-events-api/src/main/proto/io/harness/eventsframework/schemas/entityactivity:953_events_api_proto",
         "//953-events-api/src/main/proto/io/harness/eventsframework/schemas/entitysetupusage:953_events_api_proto",

@@ -237,9 +237,8 @@ public class TasRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
     ArtifactOutcome artifactOutcome = cdStepHelper.resolveArtifactsOutcome(ambiance).orElseThrow(
         () -> new InvalidArgumentsException(Pair.of("artifacts", "Primary artifact is required for TAS")));
     InfrastructureOutcome infrastructureOutcome = cdStepHelper.getInfrastructureOutcome(ambiance);
-    List<String> routeMaps =
-        tasStepHelper.getRouteMaps(executionPassThroughData.getTasManifestsPackage().getManifestYml(),
-            getParameterFieldValue(tasRollingDeployStepParameters.getAdditionalRoutes()));
+    List<String> routeMaps = tasStepHelper.getRouteMaps(executionPassThroughData.getTasManifestsPackage(),
+        getParameterFieldValue(tasRollingDeployStepParameters.getAdditionalRoutes()));
     TasInfraConfig tasInfraConfig = cdStepHelper.getTasInfraConfig(infrastructureOutcome, ambiance);
     TaskParameters taskParameters =
         CfRollingDeployRequestNG.builder()

@@ -235,13 +235,13 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
     }
     if (AnalysisStatus.getFinalStates().contains(analysisStateMachine.getStatus())
         && analysisStateMachine.getFirstPickedAt() != null) {
-      Duration totalRunningDuration = Duration.between(analysisStateMachine.getFirstPickedAt(), clock.instant());
-      cvngLogTags.addAll(CVNGTaskMetadataUtils.getTaskDurationTags(
-          CVNGTaskMetadataUtils.DurationType.RUNNING_DURATION, totalRunningDuration));
       Duration waitDuration = Duration.between(
           Instant.ofEpochMilli(analysisStateMachine.getCreatedAt()), analysisStateMachine.getFirstPickedAt());
       cvngLogTags.addAll(
           CVNGTaskMetadataUtils.getTaskDurationTags(CVNGTaskMetadataUtils.DurationType.WAIT_DURATION, waitDuration));
+      Duration totalRunningDuration = Duration.between(analysisStateMachine.getFirstPickedAt(), clock.instant());
+      cvngLogTags.addAll(CVNGTaskMetadataUtils.getTaskDurationTags(
+          CVNGTaskMetadataUtils.DurationType.RUNNING_DURATION, totalRunningDuration));
     }
     return cvngLogTags;
   }

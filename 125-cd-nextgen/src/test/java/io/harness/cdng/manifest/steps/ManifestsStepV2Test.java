@@ -351,6 +351,7 @@ public class ManifestsStepV2Test extends CategoryTest {
     assertThat(helmChartManifestSummary.getIdentifier()).isEqualTo("file1");
     assertThat(helmChartManifestSummary.getType()).isEqualTo(HelmChart);
     assertThat(helmChartManifestSummary.getChartVersion()).isEqualTo("0.1.0");
+    assertThat(helmChartManifestSummary.getHelmVersion()).isEqualTo(HelmVersion.V3);
 
     ArgumentCaptor<ManifestsOutcome> manifestsOutcomeArgumentCaptor = ArgumentCaptor.forClass(ManifestsOutcome.class);
     verify(sweepingOutputService, times(1))

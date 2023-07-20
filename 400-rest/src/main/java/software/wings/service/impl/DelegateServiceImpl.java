@@ -2573,7 +2573,7 @@ public class DelegateServiceImpl implements DelegateService {
 
     if (existingDelegate != null) {
       // if the version is same then delegate restarted
-      if (existingDelegate.getVersion().equals(delegateParams.getVersion())
+      if (existingDelegate.getVersion() != null && existingDelegate.getVersion().equals(delegateParams.getVersion())
           && !ECS.equals(existingDelegate.getDelegateType())) {
         delegateMetricsService.recordDelegateMetrics(existingDelegate, DELEGATE_RESTARTED);
       }

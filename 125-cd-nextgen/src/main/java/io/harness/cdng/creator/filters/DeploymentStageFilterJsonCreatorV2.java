@@ -289,7 +289,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
 
     if (!environmentRef.isExpression()) {
       if (!gitOpsEnabled && ParameterField.isNull(env.getInfrastructureDefinitions())
-          && ParameterField.isNull(env.getInfrastructureDefinition())) {
+          && ParameterField.isNull(env.getInfrastructureDefinition()) && ParameterField.isBlank(env.getFilters())) {
         throw new InvalidYamlRuntimeException(format(
             "infrastructureDefinitions or infrastructureDefinition should be present in stage [%s]. Please add it and try again",
             YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));

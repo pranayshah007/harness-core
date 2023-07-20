@@ -26,6 +26,7 @@ import io.harness.cdng.usage.CDLicenseUsageReportService;
 import io.harness.cdng.usage.pojos.LicenseDailyUsage;
 import io.harness.cdng.usage.pojos.LicenseDateUsageFetchData;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.licensing.LicenseStatus;
 import io.harness.licensing.beans.modules.CDModuleLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.services.LicenseService;
@@ -33,6 +34,7 @@ import io.harness.timescaledb.tables.pojos.ServiceInstancesLicenseDailyReport;
 import io.harness.timescaledb.tables.pojos.ServicesLicenseDailyReport;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Joiner;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -66,12 +68,24 @@ public class CDLicenseUsageReportServiceImpl implements CDLicenseUsageReportServ
   @Override
   public Optional<CDLicenseType> getCDLicenseTypePerAccount(String accountId) {
     List<ModuleLicenseDTO> moduleLicenses = licenseService.getModuleLicenses(accountId, ModuleType.CD);
-    return moduleLicenses.stream()
-        .filter(moduleLicenseDTO -> moduleLicenseDTO instanceof CDModuleLicenseDTO)
-        .map(CDModuleLicenseDTO.class ::cast)
-        .map(CDModuleLicenseDTO::getCdLicenseType)
-        .filter(Objects::nonNull)
-        .findFirst();
+    List<CDLicenseType> cdLicenseTypeList =
+        moduleLicenses.stream()
+            .filter(moduleLicenseDTO -> LicenseStatus.ACTIVE == moduleLicenseDTO.getStatus())
+            .filter(moduleLicenseDTO -> moduleLicenseDTO instanceof CDModuleLicenseDTO)
+            .map(CDModuleLicenseDTO.class ::cast)
+            .map(CDModuleLicenseDTO::getCdLicenseType)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+    if (cdLicenseTypeList.isEmpty()) {
+      return Optional.empty();
+    }
+
+    if (cdLicenseTypeList.size() > 1) {
+      throw new InvalidArgumentsException(format("Found more active CD license types on account: %s, licence types: %s",
+          accountId, Joiner.on(",").join(cdLicenseTypeList)));
+    }
+
+    return Optional.ofNullable(cdLicenseTypeList.get(0));
   }
 
   @Override

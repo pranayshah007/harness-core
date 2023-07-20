@@ -239,7 +239,7 @@ func GetGitClient(p pb.Provider, log *zap.SugaredLogger) (client *scm.Client, er
 			client.Client = &http.Client{
 				Transport: &transport.Custom{
 					Before: func(r *http.Request) {
-						r.Header.Set("Authorization", fmt.Sprintf("Basic %s", p.GetHarness().GetHarnessJwt().GetToken()))
+						r.Header.Set("Authorization", fmt.Sprintf("CIManager %s", p.GetHarness().GetHarnessJwt().GetToken()))
 					},
 				},
 			}

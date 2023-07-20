@@ -180,7 +180,8 @@ public class PluginSettingUtils extends PluginServiceImpl {
       case GIT_CLONE:
         final String connectorRef = stepInfo.getConnectorRef().getValue();
         final NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-        final ConnectorDetails gitConnector = codebaseUtils.getGitConnector(ngAccess, connectorRef);
+        final ConnectorDetails gitConnector = codebaseUtils.getGitConnector(
+            ngAccess, connectorRef, ambiance, ((GitCloneStepInfo) stepInfo).getRepoName().getValue());
         return getGitCloneStepInfoEnvVariables((GitCloneStepInfo) stepInfo, ambiance, gitConnector, identifier);
       case SSCA_ORCHESTRATION:
         return sscaOrchestrationPluginUtils.getSscaOrchestrationStepEnvVariables(

@@ -111,6 +111,13 @@ public class ACLGeneratorServiceImpl implements ACLGeneratorService {
   }
 
   @Override
+  public long createImplicitACLs(RoleAssignmentDBO roleAssignment, Set<String> addedUsers) {
+    Set<String> permissions = getPermissionsFromRole(roleAssignment);
+    List<ACL> acls = getImplicitACLsForRoleAssignment(roleAssignment, addedUsers, permissions);
+    return aclRepository.insertAllIgnoringDuplicates(acls);
+  }
+
+  @Override
   public long createACLs(RoleAssignmentDBO roleAssignmentDBO, Set<String> principals, Set<String> permissions,
       Set<ResourceSelector> resourceSelectors) {
     long numberOfACLsCreated = 0;
@@ -161,13 +168,18 @@ public class ACLGeneratorServiceImpl implements ACLGeneratorService {
   }
 
   private List<ACL> getImplicitACLsForRoleAssignment(RoleAssignmentDBO roleAssignment) {
+    Set<String> principals = getPrincipalsFromRoleAssignment(roleAssignment);
+    Set<String> permissionsFromRole = getPermissionsFromRole(roleAssignment);
+    return getImplicitACLsForRoleAssignment(roleAssignment, principals, permissionsFromRole);
+  }
+
+  private List<ACL> getImplicitACLsForRoleAssignment(
+      RoleAssignmentDBO roleAssignment, Set<String> principals, Set<String> permissions) {
     Optional<ResourceGroup> resourceGroup = resourceGroupService.get(
         roleAssignment.getResourceGroupIdentifier(), roleAssignment.getScopeIdentifier(), ManagedFilter.NO_FILTER);
     if (!resourceGroup.isPresent() || resourceGroup.get().getScopeSelectors() == null) {
       return new ArrayList<>();
     }
-    Set<String> principals = getPrincipalsFromRoleAssignment(roleAssignment);
-    Set<String> permissionsFromRole = getPermissionsFromRole(roleAssignment);
     List<ACL> acls = new ArrayList<>();
     for (ScopeSelector scopeSelector : resourceGroup.get().getScopeSelectors()) {
       Scope currentScope = scopeSelector.getScopeIdentifier() == null
@@ -178,9 +190,9 @@ public class ACLGeneratorServiceImpl implements ACLGeneratorService {
       while (currentScope != null) {
         ResourceSelector resourceSelector =
             ResourceSelector.builder().selector(buildResourceSelector(currentScope)).build();
-        Set<String> permissions = getPermissions(currentScope, givePermissionOnChildScopes, permissionsFromRole);
+        Set<String> filteredPermissions = getPermissions(currentScope, givePermissionOnChildScopes, permissions);
         for (String principalIdentifier : principals) {
-          for (String permission : permissions) {
+          for (String permission : filteredPermissions) {
             if (disableRedundantACLs) {
               isPermissionCompatibleWithResourceSelector =
                   inMemoryPermissionRepository.isPermissionCompatibleWithResourceSelector(

@@ -32,6 +32,7 @@ import io.harness.delegate.task.stepstatus.StepStatus;
 import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.sdk.core.plugin.ContainerStepExecutionResponseHelper;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.yaml.ParameterField;
@@ -65,6 +66,8 @@ public class ServerlessAwsLambdaDeployStepV2Test extends CategoryTest {
   @Mock private InstanceInfoService instanceInfoService;
 
   @Mock private AwsSamStepHelper awsSamStepHelper;
+
+  @Mock private ContainerStepExecutionResponseHelper containerStepExecutionResponseHelper;
 
   @InjectMocks @Spy private ServerlessAwsLambdaDeployV2Step serverlessAwsLambdaDeployV2Step;
 
@@ -102,6 +105,7 @@ public class ServerlessAwsLambdaDeployStepV2Test extends CategoryTest {
             .stepStatus(
                 StepStatus.builder().stepExecutionStatus(StepExecutionStatus.SUCCESS).output(stepMapOutput).build())
             .build();
+    doReturn(stepStatusTaskResponseData).when(containerStepExecutionResponseHelper).filterK8StepResponse(any());
     responseDataMap.put("key", stepStatusTaskResponseData);
     when(serverlessStepCommonHelper.convertByte64ToString(instancesContentBase64)).thenReturn(instanceContent);
     when(serverlessStepCommonHelper.getServerlessAwsLambdaFunctionsWithServiceName(instanceContent))

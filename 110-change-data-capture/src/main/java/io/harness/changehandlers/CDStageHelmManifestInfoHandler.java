@@ -112,6 +112,8 @@ public class CDStageHelmManifestInfoHandler extends AbstractChangeDataHandler {
               dbObject, columnValueMapping, StageExecutionInfoKeys.stageExecutionId, STAGE_EXECUTION_ID);
           changeHandlerHelper.addKeyValuePairToMapFromDBObject(
               manifest, columnValueMapping, HelmChartManifestSummaryKeys.chartVersion, "chart_version");
+          changeHandlerHelper.addKeyValuePairToMapFromDBObject(
+              manifest, columnValueMapping, HelmChartManifestSummaryKeys.helmVersion, "helm_version");
           nodeMap.add(columnValueMapping);
         }
       }

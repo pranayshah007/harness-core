@@ -37,7 +37,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.runtime.SshCommandExecutionException;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.logging.LogLevel;
 import io.harness.shell.AbstractScriptExecutor;
 import io.harness.shell.ExecuteCommandResponse;
 
@@ -100,10 +99,10 @@ public class SshInitCommandHandler implements CommandHandler {
       checkIfDownloadAzureUniversalArtifactSupported(executor, sshCommandTaskParameters);
       CommandExecutionStatus commandExecutionStatus =
           initAndGenerateScriptCommand(sshCommandTaskParameters, executor, context, taskContext);
+      closeLogStreamEmptyMsg(executor.getLogCallback(), commandExecutionStatus);
       return ExecuteCommandResponse.builder().status(commandExecutionStatus).build();
     } catch (Exception e) {
-      executor.getLogCallback().saveExecutionLog("Command finished with status " + CommandExecutionStatus.FAILURE,
-          LogLevel.ERROR, CommandExecutionStatus.FAILURE);
+      closeLogStreamWithError(executor.getLogCallback());
       throw e;
     }
   }
@@ -173,10 +172,6 @@ public class SshInitCommandHandler implements CommandHandler {
       throw new CommandExecutionException("Failed to process destination host env variables", e);
     }
 
-    if (taskParameters.isExecuteOnDelegate()) {
-      executor.getLogCallback().saveExecutionLog(
-          "Command finished with status " + commandExecutionStatus, LogLevel.INFO, commandExecutionStatus);
-    }
     return commandExecutionStatus;
   }
 
