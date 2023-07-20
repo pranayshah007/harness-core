@@ -166,13 +166,7 @@ import software.wings.helpers.ext.account.DeleteAccountHelper;
 import software.wings.licensing.LicenseService;
 import software.wings.persistence.AppContainer;
 import software.wings.persistence.mail.EmailData;
-import software.wings.scheduler.AccountJobProperties;
-import software.wings.scheduler.AccountJobType;
-import software.wings.scheduler.AlertCheckJob;
-import software.wings.scheduler.InstanceStatsCollectorJob;
-import software.wings.scheduler.LdapGroupSyncJobHelper;
-import software.wings.scheduler.LimitVicinityCheckerJob;
-import software.wings.scheduler.ScheduledTriggerJob;
+import software.wings.scheduler.*;
 import software.wings.security.AppPermissionSummary;
 import software.wings.security.AppPermissionSummary.EnvInfo;
 import software.wings.security.PermissionAttribute.Action;
@@ -1501,6 +1495,13 @@ public class AccountServiceImpl implements AccountService {
       log.info("InstanceStatsCollectorJob is added successfully for account {}", targetAccountId);
     }
 
+    if (jobTypes.contains(AccountJobType.INSTANCE_DELETE)) {
+      log.info("Start Adding InstanceStatsDeleteJob for account {}  ", targetAccountId);
+      InstanceStatsDeleteJob.delete(jobScheduler, targetAccountId);
+      InstanceStatsDeleteJob.add(jobScheduler, targetAccountId);
+      log.info("InstanceStatsDeleteJob is added successfully for account {}", targetAccountId);
+    }
+
     if (jobTypes.contains(AccountJobType.LIMIT_VICINITY)) {
       log.info("LimitVicinityCheckerJob is added successfully for account {}", targetAccountId);
       LimitVicinityCheckerJob.delete(jobScheduler, targetAccountId);
@@ -1616,6 +1617,7 @@ public class AccountServiceImpl implements AccountService {
     AlertCheckJob.add(jobScheduler, accountId);
     InstanceStatsCollectorJob.add(jobScheduler, accountId);
     LimitVicinityCheckerJob.add(jobScheduler, accountId);
+    InstanceStatsDeleteJob.add(jobScheduler, accountId);
     segmentGroupEventJobService.scheduleJob(accountId);
   }
 
@@ -1644,7 +1646,7 @@ public class AccountServiceImpl implements AccountService {
     AlertCheckJob.delete(jobScheduler, accountId);
     InstanceStatsCollectorJob.delete(jobScheduler, accountId);
     LimitVicinityCheckerJob.delete(jobScheduler, accountId);
-
+    InstanceStatsDeleteJob.delete(jobScheduler, accountId);
     List<String> appIds = appService.getAppIdsByAccountId(accountId);
 
     // 2. ScheduledTriggerJob

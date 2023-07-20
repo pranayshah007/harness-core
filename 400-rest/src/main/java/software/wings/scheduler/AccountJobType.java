@@ -14,5 +14,6 @@ import io.harness.annotations.dev.OwnedBy;
 public enum AccountJobType {
   ALERT,
   INSTANCE,
-  LIMIT_VICINITY;
+  LIMIT_VICINITY,
+  INSTANCE_DELETE;
 }

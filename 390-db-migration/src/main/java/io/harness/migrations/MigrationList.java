@@ -41,6 +41,7 @@ import io.harness.migrations.all.AddHarnessCommandLibraryToAccount;
 import io.harness.migrations.all.AddHarnessGroupAccessFlagToAccount;
 import io.harness.migrations.all.AddImmutableDelegateEnabledFieldToAccountCollection;
 import io.harness.migrations.all.AddInstanceStatsCollectionJobToAllAccounts;
+import io.harness.migrations.all.AddInstanceStatsDeletionJobToAllAccounts;
 import io.harness.migrations.all.AddIsProductLedToAccount;
 import io.harness.migrations.all.AddLimitVicinityCheckJobToAllAccounts;
 import io.harness.migrations.all.AddLoginSettingsToAccountMigration;
@@ -472,6 +473,7 @@ public class MigrationList {
         .add(Pair.of(382, InitTerraformProvisionersSourceType.class))
         .add(Pair.of(383, CreateLongerDataRetention.class))
         .add(Pair.of(384, DeleteUsergroupsParentsNotExists.class))
+        .add(Pair.of(385, AddInstanceStatsDeletionJobToAllAccounts.class))
         .build();
   }
 }

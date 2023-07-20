@@ -56,6 +56,7 @@ import software.wings.dl.exportimport.WingsMongoExportImport;
 import software.wings.licensing.LicenseService;
 import software.wings.scheduler.AlertCheckJob;
 import software.wings.scheduler.InstanceStatsCollectorJob;
+import software.wings.scheduler.InstanceStatsDeleteJob;
 import software.wings.scheduler.LimitVicinityCheckerJob;
 import software.wings.scheduler.ScheduledTriggerJob;
 import software.wings.security.PermissionAttribute.ResourceType;
@@ -1002,6 +1003,7 @@ public class AccountExportImportResource {
     // 1. Recreate account level jobs
     AlertCheckJob.addWithDelay(scheduler, accountId);
     InstanceStatsCollectorJob.addWithDelay(scheduler, accountId);
+    InstanceStatsDeleteJob.addWithDelay(scheduler, accountId);
     LimitVicinityCheckerJob.addWithDelay(scheduler, accountId);
 
     // Recreate application or lower level jobs each need some special handling.
