@@ -110,6 +110,8 @@ public class ExceptionUtils {
       }
     } else if (t instanceof HashiCorpVaultRuntimeException) {
       return "After 3 tries, encryption for vault secret failed with the error " + t.getMessage();
+    } else if (t instanceof CastedFieldException) {
+      return t.getMessage();
     } else {
       StringBuilder result = new StringBuilder();
       result.append(t.getClass().getSimpleName());

@@ -64,7 +64,7 @@ import io.harness.delegate.beans.DelegateProfile;
 import io.harness.delegate.beans.DelegateProfile.DelegateProfileBuilder;
 import io.harness.delegate.beans.DelegateProfileScopingRule;
 import io.harness.delegate.beans.DelegateScope;
-import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.beans.TaskGroup;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
@@ -328,12 +328,12 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
             .accountId(accountId)
             .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
             .tags(isNotEmpty(request.getAwsConfig().getTag()) ? singletonList(request.getAwsConfig().getTag()) : null)
-            .data(TaskData.builder()
-                      .async(false)
-                      .taskType(TaskType.AWS_IAM_TASK.name())
-                      .parameters(new Object[] {request})
-                      .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
-                      .build())
+            .taskDataV2(TaskDataV2.builder()
+                            .async(false)
+                            .taskType(TaskType.AWS_IAM_TASK.name())
+                            .parameters(new Object[] {request})
+                            .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
+                            .build())
             .build();
 
     HttpConnectionExecutionCapability matchingExecutionCapability =
@@ -347,7 +347,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                     .build();
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), connectionResult.getCriteria())))
         .thenReturn(of(connectionResult));
-    delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
+    delegateTaskServiceClassic.scheduleSyncTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -370,12 +370,12 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
             .accountId(accountId)
             .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
             .tags(isNotEmpty(request.getAwsConfig().getTag()) ? singletonList(request.getAwsConfig().getTag()) : null)
-            .data(TaskData.builder()
-                      .async(false)
-                      .taskType(TaskType.AWS_IAM_TASK.name())
-                      .parameters(new Object[] {request})
-                      .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
-                      .build())
+            .taskDataV2(TaskDataV2.builder()
+                            .async(false)
+                            .taskType(TaskType.AWS_IAM_TASK.name())
+                            .parameters(new Object[] {request})
+                            .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
+                            .build())
             .build();
 
     HttpConnectionExecutionCapability matchingExecutionCapability =
@@ -389,7 +389,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                     .build();
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), connectionResult.getCriteria())))
         .thenReturn(of(connectionResult));
-    delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
+    delegateTaskServiceClassic.scheduleSyncTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -422,15 +422,15 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                     .accountId(accountId)
                                     .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
                                     .description("Shell Script Approval")
-                                    .data(TaskData.builder()
-                                              .async(false)
-                                              .taskType(TaskType.SHELL_SCRIPT_APPROVAL.name())
-                                              .parameters(new Object[] {shellScriptApprovalTaskParameters})
-                                              .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
-                                              .build())
+                                    .taskDataV2(TaskDataV2.builder()
+                                                    .async(false)
+                                                    .taskType(TaskType.SHELL_SCRIPT_APPROVAL.name())
+                                                    .parameters(new Object[] {shellScriptApprovalTaskParameters})
+                                                    .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
+                                                    .build())
                                     .selectionLogsTrackingEnabled(true)
                                     .build();
-    delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
+    delegateTaskServiceClassic.scheduleSyncTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -463,16 +463,16 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                     .accountId(accountId)
                                     .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
                                     .waitId(generateUuid())
-                                    .data(TaskData.builder()
-                                              .async(true)
-                                              .taskType(SPLUNK_COLLECT_LOG_DATAV2.name())
-                                              .parameters(new Object[] {params})
-                                              .timeout(TimeUnit.MINUTES.toMillis(5))
-                                              .build())
+                                    .taskDataV2(TaskDataV2.builder()
+                                                    .async(true)
+                                                    .taskType(SPLUNK_COLLECT_LOG_DATAV2.name())
+                                                    .parameters(new Object[] {params})
+                                                    .timeout(TimeUnit.MINUTES.toMillis(5))
+                                                    .build())
                                     .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, ENV_ID)
                                     .setupAbstraction(Cd1SetupFields.ENV_TYPE_FIELD, EnvironmentType.NON_PROD.name())
                                     .build();
-    delegateTaskServiceClassic.queueTask(delegateTask);
+    delegateTaskServiceClassic.queueTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -510,12 +510,12 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                     .selectionLogsTrackingEnabled(true)
                                     .description("Terraform provision task execution")
                                     .tags(Arrays.asList("sel1"))
-                                    .data(TaskData.builder()
-                                              .async(true)
-                                              .taskType(TERRAFORM_PROVISION_TASK.name())
-                                              .parameters(new Object[] {parameters})
-                                              .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
-                                              .build())
+                                    .taskDataV2(TaskDataV2.builder()
+                                                    .async(true)
+                                                    .taskType(TERRAFORM_PROVISION_TASK.name())
+                                                    .parameters(new Object[] {parameters})
+                                                    .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
+                                                    .build())
                                     .build();
     DelegateConnectionResult connectionResult1 = DelegateConnectionResult.builder()
                                                      .accountId(accountId)
@@ -534,7 +534,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), connectionResult2.getCriteria())))
         .thenReturn(of(connectionResult2));
 
-    delegateTaskServiceClassic.queueTask(delegateTask);
+    delegateTaskServiceClassic.queueTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -557,22 +557,22 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
             .accountId(accountId)
             .waitId(generateUuid())
             .tags(asList("sel1", "sel3"))
-            .data(TaskData.builder()
-                      .async(false)
-                      .taskType(TaskType.K8S_COMMAND_TASK.name())
-                      .parameters(
-                          new Object[] {K8sInstanceSyncTaskParameters.builder()
-                                            .accountId(ACCOUNT_ID)
-                                            .appId(APP_ID)
-                                            .namespace("namespace")
-                                            .releaseName("release_name")
-                                            .k8sClusterConfig(K8sClusterConfig.builder().namespace("namespace").build())
-                                            .build()})
-                      .timeout(TimeUnit.MINUTES.toMillis(VALIDATION_TIMEOUT_MINUTES))
-                      .build())
+            .taskDataV2(TaskDataV2.builder()
+                            .async(false)
+                            .taskType(TaskType.K8S_COMMAND_TASK.name())
+                            .parameters(new Object[] {
+                                K8sInstanceSyncTaskParameters.builder()
+                                    .accountId(ACCOUNT_ID)
+                                    .appId(APP_ID)
+                                    .namespace("namespace")
+                                    .releaseName("release_name")
+                                    .k8sClusterConfig(K8sClusterConfig.builder().namespace("namespace").build())
+                                    .build()})
+                            .timeout(TimeUnit.MINUTES.toMillis(VALIDATION_TIMEOUT_MINUTES))
+                            .build())
             .expiry(System.currentTimeMillis() + DELEGATE_QUEUE_TIMEOUT)
             .build();
-    delegateTaskServiceClassic.executeTask(delegateTask);
+    delegateTaskServiceClassic.executeTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNull();
   }
@@ -607,12 +607,12 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                         ngTaskSetupAbstractionsWithOwner.get(NG_DELEGATE_ENABLED_CONSTANT))
                                     .setupAbstraction(NG_DELEGATE_OWNER_CONSTANT,
                                         ngTaskSetupAbstractionsWithOwner.get(NG_DELEGATE_OWNER_CONSTANT))
-                                    .data(TaskData.builder()
-                                              .async(true)
-                                              .taskType(NGTaskType.JIRA_TASK_NG.name())
-                                              .parameters(new Object[] {taskNGParameters})
-                                              .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
-                                              .build())
+                                    .taskDataV2(TaskDataV2.builder()
+                                                    .async(true)
+                                                    .taskType(NGTaskType.JIRA_TASK_NG.name())
+                                                    .parameters(new Object[] {taskNGParameters})
+                                                    .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
+                                                    .build())
                                     .build();
     when(logStreamingAccountTokenCache.get(delegateTask.getAccountId())).thenReturn("");
 
@@ -624,7 +624,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                     .build();
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), connectionResult.getCriteria())))
         .thenReturn(of(connectionResult));
-    delegateTaskServiceClassic.queueTask(delegateTask);
+    delegateTaskServiceClassic.queueTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -668,12 +668,12 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                     .setupAbstraction("orgIdentifier", ngAccess.getOrgIdentifier())
                                     .setupAbstraction("ng", "true")
                                     .setupAbstraction("owner", ngAccess.getOrgIdentifier())
-                                    .data(TaskData.builder()
-                                              .async(true)
-                                              .taskType(NGTaskType.DOCKER_ARTIFACT_TASK_NG.name())
-                                              .parameters(new Object[] {artifactTaskParameters})
-                                              .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
-                                              .build())
+                                    .taskDataV2(TaskDataV2.builder()
+                                                    .async(true)
+                                                    .taskType(NGTaskType.DOCKER_ARTIFACT_TASK_NG.name())
+                                                    .parameters(new Object[] {artifactTaskParameters})
+                                                    .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
+                                                    .build())
                                     .build();
     when(logStreamingAccountTokenCache.get(delegateTask.getAccountId())).thenReturn("");
     DelegateConnectionResult connectionResult = DelegateConnectionResult.builder()
@@ -684,7 +684,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                     .build();
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), connectionResult.getCriteria())))
         .thenReturn(of(connectionResult));
-    delegateTaskServiceClassic.queueTask(delegateTask);
+    delegateTaskServiceClassic.queueTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -707,14 +707,14 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     DelegateTask delegateTask = DelegateTask.builder()
                                     .accountId(accountId)
                                     .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
-                                    .data(TaskData.builder()
-                                              .async(false)
-                                              .taskType(TaskType.HELM_REPO_CONFIG_VALIDATION.name())
-                                              .parameters(new Object[] {taskParams})
-                                              .timeout(TimeUnit.MINUTES.toMillis(2))
-                                              .build())
+                                    .taskDataV2(TaskDataV2.builder()
+                                                    .async(false)
+                                                    .taskType(TaskType.HELM_REPO_CONFIG_VALIDATION.name())
+                                                    .parameters(new Object[] {taskParams})
+                                                    .timeout(TimeUnit.MINUTES.toMillis(2))
+                                                    .build())
                                     .build();
-    delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
+    delegateTaskServiceClassic.scheduleSyncTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -748,14 +748,14 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
             .accountId(ngAccess.getAccountIdentifier())
             .setupAbstraction("ng", "true")
             .setupAbstraction("owner", ngAccess.getOrgIdentifier() + "/" + ngAccess.getProjectIdentifier())
-            .data(TaskData.builder()
-                      .async(false)
-                      .taskType(TaskType.NG_AWS_TASK.name())
-                      .parameters(new Object[] {awsTaskParams})
-                      .timeout(TimeUnit.MINUTES.toMillis(2))
-                      .build())
+            .taskDataV2(TaskDataV2.builder()
+                            .async(false)
+                            .taskType(TaskType.NG_AWS_TASK.name())
+                            .parameters(new Object[] {awsTaskParams})
+                            .timeout(TimeUnit.MINUTES.toMillis(2))
+                            .build())
             .build();
-    delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
+    delegateTaskServiceClassic.scheduleSyncTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -788,14 +788,14 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                     .accountId(ngAccess.getAccountIdentifier())
                                     .setupAbstraction("ng", "true")
                                     .setupAbstraction("owner", ngAccess.getOrgIdentifier())
-                                    .data(TaskData.builder()
-                                              .async(false)
-                                              .taskType(TaskType.NG_AWS_TASK.name())
-                                              .parameters(new Object[] {awsTaskParams})
-                                              .timeout(TimeUnit.MINUTES.toMillis(2))
-                                              .build())
+                                    .taskDataV2(TaskDataV2.builder()
+                                                    .async(false)
+                                                    .taskType(TaskType.NG_AWS_TASK.name())
+                                                    .parameters(new Object[] {awsTaskParams})
+                                                    .timeout(TimeUnit.MINUTES.toMillis(2))
+                                                    .build())
                                     .build();
-    delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
+    delegateTaskServiceClassic.scheduleSyncTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -839,14 +839,14 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                     .setupAbstraction("orgIdentifier", ngAccess.getOrgIdentifier())
                                     .setupAbstraction("ng", "true")
                                     .setupAbstraction("owner", ngAccess.getOrgIdentifier())
-                                    .data(TaskData.builder()
-                                              .async(true)
-                                              .taskType(NGTaskType.DOCKER_ARTIFACT_TASK_NG.name())
-                                              .parameters(new Object[] {artifactTaskParameters})
-                                              .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
-                                              .build())
+                                    .taskDataV2(TaskDataV2.builder()
+                                                    .async(true)
+                                                    .taskType(NGTaskType.DOCKER_ARTIFACT_TASK_NG.name())
+                                                    .parameters(new Object[] {artifactTaskParameters})
+                                                    .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
+                                                    .build())
                                     .build();
-    delegateTaskServiceClassic.queueTask(delegateTask);
+    delegateTaskServiceClassic.queueTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNull();
   }
@@ -873,12 +873,12 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
             .accountId(accountId)
             .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, SCOPE_WILDCARD)
             .tags(isNotEmpty(request.getAwsConfig().getTag()) ? singletonList(request.getAwsConfig().getTag()) : null)
-            .data(TaskData.builder()
-                      .async(false)
-                      .taskType(TaskType.AWS_EC2_TASK.name())
-                      .parameters(new Object[] {request})
-                      .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
-                      .build())
+            .taskDataV2(TaskDataV2.builder()
+                            .async(false)
+                            .taskType(TaskType.AWS_EC2_TASK.name())
+                            .parameters(new Object[] {request})
+                            .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
+                            .build())
             .build();
     DelegateConnectionResult connectionResult = DelegateConnectionResult.builder()
                                                     .accountId(accountId)
@@ -888,7 +888,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                     .build();
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), connectionResult.getCriteria())))
         .thenReturn(of(connectionResult));
-    delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
+    delegateTaskServiceClassic.scheduleSyncTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -912,18 +912,19 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
             .accountId(pcfConfig.getAccountId())
             .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, SCOPE_WILDCARD)
             .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
-            .data(TaskData.builder()
-                      .async(false)
-                      .taskType(TaskType.PCF_COMMAND_TASK.name())
-                      .parameters(new Object[] {CfInfraMappingDataRequest.builder()
-                                                    .pcfConfig(CfConfigToInternalMapper.toCfInternalConfig(pcfConfig))
-                                                    .pcfCommandType(CfCommandRequest.PcfCommandType.VALIDATE)
-                                                    .limitPcfThreads(false)
-                                                    .timeoutIntervalInMin(2)
-                                                    .build(),
-                          null})
-                      .timeout(TimeUnit.MINUTES.toMillis(2))
-                      .build())
+            .taskDataV2(
+                TaskDataV2.builder()
+                    .async(false)
+                    .taskType(TaskType.PCF_COMMAND_TASK.name())
+                    .parameters(new Object[] {CfInfraMappingDataRequest.builder()
+                                                  .pcfConfig(CfConfigToInternalMapper.toCfInternalConfig(pcfConfig))
+                                                  .pcfCommandType(CfCommandRequest.PcfCommandType.VALIDATE)
+                                                  .limitPcfThreads(false)
+                                                  .timeoutIntervalInMin(2)
+                                                  .build(),
+                        null})
+                    .timeout(TimeUnit.MINUTES.toMillis(2))
+                    .build())
             .build();
     DelegateConnectionResult connectionResult = DelegateConnectionResult.builder()
                                                     .accountId(accountId)
@@ -933,7 +934,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                     .build();
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), connectionResult.getCriteria())))
         .thenReturn(of(connectionResult));
-    delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
+    delegateTaskServiceClassic.scheduleSyncTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -957,12 +958,12 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                     .accountId(gitConfig.getAccountId())
                                     .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
                                     .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, SCOPE_WILDCARD)
-                                    .data(TaskData.builder()
-                                              .async(false)
-                                              .taskType(TaskType.GIT_COMMAND.name())
-                                              .parameters(new Object[] {GitCommandType.VALIDATE, gitConfig, null})
-                                              .timeout(TimeUnit.SECONDS.toMillis(60))
-                                              .build())
+                                    .taskDataV2(TaskDataV2.builder()
+                                                    .async(false)
+                                                    .taskType(TaskType.GIT_COMMAND.name())
+                                                    .parameters(new Object[] {GitCommandType.VALIDATE, gitConfig, null})
+                                                    .timeout(TimeUnit.SECONDS.toMillis(60))
+                                                    .build())
                                     .build();
     DelegateConnectionResult connectionResult = DelegateConnectionResult.builder()
                                                     .accountId(accountId)
@@ -972,7 +973,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                     .build();
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), connectionResult.getCriteria())))
         .thenReturn(of(connectionResult));
-    delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
+    delegateTaskServiceClassic.scheduleSyncTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -1006,12 +1007,12 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
             .tags(isNotEmpty(request.getAwsConfig().getTag()) ? singletonList(request.getAwsConfig().getTag()) : null)
             .selectionLogsTrackingEnabled(true)
             .description("Aws Lambda Verification task")
-            .data(TaskData.builder()
-                      .async(true)
-                      .taskType(TaskType.AWS_LAMBDA_TASK.name())
-                      .parameters(new Object[] {request})
-                      .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
-                      .build())
+            .taskDataV2(TaskDataV2.builder()
+                            .async(true)
+                            .taskType(TaskType.AWS_LAMBDA_TASK.name())
+                            .parameters(new Object[] {request})
+                            .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
+                            .build())
             .build();
     when(environmentService.get(APP_ID, ENV_ID, false))
         .thenReturn(Environment.Builder.anEnvironment().accountId(accountId).appId(APP_ID).name(ENV_NAME).build());
@@ -1023,7 +1024,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                     .build();
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), connectionResult.getCriteria())))
         .thenReturn(of(connectionResult));
-    delegateTaskServiceClassic.executeTask(delegateTask);
+    delegateTaskServiceClassic.executeTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -1047,12 +1048,12 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                     .accountId(gitConfig.getAccountId())
                                     .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
                                     .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, ENV_ID)
-                                    .data(TaskData.builder()
-                                              .async(false)
-                                              .taskType(TaskType.GIT_COMMAND.name())
-                                              .parameters(new Object[] {GitCommandType.VALIDATE, gitConfig, null})
-                                              .timeout(TimeUnit.SECONDS.toMillis(60))
-                                              .build())
+                                    .taskDataV2(TaskDataV2.builder()
+                                                    .async(false)
+                                                    .taskType(TaskType.GIT_COMMAND.name())
+                                                    .parameters(new Object[] {GitCommandType.VALIDATE, gitConfig, null})
+                                                    .timeout(TimeUnit.SECONDS.toMillis(60))
+                                                    .build())
                                     .build();
     DelegateConnectionResult connectionResult = DelegateConnectionResult.builder()
                                                     .accountId(accountId)
@@ -1063,7 +1064,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), connectionResult.getCriteria())))
         .thenReturn(of(connectionResult));
     thrown.expect(NoEligibleDelegatesInAccountException.class);
-    delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
+    delegateTaskServiceClassic.scheduleSyncTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNull();
   }
@@ -1084,12 +1085,12 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     DelegateTask delegateTask = DelegateTask.builder()
                                     .accountId(gitConfig.getAccountId())
                                     .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, "APP_ID2")
-                                    .data(TaskData.builder()
-                                              .async(false)
-                                              .taskType(TaskType.GIT_COMMAND.name())
-                                              .parameters(new Object[] {GitCommandType.VALIDATE, gitConfig, null})
-                                              .timeout(TimeUnit.SECONDS.toMillis(60))
-                                              .build())
+                                    .taskDataV2(TaskDataV2.builder()
+                                                    .async(false)
+                                                    .taskType(TaskType.GIT_COMMAND.name())
+                                                    .parameters(new Object[] {GitCommandType.VALIDATE, gitConfig, null})
+                                                    .timeout(TimeUnit.SECONDS.toMillis(60))
+                                                    .build())
                                     .build();
     DelegateConnectionResult connectionResult = DelegateConnectionResult.builder()
                                                     .accountId(accountId)
@@ -1099,7 +1100,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                     .build();
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), connectionResult.getCriteria())))
         .thenReturn(of(connectionResult));
-    delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
+    delegateTaskServiceClassic.scheduleSyncTaskV2(delegateTask);
 
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNull();
@@ -1120,18 +1121,19 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     DelegateTask delegateTask =
         DelegateTask.builder()
             .accountId(pcfConfig.getAccountId())
-            .data(TaskData.builder()
-                      .async(false)
-                      .taskType(TaskType.PCF_COMMAND_TASK.name())
-                      .parameters(new Object[] {CfInfraMappingDataRequest.builder()
-                                                    .pcfConfig(CfConfigToInternalMapper.toCfInternalConfig(pcfConfig))
-                                                    .pcfCommandType(CfCommandRequest.PcfCommandType.VALIDATE)
-                                                    .limitPcfThreads(false)
-                                                    .timeoutIntervalInMin(2)
-                                                    .build(),
-                          null})
-                      .timeout(TimeUnit.MINUTES.toMillis(2))
-                      .build())
+            .taskDataV2(
+                TaskDataV2.builder()
+                    .async(false)
+                    .taskType(TaskType.PCF_COMMAND_TASK.name())
+                    .parameters(new Object[] {CfInfraMappingDataRequest.builder()
+                                                  .pcfConfig(CfConfigToInternalMapper.toCfInternalConfig(pcfConfig))
+                                                  .pcfCommandType(CfCommandRequest.PcfCommandType.VALIDATE)
+                                                  .limitPcfThreads(false)
+                                                  .timeoutIntervalInMin(2)
+                                                  .build(),
+                        null})
+                    .timeout(TimeUnit.MINUTES.toMillis(2))
+                    .build())
             .build();
     DelegateConnectionResult connectionResult = DelegateConnectionResult.builder()
                                                     .accountId(accountId)
@@ -1141,7 +1143,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                     .build();
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), connectionResult.getCriteria())))
         .thenReturn(of(connectionResult));
-    delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
+    delegateTaskServiceClassic.scheduleSyncTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNull();
   }
@@ -1177,14 +1179,14 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                     .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
                                     .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, ENV_ID)
                                     .setupAbstraction(Cd1SetupFields.INFRASTRUCTURE_MAPPING_ID_FIELD, INFRA_MAPPING_ID)
-                                    .data(TaskData.builder()
-                                              .async(true)
-                                              .taskType(TaskType.STACKDRIVER_COLLECT_METRIC_DATA.name())
-                                              .parameters(new Object[] {dataCollectionInfo})
-                                              .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
-                                              .build())
+                                    .taskDataV2(TaskDataV2.builder()
+                                                    .async(true)
+                                                    .taskType(TaskType.STACKDRIVER_COLLECT_METRIC_DATA.name())
+                                                    .parameters(new Object[] {dataCollectionInfo})
+                                                    .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
+                                                    .build())
                                     .build();
-    delegateTaskServiceClassic.queueTask(delegateTask);
+    delegateTaskServiceClassic.queueTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNull();
   }
@@ -1203,22 +1205,22 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
             .accountId(accountId)
             .waitId(generateUuid())
             .tags(asList("sel1", "sel2"))
-            .data(TaskData.builder()
-                      .async(false)
-                      .taskType(TaskType.K8S_COMMAND_TASK.name())
-                      .parameters(
-                          new Object[] {K8sInstanceSyncTaskParameters.builder()
-                                            .accountId(ACCOUNT_ID)
-                                            .appId(APP_ID)
-                                            .namespace("namespace")
-                                            .releaseName("release_name")
-                                            .k8sClusterConfig(K8sClusterConfig.builder().namespace("namespace").build())
-                                            .build()})
-                      .timeout(TimeUnit.MINUTES.toMillis(VALIDATION_TIMEOUT_MINUTES))
-                      .build())
+            .taskDataV2(TaskDataV2.builder()
+                            .async(false)
+                            .taskType(TaskType.K8S_COMMAND_TASK.name())
+                            .parameters(new Object[] {
+                                K8sInstanceSyncTaskParameters.builder()
+                                    .accountId(ACCOUNT_ID)
+                                    .appId(APP_ID)
+                                    .namespace("namespace")
+                                    .releaseName("release_name")
+                                    .k8sClusterConfig(K8sClusterConfig.builder().namespace("namespace").build())
+                                    .build()})
+                            .timeout(TimeUnit.MINUTES.toMillis(VALIDATION_TIMEOUT_MINUTES))
+                            .build())
             .expiry(System.currentTimeMillis() + DELEGATE_QUEUE_TIMEOUT)
             .build();
-    delegateTaskServiceClassic.executeTask(delegateTask);
+    delegateTaskServiceClassic.executeTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -1240,22 +1242,22 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
             .accountId(accountId)
             .waitId(generateUuid())
             .tags(asList("custom-grp-tag1", "custom-grp-tag2"))
-            .data(TaskData.builder()
-                      .async(false)
-                      .taskType(TaskType.K8S_COMMAND_TASK.name())
-                      .parameters(
-                          new Object[] {K8sInstanceSyncTaskParameters.builder()
-                                            .accountId(ACCOUNT_ID)
-                                            .appId(APP_ID)
-                                            .namespace("namespace")
-                                            .releaseName("release_name")
-                                            .k8sClusterConfig(K8sClusterConfig.builder().namespace("namespace").build())
-                                            .build()})
-                      .timeout(TimeUnit.MINUTES.toMillis(VALIDATION_TIMEOUT_MINUTES))
-                      .build())
+            .taskDataV2(TaskDataV2.builder()
+                            .async(false)
+                            .taskType(TaskType.K8S_COMMAND_TASK.name())
+                            .parameters(new Object[] {
+                                K8sInstanceSyncTaskParameters.builder()
+                                    .accountId(ACCOUNT_ID)
+                                    .appId(APP_ID)
+                                    .namespace("namespace")
+                                    .releaseName("release_name")
+                                    .k8sClusterConfig(K8sClusterConfig.builder().namespace("namespace").build())
+                                    .build()})
+                            .timeout(TimeUnit.MINUTES.toMillis(VALIDATION_TIMEOUT_MINUTES))
+                            .build())
             .expiry(System.currentTimeMillis() + DELEGATE_QUEUE_TIMEOUT)
             .build();
-    delegateTaskServiceClassic.executeTask(delegateTask);
+    delegateTaskServiceClassic.executeTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -1280,12 +1282,12 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     DelegateTask delegateTask = DelegateTask.builder()
                                     .accountId(gitConfig.getAccountId())
                                     .setupAbstraction(SCOPING_ENTITY_KEY_APP_ID, APP_ID)
-                                    .data(TaskData.builder()
-                                              .async(false)
-                                              .taskType(TaskType.GIT_COMMAND.name())
-                                              .parameters(new Object[] {GitCommandType.VALIDATE, gitConfig, null})
-                                              .timeout(TimeUnit.SECONDS.toMillis(60))
-                                              .build())
+                                    .taskDataV2(TaskDataV2.builder()
+                                                    .async(false)
+                                                    .taskType(TaskType.GIT_COMMAND.name())
+                                                    .parameters(new Object[] {GitCommandType.VALIDATE, gitConfig, null})
+                                                    .timeout(TimeUnit.SECONDS.toMillis(60))
+                                                    .build())
                                     .build();
     DelegateConnectionResult connectionResult = DelegateConnectionResult.builder()
                                                     .accountId(accountId)
@@ -1295,7 +1297,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                     .build();
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), connectionResult.getCriteria())))
         .thenReturn(of(connectionResult));
-    delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
+    delegateTaskServiceClassic.scheduleSyncTaskV2(delegateTask);
   }
 
   @Test
@@ -1313,12 +1315,12 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
 
     DelegateTask delegateTask = DelegateTask.builder()
                                     .accountId(gitConfig.getAccountId())
-                                    .data(TaskData.builder()
-                                              .async(false)
-                                              .taskType(TaskType.GIT_COMMAND.name())
-                                              .parameters(new Object[] {GitCommandType.VALIDATE, gitConfig, null})
-                                              .timeout(TimeUnit.SECONDS.toMillis(60))
-                                              .build())
+                                    .taskDataV2(TaskDataV2.builder()
+                                                    .async(false)
+                                                    .taskType(TaskType.GIT_COMMAND.name())
+                                                    .parameters(new Object[] {GitCommandType.VALIDATE, gitConfig, null})
+                                                    .timeout(TimeUnit.SECONDS.toMillis(60))
+                                                    .build())
                                     .build();
     DelegateConnectionResult connectionResult = DelegateConnectionResult.builder()
                                                     .accountId(accountId)
@@ -1328,7 +1330,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                     .build();
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), connectionResult.getCriteria())))
         .thenReturn(of(connectionResult));
-    delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
+    delegateTaskServiceClassic.scheduleSyncTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNull();
   }

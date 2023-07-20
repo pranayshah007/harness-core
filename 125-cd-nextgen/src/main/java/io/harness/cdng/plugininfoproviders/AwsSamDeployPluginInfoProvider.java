@@ -186,8 +186,12 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
         awsSamDirectoryManifestOutcome);
 
     samDeployEnvironmentVariablesMap.put("PLUGIN_SAM_DIR", samDir);
-    samDeployEnvironmentVariablesMap.put(
-        "PLUGIN_DEPLOY_COMMAND_OPTIONS", String.join(" ", deployCommandOptions.getValue()));
+
+    if (ParameterField.isNotNull(deployCommandOptions)) {
+      samDeployEnvironmentVariablesMap.put(
+          "PLUGIN_DEPLOY_COMMAND_OPTIONS", String.join(" ", deployCommandOptions.getValue()));
+    }
+
     samDeployEnvironmentVariablesMap.put("PLUGIN_STACK_NAME", stackName.getValue());
 
     if (awsAccessKey != null) {

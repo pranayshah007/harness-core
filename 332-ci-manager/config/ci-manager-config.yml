@@ -338,13 +338,13 @@ ciExecutionServiceConfig:
       windowsEntrypoint:
         - "C:\\bin\\drone-artifactory.exe"
     cacheGCSConfig:
-      image: plugins/cache:1.5.10
+      image: plugins/cache:1.5.12
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
     cacheS3Config:
-      image: plugins/cache:1.5.10
+      image: plugins/cache:1.5.12
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
@@ -368,8 +368,8 @@ ciExecutionServiceConfig:
       s3Upload: plugins/s3:1.2.3
       security: harness/sto-plugin:dev
       artifactoryUpload: plugins/artifactory:1.4.4
-      cacheGCS: plugins/cache:1.5.10
-      cacheS3: plugins/cache:1.5.10
+      cacheGCS: plugins/cache:1.5.12
+      cacheS3: plugins/cache:1.5.12
       sscaOrchestration: harness/ssca-plugin:0.3.0
       sscaEnforcement: harness/ssca-plugin:0.3.0
     vmContainerlessStepConfig:
@@ -392,7 +392,7 @@ ciExecutionServiceConfig:
       dockerBuildxAcrConfig:
         name: github.com/drone-plugins/drone-buildx-acr@refs/tags/v1.0.0
   gitnessConfig:
-    jwtSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+    jwtSecret: ${GITNESS_JWT_SECRET:-"IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"}
 
 
 pmsSdkExecutionPoolConfig:

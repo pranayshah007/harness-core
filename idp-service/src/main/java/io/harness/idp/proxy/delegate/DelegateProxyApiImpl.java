@@ -11,7 +11,7 @@ import static io.harness.NGCommonEntityConstants.APPLICATION_GZIP_MEDIA_TYPE;
 import static io.harness.NGCommonEntityConstants.APPLICATION_OCTET_STREAM_MEDIA_TYPE;
 import static io.harness.NGCommonEntityConstants.CONTENT_TYPE_HEADER;
 import static io.harness.annotations.dev.HarnessTeam.IDP;
-import static io.harness.idp.proxy.ngmanager.IdpAuthInterceptor.AUTHORIZATION;
+import static io.harness.idp.proxy.services.IdpAuthInterceptor.AUTHORIZATION;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.http.HttpStepResponse;

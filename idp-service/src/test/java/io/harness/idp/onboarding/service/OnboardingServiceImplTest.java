@@ -306,7 +306,9 @@ public class OnboardingServiceImplTest extends CategoryTest {
         .thenReturn(githubConnectorProcessor);
     when(githubConnectorProcessor.getInfraConnectorType(any())).thenReturn("DIRECT");
     when(githubConnectorProcessor.getConnectorInfo(any(), any())).thenReturn(connectorInfoDTO);
-    doNothing().when(gitIntegrationService).createOrUpdateConnectorInBackstage(any(), any(), any(), any());
+    doNothing()
+        .when(gitIntegrationService)
+        .createOrUpdateConnectorInBackstage(any(), any(), any(), any(), eq(delegateSelectors));
     ImportEntitiesResponse importEntitiesResponse = onboardingServiceImpl.importHarnessEntities(ACCOUNT_IDENTIFIER,
         new SampleEntitiesImport()
             .type(ImportEntitiesBase.TypeEnum.SAMPLE)
@@ -347,7 +349,9 @@ public class OnboardingServiceImplTest extends CategoryTest {
         .thenReturn(githubConnectorProcessor);
     when(githubConnectorProcessor.getInfraConnectorType(any())).thenReturn("DIRECT");
     when(githubConnectorProcessor.getConnectorInfo(any(), any())).thenReturn(connectorInfoDTO);
-    doNothing().when(gitIntegrationService).createOrUpdateConnectorInBackstage(any(), any(), any(), any());
+    doNothing()
+        .when(gitIntegrationService)
+        .createOrUpdateConnectorInBackstage(any(), any(), any(), any(), eq(delegateSelectors));
     when(transactionHelper.performTransaction(any())).thenReturn(null);
     List<EntitiesForImport> entitiesForImports = new ArrayList<>();
     entitiesForImports.add(new EntitiesForImport()
@@ -388,7 +392,9 @@ public class OnboardingServiceImplTest extends CategoryTest {
         .thenReturn(githubConnectorProcessor);
     when(githubConnectorProcessor.getInfraConnectorType(any())).thenReturn("DIRECT");
     when(githubConnectorProcessor.getConnectorInfo(any(), any())).thenReturn(connectorInfoDTO);
-    doNothing().when(gitIntegrationService).createOrUpdateConnectorInBackstage(any(), any(), any(), any());
+    doNothing()
+        .when(gitIntegrationService)
+        .createOrUpdateConnectorInBackstage(any(), any(), any(), any(), eq(delegateSelectors));
     when(transactionHelper.performTransaction(any())).thenReturn(null);
     ImportEntitiesResponse importEntitiesResponse = onboardingServiceImpl.importHarnessEntities(ACCOUNT_IDENTIFIER,
         new AllEntitiesImport().type(ImportEntitiesBase.TypeEnum.ALL).catalogConnectorInfo(getCatalogConnectorInfo()));

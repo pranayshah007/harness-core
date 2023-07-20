@@ -1,0 +1,25 @@
+Var url = concat(Env:baseUrl, "v1", Env:resourceId, "/query?scope=hierarchy&timespan=", Env:startTime, "/", Env:endTime)
+
+Var bodyMap = {}
+Var:bodyMap.put("query", Env:query)
+Var azureTokenBodyMap = {}
+Var:azureTokenBodyMap.put("grant_type", "client_credentials")
+Var:azureTokenBodyMap.put("client_id", Env:clientId)
+Var:azureTokenBodyMap.put("resource", Env:baseUrl)
+Var:azureTokenBodyMap.put("client_secret", Env:clientSecret)
+
+Var response = sync-call-azure(url=Var:url, header=Env:commonHeaders, options=Env:commonOptions, body=Var:bodyMap, bodyType=JSON, method=POST, azureTokenUrl=Env:azureTokenUrl, azureTokenBody=Var:azureTokenBodyMap)
+Var table = extract(Var:response, "$.tables.[0]")
+Var rows = extract(Var:table, "$.rows")
+
+Var responseList = []
+foreach row in Var:rows {
+    Var message = extract(Var:row, Env:messageIdentifier)
+    Var timestamp = extract(Var:row, Env:timeStampIdentifier)
+    Var timeStampVal = string-to-time(Var:timestamp)
+    Var host = extract(Var:row, Env:serviceInstanceIdentifier)
+
+    Var logToReturn = new LogDataRecord(log=Var:message, timestamp=Var:timeStampVal, host=Var:host)
+    Var:responseList.append(Var:logToReturn)
+}
+return Var:responseList

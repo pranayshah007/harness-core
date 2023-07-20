@@ -8,6 +8,7 @@
 package io.harness.engine.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.NGExpressionUtils;
@@ -15,18 +16,24 @@ import io.harness.jackson.JsonNodeUtils;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.FQNMapGenerator;
+import io.harness.pms.yaml.YamlNode;
+import io.harness.pms.yaml.YamlNodeUtils;
+import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Singleton;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
 @Slf4j
 @OwnedBy(PIPELINE)
 public class ExecutionInputServiceHelper {
+  private static final Set<String> ENTITY_INPUTS_FIELD_NAMES_SET = ImmutableSet.of("serviceInputs");
   public Map<String, Object> getExecutionInputMap(JsonNode inputTemplate, JsonNode userInput) {
     Map<FQN, Object> templateFqnToValueMap = FQNMapGenerator.generateFQNMap(inputTemplate);
     YamlConfig inputConfig = new YamlConfig(userInput);
@@ -38,8 +45,25 @@ public class ExecutionInputServiceHelper {
     templateFqnToValueMap.keySet().forEach(key -> {
       String value = templateFqnToValueMap.get(key).toString().replace("\\\"", "").replace("\"", "");
       if (NGExpressionUtils.matchesExecutionInputPattern(value)) {
-        Object rawInputValue = fullUserInputMap.get(key);
-        Object inputValue = JsonNodeUtils.getValueFromJsonNode(rawInputValue);
+        Object inputValue = new Object();
+        String keyFieldName = key.getFieldName();
+
+        /*
+        This if condition is specifically added for the cases when execution input is at non-leaf nodes,
+        for e.g. - serviceInputs. In such cases, we will get the complete JsonNode as that non-leaf node's value,
+        convert it to a map and pass it to inputMap
+         */
+        if (isNotEmpty(keyFieldName) && ENTITY_INPUTS_FIELD_NAMES_SET.contains(keyFieldName)) {
+          YamlNode userInputYamlNode = new YamlNode(userInput);
+          YamlNode executionInputYamlNode = YamlNodeUtils.goToPathUsingFqn(userInputYamlNode, key.getExpressionFqn());
+          if (executionInputYamlNode != null) {
+            Object rawInputValue = executionInputYamlNode.getCurrJsonNode();
+            inputValue = JsonUtils.jsonNodeToMap((JsonNode) rawInputValue);
+          }
+        } else {
+          Object rawInputValue = fullUserInputMap.get(key);
+          inputValue = JsonNodeUtils.getValueFromJsonNode(rawInputValue);
+        }
         inputMap.put(key.getExpressionFqnWithoutIgnoring(), inputValue);
       }
     });

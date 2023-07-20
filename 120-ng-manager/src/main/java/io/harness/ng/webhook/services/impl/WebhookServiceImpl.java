@@ -39,6 +39,7 @@ import io.harness.product.ci.scm.proto.ParseWebhookResponse;
 import io.harness.repositories.ng.webhook.spring.WebhookEventRepository;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -62,6 +63,7 @@ public class WebhookServiceImpl implements WebhookService, WebhookEventService {
     try {
       log.info(
           "received webhook event with id {} in the accountId {}", webhookEvent.getUuid(), webhookEvent.getAccountId());
+      // TODO: add a check based on env to use iterators in community edition and on prem
       if (!ngFeatureFlagHelperService.isEnabled(
               webhookEvent.getAccountId(), FeatureName.CDS_QUEUE_SERVICE_FOR_TRIGGERS)) {
         return webhookEventRepository.save(webhookEvent);
@@ -74,7 +76,8 @@ public class WebhookServiceImpl implements WebhookService, WebhookEventService {
     }
   }
 
-  private void generateWebhookDTOAndEnqueue(WebhookEvent webhookEvent) {
+  @VisibleForTesting
+  void generateWebhookDTOAndEnqueue(WebhookEvent webhookEvent) {
     if (isEmpty(webhookEvent.getUuid())) {
       webhookEvent.setUuid(generateUuid());
     }
@@ -96,6 +99,7 @@ public class WebhookServiceImpl implements WebhookService, WebhookEventService {
   }
 
   private void enqueueWebhookEvents(WebhookDTO webhookDTO, String topic, String moduleName, String uuid) {
+    // Consumer for webhook events stream: WebhookEventQueueProcessor (in Pipeline service)
     EnqueueRequest enqueueRequest = EnqueueRequest.builder()
                                         .topic(topic + WEBHOOK_EVENT)
                                         .subTopic(webhookDTO.getAccountId())
@@ -114,6 +118,7 @@ public class WebhookServiceImpl implements WebhookService, WebhookEventService {
   }
 
   private EnqueueRequest getEnqueueRequestBasedOnGitEvent(String moduleName, String topic, WebhookDTO webhookDTO) {
+    // Consumer for push events stream: WebhookPushEventQueueProcessor (in NG manager)
     if (PUSH == webhookDTO.getGitDetails().getEvent()) {
       return EnqueueRequest.builder()
           .topic(topic + WEBHOOK_PUSH_EVENT)
@@ -121,7 +126,9 @@ public class WebhookServiceImpl implements WebhookService, WebhookEventService {
           .producerName(moduleName + WEBHOOK_PUSH_EVENT)
           .payload(RecastOrchestrationUtils.toJson(webhookDTO))
           .build();
-    } else if (CREATE_BRANCH == webhookDTO.getGitDetails().getEvent()
+    }
+    // Consumer for branch hook events stream: WebhookBranchHookEventQueueProcessor (in NG manager)
+    else if (CREATE_BRANCH == webhookDTO.getGitDetails().getEvent()
         || DELETE_BRANCH == webhookDTO.getGitDetails().getEvent()) {
       return EnqueueRequest.builder()
           .topic(topic + WEBHOOK_BRANCH_HOOK_EVENT)

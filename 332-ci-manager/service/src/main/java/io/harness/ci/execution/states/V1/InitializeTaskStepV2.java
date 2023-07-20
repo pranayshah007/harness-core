@@ -640,7 +640,9 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
   }
 
   private VmDetailsOutcome getVmDetailsOutcome(VmTaskExecutionResponse vmTaskExecutionResponse) {
-    VmDetailsOutcomeBuilder builder = VmDetailsOutcome.builder().ipAddress(vmTaskExecutionResponse.getIpAddress());
+    VmDetailsOutcomeBuilder builder = VmDetailsOutcome.builder()
+                                          .ipAddress(vmTaskExecutionResponse.getIpAddress())
+                                          .poolDriverUsed(vmTaskExecutionResponse.getPoolDriverUsed());
     if (vmTaskExecutionResponse.getDelegateMetaInfo() == null
         || isEmpty(vmTaskExecutionResponse.getDelegateMetaInfo().getId())) {
       return builder.build();

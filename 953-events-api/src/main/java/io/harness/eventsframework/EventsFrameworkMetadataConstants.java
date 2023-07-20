@@ -26,6 +26,7 @@ public final class EventsFrameworkMetadataConstants {
   public static final String UPSERT_ACTION = "upsert";
   public static final String DELETE_ACTION = "delete";
   public static final String NG_USER_CLEANUP_ACTION = "ngUserCleanUp";
+  public static final String DISABLE_IP_ALLOWLIST = "disableIPAllowlist";
   public static final String FLUSH_CREATE_ACTION = "flushCreate";
 
   public static final String PROJECT_ENTITY = "project";

@@ -48,6 +48,7 @@ import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.grpc.server.PipelineServiceGrpcModule;
 import io.harness.hsqs.client.HsqsServiceClientModule;
+import io.harness.hsqs.client.beans.HsqsDequeueConfig;
 import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
@@ -149,6 +150,8 @@ import io.harness.pms.plan.creation.NodeTypeLookupServiceImpl;
 import io.harness.pms.plan.execution.PlanExecutionResource;
 import io.harness.pms.plan.execution.PlanExecutionResourceImpl;
 import io.harness.pms.plan.execution.mapper.PipelineExecutionFilterPropertiesMapper;
+import io.harness.pms.plan.execution.service.ExpressionEvaluatorService;
+import io.harness.pms.plan.execution.service.ExpressionEvaluatorServiceImpl;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.plan.execution.service.PMSExecutionServiceImpl;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
@@ -411,6 +414,7 @@ public class PipelineServiceModule extends AbstractModule {
     bind(PipelineRbacService.class).to(PipelineRbacServiceImpl.class);
     bind(PMSInputSetService.class).to(PMSInputSetServiceImpl.class);
     bind(PMSExecutionService.class).to(PMSExecutionServiceImpl.class);
+    bind(ExpressionEvaluatorService.class).to(ExpressionEvaluatorServiceImpl.class);
     bind(PMSYamlSchemaService.class).to(PMSYamlSchemaServiceImpl.class);
     bind(ApprovalNotificationHandler.class).to(ApprovalNotificationHandlerImpl.class);
     bind(PMSOpaService.class).to(PMSOpaServiceImpl.class);
@@ -750,6 +754,13 @@ public class PipelineServiceModule extends AbstractModule {
         configuration.getPlanCreatorMergeServicePoolConfig().getIdleTime(),
         configuration.getPlanCreatorMergeServicePoolConfig().getTimeUnit(),
         new ThreadFactoryBuilder().setNameFormat("PipelineExecutorService-%d").build());
+  }
+
+  @Provides
+  @Singleton
+  @Named("webhookEventHsqsDequeueConfig")
+  public HsqsDequeueConfig getWebhookEventHsqsDequeueConfig() {
+    return configuration.getWebhookEventHsqsDequeueConfig();
   }
 
   @Provides

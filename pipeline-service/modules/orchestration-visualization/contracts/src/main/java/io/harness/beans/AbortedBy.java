@@ -23,4 +23,5 @@ import lombok.experimental.FieldNameConstants;
 public class AbortedBy {
   @Schema(description = "Email id of the user who aborted the pipeline") String email;
   @Schema(description = "User name of the user who aborted the pipeline") String userName;
+  @Schema(description = "Timestamp when user aborted the pipeline") Long createdAt;
 }

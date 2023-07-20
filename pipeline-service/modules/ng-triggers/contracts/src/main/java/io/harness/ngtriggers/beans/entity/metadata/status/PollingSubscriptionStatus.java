@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -23,4 +24,6 @@ import lombok.experimental.FieldDefaults;
 public class PollingSubscriptionStatus {
   StatusResult statusResult;
   String detailedMessage;
+  List<String> lastPolled;
+  Long lastPollingUpdate;
 }

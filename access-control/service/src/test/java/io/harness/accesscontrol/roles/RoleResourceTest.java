@@ -11,7 +11,9 @@ import static io.harness.accesscontrol.AccessControlPermissions.EDIT_ROLE_PERMIS
 import static io.harness.accesscontrol.AccessControlPermissions.VIEW_ROLE_PERMISSION;
 import static io.harness.accesscontrol.AccessControlResourceTypes.ROLE;
 import static io.harness.accesscontrol.common.filter.ManagedFilter.NO_FILTER;
+import static io.harness.accesscontrol.common.filter.ManagedFilter.ONLY_CUSTOM;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.KARAN;
 
 import static junit.framework.TestCase.assertEquals;
@@ -29,6 +31,7 @@ import io.harness.accesscontrol.AccessControlTestBase;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.accesscontrol.common.filter.ManagedFilter;
 import io.harness.accesscontrol.roles.api.RoleDTO;
 import io.harness.accesscontrol.roles.api.RoleDTOMapper;
 import io.harness.accesscontrol.roles.api.RoleResource;
@@ -41,8 +44,10 @@ import io.harness.accesscontrol.scopes.harness.HarnessScopeLevel;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
 import io.harness.accesscontrol.scopes.harness.ScopeMapper;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -51,9 +56,11 @@ import io.harness.rule.Owner;
 
 import java.util.Optional;
 import javax.ws.rs.NotFoundException;
+import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
@@ -68,8 +75,10 @@ public class RoleResourceTest extends AccessControlTestBase {
   private PageRequest pageRequest;
   private String accountIdentifier;
   private String orgIdentifier;
+  private String projectIdentifier;
   private HarnessScopeParams harnessScopeParams;
   private ResourceScope resourceScope;
+  private FeatureFlagService featureFlagService;
 
   @Before
   public void setup() {
@@ -79,11 +88,13 @@ public class RoleResourceTest extends AccessControlTestBase {
     transactionTemplate = mock(TransactionTemplate.class);
     outboxService = mock(OutboxService.class);
     accessControlClient = mock(AccessControlClient.class);
-    roleResource = new RoleResourceImpl(
-        roleService, scopeService, roleDTOMapper, transactionTemplate, outboxService, accessControlClient);
+    featureFlagService = mock(FeatureFlagService.class);
+    roleResource = new RoleResourceImpl(roleService, scopeService, roleDTOMapper, transactionTemplate, outboxService,
+        accessControlClient, featureFlagService);
     pageRequest = PageRequest.builder().pageIndex(0).pageSize(50).build();
     accountIdentifier = randomAlphabetic(10);
     orgIdentifier = randomAlphabetic(10);
+    projectIdentifier = randomAlphabetic(10);
     harnessScopeParams =
         HarnessScopeParams.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build();
     resourceScope = ResourceScope.builder()
@@ -98,17 +109,129 @@ public class RoleResourceTest extends AccessControlTestBase {
   @Category(UnitTests.class)
   public void testList() {
     String searchTerm = randomAlphabetic(10);
+    HarnessScopeParams scopeParams = HarnessScopeParams.builder().accountIdentifier(accountIdentifier).build();
     doNothing()
         .when(accessControlClient)
         .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, null), VIEW_ROLE_PERMISSION);
-    String scopeIdentifier = ScopeMapper.fromParams(harnessScopeParams).toString();
-    RoleFilter roleFilter =
-        RoleFilter.builder().searchTerm(searchTerm).scopeIdentifier(scopeIdentifier).managedFilter(NO_FILTER).build();
-    when(roleService.list(pageRequest, roleFilter, true)).thenReturn(PageResponse.getEmptyPageResponse(pageRequest));
-    ResponseDTO<PageResponse<RoleResponseDTO>> response = roleResource.get(pageRequest, harnessScopeParams, searchTerm);
+    when(roleService.list(eq(pageRequest), any(), eq(true))).thenReturn(PageResponse.getEmptyPageResponse(pageRequest));
+    ResponseDTO<PageResponse<RoleResponseDTO>> response = roleResource.get(pageRequest, scopeParams, searchTerm);
     assertTrue(response.getData().isEmpty());
     verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
-    verify(roleService, times(1)).list(any(), any(), eq(true));
+
+    ArgumentCaptor<RoleFilter> captor = ArgumentCaptor.forClass(RoleFilter.class);
+    verify(roleService, times(1)).list(any(), captor.capture(), eq(true));
+    Assertions.assertThat(captor.getValue().getManagedFilter()).isEqualTo(NO_FILTER);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testListWithHideOrgLevelManagedRolesIfFFIsEnabled() {
+    String searchTerm = randomAlphabetic(10);
+    HarnessScopeParams scopeParams =
+        HarnessScopeParams.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build();
+    when(featureFlagService.isEnabled(FeatureName.PL_HIDE_ORGANIZATION_LEVEL_MANAGED_ROLE, accountIdentifier))
+        .thenReturn(true);
+    doNothing()
+        .when(accessControlClient)
+        .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, null), VIEW_ROLE_PERMISSION);
+    when(roleService.list(eq(pageRequest), any(), eq(true))).thenReturn(PageResponse.getEmptyPageResponse(pageRequest));
+    ResponseDTO<PageResponse<RoleResponseDTO>> response = roleResource.get(pageRequest, scopeParams, searchTerm);
+    assertTrue(response.getData().isEmpty());
+    verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
+    ArgumentCaptor<RoleFilter> captor = ArgumentCaptor.forClass(RoleFilter.class);
+    verify(roleService, times(1)).list(any(), captor.capture(), eq(true));
+    Assertions.assertThat(captor.getValue().getManagedFilter()).isEqualTo(ONLY_CUSTOM);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testListToShowOrgLevelManagedRolesIfFFIsDisabled() {
+    String searchTerm = randomAlphabetic(10);
+    HarnessScopeParams scopeParams =
+        HarnessScopeParams.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build();
+    when(featureFlagService.isEnabled(FeatureName.PL_HIDE_ORGANIZATION_LEVEL_MANAGED_ROLE, accountIdentifier))
+        .thenReturn(false);
+    doNothing()
+        .when(accessControlClient)
+        .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, null), VIEW_ROLE_PERMISSION);
+    when(roleService.list(eq(pageRequest), any(), eq(true))).thenReturn(PageResponse.getEmptyPageResponse(pageRequest));
+    ResponseDTO<PageResponse<RoleResponseDTO>> response = roleResource.get(pageRequest, scopeParams, searchTerm);
+    assertTrue(response.getData().isEmpty());
+    verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
+    ArgumentCaptor<RoleFilter> captor = ArgumentCaptor.forClass(RoleFilter.class);
+    verify(roleService, times(1)).list(any(), captor.capture(), eq(true));
+    Assertions.assertThat(captor.getValue().getManagedFilter()).isEqualTo(NO_FILTER);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testListToShowOrgLevelManagedRolesIfFFIsEnabledForProject() {
+    String searchTerm = randomAlphabetic(10);
+    HarnessScopeParams scopeParams =
+        HarnessScopeParams.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build();
+    when(featureFlagService.isEnabled(FeatureName.PL_HIDE_PROJECT_LEVEL_MANAGED_ROLE, accountIdentifier))
+        .thenReturn(true);
+    doNothing()
+        .when(accessControlClient)
+        .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, null), VIEW_ROLE_PERMISSION);
+    when(roleService.list(eq(pageRequest), any(), eq(true))).thenReturn(PageResponse.getEmptyPageResponse(pageRequest));
+    ResponseDTO<PageResponse<RoleResponseDTO>> response = roleResource.get(pageRequest, scopeParams, searchTerm);
+    assertTrue(response.getData().isEmpty());
+    verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
+    ArgumentCaptor<RoleFilter> captor = ArgumentCaptor.forClass(RoleFilter.class);
+    verify(roleService, times(1)).list(any(), captor.capture(), eq(true));
+    Assertions.assertThat(captor.getValue().getManagedFilter()).isEqualTo(NO_FILTER);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testListWithHideProjectLevelManagedRolesIfFFIsEnabled() {
+    String searchTerm = randomAlphabetic(10);
+    HarnessScopeParams scopeParams = HarnessScopeParams.builder()
+                                         .accountIdentifier(accountIdentifier)
+                                         .orgIdentifier(orgIdentifier)
+                                         .projectIdentifier(projectIdentifier)
+                                         .build();
+    when(featureFlagService.isEnabled(FeatureName.PL_HIDE_PROJECT_LEVEL_MANAGED_ROLE, accountIdentifier))
+        .thenReturn(true);
+    doNothing()
+        .when(accessControlClient)
+        .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, null), VIEW_ROLE_PERMISSION);
+    when(roleService.list(eq(pageRequest), any(), eq(true))).thenReturn(PageResponse.getEmptyPageResponse(pageRequest));
+    ResponseDTO<PageResponse<RoleResponseDTO>> response = roleResource.get(pageRequest, scopeParams, searchTerm);
+    assertTrue(response.getData().isEmpty());
+    verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
+    ArgumentCaptor<RoleFilter> captor = ArgumentCaptor.forClass(RoleFilter.class);
+    verify(roleService, times(1)).list(any(), captor.capture(), eq(true));
+    Assertions.assertThat(captor.getValue().getManagedFilter()).isEqualTo(ONLY_CUSTOM);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testListToShowProjectLevelManagedRolesIfFFIsDisabled() {
+    String searchTerm = randomAlphabetic(10);
+    HarnessScopeParams scopeParams = HarnessScopeParams.builder()
+                                         .accountIdentifier(accountIdentifier)
+                                         .orgIdentifier(orgIdentifier)
+                                         .projectIdentifier(projectIdentifier)
+                                         .build();
+    when(featureFlagService.isEnabled(FeatureName.PL_HIDE_PROJECT_LEVEL_MANAGED_ROLE, accountIdentifier))
+        .thenReturn(false);
+    doNothing()
+        .when(accessControlClient)
+        .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, null), VIEW_ROLE_PERMISSION);
+    when(roleService.list(eq(pageRequest), any(), eq(true))).thenReturn(PageResponse.getEmptyPageResponse(pageRequest));
+    ResponseDTO<PageResponse<RoleResponseDTO>> response = roleResource.get(pageRequest, scopeParams, searchTerm);
+    assertTrue(response.getData().isEmpty());
+    verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
+    ArgumentCaptor<RoleFilter> captor = ArgumentCaptor.forClass(RoleFilter.class);
+    verify(roleService, times(1)).list(any(), captor.capture(), eq(true));
+    Assertions.assertThat(captor.getValue().getManagedFilter()).isEqualTo(NO_FILTER);
   }
 
   @Test
@@ -130,6 +253,142 @@ public class RoleResourceTest extends AccessControlTestBase {
     verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
     verify(roleService, times(1)).get(any(), any(), any());
     verify(roleDTOMapper, times(1)).toResponseDTO(any());
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testGetToHideOrgLevelManagedRolesIfFFIsEnabled() {
+    String identifier = randomAlphabetic(10);
+    HarnessScopeParams scopeParams =
+        HarnessScopeParams.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build();
+    when(featureFlagService.isEnabled(FeatureName.PL_HIDE_ORGANIZATION_LEVEL_MANAGED_ROLE, accountIdentifier))
+        .thenReturn(true);
+    doNothing()
+        .when(accessControlClient)
+        .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, null), VIEW_ROLE_PERMISSION);
+    String scopeIdentifier = ScopeMapper.fromParams(scopeParams).toString();
+    Role role = Role.builder().scopeIdentifier(scopeIdentifier).identifier(identifier).build();
+    when(roleService.get(eq(identifier), eq(scopeIdentifier), any())).thenReturn(Optional.of(role));
+    RoleResponseDTO roleResponseDTO =
+        RoleResponseDTO.builder().role(RoleDTO.builder().identifier(identifier).build()).build();
+    when(roleDTOMapper.toResponseDTO(role)).thenReturn(roleResponseDTO);
+
+    roleResource.get(identifier, scopeParams);
+
+    ArgumentCaptor<ManagedFilter> captor = ArgumentCaptor.forClass(ManagedFilter.class);
+    verify(roleService, times(1)).get(any(), any(), captor.capture());
+    Assertions.assertThat(captor.getValue()).isEqualTo(ONLY_CUSTOM);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testGetToShowOrgLevelManagedRolesIfFFIsDisabled() {
+    String identifier = randomAlphabetic(10);
+    HarnessScopeParams scopeParams =
+        HarnessScopeParams.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build();
+    when(featureFlagService.isEnabled(FeatureName.PL_HIDE_ORGANIZATION_LEVEL_MANAGED_ROLE, accountIdentifier))
+        .thenReturn(false);
+    doNothing()
+        .when(accessControlClient)
+        .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, null), VIEW_ROLE_PERMISSION);
+    String scopeIdentifier = ScopeMapper.fromParams(scopeParams).toString();
+    Role role = Role.builder().scopeIdentifier(scopeIdentifier).identifier(identifier).build();
+    when(roleService.get(eq(identifier), eq(scopeIdentifier), any())).thenReturn(Optional.of(role));
+    RoleResponseDTO roleResponseDTO =
+        RoleResponseDTO.builder().role(RoleDTO.builder().identifier(identifier).build()).build();
+    when(roleDTOMapper.toResponseDTO(role)).thenReturn(roleResponseDTO);
+
+    roleResource.get(identifier, scopeParams);
+
+    ArgumentCaptor<ManagedFilter> captor = ArgumentCaptor.forClass(ManagedFilter.class);
+    verify(roleService, times(1)).get(any(), any(), captor.capture());
+    Assertions.assertThat(captor.getValue()).isEqualTo(NO_FILTER);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testGetToShowOrgLevelManagedRolesIfFFIsEnabledForProjectLevel() {
+    String identifier = randomAlphabetic(10);
+    HarnessScopeParams scopeParams =
+        HarnessScopeParams.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build();
+    when(featureFlagService.isEnabled(FeatureName.PL_HIDE_PROJECT_LEVEL_MANAGED_ROLE, accountIdentifier))
+        .thenReturn(true);
+    doNothing()
+        .when(accessControlClient)
+        .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, null), VIEW_ROLE_PERMISSION);
+    String scopeIdentifier = ScopeMapper.fromParams(scopeParams).toString();
+    Role role = Role.builder().scopeIdentifier(scopeIdentifier).identifier(identifier).build();
+    when(roleService.get(eq(identifier), eq(scopeIdentifier), any())).thenReturn(Optional.of(role));
+    RoleResponseDTO roleResponseDTO =
+        RoleResponseDTO.builder().role(RoleDTO.builder().identifier(identifier).build()).build();
+    when(roleDTOMapper.toResponseDTO(role)).thenReturn(roleResponseDTO);
+
+    roleResource.get(identifier, scopeParams);
+
+    ArgumentCaptor<ManagedFilter> captor = ArgumentCaptor.forClass(ManagedFilter.class);
+    verify(roleService, times(1)).get(any(), any(), captor.capture());
+    Assertions.assertThat(captor.getValue()).isEqualTo(NO_FILTER);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testGetToHideProjectLevelManagedRolesIfFFIsEnabled() {
+    String identifier = randomAlphabetic(10);
+    HarnessScopeParams scopeParams = HarnessScopeParams.builder()
+                                         .accountIdentifier(accountIdentifier)
+                                         .orgIdentifier(orgIdentifier)
+                                         .projectIdentifier(projectIdentifier)
+                                         .build();
+    when(featureFlagService.isEnabled(FeatureName.PL_HIDE_PROJECT_LEVEL_MANAGED_ROLE, accountIdentifier))
+        .thenReturn(true);
+    doNothing()
+        .when(accessControlClient)
+        .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, null), VIEW_ROLE_PERMISSION);
+    String scopeIdentifier = ScopeMapper.fromParams(scopeParams).toString();
+    Role role = Role.builder().scopeIdentifier(scopeIdentifier).identifier(identifier).build();
+    when(roleService.get(eq(identifier), eq(scopeIdentifier), any())).thenReturn(Optional.of(role));
+    RoleResponseDTO roleResponseDTO =
+        RoleResponseDTO.builder().role(RoleDTO.builder().identifier(identifier).build()).build();
+    when(roleDTOMapper.toResponseDTO(role)).thenReturn(roleResponseDTO);
+
+    roleResource.get(identifier, scopeParams);
+
+    ArgumentCaptor<ManagedFilter> captor = ArgumentCaptor.forClass(ManagedFilter.class);
+    verify(roleService, times(1)).get(any(), any(), captor.capture());
+    Assertions.assertThat(captor.getValue()).isEqualTo(ONLY_CUSTOM);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testGetToShowProjectLevelManagedRolesIfFFIsDisabled() {
+    String identifier = randomAlphabetic(10);
+    HarnessScopeParams scopeParams = HarnessScopeParams.builder()
+                                         .accountIdentifier(accountIdentifier)
+                                         .orgIdentifier(orgIdentifier)
+                                         .projectIdentifier(projectIdentifier)
+                                         .build();
+    when(featureFlagService.isEnabled(FeatureName.PL_HIDE_PROJECT_LEVEL_MANAGED_ROLE, accountIdentifier))
+        .thenReturn(false);
+    doNothing()
+        .when(accessControlClient)
+        .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, null), VIEW_ROLE_PERMISSION);
+    String scopeIdentifier = ScopeMapper.fromParams(scopeParams).toString();
+    Role role = Role.builder().scopeIdentifier(scopeIdentifier).identifier(identifier).build();
+    when(roleService.get(eq(identifier), eq(scopeIdentifier), any())).thenReturn(Optional.of(role));
+    RoleResponseDTO roleResponseDTO =
+        RoleResponseDTO.builder().role(RoleDTO.builder().identifier(identifier).build()).build();
+    when(roleDTOMapper.toResponseDTO(role)).thenReturn(roleResponseDTO);
+
+    roleResource.get(identifier, scopeParams);
+
+    ArgumentCaptor<ManagedFilter> captor = ArgumentCaptor.forClass(ManagedFilter.class);
+    verify(roleService, times(1)).get(any(), any(), captor.capture());
+    Assertions.assertThat(captor.getValue()).isEqualTo(NO_FILTER);
   }
 
   @Test(expected = NotFoundException.class)

@@ -17,18 +17,17 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.verify;
 
-import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.CDNGTestBase;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.gitops.steps.GitopsClustersOutcome;
 import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -37,10 +36,12 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
+import com.google.inject.Inject;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import junitparams.JUnitParamsRunner;
+import org.joor.Reflect;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -51,7 +52,8 @@ import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.GITOPS)
 @RunWith(JUnitParamsRunner.class)
-public class UpdateReleaseRepoStepTest extends CategoryTest {
+public class UpdateReleaseRepoStepTest extends CDNGTestBase {
+  @Inject private CDExpressionResolver cdExpressionResolver;
   @Mock private EngineExpressionService engineExpressionService;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock protected OutcomeService outcomeService;
@@ -60,6 +62,8 @@ public class UpdateReleaseRepoStepTest extends CategoryTest {
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
+    Reflect.on(cdExpressionResolver).set("engineExpressionService", engineExpressionService);
+    Reflect.on(step).set("cdExpressionResolver", cdExpressionResolver);
   }
 
   @Test
@@ -68,9 +72,9 @@ public class UpdateReleaseRepoStepTest extends CategoryTest {
   public void testBuildFilePathsToVariablesMap() {
     Ambiance ambiance = Ambiance.newBuilder().build();
 
-    doAnswer(invocation -> invocation.getArgument(1, String.class))
+    doAnswer(invocation -> invocation.getArgument(1))
         .when(engineExpressionService)
-        .renderExpression(eq(ambiance), any(), eq(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED));
+        .renderExpression(eq(ambiance), any(), any());
     Map<String, Object> variables = new HashMap<>();
     variables.put("config1", ParameterField.builder().value("VALUE1").build());
     variables.put("config2", ParameterField.builder().expression(true).expressionValue("<+cluster.name>").build());
@@ -122,10 +126,6 @@ public class UpdateReleaseRepoStepTest extends CategoryTest {
     assertThat(fileVariables2.get("config1")).isEqualTo("VALUE1");
     assertThat(fileVariables2.get("config2")).isEqualTo("CLUSTER_NAME2");
     assertThat(fileVariables2.get("config3")).isEqualTo("ENV_NAME2");
-    verify(engineExpressionService)
-        .renderExpression(ambiance, "ENV_NAME/<+variable.foo>", ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-    verify(engineExpressionService)
-        .renderExpression(ambiance, "ENV_NAME2/<+variable.foo>", ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
   }
 
   @Test
@@ -134,9 +134,9 @@ public class UpdateReleaseRepoStepTest extends CategoryTest {
   public void testBuildFilePathsToVariablesMapForEnvGroup() {
     Ambiance ambiance = Ambiance.newBuilder().build();
 
-    doAnswer(invocation -> invocation.getArgument(1, String.class))
+    doAnswer(invocation -> invocation.getArgument(1))
         .when(engineExpressionService)
-        .renderExpression(eq(ambiance), any(), eq(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED));
+        .renderExpression(eq(ambiance), any(), any());
     Map<String, Object> variables = new HashMap<>();
     variables.put("config1", ParameterField.builder().value("VALUE1").build());
     variables.put("configNum", ParameterField.builder().value("3.0").build());
@@ -201,10 +201,6 @@ public class UpdateReleaseRepoStepTest extends CategoryTest {
     assertThat(fileVariables2.get("config2")).isEqualTo("CLUSTER_NAME2");
     assertThat(fileVariables2.get("config3")).isEqualTo("ENV_NAME2");
     assertThat(fileVariables2.get("config5")).isEqualTo("ENV_GROUP");
-    verify(engineExpressionService)
-        .renderExpression(ambiance, "ENV_NAME/<+variable.foo>", ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-    verify(engineExpressionService)
-        .renderExpression(ambiance, "ENV_NAME2/<+variable.foo>", ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
   }
 
   @Test
@@ -213,9 +209,9 @@ public class UpdateReleaseRepoStepTest extends CategoryTest {
   public void testBuildFilePathsToVariablesMapForClusterVar() {
     Ambiance ambiance = Ambiance.newBuilder().build();
 
-    doAnswer(invocation -> invocation.getArgument(1, String.class))
+    doAnswer(invocation -> invocation.getArgument(1))
         .when(engineExpressionService)
-        .renderExpression(eq(ambiance), any(), eq(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED));
+        .renderExpression(eq(ambiance), any(), any());
     Map<String, Object> variables = new HashMap<>();
     variables.put("config1", ParameterField.builder().value("VALUE1").build());
     variables.put("config2", "VALUE2");
@@ -262,9 +258,9 @@ public class UpdateReleaseRepoStepTest extends CategoryTest {
   public void testBuildFilePathsToVariablesMapForEmptyVar() {
     Ambiance ambiance = Ambiance.newBuilder().build();
 
-    doAnswer(invocation -> invocation.getArgument(1, String.class))
+    doAnswer(invocation -> invocation.getArgument(1))
         .when(engineExpressionService)
-        .renderExpression(eq(ambiance), any(), eq(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED));
+        .renderExpression(eq(ambiance), any(), any());
     Map<String, Object> variables = new HashMap<>();
     variables.put("config1", ParameterField.builder().value("null").build());
     variables.put("config2", ParameterField.builder().value("").build());

@@ -541,4 +541,12 @@ queueServiceClientConfig:
   envNamespace: ${EVENTS_FRAMEWORK_ENV_NAMESPACE:-localhost}
   topic: ${HSQS_TOPIC:-ng}
 
+webhookPushEventHsqsDequeueConfig:
+  batchSize: ${WEBHOOK_PUSH_EVENT_DEQUE_BATCH_SIZE:-20}
+  threadSleepTimeInMillis: ${WEBHOOK_PUSH_EVENT_DEQUE_THREAD_SLEEP_TIME_IN_MILLIS:-30}
+
+webhookBranchHookEventHsqsDequeueConfig:
+  batchSize: ${WEBHOOK_BRANCH_HOOK_EVENT_DEQUE_BATCH_SIZE:-20}
+  threadSleepTimeInMillis: ${WEBHOOK_BRANCH_HOOK_EVENT_DEQUE_THREAD_SLEEP_TIME_IN_MILLIS:-30}
+
 

@@ -13,6 +13,7 @@ java_library(
     deps = [
         "//:lombok",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/beans/logstreaming:module",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/beans/progresstaskstreaming:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/expression:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/k8s/openshift:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/git:module",

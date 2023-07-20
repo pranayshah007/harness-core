@@ -253,7 +253,7 @@ public class OnboardingServiceImpl implements OnboardingService {
         Collections.singletonList(backstageCatalogEntityInitial.getSecond().getSecond()
             + backstageCatalogEntityInitial.getFirst().getMetadata().getName() + YAML_FILE_EXTENSION));
 
-    createCatalogInfraConnectorInBackstageK8S(accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType,
+    createCatalogInfraConnectorInBackstageK8S(accountIdentifier, catalogInfraConnectorType,
         connectorProcessor.getConnectorInfo(accountIdentifier, catalogConnectorInfo.getConnector().getIdentifier()));
 
     transactionHelper.performTransaction(() -> {
@@ -500,8 +500,7 @@ public class OnboardingServiceImpl implements OnboardingService {
             + YAML_FILE_EXTENSION));
     registerLocationInBackstage(accountIdentifier, BACKSTAGE_LOCATION_URL_TYPE, locationTargets);
 
-    createCatalogInfraConnectorInBackstageK8S(
-        accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType, connectorInfoDTO);
+    createCatalogInfraConnectorInBackstageK8S(accountIdentifier, catalogInfraConnectorType, connectorInfoDTO);
 
     saveCatalogConnector(accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType, connectorInfoDTO);
     saveStatusInfo(accountIdentifier, StatusType.ONBOARDING.name(), StatusInfo.CurrentStatusEnum.COMPLETED,
@@ -786,12 +785,13 @@ public class OnboardingServiceImpl implements OnboardingService {
     }
   }
 
-  private void createCatalogInfraConnectorInBackstageK8S(String accountIdentifier,
-      CatalogConnectorInfo catalogConnectorInfo, String catalogInfraConnectorType, ConnectorInfoDTO connectorInfoDTO) {
+  private void createCatalogInfraConnectorInBackstageK8S(
+      String accountIdentifier, String catalogInfraConnectorType, ConnectorInfoDTO connectorInfoDTO) {
     try {
+      Set<String> delegateSelectors = DelegateSelectorsUtils.extractDelegateSelectors(connectorInfoDTO);
+      String host = GitIntegrationUtils.getHostForConnector(connectorInfoDTO);
       gitIntegrationService.createOrUpdateConnectorInBackstage(accountIdentifier, connectorInfoDTO,
-          CatalogInfraConnectorType.valueOf(catalogInfraConnectorType),
-          catalogConnectorInfo.getConnector().getIdentifier());
+          CatalogInfraConnectorType.valueOf(catalogInfraConnectorType), host, delegateSelectors);
     } catch (Exception e) {
       log.error("Error in creating catalog connector in backstage. Error = {}", e.getMessage(), e);
       throw new InvalidRequestException("Unable to create catalog connector in backstage - " + e.getMessage());

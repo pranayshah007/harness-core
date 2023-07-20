@@ -22,6 +22,7 @@ java_library(
         "//990-commons-test:module",
         "//idp-service/src/main/java/io/harness/idp/envvariable:module",
         "//idp-service/src/main/java/io/harness/idp/events:module",
+        "//idp-service/src/main/java/io/harness/idp/events/eventlisteners:module",
         "//idp-service/src/main/java/io/harness/idp/gitintegration/service:module",
         "//idp-service/src/main/java/io/harness/idp/user:module",
     ],

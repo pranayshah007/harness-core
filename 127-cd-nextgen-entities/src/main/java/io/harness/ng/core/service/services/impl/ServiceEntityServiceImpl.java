@@ -53,6 +53,7 @@ import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.ng.core.service.entity.ServiceInputsMergedResponseDto;
+import io.harness.ng.core.service.mappers.ManifestFilterHelper;
 import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.services.validators.ServiceEntityValidator;
@@ -1084,14 +1085,14 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
             String.format("Yaml provided for service %s does not have service root field.", serviceIdentifier));
       }
 
-      YamlField serviceDefinitionField = serviceYamlField.getNode().getField(YamlTypes.SERVICE_DEFINITION);
-      YamlField manifestsField = ServiceFilterHelper.getManifestsNodeFromServiceDefinitionYaml(serviceDefinitionField);
+      YamlField manifestsField =
+          ManifestFilterHelper.getManifestsNodeFromServiceYaml(serviceYamlField, serviceIdentifier);
       if (manifestsField == null) {
         return new ManifestsResponseDTO();
       }
 
-      return new ManifestsResponseDTO().identifiers(ServiceFilterHelper.getManifestIdentifiersFilteredOnServiceType(
-          manifestsField, serviceDefinitionField.getType()));
+      return new ManifestsResponseDTO().identifiers(
+          ManifestFilterHelper.getManifestIdentifiersFilteredOnManifestType(manifestsField));
     } catch (IOException e) {
       throw new InvalidRequestException(
           String.format("Error occurred while fetching list of manifests for service %s", serviceIdentifier), e);

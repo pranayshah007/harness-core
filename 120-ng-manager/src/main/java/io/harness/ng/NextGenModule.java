@@ -135,6 +135,7 @@ import io.harness.govern.ProviderModule;
 import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.grpc.client.GrpcClientConfig;
+import io.harness.hsqs.client.beans.HsqsDequeueConfig;
 import io.harness.licensing.LicenseModule;
 import io.harness.licensing.event.ModuleLicenseEventListener;
 import io.harness.lock.DistributedLockImplementation;
@@ -290,6 +291,7 @@ import io.harness.outbox.TransactionOutboxModule;
 import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.persistence.UserProvider;
 import io.harness.pipeline.remote.PipelineRemoteClientModule;
+import io.harness.pipeline.triggers.TriggersClientModule;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.expression.NoopEngineExpressionServiceImpl;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
@@ -598,6 +600,20 @@ public class NextGenModule extends AbstractModule {
         new ThreadFactoryBuilder().setNameFormat("log-client-pool-%d").build());
   }
 
+  @Provides
+  @Singleton
+  @Named("webhookBranchHookEventHsqsDequeueConfig")
+  public HsqsDequeueConfig getWebhookBranchHookEventHsqsDequeueConfig() {
+    return appConfig.getWebhookBranchHookEventHsqsDequeueConfig();
+  }
+
+  @Provides
+  @Singleton
+  @Named("webhookPushEventHsqsDequeueConfig")
+  public HsqsDequeueConfig getWebhookPushEventHsqsDequeueConfig() {
+    return appConfig.getWebhookPushEventHsqsDequeueConfig();
+  }
+
   @Override
   protected void configure() {
     install(VersionModule.getInstance());
@@ -755,6 +771,9 @@ public class NextGenModule extends AbstractModule {
         appConfig.getNextGenConfig().getManagerServiceSecret(), NG_MANAGER.getServiceId()));
     install(new AgentNgManagerCgManagerClientModule(appConfig.getManagerClientConfig(),
         appConfig.getNextGenConfig().getManagerServiceSecret(), NG_MANAGER.getServiceId()));
+    install(new TriggersClientModule(
+        ServiceHttpClientConfig.builder().baseUrl(appConfig.getPipelineServiceClientConfig().getBaseUrl()).build(),
+        appConfig.getNextGenConfig().getPipelineServiceSecret(), NG_MANAGER.toString()));
     bind(NgGlobalKmsService.class).to(NgGlobalKmsServiceImpl.class);
     bind(FreezeCRUDService.class).to(FreezeCRUDServiceImpl.class);
     bind(FreezeEvaluateService.class).to(FreezeEvaluateServiceImpl.class);

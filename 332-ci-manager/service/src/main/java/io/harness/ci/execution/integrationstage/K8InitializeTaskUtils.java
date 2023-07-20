@@ -114,6 +114,7 @@ import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.validation.InputSetValidatorFactory;
 import io.harness.stoserviceclient.STOServiceUtils;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.core.timeout.Timeout;
@@ -138,6 +139,7 @@ import org.jetbrains.annotations.NotNull;
 @OwnedBy(HarnessTeam.CI)
 public class K8InitializeTaskUtils {
   @Inject private ConnectorUtils connectorUtils;
+  @Inject private InputSetValidatorFactory inputSetValidatorFactory;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Inject private CILogServiceUtils logServiceUtils;
@@ -459,6 +461,7 @@ public class K8InitializeTaskUtils {
                                         .fetchConnector(true)
                                         .build())
             .connectorUtils(connectorUtils)
+            .inputSetValidatorFactory(inputSetValidatorFactory)
             .build();
 
     return githubApiTokenEvaluator.resolve(initializeStepInfo, ngAccess, ambiance.getExpressionFunctorToken());

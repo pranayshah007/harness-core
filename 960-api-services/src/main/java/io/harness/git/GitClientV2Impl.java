@@ -637,9 +637,7 @@ public class GitClientV2Impl implements GitClientV2 {
     CommitResult commitResult = revert(revertRequest);
 
     PushRequest pushRequest = PushRequest.mapFromRevertAndPushRequest(request);
-    RevertAndPushResult revertAndPushResult =
-        RevertAndPushResult.builder().gitCommitResult(commitResult).gitPushResult(push(pushRequest)).build();
-    return revertAndPushResult;
+    return RevertAndPushResult.builder().gitCommitResult(commitResult).gitPushResult(push(pushRequest)).build();
   }
 
   protected CommitResult revert(RevertRequest request) {

@@ -6,7 +6,9 @@
  */
 
 package io.harness.cdng.artifact.resources.ami;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.delegate.task.artifacts.ami.AMIFilter;
 import io.harness.delegate.task.artifacts.ami.AMITag;
@@ -15,6 +17,7 @@ import software.wings.helpers.ext.jenkins.BuildDetails;
 
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 public interface AMIResourceService {
   List<BuildDetails> listVersions(IdentifierRef connectorRef, String accountId, String orgIdentifier,
       String projectIdentifier, String region, List<AMITag> tags, List<AMIFilter> filters, String versionRegex);

@@ -38,6 +38,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.plugin.ContainerPluginParseException;
+import io.harness.pms.sdk.core.plugin.ContainerStepExecutionResponseHelper;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -70,11 +71,13 @@ public class ServerlessDownloadManifestsStepHelper {
 
   @Inject private ServerlessV2PluginInfoProviderHelper serverlessV2PluginInfoProviderHelper;
 
+  @Inject private ContainerStepExecutionResponseHelper containerStepExecutionResponseHelper;
+
   @Inject DownloadManifestsCommonHelper downloadManifestsCommonHelper;
 
   public AsyncExecutableResponse executeAsyncAfterRbac(
       Ambiance ambiance, StepInputPackage inputPackage, GitCloneStep gitCloneStep) {
-    ManifestsOutcome manifestsOutcome = downloadManifestsCommonHelper.fetchManifestsOutcome(ambiance);
+    ManifestsOutcome manifestsOutcome = serverlessV2PluginInfoProviderHelper.fetchManifestsOutcome(ambiance);
 
     AsyncExecutableResponse samDirectoryAsyncExecutableResponse =
         getAsyncExecutableResponseForServerlessAwsLambdaManifest(
@@ -137,8 +140,7 @@ public class ServerlessDownloadManifestsStepHelper {
   }
 
   public StepResponse handleAsyncResponse(Ambiance ambiance, Map<String, ResponseData> responseDataMap) {
-    ManifestsOutcome manifestsOutcome =
-        (ManifestsOutcome) outcomeService.resolveOptional(ambiance, getOutcomeRefObject()).getOutcome();
+    ManifestsOutcome manifestsOutcome = serverlessV2PluginInfoProviderHelper.fetchManifestsOutcome(ambiance);
 
     handleResponseForValuesManifest(ambiance, responseDataMap, manifestsOutcome);
 
@@ -173,6 +175,8 @@ public class ServerlessDownloadManifestsStepHelper {
     if (valuesManifestOutcome != null) {
       ServerlessV2ValuesYamlDataOutcomeBuilder serverlessValuesYamlDataOutcomeBuilder =
           ServerlessV2ValuesYamlDataOutcome.builder();
+
+      containerStepExecutionResponseHelper.deserializeResponse(responseDataMap);
 
       for (Map.Entry<String, ResponseData> entry : responseDataMap.entrySet()) {
         ResponseData responseData = entry.getValue();
@@ -226,10 +230,7 @@ public class ServerlessDownloadManifestsStepHelper {
 
     List<PluginCreationResponseWrapper> pluginCreationResponseWrapperList = new ArrayList<>();
 
-    ManifestsOutcome manifestsOutcome =
-        (ManifestsOutcome) outcomeService
-            .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.MANIFESTS))
-            .getOutcome();
+    ManifestsOutcome manifestsOutcome = serverlessV2PluginInfoProviderHelper.fetchManifestsOutcome(ambiance);
 
     PluginCreationResponseWrapper pluginCreationResponseWrapper =
         getPluginCreationResponseWrapperForServerlessAwsLambdaManifest(

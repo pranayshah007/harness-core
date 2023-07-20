@@ -200,6 +200,7 @@ io.harness.beans.steps.outcome.CIStepArtifactOutcome
 io.harness.beans.yaml.extended.TIPythonVersion
 io.harness.beans.yaml.extended.reports.V1.Report
 io.harness.yaml.core.failurestrategy.retry.RetryFailureSpecConfig
+io.harness.yaml.core.failurestrategy.retry.RetryStepGroupFailureSpecConfig
 io.harness.beans.steps.stepinfo.RestoreCacheS3StepInfo
 io.harness.plancreator.steps.http.HttpStepNode
 io.harness.yaml.core.failurestrategy.rollback.StepGroupFailureActionConfig
@@ -327,6 +328,7 @@ io.harness.delegate.beans.connector.k8Connector.KubernetesAuthDTO
 io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO
 io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO
 io.harness.delegate.beans.logstreaming.UnitProgressData
+io.harness.delegate.beans.helm.HelmDeployProgressData
 io.harness.steps.SectionStepSweepingOutput
 io.harness.beans.Scope
 io.harness.spotinst.model.ElastiGroup

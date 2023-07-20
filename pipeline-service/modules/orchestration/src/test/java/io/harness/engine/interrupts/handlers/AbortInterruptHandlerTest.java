@@ -104,6 +104,8 @@ public class AbortInterruptHandlerTest extends OrchestrationTestBase {
              Status.DISCONTINUING, null, EnumSet.noneOf(Status.class)))
         .thenReturn(NodeExecution.builder().uuid("neUuid").build());
     when(interruptService.save(interruptWithNodeExecutionId)).thenReturn(interruptWithNodeExecutionId);
+    when(interruptService.markProcessed(interruptUuid, PROCESSED_SUCCESSFULLY))
+        .thenReturn(interruptWithNodeExecutionId);
     Interrupt handledInterrupt = abortInterruptHandler.registerInterrupt(interruptWithNodeExecutionId);
 
     ArgumentCaptor<NodeExecution> nodeExecutionArgumentCaptor = ArgumentCaptor.forClass(NodeExecution.class);

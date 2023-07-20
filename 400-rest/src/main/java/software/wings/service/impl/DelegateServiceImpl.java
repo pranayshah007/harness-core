@@ -171,7 +171,6 @@ import io.harness.persistence.HPersistence;
 import io.harness.persistence.UuidAware;
 import io.harness.reflection.ReflectionUtils;
 import io.harness.serializer.JsonUtils;
-import io.harness.serializer.KryoSerializer;
 import io.harness.service.intfc.AgentMtlsEndpointService;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateCallbackRegistry;
@@ -383,7 +382,6 @@ public class DelegateServiceImpl implements DelegateService {
   @Inject private SystemEnvironment sysenv;
   @Inject private DelegateSyncService delegateSyncService;
   @Inject private DelegateTaskService delegateTaskService;
-  @Inject private KryoSerializer kryoSerializer;
   @Inject private DelegateCallbackRegistry delegateCallbackRegistry;
   @Inject private EmailNotificationService emailNotificationService;
   @Inject private DelegateGrpcConfig delegateGrpcConfig;
@@ -3969,15 +3967,6 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   @Override
-  public String queueTask(DelegateTask task) {
-    if (task.getUuid() == null) {
-      task.setUuid(delegateTaskMigrationHelper.generateDelegateTaskUUID());
-    }
-    log.debug("Task id [{}] has wait Id [{}], task Object: [{}]", task.getUuid(), task.getWaitId(), task);
-    return delegateTaskServiceClassic.queueTask(task);
-  }
-
-  @Override
   public String queueTaskV2(DelegateTask task) {
     if (task.getUuid() == null) {
       task.setUuid(delegateTaskMigrationHelper.generateDelegateTaskUUID());
@@ -3988,22 +3977,9 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   @Override
-  public void scheduleSyncTask(DelegateTask task) {
-    delegateTaskServiceClassic.scheduleSyncTask(task);
-  }
-
-  @Override
   public void scheduleSyncTaskV2(DelegateTask task) {
     copyTaskDataToTaskDataV2(task);
     delegateTaskServiceClassic.scheduleSyncTaskV2(task);
-  }
-
-  @Override
-  public <T extends DelegateResponseData> T executeTask(DelegateTask task) throws InterruptedException {
-    if (task.getUuid() == null) {
-      task.setUuid(delegateTaskMigrationHelper.generateDelegateTaskUUID());
-    }
-    return delegateTaskServiceClassic.executeTask(task);
   }
 
   @Override
@@ -4058,18 +4034,8 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   @Override
-  public DelegateTask abortTask(String accountId, String delegateTaskId) {
-    return delegateTaskServiceClassic.abortTask(accountId, delegateTaskId);
-  }
-
-  @Override
   public DelegateTask abortTaskV2(String accountId, String delegateTaskId) {
     return delegateTaskServiceClassic.abortTaskV2(accountId, delegateTaskId);
-  }
-
-  @Override
-  public String expireTask(String accountId, String delegateTaskId) {
-    return delegateTaskServiceClassic.expireTask(accountId, delegateTaskId);
   }
 
   @Override

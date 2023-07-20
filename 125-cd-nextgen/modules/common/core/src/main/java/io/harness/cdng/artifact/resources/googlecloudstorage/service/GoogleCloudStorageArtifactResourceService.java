@@ -6,12 +6,15 @@
  */
 
 package io.harness.cdng.artifact.resources.googlecloudstorage.service;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.resources.googlecloudstorage.dtos.GoogleCloudStorageBucketDetails;
 
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 public interface GoogleCloudStorageArtifactResourceService {
   List<GoogleCloudStorageBucketDetails> listGcsBuckets(
       IdentifierRef connectorRef, String accountId, String orgIdentifier, String projectIdentifier, String project);

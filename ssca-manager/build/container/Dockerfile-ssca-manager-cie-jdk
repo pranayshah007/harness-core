@@ -8,15 +8,16 @@
 FROM us.gcr.io/platform-205701/ubi/ubi-java:8.7 as base
 
 # Add the capsule JAR and config.yml
-
+COPY --chown=65534:65534 ssca-manager-capsule.jar /opt/harness/
+COPY --chown=65534:65534 ssca-manager-config.yml /opt/harness/
 COPY --chown=65534:65534 protocol.info /opt/harness/
 COPY --chown=65534:65534 default.jfc /opt/harness/
 COPY --chown=65534:65534 profile.jfc /opt/harness/
 
 COPY --chown=65534:65534 scripts /opt/harness
 
-CMD [ "./run.sh" ]
-
+RUN chmod +x /opt/harness/*.sh
+CMD [ "/opt/harness/run.sh" ]
 
 ############################ON PREM#########################
 FROM base as onprem

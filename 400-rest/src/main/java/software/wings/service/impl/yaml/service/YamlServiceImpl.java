@@ -915,7 +915,8 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
 
     // do not process commits which exceed limits
     // if you process them, the processing throws validation errors which populates the Alerts page with GitSyncErrors
-    if (failedCommitStore.didExceedLimit(new FailedCommitStore.Commit(commitId, accountId))) {
+    if (isNotEmpty(commitId) && failedCommitStore.didExceedLimit(new FailedCommitStore.Commit(commitId, accountId))) {
+      log.warn("CommitId: {} blocked by rate limit", commitId);
       return;
     }
 
@@ -986,7 +987,9 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
     } catch (WingsException e) {
       if (e.getCode() == ErrorCode.USAGE_LIMITS_EXCEEDED) {
         log.info("Usage Limit Exceeded. Account: {}. Message: {}", change.getAccountId(), e.getMessage());
-        failedCommitStore.exceededLimit(new FailedCommitStore.Commit(commitId, accountId));
+        if (isNotEmpty(commitId)) {
+          failedCommitStore.exceededLimit(new FailedCommitStore.Commit(commitId, accountId));
+        }
       }
       throw e;
     }

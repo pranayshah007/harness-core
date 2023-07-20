@@ -236,9 +236,7 @@ public class AzureContainerRegistryClientImpl extends AzureClient implements Azu
       Response<AcrGetTokenResponse> response =
           acrRestClient.getRefreshToken(AzureConstants.ACCESS_TOKEN, azureAccessToken, registryUrl).execute();
       if (response.isSuccessful()) {
-        String refreshToken = response.body().getRefreshToken();
-
-        return refreshToken;
+        return response.body().getRefreshToken();
       } else {
         we = new AzureAuthenticationException(
             format("Get ACR refresh token in exchange for Azure access token has failed: %s with status code %s",
@@ -267,9 +265,7 @@ public class AzureContainerRegistryClientImpl extends AzureClient implements Azu
           acrRestClient.getAccessToken(AzureConstants.REFRESH_TOKEN, refreshToken, registryUrl, scope).execute();
 
       if (response.isSuccessful()) {
-        String acrAccessToken = response.body().getAccessToken();
-
-        return acrAccessToken;
+        return response.body().getAccessToken();
       } else {
         errMsg =
             format("Get ACR access token request failed: %s with status code %s", response.message(), response.code());

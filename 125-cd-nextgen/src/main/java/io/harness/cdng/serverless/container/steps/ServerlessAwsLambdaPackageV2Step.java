@@ -64,7 +64,6 @@ public class ServerlessAwsLambdaPackageV2Step extends AbstractContainerStepV2<St
   @Override
   public UnitStep getSerialisedStep(Ambiance ambiance, StepElementParameters stepElementParameters, String accountId,
       String logKey, long timeout, String parkedTaskId) {
-    // Todo: Add entrypoint
     ServerlessAwsLambdaPackageV2StepParameters serverlessAwsLambdaPackageV2StepParameters =
         (ServerlessAwsLambdaPackageV2StepParameters) stepElementParameters.getSpec();
 
@@ -72,8 +71,6 @@ public class ServerlessAwsLambdaPackageV2Step extends AbstractContainerStepV2<St
     serverlessStepCommonHelper.verifyPluginImageIsProvider(serverlessAwsLambdaPackageV2StepParameters.getImage());
 
     Map<String, String> envVarMap = new HashMap<>();
-
-    awsSamStepHelper.putK8sServiceAccountEnvVars(ambiance, envVarMap);
 
     return getUnitStep(
         ambiance, stepElementParameters, accountId, logKey, parkedTaskId, serverlessAwsLambdaPackageV2StepParameters);

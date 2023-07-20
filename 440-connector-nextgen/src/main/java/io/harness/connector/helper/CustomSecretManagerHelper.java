@@ -22,6 +22,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementException;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.validation.InputSetValidatorFactory;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.dto.CustomSecretManagerConfigDTO;
 import io.harness.security.encryption.EncryptedDataParams;
@@ -53,6 +54,7 @@ public class CustomSecretManagerHelper {
   private static final String SCRIPT = "Script";
   @Inject private TemplateResourceClient templateResourceClient;
   @Inject private NGConnectorSecretManagerService ngConnectorSecretManagerService;
+  @Inject private InputSetValidatorFactory inputSetValidatorFactory;
   private final ObjectMapper objectMapper = HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 
   public Set<EncryptedDataParams> prepareEncryptedDataParamsSet(
@@ -69,7 +71,7 @@ public class CustomSecretManagerHelper {
     log.info("Yaml received from template service is \n" + mergedYaml);
     int functorToken = HashGenerator.generateIntegerHash();
     ShellScriptYamlExpressionEvaluator shellScriptYamlExpressionEvaluator =
-        new ShellScriptYamlExpressionEvaluator(mergedYaml, functorToken);
+        new ShellScriptYamlExpressionEvaluator(mergedYaml, functorToken, inputSetValidatorFactory);
     ShellScriptBaseDTO shellScriptBaseDTO;
     try {
       shellScriptBaseDTO = YamlUtils.read(mergedYaml, ShellScriptYamlDTO.class).getShellScriptBaseDTO();

@@ -232,9 +232,10 @@ public class TriggerEventExecutionHelper {
       log.error("Webhook registration status update failed", ex);
     }
     ngTriggerRepository.updateValidationStatus(criteria, triggerEntity);
+    List<HeaderConfig> headerConfigList = triggerWebhookEvent.getHeaders();
     eventResponses.add(triggerPipelineExecution(triggerWebhookEvent, triggerDetails,
         getTriggerPayloadForWebhookTrigger(parseWebhookResponse, triggerWebhookEvent, yamlVersion, changedFiles),
-        triggerWebhookEvent.getPayload()));
+        triggerWebhookEvent.getPayload(), headerConfigList));
   }
 
   @VisibleForTesting
@@ -277,7 +278,7 @@ public class TriggerEventExecutionHelper {
   }
 
   private TriggerEventResponse triggerPipelineExecution(TriggerWebhookEvent triggerWebhookEvent,
-      TriggerDetails triggerDetails, TriggerPayload triggerPayload, String payload) {
+      TriggerDetails triggerDetails, TriggerPayload triggerPayload, String payload, List<HeaderConfig> header) {
     String runtimeInputYaml = null;
     NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
     try {
@@ -292,7 +293,7 @@ public class TriggerEventExecutionHelper {
         runtimeInputYaml = triggerExecutionHelper.fetchInputSetYAML(triggerDetails, triggerWebhookEvent);
       }
       PlanExecution response = triggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionRequest(
-          triggerDetails, triggerPayload, triggerWebhookEvent, payload, runtimeInputYaml);
+          triggerDetails, triggerPayload, triggerWebhookEvent, payload, header, runtimeInputYaml);
       return generateEventHistoryForSuccess(
           triggerDetails, runtimeInputYaml, ngTriggerEntity, triggerWebhookEvent, response, null);
     } catch (Exception e) {

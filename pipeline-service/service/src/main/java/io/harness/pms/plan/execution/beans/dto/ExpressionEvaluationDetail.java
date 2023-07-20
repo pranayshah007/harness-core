@@ -32,4 +32,5 @@ public class ExpressionEvaluationDetail {
   String fqn;
   String originalExpression;
   String error;
+  boolean resolvedByYaml;
 }

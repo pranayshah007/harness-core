@@ -20,10 +20,11 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.S3UrlStoreConfig;
@@ -81,12 +82,15 @@ import software.wings.beans.TaskType;
 import software.wings.sm.states.provision.S3UriParser;
 
 import com.amazonaws.services.s3.AmazonS3URI;
+import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.joor.Reflect;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -96,6 +100,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.junit.MockitoRule;
@@ -104,7 +109,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 
 @PrepareForTest({StepUtils.class})
 @RunWith(MockitoJUnitRunner.class)
-public class CloudformationStepHelperTest extends CategoryTest {
+public class CloudformationStepHelperTest extends CDNGTestBase {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock private EngineExpressionService engineExpressionService;
   @Mock private SecretManagerClientService secretManagerClientService;
@@ -114,6 +119,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
   @Mock private StepHelper stepHelper;
   @Mock private CloudformationStepExecutor cloudformationStepExecutor;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
   @InjectMocks private final CloudformationStepHelper cloudformationStepHelper = new CloudformationStepHelper();
   private static final String TAGS = "[\n"
       + "  {\n"
@@ -128,6 +134,13 @@ public class CloudformationStepHelperTest extends CategoryTest {
       + "    \"ParameterValue\": \"nasser.gonzalez@harness.io\"\n"
       + "  }\n"
       + "]";
+
+  @Before
+  public void setUp() throws Exception {
+    MockitoAnnotations.initMocks(this);
+    Reflect.on(cdExpressionResolver).set("engineExpressionService", engineExpressionService);
+    Reflect.on(cloudformationStepHelper).set("cdExpressionResolver", cdExpressionResolver);
+  }
 
   @Test
   @Owner(developers = TMACARI)

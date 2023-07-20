@@ -228,7 +228,10 @@ public class GitClientHelper {
 
   public static String getHarnessApiURL(String url) {
     String domain = GitClientHelper.getGitSCM(url);
-    return getHttpProtocolPrefix(url) + domain;
+    if (domain.startsWith("git.")) {
+      return getHttpProtocolPrefix(url) + domain;
+    }
+    return getHttpProtocolPrefix(url) + domain + "/gateway/code";
   }
 
   public static String convertToHarnessRepoName(String accountId, String orgId, String projectId, String repo) {

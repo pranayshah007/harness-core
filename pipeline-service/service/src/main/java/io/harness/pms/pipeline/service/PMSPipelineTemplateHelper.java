@@ -13,8 +13,10 @@ import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper.BOOLEAN_TRUE_VALUE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.exception.HarnessRemoteServiceException;
 import io.harness.exception.InternalServerErrorException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
@@ -34,6 +36,7 @@ import io.harness.ng.core.template.refresh.YamlFullRefreshResponseDTO;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.remote.client.NGRestUtils;
+import io.harness.remote.client.PipelineRestUtils;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.utils.PipelineGitXHelper;
@@ -98,34 +101,60 @@ public class PMSPipelineTemplateHelper {
       try {
         GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
         if (gitEntityInfo != null) {
-          return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
-              gitEntityInfo.getBranch(), gitEntityInfo.getYamlGitConfigId(), true, getConnectorRef(), getRepoName(),
-              accountId, orgId, projectId, loadFromCache,
-              TemplateApplyRequestDTO.builder()
-                  .originalEntityYaml(yaml)
-                  .checkForAccess(checkForTemplateAccess)
-                  .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
-                  .getOnlyFileContent(PipelineGitXHelper.isExecutionFlow())
-                  .build(),
-              appendInputSetValidator));
+          if (pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.PIE_ERROR_ENHANCEMENTS)) {
+            return PipelineRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId,
+                projectId, gitEntityInfo.getBranch(), gitEntityInfo.getYamlGitConfigId(), true, getConnectorRef(),
+                getRepoName(), accountId, orgId, projectId, loadFromCache,
+                TemplateApplyRequestDTO.builder()
+                    .originalEntityYaml(yaml)
+                    .checkForAccess(checkForTemplateAccess)
+                    .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
+                    .getOnlyFileContent(PipelineGitXHelper.isExecutionFlow())
+                    .build(),
+                appendInputSetValidator));
+          } else {
+            return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId,
+                projectId, gitEntityInfo.getBranch(), gitEntityInfo.getYamlGitConfigId(), true, getConnectorRef(),
+                getRepoName(), accountId, orgId, projectId, loadFromCache,
+                TemplateApplyRequestDTO.builder()
+                    .originalEntityYaml(yaml)
+                    .checkForAccess(checkForTemplateAccess)
+                    .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
+                    .getOnlyFileContent(PipelineGitXHelper.isExecutionFlow())
+                    .build(),
+                appendInputSetValidator));
+          }
         }
         GitSyncBranchContext gitSyncBranchContext =
             GitSyncBranchContext.builder().gitBranchInfo(GitEntityInfo.builder().build()).build();
         try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(gitSyncBranchContext, true)) {
-          return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
-              null, null, null, null, null, null, null, null, loadFromCache,
-              TemplateApplyRequestDTO.builder()
-                  .originalEntityYaml(yaml)
-                  .checkForAccess(checkForTemplateAccess)
-                  .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
-                  .getOnlyFileContent(PipelineGitXHelper.isExecutionFlow())
-                  .build(),
-              appendInputSetValidator));
+          if (pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.PIE_ERROR_ENHANCEMENTS)) {
+            return PipelineRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId,
+                projectId, null, null, null, null, null, null, null, null, loadFromCache,
+                TemplateApplyRequestDTO.builder()
+                    .originalEntityYaml(yaml)
+                    .checkForAccess(checkForTemplateAccess)
+                    .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
+                    .getOnlyFileContent(PipelineGitXHelper.isExecutionFlow())
+                    .build(),
+                appendInputSetValidator));
+          } else {
+            return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId,
+                projectId, null, null, null, null, null, null, null, null, loadFromCache,
+                TemplateApplyRequestDTO.builder()
+                    .originalEntityYaml(yaml)
+                    .checkForAccess(checkForTemplateAccess)
+                    .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
+                    .getOnlyFileContent(PipelineGitXHelper.isExecutionFlow())
+                    .build(),
+                appendInputSetValidator));
+          }
         }
-      }
-      // TODO: use nested exceptions to add explanations and hints to the error messages
-      catch (InvalidRequestException e) {
-        throw e;
+      } catch (InvalidRequestException ex) {
+        throw ex;
+      } catch (HarnessRemoteServiceException e) {
+        throw new NGTemplateException("Failed to apply templates on pipeline", e.getResponseMessages());
+
       } catch (UnexpectedException e) {
         log.error("Error connecting to Template Service", e);
         throw new InternalServerErrorException(

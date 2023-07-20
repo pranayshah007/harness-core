@@ -41,10 +41,12 @@ import java.util.Map;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
-@OwnedBy(HarnessTeam.PL)
+@Slf4j
 @Singleton
+@OwnedBy(HarnessTeam.PL)
 public class InMemoryPermissionRepository {
   private static final String RESOURCE_PERMISSIONS_YAML_PATH =
       "io/harness/accesscontrol/resources/resource-permissions-exception-mapping.yml";
@@ -148,7 +150,11 @@ public class InMemoryPermissionRepository {
   }
 
   public Set<String> getResourceTypesApplicableToPermission(String permission) {
-    return permissionToResourceTypeMapping.get(permission);
+    if (isNotEmpty(permissionToResourceTypeMapping.get(permission))) {
+      return permissionToResourceTypeMapping.get(permission);
+    }
+    log.warn("No mapping found for permission: {}", permission);
+    return new HashSet<>();
   }
 
   @OwnedBy(HarnessTeam.PL)

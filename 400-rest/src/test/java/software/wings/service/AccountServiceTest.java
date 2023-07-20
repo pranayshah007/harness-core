@@ -522,7 +522,12 @@ public class AccountServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldUpdateUserAfterDeletingAccount() {
     String accountId = generateUuid();
-    Account account = anAccount().withUuid(accountId).withCompanyName(HARNESS_NAME).build();
+    Account account =
+        anAccount()
+            .withUuid(accountId)
+            .withCompanyName(HARNESS_NAME)
+            .withLicenseInfo(LicenseInfo.builder().accountType("PAID").expiryTime(100000).licenseUnits(100).build())
+            .build();
     wingsPersistence.save(account);
 
     String accountId2 = generateUuid();

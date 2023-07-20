@@ -18,10 +18,12 @@ import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.errorhandling.NGErrorHelper;
+import io.harness.exception.ArtifactServerException;
+import io.harness.exception.NestedExceptionUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.Collections;
+import org.jooq.tools.StringUtils;
 
 @Singleton
 public class DockerValidationHandler implements ConnectorValidationHandler {
@@ -55,9 +57,11 @@ public class DockerValidationHandler implements ConnectorValidationHandler {
 
     validationResultBuilder.status(isDockerCredentialsValid ? ConnectivityStatus.SUCCESS : ConnectivityStatus.FAILURE);
     if (!isDockerCredentialsValid) {
-      String errorMessage = validationResponse.getErrorMessage();
-      validationResultBuilder.errorSummary(ngErrorHelper.getErrorSummary(errorMessage))
-          .errors(Collections.singletonList(ngErrorHelper.createErrorDetail(errorMessage)));
+      String errorMessage = StringUtils.defaultIfBlank(validationResponse.getErrorMessage(),
+          "An exception occurred while attempting to validate Docker credentials. Please verify the accuracy of the provided Docker URL and credentials. Additionally, ensure that the Docker registry is accessible from the delegate.");
+      throw NestedExceptionUtils.hintWithExplanationException(errorMessage,
+          "Failed to validate the response from Docker Registry",
+          new ArtifactServerException("Non standard response from Docker registry"));
     }
 
     return validationResultBuilder.build();

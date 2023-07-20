@@ -1,0 +1,210 @@
+{
+  "data": {
+    "pairs": [
+      {
+        "request": {
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/b229b2bb-5f33-4d22-bce0-730f6474e906/oauth2/token"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "POST"
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "login.microsoftonline.com"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ],
+          "body": [
+            {
+              "matcher": "exact",
+              "value": "grant_type=client_credentials&resource=https%3A%2F%2Fmanagement.azure.com&client_secret=***&client_id=***"
+            }
+          ]
+        },
+        "response": {
+          "status": 200,
+          "body": "{\"token_type\":\"Bearer\",\"expires_in\":\"3599\",\"ext_expires_in\":\"3599\",\"expires_on\":\"1689832903\",\"not_before\":\"1689829003\",\"resource\":\"https://management.azure.com\",\"access_token\":\"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Ii1LSTNROW5OUjdiUm9meG1lWm9YcWJIWkdldyIsImtpZCI6Ii1LSTNROW5OUjdiUm9meG1lWm9YcWJIWkdldyJ9.eyJhdWQiOiJodHRwczovL21hbmFnZW1lbnQuYXp1cmUuY29tIiwiaXNzIjoiaHR0cHM6Ly9zdHMud2luZG93cy5uZXQvYjIyOWIyYmItNWYzMy00ZDIyLWJjZTAtNzMwZjY0NzRlOTA2LyIsImlhdCI6MTY4OTgyOTAwMywibmJmIjoxNjg5ODI5MDAzLCJleHAiOjE2ODk4MzI5MDMsImFpbyI6IkUyWmdZSGpueU8rM01sOG5vYzdqNU9ZMVZqTGNBQT09IiwiYXBwaWQiOiIyZmZmY2M4My0wOWE4LTQ1MGYtODdmNS1hMjVlMzk0MmRkMTAiLCJhcHBpZGFjciI6IjEiLCJpZHAiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC9iMjI5YjJiYi01ZjMzLTRkMjItYmNlMC03MzBmNjQ3NGU5MDYvIiwiaWR0eXAiOiJhcHAiLCJvaWQiOiIzMDcxY2ZlZi00YTc1LTRhOTYtYTllNi05NzQwMjU0YmQxZjUiLCJyaCI6IjAuQVNrQXU3SXBzak5mSWsyODRITVBaSFRwQmtaSWYza0F1dGRQdWtQYXdmajJNQk1wQUFBLiIsInN1YiI6IjMwNzFjZmVmLTRhNzUtNGE5Ni1hOWU2LTk3NDAyNTRiZDFmNSIsInRpZCI6ImIyMjliMmJiLTVmMzMtNGQyMi1iY2UwLTczMGY2NDc0ZTkwNiIsInV0aSI6IkoyT2ZDXzZ4ekVpa1pMVXdVTTNyQUEiLCJ2ZXIiOiIxLjAiLCJ4bXNfdGNkdCI6MTUxOTc2ODk4Nn0.legzpZIzgdYF6NTS4V1OjDsfSErS1cyp-P4TId40cW4xuvG4AMKw_ak_GotcRsjeWiSimoSzRLsvfCkCJK3NGBClmLA88yTp_GG8JCrWJ9zOdaRGCi57xyZ0SAa-w6dZBEv7VFaUz0xvlEBUFJyrwSrT0M6FzR0U1xRUTHEbELDjdpHD71t0B09h6EtZ7oCbZDOwrXuLHRB2d54CIEjA4inwxKNZB1mgdp7qDHx0VwFbAXVhpU9nNe2ZxX9zW-0UCzC8nt57AzdgC_QuC6FuzTyPkh8fPd9xv9iq0hEKAnRl5nJx1hT-1G4Vc6wCScptWCR0PNzqDlRqBMeRPAa6gg\"}",
+          "encodedBody": false,
+          "templated": false,
+          "headers": {
+            "Cache-Control": [
+              "no-store, no-cache"
+            ],
+            "Content-Length": [
+              "1466"
+            ],
+            "Content-Type": [
+              "application/json; charset=utf-8"
+            ],
+            "Date": [
+              "Thu, 20 Jul 2023 05:01:42 GMT"
+            ],
+            "Expires": [
+              "-1"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "P3p": [
+              "CP=\"DSP CUR OTPi IND OTRi ONL FIN\""
+            ],
+            "Pragma": [
+              "no-cache"
+            ],
+            "Set-Cookie": [
+              "fpc=AupRteABvUpMofLfBksXk9q6AFXmAQAAALe2StwOAAAA; expires=Sat, 19-Aug-2023 05:01:43 GMT; path=/; secure; HttpOnly; SameSite=None",
+              "x-ms-gateway-slice=estsfd; path=/; secure; samesite=none; httponly",
+              "stsservicecookie=estsfd; path=/; secure; samesite=none; httponly"
+            ],
+            "Strict-Transport-Security": [
+              "max-age=31536000; includeSubDomains"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Ms-Ests-Server": [
+              "2.1.15811.5 - NCUS ProdSlices"
+            ],
+            "X-Ms-Request-Id": [
+              "0b9f6327-b1fe-48cc-a464-b53050cdeb00"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          }
+        }
+      },
+      {
+        "request": {
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/subscriptions/12d2db62-5aa9-471d-84bb-faa489b3e319/resourceGroups/srm-test/providers/Microsoft.ContainerService/managedClusters/srm-test/providers/Microsoft.Insights/metrics"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "management.azure.com"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ],
+          "query": {
+            "api-version": [
+              {
+                "matcher": "exact",
+                "value": "2021-05-01"
+              }
+            ],
+            "metricnames": [
+              {
+                "matcher": "exact",
+                "value": "node_cpu_usage_millicores"
+              }
+            ],
+            "timespan": [
+              {
+                "matcher": "exact",
+                "value": "2023-07-13T20:20:00Z/2023-07-13T20:30:00Z"
+              }
+            ]
+          },
+          "body": [
+            {
+              "matcher": "json",
+              "value": ""
+            }
+          ]
+        },
+        "response": {
+          "status": 200,
+          "body": "H4sIAAAAAAAEAO29B2AcSZYlJi9tynt/SvVK1+B0oQiAYBMk2JBAEOzBiM3mkuwdaUcjKasqgcplVmVdZhZAzO2dvPfee++999577733ujudTif33/8/XGZkAWz2zkrayZ4hgKrIHz9+fB8/In7xR9OqaT969HD0UVss8maVLT969NHezt697Z0H27v33uztPKL/7ez81N3ww3v84Uejj4plm9eXWUmvvXyz+wV9Qn+s848efe8Xf1TM6NO7zXrSTOti1RbVsrm7uzfbm00+3du+n2UPt/cf7M62D/Ynk+3zLNs/eDi5l9/bfXi3zptqXU/zz+tqvWruNvViu82b9u6qri6LWV43d78opnXVVOft+KRatlmxzOvXhEcxze8usmV2kc9OynVDqN3w9tmyKS7mbXN3kbd1MW3uLqtZ/vtPV+vff90QlN9/UZRlMa0IIRpZe72igX00/Da1WWYLavOLDRU+2gSvrKZZWfwgn/2kNj55+VX6FdqlX7h2v2T00axoVmV2/TS3hKTGxxcXdX6RtfksXeRZs67zRb5s0+o8BZh1WxDoDG3TYpm6ftMM2DdpO8/TqdCIUFkvC2IDGho1O0Ez+ow5Iq8L+gOzSWPMZlmb8cjw0fcJMfqbfvvF3PZ1my1WBCTkFPqfcEp2mdc0tI8e7d17ML7nP/u/ZLQRwm4fwqc3vLLXf+X++3V674Mh7H8whPt9CA/GnwbPDRA+7UHY37nhlQe9V26k9kH/lb33w/NhH8LuL/n+LyEWy+u6qk9Iiuil1+vpNG9IJOhzCBrpqyk+dxJ5kzagLoi5WbmQ8JBw0NskPO26+eiX/D+kLRP0DQUAAA==",
+          "encodedBody": true,
+          "templated": false,
+          "headers": {
+            "Access-Control-Allow-Origin": [
+              "*"
+            ],
+            "Cache-Control": [
+              "no-cache"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=utf-8"
+            ],
+            "Date": [
+              "Thu, 20 Jul 2023 05:01:45 GMT"
+            ],
+            "Expires": [
+              "-1"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Pragma": [
+              "no-cache"
+            ],
+            "Request-Context": [
+              "appId=cid-v1:b021da79-5252-4375-9df5-2e17c1dcd822"
+            ],
+            "Strict-Transport-Security": [
+              "max-age=31536000; includeSubDomains"
+            ],
+            "Vary": [
+              "Accept-Encoding"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Ms-Correlation-Request-Id": [
+              "8ac88591-d081-4dc2-906c-c39162945774"
+            ],
+            "X-Ms-Ratelimit-Remaining-Subscription-Reads": [
+              "11999"
+            ],
+            "X-Ms-Request-Id": [
+              "{8ac88591-d081-4dc2-906c-c39162945774}"
+            ],
+            "X-Ms-Routing-Request-Id": [
+              "WESTINDIA:20230720T050145Z:8ac88591-d081-4dc2-906c-c39162945774"
+            ]
+          }
+        }
+      }
+    ],
+    "globalActions": {
+      "delays": []
+    }
+  },
+  "meta": {
+    "schemaVersion": "v5",
+    "hoverflyVersion": "v1.1.5",
+    "timeExported": "2023-07-20T05:01:45Z"
+  }
+}

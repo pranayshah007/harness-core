@@ -188,9 +188,6 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.modelmapper.MappingException;
 
 /**
  * Class responsible for executing state machine.
@@ -2780,92 +2777,6 @@ public class StateMachineExecutor implements StateInspectionListener {
    * Maps source to target.
    */
   private void mapObject(Map<String, Object> source, State target, String accountId) {
-    try {
-      MapperUtils.mapObject(source, target);
-    } catch (MappingException e) {
-      // CHANGE LOG PRIORITY TO A LOWER VALUE AS WE FOUND THE ROOT CAUSE
-      log.warn(String.format("Got model mapping exception during map the stateParams <%s> to state <%s>", source,
-                   ToStringBuilder.reflectionToString(target)),
-          e);
-
-      // ITERATE THE SOURCE ELEMENTS AND MAP TO THE SAME TARGET
-      mapEntries(source, target, accountId);
-    }
-  }
-
-  @VisibleForTesting
-  void mapEntries(Map<String, Object> source, State target, String accountId) {
-    for (Map.Entry<String, Object> entry : source.entrySet()) {
-      try {
-        MapperUtils.mapObject(sanitizeEntry(entry), target);
-
-      } catch (MappingException e1) {
-        log.error(String.format("Failure on entry <%s> to the same target", entry), e1);
-
-        // IF IGNORE FF IS ENABLED, LOG AND KEEP THE EXECUTION.
-        if (featureFlagService.isNotEnabled(FeatureName.SPG_STATE_MACHINE_MAPPING_EXCEPTION_IGNORE, accountId)) {
-          throw e1;
-        }
-      }
-    }
-  }
-
-  @VisibleForTesting
-  Map<String, Object> sanitizeEntry(Map.Entry<String, Object> entry) {
-    //
-    // ONLY SOME FIELDS NEED SANITIZATION, WHEN NOT REQUIRED THE SAME ENTRY IS RETURNED.
-    //
-    Map<String, Object> result = null;
-
-    if (TEMPLATE_VARIABLE_ENTRY.equals(entry.getKey())) {
-      result = sanitizeTemplateVariables(entry);
-    }
-
-    // ADVICE: USING singletonMap BECAUSE ENTRY VALUE CAN BE NULL
-    return Optional.ofNullable(result).orElseGet(() -> Collections.singletonMap(entry.getKey(), entry.getValue()));
-  }
-
-  @VisibleForTesting
-  Map<String, Object> sanitizeTemplateVariables(final Map.Entry<String, Object> entry) {
-    //
-    // THE ROOT CAUSE OF MAPPING EXCEPTION IS AN ISSUE IN ModelMapper LIBRARY WHERE IS EXPECTED TO EVERY MAP
-    // ELEMENT OF THE SAME FIELD HAS THE SAME KEYS, NOT THE COUNT, BUT THE KEYS. MORE DETAILS AT CDS-54824.
-    //
-    if (entry.getValue() instanceof List) {
-      try {
-        @SuppressWarnings("unchecked")
-        List<Map<String, String>> elements = (List<Map<String, String>>) entry.getValue();
-        final List<Map<String, String>> result = new ArrayList<>();
-
-        final boolean hasDescription = elements.stream().anyMatch(e -> e.containsKey(VARIABLE_DESCRIPTION_FIELD));
-        final boolean hasValue = elements.stream().anyMatch(e -> e.containsKey(VARIABLE_VALUE_FIELD));
-
-        elements.forEach(e -> {
-          Map<String, String> content = new HashMap<>(e);
-          if (hasDescription) {
-            content.putIfAbsent(VARIABLE_DESCRIPTION_FIELD, StringUtils.EMPTY);
-          }
-          if (hasValue) {
-            content.putIfAbsent(VARIABLE_VALUE_FIELD, StringUtils.EMPTY);
-          }
-          result.add(content);
-        });
-
-        if (!result.isEmpty()) {
-          return Collections.singletonMap(TEMPLATE_VARIABLE_ENTRY, result);
-        }
-
-      } catch (ClassCastException e) {
-        log.warn(
-            String.format("Unable to cast [%s] to expected type [java.util.List]", entry.getValue().getClass()), e);
-      } catch (RuntimeException e) {
-        log.warn(String.format("Unable to sanitize field [%s]", TEMPLATE_VARIABLE_ENTRY), e);
-      }
-    }
-
-    // FALLBACK. THE OUTPUT IS THE SAME AS INPUT
-    final Map<String, Object> fallback = new HashMap<>();
-    fallback.put(entry.getKey(), entry.getValue());
-    return fallback;
+    MapperUtils.mapProperties(source, target);
   }
 }

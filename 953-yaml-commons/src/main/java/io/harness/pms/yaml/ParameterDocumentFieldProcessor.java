@@ -115,12 +115,20 @@ public class ParameterDocumentFieldProcessor {
             finalValue = Integer.parseInt(finalValue.toString());
           } else if (finalValue.getClass().equals(Double.class)) {
             finalValue = ((Double) finalValue).intValue();
+          } else if (finalValue.getClass().equals(Long.class)) {
+            finalValue = ((Long) finalValue).intValue();
           }
         } else if (fieldClass.equals(Double.class)) {
           if (finalValue.getClass().equals(String.class)) {
             finalValue = Double.valueOf((String) finalValue);
           } else if (finalValue.getClass().equals(Integer.class)) {
             finalValue = new Double((Integer) finalValue);
+          } else if (finalValue.getClass().equals(Long.class)) {
+            finalValue = new Double((Long) finalValue);
+          }
+        } else if (fieldClass.equals(Boolean.class)) {
+          if (finalValue.getClass().equals(String.class)) {
+            finalValue = Boolean.valueOf((String) finalValue);
           }
         }
       }

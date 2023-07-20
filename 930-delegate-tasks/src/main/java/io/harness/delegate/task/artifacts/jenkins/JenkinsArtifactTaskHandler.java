@@ -6,6 +6,7 @@
  */
 
 package io.harness.delegate.task.artifacts.jenkins;
+
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.ExecutionContext.DELEGATE;
 import static io.harness.exception.WingsException.USER;
@@ -155,42 +156,41 @@ public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<Jenk
   public ArtifactTaskExecutionResponse getLastSuccessfulBuild(JenkinsArtifactDelegateRequest attributesRequest) {
     try {
       String jobName = URLEncoder.encode(attributesRequest.getJobName(), StandardCharsets.UTF_8.toString());
-      if (isNotEmpty(attributesRequest.getBuildNumber())) {
+      if (isNotEmpty(attributesRequest.getBuildRegex())) {
         List<BuildDetails> buildDetails = jenkinsRegistryService.getBuildsForJob(
             JenkinsRequestResponseMapper.toJenkinsInternalConfig(attributesRequest), jobName,
-            attributesRequest.getArtifactPaths(), ARTIFACT_RETENTION_SIZE);
+            attributesRequest.getArtifactPaths(), Integer.MAX_VALUE);
         if (isNotEmpty(buildDetails)) {
           Pattern pattern = Pattern.compile(
-              attributesRequest.getBuildNumber().replace(".", "\\.").replace("?", ".?").replace("*", ".*?"));
+              attributesRequest.getBuildRegex().replace(".", "\\.").replace("?", ".?").replace("*", ".*?"));
           buildDetails = buildDetails.stream()
                              .filter(buildDetail -> pattern.matcher(buildDetail.getNumber()).find())
                              .sorted(new BuildDetailsComparatorDescending())
                              .collect(toList());
-        } else {
-          throw NestedExceptionUtils.hintWithExplanationException(
-              "Check if the version exist & check if the right connector chosen for fetching the build.",
-              "Version not found ", new InvalidRequestException("Version not found"));
-        }
-        if (isNotEmpty(buildDetails) && buildDetails.get(0) != null) {
-          JenkinsArtifactDelegateResponse jenkinsArtifactDelegateResponse =
-              JenkinsRequestResponseMapper.toJenkinsArtifactDelegateResponse(buildDetails.get(0), attributesRequest);
-          return getSuccessTaskExecutionResponse(Collections.singletonList(jenkinsArtifactDelegateResponse),
-              Collections.singletonList(buildDetails.get(0)));
-        } else {
-          // If provided build is not older than the ARTIFACT_RETENTION_SIZE builds.
-          BuildDetails buildDetail = jenkinsRegistryService.verifyBuildForJob(
-              JenkinsRequestResponseMapper.toJenkinsInternalConfig(attributesRequest), jobName,
-              attributesRequest.getArtifactPaths(), attributesRequest.getBuildNumber());
-          if (buildDetail != null) {
+
+          if (isNotEmpty(buildDetails) && buildDetails.get(0) != null) {
             JenkinsArtifactDelegateResponse jenkinsArtifactDelegateResponse =
-                JenkinsRequestResponseMapper.toJenkinsArtifactDelegateResponse(buildDetail, attributesRequest);
-            return getSuccessTaskExecutionResponse(
-                Collections.singletonList(jenkinsArtifactDelegateResponse), Collections.singletonList(buildDetail));
+                JenkinsRequestResponseMapper.toJenkinsArtifactDelegateResponse(buildDetails.get(0), attributesRequest);
+            return getSuccessTaskExecutionResponse(Collections.singletonList(jenkinsArtifactDelegateResponse),
+                Collections.singletonList(buildDetails.get(0)));
           }
-          throw NestedExceptionUtils.hintWithExplanationException(
-              "Check if the version exist & check if the right connector chosen for fetching the build.",
-              "Version didn't matched ", new InvalidRequestException("Version didn't matched"));
         }
+        throw NestedExceptionUtils.hintWithExplanationException(
+            "Check if the version exist & check if the right connector chosen for fetching the build.",
+            "Version not found ", new InvalidRequestException("Version not found"));
+      } else if (isNotEmpty(attributesRequest.getBuildNumber())) {
+        BuildDetails buildDetail = jenkinsRegistryService.verifyBuildForJob(
+            JenkinsRequestResponseMapper.toJenkinsInternalConfig(attributesRequest), jobName,
+            attributesRequest.getArtifactPaths(), attributesRequest.getBuildNumber());
+        if (buildDetail != null) {
+          JenkinsArtifactDelegateResponse jenkinsArtifactDelegateResponse =
+              JenkinsRequestResponseMapper.toJenkinsArtifactDelegateResponse(buildDetail, attributesRequest);
+          return getSuccessTaskExecutionResponse(
+              Collections.singletonList(jenkinsArtifactDelegateResponse), Collections.singletonList(buildDetail));
+        }
+        throw NestedExceptionUtils.hintWithExplanationException(
+            "Check if the version exist & check if the right connector chosen for fetching the build.",
+            "Version not found ", new InvalidRequestException("Version not found"));
       }
       return getLastSuccessfulBuildForJob(attributesRequest, jobName);
     } catch (UnsupportedEncodingException e) {

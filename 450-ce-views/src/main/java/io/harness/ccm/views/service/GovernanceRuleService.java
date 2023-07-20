@@ -27,7 +27,7 @@ public interface GovernanceRuleService {
   RuleList list(GovernanceRuleFilter governancePolicyFilter);
   List<Rule> list(String accountId, List<String> uuid);
   Rule fetchByName(String accountId, String name, boolean create);
-  Rule fetchById(String accountId, String name, boolean create);
+  Rule fetchById(String accountId, String uuid, boolean create);
   void check(String accountId, List<String> policiesIdentifier);
   void customRuleLimit(String accountId);
   void custodianValidate(Rule rule);
@@ -40,4 +40,5 @@ public interface GovernanceRuleService {
   String enqueueAdhoc(String accountId, GovernanceJobEnqueueDTO governanceJobEnqueueDTO);
   List<RuleExecution> enqueue(String accountId, RuleEnforcement ruleEnforcement, List<Rule> rulesList,
       ConnectorConfigDTO connectorConfig, String cloudConnectorId, String faktoryJobType, String faktoryQueueName);
+  String getResourceType(String ruleYaml);
 }

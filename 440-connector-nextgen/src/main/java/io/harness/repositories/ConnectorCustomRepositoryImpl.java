@@ -23,14 +23,20 @@ import io.harness.gitsync.persistance.GitAwarePersistence;
 import io.harness.gitsync.persistance.GitSyncableHarnessRepo;
 import io.harness.ng.core.utils.NGYamlUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
@@ -51,6 +57,7 @@ public class ConnectorCustomRepositoryImpl implements ConnectorCustomRepository 
   // todo(abhinav): This method is not yet migrated because of find By fqn
   @Override
   public Page<Connector> findAll(Criteria criteria, Pageable pageable, boolean getDistinctIdentifiers) {
+    pageable = getPageableWithSortFieldAsTimeWhenConnectorIsLastUpdated(pageable);
     Query query = new Query(criteria).with(pageable);
     if (!getDistinctIdentifiers) {
       List<Connector> connectors = mongoTemplate.find(query, Connector.class);
@@ -65,6 +72,7 @@ public class ConnectorCustomRepositoryImpl implements ConnectorCustomRepository 
   @Override
   public Page<Connector> findAll(
       Criteria criteria, Pageable pageable, String projectIdentifier, String orgIdentifier, String accountIdentifier) {
+    pageable = getPageableWithSortFieldAsTimeWhenConnectorIsLastUpdated(pageable);
     List<Connector> connectors = gitAwarePersistence.find(
         criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier, Connector.class);
     return PageableExecutionUtils.getPage(connectors, pageable,
@@ -75,6 +83,7 @@ public class ConnectorCustomRepositoryImpl implements ConnectorCustomRepository 
 
   @Override
   public Page<Connector> findAll(Criteria criteria, Pageable pageable) {
+    pageable = getPageableWithSortFieldAsTimeWhenConnectorIsLastUpdated(pageable);
     Query query = new Query(criteria).with(pageable);
     List<Connector> connectors = mongoTemplate.find(query, Connector.class);
     return PageableExecutionUtils.getPage(
@@ -166,5 +175,22 @@ public class ConnectorCustomRepositoryImpl implements ConnectorCustomRepository 
   @Override
   public long count(Criteria criteria) {
     return mongoTemplate.count(new Query(criteria), Connector.class);
+  }
+
+  @VisibleForTesting
+  Pageable getPageableWithSortFieldAsTimeWhenConnectorIsLastUpdated(Pageable pageable) {
+    Order lastModifiedAtSortOrder = pageable.getSort().getOrderFor(ConnectorKeys.lastModifiedAt);
+    if (Objects.nonNull(lastModifiedAtSortOrder)) {
+      List<Order> orders = new ArrayList<>();
+      for (Order order : pageable.getSort()) {
+        if (lastModifiedAtSortOrder.equals(order)) {
+          orders.add(new Order(lastModifiedAtSortOrder.getDirection(), ConnectorKeys.timeWhenConnectorIsLastUpdated));
+        } else {
+          orders.add(order);
+        }
+      }
+      return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(orders));
+    }
+    return pageable;
   }
 }

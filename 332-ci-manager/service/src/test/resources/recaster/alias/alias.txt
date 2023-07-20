@@ -254,6 +254,7 @@ io.harness.beans.steps.stepinfo.security.AwsSecurityHubStepInfo
 io.harness.beans.steps.stepinfo.security.JfrogXrayStepInfo
 io.harness.beans.yaml.extended.reports.V1.Report
 io.harness.yaml.core.failurestrategy.retry.RetryFailureSpecConfig
+io.harness.yaml.core.failurestrategy.retry.RetryStepGroupFailureSpecConfig
 io.harness.beans.steps.stepinfo.RestoreCacheS3StepInfo
 io.harness.beans.steps.stepinfo.security.DockerContentTrustStepInfo
 io.harness.beans.steps.stepinfo.security.AwsEcrStepInfo
@@ -412,6 +413,7 @@ io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig
 io.harness.k8s.model.K8sContainer
 io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO
 io.harness.delegate.beans.logstreaming.UnitProgressData
+io.harness.delegate.beans.helm.HelmDeployProgressData
 io.harness.steps.SectionStepSweepingOutput
 io.harness.spotinst.model.ElastiGroup
 io.harness.delegate.cdng.execution.StepExecutionInstanceInfo

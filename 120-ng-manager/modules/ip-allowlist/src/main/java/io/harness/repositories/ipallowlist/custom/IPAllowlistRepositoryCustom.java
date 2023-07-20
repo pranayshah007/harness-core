@@ -15,4 +15,5 @@ import org.springframework.data.mongodb.core.query.Criteria;
 
 public interface IPAllowlistRepositoryCustom {
   Page<IPAllowlistEntity> findAll(Criteria criteria, Pageable pageable);
+  void disableIPAllowListWithAccountId(String accountIdentifier);
 }

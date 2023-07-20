@@ -410,6 +410,7 @@ public class GithubServiceImpl implements GithubService {
           .withExpiresAt(new Date(System.currentTimeMillis() + EXP_TIME))
           .sign(algorithm);
     } catch (Exception ex) {
+      log.error("Failed to generate Token From PrivateKey with exception", ex);
       throw new InvalidRequestException("Invalid Github App key, Validate key is copied properly by trimming end line");
     }
   }

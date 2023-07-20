@@ -38,6 +38,7 @@ import io.harness.cdng.manifest.mappers.ManifestSummaryMapper;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.steps.output.NgManifestsMetadataSweepingOutput;
 import io.harness.cdng.manifest.steps.output.UnresolvedManifestsOutput;
+import io.harness.cdng.manifest.steps.task.FetchManifestTaskContext;
 import io.harness.cdng.manifest.steps.task.ManifestTaskService;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
@@ -226,8 +227,14 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
     Map<String, String> taskIdMapping = new HashMap<>();
 
     manifests.forEach((identifier, manifest) -> {
-      if (manifestTaskService.isSupported(ambiance, manifest)) {
-        Optional<TaskData> taskData = manifestTaskService.createTaskData(ambiance, manifest);
+      final FetchManifestTaskContext context = FetchManifestTaskContext.builder()
+                                                   .ambiance(ambiance)
+                                                   .manifestOutcome(manifest)
+                                                   .logCallback(logCallback)
+                                                   .build();
+
+      if (manifestTaskService.isSupported(context)) {
+        Optional<TaskData> taskData = manifestTaskService.createTaskData(context);
         taskData.ifPresent(task -> {
           String taskId = queueTask(ambiance, task);
           logCallback.saveExecutionLog(

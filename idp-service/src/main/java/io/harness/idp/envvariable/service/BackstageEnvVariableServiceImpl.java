@@ -282,6 +282,9 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
     envVariables = removeAccountFromIdentifierForBackstageEnvVarList(envVariables);
     Map<String, byte[]> secretData = new HashMap<>();
 
+    Set<String> envNames = envVariables.stream().map(BackstageEnvVariable::getEnvName).collect(Collectors.toSet());
+    log.info("Adding/Updating envs {} for account {}", envNames, accountIdentifier);
+
     for (BackstageEnvVariable envVariable : envVariables) {
       String envName = envVariable.getEnvName();
 

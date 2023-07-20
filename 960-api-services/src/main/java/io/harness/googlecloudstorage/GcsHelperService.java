@@ -166,7 +166,6 @@ public class GcsHelperService {
     }
 
     Blob blob = storage.get(BlobId.of(gcsInternalConfig.getBucket(), fileName));
-    InputStream inputStream = new ByteArrayInputStream(blob.getContent());
-    return inputStream;
+    return new ByteArrayInputStream(blob.getContent());
   }
 }

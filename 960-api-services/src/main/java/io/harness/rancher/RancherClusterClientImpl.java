@@ -70,25 +70,25 @@ public class RancherClusterClientImpl implements RancherClusterClient {
   }
 
   @Override
-  public RancherGenerateKubeconfigResponse generateKubeconfig(String bearerToken, String url, String clusterName) {
+  public RancherGenerateKubeconfigResponse generateKubeconfig(String bearerToken, String url, String clusterId) {
     try {
       RancherRestClient rancherRestClient = rancherRestClientFactory.getRestClient(url, bearerToken);
       Response<RancherGenerateKubeconfigResponse> generateKubeconfigResponse =
-          Retry.decorateCallable(retry, () -> rancherRestClient.generateKubeconfig(clusterName).execute()).call();
+          Retry.decorateCallable(retry, () -> rancherRestClient.generateKubeconfig(clusterId).execute()).call();
 
       if (isResponseUnsuccessfulOrEmpty(generateKubeconfigResponse)) {
         throw createRancherRuntimeException(format(
-            RANCHER_GENERATE_KUBECONFIG_ERROR_MESSAGE_WITH_CODE, clusterName, url, generateKubeconfigResponse.code()));
+            RANCHER_GENERATE_KUBECONFIG_ERROR_MESSAGE_WITH_CODE, clusterId, url, generateKubeconfigResponse.code()));
       }
       return generateKubeconfigResponse.body();
     } catch (RancherClientRuntimeException e) {
-      log.error("Failed to generate kubeconfig for cluster {} using rancher {}", clusterName, url, e);
+      log.error("Failed to generate kubeconfig for cluster {} using rancher {}", clusterId, url, e);
       throw e;
     } catch (Exception e) {
       Exception sanitizedException = sanitizeException(e);
-      log.error("Failed to generate kubeconfig for cluster {} using rancher {}", clusterName, url, sanitizedException);
+      log.error("Failed to generate kubeconfig for cluster {} using rancher {}", clusterId, url, sanitizedException);
       throw createRancherRuntimeException(
-          format(RANCHER_GENERATE_KUBECONFIG_ERROR_MESSAGE, clusterName, url), sanitizedException);
+          format(RANCHER_GENERATE_KUBECONFIG_ERROR_MESSAGE, clusterId, url), sanitizedException);
     }
   }
 

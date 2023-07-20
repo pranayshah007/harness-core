@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.HeaderConfig;
 import io.harness.connector.ConnectorResponseDTO;
+import io.harness.ng.core.dto.PollingTriggerStatusUpdateDTO;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.dto.TriggerYamlDiffDTO;
 import io.harness.ngtriggers.beans.dto.WebhookEventProcessingDetails;
@@ -38,6 +39,8 @@ public interface NGTriggerService {
   NGTriggerEntity update(NGTriggerEntity ngTriggerEntity, NGTriggerEntity oldNgTriggerEntity);
 
   boolean updateTriggerStatus(NGTriggerEntity ngTriggerEntity, boolean status);
+
+  boolean updateTriggerPollingStatus(String accountId, PollingTriggerStatusUpdateDTO statusUpdate);
 
   Page<NGTriggerEntity> list(Criteria criteria, Pageable pageable);
 

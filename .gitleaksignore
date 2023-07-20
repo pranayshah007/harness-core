@@ -2740,3 +2740,6 @@ cb04e6dfddaf18a45690bdc194f5b93fa562a6e4:120-ng-manager/config.yml:generic-api-k
 fdc9b219d20135e79d5754237912ac7f0d7911e9:platform-service/config/config.yml:generic-api-key:173
 fdc9b219d20135e79d5754237912ac7f0d7911e9:platform-service/service/src/test/resources/test-config.yml:generic-api-key:155
 463b1add0d690ce82c21566f262a5102b780652a:332-ci-manager/config/ci-manager-config.yml:generic-api-key:395
+ff1924b912d74eaaf0bd983caa24e90bc2462461:idp-service/config/config.yml:generic-api-key:154
+ff1924b912d74eaaf0bd983caa24e90bc2462461:idp-service/config/config.yml:generic-api-key:163
+ff1924b912d74eaaf0bd983caa24e90bc2462461:idp-service/config/config.yml:generic-api-key:175

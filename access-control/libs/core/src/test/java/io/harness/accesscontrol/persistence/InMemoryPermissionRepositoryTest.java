@@ -111,10 +111,15 @@ public class InMemoryPermissionRepositoryTest {
         new InMemoryPermissionRepository(mongoTemplate, getExplicitPermissionToResourceTypeMapping());
 
     assertThat(inMemoryPermissionRepository.getResourceTypesApplicableToPermission(CORE_USERGROUP_MANAGE_PERMISSION))
-        .isNull();
+        .isNotNull();
+    assertThat(inMemoryPermissionRepository.getResourceTypesApplicableToPermission(CORE_USERGROUP_MANAGE_PERMISSION))
+        .isEmpty();
     assertThat(
         inMemoryPermissionRepository.getResourceTypesApplicableToPermission(CORE_RESOURCEGROUP_MANAGE_PERMISSION))
-        .isNull();
+        .isNotNull();
+    assertThat(
+        inMemoryPermissionRepository.getResourceTypesApplicableToPermission(CORE_RESOURCEGROUP_MANAGE_PERMISSION))
+        .isEmpty();
   }
 
   @Test

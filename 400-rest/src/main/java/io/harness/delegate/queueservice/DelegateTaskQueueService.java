@@ -173,7 +173,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
             delegateTaskDequeue.getDelegateTask().getUuid(), itemId);
         if (isNotEmpty(itemId)) {
           if (isDelegateTaskAborted(delegateTaskDequeue)) {
-            delegateTaskServiceClassic.abortTask(
+            delegateTaskServiceClassic.abortTaskV2(
                 delegateTaskDequeue.getDelegateTask().getAccountId(), delegateTaskDequeue.getDelegateTask().getUuid());
             delegateCache.removeFromAbortedTaskList(
                 delegateTaskDequeue.getDelegateTask().getAccountId(), delegateTaskDequeue.getDelegateTask().getUuid());

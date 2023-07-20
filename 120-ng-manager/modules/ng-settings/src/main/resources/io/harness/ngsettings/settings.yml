@@ -1,6 +1,6 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 27
+version : 29
 settings :
   - identifier: mandate_webhook_secrets_for_github_triggers
     name: Mandate Webhook Secrets for Github Triggers
@@ -393,3 +393,34 @@ settings :
       - ACCOUNT
       - ORGANIZATION
       - PROJECT
+  - identifier: trigger_for_all_artifacts_or_manifests
+    name: Execute Triggers With All Collected Artifacts or Manifests
+    category: PMS
+    defaultValue: false
+    valueType: BOOLEAN
+    allowOverrides: true
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
+  - identifier: ticketing_tool
+    name: Ticketing Tool
+    category: CE
+    groupIdentifier: ticketing_preferences
+    defaultValue: Jira
+    valueType: STRING
+    allowOverrides: true
+    allowedScopes:
+      - ACCOUNT
+    allowedValues:
+      - Jira
+      - Servicenow
+  - identifier: ticketing_tool_connector
+    name: Connector
+    category: CE
+    groupIdentifier: ticketing_preferences
+    defaultValue:
+    valueType: STRING
+    allowOverrides: true
+    allowedScopes:
+      - ACCOUNT

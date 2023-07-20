@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.Trimmed;
+import io.harness.pms.execution.ExecutionStatus;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -36,6 +37,6 @@ public class PipelineExecutionIdentifierSummaryDTO {
   @NotEmpty String orgIdentifier;
   @Trimmed @NotEmpty String projectIdentifier;
   String planExecutionId;
-
+  ExecutionStatus status;
   int runSequence;
 }

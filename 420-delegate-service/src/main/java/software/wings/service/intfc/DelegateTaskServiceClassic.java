@@ -28,31 +28,20 @@ import software.wings.service.intfc.ownership.OwnedByAccount;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import java.util.Optional;
-import javax.validation.Valid;
 import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 
 @OwnedBy(DEL)
 @BreakDependencyOn("software.wings.service.intfc.ownership.OwnedByAccount")
 public interface DelegateTaskServiceClassic extends OwnedByAccount {
-  @ValidationGroups(Create.class) String queueTask(@Valid DelegateTask task);
-
   @ValidationGroups(Create.class) String queueTaskV2(DelegateTask task);
-
-  void scheduleSyncTask(DelegateTask task);
 
   void scheduleSyncTaskV2(DelegateTask task);
 
-  <T extends DelegateResponseData> T executeTask(DelegateTask task) throws InterruptedException;
-
   <T extends DelegateResponseData> T executeTaskV2(DelegateTask task) throws InterruptedException;
-
-  void processDelegateTask(DelegateTask task, DelegateTask.Status taskStatus);
 
   @VisibleForTesting void processDelegateTaskV2(DelegateTask task, DelegateTask.Status taskStatus);
 
   void processScheduleTaskRequest(DelegateTask task, DelegateTask.Status taskStatus);
-
-  String queueParkedTask(String accountId, String taskId);
 
   String queueParkedTaskV2(String accountId, String taskId);
 
@@ -72,11 +61,7 @@ public interface DelegateTaskServiceClassic extends OwnedByAccount {
 
   boolean filter(String delegateId, DelegateTaskAbortEvent taskAbortEvent);
 
-  DelegateTask abortTask(String accountId, String delegateTaskId);
-
   DelegateTask abortTaskV2(String accountId, String delegateTaskId);
-
-  String expireTask(String accountId, String delegateTaskId);
 
   String expireTaskV2(String accountId, String delegateTaskId);
 
@@ -97,6 +82,4 @@ public interface DelegateTaskServiceClassic extends OwnedByAccount {
   List<SelectorCapability> fetchTaskSelectorCapabilities(List<ExecutionCapability> executionCapabilities);
 
   String saveAndBroadcastDelegateTaskV2(DelegateTask task);
-
-  String saveAndBroadcastDelegateTask(DelegateTask task);
 }

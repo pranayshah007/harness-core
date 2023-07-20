@@ -1147,6 +1147,8 @@
 9149:io.harness.cvng.beans.grafanaloki.GrafanaLokiLogSampleDataRequest
 9150:io.harness.cvng.beans.GrafanaLokiLogDataCollectionInfo
 9151:io.harness.cvng.beans.azure.AzureLogsSampleDataRequest
+9152:io.harness.cvng.beans.AzureLogsDataCollectionInfo
+9153:io.harness.cvng.beans.azure.AzureMetricsSampleDataRequest
 9701:io.harness.logging.UnitProgress
 9702:io.harness.logging.UnitStatus
 9709:io.harness.jira.JiraIssueTypeNG
@@ -1919,6 +1921,7 @@
 83087:io.harness.delegate.beans.trigger.TriggerAuthenticationTaskResponse
 90001:software.wings.service.impl.apm.AWSPrometheusInfo
 95001:io.harness.delegate.beans.logstreaming.UnitProgressData
+95003:io.harness.delegate.beans.helm.HelmDeployProgressData
 97001:io.harness.jira.JiraActionNG
 97002:io.harness.jira.JiraCreateIssueRequestNG
 97003:io.harness.jira.JiraFieldAllowedValueNG
@@ -2719,6 +2722,7 @@
 10000121:io.harness.adfs.AdfsAccessTokenResponse
 10000122:io.harness.exception.ServiceNowOIDCException
 10000123:io.harness.servicenow.auth.refreshtoken.AccessTokenResponse
+10000124:io.harness.exception.HarnessRemoteServiceException
 10000201:io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO
 10000202:io.harness.delegate.beans.connector.tasconnector.TasCredentialDTO
 10000203:io.harness.delegate.beans.connector.tasconnector.TasCredentialSpecDTO

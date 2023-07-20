@@ -130,7 +130,8 @@ public class HarnessApprovalInstance extends ApprovalInstance {
                       .collect(Collectors.toList()))
         .approverInputs(approverInputs == null
                 ? Collections.emptyMap()
-                : approverInputs.stream().collect(Collectors.toMap(ApproverInput::getName, ApproverInput::getValue)))
+                : approverInputs.stream().collect(Collectors.toMap(
+                    ApproverInput::getName, approverInput -> Optional.ofNullable(approverInput.getValue()).orElse(""))))
         .build();
   }
 

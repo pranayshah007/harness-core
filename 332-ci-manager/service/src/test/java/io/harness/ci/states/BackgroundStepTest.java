@@ -63,6 +63,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.product.ci.engine.proto.UnitStep;
 import io.harness.repositories.CIStageOutputRepository;
 import io.harness.rule.Owner;
+import io.harness.vm.VmExecuteStepUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -89,6 +90,7 @@ public class BackgroundStepTest extends CIExecutionTestBase {
   @Mock private OutcomeService outcomeService;
   @Mock private ConnectorUtils connectorUtils;
   @Mock private VmStepSerializer vmStepSerializer;
+  @Mock private VmExecuteStepUtils vmExecuteStepUtils;
   @Mock protected CIFeatureFlagService featureFlagService;
   @Mock protected CIStageOutputRepository ciStageOutputRepository;
   @InjectMocks BackgroundStep backgroundStep;
@@ -236,6 +238,7 @@ public class BackgroundStepTest extends CIExecutionTestBase {
              ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS)))
         .thenReturn(OptionalSweepingOutput.builder().found(true).output(VmStageInfraDetails.builder().build()).build());
 
+    when(vmExecuteStepUtils.isBareMetalUsed(any())).thenReturn(false);
     when(vmStepSerializer.serialize(any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(VmBackgroundStep.builder().build());
     when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any(), eq(false), any())).thenReturn(callbackId);

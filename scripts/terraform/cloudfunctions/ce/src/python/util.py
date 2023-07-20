@@ -9,8 +9,10 @@ import time
 import re
 import datetime
 import hashlib
+import requests
 
 from google.cloud import bigquery
+from google.cloud import functions_v2
 from google.cloud import pubsub_v1
 from google.cloud.exceptions import NotFound
 
@@ -114,6 +116,37 @@ def if_tbl_exists(client, table_ref):
         return True
     except NotFound:
         return False
+
+
+def get_cf_v2_uri(cf_name):
+    functions_v2_client = functions_v2.FunctionServiceClient()
+    request = functions_v2.GetFunctionRequest(
+        name=cf_name
+    )
+    response = functions_v2_client.get_function(request=request)
+    return response.service_config.uri
+
+
+def http_trigger_cf_v2_async(cf_name, trigger_payload):
+    # http-trigger a 2nd gen cloudfunction without waiting for http response
+    url = get_cf_v2_uri(cf_name)
+    try:
+        # Set up metadata server request
+        # See https://cloud.google.com/compute/docs/instances/verifying-instance-identity#request_signature
+        metadata_server_token_url = 'http://metadata/computeMetadata/v1/instance/service-accounts/default/identity?audience='
+        token_request_url = metadata_server_token_url + url
+        token_request_headers = {'Metadata-Flavor': 'Google'}
+
+        # Fetch the token
+        token_response = requests.get(token_request_url, headers=token_request_headers)
+        jwt = token_response.content.decode("utf-8")
+
+        # Provide the token in the request to the receiving function
+        receiving_function_headers = {'Authorization': f'bearer {jwt}'}
+        r = requests.post(url, json=trigger_payload, timeout=30, headers=receiving_function_headers)
+    except Exception as e:
+        print_(e)
+        print_("2nd gen cloudfunction HTTP trigger: Ignore above exception if it's a timeout exception")
 
 
 def createTable(client, table_ref):

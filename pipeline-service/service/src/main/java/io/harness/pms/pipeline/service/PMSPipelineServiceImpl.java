@@ -29,6 +29,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
+import io.harness.eraro.ErrorCode;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
@@ -42,6 +43,8 @@ import io.harness.exception.InvalidYamlException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.ScmException;
 import io.harness.exception.UnexpectedException;
+import io.harness.exception.ngexception.NGTemplateException;
+import io.harness.exception.ngexception.PipelineException;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.git.model.ChangeType;
@@ -169,43 +172,51 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Override
   public PipelineCRUDResult validateAndCreatePipeline(
       PipelineEntity pipelineEntity, boolean throwExceptionIfGovernanceFails) {
-    if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
-      log.info("Creating Draft Pipeline with identifier: {}", pipelineEntity.getIdentifier());
-      return createPipeline(pipelineEntity);
-    }
-
-    PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity);
-    applyGitXSettingsIfApplicable(pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier(),
-        pipelineEntity.getProjectIdentifier());
-    checkProjectExists(
-        pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
-
-    GovernanceMetadata governanceMetadata = pmsPipelineServiceHelper.resolveTemplatesAndValidatePipeline(
-        pipelineEntity, throwExceptionIfGovernanceFails, false);
     try {
-      if (governanceMetadata.getDeny()) {
-        return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
+      if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
+        log.info("Creating Draft Pipeline with identifier: {}", pipelineEntity.getIdentifier());
+        return createPipeline(pipelineEntity);
       }
-      // TODO: As part of this ticket https://harness.atlassian.net/browse/CDS-70970, we should publish the setup usages
-      // after the entity has been created
-      PipelineEntity entityWithUpdatedInfo =
-          pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
-      PipelineEntity createdEntity;
-      PipelineCRUDResult pipelineCRUDResult = createPipeline(entityWithUpdatedInfo);
-      createdEntity = pipelineCRUDResult.getPipelineEntity();
 
+      PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity);
+      applyGitXSettingsIfApplicable(pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier(),
+          pipelineEntity.getProjectIdentifier());
+      checkProjectExists(
+          pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
+
+      GovernanceMetadata governanceMetadata = pmsPipelineServiceHelper.resolveTemplatesAndValidatePipeline(
+          pipelineEntity, throwExceptionIfGovernanceFails, false);
       try {
-        String branchInRequest = GitAwareContextHelper.getBranchInRequest();
-        pipelineAsyncValidationService.createRecordForSuccessfulSyncValidation(createdEntity,
-            GitAwareContextHelper.DEFAULT.equals(branchInRequest) ? "" : branchInRequest, governanceMetadata,
-            Action.CRUD);
-      } catch (Exception e) {
-        log.error("Unable to save validation event for Pipeline: " + e.getMessage(), e);
+        if (governanceMetadata.getDeny()) {
+          return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
+        }
+        // TODO: As part of this ticket https://harness.atlassian.net/browse/CDS-70970, we should publish the setup
+        // usages after the entity has been created
+        PipelineEntity entityWithUpdatedInfo =
+            pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
+        PipelineEntity createdEntity;
+        PipelineCRUDResult pipelineCRUDResult = createPipeline(entityWithUpdatedInfo);
+        createdEntity = pipelineCRUDResult.getPipelineEntity();
+
+        try {
+          String branchInRequest = GitAwareContextHelper.getBranchInRequest();
+          pipelineAsyncValidationService.createRecordForSuccessfulSyncValidation(createdEntity,
+              GitAwareContextHelper.DEFAULT.equals(branchInRequest) ? "" : branchInRequest, governanceMetadata,
+              Action.CRUD);
+        } catch (Exception e) {
+          log.error("Unable to save validation event for Pipeline: " + e.getMessage(), e);
+        }
+        return PipelineCRUDResult.builder()
+            .governanceMetadata(governanceMetadata)
+            .pipelineEntity(createdEntity)
+            .build();
+      } catch (IOException ex) {
+        log.error(format(INVALID_YAML_IN_NODE, YamlUtils.getErrorNodePartialFQN(ex)), ex);
+        throw new InvalidYamlException(format(INVALID_YAML_IN_NODE, YamlUtils.getErrorNodePartialFQN(ex)), ex);
       }
-      return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(createdEntity).build();
-    } catch (IOException ex) {
-      log.error(format(INVALID_YAML_IN_NODE, YamlUtils.getErrorNodePartialFQN(ex)), ex);
-      throw new InvalidYamlException(format(INVALID_YAML_IN_NODE, YamlUtils.getErrorNodePartialFQN(ex)), ex);
+    } catch (NGTemplateException ex) {
+      throw new PipelineException(
+          PipelineException.PIPELINE_CREATE_MESSAGE, ex, ErrorCode.NG_PIPELINE_CREATE_EXCEPTION);
     }
   }
 
@@ -475,28 +486,35 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Override
   public PipelineCRUDResult validateAndUpdatePipeline(
       PipelineEntity pipelineEntity, ChangeType changeType, boolean throwExceptionIfGovernanceFails) {
-    if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
-      log.info("Updating Draft Pipeline with identifier: {}", pipelineEntity.getIdentifier());
-      PipelineEntity updatedEntity = updatePipelineWithoutValidation(pipelineEntity, changeType);
-      GovernanceMetadata governanceMetadata = GovernanceMetadata.newBuilder().setDeny(false).build();
-      return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(updatedEntity).build();
-    }
-    PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity);
-    GovernanceMetadata governanceMetadata = pmsPipelineServiceHelper.resolveTemplatesAndValidatePipeline(
-        pipelineEntity, throwExceptionIfGovernanceFails, false);
-    if (governanceMetadata.getDeny()) {
-      return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
-    }
-    PipelineEntity updatedEntity = updatePipelineWithoutValidation(pipelineEntity, changeType);
     try {
-      String branchInRequest = GitAwareContextHelper.getBranchInRequest();
-      pipelineAsyncValidationService.createRecordForSuccessfulSyncValidation(updatedEntity,
-          GitAwareContextHelper.DEFAULT.equals(branchInRequest) ? "" : branchInRequest, governanceMetadata,
-          Action.CRUD);
-    } catch (Exception e) {
-      log.error("Unable to save validation event for Pipeline: " + e.getMessage(), e);
+      if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
+        log.info("Updating Draft Pipeline with identifier: {}", pipelineEntity.getIdentifier());
+        PipelineEntity updatedEntity = updatePipelineWithoutValidation(pipelineEntity, changeType);
+        GovernanceMetadata governanceMetadata = GovernanceMetadata.newBuilder().setDeny(false).build();
+        return PipelineCRUDResult.builder()
+            .governanceMetadata(governanceMetadata)
+            .pipelineEntity(updatedEntity)
+            .build();
+      }
+      PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity);
+      GovernanceMetadata governanceMetadata = pmsPipelineServiceHelper.resolveTemplatesAndValidatePipeline(
+          pipelineEntity, throwExceptionIfGovernanceFails, false);
+      if (governanceMetadata.getDeny()) {
+        return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
+      }
+      PipelineEntity updatedEntity = updatePipelineWithoutValidation(pipelineEntity, changeType);
+      try {
+        String branchInRequest = GitAwareContextHelper.getBranchInRequest();
+        pipelineAsyncValidationService.createRecordForSuccessfulSyncValidation(updatedEntity,
+            GitAwareContextHelper.DEFAULT.equals(branchInRequest) ? "" : branchInRequest, governanceMetadata,
+            Action.CRUD);
+      } catch (Exception e) {
+        log.error("Unable to save validation event for Pipeline: " + e.getMessage(), e);
+      }
+      return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(updatedEntity).build();
+    } catch (NGTemplateException ex) {
+      throw new PipelineException(PipelineException.PIPELINE_UPDATE_MESSAGE, ex, ErrorCode.PIPELINE_UPDATE_EXCEPTION);
     }
-    return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(updatedEntity).build();
   }
 
   private PipelineEntity updatePipelineWithoutValidation(PipelineEntity pipelineEntity, ChangeType changeType) {

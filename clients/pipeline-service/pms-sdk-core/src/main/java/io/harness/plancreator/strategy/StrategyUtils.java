@@ -46,6 +46,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.validation.InputSetValidatorFactory;
 import io.harness.serializer.JsonUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.matrix.StrategyConstants;
@@ -72,6 +73,8 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class StrategyUtils {
   @Inject IterationVariables iterationVariables;
+  @Inject InputSetValidatorFactory inputSetValidatorFactory;
+
   public boolean isWrappedUnderStrategy(YamlField yamlField) {
     YamlField strategyField = yamlField.getNode().getField(YAMLFieldNameConstants.STRATEGY);
     return strategyField != null;
@@ -280,14 +283,14 @@ public class StrategyUtils {
   public void replaceExpressions(
       Object jsonString, Map<String, String> combinations, int currentIteration, int totalIteration, String itemValue) {
     EngineExpressionEvaluator evaluator = new StrategyExpressionEvaluator(
-        combinations, currentIteration, totalIteration, itemValue, Collections.emptyMap());
+        combinations, currentIteration, totalIteration, itemValue, Collections.emptyMap(), inputSetValidatorFactory);
     evaluator.resolve(jsonString, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
   }
 
   public JsonNode replaceExpressions(
       JsonNode jsonNode, Map<String, String> combinations, int currentIteration, int totalIteration, String itemValue) {
-    EngineExpressionEvaluator evaluator =
-        new StrategyExpressionEvaluator(combinations, currentIteration, totalIteration, itemValue);
+    EngineExpressionEvaluator evaluator = new StrategyExpressionEvaluator(
+        combinations, currentIteration, totalIteration, itemValue, inputSetValidatorFactory);
     return (JsonNode) evaluator.resolve(jsonNode, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
   }
 

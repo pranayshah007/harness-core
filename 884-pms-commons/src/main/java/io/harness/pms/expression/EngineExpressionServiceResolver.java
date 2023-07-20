@@ -9,6 +9,7 @@ package io.harness.pms.expression;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 
@@ -33,8 +34,11 @@ public class EngineExpressionServiceResolver implements EngineExpressionResolver
 
   @Override
   public Object evaluateExpression(String expression, ExpressionMode expressionMode) {
-    return engineExpressionService.evaluateExpression(
-        ambiance, expression, ExpressionModeMapper.toExpressionModeProto(expressionMode));
+    if (EngineExpressionEvaluator.hasExpressions(expression)) {
+      return engineExpressionService.evaluateExpression(
+          ambiance, expression, ExpressionModeMapper.toExpressionModeProto(expressionMode));
+    }
+    return expression;
   }
 
   @Override

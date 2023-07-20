@@ -60,15 +60,6 @@ public class GitRepoHelper {
     return namespace + "/" + repo;
   }
 
-  public boolean isRepoPresent(List<Repository> repoList, String absoluteRepoName) {
-    for (Repository repository : repoList) {
-      if (absoluteRepoName.equals(repository.getName())) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   public String getCompleteRepoName(Repository repo) {
     return repo.getNamespace() + "/" + repo.getName();
   }
