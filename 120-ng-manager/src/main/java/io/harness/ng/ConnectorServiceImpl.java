@@ -662,7 +662,7 @@ public class ConnectorServiceImpl implements ConnectorService {
         && connector.getHeartbeatPerpetualTaskId() == null && connector.getExecuteOnDelegate()) {
       PerpetualTaskId connectorHeartbeatTaskId = connectorHeartbeatService.createConnectorHeatbeatTask(
           accountIdentifier, connector.getOrgIdentifier(), connector.getProjectIdentifier(), connector.getIdentifier());
-      log.info("Started Heartbeat Perpetual task for connector {} with taskID {}", connector.getAccountIdentifier(),
+      log.info("Started Heartbeat Perpetual task for connector {} with taskID {}", connector.getIdentifier(),
           connectorHeartbeatTaskId.getId());
 
       connector.setHeartbeatPerpetualTaskId(connectorHeartbeatTaskId == null ? null : connectorHeartbeatTaskId.getId());
@@ -714,7 +714,7 @@ public class ConnectorServiceImpl implements ConnectorService {
           accountIdentifier, fullyQualifiedIdentifier, connector.getHeartbeatPerpetualTaskId());
       if (isConnectorHeartbeatDeleted) {
         log.info("Deleted Heartbeat Perpetual task for connector {} with taskID {} due to invalid Auth",
-            connector.getAccountIdentifier(), connector.getHeartbeatPerpetualTaskId());
+            connector.getIdentifier(), connector.getHeartbeatPerpetualTaskId());
         connector.setHeartbeatPerpetualTaskId(null);
       }
     }
