@@ -114,6 +114,7 @@ public class ExpressionEvaluatorTest extends CategoryTest {
     context.put("name", null);
     assertThat(expressionEvaluator.substitute("${name}", context)).isEqualTo("null");
     assertThat(expressionEvaluator.evaluate("name", context)).isNull();
+    assertThat(expressionEvaluator.evaluate("\n name", context)).isNull();
   }
 
   @Test
