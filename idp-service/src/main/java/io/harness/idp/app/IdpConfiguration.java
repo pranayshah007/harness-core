@@ -102,10 +102,6 @@ public class IdpConfiguration extends Configuration {
   @JsonProperty("delegateSelectorsCacheMode") private String delegateSelectorsCacheMode;
   @JsonProperty("idpEncryptionSecret") private String idpEncryptionSecret;
   @JsonProperty("proxyAllowList") private ProxyAllowListConfig proxyAllowList;
-  @JsonProperty("pmsSdkGrpcServerConfig") private GrpcServerConfig pmsSdkGrpcServerConfig;
-  @JsonProperty("pmsGrpcClientConfig") private GrpcClientConfig pmsGrpcClientConfig;
-  @JsonProperty("shouldConfigureWithPMS") private Boolean shouldConfigureWithPMS;
-  @JsonProperty("cacheConfig") private CacheConfig cacheConfig;
   @JsonProperty("logServiceConfig") private LogServiceConfig logServiceConfig;
   @JsonProperty("tiServiceConfig") private TIServiceConfig tiServiceConficg;
   @JsonProperty("sscaServiceConfig") private SSCAServiceConfig sscaServiceConfig;

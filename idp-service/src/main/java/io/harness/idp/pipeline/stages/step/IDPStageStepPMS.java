@@ -65,8 +65,8 @@ public class IDPStageStepPMS implements ChildExecutable<StageElementParameters> 
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
 
-    log.info("Executing integration stage with params accountId {} projectId {} [{}]", accountId, projectIdentifier,
-        stepParameters);
+    log.info(
+        "Executing IDP stage with params accountId {} projectId {} [{}]", accountId, projectIdentifier, stepParameters);
 
     IntegrationStageStepParametersPMS integrationStageStepParametersPMS =
         (IntegrationStageStepParametersPMS) stepParameters.getSpecConfig();
@@ -109,7 +109,7 @@ public class IDPStageStepPMS implements ChildExecutable<StageElementParameters> 
     StepResponseNotifyData stepResponseNotifyData = filterStepResponse(responseDataMap);
 
     Status stageStatus = stepResponseNotifyData.getStatus();
-    log.info("Executed integration stage {} in {} milliseconds with status {} ", stepParameters.getIdentifier(),
+    log.info("Executed IDP stage {} in {} milliseconds with status {} ", stepParameters.getIdentifier(),
         (currentTime - startTime) / 1000, stageStatus);
 
     IntegrationStageStepParametersPMS integrationStageStepParametersPMS =
