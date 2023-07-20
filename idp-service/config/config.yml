@@ -161,7 +161,6 @@ prEnvDefaultBackstageNamespace: ""
 backstageAppBaseUrl: https://localhost:3000
 backstagePostgresHost: ""
 
-<<<<<<< HEAD
 delegateSelectorsCacheMode: redis # in-memory or redis
 
 proxyAllowList:
@@ -186,9 +185,7 @@ proxyAllowList:
         - /user/aggregate
         - /aggregate/acl/usergroups
         - /token/validate
-=======
 
-delegateSelectorsCacheMode: redis # in-memory or redis
 
 
 logServiceConfig:
@@ -375,4 +372,3 @@ iacmServiceConfig:
 
 enforcementClientConfiguration:
   enforcementCheckEnabled: false
->>>>>>> 554139eeb68 (feat: [IDP-724]: execution for idp stage)
