@@ -280,19 +280,7 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -603,7 +591,7 @@ public class UserServiceImpl implements UserService {
     if (!accountsWithNullLicenseInfo.isEmpty()) {
       for (Account account : accountsWithNullLicenseInfo) {
         if (!"Global".equals(account.getAccountName())) {
-          String ngLicense = getNgLicense(account.getUuid());
+          String ngLicense = getHighestEditionNgLicense(account.getUuid());
           if (ngLicense != null && !ngLicense.isEmpty()) {
             account.getLicenseInfo().setAccountType(ngLicense);
           }
@@ -634,36 +622,47 @@ public class UserServiceImpl implements UserService {
     return query;
   }
 
-  public String getNgLicense(String accountId) {
-    AccountLicenseDTO response = NGRestUtils.getResponse(adminLicenseHttpClient.getAccountLicense(accountId));
-    Map<ModuleType, List<ModuleLicenseDTO>> allModuleLicenses = response.getAllModuleLicenses();
+  public String getHighestEditionNgLicense(String accountId) {
+    try {
+      AccountLicenseDTO response = NGRestUtils.getResponse(adminLicenseHttpClient.getAccountLicense(accountId));
+      Map<ModuleType, List<ModuleLicenseDTO>> allModuleLicenses = response.getAllModuleLicenses();
 
-    Optional<ModuleLicenseDTO> highestEditionLicense =
-        allModuleLicenses.values().stream().flatMap(Collection::stream).reduce((compareLicense, currentLicense) -> {
-          if (compareLicense.getEdition().compareTo(currentLicense.getEdition()) < 0) {
-            return currentLicense;
+      //      Optional<ModuleLicenseDTO> highestEditionLicense =
+      //          allModuleLicenses.values().stream().flatMap(Collection::stream).reduce((compareLicense,
+      //          currentLicense) -> {
+      //            if (compareLicense.getEdition().compareTo(currentLicense.getEdition()) < 0) {
+      //              return currentLicense;
+      //            }
+      //            return compareLicense;
+      //          });
+
+      Optional<ModuleLicenseDTO> highestEditionLicense = allModuleLicenses.values()
+                                                             .stream()
+                                                             .flatMap(Collection::stream)
+                                                             .max(Comparator.comparing(ModuleLicenseDTO::getEdition));
+
+      if (!highestEditionLicense.isPresent()) {
+        Edition edition = Edition.FREE;
+        if (DeployMode.isOnPrem(System.getenv().get(DEPLOY_MODE))) {
+          if (DeployVariant.isCommunity(System.getenv().get(DEPLOY_VERSION))) {
+            edition = Edition.COMMUNITY;
+          } else {
+            edition = Edition.ENTERPRISE;
           }
-          return compareLicense;
-        });
-
-    if (!highestEditionLicense.isPresent()) {
-      Edition edition = Edition.FREE;
-      if (DeployMode.isOnPrem(System.getenv().get(DEPLOY_MODE))) {
-        if (DeployVariant.isCommunity(System.getenv().get(DEPLOY_VERSION))) {
-          edition = Edition.COMMUNITY;
-        } else {
-          edition = Edition.ENTERPRISE;
         }
+        log.warn("Account {} has no highest edition license, fallback to {}", accountId, edition);
+        return edition.name();
       }
-      log.warn("Account {} has no highest edition license, fallback to {}", accountId, edition);
-      return edition.name();
-    }
 
-    if (highestEditionLicense.get().getEdition() == Edition.ENTERPRISE
-        || highestEditionLicense.get().getEdition() == Edition.TEAM) {
-      return "PAID";
-    } else {
-      return "FREE";
+      if (highestEditionLicense.get().getEdition() == Edition.ENTERPRISE
+          || highestEditionLicense.get().getEdition() == Edition.TEAM) {
+        return "PAID";
+      } else {
+        return "FREE";
+      }
+    } catch (Exception e) {
+      log.warn("Exception occurred while fetching NG licenseInfo {}", e.getMessage());
+      throw new GeneralException("Something went wrong on our end");
     }
   }
   public List<String> getUserAccountIds(String userId) {
