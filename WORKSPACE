@@ -5615,6 +5615,7 @@ maven_install(
 maven_install(
     name = "ce-nextgen",
     artifacts = [
+        "com.google.guava:guava:32.0.1-jre",
         "com.azure:azure-core:1.29.1",
         "com.azure:azure-core-management:1.6.2",
         "com.azure:azure-identity:1.5.0",
