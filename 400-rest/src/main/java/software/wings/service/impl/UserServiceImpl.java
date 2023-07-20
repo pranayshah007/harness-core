@@ -13,6 +13,8 @@ import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.SearchFilter.Operator.EQ;
 import static io.harness.beans.SearchFilter.Operator.HAS;
 import static io.harness.beans.SearchFilter.Operator.IN;
+import static io.harness.configuration.DeployMode.DEPLOY_MODE;
+import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -76,6 +78,8 @@ import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter;
 import io.harness.cache.HarnessCacheManager;
 import io.harness.cd.CDLicenseType;
+import io.harness.configuration.DeployMode;
+import io.harness.configuration.DeployVariant;
 import io.harness.data.encoding.EncodingUtils;
 import io.harness.eraro.ErrorCode;
 import io.harness.event.handler.impl.EventPublishHelper;
@@ -104,13 +108,7 @@ import io.harness.invites.remote.NgInviteClient;
 import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseStatus;
 import io.harness.licensing.LicenseType;
-import io.harness.licensing.beans.modules.CDModuleLicenseDTO;
-import io.harness.licensing.beans.modules.CEModuleLicenseDTO;
-import io.harness.licensing.beans.modules.CFModuleLicenseDTO;
-import io.harness.licensing.beans.modules.CIModuleLicenseDTO;
-import io.harness.licensing.beans.modules.ModuleLicenseDTO;
-import io.harness.licensing.beans.modules.SRMModuleLicenseDTO;
-import io.harness.licensing.beans.modules.STOModuleLicenseDTO;
+import io.harness.licensing.beans.modules.*;
 import io.harness.licensing.remote.admin.AdminLicenseHttpClient;
 import io.harness.limits.ActionType;
 import io.harness.limits.LimitCheckerFactory;
@@ -592,7 +590,28 @@ public class UserServiceImpl implements UserService {
   @Override
   public List<Account> getUserAccounts(String userId, int pageIndex, int pageSize, String searchTerm) {
     Query<Account> query = getUserAccountsQuery(userId, searchTerm);
-    return query.asList(new FindOptions().limit(pageSize).skip(pageIndex));
+    List<Account> accounts = query.asList(new FindOptions().limit(pageSize).skip(pageIndex));
+
+    List<Account> accountsWithNGLicenseInfo = accounts.stream()
+                                                  .filter(account
+                                                      -> "FREE".equals(account.getLicenseInfo().getAccountType())
+                                                          || "TRIAL".equals(account.getLicenseInfo().getAccountType()))
+                                                  .collect(Collectors.toList());
+
+    for (Account account : accountsWithNGLicenseInfo) {
+      if ("Global".equals(account.getAccountName())) {
+        continue;
+      } else {
+        String ngLicense = getNgLicense(account.getUuid());
+        if (ngLicense != null && !ngLicense.isEmpty()) {
+          account.getLicenseInfo().setAccountType(ngLicense);
+        }
+      }
+    }
+    accounts.removeAll(accountsWithNGLicenseInfo);
+    accounts.addAll(accountsWithNGLicenseInfo);
+
+    return accounts;
   }
 
   private Query<Account> getUserAccountsQuery(String userId, String searchTerm) {
@@ -611,6 +630,38 @@ public class UserServiceImpl implements UserService {
     return query;
   }
 
+  public String getNgLicense(String accountId) {
+    AccountLicenseDTO response = NGRestUtils.getResponse(adminLicenseHttpClient.getAccountLicense(accountId));
+    Map<ModuleType, List<ModuleLicenseDTO>> allModuleLicenses = response.getAllModuleLicenses();
+
+    Optional<ModuleLicenseDTO> highestEditionLicense =
+        allModuleLicenses.values().stream().flatMap(Collection::stream).reduce((compareLicense, currentLicense) -> {
+          if (compareLicense.getEdition().compareTo(currentLicense.getEdition()) < 0) {
+            return currentLicense;
+          }
+          return compareLicense;
+        });
+
+    if (!highestEditionLicense.isPresent()) {
+      Edition edition = Edition.FREE;
+      if (DeployMode.isOnPrem(System.getenv().get(DEPLOY_MODE))) {
+        if (DeployVariant.isCommunity(System.getenv().get(DEPLOY_VERSION))) {
+          edition = Edition.COMMUNITY;
+        } else {
+          edition = Edition.ENTERPRISE;
+        }
+      }
+      log.warn("Account {} has no highest edition license, fallback to {}", accountId, edition);
+      return edition.name();
+    }
+
+    if (highestEditionLicense.get().getEdition() == Edition.ENTERPRISE
+        || highestEditionLicense.get().getEdition() == Edition.TEAM) {
+      return "PAID";
+    } else {
+      return "FREE";
+    }
+  }
   public List<String> getUserAccountIds(String userId) {
     User user = wingsPersistence.createQuery(User.class).filter("uuid", userId).project(UserKeys.accounts, true).get();
     return user.getAccounts().stream().map(Account::getUuid).collect(toList());
