@@ -250,14 +250,6 @@ if [[ "" != "$STO_MANAGER_AUTHORITY" ]]; then
   export STO_MANAGER_AUTHORITY; yq -i '.grpcClientConfigs.sto.authority=env(STO_MANAGER_AUTHORITY)' $CONFIG_FILE
 fi
 
-if [[ "" != "$IDP_SERVICE_TARGET" ]]; then
-  export IDP_SERVICE_TARGET; yq -i '.grpcClientConfigs.idp.target=env(IDP_SERVICE_TARGET)' $CONFIG_FILE
-fi
-
-if [[ "" != "$IDP_SERVICE_AUTHORITY" ]]; then
-  export IDP_SERVICE_AUTHORITY; yq -i '.grpcClientConfigs.idp.authority=env(IDP_SERVICE_AUTHORITY)' $CONFIG_FILE
-fi
-
 if [[ "" != "$NG_MANAGER_GITSYNC_TARGET" ]]; then
   export NG_MANAGER_GITSYNC_TARGET; yq -i '.gitSdkConfiguration.gitManagerGrpcClientConfig.target=env(NG_MANAGER_GITSYNC_TARGET)' $CONFIG_FILE
 fi
