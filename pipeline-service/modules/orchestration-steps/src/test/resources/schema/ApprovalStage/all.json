@@ -1186,6 +1186,26 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "BlackduckSbomOrchestration": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/SbomOrchestrationSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "format": {
+              "type": "string",
+              "enum": [
+                "spdx-json",
+                "cyclonedx-json"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "BranchBuildSpec": {
       "allOf": [
         {
@@ -5579,12 +5599,29 @@
         "type": {
           "type": "string",
           "enum": [
-            "Syft"
+            "Syft",
+            "Blackduck"
           ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Blackduck"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/BlackduckSbomOrchestration"
+              }
+            }
+          }
+        },
         {
           "if": {
             "properties": {
