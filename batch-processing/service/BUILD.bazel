@@ -10,6 +10,7 @@ load("//:tools/bazel/macros.bzl", "run_analysis")
 HarnessTeam = "CE"
 
 shared_dependencies = [
+    "@batch//:com_google_guava_guava",
     "@batch//:com_fasterxml_jackson_core_jackson_databind",
     "@batch//:com_azure_azure_core",
     "@batch//:com_azure_azure_storage_blob",
