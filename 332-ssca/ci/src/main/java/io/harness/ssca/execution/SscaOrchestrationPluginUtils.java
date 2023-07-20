@@ -7,6 +7,8 @@
 
 package io.harness.ssca.execution;
 
+import static io.harness.pms.expression.ExpressionResolverUtils.resolveStringParameter;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
@@ -16,8 +18,11 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.ssca.beans.OrchestrationStepEnvVariables;
 import io.harness.ssca.beans.OrchestrationStepSecretVariables;
+import io.harness.ssca.beans.SscaConstants;
 import io.harness.ssca.beans.attestation.AttestationType;
 import io.harness.ssca.beans.attestation.CosignAttestation;
+import io.harness.ssca.beans.source.ImageSbomSource;
+import io.harness.ssca.beans.source.SbomSourceType;
 import io.harness.ssca.beans.stepinfo.SscaOrchestrationStepInfo;
 import io.harness.ssca.beans.tools.blackduck.BlackduckSbomOrchestration;
 import io.harness.ssca.beans.tools.syft.SyftSbomOrchestration;
@@ -46,11 +51,18 @@ public class SscaOrchestrationPluginUtils {
     if (stepInfo.getIngestion() != null) {
       ingestion = stepInfo.getIngestion().getFile().getValue();
     }
+    String sbomSource = null;
+    if (stepInfo.getSource().getType().equals(SbomSourceType.IMAGE)) {
+      sbomSource = resolveStringParameter("source", SscaConstants.SSCA_ORCHESTRATION_STEP, identifier,
+          ((ImageSbomSource) stepInfo.getSource().getSbomSourceSpec()).getImage(), true);
+    }
+
     String runtimeId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     OrchestrationStepEnvVariables envVariables =
         OrchestrationStepEnvVariables.builder()
             .sbomGenerationTool(tool)
             .sbomGenerationFormat(format)
+            .sbomSource(sbomSource)
             .sbomDestination(ingestion)
             .sscaCoreUrl(sscaServiceUtils.getSscaServiceConfig().getHttpClientConfig().getBaseUrl())
             .stepExecutionId(runtimeId)
