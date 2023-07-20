@@ -100,7 +100,8 @@ public class ParameterDocumentFieldMapper {
        */
       if (cls.isEnum() && parameterFieldValueWrapper.getValue().getClass().isAssignableFrom(String.class)) {
         for (Object object : cls.getEnumConstants()) {
-          if (((Enum) object).name().equalsIgnoreCase((String) parameterFieldValueWrapper.getValue())) {
+          if (((Enum) object).name().equalsIgnoreCase((String) parameterFieldValueWrapper.getValue())
+              || object.toString().equalsIgnoreCase((String) parameterFieldValueWrapper.getValue())) {
             return;
           }
         }
