@@ -7,7 +7,9 @@
 
 package io.harness.cvng.analysis.services.impl;
 
+import static io.harness.beans.FeatureName.SRM_ENABLE_BASELINE_BASED_VERIFICATION;
 import static io.harness.cvng.CVConstants.TAG_DATA_SOURCE;
+import static io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ClusterType.NO_BASELINE_AVAILABLE;
 import static io.harness.cvng.beans.MonitoredServiceDataSourceType.ERROR_TRACKING;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -627,6 +629,15 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
                        .build())
             .collect(Collectors.toList());
 
+    VerificationJobInstance verificationJobInstance =
+        verificationJobInstanceService.getVerificationJobInstance(verificationJobInstanceId);
+    VerificationJobType verificationJobType = verificationJobInstance.getResolvedJob().getType();
+    if (!featureFlagService.isFeatureFlagEnabled(accountId, SRM_ENABLE_BASELINE_BASED_VERIFICATION.name())
+        || verificationJobType != VerificationJobType.TEST) {
+      eventCounts = eventCounts.stream()
+                        .filter(eventCount -> !eventCount.getClusterType().equals(NO_BASELINE_AVAILABLE))
+                        .collect(Collectors.toList());
+    }
     eventCounts.add(EventCount.builder()
                         .clusterType(ClusterType.BASELINE)
                         .count(eventCountByEventTypeMap.getOrDefault(ClusterType.BASELINE, 0L).intValue())
