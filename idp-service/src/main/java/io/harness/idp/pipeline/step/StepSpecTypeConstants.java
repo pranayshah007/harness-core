@@ -9,4 +9,6 @@ package io.harness.idp.pipeline.step;
 
 public interface StepSpecTypeConstants {
   String GIT_CLONE = "GitClone";
+  String PLUGIN = "Plugin";
+  String RUN = "Run";
 }

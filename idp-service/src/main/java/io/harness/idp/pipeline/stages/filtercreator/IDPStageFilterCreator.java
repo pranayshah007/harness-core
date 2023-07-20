@@ -69,7 +69,7 @@ public class IDPStageFilterCreator extends GenericStageFilterJsonCreatorV2<IDPSt
 
   @Override
   public PipelineFilter getFilter(FilterCreationContext filterCreationContext, IDPStageNode stageNode) {
-    log.info("Received filter creation request for integration stage {}", stageNode.getIdentifier());
+    log.info("Received filter creation request for IDP stage {}", stageNode.getIdentifier());
     String accountId = filterCreationContext.getSetupMetadata().getAccountId();
     String orgIdentifier = filterCreationContext.getSetupMetadata().getOrgId();
     String projectIdentifier = filterCreationContext.getSetupMetadata().getProjectId();
