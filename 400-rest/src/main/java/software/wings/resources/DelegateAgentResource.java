@@ -69,6 +69,7 @@ import io.harness.rest.RestResponse;
 import io.harness.security.annotations.DelegateAuth;
 import io.harness.serializer.KryoSerializer;
 
+import io.harness.service.intfc.DelegateRingService;
 import software.wings.beans.Account;
 import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.core.managerConfiguration.ConfigurationController;
@@ -136,16 +137,18 @@ public class DelegateAgentResource {
   private DelegatePollingHeartbeatService delegatePollingHeartbeatService;
   private DelegateCapacityManagementService delegateCapacityManagementService;
 
+  private DelegateRingService delegateRingService;
+
   @Inject
   public DelegateAgentResource(DelegateService delegateService, AccountService accountService, HPersistence persistence,
-      SubdomainUrlHelperIntfc subdomainUrlHelper, ArtifactCollectionResponseHandler artifactCollectionResponseHandler,
-      InstanceHelper instanceHelper, ManifestCollectionResponseHandler manifestCollectionResponseHandler,
-      ConnectorHearbeatPublisher connectorHearbeatPublisher, KryoSerializer kryoSerializer,
-      ConfigurationController configurationController, FeatureFlagService featureFlagService,
-      DelegateTaskServiceClassic delegateTaskServiceClassic, PollingResourceClient pollingResourceClient,
-      InstanceSyncResponsePublisher instanceSyncResponsePublisher,
-      DelegatePollingHeartbeatService delegatePollingHeartbeatService,
-      DelegateCapacityManagementService delegateCapacityManagementService) {
+                               SubdomainUrlHelperIntfc subdomainUrlHelper, ArtifactCollectionResponseHandler artifactCollectionResponseHandler,
+                               InstanceHelper instanceHelper, ManifestCollectionResponseHandler manifestCollectionResponseHandler,
+                               ConnectorHearbeatPublisher connectorHearbeatPublisher, KryoSerializer kryoSerializer,
+                               ConfigurationController configurationController, FeatureFlagService featureFlagService,
+                               DelegateTaskServiceClassic delegateTaskServiceClassic, PollingResourceClient pollingResourceClient,
+                               InstanceSyncResponsePublisher instanceSyncResponsePublisher,
+                               DelegatePollingHeartbeatService delegatePollingHeartbeatService,
+                               DelegateCapacityManagementService delegateCapacityManagementService, DelegateRingService delegateRingService) {
     this.instanceHelper = instanceHelper;
     this.delegateService = delegateService;
     this.accountService = accountService;
@@ -162,6 +165,7 @@ public class DelegateAgentResource {
     this.instanceSyncResponsePublisher = instanceSyncResponsePublisher;
     this.delegatePollingHeartbeatService = delegatePollingHeartbeatService;
     this.delegateCapacityManagementService = delegateCapacityManagementService;
+    this.delegateRingService = delegateRingService;
   }
 
   @DelegateAuth
@@ -197,7 +201,7 @@ public class DelegateAgentResource {
   public RestResponse<String> getJREVersion(
       @QueryParam("accountId") @NotEmpty String accountId, @QueryParam("isDelegate") boolean isDelegate) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
-      String jreVersion = accountService.getJREVersion(accountId, isDelegate);
+      String jreVersion = delegateRingService.getJREVersion(accountId, isDelegate);
       if (isNotEmpty(jreVersion)) {
         return new RestResponse<>(jreVersion);
       }

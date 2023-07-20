@@ -426,6 +426,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private double maxPodRSSThresholdMB;
   private final AtomicBoolean rejectRequest = new AtomicBoolean(false);
 
+  private final String defaultJREVersion =  "11.0.19+7";
+
   public static Optional<String> getDelegateId() {
     return Optional.ofNullable(delegateId);
   }
@@ -1720,7 +1722,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       log.warn("Failed to fetch jre version from Manager ", ex);
     }
     // for smp it will return empty and take default value defined above
-    return "11.0.19+7";
+    return defaultJREVersion;
   }
 
   private boolean downloadRunScriptsForWatcher(String version) {

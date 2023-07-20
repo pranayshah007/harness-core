@@ -128,8 +128,6 @@ public interface AccountService {
 
   String getWatcherVersion(String accountId);
 
-  String getJREVersion(String accountId, boolean isDelegate);
-
   String getAccountPrimaryDelegateVersion(String accountId);
 
   List<Account> listAllAccountsWithoutTheGlobalAccount();

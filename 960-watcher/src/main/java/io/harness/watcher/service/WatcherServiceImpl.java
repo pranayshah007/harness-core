@@ -231,6 +231,8 @@ public class WatcherServiceImpl implements WatcherService {
 
   private final AtomicBoolean frozen = new AtomicBoolean(false);
 
+  private final String defaultJREVersion =  "11.0.19+7";
+
   @Override
   public void run(boolean upgrade) {
     WatcherStackdriverLogAppender.setTimeLimiter(timeLimiter);
@@ -1270,7 +1272,7 @@ public class WatcherServiceImpl implements WatcherService {
       log.warn("Failed to fetch jre version from Manager ", ex);
     }
     // for smp it will return empty and take default value defined above
-    return "11.0.19+7";
+    return defaultJREVersion;
   }
 
   private void shutdownDelegate(String delegateProcess) {
