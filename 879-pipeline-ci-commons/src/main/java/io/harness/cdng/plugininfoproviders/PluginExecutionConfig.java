@@ -32,5 +32,6 @@ public class PluginExecutionConfig {
   StepImageConfig serverlessPrepareRollbackV2StepImageConfig;
   StepImageConfig serverlessAwsLambdaDeployV2StepImageConfig;
   StepImageConfig serverlessAwsLambdaPackageV2StepImageConfig;
+  StepImageConfig serverlessAwsLambdaRollbackV2StepImageConfig;
   String apiUrl;
 }
