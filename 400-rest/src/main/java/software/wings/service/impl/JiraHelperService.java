@@ -255,7 +255,7 @@ public class JiraHelperService {
                                                 .async(false)
                                                 .taskType(TaskType.JIRA.name())
                                                 .parameters(new Object[] {jiraTaskParameters})
-                                                .timeout(Long.max(timeoutMillis, JIRA_DELEGATE_TIMEOUT_MILLIS))
+                                                .timeout(Long.min(timeoutMillis, JIRA_DELEGATE_TIMEOUT_MILLIS))
                                                 .build())
                                       .build();
       DelegateResponseData responseData = delegateService.executeTaskV2(delegateTask);
