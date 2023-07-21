@@ -4335,7 +4335,7 @@ public class DelegateServiceImpl implements DelegateService {
                                                     .filter(DelegateGroupKeys.name, delegateName)
                                                     .filter(DelegateGroupKeys.ng, true);
       if (owner != null) {
-        delegateGroupQuery.filter(DelegateGroupKeys.owner, owner);
+        delegateGroupQuery.filter(DelegateGroupKeys.identifier, owner.getIdentifier());
       }
       if (delegateGroupQuery.get() != null) {
         throw new InvalidRequestException(
