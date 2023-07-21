@@ -1233,12 +1233,14 @@ public class ScmServiceClientImpl implements ScmServiceClient {
       ScmConnector scmConnector, PageRequestDTO pageRequest, BranchFilterParamsDTO branchFilterParamsDTO) {
     final String slug = scmGitProviderHelper.getSlug(scmConnector);
     final Provider provider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
-    int pageNumber = 1;
     ListBranchesWithDefaultRequest listBranchesWithDefaultRequest =
         ListBranchesWithDefaultRequest.newBuilder()
             .setSlug(slug)
             .setProvider(provider)
-            .setPagination(PageRequest.newBuilder().setPage(pageNumber).setSize(pageRequest.getPageSize()).build())
+            .setPagination(PageRequest.newBuilder()
+                               .setPage(pageRequest.getPageIndex() + 1)
+                               .setSize(pageRequest.getPageSize())
+                               .build())
             .build();
     if (branchFilterParamsDTO != null) {
       listBranchesWithDefaultRequest =

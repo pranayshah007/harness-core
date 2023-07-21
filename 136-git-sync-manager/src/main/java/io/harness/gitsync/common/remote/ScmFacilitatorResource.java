@@ -412,10 +412,11 @@ public class ScmFacilitatorResource {
               + "(max 100)"
               + "Default Value: 50") @QueryParam(NGCommonEntityConstants.SIZE) @DefaultValue("50") @Max(100)
       int listSize,
-      @Parameter(description = GitSyncApiConstants.SEARCH_TERM_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.SEARCH_TERM) @DefaultValue("") String searchTerm) {
-    return ResponseDTO.newResponse(scmFacilitatorService.listBranchesV2(accountIdentifier, orgIdentifier,
-        projectIdentifier, connectorRef, repoName, PageRequest.builder().pageSize(listSize).build(), searchTerm));
+      @Parameter(description = GitSyncApiConstants.BRANCH_NAME_SEARCH_TERM_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.BRANCH_NAME_SEARCH_TERM) @DefaultValue("") String branchNameSearchTerm) {
+    return ResponseDTO.newResponse(
+        scmFacilitatorService.listBranchesV2(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef,
+            repoName, PageRequest.builder().pageSize(listSize).build(), branchNameSearchTerm));
   }
 
   @GET

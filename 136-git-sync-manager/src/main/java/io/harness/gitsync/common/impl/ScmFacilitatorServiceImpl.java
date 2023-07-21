@@ -236,7 +236,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
 
   @Override
   public GitBranchesResponseDTO listBranchesV2(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String connectorRef, String repoName, PageRequest pageRequest, String searchTerm) {
+      String connectorRef, String repoName, PageRequest pageRequest, String branchNameSearchTerm) {
     final ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(
         accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, repoName);
 
@@ -248,7 +248,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
                     .pageIndex(pageRequest.getPageIndex())
                     .pageSize(pageRequest.getPageSize())
                     .build(),
-                BranchFilterParamsDTO.builder().branchName(searchTerm).build()),
+                BranchFilterParamsDTO.builder().branchName(branchNameSearchTerm).build()),
             scmConnector);
 
     if (ScmApiErrorHandlingHelper.isFailureResponse(
@@ -259,7 +259,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
           ErrorMetadata.builder().connectorRef(connectorRef).repoName(repoName).build());
     }
 
-    List<GitBranchDetailsDTO> gitBranches = prepareGitBranchList(listBranchesWithDefaultResponse, searchTerm);
+    List<GitBranchDetailsDTO> gitBranches = prepareGitBranchList(listBranchesWithDefaultResponse, branchNameSearchTerm);
     return GitBranchesResponseDTO.builder()
         .branches(gitBranches)
         .defaultBranch(GitBranchDetailsDTO.builder().name(listBranchesWithDefaultResponse.getDefaultBranch()).build())
