@@ -176,7 +176,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
 
   @Override
   public List<GitRepositoryResponseDTO> listReposByRefConnector(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String connectorRef, PageRequest pageRequest, String searchTerm,
+      String projectIdentifier, String connectorRef, PageRequest pageRequest, String repoNameSearchTerm,
       boolean applyGitXRepoAllowListFilter) {
     ScmConnector scmConnector =
         gitSyncConnectorHelper.getScmConnector(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef);
@@ -185,7 +185,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
         scmClientFacilitatorService
         -> scmClientFacilitatorService.listUserRepos(accountIdentifier, orgIdentifier, projectIdentifier, scmConnector,
             PageRequestDTO.builder().pageIndex(pageRequest.getPageIndex()).pageSize(pageRequest.getPageSize()).build(),
-            RepoFilterParamsDTO.builder().repoName(searchTerm).build()),
+            RepoFilterParamsDTO.builder().repoName(repoNameSearchTerm).build()),
         scmConnector);
     if (ScmApiErrorHandlingHelper.isFailureResponse(response.getStatus(), scmConnector.getConnectorType())) {
       ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.LIST_REPOSITORIES, scmConnector.getConnectorType(),
@@ -218,8 +218,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
             .get(()
                      -> scmOrchestratorService.processScmRequestUsingConnectorSettings(scmClientFacilitatorService
                          -> scmClientFacilitatorService.listUserRepos(accountIdentifier, orgIdentifier,
-                             projectIdentifier, scmConnector, PageRequestDTO.builder().fetchAll(true).build(),
-                             RepoFilterParamsDTO.builder().build()),
+                             projectIdentifier, scmConnector, PageRequestDTO.builder().fetchAll(true).build(), null),
                          scmConnector));
 
     if (ScmApiErrorHandlingHelper.isFailureResponse(response.getStatus(), scmConnector.getConnectorType())) {

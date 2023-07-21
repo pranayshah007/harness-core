@@ -948,6 +948,12 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   }
 
   @Override
+  public GetUserReposResponse getUserRepos(
+      ScmConnector scmConnector, io.harness.beans.PageRequestDTO pageRequest, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+    GetUserReposRequest getUserReposRequest = buildGetUserReposRequest(scmConnector, pageRequest, null);
+    return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getUserRepos, getUserReposRequest);
+  }
+  @Override
   public GetUserReposResponse getUserRepos(ScmConnector scmConnector, io.harness.beans.PageRequestDTO pageRequest,
       SCMGrpc.SCMBlockingStub scmBlockingStub, RepoFilterParamsDTO repoFilterParamsDTO) {
     GetUserReposRequest getUserReposRequest = buildGetUserReposRequest(scmConnector, pageRequest, repoFilterParamsDTO);
@@ -1272,15 +1278,9 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     }
   }
 
-  private String getRepoOwner(ScmConnector scmConnector) {
-    String slug = scmGitProviderHelper.getSlug(scmConnector);
-    return slug.split("/")[0];
-  }
-
   private GetUserReposRequest buildGetUserReposRequest(
       ScmConnector scmConnector, io.harness.beans.PageRequestDTO pageRequest, RepoFilterParamsDTO repoFilterParamsDTO) {
     Provider gitProvider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
-    String owner = getRepoOwner(scmConnector);
     GetUserReposRequest getUserReposRequest = GetUserReposRequest.newBuilder()
                                                   .setPagination(PageRequest.newBuilder()
                                                                      .setPage(pageRequest.getPageIndex() + 1)
@@ -1292,7 +1292,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     if (repoFilterParamsDTO != null) {
       getUserReposRequest = GetUserReposRequest.newBuilder(getUserReposRequest)
                                 .setRepoFilterParams(RepoFilterParams.newBuilder()
-                                                         .setUserName(owner)
+                                                         .setUserName(scmGitProviderHelper.getRepoOwner(scmConnector))
                                                          .setRepoName(repoFilterParamsDTO.getRepoName())
                                                          .build())
                                 .build();

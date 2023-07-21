@@ -157,7 +157,7 @@ public class ScmGitRefTask extends AbstractDelegateRunnableTask {
                 scmGitRefTaskParams.getRepoFilterDelegateTaskParams() != null
                     ? RepoFilterParamsDTO.builder()
                           .repoName(scmGitRefTaskParams.getRepoFilterDelegateTaskParams().getRepoName())
-                          .userName(scmGitRefTaskParams.getRepoFilterDelegateTaskParams().getUser())
+                          .userName(scmGitRefTaskParams.getRepoFilterDelegateTaskParams().getUserName())
                           .build()
                     : RepoFilterParamsDTO.builder().build()));
         return ScmGitRefTaskResponseData.builder()

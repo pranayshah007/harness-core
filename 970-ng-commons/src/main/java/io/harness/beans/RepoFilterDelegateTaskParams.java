@@ -19,5 +19,5 @@ import lombok.Data;
 @OwnedBy(PIPELINE)
 public class RepoFilterDelegateTaskParams {
   String repoName;
-  String user;
+  String userName;
 }

@@ -144,6 +144,9 @@ public interface ScmServiceClient {
   UserDetailsResponseDTO getUserDetails(
       UserDetailsRequestDTO userDetailsRequestDTO, SCMGrpc.SCMBlockingStub scmBlockingStub);
 
+  GetUserReposResponse getUserRepos(
+      ScmConnector scmConnector, PageRequestDTO pageRequest, SCMGrpc.SCMBlockingStub scmBlockingStub);
+
   GetUserReposResponse getUserRepos(ScmConnector scmConnector, PageRequestDTO pageRequest,
       SCMGrpc.SCMBlockingStub scmBlockingStub, RepoFilterParamsDTO repoFilterParamsDTO);
 

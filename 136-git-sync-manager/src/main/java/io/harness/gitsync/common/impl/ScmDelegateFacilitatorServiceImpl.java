@@ -1231,7 +1231,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
     }
     return RepoFilterDelegateTaskParams.builder()
         .repoName(repoFilterParamsDTO.getRepoName())
-        .user(repoFilterParamsDTO.getUserName())
+        .userName(repoFilterParamsDTO.getUserName())
         .build();
   }
 }

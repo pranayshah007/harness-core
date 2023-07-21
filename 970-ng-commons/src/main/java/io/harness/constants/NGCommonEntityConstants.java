@@ -76,6 +76,7 @@ public class NGCommonEntityConstants {
   public static final String GA_CLIENT_ID = "ga_client_id";
   public static final String ENTITY_TYPE = "entityType";
   public static final String SEARCH_TERM = "searchTerm";
+  public static final String REPO_NAME_SEARCH_TERM = "repoNameSearchTerm";
   public static final String USER_ID = "userId";
   public static final String PAGE = "page";
   public static final String PAGE_SIZE = "page_size";

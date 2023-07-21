@@ -128,4 +128,9 @@ public class ScmGitProviderHelper {
     }
     return String.valueOf(tokenRef.getDecryptedValue());
   }
+
+  public String getRepoOwner(ScmConnector scmConnector) {
+    String slug = getSlug(scmConnector);
+    return slug.split("/")[0];
+  }
 }

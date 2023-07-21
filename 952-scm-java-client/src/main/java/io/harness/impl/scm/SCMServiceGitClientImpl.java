@@ -206,6 +206,11 @@ public class SCMServiceGitClientImpl implements ScmClient {
   }
 
   @Override
+  public GetUserReposResponse getUserRepos(ScmConnector scmConnector, PageRequestDTO pageRequest) {
+    return scmServiceClient.getUserRepos(scmConnector, pageRequest, scmBlockingStub);
+  }
+
+  @Override
   public GetUserReposResponse getUserRepos(
       ScmConnector scmConnector, PageRequestDTO pageRequest, RepoFilterParamsDTO repoFilterParamsDTO) {
     return scmServiceClient.getUserRepos(scmConnector, pageRequest, scmBlockingStub, repoFilterParamsDTO);

@@ -110,6 +110,7 @@ public interface ScmClient {
 
   FindCommitResponse findCommit(ScmConnector scmConnector, String commitId);
 
+  GetUserReposResponse getUserRepos(ScmConnector scmConnector, PageRequestDTO pageRequest);
   GetUserReposResponse getUserRepos(
       ScmConnector scmConnector, PageRequestDTO pageRequest, RepoFilterParamsDTO repoFilterParamsDTO);
 

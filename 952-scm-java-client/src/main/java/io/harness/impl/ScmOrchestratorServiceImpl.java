@@ -204,6 +204,11 @@ public class ScmOrchestratorServiceImpl implements ScmOrchestratorService {
   }
 
   @Override
+  public GetUserReposResponse getUserRepos(ScmConnector scmConnector, PageRequestDTO pageRequest) {
+    return scmServiceGitClient.getUserRepos(scmConnector, pageRequest);
+  }
+
+  @Override
   public GetUserReposResponse getUserRepos(
       ScmConnector scmConnector, PageRequestDTO pageRequest, RepoFilterParamsDTO repoFilterParamsDTO) {
     return scmServiceGitClient.getUserRepos(scmConnector, pageRequest, repoFilterParamsDTO);
