@@ -612,7 +612,7 @@ public class UserServiceImpl implements UserService {
       for (Account account : accountsWithNullLicenseInfo) {
         if (!"Global".equals(account.getAccountName())) {
           String ngLicense = getHighestEditionNgLicense(account.getUuid());
-          if (ngLicense != null && !ngLicense.isEmpty()) {
+          if (ngLicense != null && StringUtils.isNotEmpty(ngLicense)) {
             account.getLicenseInfo().setAccountType(ngLicense);
           }
         }
