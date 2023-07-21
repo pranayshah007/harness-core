@@ -25,11 +25,13 @@ import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
 @Slf4j
 @Singleton
 public class CEViewDao {
   @Inject private HPersistence hPersistence;
+  @Inject private MongoTemplate mongoTemplate;
   private static final String VIEW_VISUALIZATION_GROUP_BY_FIELD_ID = "viewVisualization.groupBy.fieldId";
   private static final String VIEW_VISUALIZATION_GROUP_BY_FIELD_NAME = "viewVisualization.groupBy.fieldName";
   private static final String VIEW_VISUALIZATION_GROUP_BY_IDENTIFIER = "viewVisualization.groupBy.identifier";
@@ -42,7 +44,11 @@ public class CEViewDao {
   private static final String BUSINESS_MAPPING = "BUSINESS_MAPPING";
 
   public boolean save(CEView ceView) {
-    return hPersistence.save(ceView) != null;
+    if (mongoTemplate.save(ceView) != null) {
+      return true;
+    }
+    return false;
+    // hPersistence.save(ceView) != null;
   }
 
   public void updateBusinessMappingName(String accountId, String buinessMappingUuid, String newBusinessMappingName) {

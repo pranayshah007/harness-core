@@ -8,11 +8,13 @@
 package io.harness.ccm.views.entities;
 
 import io.harness.annotations.StoreIn;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
-import io.harness.persistence.AccountAccess;
+import io.harness.ng.core.NGAccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.CreatedByAware;
 import io.harness.persistence.PersistentEntity;
@@ -32,6 +34,8 @@ import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotBlank;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.LastModifiedBy;
 
 @Data
 @Builder
@@ -40,7 +44,8 @@ import org.hibernate.validator.constraints.NotBlank;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity(value = "ceView", noClassnameStored = true)
 @Schema(description = "This object will contain the complete definition of a Cloud Cost Perspective")
-public final class CEView implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess,
+@OwnedBy(HarnessTeam.CE)
+public final class CEView implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, NGAccountAccess,
                                      CreatedByAware, UpdatedByAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
@@ -70,8 +75,8 @@ public final class CEView implements PersistentEntity, UuidAware, CreatedAtAware
   double totalCost;
   long createdAt;
   long lastUpdatedAt;
-  private EmbeddedUser createdBy;
-  private EmbeddedUser lastUpdatedBy;
+  @CreatedBy private EmbeddedUser createdBy;
+  @LastModifiedBy private EmbeddedUser lastUpdatedBy;
 
   public CEView toDTO() {
     return CEView.builder()
@@ -90,5 +95,10 @@ public final class CEView implements PersistentEntity, UuidAware, CreatedAtAware
         .createdBy(getCreatedBy())
         .lastUpdatedBy(getLastUpdatedBy())
         .build();
+  }
+
+  @Override
+  public String getAccountIdentifier() {
+    return accountId;
   }
 }
