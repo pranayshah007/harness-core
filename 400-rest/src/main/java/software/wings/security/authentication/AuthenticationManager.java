@@ -419,6 +419,9 @@ public class AuthenticationManager {
       }
 
       User user;
+      log.info(
+          "DEBUG_USER_PASSWORD_LOGIN_TIME: Starting login internal processing with audits for user: {}, using passwordHash: {}, at: {}",
+          userName, isPasswordHash, System.currentTimeMillis());
       if (isPasswordHash) {
         if (authHandler instanceof PasswordBasedAuthHandler) {
           PasswordBasedAuthHandler passwordBasedAuthHandler = (PasswordBasedAuthHandler) authHandler;
@@ -436,8 +439,15 @@ public class AuthenticationManager {
         return generate2faJWTToken(user);
       } else {
         User loggedInUser = authService.generateBearerTokenForUser(user);
+        log.info("DEBUG_USER_PASSWORD_LOGIN_TIME: Starting login audit for user: {} at: {}", user.getUuid(),
+            System.currentTimeMillis());
         authService.auditLogin(Collections.singletonList(account.getUuid()), loggedInUser);
         authService.auditLoginToNg(Collections.singletonList(account.getUuid()), loggedInUser);
+        log.info("DEBUG_USER_PASSWORD_LOGIN_TIME: Finished login audit for user: {} at: {}", user.getUuid(),
+            System.currentTimeMillis());
+        log.info(
+            "DEBUG_USER_PASSWORD_LOGIN_TIME: Finished login internal processing with audits for user: {}, using passwordHash: {}, at: {}",
+            userName, isPasswordHash, System.currentTimeMillis());
         return loggedInUser;
       }
 
