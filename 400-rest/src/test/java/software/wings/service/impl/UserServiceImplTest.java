@@ -20,8 +20,19 @@ import static io.harness.ng.core.invites.dto.InviteOperationResponse.INVITE_EXPI
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.INVITE_INVALID;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_ALREADY_ADDED;
 import static io.harness.persistence.HQuery.excludeAuthority;
+import static io.harness.rule.OwnerRule.BHAVYA;
+import static io.harness.rule.OwnerRule.DEEPAK;
+import static io.harness.rule.OwnerRule.HEN;
+import static io.harness.rule.OwnerRule.MOHIT;
+import static io.harness.rule.OwnerRule.NAMANG;
+import static io.harness.rule.OwnerRule.NANDAN;
+import static io.harness.rule.OwnerRule.PRATEEK;
+import static io.harness.rule.OwnerRule.RAFAEL;
+import static io.harness.rule.OwnerRule.RAJ;
+import static io.harness.rule.OwnerRule.TEJAS;
+import static io.harness.rule.OwnerRule.VIKAS_M;
+import static io.harness.rule.OwnerRule.VOJIN;
 
-import static io.harness.rule.OwnerRule.*;
 import static software.wings.app.ManagerCacheRegistrar.PRIMARY_CACHE_PREFIX;
 import static software.wings.app.ManagerCacheRegistrar.USER_CACHE;
 import static software.wings.beans.Account.Builder.anAccount;
