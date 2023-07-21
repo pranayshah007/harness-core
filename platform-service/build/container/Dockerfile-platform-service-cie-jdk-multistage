@@ -6,15 +6,52 @@
 FROM us.gcr.io/platform-205701/cie-agent-harness-core-jdk11:latest as builder
 
 RUN mkdir -p /app
-
+ARG GCP_KEY
 COPY . /app
 
 WORKDIR /app
 
-RUN chmod +x /app/platform-service/build/feature_build.sh
-RUN chmod +x /app/platform-service/build/build_jar.sh
-RUN chmod +x /app/platform-service/build/build_dist.sh
-RUN chmod +x /app/scripts/bazel/testDistribute.sh
+ENV BUILD_PURPOSE=DEVELOPMENT
 
-RUN /app/platform-service/build/feature_build.sh
-RUN /app/platform-service/build/build_jar.sh
+RUN chmod +x \
+    /app/platform-service/build/feature_build.sh \
+    /app/platform-service/build/build_jar.sh \
+    /app/platform-service/build/build_dist.sh \
+    /app/scripts/bazel/generate_credentials.sh \
+    && /app/scripts/bazel/generate_credentials.sh \
+    && /app/platform-service/build/feature_build.sh $GCP_KEY \
+    && /app/platform-service/build/build_jar.sh \
+    && /app/platform-service/build/build_dist.sh
+
+FROM us.gcr.io/platform-205701/ubi/ubi-java:8.8 as base
+
+# Add the capsule JAR and config.yml
+COPY --chown=65534:65534  --from=builder \
+  /app/dist/platform-service/platform-service-capsule.jar  \
+  /app/dist/platform-service/keystore.jks \
+  /app/dist/platform-service/config.yml \
+  /app/dist/platform-service/classpath_metadata.json \
+  /app/dist/platform-service/scripts /opt/harness \
+  /app/dist/platform-service/default.jfc \
+  /app/dist/platform-service/profile.jfc \
+  /app/dockerization/base-images/apm/*.sh \
+  /opt/harness/
+RUN chmod +x /opt/harness/*.sh
+CMD [ "/opt/harness/run.sh" ]
+
+############################ON PREM#########################
+FROM base as onprem
+
+RUN /opt/harness/inject-onprem-apm-bins-into-dockerimage.sh && rm /opt/harness/inject-onprem-apm-bins-into-dockerimage.sh
+USER root
+RUN microdnf remove tar unzip gzip \
+    && microdnf clean all \
+    && rm -rf /var/cache/yum
+USER 65534
+
+############################SAAS#########################
+FROM base as saas
+
+RUN /opt/harness/inject-saas-apm-bins-into-dockerimage.sh && rm -rf /opt/harness/inject-saas-apm-bins-into-dockerimage.sh
+
+USER root
