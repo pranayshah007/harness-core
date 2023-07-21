@@ -9,6 +9,7 @@ import re
 import datetime
 import util
 import requests
+import uuid
 
 from util import create_dataset, if_tbl_exists, createTable, print_, run_batch_query, COSTAGGREGATED, UNIFIED, \
     PREAGGREGATED, CEINTERNALDATASET, CURRENCYCONVERSIONFACTORUSERINPUT, update_connector_data_sync_status, \
@@ -58,10 +59,13 @@ def main(request):
     """
     print(request)
     jsonData = request.get_json(force=True)
-    print(jsonData)
 
     # Set accountid for GCP logging
     util.ACCOUNTID_LOG = jsonData.get("accountId")
+    util.CF_EXECUTION_ID = uuid.uuid4()
+    print_(request)
+    print_(jsonData)
+
     jsonData["cloudProvider"] = "AWS"
     ps = jsonData["path"].split("/")
     if len(ps) == 4:

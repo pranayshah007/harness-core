@@ -26,6 +26,7 @@ import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.exception.InvalidRequestException;
+import io.harness.logging.LogCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.rule.Owner;
 import io.harness.tasks.ResponseData;
@@ -59,6 +60,8 @@ public class ManifestTaskServiceImplTest extends CategoryTest {
 
   @Mock private Map<String, ManifestTaskHandler> taskHandlersMap;
 
+  @Mock private LogCallback logCallback;
+
   @InjectMocks private ManifestTaskServiceImpl taskService;
 
   private final Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", "test-account").build();
@@ -68,12 +71,17 @@ public class ManifestTaskServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testIsSupported() {
     final ManifestOutcome manifest = createMockManifest(MANIFEST_TYPE_1);
+    final FetchManifestTaskContext context = FetchManifestTaskContext.builder()
+                                                 .manifestOutcome(manifest)
+                                                 .ambiance(ambiance)
+                                                 .logCallback(logCallback)
+                                                 .build();
     setupMockMapHandler(MANIFEST_TYPE_1);
 
-    doReturn(true).when(mockTaskHandler).isSupported(ambiance, manifest);
+    doReturn(true).when(mockTaskHandler).isSupported(context);
 
-    assertThat(taskService.isSupported(ambiance, manifest)).isTrue();
-    verify(mockTaskHandler).isSupported(ambiance, manifest);
+    assertThat(taskService.isSupported(context)).isTrue();
+    verify(mockTaskHandler).isSupported(context);
   }
 
   @Test
@@ -81,12 +89,18 @@ public class ManifestTaskServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testIsSupportedNegative() {
     final ManifestOutcome manifest = createMockManifest(MANIFEST_TYPE_1);
+    final FetchManifestTaskContext context = FetchManifestTaskContext.builder()
+                                                 .manifestOutcome(manifest)
+                                                 .ambiance(ambiance)
+                                                 .logCallback(logCallback)
+                                                 .build();
+
     setupMockMapHandler(MANIFEST_TYPE_1);
 
-    doReturn(false).when(mockTaskHandler).isSupported(ambiance, manifest);
+    doReturn(false).when(mockTaskHandler).isSupported(context);
 
-    assertThat(taskService.isSupported(ambiance, manifest)).isFalse();
-    verify(mockTaskHandler).isSupported(ambiance, manifest);
+    assertThat(taskService.isSupported(context)).isFalse();
+    verify(mockTaskHandler).isSupported(context);
   }
 
   @Test
@@ -94,9 +108,14 @@ public class ManifestTaskServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testIsSupportedNoHandler() {
     final ManifestOutcome manifest = createMockManifest(MANIFEST_TYPE_1);
+    final FetchManifestTaskContext context = FetchManifestTaskContext.builder()
+                                                 .manifestOutcome(manifest)
+                                                 .ambiance(ambiance)
+                                                 .logCallback(logCallback)
+                                                 .build();
 
-    assertThat(taskService.isSupported(ambiance, manifest)).isFalse();
-    verify(mockTaskHandler, never()).isSupported(ambiance, manifest);
+    assertThat(taskService.isSupported(context)).isFalse();
+    verify(mockTaskHandler, never()).isSupported(context);
   }
 
   @Test
@@ -105,15 +124,20 @@ public class ManifestTaskServiceImplTest extends CategoryTest {
   public void testCreateTaskData() {
     final TaskData expectedTaskData = TaskData.builder().build();
     final ManifestOutcome manifest = createMockManifest(MANIFEST_TYPE_1);
+    final FetchManifestTaskContext context = FetchManifestTaskContext.builder()
+                                                 .manifestOutcome(manifest)
+                                                 .ambiance(ambiance)
+                                                 .logCallback(logCallback)
+                                                 .build();
     setupMockMapHandler(MANIFEST_TYPE_1);
 
-    doReturn(Optional.of(expectedTaskData)).when(mockTaskHandler).createTaskData(ambiance, manifest);
+    doReturn(Optional.of(expectedTaskData)).when(mockTaskHandler).createTaskData(context);
 
-    Optional<TaskData> result = taskService.createTaskData(ambiance, manifest);
+    Optional<TaskData> result = taskService.createTaskData(context);
 
     assertThat(result).isNotEmpty();
     assertThat(result.get()).isEqualTo(expectedTaskData);
-    verify(mockTaskHandler).createTaskData(ambiance, manifest);
+    verify(mockTaskHandler).createTaskData(context);
   }
 
   @Test
@@ -121,14 +145,19 @@ public class ManifestTaskServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateTaskDataEmptyTaskData() {
     final ManifestOutcome manifest = createMockManifest(MANIFEST_TYPE_1);
+    final FetchManifestTaskContext context = FetchManifestTaskContext.builder()
+                                                 .manifestOutcome(manifest)
+                                                 .ambiance(ambiance)
+                                                 .logCallback(logCallback)
+                                                 .build();
     setupMockMapHandler(MANIFEST_TYPE_1);
 
-    doReturn(Optional.empty()).when(mockTaskHandler).createTaskData(ambiance, manifest);
+    doReturn(Optional.empty()).when(mockTaskHandler).createTaskData(context);
 
-    Optional<TaskData> result = taskService.createTaskData(ambiance, manifest);
+    Optional<TaskData> result = taskService.createTaskData(context);
 
     assertThat(result).isEmpty();
-    verify(mockTaskHandler).createTaskData(ambiance, manifest);
+    verify(mockTaskHandler).createTaskData(context);
   }
 
   @Test
@@ -136,13 +165,18 @@ public class ManifestTaskServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateTaskDataNoTaskHandler() {
     final ManifestOutcome manifest = createMockManifest(MANIFEST_TYPE_1);
+    final FetchManifestTaskContext context = FetchManifestTaskContext.builder()
+                                                 .manifestOutcome(manifest)
+                                                 .ambiance(ambiance)
+                                                 .logCallback(logCallback)
+                                                 .build();
 
-    doReturn(Optional.empty()).when(mockTaskHandler).createTaskData(ambiance, manifest);
+    doReturn(Optional.empty()).when(mockTaskHandler).createTaskData(context);
 
-    Optional<TaskData> result = taskService.createTaskData(ambiance, manifest);
+    Optional<TaskData> result = taskService.createTaskData(context);
 
     assertThat(result).isEmpty();
-    verify(mockTaskHandler, never()).createTaskData(ambiance, manifest);
+    verify(mockTaskHandler, never()).createTaskData(context);
   }
 
   @Test

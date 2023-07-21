@@ -8,6 +8,9 @@
 package io.harness.steps.jira.create;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.eraro.ErrorCode.APPROVAL_STEP_NG_ERROR;
+import static io.harness.jira.JiraConstantsNG.ISSUE_TYPE_NAME;
+import static io.harness.jira.JiraConstantsNG.STATUS_NAME;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
@@ -17,13 +20,16 @@ import io.harness.delegate.task.jira.JiraTaskNGParameters;
 import io.harness.delegate.task.jira.JiraTaskNGParameters.JiraTaskNGParametersBuilder;
 import io.harness.delegate.task.jira.JiraTaskNGResponse;
 import io.harness.engine.executions.step.StepExecutionEntityService;
+import io.harness.eraro.Level;
+import io.harness.exception.ExceptionUtils;
 import io.harness.execution.step.jira.create.JiraCreateStepExecutionDetails;
-import io.harness.execution.step.jira.create.JiraCreateStepExecutionDetails.JiraCreateStepExecutionDetailsBuilder;
 import io.harness.jira.JiraActionNG;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureData;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -44,10 +50,8 @@ import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDC)
-@Slf4j
 public class JiraCreateStep extends PipelineTaskExecutable<JiraTaskNGResponse> {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.JIRA_CREATE_STEP_TYPE;
 
@@ -94,35 +98,34 @@ public class JiraCreateStep extends PipelineTaskExecutable<JiraTaskNGResponse> {
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       ThrowingSupplier<JiraTaskNGResponse> responseSupplier) throws Exception {
     dashboardExecutorService.submit(
-        ()
-            -> stepExecutionEntityService.updateStepExecutionEntity(ambiance, null,
-                createJiraCreateStepExecutionDetailsFromResponse(ambiance, responseSupplier), stepParameters.getName(),
-                Status.RUNNING));
+        () -> updateJiraCreateStepExecutionDetailsFromResponse(ambiance, responseSupplier, stepParameters.getName()));
     return jiraStepHelperService.prepareStepResponse(responseSupplier);
   }
 
-  private JiraCreateStepExecutionDetails createJiraCreateStepExecutionDetailsFromResponse(
-      Ambiance ambiance, ThrowingSupplier<JiraTaskNGResponse> responseSupplier) {
+  private void updateJiraCreateStepExecutionDetailsFromResponse(
+      Ambiance ambiance, ThrowingSupplier<JiraTaskNGResponse> responseSupplier, String stepName) {
     try {
       JiraTaskNGResponse taskResponse = responseSupplier.get();
       if (taskResponse != null && taskResponse.getIssue() != null) {
-        JiraCreateStepExecutionDetailsBuilder builder =
-            JiraCreateStepExecutionDetails.builder().url(taskResponse.getIssue().getUrl());
-        if (taskResponse.getIssue().getFields().containsKey("Status")) {
-          builder.ticketStatus(taskResponse.getIssue().getFields().get("Status").toString());
-        }
-        return builder.build();
+        JiraCreateStepExecutionDetails jiraCreateStepExecutionDetails =
+            JiraCreateStepExecutionDetails.builder()
+                .url(taskResponse.getIssue().getUrl())
+                .issueType(taskResponse.getIssue().getFields().getOrDefault(ISSUE_TYPE_NAME, "").toString())
+                .ticketStatus(taskResponse.getIssue().getFields().getOrDefault(STATUS_NAME, "").toString())
+                .build();
+        stepExecutionEntityService.updateStepExecutionEntity(
+            ambiance, null, jiraCreateStepExecutionDetails, stepName, Status.RUNNING);
       }
     } catch (Exception ex) {
-      log.error(
-          String.format(
-              "Unable to update step execution entity, accountIdentifier: %s, orgIdentifier: %s, projectIdentifier: %s, planExecutionId: %s, stageExecutionId: %s, stepExecutionId: %s",
-              AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
-              AmbianceUtils.getProjectIdentifier(ambiance), ambiance.getPlanExecutionId(),
-              ambiance.getStageExecutionId(), AmbianceUtils.obtainCurrentRuntimeId(ambiance)),
-          ex);
+      FailureInfo failureInfo = FailureInfo.newBuilder()
+                                    .addFailureData(FailureData.newBuilder()
+                                                        .setLevel(Level.ERROR.name())
+                                                        .setCode(APPROVAL_STEP_NG_ERROR.name())
+                                                        .setMessage(ExceptionUtils.getMessage(ex))
+                                                        .build())
+                                    .build();
+      stepExecutionEntityService.updateStepExecutionEntity(ambiance, failureInfo, null, stepName, Status.RUNNING);
     }
-    return null;
   }
 
   @Override

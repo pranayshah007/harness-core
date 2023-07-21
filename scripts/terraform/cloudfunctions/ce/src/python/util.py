@@ -18,6 +18,7 @@ from google.cloud.exceptions import NotFound
 
 publisher = pubsub_v1.PublisherClient()
 ACCOUNTID_LOG = ""
+CF_EXECUTION_ID = ""
 TABLE_NAME_FORMAT = "%s.BillingReport_%s.%s"
 
 # TABLE NAMES
@@ -82,7 +83,8 @@ BACKUP_CURRENCY_FX_RATES = {
 def print_(message, severity="INFO"):
     # Set account id in the beginning of your CF call
     try:
-        print(json.dumps({"accountId":ACCOUNTID_LOG, "severity":severity, "message": message}))
+        print(json.dumps({"accountId":ACCOUNTID_LOG, "severity":severity,
+                          "message": message, "cloudFunctionExecutionId": str(CF_EXECUTION_ID)}))
     except:
         print(message)
 

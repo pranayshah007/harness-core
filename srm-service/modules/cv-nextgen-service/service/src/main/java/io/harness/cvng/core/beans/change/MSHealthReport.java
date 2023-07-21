@@ -5,9 +5,9 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cvng.beans;
+package io.harness.cvng.core.beans.change;
 
-import io.harness.cvng.beans.change.ChangeSummaryDTO;
+import io.harness.cvng.core.beans.monitoredService.RiskData;
 
 import java.util.List;
 import lombok.Builder;
@@ -17,7 +17,7 @@ import lombok.Value;
 @Data
 @Builder
 public class MSHealthReport {
-  int currentHealthScore;
+  RiskData currentHealthScore;
   ChangeSummaryDTO changeSummary;
   List<AssociatedSLOsDetails> associatedSLOsDetails;
   String internalLinkToEntity;
@@ -31,6 +31,8 @@ public class MSHealthReport {
     String scopedMonitoredServiceIdentifier;
     Double pastSLOPerformance;
     Double currentSLOPerformance;
-    Double errorBudgetBurnRate;
+    Double errorBudgetBurned;
+
+    Double errorBudgetRemaining;
   }
 }

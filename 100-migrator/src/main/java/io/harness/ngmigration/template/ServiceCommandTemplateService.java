@@ -69,6 +69,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -105,6 +106,8 @@ public class ServiceCommandTemplateService implements NgTemplateService {
                                                        .map(commandUnit -> handleCommandUnit(context, commandUnit))
                                                        .filter(Objects::nonNull)
                                                        .collect(Collectors.toList());
+
+    updateTemplateSpecWithNewExpressions(context, commandUnitWrappers, variables);
 
     CommandStepInfo commandStepInfo = CommandStepInfo.infoBuilder()
                                           .commandUnits(commandUnitWrappers)
@@ -260,5 +263,20 @@ public class ServiceCommandTemplateService implements NgTemplateService {
 
   static ParameterField<String> valueOrDefaultEmpty(String val) {
     return ParameterField.createValueField(StringUtils.isNotBlank(val) ? val : "");
+  }
+
+  static void updateTemplateSpecWithNewExpressions(
+      MigrationContext context, List<CommandUnitWrapper> commandUnitWrappers, List<NGVariable> variables) {
+    // More details here: https://harness.atlassian.net/browse/CDS-73356
+    if (EmptyPredicate.isEmpty(variables)) {
+      return;
+    }
+    Map<String, Object> customExpressions =
+        variables.stream()
+            .map(NGVariable::getName)
+            .filter(StringUtils::isNotBlank)
+            .collect(Collectors.toMap(s -> s, s -> String.format("<+spec.environmentVariables.%s>", s)));
+
+    MigratorExpressionUtils.render(context, commandUnitWrappers, customExpressions);
   }
 }

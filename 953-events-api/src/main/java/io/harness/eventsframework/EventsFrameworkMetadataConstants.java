@@ -106,4 +106,6 @@ public final class EventsFrameworkMetadataConstants {
 
   // IDP
   public static final String ASYNC_CATALOG_IMPORT_ENTITY = "asyncCatalogImport";
+
+  public static final String CD_ACCOUNT_EXECUTION_METADATA = "cdAccountExecutionMetadata";
 }

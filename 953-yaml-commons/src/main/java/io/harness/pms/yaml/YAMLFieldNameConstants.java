@@ -117,4 +117,5 @@ public class YAMLFieldNameConstants {
   public final String STEP_GROUP_CHILD_NODE_ID = "stepsChildNodeId";
 
   public final String COMBINED_ROLLBACK_STATUS = "combinedRollbackStatus";
+  public final String RETRY_STEP_GROUP = "retryStepGroup";
 }

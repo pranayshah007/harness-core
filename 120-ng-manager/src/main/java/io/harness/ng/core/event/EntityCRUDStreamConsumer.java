@@ -13,6 +13,7 @@ import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_SYNC_ENTITY_STREAM;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.API_KEY_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.AZURE_ARM_CONFIG_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CD_ACCOUNT_EXECUTION_METADATA;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CD_TELEMETRY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CLOUDFORMATION_CONFIG_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
@@ -110,7 +111,9 @@ public class EntityCRUDStreamConsumer extends RedisTraceConsumer {
       @Named(SCM + ENTITY_CRUD) MessageListener sourceCodeManagerEventListener,
       @Named(STAGE_EXEC_INFO + ENTITY_CRUD) MessageListener stageExecutionInfoEventListener,
       @Named(YAML_CHANGE_SET + ENTITY_CRUD) MessageListener yamlChangeSetEventListener,
-      @Named(FILE_ENTITY + ENTITY_CRUD) MessageListener fileEntityCRUDStreamListener, QueueController queueController) {
+      @Named(FILE_ENTITY + ENTITY_CRUD) MessageListener fileEntityCRUDStreamListener,
+      @Named(CD_ACCOUNT_EXECUTION_METADATA + ENTITY_CRUD) MessageListener accountExecutionMetadataCRUDStreamListener,
+      QueueController queueController) {
     this.redisConsumer = redisConsumer;
     this.queueController = queueController;
     messageListenersList = new ArrayList<>();
@@ -146,6 +149,7 @@ public class EntityCRUDStreamConsumer extends RedisTraceConsumer {
     messageListenersList.add(gitopsClusterCleanupProcessor);
     messageListenersList.add(customDeploymentEntityCRUDStreamEventListener);
     messageListenersList.add(fileEntityCRUDStreamListener);
+    messageListenersList.add(accountExecutionMetadataCRUDStreamListener);
     processorMap = new HashMap<>();
     processorMap.put(SETUP_USAGE_ENTITY, setupUsageChangeEventMessageProcessor);
   }

@@ -203,6 +203,7 @@ io.harness.beans.yaml.extended.TIPythonVersion
 io.harness.beans.steps.outcome.CIStepArtifactOutcome
 io.harness.beans.yaml.extended.reports.V1.Report
 io.harness.yaml.core.failurestrategy.retry.RetryFailureSpecConfig
+io.harness.yaml.core.failurestrategy.retry.RetryStepGroupFailureSpecConfig
 io.harness.beans.steps.stepinfo.RestoreCacheS3StepInfo
 io.harness.plancreator.steps.http.HttpStepNode
 io.harness.yaml.core.failurestrategy.rollback.StepGroupFailureActionConfig

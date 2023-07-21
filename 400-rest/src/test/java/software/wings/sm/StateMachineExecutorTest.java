@@ -1156,7 +1156,8 @@ public class StateMachineExecutorTest extends WingsBaseTest {
         ArgumentCaptor.forClass(WorkflowExecution.class);
     WorkflowExecution workflowExecution =
         WorkflowExecution.builder().workflowType(WorkflowType.ORCHESTRATION).uuid("id1").build();
-    when(workflowExecutionService.getWorkflowExecution(any(), any())).thenReturn(workflowExecution);
+    when(workflowExecutionService.getWorkflowExecution(any(), any(), any(String[].class)))
+        .thenReturn(workflowExecution);
     StateExecutionInstance updatedStateExecutionInstance = stateMachineExecutor.handleExecutionEventAdvice(
         context, initialStateExecutionInstance, RUNNING, executionEventAdvice);
     // Change this to WF_Pause once that is merged.

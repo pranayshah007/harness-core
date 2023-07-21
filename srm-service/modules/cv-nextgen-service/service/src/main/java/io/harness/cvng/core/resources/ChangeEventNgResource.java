@@ -13,7 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeSourceType;
-import io.harness.cvng.beans.change.ChangeSummaryDTO;
+import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.core.beans.change.ChangeTimeline;
 import io.harness.cvng.core.beans.params.ProjectPathParams;
 import io.harness.ng.beans.PageRequest;

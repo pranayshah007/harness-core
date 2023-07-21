@@ -32,6 +32,7 @@ public interface JiraConstantsNG {
   String PROJECT_INTERNAL_NAME = "__" + PROJECT_KEY;
 
   String ISSUE_TYPE_KEY = "issuetype";
+  String ISSUE_TYPE_NAME = "Issue Type";
   String ISSUE_TYPE_INTERNAL_NAME = "__" + ISSUE_TYPE_KEY;
 
   String STATUS_KEY = "status";

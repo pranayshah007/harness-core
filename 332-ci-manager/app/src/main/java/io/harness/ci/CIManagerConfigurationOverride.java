@@ -7,6 +7,8 @@
 
 package io.harness.app;
 
+import static io.harness.eventsframework.EventsFrameworkConstants.CI_ORCHESTRATION_NOTIFY_EVENT;
+
 import io.harness.authorization.AuthorizationServiceHeader;
 
 import lombok.AllArgsConstructor;
@@ -25,4 +27,6 @@ public class CIManagerConfigurationOverride {
   private boolean useBuildEnforcer = true;
 
   private String mongoUri = "";
+
+  private String orchestrationEvent = CI_ORCHESTRATION_NOTIFY_EVENT;
 }

@@ -10,6 +10,7 @@ package io.harness.ngmigration.service.servicev2;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static software.wings.ngmigration.NGMigrationEntityType.ARTIFACT_STREAM;
+import static software.wings.ngmigration.NGMigrationEntityType.MANIFEST;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -18,6 +19,7 @@ import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.elastigroup.config.yaml.StartupScriptConfiguration;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
+import io.harness.cdng.manifestConfigs.ManifestConfigurations;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.beans.MigrationContext;
@@ -27,8 +29,10 @@ import io.harness.ngmigration.service.artifactstream.ArtifactStreamFactory;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 
+import software.wings.beans.HelmChartConfig;
 import software.wings.beans.LambdaSpecification;
 import software.wings.beans.Service;
+import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
@@ -71,6 +75,19 @@ public interface ServiceV2Mapper {
     return new ArrayList<>();
   }
 
+  default List<ApplicationManifest> getManifests(
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph, Service service) {
+    CgEntityId cgEntityId = CgEntityId.builder().id(service.getUuid()).type(NGMigrationEntityType.SERVICE).build();
+    if (isNotEmpty(graph.get(cgEntityId)) && graph.get(cgEntityId).stream().anyMatch(e -> e.getType() == MANIFEST)) {
+      return graph.get(cgEntityId)
+          .stream()
+          .filter(e -> e.getType() == MANIFEST)
+          .map(entityId -> (ApplicationManifest) entities.get(entityId).getEntity())
+          .collect(Collectors.toList());
+    }
+    return new ArrayList<>();
+  }
+
   default PrimaryArtifact getPrimaryArtifactStream(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, Service service, Map<CgEntityId, NGYamlFile> migratedEntities) {
     List<ArtifactStream> artifactStreams = getArtifactStream(entities, graph, service);
@@ -100,6 +117,21 @@ public interface ServiceV2Mapper {
         .primaryArtifactRef(ParameterField.createValueField("<+input>"))
         .sources(sources)
         .build();
+  }
+
+  default ManifestConfigurations getManifestConfigurations(
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph, Service service) {
+    List<ApplicationManifest> manifests = getManifests(entities, graph, service);
+    if (EmptyPredicate.isEmpty(manifests)) {
+      return null;
+    }
+    List<HelmChartConfig> helmCharts = manifests.stream()
+                                           .map(applicationManifest -> applicationManifest.getHelmChartConfig())
+                                           .collect(Collectors.toList());
+    if (helmCharts.size() <= 1) {
+      return null;
+    }
+    return ManifestConfigurations.builder().primaryManifestRef(ParameterField.createValueField("<+input>")).build();
   }
 
   default List<ManifestConfigWrapper> changeIdentifier(List<ManifestConfigWrapper> manifests, String prefix) {

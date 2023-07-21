@@ -502,5 +502,10 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
     assertThat(shellScriptOutcome.getOutputVariables()).hasSize(2);
     assertThat(shellScriptOutcome.getOutputVariables().get("output1")).containsPattern(Pattern.compile(SECRET_REGEX));
     assertThat(shellScriptOutcome.getOutputVariables().get("output2")).isEqualTo("val2");
+
+    shellScriptOutcome =
+        ShellScriptHelperService.prepareShellScriptOutcome(new HashMap<>(), outputVariables, secretOutputVars);
+    assertThat(shellScriptOutcome).isNotNull();
+    assertThat(shellScriptOutcome.getOutputVariables().get("output1")).isNull();
   }
 }

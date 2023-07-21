@@ -66,9 +66,7 @@ public class AzureKubernetesClientImpl extends AzureClient implements AzureKuber
 
       Response<AksClusterCredentials> response = request.execute();
       if (response.isSuccessful()) {
-        String clusterCredentials = response.body().getKubeconfigs().get(0).getValue();
-
-        return clusterCredentials;
+        return response.body().getKubeconfigs().get(0).getValue();
       }
 
       error = response.errorBody().string();

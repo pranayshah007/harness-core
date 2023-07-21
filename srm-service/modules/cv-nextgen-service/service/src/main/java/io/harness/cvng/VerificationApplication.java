@@ -40,10 +40,13 @@ import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.entities.Activity.ActivityKeys;
 import io.harness.cvng.activity.jobs.ActivityStatusJob;
 import io.harness.cvng.activity.jobs.HarnessCDCurrentGenEventsHandler;
+import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
+import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail.SRMAnalysisStepExecutionDetailsKeys;
 import io.harness.cvng.analysis.entities.VerificationTaskBase.VerificationTaskBaseKeys;
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.change.ChangeSourceType;
+import io.harness.cvng.beans.change.SRMAnalysisStatus;
 import io.harness.cvng.cdng.jobs.CVNGStepTaskHandler;
 import io.harness.cvng.cdng.services.impl.CVNGFilterCreationResponseMerger;
 import io.harness.cvng.cdng.services.impl.CVNGModuleInfoProvider;
@@ -105,6 +108,7 @@ import io.harness.cvng.migration.beans.CVNGSchema.CVNGSchemaKeys;
 import io.harness.cvng.migration.service.CVNGMigrationService;
 import io.harness.cvng.notification.jobs.MonitoredServiceNotificationHandler;
 import io.harness.cvng.notification.jobs.SLONotificationHandler;
+import io.harness.cvng.notification.jobs.SRMAnalysisStepNotificationHandler;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
@@ -518,6 +522,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     registerNotificationTemplates(configuration, injector);
     registerSLONotificationIterator(injector);
     registerMonitoredServiceNotificationIterator(injector);
+    registerAnalysisStepReportNotificationIterator(injector);
     scheduleSidekickProcessing(injector);
     scheduleMaintenanceActivities(injector, configuration);
     initializeEnforcementSdk(injector);
@@ -1222,7 +1227,8 @@ public class VerificationApplication extends Application<VerificationConfigurati
         PredefinedTemplate.CVNG_SLO_COMPOSITE_ACCOUNT_MSTEAMS, PredefinedTemplate.CVNG_FIREHYDRANT_SLACK,
         PredefinedTemplate.CVNG_MONITOREDSERVICE_SLACK, PredefinedTemplate.CVNG_MONITOREDSERVICE_EMAIL,
         PredefinedTemplate.CVNG_MONITOREDSERVICE_PAGERDUTY, PredefinedTemplate.CVNG_MONITOREDSERVICE_MSTEAMS,
-        PredefinedTemplate.CVNG_MONITOREDSERVICE_ET_SLACK, PredefinedTemplate.CVNG_MONITOREDSERVICE_ET_EMAIL));
+        PredefinedTemplate.CVNG_MONITOREDSERVICE_ET_SLACK, PredefinedTemplate.CVNG_MONITOREDSERVICE_ET_EMAIL,
+        PredefinedTemplate.CVNG_MONITOREDSERVICE_REPORT_SLACK));
 
     if (configuration.getShouldConfigureWithNotification()) {
       for (PredefinedTemplate template : templates) {
@@ -1282,6 +1288,37 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .handler(notificationHandler)
             .schedulingType(REGULAR)
             .filterExpander(query -> query.field(MonitoredServiceKeys.notificationRuleRefs).exists())
+            .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
+            .redistribute(true)
+            .build();
+    injector.injectMembers(dataCollectionIterator);
+    notificationExecutor.scheduleWithFixedDelay(dataCollectionIterator::process, 0, 2, TimeUnit.MINUTES);
+  }
+
+  private void registerAnalysisStepReportNotificationIterator(Injector injector) {
+    ScheduledThreadPoolExecutor notificationExecutor = new ScheduledThreadPoolExecutor(
+        2, new ThreadFactoryBuilder().setNameFormat("analysis-step-report-notification-iterator").build());
+    SRMAnalysisStepNotificationHandler notificationHandler =
+        injector.getInstance(SRMAnalysisStepNotificationHandler.class);
+
+    PersistenceIterator dataCollectionIterator =
+        MongoPersistenceIterator
+            .<SRMAnalysisStepExecutionDetail, MorphiaFilterExpander<SRMAnalysisStepExecutionDetail>>builder()
+            .mode(PersistenceIterator.ProcessMode.PUMP)
+            .iteratorName("AnalysisStepReportNotificationIterator")
+            .clazz(SRMAnalysisStepExecutionDetail.class)
+            .fieldName(SRMAnalysisStepExecutionDetailsKeys.reportNotificationIteration)
+            .targetInterval(ofMinutes(5))
+            .acceptableNoAlertDelay(ofMinutes(3))
+            .executorService(notificationExecutor)
+            .semaphore(new Semaphore(2))
+            .handler(notificationHandler)
+            .schedulingType(REGULAR)
+            .filterExpander(query
+                -> query.and(
+                    query.criteria(SRMAnalysisStepExecutionDetailsKeys.analysisStatus).equal(SRMAnalysisStatus.RUNNING),
+                    query.criteria(SRMAnalysisStepExecutionDetailsKeys.analysisEndTime)
+                        .lessThanOrEq(injector.getInstance(Clock.class).instant().toEpochMilli())))
             .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
             .redistribute(true)
             .build();

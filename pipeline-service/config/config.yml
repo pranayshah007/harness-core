@@ -227,11 +227,12 @@ ciServiceClientConfig:
 
 queueServiceClientConfig:
   httpClientConfig:
-    baseUrl: http://localhost:9091/
+    baseUrl: ${HSQS_BASE_URL:-http://localhost:9091/}
     connectTimeOutSeconds: 15
     readTimeOutSeconds: 15
-  queueServiceSecret: ThisIsMyUniqueJwtQueueServiceSecret
+  queueServiceSecret: ${HSQS_AUTH_TOKEN:-ThisIsMyUniqueJwtQueueServiceSecret}
   envNamespace: ${EVENTS_FRAMEWORK_ENV_NAMESPACE:-localhost}
+  topic: ${HSQS_TOPIC:-pipeline}
 
 ngManagerServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 pipelineServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
@@ -343,7 +344,7 @@ orchestrationStepConfig:
           - /bin/ssca-plugin
     #Todo: Move to config Management Service
     moduleToSupportedSteps:
-      cd: [ "DownloadManifests", "AwsSamBuild", "AwsSamDeploy", "ServerlessAwsLambdaPrepareRollbackV2", "ServerlessAwsLambdaDeployV2", "ServerlessAwsLambdaPackageV2", "AwsCdkBootstrap", "ServerlessAwsLambdaRollbackV2"]
+      cd: [ "DownloadManifests", "AwsSamBuild", "AwsSamDeploy", "ServerlessAwsLambdaPrepareRollbackV2", "ServerlessAwsLambdaDeployV2", "ServerlessAwsLambdaPackageV2", "AwsCdkBootstrap", "AwsCdkSynth", "ServerlessAwsLambdaRollbackV2"]
       ci: [ "Background", "background", "GitClone", "Run", "Plugin", "Action"]
 
 

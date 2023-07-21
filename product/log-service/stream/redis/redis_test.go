@@ -17,10 +17,11 @@ import (
 	"time"
 
 	"github.com/alicebob/miniredis/v2"
-	"github.com/elliotchance/redismock/v7"
-	"github.com/go-redis/redis/v7"
-	"github.com/harness/harness-core/product/log-service/stream"
+	"github.com/go-redis/redismock/v9"
+	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/harness/harness-core/product/log-service/stream"
 )
 
 var (
@@ -82,20 +83,19 @@ func TestCreate_Error(t *testing.T) {
 	ctx := context.Background()
 	key := "key"
 
-	var client *redis.Client
-	mock := redismock.NewNiceMock(client)
+	cli, mock := redismock.NewClientMock()
 	args := &redis.XAddArgs{
-		Stream:       key,
-		ID:           "*",
-		MaxLenApprox: maxStreamSize,
-		Values:       map[string]interface{}{entryKey: []byte{}},
+		Stream: key,
+		ID:     "*",
+		MaxLen: maxStreamSize,
+		Values: map[string]interface{}{entryKey: []byte{}},
 	}
-	mock.On("Exists", []string{key}).Return(redis.NewIntResult(1, nil))
-	mock.On("Del", []string{key}).Return(redis.NewIntResult(1, nil))
-	mock.On("XAdd", args).Return(redis.NewStringResult("failed", errors.New("err")))
+	mock.ExpectExists([]string{key}...).SetVal(1)
+	mock.ExpectDel([]string{key}...).SetVal(1)
+	mock.ExpectXAdd(args).SetErr(errors.New("err"))
 
 	rdb := &Redis{
-		Client: mock,
+		Client: cli,
 	}
 	err := rdb.Create(ctx, key)
 	assert.NotEqual(t, err, nil)
@@ -153,31 +153,32 @@ func TestWrite_Success(t *testing.T) {
 	ctx := context.Background()
 	key := "key"
 
-	var client *redis.Client
-	mock := redismock.NewNiceMock(client)
+	cli, mock := redismock.NewClientMock()
 	line1 := &stream.Line{Level: "info", Number: 0, Message: "test message"}
 	line2 := &stream.Line{Level: "warn", Number: 1, Message: "test message2"}
 	bytes1, _ := json.Marshal(&line1)
 	bytes2, _ := json.Marshal(&line2)
 	args1 := &redis.XAddArgs{
-		Stream:       key,
-		ID:           "*",
-		MaxLenApprox: maxStreamSize,
-		Values:       map[string]interface{}{entryKey: bytes1},
+		Stream: key,
+		ID:     "*",
+		MaxLen: maxStreamSize,
+		Approx: true,
+		Values: map[string]interface{}{entryKey: bytes1},
 	}
 	args2 := &redis.XAddArgs{
-		Stream:       key,
-		ID:           "*",
-		MaxLenApprox: maxStreamSize,
-		Values:       map[string]interface{}{entryKey: bytes2},
+		Stream: key,
+		ID:     "*",
+		MaxLen: maxStreamSize,
+		Approx: true,
+		Values: map[string]interface{}{entryKey: bytes2},
 	}
-	mock.On("Exists", []string{key}).Return(redis.NewIntResult(1, nil))
-	mock.On("XAdd", args1).Return(redis.NewStringResult("success", nil))
-	mock.On("XAdd", args2).Return(redis.NewStringResult("success", nil))
-	mock.On("TTL", key).Return(redis.NewDurationResult(20*time.Second, errors.New("could not get ttl")))
+	mock.ExpectExists([]string{key}...).SetVal(1)
+	mock.ExpectXAdd(args1).SetVal("success")
+	mock.ExpectXAdd(args2).SetVal("success")
+	mock.ExpectTTL(key).SetVal(20 * time.Second)
 
 	rdb := &Redis{
-		Client: mock,
+		Client: cli,
 	}
 	err := rdb.Write(ctx, key, line1, line2)
 	assert.Equal(t, err, nil)
@@ -187,8 +188,7 @@ func TestWrite_Failure(t *testing.T) {
 	ctx := context.Background()
 	key := "key"
 
-	var client *redis.Client
-	mock := redismock.NewNiceMock(client)
+	cli, mock := redismock.NewClientMock()
 	line1 := &stream.Line{Level: "info", Number: 0, Message: "test message"}
 	line2 := &stream.Line{Level: "warn", Number: 1, Message: "test message2"}
 	line3 := &stream.Line{Level: "error", Number: 2, Message: "test message3"}
@@ -196,30 +196,31 @@ func TestWrite_Failure(t *testing.T) {
 	bytes2, _ := json.Marshal(&line2)
 	bytes3, _ := json.Marshal(&line3)
 	args1 := &redis.XAddArgs{
-		Stream:       key,
-		ID:           "*",
-		MaxLenApprox: maxStreamSize,
-		Values:       map[string]interface{}{entryKey: bytes1},
+		Stream: key,
+		ID:     "*",
+		MaxLen: maxStreamSize,
+		Values: map[string]interface{}{entryKey: bytes1},
 	}
 	args2 := &redis.XAddArgs{
-		Stream:       key,
-		ID:           "*",
-		MaxLenApprox: maxStreamSize,
-		Values:       map[string]interface{}{entryKey: bytes2},
+		Stream: key,
+		ID:     "*",
+		MaxLen: maxStreamSize,
+		Values: map[string]interface{}{entryKey: bytes2},
 	}
 	args3 := &redis.XAddArgs{
-		Stream:       key,
-		ID:           "*",
-		MaxLenApprox: maxStreamSize,
-		Values:       map[string]interface{}{entryKey: bytes3},
+		Stream: key,
+		ID:     "*",
+		MaxLen: maxStreamSize,
+		Values: map[string]interface{}{entryKey: bytes3},
 	}
-	mock.On("Exists", []string{key}).Return(redis.NewIntResult(1, nil))
-	mock.On("XAdd", args1).Return(redis.NewStringResult("success", nil))
-	mock.On("XAdd", args2).Return(redis.NewStringResult("", errors.New("err")))
-	mock.On("XAdd", args3).Return(redis.NewStringResult("success", nil))
-	mock.On("TTL", key).Return(redis.NewDurationResult(20*time.Second, errors.New("could not get ttl")))
+	mock.ExpectExists([]string{key}...).SetVal(1)
+	mock.ExpectXAdd(args1).SetVal("success")
+	mock.ExpectXAdd(args2).SetErr(errors.New("err"))
+	mock.ExpectXAdd(args3).SetVal("success")
+	mock.ExpectTTL(key).SetVal(20 * time.Second)
+
 	rdb := &Redis{
-		Client: mock,
+		Client: cli,
 	}
 	err := rdb.Write(ctx, key, line1, line2, line3)
 	assert.NotEqual(t, err, nil)
@@ -229,8 +230,7 @@ func TestTail_Single_Success(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	key := "key"
 
-	var client *redis.Client
-	mock := redismock.NewNiceMock(client)
+	cli, mock := redismock.NewClientMock()
 	line1 := &stream.Line{Level: "info", Number: 0, Message: "test message"}
 	line2 := &stream.Line{Level: "warn", Number: 1, Message: "test message2"}
 	bytes1, _ := json.Marshal(&line1)
@@ -250,12 +250,11 @@ func TestTail_Single_Success(t *testing.T) {
 		},
 	}
 
-	streamSlice := redis.NewXStreamSliceCmdResult(stream, nil)
-	mock.On("Exists", []string{key}).Return(redis.NewIntResult(1, nil))
-	mock.On("XRead", args).Return(streamSlice).After(1 * time.Second)
+	mock.ExpectExists([]string{key}...).SetVal(1)
+	mock.ExpectXRead(args).SetVal(stream)
 
 	rdb := &Redis{
-		Client: mock,
+		Client: cli,
 	}
 	linec, _ := rdb.Tail(ctx, key)
 	time.Sleep(100 * time.Millisecond)
@@ -270,8 +269,7 @@ func TestTail_Multiple(t *testing.T) {
 	ctx, _ := context.WithCancel(context.Background())
 	key := "key"
 
-	var client *redis.Client
-	mock := redismock.NewNiceMock(client)
+	cli, mock := redismock.NewClientMock()
 	line1 := &stream.Line{Level: "info", Number: 0, Message: "test message"}
 	line2 := &stream.Line{Level: "warn", Number: 1, Message: "test message2"}
 	bytes1, _ := json.Marshal(&line1)
@@ -296,14 +294,12 @@ func TestTail_Multiple(t *testing.T) {
 		},
 	}
 
-	streamSlice1 := redis.NewXStreamSliceCmdResult(stream, nil)
-	streamSlice2 := redis.NewXStreamSliceCmdResult(nil, errors.New("err"))
-	mock.On("Exists", []string{key}).Return(redis.NewIntResult(1, nil))
-	mock.On("XRead", args1).Return(streamSlice1)
-	mock.On("XRead", args2).Return(streamSlice2)
+	mock.ExpectExists([]string{key}...).SetVal(1)
+	mock.ExpectXRead(args1).SetVal(stream)
+	mock.ExpectXRead(args2).SetErr(errors.New("err"))
 
 	rdb := &Redis{
-		Client: mock,
+		Client: cli,
 	}
 
 	linec, errc := rdb.Tail(ctx, key)
@@ -319,8 +315,7 @@ func TestTail_Failure(t *testing.T) {
 	ctx := context.Background()
 	key := "key"
 
-	var client *redis.Client
-	mock := redismock.NewNiceMock(client)
+	cli, mock := redismock.NewClientMock()
 	line1 := &stream.Line{Level: "info", Number: 0, Message: "test message"}
 	line2 := &stream.Line{Level: "warn", Number: 1, Message: "test message2"}
 	lines := []*stream.Line{line1, line2}
@@ -339,24 +334,26 @@ func TestTail_Failure(t *testing.T) {
 		},
 	}
 
-	streamSlice := redis.NewXStreamSliceCmdResult(stream, errors.New("err"))
-	mock.On("Exists", []string{key}).Return(redis.NewIntResult(1, nil))
-	mock.On("XRead", args).Return(streamSlice)
+	mock.ExpectExists([]string{key}...).SetVal(1)
+	mock.ExpectXRead(args).SetVal(stream)
 
 	rdb := &Redis{
-		Client: mock,
+		Client: cli,
 	}
 	_, errc := rdb.Tail(ctx, key)
 	err := <-errc
-	assert.Equal(t, err, errors.New("err"))
+	assert.NotEqual(t, err, nil)
+	assert.Equal(t, err, errors.New("all "+
+		"expectations were already fulfilled, "+
+		"call to cmd '[xread block 100 streams key 1]'"+
+		" was not expected"))
 }
 
 func TestCopyTo(t *testing.T) {
 	ctx, _ := context.WithCancel(context.Background())
 	key := "key"
 
-	var client *redis.Client
-	mock := redismock.NewNiceMock(client)
+	cli, mock := redismock.NewClientMock()
 	line1 := &stream.Line{Level: "info", Number: 0, Message: "test message"}
 	line2 := &stream.Line{Level: "warn", Number: 1, Message: "test message1"}
 	bytes1, _ := json.Marshal(&line1)
@@ -376,12 +373,11 @@ func TestCopyTo(t *testing.T) {
 		},
 	}
 
-	streamSlice := redis.NewXStreamSliceCmdResult(stream, nil)
-	mock.On("Exists", []string{key}).Return(redis.NewIntResult(1, nil))
-	mock.On("XRead", args).Return(streamSlice)
+	mock.ExpectExists([]string{key}...).SetVal(1)
+	mock.ExpectXRead(args).SetVal(stream)
 
 	rdb := &Redis{
-		Client: mock,
+		Client: cli,
 	}
 	w := new(bytes.Buffer)
 	bwc := BufioWriterCloser{bufio.NewWriter(w)}

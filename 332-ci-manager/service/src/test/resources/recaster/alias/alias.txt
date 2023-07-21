@@ -254,6 +254,7 @@ io.harness.beans.steps.stepinfo.security.AwsSecurityHubStepInfo
 io.harness.beans.steps.stepinfo.security.JfrogXrayStepInfo
 io.harness.beans.yaml.extended.reports.V1.Report
 io.harness.yaml.core.failurestrategy.retry.RetryFailureSpecConfig
+io.harness.yaml.core.failurestrategy.retry.RetryStepGroupFailureSpecConfig
 io.harness.beans.steps.stepinfo.RestoreCacheS3StepInfo
 io.harness.beans.steps.stepinfo.security.DockerContentTrustStepInfo
 io.harness.beans.steps.stepinfo.security.AwsEcrStepInfo

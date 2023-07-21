@@ -12,13 +12,11 @@ import io.harness.dto.PollingInfoForTriggers;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.ngtriggers.beans.dto.NGTriggerEventHistoryBaseDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerEventHistoryDTO;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.TriggerEventHistory;
 import io.harness.ngtriggers.beans.entity.TriggerEventHistory.TriggerEventHistoryKeys;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
-import io.harness.ngtriggers.mapper.NGTriggerEventHistoryBaseMapper;
 import io.harness.ngtriggers.mapper.NGTriggerEventHistoryMapper;
 import io.harness.ngtriggers.service.NGTriggerEventsService;
 import io.harness.ngtriggers.service.NGTriggerService;
@@ -75,7 +73,7 @@ public class NGTriggerEventHistoryResourceImpl implements NGTriggerEventHistoryR
   }
 
   @Override
-  public ResponseDTO<Page<NGTriggerEventHistoryBaseDTO>> getTriggerHistoryEventCorrelation(
+  public ResponseDTO<Page<NGTriggerEventHistoryDTO>> getTriggerHistoryEventCorrelation(
       String accountIdentifier, String eventCorrelationId, int page, int size, List<String> sort) {
     Criteria criteria =
         ngTriggerEventsService.formEventCriteria(accountIdentifier, eventCorrelationId, new ArrayList<>());
@@ -88,8 +86,8 @@ public class NGTriggerEventHistoryResourceImpl implements NGTriggerEventHistoryR
 
     Page<TriggerEventHistory> eventHistoryList = ngTriggerEventsService.getEventHistory(criteria, pageRequest);
 
-    Page<NGTriggerEventHistoryBaseDTO> ngTriggerEventHistoryDTOS =
-        eventHistoryList.map(eventHistory -> NGTriggerEventHistoryBaseMapper.toEventHistory(eventHistory));
+    Page<NGTriggerEventHistoryDTO> ngTriggerEventHistoryDTOS =
+        eventHistoryList.map(eventHistory -> NGTriggerEventHistoryMapper.toTriggerEventHistoryDto(eventHistory));
 
     return ResponseDTO.newResponse(ngTriggerEventHistoryDTOS);
   }

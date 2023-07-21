@@ -2743,3 +2743,5 @@ fdc9b219d20135e79d5754237912ac7f0d7911e9:platform-service/service/src/test/resou
 ff1924b912d74eaaf0bd983caa24e90bc2462461:idp-service/config/config.yml:generic-api-key:154
 ff1924b912d74eaaf0bd983caa24e90bc2462461:idp-service/config/config.yml:generic-api-key:163
 ff1924b912d74eaaf0bd983caa24e90bc2462461:idp-service/config/config.yml:generic-api-key:175
+
+9ef0a21f6e5f9094bda351e60259ff0f55c79cb9:315-sto-manager/chart/templates/config.yaml:generic-api-key:64

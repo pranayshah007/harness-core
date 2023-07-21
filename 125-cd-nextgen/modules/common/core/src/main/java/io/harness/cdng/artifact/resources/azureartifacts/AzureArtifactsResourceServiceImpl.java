@@ -6,11 +6,13 @@
  */
 
 package io.harness.cdng.artifact.resources.azureartifacts;
-
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
@@ -64,6 +66,7 @@ import javax.annotation.Nonnull;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 public class AzureArtifactsResourceServiceImpl implements AzureArtifactsResourceService {
   private final ConnectorService connectorService;
   private final SecretManagerClientService secretManagerClientService;
@@ -332,7 +335,7 @@ public class AzureArtifactsResourceServiceImpl implements AzureArtifactsResource
       RemoteMethodReturnValueData remoteMethodReturnValueData = (RemoteMethodReturnValueData) responseData;
 
       if (remoteMethodReturnValueData.getException() instanceof InvalidRequestException) {
-        throw(InvalidRequestException)(remoteMethodReturnValueData.getException());
+        throw (InvalidRequestException) (remoteMethodReturnValueData.getException());
       } else {
         throw new ArtifactServerException("Unexpected error during authentication to Azure Artifacts Server "
                 + remoteMethodReturnValueData.getReturnValue(),

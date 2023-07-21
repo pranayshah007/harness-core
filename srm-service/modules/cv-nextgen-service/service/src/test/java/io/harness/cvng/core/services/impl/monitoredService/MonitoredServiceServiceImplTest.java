@@ -53,7 +53,6 @@ import io.harness.cvng.beans.MonitoredServiceType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeSourceType;
-import io.harness.cvng.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.beans.cvnglog.CVNGLogTag;
 import io.harness.cvng.beans.cvnglog.CVNGLogTag.TagType;
@@ -71,6 +70,7 @@ import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO.Deplo
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO.LiveMonitoringDTO;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.SLIDTO;
 import io.harness.cvng.core.beans.RiskProfile;
+import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.core.beans.monitoredService.ChangeSourceDTO;
 import io.harness.cvng.core.beans.monitoredService.CountServiceDTO;
 import io.harness.cvng.core.beans.monitoredService.HealthScoreDTO;
@@ -128,12 +128,14 @@ import io.harness.cvng.events.monitoredservice.MonitoredServiceToggleEvent;
 import io.harness.cvng.events.monitoredservice.MonitoredServiceUpdateEvent;
 import io.harness.cvng.models.VerificationType;
 import io.harness.cvng.notification.beans.ChangeObservedConditionSpec;
+import io.harness.cvng.notification.beans.DeploymentImpactReportConditionSpec;
 import io.harness.cvng.notification.beans.NotificationRuleCondition;
 import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleDTO;
 import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.notification.beans.NotificationRuleType;
+import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceChangeImpactCondition;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceChangeObservedCondition;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceHealthScoreCondition;
@@ -3315,6 +3317,52 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(notificationRuleResponsePageResponse.getContent().get(0).isEnabled()).isTrue();
     assertThat(notificationRuleResponsePageResponse.getContent().get(0).getNotificationRule().getIdentifier())
         .isEqualTo(notificationRuleDTO.getIdentifier());
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetEnabledNotificationRulesWithConditionType() {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
+    NotificationRuleResponse notificationRuleResponse1 =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setIdentifier("noti1");
+    notificationRuleDTO.setConditions(
+        Collections.singletonList(NotificationRuleCondition.builder()
+                                      .type(NotificationRuleConditionType.DEPLOYMENT_IMPACT_REPORT)
+                                      .spec(DeploymentImpactReportConditionSpec.builder().build())
+                                      .build()));
+    notificationRuleDTO.setIdentifier("noti2");
+    NotificationRuleResponse notificationRuleResponse2 =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setIdentifier("noti3");
+    NotificationRuleResponse notificationRuleResponse3 =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
+        "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
+    monitoredServiceDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponse1.getNotificationRule().getIdentifier())
+                          .enabled(true)
+                          .build(),
+            NotificationRuleRefDTO.builder()
+                .notificationRuleRef(notificationRuleResponse2.getNotificationRule().getIdentifier())
+                .enabled(false)
+                .build(),
+            NotificationRuleRefDTO.builder()
+                .notificationRuleRef(notificationRuleResponse3.getNotificationRule().getIdentifier())
+                .enabled(true)
+                .build()));
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    List<MonitoredServiceNotificationRule> notificationRules =
+        monitoredServiceService.getNotificationRules(projectParams, monitoredServiceDTO.getIdentifier(),
+            Collections.singletonList(NotificationRuleConditionType.DEPLOYMENT_IMPACT_REPORT));
+    assertThat(notificationRules.size()).isEqualTo(1);
+    assertThat(notificationRules.get(0).getType()).isEqualTo(NotificationRuleType.MONITORED_SERVICE);
+    assertThat(notificationRules.get(0).getIdentifier())
+        .isEqualTo(notificationRuleResponse3.getNotificationRule().getIdentifier());
   }
 
   @Test

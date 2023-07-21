@@ -9,23 +9,29 @@ package io.harness.utils;
 
 import static io.harness.pms.yaml.YAMLFieldNameConstants.FAILURE_STRATEGIES;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGE;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.advisers.rollback.OnFailRollbackParameters.OnFailRollbackParametersBuilder;
 import io.harness.advisers.rollback.RollbackStrategy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
+import io.harness.plancreator.steps.FailureStrategiesUtils;
 import io.harness.plancreator.steps.GenericPlanCreatorUtils;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.yaml.core.failurestrategy.FailureStrategyActionConfig;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -109,5 +115,28 @@ public class PlanCreatorUtilsCommon {
     rollbackStrategyStringMap.put(
         RollbackStrategy.STEP_GROUP_ROLLBACK, GenericPlanCreatorUtils.getStepGroupRollbackStepsNodeId(currentField));
     return rollbackStrategyStringMap;
+  }
+
+  public Map<FailureStrategyActionConfig, Collection<FailureType>>
+  getPriorityWiseMergedActionMapForFailureStrategiesForStepStageAndStepGroup(
+      YamlField currentField, String currentFieldName, boolean isStepInsideRollback) {
+    List<FailureStrategyConfig> stageFailureStrategies = new ArrayList<>();
+    List<FailureStrategyConfig> stepGroupFailureStrategies = new ArrayList<>();
+    List<FailureStrategyConfig> stepFailureStrategies = new ArrayList<>();
+    if (STAGE.equals(currentFieldName)) {
+      stageFailureStrategies = getFailureStrategies(currentField.getNode());
+      stepGroupFailureStrategies = new ArrayList<>();
+      stepFailureStrategies = new ArrayList<>();
+    } else if (STEP_GROUP.equals(currentFieldName)) {
+      stageFailureStrategies = getFieldFailureStrategies(currentField, STAGE, isStepInsideRollback);
+      stepGroupFailureStrategies = getFailureStrategies(currentField.getNode());
+      stepFailureStrategies = new ArrayList<>();
+    } else if (STEP.equals(currentFieldName)) {
+      stageFailureStrategies = getFieldFailureStrategies(currentField, STAGE, isStepInsideRollback);
+      stepGroupFailureStrategies = getFieldFailureStrategies(currentField, STEP_GROUP, isStepInsideRollback);
+      stepFailureStrategies = getFailureStrategies(currentField.getNode());
+    }
+    return FailureStrategiesUtils.priorityMergeFailureStrategies(
+        stepFailureStrategies, stepGroupFailureStrategies, stageFailureStrategies);
   }
 }

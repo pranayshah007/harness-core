@@ -27,6 +27,7 @@ import software.wings.api.SkipStateExecutionData;
 import software.wings.beans.PipelineExecution;
 import software.wings.beans.PipelineStageExecution;
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.service.intfc.WorkflowService;
 import software.wings.sm.ExecutionContext;
@@ -94,7 +95,9 @@ public class EnvRollbackState extends State implements WorkflowState {
     if (stateExecutionData == null) {
       String pipelineExecutionId = executionContext.getStateExecutionInstance().getExecutionUuid();
       PipelineExecution pipelineExecution =
-          executionService.getWorkflowExecution(context.getAppId(), pipelineExecutionId).getPipelineExecution();
+          executionService
+              .getWorkflowExecution(context.getAppId(), pipelineExecutionId, WorkflowExecutionKeys.pipelineExecution)
+              .getPipelineExecution();
       PipelineStageExecution pipelineStageExecution =
           pipelineExecution.getPipelineStageExecutions()
               .stream()
@@ -106,8 +109,12 @@ public class EnvRollbackState extends State implements WorkflowState {
       workflowExecutionId = stateExecutionData.getWorkflowExecutionId();
     }
 
+    String[] wfeFields = {WorkflowExecutionKeys.accountId, WorkflowExecutionKeys.appId, WorkflowExecutionKeys.artifacts,
+        WorkflowExecutionKeys.envId, WorkflowExecutionKeys.executionArgs, WorkflowExecutionKeys.infraDefinitionIds,
+        WorkflowExecutionKeys.infraMappingIds, WorkflowExecutionKeys.name, WorkflowExecutionKeys.pipelineExecutionId,
+        WorkflowExecutionKeys.startTs, WorkflowExecutionKeys.status, WorkflowExecutionKeys.workflowType};
     WorkflowExecution workflowExecution =
-        executionService.getWorkflowExecution(executionContext.getAppId(), workflowExecutionId);
+        executionService.getWorkflowExecution(executionContext.getAppId(), workflowExecutionId, wfeFields);
     WorkflowExecution rollbackExecution = null;
     try {
       rollbackExecution =

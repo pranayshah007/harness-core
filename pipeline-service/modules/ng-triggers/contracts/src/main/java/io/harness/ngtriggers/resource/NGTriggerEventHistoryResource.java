@@ -20,7 +20,6 @@ import io.harness.dto.PollingInfoForTriggers;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.ngtriggers.beans.dto.NGTriggerEventHistoryBaseDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerEventHistoryDTO;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.pipeline.PipelineResourceConstants;
@@ -106,7 +105,7 @@ public interface NGTriggerEventHistoryResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the Trigger catalogue response")
       })
-  ResponseDTO<Page<NGTriggerEventHistoryBaseDTO>>
+  ResponseDTO<Page<NGTriggerEventHistoryDTO>>
   getTriggerHistoryEventCorrelation(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @NotNull @PathParam("eventCorrelationId") String eventCorrelationId,

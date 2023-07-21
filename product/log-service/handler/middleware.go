@@ -7,13 +7,20 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/dchest/authcookie"
-	"github.com/harness/harness-core/product/log-service/config"
 	"github.com/harness/harness-core/product/platform/client"
+
+	"github.com/harness/harness-core/product/log-service/cache"
+	"github.com/harness/harness-core/product/log-service/config"
+	"github.com/harness/harness-core/product/log-service/entity"
+	"github.com/harness/harness-core/product/log-service/logger"
 )
 
 const authHeader = "X-Harness-Token"
@@ -118,4 +125,118 @@ func AuthMiddleware(config config.Config, ngClient *client.HTTPClient, skipKeyCh
 func doApiKeyAuthentication(inputApiKey, accountID, routingId string, ngClient *client.HTTPClient) error {
 	err := ngClient.ValidateApiKey(context.Background(), accountID, routingId, inputApiKey)
 	return err
+}
+
+func CacheRequest(c cache.Cache) func(handler http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			logger.WithContext(ctx, logger.FromRequest(r))
+
+			var info entity.ResponsePrefixDownload
+			prefix := r.URL.Query().Get(usePrefixParam)
+			exists := c.Exists(ctx, prefix)
+
+			if exists {
+				inf, err := c.Get(ctx, prefix)
+				if err != nil {
+					logger.FromRequest(r).
+						WithError(err).
+						WithField("url", r.URL.String()).
+						WithField("time", time.Now().Format(time.RFC3339)).
+						Errorln("middleware cache: cannot get prefix")
+					WriteInternalError(w, err)
+					return
+				}
+
+				err = json.Unmarshal(inf, &info)
+				if err != nil {
+					logger.FromRequest(r).
+						WithError(err).
+						WithField("url", r.URL.String()).
+						WithField("time", time.Now().Format(time.RFC3339)).
+						WithField("info", inf).
+						Errorln("middleware cache: failed to unmarshal info")
+					WriteInternalError(w, err)
+					return
+				}
+
+				switch info.Status {
+				case entity.QUEUED:
+				case entity.IN_PROGRESS:
+					WriteJSON(w, info, 200)
+					return
+				case entity.ERROR:
+					err := c.Delete(ctx, prefix)
+					if err != nil {
+						logger.FromRequest(r).
+							WithError(err).
+							WithField("url", r.URL.String()).
+							WithField("time", time.Now().Format(time.RFC3339)).
+							WithField("info", inf).
+							Errorln("middleware cache: failed to delete error in c")
+						WriteInternalError(w, err)
+						return
+					}
+					WriteJSON(w, info, 200)
+					return
+				case entity.SUCCESS:
+					WriteJSON(w, info, 200)
+					return
+				default:
+					next.ServeHTTP(w, r)
+					return
+				}
+			}
+			next.ServeHTTP(w, r)
+			return
+		})
+	}
+}
+
+func RequiredQueryParams(params ...string) func(handler http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			for _, param := range params {
+				value := r.FormValue(param)
+				if len(value) == 0 || value == "" {
+					err := errors.New(fmt.Sprintf("parameter %s is required.", param))
+					WriteNotFound(w, err)
+					logger.FromRequest(r).
+						WithField("url", r.URL.String()).
+						WithField("time", time.Now().Format(time.RFC3339)).
+						WithError(err).
+						Errorln("middleware validate query params: doesnt contain query param", param)
+					return
+				}
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func ValidatePrefixRequest() func(handler http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			containRunSequence := strings.Contains(r.URL.String(), "runSequence")
+			if containRunSequence {
+				logger.WithContext(context.Background(), logger.FromRequest(r))
+				logger.FromRequest(r).
+					WithField("url", r.URL.String()).
+					WithField("time", time.Now().Format(time.RFC3339)).
+					Debug("middleware validate: contain execution in prefix")
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			err := errors.New(fmt.Sprintf("operation not permitted for prefix: %s", r.URL.String()))
+			WriteBadRequest(w, err)
+			logger.FromRequest(r).
+				WithField("url", r.URL.String()).
+				WithField("time", time.Now().Format(time.RFC3339)).
+				WithError(err).
+				Errorln("middleware validate: doesnt contain execution in prefix")
+			return
+		})
+	}
 }

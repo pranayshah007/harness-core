@@ -7,13 +7,9 @@
 
 package io.harness.cvng.beans.azure;
 
-import static io.harness.cvng.utils.AzureUtils.AZURE_TOKEN_URL_FORMAT;
-
 import io.harness.cvng.beans.DataCollectionRequestType;
 import io.harness.cvng.models.VerificationType;
 import io.harness.cvng.utils.AzureUtils;
-import io.harness.delegate.beans.connector.azureconnector.AzureClientSecretKeyDTO;
-import io.harness.delegate.beans.connector.azureconnector.AzureManualDetailsDTO;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.time.Instant;
@@ -54,14 +50,7 @@ public class AzureLogsSampleDataRequest extends AbstractAzureDataRequest {
 
   @Override
   public Map<String, Object> fetchDslEnvVariables() {
-    AzureManualDetailsDTO azureManualDetailsDTO =
-        AzureUtils.validateConnectorConfigurationType(getConnectorConfigDTO().getCredential().getConfig());
-    AzureClientSecretKeyDTO azureClientSecretKeyDTO =
-        AzureUtils.validateConnectorAuthenticationType(azureManualDetailsDTO.getAuthDTO().getCredentials());
     Map<String, Object> dslEnvVariables = super.fetchDslEnvVariables();
-    dslEnvVariables.put("clientId", azureManualDetailsDTO.getClientId());
-    dslEnvVariables.put("clientSecret", String.valueOf(azureClientSecretKeyDTO.getSecretKey().getDecryptedValue()));
-    dslEnvVariables.put("azureTokenUrl", String.format(AZURE_TOKEN_URL_FORMAT, azureManualDetailsDTO.getTenantId()));
     dslEnvVariables.put("query", query);
     dslEnvVariables.put(
         "url", String.format("%sv1%s/query?scope=hierarchy&timespan=%s/%s", getBaseUrl(), resourceId, from, to));

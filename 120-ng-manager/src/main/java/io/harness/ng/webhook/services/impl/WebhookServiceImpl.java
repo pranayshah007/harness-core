@@ -63,6 +63,7 @@ public class WebhookServiceImpl implements WebhookService, WebhookEventService {
     try {
       log.info(
           "received webhook event with id {} in the accountId {}", webhookEvent.getUuid(), webhookEvent.getAccountId());
+      // TODO: add a check based on env to use iterators in community edition and on prem
       if (!ngFeatureFlagHelperService.isEnabled(
               webhookEvent.getAccountId(), FeatureName.CDS_QUEUE_SERVICE_FOR_TRIGGERS)) {
         return webhookEventRepository.save(webhookEvent);

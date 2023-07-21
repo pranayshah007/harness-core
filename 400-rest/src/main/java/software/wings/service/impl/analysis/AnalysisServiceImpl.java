@@ -428,7 +428,8 @@ public class AnalysisServiceImpl implements AnalysisService {
   }
 
   private String getEnvIdForStateExecutionId(String appId, String workflowExecutionId) {
-    WorkflowExecution execution = workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId);
+    WorkflowExecution execution =
+        workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId, WorkflowExecutionKeys.envId);
     Preconditions.checkNotNull(execution, "This stateExecutionId does not correspond to a valid workflow");
     return execution.getEnvId();
   }
@@ -498,8 +499,8 @@ public class AnalysisServiceImpl implements AnalysisService {
       if (isNotEmpty(stateExecutionInstances) && stateExecutionInstances.size() == 1) {
         StateExecutionInstance instance = stateExecutionInstances.get(0);
         serviceId = getServiceIdFromStateExecutionInstance(instance);
-        WorkflowExecution execution =
-            workflowExecutionService.getWorkflowExecution(instance.getAppId(), instance.getExecutionUuid());
+        WorkflowExecution execution = workflowExecutionService.getWorkflowExecution(
+            instance.getAppId(), instance.getExecutionUuid(), WorkflowExecutionKeys.envId);
         envId = execution.getEnvId();
       }
     } else {
@@ -587,7 +588,9 @@ public class AnalysisServiceImpl implements AnalysisService {
       while (cvMetaDateIterator.hasNext()) {
         ContinuousVerificationExecutionMetaData cvMetaData = cvMetaDateIterator.next();
         String workflowExecutionId = cvMetaData.getWorkflowExecutionId();
-        WorkflowExecution execution = workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId);
+        String[] fields = {WorkflowExecutionKeys.envId, WorkflowExecutionKeys.infraMappingIds,
+            WorkflowExecutionKeys.serviceIds, WorkflowExecutionKeys.uuid};
+        WorkflowExecution execution = workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId, fields);
         if (execution != null) {
           if (!execution.getInfraMappingIds().contains(infraMappingId) || !execution.getEnvId().equals(envId)
               || !execution.getServiceIds().contains(serviceId)) {

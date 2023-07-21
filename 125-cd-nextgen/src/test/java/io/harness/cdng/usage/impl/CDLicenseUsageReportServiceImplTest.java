@@ -10,6 +10,7 @@ package io.harness.cdng.usage.impl;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.times;
@@ -25,6 +26,8 @@ import io.harness.cd.TimeScaleDAL;
 import io.harness.cdng.usage.CDLicenseUsageDAL;
 import io.harness.cdng.usage.pojos.LicenseDailyUsage;
 import io.harness.cdng.usage.pojos.LicenseDateUsageFetchData;
+import io.harness.exception.InvalidArgumentsException;
+import io.harness.licensing.LicenseStatus;
 import io.harness.licensing.beans.modules.CDModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CEModuleLicenseDTO;
 import io.harness.licensing.services.LicenseService;
@@ -68,7 +71,8 @@ public class CDLicenseUsageReportServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetCDLicenseTypePerAccountServices() {
     when(licenseService.getModuleLicenses(ACCOUNT_ID, ModuleType.CD))
-        .thenReturn(List.of(CDModuleLicenseDTO.builder().cdLicenseType(CDLicenseType.SERVICES).build()));
+        .thenReturn(List.of(
+            CDModuleLicenseDTO.builder().cdLicenseType(CDLicenseType.SERVICES).status(LicenseStatus.ACTIVE).build()));
     Optional<CDLicenseType> cdLicenseTypePerAccount =
         cdLicenseUsageReportService.getCDLicenseTypePerAccount(ACCOUNT_ID);
 
@@ -81,7 +85,10 @@ public class CDLicenseUsageReportServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetCDLicenseTypePerAccountServiceInstances() {
     when(licenseService.getModuleLicenses(ACCOUNT_ID, ModuleType.CD))
-        .thenReturn(List.of(CDModuleLicenseDTO.builder().cdLicenseType(CDLicenseType.SERVICE_INSTANCES).build()));
+        .thenReturn(List.of(CDModuleLicenseDTO.builder()
+                                .cdLicenseType(CDLicenseType.SERVICE_INSTANCES)
+                                .status(LicenseStatus.ACTIVE)
+                                .build()));
     Optional<CDLicenseType> cdLicenseTypePerAccount =
         cdLicenseUsageReportService.getCDLicenseTypePerAccount(ACCOUNT_ID);
 
@@ -99,6 +106,24 @@ public class CDLicenseUsageReportServiceImplTest extends CategoryTest {
         cdLicenseUsageReportService.getCDLicenseTypePerAccount(ACCOUNT_ID);
 
     assertThat(cdLicenseTypePerAccount.isPresent()).isFalse();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.IVAN)
+  @Category(UnitTests.class)
+  public void testGetCDLicenseTypePerAccountNotValidCDLicenseTypes() {
+    when(licenseService.getModuleLicenses(ACCOUNT_ID, ModuleType.CD))
+        .thenReturn(List.of(
+            CDModuleLicenseDTO.builder().cdLicenseType(CDLicenseType.SERVICES).status(LicenseStatus.ACTIVE).build(),
+            CDModuleLicenseDTO.builder()
+                .cdLicenseType(CDLicenseType.SERVICE_INSTANCES)
+                .status(LicenseStatus.ACTIVE)
+                .build()));
+
+    assertThatThrownBy(() -> cdLicenseUsageReportService.getCDLicenseTypePerAccount(ACCOUNT_ID))
+        .isInstanceOf(InvalidArgumentsException.class)
+        .hasMessage(
+            "Found more active CD license types on account: ACCOUNT_ID, licence types: SERVICES,SERVICE_INSTANCES");
   }
 
   @Test

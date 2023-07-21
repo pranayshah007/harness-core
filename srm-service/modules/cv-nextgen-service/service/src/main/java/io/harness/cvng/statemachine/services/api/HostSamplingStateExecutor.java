@@ -54,8 +54,7 @@ public abstract class HostSamplingStateExecutor<T extends HostSamplingState> ext
     VerificationJob verificationJob = verificationJobInstance.getResolvedJob();
 
     Set<String> preDeploymentHosts, postDeploymentHosts, newHosts, commonHosts;
-    if (verificationJobInstance.getServiceInstanceDetails() != null
-        && verificationJobInstance.getServiceInstanceDetails().isShouldUseNodesFromCD()) {
+    if (VerificationJobInstanceServiceInstanceUtils.canUseNodesFromCD(verificationJobInstance)) {
       preDeploymentHosts =
           new HashSet<>(verificationJobInstance.getServiceInstanceDetails().getServiceInstancesBeforeDeployment());
       postDeploymentHosts =
@@ -80,7 +79,11 @@ public abstract class HostSamplingStateExecutor<T extends HostSamplingState> ext
     switch (verificationJob.getType()) {
       case CANARY:
         analysisInputBuilder.learningEngineTaskType(getCanaryTaskType());
-        if (VerificationJobInstanceServiceInstanceUtils.isNodeRegExEnabled(verificationJobInstance)) {
+        if (VerificationJobInstanceServiceInstanceUtils.canUseNodesFromCD(verificationJobInstance)) {
+          testHosts = new HashSet<>(VerificationJobInstanceServiceInstanceUtils.getTestNodes(verificationJobInstance));
+          controlHosts =
+              new HashSet<>(VerificationJobInstanceServiceInstanceUtils.getControlNodes(verificationJobInstance));
+        } else if (VerificationJobInstanceServiceInstanceUtils.isNodeRegExEnabled(verificationJobInstance)) {
           testHosts = VerificationJobInstanceServiceInstanceUtils.filterValidTestNodes(
               postDeploymentHosts, verificationJobInstance, executionLogger);
           controlHosts = VerificationJobInstanceServiceInstanceUtils.filterValidControlNodes(
@@ -96,8 +99,7 @@ public abstract class HostSamplingStateExecutor<T extends HostSamplingState> ext
            Pre deployment hosts are n1, n2
            Post deployment hosts are also n1, n2
            */
-          controlHosts = VerificationJobInstanceServiceInstanceUtils.filterValidControlNodes(
-              postDeploymentHosts, verificationJobInstance, executionLogger);
+          controlHosts = postDeploymentHosts;
           testHosts = new HashSet<>();
         } else if (!newHosts.equals(postDeploymentHosts)) {
           /*
@@ -105,10 +107,8 @@ public abstract class HostSamplingStateExecutor<T extends HostSamplingState> ext
            Pre deployment hosts are n1, n2
            Post deployment hosts are n1, n2, n3
            */
-          testHosts = VerificationJobInstanceServiceInstanceUtils.filterValidTestNodes(
-              newHosts, verificationJobInstance, executionLogger);
-          controlHosts = VerificationJobInstanceServiceInstanceUtils.filterValidControlNodes(
-              postDeploymentHosts, verificationJobInstance, executionLogger);
+          testHosts = newHosts;
+          controlHosts = postDeploymentHosts;
           controlHosts.removeAll(testHosts);
         } else {
           /*
@@ -116,8 +116,7 @@ public abstract class HostSamplingStateExecutor<T extends HostSamplingState> ext
            Pre deployment hosts are n1, n2
            Post deployment hosts are n3, n4
            */
-          testHosts = VerificationJobInstanceServiceInstanceUtils.filterValidTestNodes(
-              postDeploymentHosts, verificationJobInstance, executionLogger);
+          testHosts = postDeploymentHosts;
           controlHosts = new HashSet<>();
         }
         analysisInputBuilder = analysisInputBuilder.controlHosts(controlHosts).testHosts(testHosts);
@@ -127,10 +126,16 @@ public abstract class HostSamplingStateExecutor<T extends HostSamplingState> ext
         break;
       case ROLLING:
       case BLUE_GREEN:
-        controlHosts = VerificationJobInstanceServiceInstanceUtils.filterValidControlNodes(
-            preDeploymentHosts, verificationJobInstance, executionLogger);
-        testHosts = VerificationJobInstanceServiceInstanceUtils.filterValidTestNodes(
-            postDeploymentHosts, verificationJobInstance, executionLogger);
+        if (VerificationJobInstanceServiceInstanceUtils.canUseNodesFromCD(verificationJobInstance)) {
+          testHosts = new HashSet<>(VerificationJobInstanceServiceInstanceUtils.getTestNodes(verificationJobInstance));
+          controlHosts =
+              new HashSet<>(VerificationJobInstanceServiceInstanceUtils.getControlNodes(verificationJobInstance));
+        } else {
+          testHosts = VerificationJobInstanceServiceInstanceUtils.filterValidTestNodes(
+              postDeploymentHosts, verificationJobInstance, executionLogger);
+          controlHosts = VerificationJobInstanceServiceInstanceUtils.filterValidControlNodes(
+              preDeploymentHosts, verificationJobInstance, executionLogger);
+        }
         analysisState.setLearningEngineTaskType(getBeforeAfterTaskType());
         analysisInputBuilder.learningEngineTaskType(getBeforeAfterTaskType());
         analysisInputBuilder = analysisInputBuilder.controlHosts(controlHosts).testHosts(testHosts);
@@ -139,7 +144,24 @@ public abstract class HostSamplingStateExecutor<T extends HostSamplingState> ext
         analysisState.setTestHosts(testHosts);
         break;
       case AUTO:
-        if (newHosts.isEmpty()) {
+        if (VerificationJobInstanceServiceInstanceUtils.canUseNodesFromCD(verificationJobInstance)) {
+          testHosts = new HashSet<>(VerificationJobInstanceServiceInstanceUtils.getTestNodes(verificationJobInstance));
+          controlHosts =
+              new HashSet<>(VerificationJobInstanceServiceInstanceUtils.getControlNodes(verificationJobInstance));
+          analysisState.setTestHosts(testHosts);
+          analysisState.setControlHosts(controlHosts);
+          analysisInputBuilder = analysisInputBuilder.controlHosts(controlHosts).testHosts(testHosts);
+          if (VerificationJobInstanceServiceInstanceUtils.isValidCanaryDeployment(
+                  verificationJobInstance.getServiceInstanceDetails())) {
+            analysisState.setLearningEngineTaskType(getCanaryTaskType());
+            analysisInputBuilder.learningEngineTaskType(getCanaryTaskType());
+            analysisState.setInputs(analysisInputBuilder.build());
+          } else {
+            analysisState.setLearningEngineTaskType(getBeforeAfterTaskType());
+            analysisInputBuilder.learningEngineTaskType(getBeforeAfterTaskType());
+            analysisState.setInputs(analysisInputBuilder.build());
+          }
+        } else if (newHosts.isEmpty()) {
           /*
             For example:
             Pre deployments hosts and post deployments hosts both are n1, n2

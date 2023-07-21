@@ -30,10 +30,13 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.interrupts.Interrupt;
 import io.harness.interrupts.Interrupt.InterruptBuilder;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.interrupts.InterruptConfig;
 import io.harness.pms.contracts.interrupts.InterruptType;
+import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.rule.Owner;
 
@@ -77,7 +80,12 @@ public class RetryInterruptHandlerTest extends CategoryTest {
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("NodeExecutionId Cannot be empty for RETRY interrupt");
 
-    doReturn(NodeExecution.builder().status(Status.SUCCEEDED).build())
+    doReturn(NodeExecution.builder()
+                 .status(Status.SUCCEEDED)
+                 .ambiance(Ambiance.newBuilder()
+                               .addLevels(Level.newBuilder().setStepType(StepType.newBuilder().setType("step")).build())
+                               .build())
+                 .build())
         .when(nodeExecutionService)
         .getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.fieldsForRetryInterruptHandler);
 
@@ -86,7 +94,13 @@ public class RetryInterruptHandlerTest extends CategoryTest {
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("NodeExecution is not in a retryable status. Current Status: " + Status.SUCCEEDED);
 
-    doReturn(NodeExecution.builder().oldRetry(true).status(FAILED).build())
+    doReturn(NodeExecution.builder()
+                 .oldRetry(true)
+                 .status(FAILED)
+                 .ambiance(Ambiance.newBuilder()
+                               .addLevels(Level.newBuilder().setStepType(StepType.newBuilder().setType("step")).build())
+                               .build())
+                 .build())
         .when(nodeExecutionService)
         .getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.fieldsForRetryInterruptHandler);
 
@@ -94,7 +108,13 @@ public class RetryInterruptHandlerTest extends CategoryTest {
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("This Node is already Retried");
 
-    doReturn(NodeExecution.builder().mode(ExecutionMode.CHILDREN).status(FAILED).build())
+    doReturn(NodeExecution.builder()
+                 .mode(ExecutionMode.CHILDREN)
+                 .status(FAILED)
+                 .ambiance(Ambiance.newBuilder()
+                               .addLevels(Level.newBuilder().setStepType(StepType.newBuilder().setType("step")).build())
+                               .build())
+                 .build())
         .when(nodeExecutionService)
         .getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.fieldsForRetryInterruptHandler);
 
@@ -102,7 +122,13 @@ public class RetryInterruptHandlerTest extends CategoryTest {
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Node Retry is supported only for Leaf Nodes");
 
-    doReturn(NodeExecution.builder().mode(ExecutionMode.TASK).status(FAILED).build())
+    doReturn(NodeExecution.builder()
+                 .mode(ExecutionMode.TASK)
+                 .status(FAILED)
+                 .ambiance(Ambiance.newBuilder()
+                               .addLevels(Level.newBuilder().setStepType(StepType.newBuilder().setType("step")).build())
+                               .build())
+                 .build())
         .when(nodeExecutionService)
         .getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.fieldsForRetryInterruptHandler);
 

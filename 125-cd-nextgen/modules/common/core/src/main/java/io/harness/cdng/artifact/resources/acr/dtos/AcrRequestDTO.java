@@ -6,8 +6,11 @@
  */
 
 package io.harness.cdng.artifact.resources.acr.dtos;
-
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
+
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -17,6 +20,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)

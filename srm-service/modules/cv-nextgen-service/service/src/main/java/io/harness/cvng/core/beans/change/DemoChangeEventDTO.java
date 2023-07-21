@@ -5,7 +5,9 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.cvng.beans.change;
+package io.harness.cvng.core.beans.change;
+
+import io.harness.cvng.beans.change.ChangeSourceType;
 
 import lombok.Builder;
 import lombok.Value;

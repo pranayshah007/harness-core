@@ -359,14 +359,7 @@ public class HelmClientImpl implements HelmClient {
     command = applyCommandFlags(command, commandType, helmCommandData.getCommandFlags(),
         helmCommandData.isHelmCmdFlagsNull(), helmCommandData.getValueMap(), helmCommandData.getHelmVersion());
     logHelmCommandInExecutionLogs(command, helmCommandData.getLogCallback());
-
-    try {
-      return executeHelmCLICommandWithRetry(helmCommandData, command, commandType, "Failed to retrieve helm manifest");
-    } catch (Exception e) {
-      throw e;
-    } catch (Throwable e) {
-      throw new RuntimeException(e);
-    }
+    return executeHelmCLICommandWithRetry(helmCommandData, command, commandType, "Failed to retrieve helm manifest");
   }
 
   /**
@@ -417,8 +410,8 @@ public class HelmClientImpl implements HelmClient {
     }
   }
 
-  public HelmCliResponse executeHelmCLICommandWithRetry(HelmCommandData helmCommandData, String command,
-      HelmCliCommandType commandType, String errorMessagePrefix) throws Throwable {
+  public HelmCliResponse executeHelmCLICommandWithRetry(
+      HelmCommandData helmCommandData, String command, HelmCliCommandType commandType, String errorMessagePrefix) {
     try (LogOutputStream errorStream = helmCommandData.getLogCallback() != null
             ? new ErrorActivityOutputStream(helmCommandData.getLogCallback())
             : new LogErrorStream()) {
@@ -437,11 +430,10 @@ public class HelmClientImpl implements HelmClient {
         }
       });
 
-      try {
-        return responseSupplier.apply();
-      } catch (HelmClientRetryableException e) {
-        throw e.getCause();
-      }
+      // PMD issue: Converting checked exception to unchecked exception. Not a good practice to do this.
+      return responseSupplier.unchecked().apply();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
   }
 

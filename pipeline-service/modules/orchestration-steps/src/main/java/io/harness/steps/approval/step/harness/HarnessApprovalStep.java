@@ -202,7 +202,7 @@ public class HarnessApprovalStep extends PipelineAsyncExecutable {
 
   private HarnessApprovalStepExecutionDetails createHarnessApprovalStepExecutionDetailsFromHarnessApprovalOutcome(
       HarnessApprovalOutcome outcome) {
-    List<HarnessApprovalStepExecutionDetails.HarnessApprovalActivity> approvalActivities = new ArrayList<>();
+    List<HarnessApprovalStepExecutionDetails.HarnessApprovalExecutionActivity> approvalActivities = new ArrayList<>();
     if (outcome != null && outcome.getApprovalActivities() != null) {
       for (HarnessApprovalActivityDTO harnessApprovalActivityDTO : outcome.getApprovalActivities()) {
         String action = harnessApprovalActivityDTO.getAction().toString();
@@ -211,7 +211,7 @@ public class HarnessApprovalStep extends PipelineAsyncExecutable {
           approverInputs = harnessApprovalActivityDTO.getApproverInputs().stream().collect(
               Collectors.toMap(ApproverInput::getName, ApproverInput::getValue));
         }
-        approvalActivities.add(HarnessApprovalStepExecutionDetails.HarnessApprovalActivity.builder()
+        approvalActivities.add(HarnessApprovalStepExecutionDetails.HarnessApprovalExecutionActivity.builder()
                                    .user(EmbeddedUserDTO.toEmbeddedUser(harnessApprovalActivityDTO.getUser()))
                                    .approvalAction(action)
                                    .approverInputs(approverInputs)

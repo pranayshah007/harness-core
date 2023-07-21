@@ -6,12 +6,15 @@
  */
 
 package io.harness.cdng.artifact.resources.jenkins.mappers;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.resources.jenkins.dtos.JenkinsJobDetailsDTO;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @UtilityClass
 public class JenkinsResourceMapper {
   public JenkinsJobDetailsDTO toJenkinsJobDetailsDTO(ArtifactTaskExecutionResponse artifactTaskExecutionResponse) {

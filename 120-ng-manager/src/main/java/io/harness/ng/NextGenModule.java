@@ -32,6 +32,7 @@ import static io.harness.eventsframework.EventsFrameworkConstants.INSTANCE_STATS
 import static io.harness.eventsframework.EventsFrameworkConstants.SETUP_USAGE;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.AZURE_ARM_CONFIG_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CD_ACCOUNT_EXECUTION_METADATA;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CLOUDFORMATION_CONFIG_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENVIRONMENT_GROUP_ENTITY;
@@ -188,6 +189,7 @@ import io.harness.ng.core.entityactivity.event.EntityActivityCrudEventMessageLis
 import io.harness.ng.core.entitysetupusage.EntitySetupUsageModule;
 import io.harness.ng.core.entitysetupusage.event.SetupUsageChangeEventMessageListener;
 import io.harness.ng.core.entitysetupusage.event.SetupUsageChangeEventMessageProcessor;
+import io.harness.ng.core.event.AccountExecutionMetadataCRUDStreamListener;
 import io.harness.ng.core.event.AccountSetupListener;
 import io.harness.ng.core.event.ApiKeyEventListener;
 import io.harness.ng.core.event.AzureARMConfigEntityCRUDStreamListener;
@@ -1152,6 +1154,9 @@ public class NextGenModule extends AbstractModule {
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkConstants.GIT_SYNC_ENTITY_STREAM + ENTITY_CRUD))
         .to(GitSyncProjectCleanup.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(CD_ACCOUNT_EXECUTION_METADATA + ENTITY_CRUD))
+        .to(AccountExecutionMetadataCRUDStreamListener.class);
 
     bind(ServiceAccountService.class).to(ServiceAccountServiceImpl.class);
     bind(OpaService.class).to(OpaServiceImpl.class);

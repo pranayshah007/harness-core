@@ -1,0 +1,25 @@
+{
+  "_id" : "64b64d70dca834008947a5a2",
+  "createdAt" : 1689668976033,
+  "lastModifiedAt" : 1689668976033,
+  "accountIdentifier" : "kmpySmUISimoRrJL6NL73w",
+  "orgIdentifier" : "default",
+  "projectIdentifier" : "TAS",
+  "stageExecutionId" : "i1irq3HVT_i1vkJKUq3jKA",
+  "stepExecutionId" : "TnTzF1TmTZ-J9TTuEaFX4w",
+  "planExecutionId" : "tYn28B4nRqiq1Ys-W4AoWw",
+  "pipelineIdentifier" : "testApproval",
+  "stepIdentifier" : "JiraApproval_1",
+  "status" : "SUCCEEDED",
+  "stepType" : "JiraApproval",
+  "startts" : 1689668975887,
+  "_class" : "stepExecutionEntity",
+  "executionDetails" : {
+    "url" : "https://harness.atlassian.net/browse/TJI-150479",
+    "issueType" : "Task",
+    "ticketStatus" : "To Do",
+    "_class" : "JiraApprovalStepExecutionDetails"
+  },
+  "stepName" : "JiraApproval_1",
+  "endts" : 1689669038401
+}

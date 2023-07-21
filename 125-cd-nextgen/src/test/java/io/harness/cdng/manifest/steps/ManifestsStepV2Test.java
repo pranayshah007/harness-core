@@ -43,6 +43,7 @@ import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.steps.output.NgManifestsMetadataSweepingOutput;
 import io.harness.cdng.manifest.steps.output.UnresolvedManifestsOutput;
+import io.harness.cdng.manifest.steps.task.FetchManifestTaskContext;
 import io.harness.cdng.manifest.steps.task.ManifestTaskService;
 import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.HttpStoreConfig;
@@ -228,10 +229,10 @@ public class ManifestsStepV2Test extends CategoryTest {
     doReturn(listEntityDetail)
         .when(entityDetailProtoToRestMapper)
         .createEntityDetailsDTO(new ArrayList<>(emptyIfNull(setEntityDetail)));
-    doReturn(true).when(manifestTaskService).isSupported(any(Ambiance.class), any(ManifestOutcome.class));
+    doReturn(true).when(manifestTaskService).isSupported(any(FetchManifestTaskContext.class));
     doReturn(Optional.of(TaskData.builder().parameters(new Object[] {taskParameters}).taskType("TEST_TASK").build()))
         .when(manifestTaskService)
-        .createTaskData(any(Ambiance.class), any(ManifestOutcome.class));
+        .createTaskData(any(FetchManifestTaskContext.class));
     doReturn("taskId")
         .when(delegateGrpcClientWrapper)
         .submitAsyncTaskV2(nullable(DelegateTaskRequest.class), any(Duration.class));

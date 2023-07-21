@@ -11,6 +11,7 @@ import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.delegate.cdng.execution.StepExecutionInstanceInfo;
 import io.harness.ng.core.dto.OrganizationDTO;
 import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
@@ -174,5 +175,11 @@ public class FakeNextGenService implements NextGenService {
     projectDTOS.add(ProjectDTO.builder().orgIdentifier("orgIdentifier1").identifier("project1").build());
     projectDTOS.add(ProjectDTO.builder().orgIdentifier("orgIdentifier1").identifier("project3").build());
     return projectDTOS;
+  }
+
+  @Override
+  public List<StepExecutionInstanceInfo> getCDStageInstanceInfo(String accountId, String orgIdentifier,
+      String projectIdentifier, String pipelineExecutionId, String stageExecutionId) {
+    return new ArrayList<>();
   }
 }

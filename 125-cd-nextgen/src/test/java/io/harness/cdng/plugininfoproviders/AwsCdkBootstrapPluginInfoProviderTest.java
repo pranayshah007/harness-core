@@ -7,6 +7,9 @@
 
 package io.harness.cdng.plugininfoproviders;
 
+import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_APP_PATH;
+import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_COMMAND_OPTIONS;
+import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_EXPORT_BOOTSTRAP_TEMPLATE;
 import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -77,13 +80,13 @@ public class AwsCdkBootstrapPluginInfoProviderTest extends CategoryTest {
     PluginCreationResponseWrapper pluginCreationResponseWrapper =
         awsCdkBootstrapPluginInfoProvider.getPluginInfo(pluginCreationRequest, new HashSet<>(), ambiance);
     assertThat(pluginCreationResponseWrapper.getResponse().getPluginDetails().getEnvVariablesMap().get(
-                   "PLUGIN_AWS_CDK_APP_PATH"))
+                   PLUGIN_AWS_CDK_APP_PATH))
         .isEqualTo("appPath");
     assertThat(pluginCreationResponseWrapper.getResponse().getPluginDetails().getEnvVariablesMap().get(
-                   "PLUGIN_AWS_CDK_EXPORT_BOOTSTRAP_TEMPLATE"))
+                   PLUGIN_AWS_CDK_EXPORT_BOOTSTRAP_TEMPLATE))
         .isEqualTo("true");
     assertThat(pluginCreationResponseWrapper.getResponse().getPluginDetails().getEnvVariablesMap().get(
-                   "PLUGIN_AWS_CDK_COMMAND_OPTIONS"))
+                   PLUGIN_AWS_CDK_COMMAND_OPTIONS))
         .isEqualTo("test");
 
     assertThat(pluginCreationResponseWrapper.getStepInfo().getIdentifier()).isEqualTo("identifier");

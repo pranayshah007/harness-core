@@ -165,9 +165,7 @@ public class AzureAuthorizationClientImpl extends AzureClient implements AzureAu
 
       if (response != null) {
         if (response.isSuccessful()) {
-          AzureIdentityAccessTokenResponse azureIdentityAccessTokenResponse = response.body();
-
-          return azureIdentityAccessTokenResponse;
+          return response.body();
         }
         String errorBody = response.errorBody().string();
         throw NestedExceptionUtils.hintWithExplanationException(

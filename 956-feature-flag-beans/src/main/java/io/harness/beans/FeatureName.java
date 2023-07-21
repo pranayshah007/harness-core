@@ -131,6 +131,7 @@ public enum FeatureName {
   CDS_K8S_SERVICE_HOOKS_NG("Enables Service hooks support for K8s/Native Helm Services", HarnessTeam.CDP),
   CDS_K8S_SOCKET_CAPABILITY_CHECK_NG(
       "Replace HTTP capability check for Kubernetes connector with Socket Capability", HarnessTeam.CDP),
+  CDS_MULTI_SERVICE_PROPAGATION("FF for enabling multi service propagation for CD", HarnessTeam.CDP),
   CDS_NEXUS_GROUPID_ARTIFACTID_DROPDOWN(
       "FF to enable dropdowns for groupId and artifactId in Nexus Artifact Source", HarnessTeam.CDC),
   CDS_NG_TRIGGER_EXECUTION_REFACTOR(
@@ -149,7 +150,6 @@ public enum FeatureName {
       HarnessTeam.CDC),
   CDS_QUERY_OPTIMIZATION("Feature flag to optimize CG Queries", HarnessTeam.CDC),
   CDS_RANCHER_SUPPORT_NG("Enable Rancher support in NG.", HarnessTeam.CDP),
-  CDS_REMOVE_COMMENTS_FROM_VALUES_YAML("Remove comments from values.yaml files", HarnessTeam.CDP),
   CDS_RENAME_HARNESS_RELEASE_HISTORY_RESOURCE_NATIVE_HELM_NG(
       "Use a prefix for internal harness release history for native helm deployment. Feature Flag will be removed as part of the epic: https://harness.atlassian.net/browse/CDS-46915",
       HarnessTeam.CDP),
@@ -274,6 +274,7 @@ public enum FeatureName {
   CI_USE_S3_FOR_CACHE("Use S3 bucket for cache intelligence instead of GCP", HarnessTeam.CI),
   CI_USE_S3_FOR_DLC("Use S3 bucket for DLC cache", HarnessTeam.CI),
   CI_YAML_VERSIONING("Feature flag for yaml simplification", HarnessTeam.CI),
+  CI_NEW_CODEBASE_INPUTSET("Feature flag for new codebase input set", HarnessTeam.CI),
   CLEAN_UP_OLD_MANAGER_VERSIONS(Scope.PER_ACCOUNT),
   CLOUDFORMATION_CHANGE_SET,
   CLOUDFORMATION_SKIP_WAIT_FOR_RESOURCES,
@@ -633,6 +634,9 @@ public enum FeatureName {
   SPG_CG_STATS_INSTANCE_CONSUMER("Optimize stats collector for instance collection", HarnessTeam.SPG),
   SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW("Enable timeout failure strategy at workflow level", HarnessTeam.SPG),
   SPG_CG_K8S_SECRET_MANAGER_CAPABILITIES("Enable to enforce secret manager capabilities on k8s tasks", HarnessTeam.SPG),
+  SPG_CG_WFE_PROJECTION_FIELDS(
+      "Enable to optimize workflow execution queries to retrieve only required fields using projection",
+      HarnessTeam.SPG),
   SPG_CHANGE_SECRET_VAULT_PATTERN_ON_YAML("Change the format of secret in yaml when use vault", HarnessTeam.SPG),
   SPG_DASHBOARD_STATS_OPTIMIZE_ACTIVE_SERVICES(
       "Active services slow api call optimization. Also solves MOM issue in CG.", HarnessTeam.SPG),

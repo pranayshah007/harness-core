@@ -32,6 +32,7 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 
 import software.wings.api.EnvStateExecutionData;
+import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.service.intfc.PipelineService;
 import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.service.intfc.WorkflowService;
@@ -68,8 +69,8 @@ public class PipelineStageExecutionAdvisor implements ExecutionEventAdvisor {
   public ExecutionEventAdvice onExecutionEvent(ExecutionEvent executionEvent) {
     State state = executionEvent.getState();
     ExecutionContextImpl context = executionEvent.getContext();
-    WorkflowExecution workflowExecution =
-        workflowExecutionService.getWorkflowExecution(context.getAppId(), context.getWorkflowExecutionId());
+    WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(
+        context.getAppId(), context.getWorkflowExecutionId(), WorkflowExecutionKeys.pipelineSummary);
     StateExecutionInstance stateExecutionInstance = context.getStateExecutionInstance();
 
     if (shouldRollback(

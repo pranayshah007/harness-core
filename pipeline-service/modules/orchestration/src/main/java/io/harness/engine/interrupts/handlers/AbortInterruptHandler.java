@@ -12,6 +12,7 @@ import static io.harness.data.structure.CollectionUtils.isPresent;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.interrupts.Interrupt.State.DISCARDED;
 import static io.harness.interrupts.Interrupt.State.PROCESSED_SUCCESSFULLY;
+import static io.harness.interrupts.Interrupt.State.PROCESSED_UNSUCCESSFULLY;
 import static io.harness.interrupts.Interrupt.State.PROCESSING;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -65,8 +66,12 @@ public class AbortInterruptHandler implements InterruptHandler {
             InterruptType.ABORT, "Failed to abort node with nodeExecutionId" + nodeExecutionId);
       }
       abortHelper.discontinueMarkedInstance(nodeExecution, interrupt);
-      return interrupt;
+
+    } catch (Exception ex) {
+      interruptService.markProcessed(interrupt.getUuid(), PROCESSED_UNSUCCESSFULLY);
+      throw ex;
     }
+    return interruptService.markProcessed(interrupt.getUuid(), PROCESSED_SUCCESSFULLY);
   }
 
   @VisibleForTesting

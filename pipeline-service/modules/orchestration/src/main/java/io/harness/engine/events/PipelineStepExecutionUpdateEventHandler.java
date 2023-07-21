@@ -122,7 +122,7 @@ public class PipelineStepExecutionUpdateEventHandler implements OrchestrationEve
     } catch (Exception ex) {
       log.error(
           String.format(
-              "Unable to update step execution entity, accountIdentifier: %s, orgIdentifier: %s, projectIdentifier: %s, planExecutionId: %s, stageExecutionId: %s, stepExecutionId: %s",
+              "[CustomDashboard]: Unable to update step execution entity, accountIdentifier: %s, orgIdentifier: %s, projectIdentifier: %s, planExecutionId: %s, stageExecutionId: %s, stepExecutionId: %s",
               accountIdentifier, orgIdentifier, projectIdentifier, ambiance.getPlanExecutionId(),
               ambiance.getStageExecutionId(), stepExecutionId),
           ex);

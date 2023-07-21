@@ -112,7 +112,18 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
 
   WorkflowExecution getExecutionWithoutSummary(@NotNull String appId, @NotNull String workflowExecutionId);
 
-  WorkflowExecution getWorkflowExecution(@NotNull String appId, @NotNull String workflowExecutionId);
+  /**
+   * Get a workflow execution using appId and workflowExecutionId (collection primary key).
+   *
+   * <p>As we know the {@code workflowExecution} collection has a higher number of fields and nested objects, the caller
+   * can optimize the resource usage when setting which fields want to be retrieved. When fields are provided the fields
+   * appId, accountId, and uuid are returned retrieved too by default.
+   *
+   * @param fields which fields should be retrieved, leave it empty to retrieve all document fields.
+   *
+   * @return a workflow execution or {@code null} when not found.
+   */
+  WorkflowExecution getWorkflowExecution(@NotNull String appId, @NotNull String workflowExecutionId, String... fields);
 
   WorkflowExecution getUpdatedWorkflowExecution(@NotNull String appId, @NotNull String workflowExecutionId);
 

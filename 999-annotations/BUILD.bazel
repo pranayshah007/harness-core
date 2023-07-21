@@ -4,6 +4,7 @@
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 load("//:tools/bazel/harness.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis")
 
 HarnessTeam = "PT"
 
@@ -14,4 +15,15 @@ java_library(
         "//999-annotations/src/main/java/io/harness/agent/sdk:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
     ],
+)
+
+file_srcs = [
+    "//999-annotations/src/main/java/io/harness/agent/sdk:java_srcs",
+    "//999-annotations/src/main/java/io/harness/annotations/dev:java_srcs",
+]
+
+run_analysis(
+    checkstyle_srcs = file_srcs,
+    pmd_srcs = file_srcs,
+    sonarqube_srcs = file_srcs,
 )

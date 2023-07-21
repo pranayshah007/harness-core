@@ -34,7 +34,6 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.AWS_CDK_BOOTSTRAP)
 @TypeAlias("awsCdkBootstrapStepNode")
 @RecasterAlias("io.harness.cdng.provision.awscdk.AwsCdkBootstrapStepNode")
-
 public class AwsCdkBootstrapStepNode extends CdAbstractStepNode {
   @JsonProperty("type")
   @NotNull

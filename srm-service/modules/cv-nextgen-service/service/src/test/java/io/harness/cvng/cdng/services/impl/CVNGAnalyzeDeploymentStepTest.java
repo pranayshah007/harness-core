@@ -15,6 +15,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
@@ -39,6 +40,8 @@ import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.monitoredService.ChangeSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
+import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -54,9 +57,12 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -66,11 +72,15 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
+import retrofit2.Call;
+import retrofit2.Response;
 
 public class CVNGAnalyzeDeploymentStepTest extends CvNextGenTestBase {
   private CVNGAnalyzeDeploymentStep deploymentStep;
   @Inject private Injector injector;
   @Inject private MonitoredServiceService monitoredServiceService;
+
+  @Mock OutcomeService outcomeService;
   @Inject private MetricPackService metricPackService;
   @Inject private ActivityService activityService;
   @Inject private ChangeSourceService changeSourceService;
@@ -79,12 +89,10 @@ public class CVNGAnalyzeDeploymentStepTest extends CvNextGenTestBase {
   @Inject
   private DefaultPipelineStepMonitoredServiceResolutionServiceImpl defaultVerifyStepMonitoredServiceResolutionService;
 
+  @Mock PipelineServiceClient pipelineServiceClient;
   @Inject
   private ConfiguredPipelineStepMonitoredServiceResolutionServiceImpl
       configuredPipelineStepMonitoredServiceResolutionService;
-
-  @Mock OutcomeService outcomeService;
-
   private BuilderFactory builderFactory;
   private String accountId;
   private String projectIdentifier;
@@ -102,7 +110,7 @@ public class CVNGAnalyzeDeploymentStepTest extends CvNextGenTestBase {
   private String configuredEnvironmentRef;
   long activityStartTime;
   @Before
-  public void setup() throws IllegalAccessException {
+  public void setup() throws IllegalAccessException, IOException {
     deploymentStep = new CVNGAnalyzeDeploymentStep();
     Injector withPMSSDK = injector.createChildInjector(new AbstractModule() {
       @Override
@@ -131,10 +139,6 @@ public class CVNGAnalyzeDeploymentStepTest extends CvNextGenTestBase {
     ConfiguredPipelineStepMonitoredServiceResolutionServiceImpl
         spiedConfiguredVerifyStepMonitoredServiceResolutionService =
             spy(configuredPipelineStepMonitoredServiceResolutionService);
-    verifyStepCvConfigServiceMap.put(
-        MonitoredServiceSpecType.DEFAULT, spiedDefaultVerifyStepMonitoredServiceResolutionService);
-    verifyStepCvConfigServiceMap.put(
-        MonitoredServiceSpecType.CONFIGURED, spiedConfiguredVerifyStepMonitoredServiceResolutionService);
     doReturn(
         OptionalOutcome.builder()
             .found(true)
@@ -146,11 +150,24 @@ public class CVNGAnalyzeDeploymentStepTest extends CvNextGenTestBase {
             .build())
         .when(outcomeService)
         .resolveOptional(any(), any());
+    verifyStepCvConfigServiceMap.put(
+        MonitoredServiceSpecType.DEFAULT, spiedDefaultVerifyStepMonitoredServiceResolutionService);
+    verifyStepCvConfigServiceMap.put(
+        MonitoredServiceSpecType.CONFIGURED, spiedConfiguredVerifyStepMonitoredServiceResolutionService);
+    Call<ResponseDTO<Object>> pipelineSummaryCall = mock(Call.class);
+    doReturn(pipelineSummaryCall).when(pipelineServiceClient).getExecutionDetailV2(any(), any(), any(), any());
+    ObjectMapper objectMapper = new ObjectMapper();
+    ObjectNode pipelineExecutionSummary = objectMapper.createObjectNode();
+    pipelineExecutionSummary.put("name", "Mocked Pipeline");
+    ObjectNode mockResponse = objectMapper.createObjectNode();
+    mockResponse.set("pipelineExecutionSummary", pipelineExecutionSummary);
+    when(pipelineSummaryCall.execute()).thenReturn(Response.success(ResponseDTO.newResponse(mockResponse)));
     FieldUtils.writeField(changeSourceService, "changeSourceUpdateHandlerMap", new HashMap<>(), true);
     FieldUtils.writeField(monitoredServiceService, "changeSourceService", changeSourceService, true);
     FieldUtils.writeField(deploymentStep, "clock", builderFactory.getClock(), true);
     FieldUtils.writeField(deploymentStep, "verifyStepCvConfigServiceMap", verifyStepCvConfigServiceMap, true);
     FieldUtils.writeField(deploymentStep, "monitoredServiceService", monitoredServiceService, true);
+    FieldUtils.writeField(srmAnalysisStepService, "pipelineServiceClient", pipelineServiceClient, true);
     FieldUtils.writeField(deploymentStep, "srmAnalysisStepService", srmAnalysisStepService, true);
     FieldUtils.writeField(deploymentStep, "activityService", activityService, true);
     FieldUtils.writeField(deploymentStep, "outcomeService", outcomeService, true);
@@ -235,6 +252,7 @@ public class CVNGAnalyzeDeploymentStepTest extends CvNextGenTestBase {
         srmStepAnalysisActivity.getExecutionNotificationDetailsId());
     assertThat(stepExecutionDetail.getAnalysisStatus()).isEqualTo(SRMAnalysisStatus.RUNNING);
     assertThat(stepExecutionDetail.getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceDTO.getIdentifier());
+    assertThat(stepExecutionDetail.getPipelineName()).isEqualTo("Mocked Pipeline");
   }
 
   @Test
@@ -313,6 +331,7 @@ public class CVNGAnalyzeDeploymentStepTest extends CvNextGenTestBase {
         srmStepAnalysisActivity.getExecutionNotificationDetailsId());
     assertThat(stepExecutionDetail.getAnalysisStatus()).isEqualTo(SRMAnalysisStatus.RUNNING);
     assertThat(stepExecutionDetail.getMonitoredServiceIdentifier()).isEqualTo(configuredMonitoredServiceRef);
+    assertThat(stepExecutionDetail.getPipelineName()).isEqualTo("Mocked Pipeline");
   }
 
   private Ambiance getAmbiance() {

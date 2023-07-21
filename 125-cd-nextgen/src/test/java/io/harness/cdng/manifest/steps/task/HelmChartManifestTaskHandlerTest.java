@@ -31,6 +31,7 @@ import io.harness.delegate.task.helm.response.HelmChartManifest;
 import io.harness.delegate.task.helm.response.HelmFetchChartManifestResponse;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.delegate.task.k8s.K8sManifestDelegateConfig;
+import io.harness.logging.LogCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
@@ -59,6 +60,8 @@ public class HelmChartManifestTaskHandlerTest extends CategoryTest {
   @Mock private K8sManifestDelegateMapper manifestDelegateMapper;
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Mock private CDFeatureFlagHelper featureFlagHelperService;
+
+  @Mock private LogCallback logCallback;
 
   @InjectMocks private HelmChartManifestTaskHandler helmChartManifestTaskHandler;
 
@@ -108,12 +111,40 @@ public class HelmChartManifestTaskHandlerTest extends CategoryTest {
         io.harness.delegate.TaskType.newBuilder().setType(TaskType.HELM_FETCH_CHART_MANIFEST_TASK.name()).build();
     final AccountId expectedAccountId = AccountId.newBuilder().setId(ACCOUNT_ID).build();
     final K8sManifestOutcome manifestOutcome = K8sManifestOutcome.builder().build();
+    final FetchManifestTaskContext context = FetchManifestTaskContext.builder()
+                                                 .ambiance(ambiance)
+                                                 .manifestOutcome(manifestOutcome)
+                                                 .logCallback(logCallback)
+                                                 .build();
 
     doReturn(true).when(featureFlagHelperService).isEnabled(ACCOUNT_ID, FeatureName.CDS_HELM_FETCH_CHART_METADATA_NG);
 
     doReturn(true).when(delegateGrpcClientWrapper).isTaskTypeSupported(expectedAccountId, expectedTaskType);
 
-    assertThat(helmChartManifestTaskHandler.isSupported(ambiance, manifestOutcome)).isFalse();
+    assertThat(helmChartManifestTaskHandler.isSupported(context)).isFalse();
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testIsSupportedContainsExpressions() {
+    final io.harness.delegate.TaskType expectedTaskType =
+        io.harness.delegate.TaskType.newBuilder().setType(TaskType.HELM_FETCH_CHART_MANIFEST_TASK.name()).build();
+    final AccountId expectedAccountId = AccountId.newBuilder().setId(ACCOUNT_ID).build();
+    final HelmChartManifestOutcome manifestOutcome =
+        HelmChartManifestOutcome.builder()
+            .chartName(ParameterField.createExpressionField(true, "<+expression>", null, true))
+            .chartVersion(ParameterField.createExpressionField(true, "<+expression>", null, true))
+            .build();
+    final FetchManifestTaskContext context = FetchManifestTaskContext.builder()
+                                                 .ambiance(ambiance)
+                                                 .manifestOutcome(manifestOutcome)
+                                                 .logCallback(logCallback)
+                                                 .build();
+
+    doReturn(true).when(featureFlagHelperService).isEnabled(ACCOUNT_ID, FeatureName.CDS_HELM_FETCH_CHART_METADATA_NG);
+    doReturn(true).when(delegateGrpcClientWrapper).isTaskTypeSupported(expectedAccountId, expectedTaskType);
+    assertThat(helmChartManifestTaskHandler.isSupported(context)).isFalse();
   }
 
   @Test
@@ -122,10 +153,15 @@ public class HelmChartManifestTaskHandlerTest extends CategoryTest {
   public void testCreateTaskData() {
     final HelmChartManifestOutcome manifestOutcome = HelmChartManifestOutcome.builder().build();
     final HelmChartManifestDelegateConfig manifestConfig = HelmChartManifestDelegateConfig.builder().build();
+    final FetchManifestTaskContext context = FetchManifestTaskContext.builder()
+                                                 .ambiance(ambiance)
+                                                 .manifestOutcome(manifestOutcome)
+                                                 .logCallback(logCallback)
+                                                 .build();
 
     doReturn(manifestConfig).when(manifestDelegateMapper).getManifestDelegateConfig(manifestOutcome, ambiance);
 
-    Optional<TaskData> result = helmChartManifestTaskHandler.createTaskData(ambiance, manifestOutcome);
+    Optional<TaskData> result = helmChartManifestTaskHandler.createTaskData(context);
 
     assertThat(result).isNotEmpty();
 
@@ -149,7 +185,13 @@ public class HelmChartManifestTaskHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateTaskDataInvalidManifest() {
     final K8sManifestOutcome k8sManifestOutcome = K8sManifestOutcome.builder().build();
-    Optional<TaskData> result = helmChartManifestTaskHandler.createTaskData(ambiance, k8sManifestOutcome);
+    final FetchManifestTaskContext context = FetchManifestTaskContext.builder()
+                                                 .ambiance(ambiance)
+                                                 .manifestOutcome(k8sManifestOutcome)
+                                                 .logCallback(logCallback)
+                                                 .build();
+
+    Optional<TaskData> result = helmChartManifestTaskHandler.createTaskData(context);
     assertThat(result).isEmpty();
   }
 
@@ -159,10 +201,15 @@ public class HelmChartManifestTaskHandlerTest extends CategoryTest {
   public void testCreateTaskDataIncorrectManifestDelegateType() {
     final HelmChartManifestOutcome manifestOutcome = HelmChartManifestOutcome.builder().build();
     final K8sManifestDelegateConfig manifestDelegateConfig = K8sManifestDelegateConfig.builder().build();
+    final FetchManifestTaskContext context = FetchManifestTaskContext.builder()
+                                                 .ambiance(ambiance)
+                                                 .manifestOutcome(manifestOutcome)
+                                                 .logCallback(logCallback)
+                                                 .build();
 
     doReturn(manifestDelegateConfig).when(manifestDelegateMapper).getManifestDelegateConfig(manifestOutcome, ambiance);
 
-    Optional<TaskData> result = helmChartManifestTaskHandler.createTaskData(ambiance, manifestOutcome);
+    Optional<TaskData> result = helmChartManifestTaskHandler.createTaskData(context);
     assertThat(result).isEmpty();
   }
 
@@ -267,12 +314,18 @@ public class HelmChartManifestTaskHandlerTest extends CategoryTest {
     final HelmChartManifestOutcome manifestOutcome =
         HelmChartManifestOutcome.builder().fetchHelmChartMetadata(fetchHelmChart).build();
 
+    final FetchManifestTaskContext context = FetchManifestTaskContext.builder()
+                                                 .ambiance(ambiance)
+                                                 .manifestOutcome(manifestOutcome)
+                                                 .logCallback(logCallback)
+                                                 .build();
+
     doReturn(ffEnabled)
         .when(featureFlagHelperService)
         .isEnabled(ACCOUNT_ID, FeatureName.CDS_HELM_FETCH_CHART_METADATA_NG);
 
     doReturn(taskSupported).when(delegateGrpcClientWrapper).isTaskTypeSupported(expectedAccountId, expectedTaskType);
 
-    assertThat(helmChartManifestTaskHandler.isSupported(ambiance, manifestOutcome)).isEqualTo(expectedResult);
+    assertThat(helmChartManifestTaskHandler.isSupported(context)).isEqualTo(expectedResult);
   }
 }

@@ -25,5 +25,9 @@ public interface SRMAnalysisStepService {
 
   SRMAnalysisStepDetailDTO abortRunningSrmAnalysisStep(String executionDetailId);
 
+  void completeSrmAnalysisStep(SRMAnalysisStepExecutionDetail stepExecutionDetail);
+
   SRMAnalysisStepDetailDTO getSRMAnalysisSummary(String activityId);
+
+  void handleReportNotification(SRMAnalysisStepExecutionDetail stepExecutionDetail);
 }

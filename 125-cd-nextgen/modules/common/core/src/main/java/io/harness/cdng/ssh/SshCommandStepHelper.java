@@ -237,7 +237,6 @@ public class SshCommandStepHelper extends CDStepHelper {
     finalEnvVariables = mergeEnvironmentVariables(evaluatedStageVariables, finalEnvVariables);
     finalEnvVariables = mergeEnvironmentVariables(evaluatedPipelineVariables, finalEnvVariables);
     finalEnvVariables = mergeEnvironmentVariables(getServiceVariables(ambiance), finalEnvVariables);
-    finalEnvVariables = mergeEnvironmentVariables(infrastructure.getEnvironment().getVariables(), finalEnvVariables);
     return mergeEnvironmentVariables(commandStepParameters.getEnvironmentVariables(), finalEnvVariables);
   }
 

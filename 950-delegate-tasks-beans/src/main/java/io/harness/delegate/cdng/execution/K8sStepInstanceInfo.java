@@ -9,11 +9,15 @@ package io.harness.delegate.cdng.execution;
 
 import io.harness.annotation.RecasterAlias;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @RecasterAlias("io.harness.delegate.cdng.execution.K8sStepInstanceInfo")
 public class K8sStepInstanceInfo implements StepInstanceInfo {
   String podName;

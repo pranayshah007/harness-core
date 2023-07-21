@@ -6,11 +6,13 @@
  */
 
 package io.harness.cdng.artifact.resources.jenkins.service;
-
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.DelegateTaskRequest.DelegateTaskRequestBuilder;
 import io.harness.beans.IdentifierRef;
@@ -62,6 +64,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Slf4j
 public class JenkinsResourceServiceImpl implements JenkinsResourceService {
   private final ConnectorService connectorService;
@@ -220,7 +223,7 @@ public class JenkinsResourceServiceImpl implements JenkinsResourceService {
     } else if (responseData instanceof RemoteMethodReturnValueData) {
       RemoteMethodReturnValueData remoteMethodReturnValueData = (RemoteMethodReturnValueData) responseData;
       if (remoteMethodReturnValueData.getException() instanceof InvalidRequestException) {
-        throw(InvalidRequestException)(remoteMethodReturnValueData.getException());
+        throw (InvalidRequestException) (remoteMethodReturnValueData.getException());
       } else {
         throw new ArtifactServerException(
             "Unexpected error during authentication to docker server " + remoteMethodReturnValueData.getReturnValue(),
