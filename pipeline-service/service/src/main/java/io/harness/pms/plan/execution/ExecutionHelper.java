@@ -125,10 +125,12 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.InternalServerErrorException;
 import lombok.AccessLevel;
@@ -712,15 +714,23 @@ public class ExecutionHelper {
   public NodeExecutionSubGraphResponse getNodeExecutionSubGraph(String nodeExecutionId, String planExecutionId, PipelineExecutionSummaryEntity executionSummaryEntity,
                                                                 EntityGitDetails entityGitDetails) {
     List<NodeExecution> nodeExecutions = new LinkedList<>();
+    List<NodeExecution> tempNodeEx = new LinkedList<>();
     try (CloseableIterator<NodeExecution> iterator =
                  nodeExecutionService.fetchChildrenNodeExecutionsIterator(planExecutionId, nodeExecutionId,
                          Sort.Direction.ASC)) {
       while (iterator.hasNext()) {
-        nodeExecutions.add(iterator.next());
+        tempNodeEx.add(iterator.next());
       }
     }
+    nodeExecutions = nodeExecutionService.extractChildExecutions(nodeExecutionId, false, nodeExecutions, tempNodeEx, true);
     nodeExecutions.add(nodeExecutionService.get(nodeExecutionId));
-
+    Set<String> retryIds = new HashSet<>();
+    for(NodeExecution nodeExecution:nodeExecutions){
+      if(EmptyPredicate.isNotEmpty(nodeExecution.getRetryIds())){
+        retryIds.addAll(nodeExecution.getRetryIds());
+      }
+    }
+//    nodeExecutions.removeIf(nodeExecution -> retryIds.contains(nodeExecution.getUuid()));
     // build graph wale me new func
     OrchestrationGraph graph = OrchestrationGraph.builder()
             .cacheKey(planExecutionId)

@@ -298,7 +298,6 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
           String planExecutionId, String parentId, Direction sortOrderOfCreatedAt) {
     // Uses planExecutionId_parentId_createdAt_idx
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
-            .addCriteria(where(NodeExecutionKeys.parentId).is(parentId))
             .with(Sort.by(sortOrderOfCreatedAt, NodeExecutionKeys.createdAt));
     return nodeExecutionReadHelper.fetchNodeExecutionsIteratorWithoutProjections(query);
   }
