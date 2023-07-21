@@ -137,7 +137,7 @@ public class CommandStepMapperImpl extends StepMapper {
   @Override
   public void overrideTemplateInputs(MigrationContext migrationContext, WorkflowMigrationContext context,
       WorkflowPhase phase, GraphNode graphNode, NGYamlFile templateFile, JsonNode templateInputs) {
-    CommandState state = new CommandState(graphNode.getName());
+    CommandState state = (CommandState) getState(graphNode);
     boolean shouldRunOnDelegate = state.isExecuteOnDelegate();
     JsonNode onDelegate = templateInputs.at("/spec/onDelegate");
     if (onDelegate instanceof TextNode) {

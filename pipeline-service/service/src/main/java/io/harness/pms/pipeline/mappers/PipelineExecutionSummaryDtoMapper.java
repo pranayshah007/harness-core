@@ -99,6 +99,7 @@ public class PipelineExecutionSummaryDtoMapper {
         .planExecutionId(pipelineExecutionSummaryEntity.getPlanExecutionId())
         .pipelineIdentifier(pipelineExecutionSummaryEntity.getPipelineIdentifier())
         .runSequence(pipelineExecutionSummaryEntity.getRunSequence())
+        .status(pipelineExecutionSummaryEntity.getStatus())
         .build();
   }
 

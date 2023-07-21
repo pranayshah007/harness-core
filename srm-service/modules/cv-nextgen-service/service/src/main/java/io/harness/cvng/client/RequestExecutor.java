@@ -53,7 +53,7 @@ public class RequestExecutor {
     try {
       restResponse = (RestResponse<?>) JsonUtils.asObject(errorBody, RestResponse.class);
     } catch (RuntimeException e) {
-      // ignore if json can not be parsed to RestResponse
+      log.error("Response cannot be parsed");
       return;
     }
     List<ResponseMessage> responseMessages = restResponse.getResponseMessages();

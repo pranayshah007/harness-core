@@ -24,6 +24,7 @@ import io.harness.entities.PipelineExecutionSummaryEntityCDCEntityWithDebeziumEn
 import io.harness.entities.PipelineStageExecutionCDCEntity;
 import io.harness.entities.ProjectEntity;
 import io.harness.entities.ServiceCDCEntity;
+import io.harness.entities.StepExecutionCDCEntity;
 import io.harness.entities.UserEntity;
 import io.harness.entities.VerifyStepCDCEntity;
 import io.harness.persistence.HPersistence;
@@ -104,6 +105,7 @@ public class ChangeDataCaptureModule extends AbstractModule {
     cdcEntityMultibinder.addBinding().to(VerifyStepCDCEntity.class);
     cdcEntityMultibinder.addBinding().to(InterruptCDCEntity.class);
     cdcEntityMultibinder.addBinding().to(PipelineStageExecutionCDCEntity.class);
+    cdcEntityMultibinder.addBinding().to(StepExecutionCDCEntity.class);
   }
 
   @Provides

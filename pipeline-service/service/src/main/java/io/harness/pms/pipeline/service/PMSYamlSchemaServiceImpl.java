@@ -109,7 +109,6 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   Integer allowedParallelStages;
 
   private final String PIPELINE_JSON = "pipeline.json";
-  private final String TEMPLATE_JSON = "template.json";
 
   @Inject
   public PMSYamlSchemaServiceImpl(YamlSchemaProvider yamlSchemaProvider, YamlSchemaValidator yamlSchemaValidator,
@@ -515,9 +514,6 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
     switch (entityType) {
       case PIPELINES:
         entityTypeJson = PIPELINE_JSON;
-        break;
-      case TEMPLATE:
-        entityTypeJson = TEMPLATE_JSON;
         break;
       default:
         entityTypeJson = PIPELINE_JSON;

@@ -7,13 +7,17 @@
 
 package io.harness.polling.service.impl;
 
+import static io.harness.remote.client.NGRestUtils.getResponse;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.dto.PollingInfoForTriggers;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.dto.PollingTriggerStatusUpdateDTO;
 import io.harness.observer.Subject;
+import io.harness.pipeline.triggers.TriggersClient;
 import io.harness.polling.bean.ArtifactPolledResponse;
 import io.harness.polling.bean.GitPollingPolledResponse;
 import io.harness.polling.bean.ManifestPolledResponse;
@@ -41,8 +45,10 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @OwnedBy(HarnessTeam.CDC)
 @Singleton
 public class PollingServiceImpl implements PollingService {
+  private int MAX_COLLECTED_VERSIONS_FOR_TRIGGER_STATUS = 10;
   @Inject private PollingRepository pollingRepository;
   @Inject private PollingDocumentMapper pollingDocumentMapper;
+  @Inject private TriggersClient triggersClient;
   @Inject @Getter private final Subject<PollingServiceObserver> subject = new Subject<>();
 
   @Override
@@ -235,5 +241,27 @@ public class PollingServiceImpl implements PollingService {
         .polledResponse(polledResponse)
         .perpetualTaskId(pollingDocument.getPerpetualTaskId())
         .build();
+  }
+
+  @Override
+  public boolean updateTriggerPollingStatus(String accountId, List<String> signatures, boolean success,
+      String errorMessage, List<String> lastCollectedVersions) {
+    // Truncate `lastCollectedVersions` list to at most 10 items, in order to avoid large payloads.
+    if (lastCollectedVersions != null && lastCollectedVersions.size() > MAX_COLLECTED_VERSIONS_FOR_TRIGGER_STATUS) {
+      lastCollectedVersions = lastCollectedVersions.subList(0, MAX_COLLECTED_VERSIONS_FOR_TRIGGER_STATUS);
+    }
+    PollingTriggerStatusUpdateDTO statusUpdate = PollingTriggerStatusUpdateDTO.builder()
+                                                     .signatures(signatures)
+                                                     .success(success)
+                                                     .errorMessage(errorMessage)
+                                                     .lastCollectedVersions(lastCollectedVersions)
+                                                     .lastCollectedTime(System.currentTimeMillis())
+                                                     .build();
+    try {
+      return getResponse(triggersClient.updateTriggerPollingStatus(accountId, statusUpdate));
+    } catch (Exception e) {
+      log.error("Failed to update triggers' polling Status for accountId {}, signatures {}", accountId, signatures, e);
+      return false;
+    }
   }
 }

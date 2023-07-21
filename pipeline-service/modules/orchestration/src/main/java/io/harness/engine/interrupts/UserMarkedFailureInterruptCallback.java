@@ -67,7 +67,8 @@ public class UserMarkedFailureInterruptCallback implements OldNotifyCallback {
   }
 
   void failNode(Map<String, ResponseData> response) {
-    userMarkedFailAllHelper.failDiscontinuingNode(ambiance);
+    userMarkedFailAllHelper.failDiscontinuingNode(
+        ambiance, nodeExecutionId, interruptType, interruptId, interruptConfig);
     ResponseData responseData = isEmpty(response) ? null : response.values().iterator().next();
     waitNotifyEngine.doneWith(nodeExecutionId + "|" + interruptId, responseData);
   }

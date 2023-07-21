@@ -33,6 +33,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.io.IOException;
+import java.util.Map;
 import okhttp3.MediaType;
 import okhttp3.Protocol;
 import okhttp3.Request;
@@ -192,6 +193,46 @@ public class IACMServiceUtilsTest extends CategoryTest implements MockableTestMi
     when(connectorCall5.execute()).thenReturn(response);
     WorkspaceVariables[] vars = iacmServiceUtils.getIacmWorkspaceEnvs("a", "b", "c", "d");
     assertThat(vars.length).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = NGONZALEZ)
+  @Category(UnitTests.class)
+  public void testGetIACMResources() throws IOException {
+    Call<JsonObject> connectorCall5 = mock(Call.class);
+    IACMServiceUtils iacmServiceUtils = new IACMServiceUtils(iacmServiceClient, createServiceConfig());
+    when(iacmServiceClient.getWorkspaceResoures(any(), any(), any(), any(), any())).thenReturn(connectorCall5);
+    Response<JsonObject> response = Response.success(200,
+        JsonParser
+            .parseString("{\n"
+                + "    \"resources\": [\n"
+                + "        {}\n"
+                + "    ],\n"
+                + "    \"outputs\": [\n"
+                + "        {\n"
+                + "            \"name\": \"app1\",\n"
+                + "            \"value\": \"ami-1\",\n"
+                + "            \"sensitive\": true\n"
+                + "        },\n"
+                + "        {\n"
+                + "            \"name\": \"app2\",\n"
+                + "            \"value\": \"ami-2\",\n"
+                + "            \"sensitive\": false\n"
+                + "        },\n"
+                + "        {\n"
+                + "            \"name\": \"app3\",\n"
+                + "            \"value\": \"ami-3\",\n"
+                + "            \"sensitive\": false\n"
+                + "        }\n"
+                + "    ]\n"
+                + "}")
+            .getAsJsonObject());
+    when(connectorCall5.execute()).thenReturn(response);
+    Map<String, String> vars = iacmServiceUtils.getIacmWorkspaceOutputs("a", "b", "c", "d");
+    assertThat(vars.size()).isEqualTo(3);
+    assertThat(vars.get("app1")).isEqualTo("ami-1");
+    assertThat(vars.get("app2")).isEqualTo("ami-2");
+    assertThat(vars.get("app3")).isEqualTo("ami-3");
   }
 
   private ResponseBody getResponse(int code) {

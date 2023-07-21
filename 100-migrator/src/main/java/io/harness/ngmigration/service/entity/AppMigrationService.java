@@ -7,7 +7,6 @@
 
 package io.harness.ngmigration.service.entity;
 
-import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.encryption.Scope.PROJECT;
 
 import static software.wings.ngmigration.NGMigrationEntityType.APPLICATION;
@@ -18,7 +17,6 @@ import static software.wings.ngmigration.NGMigrationEntityType.TRIGGER;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
-import io.harness.beans.SearchFilter.Operator;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.gitsync.beans.YamlDTO;
@@ -157,11 +155,12 @@ public class AppMigrationService extends NgMigrationService {
     }
     // We are filtering based on service template because service variables & environment types are handled with
     // Environment migration. These variables depend on both service & environment to be migrated.
-    List<ServiceVariable> serviceVariables = serviceVariableService.list(
-        aPageRequest()
-            .addFilter(ServiceVariableKeys.appId, Operator.EQ, appId)
-            .addFilter(ServiceVariableKeys.entityType, Operator.EQ, EntityType.SERVICE_TEMPLATE.name())
-            .build());
+    List<ServiceVariable> serviceVariables =
+        hPersistence.createQuery(ServiceVariable.class)
+            .filter(ServiceVariableKeys.appId, appId)
+            .filter(ServiceVariableKeys.entityType, EntityType.SERVICE_TEMPLATE.name())
+            .filter(ServiceVariableKeys.accountId, application.getAccountId())
+            .asList();
     if (EmptyPredicate.isNotEmpty(serviceVariables)) {
       children.addAll(serviceVariables.stream()
                           .distinct()

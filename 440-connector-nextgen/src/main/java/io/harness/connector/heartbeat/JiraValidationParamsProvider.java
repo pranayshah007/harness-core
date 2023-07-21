@@ -8,11 +8,8 @@
 package io.harness.connector.heartbeat;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.remote.client.CGRestUtils.getResponse;
 
-import io.harness.account.AccountClient;
 import io.harness.beans.DecryptableEntity;
-import io.harness.beans.FeatureName;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.helper.EncryptionHelper;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;
@@ -25,21 +22,11 @@ import java.util.List;
 
 public class JiraValidationParamsProvider implements ConnectorValidationParamsProvider {
   @Inject EncryptionHelper encryptionHelper;
-  @Inject private AccountClient accountClient;
 
   @Override
   public ConnectorValidationParams getConnectorValidationParams(ConnectorInfoDTO connectorInfoDTO, String connectorName,
       String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     final JiraConnectorDTO connectorConfig = (JiraConnectorDTO) connectorInfoDTO.getConnectorConfig();
-
-    // TODO: when GAing CDS_JIRA_PAT_AUTH FF: remove this if code block
-    //  Change done for:  backward compatibility with older delegates as reference true kryo used in
-    //  ConnectorHeartbeatPerpetualTaskExecutor.java in older versions
-
-    if (!getResponse(accountClient.isFeatureFlagEnabled(FeatureName.CDS_JIRA_PAT_AUTH.name(), accountIdentifier))) {
-      connectorConfig.setAuth(null);
-    }
-
     final List<DecryptableEntity> decryptableEntityList = connectorConfig.getDecryptableEntities();
     DecryptableEntity decryptableEntity = null;
     if (isNotEmpty(decryptableEntityList)) {

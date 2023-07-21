@@ -64,6 +64,7 @@ public final class Rule implements PersistentEntity, UuidAware, CreatedAtAware, 
   @Schema(description = "isOOTB") Boolean isOOTB;
   @Schema(description = "deleted") Boolean deleted;
   @Schema(description = "forRecommendation") Boolean forRecommendation;
+  @Schema(description = "resourceType") String resourceType;
   @Schema(description = NGCommonEntityConstants.CREATED_AT_MESSAGE) long createdAt;
   @Schema(description = NGCommonEntityConstants.UPDATED_AT_MESSAGE) long lastUpdatedAt;
   @CreatedBy @Schema private EmbeddedUser createdBy;

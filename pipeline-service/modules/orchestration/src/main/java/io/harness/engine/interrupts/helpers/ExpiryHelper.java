@@ -10,27 +10,38 @@ package io.harness.engine.interrupts.helpers;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.eraro.ErrorCode.TIMEOUT_ENGINE_EXCEPTION;
 import static io.harness.logging.UnitStatus.EXPIRED;
+import static io.harness.pms.contracts.interrupts.InterruptType.MARK_EXPIRED;
 
+import io.harness.OrchestrationPublisherName;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.node.NodeExecutionUpdateFailedException;
+import io.harness.engine.interrupts.ExpiryInterruptCallback;
 import io.harness.engine.interrupts.InterruptProcessingFailedException;
+import io.harness.engine.interrupts.handlers.publisher.InterruptEventPublisher;
 import io.harness.eraro.Level;
 import io.harness.exception.InvalidRequestException;
+import io.harness.execution.ExecutionModeUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.interrupts.Interrupt;
 import io.harness.interrupts.InterruptEffect;
 import io.harness.logging.UnitProgress;
+import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
+import io.harness.pms.contracts.interrupts.InterruptConfig;
 import io.harness.pms.contracts.interrupts.InterruptType;
 import io.harness.pms.contracts.steps.io.StepResponseProto;
+import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,7 +53,10 @@ public class ExpiryHelper {
 
   @Inject private OrchestrationEngine engine;
   @Inject private InterruptHelper interruptHelper;
+  @Inject @Named(OrchestrationPublisherName.PUBLISHER_NAME) String publisherName;
   @Inject private NodeExecutionService nodeExecutionService;
+  @Inject private InterruptEventPublisher interruptEventPublisher;
+  @Inject private WaitNotifyEngine waitNotifyEngine;
 
   public void expireMarkedInstance(NodeExecution nodeExecution, Interrupt interrupt) {
     try {
@@ -51,33 +65,22 @@ public class ExpiryHelper {
         log.error("Delegate Task Cannot be aborted for NodeExecutionId: {}", nodeExecution.getUuid());
       }
 
-      List<UnitProgress> unitProgressList = InterruptHelper.evaluateUnitProgresses(nodeExecution, EXPIRED);
-      nodeExecutionService.updateV2(nodeExecution.getUuid(),
-          ops
-          -> ops.addToSet(NodeExecutionKeys.interruptHistories,
-              InterruptEffect.builder()
-                  .interruptType(interrupt.getType())
-                  .tookEffectAt(System.currentTimeMillis())
-                  .interruptId(interrupt.getUuid())
-                  .interruptConfig(interrupt.getInterruptConfig())
-                  .build()));
+      if (nodeExecution.getMode() == ExecutionMode.SYNC || ExecutionModeUtils.isParentMode(nodeExecution.getMode())) {
+        log.info("Expiring directly because mode is {}", nodeExecution.getMode());
+        expireDiscontinuedInstance(
+            nodeExecution, interrupt.getInterruptConfig(), interrupt.getUuid(), interrupt.getType());
+        return;
+      }
 
-      StepResponseProto expiredStepResponse =
-          StepResponseProto.newBuilder()
-              .setStatus(Status.EXPIRED)
-              .setFailureInfo(FailureInfo.newBuilder()
-                                  .setErrorMessage(EXPIRE_ERROR_MESSAGE)
-                                  .addFailureTypes(FailureType.TIMEOUT_FAILURE)
-                                  .addFailureData(FailureData.newBuilder()
-                                                      .addFailureTypes(FailureType.TIMEOUT_FAILURE)
-                                                      .setLevel(Level.ERROR.name())
-                                                      .setCode(TIMEOUT_ENGINE_EXCEPTION.name())
-                                                      .setMessage(EXPIRE_ERROR_MESSAGE)
-                                                      .build())
-                                  .build())
-              .addAllUnitProgress(unitProgressList)
-              .build();
-      engine.processStepResponse(nodeExecution.getAmbiance(), expiredStepResponse);
+      String notifyId = interruptEventPublisher.publishEvent(nodeExecution.getUuid(), interrupt, MARK_EXPIRED);
+      ExpiryInterruptCallback expiryInterruptCallback = ExpiryInterruptCallback.builder()
+                                                            .nodeExecutionId(nodeExecution.getUuid())
+                                                            .interruptId(interrupt.getUuid())
+                                                            .interruptType(interrupt.getType())
+                                                            .interruptConfig(interrupt.getInterruptConfig())
+                                                            .build();
+      waitNotifyEngine.waitForAllOnInList(
+          publisherName, expiryInterruptCallback, Collections.singletonList(notifyId), Duration.ofMinutes(1));
     } catch (NodeExecutionUpdateFailedException ex) {
       throw new InterruptProcessingFailedException(
           InterruptType.MARK_EXPIRED, "Expiry failed for NodeExecutionId: " + nodeExecution.getUuid(), ex);
@@ -85,5 +88,36 @@ public class ExpiryHelper {
       log.error("Error in discontinuing", e);
       throw new InvalidRequestException("Error in discontinuing, " + e.getMessage());
     }
+  }
+
+  public void expireDiscontinuedInstance(
+      NodeExecution nodeExecution, InterruptConfig interruptConfig, String interruptId, InterruptType interruptType) {
+    List<UnitProgress> unitProgressList = InterruptHelper.evaluateUnitProgresses(nodeExecution, EXPIRED);
+    nodeExecutionService.updateV2(nodeExecution.getUuid(),
+        ops
+        -> ops.addToSet(NodeExecutionKeys.interruptHistories,
+            InterruptEffect.builder()
+                .interruptType(interruptType)
+                .tookEffectAt(System.currentTimeMillis())
+                .interruptId(interruptId)
+                .interruptConfig(interruptConfig)
+                .build()));
+
+    StepResponseProto expiredStepResponse =
+        StepResponseProto.newBuilder()
+            .setStatus(Status.EXPIRED)
+            .setFailureInfo(FailureInfo.newBuilder()
+                                .setErrorMessage(EXPIRE_ERROR_MESSAGE)
+                                .addFailureTypes(FailureType.TIMEOUT_FAILURE)
+                                .addFailureData(FailureData.newBuilder()
+                                                    .addFailureTypes(FailureType.TIMEOUT_FAILURE)
+                                                    .setLevel(Level.ERROR.name())
+                                                    .setCode(TIMEOUT_ENGINE_EXCEPTION.name())
+                                                    .setMessage(EXPIRE_ERROR_MESSAGE)
+                                                    .build())
+                                .build())
+            .addAllUnitProgress(unitProgressList)
+            .build();
+    engine.processStepResponse(nodeExecution.getAmbiance(), expiredStepResponse);
   }
 }

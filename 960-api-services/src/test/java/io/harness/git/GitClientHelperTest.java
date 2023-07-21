@@ -769,8 +769,11 @@ public class GitClientHelperTest extends CategoryTest {
   public void testGetHarnessApiURL() {
     assertThat(GitClientHelper.getHarnessApiURL("http://git.app.harness.io/acc"))
         .isEqualTo("http://git.app.harness.io");
+    assertThat(GitClientHelper.getHarnessApiURL(
+                   "https://qa.harness.io/code/git/h61p38AZSV6MzEkpWWBtew/default/RaghavTest/privaterepo.git"))
+        .isEqualTo("https://qa.harness.io/gateway/code");
     assertThat(GitClientHelper.getHarnessApiURL("http://git.qa.harness.io/acc")).isEqualTo("http://git.qa.harness.io");
-    assertThat(GitClientHelper.getHarnessApiURL("http://abcd.efgh.app/acc")).isEqualTo("http://abcd.efgh.app");
+    assertThat(GitClientHelper.getHarnessApiURL("http://git.efgh.app/acc")).isEqualTo("http://git.efgh.app");
   }
 
   @Test
@@ -792,5 +795,19 @@ public class GitClientHelperTest extends CategoryTest {
         .isEqualTo("acc/org/proj/repo");
     assertThat(GitClientHelper.convertToHarnessRepoName("acc", "org", "proj", "/org/proj/repo"))
         .isEqualTo("acc/org/proj/repo");
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testGetHarnessRepoName() {
+    String repoName = GitClientHelper.getHarnessRepoName("https://qa.harness.io/code/git/acc/org/proj/repo");
+    assertThat(repoName).isEqualTo("acc/org/proj/repo/+");
+
+    repoName = GitClientHelper.getHarnessRepoName("https://qa.harness.io/code/git/acc/org/proj/repo.git");
+    assertThat(repoName).isEqualTo("acc/org/proj/repo/+");
+
+    repoName = GitClientHelper.getHarnessRepoName("https://app.harness.io/code/git/acc/org/proj/repo.git/");
+    assertThat(repoName).isEqualTo("acc/org/proj/repo/+");
   }
 }

@@ -33,6 +33,7 @@ import io.harness.delegate.beans.Delegate.DelegateBuilder;
 import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapability;
+import io.harness.delegate.task.TaskFailureReason;
 import io.harness.iterator.DelegateDisconnectDetectorIterator;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.network.LocalhostUtils;
@@ -127,8 +128,27 @@ public class DelegateDisconnectDetectorIteratorTest extends WingsBaseTest {
   public void testDeleteDelegateTaskAssignedOnDelegateDisconnect() throws ExecutionException {
     Delegate delegate = createDelegate(ACCOUNT_ID);
     when(accountService.getFromCacheWithFallback(ACCOUNT_ID)).thenReturn(Account.Builder.anAccount().build());
-    createAndAssignDelegateTasks(delegate);
+    DelegateTask task1 = createDelegateTask(delegate);
+    task1.setDelegateId(delegate.getUuid());
+    task1.setStatus(STARTED);
+    persistence.save(task1);
+    DelegateTask task2 = createDelegateTask(delegate);
+    task2.setDelegateId(delegate.getUuid());
+    task2.setStatus(STARTED);
+    persistence.save(task2);
+    DelegateTask task3 = createDelegateTask(delegate);
+    task3.setDelegateId(delegate.getUuid());
+    task3.setStatus(STARTED);
+    persistence.save(task3);
     assertThat(getAlreadyStartedDelegateTask(ACCOUNT_ID, delegate.getUuid())).hasSize(3);
+    when(delegateCache.get(ACCOUNT_ID, delegate.getUuid(), false)).thenReturn(delegate);
+    when(assignDelegateService.getDelegateTaskAssignmentFailureMessage(task1, TaskFailureReason.DELEGATE_DISCONNECTED))
+        .thenReturn("ERROR1");
+    when(assignDelegateService.getDelegateTaskAssignmentFailureMessage(task2, TaskFailureReason.DELEGATE_DISCONNECTED))
+        .thenReturn("ERROR2");
+    when(assignDelegateService.getDelegateTaskAssignmentFailureMessage(task3, TaskFailureReason.DELEGATE_DISCONNECTED))
+        .thenReturn("ERROR3");
+
     delegateDisconnectDetectorIterator.handle(delegate);
     delegateTaskServiceClassic.markAllTasksFailedForDelegate(ACCOUNT_ID, delegate.getUuid());
     assertThat(getAlreadyStartedDelegateTask(ACCOUNT_ID, delegate.getUuid())).hasSize(0);
@@ -202,21 +222,6 @@ public class DelegateDisconnectDetectorIteratorTest extends WingsBaseTest {
     delegateTaskServiceClassic.processDelegateTaskV2(delegateTask, QUEUED);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     return task;
-  }
-
-  private void createAndAssignDelegateTasks(Delegate delegate) throws ExecutionException {
-    DelegateTask task1 = createDelegateTask(delegate);
-    task1.setDelegateId(delegate.getUuid());
-    task1.setStatus(STARTED);
-    persistence.save(task1);
-    DelegateTask task2 = createDelegateTask(delegate);
-    task2.setDelegateId(delegate.getUuid());
-    task2.setStatus(STARTED);
-    persistence.save(task2);
-    DelegateTask task3 = createDelegateTask(delegate);
-    task3.setDelegateId(delegate.getUuid());
-    task3.setStatus(STARTED);
-    persistence.save(task3);
   }
 
   private Delegate createDelegate(String accountId) {

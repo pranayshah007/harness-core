@@ -251,4 +251,6 @@ public class EntityYamlRootNames {
   public static final String SERVERLESS_AWS_LAMBDA_ROLLBACK_V2 = "ServerlessAwsLambdaRollbackV2";
   public static final String SERVERLESS_AWS_LAMBDA_DEPLOY_V2 = "ServerlessAwsLambdaDeployV2";
   public static final String SERVERLESS_AWS_LAMBDA_PACKAGE_V2 = "ServerlessAwsLambdaPackageV2";
+  public static final String AWS_CDK_BOOTSTRAP = "AwsCdkBootstrap";
+  public static final String AWS_CDK_SYNTH = "AwsCdkSynth";
 }

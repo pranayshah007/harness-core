@@ -113,6 +113,7 @@ import io.harness.delegate.beans.executioncapability.SocketConnectivityExecution
 import io.harness.delegate.beans.executioncapability.SshConnectivityExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SystemEnvCheckerCapability;
 import io.harness.delegate.beans.executioncapability.WinrmConnectivityExecutionCapability;
+import io.harness.delegate.beans.helm.HelmDeployProgressData;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
@@ -439,6 +440,7 @@ public class K8sNgTaskRegister implements KryoRegistrar {
     kryo.register(EmptyHostDelegateConfig.class, 60015);
     kryo.register(TaskGroup.class, 74001);
     kryo.register(UnitProgressData.class, 95001);
+    kryo.register(HelmDeployProgressData.class, 95003);
     kryo.register(CfCliVersion.class, 97023);
     kryo.register(KubernetesResourceId.class, 97031);
     kryo.register(ValueType.class, 543215);

@@ -11,35 +11,37 @@ package mock
 
 import (
 	context "context"
+	io "io"
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	stream "github.com/harness/harness-core/product/log-service/stream"
-	reflect "reflect"
 )
 
-// MockStream is a mock of Stream interface.
+// MockStream is a mock of Stream interface
 type MockStream struct {
 	ctrl     *gomock.Controller
 	recorder *MockStreamMockRecorder
 }
 
-// MockStreamMockRecorder is the mock recorder for MockStream.
+// MockStreamMockRecorder is the mock recorder for MockStream
 type MockStreamMockRecorder struct {
 	mock *MockStream
 }
 
-// NewMockStream creates a new mock instance.
+// NewMockStream creates a new mock instance
 func NewMockStream(ctrl *gomock.Controller) *MockStream {
 	mock := &MockStream{ctrl: ctrl}
 	mock.recorder = &MockStreamMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use.
+// EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockStream) EXPECT() *MockStreamMockRecorder {
 	return m.recorder
 }
 
-// Create mocks base method.
+// Create mocks base method
 func (m *MockStream) Create(arg0 context.Context, arg1 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", arg0, arg1)
@@ -47,13 +49,13 @@ func (m *MockStream) Create(arg0 context.Context, arg1 string) error {
 	return ret0
 }
 
-// Create indicates an expected call of Create.
+// Create indicates an expected call of Create
 func (mr *MockStreamMockRecorder) Create(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockStream)(nil).Create), arg0, arg1)
 }
 
-// Delete mocks base method.
+// Delete mocks base method
 func (m *MockStream) Delete(arg0 context.Context, arg1 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Delete", arg0, arg1)
@@ -61,13 +63,27 @@ func (m *MockStream) Delete(arg0 context.Context, arg1 string) error {
 	return ret0
 }
 
-// Delete indicates an expected call of Delete.
+// Delete indicates an expected call of Delete
 func (mr *MockStreamMockRecorder) Delete(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStream)(nil).Delete), arg0, arg1)
 }
 
-// Write mocks base method.
+// Ping mocks base method
+func (m *MockStream) Ping(arg0 context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Ping", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Ping indicates an expected call of Ping
+func (mr *MockStreamMockRecorder) Ping(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ping", reflect.TypeOf((*MockStream)(nil).Ping), arg0)
+}
+
+// Write mocks base method
 func (m *MockStream) Write(arg0 context.Context, arg1 string, arg2 ...*stream.Line) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
@@ -79,14 +95,14 @@ func (m *MockStream) Write(arg0 context.Context, arg1 string, arg2 ...*stream.Li
 	return ret0
 }
 
-// Write indicates an expected call of Write.
+// Write indicates an expected call of Write
 func (mr *MockStreamMockRecorder) Write(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Write", reflect.TypeOf((*MockStream)(nil).Write), varargs...)
 }
 
-// Tail mocks base method.
+// Tail mocks base method
 func (m *MockStream) Tail(arg0 context.Context, arg1 string) (<-chan *stream.Line, <-chan error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Tail", arg0, arg1)
@@ -95,13 +111,13 @@ func (m *MockStream) Tail(arg0 context.Context, arg1 string) (<-chan *stream.Lin
 	return ret0, ret1
 }
 
-// Tail indicates an expected call of Tail.
+// Tail indicates an expected call of Tail
 func (mr *MockStreamMockRecorder) Tail(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Tail", reflect.TypeOf((*MockStream)(nil).Tail), arg0, arg1)
 }
 
-// Info mocks base method.
+// Info mocks base method
 func (m *MockStream) Info(arg0 context.Context) *stream.Info {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Info", arg0)
@@ -109,8 +125,51 @@ func (m *MockStream) Info(arg0 context.Context) *stream.Info {
 	return ret0
 }
 
-// Info indicates an expected call of Info.
+// Info indicates an expected call of Info
 func (mr *MockStreamMockRecorder) Info(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Info", reflect.TypeOf((*MockStream)(nil).Info), arg0)
+}
+
+// CopyTo mocks base method
+func (m *MockStream) CopyTo(ctx context.Context, key string, rc io.WriteCloser) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CopyTo", ctx, key, rc)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CopyTo indicates an expected call of CopyTo
+func (mr *MockStreamMockRecorder) CopyTo(ctx, key, rc interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CopyTo", reflect.TypeOf((*MockStream)(nil).CopyTo), ctx, key, rc)
+}
+
+// Exists mocks base method
+func (m *MockStream) Exists(ctx context.Context, key string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Exists", ctx, key)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Exists indicates an expected call of Exists
+func (mr *MockStreamMockRecorder) Exists(ctx, key interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockStream)(nil).Exists), ctx, key)
+}
+
+// ListPrefix mocks base method
+func (m *MockStream) ListPrefix(ctx context.Context, prefix string) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListPrefix", ctx, prefix)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListPrefix indicates an expected call of ListPrefix
+func (mr *MockStreamMockRecorder) ListPrefix(ctx, prefix interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPrefix", reflect.TypeOf((*MockStream)(nil).ListPrefix), ctx, prefix)
 }

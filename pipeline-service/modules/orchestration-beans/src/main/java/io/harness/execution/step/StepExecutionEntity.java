@@ -8,6 +8,7 @@
 package io.harness.execution.step;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -48,6 +49,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("stepExecutionEntity")
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CDP)
+@ChangeDataCapture(table = "step_execution", dataStore = "pms-harness", fields = {}, handler = "StepExecutionHandler")
+@ChangeDataCapture(table = "harness_approval_step_execution", dataStore = "pms-harness", fields = {},
+    handler = "HarnessApprovalStepExecutionHandler")
+@ChangeDataCapture(
+    table = "jira_step_execution", dataStore = "pms-harness", fields = {}, handler = "JiraStepExecutionHandler")
 public class StepExecutionEntity implements PersistentEntity, UuidAware {
   @org.springframework.data.annotation.Id @Id String uuid;
   @CreatedDate private Long createdAt;

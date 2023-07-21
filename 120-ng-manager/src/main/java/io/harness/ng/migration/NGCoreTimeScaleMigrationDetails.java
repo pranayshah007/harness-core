@@ -10,6 +10,7 @@ package io.harness.ng.migration;
 import io.harness.migration.MigrationDetails;
 import io.harness.migration.NGMigration;
 import io.harness.migration.beans.MigrationType;
+import io.harness.ng.core.migration.timescale.AddChartVersionToCDStageHelmManifestTable;
 import io.harness.ng.core.migration.timescale.AddColumnsToCDStageTable;
 import io.harness.ng.core.migration.timescale.AddDeletedAtColumns;
 import io.harness.ng.core.migration.timescale.AddIndexToServiceInfraInfoTable;
@@ -63,6 +64,7 @@ public class NGCoreTimeScaleMigrationDetails implements MigrationDetails {
         .add(Pair.of(16, CreateServiceInstancesLicenseDailyReport.class))
         .add(Pair.of(17, CreateServicesLicenseDailyReport.class))
         .add(Pair.of(18, CreateCDStageHelmManifestTable.class))
+        .add(Pair.of(19, AddChartVersionToCDStageHelmManifestTable.class))
         .build();
   }
 }

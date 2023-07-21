@@ -37,6 +37,7 @@ import io.harness.accesscontrol.aggregator.api.AggregatorResource;
 import io.harness.accesscontrol.aggregator.api.AggregatorResourceImpl;
 import io.harness.accesscontrol.aggregator.consumers.AccessControlChangeEventFailureHandler;
 import io.harness.accesscontrol.commons.events.EventConsumer;
+import io.harness.accesscontrol.commons.events.EventsConfig;
 import io.harness.accesscontrol.commons.iterators.AccessControlIteratorsConfig;
 import io.harness.accesscontrol.commons.notifications.NotificationConfig;
 import io.harness.accesscontrol.commons.outbox.AccessControlOutboxEventHandler;
@@ -197,6 +198,13 @@ public class AccessControlModule extends AbstractModule {
   @Singleton
   public RedisConfig redisLockConfig() {
     return config.getRedisLockConfig();
+  }
+
+  @Provides
+  @Named("eventsConfig")
+  @Singleton
+  public EventsConfig eventsConfig() {
+    return config.getEventsConfig();
   }
 
   @Provides

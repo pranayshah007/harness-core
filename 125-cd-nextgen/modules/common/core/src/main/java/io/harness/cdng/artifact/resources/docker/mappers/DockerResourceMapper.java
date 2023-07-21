@@ -6,7 +6,9 @@
  */
 
 package io.harness.cdng.artifact.resources.docker.mappers;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.resources.docker.dtos.DockerBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.docker.dtos.DockerResponseDTO;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
@@ -16,6 +18,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @UtilityClass
 public class DockerResourceMapper {
   public DockerResponseDTO toDockerResponse(List<DockerArtifactDelegateResponse> dockerArtifactDelegateResponseList) {

@@ -26,11 +26,16 @@ public class AbortInfoHelper {
     AbortedBy abortedBy = null;
     List<Interrupt> interruptsList = interruptService.fetchAbortAllPlanLevelInterrupt(planExecutionId);
     if (isNotEmpty(interruptsList)) {
+      Long createdAt = interruptsList.get(0).getCreatedAt();
       ManualIssuer manualIssuer = interruptsList.get(0).getInterruptConfig().getIssuedBy().getManualIssuer();
       if (isEmpty(manualIssuer.getUserId())) {
-        abortedBy = AbortedBy.builder().userName(SYSTEM_USER).build();
+        abortedBy = AbortedBy.builder().userName(SYSTEM_USER).createdAt(createdAt).build();
       } else {
-        abortedBy = AbortedBy.builder().email(manualIssuer.getEmailId()).userName(manualIssuer.getUserId()).build();
+        abortedBy = AbortedBy.builder()
+                        .email(manualIssuer.getEmailId())
+                        .userName(manualIssuer.getUserId())
+                        .createdAt(createdAt)
+                        .build();
       }
     }
     // In case of pipeline stage, if a child pipeline is aborted, interrupt won't be registered with parent pipeline's

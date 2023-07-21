@@ -7,6 +7,7 @@
 
 package io.harness.cdng.manifest.steps;
 
+import static io.harness.cdng.manifest.ManifestType.MULTIPLE_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.cdng.service.steps.ServiceStepOverrideHelper.validateOverridesTypeAndUniqueness;
 import static io.harness.cdng.service.steps.ServiceStepOverrideHelper.validateOverridesTypeAndUniquenessV2;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.ENVIRONMENT_GLOBAL_OVERRIDES;
@@ -38,6 +39,7 @@ import io.harness.cdng.manifest.mappers.ManifestSummaryMapper;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.steps.output.NgManifestsMetadataSweepingOutput;
 import io.harness.cdng.manifest.steps.output.UnresolvedManifestsOutput;
+import io.harness.cdng.manifest.steps.task.FetchManifestTaskContext;
 import io.harness.cdng.manifest.steps.task.ManifestTaskService;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
@@ -47,10 +49,12 @@ import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
 import io.harness.cdng.manifest.yaml.kinds.HelmRepoOverrideManifest;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.summary.ManifestSummary;
+import io.harness.cdng.manifestConfigs.ManifestConfigurations;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorModule;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -67,6 +71,7 @@ import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.ng.core.environment.validator.SvcEnvV2ManifestValidator;
+import io.harness.ng.core.service.mappers.ManifestFilterHelper;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -105,6 +110,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -116,6 +122,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -226,8 +233,14 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
     Map<String, String> taskIdMapping = new HashMap<>();
 
     manifests.forEach((identifier, manifest) -> {
-      if (manifestTaskService.isSupported(ambiance, manifest)) {
-        Optional<TaskData> taskData = manifestTaskService.createTaskData(ambiance, manifest);
+      final FetchManifestTaskContext context = FetchManifestTaskContext.builder()
+                                                   .ambiance(ambiance)
+                                                   .manifestOutcome(manifest)
+                                                   .logCallback(logCallback)
+                                                   .build();
+
+      if (manifestTaskService.isSupported(context)) {
+        Optional<TaskData> taskData = manifestTaskService.createTaskData(context);
         taskData.ifPresent(task -> {
           String taskId = queueTask(ambiance, task);
           logCallback.saveExecutionLog(
@@ -273,11 +286,21 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
 
     boolean isOverridesV2Enabled = isOverridesV2(AmbianceUtils.getAccountId(ambiance),
         AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
+    final boolean isMultipleManifestEnabled = isMultipleManifestEnabled(
+        AmbianceUtils.getAccountId(ambiance), ngManifestsMetadataSweepingOutput.getManifestConfigurations());
 
     List<ManifestConfigWrapper> manifests;
     Map<String, List<ManifestConfigWrapper>> finalSvcManifestsMapV1 = new HashMap<>();
     Map<ServiceOverridesType, List<ManifestConfigWrapper>> manifestsFromOverride = new HashMap<>();
     List<ManifestConfigWrapper> svcManifests = new ArrayList<>();
+    String primaryManifestId = StringUtils.EMPTY;
+
+    if (isMultipleManifestEnabled) {
+      ParameterField<String> primaryManifestRef =
+          ngManifestsMetadataSweepingOutput.getManifestConfigurations().getPrimaryManifestRef();
+      resolve(ambiance, primaryManifestRef);
+      primaryManifestId = getResolvedPrimaryManifestRef(primaryManifestRef);
+    }
 
     if (isOverridesV2Enabled) {
       svcManifests = ngManifestsMetadataSweepingOutput.getSvcManifests();
@@ -289,6 +312,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
 
         return Optional.empty();
       }
+      svcManifests = filterServiceManifest(svcManifests, primaryManifestId, isMultipleManifestEnabled);
       manifests = aggregateManifestsFromAllLocationsV2(svcManifests, manifestsFromOverride, logCallback);
 
     } else {
@@ -300,6 +324,8 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
 
         return Optional.empty();
       }
+      finalSvcManifestsMapV1.replace(SERVICE,
+          filterServiceManifest(finalSvcManifestsMapV1.get(SERVICE), primaryManifestId, isMultipleManifestEnabled));
       manifests = aggregateManifestsFromAllLocations(finalSvcManifestsMapV1);
     }
 
@@ -618,5 +644,45 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
       }
     }
     return manifestSummaries;
+  }
+
+  private boolean isMultipleManifestEnabled(String accountId, ManifestConfigurations manifestConfigurations) {
+    return ManifestFilterHelper.hasPrimaryManifestRef(manifestConfigurations)
+        && featureFlagHelperService.isEnabled(accountId, FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG);
+  }
+
+  private void resolve(Ambiance ambiance, Object... objects) {
+    final List<Object> toResolve = new ArrayList<>(Arrays.asList(objects));
+    cdExpressionResolver.updateExpressions(ambiance, toResolve);
+  }
+
+  private String getResolvedPrimaryManifestRef(ParameterField<String> primaryManifestRef) {
+    String primaryManifestId = ParameterFieldHelper.getParameterFieldValue(primaryManifestRef);
+    if (isEmpty(primaryManifestId)) {
+      throw new InvalidRequestException(
+          String.format("Unable to resolve primaryManifestRef. Please check the expression %s",
+              primaryManifestRef.isExpression() ? primaryManifestRef.getExpressionValue() : StringUtils.EMPTY));
+    }
+    return primaryManifestId;
+  }
+
+  private List<ManifestConfigWrapper> filterServiceManifest(
+      List<ManifestConfigWrapper> svcManifests, String primaryManifestId, boolean isMultipleManifestEnabled) {
+    if (!isMultipleManifestEnabled) {
+      return svcManifests;
+    }
+    List<ManifestConfigWrapper> updatedSvcManifests =
+        svcManifests.stream()
+            .filter(manifest
+                -> !MULTIPLE_SUPPORTED_MANIFEST_TYPES.contains(manifest.getManifest().getType().getDisplayName())
+                    || manifest.getManifest().getIdentifier().equals(primaryManifestId))
+            .collect(Collectors.toList());
+
+    if (updatedSvcManifests.stream().noneMatch(manifest
+            -> MULTIPLE_SUPPORTED_MANIFEST_TYPES.contains(manifest.getManifest().getType().getDisplayName()))) {
+      throw new InvalidRequestException(String.format("primaryManifestRef: %s does not match to any [%S] manifests",
+          primaryManifestId, String.join(", ", MULTIPLE_SUPPORTED_MANIFEST_TYPES)));
+    }
+    return updatedSvcManifests;
   }
 }

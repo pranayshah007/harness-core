@@ -20,6 +20,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.ACCOUNT_DOES_NOT_EXIST;
 import static io.harness.eraro.ErrorCode.INVALID_REQUEST;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE_ACTION;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DISABLE_IP_ALLOWLIST;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.NG_USER_CLEANUP_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SYNC_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.UPDATE_ACTION;
@@ -34,6 +35,7 @@ import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.Account.DEFAULT_SESSION_TIMEOUT_IN_MINUTES;
 import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
+import static software.wings.beans.AccountStatus.MARKED_FOR_DELETION;
 import static software.wings.beans.Base.ID_KEY2;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.NotificationGroup.NotificationGroupBuilder.aNotificationGroup;
@@ -377,6 +379,7 @@ public class AccountServiceImpl implements AccountService {
   }
 
   private void publishAccountChangeEventViaEventFramework(String accountId, String action) {
+    log.info("testDeletionLog: producing event to events framework for account {}, action {}", accountId, action);
     try {
       eventProducer.send(
           Message.newBuilder()
@@ -586,6 +589,13 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
+  public Boolean disableIpAllowList(String accountId) {
+    log.info("Publish disable ip event for account" + accountId);
+    publishAccountChangeEventViaEventFramework(accountId, DISABLE_IP_ALLOWLIST);
+    return true;
+  }
+
+  @Override
   public Boolean updateIsProductLed(String accountId, boolean isProductLed) {
     Account account = get(accountId);
     account.setProductLed(isProductLed);
@@ -744,12 +754,27 @@ public class AccountServiceImpl implements AccountService {
 
   @Override
   public boolean delete(String accountId) {
-    boolean success = accountId != null && deleteAccountHelper.deleteAccount(accountId);
-    accountLicenseObserverSubject.fireInform(AccountLicenseObserver::onLicenseChange, accountId);
-    if (success) {
-      publishAccountChangeEventViaEventFramework(accountId, DELETE_ACTION);
+    if (accountId == null) {
+      return true;
     }
-    return success;
+    updateAccountStatus(accountId, MARKED_FOR_DELETION);
+    try {
+      publishAccountChangeEventViaEventFramework(accountId, DELETE_ACTION);
+      try {
+        accountLicenseObserverSubject.fireInform(AccountLicenseObserver::onLicenseChange, accountId);
+      } catch (Exception ex) {
+        log.info("testDeletionLog: exception occurred for accountLicenseObserverSubject {}", ex.getMessage());
+      }
+      boolean isCgEntitiesDeleted = deleteAccountHelper.deleteAccount(accountId, false);
+      if (isCgEntitiesDeleted) {
+        deleteAccountHelper.deleteAccountFromAccountsCollection(accountId);
+        return true;
+      }
+      return false;
+    } catch (Exception ex) {
+      log.info("testDeletionLog: some exception occurred - {}", ex);
+      return false;
+    }
   }
 
   @Override

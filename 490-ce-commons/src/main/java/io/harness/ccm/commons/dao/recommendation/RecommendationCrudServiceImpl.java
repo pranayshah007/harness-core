@@ -48,9 +48,9 @@ public class RecommendationCrudServiceImpl implements RecommendationCrudService 
 
   @Override
   public void upsertNodeRecommendation(String entityUuid, JobConstants jobConstants, NodePoolId nodePoolId,
-      String clusterName, RecommendationOverviewStats stats) {
-    k8sRecommendationDAO.upsertCeRecommendation(
-        entityUuid, jobConstants, nodePoolId, clusterName, stats, Instant.ofEpochMilli(jobConstants.getJobEndTime()));
+      String clusterName, RecommendationOverviewStats stats, String cloudProvider) {
+    k8sRecommendationDAO.upsertCeRecommendation(entityUuid, jobConstants, nodePoolId, clusterName, stats,
+        Instant.ofEpochMilli(jobConstants.getJobEndTime()), cloudProvider);
   }
 
   @Nullable

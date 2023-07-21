@@ -80,7 +80,7 @@ func HandleClose(logStream stream.Stream, store store.Store) http.HandlerFunc {
 		usePrefix := r.FormValue(usePrefixParam)
 
 		logger.FromRequest(r).WithField("key", key).
-			WithField("prefix", usePrefix).
+			WithField(usePrefixParam, usePrefix).
 			WithField("time", time.Now().Format(time.RFC3339)).
 			Infoln("api: initiating close request on log service")
 
@@ -93,7 +93,7 @@ func HandleClose(logStream stream.Stream, store store.Store) http.HandlerFunc {
 				logger.FromRequest(r).
 					WithError(err).
 					WithField("key", key).
-					WithField("prefix", "true").
+					WithField(usePrefixParam, "true").
 					Errorln("api: unable to fetch prefixes")
 				return
 			}
@@ -154,7 +154,7 @@ func HandleClose(logStream stream.Stream, store store.Store) http.HandlerFunc {
 
 		logger.FromRequest(r).WithField("keys", keys).
 			WithField("snapshot", snapshot).
-			WithField("prefix", usePrefix).
+			WithField(usePrefixParam, usePrefix).
 			WithField("latency", time.Since(st)).
 			WithField("time", time.Now().Format(time.RFC3339)).
 			WithField("num_keys", len(keys)).

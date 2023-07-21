@@ -58,7 +58,6 @@ public class SchemaFetcher {
   @Inject PipelineServiceConfiguration pipelineServiceConfiguration;
 
   private final String PIPELINE_JSON = "pipeline.json";
-  private final String TEMPLATE_JSON = "template.json";
 
   private final String PRE_QA = "stress";
 
@@ -195,9 +194,6 @@ public class SchemaFetcher {
     switch (entityType) {
       case PIPELINES:
         entityTypeJson = PIPELINE_JSON;
-        break;
-      case TEMPLATE:
-        entityTypeJson = TEMPLATE_JSON;
         break;
       default:
         entityTypeJson = PIPELINE_JSON;

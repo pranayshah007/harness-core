@@ -24,7 +24,6 @@ import static io.harness.delegate.beans.DelegateTaskAbortEvent.Builder.aDelegate
 import static io.harness.delegate.beans.DelegateTaskEvent.DelegateTaskEventBuilder.aDelegateTaskEvent;
 import static io.harness.delegate.beans.NgSetupFields.NG;
 import static io.harness.delegate.beans.executioncapability.ExecutionCapability.EvaluationMode;
-import static io.harness.delegate.task.TaskFailureReason.EXPIRED;
 import static io.harness.exception.FailureType.DELEGATE_RESTART;
 import static io.harness.govern.Switch.noop;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -94,6 +93,7 @@ import io.harness.delegate.core.beans.AcquireTasksResponse;
 import io.harness.delegate.core.beans.InputData;
 import io.harness.delegate.core.beans.TaskPayload;
 import io.harness.delegate.queueservice.DelegateTaskQueueService;
+import io.harness.delegate.task.TaskFailureReason;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.pcf.CfCommandRequest;
 import io.harness.delegate.task.pcf.request.CfCommandTaskParameters;
@@ -650,11 +650,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
           addToTaskActivityLog(task, NO_ELIGIBLE_DELEGATES);
           delegateSelectionLogsService.logNoEligibleDelegatesToExecuteTask(task);
           delegateMetricsService.recordDelegateTaskMetrics(task, DELEGATE_TASK_NO_ELIGIBLE_DELEGATES);
-          StringBuilder errorMessage = new StringBuilder(NO_ELIGIBLE_DELEGATES);
-          if (task.getNonAssignableDelegates() != null) {
-            errorMessage.append(String.join(" , ", task.getNonAssignableDelegates().keySet()));
-          }
-          throw new NoEligibleDelegatesInAccountException(errorMessage.toString());
+          throw new NoEligibleDelegatesInAccountException(assignDelegateService.getDelegateTaskAssignmentFailureMessage(
+              task, TaskFailureReason.NO_ELIGIBLE_DELEGATES));
         }
         // shuffle the eligible delegates to evenly distribute the load
         Collections.shuffle(eligibleListOfDelegates);
@@ -680,11 +677,13 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
             assignDelegateService.getConnectedDelegateList(eligibleListOfDelegates, task);
 
         if (!task.getTaskDataV2().isAsync() && connectedEligibleDelegates.isEmpty()) {
+          String errorMessage = assignDelegateService.getDelegateTaskAssignmentFailureMessage(
+              task, TaskFailureReason.NO_ACTIVE_DELEGATES);
           addToTaskActivityLog(task, "No Connected eligible delegates to execute sync task");
           if (assignDelegateService.noInstalledDelegates(task.getAccountId())) {
-            throw new NoInstalledDelegatesException();
+            throw new NoInstalledDelegatesException(errorMessage);
           } else {
-            throw new NoAvailableDelegatesException();
+            throw new NoAvailableDelegatesException(errorMessage);
           }
         }
         checkTaskRankRateLimit(task);
@@ -1587,7 +1586,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       if (delegateTask != null) {
         try (AutoLogContext ignore3 = DelegateLogContextHelper.getLogContext(delegateTask)) {
           errorMessage =
-              "Task expired. " + assignDelegateService.getActiveDelegateAssignmentErrorMessage(EXPIRED, delegateTask);
+              assignDelegateService.getDelegateTaskAssignmentFailureMessage(delegateTask, TaskFailureReason.EXPIRED);
           delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_EXPIRED);
           log.info("Marking task as expired: {}", errorMessage);
 
@@ -1843,23 +1842,20 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     }
     log.warn("Marking delegate tasks {} failed since delegate went down before completion.",
         delegateTasks.stream().map(DelegateTask::getUuid).collect(Collectors.toList()));
-    Optional<Delegate> delegate = Optional.ofNullable(delegateCache.get(accountId, delegateId, false));
-    final String delegateName =
-        delegate.filter(d -> isNotEmpty(d.getHostName())).map(Delegate::getHostName).orElse(delegateId);
-    final String errorMessage = "Delegate [" + delegateName + "] disconnected while executing the task";
-    final DelegateTaskResponse delegateTaskResponse =
-        DelegateTaskResponse.builder()
-            .responseCode(ResponseCode.FAILED)
-            .accountId(accountId)
-            .response(ErrorNotifyResponseData.builder()
-                          .failureTypes(EnumSet.of(DELEGATE_RESTART))
-                          .errorMessage(errorMessage)
-                          .exception(new DelegateNotAvailableException(errorMessage))
-                          .delegateMetaInfo(DelegateMetaInfo.builder().id(delegateId).build())
-                          .build())
-            .build();
     delegateTasks.forEach(delegateTask -> {
-      delegateTaskService.processDelegateResponse(accountId, delegateId, delegateTask.getUuid(), delegateTaskResponse);
+      String errorMessage = assignDelegateService.getDelegateTaskAssignmentFailureMessage(
+          delegateTask, TaskFailureReason.DELEGATE_DISCONNECTED);
+      delegateTaskService.processDelegateResponse(accountId, delegateId, delegateTask.getUuid(),
+          DelegateTaskResponse.builder()
+              .responseCode(ResponseCode.FAILED)
+              .accountId(accountId)
+              .response(ErrorNotifyResponseData.builder()
+                            .failureTypes(EnumSet.of(DELEGATE_RESTART))
+                            .errorMessage(errorMessage)
+                            .exception(new DelegateNotAvailableException(errorMessage))
+                            .delegateMetaInfo(DelegateMetaInfo.builder().id(delegateId).build())
+                            .build())
+              .build());
     });
   }
 

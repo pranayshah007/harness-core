@@ -59,7 +59,9 @@ public class WorkflowStatusPropagatorHelper {
 
   @NotNull
   public WorkflowExecution obtainExecution(@NotNull String appId, @NotNull String uuid) {
-    WorkflowExecution execution = workflowExecutionService.getWorkflowExecution(appId, uuid);
+    // ONLY TWO FIELDS ARE READ FROM THE CALLER
+    WorkflowExecution execution = workflowExecutionService.getWorkflowExecution(
+        appId, uuid, WorkflowExecutionKeys.pipelineExecutionId, WorkflowExecutionKeys.pipelineExecution);
     notNullCheck("Workflow Execution null for executionId: " + uuid, execution);
     return execution;
   }
@@ -97,8 +99,11 @@ public class WorkflowStatusPropagatorHelper {
 
   public void refreshPipelineExecution(String appId, String pipelineExecutionId) {
     if (isNotEmpty(pipelineExecutionId)) {
+      String[] fields = {WorkflowExecutionKeys.appId, WorkflowExecutionKeys.createdAt,
+          WorkflowExecutionKeys.pipelineExecution, WorkflowExecutionKeys.status, WorkflowExecutionKeys.triggeredBy,
+          WorkflowExecutionKeys.uuid};
       workflowExecutionService.refreshPipelineExecution(
-          workflowExecutionService.getWorkflowExecution(appId, pipelineExecutionId));
+          workflowExecutionService.getWorkflowExecution(appId, pipelineExecutionId, fields));
     }
   }
 

@@ -338,11 +338,9 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
     if (null == secretEnvVariablesToCollect) {
       secretEnvVariablesToCollect = new ArrayList<>();
     }
-    List<String> allVariablesToCollect =
-        Stream.concat(envVariablesToCollect.stream(), secretEnvVariablesToCollect.stream())
-            .filter(EmptyPredicate::isNotEmpty)
-            .collect(Collectors.toList());
-    return allVariablesToCollect;
+    return Stream.concat(envVariablesToCollect.stream(), secretEnvVariablesToCollect.stream())
+        .filter(EmptyPredicate::isNotEmpty)
+        .collect(Collectors.toList());
   }
 
   public ExecuteCommandResponse getExecuteCommandResponse(

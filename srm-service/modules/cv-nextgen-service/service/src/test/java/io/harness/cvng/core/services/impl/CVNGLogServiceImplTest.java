@@ -43,12 +43,16 @@ import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
 import java.lang.reflect.Field;
+import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.commons.lang3.reflect.FieldUtils;
@@ -60,7 +64,6 @@ import org.junit.experimental.categories.Category;
 public class CVNGLogServiceImplTest extends CvNextGenTestBase {
   @Inject private HPersistence hPersistence;
   @Inject private CVNGLogService cvngLogService;
-
   private String accountId;
   private String traceableId;
   private long createdAt;
@@ -381,6 +384,51 @@ public class CVNGLogServiceImplTest extends CvNextGenTestBase {
       assertThat(executionLogDTO.getType()).isEqualTo(CVNGLogType.EXECUTION_LOG);
       assertThat(executionLogDTO.getTraceableType()).isEqualTo(TraceableType.VERIFICATION_TASK);
     });
+  }
+
+  @Test
+  @Owner(developers = ANSUMAN)
+  @Category(UnitTests.class)
+  public void testGetCVNGLogsSorting_forExecutionLog() throws IllegalAccessException {
+    List<CVNGLogDTO> cvngLogDTOs = IntStream.range(0, 50)
+                                       .mapToObj(index -> createExecutionLogDTOVerification(LogLevel.INFO))
+                                       .collect(Collectors.toList());
+    for (CVNGLogDTO cvngLogDTO : cvngLogDTOs) {
+      Clock clock = Clock.fixed(
+          Instant.now().plus(Duration.ofMinutes(ThreadLocalRandom.current().nextInt(-60, 60))), ZoneOffset.UTC);
+      FieldUtils.writeField(cvngLogService, "clock", clock, true);
+      cvngLogService.save(List.of(cvngLogDTO));
+    }
+    Set<String> traceableIds = cvngLogDTOs.stream().map(CVNGLogDTO::getTraceableId).collect(Collectors.toSet());
+    VerificationTaskService verificationTaskService = mock(VerificationTaskServiceImpl.class);
+    FieldUtils.writeField(cvngLogService, "verificationTaskService", verificationTaskService, true);
+    when(verificationTaskService.maybeGetVerificationTaskIds(any(), any())).thenReturn(traceableIds);
+
+    DeploymentLogsFilter deploymentLogsFilter =
+        DeploymentLogsFilter.builder().logType(CVNGLogType.EXECUTION_LOG).errorLogsOnly(false).build();
+    PageResponse<CVNGLogDTO> cvngLogDTOResponse = cvngLogService.getCVNGLogs(accountId,
+        verificationTaskService.getVerificationJobInstanceId(traceableIds.iterator().next()), deploymentLogsFilter,
+        PageParams.builder().page(0).size(30).build());
+
+    assertThat(cvngLogDTOResponse.getContent().size()).isEqualTo(30);
+    assertThat(cvngLogDTOResponse.getPageIndex()).isEqualTo(0);
+    assertThat(cvngLogDTOResponse.getPageSize()).isEqualTo(30);
+
+    List<CVNGLogDTO> cvngLogDTOsResult = cvngLogDTOResponse.getContent();
+    List<ExecutionLogDTO> executionLogDTOS = new ArrayList<>();
+    cvngLogDTOsResult.forEach(cvngLogDTO -> executionLogDTOS.add((ExecutionLogDTO) cvngLogDTO));
+
+    assertThat(executionLogDTOS.size()).isEqualTo(30);
+    executionLogDTOS.forEach(executionLogDTO -> {
+      assertThat(executionLogDTO.getLogLevel()).isEqualTo(LogLevel.INFO);
+      assertThat(executionLogDTO.getType()).isEqualTo(CVNGLogType.EXECUTION_LOG);
+      assertThat(executionLogDTO.getTraceableType()).isEqualTo(TraceableType.VERIFICATION_TASK);
+    });
+    List<ExecutionLogDTO> executionLogDTOSSorted =
+        executionLogDTOS.stream()
+            .sorted(Comparator.comparing(CVNGLogDTO::getCreatedAt).reversed())
+            .collect(Collectors.toList());
+    assertThat(executionLogDTOSSorted).isEqualTo(executionLogDTOS);
   }
 
   @Test

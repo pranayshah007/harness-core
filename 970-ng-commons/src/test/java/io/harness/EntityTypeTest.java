@@ -254,6 +254,8 @@ public class EntityTypeTest extends CategoryTest {
     entityTypeOrdinalMapping.put(220, "ANALYZE_DEPLOYMENT_IMPACT_STEP");
     entityTypeOrdinalMapping.put(221, "SERVERLESS_AWS_LAMBDA_PACKAGE_V2");
     entityTypeOrdinalMapping.put(222, "GITOPS_REVERT_PR");
+    entityTypeOrdinalMapping.put(223, "AWS_CDK_BOOTSTRAP");
+    entityTypeOrdinalMapping.put(224, "AWS_CDK_SYNTH");
 
     entityTypeConstantMapping =
         entityTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

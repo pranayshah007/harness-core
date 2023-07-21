@@ -400,6 +400,7 @@ io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig
 io.harness.cdng.creator.plan.customDeployment.CustomDeploymentNode
 io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepInfo
 io.harness.yaml.core.failurestrategy.retry.RetryFailureSpecConfig
+io.harness.yaml.core.failurestrategy.retry.RetryStepGroupFailureSpecConfig
 io.harness.cdng.provision.azure.AzureCreateARMResourceStepScope
 io.harness.cdng.provision.cloudformation.InlineCloudformationTemplateFileSpec
 io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary$ArtifactsSummary
@@ -1048,6 +1049,7 @@ io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo
 io.harness.delegate.beans.instancesync.info.SpotServerInstanceInfo
 io.harness.delegate.beans.instancesync.info.TasServerInstanceInfo
 io.harness.delegate.beans.logstreaming.UnitProgressData
+io.harness.delegate.beans.helm.HelmDeployProgressData
 io.harness.delegate.beans.pcf.CfInternalInstanceElement
 io.harness.delegate.beans.pcf.CfServiceData
 io.harness.delegate.beans.pcf.TasApplicationInfo
@@ -1081,3 +1083,9 @@ io.harness.cdng.gitops.revertpr.RevertPRStepInfo
 io.harness.cdng.gitops.revertpr.RevertPRStepNode
 io.harness.cdng.gitops.revertpr.RevertPRStepParameters
 io.harness.cdng.gitops.revertpr.RevertPROutcome
+io.harness.cdng.provision.awscdk.AwsCdkBootstrapStepInfo
+io.harness.cdng.provision.awscdk.AwsCdkBootstrapStepNode
+io.harness.cdng.provision.awscdk.AwsCdkBootstrapStepParameters
+io.harness.cdng.provision.awscdk.AwsCdkSynthStepInfo
+io.harness.cdng.provision.awscdk.AwsCdkSynthStepNode
+io.harness.cdng.provision.awscdk.AwsCdkSynthStepParameters

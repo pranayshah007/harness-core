@@ -76,7 +76,7 @@ public class RequestExecutorTest extends CategoryTest {
     when(call.execute()).thenReturn((Response<String>) response);
     assertThatThrownBy(() -> requestExecutor.execute(call))
         .isInstanceOf(ServiceCallException.class)
-        .hasMessage("Response code: 500, Message: message, Error: error");
+        .hasMessage("Response code: 500, Message: message");
   }
 
   @Test
@@ -105,8 +105,7 @@ public class RequestExecutorTest extends CategoryTest {
     when(call.execute()).thenReturn((Response<String>) response);
     assertThatThrownBy(() -> requestExecutor.execute(call))
         .isInstanceOf(ServiceCallException.class)
-        .hasMessage(
-            "Response code: 500, Message: error message from manager, Error: {\"metaData\":{},\"responseMessages\":[{\"code\":\"DEFAULT_ERROR_CODE\",\"level\":\"ERROR\",\"message\":\"error message from manager\",\"failureTypes\":[]}]}")
+        .hasMessage("Response code: 500, Message: error message from manager")
         .hasNoCause();
   }
 
@@ -137,8 +136,7 @@ public class RequestExecutorTest extends CategoryTest {
     when(call.execute()).thenReturn((Response<String>) response);
     assertThatThrownBy(() -> requestExecutor.execute(call))
         .isInstanceOf(ServiceCallException.class)
-        .hasMessageContaining(
-            "Response code: 500, Message: error message from manager, Error: {\"metaData\":{},\"responseMessages\":[{\"code\":\"DEFAULT_ERROR_CODE\",\"level\":\"ERROR\",\"message\":\"error message from manager\",\"exception\":{\"stackTrace\":[{\"classLoaderName\":\"app\"");
+        .hasMessageContaining("Response code: 500, Message: error message from manager");
   }
 
   @Test
@@ -180,7 +178,7 @@ public class RequestExecutorTest extends CategoryTest {
     assertThatThrownBy(() -> requestExecutor.execute(call))
         .isInstanceOf(ServiceCallException.class)
         .hasMessage(
-            "Response code: 400, Message: Error: io.harness.datacollection.exception.DataCollectionException: Response code: 400, Message: , Error: {  \"error\": {    \"code\": 400,    \"message\": \"Unsupportedresourcetype: k8s_containers\",    \"status\": \"INVALID_ARGUMENT\"  }}, Error: {\"metaData\":null,\"resource\":null,\"responseMessages\":[{\"code\":\"DATA_COLLECTION_ERROR\",\"level\":\"ERROR\",\"message\":\"Error: io.harness.datacollection.exception.DataCollectionException: Response code: 400, Message: , Error: {  \\\"error\\\": {    \\\"code\\\": 400,    \\\"message\\\": \\\"Unsupportedresourcetype: k8s_containers\\\",    \\\"status\\\": \\\"INVALID_ARGUMENT\\\"  }}\",\"exception\":null,\"failureTypes\":null}]}");
+            "Response code: 400, Message: Error: io.harness.datacollection.exception.DataCollectionException: Response code: 400, Message: , Error: {  \"error\": {    \"code\": 400,    \"message\": \"Unsupportedresourcetype: k8s_containers\",    \"status\": \"INVALID_ARGUMENT\"  }}");
   }
 
   @Test
@@ -203,7 +201,7 @@ public class RequestExecutorTest extends CategoryTest {
     when(call.execute()).thenReturn((Response<String>) response);
 
     String errorMsg =
-        "Response code: 400, Message: Error: io.harness.datacollection.exception.DataCollectionException: Response code: 400, Message: , Error: {  \"error\": {    \"code\": 400,    \"message\": \"Unsupportedresourcetype: k8s_containers\",    \"status\": \"INVALID_ARGUMENT\"  }}, Error: {\"metaData\":null,\"resource\":null,\"responseMessages\":[{\"code\":\"UNKNOWN_ERROR\",\"level\":\"ERROR\",\"message\":\"Error: io.harness.datacollection.exception.DataCollectionException: Response code: 400, Message: , Error: {  \\\"error\\\": {    \\\"code\\\": 400,    \\\"message\\\": \\\"Unsupportedresourcetype: k8s_containers\\\",    \\\"status\\\": \\\"INVALID_ARGUMENT\\\"  }}\",\"exception\":null,\"failureTypes\":null}]}";
+        "Response code: 400, Message: Error: io.harness.datacollection.exception.DataCollectionException: Response code: 400, Message: , Error: {  \"error\": {    \"code\": 400,    \"message\": \"Unsupportedresourcetype: k8s_containers\",    \"status\": \"INVALID_ARGUMENT\"  }}";
     assertThatThrownBy(() -> requestExecutor.execute(call))
         .isInstanceOf(ServiceCallException.class)
         .hasMessage(errorMsg);

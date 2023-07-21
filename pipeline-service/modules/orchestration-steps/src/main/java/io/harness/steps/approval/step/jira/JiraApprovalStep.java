@@ -9,14 +9,17 @@ package io.harness.steps.approval.step.jira;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.eraro.ErrorCode.APPROVAL_STEP_NG_ERROR;
+import static io.harness.jira.JiraConstantsNG.STATUS_NAME;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
 import io.harness.delegate.task.shell.ShellScriptTaskNG;
 import io.harness.engine.executions.step.StepExecutionEntityService;
 import io.harness.eraro.Level;
 import io.harness.exception.ApprovalStepNGException;
 import io.harness.execution.step.approval.jira.JiraApprovalStepExecutionDetails;
+import io.harness.jira.JiraIssueUtilsNG;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -99,8 +102,8 @@ public class JiraApprovalStep extends PipelineAsyncExecutable {
       dashboardExecutorService.submit(
           ()
               -> stepExecutionEntityService.updateStepExecutionEntity(ambiance, instance.getFailureInfo(),
-                  createJiraApprovalStepExecutionDetailsFromJiraApprovalInstance(instance), stepParameters.getName(),
-                  Status.APPROVAL_WAITING));
+                  createJiraApprovalStepExecutionDetailsFromJiraApprovalInstance(ambiance, instance),
+                  stepParameters.getName(), Status.APPROVAL_WAITING));
       return StepResponse.builder()
           .status(instance.getStatus().toFinalExecutionStatus())
           .failureInfo(instance.getFailureInfo())
@@ -113,12 +116,15 @@ public class JiraApprovalStep extends PipelineAsyncExecutable {
   }
 
   private JiraApprovalStepExecutionDetails createJiraApprovalStepExecutionDetailsFromJiraApprovalInstance(
-      JiraApprovalInstance jiraApprovalInstance) {
+      Ambiance ambiance, JiraApprovalInstance jiraApprovalInstance) {
     if (jiraApprovalInstance != null) {
+      JiraConnectorDTO jiraConnectorDTO = jiraApprovalHelperService.getJiraConnector(
+          AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+          AmbianceUtils.getProjectIdentifier(ambiance), jiraApprovalInstance.getConnectorRef());
       return JiraApprovalStepExecutionDetails.builder()
-          .issueKey(jiraApprovalInstance.getIssueKey())
           .issueType(jiraApprovalInstance.getIssueType())
-          .projectKey(jiraApprovalInstance.getProjectKey())
+          .url(JiraIssueUtilsNG.prepareIssueUrl(jiraConnectorDTO.getJiraUrl(), jiraApprovalInstance.getIssueKey()))
+          .ticketStatus(jiraApprovalInstance.getTicketFields().getOrDefault(STATUS_NAME, "").toString())
           .build();
     }
     return null;

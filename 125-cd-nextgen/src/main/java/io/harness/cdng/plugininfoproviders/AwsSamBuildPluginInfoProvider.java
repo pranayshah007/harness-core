@@ -180,8 +180,12 @@ public class AwsSamBuildPluginInfoProvider implements CDPluginInfoProvider {
         awsSamDirectoryManifestOutcome);
 
     samBuildEnvironmentVariablesMap.put("PLUGIN_SAM_DIR", samDir);
-    samBuildEnvironmentVariablesMap.put(
-        "PLUGIN_BUILD_COMMAND_OPTIONS", String.join(" ", buildCommandOptions.getValue()));
+
+    if (ParameterField.isNotNull(buildCommandOptions)) {
+      samBuildEnvironmentVariablesMap.put(
+          "PLUGIN_BUILD_COMMAND_OPTIONS", String.join(" ", buildCommandOptions.getValue()));
+    }
+
     samBuildEnvironmentVariablesMap.put("PLUGIN_SAM_TEMPLATE_FILE_PATH", "template.yaml");
 
     if (envVariables != null && envVariables.getValue() != null) {

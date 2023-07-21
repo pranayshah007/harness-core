@@ -38,7 +38,7 @@ public class AzureLogsDataCollectionInfoMapperTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = KARAN_SARASWAT)
   @Category(UnitTests.class)
-  public void testToSumologicDataCollectionInfo() {
+  public void testToAzureDataCollectionInfo() {
     NextGenLogCVConfig nextGenLogCVConfig = NextGenLogCVConfig.builder()
                                                 .query(MOCKED_QUERY)
                                                 .queryName(MOCKED_QUERY_NAME)

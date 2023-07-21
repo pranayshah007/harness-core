@@ -45,6 +45,7 @@ public class AnomalyUtility {
     substitutes.put(AnomalyEntityKeys.gcpSKUDescription, anomaly.getGcpSKUDescription());
     substitutes.put(AnomalyEntityKeys.awsAccount, anomaly.getAwsAccount());
     substitutes.put(AnomalyEntityKeys.awsService, anomaly.getAwsService());
+    substitutes.put(AnomalyEntityKeys.awsUsageType, anomaly.getAwsUsageType());
     substitutes.put(
         AnomalyEntityKeys.actualCost, currencySymbol + getRoundedDoubleValue(anomaly.getActualCost()).toString());
     substitutes.put(

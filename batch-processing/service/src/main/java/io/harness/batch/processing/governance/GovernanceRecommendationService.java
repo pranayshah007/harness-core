@@ -125,7 +125,7 @@ public class GovernanceRecommendationService {
       RuleCloudProviderType ruleCloudProviderType, String fieldId, String fieldName, ViewFieldIdentifier identifier,
       String identifierName) {
     Set<Rule> ruleList = new HashSet<>();
-    ruleList.addAll(ruleDAO.forRecommendation(ruleCloudProviderType));
+    ruleList.addAll(ruleDAO.forRecommendation(ruleCloudProviderType, accountId));
 
     // getting the needed fields for recommendation
     List<RecommendationAdhocDTO> recommendationAdhocDTOList = new ArrayList<>();

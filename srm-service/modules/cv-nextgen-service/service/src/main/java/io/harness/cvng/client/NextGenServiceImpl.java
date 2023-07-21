@@ -15,6 +15,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.utils.ScopedInformation;
+import io.harness.delegate.cdng.execution.StepExecutionInstanceInfo;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.OrganizationDTO;
@@ -269,6 +270,15 @@ public class NextGenServiceImpl implements NextGenService {
             0, 1000, accountId, orgIdentifier, projectIdentifier, null, null))
         .getData()
         .getTotalItems();
+  }
+
+  @Override
+  public List<StepExecutionInstanceInfo> getCDStageInstanceInfo(String accountId, String orgIdentifier,
+      String projectIdentifier, String pipelineExecutionId, String stageExecutionId) {
+    return requestExecutor
+        .execute(nextGenPrivilegedClient.getCDStageInstanceInfo(
+            accountId, orgIdentifier, projectIdentifier, pipelineExecutionId, stageExecutionId))
+        .getData();
   }
 
   @Override

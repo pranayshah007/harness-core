@@ -58,6 +58,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.head;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static com.google.common.base.Charsets.UTF_8;
 import static java.lang.System.currentTimeMillis;
 import static java.time.Duration.ofMinutes;
@@ -137,7 +138,6 @@ import io.harness.exception.WingsException;
 import io.harness.globalcontex.DelegateTokenGlobalContextData;
 import io.harness.logstreaming.LogStreamingServiceConfig;
 import io.harness.manage.GlobalContextManager;
-import io.harness.network.LocalhostUtils;
 import io.harness.observer.Subject;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
@@ -288,8 +288,7 @@ public class DelegateServiceTest extends WingsBaseTest {
   @Inject private FeatureTestHelper featureTestHelper;
   @Inject private DelegateDao delegateDao;
 
-  private final int port = LocalhostUtils.findFreePort();
-  @Rule public WireMockRule wireMockRule = new WireMockRule(port);
+  @Rule public WireMockRule wireMockRule = new WireMockRule(wireMockConfig().dynamicPort().dynamicHttpsPort());
   @Rule public ExpectedException thrown = ExpectedException.none();
 
   @InjectMocks @Inject private DelegateCache delegateCache;
@@ -320,7 +319,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     CdnConfig cdnConfig = new CdnConfig();
     cdnConfig.setUrl("http://localhost:9500");
     when(subdomainUrlHelper.getDelegateMetadataUrl(any(), any(), any()))
-        .thenReturn("http://localhost:" + port + "/delegateci.txt");
+        .thenReturn("http://localhost:" + wireMockRule.port() + "/delegateci.txt");
     when(mainConfiguration.getDeployMode()).thenReturn(DeployMode.KUBERNETES);
     when(mainConfiguration.getScmVersion()).thenReturn("542f4642");
     when(mainConfiguration.getOcVersion()).thenReturn("v4.2.16");
@@ -332,7 +331,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     when(mainConfiguration.getJreConfigs()).thenReturn(jreConfigMap);
     when(mainConfiguration.getMigrateToJre()).thenReturn("openjdk11014_9");
     when(subdomainUrlHelper.getWatcherMetadataUrl(any(), any(), any()))
-        .thenReturn("http://localhost:" + port + "/watcherci.txt");
+        .thenReturn("http://localhost:" + wireMockRule.port() + "/watcherci.txt");
     FileUploadLimit fileUploadLimit = new FileUploadLimit();
     fileUploadLimit.setProfileResultLimit(1000000000L);
     when(mainConfiguration.getFileUploadLimits()).thenReturn(fileUploadLimit);
@@ -351,7 +350,7 @@ public class DelegateServiceTest extends WingsBaseTest {
         .thenReturn(DelegateConfiguration.builder().delegateVersions(singletonList("0.0.0")).build());
     when(accountService.get(ACCOUNT_ID)).thenReturn(account);
     when(infraDownloadService.getDownloadUrlForDelegate(anyString(), any()))
-        .thenReturn("http://localhost:" + port + "/builds/9/delegate.jar");
+        .thenReturn("http://localhost:" + wireMockRule.port() + "/builds/9/delegate.jar");
     when(infraDownloadService.getCdnWatcherBaseUrl()).thenReturn("http://localhost:9500/builds");
     wireMockRule.stubFor(get(urlEqualTo("/delegateci.txt"))
                              .willReturn(aResponse()
@@ -1898,7 +1897,7 @@ public class DelegateServiceTest extends WingsBaseTest {
       IOUtils.read(tarArchiveInputStream, buffer);
       String expectedD =
           CharStreams.toString(new InputStreamReader(getClass().getResourceAsStream(expectedDelegateFilepath)))
-              .replaceAll("8888", "" + port);
+              .replaceAll("8888", "" + wireMockRule.port());
       String actualD = new String(buffer);
       assertThat(actualD.equals(expectedD));
       file = (TarArchiveEntry) tarArchiveInputStream.getNextEntry();
@@ -1910,7 +1909,7 @@ public class DelegateServiceTest extends WingsBaseTest {
 
       String expectedFile = "/expectedStopOpenJdk.sh";
       String expectedS = CharStreams.toString(new InputStreamReader(getClass().getResourceAsStream(expectedFile)))
-                             .replaceAll("8888", "" + port);
+                             .replaceAll("8888", "" + wireMockRule.port());
       String actualS = new String(buffer);
       assertThat(actualS.equals(expectedS));
       file = (TarArchiveEntry) tarArchiveInputStream.getNextEntry();
@@ -1920,7 +1919,7 @@ public class DelegateServiceTest extends WingsBaseTest {
       buffer = new byte[(int) file.getSize()];
       IOUtils.read(tarArchiveInputStream, buffer);
       String expectedP = CharStreams.toString(new InputStreamReader(getClass().getResourceAsStream(expectedFile)))
-                             .replaceAll("8888", "" + port);
+                             .replaceAll("8888", "" + wireMockRule.port());
       String actualP = new String(buffer);
       assertThat(actualP.equals(expectedP));
       file = (TarArchiveEntry) tarArchiveInputStream.getNextEntry();
@@ -1930,7 +1929,7 @@ public class DelegateServiceTest extends WingsBaseTest {
       buffer = new byte[(int) file.getSize()];
       IOUtils.read(tarArchiveInputStream, buffer);
       String expectedR = CharStreams.toString(new InputStreamReader(getClass().getResourceAsStream(expectedFile)))
-                             .replaceAll("8888", "" + port);
+                             .replaceAll("8888", "" + wireMockRule.port());
       String actualR = new String(buffer);
       assertThat(actualR.equals(expectedR));
       file = (TarArchiveEntry) tarArchiveInputStream.getNextEntry();
@@ -1964,7 +1963,7 @@ public class DelegateServiceTest extends WingsBaseTest {
       assertThat(new String(buffer))
           .isEqualTo(
               CharStreams.toString(new InputStreamReader(getClass().getResourceAsStream("/expectedStartOpenJdk.sh")))
-                  .replaceAll("8888", "" + port));
+                  .replaceAll("8888", "" + wireMockRule.port()));
 
       file = (TarArchiveEntry) tarArchiveInputStream.getNextEntry();
       assertThat(file).extracting(TarArchiveEntry::getName).isEqualTo(DELEGATE_DIR + "/stop.sh");
@@ -1975,7 +1974,7 @@ public class DelegateServiceTest extends WingsBaseTest {
       assertThat(new String(buffer))
           .isEqualTo(
               CharStreams.toString(new InputStreamReader(getClass().getResourceAsStream("/expectedStopOpenJdk.sh")))
-                  .replaceAll("8888", "" + port));
+                  .replaceAll("8888", "" + wireMockRule.port()));
 
       file = (TarArchiveEntry) tarArchiveInputStream.getNextEntry();
       assertThat(file).extracting(TarArchiveEntry::getName).isEqualTo(DELEGATE_DIR + "/setup-proxy.sh");
@@ -2064,7 +2063,7 @@ public class DelegateServiceTest extends WingsBaseTest {
           .isEqualTo(
               CharStreams
                   .toString(new InputStreamReader(getClass().getResourceAsStream(expectedLaunchDelegateFilepath)))
-                  .replaceAll("8888", "" + port));
+                  .replaceAll("8888", "" + wireMockRule.port()));
 
       file = (TarArchiveEntry) tarArchiveInputStream.getNextEntry();
       assertThat(file).extracting(ArchiveEntry::getName).isEqualTo(DOCKER_DELEGATE + "/README.txt");
@@ -2103,7 +2102,7 @@ public class DelegateServiceTest extends WingsBaseTest {
           .isEqualTo(
               CharStreams
                   .toString(new InputStreamReader(getClass().getResourceAsStream("/expectedHarnessDelegate.yaml")))
-                  .replaceAll("8888", "" + port));
+                  .replaceAll("8888", "" + wireMockRule.port()));
 
       file = (TarArchiveEntry) tarArchiveInputStream.getNextEntry();
       assertThat(file).extracting(TarArchiveEntry::getName).isEqualTo(KUBERNETES_DELEGATE + "/README.txt");
@@ -2132,7 +2131,7 @@ public class DelegateServiceTest extends WingsBaseTest {
           .isEqualTo(CharStreams
                          .toString(new InputStreamReader(
                              getClass().getResourceAsStream("/expectedHarnessDelegateImmutable.yaml")))
-                         .replaceAll("8888", "" + port));
+                         .replaceAll("8888", "" + wireMockRule.port()));
 
       file = (TarArchiveEntry) tarArchiveInputStream.getNextEntry();
       assertThat(file).extracting(TarArchiveEntry::getName).isEqualTo(KUBERNETES_DELEGATE + "/README.txt");
@@ -2161,7 +2160,7 @@ public class DelegateServiceTest extends WingsBaseTest {
           .isEqualTo(CharStreams
                          .toString(new InputStreamReader(
                              getClass().getResourceAsStream("/expectedHarnessDelegateWithNonRoot.yaml")))
-                         .replaceAll("8888", "" + port));
+                         .replaceAll("8888", "" + wireMockRule.port()));
 
       file = (TarArchiveEntry) tarArchiveInputStream.getNextEntry();
       assertThat(file).extracting(TarArchiveEntry::getName).isEqualTo(KUBERNETES_DELEGATE + "/README.txt");
@@ -2192,7 +2191,7 @@ public class DelegateServiceTest extends WingsBaseTest {
           .isEqualTo(CharStreams
                          .toString(new InputStreamReader(
                              getClass().getResourceAsStream("/expectedHarnessDelegateWithCiEnabled.yaml")))
-                         .replaceAll("8888", "" + port));
+                         .replaceAll("8888", "" + wireMockRule.port()));
 
       file = (TarArchiveEntry) tarArchiveInputStream.getNextEntry();
       assertThat(file).extracting(TarArchiveEntry::getName).isEqualTo(KUBERNETES_DELEGATE + "/README.txt");
@@ -2224,7 +2223,7 @@ public class DelegateServiceTest extends WingsBaseTest {
           .isEqualTo(CharStreams
                          .toString(new InputStreamReader(
                              getClass().getResourceAsStream("/expectedHarnessDelegateImmutableWithCiEnabled.yaml")))
-                         .replaceAll("8888", "" + port));
+                         .replaceAll("8888", "" + wireMockRule.port()));
 
       file = (TarArchiveEntry) tarArchiveInputStream.getNextEntry();
       assertThat(file).extracting(TarArchiveEntry::getName).isEqualTo(KUBERNETES_DELEGATE + "/README.txt");
@@ -2344,7 +2343,7 @@ public class DelegateServiceTest extends WingsBaseTest {
           .isEqualTo(CharStreams
                          .toString(new InputStreamReader(
                              getClass().getResourceAsStream("/expectedHarnessDelegateNgClusterAdminImmutable.yaml")))
-                         .replaceAll("8888", "" + port));
+                         .replaceAll("8888", "" + wireMockRule.port()));
 
       file = (TarArchiveEntry) tarArchiveInputStream.getNextEntry();
       assertThat(file).extracting(TarArchiveEntry::getName).isEqualTo(KUBERNETES_DELEGATE + "/README.txt");
@@ -2391,7 +2390,7 @@ public class DelegateServiceTest extends WingsBaseTest {
           .isEqualTo(CharStreams
                          .toString(new InputStreamReader(
                              getClass().getResourceAsStream("/expectedHarnessDelegateNgClusterViewerImmutable.yaml")))
-                         .replaceAll("8888", "" + port));
+                         .replaceAll("8888", "" + wireMockRule.port()));
 
       file = (TarArchiveEntry) tarArchiveInputStream.getNextEntry();
       assertThat(file).extracting(TarArchiveEntry::getName).isEqualTo(KUBERNETES_DELEGATE + "/README.txt");
@@ -2440,7 +2439,7 @@ public class DelegateServiceTest extends WingsBaseTest {
           .isEqualTo(CharStreams
                          .toString(new InputStreamReader(
                              getClass().getResourceAsStream("/expectedHarnessDelegateNgNamespaceAdminImmutable.yaml")))
-                         .replaceAll("8888", "" + port));
+                         .replaceAll("8888", "" + wireMockRule.port()));
 
       file = (TarArchiveEntry) tarArchiveInputStream.getNextEntry();
       assertThat(file).extracting(TarArchiveEntry::getName).isEqualTo(KUBERNETES_DELEGATE + "/README.txt");
@@ -3316,7 +3315,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     String fileContent = new String(FileUtils.readFileToByteArray(file));
     String expected =
         CharStreams.toString(new InputStreamReader(getClass().getResourceAsStream("/expectedDockerCompose.yaml")))
-            .replaceAll("8888", "" + port);
+            .replaceAll("8888", "" + wireMockRule.port());
 
     assertThat(fileContent).isEqualTo(expected);
   }
@@ -3349,7 +3348,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     String expected =
         CharStreams
             .toString(new InputStreamReader(getClass().getResourceAsStream("/expectedImmutableDockerCompose.yaml")))
-            .replaceAll("8888", "" + port);
+            .replaceAll("8888", "" + wireMockRule.port());
 
     assertThat(fileContent).isEqualTo(expected);
   }
@@ -3585,7 +3584,7 @@ public class DelegateServiceTest extends WingsBaseTest {
         .isEqualTo(
             CharStreams
                 .toString(new InputStreamReader(getClass().getResourceAsStream("/expectedNgHelmDelegateValues.yaml")))
-                .replaceAll("8888", "" + port));
+                .replaceAll("8888", "" + wireMockRule.port()));
   }
 
   @Test

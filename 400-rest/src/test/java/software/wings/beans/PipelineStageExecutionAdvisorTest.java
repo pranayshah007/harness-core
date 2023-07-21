@@ -74,7 +74,7 @@ public class PipelineStageExecutionAdvisorTest extends WingsBaseTest {
   public void shouldSkipStageFirstIfContinueWithDefaultValuesSelected() {
     WorkflowExecution mockExecution = mock(WorkflowExecution.class);
     PipelineSummary mockSummary = mock(PipelineSummary.class);
-    doReturn(mockExecution).when(workflowExecutionService).getWorkflowExecution(any(), any());
+    doReturn(mockExecution).when(workflowExecutionService).getWorkflowExecution(any(), any(), any(String[].class));
     doReturn(mockSummary).when(mockExecution).getPipelineSummary();
     EnvState envState = new EnvState("workflow1");
     envState.setDisableAssertion("true");
@@ -95,7 +95,7 @@ public class PipelineStageExecutionAdvisorTest extends WingsBaseTest {
   public void testAdviceShouldBeRollback() {
     WorkflowExecution mockExecution = mock(WorkflowExecution.class);
     PipelineSummary mockSummary = mock(PipelineSummary.class);
-    doReturn(mockExecution).when(workflowExecutionService).getWorkflowExecution(any(), any());
+    doReturn(mockExecution).when(workflowExecutionService).getWorkflowExecution(any(), any(), any(String[].class));
     doReturn(mockSummary).when(mockExecution).getPipelineSummary();
     doReturn("PIPELINE_ID").when(mockSummary).getPipelineId();
 
@@ -149,7 +149,7 @@ public class PipelineStageExecutionAdvisorTest extends WingsBaseTest {
 
     WorkflowExecution mockExecution = mock(WorkflowExecution.class);
     PipelineSummary mockSummary = mock(PipelineSummary.class);
-    doReturn(mockExecution).when(workflowExecutionService).getWorkflowExecution(any(), any());
+    doReturn(mockExecution).when(workflowExecutionService).getWorkflowExecution(any(), any(), any(String[].class));
     doReturn(mockSummary).when(mockExecution).getPipelineSummary();
     doReturn("PIPELINE_ID").when(mockSummary).getPipelineId();
     Pipeline pipeline = Pipeline.builder().uuid("PIPELINE_ID").appId("APP_ID").rollbackPreviousStages(true).build();

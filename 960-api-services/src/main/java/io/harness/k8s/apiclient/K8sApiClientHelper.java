@@ -32,7 +32,7 @@ public class K8sApiClientHelper {
   public String generateExecFormatKubeconfig(KubernetesConfig config) {
     String insecureSkipTlsVerify = isEmpty(config.getCaCert()) ? "insecure-skip-tls-verify: true" : "";
     String certificateAuthorityData =
-        isNotEmpty(config.getCaCert()) ? ("certificate-authority-data: " + String.valueOf(config.getCaCert())) : "";
+        isNotEmpty(config.getCaCert()) ? ("certificate-authority-data: " + new String(config.getCaCert())) : "";
     String namespace = isNotEmpty(config.getNamespace()) ? ("namespace: " + config.getNamespace()) : "";
     String exec;
     try {

@@ -1433,6 +1433,7 @@ paths:
         - x-api-key: []
       tags:
         - Project Services
+      x-internal: true
   '/v1/orgs/{org}/services/{service}/primary-manifests':
     parameters:
       - $ref: '#/components/parameters/ServicePathParam'
@@ -1450,6 +1451,7 @@ paths:
         - x-api-key: []
       tags:
         - Org Services
+      x-internal: true
   '/v1/services/{service}/primary-manifests':
     parameters:
       - $ref: '#/components/parameters/ServicePathParam'
@@ -1466,6 +1468,7 @@ paths:
         - x-api-key: []
       tags:
         - Account Services
+      x-internal: true
 components:
   schemas:
     Service:

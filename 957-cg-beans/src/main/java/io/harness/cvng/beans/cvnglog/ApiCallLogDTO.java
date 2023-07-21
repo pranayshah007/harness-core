@@ -63,7 +63,7 @@ public class ApiCallLogDTO extends CVNGLogDTO {
       this.requests = new ArrayList<>();
     }
     FieldType fieldType = ApiCallLogUtils.mapRequestBodyContentTypeToFieldType(request);
-    String requestBody = getCallObjectToLog(ApiCallLogUtils.requestBodyToString(request), fieldType);
+    String requestBody = getCallObjectToLog(ApiCallLogUtils.requestBodyToString(request, false), fieldType);
     if (fieldType == FieldType.TEXT && ApiCallLogUtils.isFormEncoded(request)) {
       requestBody = URLDecoder.decode(requestBody, StandardCharsets.UTF_8);
     }

@@ -10,9 +10,7 @@ package io.harness.cdng.manifest.steps.task;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
-import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.delegate.beans.TaskData;
-import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.tasks.ResponseData;
 
 import java.util.Map;
@@ -20,9 +18,9 @@ import java.util.Optional;
 
 @OwnedBy(HarnessTeam.CDP)
 public interface ManifestTaskService {
-  boolean isSupported(Ambiance ambiance, ManifestOutcome manifest);
+  boolean isSupported(FetchManifestTaskContext context);
 
-  Optional<TaskData> createTaskData(Ambiance ambiance, ManifestOutcome manifest);
+  Optional<TaskData> createTaskData(FetchManifestTaskContext context);
 
   void handleTaskResponses(
       Map<String, ResponseData> responseDataMap, ManifestsOutcome manifests, Map<String, String> taskIdMapping);

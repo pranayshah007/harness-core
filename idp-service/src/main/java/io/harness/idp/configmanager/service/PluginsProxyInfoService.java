@@ -6,6 +6,7 @@
  */
 package io.harness.idp.configmanager.service;
 
+import io.harness.idp.configmanager.utils.ConfigType;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.ProxyHostDetail;
 
@@ -13,9 +14,11 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 public interface PluginsProxyInfoService {
-  List<ProxyHostDetail> insertProxyHostDetailsForPlugin(AppConfig appConfig, String accountIdentifier);
+  List<ProxyHostDetail> insertProxyHostDetailsForPlugin(
+      AppConfig appConfig, String accountIdentifier, ConfigType configType);
 
-  List<ProxyHostDetail> updateProxyHostDetailsForPlugin(AppConfig appConfig, String accountIdentifier);
+  List<ProxyHostDetail> updateProxyHostDetailsForPlugin(
+      AppConfig appConfig, String accountIdentifier, ConfigType configType);
 
   void deleteProxyHostDetailsForPlugin(String accountIdentifier, String pluginId) throws ExecutionException;
 

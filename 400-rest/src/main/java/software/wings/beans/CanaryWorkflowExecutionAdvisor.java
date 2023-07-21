@@ -66,6 +66,7 @@ import io.harness.logging.AutoLogContext;
 
 import software.wings.api.PhaseElement;
 import software.wings.beans.FailureStrategy.FailureStrategyBuilder;
+import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.workflow.StepSkipStrategy;
 import software.wings.dl.WingsPersistence;
 import software.wings.service.impl.instance.InstanceHelper;
@@ -144,8 +145,15 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
   public ExecutionEventAdvice onExecutionEvent(ExecutionEvent executionEvent) {
     State state = executionEvent.getState();
     ExecutionContextImpl context = executionEvent.getContext();
+    String[] fields = {WorkflowExecutionKeys.appId, WorkflowExecutionKeys.appName, WorkflowExecutionKeys.envId,
+        WorkflowExecutionKeys.envName, WorkflowExecutionKeys.envType, WorkflowExecutionKeys.helmExecutionSummary,
+        WorkflowExecutionKeys.infraMappingIds, WorkflowExecutionKeys.name, WorkflowExecutionKeys.onDemandRollback,
+        WorkflowExecutionKeys.pipelineExecution, WorkflowExecutionKeys.pipelineSummary,
+        WorkflowExecutionKeys.isRollbackProvisionerAfterPhases, WorkflowExecutionKeys.serviceIds,
+        WorkflowExecutionKeys.triggeredBy, WorkflowExecutionKeys.uuid, WorkflowExecutionKeys.workflowId,
+        WorkflowExecutionKeys.workflowType};
     WorkflowExecution workflowExecution =
-        workflowExecutionService.getWorkflowExecution(context.getAppId(), context.getWorkflowExecutionId());
+        workflowExecutionService.getWorkflowExecution(context.getAppId(), context.getWorkflowExecutionId(), fields);
     StateExecutionInstance stateExecutionInstance = context.getStateExecutionInstance();
     boolean isTimeoutSupportOnWFLevelEnabled =
         featureFlagService.isEnabled(SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW, context.getAccountId());
@@ -173,7 +181,7 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
       }
 
       CanaryOrchestrationWorkflow orchestrationWorkflow =
-          (CanaryOrchestrationWorkflow) findOrchestrationWorkflow(workflow, workflowExecution);
+          (CanaryOrchestrationWorkflow) findOrchestrationWorkflow(workflow);
 
       boolean rolling = false;
       if (stateExecutionInstance != null && stateExecutionInstance.getOrchestrationWorkflowType() == ROLLING
@@ -811,22 +819,13 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
     return failureStrategyBuilder.repairActionCode(repairActionCodeAfterRetry).build();
   }
 
-  private OrchestrationWorkflow findOrchestrationWorkflow(Workflow workflow, WorkflowExecution workflowExecution) {
+  private OrchestrationWorkflow findOrchestrationWorkflow(Workflow workflow) {
     if (workflow == null || workflow.getOrchestrationWorkflow() == null
         || !(workflow.getOrchestrationWorkflow() instanceof CanaryOrchestrationWorkflow)) {
       return null;
     }
 
     return workflow.getOrchestrationWorkflow();
-  }
-
-  private ExecutionEventAdvice computeRollingPhase(StateExecutionInstance stateExecutionInstance) {
-    return anExecutionEventAdvice()
-        .withExecutionInterruptType(ExecutionInterruptType.NEXT_STEP)
-        .withNextStateName(stateExecutionInstance.getStateName())
-        .withNextChildStateMachineId(stateExecutionInstance.getChildStateMachineId())
-        .withNextStateDisplayName(computeDisplayName(stateExecutionInstance))
-        .build();
   }
 
   public String computeDisplayName(StateExecutionInstance stateExecutionInstance) {

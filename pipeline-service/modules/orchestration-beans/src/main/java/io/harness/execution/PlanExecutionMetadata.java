@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.HeaderConfig;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -66,6 +67,7 @@ public class PlanExecutionMetadata implements PersistentEntity, UuidAware, PmsNo
   private Boolean allowStagesExecution;
   private Boolean executionInputConfigured;
   @Wither private String triggerJsonPayload;
+  @Wither private List<HeaderConfig> triggerHeader;
   @Wither private TriggerPayload triggerPayload;
   private Boolean notifyOnlyUser;
   @With String notes;

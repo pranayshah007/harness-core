@@ -17,7 +17,6 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
-import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.encryption.Scope;
@@ -27,7 +26,6 @@ import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.pms.yaml.YamlField;
-import io.harness.pms.yaml.YamlNode;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.common.base.Predicates;
@@ -35,7 +33,6 @@ import com.google.common.collect.Iterables;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -304,35 +301,5 @@ public class ServiceFilterHelper {
         }
       }
     }
-  }
-
-  public YamlField getManifestsNodeFromServiceDefinitionYaml(YamlField serviceDefinitionField) {
-    if (serviceDefinitionField == null) {
-      return null;
-    }
-
-    YamlField serviceSpecField = serviceDefinitionField.getNode().getField(YamlTypes.SERVICE_SPEC);
-    if (serviceSpecField == null) {
-      return null;
-    }
-
-    return serviceSpecField.getNode().getField(YamlTypes.MANIFEST_LIST_CONFIG);
-  }
-
-  public List<String> getManifestIdentifiersFilteredOnServiceType(YamlField manifestsField, String serviceType) {
-    List<String> manifestIdentifierList = new ArrayList<>();
-    List<YamlNode> manifests = manifestsField.getNode().asArray();
-    Set<String> supportedManifestTypes = ManifestType.getSupportedManifestTypes(serviceType);
-    for (YamlNode manifestConfig : manifests) {
-      if (manifestConfig == null) {
-        continue;
-      }
-      YamlNode manifest = manifestConfig.getField(YamlTypes.MANIFEST_CONFIG).getNode();
-      if (manifest != null && supportedManifestTypes.contains(manifest.getType())) {
-        String manifestIdentifier = manifest.getIdentifier();
-        manifestIdentifierList.add(manifestIdentifier);
-      }
-    }
-    return manifestIdentifierList;
   }
 }

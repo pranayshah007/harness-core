@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.executables.CdTaskChainExecutable;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.helm.HelmDeployBaseStepInfo.HelmDeployBaseStepInfoKeys;
@@ -26,6 +27,8 @@ import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.delegate.beans.helm.HelmDeployProgressData;
+import io.harness.delegate.beans.helm.HelmDeployProgressDataVersion;
 import io.harness.delegate.beans.instancesync.mapper.K8sContainerToHelmServiceInstanceInfoMapper;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
@@ -38,7 +41,6 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -53,6 +55,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.supplier.ThrowingSupplier;
+import io.harness.tasks.ProgressData;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
@@ -61,7 +64,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDP)
 @Slf4j
-public class HelmDeployStep extends TaskChainExecutableWithRollbackAndRbac implements NativeHelmStepExecutor {
+public class HelmDeployStep extends CdTaskChainExecutable implements NativeHelmStepExecutor {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.HELM_DEPLOY.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
@@ -92,15 +95,43 @@ public class HelmDeployStep extends TaskChainExecutableWithRollbackAndRbac imple
   }
 
   @Override
-  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      StepInputPackage inputPackage, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier)
-      throws Exception {
+  public TaskChainResponse executeNextLinkWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepElementParameters stepParameters, StepInputPackage inputPackage, PassThroughData passThroughData,
+      ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
     return nativeHelmStepHelper.executeNextLink(this, ambiance, stepParameters, passThroughData, responseSupplier);
   }
 
   @Override
-  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
+  public ProgressData handleProgress(
+      Ambiance ambiance, StepElementParameters stepParameters, ProgressData progressData) {
+    if (progressData instanceof HelmDeployProgressData) {
+      if (cdFeatureFlagHelper.isEnabled(
+              AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_SEND_TASK_PROGRESS_NG)) {
+        HelmDeployProgressData helmDeployProgressData = (HelmDeployProgressData) progressData;
+        if (HelmDeployProgressDataVersion.V1.getVersionName().equalsIgnoreCase(
+                helmDeployProgressData.getProgressDataVersion())) {
+          NativeHelmDeployOutcomeBuilder nativeHelmDeployOutcomeBuilder = NativeHelmDeployOutcome.builder();
+          nativeHelmDeployOutcomeBuilder.prevReleaseVersion(helmDeployProgressData.getPrevReleaseVersion());
+          nativeHelmDeployOutcomeBuilder.newReleaseVersion(helmDeployProgressData.getPrevReleaseVersion() + 1);
+          nativeHelmDeployOutcomeBuilder.hasInstallUpgradeStarted(helmDeployProgressData.isHasInstallUpgradeStarted());
+
+          executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.HELM_DEPLOY_RELEASE_OUTCOME,
+              nativeHelmDeployOutcomeBuilder.build(), StepOutcomeGroup.STEP.name());
+        } else {
+          log.error(
+              "Version {} of Helm Progress Data is not recognised", helmDeployProgressData.getProgressDataVersion());
+        }
+      }
+      return null;
+    }
+
+    return super.handleProgress(ambiance, stepParameters, progressData);
+  }
+
+  @Override
+  public StepResponse finalizeExecutionWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepElementParameters stepParameters, PassThroughData passThroughData,
+      ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     if (passThroughData instanceof CustomFetchResponsePassThroughData) {
       return nativeHelmStepHelper.handleCustomTaskFailure((CustomFetchResponsePassThroughData) passThroughData);
     }
@@ -225,7 +256,9 @@ public class HelmDeployStep extends TaskChainExecutableWithRollbackAndRbac imple
             .ignoreReleaseHistFailStatus(ignoreHelmHistFailure)
             .useRefactorSteadyStateCheck(cdFeatureFlagHelper.isEnabled(
                 AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_STEADY_STATE_CHECK_1_16_V2_NG))
-            .skipSteadyStateCheck(skipSteadyStateCheck);
+            .skipSteadyStateCheck(skipSteadyStateCheck)
+            .sendTaskProgressEvents(cdFeatureFlagHelper.isEnabled(
+                AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_SEND_TASK_PROGRESS_NG));
 
     if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_K8S_SERVICE_HOOKS_NG)) {
       helmCommandRequestBuilder.serviceHooks(nativeHelmStepHelper.getServiceHooks(ambiance));

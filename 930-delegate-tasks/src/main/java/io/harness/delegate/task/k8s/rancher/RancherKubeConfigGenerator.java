@@ -37,17 +37,17 @@ public class RancherKubeConfigGenerator {
   @Inject private RancherConnectionHelperService rancherConnectionHelperService;
   public KubernetesConfig createKubernetesConfig(RancherClusterActionDTO clusterActionDTO) {
     String rancherUrl = clusterActionDTO.getClusterUrl();
-    String clusterName = clusterActionDTO.getClusterName();
+    String clusterId = clusterActionDTO.getClusterName();
     try {
       String generatedKubeConfig =
-          rancherConnectionHelperService.generateKubeconfig(rancherUrl, clusterActionDTO.getBearerToken(), clusterName);
+          rancherConnectionHelperService.generateKubeconfig(rancherUrl, clusterActionDTO.getBearerToken(), clusterId);
       ensureKubeConfigIsNotEmpty(generatedKubeConfig, clusterActionDTO);
       return createKubernetesConfig(clusterActionDTO, generatedKubeConfig);
     } catch (RancherClientRuntimeException e) {
       throw e;
     } catch (Exception e) {
       Exception sanitizedException = sanitizeException(e);
-      String errorMessage = format(KUBECONFIG_GEN_ERROR_LOG_MESSAGE, rancherUrl, clusterName);
+      String errorMessage = format(KUBECONFIG_GEN_ERROR_LOG_MESSAGE, rancherUrl, clusterId);
       log.error(errorMessage, sanitizedException);
       throw new RancherClientRuntimeException(errorMessage + ExceptionUtils.getMessage(sanitizedException));
     }

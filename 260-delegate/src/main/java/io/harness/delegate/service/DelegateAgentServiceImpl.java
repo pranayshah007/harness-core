@@ -1378,7 +1378,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private void startInputCheck() {
     inputExecutor.scheduleWithFixedDelay(
-        messageService.getMessageCheckingRunnable(TimeUnit.SECONDS.toMillis(2), message -> {
+        messageService.getMessageCheckingRunnable(TimeUnit.SECONDS.toMillis(20), message -> {
           if (DELEGATE_STOP_ACQUIRING.equals(message.getMessage())) {
             handleStopAcquiringMessage(message.getFromProcess());
           } else if (DELEGATE_RESUME.equals(message.getMessage())) {

@@ -25,6 +25,7 @@ connector_endpoint = "/gateway/ng/api/connectors"
 template_endpoint = "/gateway/template/api/templates"
 pipeline_endpoint = "/gateway/pipeline/api/pipelines"
 input_set_endpoint = "/gateway/pipeline/api/inputSets"
+trigger_endpoint = "/gateway/pipeline/api/triggers"
 variable_endpoint = "gateway/ng/api/variables"
 roles_endpoint = "gateway/authz/api/roles"
 resourcegroup_endpoint = "gateway/resourcegroup/api/v2/resourcegroup"
@@ -151,6 +152,7 @@ def export_input_set(pipelineIdentifier):
                 + pipelineIdentifier
                 + "&projectIdentifier="
                 + from_projectIdentifier
+                + "&loadFromFallbackBranch=true"
             )
             response_get_input_set = get_response_data("GET", url_get_input_set, "")
             new_payload_json = modify_payload(
@@ -172,6 +174,80 @@ def export_input_set(pipelineIdentifier):
             )
             create_and_print_entity(url_create_input_set, new_payload_json)
 
+
+def export_triggers(pipelineIdentifier):
+    url = (
+        "/gateway/pipeline/api/triggers"
+        + "?routingId="
+        + accountIdentifier
+        + "&accountIdentifier="
+        + accountIdentifier
+        + "&orgIdentifier="
+        + from_orgIdentifier
+        + "&projectIdentifier="
+        + from_projectIdentifier
+        + "&targetIdentifier="
+        + pipelineIdentifier
+        + "&pageIndex=0&pageSize=20"
+    )
+    response_dict = get_response_data("GET", url, "")
+    for j in range(0, response_dict["data"]["totalPages"]):
+        url_paginated = (
+            trigger_endpoint
+            + "?routingId="
+            + accountIdentifier
+            + "&accountIdentifier="
+            + accountIdentifier
+            + "&orgIdentifier="
+            + from_orgIdentifier
+            + "&projectIdentifier="
+            + from_projectIdentifier
+            + "&targetIdentifier="
+            + pipelineIdentifier
+            + "&pageIndex="
+            + str(j)
+            + "&pageSize=20"
+        )
+        response_dict = get_response_data("GET", url_paginated, "")
+
+        for i in range(0, response_dict["data"]["pageItemCount"]):
+            url_get_input_set = (
+                "/gateway/pipeline/api/triggers"
+                + "/"
+                + response_dict["data"]["content"][i]["identifier"]
+                + "?routingId="
+                + accountIdentifier
+                + "&accountIdentifier="
+                + accountIdentifier
+                + "&orgIdentifier="
+                + from_orgIdentifier
+                + "&targetIdentifier="
+                + pipelineIdentifier
+                + "&projectIdentifier="
+                + from_projectIdentifier
+                + "&loadFromFallbackBranch=true"
+            )
+            response_get_input_set = get_response_data("GET", url_get_input_set, "")
+            new_payload_json = modify_payload(
+                yaml.safe_load(response_get_input_set["data"]["yaml"]),
+                "trigger",
+            )
+            url_create_input_set = (
+                "/gateway/pipeline/api/triggers"
+                + "?routingId="
+                + accountIdentifier
+                + "&accountIdentifier="
+                + accountIdentifier
+                + "&orgIdentifier="
+                + to_orgIdentifier
+                + "&targetIdentifier="
+                + pipelineIdentifier
+                + "&projectIdentifier="
+                + to_projectIdentifier
+                + "&withServiceV2=true"
+            )
+
+            create_and_print_entity(url_create_input_set, yaml.dump(json.loads(new_payload_json)))
 
 class ImportExport(ABC):
     @abstractmethod
@@ -440,34 +516,6 @@ class ServiceOverride(ImportExport):
     def get_entity(self, response_list_entity, i):
         return response_list_entity
 
-        # environment_instance = Environment()
-        # response_list_entity = environment_instance.list_entity()
-        # environment_identifiers = [
-        #     environment_instance.get_entity_identifier(response_list_entity, i)
-        #     for i in range(len(response_list_entity["data"]["content"]))
-        # ]
-        #
-        # responses = []
-        # for environment_identifier in environment_identifiers:
-        #     url_secret_list = (
-        #         environment_service
-        #         + source_query_param
-        #         + "&environmentIdentifier="
-        #         + environment_identifier
-        #         + "&pageIndex=0&pageSize=10"
-        #     )
-        #     response = get_response_data("GET", url_secret_list, "")
-        #     print (response)
-        #     if response["status"] == "SUCCESS" or response["code"] == "DUPLICATE_FIELD":
-        #
-        #         responses.append(response)
-        #
-        # if i < len(responses):
-        #     print (responses)
-        #     return responses[i]
-        # else:
-        #     return responses[0]
-
     def get_payload(self, response_get_entity,i):
         item = response_get_entity["data"]["content"][i]
         modified_payloads = []
@@ -554,29 +602,6 @@ class InfraOverride(ImportExport):
 
     def get_entity(self, response_list_entity, i):
         return response_list_entity
-        # environment_instance = Environment()
-        # response_list_entity = environment_instance.list_entity()
-        # environment_identifiers = [
-        #     environment_instance.get_entity_identifier(response_list_entity, i)
-        #     for i in range(len(response_list_entity["data"]["content"]))
-        # ]
-        # responses = []
-        # for environment_identifier in environment_identifiers:
-        #     url_secret_list = (
-        #         environment_infra
-        #         + source_query_param
-        #         + "&environmentIdentifier="
-        #         + environment_identifier
-        #         + "&pageIndex=0&pageSize=10"
-        #     )
-        #     response = get_response_data("GET", url_secret_list, "")
-        #     if response["status"] == "SUCCESS" or response["code"] == "DUPLICATE_FIELD":
-        #         responses.append(response)
-        #
-        # if i < len(responses):
-        #     return responses[i]
-        # else:
-        #     return responses[0]
 
     def get_payload(self, response_get_entity):
 
@@ -821,6 +846,7 @@ class Pipeline(ImportExport):
         url_create_pipeline = url_create_pipeline.replace(" ", "%20")
         response_create_pipeline = create_and_print_entity(url_create_pipeline, payload)
         export_input_set(json.loads(payload)["pipeline"]["identifier"])
+        export_triggers(json.loads(payload)["pipeline"]["identifier"])
         return response_create_pipeline
 
 # This copies the Variable

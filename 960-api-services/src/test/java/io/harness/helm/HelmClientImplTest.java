@@ -38,6 +38,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.HelmClientException;
+import io.harness.exception.HelmClientRetryableException;
 import io.harness.exception.HelmClientRuntimeException;
 import io.harness.helm.HelmClientImpl.HelmCliResponse;
 import io.harness.k8s.config.K8sGlobalConfigService;
@@ -517,6 +518,8 @@ public class HelmClientImplTest extends CategoryTest {
     doReturn("helm").when(k8sGlobalConfigService).getHelmPath(HelmVersion.V3);
 
     assertThatThrownBy(() -> helmClient.getManifest(commandData, "default"))
+        .isInstanceOf(HelmClientRetryableException.class)
+        .getCause()
         .isInstanceOf(HelmClientRuntimeException.class);
     verify(helmClient, times(3))
         .executeWithExceptionHandling(

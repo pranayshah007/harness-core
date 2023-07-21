@@ -7,6 +7,19 @@
 
 package io.harness.cvng.cdng.services.impl;
 
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.ANALYSIS_DURATION;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.ANALYSIS_ENDED_AT;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.ANALYSIS_PIPELINE_NAME;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.ANALYSIS_STARTED_AT;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_IDENTIFIER;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_NAME;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.MS_HEALTH_REPORT;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.PIPELINE_ID;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.PIPELINE_URL_FORMAT;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.PLAN_EXECUTION_ID;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_IDENTIFIER;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.STAGE_STEP_ID;
+
 import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.entities.SRMStepAnalysisActivity;
 import io.harness.cvng.activity.services.api.ActivityService;
@@ -16,30 +29,65 @@ import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail.SRMAnaly
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.SRMAnalysisStatus;
 import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
+import io.harness.cvng.core.beans.change.MSHealthReport;
+import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
+import io.harness.cvng.core.entities.MonitoredService;
+import io.harness.cvng.core.services.api.monitoredService.MSHealthReportService;
+import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.cvng.notification.beans.NotificationRuleConditionType;
+import io.harness.cvng.notification.beans.NotificationRuleType;
+import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule;
+import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceNotificationRuleCondition;
 import io.harness.persistence.HPersistence;
+import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.remote.client.NGRestUtils;
+import io.harness.serializer.JsonUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
+import java.text.SimpleDateFormat;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TimeZone;
 import javax.annotation.Nullable;
 
 public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService {
   @Inject HPersistence hPersistence;
 
+  @Inject PipelineServiceClient pipelineServiceClient;
+
   @Inject Clock clock;
 
   @Inject ActivityService activityService;
+
+  @Inject MonitoredServiceService monitoredServiceService;
+
+  @Inject MSHealthReportService msHealthReportService;
+
   @Override
   public String createSRMAnalysisStepExecution(Ambiance ambiance, String monitoredServiceIdentifier,
       ServiceEnvironmentParams serviceEnvironmentParams, Duration duration) {
+    Object pmsExecutionSummary = NGRestUtils.getResponse(pipelineServiceClient.getExecutionDetailV2(
+        ambiance.getPlanExecutionId(), serviceEnvironmentParams.getAccountIdentifier(),
+        serviceEnvironmentParams.getOrgIdentifier(), serviceEnvironmentParams.getProjectIdentifier()));
+    JsonNode rootNode = JsonUtils.asTree(pmsExecutionSummary);
+
+    // Fetch the value of the "name" field
+    String pipelineName = rootNode.get("pipelineExecutionSummary").get("name").asText();
     Instant instant = clock.instant();
     SRMAnalysisStepExecutionDetail executionDetails =
         SRMAnalysisStepExecutionDetail.builder()
@@ -56,6 +104,7 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService {
             .analysisStatus(SRMAnalysisStatus.RUNNING)
             .analysisEndTime(instant.plus(duration).toEpochMilli())
             .analysisDuration(duration)
+            .pipelineName(pipelineName)
             .build();
     return hPersistence.save(executionDetails);
   }
@@ -84,6 +133,28 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService {
 
   @Override
   public SRMAnalysisStepDetailDTO abortRunningSrmAnalysisStep(String executionDetailId) {
+    SRMAnalysisStepExecutionDetail stepExecutionDetail = verifyAndGetSRMAnalysisStepExecutionDetail(executionDetailId);
+
+    UpdateOperations<SRMAnalysisStepExecutionDetail> updateOperations =
+        hPersistence.createUpdateOperations(SRMAnalysisStepExecutionDetail.class)
+            .set(SRMAnalysisStepExecutionDetailsKeys.analysisStatus, SRMAnalysisStatus.ABORTED)
+            .set(SRMAnalysisStepExecutionDetailsKeys.analysisEndTime, clock.millis());
+    hPersistence.update(stepExecutionDetail, updateOperations);
+    stepExecutionDetail = getSRMAnalysisStepExecutionDetail(executionDetailId);
+    handleReportNotification(stepExecutionDetail);
+    return SRMAnalysisStepDetailDTO.getDTOFromEntity(stepExecutionDetail);
+  }
+
+  @Override
+  public void completeSrmAnalysisStep(SRMAnalysisStepExecutionDetail stepExecutionDetail) {
+    UpdateOperations<SRMAnalysisStepExecutionDetail> updateOperations =
+        hPersistence.createUpdateOperations(SRMAnalysisStepExecutionDetail.class)
+            .set(SRMAnalysisStepExecutionDetailsKeys.analysisStatus, SRMAnalysisStatus.COMPLETED);
+    hPersistence.update(stepExecutionDetail, updateOperations);
+    handleReportNotification(stepExecutionDetail);
+  }
+
+  private SRMAnalysisStepExecutionDetail verifyAndGetSRMAnalysisStepExecutionDetail(String executionDetailId) {
     SRMAnalysisStepExecutionDetail stepExecutionDetail = getSRMAnalysisStepExecutionDetail(executionDetailId);
 
     Preconditions.checkArgument(
@@ -91,13 +162,7 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService {
     Preconditions.checkArgument(stepExecutionDetail.getAnalysisStatus().equals(SRMAnalysisStatus.RUNNING),
         String.format("Step Execution Id %s is not RUNNING, the current status is %s", executionDetailId,
             stepExecutionDetail.getAnalysisStatus()));
-
-    UpdateOperations<SRMAnalysisStepExecutionDetail> updateOperations =
-        hPersistence.createUpdateOperations(SRMAnalysisStepExecutionDetail.class)
-            .set(SRMAnalysisStepExecutionDetailsKeys.analysisStatus, SRMAnalysisStatus.ABORTED)
-            .set(SRMAnalysisStepExecutionDetailsKeys.analysisEndTime, clock.millis());
-    hPersistence.update(stepExecutionDetail, updateOperations);
-    return SRMAnalysisStepDetailDTO.getDTOFromEntity(getSRMAnalysisStepExecutionDetail(executionDetailId));
+    return stepExecutionDetail;
   }
 
   @Override
@@ -114,5 +179,60 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService {
         String.format(
             "Step Execution Details %s is not present.", stepAnalysisActivity.getExecutionNotificationDetailsId()));
     return SRMAnalysisStepDetailDTO.getDTOFromEntity(stepExecutionDetail);
+  }
+
+  @Override
+  public void handleReportNotification(SRMAnalysisStepExecutionDetail stepExecutionDetail) {
+    ProjectParams projectParams = ProjectParams.builder()
+                                      .accountIdentifier(stepExecutionDetail.getAccountId())
+                                      .orgIdentifier(stepExecutionDetail.getOrgIdentifier())
+                                      .projectIdentifier(stepExecutionDetail.getProjectIdentifier())
+                                      .build();
+    List<MonitoredServiceNotificationRule> notificationRules =
+        monitoredServiceService.getNotificationRules(projectParams, stepExecutionDetail.getMonitoredServiceIdentifier(),
+            Collections.singletonList(NotificationRuleConditionType.DEPLOYMENT_IMPACT_REPORT));
+    for (MonitoredServiceNotificationRule notificationRule : notificationRules) {
+      List<MonitoredServiceNotificationRuleCondition> notificationRuleConditions = notificationRule.getConditions();
+      for (MonitoredServiceNotificationRuleCondition condition : notificationRuleConditions) {
+        MSHealthReport msHealthReport =
+            msHealthReportService.getMSHealthReport(projectParams, stepExecutionDetail.getMonitoredServiceIdentifier(),
+                Instant.ofEpochMilli(stepExecutionDetail.getAnalysisStartTime()));
+        MonitoredService monitoredService = monitoredServiceService.getMonitoredService(
+            MonitoredServiceParams.builderWithProjectParams(projectParams)
+                .monitoredServiceIdentifier(stepExecutionDetail.getMonitoredServiceIdentifier())
+                .build());
+        SimpleDateFormat dateFormat = new SimpleDateFormat("d MMM 'at' h:mm a z", Locale.ENGLISH);
+        dateFormat.setTimeZone(TimeZone.getTimeZone(clock.getZone().getId())); // Set the desired time zone
+        Date startDateTime = new Date(stepExecutionDetail.getAnalysisStartTime());
+        String formattedStartDate = dateFormat.format(startDateTime);
+        Date endDateTime = new Date(stepExecutionDetail.getAnalysisEndTime());
+        String formattedEndDate = dateFormat.format(endDateTime);
+        Map<String, Object> entityDetails = new HashMap<>();
+        entityDetails.put(ENTITY_IDENTIFIER, stepExecutionDetail.getMonitoredServiceIdentifier());
+        entityDetails.put(ENTITY_NAME, monitoredService.getName());
+        entityDetails.put(SERVICE_IDENTIFIER, monitoredService.getServiceIdentifier());
+        entityDetails.put(MS_HEALTH_REPORT, msHealthReport);
+        entityDetails.put(PIPELINE_ID, stepExecutionDetail.getPipelineId());
+        entityDetails.put(PLAN_EXECUTION_ID, stepExecutionDetail.getPlanExecutionId());
+        entityDetails.put(STAGE_STEP_ID, stepExecutionDetail.getStageStepId());
+        entityDetails.put(ANALYSIS_STARTED_AT, formattedStartDate);
+        entityDetails.put(ANALYSIS_ENDED_AT, formattedEndDate);
+        entityDetails.put(
+            ANALYSIS_DURATION, String.valueOf(stepExecutionDetail.getAnalysisDuration().toDays()) + " days");
+        entityDetails.put(ANALYSIS_PIPELINE_NAME,
+            stepExecutionDetail.getPipelineName().equals(null) ? "" : stepExecutionDetail.getPipelineName());
+        msHealthReportService.sendReportNotification(projectParams, entityDetails,
+            NotificationRuleType.MONITORED_SERVICE,
+            MonitoredServiceNotificationRule.MonitoredServiceDeploymentImpactReportCondition.builder().build(),
+            notificationRule.getNotificationMethod(), stepExecutionDetail.getMonitoredServiceIdentifier());
+      }
+    }
+  }
+
+  private String getPipelineUrl(
+      String baseUrl, ProjectParams projectParams, SRMAnalysisStepExecutionDetail stepExecutionDetail) {
+    return String.format(PIPELINE_URL_FORMAT, baseUrl, projectParams.getAccountIdentifier(),
+        projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), stepExecutionDetail.getPipelineId(),
+        stepExecutionDetail.getPlanExecutionId(), stepExecutionDetail.getStageStepId());
   }
 }

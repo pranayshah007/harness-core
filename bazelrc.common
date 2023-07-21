@@ -15,10 +15,12 @@ build --tool_java_language_version=11
 build --tool_java_runtime_version=local_jdk
 build --javacopt='--release 11'
 build --jvmopt="--illegal-access=debug"
+build --jvmopt="--add-exports java.base/sun.nio.ch=ALL-UNNAMED"
 build --jvmopt="--add-exports java.xml/com.sun.org.apache.xerces.internal.parsers=ALL-UNNAMED"
 build --jvmopt="--add-opens java.base/java.io=ALL-UNNAMED"
 build --jvmopt="--add-opens java.base/java.lang=ALL-UNNAMED"
 build --jvmopt="--add-opens java.base/java.lang.invoke=ALL-UNNAMED"
+build --jvmopt="--add-opens=java.base/java.lang.reflect=ALL-UNNAMED"
 build --jvmopt="--add-opens java.base/java.math=ALL-UNNAMED"
 build --jvmopt="--add-opens java.base/java.nio=ALL-UNNAMED"
 build --jvmopt="--add-opens java.base/java.nio.file=ALL-UNNAMED"

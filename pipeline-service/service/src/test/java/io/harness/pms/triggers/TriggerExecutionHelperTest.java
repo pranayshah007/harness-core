@@ -106,6 +106,7 @@ import io.harness.rule.Owner;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.Principal;
+import io.harness.security.dto.ServiceAccountPrincipal;
 import io.harness.security.dto.ServicePrincipal;
 import io.harness.security.dto.UserPrincipal;
 import io.harness.utils.PmsFeatureFlagHelper;
@@ -375,6 +376,7 @@ public class TriggerExecutionHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGenerateTriggeredBy() {
     User user = User.newBuilder().setLogin("login").setEmail("user@email.com").setName("name").build();
+    TriggerWebhookEvent triggerWebhookEvent = TriggerWebhookEvent.builder().uuid("eventId").build();
 
     TriggeredBy triggeredBy = triggerExecutionHelper.generateTriggerdBy("tag", ngTriggerEntity,
         TriggerPayload.newBuilder()
@@ -387,9 +389,9 @@ public class TriggerExecutionHelperTest extends CategoryTest {
                             .build())
                     .build())
             .build(),
-        "eventId");
+        triggerWebhookEvent);
 
-    assertTriggerBy(triggeredBy);
+    assertTriggerBy(triggeredBy, "login", "user@email.com", true);
 
     triggeredBy = triggerExecutionHelper.generateTriggerdBy("tag", ngTriggerEntity,
         TriggerPayload.newBuilder()
@@ -401,9 +403,9 @@ public class TriggerExecutionHelperTest extends CategoryTest {
                                .build())
                     .build())
             .build(),
-        "eventId");
+        triggerWebhookEvent);
 
-    assertTriggerBy(triggeredBy);
+    assertTriggerBy(triggeredBy, "login", "user@email.com", true);
 
     triggeredBy = triggerExecutionHelper.generateTriggerdBy("tag", ngTriggerEntity,
         TriggerPayload.newBuilder()
@@ -416,9 +418,30 @@ public class TriggerExecutionHelperTest extends CategoryTest {
                             .build())
                     .build())
             .build(),
-        "eventId");
+        triggerWebhookEvent);
 
-    assertTriggerBy(triggeredBy);
+    assertTriggerBy(triggeredBy, "login", "user@email.com", true);
+
+    Principal servicePrincipal = new ServicePrincipal("svc");
+    triggerWebhookEvent.setPrincipal(servicePrincipal);
+    triggeredBy = triggerExecutionHelper.generateTriggerdBy(
+        null, ngTriggerEntity, TriggerPayload.newBuilder().build(), triggerWebhookEvent);
+
+    assertTriggerBy(triggeredBy, ngTriggerEntity.getIdentifier(), null, false);
+
+    Principal userPrincipal = new UserPrincipal("user", "mail", "username", "account");
+    triggerWebhookEvent.setPrincipal(userPrincipal);
+    triggeredBy = triggerExecutionHelper.generateTriggerdBy(
+        null, ngTriggerEntity, TriggerPayload.newBuilder().build(), triggerWebhookEvent);
+
+    assertTriggerBy(triggeredBy, "username", "mail", false);
+
+    Principal serviceAccountPrincipal = new ServiceAccountPrincipal("svc", "mail", "username", "account");
+    triggerWebhookEvent.setPrincipal(serviceAccountPrincipal);
+    triggeredBy = triggerExecutionHelper.generateTriggerdBy(
+        null, ngTriggerEntity, TriggerPayload.newBuilder().build(), triggerWebhookEvent);
+
+    assertTriggerBy(triggeredBy, "username", "mail", false);
   }
 
   @Test
@@ -499,23 +522,26 @@ public class TriggerExecutionHelperTest extends CategoryTest {
             pipelineEntityV1.getProjectIdentifier(), pipelineEntityV1.getYaml(),
             OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
     triggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionRequest(
-        triggerDetails, payloadBuilder.build(), triggerWebhookEvent, null, null);
+        triggerDetails, payloadBuilder.build(), triggerWebhookEvent, null, null, null);
   }
 
-  private void assertTriggerBy(TriggeredBy triggeredBy) {
+  private void assertTriggerBy(TriggeredBy triggeredBy, String identifier, String email, boolean isGitTrigger) {
     Map<String, String> extraInfoMap = triggeredBy.getExtraInfoMap();
-    assertThat(extraInfoMap.containsKey(EXEC_TAG_SET_BY_TRIGGER)).isTrue();
-    assertThat(extraInfoMap.containsKey(TRIGGER_REF)).isTrue();
-    assertThat(extraInfoMap.containsKey(EVENT_CORRELATION_ID)).isTrue();
-
-    assertThat(extraInfoMap.get(EXEC_TAG_SET_BY_TRIGGER)).isEqualTo("tag");
-    assertThat(extraInfoMap.get(TRIGGER_REF)).isEqualTo("acc/org/proj/trigger");
-    assertThat(extraInfoMap.get(GIT_USER)).isEqualTo("login");
-    assertThat(extraInfoMap.get(EVENT_CORRELATION_ID)).isEqualTo("eventId");
-    assertThat(extraInfoMap.get(SOURCE_EVENT_ID))
-        .isIn(
-            Arrays.asList("123", "sourceEventId", StringUtils.substring("sourceEventId", 0, COMMIT_SHA_STRING_LENGTH)));
-    assertThat(extraInfoMap.get(SOURCE_EVENT_LINK)).isEqualTo("sourceEventLink");
+    if (isGitTrigger) {
+      assertThat(extraInfoMap.containsKey(EXEC_TAG_SET_BY_TRIGGER)).isTrue();
+      assertThat(extraInfoMap.containsKey(TRIGGER_REF)).isTrue();
+      assertThat(extraInfoMap.get(EXEC_TAG_SET_BY_TRIGGER)).isEqualTo("tag");
+      assertThat(extraInfoMap.get(GIT_USER)).isEqualTo("login");
+      assertThat(extraInfoMap.containsKey(EVENT_CORRELATION_ID)).isTrue();
+      assertThat(extraInfoMap.get(EVENT_CORRELATION_ID)).isEqualTo("eventId");
+      assertThat(extraInfoMap.get(TRIGGER_REF)).isEqualTo("acc/org/proj/trigger");
+      assertThat(extraInfoMap.get(SOURCE_EVENT_ID))
+          .isIn(Arrays.asList(
+              "123", "sourceEventId", StringUtils.substring("sourceEventId", 0, COMMIT_SHA_STRING_LENGTH)));
+      assertThat(extraInfoMap.get(SOURCE_EVENT_LINK)).isEqualTo("sourceEventLink");
+    }
+    assertThat(triggeredBy.getIdentifier()).isEqualTo(identifier);
+    assertThat(triggeredBy.getExtraInfoMap().get("email")).isEqualTo(email);
   }
 
   @Test
@@ -572,7 +598,7 @@ public class TriggerExecutionHelperTest extends CategoryTest {
              execArgs.getPlanExecutionMetadata(), false, null, null, null))
         .thenReturn(PlanExecution.builder().ambiance(ambiance).build());
 
-    triggerExecutionHelper.createPlanExecutionV2(triggerDetails, null, null, null, null,
+    triggerExecutionHelper.createPlanExecutionV2(triggerDetails, null, null, null, null, null,
         TriggerWebhookEvent.builder().build(), triggerDetails.getNgTriggerConfigV2().getInputYaml());
     ArgumentCaptor<String> capturedRuntimeInputYaml = ArgumentCaptor.forClass(String.class);
     verify(executionHelper, times(1))
@@ -619,7 +645,7 @@ public class TriggerExecutionHelperTest extends CategoryTest {
                         .mergedPipelineYamlWithTemplateRef(null)
                         .build());
     assertThatCode(()
-                       -> triggerExecutionHelper.createPlanExecution(triggerDetails, null, null, null,
+                       -> triggerExecutionHelper.createPlanExecution(triggerDetails, null, null, null, null,
                            ExecutionTriggerInfo.newBuilder().build(), TriggerWebhookEvent.builder().build(),
                            triggerDetails.getNgTriggerConfigV2().getInputYaml()))
         .doesNotThrowAnyException();
@@ -657,7 +683,7 @@ public class TriggerExecutionHelperTest extends CategoryTest {
         .thenReturn(PlanExecution.builder().ambiance(ambiance).build());
 
     triggerExecutionHelper.createPlanExecutionV2(
-        triggerDetails, null, null, null, null, null, triggerDetails.getNgTriggerConfigV2().getInputYaml());
+        triggerDetails, null, null, null, null, null, null, triggerDetails.getNgTriggerConfigV2().getInputYaml());
 
     Principal expectedPrincipal = new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId());
     assertThat(SecurityContextBuilder.getPrincipal()).isEqualToComparingFieldByField(expectedPrincipal);
@@ -701,7 +727,7 @@ public class TriggerExecutionHelperTest extends CategoryTest {
              execArgs.getPlanExecutionMetadata(), false, null, null, null))
         .thenReturn(PlanExecution.builder().ambiance(ambiance).build());
 
-    triggerExecutionHelper.createPlanExecutionV2(triggerDetails, null, null, null, null,
+    triggerExecutionHelper.createPlanExecutionV2(triggerDetails, null, null, null, null, null,
         TriggerWebhookEvent.builder().build(), triggerDetails.getNgTriggerConfigV2().getInputYaml());
     verify(pmsPipelineService, times(1)).getPipeline("acc", "default", "test", "myPipeline", false, false);
     assertThat(GitAwareContextHelper.getGitRequestParamsInfo())
@@ -751,7 +777,7 @@ public class TriggerExecutionHelperTest extends CategoryTest {
              execArgs.getPlanExecutionMetadata(), false, null, null, null))
         .thenReturn(PlanExecution.builder().ambiance(ambiance).build());
 
-    triggerExecutionHelper.createPlanExecutionV2(triggerDetails, null, null, null, null,
+    triggerExecutionHelper.createPlanExecutionV2(triggerDetails, null, null, null, null, null,
         TriggerWebhookEvent.builder().build(), triggerDetails.getNgTriggerConfigV2().getInputYaml());
     verify(pmsPipelineService, times(1)).getPipeline("acc", "default", "test", "myPipeline", false, false);
     assertThat(GitAwareContextHelper.getGitRequestParamsInfo())

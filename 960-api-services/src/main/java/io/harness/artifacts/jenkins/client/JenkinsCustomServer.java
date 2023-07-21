@@ -6,6 +6,7 @@
  */
 
 package io.harness.artifacts.jenkins.client;
+
 import static software.wings.helpers.ext.jenkins.JenkinsJobPathBuilder.getJenkinsJobPath;
 
 import io.harness.annotations.dev.CodePulse;
@@ -56,8 +57,7 @@ public class JenkinsCustomServer extends JenkinsServer {
       JobWithExtendedDetails jobWithExtendedDetails =
           client.get(toJobUrl(folder, jobName) + "/" + buildNumber, JobWithExtendedDetails.class);
       String url = jobWithExtendedDetails.getUrl();
-      BuildWithDetails buildWithDetails = client.get(url, BuildWithDetails.class);
-      return buildWithDetails;
+      return client.get(url, BuildWithDetails.class);
     } catch (HttpResponseException e) {
       if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
         return null;
@@ -68,8 +68,7 @@ public class JenkinsCustomServer extends JenkinsServer {
 
   public String getJenkinsConsoleLogs(FolderJob folder, String jobName, String jobId) throws IOException {
     try {
-      String consoleLogs = client.get(toConsoleLogs(folder, jobName, jobId));
-      return consoleLogs;
+      return client.get(toConsoleLogs(folder, jobName, jobId));
     } catch (HttpResponseException e) {
       if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
         return null;

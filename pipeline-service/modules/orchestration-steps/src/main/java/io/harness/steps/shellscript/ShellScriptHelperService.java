@@ -8,10 +8,10 @@
 package io.harness.steps.shellscript;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.encoding.EncodingUtils;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG.ShellScriptTaskParametersNGBuilder;
@@ -62,7 +62,8 @@ public interface ShellScriptHelperService {
     Map<String, String> resolvedOutputVariables = new HashMap<>();
     outputVariables.keySet().forEach(name -> {
       Object value = ((ParameterField<?>) outputVariables.get(name)).getValue();
-      if (EmptyPredicate.isNotEmpty(secretOutputVariables) && secretOutputVariables.contains(name)) {
+      if (isNotEmpty(secretOutputVariables) && secretOutputVariables.contains(name)
+          && isNotEmpty(sweepingOutputEnvVariables.get(value.toString()))) {
         String encodedValue = EncodingUtils.encodeBase64(
             encryption.encrypt(sweepingOutputEnvVariables.get(value).getBytes(StandardCharsets.UTF_8)));
         String finalValue = "${sweepingOutputSecrets.obtain(\"" + name + "\",\"" + encodedValue + "\")}";

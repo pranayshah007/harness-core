@@ -17,6 +17,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data
@@ -25,9 +26,10 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @OwnedBy(CDP)
 @JsonTypeName("JiraApproval")
+@FieldNameConstants(innerTypeName = "JiraApprovalStepExecutionDetailsKeys")
 @TypeAlias("JiraApprovalStepExecutionDetails")
 public class JiraApprovalStepExecutionDetails implements StepExecutionDetails {
-  String issueKey;
+  String url;
   String issueType;
-  String projectKey;
+  String ticketStatus;
 }

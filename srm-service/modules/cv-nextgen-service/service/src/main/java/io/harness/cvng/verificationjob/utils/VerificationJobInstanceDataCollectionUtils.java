@@ -22,7 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 public class VerificationJobInstanceDataCollectionUtils {
   public boolean shouldCollectPreDeploymentData(VerificationJobInstance verificationJobInstance) {
     if (verificationJobInstance.getResolvedJob().getType().equals(VerificationJobType.CANARY)
-        && (shouldCollectUsingNodesFromCD(verificationJobInstance)
+        && (VerificationJobInstanceServiceInstanceUtils.canUseNodesFromCD(verificationJobInstance)
             || VerificationJobInstanceServiceInstanceUtils.isNodeRegExEnabled(verificationJobInstance))) {
       return false;
     }
@@ -56,11 +56,6 @@ public class VerificationJobInstanceDataCollectionUtils {
     }
     return Arrays.asList(verificationJobInstance.getServiceInstanceDetails().getTestNodeRegExPattern(),
         verificationJobInstance.getServiceInstanceDetails().getControlNodeRegExPattern());
-  }
-
-  public boolean shouldCollectUsingNodesFromCD(VerificationJobInstance verificationJobInstance) {
-    return verificationJobInstance.getServiceInstanceDetails() != null
-        && verificationJobInstance.getServiceInstanceDetails().isShouldUseNodesFromCD();
   }
 
   public List<String> getPreDeploymentNodesToCollect(VerificationJobInstance verificationJobInstance) {

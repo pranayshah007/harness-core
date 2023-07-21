@@ -8,7 +8,9 @@
 package io.harness.cdng.environment.helper;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.PARENT_PATH_KEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -18,10 +20,16 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
+import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
+import io.harness.eventsframework.schemas.entity.ScopeProtoEnum;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
+import com.google.protobuf.StringValue;
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import org.junit.Test;
@@ -32,13 +40,12 @@ public class EnvironmentYamlV2VisitorHelperTest extends CategoryTest {
   String accountId = "acc";
   String orgId = "org";
   String projectId = "proj";
+  EnvironmentYamlV2VisitorHelper envVisitor = new EnvironmentYamlV2VisitorHelper();
 
   @Test
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
   public void testAddReference() {
-    EnvironmentYamlV2VisitorHelper envVisitor = new EnvironmentYamlV2VisitorHelper();
-
     // case1: without expression
     EnvironmentYamlV2 environmentYamlV2 =
         EnvironmentYamlV2.builder().environmentRef(ParameterField.createValueField("ref")).build();
@@ -64,5 +71,46 @@ public class EnvironmentYamlV2VisitorHelperTest extends CategoryTest {
     assertThat(entityDetailProtoDTOS).hasSize(1);
     entityDetailProto = entityDetailProtoDTOS.iterator().next();
     assertThat(entityDetailProto.getType()).isEqualTo(EntityTypeProtoEnum.ENVIRONMENT);
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testaddReferenceMultiEnvCase() throws IOException {
+    Map<String, Object> contextMap = new HashMap<>();
+    LinkedList<String> linkedList = new LinkedList<>();
+    linkedList.add("pipeline");
+    linkedList.add("stages");
+    linkedList.add("s1");
+    linkedList.add("spec");
+    linkedList.add("environments");
+    linkedList.add("values");
+    contextMap.put(PARENT_PATH_KEY, linkedList);
+    Map<String, Object> serviceInputs = new LinkedHashMap<>();
+    EnvironmentYamlV2 environmentYamlV2 =
+        EnvironmentYamlV2.builder()
+            .environmentRef(ParameterField.createExpressionField(true, "<+input>", null, true))
+            .environmentInputs(ParameterField.<Map<String, Object>>builder().value(serviceInputs).build())
+            .build();
+
+    EntityDetailProtoDTO entityDetailProtoDTO =
+        EntityDetailProtoDTO.newBuilder()
+            .setType(EntityTypeProtoEnum.ENVIRONMENT)
+            .setIdentifierRef(IdentifierRefProtoDTO.newBuilder()
+                                  .setScope(ScopeProtoEnum.UNKNOWN)
+                                  .setAccountIdentifier(StringValue.of(accountId))
+                                  .setOrgIdentifier(StringValue.of(orgId))
+                                  .setProjectIdentifier(StringValue.of(projectId))
+                                  .setIdentifier(StringValue.of("<+input>"))
+                                  .putMetadata("fqn", "pipeline.stages.s1.spec.environments.values")
+                                  .putMetadata("yamlTypeRefName", "environmentRef")
+                                  .putMetadata("expression", "<+input>")
+                                  .build())
+            .build();
+
+    Set<EntityDetailProtoDTO> entityDetailProtoDTOS =
+        envVisitor.addReference(environmentYamlV2, accountId, orgId, projectId, contextMap);
+
+    assertThat(entityDetailProtoDTOS).contains(entityDetailProtoDTO);
   }
 }

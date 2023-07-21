@@ -42,6 +42,7 @@ public class ManifestSummaryMapper {
         .type(HelmChart)
         .store(helmChartManifestOutcome.getStore())
         .chartVersion(getParameterFieldValue(helmChartManifestOutcome.getChartVersion()))
+        .helmVersion(helmChartManifestOutcome.getHelmVersion())
         .build();
   }
 }

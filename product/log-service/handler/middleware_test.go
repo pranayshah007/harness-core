@@ -6,6 +6,7 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -13,9 +14,12 @@ import (
 	"time"
 
 	"github.com/dchest/authcookie"
-	"github.com/harness/harness-core/product/log-service/config"
 	"github.com/harness/harness-core/product/platform/client"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/harness/harness-core/product/log-service/cache/memory"
+	"github.com/harness/harness-core/product/log-service/config"
+	"github.com/harness/harness-core/product/log-service/entity"
 )
 
 type MockHandler struct{}
@@ -216,4 +220,200 @@ func TestAuthMiddleware_NoKeyPresent(t *testing.T) {
 	writer := httptest.NewRecorder()
 	handlerFunc.ServeHTTP(writer, httpReq)
 	assert.Equal(t, writer.Code, 400)
+}
+
+func TestValidatePrefixRequest_success(t *testing.T) {
+	path := &url.URL{
+		Host: "localhost/blob/prefix/",
+		Path: "accountID=accId&prefix=accountId:accId/path1:path/runSequence:9/pipeline:level0",
+	}
+	header := http.Header{}
+	httpReq := &http.Request{URL: path, Header: header}
+	fn := ValidatePrefixRequest()
+	mockHandler := &MockHandler{}
+	handlerFunc := fn(mockHandler)
+	writer := httptest.NewRecorder()
+	handlerFunc.ServeHTTP(writer, httpReq)
+	assert.Equal(t, writer.Code, 200)
+}
+
+func TestValidatePrefixRequest_error(t *testing.T) {
+	path := &url.URL{
+		Host: "localhost/blob/prefix/",
+		Path: "accountID=accId&prefix=accountId:accId/path1:path",
+	}
+	header := http.Header{}
+	httpReq := &http.Request{URL: path, Header: header}
+	fn := ValidatePrefixRequest()
+	mockHandler := &MockHandler{}
+	handlerFunc := fn(mockHandler)
+	writer := httptest.NewRecorder()
+	handlerFunc.ServeHTTP(writer, httpReq)
+	assert.Equal(t, writer.Code, 400)
+}
+
+func TestRequiredQueryParams_success(t *testing.T) {
+	path := "accountID=accId&prefix=accountId:accId/path1:path/runSequence:9/pipeline:level0"
+	url := &url.URL{
+		Host:     "localhost/blob/prefix/",
+		Path:     path,
+		RawQuery: path,
+	}
+
+	header := http.Header{}
+	httpReq := &http.Request{URL: url, Header: header}
+	fn := RequiredQueryParams("accountID", "prefix")
+	mockHandler := &MockHandler{}
+	handlerFunc := fn(mockHandler)
+	writer := httptest.NewRecorder()
+	handlerFunc.ServeHTTP(writer, httpReq)
+	assert.Equal(t, writer.Code, 200)
+}
+
+func TestRequiredQueryParams_error(t *testing.T) {
+	path := "prefix=accountId:accId/path1:path/runSequence:9/pipeline:level0"
+	url := &url.URL{
+		Host:     "localhost/blob/prefix/",
+		Path:     path,
+		RawQuery: path,
+	}
+
+	header := http.Header{}
+	httpReq := &http.Request{URL: url, Header: header}
+	fn := RequiredQueryParams("accountID", "prefix")
+	mockHandler := &MockHandler{}
+	handlerFunc := fn(mockHandler)
+	writer := httptest.NewRecorder()
+	handlerFunc.ServeHTTP(writer, httpReq)
+	assert.Equal(t, writer.Code, 404)
+}
+
+func TestCacheRequest_whenCacheDidntExists(t *testing.T) {
+	path := "accountID=accId&prefix=accountId:accId/path1:path/runSequence:9/pipeline:level0"
+	url := &url.URL{
+		Host:     "localhost/blob/prefix/",
+		Path:     path,
+		RawQuery: path,
+	}
+
+	cache := memory.New()
+
+	header := http.Header{}
+	httpReq := &http.Request{URL: url, Header: header}
+	fn := CacheRequest(cache)
+	mockHandler := &MockHandler{}
+	handlerFunc := fn(mockHandler)
+	writer := httptest.NewRecorder()
+	handlerFunc.ServeHTTP(writer, httpReq)
+	assert.Equal(t, writer.Code, 200)
+}
+
+func TestCacheRequest_whenCacheExistsWithStatusQueued(t *testing.T) {
+	prefix := "accountId:accId/path1:path/runSequence:9/pipeline:level0"
+	path := "accountID=accId&prefix=" + prefix
+	url := &url.URL{
+		Host:     "localhost/blob/prefix/",
+		Path:     path,
+		RawQuery: path,
+	}
+
+	info := entity.ResponsePrefixDownload{
+		Value:  "link",
+		Status: entity.QUEUED,
+	}
+
+	cache := memory.New()
+	cache.Create(context.Background(), prefix, info, time.Hour)
+
+	header := http.Header{}
+	httpReq := &http.Request{URL: url, Header: header}
+	fn := CacheRequest(cache)
+	mockHandler := &MockHandler{}
+	handlerFunc := fn(mockHandler)
+	writer := httptest.NewRecorder()
+	handlerFunc.ServeHTTP(writer, httpReq)
+	assert.Equal(t, writer.Code, 200)
+}
+
+func TestCacheRequest_whenCacheExistsWithStatusInProgress(t *testing.T) {
+	prefix := "accountId:accId/path1:path/runSequence:9/pipeline:level0"
+	path := "accountID=accId&prefix=" + prefix
+	url := &url.URL{
+		Host:     "localhost/blob/prefix/",
+		Path:     path,
+		RawQuery: path,
+	}
+
+	info := entity.ResponsePrefixDownload{
+		Value:  "link",
+		Status: entity.IN_PROGRESS,
+	}
+
+	cache := memory.New()
+	cache.Create(context.Background(), prefix, info, time.Hour)
+
+	header := http.Header{}
+	httpReq := &http.Request{URL: url, Header: header}
+	fn := CacheRequest(cache)
+	mockHandler := &MockHandler{}
+	handlerFunc := fn(mockHandler)
+	writer := httptest.NewRecorder()
+	handlerFunc.ServeHTTP(writer, httpReq)
+	assert.Equal(t, writer.Code, 200)
+}
+
+func TestCacheRequest_whenCacheExistsWithStatusSuccess(t *testing.T) {
+	prefix := "accountId:accId/path1:path/runSequence:9/pipeline:level0"
+	path := "accountID=accId&prefix=" + prefix
+	url := &url.URL{
+		Host:     "localhost/blob/prefix/",
+		Path:     path,
+		RawQuery: path,
+	}
+
+	info := entity.ResponsePrefixDownload{
+		Value:  "link",
+		Status: entity.SUCCESS,
+	}
+
+	cache := memory.New()
+	cache.Create(context.Background(), prefix, info, time.Hour)
+
+	header := http.Header{}
+	httpReq := &http.Request{URL: url, Header: header}
+	fn := CacheRequest(cache)
+	mockHandler := &MockHandler{}
+	handlerFunc := fn(mockHandler)
+	writer := httptest.NewRecorder()
+	handlerFunc.ServeHTTP(writer, httpReq)
+	assert.Equal(t, writer.Code, 200)
+}
+
+func TestCacheRequest_whenCacheExistsWithStatusError(t *testing.T) {
+	prefix := "accountId:accId/path1:path/runSequence:9/pipeline:level0"
+	path := "accountID=accId&prefix=" + prefix
+	url := &url.URL{
+		Host:     "localhost/blob/prefix/",
+		Path:     path,
+		RawQuery: path,
+	}
+
+	info := entity.ResponsePrefixDownload{
+		Value:   "link",
+		Status:  entity.ERROR,
+		Message: "err: generic error",
+	}
+
+	cache := memory.New()
+	cache.Create(context.Background(), prefix, info, time.Hour)
+
+	header := http.Header{}
+	httpReq := &http.Request{URL: url, Header: header}
+	fn := CacheRequest(cache)
+	mockHandler := &MockHandler{}
+	handlerFunc := fn(mockHandler)
+	writer := httptest.NewRecorder()
+	handlerFunc.ServeHTTP(writer, httpReq)
+	assert.Equal(t, writer.Code, 200)
+	assert.Equal(t, false, cache.Exists(context.Background(), path))
 }

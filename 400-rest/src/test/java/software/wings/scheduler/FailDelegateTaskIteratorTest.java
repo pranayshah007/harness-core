@@ -33,6 +33,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapability;
+import io.harness.delegate.task.TaskFailureReason;
 import io.harness.delegate.task.http.HttpTaskParameters;
 import io.harness.iterator.FailDelegateTaskIterator;
 import io.harness.iterator.FailDelegateTaskIteratorHelper;
@@ -365,7 +366,7 @@ public class FailDelegateTaskIteratorTest extends WingsBaseTest {
             .validationCompleteDelegateIds(ImmutableSet.of("del1", "del2"))
             .build();
     persistence.save(delegateTask);
-    failDelegateTaskIteratorHelper.endTasks(asList(delegateTask.getUuid()), false);
+    failDelegateTaskIteratorHelper.endTasks(asList(delegateTask.getUuid()), false, TaskFailureReason.NOT_ASSIGNED);
     assertThat(persistence.createQuery(DelegateTask.class).get()).isNull();
   }
 

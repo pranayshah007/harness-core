@@ -28,7 +28,7 @@ public class ParameterFieldExpressionProcessor {
    * EngineExpressionEvaluator)
    * Example of EngineExpressionService - Makes grpc call to pipeline-service if object is of type ParameterField.
    * Example: CD service wants to pass resolve its expression inside nested object like infra, service, env (like
-   * CDExpressionResolveFunctor, etc.) to resolve.
+   * CDExpressionResolver, etc.) to resolve.
    *
    * Example of EngineExpressionEvaluator - CI service wants to pass its expressionEvaluator (like
    * StrategyExpressionEvaluator, etc.) to resolve using only current evaluator

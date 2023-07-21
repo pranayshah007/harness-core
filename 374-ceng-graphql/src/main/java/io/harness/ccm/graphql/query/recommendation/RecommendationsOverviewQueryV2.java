@@ -12,6 +12,7 @@ import static io.harness.ccm.commons.beans.InstanceType.ECS_TASK_EC2;
 import static io.harness.ccm.commons.beans.InstanceType.ECS_TASK_FARGATE;
 import static io.harness.ccm.commons.beans.InstanceType.K8S_POD;
 import static io.harness.ccm.commons.beans.InstanceType.K8S_POD_FARGATE;
+import static io.harness.ccm.commons.constants.ViewFieldConstants.CLOUD_PROVIDER_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.CLOUD_SERVICE_NAME_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.CLUSTER_NAME_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.INSTANCE_NAME_FIELD_ID;
@@ -24,6 +25,7 @@ import static io.harness.ccm.rbac.CCMRbacHelperImpl.RESOURCE_FOLDER;
 import static io.harness.ccm.rbac.CCMRbacPermissions.PERSPECTIVE_VIEW;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.BUSINESS_MAPPING;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.CLUSTER;
+import static io.harness.ccm.views.entities.ViewFieldIdentifier.COMMON;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.LABEL;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.AFTER;
 import static io.harness.ccm.views.graphql.ViewsQueryHelper.getPerspectiveIdFromMetadataFilter;
@@ -531,10 +533,7 @@ public class RecommendationsOverviewQueryV2 {
       final ViewFieldIdentifier viewFieldIdentifier = idCondition.getViewField().getIdentifier();
       if (viewFieldIdentifier == CLUSTER && RECOMMENDATION_FILTER_COLUMNS.contains(fieldId)) {
         condition = condition.and(constructViewFilterCondition(idCondition));
-        final String resourceType = getRecommendationResourceType(fieldId);
-        if (Objects.nonNull(resourceType)) {
-          resourceTypes.add(resourceType);
-        }
+        resourceTypes.addAll(getRecommendationResourceType(fieldId));
       } else if (viewFieldIdentifier == BUSINESS_MAPPING) {
         final String businessMappingId = idCondition.getViewField().getFieldId();
         if (Objects.nonNull(businessMappingId)) {
@@ -551,6 +550,11 @@ public class RecommendationsOverviewQueryV2 {
           final TableResult result =
               getWorkloadAndCloudServiceNamesTableResult(accountId, qlCEViewTimeFilters, idCondition);
           condition = condition.and(getWorkloadAndCloudServiceNamesConditions(result));
+        }
+      } else if (viewFieldIdentifier == COMMON && fieldId.equals(CLOUD_PROVIDER_FIELD_ID)) {
+        if (idCondition.getValues().contains("CLUSTER")) {
+          resourceTypes.add(ResourceType.WORKLOAD.name());
+          resourceTypes.add(ResourceType.NODE_POOL.name());
         }
       }
     }
@@ -673,17 +677,21 @@ public class RecommendationsOverviewQueryV2 {
     return null;
   }
 
-  private static String getRecommendationResourceType(final String fieldId) {
-    String resourceType = null;
+  private static Set<String> getRecommendationResourceType(final String fieldId) {
+    Set<String> resourceType = new HashSet<>();
     switch (fieldId) {
       case WORKLOAD_NAME_FIELD_ID:
-        resourceType = ResourceType.WORKLOAD.name();
+        resourceType.add(ResourceType.WORKLOAD.name());
         break;
       case INSTANCE_NAME_FIELD_ID:
-        resourceType = ResourceType.NODE_POOL.name();
+        resourceType.add(ResourceType.NODE_POOL.name());
         break;
       case CLOUD_SERVICE_NAME_FIELD_ID:
-        resourceType = ResourceType.ECS_SERVICE.name();
+        resourceType.add(ResourceType.ECS_SERVICE.name());
+        break;
+      case CLUSTER_NAME_FIELD_ID:
+        resourceType.add(ResourceType.WORKLOAD.name());
+        resourceType.add(ResourceType.NODE_POOL.name());
         break;
       default:
         break;

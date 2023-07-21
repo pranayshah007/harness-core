@@ -39,6 +39,7 @@ public class OutcomeExpressionConstants {
   public final String TERRAFORM_CLOUD_CONFIG = "terraformCloudConfig";
   public final String DEPLOYMENT_INFO_OUTCOME = "deploymentInfoOutcome";
   public final String HELM_DEPLOY_OUTCOME = "helmDeployOutcome";
+  public final String HELM_DEPLOY_RELEASE_OUTCOME = "helmDeployRelease";
   public final String HELM_ROLLBACK_OUTCOME = "helmRollbackOutcome";
   public final String SERVERLESS_AWS_LAMBDA_ROLLBACK_DATA_OUTCOME = "serverlessAwsLambdaRollbackDataOutcome";
   public final String SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_DATA_OUTCOME_V2 =

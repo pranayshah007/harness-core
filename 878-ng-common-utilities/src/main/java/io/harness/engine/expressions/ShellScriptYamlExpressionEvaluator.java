@@ -6,18 +6,20 @@
  */
 
 package io.harness.engine.expressions;
+
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.ExpressionEvaluatorUtils;
-import io.harness.expression.ResolveObjectResponse;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.ng.core.template.TemplateEntityConstants;
-import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.expression.EngineExpressionEvaluatorResolver;
+import io.harness.pms.expression.ParameterFieldResolverFunctor;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.validation.InputSetValidatorFactory;
 
 import com.google.common.collect.ImmutableList;
 import java.io.IOException;
@@ -34,16 +36,19 @@ public class ShellScriptYamlExpressionEvaluator extends EngineExpressionEvaluato
   protected final String yaml;
 
   private int functorToken;
+  private InputSetValidatorFactory inputSetValidatorFactory;
   private static final String YAML_EXPRESSION_PREFIX = "__yamlExpression";
   private static final String SECRETS_PREFIX = "secrets";
   private static final String YAML_EXPRESSION_CONNECTOR_PREFIX = "__yamlExpression.connector";
   private static final String CONNECTOR_ROOT_FIELD = "connector";
   private static final String SPEC_FIELD = "spec";
 
-  public ShellScriptYamlExpressionEvaluator(String yaml, int functorToken) {
+  public ShellScriptYamlExpressionEvaluator(
+      String yaml, int functorToken, InputSetValidatorFactory inputSetValidatorFactory) {
     super(null);
     this.yaml = yaml;
     this.functorToken = functorToken;
+    this.inputSetValidatorFactory = inputSetValidatorFactory;
   }
 
   @Override
@@ -80,29 +85,8 @@ public class ShellScriptYamlExpressionEvaluator extends EngineExpressionEvaluato
   public Object resolve(Object o, boolean skipUnresolvedExpressionsCheck) {
     ExpressionMode expressionMode = skipUnresolvedExpressionsCheck ? ExpressionMode.RETURN_NULL_IF_UNRESOLVED
                                                                    : ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED;
-    return ExpressionEvaluatorUtils.updateExpressions(o, new ShellScriptFunctorImpl(this, expressionMode));
-  }
-
-  public static class ShellScriptFunctorImpl extends ResolveFunctorImpl {
-    public ShellScriptFunctorImpl(EngineExpressionEvaluator expressionEvaluator, ExpressionMode expressionMode) {
-      super(expressionEvaluator, expressionMode);
-    }
-
-    @Override
-    public ResolveObjectResponse processObject(Object o) {
-      if (!(o instanceof ParameterField)) {
-        return new ResolveObjectResponse(false, null);
-      }
-
-      ParameterField<?> parameterField = (ParameterField<?>) o;
-      if (!parameterField.isExpression()) {
-        return new ResolveObjectResponse(false, null);
-      }
-
-      String processedExpressionValue = processString(parameterField.getExpressionValue());
-      parameterField.updateWithValue(processedExpressionValue);
-
-      return new ResolveObjectResponse(true, parameterField);
-    }
+    return ExpressionEvaluatorUtils.updateExpressions(o,
+        new ParameterFieldResolverFunctor(
+            new EngineExpressionEvaluatorResolver(this), inputSetValidatorFactory, expressionMode));
   }
 }

@@ -202,6 +202,11 @@ public class AdminAccountServiceImpl implements AdminAccountService {
   }
 
   @Override
+  public boolean disableIpAllowList(String accountId) {
+    return accountService.disableIpAllowList(accountId);
+  }
+
+  @Override
   public boolean updateIsProductLed(String accountId, boolean isProductLed) {
     accountService.updateIsProductLed(accountId, isProductLed);
     return true;

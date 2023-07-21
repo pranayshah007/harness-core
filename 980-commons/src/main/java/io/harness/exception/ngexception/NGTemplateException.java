@@ -11,14 +11,20 @@ import static io.harness.eraro.ErrorCode.TEMPLATE_EXCEPTION;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.Level;
+import io.harness.eraro.ResponseMessage;
+import io.harness.exception.HasResponseMessages;
 import io.harness.exception.WingsException;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.List;
 
 @OwnedBy(HarnessTeam.CDC)
-public class NGTemplateException extends WingsException {
+public class NGTemplateException extends WingsException implements HasResponseMessages {
   private static final String MESSAGE_ARG = "message";
+  private List<ResponseMessage> responseMessages = new ArrayList<>();
 
   public NGTemplateException(String message, EnumSet<ReportTarget> reportTarget, ErrorMetadataDTO metadata) {
     super(message, null, TEMPLATE_EXCEPTION, Level.ERROR, reportTarget, null, metadata);
@@ -33,5 +39,19 @@ public class NGTemplateException extends WingsException {
   public NGTemplateException(String message, Throwable cause) {
     super(message, cause, TEMPLATE_EXCEPTION, Level.ERROR, null, null);
     super.param(MESSAGE_ARG, message);
+  }
+
+  public NGTemplateException(String message, List<ResponseMessage> responseMessages) {
+    super(message, null, TEMPLATE_EXCEPTION, Level.ERROR, null, null);
+    super.param(MESSAGE_ARG, message);
+    this.responseMessages = responseMessages;
+  }
+
+  @Override
+  public List<ResponseMessage> getResponseMessages() {
+    if (EmptyPredicate.isEmpty(responseMessages)) {
+      return new ArrayList<>(0);
+    }
+    return responseMessages;
   }
 }

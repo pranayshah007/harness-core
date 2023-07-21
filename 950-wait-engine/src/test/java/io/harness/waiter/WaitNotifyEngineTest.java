@@ -52,6 +52,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
@@ -66,6 +68,8 @@ public class WaitNotifyEngineTest extends WaitEngineTestBase {
   private static AtomicInteger timeoutCallCount;
   private static Map<String, ResponseData> responseMap;
   private static List<ProgressData> progressDataList;
+  private static CountDownLatch barrier;
+  private static CountDownLatch[] barriers;
 
   @Inject private TimeoutEngine timeoutEngine;
   @Inject private WaitNotifyEngine waitNotifyEngine;
@@ -433,16 +437,24 @@ public class WaitNotifyEngineTest extends WaitEngineTestBase {
   /**
    * Should wait for progress on correlation id.
    */
+  // CREATES A WAIT INSTANCE AND VERIFY THAT TWO PROGRESS EVENTS ARE TRIGGERED TO THE SAME CORRELATION. AS THE CODE
+  // NATURE IS MULTI THREAD, WE NEED TO ENFORCE THE FLOW EXECUTION TO AVOID A CASE WHEN PROGRESS IS CONSUMED MORE FAST
+  // THAN WE CAN READ THE PERSISTED INFORMATION.
   @Test
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void shouldWaitForProgressOnCorrelationIdUsingKryoWithoutReference() throws InterruptedException {
     String uuid = generateUuid();
-    try (MaintenanceGuard guard = new MaintenanceGuard(false)) {
-      String waitInstanceId =
-          waitNotifyEngine.waitForAllOn(TEST_PUBLISHER, new TestNotifyCallback(), new TestProgressCallback(), uuid);
+    try (MaintenanceGuard ignore = new MaintenanceGuard(false)) {
+      // USED AT END TO VERIFY NOTIFIED PROGRESS EVENTS
+      barrier = new CountDownLatch(2);
+      // USED AFTER POST PROGRESS EVENTS
+      barriers = new CountDownLatch[] {new CountDownLatch(1), new CountDownLatch(1)};
 
+      String waitInstanceId =
+          waitNotifyEngine.waitForAllOn(TEST_PUBLISHER, new TestNotifyCallback(), new BarrierProgressCallback(), uuid);
       assertThat(persistence.get(WaitInstance.class, waitInstanceId)).isNotNull();
+
       StringNotifyProgressData data1 = StringNotifyProgressData.builder().data("progress1-" + uuid).build();
       waitNotifyEngine.progressOn(uuid, data1, true);
 
@@ -454,6 +466,7 @@ public class WaitNotifyEngineTest extends WaitEngineTestBase {
       ProgressData progressDataResult =
           (ProgressData) referenceFalseKryoSerializer.asInflatedObject(progressUpdate.getProgressData());
       assertThat(progressDataResult).isEqualTo(data1);
+      barriers[0].countDown();
 
       StringNotifyProgressData data2 = StringNotifyProgressData.builder().data("progress2-" + uuid).build();
       waitNotifyEngine.progressOn(uuid, data2, true);
@@ -466,10 +479,9 @@ public class WaitNotifyEngineTest extends WaitEngineTestBase {
       ProgressData progressDataResult2 =
           (ProgressData) referenceFalseKryoSerializer.asInflatedObject(progressUpdate2.get(1).getProgressData());
       assertThat(progressDataResult2).isEqualTo(data2);
+      barriers[1].countDown();
 
-      while (progressCallCount.get() < 2) {
-        Thread.yield();
-      }
+      barrier.await(7L, TimeUnit.SECONDS);
 
       StringNotifyProgressData result1 = (StringNotifyProgressData) progressDataList.get(0);
       StringNotifyProgressData result2 = (StringNotifyProgressData) progressDataList.get(1);
@@ -477,7 +489,6 @@ public class WaitNotifyEngineTest extends WaitEngineTestBase {
       assertThat(progressDataList).hasSize(2);
       assertThat(Arrays.asList(result1.getData(), result2.getData()))
           .containsExactlyInAnyOrder(data1.getData(), data2.getData());
-      assertThat(progressCallCount.get()).isEqualTo(2);
     }
   }
 
@@ -521,6 +532,22 @@ public class WaitNotifyEngineTest extends WaitEngineTestBase {
     public void notify(String correlationId, ProgressData progressData) {
       progressCallCount.incrementAndGet();
       progressDataList.add(progressData);
+    }
+  }
+
+  // SAVE PROGRESS DATA AND WAIT FOR COUNT DOWN OF THE CURRENT BARRIER EXECUTION, THEN COUNT DOWN THE FINAL BARRIER THAT
+  // HAVE THE SAME COUNT OF THE EXPECTED COLLECTION SIZE.
+  private static class BarrierProgressCallback implements ProgressCallback {
+    @Override
+    public void notify(String correlationId, ProgressData progressData) {
+      progressDataList.add(progressData);
+      try {
+        barriers[progressDataList.size()].await();
+        barrier.countDown();
+
+      } catch (InterruptedException e) {
+        // IGNORE
+      }
     }
   }
 }

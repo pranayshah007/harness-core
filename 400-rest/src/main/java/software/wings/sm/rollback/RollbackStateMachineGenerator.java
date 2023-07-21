@@ -38,6 +38,7 @@ import software.wings.beans.PhaseStepType;
 import software.wings.beans.Pipeline;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.WorkflowPhase;
 import software.wings.beans.concurrency.ConcurrencyStrategy;
 import software.wings.exception.InvalidRollbackException;
@@ -74,7 +75,10 @@ public class RollbackStateMachineGenerator {
 
   public StateMachine generateForRollbackExecution(@NotNull String appId, @NotNull String successfulExecutionId)
       throws InvalidRollbackException {
-    WorkflowExecution successfulExecution = workflowExecutionService.getWorkflowExecution(appId, successfulExecutionId);
+    String[] fields = {
+        WorkflowExecutionKeys.pipelineSummary, WorkflowExecutionKeys.status, WorkflowExecutionKeys.workflowId};
+    WorkflowExecution successfulExecution =
+        workflowExecutionService.getWorkflowExecution(appId, successfulExecutionId, fields);
     if (!validForRollback(successfulExecution)) {
       throw new InvalidRollbackException("Execution Not Valid For Rollback", ErrorCode.INVALID_ROLLBACK);
     }

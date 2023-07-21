@@ -43,6 +43,7 @@ import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TemplateExpression;
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.persistence.artifact.Artifact;
 import software.wings.service.PhaseSubWorkflowHelperService;
@@ -280,11 +281,9 @@ public class PhaseSubWorkflow extends SubWorkflowState {
     if (isRollback() && workflowStandardParams.getWorkflowElement() != null) {
       // if last successful deployment found, save it in sweeping output
       if (workflowStandardParams.getWorkflowElement().getLastGoodDeploymentUuid() != null) {
-        WorkflowExecution workflowExecution =
-            workflowExecutionService.getWorkflowExecution(workflowStandardParams.getAppId(),
-                workflowStandardParams.getWorkflowElement()
-                    .getLastGoodDeploymentUuid()); // TODO: performance issue -filter query to get only execution args
-        // and artifacts
+        WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(
+            workflowStandardParams.getAppId(), workflowStandardParams.getWorkflowElement().getLastGoodDeploymentUuid(),
+            WorkflowExecutionKeys.executionArgs);
 
         if (workflowExecution == null) {
           log.error("ERROR: Last Good Deployment ID is not found - lastGoodDeploymentUuid: {}",
@@ -303,7 +302,9 @@ public class PhaseSubWorkflow extends SubWorkflowState {
     if (workflowStandardParams.getWorkflowElement() != null
         && workflowStandardParams.getWorkflowElement().getPipelineDeploymentUuid() != null) {
       WorkflowExecution pipelineExecution = workflowExecutionService.getWorkflowExecution(
-          workflowStandardParams.getAppId(), workflowStandardParams.getWorkflowElement().getPipelineDeploymentUuid());
+          workflowStandardParams.getAppId(), workflowStandardParams.getWorkflowElement().getPipelineDeploymentUuid(),
+          WorkflowExecutionKeys.pipelineExecution);
+
       if (pipelineExecution != null && pipelineExecution.getPipelineExecution().getPipelineStageExecutions() != null) {
         for (PipelineStageExecution pse : pipelineExecution.getPipelineExecution().getPipelineStageExecutions()) {
           if (pse.getWorkflowExecutions() != null) {

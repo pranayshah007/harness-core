@@ -48,6 +48,7 @@ import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.grpc.server.PipelineServiceGrpcModule;
 import io.harness.hsqs.client.HsqsServiceClientModule;
+import io.harness.hsqs.client.beans.HsqsDequeueConfig;
 import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
@@ -753,6 +754,13 @@ public class PipelineServiceModule extends AbstractModule {
         configuration.getPlanCreatorMergeServicePoolConfig().getIdleTime(),
         configuration.getPlanCreatorMergeServicePoolConfig().getTimeUnit(),
         new ThreadFactoryBuilder().setNameFormat("PipelineExecutorService-%d").build());
+  }
+
+  @Provides
+  @Singleton
+  @Named("webhookEventHsqsDequeueConfig")
+  public HsqsDequeueConfig getWebhookEventHsqsDequeueConfig() {
+    return configuration.getWebhookEventHsqsDequeueConfig();
   }
 
   @Provides

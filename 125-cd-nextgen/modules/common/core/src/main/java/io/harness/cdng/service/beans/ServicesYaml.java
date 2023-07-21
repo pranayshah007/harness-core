@@ -8,9 +8,11 @@
 package io.harness.cdng.service.beans;
 
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.utils.YamlConstants.INPUT;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.beans.SwaggerConstants;
+import io.harness.common.NGExpressionUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.beans.VisitableChild;
@@ -53,6 +55,12 @@ public class ServicesYaml implements Visitable {
       for (ServiceYamlV2 serviceYamlV2 : values.getValue()) {
         children.add(VisitableChild.builder().value(serviceYamlV2).fieldName("values").build());
       }
+    } else if (NGExpressionUtils.isRuntimeField(values.getExpressionValue())) {
+      ServiceYamlV2 serviceYamlV2 = ServiceYamlV2.builder()
+                                        .serviceRef(ParameterField.createExpressionField(true, INPUT, null, true))
+                                        .serviceInputs(ParameterField.createExpressionField(true, INPUT, null, false))
+                                        .build();
+      children.add(VisitableChild.builder().value(serviceYamlV2).fieldName("values").build());
     }
     return VisitableChildren.builder().visitableChildList(children).build();
   }

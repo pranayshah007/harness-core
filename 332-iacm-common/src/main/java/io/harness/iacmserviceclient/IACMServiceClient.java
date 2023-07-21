@@ -32,6 +32,11 @@ public interface IACMServiceClient {
       @Path("workspaceId") String workspaceId, @Header("Harness-Token") String globalToken,
       @Header("Harness-Account") String accountId);
 
+  @GET(IACMCommonEndpointConstants.IACM_SERVICE_GET_WORKSPACE_RESOUCES_ENDPOINT)
+  Call<JsonObject> getWorkspaceResoures(@Path("org") String org, @Path("project") String project,
+      @Path("workspaceId") String workspaceId, @Header("Harness-Token") String globalToken,
+      @Header("Harness-Account") String accountId);
+
   @POST(IACMCommonEndpointConstants.IACM_SERVICE_POST_EXECUTION)
   Call<JsonObject> postIACMExecution(@Path("org") String org, @Path("project") String project,
       @Body Execution execution, @Header("Harness-Token") String globalToken,

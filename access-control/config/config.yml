@@ -77,6 +77,7 @@ eventsConfig:
       CATrustStorePath: ${EVENTS_CONFIG_REDIS_SSL_CA_TRUST_STORE_PATH:-""}
       CATrustStorePassword: ${EVENTS_CONFIG_REDIS_SSL_CA_TRUST_STORE_PASSWORD:-""}
   enabled: true
+  threads: ${EVENTS_CONFIG_CONSUMER_THREADS:-1}
 
 redisLockConfig:
   sentinel: ${LOCK_CONFIG_USE_SENTINEL:-false}
