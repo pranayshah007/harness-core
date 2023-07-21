@@ -627,15 +627,6 @@ public class UserServiceImpl implements UserService {
       AccountLicenseDTO response = NGRestUtils.getResponse(adminLicenseHttpClient.getAccountLicense(accountId));
       Map<ModuleType, List<ModuleLicenseDTO>> allModuleLicenses = response.getAllModuleLicenses();
 
-      //      Optional<ModuleLicenseDTO> highestEditionLicense =
-      //          allModuleLicenses.values().stream().flatMap(Collection::stream).reduce((compareLicense,
-      //          currentLicense) -> {
-      //            if (compareLicense.getEdition().compareTo(currentLicense.getEdition()) < 0) {
-      //              return currentLicense;
-      //            }
-      //            return compareLicense;
-      //          });
-
       Optional<ModuleLicenseDTO> highestEditionLicense = allModuleLicenses.values()
                                                              .stream()
                                                              .flatMap(Collection::stream)
@@ -660,9 +651,9 @@ public class UserServiceImpl implements UserService {
       } else {
         return "FREE";
       }
-    } catch (Exception e) {
+    } catch (InvalidRequestException e) {
       log.warn("Exception occurred while fetching NG licenseInfo {}", e.getMessage());
-      throw new GeneralException("Something went wrong on our end");
+      throw new InvalidRequestException("Error while fetching NG Licenses");
     }
   }
   public List<String> getUserAccountIds(String userId) {
