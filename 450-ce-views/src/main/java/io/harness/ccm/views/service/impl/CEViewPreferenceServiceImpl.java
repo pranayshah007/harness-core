@@ -12,6 +12,8 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 import static java.lang.Boolean.parseBoolean;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.commons.dao.CEMetadataRecordDao;
+import io.harness.ccm.commons.entities.batch.CEMetadataRecord;
 import io.harness.ccm.views.entities.AWSViewPreferenceCost;
 import io.harness.ccm.views.entities.AWSViewPreferences;
 import io.harness.ccm.views.entities.CEView;
@@ -50,6 +52,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.Nullable;
 
 @Singleton
 @Slf4j
@@ -86,11 +89,12 @@ public class CEViewPreferenceServiceImpl implements CEViewPreferenceService {
 
   @Inject @Named("PRIVILEGED") private NGSettingsClient settingsClient;
   @Inject private ViewParametersHelper viewParametersHelper;
+  @Inject private CEMetadataRecordDao ceMetadataRecordDao;
 
   private final LoadingCache<String, List<SettingResponseDTO>> settingsResponseCache =
       Caffeine.newBuilder()
-          .maximumSize(5)
-          .expireAfterWrite(30, TimeUnit.SECONDS)
+          .maximumSize(50)
+          .expireAfterWrite(10, TimeUnit.SECONDS)
           .build(accountId
               -> NGRestUtils.getResponse(settingsClient.listSettings(accountId, null, null, SettingCategory.CE,
                   SettingIdentifiers.PERSPECTIVE_PREFERENCES_GROUP_IDENTIFIER)));
@@ -99,16 +103,20 @@ public class CEViewPreferenceServiceImpl implements CEViewPreferenceService {
   public ViewPreferences getCEViewPreferences(
       final CEView ceView, final Set<String> viewPreferencesFieldsToUpdateWithDefaultSettings) {
     ViewPreferences viewPreferences = ceView.getViewPreferences();
-    final List<SettingResponseDTO> settingsResponse = getDefaultSettingResponse(ceView.getAccountId());
-    if (!Lists.isNullOrEmpty(settingsResponse)) {
-      final List<SettingDTO> settingsDTO =
-          settingsResponse.stream().map(SettingResponseDTO::getSetting).collect(Collectors.toList());
-      final Map<String, String> settingsMap =
-          settingsDTO.stream().collect(Collectors.toMap(SettingDTO::getIdentifier, SettingDTO::getValue));
-      viewPreferences = getViewPreferences(ceView, settingsMap, viewPreferencesFieldsToUpdateWithDefaultSettings);
-    } else {
-      log.error(
-          "Unable to fetch perspective preferences account default settings for account: {}", ceView.getAccountId());
+    try {
+      final List<SettingResponseDTO> settingsResponse = getDefaultSettingResponse(ceView.getAccountId());
+      if (!Lists.isNullOrEmpty(settingsResponse)) {
+        final List<SettingDTO> settingsDTO =
+            settingsResponse.stream().map(SettingResponseDTO::getSetting).collect(Collectors.toList());
+        final Map<String, String> settingsMap =
+            settingsDTO.stream().collect(Collectors.toMap(SettingDTO::getIdentifier, SettingDTO::getValue));
+        viewPreferences = getViewPreferences(ceView, settingsMap, viewPreferencesFieldsToUpdateWithDefaultSettings);
+      } else {
+        log.error(
+            "Unable to fetch perspective preferences account default settings for account: {}", ceView.getAccountId());
+      }
+    } catch (final Exception exception) {
+      log.error("Exception while getting perspective preferences for ceView: {}", ceView, exception);
     }
     return viewPreferences;
   }
@@ -125,47 +133,52 @@ public class CEViewPreferenceServiceImpl implements CEViewPreferenceService {
 
   private ViewPreferences getViewPreferences(final CEView ceView, final Map<String, String> settingsMap,
       final Set<String> viewPreferencesFieldsToUpdateWithDefaultSettings) {
-    ViewPreferences viewPreferences;
-    final Set<ViewFieldIdentifier> dataSources = viewParametersHelper.getDataSourcesFromCEView(ceView);
-    if (Objects.nonNull(ceView.getViewPreferences())) {
-      viewPreferences = getViewPreferencesFromCEView(
-          ceView, settingsMap, dataSources, viewPreferencesFieldsToUpdateWithDefaultSettings);
-    } else {
-      viewPreferences = getDefaultViewPreferences(ceView, settingsMap, dataSources);
-    }
-    return viewPreferences;
+    final CEMetadataRecord ceMetadataRecord = getCeMetadataRecord(ceView.getAccountId());
+    return Objects.nonNull(ceView.getViewPreferences())
+        ? getViewPreferencesFromCEView(
+            ceView, ceMetadataRecord, settingsMap, viewPreferencesFieldsToUpdateWithDefaultSettings)
+        : getDefaultViewPreferences(ceView, ceMetadataRecord, settingsMap);
   }
 
-  private ViewPreferences getViewPreferencesFromCEView(final CEView ceView, final Map<String, String> settingsMap,
-      final Set<ViewFieldIdentifier> dataSources, final Set<String> viewPreferencesFieldsToUpdateWithDefaultSettings) {
+  @Nullable
+  private CEMetadataRecord getCeMetadataRecord(final String accountId) {
+    final CEMetadataRecord ceMetadataRecord = ceMetadataRecordDao.getByAccountId(accountId);
+    if (Objects.isNull(ceMetadataRecord)) {
+      log.error("CEMetadataRecord is null for accountId: {}", accountId);
+    }
+    return ceMetadataRecord;
+  }
+
+  private ViewPreferences getViewPreferencesFromCEView(final CEView ceView, final CEMetadataRecord ceMetadataRecord,
+      final Map<String, String> settingsMap, final Set<String> viewPreferencesFieldsToUpdateWithDefaultSettings) {
     return ViewPreferences.builder()
         .includeOthers(getBooleanSettingValue(ceView.getViewPreferences().getIncludeOthers(), settingsMap,
             SettingIdentifiers.SHOW_OTHERS_IDENTIFIER, viewPreferencesFieldsToUpdateWithDefaultSettings))
         .includeUnallocatedCost(getBooleanSettingValue(ceView.getViewPreferences().getIncludeOthers(), settingsMap,
                                     SettingIdentifiers.SHOW_UNALLOCATED_CLUSTER_COST_IDENTIFIER,
                                     viewPreferencesFieldsToUpdateWithDefaultSettings)
-            && viewParametersHelper.isClusterDataSources(dataSources))
+            && viewParametersHelper.isClusterDataSources(viewParametersHelper.getDataSourcesFromCEView(ceView)))
         .showAnomalies(getBooleanSettingValue(ceView.getViewPreferences().getShowAnomalies(), settingsMap,
             SettingIdentifiers.SHOW_ANOMALIES_IDENTIFIER, viewPreferencesFieldsToUpdateWithDefaultSettings))
-        .awsPreferences(
-            getAWSViewPreferences(ceView, settingsMap, dataSources, viewPreferencesFieldsToUpdateWithDefaultSettings))
-        .gcpPreferences(
-            getGCPViewPreferences(ceView, settingsMap, dataSources, viewPreferencesFieldsToUpdateWithDefaultSettings))
+        .awsPreferences(getAWSViewPreferences(
+            ceView, ceMetadataRecord, settingsMap, viewPreferencesFieldsToUpdateWithDefaultSettings))
+        .gcpPreferences(getGCPViewPreferences(
+            ceView, ceMetadataRecord, settingsMap, viewPreferencesFieldsToUpdateWithDefaultSettings))
         .build();
   }
 
   private ViewPreferences getDefaultViewPreferences(
-      final CEView ceView, final Map<String, String> settingsMap, final Set<ViewFieldIdentifier> dataSources) {
+      final CEView ceView, final CEMetadataRecord ceMetadataRecord, final Map<String, String> settingsMap) {
     return ViewPreferences.builder()
         .includeOthers(getBooleanSettingValue(settingsMap, SettingIdentifiers.SHOW_OTHERS_IDENTIFIER))
         .includeUnallocatedCost(
             getBooleanSettingValue(settingsMap, SettingIdentifiers.SHOW_UNALLOCATED_CLUSTER_COST_IDENTIFIER)
-            && viewParametersHelper.isClusterDataSources(new HashSet<>(dataSources)))
+            && viewParametersHelper.isClusterDataSources(viewParametersHelper.getDataSourcesFromCEView(ceView)))
         .showAnomalies(getBooleanSettingValue(settingsMap, SettingIdentifiers.SHOW_ANOMALIES_IDENTIFIER))
         .awsPreferences(
-            getAWSViewPreferences(ceView, settingsMap, dataSources, getAWSViewPreferencesSettingIdentifiers()))
+            getAWSViewPreferences(ceView, ceMetadataRecord, settingsMap, getAWSViewPreferencesSettingIdentifiers()))
         .gcpPreferences(
-            getGCPViewPreferences(ceView, settingsMap, dataSources, getGCPViewPreferencesSettingIdentifiers()))
+            getGCPViewPreferences(ceView, ceMetadataRecord, settingsMap, getGCPViewPreferencesSettingIdentifiers()))
         .build();
   }
 
@@ -180,10 +193,21 @@ public class CEViewPreferenceServiceImpl implements CEViewPreferenceService {
         SettingIdentifiers.INCLUDE_GCP_DISCOUNTS_IDENTIFIER, SettingIdentifiers.INCLUDE_GCP_TAXES_IDENTIFIER);
   }
 
-  private GCPViewPreferences getGCPViewPreferences(final CEView ceView, final Map<String, String> settingsMap,
-      final Set<ViewFieldIdentifier> dataSources, final Set<String> viewPreferencesFieldsToUpdateWithDefaultSettings) {
+  private boolean isViewFieldIdentifierPresent(final CEView ceView, final ViewFieldIdentifier viewFieldIdentifier) {
+    return Objects.nonNull(ceView) && Objects.nonNull(ceView.getDataSources())
+        && ceView.getDataSources().contains(viewFieldIdentifier);
+  }
+
+  private boolean isGCPConnectorConfigured(final CEMetadataRecord ceMetadataRecord) {
+    return Objects.isNull(ceMetadataRecord) || Boolean.TRUE.equals(ceMetadataRecord.getGcpConnectorConfigured());
+  }
+
+  private GCPViewPreferences getGCPViewPreferences(final CEView ceView, final CEMetadataRecord ceMetadataRecord,
+      final Map<String, String> settingsMap, final Set<String> viewPreferencesFieldsToUpdateWithDefaultSettings) {
     GCPViewPreferences gcpViewPreferences = null;
-    if (Objects.nonNull(ceView) && Objects.nonNull(dataSources) && dataSources.contains(ViewFieldIdentifier.GCP)) {
+    if (isViewFieldIdentifierPresent(ceView, ViewFieldIdentifier.GCP)
+        || (isViewFieldIdentifierPresent(ceView, ViewFieldIdentifier.BUSINESS_MAPPING)
+            && isGCPConnectorConfigured(ceMetadataRecord))) {
       if (Objects.nonNull(ceView.getViewPreferences())
           && Objects.nonNull(ceView.getViewPreferences().getGcpPreferences())) {
         gcpViewPreferences =
@@ -213,10 +237,12 @@ public class CEViewPreferenceServiceImpl implements CEViewPreferenceService {
         .build();
   }
 
-  private AWSViewPreferences getAWSViewPreferences(final CEView ceView, final Map<String, String> settingsMap,
-      final Set<ViewFieldIdentifier> dataSources, final Set<String> viewPreferencesFieldsToUpdateWithDefaultSettings) {
+  private AWSViewPreferences getAWSViewPreferences(final CEView ceView, final CEMetadataRecord ceMetadataRecord,
+      final Map<String, String> settingsMap, final Set<String> viewPreferencesFieldsToUpdateWithDefaultSettings) {
     AWSViewPreferences awsViewPreferences = null;
-    if (Objects.nonNull(ceView) && Objects.nonNull(dataSources) && dataSources.contains(ViewFieldIdentifier.AWS)) {
+    if (isViewFieldIdentifierPresent(ceView, ViewFieldIdentifier.AWS)
+        || (isViewFieldIdentifierPresent(ceView, ViewFieldIdentifier.BUSINESS_MAPPING)
+            && isAWSConnectorConfigured(ceMetadataRecord))) {
       if (Objects.nonNull(ceView.getViewPreferences())
           && Objects.nonNull(ceView.getViewPreferences().getAwsPreferences())) {
         awsViewPreferences =
@@ -226,6 +252,10 @@ public class CEViewPreferenceServiceImpl implements CEViewPreferenceService {
       }
     }
     return awsViewPreferences;
+  }
+
+  private boolean isAWSConnectorConfigured(final CEMetadataRecord ceMetadataRecord) {
+    return Objects.isNull(ceMetadataRecord) || Boolean.TRUE.equals(ceMetadataRecord.getAwsConnectorConfigured());
   }
 
   private AWSViewPreferences getAWSViewPreferencesFromCEView(final CEView ceView, final Map<String, String> settingsMap,
@@ -297,23 +327,59 @@ public class CEViewPreferenceServiceImpl implements CEViewPreferenceService {
       return Collections.emptyList();
     }
     final List<QLCEViewPreferenceAggregation> viewPreferenceAggregations = new ArrayList<>();
-    final Set<ViewFieldIdentifier> dataSources = viewParametersHelper.getDataSourcesFromCEView(ceView);
-    if (Objects.isNull(dataSources)) {
-      // All cloud providers are present
-      viewPreferenceAggregations.add(getQLCEOthersViewPreferenceAggregation());
+    try {
+      final Set<ViewFieldIdentifier> dataSources =
+          Objects.nonNull(ceView.getDataSources()) ? new HashSet<>(ceView.getDataSources()) : null;
+      if (Objects.isNull(dataSources)) {
+        // All cloud providers are present
+        viewPreferenceAggregations.addAll(getViewPreferenceAggregations(viewPreferences));
+      } else if (dataSources.contains(ViewFieldIdentifier.BUSINESS_MAPPING)) {
+        // We have to consider all cloud providers to calculate the unattributed cost
+        viewPreferenceAggregations.addAll(getViewPreferenceAggregations(ceView.getAccountId(), viewPreferences));
+      } else {
+        viewPreferenceAggregations.addAll(getViewPreferenceAggregations(viewPreferences, dataSources));
+      }
+    } catch (final Exception exception) {
+      log.error("Exception while generating perspective preference aggregation list. ceView: {}, viewPreferences: {}",
+          ceView, viewPreferences, exception);
+    }
+    return viewPreferenceAggregations;
+  }
+
+  private List<QLCEViewPreferenceAggregation> getViewPreferenceAggregations(final ViewPreferences viewPreferences) {
+    final List<QLCEViewPreferenceAggregation> viewPreferenceAggregations = new ArrayList<>();
+    viewPreferenceAggregations.add(getQLCEOthersViewPreferenceAggregation());
+    viewPreferenceAggregations.addAll(getQLCEAWSViewPreferenceAggregation(viewPreferences));
+    viewPreferenceAggregations.addAll(getQLCEGCPViewPreferenceAggregation(viewPreferences));
+    return viewPreferenceAggregations;
+  }
+
+  private List<QLCEViewPreferenceAggregation> getViewPreferenceAggregations(
+      final String accountId, final ViewPreferences viewPreferences) {
+    final List<QLCEViewPreferenceAggregation> viewPreferenceAggregations = new ArrayList<>();
+    final CEMetadataRecord ceMetadataRecord = getCeMetadataRecord(accountId);
+    viewPreferenceAggregations.add(getQLCEOthersViewPreferenceAggregation());
+    if (isAWSConnectorConfigured(ceMetadataRecord)) {
       viewPreferenceAggregations.addAll(getQLCEAWSViewPreferenceAggregation(viewPreferences));
+    }
+    if (isGCPConnectorConfigured(ceMetadataRecord)) {
       viewPreferenceAggregations.addAll(getQLCEGCPViewPreferenceAggregation(viewPreferences));
-    } else {
-      if (dataSources.contains(ViewFieldIdentifier.AWS)) {
-        viewPreferenceAggregations.addAll(getQLCEAWSViewPreferenceAggregation(viewPreferences));
-      }
-      if (dataSources.contains(ViewFieldIdentifier.GCP)) {
-        viewPreferenceAggregations.addAll(getQLCEGCPViewPreferenceAggregation(viewPreferences));
-      }
-      dataSources.removeAll(ImmutableSet.of(ViewFieldIdentifier.AWS, ViewFieldIdentifier.GCP));
-      if (!dataSources.isEmpty()) {
-        viewPreferenceAggregations.add(getQLCEOthersViewPreferenceAggregation());
-      }
+    }
+    return viewPreferenceAggregations;
+  }
+
+  private List<QLCEViewPreferenceAggregation> getViewPreferenceAggregations(
+      final ViewPreferences viewPreferences, final Set<ViewFieldIdentifier> dataSources) {
+    final List<QLCEViewPreferenceAggregation> viewPreferenceAggregations = new ArrayList<>();
+    if (dataSources.contains(ViewFieldIdentifier.AWS)) {
+      viewPreferenceAggregations.addAll(getQLCEAWSViewPreferenceAggregation(viewPreferences));
+    }
+    if (dataSources.contains(ViewFieldIdentifier.GCP)) {
+      viewPreferenceAggregations.addAll(getQLCEGCPViewPreferenceAggregation(viewPreferences));
+    }
+    dataSources.removeAll(ImmutableSet.of(ViewFieldIdentifier.AWS, ViewFieldIdentifier.GCP));
+    if (!dataSources.isEmpty()) {
+      viewPreferenceAggregations.add(getQLCEOthersViewPreferenceAggregation());
     }
     return viewPreferenceAggregations;
   }

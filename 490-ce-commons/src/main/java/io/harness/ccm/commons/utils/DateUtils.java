@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.ccm.views.utils;
+package io.harness.ccm.commons.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
@@ -22,7 +22,10 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(CE)
 public class DateUtils {
-  private List<LocalDateTime> getLastTwelveMonthsFirstDayLocalDateTime() {
+  private static final String MONTH_TWO_DIGITS_FORMAT_SPECIFIER = "%02d";
+  private static final String YYYY_MM = "%s%s";
+
+  private List<LocalDateTime> getLastTwelveMonthsFirstDay() {
     final List<LocalDateTime> localDateTimes = new ArrayList<>();
 
     final LocalDate currentDate = LocalDate.now();
@@ -43,11 +46,11 @@ public class DateUtils {
   }
 
   public List<String> getLastTwelveMonthsGCPInvoiceMonth() {
-    return getLastTwelveMonthsFirstDayLocalDateTime()
+    return getLastTwelveMonthsFirstDay()
         .stream()
         .map(localDateTime
-            -> String.format(
-                "%s%s", localDateTime.getYear(), String.format("%02d", localDateTime.getMonth().getValue())))
+            -> String.format(YYYY_MM, localDateTime.getYear(),
+                String.format(MONTH_TWO_DIGITS_FORMAT_SPECIFIER, localDateTime.getMonth().getValue())))
         .collect(Collectors.toList());
   }
 }

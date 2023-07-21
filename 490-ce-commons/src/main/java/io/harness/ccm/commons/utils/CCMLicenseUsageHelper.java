@@ -41,7 +41,7 @@ public class CCMLicenseUsageHelper {
   private static final Set<String> DUPLICATE_K8S_CLOUD_PROVIDERS = ImmutableSet.of("K8S_AWS", "K8S_AZURE", "K8S_GCP");
 
   public static final String QUERY_TEMPLATE_BIGQUERY =
-      "SELECT cloudProvider, clustertype, clustercloudprovider, SUM(cost) AS cost, "
+      "SELECT cloudProvider, clustertype, clustercloudprovider, SUM(cost + IFNULL(discount, 0)) AS cost, "
       + "TIMESTAMP_TRUNC(TIMESTAMP_TRUNC(startTime, DAY), MONTH) AS month FROM %s "
       + "WHERE (((clustertype IS NULL) OR (clustertype = 'K8S')) AND ((instancetype IS NULL) OR "
       + "(instancetype IN ('K8S_NODE','K8S_PV','K8S_POD_FARGATE','ECS_TASK_FARGATE','ECS_CONTAINER_INSTANCE') )) AND "

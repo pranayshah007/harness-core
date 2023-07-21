@@ -57,7 +57,7 @@ public class CCMActiveSpendServiceImpl implements CCMActiveSpendService {
   private static final String FORECASTED_SPEND_LABEL = "Forecast Cost";
   private static final String TABLE_NAME = "costAggregated";
   private static final String QUERY_TEMPLATE_BIGQUERY =
-      "SELECT cloudProvider, clustertype, clustercloudprovider, SUM(cost) AS cost, "
+      "SELECT cloudProvider, clustertype, clustercloudprovider, SUM(cost + IFNULL(discount, 0)) AS cost, "
       + "TIMESTAMP_TRUNC(TIMESTAMP_TRUNC(startTime, DAY), MONTH) AS month, MAX(startTime) AS startTime_MAX, "
       + "MIN(startTime) AS startTime_MIN FROM %s WHERE (((clustertype IS NULL) OR (clustertype = 'K8S')) AND "
       + "((instancetype IS NULL) OR (instancetype IN ('K8S_NODE','K8S_PV','K8S_POD_FARGATE','ECS_TASK_FARGATE',"
