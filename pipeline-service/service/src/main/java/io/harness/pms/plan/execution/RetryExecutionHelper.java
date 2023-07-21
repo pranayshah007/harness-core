@@ -480,9 +480,7 @@ public class RetryExecutionHelper {
     for (Node node : planNodes) {
       List<NodeExecution> strategyNodeExecution =
           nodeExecutions.stream()
-              .filter(o
-                  -> o.getStageFqn().equals(node.getStageFqn())
-                      && node.getIdentifier().equals(o.getNode().getIdentifier()))
+              .filter(o -> o.getStageFqn().equals(node.getStageFqn()) && node.getUuid().equals(o.getNodeId()))
               .filter(o -> AmbianceUtils.isCurrentStrategyLevelAtStage(o.getAmbiance()))
               .collect(Collectors.toList());
       if (strategyNodeExecution.isEmpty()) {
