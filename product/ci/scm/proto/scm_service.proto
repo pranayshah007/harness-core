@@ -556,7 +556,7 @@ message ListBranchesWithDefaultRequest {
 }
 
 message BranchFilterParams {
-  string branchSearchTerm = 1;
+  string branchName = 1;
 }
 
 message ListBranchesResponse {

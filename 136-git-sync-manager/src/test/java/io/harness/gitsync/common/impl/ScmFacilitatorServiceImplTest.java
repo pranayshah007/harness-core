@@ -86,11 +86,7 @@ import io.harness.product.ci.scm.proto.UpdateFileResponse;
 import io.harness.rule.Owner;
 import io.harness.utils.NGFeatureFlagHelperService;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -634,7 +630,8 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
             .setDefaultBranch(defaultBranch)
             .addAllBranches(Arrays.asList(branch, "branch1", defaultBranch))
             .build();
-    List<GitBranchDetailsDTO> gitBranches = scmFacilitatorService.prepareGitBranchList(listBranchesWithDefaultResponse);
+    List<GitBranchDetailsDTO> gitBranches =
+        scmFacilitatorService.prepareGitBranchList(listBranchesWithDefaultResponse, "");
     assertEquals(3, gitBranches.size());
     assertEquals(defaultBranch, gitBranches.get(2).getName());
   }
@@ -648,9 +645,25 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
             .setDefaultBranch(defaultBranch)
             .addAllBranches(Arrays.asList(branch, "branch1"))
             .build();
-    List<GitBranchDetailsDTO> gitBranches = scmFacilitatorService.prepareGitBranchList(listBranchesWithDefaultResponse);
+    List<GitBranchDetailsDTO> gitBranches =
+        scmFacilitatorService.prepareGitBranchList(listBranchesWithDefaultResponse, "");
     assertEquals(2, gitBranches.size());
     assertEquals(defaultBranch, gitBranches.get(1).getName());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testPrepareGitBranchListWithSearchTerm() {
+    ListBranchesWithDefaultResponse listBranchesWithDefaultResponse =
+        ListBranchesWithDefaultResponse.newBuilder()
+            .setDefaultBranch(defaultBranch)
+            .addAllBranches(Collections.singletonList(branch))
+            .build();
+    List<GitBranchDetailsDTO> gitBranches =
+        scmFacilitatorService.prepareGitBranchList(listBranchesWithDefaultResponse, branch);
+    assertEquals(1, gitBranches.size());
+    assertEquals(branch, gitBranches.get(0).getName());
   }
 
   @Test
@@ -659,7 +672,8 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   public void testPrepareGitBranchListWhenBranchesAreEmpty() {
     ListBranchesWithDefaultResponse listBranchesWithDefaultResponse =
         ListBranchesWithDefaultResponse.newBuilder().setDefaultBranch(defaultBranch).build();
-    List<GitBranchDetailsDTO> gitBranches = scmFacilitatorService.prepareGitBranchList(listBranchesWithDefaultResponse);
+    List<GitBranchDetailsDTO> gitBranches =
+        scmFacilitatorService.prepareGitBranchList(listBranchesWithDefaultResponse, "");
     assertEquals(0, gitBranches.size());
   }
 

@@ -248,7 +248,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
                     .pageIndex(pageRequest.getPageIndex())
                     .pageSize(pageRequest.getPageSize())
                     .build(),
-                BranchFilterParamsDTO.builder().branchSearchTerm(searchTerm).build()),
+                BranchFilterParamsDTO.builder().branchName(searchTerm).build()),
             scmConnector);
 
     if (ScmApiErrorHandlingHelper.isFailureResponse(
@@ -259,7 +259,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
           ErrorMetadata.builder().connectorRef(connectorRef).repoName(repoName).build());
     }
 
-    List<GitBranchDetailsDTO> gitBranches = prepareGitBranchList(listBranchesWithDefaultResponse);
+    List<GitBranchDetailsDTO> gitBranches = prepareGitBranchList(listBranchesWithDefaultResponse, searchTerm);
     return GitBranchesResponseDTO.builder()
         .branches(gitBranches)
         .defaultBranch(GitBranchDetailsDTO.builder().name(listBranchesWithDefaultResponse.getDefaultBranch()).build())
@@ -784,9 +784,10 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
 
   @VisibleForTesting
   protected List<GitBranchDetailsDTO> prepareGitBranchList(
-      ListBranchesWithDefaultResponse listBranchesWithDefaultResponse) {
+      ListBranchesWithDefaultResponse listBranchesWithDefaultResponse, String searchTerm) {
     List<String> branchList = new ArrayList<>(emptyIfNull(listBranchesWithDefaultResponse.getBranchesList()));
-    if (!branchList.isEmpty() && !branchList.contains(listBranchesWithDefaultResponse.getDefaultBranch())) {
+    if (isEmpty(searchTerm) && !branchList.isEmpty()
+        && !branchList.contains(listBranchesWithDefaultResponse.getDefaultBranch())) {
       branchList.set(branchList.size() - 1, listBranchesWithDefaultResponse.getDefaultBranch());
     }
     return branchList.stream()

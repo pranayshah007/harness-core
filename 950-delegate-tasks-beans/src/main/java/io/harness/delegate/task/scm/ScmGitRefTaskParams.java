@@ -9,6 +9,7 @@ package io.harness.delegate.task.scm;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.BranchFilterDelegateTaskParams;
 import io.harness.beans.BranchFilterParamsDTO;
 import io.harness.beans.PageRequestDTO;
 import io.harness.beans.RepoFilterDelegateTaskParams;
@@ -42,7 +43,7 @@ public class ScmGitRefTaskParams implements TaskParameters, ExecutionCapabilityD
   PageRequestDTO pageRequest;
   String filePath;
   RepoFilterDelegateTaskParams repoFilterDelegateTaskParams;
-  BranchFilterParamsDTO branchFilterParamsDTO;
+  BranchFilterDelegateTaskParams branchFilterDelegateTaskParams;
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(scmConnector);

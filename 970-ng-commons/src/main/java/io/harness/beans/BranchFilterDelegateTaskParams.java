@@ -17,6 +17,6 @@ import lombok.Data;
 @Data
 @Builder
 @OwnedBy(PIPELINE)
-public class BranchFilterParamsDTO {
+public class BranchFilterDelegateTaskParams {
   String branchName;
 }

@@ -9,6 +9,7 @@ package io.harness.delegate.task.scm;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.BranchFilterParamsDTO;
 import io.harness.beans.RepoFilterParamsDTO;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.service.scm.ScmDelegateClient;
@@ -169,7 +170,11 @@ public class ScmGitRefTask extends AbstractDelegateRunnableTask {
         final ListBranchesWithDefaultResponse listBranchesWithDefaultResponse = scmDelegateClient.processScmRequest(c
             -> scmServiceClient.listBranchesWithDefault(scmGitRefTaskParams.getScmConnector(),
                 scmGitRefTaskParams.getPageRequest(), SCMGrpc.newBlockingStub(c),
-                scmGitRefTaskParams.getBranchFilterParamsDTO()));
+                scmGitRefTaskParams.getBranchFilterDelegateTaskParams() != null
+                    ? BranchFilterParamsDTO.builder()
+                          .branchName(scmGitRefTaskParams.getBranchFilterDelegateTaskParams().getBranchName())
+                          .build()
+                    : BranchFilterParamsDTO.builder().build()));
         return ScmGitRefTaskResponseData.builder()
             .gitRefType(scmGitRefTaskParams.getGitRefType())
             .getListBranchesWithDefaultResponse(listBranchesWithDefaultResponse.toByteArray())

@@ -1243,9 +1243,8 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     if (branchFilterParamsDTO != null) {
       listBranchesWithDefaultRequest =
           ListBranchesWithDefaultRequest.newBuilder(listBranchesWithDefaultRequest)
-              .setBranchFilterParams(BranchFilterParams.newBuilder()
-                                         .setBranchSearchTerm(branchFilterParamsDTO.getBranchSearchTerm())
-                                         .build())
+              .setBranchFilterParams(
+                  BranchFilterParams.newBuilder().setBranchName(branchFilterParamsDTO.getBranchName()).build())
               .build();
     }
     return listBranchesWithDefaultRequest;

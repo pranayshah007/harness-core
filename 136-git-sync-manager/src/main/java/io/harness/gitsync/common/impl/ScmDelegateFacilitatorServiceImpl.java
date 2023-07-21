@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.BranchFilterDelegateTaskParams;
 import io.harness.beans.BranchFilterParamsDTO;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.DelegateTaskRequest;
@@ -705,13 +706,14 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
       BranchFilterParamsDTO branchFilterParamsDTO) {
     final List<EncryptedDataDetail> encryptionDetails =
         getEncryptedDataDetailsForNewGitX(accountIdentifier, orgIdentifier, projectIdentifier, scmConnector);
-    final ScmGitRefTaskParams scmGitRefTaskParams = ScmGitRefTaskParams.builder()
-                                                        .gitRefType(GitRefType.BRANCH_LIST_WITH_DEFAULT_BRANCH)
-                                                        .scmConnector(scmConnector)
-                                                        .encryptedDataDetails(encryptionDetails)
-                                                        .pageRequest(pageRequest)
-                                                        .branchFilterParamsDTO(branchFilterParamsDTO)
-                                                        .build();
+    final ScmGitRefTaskParams scmGitRefTaskParams =
+        ScmGitRefTaskParams.builder()
+            .gitRefType(GitRefType.BRANCH_LIST_WITH_DEFAULT_BRANCH)
+            .scmConnector(scmConnector)
+            .encryptedDataDetails(encryptionDetails)
+            .pageRequest(pageRequest)
+            .branchFilterDelegateTaskParams(buildBranchFilterDelegateTaskParams(branchFilterParamsDTO))
+            .build();
     DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(accountIdentifier, orgIdentifier,
         projectIdentifier, scmGitRefTaskParams, TaskType.SCM_GIT_REF_TASK, DEFAULT_DELEGATE_TASK_TIMEOUT_In_SECONDS);
     final DelegateResponseData delegateResponseData = executeDelegateSyncTaskV2(delegateTaskRequest);
@@ -1236,5 +1238,13 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
         .repoName(repoFilterParamsDTO.getRepoName())
         .userName(repoFilterParamsDTO.getUserName())
         .build();
+  }
+
+  private BranchFilterDelegateTaskParams buildBranchFilterDelegateTaskParams(
+      BranchFilterParamsDTO branchFilterParamsDTO) {
+    if (branchFilterParamsDTO == null) {
+      return BranchFilterDelegateTaskParams.builder().build();
+    }
+    return BranchFilterDelegateTaskParams.builder().branchName(branchFilterParamsDTO.getBranchName()).build();
   }
 }
