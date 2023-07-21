@@ -26,15 +26,16 @@ RUN chmod +x \
 FROM us.gcr.io/platform-205701/ubi/ubi-java:8.8 as base
 
 # Add the capsule JAR and config.yml
-COPY --chown=65534:65534  --from=builder /app/dist/platform-service/platform-service-capsule.jar /opt/harness/
-COPY --chown=65534:65534  --from=builder /app/dist/platform-service/keystore.jks /opt/harness/
-COPY --chown=65534:65534  --from=builder /app/dist/platform-service/config.yml /opt/harness/
-COPY --chown=65534:65534  --from=builder /app/dist/platform-service/classpath_metadata.json /opt/harness/
-
-COPY --chown=65534:65534  --from=builder /app/dist/platform-service/scripts /opt/harness
-COPY --chown=65534:65534  --from=builder /app/dist/platform-service/default.jfc /opt/harness/
-COPY --chown=65534:65534  --from=builder /app/dist/platform-service/profile.jfc /opt/harness/
-COPY --chown=65534:65534 --from=builder /app/dockerization/base-images/apm/*.sh /opt/harness
+COPY --chown=65534:65534  --from=builder \
+  /app/dist/platform-service/platform-service-capsule.jar  \
+  /app/dist/platform-service/keystore.jks \
+  /app/dist/platform-service/config.yml \
+  /app/dist/platform-service/classpath_metadata.json \
+  /app/dist/platform-service/scripts /opt/harness \
+  /app/dist/platform-service/default.jfc \
+  /app/dist/platform-service/profile.jfc \
+  /app/dockerization/base-images/apm/*.sh \
+  /opt/harness/
 RUN chmod +x /opt/harness/*.sh
 CMD [ "/opt/harness/run.sh" ]
 
