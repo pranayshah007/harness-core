@@ -19,6 +19,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.GetBatchFileRequestIdentifier;
 import io.harness.beans.PageRequestDTO;
+import io.harness.beans.RepoFilterParamsDTO;
 import io.harness.beans.Scope;
 import io.harness.beans.request.GitFileBatchRequest;
 import io.harness.beans.request.GitFileRequest;
@@ -183,7 +184,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     GetUserReposResponse response = scmOrchestratorService.processScmRequestUsingConnectorSettings(
         scmClientFacilitatorService
         -> scmClientFacilitatorService.listUserRepos(accountIdentifier, orgIdentifier, projectIdentifier, scmConnector,
-            PageRequestDTO.builder().pageIndex(pageRequest.getPageIndex()).pageSize(pageRequest.getPageSize()).build()),
+            PageRequestDTO.builder().pageIndex(pageRequest.getPageIndex()).pageSize(pageRequest.getPageSize()).build(),
+            RepoFilterParamsDTO.builder().repoName(searchTerm).build()),
         scmConnector);
     if (ScmApiErrorHandlingHelper.isFailureResponse(response.getStatus(), scmConnector.getConnectorType())) {
       ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.LIST_REPOSITORIES, scmConnector.getConnectorType(),
@@ -216,7 +218,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
             .get(()
                      -> scmOrchestratorService.processScmRequestUsingConnectorSettings(scmClientFacilitatorService
                          -> scmClientFacilitatorService.listUserRepos(accountIdentifier, orgIdentifier,
-                             projectIdentifier, scmConnector, PageRequestDTO.builder().fetchAll(true).build()),
+                             projectIdentifier, scmConnector, PageRequestDTO.builder().fetchAll(true).build(),
+                             RepoFilterParamsDTO.builder().build()),
                          scmConnector));
 
     if (ScmApiErrorHandlingHelper.isFailureResponse(response.getStatus(), scmConnector.getConnectorType())) {

@@ -18,6 +18,8 @@ import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.GetBatchFileRequestIdentifier;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.PageRequestDTO;
+import io.harness.beans.RepoFilterDelegateTaskParams;
+import io.harness.beans.RepoFilterParamsDTO;
 import io.harness.beans.Scope;
 import io.harness.beans.WebhookEncryptedSecretDTO;
 import io.harness.beans.gitsync.GitFileDetails;
@@ -671,15 +673,17 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
 
   @Override
   public GetUserReposResponse listUserRepos(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      ScmConnector scmConnector, PageRequestDTO pageRequest) {
+      ScmConnector scmConnector, PageRequestDTO pageRequest, RepoFilterParamsDTO repoFilterParamsDTO) {
     final List<EncryptedDataDetail> encryptionDetails =
         getEncryptedDataDetailsForNewGitX(accountIdentifier, orgIdentifier, projectIdentifier, scmConnector);
-    final ScmGitRefTaskParams scmGitRefTaskParams = ScmGitRefTaskParams.builder()
-                                                        .gitRefType(GitRefType.REPOSITORY_LIST)
-                                                        .scmConnector(scmConnector)
-                                                        .encryptedDataDetails(encryptionDetails)
-                                                        .pageRequest(pageRequest)
-                                                        .build();
+    final ScmGitRefTaskParams scmGitRefTaskParams =
+        ScmGitRefTaskParams.builder()
+            .gitRefType(GitRefType.REPOSITORY_LIST)
+            .scmConnector(scmConnector)
+            .encryptedDataDetails(encryptionDetails)
+            .pageRequest(pageRequest)
+            .repoFilterDelegateTaskParams(buildRepoFilterDelegateTaskParams(repoFilterParamsDTO))
+            .build();
     DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(accountIdentifier, orgIdentifier,
         projectIdentifier, scmGitRefTaskParams, TaskType.SCM_GIT_REF_TASK, DEFAULT_DELEGATE_TASK_TIMEOUT_In_SECONDS);
     final DelegateResponseData delegateResponseData = executeDelegateSyncTaskV2(delegateTaskRequest);
@@ -1219,5 +1223,15 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
   public UserDetailsResponseDTO getUserDetails(UserDetailsRequestDTO userDetailsRequestDTO) {
     // TODO: Implement this flow to obtain user details via delegate
     return null;
+  }
+
+  private RepoFilterDelegateTaskParams buildRepoFilterDelegateTaskParams(RepoFilterParamsDTO repoFilterParamsDTO) {
+    if (repoFilterParamsDTO == null) {
+      return RepoFilterDelegateTaskParams.builder().build();
+    }
+    return RepoFilterDelegateTaskParams.builder()
+        .repoName(repoFilterParamsDTO.getRepoName())
+        .user(repoFilterParamsDTO.getUserName())
+        .build();
   }
 }

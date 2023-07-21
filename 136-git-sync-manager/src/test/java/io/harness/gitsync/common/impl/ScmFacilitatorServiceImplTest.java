@@ -710,6 +710,29 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
     assertThat(repositoryResponseDTOList.get(0).getName()).isEqualTo("test-repo");
   }
 
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testListReposForConnectorOfRepoWithSearchTerms() {
+    GithubConnectorDTO githubConnector = GithubConnectorDTO.builder()
+                                             .connectionType(GitConnectionType.REPO)
+                                             .apiAccess(GithubApiAccessDTO.builder().build())
+                                             .url("https://github.com/senjucanon2/test-repo")
+                                             .build();
+    connectorInfo = ConnectorInfoDTO.builder().connectorConfig(githubConnector).build();
+    scmConnector = (ScmConnector) connectorInfo.getConnectorConfig();
+    when(gitSyncConnectorHelper.getScmConnector(any(), any(), any(), any())).thenReturn(scmConnector);
+
+    List<Repository> repositories =
+        Arrays.asList(Repository.newBuilder().setName("repo1").setNamespace("harness").build(),
+            Repository.newBuilder().setName("repo2").setNamespace("harness").build());
+    GetUserReposResponse getUserReposResponse = GetUserReposResponse.newBuilder().addAllRepos(repositories).build();
+    when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any())).thenReturn(getUserReposResponse);
+    List<GitRepositoryResponseDTO> repositoryResponseDTOList = scmFacilitatorService.listReposByRefConnector(
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, pageRequest, "test", false);
+    assertThat(repositoryResponseDTOList.get(0).getName()).isEqualTo("test-repo");
+  }
+
   private Scope getDefaultScope() {
     return Scope.builder()
         .accountIdentifier(accountIdentifier)

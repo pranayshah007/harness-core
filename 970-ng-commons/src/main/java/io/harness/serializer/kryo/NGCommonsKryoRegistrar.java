@@ -14,6 +14,7 @@ import io.harness.SchemaCacheKey;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.InputSetValidatorType;
 import io.harness.beans.PageRequestDTO;
+import io.harness.beans.RepoFilterDelegateTaskParams;
 import io.harness.beans.WebhookEncryptedSecretDTO;
 import io.harness.cd.CDLicenseType;
 import io.harness.connector.ConnectivityStatus;
@@ -102,5 +103,6 @@ public class NGCommonsKryoRegistrar implements KryoRegistrar {
     kryo.register(PageRequestDTO.class, 5216);
     kryo.register(Timeout.class, 9300122);
     kryo.register(WebhookEncryptedSecretDTO.class, 9300123);
+    kryo.register(RepoFilterDelegateTaskParams.class, 9300130);
   }
 }
