@@ -35,8 +35,6 @@ import io.harness.ci.enforcement.BuildRestrictionUsageImpl;
 import io.harness.ci.enforcement.BuildsPerDayRestrictionUsageImpl;
 import io.harness.ci.enforcement.BuildsPerMonthRestrictionUsageImpl;
 import io.harness.ci.enforcement.TotalBuildsRestrictionUsageImpl;
-import io.harness.ci.execution.CINotifyEventConsumerRedis;
-import io.harness.ci.execution.CINotifyEventPublisher;
 import io.harness.ci.execution.ObserverEventConsumer;
 import io.harness.ci.execution.OrchestrationExecutionEventHandlerRegistrar;
 import io.harness.ci.execution.queue.CIExecutionPoller;
@@ -495,7 +493,6 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     pipelineEventConsumerController.register(injector.getInstance(NodeAdviseEventRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(CreatePartialPlanRedisConsumer.class), 2);
-    pipelineEventConsumerController.register(injector.getInstance(CINotifyEventConsumerRedis.class), 15);
   }
 
   private void registerHealthCheck(Environment environment, Injector injector) {
@@ -526,7 +523,6 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
         injector.getInstance(NotifyQueuePublisherRegister.class);
     notifyQueuePublisherRegister.register(
         NG_ORCHESTRATION, payload -> publisher.send(singletonList(NG_ORCHESTRATION), payload));
-    notifyQueuePublisherRegister.register("ci_orchestration", injector.getInstance(CINotifyEventPublisher.class));
   }
 
   private void registerAuthFilters(CIManagerConfiguration configuration, Environment environment, Injector injector) {
