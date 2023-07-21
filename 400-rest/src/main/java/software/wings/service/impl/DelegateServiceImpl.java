@@ -3206,7 +3206,9 @@ public class DelegateServiceImpl implements DelegateService {
                                      .filter(DelegateGroupKeys.accountId, accountId)
                                      .filter(DelegateGroupKeys.ng, isNg)
                                      .filter(DelegateGroupKeys.name, name);
-
+    if (owner != null) {
+      query.filter(DelegateGroupKeys.owner, owner);
+    }
     DelegateGroup existingEntity = query.get();
 
     if (existingEntity != null && !matchOwners(existingEntity.getOwner(), owner)) {
