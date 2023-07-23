@@ -73,9 +73,9 @@ import io.harness.common.NGTimeConversionHelper;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
-import io.harness.connector.helper.GitAuthenticationDecryptionHelper;
 import io.harness.connector.helper.GithubAppDTOToGithubAppSpecDTOMapper;
 import io.harness.connector.services.ConnectorService;
+import io.harness.connector.task.git.GitAuthenticationDecryptionHelper;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.SubmitTaskRequest;
@@ -267,13 +267,6 @@ public class CDStepHelper {
                .equals(GithubHttpAuthenticationType.USERNAME_AND_TOKEN);
   }
 
-  public boolean isGithubAppAuth(GithubConnectorDTO githubConnectorDTO) {
-    return githubConnectorDTO.getAuthentication().getCredentials() instanceof GithubHttpCredentialsDTO
-        && ((GithubHttpCredentialsDTO) githubConnectorDTO.getAuthentication().getCredentials())
-               .getType()
-               .equals(GithubHttpAuthenticationType.USERNAME_AND_TOKEN);
-  }
-
   public boolean isAzureRepoUsernameTokenAuth(AzureRepoConnectorDTO azureRepoConnectorDTO) {
     return azureRepoConnectorDTO.getAuthentication().getCredentials() instanceof AzureRepoHttpCredentialsDTO
         && ((AzureRepoHttpCredentialsDTO) azureRepoConnectorDTO.getAuthentication().getCredentials())
@@ -281,10 +274,17 @@ public class CDStepHelper {
                .equals(AzureRepoHttpAuthenticationType.USERNAME_AND_TOKEN);
   }
 
-  public boolean isGithubTokenAuth(ScmConnector scmConnector) {
+  public boolean isGithubTokenOrAppAuth(ScmConnector scmConnector) {
     return scmConnector instanceof GithubConnectorDTO
         && (((GithubConnectorDTO) scmConnector).getApiAccess() != null
-            || isGithubUsernameTokenAuth((GithubConnectorDTO) scmConnector));
+            || isGithubUsernameTokenAuth((GithubConnectorDTO) scmConnector)
+            || isGithubAppAuth((GithubConnectorDTO) scmConnector));
+  }
+
+  private boolean isGithubAppAuth(GithubConnectorDTO githubConnectorDTO) {
+    return githubConnectorDTO.getAuthentication().getCredentials() instanceof GithubHttpCredentialsDTO
+        && (((GithubHttpCredentialsDTO) githubConnectorDTO.getAuthentication().getCredentials()).getType()
+            == GithubHttpAuthenticationType.GITHUB_APP);
   }
 
   public boolean isAzureRepoTokenAuth(ScmConnector scmConnector) {
@@ -300,7 +300,7 @@ public class CDStepHelper {
 
   public boolean isOptimizedFilesFetch(@Nonnull ConnectorInfoDTO connectorDTO, String accountId) {
     return cdFeatureFlagHelper.isEnabled(accountId, OPTIMIZED_GIT_FETCH_FILES)
-        && ((isGithubTokenAuth((ScmConnector) connectorDTO.getConnectorConfig())
+        && ((isGithubTokenOrAppAuth((ScmConnector) connectorDTO.getConnectorConfig())
                 || isGitlabTokenAuth((ScmConnector) connectorDTO.getConnectorConfig()))
             || (isAzureRepoTokenAuth((ScmConnector) connectorDTO.getConnectorConfig()))
             || (isBitbucketTokenAuth((ScmConnector) connectorDTO.getConnectorConfig())));
@@ -493,13 +493,8 @@ public class CDStepHelper {
           secretManagerClientService.getEncryptionDetails(basicNGAccessObject, apiAccessDecryptableEntity);
     } else if (githubAppAuthentication) {
       scmConnector = (ScmConnector) connectorDTO.getConnectorConfig();
-      GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) scmConnector;
-      githubConnectorDTO.setApiAccess(getGitAppAccessFromGithubAppAuth(githubConnectorDTO));
-      final DecryptableEntity apiAccessDecryptableEntity =
-          GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(githubConnectorDTO);
-      apiAuthEncryptedDataDetails =
-          secretManagerClientService.getEncryptionDetails(basicNGAccessObject, apiAccessDecryptableEntity);
-      optimizedFilesFetch = true;
+      encryptedDataDetails =
+          gitConfigAuthenticationInfoHelper.getGithubAppEncryptedDataDetail(scmConnector, basicNGAccessObject);
     }
 
     convertToRepoGitConfig(gitstoreConfig, scmConnector);

@@ -9,6 +9,7 @@ package io.harness.delegate.beans.executioncapability;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
@@ -27,12 +28,11 @@ public class GitConnectionNGCapability implements ExecutionCapability {
     return EvaluationMode.AGENT;
   }
 
-  GitConfigDTO gitConfig;
+  ScmConnector gitConfig;
   List<EncryptedDataDetail> encryptedDataDetails;
   CapabilityType capabilityType = CapabilityType.GIT_CONNECTION_NG;
   SSHKeySpecDTO sshKeySpecDTO;
-  GithubConnectorDTO githubConnectorDTO;
-  boolean isGithubAppAuthentication;
+  boolean optimizedFilesFetch;
 
   @Override
   public String fetchCapabilityBasis() {

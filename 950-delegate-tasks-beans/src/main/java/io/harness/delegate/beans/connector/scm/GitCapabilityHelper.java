@@ -72,9 +72,11 @@ public class GitCapabilityHelper extends ConnectorCapabilityBaseHelper {
             .sshKeySpecDTO(sshKeySpecDTO);
 
     if (gitStoreConfig.isGithubAppAuthentication()) {
-      gitConnectionNGCapability.githubConnectorDTO((GithubConnectorDTO) gitStoreConfig.getGitConfigDTO());
-      gitConnectionNGCapability.isGithubAppAuthentication(true);
-      gitConnectionNGCapability.encryptedDataDetails(gitStoreConfig.getApiAuthEncryptedDataDetails());
+      gitConnectionNGCapability.gitConfig(gitStoreConfig.getGitConfigDTO());
+      if (gitStoreConfig.isOptimizedFilesFetch()) {
+        gitConnectionNGCapability.optimizedFilesFetch(true);
+        gitConnectionNGCapability.encryptedDataDetails(gitStoreConfig.getApiAuthEncryptedDataDetails());
+      }
     }
 
     capabilityList.add(gitConnectionNGCapability.build());

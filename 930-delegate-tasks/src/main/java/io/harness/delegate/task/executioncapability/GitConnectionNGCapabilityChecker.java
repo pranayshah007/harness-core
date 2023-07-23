@@ -12,10 +12,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.service.scm.ScmDelegateClient;
 import io.harness.connector.task.git.GitDecryptionHelper;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.connector.task.shell.SshSessionConfigMapper;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
+import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.executioncapability.CapabilityResponse;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.GitConnectionNGCapability;
@@ -41,43 +42,48 @@ public class GitConnectionNGCapabilityChecker implements CapabilityCheck {
   @Inject private GitDecryptionHelper gitDecryptionHelper;
   @Inject private ScmDelegateClient scmDelegateClient;
   @Inject private ScmServiceClient scmServiceClient;
+  @Inject private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   @Override
   public CapabilityResponse performCapabilityCheck(ExecutionCapability delegateCapability) {
     GitConnectionNGCapability capability = (GitConnectionNGCapability) delegateCapability;
-    GitConfigDTO gitConfig = capability.getGitConfig();
+    try {
+      if (capability.isOptimizedFilesFetch()) {
+        //    checkCapabilityForScm(capability.getGitConfig(), capability.getEncryptedDataDetails());
+      } else {
+        checkCapabilityForJgit(capability);
+      }
+    } catch (Exception e) {
+      return CapabilityResponse.builder().delegateCapability(capability).validated(false).build();
+    }
+    return CapabilityResponse.builder().delegateCapability(capability).validated(true).build();
+  }
+
+  private void checkCapabilityForJgit(GitConnectionNGCapability capability) {
+    GitConfigDTO gitConfig =
+        scmConnectorMapperDelegate.toGitConfigDTO(capability.getGitConfig(), capability.getEncryptedDataDetails());
     List<EncryptedDataDetail> encryptedDataDetails = capability.getEncryptedDataDetails();
     SshSessionConfig sshSessionConfig = null;
-    GithubConnectorDTO githubConnectorDTO = capability.getGithubConnectorDTO();
 
     try {
       if (gitConfig.getGitAuthType() == GitAuthType.HTTP) {
-        if (capability.isGithubAppAuthentication()) {
-          gitDecryptionHelper.decryptApiAccessConfig(githubConnectorDTO, capability.getEncryptedDataDetails());
-        } else {
-          decryptionService.decrypt(gitConfig.getGitAuth(), encryptedDataDetails);
-        }
+        decryptionService.decrypt(gitConfig.getGitAuth(), encryptedDataDetails);
       } else if (gitConfig.getGitAuthType() == GitAuthType.SSH) {
         sshSessionConfig =
             getSSHConfigIfSSHCredsAreUsed(capability.getSshKeySpecDTO(), capability.getEncryptedDataDetails());
       }
     } catch (Exception e) {
       log.info("Failed to decrypt " + capability.getGitConfig(), e);
-      return CapabilityResponse.builder().delegateCapability(capability).validated(false).build();
+      throw e;
     }
     String accountId = delegateConfiguration.getAccountId();
-    try {
-      if (capability.isGithubAppAuthentication()) {
-        scmDelegateClient.processScmRequest(
-            c -> scmServiceClient.listBranches(githubConnectorDTO, SCMGrpc.newBlockingStub(c)));
+    gitService.validateOrThrow(gitConfig, accountId, sshSessionConfig);
+  }
 
-      } else {
-        gitService.validateOrThrow(gitConfig, accountId, sshSessionConfig);
-      }
-    } catch (Exception e) {
-      return CapabilityResponse.builder().delegateCapability(capability).validated(false).build();
-    }
-    return CapabilityResponse.builder().delegateCapability(capability).validated(true).build();
+  private void checkCapabilityForScm(ScmConnector scmConnector, List<EncryptedDataDetail> encryptedDataDetails) {
+    log.info("Capability check using scm service");
+    gitDecryptionHelper.decryptApiAccessConfig(scmConnector, encryptedDataDetails);
+    scmDelegateClient.processScmRequest(c -> scmServiceClient.listBranches(scmConnector, SCMGrpc.newBlockingStub(c)));
   }
 
   private SshSessionConfig getSSHConfigIfSSHCredsAreUsed(
