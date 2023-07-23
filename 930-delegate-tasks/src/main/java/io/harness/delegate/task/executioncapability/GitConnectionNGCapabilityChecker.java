@@ -49,7 +49,7 @@ public class GitConnectionNGCapabilityChecker implements CapabilityCheck {
     GitConnectionNGCapability capability = (GitConnectionNGCapability) delegateCapability;
     try {
       if (capability.isOptimizedFilesFetch()) {
-        //    checkCapabilityForScm(capability.getGitConfig(), capability.getEncryptedDataDetails());
+        checkCapabilityForScm(capability.getGitConfig(), capability.getEncryptedDataDetails());
       } else {
         checkCapabilityForJgit(capability);
       }
