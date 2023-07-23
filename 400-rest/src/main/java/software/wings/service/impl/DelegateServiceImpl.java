@@ -4417,7 +4417,12 @@ public class DelegateServiceImpl implements DelegateService {
                                .accountIdentifier(accountId)
                                .orgIdentifier(delegateSetupDetails.getOrgIdentifier())
                                .projectIdentifier(delegateSetupDetails.getProjectIdentifier())
-                               .delegateSetupDetails(delegateSetupDetails)
+                               .delegateSetupDetails(DelegateSetupDetails.builder()
+                                                         .identifier(delegateSetupDetails.getIdentifier())
+                                                         .delegateType(delegateSetupDetails.getDelegateType())
+                                                         .tokenName(delegateSetupDetails.getTokenName())
+                                                         .tags(delegateSetupDetails.getTags())
+                                                         .build())
                                .build());
       } else {
         log.info("DelegateSetupDetails empty while DelegateAuditEvent");
