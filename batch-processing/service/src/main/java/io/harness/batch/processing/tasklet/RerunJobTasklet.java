@@ -22,6 +22,7 @@ import io.harness.ff.FeatureFlagService;
 import com.google.common.collect.ImmutableList;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
@@ -42,6 +43,12 @@ public class RerunJobTasklet implements Tasklet {
     final JobConstants jobConstants = new CCMJobConstants(chunkContext);
 
     String accountId = jobConstants.getAccountId();
+
+    Instant lastRunStartInstant = Instant.ofEpochMilli(jobConstants.getJobStartTime()).minus(35, ChronoUnit.DAYS);
+    List<String> costCategoryBatchJob = List.of(BatchJobType.COST_CATEGORY_BIGQUERY.toString());
+    log.info("invalidating last run for batchJobs: {} for account: {}", costCategoryBatchJob, accountId);
+    batchJobScheduledDataService.invalidateJobs(accountId, costCategoryBatchJob, lastRunStartInstant);
+
     Instant startInstant = Instant.ofEpochMilli(jobConstants.getJobStartTime()).minus(3, ChronoUnit.DAYS);
     CEMetadataRecord ceMetadataRecord = ceMetadataRecordDao.getByAccountId(accountId);
     if (null != ceMetadataRecord && isCloudDataPresent(ceMetadataRecord)) {

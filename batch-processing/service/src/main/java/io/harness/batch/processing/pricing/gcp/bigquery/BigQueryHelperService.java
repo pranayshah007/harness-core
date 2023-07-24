@@ -38,12 +38,20 @@ public interface BigQueryHelperService {
 
   void addCostCategoriesColumnInUnifiedTable(String tableName);
 
-  void removeAllCostCategories(String tableName, String startTime, String endTime, CloudProvider cloudProvider,
+  void removeAllCostCategories(String tableName, String startTime, String endTime);
+
+  void insertCostCategories(String tableName, String costCategoriesStatement, String startTime, String endTime)
+      throws InterruptedException;
+
+  void addCostCategory(String tableName, String costCategoriesStatement, String startTime, String endTime)
+      throws InterruptedException;
+
+  void removeAllCostCategoriesPubSub(String tableName, String startTime, String endTime, CloudProvider cloudProvider,
       List<String> cloudProviderAccountIds);
 
-  void insertCostCategories(String tableName, String costCategoriesStatement, String startTime, String endTime,
+  void insertCostCategoriesPubSub(String tableName, String costCategoriesStatement, String startTime, String endTime,
       CloudProvider cloudProvider, List<String> cloudProviderAccountIds) throws InterruptedException;
 
-  void addCostCategory(String tableName, String costCategoriesStatement, String startTime, String endTime,
+  void addCostCategoryPubSub(String tableName, String costCategoriesStatement, String startTime, String endTime,
       CloudProvider cloudProvider, List<String> cloudProviderAccountIds) throws InterruptedException;
 }

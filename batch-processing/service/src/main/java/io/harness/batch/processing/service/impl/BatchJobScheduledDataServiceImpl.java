@@ -53,6 +53,10 @@ public class BatchJobScheduledDataServiceImpl implements BatchJobScheduledDataSe
         return Instant.ofEpochMilli(Instant.now().toEpochMilli())
             .truncatedTo(ChronoUnit.DAYS)
             .minus(2, ChronoUnit.DAYS);
+      } else if (batchJobType.equals(BatchJobType.COST_CATEGORY_BIGQUERY)) {
+        return Instant.ofEpochMilli(Instant.now().toEpochMilli())
+            .truncatedTo(ChronoUnit.DAYS)
+            .minus(3, ChronoUnit.MONTHS);
       }
       if (ImmutableSet.of(BatchJobBucket.OUT_OF_CLUSTER, BatchJobBucket.OUT_OF_CLUSTER_ECS)
               .contains(batchJobType.getBatchJobBucket())) {

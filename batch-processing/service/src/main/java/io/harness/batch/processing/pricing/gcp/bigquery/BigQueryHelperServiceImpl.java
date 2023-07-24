@@ -38,6 +38,8 @@ import com.google.cloud.bigquery.Field;
 import com.google.cloud.bigquery.FieldList;
 import com.google.cloud.bigquery.FieldValue;
 import com.google.cloud.bigquery.FieldValueList;
+import com.google.cloud.bigquery.Job;
+import com.google.cloud.bigquery.JobInfo;
 import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.TableResult;
@@ -442,14 +444,9 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
     }
   }
 
-  @Override
-  public void removeAllCostCategories(String tableName, String startTime, String endTime, CloudProvider cloudProvider,
-      List<String> cloudProviderAccountIds) {
+  public void removeAllCostCategories(String tableName, String startTime, String endTime) {
     BigQuery bigQueryService = getBigQueryService();
-    String cloudAccountIdColumn = getCloudAccountIdColumnName(cloudProvider);
-    String cloudProviderAccountIdsString = "('" + String.join("', '", cloudProviderAccountIds) + "')";
-    String query = format(BQConst.COST_CATEGORY_REMOVE, tableName, BQConst.costCategory, startTime, endTime,
-        cloudAccountIdColumn, cloudProviderAccountIdsString);
+    String query = format(BQConst.COST_CATEGORY_REMOVE, tableName, BQConst.costCategory, startTime, endTime);
     log.info("Remove cost categories query: {}", query);
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query).build();
     try {
@@ -461,17 +458,76 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
   }
 
   @Override
-  public void insertCostCategories(String tableName, String costCategoriesStatement, String startTime, String endTime,
-      CloudProvider cloudProvider, List<String> cloudProviderAccountIds) throws InterruptedException {
+  public void removeAllCostCategoriesPubSub(String tableName, String startTime, String endTime,
+      CloudProvider cloudProvider, List<String> cloudProviderAccountIds) {
     BigQuery bigQueryService = getBigQueryService();
     String cloudAccountIdColumn = getCloudAccountIdColumnName(cloudProvider);
     String cloudProviderAccountIdsString = "('" + String.join("', '", cloudProviderAccountIds) + "')";
-    String query = format(BQConst.COST_CATEGORY_SET, tableName, BQConst.costCategory, costCategoriesStatement,
+    String query = format(BQConst.COST_CATEGORY_REMOVE_PUBSUB, tableName, BQConst.costCategory, startTime, endTime,
+        cloudAccountIdColumn, cloudProviderAccountIdsString);
+    log.info("Remove cost categories query: {}", query);
+    QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query).build();
+    try {
+      Job job = bigQueryService.create(JobInfo.newBuilder(queryConfig).build());
+      log.info("Job id: {} for cost categories removal", job.getJobId());
+      job.getQueryResults();
+      log.info("costCategories removed");
+    } catch (BigQueryException | InterruptedException bigQueryException) {
+      log.warn("Error: ", bigQueryException);
+    }
+  }
+
+  public void insertCostCategories(String tableName, String costCategoriesStatement, String startTime, String endTime)
+      throws InterruptedException {
+    BigQuery bigQueryService = getBigQueryService();
+    String query =
+        format(BQConst.COST_CATEGORY_SET, tableName, BQConst.costCategory, costCategoriesStatement, startTime, endTime);
+    log.info("Update cost category column query: {}", query);
+    QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query).build();
+    try {
+      Job job = bigQueryService.create(JobInfo.newBuilder(queryConfig).build());
+      log.info("Job id: {} for cost categories update", job.getJobId());
+      job.getQueryResults();
+      log.info("costCategories inserted");
+    } catch (BigQueryException | InterruptedException bigQueryException) {
+      log.error("Error: ", bigQueryException);
+      throw bigQueryException;
+    }
+  }
+
+  @Override
+  public void insertCostCategoriesPubSub(String tableName, String costCategoriesStatement, String startTime,
+      String endTime, CloudProvider cloudProvider, List<String> cloudProviderAccountIds) throws InterruptedException {
+    BigQuery bigQueryService = getBigQueryService();
+    String cloudAccountIdColumn = getCloudAccountIdColumnName(cloudProvider);
+    String cloudProviderAccountIdsString = "('" + String.join("', '", cloudProviderAccountIds) + "')";
+    String query = format(BQConst.COST_CATEGORY_SET_PUBSUB, tableName, BQConst.costCategory, costCategoriesStatement,
         startTime, endTime, cloudAccountIdColumn, cloudProviderAccountIdsString);
     log.info("Update cost category column query: {}", query);
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query).build();
     try {
-      bigQueryService.query(queryConfig);
+      Job job = bigQueryService.create(JobInfo.newBuilder(queryConfig).build());
+      log.info("Job id: {} cost categories update", job.getJobId());
+      job.getQueryResults();
+      log.info("costCategories inserted");
+    } catch (BigQueryException | InterruptedException bigQueryException) {
+      log.error("Error: ", bigQueryException);
+      throw bigQueryException;
+    }
+  }
+
+  @Override
+  public void addCostCategory(String tableName, String costCategoriesStatement, String startTime, String endTime)
+      throws InterruptedException {
+    BigQuery bigQueryService = getBigQueryService();
+    String query = format(BQConst.COST_CATEGORY_ADD, tableName, BQConst.costCategory, BQConst.costCategory,
+        costCategoriesStatement, startTime, endTime);
+    log.info("Update cost category column query: {}", query);
+    QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query).build();
+    try {
+      Job job = bigQueryService.create(JobInfo.newBuilder(queryConfig).build());
+      log.info("Job id: {} cost categories update", job.getJobId());
+      job.getQueryResults();
       log.info("costCategory updated");
     } catch (BigQueryException | InterruptedException bigQueryException) {
       log.error("Error: ", bigQueryException);
@@ -480,17 +536,19 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
   }
 
   @Override
-  public void addCostCategory(String tableName, String costCategoriesStatement, String startTime, String endTime,
+  public void addCostCategoryPubSub(String tableName, String costCategoriesStatement, String startTime, String endTime,
       CloudProvider cloudProvider, List<String> cloudProviderAccountIds) throws InterruptedException {
     BigQuery bigQueryService = getBigQueryService();
     String cloudAccountIdColumn = getCloudAccountIdColumnName(cloudProvider);
     String cloudProviderAccountIdsString = "('" + String.join("', '", cloudProviderAccountIds) + "')";
-    String query = format(BQConst.COST_CATEGORY_ADD, tableName, BQConst.costCategory, BQConst.costCategory,
+    String query = format(BQConst.COST_CATEGORY_ADD_PUBSUB, tableName, BQConst.costCategory, BQConst.costCategory,
         costCategoriesStatement, startTime, endTime, cloudAccountIdColumn, cloudProviderAccountIdsString);
     log.info("Update cost category column query: {}", query);
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query).build();
     try {
-      bigQueryService.query(queryConfig);
+      Job job = bigQueryService.create(JobInfo.newBuilder(queryConfig).build());
+      log.info("Job id: {} cost categories update", job.getJobId());
+      job.getQueryResults();
       log.info("costCategory updated");
     } catch (BigQueryException | InterruptedException bigQueryException) {
       log.error("Error: ", bigQueryException);

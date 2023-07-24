@@ -20,6 +20,7 @@ public interface BusinessMappingService {
   BusinessMapping save(BusinessMapping businessMapping);
   BusinessMapping get(String uuid, String accountId);
   BusinessMapping get(String uuid);
+  List<BusinessMapping> getAll(String accountId);
   BusinessMapping update(BusinessMapping newBusinessMapping, BusinessMapping oldBusinessMapping);
   boolean delete(String uuid, String accountIdentifier);
   BusinessMappingListDTO list(String accountId, String searchKey, CostCategorySortType sortType, CCMSortOrder sortOrder,

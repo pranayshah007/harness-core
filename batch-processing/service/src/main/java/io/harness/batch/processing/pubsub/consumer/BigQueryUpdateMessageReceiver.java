@@ -181,7 +181,7 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
     String costCategoriesStatement = "[" + String.join(", ", sqlCaseStatements) + "]";
 
     try {
-      bigQueryHelperService.insertCostCategories(tableName, costCategoriesStatement,
+      bigQueryHelperService.insertCostCategoriesPubSub(tableName, costCategoriesStatement,
           formattedTime(Date.from(queryStartTime)), formattedTime(Date.from(queryEndTime)), message.getCloudProvider(),
           message.getCloudProviderAccountIds());
       return;
@@ -190,7 +190,7 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
     }
 
     // If single update query doesn't work try adding cost categories one by one
-    bigQueryHelperService.removeAllCostCategories(tableName, formattedTime(Date.from(queryStartTime)),
+    bigQueryHelperService.removeAllCostCategoriesPubSub(tableName, formattedTime(Date.from(queryStartTime)),
         formattedTime(Date.from(queryEndTime)), message.getCloudProvider(), message.getCloudProviderAccountIds());
     for (BusinessMappingHistory businessMappingHistory : businessMappingHistories) {
       try {
@@ -199,7 +199,7 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
                 viewsQueryBuilder.getSQLCaseStatementBusinessMapping(
                     null, BusinessMapping.fromHistory(businessMappingHistory), UNIFIED_TABLE, viewLabelsFlattened))
             + "]";
-        bigQueryHelperService.addCostCategory(tableName, costCategoriesStatement,
+        bigQueryHelperService.addCostCategoryPubSub(tableName, costCategoriesStatement,
             formattedTime(Date.from(queryStartTime)), formattedTime(Date.from(queryEndTime)),
             message.getCloudProvider(), message.getCloudProviderAccountIds());
       } catch (Exception e) {

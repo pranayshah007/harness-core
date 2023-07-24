@@ -78,13 +78,24 @@ public class BQConst {
   public static final String COST_CATEGORY_DATA_TYPE = "ARRAY<STRUCT<costCategoryName STRING, costBucketName STRING>>";
 
   public static final String COST_CATEGORY_REMOVE = "UPDATE `%s` SET %s = [] "
+      + "WHERE startTime >= '%s' AND startTime <= '%s'";
+
+  public static final String COST_CATEGORY_REMOVE_PUBSUB = "UPDATE `%s` SET %s = [] "
       + "WHERE startTime >= '%s' AND startTime <= '%s' AND %s IN %s";
 
   public static final String COST_CATEGORY_SET = "UPDATE `%s` "
       + "SET %s = %s "
+      + "WHERE startTime >= '%s' AND startTime <= '%s'";
+
+  public static final String COST_CATEGORY_SET_PUBSUB = "UPDATE `%s` "
+      + "SET %s = %s "
       + "WHERE startTime >= '%s' AND startTime <= '%s' AND %s IN %s";
 
   public static final String COST_CATEGORY_ADD = "UPDATE `%s` "
+      + "SET %s = ARRAY_CONCAT(%s, %s) "
+      + "WHERE startTime >= '%s' AND startTime <= '%s'";
+
+  public static final String COST_CATEGORY_ADD_PUBSUB = "UPDATE `%s` "
       + "SET %s = ARRAY_CONCAT(%s, %s) "
       + "WHERE startTime >= '%s' AND startTime <= '%s' AND %s IN %s";
 

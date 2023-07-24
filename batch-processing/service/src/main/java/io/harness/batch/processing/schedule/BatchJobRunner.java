@@ -27,7 +27,9 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.ImmutableSet;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.Value;
@@ -154,6 +156,9 @@ public class BatchJobRunner {
             if (status == BatchStatus.COMPLETED) {
               BatchJobScheduledData batchJobScheduledData = new BatchJobScheduledData(accountId, batchJobType.name(),
                   Duration.between(jobStartTime, jobStopTime).toMillis(), startInstant, endInstant, instanceId);
+              if (batchJobType == BatchJobType.COST_CATEGORY_BIGQUERY) {
+                batchJobScheduledData.setValidUntil(Date.from(OffsetDateTime.now().plusMonths(13).toInstant()));
+              }
               batchJobScheduledDataService.create(batchJobScheduledData);
               startInstant = endInstant;
             } else {

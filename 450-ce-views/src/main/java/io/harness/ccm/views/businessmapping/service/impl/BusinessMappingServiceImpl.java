@@ -62,6 +62,10 @@ public class BusinessMappingServiceImpl implements BusinessMappingService {
     return businessMappingDao.get(uuid);
   }
 
+  public List<BusinessMapping> getAll(String accountId) {
+    return businessMappingDao.findByAccountId(accountId);
+  }
+
   @Override
   public BusinessMapping update(BusinessMapping newBusinessMapping, BusinessMapping oldBusinessMapping) {
     validateUpdateRequest(newBusinessMapping, oldBusinessMapping);
