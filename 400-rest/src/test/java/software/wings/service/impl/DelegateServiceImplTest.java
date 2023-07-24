@@ -1009,6 +1009,8 @@ public class DelegateServiceImplTest extends WingsBaseTest {
     assertThat(delegateUpsertEvent.getDelegateSetupDetails())
         .isEqualTo(DelegateSetupDetails.builder()
                        .name(TEST_DELEGATE_GROUP_NAME)
+                       .orgIdentifier(ORG_ID)
+                       .projectIdentifier(PROJECT_ID)
                        .tokenName(TOKEN_NAME)
                        .identifier(DELEGATE_GROUP_IDENTIFIER)
                        .tags(tags)
