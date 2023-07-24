@@ -26,6 +26,8 @@ public class Constants {
   public static final String GITHUB_TOKEN = "HARNESS_GITHUB_TOKEN";
   public static final String GITHUB_APP_ID = "HARNESS_GITHUB_APP_APPLICATION_ID";
   public static final String GITHUB_APP_PRIVATE_KEY_REF = "HARNESS_GITHUB_APP_PRIVATE_KEY_REF";
+  public static final String PRIVATE_KEY_START = "-----BEGIN PRIVATE KEY-----";
+  public static final String PRIVATE_KEY_END = "-----END PRIVATE KEY-----";
   public static final String GITLAB_TOKEN = "HARNESS_GITLAB_TOKEN";
   public static final String BITBUCKET_USERNAME = "HARNESS_BITBUCKET_USERNAME";
   public static final String BITBUCKET_USERNAME_API_ACCESS = "HARNESS_BITBUCKET_API_ACCESS_USERNAME";
