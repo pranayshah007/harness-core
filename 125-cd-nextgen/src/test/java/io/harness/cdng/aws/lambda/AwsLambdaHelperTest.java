@@ -33,6 +33,7 @@ import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStepParameters;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.AwsLambdaInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestType;
@@ -67,7 +68,6 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
@@ -128,7 +128,7 @@ public class AwsLambdaHelperTest extends CategoryTest {
 
   @Mock private LogCallback logCallback;
   @Mock private FileStoreService fileStoreService;
-  @Mock private EngineExpressionService engineExpressionService;
+  @Mock private CDExpressionResolver cdExpressionResolver;
   @Mock private OutcomeService outcomeService;
   @Mock private AwsLambdaEntityHelper awsLambdaEntityHelper;
   @Mock private TaskRequestsUtils TaskRequestsUtils;
@@ -177,7 +177,7 @@ public class AwsLambdaHelperTest extends CategoryTest {
 
       Optional<FileStoreNodeDTO> manifestFile = Optional.of(FileNodeDTO.builder().content(MANIFEST_CONTENT).build());
       doReturn(manifestFile).when(fileStoreService).getWithChildrenByPath(any(), any(), any(), any(), anyBoolean());
-      doReturn(MANIFEST_CONTENT).when(engineExpressionService).renderExpression(any(), any());
+      doReturn(MANIFEST_CONTENT).when(cdExpressionResolver).renderExpression(any(), any());
       doReturn(unitProgressData)
           .when(awsLambdaHelper)
           .getCommandUnitProgressData(

@@ -28,4 +28,5 @@ public class WebhookEventMappingResponse {
   @Default boolean failedToFindTrigger = true;
   boolean isCustomTrigger;
   @Singular List<TriggerDetails> triggers;
+  @Singular("unMatchedTriggerInfo") List<UnMatchedTriggerInfo> unMatchedTriggerInfoList;
 }

@@ -266,7 +266,7 @@ public abstract class ConnectorProcessor {
         gitConfigDTO, connectorConfigDto, accountIdentifier, commitToNewBranch, baseBranchName, gitFileDetails);
 
     DelegateTaskRequest delegateTaskRequest =
-        buildDelegateTask(taskParameters, connectorConfigDto, getTaskType("scm"), accountIdentifier);
+        buildDelegateTask(taskParameters, connectorConfigDto, getTaskType("scm"), accountIdentifier, 2);
 
     return executeDelegateSyncTask(delegateTaskRequest);
   }
@@ -395,7 +395,7 @@ public abstract class ConnectorProcessor {
         gitConfigDTO, connectorConfigDto, accountIdentifier, GitCommandType.LIST_REMOTE, listRemoteRequest);
 
     DelegateTaskRequest delegateTaskRequest =
-        buildDelegateTask(taskParameters, connectorConfigDto, getTaskType("ngGit"), accountIdentifier);
+        buildDelegateTask(taskParameters, connectorConfigDto, getTaskType("ngGit"), accountIdentifier, 1);
 
     return executeDelegateSyncTask(delegateTaskRequest);
   }
@@ -406,7 +406,7 @@ public abstract class ConnectorProcessor {
         gitConfigDTO, connectorConfigDto, accountIdentifier, GitCommandType.COMMIT_AND_PUSH, commitAndPushRequest);
 
     DelegateTaskRequest delegateTaskRequest =
-        buildDelegateTask(taskParameters, connectorConfigDto, getTaskType("ngGit"), accountIdentifier);
+        buildDelegateTask(taskParameters, connectorConfigDto, getTaskType("ngGit"), accountIdentifier, 15);
 
     return executeDelegateSyncTask(delegateTaskRequest);
   }
@@ -465,8 +465,8 @@ public abstract class ConnectorProcessor {
     return emptyList();
   }
 
-  private DelegateTaskRequest buildDelegateTask(
-      TaskParameters taskParameters, ConnectorConfigDTO connectorConfig, String taskType, String accountIdentifier) {
+  private DelegateTaskRequest buildDelegateTask(TaskParameters taskParameters, ConnectorConfigDTO connectorConfig,
+      String taskType, String accountIdentifier, long executionTimeoutInMinutes) {
     if (taskParameters instanceof ConnectorTaskParams && connectorConfig instanceof DelegateSelectable) {
       ((ConnectorTaskParams) taskParameters)
           .setDelegateSelectors(((DelegateSelectable) connectorConfig).getDelegateSelectors());
@@ -480,7 +480,7 @@ public abstract class ConnectorProcessor {
         .taskType(taskType)
         .taskParameters(taskParameters)
         .taskSetupAbstractions(ngTaskSetupAbstractionsWithOwner)
-        .executionTimeout(Duration.ofMinutes(10))
+        .executionTimeout(Duration.ofMinutes(executionTimeoutInMinutes))
         .forceExecute(true)
         .build();
   }

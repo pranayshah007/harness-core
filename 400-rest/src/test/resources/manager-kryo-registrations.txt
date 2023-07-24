@@ -1389,6 +1389,10 @@
 9148:io.harness.cvng.beans.SignalFXMetricDataCollectionInfo.MetricCollectionInfo
 9149:io.harness.cvng.beans.grafanaloki.GrafanaLokiLogSampleDataRequest
 9150:io.harness.cvng.beans.GrafanaLokiLogDataCollectionInfo
+9151:io.harness.cvng.beans.azure.AzureLogsSampleDataRequest
+9152:io.harness.cvng.beans.AzureLogsDataCollectionInfo
+9153:io.harness.cvng.beans.azure.AzureMetricsSampleDataRequest
+9154:io.harness.cvng.beans.azure.AzureServiceInstanceFieldDataRequest
 9501:io.harness.timeout.trackers.absolute.AbsoluteTimeoutParameters
 9701:io.harness.logging.UnitProgress
 9702:io.harness.logging.UnitStatus
@@ -2303,6 +2307,7 @@
 90001:software.wings.service.impl.apm.AWSPrometheusInfo
 95001:io.harness.delegate.beans.logstreaming.UnitProgressData
 95002:io.harness.waiter.WaitInstanceTimeoutCallback
+95003:io.harness.delegate.beans.helm.HelmDeployProgressData
 96001:io.harness.springdata.exceptions.WingsTransactionFailureException
 97001:io.harness.jira.JiraActionNG
 97002:io.harness.jira.JiraCreateIssueRequestNG
@@ -3135,6 +3140,7 @@
 10000121:io.harness.adfs.AdfsAccessTokenResponse
 10000122:io.harness.exception.ServiceNowOIDCException
 10000123:io.harness.servicenow.auth.refreshtoken.AccessTokenResponse
+10000124:io.harness.exception.HarnessRemoteServiceException
 10000201:io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO
 10000202:io.harness.delegate.beans.connector.tasconnector.TasCredentialDTO
 10000203:io.harness.delegate.beans.connector.tasconnector.TasCredentialSpecDTO
@@ -3255,4 +3261,7 @@
 20000614:io.harness.delegate.beans.serverless.RollbackConfiguration
 20000615:io.harness.delegate.beans.serverless.RollbackTrigger
 20000616:io.harness.delegate.beans.serverless.Tag
+20000617:io.harness.delegate.task.helm.request.HelmFetchChartManifestTaskParameters
+20000618:io.harness.delegate.task.helm.response.HelmFetchChartManifestResponse
+20000619:io.harness.delegate.task.helm.response.HelmChartManifest
 20001000:io.harness.delegate.beans.connector.scm.github.GithubAppDTO

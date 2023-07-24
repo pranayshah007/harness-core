@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.instancesync.info;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
@@ -22,6 +23,7 @@ import lombok.EqualsAndHashCode;
 @Data
 @Builder
 @EqualsAndHashCode(callSuper = true)
+@RecasterAlias("io.harness.delegate.beans.instancesync.info.ServerlessAwsLambdaServerInstanceInfo")
 public class ServerlessAwsLambdaServerInstanceInfo extends ServerInstanceInfo {
   // serverless details
   private String serverlessServiceName;

@@ -10,6 +10,8 @@ package io.harness.delegate.task.winrm;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.task.winrm.DownloadWinRmScript.AUTHORIZATION;
 import static io.harness.delegate.task.winrm.DownloadWinRmScript.AZURE_ARTIFACTS_URL;
+import static io.harness.delegate.task.winrm.DownloadWinRmScript.AZURE_UPACK_DOWNLOAD_ARTIFACT_BASH_ORG;
+import static io.harness.delegate.task.winrm.DownloadWinRmScript.AZURE_UPACK_DOWNLOAD_ARTIFACT_BASH_PROJ;
 import static io.harness.delegate.task.winrm.DownloadWinRmScript.AZURE_UPACK_DOWNLOAD_ARTIFACT_PS_ORG;
 import static io.harness.delegate.task.winrm.DownloadWinRmScript.AZURE_UPACK_DOWNLOAD_ARTIFACT_PS_PROJ;
 import static io.harness.delegate.task.winrm.DownloadWinRmScript.DESTINATION_PATH;
@@ -64,6 +66,11 @@ public class AzureArtifactDownloadHandler implements ArtifactDownloadHandler {
       String downloadUrl = getDownloadUrl(artifactFileName, azureArtifactDelegateConfig);
       return getPowerShellCommand(destinationPath, artifactFileName, azureArtifactDelegateConfig, downloadUrl);
     } else if (ScriptType.BASH.equals(scriptType)) {
+      if (AzureArtifactsProtocolType.upack.name().equals(azureArtifactDelegateConfig.getPackageType())) {
+        return PROJECT_SCOPE.equals(azureArtifactDelegateConfig.getScope())
+            ? getBashCommandForUpackProjLevel(destinationPath, azureArtifactDelegateConfig)
+            : getBashCommandForUpackOrgLevel(destinationPath, azureArtifactDelegateConfig);
+      }
       String downloadUrl = getDownloadUrl(artifactFileName, azureArtifactDelegateConfig);
       return getSshCommand(destinationPath, artifactFileName, azureArtifactDelegateConfig, downloadUrl);
     } else {
@@ -84,6 +91,29 @@ public class AzureArtifactDownloadHandler implements ArtifactDownloadHandler {
         .replace(AUTHORIZATION, getAuthHeader(getDecryptedToken(azureArtifactDelegateConfig, secretDecryptionService)))
         .replace(URI, downloadUrl)
         .replace(OUT_FILE, destinationPath + "\\" + artifactFileName);
+  }
+
+  private String getBashCommandForUpackOrgLevel(
+      String destinationPath, AzureArtifactDelegateConfig azureArtifactDelegateConfig) {
+    return AZURE_UPACK_DOWNLOAD_ARTIFACT_BASH_ORG
+        .replace(TOKEN, getDecryptedToken(azureArtifactDelegateConfig, secretDecryptionService))
+        .replace(AZURE_ARTIFACTS_URL, getAzureArtifactsURL(azureArtifactDelegateConfig))
+        .replace(FEED, azureArtifactDelegateConfig.getFeed())
+        .replace(PKG_NAME, azureArtifactDelegateConfig.getPackageName())
+        .replace(PKG_VERSION, azureArtifactDelegateConfig.getVersion())
+        .replace(DESTINATION_PATH, destinationPath);
+  }
+
+  private String getBashCommandForUpackProjLevel(
+      String destinationPath, AzureArtifactDelegateConfig azureArtifactDelegateConfig) {
+    return AZURE_UPACK_DOWNLOAD_ARTIFACT_BASH_PROJ
+        .replace(TOKEN, getDecryptedToken(azureArtifactDelegateConfig, secretDecryptionService))
+        .replace(AZURE_ARTIFACTS_URL, getAzureArtifactsURL(azureArtifactDelegateConfig))
+        .replace(PROJECT, azureArtifactDelegateConfig.getProject())
+        .replace(FEED, azureArtifactDelegateConfig.getFeed())
+        .replace(PKG_NAME, azureArtifactDelegateConfig.getPackageName())
+        .replace(PKG_VERSION, azureArtifactDelegateConfig.getVersion())
+        .replace(DESTINATION_PATH, destinationPath);
   }
 
   private String getPowerShellCommandForUpackOrgLevel(

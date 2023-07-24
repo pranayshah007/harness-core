@@ -25,6 +25,7 @@ import lombok.experimental.UtilityClass;
 public class EntityYamlRootNames {
   public static final String GITOPS_CREATE_PR = "CreatePR";
   public static final String GITOPS_MERGE_PR = "MergePR";
+  public static final String GITOPS_REVERT_PR = "RevertPR";
   public static final String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
   public static final String GITOPS_FETCH_LINKED_APPS = "GitOpsFetchLinkedApps";
   public static final String GITOPS_SYNC = "GitOpsSync";
@@ -250,4 +251,6 @@ public class EntityYamlRootNames {
   public static final String SERVERLESS_AWS_LAMBDA_ROLLBACK_V2 = "ServerlessAwsLambdaRollbackV2";
   public static final String SERVERLESS_AWS_LAMBDA_DEPLOY_V2 = "ServerlessAwsLambdaDeployV2";
   public static final String SERVERLESS_AWS_LAMBDA_PACKAGE_V2 = "ServerlessAwsLambdaPackageV2";
+  public static final String AWS_CDK_BOOTSTRAP = "AwsCdkBootstrap";
+  public static final String AWS_CDK_SYNTH = "AwsCdkSynth";
 }

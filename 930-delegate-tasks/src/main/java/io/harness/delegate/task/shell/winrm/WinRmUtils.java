@@ -35,15 +35,18 @@ import lombok.experimental.UtilityClass;
 public class WinRmUtils {
   public static WinRmSessionConfig getWinRmSessionConfig(NgCommandUnit commandUnit,
       WinrmTaskParameters winRmCommandTaskParameters, WinRmConfigAuthEnhancer winRmConfigAuthEnhancer) {
-    WinRmSessionConfigBuilder configBuilder = WinRmSessionConfig.builder()
-                                                  .accountId(winRmCommandTaskParameters.getAccountId())
-                                                  .executionId(winRmCommandTaskParameters.getExecutionId())
-                                                  .workingDirectory(getWorkingDir(commandUnit.getDestinationPath()))
-                                                  .commandUnitName(commandUnit.getName())
-                                                  .environment(winRmCommandTaskParameters.getEnvironmentVariables())
-                                                  .hostname(winRmCommandTaskParameters.getHost())
-                                                  .timeout(SESSION_TIMEOUT)
-                                                  .commandParameters(getCommandParameters(winRmCommandTaskParameters));
+    WinRmSessionConfigBuilder configBuilder =
+        WinRmSessionConfig.builder()
+            .accountId(winRmCommandTaskParameters.getAccountId())
+            .executionId(winRmCommandTaskParameters.getExecutionId())
+            .workingDirectory(getWorkingDir(commandUnit.getDestinationPath()))
+            .commandUnitName(commandUnit.getName())
+            .environment(winRmCommandTaskParameters.getEnvironmentVariables())
+            .hostname(winRmCommandTaskParameters.getHost())
+            .timeout(winRmCommandTaskParameters.getSessionTimeout() != null
+                    ? Math.toIntExact(winRmCommandTaskParameters.getSessionTimeout())
+                    : SESSION_TIMEOUT)
+            .commandParameters(getCommandParameters(winRmCommandTaskParameters));
 
     final WinRmInfraDelegateConfig winRmInfraDelegateConfig = winRmCommandTaskParameters.getWinRmInfraDelegateConfig();
     if (winRmInfraDelegateConfig == null) {

@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 54
+version: 55
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -984,6 +984,22 @@ roles:
         - code_repo_delete
         - code_repo_push
         - code_commitCheck_report
+      managed: true
+      allowedScopeLevels:
+        - account
+        - organization
+        - project
+    - identifier: _cet_admin
+      name: CET Admin
+      description: Can create, edit, and view CET Resources
+      permissions:
+        - cet_agents_view
+        - cet_token_view
+        - cet_token_create
+        - cet_token_revoke
+        - cet_criticalevent_view
+        - cet_criticalevent_create
+        - cet_criticalevent_delete
       managed: true
       allowedScopeLevels:
         - account

@@ -9,6 +9,7 @@ package io.harness.cdng.usage.mapper;
 
 import static io.harness.NGDateUtils.YEAR_MONTH_DAY_DATE_PATTERN;
 import static io.harness.NGDateUtils.getLocalDateOrThrow;
+import static io.harness.licensing.usage.params.filter.LicenseDateUsageReportType.DAILY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -31,6 +32,17 @@ public class ServiceInstancesDateUsageMapper {
         .fromDate(fromDate)
         .toDate(toDate)
         .reportType(licenseDateUsageParams.getReportType())
+        .licenseType(licenseType)
+        .build();
+  }
+
+  public static LicenseDateUsageFetchData buildDailyLicenseDateUsageFetchData(
+      String accountId, LocalDate fromDate, LocalDate toDate, CDLicenseType licenseType) {
+    return LicenseDateUsageFetchData.builder()
+        .accountIdentifier(accountId)
+        .fromDate(fromDate)
+        .toDate(toDate)
+        .reportType(DAILY)
         .licenseType(licenseType)
         .build();
   }

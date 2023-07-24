@@ -51,6 +51,7 @@ import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TemplateExpression;
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.beans.dto.ThirdPartyApiCallLog.FieldType;
 import software.wings.beans.dto.ThirdPartyApiCallLog.ThirdPartyApiCallField;
@@ -251,8 +252,10 @@ public abstract class AbstractAnalysisState extends State implements SweepingOut
   }
   protected void saveMetaDataForDashboard(String accountId, ExecutionContext executionContext) {
     try {
+      String[] fields = {WorkflowExecutionKeys.executionArgs, WorkflowExecutionKeys.pipelineExecutionId,
+          WorkflowExecutionKeys.startTs};
       WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(
-          executionContext.getAppId(), executionContext.getWorkflowExecutionId());
+          executionContext.getAppId(), executionContext.getWorkflowExecutionId(), fields);
 
       // TODO: ASR: update this for multi-artifact
       final Artifact artifactForService =
@@ -358,8 +361,8 @@ public abstract class AbstractAnalysisState extends State implements SweepingOut
   }
 
   protected String getWorkflowId(ExecutionContext context) {
-    final WorkflowExecution executionDetails =
-        workflowExecutionService.getWorkflowExecution(context.getAppId(), context.getWorkflowExecutionId());
+    final WorkflowExecution executionDetails = workflowExecutionService.getWorkflowExecution(
+        context.getAppId(), context.getWorkflowExecutionId(), WorkflowExecutionKeys.workflowId);
     return executionDetails.getWorkflowId();
   }
 

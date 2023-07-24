@@ -21,7 +21,7 @@ java_library(
         "//idp-service/src/main/java/io/harness/idp/proxy/delegate:module",
         "//idp-service/src/main/java/io/harness/idp/proxy/envvariable:module",
         "//idp-service/src/main/java/io/harness/idp/proxy/layout:module",
-        "//idp-service/src/main/java/io/harness/idp/proxy/ngmanager:module",
+        "//idp-service/src/main/java/io/harness/idp/proxy/services:module",
         "@maven//:org_mockito_mockito_inline",
     ],
 )

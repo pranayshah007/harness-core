@@ -51,6 +51,7 @@ import software.wings.beans.Service;
 import software.wings.beans.Variable;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.deployment.WorkflowVariablesMetadata;
 import software.wings.dl.WingsPersistence;
@@ -108,7 +109,10 @@ public class WorkflowExecutionServiceHelper {
     if (isBlank(workflowExecutionId) || isEmpty(workflowVariables)) {
       return new WorkflowVariablesMetadata(workflowVariables);
     }
-    WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId);
+    String[] fields = {WorkflowExecutionKeys.executionArgs, WorkflowExecutionKeys.pipelineExecution,
+        WorkflowExecutionKeys.workflowId, WorkflowExecutionKeys.workflowType};
+    WorkflowExecution workflowExecution =
+        workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId, fields);
     if (workflowExecution == null || workflowExecution.getExecutionArgs() == null
         || executionArgs.getWorkflowType() != workflowExecution.getWorkflowType()
         || (ORCHESTRATION == workflowExecution.getWorkflowType()
@@ -406,7 +410,8 @@ public class WorkflowExecutionServiceHelper {
 
   private List<Variable> fetchWorkflowVariablesRunningPipeline(
       String appId, String pipelineExecutionId, String pipelineStageElementId) {
-    WorkflowExecution pipelineExecution = workflowExecutionService.getWorkflowExecution(appId, pipelineExecutionId);
+    WorkflowExecution pipelineExecution = workflowExecutionService.getWorkflowExecution(
+        appId, pipelineExecutionId, WorkflowExecutionKeys.executionArgs, WorkflowExecutionKeys.workflowId);
 
     notNullCheck("No Executions found for given PipelineExecutionId " + pipelineExecutionId, pipelineExecution);
     String pipelineId = pipelineExecution.getWorkflowId();

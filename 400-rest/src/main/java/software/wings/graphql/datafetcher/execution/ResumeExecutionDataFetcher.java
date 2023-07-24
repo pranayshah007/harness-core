@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.graphql.datafetcher.BaseMutatorDataFetcher;
 import software.wings.graphql.datafetcher.MutationContext;
 import software.wings.graphql.schema.mutation.execution.input.QLResumeExecutionInput;
@@ -88,7 +89,13 @@ public class ResumeExecutionDataFetcher
 
   @VisibleForTesting
   private WorkflowExecution validateAndGetWorkflowExecution(String appId, String workflowExecutionId) {
-    WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId);
+    String[] fields = {WorkflowExecutionKeys.appId, WorkflowExecutionKeys.createdAt, WorkflowExecutionKeys.envId,
+        WorkflowExecutionKeys.executionArgs, WorkflowExecutionKeys.latestPipelineResume,
+        WorkflowExecutionKeys.pipelineExecution, WorkflowExecutionKeys.pipelineResumeId,
+        WorkflowExecutionKeys.pipelineSummary, WorkflowExecutionKeys.status, WorkflowExecutionKeys.workflowId,
+        WorkflowExecutionKeys.workflowType};
+    WorkflowExecution workflowExecution =
+        workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId, fields);
     notNullCheck(String.format(ERROR_MESSAGE_EXECUTION_S_DOESN_T_EXIST, workflowExecutionId), workflowExecution);
     return workflowExecution;
   }

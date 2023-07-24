@@ -19,7 +19,8 @@ public enum Risk {
   HEALTHY(0, "Healthy"),
   OBSERVE(1, "Observe"),
   NEED_ATTENTION(2, "Need Attention"),
-  UNHEALTHY(3, "Unhealthy");
+  UNHEALTHY(3, "Unhealthy"),
+  CUSTOMER_DEFINED_UNHEALTHY(4, "Customer Defined Unhealthy");
   private static final Map<Integer, Risk> INT_TO_RISK_MAP = new HashMap<>();
   private static final Map<Integer, Risk> INT_TO_RISK_MAP_FOR_DEPLOYMENT_LOG_ANALYSIS = new HashMap<>();
   private static final Map<Integer, Risk> INT_TO_RISK_MAP_FOR_DEPLOYMENT_TIMESERIES_ANALYSIS = new HashMap<>();
@@ -40,9 +41,12 @@ public enum Risk {
     INT_TO_RISK_MAP_FOR_DEPLOYMENT_TIMESERIES_ANALYSIS.put(0, HEALTHY);
     INT_TO_RISK_MAP_FOR_DEPLOYMENT_TIMESERIES_ANALYSIS.put(1, OBSERVE);
     INT_TO_RISK_MAP_FOR_DEPLOYMENT_TIMESERIES_ANALYSIS.put(2, UNHEALTHY);
-    // LE doest not send 3 for deployment timeseries analysis, but as the demo data deserializer converts unhealthy into
-    // value 3, that's why adding this entry
+    // LE doest not send 3 for deployment time series analysis, but as the demo data deserializer converts unhealthy
+    // into value 3, that's why adding this entry
     INT_TO_RISK_MAP_FOR_DEPLOYMENT_TIMESERIES_ANALYSIS.put(3, UNHEALTHY);
+    // Risk with score 4 will be used for unhealthy only, but it is marked unhealthy from customer defined metric
+    // thresholds not ML analysis
+    INT_TO_RISK_MAP_FOR_DEPLOYMENT_TIMESERIES_ANALYSIS.put(4, CUSTOMER_DEFINED_UNHEALTHY);
   }
 
   private final int value;

@@ -134,7 +134,7 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
     endInterval = endInterval + DAY_IN_MS;
 
     long totalTries = 0;
-    String query = "select sum(stagebuildtime*buildmultiplier/60000) from " + tableNameStageSummary
+    String query = "select sum(cputime*buildmultiplier/60000) from " + tableNameStageSummary
         + " where accountidentifier=? and infratype ='HostedVm' "
         + " and startts>=? and startts<=?;";
 

@@ -22,12 +22,29 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 @UtilityClass
 public class VerificationJobInstanceServiceInstanceUtils {
   public static Integer MAX_TEST_NODE_COUNT = 50;
   public static Integer MAX_CONTROL_NODE_COUNT = 50;
+
+  public boolean isNodeRegExEnabled(VerificationJobInstance verificationJobInstance) {
+    return verificationJobInstance != null && verificationJobInstance.getServiceInstanceDetails() != null
+        && (StringUtils.isNotEmpty(verificationJobInstance.getServiceInstanceDetails().getTestNodeRegExPattern())
+            || StringUtils.isNoneBlank(
+                verificationJobInstance.getServiceInstanceDetails().getControlNodeRegExPattern()));
+  }
+
+  public boolean canUseNodesFromCD(VerificationJobInstance verificationJobInstance) {
+    return verificationJobInstance.getServiceInstanceDetails() != null
+        && verificationJobInstance.getServiceInstanceDetails().isShouldUseNodesFromCD()
+        && CollectionUtils.isNotEmpty(verificationJobInstance.getServiceInstanceDetails().getDeployedServiceInstances())
+        && CollectionUtils.isNotEmpty(
+            verificationJobInstance.getServiceInstanceDetails().getServiceInstancesAfterDeployment());
+  }
 
   public List<String> getSampledTestNodes(VerificationJobInstance verificationJobInstance) {
     return getRandomElement(getTestNodes(verificationJobInstance), MAX_TEST_NODE_COUNT);
@@ -44,16 +61,26 @@ public class VerificationJobInstanceServiceInstanceUtils {
       return new HashSet<>(testNodes);
     }
     Set<String> filteredTestNodes =
-        testNodes.stream()
-            .filter(str
-                -> Pattern.matches(verificationJobInstance.getServiceInstanceDetails().getTestNodeRegExPattern(), str))
-            .collect(Collectors.toSet());
-    if (filteredTestNodes.size() < testNodes.size()) {
+        getRegExFilteredTestNodes(testNodes, verificationJobInstance.getServiceInstanceDetails());
+    if (executionLogger != null) {
       executionLogger.log(ExecutionLogDTO.LogLevel.INFO,
-          "Following test nodes were filtered out of testNodes because of regex match failure: "
-              + String.join(",", Sets.difference(testNodes, filteredTestNodes)));
+          "Regex" + verificationJobInstance.getServiceInstanceDetails().getTestNodeRegExPattern()
+              + "matched test nodes: " + String.join(",", filteredTestNodes) + ", Filtered out nodes:"
+              + String.join(",", Sets.difference(SetUtils.emptyIfNull(testNodes), filteredTestNodes)));
     }
     return filteredTestNodes;
+  }
+
+  @NotNull
+  private static Set<String> getRegExFilteredTestNodes(
+      Set<String> testNodes, ServiceInstanceDetails serviceInstanceDetails) {
+    if (StringUtils.isNotEmpty(serviceInstanceDetails.getTestNodeRegExPattern())) {
+      return CollectionUtils.emptyIfNull(testNodes)
+          .stream()
+          .filter(str -> Pattern.matches(serviceInstanceDetails.getTestNodeRegExPattern(), str))
+          .collect(Collectors.toSet());
+    }
+    return SetUtils.emptyIfNull(testNodes);
   }
 
   public Set<String> filterValidControlNodes(
@@ -63,42 +90,46 @@ public class VerificationJobInstanceServiceInstanceUtils {
       return new HashSet<>(controlNodes);
     }
     Set<String> filteredControlNodes =
-        controlNodes.stream()
-            .filter(str
-                -> Pattern.matches(
-                    verificationJobInstance.getServiceInstanceDetails().getControlNodeRegExPattern(), str))
-            .collect(Collectors.toSet());
-    if (filteredControlNodes.size() < controlNodes.size()) {
+        getRegExFilterdControlNodes(controlNodes, verificationJobInstance.getServiceInstanceDetails());
+    if (executionLogger != null) {
       executionLogger.log(ExecutionLogDTO.LogLevel.INFO,
-          "Following control nodes were filtered out of testNodes because of regex match failure: "
-              + String.join(",", Sets.difference(controlNodes, filteredControlNodes)));
+          "Regex " + verificationJobInstance.getServiceInstanceDetails().getControlNodeRegExPattern()
+              + "matched control nodes: " + String.join(",", filteredControlNodes) + ", Filtered out nodes:"
+              + String.join(",", Sets.difference(SetUtils.emptyIfNull(controlNodes), filteredControlNodes)));
     }
     return filteredControlNodes;
   }
 
+  @NotNull
+  private static Set<String> getRegExFilterdControlNodes(
+      Set<String> controlNodes, ServiceInstanceDetails serviceInstanceDetails) {
+    if (StringUtils.isNotEmpty(serviceInstanceDetails.getControlNodeRegExPattern())) {
+      return SetUtils.emptyIfNull(controlNodes)
+          .stream()
+          .filter(str -> Pattern.matches(serviceInstanceDetails.getControlNodeRegExPattern(), str))
+          .collect(Collectors.toSet());
+    }
+    return SetUtils.emptyIfNull(controlNodes);
+  }
+
   public List<String> getTestNodes(VerificationJobInstance verificationJobInstance) {
-    if (verificationJobInstance.getServiceInstanceDetails() == null
-        || verificationJobInstance.getServiceInstanceDetails().isShouldUseNodesFromCD() == false
-        || CollectionUtils.isEmpty(
-            verificationJobInstance.getServiceInstanceDetails().getServiceInstancesAfterDeployment())) {
+    if (!canUseNodesFromCD(verificationJobInstance)) {
       return null;
     }
-    return CollectionUtils
-        .emptyIfNull(verificationJobInstance.getServiceInstanceDetails().getDeployedServiceInstances())
-        .stream()
-        .filter(
-            si -> verificationJobInstance.getServiceInstanceDetails().getServiceInstancesAfterDeployment().contains(si))
-        .collect(Collectors.toList());
+    return new ArrayList<>(getRegExFilteredTestNodes(
+        CollectionUtils.emptyIfNull(verificationJobInstance.getServiceInstanceDetails().getDeployedServiceInstances())
+            .stream()
+            .filter(si
+                -> verificationJobInstance.getServiceInstanceDetails().getServiceInstancesAfterDeployment().contains(
+                    si))
+            .collect(Collectors.toSet()),
+        verificationJobInstance.getServiceInstanceDetails()));
   }
 
   public List<String> getControlNodes(VerificationJobInstance verificationJobInstance) {
-    if (verificationJobInstance.getServiceInstanceDetails() == null
-        || verificationJobInstance.getServiceInstanceDetails().isShouldUseNodesFromCD() == false
-        || CollectionUtils.isEmpty(
-            verificationJobInstance.getServiceInstanceDetails().getServiceInstancesAfterDeployment())) {
+    if (!canUseNodesFromCD(verificationJobInstance)) {
       return null;
     }
-
     switch (verificationJobInstance.getResolvedJob().getType()) {
       case CANARY:
         return getControlNodesForCanaryComparison(verificationJobInstance.getServiceInstanceDetails());
@@ -117,7 +148,8 @@ public class VerificationJobInstanceServiceInstanceUtils {
   }
 
   public boolean isValidCanaryDeployment(ServiceInstanceDetails serviceInstanceDetails) {
-    if (serviceInstanceDetails == null) {
+    if (serviceInstanceDetails == null
+        || CollectionUtils.isEmpty(serviceInstanceDetails.getDeployedServiceInstances())) {
       return false;
     }
     // Deployed SI shouldn't be there before deployment and at-least 1 before deployment SI should be there after
@@ -137,14 +169,18 @@ public class VerificationJobInstanceServiceInstanceUtils {
   }
 
   private List<String> getControlNodesForBeforeAfterComparison(ServiceInstanceDetails serviceInstanceDetails) {
-    return serviceInstanceDetails.getServiceInstancesBeforeDeployment();
+    return new ArrayList<>(getRegExFilterdControlNodes(
+        new HashSet<>(serviceInstanceDetails.getServiceInstancesBeforeDeployment()), serviceInstanceDetails));
   }
 
   private List<String> getControlNodesForCanaryComparison(ServiceInstanceDetails serviceInstanceDetails) {
-    return CollectionUtils.emptyIfNull(serviceInstanceDetails.getServiceInstancesAfterDeployment())
-        .stream()
-        .filter(si -> serviceInstanceDetails.getServiceInstancesBeforeDeployment().contains(si))
-        .collect(Collectors.toList());
+    return new ArrayList<>(getRegExFilterdControlNodes(
+        CollectionUtils.emptyIfNull(serviceInstanceDetails.getServiceInstancesAfterDeployment())
+            .stream()
+            .filter(si -> serviceInstanceDetails.getServiceInstancesBeforeDeployment().contains(si))
+            .filter(si -> !serviceInstanceDetails.getDeployedServiceInstances().contains(si))
+            .collect(Collectors.toSet()),
+        serviceInstanceDetails));
   }
 
   public List<String> getRandomElement(List<String> list, int totalItems) {

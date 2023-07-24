@@ -43,6 +43,7 @@ import io.harness.connector.ConnectorCategory;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.ConnectorInternalFilterPropertiesDTO;
 import io.harness.connector.ConnectorRegistryFactory;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
@@ -1292,6 +1293,13 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     log.info("ccmK8sConnectors count elements: {} pages: {}", ccmK8sConnectors.getTotalElements(),
         ccmK8sConnectors.getTotalPages());
     return getCcmK8sResponseList(accountIdentifier, orgIdentifier, projectIdentifier, k8sConnectors, ccmK8sConnectors);
+  }
+
+  @Override
+  public Page<ConnectorResponseDTO> list(
+      ConnectorInternalFilterPropertiesDTO connectorInternalFilterPropertiesDTO, Pageable pageable) {
+    Criteria criteria = filterService.createCriteriaFromCcmConnectorFilter(connectorInternalFilterPropertiesDTO);
+    return connectorRepository.findAll(criteria, pageable).map(connectorMapper::writeDTO);
   }
 
   @Override

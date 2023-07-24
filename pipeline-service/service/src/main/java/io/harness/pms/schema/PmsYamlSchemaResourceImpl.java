@@ -48,7 +48,6 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
 
   private final String deployMode = System.getenv().get("DEPLOY_MODE");
   private final String PIPELINE_JSON_PATH = "static-schema/pipeline.json";
-  private final String TEMPLATE_JSON_PATH = "static-schema/template.json";
 
   private final String PRE_QA = "stress";
 
@@ -89,9 +88,6 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
     switch (entityType) {
       case PIPELINES:
         filePath = PIPELINE_JSON_PATH;
-        break;
-      case TEMPLATE:
-        filePath = TEMPLATE_JSON_PATH;
         break;
       default:
         return getYamlSchema(entityType, projectIdentifier, orgIdentifier, scope, identifier, accountIdentifier);

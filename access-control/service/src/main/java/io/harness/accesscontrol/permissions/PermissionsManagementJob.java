@@ -9,7 +9,6 @@ package io.harness.accesscontrol.permissions;
 
 import io.harness.accesscontrol.commons.bootstrap.ConfigurationState;
 import io.harness.accesscontrol.commons.bootstrap.ConfigurationStateRepository;
-import io.harness.accesscontrol.permissions.persistence.repositories.InMemoryPermissionRepository;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
@@ -36,15 +35,12 @@ public class PermissionsManagementJob {
 
   private final PermissionService permissionService;
   private final ConfigurationStateRepository configurationStateRepository;
-  private final InMemoryPermissionRepository inMemoryPermissionRepository;
   private final PermissionsConfig permissionsConfig;
 
   @Inject
-  public PermissionsManagementJob(PermissionService permissionService,
-      ConfigurationStateRepository configurationStateRepository,
-      InMemoryPermissionRepository inMemoryPermissionRepository) {
+  public PermissionsManagementJob(
+      PermissionService permissionService, ConfigurationStateRepository configurationStateRepository) {
     this.configurationStateRepository = configurationStateRepository;
-    this.inMemoryPermissionRepository = inMemoryPermissionRepository;
     ObjectMapper om = new ObjectMapper(new YAMLFactory());
     URL url = getClass().getClassLoader().getResource(PERMISSIONS_YAML_PATH);
     try {

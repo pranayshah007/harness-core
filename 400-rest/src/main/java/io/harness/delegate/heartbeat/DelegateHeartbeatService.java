@@ -160,7 +160,7 @@ public abstract class DelegateHeartbeatService<T extends Object> {
 
   private void destroyTheCurrentDelegate(
       String accountId, String delegateId, String delegateConnectionId, boolean isPollingMode) {
-    Delegate delegate = delegateCache.get(accountId, delegateId, false);
+    Delegate delegate = delegateCache.get(accountId, delegateId);
     delegateMetricsService.recordDelegateMetrics(delegate, DELEGATE_DESTROYED);
     if (isPollingMode) {
       log.warn("Sent self destruct command to delegate {}, with connectionId {}.", delegateId, delegateConnectionId);

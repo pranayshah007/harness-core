@@ -36,12 +36,12 @@ message TaskPayload {
   // When delegate receives POST /execution/{runnerType},
   // delegate will invoke the handler of executing a task, in which it will call the corresponding runner's API to
   // execute the task.
-  string resourceUri = 2;
-  string resourceMethod = 3;
+  string eventType = 2;
+  string runnerType = 3;
   string log_token =
-      6;  // Token for log stream. It's not in the payload data because log token is assigned when acquire
-  InputData task_data = 7;      // binary data for task inputs.
-  InputData infra_data = 8;     // binary data for infra config
-  string executionInfraId = 9;  // Id for the execution infra to use
+      4;  // Token for log stream. It's not in the payload data because log token is assigned when acquire
+  InputData task_data = 5;      // binary data for task inputs.
+  InputData infra_data = 6;     // binary data for infra config
+  string executionInfraId = 7;  // Id for the execution infra to use
   // TODO: secrets + decryptableEntities
 }

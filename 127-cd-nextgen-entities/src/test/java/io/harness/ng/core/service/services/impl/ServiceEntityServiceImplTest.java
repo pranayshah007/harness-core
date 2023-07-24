@@ -1228,8 +1228,8 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     String yaml = readFile(filename);
     ManifestsResponseDTO responseDTO = serviceEntityService.getManifestIdentifiers(yaml, SERVICE_ID);
     assertThat(responseDTO).isNotNull();
-    assertThat(responseDTO.getIdentifiers()).isNotNull().isNotEmpty().hasSize(2);
-    assertThat(responseDTO.getIdentifiers()).hasSameElementsAs(Arrays.asList("mani_i1", "mani_i2"));
+    assertThat(responseDTO.getIdentifiers()).isNotNull().isNotEmpty().hasSize(1);
+    assertThat(responseDTO.getIdentifiers()).hasSameElementsAs(Arrays.asList("mani_i1"));
   }
 
   @Test
@@ -1270,8 +1270,19 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   public void testGetEmptyManifestIdentifiersListServiceV2() {
     String filename = "service/service-with-no-manifests.yaml";
     String yaml = readFile(filename);
-    ManifestsResponseDTO responseDTO = serviceEntityService.getManifestIdentifiers(yaml, SERVICE_ID);
-    assertThat(responseDTO).isEqualTo(new ManifestsResponseDTO());
+    assertThat(serviceEntityService.getManifestIdentifiers(yaml, SERVICE_ID)).isEqualTo(new ManifestsResponseDTO());
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testFailGetManifestIdentifiersServiceV2YamlExceptionServiceDefinition() {
+    assertThatThrownBy(()
+                           -> serviceEntityService.getManifestIdentifiers("service:\n"
+                                   + "  serviceDefinition:",
+                               SERVICE_ID))
+        .isInstanceOf(YamlException.class)
+        .hasMessage("Yaml provided for service " + SERVICE_ID + " does not have service definition field.");
   }
 
   private String readFile(String filename) {

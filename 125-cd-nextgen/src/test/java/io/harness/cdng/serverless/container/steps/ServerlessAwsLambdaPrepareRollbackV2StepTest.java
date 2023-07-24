@@ -28,6 +28,7 @@ import io.harness.delegate.task.stepstatus.StepStatus;
 import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.sdk.core.plugin.ContainerStepExecutionResponseHelper;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.product.ci.engine.proto.UnitStep;
@@ -55,6 +56,7 @@ public class ServerlessAwsLambdaPrepareRollbackV2StepTest extends CategoryTest {
 
   @Mock private ServerlessStepCommonHelper serverlessStepCommonHelper;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Mock private ContainerStepExecutionResponseHelper containerStepExecutionResponseHelper;
 
   @InjectMocks @Spy private ServerlessAwsLambdaPrepareRollbackV2Step serverlessAwsLambdaPrepareRollbackV2Step;
 
@@ -85,6 +87,42 @@ public class ServerlessAwsLambdaPrepareRollbackV2StepTest extends CategoryTest {
             .stepStatus(
                 StepStatus.builder().stepExecutionStatus(StepExecutionStatus.SUCCESS).output(stepMapOutput).build())
             .build();
+    doReturn(stepStatusTaskResponseData).when(containerStepExecutionResponseHelper).filterK8StepResponse(any());
+    responseDataMap.put("key", stepStatusTaskResponseData);
+
+    StackDetails stackDetails = StackDetails.builder().build();
+    when(serverlessStepCommonHelper.convertByte64ToString(contentBase64)).thenReturn(content);
+    when(serverlessStepCommonHelper.getStackDetails(content)).thenReturn(stackDetails);
+
+    serverlessAwsLambdaPrepareRollbackV2Step.getAnyOutComeForStep(ambiance, stepElementParameters, responseDataMap);
+    verify(executionSweepingOutputService, times(1)).consume(any(), any(), any(), any());
+  }
+
+  @SneakyThrows
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void testGetAnyOutComeForStepWhenStackDetailsAreEmpty() {
+    String accountId = "accountId";
+    Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", accountId).build();
+    ServerlessAwsLambdaPrepareRollbackV2StepParameters stepParameters =
+        ServerlessAwsLambdaPrepareRollbackV2StepParameters.infoBuilder()
+            .image(ParameterField.<String>builder().value("sdaf").build())
+            .build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
+
+    Map<String, ResponseData> responseDataMap = new HashMap<>();
+    Map<String, String> resultMap = new HashMap<>();
+    String contentBase64 = "content64";
+    String content = "content";
+    resultMap.put("stackDetails", null);
+    StepMapOutput stepMapOutput = StepMapOutput.builder().map(resultMap).build();
+    StepStatusTaskResponseData stepStatusTaskResponseData =
+        StepStatusTaskResponseData.builder()
+            .stepStatus(
+                StepStatus.builder().stepExecutionStatus(StepExecutionStatus.SUCCESS).output(stepMapOutput).build())
+            .build();
+    doReturn(stepStatusTaskResponseData).when(containerStepExecutionResponseHelper).filterK8StepResponse(any());
     responseDataMap.put("key", stepStatusTaskResponseData);
 
     StackDetails stackDetails = StackDetails.builder().build();
@@ -119,6 +157,6 @@ public class ServerlessAwsLambdaPrepareRollbackV2StepTest extends CategoryTest {
     doReturn(logKey).when(unitStep).getLogKey();
     doReturn(unitStep)
         .when(serverlessAwsLambdaPrepareRollbackV2Step)
-        .getUnitStep(any(), any(), any(), any(), any(), any());
+        .getUnitStep(any(), any(), any(), any(), any(), any(), any());
   }
 }

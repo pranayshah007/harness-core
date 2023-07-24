@@ -7,4 +7,4 @@
 
 package io.harness.delegate.beans.gitapi;
 
-public enum GitApiRequestType { FIND_PULL_REQUEST_DETAILS, MERGE_PR }
+public enum GitApiRequestType { FIND_PULL_REQUEST_DETAILS, MERGE_PR, REVERT_PR }

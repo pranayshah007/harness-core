@@ -96,6 +96,8 @@ public class HelmCommandTaskNG extends AbstractDelegateRunnableTask {
   @Override
   public HelmCmdExecResponseNG run(TaskParameters parameters) {
     helmDeployServiceNG.setLogStreamingClient(this.getLogStreamingTaskClient());
+    helmDeployServiceNG.setTaskProgressStreamingClient(this.getLogStreamingTaskClient());
+    helmDeployServiceNG.setTaskId(this.getTaskId());
     HelmCommandRequestNG helmCommandRequestNG = (HelmCommandRequestNG) parameters;
     if (helmCommandRequestNG.getCommandUnitsProgress() == null) {
       helmCommandRequestNG.setCommandUnitsProgress(CommandUnitsProgress.builder().build());

@@ -15,6 +15,7 @@ import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.RUTVIJ_MEHTA;
 import static io.harness.rule.OwnerRule.SRIDHAR;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -32,6 +33,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.dto.PollingTriggerStatusUpdateDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.SettingValueType;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
@@ -787,5 +789,22 @@ public class NGTriggerResourceImplTest extends CategoryTest {
     assertThat(responseDTO.getCatalog().size()).isEqualTo(1);
     assertThat(responseDTO.getCatalog().get(0).getCategory()).isEqualTo(NGTriggerType.WEBHOOK);
     assertThat(responseDTO.getCatalog().get(0).getTriggerCatalogType().size()).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testUpdateTriggerPollingStatus() {
+    PollingTriggerStatusUpdateDTO statusUpdate = PollingTriggerStatusUpdateDTO.builder()
+                                                     .signatures(Collections.singletonList("sig"))
+                                                     .success(true)
+                                                     .errorMessage("")
+                                                     .lastCollectedVersions(Collections.singletonList("1.0"))
+                                                     .lastCollectedTime(123L)
+                                                     .build();
+    when(ngTriggerService.updateTriggerPollingStatus(eq("account"), eq(statusUpdate))).thenReturn(true);
+    ResponseDTO<Boolean> response = ngTriggerResource.updateTriggerPollingStatus("account", statusUpdate);
+    assertThat(response.getData()).isTrue();
+    verify(ngTriggerService, times(1)).updateTriggerPollingStatus(eq("account"), eq(statusUpdate));
   }
 }

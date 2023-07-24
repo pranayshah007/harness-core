@@ -9,6 +9,7 @@ package software.wings.graphql.datafetcher.execution;
 
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -72,7 +73,8 @@ public class ResumePipelineControllerTest extends WingsBaseTest {
                                      .put("infra", "Mq9q-Ch2QXCQlr7hGVMTIg")
                                      .put("env", "dlEk9oARQ6Oa4TDyZ62IKw")
                                      .build();
-    when(workflowExecutionService.getWorkflowExecution(eq(APP_ID), eq(PIPELINE_EXEC_ID))).thenReturn(execution);
+    when(workflowExecutionService.getWorkflowExecution(eq(APP_ID), eq(PIPELINE_EXEC_ID), any(String[].class)))
+        .thenReturn(execution);
     when(pipelineService.readPipeline(eq(APP_ID), anyString(), eq(true))).thenReturn(pipeline);
     when(pipelineExecutionController.resolveEnvId(eq(execution), eq(pipeline), eq(parameter.getVariableInputs())))
         .thenReturn(envId);

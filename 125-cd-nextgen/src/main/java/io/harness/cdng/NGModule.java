@@ -69,10 +69,17 @@ import io.harness.cdng.k8s.resources.azure.service.AzureResourceServiceImpl;
 import io.harness.cdng.k8s.resources.gcp.service.GcpResourceService;
 import io.harness.cdng.k8s.resources.gcp.service.impl.GcpResourceServiceImpl;
 import io.harness.cdng.manifest.ManifestType;
+import io.harness.cdng.manifest.groupingstrategy.InheritFromManifestGroupingStrategy;
+import io.harness.cdng.manifest.groupingstrategy.ManifestGroupingStrategy;
+import io.harness.cdng.manifest.groupingstrategy.StoreTypeGroupingStrategy;
 import io.harness.cdng.manifest.resources.HelmChartService;
 import io.harness.cdng.manifest.resources.HelmChartServiceImpl;
 import io.harness.cdng.manifest.steps.task.HelmChartManifestTaskHandler;
 import io.harness.cdng.manifest.steps.task.ManifestTaskHandler;
+import io.harness.cdng.manifest.steps.task.ManifestTaskService;
+import io.harness.cdng.manifest.steps.task.ManifestTaskServiceImpl;
+import io.harness.cdng.plugininfoproviders.AwsCdkBootstrapPluginInfoProvider;
+import io.harness.cdng.plugininfoproviders.AwsCdkSynthPluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.AwsSamBuildPluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.AwsSamDeployPluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.DownloadManifestsPluginInfoProvider;
@@ -99,7 +106,9 @@ import io.harness.cdng.servicenow.resources.service.ServiceNowResourceService;
 import io.harness.cdng.servicenow.resources.service.ServiceNowResourceServiceImpl;
 import io.harness.cdng.tas.service.TasResourceService;
 import io.harness.cdng.tas.service.TasResourceServiceImpl;
+import io.harness.cdng.usage.CDLicenseUsageReportService;
 import io.harness.cdng.usage.impl.CDLicenseUsageImpl;
+import io.harness.cdng.usage.impl.CDLicenseUsageReportServiceImpl;
 import io.harness.cdng.yaml.CdYamlSchemaService;
 import io.harness.cdng.yaml.CdYamlSchemaServiceImpl;
 import io.harness.filter.FilterType;
@@ -211,6 +220,8 @@ public class NGModule extends AbstractModule {
     bind(ServiceOverrideValidatorService.class).to(ServiceOverrideValidatorServiceImpl.class);
     bind(ServiceOverrideV2MigrationService.class).to(ServiceOverrideV2MigrationServiceImpl.class);
     bind(ServiceOverrideV2SettingsUpdateService.class).to(ServiceOverrideV2SettingsUpdateServiceImpl.class);
+    bind(CDLicenseUsageReportService.class).to(CDLicenseUsageReportServiceImpl.class);
+    bind(ManifestTaskService.class).to(ManifestTaskServiceImpl.class);
 
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);
@@ -227,6 +238,13 @@ public class NGModule extends AbstractModule {
     pluginInfoProviderMultibinder.addBinding().to(ServerlessPrepareRollbackPluginInfoProvider.class);
     pluginInfoProviderMultibinder.addBinding().to(ServerlessAwsLambdaDeployV2PluginInfoProvider.class);
     pluginInfoProviderMultibinder.addBinding().to(ServerlessAwsLambdaPackageV2PluginInfoProvider.class);
+    pluginInfoProviderMultibinder.addBinding().to(AwsCdkBootstrapPluginInfoProvider.class);
+    pluginInfoProviderMultibinder.addBinding().to(AwsCdkSynthPluginInfoProvider.class);
+
+    Multibinder<ManifestGroupingStrategy> groupingStrategyMultiBinder =
+        Multibinder.newSetBinder(binder(), new TypeLiteral<>() {});
+    groupingStrategyMultiBinder.addBinding().to(StoreTypeGroupingStrategy.class);
+    groupingStrategyMultiBinder.addBinding().to(InheritFromManifestGroupingStrategy.class);
 
     MapBinder<String, ManifestTaskHandler> manifestTaskHandlerMapper =
         MapBinder.newMapBinder(binder(), String.class, ManifestTaskHandler.class);

@@ -20,7 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
-import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -45,7 +45,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.expression.EngineExpressionEvaluator;
-import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -57,7 +56,6 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -104,7 +102,7 @@ public class FetchInstanceScriptStep extends CdTaskExecutable<FetchInstanceScrip
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private InstanceInfoService instanceInfoService;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
-  @Inject private EngineExpressionService engineExpressionService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
   static Function<InstanceMapperUtils.HostProperties, CustomDeploymentServerInstanceInfo> instanceElementMapper =
@@ -150,9 +148,7 @@ public class FetchInstanceScriptStep extends CdTaskExecutable<FetchInstanceScrip
         }
       }
     }
-
-    return (String) ExpressionEvaluatorUtils.updateExpressions(
-        fetchInstanceScript, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+    return (String) cdExpressionResolver.updateExpressions(ambiance, fetchInstanceScript);
   }
 
   @Override

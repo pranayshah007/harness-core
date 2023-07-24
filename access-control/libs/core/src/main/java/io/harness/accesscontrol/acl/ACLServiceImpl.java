@@ -13,6 +13,8 @@ import static io.harness.accesscontrol.permissions.PermissionStatus.STAGING;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static java.util.Objects.nonNull;
+import static org.apache.commons.lang3.EnumUtils.isValidEnum;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.newAggregation;
 
 import io.harness.accesscontrol.ResourceInfo;
@@ -33,6 +35,7 @@ import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentAggreg
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO.RoleAssignmentDBOKeys;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ScopeLevel;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -202,9 +205,12 @@ public class ACLServiceImpl implements ACLService {
   public List<PermissionCheckResult> checkAccess(Principal principal, List<PermissionCheck> permissionChecks,
       ResourceAttributeProvider resourceAttributeProvider) {
     permissionChecks.stream()
+        .filter(permissionCheck -> !isValidEnum(ScopeLevel.class, permissionCheck.getResourceType()))
         .filter(permissionCheck
-            -> !permissionCheck.getResourceType().equalsIgnoreCase(
-                inMemoryPermissionRepository.getResourceTypeBy(permissionCheck.getPermission())))
+            -> !nonNull(
+                   inMemoryPermissionRepository.getResourceTypesApplicableToPermission(permissionCheck.getPermission()))
+                || !inMemoryPermissionRepository.getResourceTypesApplicableToPermission(permissionCheck.getPermission())
+                        .contains(permissionCheck.getResourceType()))
         .forEach(permissionCheck
             -> log.debug("Access check requested for redundant combination of resource : {} with permission : {}",
                 permissionCheck.getResourceType(), permissionCheck.getPermission()));

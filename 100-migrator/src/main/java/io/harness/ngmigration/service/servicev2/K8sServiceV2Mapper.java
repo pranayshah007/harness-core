@@ -14,6 +14,7 @@ import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.elastigroup.config.yaml.StartupScriptConfiguration;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
+import io.harness.cdng.manifestConfigs.ManifestConfigurations;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.KubernetesServiceSpec.KubernetesServiceSpecBuilder;
 import io.harness.cdng.service.beans.ServiceDefinition;
@@ -47,6 +48,10 @@ public class K8sServiceV2Mapper implements ServiceV2Mapper {
     List<NGVariable> variables = MigratorUtility.getServiceVariables(migrationContext, service.getServiceVariables());
     if (primaryArtifact != null) {
       kubernetesServiceSpec.artifacts(ArtifactListConfig.builder().primary(primaryArtifact).build());
+    }
+    ManifestConfigurations manifestConfigurations = getManifestConfigurations(entities, graph, service);
+    if (manifestConfigurations != null) {
+      kubernetesServiceSpec.manifestConfigurations(manifestConfigurations);
     }
     kubernetesServiceSpec.manifests(changeIdentifier(manifests, "k8s_"));
     kubernetesServiceSpec.configFiles(configFiles);

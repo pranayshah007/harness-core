@@ -51,6 +51,7 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.logging.AutoLogContext;
 import io.harness.logging.NgTriggerAutoLogContext;
 import io.harness.network.SafeHttpCall;
+import io.harness.ng.core.dto.PollingTriggerStatusUpdateDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
@@ -315,6 +316,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
                 ngTriggerEntity.getAccountId(), AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
           log.info("Polling Subscription successful for Trigger {} with pollingDocumentId {}",
               ngTriggerEntity.getIdentifier(), pollingDocument.getPollingDocId());
+          // TODO: (Vinicius) Set the status to PENDING here when ng-manager changes are deployed.
           updatePollingRegistrationStatus(
               ngTriggerEntity, Collections.singletonList(pollingDocument), StatusResult.SUCCESS);
         }
@@ -348,6 +350,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
 
       if (shouldSubscribe) {
         List<PollingDocument> pollingDocuments = subscribePollingV2(ngTriggerEntity, pollingItems);
+        // TODO: (Vinicius) Set the status to PENDING here when ng-manager changes are deployed.
         updatePollingRegistrationStatus(ngTriggerEntity, pollingDocuments, StatusResult.SUCCESS);
       } else if (unsubscribeSuccess) {
         // no subscription done, check if unsubscription worked.
@@ -575,6 +578,16 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       throw new InvalidRequestException(
           String.format("NGTrigger [%s] couldn't be updated or doesn't exist", ngTriggerEntity.getIdentifier()));
     }
+  }
+
+  @Override
+  public boolean updateTriggerPollingStatus(String accountId, PollingTriggerStatusUpdateDTO statusUpdate) {
+    if (isEmpty(statusUpdate.getSignatures())) {
+      throw new InvalidRequestException("Empty signatures list provided for trigger polling status update");
+    }
+    return ngTriggerRepository.updateManyTriggerPollingSubscriptionStatusBySignatures(accountId,
+        statusUpdate.getSignatures(), statusUpdate.isSuccess(), statusUpdate.getErrorMessage(),
+        statusUpdate.getLastCollectedVersions(), statusUpdate.getLastCollectedTime());
   }
 
   @Override

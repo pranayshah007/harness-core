@@ -48,7 +48,6 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateAsyncServiceImpl implements DelegateAsyncService {
   @Inject private HPersistence persistence;
-  @Inject private KryoSerializer kryoSerializer;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject @Named("disableDeserialization") private boolean disableDeserialization;
@@ -98,16 +97,16 @@ public class DelegateAsyncServiceImpl implements DelegateAsyncService {
 
         loopStartTime = globalStopwatch.elapsed(TimeUnit.MILLISECONDS);
         ResponseData responseData;
+
         if (disableDeserialization) {
           responseData = BinaryResponseData.builder()
                              .data(lockedAsyncTaskResponse.getResponseData())
                              .usingKryoWithoutReference(lockedAsyncTaskResponse.isUsingKryoWithoutReference())
                              .build();
-        } else {
-          ResponseData data = lockedAsyncTaskResponse.isUsingKryoWithoutReference()
-              ? (ResponseData) referenceFalseKryoSerializer.asInflatedObject(lockedAsyncTaskResponse.getResponseData())
-              : (ResponseData) kryoSerializer.asInflatedObject(lockedAsyncTaskResponse.getResponseData());
 
+        } else {
+          ResponseData data =
+              (ResponseData) referenceFalseKryoSerializer.asInflatedObject(lockedAsyncTaskResponse.getResponseData());
           responseData = data instanceof SerializedResponseData ? data : (DelegateResponseData) data;
         }
 

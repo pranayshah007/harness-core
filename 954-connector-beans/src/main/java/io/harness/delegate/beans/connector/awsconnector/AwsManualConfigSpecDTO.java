@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.connector.awsconnector;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.beans.DecryptableEntity;
 import io.harness.encryption.SecretRefData;
 import io.harness.secret.SecretReference;
@@ -26,6 +27,7 @@ import lombok.Value;
 @ApiModel("AwsManualConfigSpec")
 @OneOfField(fields = {"accessKey", "accessKeyRef"})
 @Schema(name = "AwsManualConfigSpec", description = "This contains AWS manual credentials connector spec")
+@RecasterAlias("io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO")
 public class AwsManualConfigSpecDTO implements AwsCredentialSpecDTO, DecryptableEntity {
   String accessKey;
   @ApiModelProperty(dataType = "string") @SecretReference SecretRefData accessKeyRef;

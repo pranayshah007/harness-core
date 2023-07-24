@@ -56,7 +56,7 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
                   .setStrategyMetadata(StrategyMetadata.newBuilder()
                                            .setForMetadata(ForMetadata.newBuilder().addAllPartition(partition).build())
                                            .setCurrentIteration(currentIteration)
-                                           .setTotalIterations(partition.size())
+                                           .setTotalIterations(partitions.size())
                                            .build())
                   .build());
           currentIteration++;

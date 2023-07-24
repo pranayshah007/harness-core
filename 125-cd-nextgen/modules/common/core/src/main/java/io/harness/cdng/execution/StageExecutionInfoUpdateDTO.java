@@ -7,6 +7,7 @@
 
 package io.harness.cdng.execution;
 
+import io.harness.cdng.execution.ServiceExecutionSummaryDetails.ManifestsSummary;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.utils.StageStatus;
@@ -19,6 +20,7 @@ import lombok.Data;
 public class StageExecutionInfoUpdateDTO {
   private ServiceExecutionSummaryDetails serviceInfo;
   private ServiceExecutionSummaryDetails.ArtifactsSummary artifactsSummary;
+  private ManifestsSummary manifestsSummary;
   private InfraExecutionSummaryDetails infraExecutionSummary;
   private GitOpsExecutionSummaryDetails gitOpsExecutionSummary;
   private GitOpsAppSummaryDetails gitOpsAppSummary;

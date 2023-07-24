@@ -8,32 +8,52 @@
 package io.harness.delegate.task.git;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.LUCAS_SALES;
+import static io.harness.rule.OwnerRule.MANAVJOT;
 import static io.harness.rule.OwnerRule.MANKRIT;
 import static io.harness.rule.OwnerRule.MEENA;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.service.git.NGGitService;
+import io.harness.connector.task.git.GitDecryptionHelper;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
+import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
+import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.gitops.GitOpsTaskHelper;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.YamlException;
+import io.harness.git.model.CommitResult;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
+import io.harness.git.model.RevertAndPushResult;
 import io.harness.logging.LogCallback;
+import io.harness.product.ci.scm.proto.CreateBranchResponse;
+import io.harness.product.ci.scm.proto.CreatePRResponse;
 import io.harness.rule.Owner;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -49,6 +69,7 @@ import java.util.Objects;
 import org.jooq.tools.json.JSONArray;
 import org.jooq.tools.json.JSONObject;
 import org.jooq.tools.json.ParseException;
+import org.jose4j.lang.JoseException;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -61,6 +82,11 @@ import org.mockito.junit.MockitoRule;
 @OwnedBy(HarnessTeam.GITOPS)
 public class NGGitOpsCommandTaskTest extends CategoryTest {
   private static final String TEST_INPUT_ID = generateUuid();
+  @Mock private GitDecryptionHelper gitDecryptionHelper;
+  @Mock private NGGitService gitService;
+  @Mock private ScmFetchFilesHelperNG scmFetchFilesHelper;
+
+  @Mock private GitOpsTaskHelper gitOpsTaskHelper;
   @InjectMocks
   NGGitOpsCommandTask ngGitOpsCommandTask = new NGGitOpsCommandTask(
       DelegateTaskPackage.builder()
@@ -77,6 +103,7 @@ public class NGGitOpsCommandTaskTest extends CategoryTest {
   private Map<String, String> variableInputMap;
   @Mock private LogCallback logCallback;
   private static final String DEFAULT_PR_TITLE = "Harness: Updating config overrides";
+  private static final String DEFAULT_REVERT_PR_TITLE = "Harness: Reverting config overrides";
   private static final String CUSTOM_PR_TITLE = "Custom PR Title Support Verified.";
   private String sampleJSON;
   private String sampleYAML;
@@ -92,6 +119,8 @@ public class NGGitOpsCommandTaskTest extends CategoryTest {
     filename = "testYamlToJson.json";
     sampleYAMLtoJSON =
         Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
+    doNothing().when(gitDecryptionHelper).decryptGitConfig(any(GitConfigDTO.class), anyList());
+    doNothing().when(gitDecryptionHelper).decryptApiAccessConfig(any(ScmConnector.class), anyList());
   }
 
   private void setUpForHierarchical() {
@@ -141,6 +170,83 @@ public class NGGitOpsCommandTaskTest extends CategoryTest {
      */
 
     variableInputJSON = new JSONObject(tmp1);
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testGitRevertAndPush() throws JoseException, IOException {
+    doReturn(CreateBranchResponse.newBuilder().build())
+        .when(scmFetchFilesHelper)
+        .createNewBranch(any(), anyString(), anyString());
+    doReturn(CreatePRResponse.newBuilder().build()).when(scmFetchFilesHelper).createPR(any(), any());
+    RevertAndPushResult gitRevertAndPushResult =
+        RevertAndPushResult.builder().gitCommitResult(CommitResult.builder().commitId("sha").build()).build();
+    doReturn(gitRevertAndPushResult)
+        .when(gitService)
+        .revertCommitAndPush(any(GitConfigDTO.class), any(), anyString(), any(), anyBoolean());
+    GitFetchFilesConfig gitFetchFilesConfig =
+        GitFetchFilesConfig.builder()
+            .gitStoreDelegateConfig(
+                GitStoreDelegateConfig.builder().gitConfigDTO(GitConfigDTO.builder().build()).build())
+            .build();
+    doNothing().when(logCallback).saveExecutionLog(any());
+    doNothing().when(gitOpsTaskHelper).setGitConfigCred(gitFetchFilesConfig, logCallback);
+    TaskParameters params = NGGitOpsTaskParams.builder()
+                                .connectorInfoDTO(ConnectorInfoDTO.builder().name("connector").build())
+                                .gitOpsTaskType(GitOpsTaskType.REVERT_PR)
+                                .gitFetchFilesConfig(gitFetchFilesConfig)
+                                .isRevertPR(true)
+                                .build();
+
+    NGGitOpsResponse response = (NGGitOpsResponse) ngGitOpsCommandTask.run(params);
+    assertThat(response.getTaskStatus()).isEqualTo(TaskStatus.SUCCESS);
+    assertThat(response.getCommitId()).isEqualTo(gitRevertAndPushResult.getGitCommitResult().getCommitId());
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testGitRevertAndPushWithInvalidGitCredsShouldFail() throws JoseException, IOException {
+    doReturn(CreateBranchResponse.newBuilder().build())
+        .when(scmFetchFilesHelper)
+        .createNewBranch(any(), anyString(), anyString());
+    doReturn(CreatePRResponse.newBuilder().build()).when(scmFetchFilesHelper).createPR(any(), any());
+    RevertAndPushResult gitRevertAndPushResult =
+        RevertAndPushResult.builder().gitCommitResult(CommitResult.builder().commitId("sha").build()).build();
+    doThrow(new YamlException(""))
+        .when(gitService)
+        .revertCommitAndPush(any(GitConfigDTO.class), any(), anyString(), any(), anyBoolean());
+    TaskParameters params =
+        NGGitOpsTaskParams.builder()
+            .connectorInfoDTO(ConnectorInfoDTO.builder().name("connector").build())
+            .gitOpsTaskType(GitOpsTaskType.REVERT_PR)
+            .gitFetchFilesConfig(
+                GitFetchFilesConfig.builder()
+                    .gitStoreDelegateConfig(
+                        GitStoreDelegateConfig.builder().gitConfigDTO(GitConfigDTO.builder().build()).build())
+                    .build())
+            .build();
+
+    NGGitOpsResponse response = (NGGitOpsResponse) ngGitOpsCommandTask.run(params);
+    assertThat(response.getTaskStatus()).isEqualTo(TaskStatus.FAILURE);
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testGitRevertAndPushWithoutGitConfigShouldFail() throws JoseException, IOException {
+    doReturn(CreateBranchResponse.newBuilder().build())
+        .when(scmFetchFilesHelper)
+        .createNewBranch(any(), anyString(), anyString());
+    doReturn(CreatePRResponse.newBuilder().build()).when(scmFetchFilesHelper).createPR(any(), any());
+    TaskParameters params = NGGitOpsTaskParams.builder()
+                                .connectorInfoDTO(ConnectorInfoDTO.builder().name("connector").build())
+                                .gitOpsTaskType(GitOpsTaskType.REVERT_PR)
+                                .build();
+
+    NGGitOpsResponse response = (NGGitOpsResponse) ngGitOpsCommandTask.run(params);
+    assertThat(response.getTaskStatus()).isEqualTo(TaskStatus.FAILURE);
   }
 
   @Test
@@ -319,7 +425,7 @@ public class NGGitOpsCommandTaskTest extends CategoryTest {
   @Owner(developers = MANKRIT)
   @Category(UnitTests.class)
   public void testResolvePRTitleDefault() {
-    String result = ngGitOpsCommandTask.resolvePRTitle(NGGitOpsTaskParams.builder().build());
+    String result = ngGitOpsCommandTask.resolvePRTitle(NGGitOpsTaskParams.builder().build(), false);
     assertThat(result).isEqualTo(DEFAULT_PR_TITLE);
   }
 
@@ -327,7 +433,25 @@ public class NGGitOpsCommandTaskTest extends CategoryTest {
   @Owner(developers = MANKRIT)
   @Category(UnitTests.class)
   public void testResolvePRTitleCustom() {
-    String result = ngGitOpsCommandTask.resolvePRTitle(NGGitOpsTaskParams.builder().prTitle(CUSTOM_PR_TITLE).build());
+    String result =
+        ngGitOpsCommandTask.resolvePRTitle(NGGitOpsTaskParams.builder().prTitle(CUSTOM_PR_TITLE).build(), false);
+    assertThat(result).isEqualTo(CUSTOM_PR_TITLE);
+  }
+
+  @Test
+  @Owner(developers = MANAVJOT)
+  @Category(UnitTests.class)
+  public void testResolveRevertPRTitleDefault() {
+    String result = ngGitOpsCommandTask.resolvePRTitle(NGGitOpsTaskParams.builder().build(), true);
+    assertThat(result).isEqualTo(DEFAULT_REVERT_PR_TITLE);
+  }
+
+  @Test
+  @Owner(developers = MANAVJOT)
+  @Category(UnitTests.class)
+  public void testResolveRevertPRTitleCustom() {
+    String result =
+        ngGitOpsCommandTask.resolvePRTitle(NGGitOpsTaskParams.builder().prTitle(CUSTOM_PR_TITLE).build(), true);
     assertThat(result).isEqualTo(CUSTOM_PR_TITLE);
   }
 

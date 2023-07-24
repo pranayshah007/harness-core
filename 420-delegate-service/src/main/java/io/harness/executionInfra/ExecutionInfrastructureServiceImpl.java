@@ -26,8 +26,7 @@ public class ExecutionInfrastructureServiceImpl implements ExecutionInfrastructu
 
   @Override
   public String addExecutionInfrastructure(DelegateTask task, String delegateId, ExecutionInfraInfo location) {
-    try (AutoLogContext ignore =
-             new ExecutionLogContext(task.getUuid(), task.getRequestUri(), task.getRequestMethod(), OVERRIDE_ERROR)) {
+    try (AutoLogContext ignore = new ExecutionLogContext(task.getUuid(), task.getEventType(), OVERRIDE_ERROR)) {
       log.info("Response received for task: {} from Delegate: {}", task.getUuid(), delegateId);
       ExecutionInfraLocation entity = ExecutionInfraLocation.builder()
                                           .delegateGroupName(location.getDelegateName())

@@ -22,6 +22,7 @@ import io.harness.yaml.core.failurestrategy.manualintervention.ManualFailureSpec
 import io.harness.yaml.core.failurestrategy.manualintervention.ManualInterventionFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.retry.RetryFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.retry.RetryFailureSpecConfig;
+import io.harness.yaml.core.failurestrategy.retry.RetrySGFailureActionConfig;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
@@ -185,5 +186,25 @@ public class FailureStrategiesUtils {
 
   public boolean validateRetryActionUnderManualAction(ManualFailureSpecConfig manualSpecConfig) {
     return manualSpecConfig.getOnTimeout().getAction().getType().equals(NGFailureActionType.RETRY);
+  }
+
+  public void validateRetrySGFailureAction(RetrySGFailureActionConfig retryAction) {
+    if (retryAction.getSpecConfig() == null) {
+      throw new InvalidRequestException("Retry Spec cannot be null or empty");
+    }
+
+    ParameterField<Integer> retryCount = retryAction.getSpecConfig().getRetryCount();
+    if (retryCount.getValue() == null) {
+      throw new InvalidRequestException("Retry Count cannot be null or empty");
+    }
+    if (retryAction.getSpecConfig().getRetryIntervals().getValue() == null) {
+      throw new InvalidRequestException("Retry Interval cannot be null or empty");
+    }
+    if (retryCount.isExpression()) {
+      throw new InvalidRequestException("RetryCount fixed value is not given.");
+    }
+    if (retryAction.getSpecConfig().getRetryIntervals().isExpression()) {
+      throw new InvalidRequestException("RetryIntervals cannot be expression/runtime input. Please give values.");
+    }
   }
 }

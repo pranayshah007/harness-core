@@ -15,6 +15,7 @@ import static software.wings.graphql.datafetcher.execution.ResumeExecutionDataFe
 import static software.wings.graphql.datafetcher.execution.ResumeExecutionDataFetcher.ERROR_MESSAGE_EXECUTION_S_DOESN_T_EXIST;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.verify;
@@ -98,7 +99,8 @@ public class ResumeExecutionDataFetcherTest extends AbstractDataFetcherTestBase 
                                              .applicationId(APPLICATION_ID)
                                              .pipelineStageName(pipelineStageName)
                                              .build();
-      when(workflowExecutionService.getWorkflowExecution(eq(APPLICATION_ID), eq(pipelineStageExecutionId)))
+      when(workflowExecutionService.getWorkflowExecution(
+               eq(APPLICATION_ID), eq(pipelineStageExecutionId), any(String[].class)))
           .thenReturn(null);
       assertThatThrownBy(() -> resumeExecutionDataFetcher.mutateAndFetch(parameter, getMutationContext()))
           .isInstanceOf(GeneralException.class)
@@ -119,7 +121,8 @@ public class ResumeExecutionDataFetcherTest extends AbstractDataFetcherTestBase 
                                            .build();
     final WorkflowExecution previousExecution = WorkflowExecution.builder().build();
     final WorkflowExecution resumedExecution = WorkflowExecution.builder().build();
-    when(workflowExecutionService.getWorkflowExecution(eq(APPLICATION_ID), eq(pipelineExecutionId)))
+    when(
+        workflowExecutionService.getWorkflowExecution(eq(APPLICATION_ID), eq(pipelineExecutionId), any(String[].class)))
         .thenReturn(previousExecution);
     when(workflowExecutionService.triggerPipelineResumeExecution(
              eq(APPLICATION_ID), eq(pipelineStageName), eq(previousExecution)))

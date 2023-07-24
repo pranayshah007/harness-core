@@ -26,6 +26,7 @@ import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -46,11 +47,11 @@ public class RuleDAO {
     log.info("deleted rule: {}", uuid);
     return hPersistence.delete(query);
   }
-  public List<Rule> forRecommendation(RuleCloudProviderType ruleCloudProviderType) {
+  public List<Rule> forRecommendation(RuleCloudProviderType ruleCloudProviderType, String accountId) {
     log.info("creating a query");
     Query<Rule> rules = hPersistence.createQuery(Rule.class)
                             .field(RuleId.accountId)
-                            .equal(GLOBAL_ACCOUNT_ID)
+                            .in(List.of(GLOBAL_ACCOUNT_ID, accountId))
                             .field(RuleId.forRecommendation)
                             .equal(true)
                             .field(RuleId.cloudProvider)
@@ -174,6 +175,9 @@ public class RuleDAO {
     if (rule.getForRecommendation() != null) {
       updateOperations.set(RuleId.forRecommendation, rule.getForRecommendation());
     }
+    if (rule.getResourceType() != null) {
+      updateOperations.set(RuleId.resourceType, rule.getResourceType());
+    }
     log.info("Updated rule: {} {} {}", rule.getUuid(), hPersistence.update(query, updateOperations), query);
     hPersistence.update(query, updateOperations);
     return query.asList().get(0);
@@ -185,6 +189,19 @@ public class RuleDAO {
         .in(Arrays.asList(accountId, GLOBAL_ACCOUNT_ID))
         .field(RuleId.uuid)
         .in(rulesIdentifier)
+        .asList();
+  }
+
+  public List<Rule> validateCloudProvider(
+      String accountId, Set<String> rulesIdentifier, RuleCloudProviderType ruleCloudProviderType) {
+    return hPersistence.createQuery(Rule.class)
+        .project(RuleId.uuid, true)
+        .field(RuleId.accountId)
+        .in(Arrays.asList(accountId, GLOBAL_ACCOUNT_ID))
+        .field(RuleId.uuid)
+        .in(rulesIdentifier)
+        .field(RuleId.cloudProvider)
+        .equal(ruleCloudProviderType)
         .asList();
   }
 }

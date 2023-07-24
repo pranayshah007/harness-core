@@ -131,6 +131,7 @@ timeoutInstances {"name": "validUntil_1", "background": true, "expireAfterSecond
 triggerEventHistory {"name": "accountId_createdAt_desc", "background": true} {"accountId": 1, "createdAt": -1}
 triggerEventHistory {"name": "accountId_eventCorrelationId", "background": true} {"accountId": 1, "eventCorrelationId": 1}
 triggerEventHistory {"name": "las", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "triggerIdentifier": 1, "targetIdentifier": 1, "createdAt": -1}
+triggerEventHistory {"name": "las_execution_not_attempted", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "triggerIdentifier": 1, "targetIdentifier": 1, "executionNotAttempted": 1, "createdAt": -1}
 triggerEventHistory {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 triggerWebhookEvents {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 triggersNG {"name": "accId_signature_index", "background": true} {"accountId": 1, "metadata.buildMetadata.pollingConfig.signature": 1}

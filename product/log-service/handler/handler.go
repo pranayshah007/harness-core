@@ -10,18 +10,21 @@ import (
 	"net/http"
 	"net/http/pprof"
 
-	"github.com/harness/harness-core/product/log-service/config"
-	"github.com/harness/harness-core/product/log-service/logger"
-	"github.com/harness/harness-core/product/log-service/store"
-	"github.com/harness/harness-core/product/log-service/stream"
 	"github.com/harness/harness-core/product/platform/client"
 
 	"github.com/go-chi/chi"
+
+	"github.com/harness/harness-core/product/log-service/cache"
+	"github.com/harness/harness-core/product/log-service/config"
+	"github.com/harness/harness-core/product/log-service/logger"
+	"github.com/harness/harness-core/product/log-service/queue"
+	"github.com/harness/harness-core/product/log-service/store"
+	"github.com/harness/harness-core/product/log-service/stream"
 )
 
 // Handler returns an http.Handler that exposes the
 // service resources.
-func Handler(stream stream.Stream, store store.Store, config config.Config, ngClient *client.HTTPClient) http.Handler {
+func Handler(queue queue.Queue, cache cache.Cache, stream stream.Stream, store store.Store, config config.Config, ngClient *client.HTTPClient) http.Handler {
 	r := chi.NewRouter()
 	r.Use(logger.Middleware)
 
@@ -124,7 +127,26 @@ func Handler(stream stream.Stream, store store.Store, config config.Config, ngCl
 	// Readiness check
 	r.Mount("/ready/healthz", func() http.Handler {
 		sr := chi.NewRouter()
-		sr.Get("/", HandlePing(stream, store))
+		sr.Get("/", HandlePing(cache, stream, store))
+
+		return sr
+	}())
+
+	// Blob zip store endpoints
+	// Format: /blob/download?accountID=&prefix=
+	r.Mount("/blob/download", func() http.Handler {
+		sr := chi.NewRouter()
+		sr.Use(RequiredQueryParams(accountIDParam, usePrefixParam))
+		sr.Use(ValidatePrefixRequest())
+		sr.Use(CacheRequest(cache))
+
+		if !config.Auth.DisableAuth {
+			sr.Use(AuthMiddleware(config, ngClient, true))
+		}
+
+		// TODO: delete it after freeze window.
+		sr.Get("/", HandleZipLinkPrefix(queue, store, cache, config))
+		sr.Post("/", HandleZipLinkPrefix(queue, store, cache, config))
 
 		return sr
 	}())

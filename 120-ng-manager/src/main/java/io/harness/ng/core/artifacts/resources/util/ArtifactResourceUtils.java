@@ -273,8 +273,17 @@ public class ArtifactResourceUtils {
     if (!shouldResolveExpression) {
       return;
     }
-    String mergedCompleteYaml = getMergedCompleteYaml(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml, gitEntityBasicInfo);
+    String mergedCompleteYaml = "";
+
+    try {
+      mergedCompleteYaml = getMergedCompleteYaml(
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml, gitEntityBasicInfo);
+    } catch (InvalidRequestException invalidRequestException) {
+      if (invalidRequestException.getMessage().contains("doesn't exist or has been deleted")) {
+        return;
+      }
+      throw invalidRequestException;
+    }
     if (isNotEmpty(mergedCompleteYaml) && TemplateRefHelper.hasTemplateRef(mergedCompleteYaml)) {
       mergedCompleteYaml = applyTemplatesOnGivenYaml(
           accountId, orgIdentifier, projectIdentifier, mergedCompleteYaml, gitEntityBasicInfo);

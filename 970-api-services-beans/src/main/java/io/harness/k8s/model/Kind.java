@@ -50,14 +50,15 @@ public enum Kind {
   PodDisruptionBudget,
   NOOP;
 
-  public static final Set<Kind> BG_STAGE_SCALE_DOWN_WORKLOAD_KINDS =
-      ImmutableSet.of(Deployment, StatefulSet, DaemonSet, DeploymentConfig);
-  public static final Set<Kind> BG_STAGE_DELETE_WORKLOAD_KINDS =
-      ImmutableSet.of(HorizontalPodAutoscaler, PodDisruptionBudget);
-  public static final Set<Kind> BG_STAGE_WORKLOAD_KINDS =
+  public static final Set<String> BG_STAGE_SCALE_DOWN_WORKLOAD_KINDS =
+      ImmutableSet.of(Deployment.name(), StatefulSet.name(), DaemonSet.name(), DeploymentConfig.name());
+  public static final Set<String> BG_STAGE_DELETE_WORKLOAD_KINDS =
+      ImmutableSet.of(HorizontalPodAutoscaler.name(), PodDisruptionBudget.name());
+  public static final Set<String> BG_STAGE_WORKLOAD_KINDS =
       SetUtils.union(BG_STAGE_SCALE_DOWN_WORKLOAD_KINDS, BG_STAGE_DELETE_WORKLOAD_KINDS);
-  public static final Set<Kind> SCALABLE_WORKLOAD_KINDS = ImmutableSet.of(
-      Deployment, DaemonSet, StatefulSet, DeploymentConfig, ReplicationController, ReplicaSet, Job, CronJob);
+  public static final Set<String> SCALABLE_WORKLOAD_KINDS =
+      ImmutableSet.of(Deployment.name(), DaemonSet.name(), StatefulSet.name(), DeploymentConfig.name(),
+          ReplicationController.name(), ReplicaSet.name(), Job.name(), CronJob.name());
 
   public static Kind fromString(String kindName) {
     if (isEmpty(kindName)) {

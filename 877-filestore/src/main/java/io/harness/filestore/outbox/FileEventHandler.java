@@ -15,6 +15,7 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.FILE_ENTITY;
 import static io.harness.filestore.events.FileCreateEvent.FILE_CREATED_EVENT;
 import static io.harness.filestore.events.FileDeleteEvent.FILE_DELETED_EVENT;
+import static io.harness.filestore.events.FileForceDeleteEvent.FILE_FORCE_DELETED_EVENT;
 import static io.harness.filestore.events.FileUpdateEvent.FILE_UPDATED_EVENT;
 import static io.harness.security.PrincipalContextData.PRINCIPAL_CONTEXT;
 
@@ -82,7 +83,9 @@ public class FileEventHandler implements OutboxEventHandler {
         case FILE_UPDATED_EVENT:
           return handleFileUpdateEvent(outboxEvent);
         case FILE_DELETED_EVENT:
-          return handleFileDeleteEvent(outboxEvent);
+          return handleFileDeleteEvent(outboxEvent, false);
+        case FILE_FORCE_DELETED_EVENT:
+          return handleFileDeleteEvent(outboxEvent, true);
         default:
           throw new InvalidArgumentsException(format("Not supported event type %s", outboxEvent.getEventType()));
       }
@@ -129,12 +132,12 @@ public class FileEventHandler implements OutboxEventHandler {
     return publishedToRedis && publishAudit(auditEntry, outboxEvent);
   }
 
-  private boolean handleFileDeleteEvent(OutboxEvent outboxEvent) throws IOException {
+  private boolean handleFileDeleteEvent(OutboxEvent outboxEvent, boolean forceDelete) throws IOException {
     FileDeleteEvent fileDeleteEvent = objectMapper.readValue(outboxEvent.getEventData(), FileDeleteEvent.class);
     boolean publishedToRedis = publishEvent(outboxEvent, EventsFrameworkMetadataConstants.DELETE_ACTION);
     AuditEntry auditEntry =
         AuditEntry.builder()
-            .action(Action.DELETE)
+            .action(forceDelete ? Action.FORCE_DELETE : Action.DELETE)
             .module(ModuleType.CORE)
             .oldYaml(NGYamlUtils.getYamlString(FileStoreRequest.builder().file(fileDeleteEvent.getFile()).build()))
             .timestamp(outboxEvent.getCreatedAt())

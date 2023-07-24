@@ -31,4 +31,7 @@ type Store interface {
 
 	// Ping pings the store for readiness
 	Ping() error
+
+	// Generates a file path list in the datastore
+	ListBlobPrefix(ctx context.Context, prefix string, limit int) ([]string, error)
 }

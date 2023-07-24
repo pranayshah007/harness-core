@@ -43,6 +43,7 @@ import io.harness.cdng.service.beans.NativeHelmServiceSpec;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
+import io.harness.ng.core.service.mappers.ManifestFilterHelper;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
@@ -104,6 +105,8 @@ public class ServiceStepOverrideHelper {
                 ngEnvironmentConfig == null || ngEnvironmentConfig.getNgEnvironmentInfoConfig() == null
                     ? StringUtils.EMPTY
                     : ngEnvironmentConfig.getNgEnvironmentInfoConfig().getIdentifier())
+            .manifestConfigurations(ManifestFilterHelper.getManifestConfigurationsFromKubernetesAndNativeHelm(
+                ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec()))
             .build();
     sweepingOutputService.consume(
         ambiance, manifestsSweepingOutputName, manifestSweepingOutput, StepCategory.STAGE.name());
@@ -133,6 +136,8 @@ public class ServiceStepOverrideHelper {
             .environmentIdentifier(environmentRef)
             .svcManifests(svcManifests)
             .manifestsFromOverride(manifestsFromOverride)
+            .manifestConfigurations(ManifestFilterHelper.getManifestConfigurationsFromKubernetesAndNativeHelm(
+                ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec()))
             .build();
     sweepingOutputService.consume(
         ambiance, manifestsSweepingOutputName, manifestSweepingOutput, StepCategory.STAGE.name());

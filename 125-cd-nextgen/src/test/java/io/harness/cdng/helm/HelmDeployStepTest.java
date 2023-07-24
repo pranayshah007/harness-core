@@ -12,6 +12,7 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.ANSHUL;
+import static io.harness.rule.OwnerRule.MLUKIC;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -24,6 +25,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.helm.beans.NativeHelmExecutionPassThroughData;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -33,6 +35,8 @@ import io.harness.cdng.k8s.beans.HelmValuesFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.NGTimeConversionHelper;
+import io.harness.delegate.beans.helm.HelmDeployProgressData;
+import io.harness.delegate.beans.helm.HelmDeployProgressDataVersion;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.exception.HelmNGException;
 import io.harness.delegate.task.helm.HelmCmdExecResponseNG;
@@ -48,6 +52,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.tasks.ProgressData;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -123,8 +128,8 @@ public class HelmDeployStepTest extends AbstractHelmStepExecutorTestBase {
                                   .build();
     doReturn(stepOutcome).when(instanceInfoService).saveServerInstancesIntoSweepingOutput(any(), any());
 
-    StepResponse response = helmDeployStep.finalizeExecutionWithSecurityContext(ambiance, stepElementParameters,
-        NativeHelmExecutionPassThroughData.builder().build(), () -> helmCmdExecResponseNG);
+    StepResponse response = helmDeployStep.finalizeExecutionWithSecurityContextAndNodeInfo(ambiance,
+        stepElementParameters, NativeHelmExecutionPassThroughData.builder().build(), () -> helmCmdExecResponseNG);
     assertThat(response.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(response.getStepOutcomes()).hasSize(2);
 
@@ -158,7 +163,7 @@ public class HelmDeployStepTest extends AbstractHelmStepExecutorTestBase {
         .when(nativeHelmStepHelper)
         .handleTaskException(ambiance, executionPassThroughData, thrownException);
 
-    StepResponse response = helmDeployStep.finalizeExecutionWithSecurityContext(
+    StepResponse response = helmDeployStep.finalizeExecutionWithSecurityContextAndNodeInfo(
         ambiance, stepElementParameters, executionPassThroughData, () -> { throw thrownException; });
 
     assertThat(response).isEqualTo(stepResponse);
@@ -211,14 +216,14 @@ public class HelmDeployStepTest extends AbstractHelmStepExecutorTestBase {
                                                .build();
     doReturn(stepOutcome).when(instanceInfoService).saveServerInstancesIntoSweepingOutput(any(), any());
     when(cdStepHelper.handleGitTaskFailure(any())).thenReturn(StepResponse.builder().status(Status.SUCCEEDED).build());
-    StepResponse response = helmDeployStep.finalizeExecutionWithSecurityContext(ambiance, stepElementParameters,
-        GitFetchResponsePassThroughData.builder().build(), () -> helmCmdExecResponseNG);
+    StepResponse response = helmDeployStep.finalizeExecutionWithSecurityContextAndNodeInfo(ambiance,
+        stepElementParameters, GitFetchResponsePassThroughData.builder().build(), () -> helmCmdExecResponseNG);
     assertThat(response.getStatus()).isEqualTo(Status.SUCCEEDED);
 
     when(nativeHelmStepHelper.handleHelmValuesFetchFailure(any()))
         .thenReturn(StepResponse.builder().status(Status.SUCCEEDED).build());
     assertThat(helmDeployStep
-                   .finalizeExecutionWithSecurityContext(ambiance, stepElementParameters,
+                   .finalizeExecutionWithSecurityContextAndNodeInfo(ambiance, stepElementParameters,
                        HelmValuesFetchResponsePassThroughData.builder().build(), () -> helmCmdExecResponseNG)
                    .getStatus())
         .isEqualTo(Status.SUCCEEDED);
@@ -226,7 +231,7 @@ public class HelmDeployStepTest extends AbstractHelmStepExecutorTestBase {
     when(cdStepHelper.handleStepExceptionFailure(any()))
         .thenReturn(StepResponse.builder().status(Status.SUCCEEDED).build());
     assertThat(helmDeployStep
-                   .finalizeExecutionWithSecurityContext(ambiance, stepElementParameters,
+                   .finalizeExecutionWithSecurityContextAndNodeInfo(ambiance, stepElementParameters,
                        StepExceptionPassThroughData.builder().build(), () -> helmCmdExecResponseNG)
                    .getStatus())
         .isEqualTo(Status.SUCCEEDED);
@@ -241,9 +246,70 @@ public class HelmDeployStepTest extends AbstractHelmStepExecutorTestBase {
             .commandExecutionStatus(FAILURE)
             .build();
     assertThat(helmDeployStep
-                   .finalizeExecutionWithSecurityContext(ambiance, stepElementParameters,
+                   .finalizeExecutionWithSecurityContextAndNodeInfo(ambiance, stepElementParameters,
                        NativeHelmExecutionPassThroughData.builder().build(), () -> helmCmdExecResponseNGFail)
                    .getStatus())
         .isEqualTo(Status.FAILED);
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testHandleProgressWIthHelmDeployProgressDataWithFFEnabled() {
+    final HelmDeployStepParams stepParameters = HelmDeployStepParams.infoBuilder().build();
+    final StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
+    ProgressData progressData =
+        HelmDeployProgressData.builder().progressDataVersion(HelmDeployProgressDataVersion.V1.getVersionName()).build();
+
+    ProgressData result = helmDeployStep.handleProgress(ambiance, stepElementParameters, progressData);
+
+    verify(executionSweepingOutputService, times(1))
+        .consume(eq(ambiance), eq(OutcomeExpressionConstants.HELM_DEPLOY_RELEASE_OUTCOME),
+            any(NativeHelmDeployOutcome.class), eq(StepOutcomeGroup.STEP.name()));
+    assertThat(result).isNull();
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testHandleProgressWIthHelmDeployProgressDataWithFFDisabled() {
+    final HelmDeployStepParams stepParameters = HelmDeployStepParams.infoBuilder().build();
+    final StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
+    ProgressData progressData =
+        HelmDeployProgressData.builder().progressDataVersion(HelmDeployProgressDataVersion.V1.getVersionName()).build();
+    doReturn(false).when(cdFeatureFlagHelper).isEnabled(any(), eq(FeatureName.CDS_HELM_SEND_TASK_PROGRESS_NG));
+
+    ProgressData result = helmDeployStep.handleProgress(ambiance, stepElementParameters, progressData);
+
+    verify(executionSweepingOutputService, times(0)).consume(any(), any(), any(), any());
+
+    assertThat(result).isNull();
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testHandleProgressWithUnitProgressDataWhenFFDisabled() {
+    final HelmDeployStepParams stepParameters = HelmDeployStepParams.infoBuilder().build();
+    final StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
+    ProgressData progressData = UnitProgressData.builder().build();
+    doReturn(false).when(cdFeatureFlagHelper).isEnabled(any(), eq(FeatureName.CDS_HELM_SEND_TASK_PROGRESS_NG));
+
+    helmDeployStep.handleProgress(ambiance, stepElementParameters, progressData);
+
+    verify(executionSweepingOutputService, times(0)).consume(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testHandleProgressWithUnitProgressDataWhenFFEnabled() {
+    final HelmDeployStepParams stepParameters = HelmDeployStepParams.infoBuilder().build();
+    final StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
+    ProgressData progressData = UnitProgressData.builder().build();
+
+    helmDeployStep.handleProgress(ambiance, stepElementParameters, progressData);
+
+    verify(executionSweepingOutputService, times(0)).consume(any(), any(), any(), any());
   }
 }

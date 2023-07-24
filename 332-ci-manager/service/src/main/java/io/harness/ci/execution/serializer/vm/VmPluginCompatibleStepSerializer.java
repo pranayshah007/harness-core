@@ -108,23 +108,26 @@ public class VmPluginCompatibleStepSerializer {
   }
 
   public Set<String> preProcessStep(Ambiance ambiance, PluginCompatibleStep pluginCompatibleStep,
-      StageInfraDetails stageInfraDetails, String identifier) {
+      StageInfraDetails stageInfraDetails, String identifier, boolean isBareMetalUsed) {
     Set<String> secretSet = new HashSet<>();
     if (CIStepInfoUtils.canRunVmStepOnHost(pluginCompatibleStep.getNonYamlInfo().getStepInfoType(), stageInfraDetails,
             AmbianceUtils.getAccountId(ambiance), ciExecutionConfigService, featureFlagService, pluginCompatibleStep)) {
       // Check if DLC Setup is required
       if (pluginSettingUtils.dlcSetupRequired(pluginCompatibleStep)) {
-        Set<String> dlcSecrets = setupDlc(pluginCompatibleStep, AmbianceUtils.getAccountId(ambiance), identifier);
+        Set<String> dlcSecrets =
+            setupDlc(pluginCompatibleStep, AmbianceUtils.getAccountId(ambiance), identifier, isBareMetalUsed);
         secretSet.addAll(dlcSecrets);
       }
     }
     return secretSet;
   }
 
-  private Set<String> setupDlc(PluginCompatibleStep stepInfo, String accountId, String identifier) {
+  private Set<String> setupDlc(
+      PluginCompatibleStep stepInfo, String accountId, String identifier, boolean isBareMetalUsed) {
     Set<String> stepSecrets = new HashSet<>();
     // Get DLC Config for the accountId
-    CIDockerLayerCachingConfig config = dockerLayerCachingConfigService.getDockerLayerCachingConfig(accountId);
+    CIDockerLayerCachingConfig config =
+        dockerLayerCachingConfigService.getDockerLayerCachingConfig(accountId, isBareMetalUsed);
     if (config == null) {
       // Nothing to add
       return stepSecrets;

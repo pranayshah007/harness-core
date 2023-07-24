@@ -23,4 +23,8 @@ public class OutboxContext extends AutoMetricContext {
     put("serviceId", serviceId);
     put("eventType", eventType);
   }
+
+  public OutboxContext(String resourceType) {
+    put("resourceType", resourceType);
+  }
 }

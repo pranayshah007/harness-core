@@ -32,7 +32,8 @@ public interface FileFailsafeService {
    * Delete NG file in DB and publish file delete event
    *
    * @param ngFile the NG file
+   * @param forceDelete
    * @return if file delete event is published and file deleted form DB
    */
-  boolean deleteAndPublish(NGFile ngFile);
+  boolean deleteAndPublish(NGFile ngFile, boolean forceDelete);
 }

@@ -8,7 +8,9 @@
 package io.harness.cdng.service.beans;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.PARENT_PATH_KEY;
 import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.PATH_CONNECTOR;
+import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.VALUES;
 
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.visitor.YamlTypes;
@@ -35,10 +37,10 @@ import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -64,11 +66,26 @@ public class ServiceEntityVisitorHelperV2 implements ConfigValidator, EntityRefe
   public Set<EntityDetailProtoDTO> addReference(Object object, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, Map<String, Object> contextMap) {
     ServiceYamlV2 serviceYamlV2 = (ServiceYamlV2) object;
-
-    final String fullQualifiedDomainName =
-        VisitorParentPathUtils.getFullQualifiedDomainName(contextMap) + PATH_CONNECTOR + YamlTypes.SERVICE_REF;
-    final Map<String, String> metadata =
-        new HashMap<>(Collections.singletonMap(PreFlightCheckMetadata.FQN, fullQualifiedDomainName));
+    String fullQualifiedDomainName = "";
+    final Map<String, String> metadata = new HashMap<>();
+    Optional<LinkedList<String>> parentPath = Optional.ofNullable((LinkedList<String>) contextMap.get(PARENT_PATH_KEY));
+    if (parentPath.isPresent() && VALUES.equals(parentPath.get().getLast())) {
+      if (serviceYamlV2.getServiceRef().isExpression()) {
+        /*Since we do not know the value of service identifier(s)/ref(s) currently, so we only construct the fqn till
+        ".services". The service identifier(s) and "serviceRef" string will be added later when the value of services
+        are fixed
+        */
+        fullQualifiedDomainName = VisitorParentPathUtils.getFullQualifiedDomainName(contextMap);
+        metadata.put(PreFlightCheckMetadata.YAML_TYPE_REF_NAME, YamlTypes.SERVICE_REF);
+      } else if (ParameterField.isNotNull(serviceYamlV2.getServiceRef())) {
+        fullQualifiedDomainName = VisitorParentPathUtils.getFullQualifiedDomainName(contextMap) + PATH_CONNECTOR
+            + serviceYamlV2.getServiceRef().getValue() + PATH_CONNECTOR + YamlTypes.SERVICE_REF;
+      }
+    } else {
+      fullQualifiedDomainName =
+          VisitorParentPathUtils.getFullQualifiedDomainName(contextMap) + PATH_CONNECTOR + YamlTypes.SERVICE_REF;
+    }
+    metadata.put(PreFlightCheckMetadata.FQN, fullQualifiedDomainName);
 
     // Clear out Service References
     if (ParameterField.isNull(serviceYamlV2.getServiceRef())) {

@@ -13,6 +13,7 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.DbAliases;
+import io.harness.persistence.PersistentEntity;
 import io.harness.pms.plan.execution.AccountExecutionInfo;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -35,7 +36,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("cdAccountExecutionMetadata")
 @TypeAlias("cdAccountExecutionMetadata")
 @HarnessEntity(exportable = true)
-public class CDAccountExecutionMetadata {
+public class CDAccountExecutionMetadata implements PersistentEntity {
   @Wither @Id @dev.morphia.annotations.Id String uuid;
   String accountId;
   Long executionCount;

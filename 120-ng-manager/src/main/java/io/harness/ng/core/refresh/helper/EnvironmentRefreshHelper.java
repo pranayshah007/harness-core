@@ -62,7 +62,8 @@ public class EnvironmentRefreshHelper {
   public boolean isEnvironmentField(String fieldName, JsonNode envValue) {
     return YamlTypes.ENVIRONMENT_YAML.equals(fieldName) && envValue.isObject()
         && (envValue.get(YamlTypes.ENVIRONMENT_REF) != null || envValue.get(YamlTypes.INFRASTRUCTURE_DEFS) != null
-            || isNodeNotNullAndValueRuntime(envValue.get(YamlTypes.SERVICE_OVERRIDE_INPUTS)));
+            || isNodeNotNullAndValueRuntime(envValue.get(YamlTypes.SERVICE_OVERRIDE_INPUTS))
+            || envValue.get(YamlTypes.USE_FROM_STAGE) != null);
   }
 
   public void validateEnvironmentInputs(
@@ -73,6 +74,7 @@ public class EnvironmentRefreshHelper {
     ObjectMapper mapper = new ObjectMapper();
     JsonNode infraDefsNode = envJsonNode.get(YamlTypes.INFRASTRUCTURE_DEFS);
     JsonNode serviceOverrideInputs = envJsonNode.get(YamlTypes.SERVICE_OVERRIDE_INPUTS);
+    validateEnvironmentYamlWithUseFromStage(envJsonNode, errorNodeSummary);
     if (envRefJsonNode != null) {
       envRefValue = envRefJsonNode.asText();
       JsonNode envInputsNode = envJsonNode.get(YamlTypes.ENVIRONMENT_INPUTS);
@@ -119,6 +121,18 @@ public class EnvironmentRefreshHelper {
       if (serviceOverrideInputs != null) {
         validateServiceOverrideInputsWithoutEnvRef(
             context, errorNodeSummary, mapper, serviceOverrideInputs, stageYamlNodeInResolvedTemplatesYaml);
+      }
+    }
+  }
+
+  private void validateEnvironmentYamlWithUseFromStage(
+      JsonNode envJsonNode, InputsValidationResponse errorNodeSummary) {
+    JsonNode environmentInputs = envJsonNode.get(YamlTypes.ENVIRONMENT_INPUTS);
+    JsonNode serviceOverrideInputs = envJsonNode.get(YamlTypes.SERVICE_OVERRIDE_INPUTS);
+    JsonNode infraDefs = envJsonNode.get(YamlTypes.INFRASTRUCTURE_DEFS);
+    if (envJsonNode.get(YamlTypes.USE_FROM_STAGE) != null) {
+      if (environmentInputs != null || serviceOverrideInputs != null || infraDefs != null) {
+        errorNodeSummary.setValid(false);
       }
     }
   }
@@ -249,6 +263,9 @@ public class EnvironmentRefreshHelper {
     ObjectMapper mapper = new ObjectMapper();
     JsonNode infraDefsNode = envObjectNode.get(YamlTypes.INFRASTRUCTURE_DEFS);
     JsonNode serviceOverrideInputs = envObjectNode.get(YamlTypes.SERVICE_OVERRIDE_INPUTS);
+    if (refreshEnvironmentYamlWithUseFromStage(envObjectNode)) {
+      return envObjectNode;
+    }
     if (envRefJsonNode != null) {
       envRefValue = envRefJsonNode.asText();
       JsonNode envInputsNode = envObjectNode.get(YamlTypes.ENVIRONMENT_INPUTS);
@@ -291,6 +308,15 @@ public class EnvironmentRefreshHelper {
     return envObjectNode;
   }
 
+  private boolean refreshEnvironmentYamlWithUseFromStage(ObjectNode envObjectNode) {
+    if (envObjectNode.get(YamlTypes.USE_FROM_STAGE) != null) {
+      envObjectNode.remove(YamlTypes.ENVIRONMENT_INPUTS);
+      envObjectNode.remove(YamlTypes.SERVICE_OVERRIDE_INPUTS);
+      envObjectNode.remove(YamlTypes.INFRASTRUCTURE_DEFS);
+      return true;
+    }
+    return false;
+  }
   private void refreshServiceOverrideInputsWithEnvRef(YamlNode entityNode, EntityRefreshContext context,
       ObjectNode envObjectNode, JsonNode envRefJsonNode, ObjectMapper mapper, JsonNode serviceOverrideInputs) {
     YamlNode stageYamlNodeInResolvedTemplatesYaml =

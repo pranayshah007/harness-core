@@ -53,6 +53,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.HeaderConfig;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.metadata.status.TriggerStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.WebhookAutoRegistrationStatus;
@@ -215,5 +216,11 @@ public class TriggerHelper {
       }
       ngTriggerEntity.getTriggerStatus().setWebhookInfo(WebhookInfo.builder().webhookId(webhookId).build());
     }
+  }
+
+  public static Map<String, String> processTriggerHeader(List<HeaderConfig> triggerHeader) {
+    Map<String, String> headerJsonObject = new HashMap<>();
+    triggerHeader.forEach(header -> { headerJsonObject.put(header.getKey(), String.join(",", header.getValues())); });
+    return headerJsonObject;
   }
 }

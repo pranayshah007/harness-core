@@ -66,6 +66,7 @@ public class NGCommonEntityConstants {
   public static final String REPO_NAME = "repoName";
   public static final String PLAN_KEY = "planExecutionId";
   public static final String STAGE_KEY = "stageExecutionId";
+  public static final String STEP_KEY = "stepExecutionId";
   public static final String TYPE_KEY = "type";
   public static final String TOKEN_KEY = "tokenId";
   public static final String REFERRED_ENTITY_TYPE = "referredEntityType";
@@ -146,6 +147,9 @@ public class NGCommonEntityConstants {
   public static final String INTERNAL_SERVER_ERROR_CODE = "500";
   public static final String APPLICATION_JSON_MEDIA_TYPE = "application/json";
   public static final String APPLICATION_YAML_MEDIA_TYPE = "application/yaml";
+  public static final String CONTENT_TYPE_HEADER = "Content-Type";
+  public static final String APPLICATION_GZIP_MEDIA_TYPE = "application/x-gzip";
+  public static final String APPLICATION_OCTET_STREAM_MEDIA_TYPE = "application/octet-stream";
   public static final String OPERATOR_PARAM_MESSAGE = "Operator Criteria for Criterias ";
   public static final String RESOURCE = "Resource it targets (For icons)";
   public static final String POLICY = "Get YAML of the policy";

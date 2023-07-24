@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 public interface EntityTypeConstants {
   String GITOPS_CREATE_PR = "CreatePR";
   String GITOPS_MERGE_PR = "MergePR";
+  String GITOPS_REVERT_PR = "RevertPR";
   String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
   String GITOPS_FETCH_LINKED_APPS = "GitOpsFetchLinkedApps";
   String GITOPS_SYNC = "GitOpsSync";
@@ -249,4 +250,6 @@ public interface EntityTypeConstants {
   String SERVERLESS_AWS_LAMBDA_ROLLBACK_V2 = "ServerlessAwsLambdaRollbackV2";
   String SERVERLESS_AWS_LAMBDA_DEPLOY_V2 = "ServerlessAwsLambdaDeployV2";
   String SERVERLESS_AWS_LAMBDA_PACKAGE_V2 = "ServerlessAwsLambdaPackageV2";
+  String AWS_CDK_BOOTSTRAP = "AwsCdkBootstrap";
+  String AWS_CDK_SYNTH = "AwsCdkSynth";
 }

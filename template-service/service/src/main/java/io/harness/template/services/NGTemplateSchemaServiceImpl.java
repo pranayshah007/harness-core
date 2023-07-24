@@ -63,6 +63,7 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
   Integer allowedParallelStages;
   private final String TEMPLATE_JSON_PATH = "static-schema/template.json";
   private final String PRE_QA = "stress";
+  private JsonNode templateStaticSchemaJsonNode = null;
 
   @Inject
   public NGTemplateSchemaServiceImpl(PipelineYamlSchemaServiceClient pipelineYamlSchemaServiceClient,
@@ -256,11 +257,15 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
   }
 
   public JsonNode fetchFile(String filePath) throws IOException {
-    ClassLoader classLoader = this.getClass().getClassLoader();
-    String staticJson =
-        Resources.toString(Objects.requireNonNull(classLoader.getResource(filePath)), StandardCharsets.UTF_8);
-    return JsonUtils.asObject(staticJson, JsonNode.class);
+    if (null == templateStaticSchemaJsonNode) {
+      ClassLoader classLoader = this.getClass().getClassLoader();
+      String staticJson =
+          Resources.toString(Objects.requireNonNull(classLoader.getResource(filePath)), StandardCharsets.UTF_8);
+      templateStaticSchemaJsonNode = JsonUtils.asObject(staticJson, JsonNode.class);
+    }
+    return templateStaticSchemaJsonNode;
   }
+
   private JsonNode getStaticYamlSchemaFromResource(String accountIdentifier, String projectIdentifier,
       String orgIdentifier, String templateChildType, TemplateEntityType entityType, Scope scope) {
     String filePath;
@@ -281,6 +286,10 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
     }
 
     try {
+      /*
+        if templateStaticSchemaJsonNode is null then we fetch schema from template.json and set it to
+        templateStaticSchemaJsonNode else directly return templateStaticSchemaJsonNode
+      */
       return fetchFile(filePath);
     } catch (IOException ex) {
       log.error("Not able to read json from {} path", filePath);

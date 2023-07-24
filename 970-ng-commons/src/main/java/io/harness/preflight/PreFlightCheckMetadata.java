@@ -14,4 +14,5 @@ import io.harness.annotations.dev.OwnedBy;
 public interface PreFlightCheckMetadata {
   String FQN = "fqn";
   String EXPRESSION = "expression";
+  String YAML_TYPE_REF_NAME = "yamlTypeRefName";
 }

@@ -12,6 +12,7 @@ import static io.harness.app.STOManagerConfiguration.BASE_PACKAGE;
 import static io.harness.app.STOManagerConfiguration.NG_PIPELINE_PACKAGE;
 import static io.harness.authorization.AuthorizationServiceHeader.STO_MANAGER;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.eventsframework.EventsFrameworkConstants.STO_ORCHESTRATION_NOTIFY_EVENT;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.pms.contracts.plan.ExpansionRequestType.KEY;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
@@ -92,6 +93,8 @@ import io.harness.serializer.YamlBeansModuleRegistrars;
 import io.harness.service.impl.DelegateAsyncServiceImpl;
 import io.harness.service.impl.DelegateProgressServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
+import io.harness.sto.execution.STONotifyEventConsumerRedis;
+import io.harness.sto.execution.STONotifyEventPublisher;
 import io.harness.sto.plan.creator.STOPipelineServiceInfoProvider;
 import io.harness.sto.registrars.STOExecutionRegistrar;
 import io.harness.token.remote.TokenClient;
@@ -162,6 +165,7 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
   private static final SecureRandom random = new SecureRandom();
   public static final Store HARNESS_STORE = Store.builder().name("harness").build();
   private static final String APP_NAME = "STO Manager Service Application";
+  private static final String STO_ORCHESTRATION = "sto_orchestration";
 
   public static void main(String[] args) throws Exception {
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -269,8 +273,9 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
     modules.add(new CIPersistenceModule());
     addGuiceValidationModule(modules);
     String mongoUri = STOManagerConfiguration.getHarnessSTOMongo(configuration.getHarnessCIMongo()).getUri();
-    modules.add(new CIManagerServiceModule(
-        configuration, new CIManagerConfigurationOverride(STO_MANAGER, "sto", false, false, mongoUri)));
+    modules.add(new CIManagerServiceModule(configuration,
+        new CIManagerConfigurationOverride(
+            STO_MANAGER, "sto", false, false, mongoUri, STO_ORCHESTRATION_NOTIFY_EVENT)));
     modules.add(new STOManagerServiceModule());
 
     modules.add(new AbstractModule() {
@@ -474,6 +479,7 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
     pipelineEventConsumerController.register(injector.getInstance(NodeAdviseEventRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(CreatePartialPlanRedisConsumer.class), 2);
+    pipelineEventConsumerController.register(injector.getInstance(STONotifyEventConsumerRedis.class), 15);
   }
 
   private void registerHealthCheck(Environment environment, Injector injector) {
@@ -504,6 +510,7 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
         injector.getInstance(NotifyQueuePublisherRegister.class);
     notifyQueuePublisherRegister.register(
         NG_ORCHESTRATION, payload -> publisher.send(singletonList(NG_ORCHESTRATION), payload));
+    notifyQueuePublisherRegister.register(STO_ORCHESTRATION, injector.getInstance(STONotifyEventPublisher.class));
   }
 
   private void registerAuthFilters(CIManagerConfiguration configuration, Environment environment, Injector injector) {

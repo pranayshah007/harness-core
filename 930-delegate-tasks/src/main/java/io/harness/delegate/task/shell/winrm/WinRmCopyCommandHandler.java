@@ -52,7 +52,6 @@ import io.harness.exception.WingsException;
 import io.harness.exception.runtime.SshCommandExecutionException;
 import io.harness.exception.runtime.WinRmCommandExecutionException;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.logging.LogLevel;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.ssh.FileSourceType;
@@ -95,12 +94,14 @@ public class WinRmCopyCommandHandler extends WinRmDownloadArtifactCommandHandler
           new WinRmCommandExecutionException(NO_DESTINATION_PATH_SPECIFIED));
     }
 
-    CommandExecutionStatus commandExecutionStatus = CommandExecutionStatus.SUCCESS;
     if (FileSourceType.ARTIFACT.equals(copyCommandUnit.getSourceType())) {
       throw NestedExceptionUtils.hintWithExplanationException(COPY_ARTIFACT_NOT_SUPPORTED_FOR_WINRM_HINT,
           COPY_ARTIFACT_NOT_SUPPORTED_FOR_WINRM,
           new SshCommandExecutionException(COPY_ARTIFACT_NOT_SUPPORTED_FOR_WINRM));
-    } else if (FileSourceType.CONFIG.equals(copyCommandUnit.getSourceType())) {
+    }
+
+    CommandExecutionStatus commandExecutionStatus = CommandExecutionStatus.SUCCESS;
+    if (FileSourceType.CONFIG.equals(copyCommandUnit.getSourceType())) {
       commandExecutionStatus =
           copyConfigFiles(winRmCommandTaskParameters, copyCommandUnit, logStreamingTaskClient, commandUnitsProgress);
     }
@@ -115,40 +116,46 @@ public class WinRmCopyCommandHandler extends WinRmDownloadArtifactCommandHandler
         getWinRmSessionConfig(copyCommandUnit, winRmCommandTaskParameters, winRmConfigAuthEnhancer);
     FileBasedWinRmExecutorNG executor = winRmExecutorFactoryNG.getFiledBasedWinRmExecutor(config,
         winRmCommandTaskParameters.isDisableWinRMCommandEncodingFFSet(), logStreamingTaskClient, commandUnitsProgress);
-    CommandExecutionStatus result = CommandExecutionStatus.SUCCESS;
-    List<ConfigFileParameters> configFiles = getConfigFileParameters(winRmCommandTaskParameters);
-    executor.saveExecutionLog(format("Begin execution of command: %s", copyCommandUnit.getName()), INFO, RUNNING);
-    for (ConfigFileParameters configFile : configFiles) {
-      log.info(format("Copying config file : %s, isEncrypted: %b", configFile.getFileName(), configFile.isEncrypted()));
-      if (configFile.isEncrypted()) {
-        SecretConfigFile secretConfigFile;
-        try {
-          secretConfigFile = (SecretConfigFile) secretDecryptionService.decrypt(
-              configFile.getSecretConfigFile(), configFile.getEncryptionDataDetails());
-        } catch (Exception e) {
-          throw NestedExceptionUtils.hintWithExplanationException(
-              format(UNDECRYPTABLE_CONFIG_FILE_PROVIDED_HINT, configFile.getFileName()),
-              format(UNDECRYPTABLE_CONFIG_FILE_PROVIDED_EXPLANATION, configFile.getFileName()),
-              new SshCommandExecutionException(format(UNDECRYPTABLE_CONFIG_FILE_PROVIDED, configFile.getFileName())));
+
+    try {
+      CommandExecutionStatus result = CommandExecutionStatus.SUCCESS;
+      List<ConfigFileParameters> configFiles = getConfigFileParameters(winRmCommandTaskParameters);
+      executor.saveExecutionLog(format("Begin execution of command: %s", copyCommandUnit.getName()), INFO, RUNNING);
+      for (ConfigFileParameters configFile : configFiles) {
+        log.info(
+            format("Copying config file : %s, isEncrypted: %b", configFile.getFileName(), configFile.isEncrypted()));
+        if (configFile.isEncrypted()) {
+          SecretConfigFile secretConfigFile;
+          try {
+            secretConfigFile = (SecretConfigFile) secretDecryptionService.decrypt(
+                configFile.getSecretConfigFile(), configFile.getEncryptionDataDetails());
+          } catch (Exception e) {
+            throw NestedExceptionUtils.hintWithExplanationException(
+                format(UNDECRYPTABLE_CONFIG_FILE_PROVIDED_HINT, configFile.getFileName()),
+                format(UNDECRYPTABLE_CONFIG_FILE_PROVIDED_EXPLANATION, configFile.getFileName()),
+                new SshCommandExecutionException(format(UNDECRYPTABLE_CONFIG_FILE_PROVIDED, configFile.getFileName())));
+          }
+
+          String fileData = new String(secretConfigFile.getEncryptedConfigFile().getDecryptedValue());
+          configFile.setFileContent(fileData);
         }
+        configFile.setDestinationPath(copyCommandUnit.getDestinationPath());
+        configFile.calculateFileSize();
 
-        String fileData = new String(secretConfigFile.getEncryptedConfigFile().getDecryptedValue());
-        configFile.setFileContent(fileData);
+        result = executor.copyConfigFiles(configFile);
+        if (CommandExecutionStatus.FAILURE.equals(result)) {
+          log.info("Failed to copy config file: " + configFile.getFileName());
+          throw NestedExceptionUtils.hintWithExplanationException(FAILED_TO_COPY_WINRM_CONFIG_FILE_HINT,
+              format(FAILED_TO_COPY_CONFIG_FILE_EXPLANATION, configFile.getFileName(), configFile.getDestinationPath()),
+              new SshCommandExecutionException(format(FAILED_TO_COPY_CONFIG_FILE, configFile.getFileName())));
+        }
       }
-      configFile.setDestinationPath(copyCommandUnit.getDestinationPath());
-      configFile.calculateFileSize();
-
-      result = executor.copyConfigFiles(configFile);
-      if (CommandExecutionStatus.FAILURE.equals(result)) {
-        log.info("Failed to copy config file: " + configFile.getFileName());
-        executor.saveExecutionLog("Command execution finished with status " + result, LogLevel.INFO, result);
-        throw NestedExceptionUtils.hintWithExplanationException(FAILED_TO_COPY_WINRM_CONFIG_FILE_HINT,
-            format(FAILED_TO_COPY_CONFIG_FILE_EXPLANATION, configFile.getFileName(), configFile.getDestinationPath()),
-            new SshCommandExecutionException(format(FAILED_TO_COPY_CONFIG_FILE, configFile.getFileName())));
-      }
+      closeLogStream(executor.getLogCallback(), result);
+      return result;
+    } catch (Exception e) {
+      closeLogStreamWithError(executor.getLogCallback());
+      throw e;
     }
-    executor.saveExecutionLog("Command execution finished with status " + result, LogLevel.INFO, result);
-    return result;
   }
 
   private List<ConfigFileParameters> getConfigFileParameters(WinrmTaskParameters winrmTaskParameters) {

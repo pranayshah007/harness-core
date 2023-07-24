@@ -16,11 +16,13 @@ import com.mongodb.client.result.DeleteResult;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(PIPELINE)
 public interface TriggerEventHistoryRepositoryCustom {
   List<TriggerEventHistory> findAll(Criteria criteria);
+  List<TriggerEventHistory> findAllWithSort(Criteria criteria, Sort sort);
   Page<TriggerEventHistory> findAll(Criteria criteria, Pageable pageable);
   List<TriggerEventHistory> findAllActivationTimestampsInRange(Criteria criteria);
   void deleteBatch(Criteria criteria);

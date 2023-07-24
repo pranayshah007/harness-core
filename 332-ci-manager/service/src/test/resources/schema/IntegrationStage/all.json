@@ -175,6 +175,32 @@
                 }
               ]
             },
+            "cacheFrom": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheTo": {
+              "type": "string"
+            },
+            "caching": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "connectorRef": {
               "type": "string"
             },
@@ -1348,6 +1374,9 @@
                   "type": "string"
                 }
               ]
+            },
+            "sbom": {
+              "$ref": "#/definitions/STOYamlSBOM"
             },
             "settings": {
               "oneOf": [
@@ -7935,6 +7964,9 @@
             },
             "target": {
               "$ref": "#/definitions/STOYamlTarget"
+            },
+            "tool": {
+              "$ref": "#/definitions/STOYamlPrismaCloudToolData"
             }
           }
         }
@@ -8595,7 +8627,7 @@
           "properties": {
             "spec": {
               "readOnly": true,
-              "$ref": "#/definitions/RetryFailureSpecConfig"
+              "$ref": "#/definitions/RetryStepGroupFailureSpecConfig"
             },
             "type": {
               "type": "string",
@@ -8606,6 +8638,28 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "RetryStepGroupFailureSpecConfig": {
+      "type": "object",
+      "required": [
+        "retryCount",
+        "retryIntervals"
+      ],
+      "properties": {
+        "retryCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "retryIntervals": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 2147483647,
+          "minItems": 1
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "RunStepInfo": {
@@ -9398,6 +9452,49 @@
         },
         "project_token": {
           "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "STOYamlPrismaCloudToolData": {
+      "type": "object",
+      "properties": {
+        "image_name": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "STOYamlSBOM": {
+      "type": "object",
+      "properties": {
+        "format": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "spdx-json",
+                "cyclonedx-json"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "(<\\+.+>.*)",
+              "minLength": 1
+            }
+          ]
+        },
+        "generate": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "(<\\+.+>.*)",
+              "minLength": 1
+            }
+          ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -10703,8 +10800,7 @@
           "type": "object",
           "required": [
             "policy",
-            "source",
-            "verifyAttestation"
+            "source"
           ],
           "properties": {
             "policy": {
@@ -10732,7 +10828,6 @@
         {
           "type": "object",
           "required": [
-            "attestation",
             "source",
             "tool"
           ],

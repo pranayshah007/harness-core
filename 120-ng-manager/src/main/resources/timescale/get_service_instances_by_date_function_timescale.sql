@@ -34,8 +34,8 @@ BEGIN
 
     v_interim_begin_date := '1900-01-01';
     v_loop_count := -1;  -- so the first increment will be 0
-
-    WHILE v_interim_begin_date < (p_end_date - '1 DAY'::interval) LOOP
+    -- function generates reports, including reports for p_begin_date and p_end_date days
+    WHILE v_interim_begin_date < p_end_date LOOP
             v_query_start_time := clock_timestamp();
             v_loop_count := v_loop_count + 1;
 
@@ -61,7 +61,12 @@ BEGIN
                         FROM ng_instance_stats
                         WHERE accountid = p_accountid
                             -- always follow pattern of >= begin date and < end date
-                            AND reportedat >= v_interim_begin_date AND reportedat < v_interim_end_date
+                            -- Report has to be generated for last 30 days including the current reported day(v_interim_begin_date).
+                            -- For example report for 2023-06-05 day, time range interval
+                            -- will be from: 2023-05-07 00:00:00 including the whole May 07, to: 2023-06-06 00:00:00 including the whole Jun 05
+                            -- It's overall 30 days.
+                            AND reportedat >= v_interim_begin_date - INTERVAL '29 day'
+                            AND reportedat < v_interim_end_date
                         GROUP BY orgid, projectid, serviceid, date_trunc('minute', reportedat)
                         ORDER BY reportedat DESC
                       ) instancesPerServicePerReportedat

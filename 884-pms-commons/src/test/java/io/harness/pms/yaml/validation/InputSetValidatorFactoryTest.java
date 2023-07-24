@@ -18,6 +18,7 @@ import io.harness.beans.InputSetValidatorType;
 import io.harness.category.element.UnitTests;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
+import io.harness.pms.expression.EngineExpressionEvaluatorResolver;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableList;
@@ -36,8 +37,8 @@ public class InputSetValidatorFactoryTest extends PmsCommonsTestBase {
   @Category(UnitTests.class)
   public void testAllowedValuesValidator() {
     InputSetValidator validator = new InputSetValidator(InputSetValidatorType.ALLOWED_VALUES, "");
-    RuntimeValidator runtimeValidator = inputSetValidatorFactory.obtainValidator(
-        validator, expressionEvaluator, ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
+    RuntimeValidator runtimeValidator = inputSetValidatorFactory.obtainValidator(validator,
+        new EngineExpressionEvaluatorResolver(expressionEvaluator), ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
     assertThat(runtimeValidator.isValidValue(null, "a,b,c").isValid()).isFalse();
     assertThat(runtimeValidator.isValidValue("a", "a,b,c").isValid()).isTrue();
     assertThat(runtimeValidator.isValidValue("ab", "a,b,c").isValid()).isFalse();
@@ -55,8 +56,8 @@ public class InputSetValidatorFactoryTest extends PmsCommonsTestBase {
   @Category(UnitTests.class)
   public void testRegexValidator() {
     InputSetValidator validator = new InputSetValidator(InputSetValidatorType.REGEX, "");
-    RuntimeValidator runtimeValidator = inputSetValidatorFactory.obtainValidator(
-        validator, expressionEvaluator, ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
+    RuntimeValidator runtimeValidator = inputSetValidatorFactory.obtainValidator(validator,
+        new EngineExpressionEvaluatorResolver(expressionEvaluator), ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
     assertThat(runtimeValidator.isValidValue(null, "abc*").isValid()).isFalse();
     assertThat(runtimeValidator.isValidValue("abc", "abc*").isValid()).isTrue();
     assertThat(runtimeValidator.isValidValue("a", "abc*").isValid()).isFalse();

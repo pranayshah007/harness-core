@@ -32,6 +32,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateInputsErrorResponseDTO;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.execution.ExecutionStatus;
+import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetYamlWithTemplateDTO;
 import io.harness.pms.pipeline.PMSPipelineListBranchesResponse;
@@ -45,12 +46,12 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.beans.dto.ExecutionDataResponseDTO;
 import io.harness.pms.plan.execution.beans.dto.ExecutionMetaDataResponseDetailsDTO;
-import io.harness.pms.plan.execution.beans.dto.ExpressionEvaluationDetail;
 import io.harness.pms.plan.execution.beans.dto.ExpressionEvaluationDetailDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionFilterPropertiesDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionIdentifierSummaryDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionSummaryDTO;
+import io.harness.pms.plan.execution.service.ExpressionEvaluatorService;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.utils.PageUtils;
@@ -70,9 +71,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.ws.rs.BeanParam;
@@ -128,6 +127,7 @@ public class ExecutionDetailsResource {
   @Inject private final AccessControlClient accessControlClient;
   @Inject private final PmsGitSyncHelper pmsGitSyncHelper;
   @Inject private final ExecutionHelper executionHelper;
+  @Inject private final ExpressionEvaluatorService expressionEvaluatorService;
   @Inject private final PlanExecutionMetadataService planExecutionMetadataService;
 
   @POST
@@ -226,8 +226,8 @@ public class ExecutionDetailsResource {
       @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.SIZE)
       @DefaultValue("10") int size, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     log.info("Get List of executions");
-    Criteria criteria = pmsExecutionService.formCriteria(
-        accountId, orgId, projectId, pipelineIdentifier, null, null, null, null, Arrays.asList(), false, false, true);
+    Criteria criteria = pmsExecutionService.formCriteria(accountId, orgId, projectId, pipelineIdentifier, null, null,
+        null, null, ExecutionStatus.getListExecutionStatus(StatusUtils.finalStatuses()), false, false, true);
     Pageable pageRequest;
     if (page < 0 || !(size > 0 && size <= 1000)) {
       throw new InvalidRequestException(
@@ -236,9 +236,10 @@ public class ExecutionDetailsResource {
 
     pageRequest = PageRequest.of(page, size, Sort.by(Direction.DESC, PlanExecutionSummaryKeys.startTs));
 
-    List<String> projections = Arrays.asList(PlanExecutionSummaryKeys.planExecutionId,
-        PlanExecutionSummaryKeys.runSequence, PlanExecutionSummaryKeys.orgIdentifier,
-        PlanExecutionSummaryKeys.pipelineIdentifier, PlanExecutionSummaryKeys.projectIdentifier);
+    List<String> projections =
+        Arrays.asList(PlanExecutionSummaryKeys.planExecutionId, PlanExecutionSummaryKeys.runSequence,
+            PlanExecutionSummaryKeys.orgIdentifier, PlanExecutionSummaryKeys.pipelineIdentifier,
+            PlanExecutionSummaryKeys.projectIdentifier, PlanExecutionSummaryKeys.status);
 
     Page<PipelineExecutionIdentifierSummaryDTO> planExecutionSummaryDTOS =
         pmsExecutionService.getPipelineExecutionSummaryEntityWithProjection(criteria, pageRequest, projections)
@@ -360,7 +361,7 @@ public class ExecutionDetailsResource {
     return ResponseDTO.newResponse(executionDetailDTO);
   }
 
-  @GET
+  @POST
   @Path("/{planExecutionId}/evaluateExpression")
   @ApiOperation(value = "Gets Execution Expression evaluated", nickname = "getExpressionEvaluated")
   @Operation(operationId = "getExpressionEvaluated", description = "Returns the Map of evaluated Expression",
@@ -385,16 +386,7 @@ public class ExecutionDetailsResource {
       @Parameter(description = "Plan Execution Id for which Expression have to be evaluated",
           required = true) @PathParam(NGCommonEntityConstants.PLAN_KEY) String planExecutionId,
       @RequestBody(required = true, description = "Pipeline YAML") @NotNull String yaml) {
-    // TODO: need to be implemented
-    Map<String, ExpressionEvaluationDetail> dummyMapData = new HashMap<>();
-    dummyMapData.put("expression+fqn",
-        ExpressionEvaluationDetail.builder()
-            .fqn("fqn")
-            .originalExpression("originalExpression")
-            .resolvedValue("resolvedYaml")
-            .build());
-    return ResponseDTO.newResponse(
-        ExpressionEvaluationDetailDTO.builder().compiledYaml(yaml).mapExpression(dummyMapData).build());
+    return ResponseDTO.newResponse(expressionEvaluatorService.evaluateExpression(planExecutionId, yaml));
   }
 
   @GET

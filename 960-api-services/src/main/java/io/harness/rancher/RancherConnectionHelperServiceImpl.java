@@ -58,13 +58,13 @@ public class RancherConnectionHelperServiceImpl implements RancherConnectionHelp
     if (isEmpty(clustersData)) {
       return Collections.emptyList();
     }
-    return clustersData.stream().map(RancherClusterItem::getName).collect(Collectors.toList());
+    return clustersData.stream().map(RancherClusterItem::getId).collect(Collectors.toList());
   }
 
   @Override
-  public String generateKubeconfig(String rancherUrl, String bearerToken, String clusterName) {
+  public String generateKubeconfig(String rancherUrl, String bearerToken, String clusterId) {
     RancherGenerateKubeconfigResponse generateKubeConfigResponse =
-        rancherClusterClient.generateKubeconfig(bearerToken, rancherUrl, clusterName);
+        rancherClusterClient.generateKubeconfig(bearerToken, rancherUrl, clusterId);
     return generateKubeConfigResponse.getConfig();
   }
 }

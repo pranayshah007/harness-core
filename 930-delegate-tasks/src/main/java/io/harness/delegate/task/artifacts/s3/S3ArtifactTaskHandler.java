@@ -6,7 +6,9 @@
  */
 
 package io.harness.delegate.task.artifacts.s3;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -29,6 +31,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 public class S3ArtifactTaskHandler extends DelegateArtifactTaskHandler<S3ArtifactDelegateRequest> {

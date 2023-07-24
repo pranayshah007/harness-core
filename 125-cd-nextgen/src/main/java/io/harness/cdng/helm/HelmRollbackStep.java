@@ -153,13 +153,21 @@ public class HelmRollbackStep extends CdTaskExecutable<HelmCmdExecResponseNG> {
         RefObjectUtils.getSweepingOutputRefObject(
             helmRollbackStepParams.getHelmRollbackFqn() + "." + OutcomeExpressionConstants.HELM_DEPLOY_OUTCOME));
     if (!helmDeployOptionalOutput.isFound()) {
-      return TaskRequest.newBuilder()
-          .setSkipTaskRequest(
-              SkipTaskRequest.newBuilder().setMessage("Helm Deploy step was not executed. Skipping rollback.").build())
-          .build();
+      helmDeployOptionalOutput = executionSweepingOutputService.resolveOptional(ambiance,
+          RefObjectUtils.getSweepingOutputRefObject(helmRollbackStepParams.getHelmRollbackFqn() + "."
+              + OutcomeExpressionConstants.HELM_DEPLOY_RELEASE_OUTCOME));
+      if (!cdFeatureFlagHelper.isEnabled(
+              AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_SEND_TASK_PROGRESS_NG)
+          || !helmDeployOptionalOutput.isFound()) {
+        return TaskRequest.newBuilder()
+            .setSkipTaskRequest(SkipTaskRequest.newBuilder()
+                                    .setMessage("Helm Deploy step was not executed. Skipping rollback.")
+                                    .build())
+            .build();
+      }
     }
-
     NativeHelmDeployOutcome nativeHelmDeployOutcome = (NativeHelmDeployOutcome) helmDeployOptionalOutput.getOutput();
+
     if (!nativeHelmDeployOutcome.isHasInstallUpgradeStarted()) {
       return TaskRequest.newBuilder()
           .setSkipTaskRequest(SkipTaskRequest.newBuilder()
@@ -198,7 +206,9 @@ public class HelmRollbackStep extends CdTaskExecutable<HelmCmdExecResponseNG> {
         .shouldOpenFetchFilesLogStream(true)
         .useRefactorSteadyStateCheck(cdFeatureFlagHelper.isEnabled(
             AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_STEADY_STATE_CHECK_1_16_V2_NG))
-        .skipSteadyStateCheck(skipSteadyStateCheck);
+        .skipSteadyStateCheck(skipSteadyStateCheck)
+        .sendTaskProgressEvents(cdFeatureFlagHelper.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_SEND_TASK_PROGRESS_NG));
 
     HelmRollbackCommandRequestNG helmCommandRequest = rollbackCommandRequestNGBuilder.build();
 

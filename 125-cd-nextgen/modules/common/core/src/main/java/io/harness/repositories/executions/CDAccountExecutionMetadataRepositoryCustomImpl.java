@@ -9,13 +9,17 @@ package io.harness.repositories.executions;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.pipeline.executions.CDAccountExecutionMetadata;
 import io.harness.cdng.pipeline.executions.CDAccountExecutionMetadata.CDAccountExecutionMetadataKeys;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.pms.plan.execution.AccountExecutionInfo;
+import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
 import java.time.Duration;
@@ -26,6 +30,8 @@ import java.time.ZoneId;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -80,5 +86,28 @@ public class CDAccountExecutionMetadataRepositoryCustomImpl implements CDAccount
       accountExecutionMetadata.setAccountExecutionInfo(accountExecutionInfo);
       mongoTemplate.save(accountExecutionMetadata);
     }
+  }
+
+  @Override
+  public boolean deleteForAccount(String accountId) {
+    try {
+      Criteria criteria = new Criteria();
+      criteria.and(CDAccountExecutionMetadataKeys.accountId).is(accountId);
+
+      Failsafe.with(getDeleteRetryPolicy(accountId))
+          .get(() -> mongoTemplate.remove(new Query(criteria), CDAccountExecutionMetadata.class));
+      return true;
+    } catch (Exception e) {
+      log.warn(format("Error while deleting CDAccountExecutionMetadata for Account [%s] : %s", accountId,
+                   ExceptionUtils.getMessage(e)),
+          e);
+      return false;
+    }
+  }
+
+  private RetryPolicy<Object> getDeleteRetryPolicy(String accountId) {
+    return PersistenceUtils.getRetryPolicy(
+        format("[Retrying]: Failed deleting CDAccountExecutionMetadata for account: [%s]; attempt: {}", accountId),
+        format("[Failed]: Failed CDAccountExecutionMetadata for account: [%s]; attempt: {}", accountId));
   }
 }

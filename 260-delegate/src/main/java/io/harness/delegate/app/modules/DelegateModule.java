@@ -365,6 +365,7 @@ import io.harness.delegate.task.k8s.KubernetesValidationHandler;
 import io.harness.delegate.task.k8s.exception.KubernetesApiClientRuntimeExceptionHandler;
 import io.harness.delegate.task.k8s.exception.KubernetesApiExceptionHandler;
 import io.harness.delegate.task.k8s.exception.KubernetesCliRuntimeExceptionHandler;
+import io.harness.delegate.task.k8s.exception.RancherRuntimeExceptionHandler;
 import io.harness.delegate.task.ldap.NGLdapGroupSearchTask;
 import io.harness.delegate.task.ldap.NGLdapGroupSyncTask;
 import io.harness.delegate.task.ldap.NGLdapTestAuthenticationTask;
@@ -2466,5 +2467,7 @@ public class DelegateModule extends AbstractModule {
         exception -> exceptionHandlerMapBinder.addBinding(exception).to(AzureClientExceptionHandler.class));
     TerragruntRuntimeExceptionHandler.exceptions().forEach(
         exception -> exceptionHandlerMapBinder.addBinding(exception).to(TerragruntRuntimeExceptionHandler.class));
+    RancherRuntimeExceptionHandler.exceptions().forEach(
+        exception -> exceptionHandlerMapBinder.addBinding(exception).to(RancherRuntimeExceptionHandler.class));
   }
 }

@@ -64,6 +64,7 @@ public class InterruptEventHandler extends PmsBaseEventHandler<InterruptEvent> {
     switch (interruptType) {
       case ABORT:
       case USER_MARKED_FAIL_ALL:
+      case MARK_EXPIRED:
         handleAbort(event);
         log.info("Handled ABORT InterruptEvent Successfully");
         break;

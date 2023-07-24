@@ -259,31 +259,6 @@ public class K8sBlueGreenStageScaleDownRequestHandlerTest extends CategoryTest {
             eq(Arrays.asList(deploymentGreen, statefulSetGreen)), eq(logCallback), eq(true));
     assertThat(response).isEqualTo(
         K8sDeployResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build());
-
-    // No release found with BG deployment
-    KubernetesResourceId deployment = KubernetesResourceId.builder()
-                                          .kind("Deployment")
-                                          .name("release-todolist")
-                                          .namespace(namespace)
-                                          .versioned(false)
-                                          .build();
-
-    k8sLegacyRelease = K8sLegacyRelease.builder()
-                           .managedWorkload(deployment)
-                           .resources(Collections.singletonList(deployment))
-                           .status(IK8sRelease.Status.Succeeded)
-                           .build();
-
-    doReturn(k8sLegacyRelease).when(releaseHistory).getBlueGreenStageRelease();
-    response = k8sBlueGreenStageScaleDownRequestHandler.executeTask(
-        k8sBlueGreenStageScaleDownRequest, delegateTaskParams, iLogStreamingTaskClient, commandUnitsProgress);
-    verify(k8sTaskHelperBase, times(0))
-        .scale(any(Kubectl.class), eq(delegateTaskParams), eq(deployment), eq(0), eq(logCallback), eq(true));
-    verify(k8sTaskHelperBase, times(0))
-        .executeDeleteHandlingPartialExecution(any(Kubectl.class), eq(delegateTaskParams),
-            eq(Collections.singletonList(deployment)), eq(logCallback), eq(true));
-    assertThat(response).isEqualTo(
-        K8sDeployResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build());
   }
 
   @Test
@@ -385,22 +360,7 @@ public class K8sBlueGreenStageScaleDownRequestHandlerTest extends CategoryTest {
                                           .versioned(false)
                                           .build();
 
-    K8sLegacyRelease k8sLegacyRelease = K8sLegacyRelease.builder()
-                                            .managedWorkload(deployment)
-                                            .resources(Collections.singletonList(deployment))
-                                            .status(IK8sRelease.Status.Succeeded)
-                                            .build();
-
-    doReturn(k8sLegacyRelease).when(releaseHistory).getBlueGreenStageRelease();
-    K8sDeployResponse response = k8sBlueGreenStageScaleDownRequestHandler.executeTask(
-        k8sBlueGreenStageScaleDownRequest, delegateTaskParams, iLogStreamingTaskClient, commandUnitsProgress);
-    verify(k8sTaskHelperBase, times(0))
-        .scale(any(Kubectl.class), eq(delegateTaskParams), eq(deployment), eq(0), eq(logCallback), eq(true));
-    verify(k8sTaskHelperBase, times(0))
-        .executeDeleteHandlingPartialExecution(any(Kubectl.class), eq(delegateTaskParams),
-            eq(Collections.singletonList(deployment)), eq(logCallback), eq(true));
-    assertThat(response).isEqualTo(
-        K8sDeployResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build());
+    executeIgnoredResources(deployment);
   }
 
   @Test
@@ -414,9 +374,21 @@ public class K8sBlueGreenStageScaleDownRequestHandlerTest extends CategoryTest {
                                           .versioned(false)
                                           .build();
 
+    executeIgnoredResources(deployment);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testBlueGreenStageScaleDownWithNewCustomKind() throws Exception {
+    KubernetesResourceId customResource = KubernetesResourceId.builder().kind("does-not-exist").name("name").build();
+    executeIgnoredResources(customResource);
+  }
+
+  private void executeIgnoredResources(KubernetesResourceId kubernetesResourceId) throws Exception {
     K8sLegacyRelease k8sLegacyRelease = K8sLegacyRelease.builder()
-                                            .managedWorkload(deployment)
-                                            .resources(Collections.singletonList(deployment))
+                                            .managedWorkload(kubernetesResourceId)
+                                            .resources(Collections.singletonList(kubernetesResourceId))
                                             .status(IK8sRelease.Status.Succeeded)
                                             .bgEnvironment(HarnessLabelValues.bgStageEnv)
                                             .build();
@@ -425,10 +397,10 @@ public class K8sBlueGreenStageScaleDownRequestHandlerTest extends CategoryTest {
     K8sDeployResponse response = k8sBlueGreenStageScaleDownRequestHandler.executeTask(
         k8sBlueGreenStageScaleDownRequest, delegateTaskParams, iLogStreamingTaskClient, commandUnitsProgress);
     verify(k8sTaskHelperBase, times(0))
-        .scale(any(Kubectl.class), eq(delegateTaskParams), eq(deployment), eq(0), eq(logCallback), eq(true));
+        .scale(any(Kubectl.class), eq(delegateTaskParams), eq(kubernetesResourceId), eq(0), eq(logCallback), eq(true));
     verify(k8sTaskHelperBase, times(0))
         .executeDeleteHandlingPartialExecution(any(Kubectl.class), eq(delegateTaskParams),
-            eq(Collections.singletonList(deployment)), eq(logCallback), eq(true));
+            eq(Collections.singletonList(kubernetesResourceId)), eq(logCallback), eq(true));
     assertThat(response).isEqualTo(
         K8sDeployResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build());
   }

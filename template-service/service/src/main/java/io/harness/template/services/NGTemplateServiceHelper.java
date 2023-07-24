@@ -22,7 +22,6 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
@@ -68,7 +67,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
@@ -89,11 +88,12 @@ public class NGTemplateServiceHelper {
   private final GitAwareEntityHelper gitAwareEntityHelper;
 
   private final TelemetryReporter telemetryReporter;
-  private final Executor executor;
+  private final ExecutorService executorService;
 
   public static String TEMPLATE_SAVE = "template_save";
   public static String TEMPLATE_SAVE_ACTION_TYPE = "action";
   public static String TEMPLATE_NAME = "templateName";
+  public static String TEMPLATE_ID = "templateId";
   public static String ORG_ID = "orgId";
   public static String PROJECT_ID = "projectId";
   public static String MODULE_NAME = "moduleName";
@@ -102,20 +102,21 @@ public class NGTemplateServiceHelper {
   public NGTemplateServiceHelper(FilterService filterService, NGTemplateRepository templateRepository,
       GitSyncSdkService gitSyncSdkService, TemplateGitXService templateGitXService,
       GitAwareEntityHelper gitAwareEntityHelper, TelemetryReporter telemetryReporter,
-      @Named("TemplateServiceHelperExecutorService") Executor executor) {
+      @Named("TemplateServiceHelperExecutorService") ExecutorService executorService) {
     this.filterService = filterService;
     this.templateRepository = templateRepository;
     this.gitSyncSdkService = gitSyncSdkService;
     this.templateGitXService = templateGitXService;
     this.gitAwareEntityHelper = gitAwareEntityHelper;
     this.telemetryReporter = telemetryReporter;
-    this.executor = executor;
+    this.executorService = executorService;
   }
 
   public void sendTemplatesSaveTelemetryEvent(TemplateEntity entity, String actionType) {
-    executor.execute(() -> {
+    executorService.submit(() -> {
       try {
         HashMap<String, Object> properties = new HashMap<>();
+        properties.put(TEMPLATE_ID, entity.getIdentifier());
         properties.put(TEMPLATE_NAME, entity.getName());
         properties.put(ORG_ID, entity.getOrgIdentifier());
         properties.put(PROJECT_ID, entity.getProjectIdentifier());
@@ -160,17 +161,20 @@ public class NGTemplateServiceHelper {
     } catch (NGTemplateException e) {
       throw new NGTemplateException(e.getMessage(), e);
     } catch (Exception e) {
-      log.error(String.format("Error while retrieving template with identifier [%s] and versionLabel [%s]",
+      log.error(String.format("Unable to retrieve template with identifier [%s] and versionLabel [%s]",
                     templateIdentifier, versionLabel),
           e);
       ScmException exception = TemplateUtils.getScmException(e);
       if (null != exception) {
-        throw new InvalidRequestException("Error while retrieving template with identifier " + templateIdentifier
-            + " and versionLabel " + versionLabel + " due to " + ExceptionUtils.getMessage(e));
+        throw new InvalidRequestException(
+            String.format("Unable to retrieve template with identifier [%s] and versionLabel [%s]:", templateIdentifier,
+                versionLabel),
+            e);
       } else {
         throw new InvalidRequestException(
-            String.format("Error while retrieving template with identifier [%s] and versionLabel [%s]: %s",
-                templateIdentifier, versionLabel, e.getMessage()));
+            String.format("Unable to retrieve template with identifier [%s] and versionLabel [%s]:", templateIdentifier,
+                versionLabel),
+            e);
       }
     }
   }

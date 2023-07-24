@@ -66,9 +66,8 @@ public class CIDockerLayerCachingConfigServiceTest {
     CIDockerLayerCachingConfig expectedConfig = getConfig();
 
     when(featureFlagService.isEnabled(FeatureName.CI_ENABLE_DLC, accountId)).thenReturn(true);
-    when(featureFlagService.isEnabled(FeatureName.CI_USE_S3_FOR_DLC, accountId)).thenReturn(true);
     when(ciExecutionServiceConfig.getDockerLayerCachingConfig()).thenReturn(expectedConfig);
-    CIDockerLayerCachingConfig config = ciDockerLayerCachingConfigService.getDockerLayerCachingConfig(accountId);
+    CIDockerLayerCachingConfig config = ciDockerLayerCachingConfigService.getDockerLayerCachingConfig(accountId, true);
     assertThat(expectedConfig).isEqualTo(config);
   }
 
@@ -77,8 +76,7 @@ public class CIDockerLayerCachingConfigServiceTest {
   @Category(UnitTests.class)
   public void testGetDockerLayerCachingConfigFFDisabled() {
     when(featureFlagService.isEnabled(FeatureName.CI_ENABLE_DLC, accountId)).thenReturn(false);
-    when(featureFlagService.isEnabled(FeatureName.CI_USE_S3_FOR_DLC, accountId)).thenReturn(true);
-    CIDockerLayerCachingConfig config = ciDockerLayerCachingConfigService.getDockerLayerCachingConfig(accountId);
+    CIDockerLayerCachingConfig config = ciDockerLayerCachingConfigService.getDockerLayerCachingConfig(accountId, true);
     assertThat(config).isNull();
   }
 
@@ -89,9 +87,8 @@ public class CIDockerLayerCachingConfigServiceTest {
     CIDockerLayerCachingConfig expectedConfig = getConfig();
 
     when(featureFlagService.isEnabled(FeatureName.CI_ENABLE_DLC, accountId)).thenReturn(true);
-    when(featureFlagService.isEnabled(FeatureName.CI_USE_S3_FOR_DLC, accountId)).thenReturn(false);
     when(ciExecutionServiceConfig.getDockerLayerCachingGCSConfig()).thenReturn(getGCSConfig());
-    CIDockerLayerCachingConfig config = ciDockerLayerCachingConfigService.getDockerLayerCachingConfig(accountId);
+    CIDockerLayerCachingConfig config = ciDockerLayerCachingConfigService.getDockerLayerCachingConfig(accountId, false);
     assertThat(expectedConfig).isEqualTo(config);
   }
 

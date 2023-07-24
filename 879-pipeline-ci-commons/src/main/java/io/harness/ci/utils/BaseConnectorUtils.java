@@ -128,7 +128,6 @@ public class BaseConnectorUtils {
 
   private final String SAAS = "SaaS";
   private final String SELF_MANAGED = "Self-Managed";
-  private final String GIT_DOT = "git.";
 
   public Map<String, ConnectorDetails> getConnectorDetailsMap(NGAccess ngAccess, Set<String> connectorNameSet) {
     Map<String, ConnectorDetails> connectorDetailsMap = new HashMap<>();
@@ -159,8 +158,7 @@ public class BaseConnectorUtils {
     return getConnectorDetailsInternalWithRetries(ngAccess, identifierRef);
   }
 
-  public ConnectorDetails getHarnessConnectorDetails(NGAccess ngAccess, String baseUrl) {
-    String authToken = fetchAuthToken(ngAccess);
+  public ConnectorDetails getHarnessConnectorDetails(NGAccess ngAccess, String baseUrl, String authToken) {
     log.info("Generated harness scm baseurl : {}", baseUrl);
     String accountId = ngAccess.getAccountIdentifier();
     HarnessConnectorDTO connectorConfigDTO =
@@ -207,7 +205,7 @@ public class BaseConnectorUtils {
     return connectorDetailsBuilder.build();
   }
 
-  public String getSCMBaseUrl(String baseUrl) {
+  public static String getSCMBaseUrl(String baseUrl) {
     try {
       URL url = new URL(baseUrl);
       String host = url.getHost();
@@ -215,15 +213,10 @@ public class BaseConnectorUtils {
       if (host.equals("localhost")) {
         return "";
       }
-      return protocol + "://" + GIT_DOT + host;
+      return protocol + "://" + host + "/code/git";
     } catch (Exception e) {
       log.error("There was error while generating scm base URL", e);
     }
-    return "";
-  }
-
-  // TODO yet to implement
-  private String fetchAuthToken(NGAccess ngAccess) {
     return "";
   }
 

@@ -2,11 +2,11 @@ name: Access Control Service Metrics
 identifier: accessControlServiceMetrics
 metricGroup: accessControlServiceMetricsGroup
 metrics:
-  - metricName: nextgen_manager_io_dropwizard_jetty_MutableServletContextHandler_4xx_responses_count
+  - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_4xx_responses_count
     metricDefinition: Total number of 4xx error responses
     type: LastValue
     unit: count
-  - metricName: nextgen_manager_io_dropwizard_jetty_MutableServletContextHandler_5xx_responses_count
+  - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_5xx_responses_count
     metricDefinition: Total number of 5xx error responses
     type: LastValue
     unit: count

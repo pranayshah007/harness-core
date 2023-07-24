@@ -335,6 +335,7 @@ import io.harness.delegate.beans.gitapi.GitApiTaskParams;
 import io.harness.delegate.beans.gitapi.GitApiTaskResponse;
 import io.harness.delegate.beans.gitapi.GitRepoType;
 import io.harness.delegate.beans.helm.HelmChartVersionDetails;
+import io.harness.delegate.beans.helm.HelmDeployProgressData;
 import io.harness.delegate.beans.instancesync.info.AsgServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AwsSshWinrmServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo;
@@ -771,6 +772,9 @@ import io.harness.delegate.task.helm.HelmReleaseHistoryCommandRequestNG;
 import io.harness.delegate.task.helm.HelmRollbackCommandRequestNG;
 import io.harness.delegate.task.helm.HelmValuesFetchRequest;
 import io.harness.delegate.task.helm.HelmValuesFetchResponse;
+import io.harness.delegate.task.helm.request.HelmFetchChartManifestTaskParameters;
+import io.harness.delegate.task.helm.response.HelmChartManifest;
+import io.harness.delegate.task.helm.response.HelmFetchChartManifestResponse;
 import io.harness.delegate.task.http.HttpStepResponse;
 import io.harness.delegate.task.http.HttpTaskParameters;
 import io.harness.delegate.task.http.HttpTaskParametersNg;
@@ -1722,6 +1726,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(HelmInstallationParameters.class, 10013);
     kryo.register(SmtpParameters.class, 10014);
     kryo.register(UnitProgressData.class, 95001);
+    kryo.register(HelmDeployProgressData.class, 95003);
     kryo.register(TerraformCommand.class, 5524);
     kryo.register(TerraformCommandUnit.class, 5525);
     kryo.register(DecryptGitAPiAccessTaskParams.class, 543266);
@@ -2525,5 +2530,9 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(RollbackConfiguration.class, 20000614);
     kryo.register(RollbackTrigger.class, 20000615);
     kryo.register(Tag.class, 20000616);
+
+    kryo.register(HelmFetchChartManifestTaskParameters.class, 20000617);
+    kryo.register(HelmFetchChartManifestResponse.class, 20000618);
+    kryo.register(HelmChartManifest.class, 20000619);
   }
 }

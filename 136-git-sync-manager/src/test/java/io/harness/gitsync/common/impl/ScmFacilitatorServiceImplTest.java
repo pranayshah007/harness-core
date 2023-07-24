@@ -45,7 +45,6 @@ import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.GitSyncTestBase;
 import io.harness.gitsync.caching.service.GitFileCacheService;
-import io.harness.gitsync.common.beans.GitXSettingsParams;
 import io.harness.gitsync.common.dtos.GitBranchDetailsDTO;
 import io.harness.gitsync.common.dtos.GitBranchesResponseDTO;
 import io.harness.gitsync.common.dtos.GitRepositoryResponseDTO;
@@ -362,11 +361,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
         .thenReturn(getLatestCommitOnFileResponse);
     when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(false);
     ScmGetFileResponseDTO scmGetFileResponseDTO = scmFacilitatorService.getFileByBranch(
-        ScmGetFileByBranchRequestDTO.builder()
-            .scope(getDefaultScope())
-            .branchName(branch)
-            .gitXSettingsParams(GitXSettingsParams.builder().applyRepoAllowListFilter(false).build())
-            .build());
+        ScmGetFileByBranchRequestDTO.builder().scope(getDefaultScope()).branchName(branch).build());
     assertThat(scmGetFileResponseDTO.getBlobId()).isEqualTo(blobId);
     assertThat(scmGetFileResponseDTO.getCommitId()).isEqualTo(commitId);
     assertThat(scmGetFileResponseDTO.getFileContent()).isEqualTo(content);
@@ -385,11 +380,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
     assertThatThrownBy(
         ()
             -> scmFacilitatorService.getFileByBranch(
-                ScmGetFileByBranchRequestDTO.builder()
-                    .scope(getDefaultScope())
-                    .branchName(branch)
-                    .gitXSettingsParams(GitXSettingsParams.builder().applyRepoAllowListFilter(false).build())
-                    .build()))
+                ScmGetFileByBranchRequestDTO.builder().scope(getDefaultScope()).branchName(branch).build()))
         .isInstanceOf(WingsException.class);
   }
 
@@ -406,11 +397,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
         .thenReturn(getLatestCommitOnFileResponse);
     try {
       scmFacilitatorService.getFileByBranch(
-          ScmGetFileByBranchRequestDTO.builder()
-              .scope(getDefaultScope())
-              .branchName(branch)
-              .gitXSettingsParams(GitXSettingsParams.builder().applyRepoAllowListFilter(false).build())
-              .build());
+          ScmGetFileByBranchRequestDTO.builder().scope(getDefaultScope()).branchName(branch).build());
     } catch (Exception exception) {
       assertThat(exception).isInstanceOf(ScmUnexpectedException.class);
       assertThat(exception.getMessage()).isEqualTo(error);
@@ -720,7 +707,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
     when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any())).thenReturn(getUserReposResponse);
     List<GitRepositoryResponseDTO> repositoryResponseDTOList = scmFacilitatorService.listReposByRefConnector(
         accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, pageRequest, "", false);
-    assertThat(repositoryResponseDTOList.get(0).getName()).isNull();
+    assertThat(repositoryResponseDTOList.get(0).getName()).isEqualTo("test-repo");
   }
 
   private Scope getDefaultScope() {

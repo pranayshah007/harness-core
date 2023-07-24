@@ -143,8 +143,15 @@ public class SshExceptionConstants {
   public final String COPY_AND_DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_GITHUB_PACKAGE_ARTIFACT_FAILED =
       "Copy and Download Artifact for package type `%s` is not supported for Github Package Repository artifacts";
 
-  public final String AZURE_CLI_INSTALLATION_CHECK_FAILED = "Azure CLI not installed";
+  public final String COPY_ARTIFACT_NOT_SUPPORTED_FOR_AZURE_UNIVERSAL_PACKAGE_ARTIFACT_HINT =
+      "Please make sure there is no copy artifact command unit specified and use download command unit instead";
+  public final String COPY_ARTIFACT_NOT_SUPPORTED_FOR_AZURE_UNIVERSAL_PACKAGE_ARTIFACT_EXPLANATION =
+      "Copy Artifact for package type `universal` is not supported for Azure artifacts defined in service. Please use download artifact and make sure Azure CLI and devops extension is installed";
+  public final String COPY_ARTIFACT_NOT_SUPPORTED_FOR_AZURE_UNIVERSAL_PACKAGE_ARTIFACT_FAILED =
+      "Copy Artifact for package type `universal` is not supported for Azure artifacts";
+
+  public final String AZURE_CLI_INSTALLATION_CHECK_FAILED = "Azure CLI or devops extension not installed";
   public final String AZURE_CLI_INSTALLATION_CHECK_HINT =
-      "Please install Azure CLI in order to download Azure Universal packages";
+      "Please install Azure CLI and devops extension in order to download Azure Universal packages.\nYou can use this guide https://learn.microsoft.com/en-us/azure/devops/artifacts/quickstarts/universal-packages?view=azure-devops&tabs=Windows";
   public final String AZURE_CLI_INSTALLATION_CHECK_EXPLANATION = "Azure CLI check failed";
 }

@@ -87,6 +87,7 @@ public interface Constants {
   String ARTIFACT_METADATA_EXPR = "metadata";
   String SOURCE_EVENT_ID = "sourceEventId";
   String SOURCE_EVENT_LINK = "sourceEventLink";
+  String EMAIL = "email";
 
   String WEBHOOK_TYPE = "Webhook";
   String SCHEDULED_TYPE = "Scheduled";

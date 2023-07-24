@@ -81,7 +81,7 @@ public class NotificationHelper {
     if (nodeExecution.getStatus() == Status.SUCCEEDED) {
       return Optional.of(io.harness.notification.PipelineEventType.STAGE_SUCCESS);
     }
-    if (StatusUtils.brokeStatuses().contains(nodeExecution.getStatus())) {
+    if (StatusUtils.brokeAndAbortedStatuses().contains(nodeExecution.getStatus())) {
       return Optional.of(io.harness.notification.PipelineEventType.STAGE_FAILED);
     }
     return Optional.empty();

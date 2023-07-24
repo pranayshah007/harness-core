@@ -73,10 +73,7 @@ import lombok.experimental.UtilityClass;
 public class PmsStepPlanCreatorUtils {
   public List<AdviserObtainment> getAdviserObtainmentFromMetaData(
       KryoSerializer kryoSerializer, YamlField currentField, boolean isPipelineStage) {
-    boolean isStepInsideRollback = false;
-    if (YamlUtils.findParentNode(currentField.getNode(), ROLLBACK_STEPS) != null) {
-      isStepInsideRollback = true;
-    }
+    final boolean isStepInsideRollback = YamlUtils.findParentNode(currentField.getNode(), ROLLBACK_STEPS) != null;
 
     // Adding adviser obtainment list from the failure strategy.
     List<AdviserObtainment> adviserObtainmentList = new ArrayList<>(
@@ -172,7 +169,16 @@ public class PmsStepPlanCreatorUtils {
 
   public List<AdviserObtainment> getAdviserObtainmentForFailureStrategy(
       KryoSerializer kryoSerializer, YamlField currentField, boolean isStepInsideRollback, boolean isPipelineStage) {
+    Map<FailureStrategyActionConfig, Collection<FailureType>> actionMap =
+        getPriorityMergedFailureStrategies(currentField, isStepInsideRollback);
+
     List<AdviserObtainment> adviserObtainmentList = new ArrayList<>();
+    return getAdviserObtainments(
+        kryoSerializer, currentField, isStepInsideRollback, adviserObtainmentList, actionMap, isPipelineStage);
+  }
+
+  public Map<FailureStrategyActionConfig, Collection<FailureType>> getPriorityMergedFailureStrategies(
+      YamlField currentField, boolean isStepInsideRollback) {
     List<FailureStrategyConfig> stageFailureStrategies =
         PlanCreatorUtilsCommon.getFieldFailureStrategies(currentField, STAGE, isStepInsideRollback);
     List<FailureStrategyConfig> stepGroupFailureStrategies =
@@ -181,15 +187,8 @@ public class PmsStepPlanCreatorUtils {
     List<FailureStrategyConfig> stepFailureStrategies =
         PlanCreatorUtilsCommon.getFailureStrategies(currentField.getNode());
 
-    Map<FailureStrategyActionConfig, Collection<FailureType>> actionMap;
-    FailureStrategiesUtils.priorityMergeFailureStrategies(
+    return FailureStrategiesUtils.priorityMergeFailureStrategies(
         stepFailureStrategies, stepGroupFailureStrategies, stageFailureStrategies);
-
-    actionMap = FailureStrategiesUtils.priorityMergeFailureStrategies(
-        stepFailureStrategies, stepGroupFailureStrategies, stageFailureStrategies);
-
-    return getAdviserObtainments(
-        kryoSerializer, currentField, isStepInsideRollback, adviserObtainmentList, actionMap, isPipelineStage);
   }
 
   private List<AdviserObtainment> getAdviserObtainments(KryoSerializer kryoSerializer, YamlField currentField,
@@ -208,7 +207,7 @@ public class PmsStepPlanCreatorUtils {
         siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);
       }
 
-      // Check if step is in parallel section then dont have nextNodeUUid set.
+      // Check if step is in parallel section then don't have nextNodeUUid set.
       if (siblingField != null && !GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)
           && !StrategyUtils.isWrappedUnderStrategy(currentField)) {
         nextNodeUuid = siblingField.getNode().getUuid();
@@ -225,6 +224,13 @@ public class PmsStepPlanCreatorUtils {
           nextNodeUuid, adviserObtainmentBuilder);
     }
     return adviserObtainmentList;
+  }
+
+  public void adviserForActionTypeWithNoNextNode(KryoSerializer kryoSerializer, YamlField currentField,
+      List<AdviserObtainment> adviserObtainmentList, FailureStrategyActionConfig action, Set<FailureType> failureTypes,
+      NGFailureActionType actionType, AdviserObtainment.Builder adviserObtainmentBuilder) {
+    adviserForActionType(kryoSerializer, currentField, adviserObtainmentList, action, failureTypes, actionType, null,
+        adviserObtainmentBuilder);
   }
 
   private void adviserForActionType(KryoSerializer kryoSerializer, YamlField currentField,

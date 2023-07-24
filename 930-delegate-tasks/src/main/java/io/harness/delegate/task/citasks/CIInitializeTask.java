@@ -7,11 +7,6 @@
 
 package io.harness.delegate.task.citasks;
 
-/**
- * Delegate task to setup CI build environment. It calls CIK8BuildTaskHandler class to setup the build environment on
- * K8.
- */
-
 import static java.lang.String.format;
 
 import io.harness.delegate.beans.DelegateMetaInfo;
@@ -32,6 +27,10 @@ import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 
+/**
+ * Delegate task to setup CI build environment. It calls CIK8BuildTaskHandler class to setup the build environment on
+ * K8.
+ */
 @Slf4j
 public class CIInitializeTask extends AbstractDelegateRunnableTask {
   @Inject @Named(CITaskConstants.INIT_VM) private CIInitializeTaskHandler ciVmInitializeTaskHandler;
@@ -61,7 +60,7 @@ public class CIInitializeTask extends AbstractDelegateRunnableTask {
       return response;
     } else {
       throw new CIStageExecutionException(
-          format("Invalid infra type for initializing stage", ciInitializeTaskParams.getType()));
+          format("Invalid infra type [%s] for initializing stage", ciInitializeTaskParams.getType()));
     }
   }
 }

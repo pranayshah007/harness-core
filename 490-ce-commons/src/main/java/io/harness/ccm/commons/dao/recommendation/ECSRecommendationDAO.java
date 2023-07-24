@@ -217,6 +217,7 @@ public class ECSRecommendationDAO {
         .set(CE_RECOMMENDATIONS.MONTHLYSAVING, monthlySaving)
         .set(CE_RECOMMENDATIONS.ISVALID, shouldShowRecommendation)
         .set(CE_RECOMMENDATIONS.CLUSTERNAME, clusterName) // for updating older rows having clusterId instead
+        .set(CE_RECOMMENDATIONS.CLOUDPROVIDER, CloudProvider.AWS.name())
         .set(CE_RECOMMENDATIONS.LASTPROCESSEDAT, toOffsetDateTime(lastReceivedUntilAt))
         .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
         .execute();

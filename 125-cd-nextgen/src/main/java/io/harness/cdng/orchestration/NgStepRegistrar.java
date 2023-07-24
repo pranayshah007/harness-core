@@ -63,6 +63,7 @@ import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStep;
 import io.harness.cdng.elastigroup.rollback.ElastigroupRollbackStep;
 import io.harness.cdng.gitops.MergePRStep;
 import io.harness.cdng.gitops.UpdateReleaseRepoStep;
+import io.harness.cdng.gitops.revertpr.RevertPRStep;
 import io.harness.cdng.gitops.steps.FetchLinkedAppsStep;
 import io.harness.cdng.gitops.steps.GitopsClustersStep;
 import io.harness.cdng.gitops.syncstep.SyncStep;
@@ -102,6 +103,8 @@ import io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerStep;
 import io.harness.cdng.pipeline.steps.NGSectionStep;
 import io.harness.cdng.pipeline.steps.RollbackOptionalChildChainStep;
 import io.harness.cdng.pipeline.steps.RollbackOptionalChildrenStep;
+import io.harness.cdng.provision.awscdk.AwsCdkBootstrapStep;
+import io.harness.cdng.provision.awscdk.AwsCdkSynthStep;
 import io.harness.cdng.provision.azure.AzureARMRollbackStep;
 import io.harness.cdng.provision.azure.AzureCreateARMResourceStep;
 import io.harness.cdng.provision.azure.AzureCreateBPStep;
@@ -170,6 +173,7 @@ public class NgStepRegistrar {
 
     // Add CDNG steps here
     engineSteps.put(MergePRStep.STEP_TYPE, MergePRStep.class);
+    engineSteps.put(RevertPRStep.STEP_TYPE, RevertPRStep.class);
     engineSteps.put(UpdateReleaseRepoStep.STEP_TYPE, UpdateReleaseRepoStep.class);
     engineSteps.put(FetchLinkedAppsStep.STEP_TYPE, FetchLinkedAppsStep.class);
     engineSteps.put(SyncStep.STEP_TYPE, SyncStep.class);
@@ -328,6 +332,11 @@ public class NgStepRegistrar {
     engineSteps.put(TerraformRollbackStepV2.STEP_TYPE, TerraformRollbackStepV2.class);
 
     engineSteps.put(ServerlessAwsLambdaPackageV2Step.STEP_TYPE, ServerlessAwsLambdaPackageV2Step.class);
+
+    // AWS CDK
+    engineSteps.put(AwsCdkBootstrapStep.STEP_TYPE, AwsCdkBootstrapStep.class);
+    engineSteps.put(AwsCdkSynthStep.STEP_TYPE, AwsCdkSynthStep.class);
+
     return engineSteps;
   }
 }

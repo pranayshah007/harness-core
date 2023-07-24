@@ -53,6 +53,8 @@ import io.harness.cdng.provision.terraform.functor.TerraformHumanReadablePlanFun
 import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
 import io.harness.cdng.provision.terraformcloud.functor.TerraformCloudPlanJsonFunctor;
 import io.harness.cdng.provision.terraformcloud.functor.TerraformCloudPolicyChecksJsonFunctor;
+import io.harness.cdng.usage.jobs.CDLicenseDailyReportIteratorHandler;
+import io.harness.cdng.usage.task.CDLicenseDailyReportTask;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.cf.AbstractCfModule;
 import io.harness.cf.CfClientConfig;
@@ -95,6 +97,8 @@ import io.harness.gitsync.GitSyncSdkInitHelper;
 import io.harness.gitsync.core.fullsync.GitFullSyncEntityIterator;
 import io.harness.gitsync.core.runnable.GitChangeSetRunnable;
 import io.harness.gitsync.core.webhook.GitSyncEventConsumerService;
+import io.harness.gitsync.core.webhook.createbranchevent.WebhookBranchHookEventQueueProcessor;
+import io.harness.gitsync.core.webhook.pushevent.WebhookPushEventQueueProcessor;
 import io.harness.gitsync.migration.GitSyncMigrationProvider;
 import io.harness.gitsync.server.GitSyncGrpcModule;
 import io.harness.gitsync.server.GitSyncServiceConfiguration;
@@ -471,7 +475,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     initializeMonitoring(appConfig, injector);
     registerObservers(injector);
     registerOasResource(appConfig, environment, injector);
-    registerManagedBeans(environment, injector);
+    registerManagedBeans(environment, injector, appConfig);
     initializeEnforcementService(injector, appConfig);
     initializeEnforcementSdk(injector);
     initializeCdMonitoring(appConfig, injector);
@@ -657,6 +661,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     injector.getInstance(CICreditExpiryIteratorHandler.class).registerIterator(2);
     injector.getInstance(CreditProvisioningIteratorHandler.class).registerIterator(2);
     injector.getInstance(SendProvisionedCICreditsToSegmentHandler.class).registerIterator(2);
+    injector.getInstance(CDLicenseDailyReportIteratorHandler.class)
+        .registerIterator(ngIteratorsConfig.getCdLicenseDailyReportIteratorConfig());
   }
 
   public void registerJobs(Injector injector) {
@@ -872,7 +878,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     }
   }
 
-  private void registerManagedBeans(Environment environment, Injector injector) {
+  private void registerManagedBeans(Environment environment, Injector injector, NextGenConfiguration appConfig) {
     environment.lifecycle().manage(injector.getInstance(QueueListenerController.class));
     environment.lifecycle().manage(injector.getInstance(NotifierScheduledExecutorService.class));
     environment.lifecycle().manage(injector.getInstance(OutboxEventPollService.class));
@@ -880,6 +886,10 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.lifecycle().manage(injector.getInstance(FixInconsistentUserDataMigrationJob.class));
     // Do not remove as it's used for MaintenanceController for shutdown mode
     environment.lifecycle().manage(injector.getInstance(MaintenanceController.class));
+    if (appConfig.isUseQueueServiceForWebhookTriggers()) {
+      environment.lifecycle().manage(injector.getInstance(WebhookBranchHookEventQueueProcessor.class));
+      environment.lifecycle().manage(injector.getInstance(WebhookPushEventQueueProcessor.class));
+    }
     createConsumerThreadsToListenToEvents(environment, injector);
   }
 
@@ -972,6 +982,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
 
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
         .scheduleWithFixedDelay(injector.getInstance(ModuleVersionsMaintenanceTask.class), 0, 3, TimeUnit.HOURS);
+    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
+        .scheduleWithFixedDelay(injector.getInstance(CDLicenseDailyReportTask.class), 0, 3, TimeUnit.HOURS);
   }
 
   private void registerAuthFilters(NextGenConfiguration configuration, Environment environment, Injector injector) {

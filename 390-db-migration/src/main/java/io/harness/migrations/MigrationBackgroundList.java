@@ -152,6 +152,7 @@ import io.harness.migrations.all.TimeSeriesThresholdsMigration;
 import io.harness.migrations.all.UpdateAccountEncryptionClassNames;
 import io.harness.migrations.all.UpdateCorruptedEmptyClusterNameInstanceStatsMigration;
 import io.harness.migrations.all.UpdateCorruptedInstanceStatsMigration;
+import io.harness.migrations.all.UpdateEncryptedTokenToDelegateToken;
 import io.harness.migrations.all.UpdateInstanceInfoWithLastArtifactIdMigration;
 import io.harness.migrations.all.UpdateIsCrossGenerationAccessEnabledForAllAccountsMigration;
 import io.harness.migrations.all.UpdateNameInAwsInfrastructureMappingMigration;
@@ -431,6 +432,7 @@ public class MigrationBackgroundList {
         .add(Pair.of(251, EncryptDelegateTokenMigration.class))
         .add(Pair.of(252, AddAccountIdToLearningEngineExperimentalAnalysisTask.class))
         .add(Pair.of(253, SamlSSOSettingsConfiguredFromNGAuthenticationEnabledMigration.class))
+        .add(Pair.of(254, UpdateEncryptedTokenToDelegateToken.class))
         .build();
   }
 }

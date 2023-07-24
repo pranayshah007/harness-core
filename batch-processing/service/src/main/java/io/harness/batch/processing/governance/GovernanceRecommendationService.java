@@ -125,7 +125,7 @@ public class GovernanceRecommendationService {
       RuleCloudProviderType ruleCloudProviderType, String fieldId, String fieldName, ViewFieldIdentifier identifier,
       String identifierName) {
     Set<Rule> ruleList = new HashSet<>();
-    ruleList.addAll(ruleDAO.forRecommendation(ruleCloudProviderType));
+    ruleList.addAll(ruleDAO.forRecommendation(ruleCloudProviderType, accountId));
 
     // getting the needed fields for recommendation
     List<RecommendationAdhocDTO> recommendationAdhocDTOList = new ArrayList<>();
@@ -140,6 +140,7 @@ public class GovernanceRecommendationService {
                                            .targetAccountId(ceAwsConnectorDTO.getAwsAccountId())
                                            .roleArn(ceAwsConnectorDTO.getCrossAccountAccess().getCrossAccountRoleArn())
                                            .externalId(ceAwsConnectorDTO.getCrossAccountAccess().getExternalId())
+                                           .cloudConnectorId(connectorInfoDTO.getIdentifier())
                                            .build());
       } else if (ruleCloudProviderType == RuleCloudProviderType.AZURE) {
         CEAzureConnectorDTO ceAzureConnectorDTO = (CEAzureConnectorDTO) connectorInfoDTO.getConnectorConfig();
@@ -147,6 +148,7 @@ public class GovernanceRecommendationService {
         recommendationAdhocDTOList.add(AzureRecommendationAdhocDTO.builder()
                                            .tenantId(ceAzureConnectorDTO.getTenantId())
                                            .subscriptionId(ceAzureConnectorDTO.getSubscriptionId())
+                                           .cloudConnectorId(connectorInfoDTO.getIdentifier())
                                            .build());
       }
     }
@@ -232,6 +234,13 @@ public class GovernanceRecommendationService {
     List<QLCEViewFilterWrapper> filters = new ArrayList<>();
     filters.add(getTimeFilter(getStartOfMonth(true), QLCEViewTimeFilterOperator.AFTER));
     filters.add(getTimeFilter(getStartOfMonth(false) - 1000, QLCEViewTimeFilterOperator.BEFORE));
+    filters.add(QLCEViewFilterWrapper.builder()
+                    .idFilter(QLCEViewFilter.builder()
+                                  .field(regionQlceViewFieldInputBuilder.build())
+                                  .operator(QLCEViewFilterOperator.NOT_IN)
+                                  .values(new String[] {"global"})
+                                  .build())
+                    .build());
     filters.add(QLCEViewFilterWrapper.builder()
                     .idFilter(QLCEViewFilter.builder()
                                   .field(regionQlceViewFieldInputBuilder.build())

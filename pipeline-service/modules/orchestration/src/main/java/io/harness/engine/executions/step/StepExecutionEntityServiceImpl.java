@@ -102,7 +102,7 @@ public class StepExecutionEntityServiceImpl implements StepExecutionEntityServic
       } catch (Exception ex) {
         log.error(
             String.format(
-                "Unable to update step execution entity, accountIdentifier: %s, orgIdentifier: %s, projectIdentifier: %s, planExecutionId: %s, stageExecutionId: %s, stepExecutionId: %s",
+                "[CustomDashboard]: Unable to update step execution entity, accountIdentifier: %s, orgIdentifier: %s, projectIdentifier: %s, planExecutionId: %s, stageExecutionId: %s, stepExecutionId: %s",
                 AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
                 AmbianceUtils.getProjectIdentifier(ambiance), ambiance.getPlanExecutionId(),
                 ambiance.getStageExecutionId(), AmbianceUtils.obtainCurrentRuntimeId(ambiance)),

@@ -13,7 +13,7 @@ import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_READ_B
 import static io.harness.eventsframework.EventsFrameworkConstants.OBSERVER_EVENT_CHANNEL;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELEGATE_ENTITY;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
-import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
+import static io.harness.pms.listener.NgOrchestrationNotifyEventListenerNonVersioned.NG_ORCHESTRATION;
 
 import io.harness.AccessControlClientModule;
 import io.harness.account.AccountClientModule;
@@ -26,6 +26,7 @@ import io.harness.aws.AwsClientImpl;
 import io.harness.beans.execution.license.CILicenseService;
 import io.harness.cache.CICacheManagementService;
 import io.harness.cache.CICacheManagementServiceImpl;
+import io.harness.cache.HarnessCacheManager;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
@@ -65,7 +66,9 @@ import io.harness.enforcement.client.EnforcementClientModule;
 import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.api.Consumer;
+import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.impl.noop.NoOpConsumer;
+import io.harness.eventsframework.impl.redis.GitAwareRedisProducer;
 import io.harness.eventsframework.impl.redis.RedisConsumer;
 import io.harness.ff.FeatureFlagModule;
 import io.harness.ff.FeatureFlagService;
@@ -106,6 +109,7 @@ import io.harness.timescaledb.TimeScaleDBService;
 import io.harness.timescaledb.TimeScaleDBServiceImpl;
 import io.harness.token.TokenClientModule;
 import io.harness.user.UserClientModule;
+import io.harness.version.VersionInfoManager;
 import io.harness.waiter.AsyncWaitEngineImpl;
 import io.harness.waiter.WaitNotifyEngine;
 import io.harness.yaml.core.StepSpecType;
@@ -132,6 +136,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import javax.cache.Cache;
+import javax.cache.expiry.AccessedExpiryPolicy;
+import javax.cache.expiry.Duration;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RedissonClient;
 
@@ -206,9 +213,15 @@ public class CIManagerServiceModule extends AbstractModule {
   @Provides
   @Singleton
   public AsyncWaitEngine asyncWaitEngine(WaitNotifyEngine waitNotifyEngine) {
-    return new AsyncWaitEngineImpl(waitNotifyEngine, NG_ORCHESTRATION);
+    return new AsyncWaitEngineImpl(waitNotifyEngine, this.configurationOverride.getModulePrefix() + "_orchestration");
   }
 
+  @Provides
+  @Singleton
+  @Named("queueAsyncWaitEngine")
+  public AsyncWaitEngine asyncWaitEngineQueue(WaitNotifyEngine waitNotifyEngine) {
+    return new AsyncWaitEngineImpl(waitNotifyEngine, NG_ORCHESTRATION);
+  }
   @Provides
   @Singleton
   public TimeLimiter timeLimiter(ExecutorService executorService) {
@@ -229,7 +242,15 @@ public class CIManagerServiceModule extends AbstractModule {
   RedisConfig redisConfig() {
     return ciManagerConfiguration.getRedisLockConfig();
   }
-
+  @Provides
+  @Singleton
+  @Named("ciEventsCache")
+  public Cache<String, Integer> sdkEventsCache(
+      HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
+    return harnessCacheManager.getCache("ciEventsCache", String.class, Integer.class,
+        AccessedExpiryPolicy.factoryOf(Duration.THIRTY_MINUTES), versionInfoManager.getVersionInfo().getBuildNo(),
+        true);
+  }
   @Override
   protected void configure() {
     if (this.configurationOverride.isUsePrimaryVersionController()) {
@@ -238,6 +259,8 @@ public class CIManagerServiceModule extends AbstractModule {
     if (this.configurationOverride.isUseBuildEnforcer()) {
       bind(CIBuildEnforcer.class).to(CIBuildEnforcerImpl.class);
     }
+    String serviceId = this.configurationOverride.getServiceHeader().getServiceId();
+
     bind(CIManagerConfiguration.class).toInstance(ciManagerConfiguration);
     bind(CIInitTaskMessageProcessor.class).to(CIInitTaskMessageProcessorImpl.class);
     bind(HPersistence.class).to(MongoPersistence.class).in(Singleton.class);
@@ -257,8 +280,7 @@ public class CIManagerServiceModule extends AbstractModule {
     bind(CIYAMLSanitizationService.class).to(CIYAMLSanitizationServiceImpl.class).in(Singleton.class);
     bind(CIAccountValidationService.class).to(CIAccountValidationServiceImpl.class).in(Singleton.class);
     install(NgLicenseHttpClientModule.getInstance(ciManagerConfiguration.getNgManagerClientConfig(),
-        ciManagerConfiguration.getNgManagerServiceSecret(),
-        this.configurationOverride.getServiceHeader().getServiceId()));
+        ciManagerConfiguration.getNgManagerServiceSecret(), serviceId));
 
     bind(ExecutorService.class)
         .annotatedWith(Names.named("ciInitTaskExecutor"))
@@ -332,13 +354,11 @@ public class CIManagerServiceModule extends AbstractModule {
         ciManagerConfiguration.getManagerTarget(), ciManagerConfiguration.getManagerAuthority(), true));
 
     install(new TokenClientModule(ciManagerConfiguration.getNgManagerClientConfig(),
-        ciManagerConfiguration.getNgManagerServiceSecret(),
-        this.configurationOverride.getServiceHeader().getServiceId()));
+        ciManagerConfiguration.getNgManagerServiceSecret(), serviceId));
     install(PersistentLockModule.getInstance());
-    install(new OpaClientModule(ciManagerConfiguration.getOpaClientConfig(),
-        ciManagerConfiguration.getPolicyManagerSecret(), this.configurationOverride.getServiceHeader().getServiceId()));
+    install(new OpaClientModule(
+        ciManagerConfiguration.getOpaClientConfig(), ciManagerConfiguration.getPolicyManagerSecret(), serviceId));
 
-    String appName = this.configurationOverride.getServiceHeader().getServiceId();
     install(new AbstractManagerGrpcClientModule() {
       @Override
       public ManagerGrpcClientModule.Config config() {
@@ -350,38 +370,31 @@ public class CIManagerServiceModule extends AbstractModule {
 
       @Override
       public String application() {
-        return appName;
+        return serviceId;
       }
     });
 
-    install(AccessControlClientModule.getInstance(ciManagerConfiguration.getAccessControlClientConfiguration(),
-        this.configurationOverride.getServiceHeader().getServiceId()));
+    install(
+        AccessControlClientModule.getInstance(ciManagerConfiguration.getAccessControlClientConfiguration(), serviceId));
     install(new EntitySetupUsageClientModule(ciManagerConfiguration.getNgManagerClientConfig(),
-        ciManagerConfiguration.getNgManagerServiceSecret(),
-        this.configurationOverride.getServiceHeader().getServiceId()));
+        ciManagerConfiguration.getNgManagerServiceSecret(), serviceId));
     install(new ConnectorResourceClientModule(ciManagerConfiguration.getNgManagerClientConfig(),
-        ciManagerConfiguration.getNgManagerServiceSecret(),
-        this.configurationOverride.getServiceHeader().getServiceId(), ClientMode.PRIVILEGED));
+        ciManagerConfiguration.getNgManagerServiceSecret(), serviceId, ClientMode.PRIVILEGED));
     install(new SecretNGManagerClientModule(ciManagerConfiguration.getNgManagerClientConfig(),
-        ciManagerConfiguration.getNgManagerServiceSecret(),
-        this.configurationOverride.getServiceHeader().getServiceId()));
+        ciManagerConfiguration.getNgManagerServiceSecret(), serviceId));
     install(new CILogServiceClientModule(ciManagerConfiguration.getLogServiceConfig()));
-    install(UserClientModule.getInstance(ciManagerConfiguration.getManagerClientConfig(),
-        ciManagerConfiguration.getManagerServiceSecret(),
-        this.configurationOverride.getServiceHeader().getServiceId()));
+    install(UserClientModule.getInstance(
+        ciManagerConfiguration.getManagerClientConfig(), ciManagerConfiguration.getManagerServiceSecret(), serviceId));
     install(new ProjectClientModule(ciManagerConfiguration.getNgManagerClientConfig(),
-        ciManagerConfiguration.getNgManagerServiceSecret(),
-        this.configurationOverride.getServiceHeader().getServiceId()));
+        ciManagerConfiguration.getNgManagerServiceSecret(), serviceId));
     install(new TIServiceClientModule(ciManagerConfiguration.getTiServiceConfig()));
     install(new STOServiceClientModule(ciManagerConfiguration.getStoServiceConfig()));
-    install(new SSCAServiceClientModuleV2(
-        ciManagerConfiguration.getSscaServiceConfig(), AuthorizationServiceHeader.CI_MANAGER.getServiceId()));
+    install(new SSCAServiceClientModuleV2(ciManagerConfiguration.getSscaServiceConfig(), serviceId));
     install(new IACMServiceClientModule(ciManagerConfiguration.getIacmServiceConfig()));
     install(new AccountClientModule(ciManagerConfiguration.getManagerClientConfig(),
         ciManagerConfiguration.getNgManagerServiceSecret(), this.configurationOverride.getServiceHeader().toString()));
     install(EnforcementClientModule.getInstance(ciManagerConfiguration.getNgManagerClientConfig(),
-        ciManagerConfiguration.getNgManagerServiceSecret(),
-        this.configurationOverride.getServiceHeader().getServiceId(),
+        ciManagerConfiguration.getNgManagerServiceSecret(), serviceId,
         ciManagerConfiguration.getEnforcementClientConfiguration()));
     install(new AbstractTelemetryModule() {
       @Override
@@ -417,6 +430,20 @@ public class CIManagerServiceModule extends AbstractModule {
       bind(MessageListener.class)
           .annotatedWith(Names.named(DELEGATE_ENTITY + OBSERVER_EVENT_CHANNEL))
           .to(DelegateTaskEventListener.class);
+
+      String orchestrationEvent = this.configurationOverride.getOrchestrationEvent();
+      String serviceId = this.configurationOverride.getServiceHeader().getServiceId();
+
+      bind(Producer.class)
+          .annotatedWith(Names.named(orchestrationEvent))
+          .toInstance(GitAwareRedisProducer.of(
+              orchestrationEvent, redissonClient, 5000, serviceId, redisConfig.getEnvNamespace()));
+
+      bind(Consumer.class)
+          .annotatedWith(Names.named(orchestrationEvent))
+          .toInstance(RedisConsumer.of(orchestrationEvent, serviceId, redissonClient,
+              EventsFrameworkConstants.PLAN_NOTIFY_EVENT_MAX_PROCESSING_TIME,
+              EventsFrameworkConstants.PMS_ORCHESTRATION_NOTIFY_EVENT_BATCH_SIZE, redisConfig.getEnvNamespace()));
     }
   }
 }

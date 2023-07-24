@@ -127,7 +127,8 @@ public class ScheduledTriggerHandler implements Handler<NGTriggerEntity> {
         }
 
         PlanExecution response = ngTriggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionRequest(triggerDetails,
-            TriggerPayload.newBuilder().setType(Type.SCHEDULED).build(), triggerWebhookEvent, null, runtimeInputYaml);
+            TriggerPayload.newBuilder().setType(Type.SCHEDULED).build(), triggerWebhookEvent, null, null,
+            runtimeInputYaml);
         triggerEventHistoryRepository.save(toHistoryRecord(entity, "TARGET_EXECUTION_REQUESTED",
             "Pipeline execution was requested successfully", false, response, runtimeInputYaml));
         log.info("Execution started for cron trigger: " + entity.getIdentifier()

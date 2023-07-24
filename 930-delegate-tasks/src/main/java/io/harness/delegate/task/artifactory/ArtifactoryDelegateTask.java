@@ -6,9 +6,11 @@
  */
 
 package io.harness.delegate.task.artifactory;
-
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifactory.ArtifactoryImagePath;
 import io.harness.artifactory.ArtifactoryNgService;
@@ -43,6 +45,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import org.apache.commons.lang3.NotImplementedException;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 public class ArtifactoryDelegateTask extends AbstractDelegateRunnableTask {
   @Inject SecretDecryptionService decryptionService;
   @Inject ArtifactoryRequestMapper artifactoryRequestMapper;

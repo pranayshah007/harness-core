@@ -160,6 +160,13 @@ public class StatusUtils {
     return ABORT_AND_EXPIRE_STATUSES;
   }
 
+  // All statuses as abort and expire except queued status
+  public EnumSet<Status> userMarkedFailureStatuses() {
+    EnumSet<Status> userMarkedFailureStatuses = EnumSet.copyOf(ABORT_AND_EXPIRE_STATUSES);
+    userMarkedFailureStatuses.remove(QUEUED);
+    return userMarkedFailureStatuses;
+  }
+
   public EnumSet<Status> nodeAllowedStartSet(Status status) {
     switch (status) {
       case RUNNING:

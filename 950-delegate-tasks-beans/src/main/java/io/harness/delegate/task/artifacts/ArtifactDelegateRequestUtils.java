@@ -253,7 +253,7 @@ public class ArtifactDelegateRequestUtils {
   public JenkinsArtifactDelegateRequest getJenkinsDelegateArtifactRequest(String connectorRef,
       JenkinsConnectorDTO jenkinsConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails,
       ArtifactSourceType sourceType, List<JobDetails> jobDetails, String parentJobName, String jobName,
-      List<String> artifactPath, String BuildNumber) {
+      List<String> artifactPath, String BuildNumber, String buildRegex) {
     return JenkinsArtifactDelegateRequest.builder()
         .connectorRef(connectorRef)
         .jenkinsConnectorDTO(jenkinsConnectorDTO)
@@ -263,6 +263,7 @@ public class ArtifactDelegateRequestUtils {
         .parentJobName(parentJobName)
         .jobName(jobName)
         .artifactPaths(artifactPath)
+        .buildRegex(buildRegex)
         .buildNumber(BuildNumber)
         .build();
   }

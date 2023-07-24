@@ -86,6 +86,7 @@ import io.harness.helm.HelmCommandType;
 import io.harness.helm.HelmSubCommandType;
 import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.k8s.model.HelmVersion;
+import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.utils.ObjectYamlUtils;
 import io.harness.logging.LogCallback;
 import io.harness.security.encryption.SecretDecryptionService;
@@ -120,6 +121,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
@@ -189,6 +191,16 @@ public class HelmTaskHelperBase {
         .toAbsolutePath()
         .normalize()
         .toString();
+  }
+
+  public List<K8sPod> markNewPods(List<K8sPod> latestK8sPods, List<K8sPod> previousK8sPods) {
+    Set<String> olderPodNames = previousK8sPods.stream().map(K8sPod::getName).collect(Collectors.toSet());
+    latestK8sPods.forEach(pod -> {
+      if (!olderPodNames.contains(pod.getName())) {
+        pod.setNewPod(true);
+      }
+    });
+    return latestK8sPods;
   }
 
   public boolean doesChartExistInLocalRepo(String repoName, String chartName, String chartVersion) {

@@ -20,7 +20,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.clienttools.ChartmuseumVersion;
 import io.harness.delegate.clienttools.ClientTool;
 import io.harness.delegate.clienttools.ClientToolVersion;
-import io.harness.delegate.clienttools.GoTemplateVersion;
 import io.harness.delegate.clienttools.InstallUtils;
 import io.harness.delegate.clienttools.KubectlVersion;
 import io.harness.delegate.clienttools.KustomizeVersion;
@@ -47,11 +46,7 @@ public class K8sGlobalConfigServiceImpl implements K8sGlobalConfigService {
 
   @Override
   public String getGoTemplateClientPath() {
-    try {
-      return getToolPath(GO_TEMPLATE, GoTemplateVersion.V0_4_2);
-    } catch (IllegalArgumentException e) {
-      return getToolPath(GO_TEMPLATE, GoTemplateVersion.V0_4);
-    }
+    return getToolPath(GO_TEMPLATE, GO_TEMPLATE.getLatestVersion());
   }
 
   /*
@@ -64,12 +59,23 @@ public class K8sGlobalConfigServiceImpl implements K8sGlobalConfigService {
     }
     log.debug("[HELM]: picked helm binary corresponding to version {}", helmVersion);
     switch (helmVersion) {
+      // catch blocks will be deleted when we end up with just one helm version in the immutable delegate
       case V2:
         return getToolPath(HELM, io.harness.delegate.clienttools.HelmVersion.V2);
       case V3:
-        return getToolPath(HELM, io.harness.delegate.clienttools.HelmVersion.V3);
+        try {
+          return getToolPath(ClientTool.HELM, io.harness.delegate.clienttools.HelmVersion.V3);
+        } catch (IllegalArgumentException e) {
+          log.warn("Helm 3.1.2 not installed Version 3.12.0 will be used");
+          return getToolPath(ClientTool.HELM, io.harness.delegate.clienttools.HelmVersion.V3_12);
+        }
       case V380:
-        return getToolPath(HELM, io.harness.delegate.clienttools.HelmVersion.V3_8);
+        try {
+          return getToolPath(ClientTool.HELM, io.harness.delegate.clienttools.HelmVersion.V3_8);
+        } catch (IllegalArgumentException e) {
+          log.warn("Helm 3.8 not installed Version 3.12.0 will be used");
+          return getToolPath(ClientTool.HELM, io.harness.delegate.clienttools.HelmVersion.V3_12);
+        }
       default:
         throw new InvalidRequestException("Unsupported Helm Version:" + helmVersion);
     }

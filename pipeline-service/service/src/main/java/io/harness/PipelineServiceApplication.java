@@ -76,6 +76,7 @@ import io.harness.graph.stepDetail.PmsGraphStepDetailsServiceImpl;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.health.HealthMonitor;
 import io.harness.health.HealthService;
+import io.harness.iterator.PersistenceIterator;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.HarnessMetricRegistry;
@@ -113,6 +114,7 @@ import io.harness.pms.event.overviewLandingPage.PipelineExecutionSummaryRedisEve
 import io.harness.pms.event.overviewLandingPage.PipelineExecutionSummaryRedisEventConsumerSnapshot;
 import io.harness.pms.event.pollingevent.PollingEventStreamConsumer;
 import io.harness.pms.event.triggerwebhookevent.TriggerExecutionEventStreamConsumer;
+import io.harness.pms.event.webhookevent.WebhookEventQueueProcessor;
 import io.harness.pms.event.webhookevent.WebhookEventStreamConsumer;
 import io.harness.pms.events.base.PipelineEventConsumerController;
 import io.harness.pms.inputset.gitsync.InputSetEntityGitSyncHelper;
@@ -385,7 +387,7 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     registerCorsFilter(appConfig, environment);
     registerResources(environment, injector);
     registerJerseyProviders(environment, injector);
-    registerManagedBeans(environment, injector);
+    registerManagedBeans(environment, injector, appConfig);
     registerAuthFilters(appConfig, environment, injector);
     registerAPIAuthTelemetryFilters(appConfig, environment, injector);
     registerApiResponseFilter(environment, injector);
@@ -401,12 +403,27 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     injector.getInstance(TriggerWebhookExecutionService.class)
         .registerIterators(iteratorsConfig.getTriggerWebhookConfig());
     injector.getInstance(ScheduledTriggerHandler.class).registerIterators(iteratorsConfig.getScheduleTriggerConfig());
-    injector.getInstance(TimeoutEngine.class)
-        .createAndStartIterator(PersistenceIteratorFactory.PumpExecutorOptions.builder()
-                                    .name("TimeoutEngine")
-                                    .poolSize(iteratorsConfig.getTimeoutEngineConfig().getThreadPoolCount())
-                                    .build(),
-            Duration.ofSeconds(iteratorsConfig.getTimeoutEngineConfig().getTargetIntervalInSeconds()));
+    if (PersistenceIterator.ProcessMode.REDIS_BATCH.name().equals(appConfig.getTimeoutIteratorMode())) {
+      injector.getInstance(TimeoutEngine.class)
+          .createAndStartRedisBatchIterator(
+              PersistenceIteratorFactory.RedisBatchExecutorOptions.builder()
+                  .name("TimeoutEngine")
+                  .poolSize(iteratorsConfig.getTimeoutEngineRedisConfig().getThreadPoolSize())
+                  .batchSize(iteratorsConfig.getTimeoutEngineRedisConfig().getRedisBatchSize())
+                  .lockTimeout(iteratorsConfig.getTimeoutEngineRedisConfig().getRedisLockTimeout())
+                  .interval(Duration.ofSeconds(
+                      iteratorsConfig.getTimeoutEngineRedisConfig().getThreadPoolIntervalInSeconds()))
+                  .build(),
+              Duration.ofSeconds(iteratorsConfig.getTimeoutEngineRedisConfig().getTargetIntervalInSeconds()));
+    } else {
+      injector.getInstance(TimeoutEngine.class)
+          .createAndStartIterator(PersistenceIteratorFactory.PumpExecutorOptions.builder()
+                                      .name("TimeoutEngine")
+                                      .poolSize(iteratorsConfig.getTimeoutEngineConfig().getThreadPoolCount())
+                                      .build(),
+              Duration.ofSeconds(iteratorsConfig.getTimeoutEngineConfig().getTargetIntervalInSeconds()));
+    }
+
     injector.getInstance(BarrierServiceImpl.class).registerIterators(iteratorsConfig.getBarrierConfig());
     injector.getInstance(ApprovalInstanceHandler.class).registerIterators();
     injector.getInstance(CustomApprovalInstanceHandler.class)
@@ -868,12 +885,16 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     }
   }
 
-  private void registerManagedBeans(Environment environment, Injector injector) {
+  private void registerManagedBeans(
+      Environment environment, Injector injector, PipelineServiceConfiguration appConfig) {
     environment.lifecycle().manage(injector.getInstance(PMSEventConsumerService.class));
     environment.lifecycle().manage(injector.getInstance(QueueListenerController.class));
     environment.lifecycle().manage(injector.getInstance(ApprovalInstanceExpirationJob.class));
     environment.lifecycle().manage(injector.getInstance(OutboxEventPollService.class));
     environment.lifecycle().manage(injector.getInstance(PipelineEventConsumerController.class));
+    if (appConfig.isUseQueueServiceForWebhookTriggers()) {
+      environment.lifecycle().manage(injector.getInstance(WebhookEventQueueProcessor.class));
+    }
     // Do not remove as it's used for MaintenanceController for shutdown mode
     environment.lifecycle().manage(injector.getInstance(MaintenanceController.class));
   }

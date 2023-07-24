@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BadRequestException;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -171,8 +172,9 @@ public class AppDynamicsHealthSourceSpec extends MetricHealthSourceSpec {
         .flatMap(cvConfig -> cvConfig.getMetricInfos().stream())
         .forEach(metricInfo -> {
           if (metricInfo.getDeploymentVerification().isEnabled()) {
-            Preconditions.checkNotNull(metricInfo.getCompleteServiceInstanceMetricPath(),
-                "ServiceInstanceMetricPath should be set for Deployment Verification");
+            if (StringUtils.isEmpty(metricInfo.getCompleteServiceInstanceMetricPath())) {
+              throw new BadRequestException("ServiceInstanceMetricPath should be set for Deployment Verification");
+            }
             Preconditions.checkArgument(
                 metricInfo.getCompleteServiceInstanceMetricPath().contains("|Individual Nodes|*|"),
                 "ServiceInstanceMetricPath should contain |Individual Nodes|*|");

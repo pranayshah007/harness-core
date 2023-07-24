@@ -36,29 +36,33 @@ import org.apache.http.client.utils.URIBuilder;
 @TargetModule(HarnessModule._375_CE_GRAPHQL)
 public class HarnessNgUrl {
   private static final String NG_PATH_CONST = "ng/";
-  private static final String PERSPECTIVE_URL_FORMAT_NG = "/account/%s/ce/perspectives/%s/name/%s";
+  private static final String NG_PERSPECTIVE_URL_FORMAT = "ng/account/%s/ce/perspectives/%s/name/%s";
   private static final String CCM_URL_FORMAT_NG = "/account/%s/ce/overview";
   private static final String FILTER_FORMAT =
       "{\"field\":{\"fieldId\":\"%s\",\"fieldName\":\"%s\",\"identifier\":\"%s\",\"identifierName\":\"%s\"},\"operator\":\"IN\",\"type\":\"VIEW_ID_CONDITION\",\"values\":[\"%s\"]}";
   private static final String GROUP_BY_FORMAT =
       "{\"fieldId\":\"%s\",\"fieldName\":\"%s\",\"identifier\":\"%s\",\"identifierName\":\"%s\"}";
-  private static final String AGGREGATION_AND_CHART_TYPE = "aggregation=\"DAY\"&chartType=\"column\"";
-  private static final String TIME_RANGE = "timeRange={\"to\":\"%s\",\"from\":\"%s\"}";
+  private static final String DAY = "\"DAY\"";
+  private static final String COLUMN = "\"column\"";
+  private static final String TIME_RANGE = "{\"from\":\"%s\",\"to\":\"%s\"}";
 
   public String getPerspectiveUrl(String accountId, String perspectiveId, String perspectiveName, String baseUrl)
       throws URISyntaxException {
     URIBuilder uriBuilder = new URIBuilder(baseUrl);
-    uriBuilder.setPath(NG_PATH_CONST);
-    uriBuilder.setFragment(format(PERSPECTIVE_URL_FORMAT_NG, accountId, perspectiveId, perspectiveName));
+    uriBuilder.setPath(format(NG_PERSPECTIVE_URL_FORMAT, accountId, perspectiveId, perspectiveName));
     return uriBuilder.toString();
   }
 
   public String getPerspectiveAnomalyUrl(String accountId, String perspectiveId, String perspectiveName,
       AnomalyData anomaly, String baseUrl) throws URISyntaxException {
     URIBuilder uriBuilder = new URIBuilder(baseUrl);
-    uriBuilder.setPath(NG_PATH_CONST);
-    uriBuilder.setFragment(
-        format(PERSPECTIVE_URL_FORMAT_NG, accountId, perspectiveId, perspectiveName) + "?" + getQuery(anomaly));
+    uriBuilder.setPath(format(NG_PERSPECTIVE_URL_FORMAT, accountId, perspectiveId, perspectiveName));
+    uriBuilder.setParameter(UrlParams.FILTERS.getParam(), generateFilters(anomaly));
+    uriBuilder.setParameter(
+        UrlParams.GROUP_BY.getParam(), getGroupBy(anomaly.getEntity().getField(), anomaly.getCloudProvider()));
+    uriBuilder.setParameter(UrlParams.TIME_RANGE.getParam(), getTimeFilter(anomaly));
+    uriBuilder.setParameter(UrlParams.AGGREGATION.getParam(), DAY);
+    uriBuilder.setParameter(UrlParams.CHART_TYPE.getParam(), COLUMN);
     return uriBuilder.toString();
   }
 
@@ -67,12 +71,6 @@ public class HarnessNgUrl {
     uriBuilder.setPath(NG_PATH_CONST);
     uriBuilder.setFragment(format(CCM_URL_FORMAT_NG, accountId));
     return uriBuilder.toString();
-  }
-
-  private String getQuery(AnomalyData anomaly) {
-    return UrlParams.FILTERS.getParam() + "=" + generateFilters(anomaly) + "&" + UrlParams.GROUP_BY.getParam() + "="
-        + getGroupBy(anomaly.getEntity().getField(), anomaly.getCloudProvider()) + "&" + getTimeFilter(anomaly) + "&"
-        + AGGREGATION_AND_CHART_TYPE;
   }
 
   private String generateFilters(AnomalyData anomaly) {
@@ -146,13 +144,13 @@ public class HarnessNgUrl {
   }
 
   private String getTimeFilter(AnomalyData anomaly) {
-    Instant to = Instant.now();
+    Instant to = Instant.ofEpochMilli(anomaly.getTime());
     Instant from = to.minus(7, ChronoUnit.DAYS);
     Instant anomalyTime = Instant.ofEpochMilli(anomaly.getTime());
     if (anomalyTime.isBefore(from)) {
       from = anomalyTime;
     }
-    return String.format(TIME_RANGE, convertInstantToDate(to), convertInstantToDate(from));
+    return String.format(TIME_RANGE, convertInstantToDate(from), convertInstantToDate(to));
   }
 
   private static String fieldToFieldNameMapping(String field) {

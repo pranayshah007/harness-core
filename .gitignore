@@ -77,3 +77,7 @@ test-util.bzl
 .tool-versions
 .build-cleaner-index
 product/ci/scm/.idea
+
+product/log-service/.idea
+product/log-service/.vscode
+product/log-service/thread_dump.txt

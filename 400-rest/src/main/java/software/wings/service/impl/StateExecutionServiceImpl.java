@@ -29,6 +29,7 @@ import software.wings.api.PhaseExecutionData;
 import software.wings.api.SelectNodeStepExecutionSummary;
 import software.wings.beans.ServiceInstance;
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.execution.WorkflowExecutionInfo;
 import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.StateExecutionService;
@@ -110,7 +111,8 @@ public class StateExecutionServiceImpl implements StateExecutionService {
 
   @Override
   public int getRollingPhaseCount(String appId, String executionUuid) {
-    WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(appId, executionUuid);
+    WorkflowExecution workflowExecution =
+        workflowExecutionService.getWorkflowExecution(appId, executionUuid, WorkflowExecutionKeys.originalExecution);
     WorkflowExecutionInfo originalExecutionInfo = workflowExecution.getOriginalExecution();
     if (originalExecutionInfo == null) {
       throw new InvalidRequestException("No Original Execution found. Can't Rollback Execution : " + executionUuid);

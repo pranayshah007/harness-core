@@ -30,6 +30,8 @@ import static io.harness.polling.contracts.Type.NEXUS2;
 import static io.harness.polling.contracts.Type.NEXUS3;
 import static io.harness.polling.contracts.Type.S3_HELM;
 
+import static java.lang.Boolean.parseBoolean;
+
 import io.harness.NgAutoLogContext;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -52,6 +54,8 @@ import io.harness.lock.PersistentLocker;
 import io.harness.logging.AutoLogContext;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.NgPollingAutoLogContext;
+import io.harness.ngsettings.SettingIdentifiers;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.polling.artifact.ArtifactCollectionUtilsNg;
 import io.harness.polling.bean.ArtifactInfo;
 import io.harness.polling.bean.ArtifactPolledResponse;
@@ -84,6 +88,7 @@ import io.harness.polling.contracts.Metadata;
 import io.harness.polling.contracts.PollingResponse;
 import io.harness.polling.service.intfc.PollingPerpetualTaskService;
 import io.harness.polling.service.intfc.PollingService;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
@@ -108,6 +113,7 @@ public class PollingResponseHandler {
   private PolledItemPublisher polledItemPublisher;
   @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Inject private PersistentLocker persistentLocker;
+  @Inject private NGSettingsClient settingsClient;
 
   @Inject
   public PollingResponseHandler(PollingService pollingService, PollingPerpetualTaskService pollingPerpetualTaskService,
@@ -137,7 +143,7 @@ public class PollingResponseHandler {
       if (executionResponse.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {
         handleSuccessResponse(pollingDocument, executionResponse.getPollingResponseInfc());
       } else {
-        handleFailureResponse(pollingDocument);
+        handleFailureResponse(pollingDocument, executionResponse.getErrorMessage());
       }
     }
   }
@@ -183,6 +189,8 @@ public class PollingResponseHandler {
           pollingDocument.getPerpetualTaskId(), accountId);
       pollingService.updatePolledResponse(accountId, pollDocId,
           ArtifactPolledResponse.builder().allPolledKeys(new HashSet<>(unpublishedArtifactKeys)).build());
+      pollingService.updateTriggerPollingStatus(
+          pollingDocument.getAccountId(), pollingDocument.getSignatures(), true, null, unpublishedArtifactKeys);
       return;
     }
 
@@ -222,8 +230,7 @@ public class PollingResponseHandler {
 
   private void publishPolledItemToTopic(PollingDocument pollingDocument, List<String> newVersions,
       PolledResponseResult polledResponseResult, List<Metadata> newArtifactsMetadata, List<String> signatures) {
-    if (ngFeatureFlagHelperService.isEnabled(
-            pollingDocument.getAccountId(), FeatureName.SPG_TRIGGER_FOR_ALL_ARTIFACTS_NG)) {
+    if (shouldTriggerForAllArtifactsOrManifests(pollingDocument)) {
       // This ff is added needed in a use case where in customer wanted their pipeline to be triggered via trigger for
       // all the new pushed artifacts and manifests that were collected by the perpetual task in a single execution.
       // Hence we are sending a polling response for all the artifact or manifest version to the pipeline service.
@@ -257,6 +264,8 @@ public class PollingResponseHandler {
                                                  .addAllSignatures(signatures)
                                                  .build());
     }
+    pollingService.updateTriggerPollingStatus(
+        pollingDocument.getAccountId(), pollingDocument.getSignatures(), true, null, newVersions);
   }
 
   private void handleGitPollingResponse(PollingDocument pollingDocument, PollingResponseInfc pollingResponseInfc) {
@@ -278,6 +287,8 @@ public class PollingResponseHandler {
 
       pollingService.updatePolledResponse(accountId, pollDocId,
           GitPollingPolledResponse.builder().allPolledKeys(new HashSet<>(unpublishedWebhookDeliveryIds)).build());
+      pollingService.updateTriggerPollingStatus(
+          pollingDocument.getAccountId(), pollingDocument.getSignatures(), true, null, unpublishedWebhookDeliveryIds);
       return;
     }
 
@@ -293,7 +304,7 @@ public class PollingResponseHandler {
                                                .filter(item -> newWebhookDeliveryIds.contains(item.getDeliveryId()))
                                                .collect(Collectors.toList());
 
-      publishPolledItemToWebhook(accountId, result);
+      publishPolledItemToWebhook(accountId, result, pollingDocument.getSignatures());
       log.info("Published the webhook redelivery event to trigger for account {} ", accountId);
     }
 
@@ -314,11 +325,14 @@ public class PollingResponseHandler {
     pollingService.updatePolledResponse(accountId, pollDocId, pollingPolledResponse);
   }
 
-  private void publishPolledItemToWebhook(String accountId, List<GitPollingWebhookData> redeliveries) {
+  private void publishPolledItemToWebhook(
+      String accountId, List<GitPollingWebhookData> redeliveries, List<String> signatures) {
     polledItemPublisher.sendWebhookRequest(accountId, redeliveries);
+    pollingService.updateTriggerPollingStatus(accountId, signatures, true, null,
+        redeliveries.stream().map(GitPollingWebhookData::getDeliveryId).collect(Collectors.toList()));
   }
 
-  private void handleFailureResponse(PollingDocument pollingDocument) {
+  private void handleFailureResponse(PollingDocument pollingDocument, String errorMessage) {
     int failedCount = pollingDocument.getFailedAttempts() + 1;
 
     if (failedCount % 25 == 0 && failedCount != MAX_FAILED_ATTEMPTS) {
@@ -326,6 +340,8 @@ public class PollingResponseHandler {
     }
 
     pollingService.updateFailedAttempts(pollingDocument.getAccountId(), pollingDocument.getUuid(), failedCount);
+    pollingService.updateTriggerPollingStatus(
+        pollingDocument.getAccountId(), pollingDocument.getSignatures(), false, errorMessage, Collections.emptyList());
 
     if (failedCount == MAX_FAILED_ATTEMPTS) {
       pollingPerpetualTaskService.deletePerpetualTask(
@@ -348,6 +364,8 @@ public class PollingResponseHandler {
           pollingDocument.getPerpetualTaskId(), accountId);
       pollingService.updatePolledResponse(accountId, pollDocId,
           ManifestPolledResponse.builder().allPolledKeys(new HashSet<>(unpublishedManifests)).build());
+      pollingService.updateTriggerPollingStatus(
+          pollingDocument.getAccountId(), pollingDocument.getSignatures(), true, null, unpublishedManifests);
       return;
     }
 
@@ -479,14 +497,16 @@ public class PollingResponseHandler {
     return polledResponseResultBuilder.build();
   }
 
-  private List<String> getSignaturesWithNoLock(PollingDocument pollingDocument) {
+  public List<String> getSignaturesWithNoLock(PollingDocument pollingDocument) {
     // Returns signatures for triggers which are NOT of type MultiRegionArtifact.
     List<String> signatures = pollingDocument.getSignatures();
     Map<String, List<String>> signaturesLock = pollingDocument.getSignaturesLock();
     if (isEmpty(signaturesLock) || isEmpty(signatures)) {
       return signatures;
     }
-    return signatures.stream().filter(signature -> !signaturesLock.containsKey(signature)).collect(Collectors.toList());
+    return signatures.stream()
+        .filter(signature -> !signaturesLock.containsKey(signature) || isEmpty(signaturesLock.get(signature)))
+        .collect(Collectors.toList());
   }
 
   public List<String> getSignaturesWithLock(List<String> signatures, Map<String, List<String>> signaturesLock) {
@@ -495,7 +515,10 @@ public class PollingResponseHandler {
     if (isEmpty(signaturesLock) || isEmpty(signatures)) {
       signaturesWithLock = null;
     } else {
-      signaturesWithLock = signatures.stream().filter(signaturesLock::containsKey).collect(Collectors.toList());
+      signaturesWithLock =
+          signatures.stream()
+              .filter(signature -> signaturesLock.containsKey(signature) && isNotEmpty(signaturesLock.get(signature)))
+              .collect(Collectors.toList());
     }
     return signaturesWithLock;
   }
@@ -578,6 +601,8 @@ public class PollingResponseHandler {
     boolean shouldCheckLockedSignatures = isNotEmpty(newArtifactKeys) && isNotEmpty(signaturesWithLock)
         && ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.CDS_NG_TRIGGER_MULTI_ARTIFACTS);
     if (shouldCheckLockedSignatures) {
+      boolean success = true; // For trigger status update.
+      String errorMsg = null; // For trigger status update.
       // Check pollingDocuments mapping to signatures in signaturesLock if the collected tags are present
       // and publish these tags accordingly.
       List<String> allOtherPollingDocIdsToLock =
@@ -595,20 +620,26 @@ public class PollingResponseHandler {
         }
         locksAcquiredSuccess = true;
       } catch (Exception e) {
-        log.error(
-            "Failed to acquire locks for multi-region artifacts in accountId {}, pollingDocId {} and tags {}. The pollingDoc versions will be updated but events will not be published",
-            accountId, pollDocId, unpublishedArtifactKeys, e);
+        success = false;
+        errorMsg = String.format(
+            "Failed to acquire locks for multi-region artifacts in accountId %s, pollingDocId %s and tags %s. The pollingDoc versions will be updated but events will not be published",
+            accountId, pollDocId, unpublishedArtifactKeys.toString());
+        log.error(errorMsg, e);
       }
       if (locksAcquiredSuccess) {
         try {
           filterAndPublishArtifactsForLockedSignatures(pollingDocument, newArtifactKeys, polledResponseResult,
               newArtifactsMetadataMap, signaturesLock, signaturesWithLock, allOtherPollingDocIdsToLock);
         } catch (Exception e) {
-          log.error(
-              "Failed to publish artifact for locked signatures in accountId {}, pollingDocId {}, locked signatures {} and tags {}",
-              accountId, pollDocId, signaturesLock, unpublishedArtifactKeys, e);
+          success = false;
+          errorMsg = String.format(
+              "Failed to publish artifact for locked signatures in accountId %s, pollingDocId %s, locked signatures %s and tags %s",
+              accountId, pollDocId, signaturesLock, unpublishedArtifactKeys.toString());
+          log.error(errorMsg, accountId, pollDocId, signaturesLock, unpublishedArtifactKeys, e);
         }
       }
+      pollingService.updateTriggerPollingStatus(
+          accountId, signaturesWithLock, success, errorMsg, unpublishedArtifactKeys);
     }
     // After publishing event, update database as well.
     // if delegate rebalancing happened, unpublishedArtifactKeys are now the new versions. We might have to delete few
@@ -625,6 +656,25 @@ public class PollingResponseHandler {
           acquiredLock.release();
         }
       }
+    }
+  }
+
+  public boolean shouldTriggerForAllArtifactsOrManifests(PollingDocument pollingDocument) {
+    if (ngFeatureFlagHelperService.isEnabled(
+            pollingDocument.getAccountId(), FeatureName.SPG_TRIGGER_FOR_ALL_ARTIFACTS_NG)) {
+      return true;
+    }
+    try {
+      return parseBoolean(
+          NGRestUtils
+              .getResponse(settingsClient.getSetting(SettingIdentifiers.TRIGGER_FOR_ALL_ARTIFACTS_OR_MANIFESTS,
+                  pollingDocument.getAccountId(), pollingDocument.getOrgIdentifier(),
+                  pollingDocument.getProjectIdentifier()))
+              .getValue());
+    } catch (Exception e) {
+      log.error("Failed while evaluating settings value for {}, pollingDocId {}. Returning false as default value.",
+          SettingIdentifiers.TRIGGER_FOR_ALL_ARTIFACTS_OR_MANIFESTS, pollingDocument.getUuid());
+      return false;
     }
   }
 }
