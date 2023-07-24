@@ -245,6 +245,8 @@ public enum FeatureName {
   CHAOS_PROBE_ENABLED("Enable new probe ui and flow in CHAOS", HarnessTeam.CHAOS),
   CHAOS_SRM_EVENT(
       "Enables chaos events to be displayed as change source events in SRM monitored services.", HarnessTeam.CHAOS),
+  CHAOS_SECURITY_GOVERNANCE(
+      "Enables security governance routes, validation and navigation in CHAOS", HarnessTeam.CHAOS),
   CIE_ENABLED_RBAC("Enable rbac validationa at CI level", HarnessTeam.CI),
   CIE_HOSTED_VMS(
       "Enables hosted VMs in favor of hosted K8s for CIE. This flag will be deprecated once all the feature work has been checked in",
