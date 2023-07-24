@@ -12,7 +12,9 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.AwsCFTemplatesType;
+import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.GitConnectionNGCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
@@ -37,13 +39,23 @@ public class AwsCFTaskParamsRequest extends AwsTaskParams {
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> capabilityList = new ArrayList<>();
     if (fileStoreType == AwsCFTemplatesType.GIT) {
-      capabilityList.add(GitConnectionNGCapability.builder()
-                             .gitConfig((GitConfigDTO) gitStoreDelegateConfig.getGitConfigDTO())
-                             .encryptedDataDetails(gitStoreDelegateConfig.getEncryptedDataDetails())
-                             .sshKeySpecDTO(gitStoreDelegateConfig.getSshKeySpecDTO())
-                             .build());
+      GitConnectionNGCapability.GitConnectionNGCapabilityBuilder gitConnectionNGCapabilityBuilder =
+          GitConnectionNGCapability.builder()
+              .gitConfig(ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO()))
+              .encryptedDataDetails(gitStoreDelegateConfig.getEncryptedDataDetails())
+              .sshKeySpecDTO(gitStoreDelegateConfig.getSshKeySpecDTO());
 
-      GitConfigDTO gitConfigDTO = (GitConfigDTO) gitStoreDelegateConfig.getGitConfigDTO();
+      if (gitStoreDelegateConfig.isGithubAppAuthentication()) {
+        gitConnectionNGCapabilityBuilder.gitConfig(gitStoreDelegateConfig.getGitConfigDTO());
+        if (gitStoreDelegateConfig.isOptimizedFilesFetch()) {
+          gitConnectionNGCapabilityBuilder.optimizedFilesFetch(true);
+          gitConnectionNGCapabilityBuilder.encryptedDataDetails(
+              gitStoreDelegateConfig.getApiAuthEncryptedDataDetails());
+        }
+      }
+      capabilityList.add(gitConnectionNGCapabilityBuilder.build());
+
+      GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());
       if (isNotEmpty(gitConfigDTO.getDelegateSelectors())) {
         capabilityList.add(SelectorCapability.builder().selectors(gitConfigDTO.getDelegateSelectors()).build());
       }

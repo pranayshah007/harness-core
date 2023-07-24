@@ -8,6 +8,7 @@
 package io.harness.cdng.provision.cloudformation;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.beans.FeatureName.CDS_GITHUB_APP_AUTHENTICATION;
 import static io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType.S3URL;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
@@ -18,9 +19,11 @@ import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DecryptableEntity;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.k8s.K8sStepHelper;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.ManifestStoreType;
@@ -32,7 +35,9 @@ import io.harness.cdng.provision.cloudformation.beans.CloudFormationInheritOutpu
 import io.harness.cdng.provision.cloudformation.beans.CloudformationConfig;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
+import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.services.ConnectorService;
+import io.harness.connector.task.git.GitAuthenticationDecryptionHelper;
 import io.harness.connector.utils.ConnectorUtils;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
 import io.harness.delegate.beans.TaskData;
@@ -46,6 +51,7 @@ import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
@@ -131,6 +137,7 @@ public class CloudformationStepHelper {
   @Inject private StepHelper stepHelper;
   @Inject private S3UriParser s3UriParser;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   private static final String CLOUDFORMATION_INHERIT_OUTPUT_FORMAT = "cloudformationInheritOutput_%s";
   private static final String TEMPLATE_FILE_IDENTIFIER = "templateFile";
@@ -670,17 +677,29 @@ public class CloudformationStepHelper {
       gitConfigDTO.setUrl(repoUrl);
       gitConfigDTO.setGitConnectionType(GitConnectionType.REPO);
     }
+    GitStoreDelegateConfig.GitStoreDelegateConfigBuilder gitStoreDelegateConfigBuilder =
+        GitStoreDelegateConfig.builder()
+            .gitConfigDTO(gitConfigDTO)
+            .sshKeySpecDTO(sshKeySpecDTO)
+            .encryptedDataDetails(encryptedDataDetails)
+            .fetchType(gitStoreConfig.getGitFetchType())
+            .branch(getParameterFieldValue(gitStoreConfig.getBranch()))
+            .commitId(getParameterFieldValue(gitStoreConfig.getCommitId()))
+            .paths(getParameterFieldValue(gitStoreConfig.getPaths()))
+            .connectorName(connectorDTO.getName());
 
-    return GitStoreDelegateConfig.builder()
-        .gitConfigDTO(gitConfigDTO)
-        .sshKeySpecDTO(sshKeySpecDTO)
-        .encryptedDataDetails(encryptedDataDetails)
-        .fetchType(gitStoreConfig.getGitFetchType())
-        .branch(getParameterFieldValue(gitStoreConfig.getBranch()))
-        .commitId(getParameterFieldValue(gitStoreConfig.getCommitId()))
-        .paths(getParameterFieldValue(gitStoreConfig.getPaths()))
-        .connectorName(connectorDTO.getName())
-        .build();
+    boolean githubAppAuthentication =
+        GitAuthenticationDecryptionHelper.isGitHubAppAuthentication((ScmConnector) connectorDTO.getConnectorConfig())
+        && cdFeatureFlagHelper.isEnabled(basicNGAccessObject.getAccountIdentifier(), CDS_GITHUB_APP_AUTHENTICATION);
+    if (githubAppAuthentication) {
+      GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDTO.getConnectorConfig();
+      gitStoreDelegateConfigBuilder.gitConfigDTO(githubConnectorDTO);
+      gitStoreDelegateConfigBuilder.encryptedDataDetails(
+          gitConfigAuthenticationInfoHelper.getGithubAppEncryptedDataDetail(githubConnectorDTO, basicNGAccessObject));
+      gitStoreDelegateConfigBuilder.isGithubAppAuthentication(true);
+    }
+
+    return gitStoreDelegateConfigBuilder.build();
   }
 
   private TaskChainResponse getGitFetchFileTaskChainResponse(Ambiance ambiance,

@@ -19,6 +19,7 @@ import static org.powermock.api.mockito.PowerMockito.mock;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -38,6 +39,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.rule.Owner;
+import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
@@ -52,12 +54,15 @@ import org.mockito.MockitoAnnotations;
 public class GitResourceServiceHelperTest extends CategoryTest {
   @Mock private ConnectorService connectorService;
   @Mock private GitConfigAuthenticationInfoHelper gitConfigAuthenticationInfoHelper;
+  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
+  @Mock private SecretManagerClientService ngSecretService;
   private GitResourceServiceHelper gitResourceServiceHelper;
 
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    gitResourceServiceHelper = spy(new GitResourceServiceHelper(connectorService, gitConfigAuthenticationInfoHelper));
+    gitResourceServiceHelper = spy(new GitResourceServiceHelper(
+        connectorService, gitConfigAuthenticationInfoHelper, cdFeatureFlagHelper, ngSecretService));
   }
 
   @Test
