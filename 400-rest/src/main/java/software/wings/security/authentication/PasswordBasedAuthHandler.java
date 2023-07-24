@@ -85,9 +85,13 @@ public class PasswordBasedAuthHandler implements AuthHandler {
         throw new WingsException(EMAIL_NOT_VERIFIED, USER);
       }
 
+      log.info("DEBUG_USER_PASSWORD_LOGIN_TIME: Starting check for domain whitelisted on account: {} at: {}", accountId,
+          System.currentTimeMillis());
       if (!domainWhitelistCheckerService.isDomainWhitelisted(user, authenticationUtils.getAccount(accountId))) {
         domainWhitelistCheckerService.throwDomainWhitelistFilterException();
       }
+      log.info("DEBUG_USER_PASSWORD_LOGIN_TIME: Finished check for domain whitelisted on account: {} at: {}", accountId,
+          System.currentTimeMillis());
 
       if (isEmpty(user.getPasswordHash())) {
         log.error("No password set for User: {}, for signin attempt on the account: {}", uuid, accountId);
@@ -101,7 +105,11 @@ public class PasswordBasedAuthHandler implements AuthHandler {
           updateFailedLoginAttemptCount(user);
         }
       } else {
+        log.info("DEBUG_USER_PASSWORD_LOGIN_TIME: Starting check for password hash match for user: {} at: {}",
+            user.getUuid(), System.currentTimeMillis());
         boolean validCredentials = checkpw(password, user.getPasswordHash());
+        log.info("DEBUG_USER_PASSWORD_LOGIN_TIME: Finished check for password hash match for user: {} at: {}",
+            user.getUuid(), System.currentTimeMillis());
         if (validCredentials) {
           return getAuthenticationResponse(user);
         } else {
