@@ -694,9 +694,12 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
         task.setNextBroadcast(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(5));
 
-        copyTaskDataV2ToTaskData(task);
-        DelegateTaskPackage delegateTaskPackage = resolvePreAssignmentExpressions(task, SecretManagerMode.APPLY);
-        task.setDelegateTaskPackage(delegateTaskPackage);
+        // If we are using DMS then do expression and secret evaluation while task processing.
+        if (featureFlagService.isEnabled(DELEGATE_TASK_LOAD_DISTRIBUTION, task.getAccountId())) {
+          DelegateTaskPackage delegateTaskPackage = resolvePreAssignmentExpressionsV2(task, SecretManagerMode.APPLY);
+          task.setDelegateTaskPackage(delegateTaskPackage);
+        }
+
         saveDelegateTask(task, task.getAccountId());
 
         delegateSelectionLogsService.logBroadcastToDelegate(Sets.newHashSet(task.getBroadcastToDelegateIds()), task);
@@ -1148,6 +1151,10 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   }
 
   private DelegateTaskPackage buildDelegateTaskPackage(DelegateTask delegateTask) {
+    // If DMS is not used, do secret and expression evaluation and return delegateTaskPackage
+    if (featureFlagService.isEnabled(DELEGATE_TASK_LOAD_DISTRIBUTION, delegateTask.getAccountId())) {
+      return resolvePreAssignmentExpressions(delegateTask, SecretManagerMode.APPLY);
+    }
     List<ExecutionCapability> executionCapabilityList = emptyList();
     if (isNotEmpty(delegateTask.getExecutionCapabilities())) {
       executionCapabilityList = delegateTask.getExecutionCapabilities()
@@ -1226,8 +1233,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
               .delegateTaskId(delegateTask.getUuid())
               .data(delegateTask.getData())
               .executionCapabilities(executionCapabilityList)
-              .delegateCallbackToken(delegateTask.getDriverId())
-              .serializationFormat(io.harness.beans.SerializationFormat.valueOf(SerializationFormat.KRYO.name()));
+              .delegateCallbackToken(delegateTask.getDriverId());
 
       boolean isTaskNg = !isEmpty(delegateTask.getSetupAbstractions())
           && Boolean.parseBoolean(delegateTask.getSetupAbstractions().get(NG));
@@ -1341,7 +1347,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
               .delegateTaskId(delegateTask.getUuid())
               .taskDataV2(delegateTask.getTaskDataV2())
               .executionCapabilities(executionCapabilityList)
-              .delegateCallbackToken(delegateTask.getDriverId());
+              .delegateCallbackToken(delegateTask.getDriverId())
+              .serializationFormat(io.harness.beans.SerializationFormat.valueOf(SerializationFormat.KRYO.name()));
 
       boolean isTaskNg = !isEmpty(delegateTask.getSetupAbstractions())
           && Boolean.parseBoolean(delegateTask.getSetupAbstractions().get(NG));

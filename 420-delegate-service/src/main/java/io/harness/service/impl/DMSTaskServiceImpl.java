@@ -141,6 +141,8 @@ public class DMSTaskServiceImpl implements DMSTaskService {
             .get();
 
     if (delegateTask != null) {
+      copyTaskDataV2ToTaskData(delegateTask);
+
       if (delegateTask.getData() != null
           && SerializationFormat.JSON.equals(delegateTask.getData().getSerializationFormat())) {
         // CI's task data is in a json binary format in TaskData.data. But delegate hornors TaskData.parameters. This
