@@ -75,7 +75,8 @@ public class DelegateOutboxEventHandler implements OutboxEventHandler {
     }
   }
 
-  private boolean handleDelegateUpsertEvent(OutboxEvent outboxEvent) throws IOException {
+  @VisibleForTesting
+  protected boolean handleDelegateUpsertEvent(OutboxEvent outboxEvent) throws IOException {
     GlobalContext globalContext = outboxEvent.getGlobalContext();
     DelegateUpsertEvent delegateUpsertEvent =
         objectMapper.readValue(outboxEvent.getEventData(), DelegateUpsertEvent.class);
@@ -91,7 +92,8 @@ public class DelegateOutboxEventHandler implements OutboxEventHandler {
     return auditClientService.publishAudit(auditEntry, globalContext);
   }
 
-  private boolean handleDelegateDeleteEvent(OutboxEvent outboxEvent) throws IOException {
+  @VisibleForTesting
+  protected boolean handleDelegateDeleteEvent(OutboxEvent outboxEvent) throws IOException {
     GlobalContext globalContext = outboxEvent.getGlobalContext();
     DelegateDeleteEvent delegateDeleteEvent =
         objectMapper.readValue(outboxEvent.getEventData(), DelegateDeleteEvent.class);
@@ -156,7 +158,8 @@ public class DelegateOutboxEventHandler implements OutboxEventHandler {
     return auditClientService.publishAudit(auditEntry, globalContext);
   }
 
-  private boolean handleDelegateUnRegisterEvent(OutboxEvent outboxEvent) throws IOException {
+  @VisibleForTesting
+  protected boolean handleDelegateUnRegisterEvent(OutboxEvent outboxEvent) throws IOException {
     GlobalContext globalContext = outboxEvent.getGlobalContext();
     DelegateUnregisterEvent delegateUnRegisterEvent =
         objectMapper.readValue(outboxEvent.getEventData(), DelegateUnregisterEvent.class);

@@ -1,5 +1,6 @@
 package io.harness.delegate.outbox;
 
+import static io.harness.delegate.beans.DelegateType.KUBERNETES;
 import static io.harness.rule.OwnerRule.JENNY;
 
 import static junit.framework.TestCase.assertEquals;
@@ -21,10 +22,12 @@ import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.events.DelegateRegisterEvent;
 import io.harness.delegate.events.DelegateUnregisterEvent;
 import io.harness.delegate.events.DelegateUpsertEvent;
+import io.harness.ng.core.utils.NGYamlUtils;
 import io.harness.outbox.OutboxEvent;
 import io.harness.rule.Owner;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -49,10 +52,24 @@ public class DelegateOutboxEventHandlerTest extends CategoryTest {
   @Owner(developers = JENNY)
   @Category(UnitTests.class)
   public void testDelegateRegisterAuditEvent() throws Exception {
-    DelegateRegisterEvent delegateRegisterEvent = DelegateRegisterEvent.builder()
-                                                      .accountIdentifier(accountIdentifier)
-                                                      .delegateSetupDetails(DelegateSetupDetails.builder().build())
-                                                      .build();
+    DelegateSetupDetails delegateSetupDetails = DelegateSetupDetails.builder()
+                                                    .tags(Set.of("tag1", "tag2"))
+                                                    .identifier("_iden2")
+                                                    .delegateType(KUBERNETES)
+                                                    .build();
+    DelegateRegisterEvent delegateRegisterEvent =
+        DelegateRegisterEvent.builder()
+            .accountIdentifier(accountIdentifier)
+            .orgIdentifier(delegateSetupDetails.getOrgIdentifier())
+            .projectIdentifier(delegateSetupDetails.getProjectIdentifier())
+            .delegateSetupDetails(DelegateSetupDetails.builder()
+                                      .identifier(delegateSetupDetails.getIdentifier())
+                                      .delegateType(delegateSetupDetails.getDelegateType())
+                                      .tokenName(delegateSetupDetails.getTokenName())
+                                      .tags(delegateSetupDetails.getTags())
+                                      .build())
+            .build();
+
     OutboxEvent outboxEvent = OutboxEvent.builder()
                                   .id(randomAlphabetic(10))
                                   .blocked(false)
@@ -69,16 +86,31 @@ public class DelegateOutboxEventHandlerTest extends CategoryTest {
     verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any());
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertEquals(Action.CREATE, auditEntry.getAction());
+    assertEquals(auditEntry.getNewYaml(), NGYamlUtils.getYamlString(delegateSetupDetails));
   }
 
   @Test
   @Owner(developers = JENNY)
   @Category(UnitTests.class)
   public void testDelegateUnRegisterAuditEvent() throws Exception {
-    DelegateUnregisterEvent delegateUnregisterEvent = DelegateUnregisterEvent.builder()
-                                                          .accountIdentifier(accountIdentifier)
-                                                          .delegateSetupDetails(DelegateSetupDetails.builder().build())
-                                                          .build();
+    DelegateSetupDetails delegateSetupDetails = DelegateSetupDetails.builder()
+                                                    .tags(Set.of("tag1", "tag2"))
+                                                    .identifier("_iden2")
+                                                    .delegateType(KUBERNETES)
+                                                    .build();
+    DelegateUnregisterEvent delegateUnregisterEvent =
+        DelegateUnregisterEvent.builder()
+            .accountIdentifier(accountIdentifier)
+            .orgIdentifier(delegateSetupDetails.getOrgIdentifier())
+            .projectIdentifier(delegateSetupDetails.getProjectIdentifier())
+            .delegateSetupDetails(DelegateSetupDetails.builder()
+                                      .identifier(delegateSetupDetails.getIdentifier())
+                                      .delegateType(delegateSetupDetails.getDelegateType())
+                                      .tokenName(delegateSetupDetails.getTokenName())
+                                      .tags(delegateSetupDetails.getTags())
+                                      .build())
+            .build();
+
     OutboxEvent outboxEvent = OutboxEvent.builder()
                                   .id(randomAlphabetic(10))
                                   .blocked(false)
@@ -91,20 +123,32 @@ public class DelegateOutboxEventHandlerTest extends CategoryTest {
                                   .build();
     final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
     when(auditClientService.publishAudit(any(), any())).thenReturn(true);
-    delegateOutboxEventHandler.handleDelegateRegisterEvent(outboxEvent);
+    delegateOutboxEventHandler.handleDelegateUnRegisterEvent(outboxEvent);
     verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any());
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
-    assertEquals(Action.CREATE, auditEntry.getAction());
+    assertEquals(Action.DELETE, auditEntry.getAction());
   }
 
   @Test
   @Owner(developers = JENNY)
   @Category(UnitTests.class)
   public void testDelegateUpsertAuditEvent() throws Exception {
-    DelegateUpsertEvent delegateUpsertEvent = DelegateUpsertEvent.builder()
-                                                  .accountIdentifier(accountIdentifier)
-                                                  .delegateSetupDetails(DelegateSetupDetails.builder().build())
-                                                  .build();
+    DelegateSetupDetails delegateSetupDetails = DelegateSetupDetails.builder()
+                                                    .tags(Set.of("tag1", "tag2"))
+                                                    .identifier("_iden2")
+                                                    .delegateType(KUBERNETES)
+                                                    .build();
+
+    DelegateUpsertEvent delegateUpsertEvent =
+        DelegateUpsertEvent.builder()
+            .accountIdentifier(accountIdentifier)
+            .delegateSetupDetails(DelegateSetupDetails.builder()
+                                      .identifier(delegateSetupDetails.getIdentifier())
+                                      .delegateType(delegateSetupDetails.getDelegateType())
+                                      .tokenName(delegateSetupDetails.getTokenName())
+                                      .tags(delegateSetupDetails.getTags())
+                                      .build())
+            .build();
     OutboxEvent outboxEvent = OutboxEvent.builder()
                                   .id(randomAlphabetic(10))
                                   .blocked(false)
@@ -117,9 +161,10 @@ public class DelegateOutboxEventHandlerTest extends CategoryTest {
                                   .build();
     final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
     when(auditClientService.publishAudit(any(), any())).thenReturn(true);
-    delegateOutboxEventHandler.handleDelegateRegisterEvent(outboxEvent);
+    delegateOutboxEventHandler.handleDelegateUpsertEvent(outboxEvent);
     verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any());
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
-    assertEquals(Action.CREATE, auditEntry.getAction());
+    assertEquals(Action.UPSERT, auditEntry.getAction());
+    assertEquals(auditEntry.getNewYaml(), NGYamlUtils.getYamlString(delegateSetupDetails));
   }
 }
