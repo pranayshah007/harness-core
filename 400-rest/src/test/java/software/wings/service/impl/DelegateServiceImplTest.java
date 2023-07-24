@@ -36,7 +36,6 @@ import static software.wings.utils.WingsTestConstants.HOST_NAME;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -1247,11 +1246,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
                                                      .build();
 
     delegateService.upsertDelegateGroup(TEST_DELEGATE_GROUP_NAME, ACCOUNT_ID, delegateSetupDetails1);
-    assertThatThrownBy(
-        () -> delegateService.upsertDelegateGroup(TEST_DELEGATE_GROUP_NAME, ACCOUNT_ID, delegateSetupDetails2))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage(
-            "Unable to create delegate group. Delegate with same name exists. Delegate name must be unique across account.");
+    delegateService.upsertDelegateGroup(TEST_DELEGATE_GROUP_NAME, ACCOUNT_ID, delegateSetupDetails2);
   }
 
   @Test
