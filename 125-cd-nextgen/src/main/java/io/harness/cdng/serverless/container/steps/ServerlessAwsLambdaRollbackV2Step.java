@@ -178,15 +178,6 @@ public class ServerlessAwsLambdaRollbackV2Step extends AbstractContainerStepV2<S
 
     StepResponse.StepOutcome stepOutcome = null;
 
-    //    if (stepStatusTaskResponseData != null && stepStatusTaskResponseData.getStepStatus() != null
-    //            && StepExecutionStatus.SUCCESS == stepStatusTaskResponseData.getStepStatus().getStepExecutionStatus())
-    //            {
-    //      String accountName = accountService.getAccount(AmbianceUtils.getAccountId(ambiance)).getName();
-    //      stepHelper.sendRollbackTelemetryEvent(
-    //              ambiance, stepStatusTaskResponseData == null ? Status.FAILED :
-    //              stepStatusTaskResponseData.getStepStatus().getStepExecutionStatus(), accountName);
-    //    }
-
     return stepOutcome;
   }
 
