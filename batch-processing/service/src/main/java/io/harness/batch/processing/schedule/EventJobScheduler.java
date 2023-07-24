@@ -477,7 +477,7 @@ public class EventJobScheduler {
         batchJobRunner.runJob(accountId, job, runningMode);
       }
     } catch (Exception ex) {
-      log.error("Exception while running job {}", job);
+      log.error("Exception while running job {}", job, ex);
     }
   }
 
