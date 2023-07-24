@@ -214,6 +214,7 @@ public class NGTriggerEventHistoryResourceImplTest extends CategoryTest {
 
     TriggerEventHistory eventHistory = TriggerEventHistory.builder()
                                            .accountId(ACCOUNT_ID)
+                                           .triggerIdentifier(IDENTIFIER)
                                            .eventCorrelationId(EVENT_CORRELATION_ID)
                                            .finalStatus("NO_MATCHING_TRIGGER_FOR_REPO")
                                            .build();
@@ -233,6 +234,7 @@ public class NGTriggerEventHistoryResourceImplTest extends CategoryTest {
 
     assertThat(content).isNotEmpty();
     assertThat(content.getNumberOfElements()).isEqualTo(1);
+    assertThat(content.getContent().get(0).getTriggerIdentifier()).isEqualTo(IDENTIFIER);
 
     NGTriggerEventHistoryBaseDTO responseDto = content.toList().get(0);
     assertThat(responseDto.getEventCorrelationId()).isEqualTo(EVENT_CORRELATION_ID);

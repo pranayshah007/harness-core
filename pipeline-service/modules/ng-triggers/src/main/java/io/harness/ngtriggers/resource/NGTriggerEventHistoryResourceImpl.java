@@ -90,4 +90,24 @@ public class NGTriggerEventHistoryResourceImpl implements NGTriggerEventHistoryR
 
     return ResponseDTO.newResponse(ngTriggerEventHistoryDTOS);
   }
+
+  @Override
+  public ResponseDTO<Page<NGTriggerEventHistoryDTO>> getTriggerHistoryEventCorrelationV2(
+      String accountIdentifier, String eventCorrelationId, int page, int size, List<String> sort) {
+    Criteria criteria =
+        ngTriggerEventsService.formEventCriteria(accountIdentifier, eventCorrelationId, new ArrayList<>());
+    Pageable pageRequest;
+    if (EmptyPredicate.isEmpty(sort)) {
+      pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, TriggerEventHistoryKeys.createdAt));
+    } else {
+      pageRequest = PageUtils.getPageRequest(page, size, sort);
+    }
+
+    Page<TriggerEventHistory> eventHistoryList = ngTriggerEventsService.getEventHistory(criteria, pageRequest);
+
+    Page<NGTriggerEventHistoryDTO> ngTriggerEventHistoryDTOS =
+        eventHistoryList.map(eventHistory -> NGTriggerEventHistoryMapper.toTriggerEventHistoryDto(eventHistory));
+
+    return ResponseDTO.newResponse(ngTriggerEventHistoryDTOS);
+  }
 }

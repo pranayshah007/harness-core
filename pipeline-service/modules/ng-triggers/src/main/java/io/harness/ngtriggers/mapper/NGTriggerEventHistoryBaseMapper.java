@@ -29,6 +29,7 @@ public class NGTriggerEventHistoryBaseMapper {
         .eventCorrelationId(triggerEventHistory.getEventCorrelationId())
         .payload(triggerEventHistory.getPayload())
         .eventCreatedAt(triggerEventHistory.getEventCreatedAt())
+        .triggerIdentifier(triggerEventHistory.getTriggerIdentifier())
         .finalStatus(
             EnumUtils.getEnum(TriggerEventResponse.FinalStatus.class, triggerEventHistory.getFinalStatus(), null))
         .message(triggerEventHistory.getMessage())

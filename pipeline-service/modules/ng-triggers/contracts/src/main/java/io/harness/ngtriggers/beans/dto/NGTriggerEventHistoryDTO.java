@@ -31,7 +31,6 @@ import lombok.experimental.SuperBuilder;
 @ApiModel("NGTriggerEventHistoryResponse")
 @OwnedBy(PIPELINE)
 public class NGTriggerEventHistoryDTO extends NGTriggerEventHistoryBaseDTO {
-  String triggerIdentifier;
   String orgIdentifier;
   String projectIdentifier;
   String targetIdentifier;
@@ -43,9 +42,8 @@ public class NGTriggerEventHistoryDTO extends NGTriggerEventHistoryBaseDTO {
       TriggerEventResponse.FinalStatus finalStatus, String message, Boolean exceptionOccurred, Long createdAt,
       String triggerIdentifier, String orgIdentifier, String projectIdentifier, String targetIdentifier,
       TargetExecutionSummary targetExecutionSummary, NGTriggerType type, TriggerEventStatus triggerEventStatus) {
-    super(accountId, eventCorrelationId, payload, eventCreatedAt, finalStatus, message, exceptionOccurred, createdAt,
-        triggerEventStatus);
-    this.triggerIdentifier = triggerIdentifier;
+    super(triggerIdentifier, accountId, eventCorrelationId, payload, eventCreatedAt, finalStatus, message,
+        exceptionOccurred, createdAt, triggerEventStatus);
     this.orgIdentifier = orgIdentifier;
     this.projectIdentifier = projectIdentifier;
     this.targetIdentifier = targetIdentifier;

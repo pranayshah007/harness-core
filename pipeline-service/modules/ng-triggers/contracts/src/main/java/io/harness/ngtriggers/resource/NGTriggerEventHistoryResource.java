@@ -114,4 +114,24 @@ public interface NGTriggerEventHistoryResource {
       @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.SIZE) @DefaultValue("10") int size,
       @Parameter(description = NGCommonEntityConstants.SORT_PARAM_MESSAGE) @QueryParam("sort") List<String> sort);
+
+  @GET
+  @Path("/v2/eventCorrelation/{eventCorrelationId}")
+  @ApiOperation(value = "Get Trigger history event correlation V2", nickname = "triggerHistoryEventCorrelationV2")
+  @Operation(operationId = "triggerHistoryEventCorrelationV2", summary = "Get Trigger history event correlation V2",
+      description = "Get Trigger history event correlation V2",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the Trigger catalogue response")
+      })
+  ResponseDTO<Page<NGTriggerEventHistoryDTO>>
+  getTriggerHistoryEventCorrelationV2(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @NotNull @PathParam("eventCorrelationId") String eventCorrelationId,
+      @Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
+      @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.SIZE) @DefaultValue("10") int size,
+      @Parameter(description = NGCommonEntityConstants.SORT_PARAM_MESSAGE) @QueryParam("sort") List<String> sort);
 }
