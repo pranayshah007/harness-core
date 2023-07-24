@@ -4421,6 +4421,7 @@ public class DelegateServiceImpl implements DelegateService {
                                                          .identifier(delegateSetupDetails.getIdentifier())
                                                          .delegateType(delegateSetupDetails.getDelegateType())
                                                          .tokenName(delegateSetupDetails.getTokenName())
+                                                         .name(delegateSetupDetails.getName())
                                                          .tags(delegateSetupDetails.getTags())
                                                          .build())
                                .build());
@@ -4467,6 +4468,7 @@ public class DelegateServiceImpl implements DelegateService {
                                         .delegateType(delegateSetupDetails.getDelegateType())
                                         .tokenName(delegateSetupDetails.getTokenName())
                                         .tags(delegateSetupDetails.getTags())
+                                        .name(delegateSetupDetails.getName())
                                         .build())
               .build());
     } else {
