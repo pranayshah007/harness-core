@@ -12,11 +12,11 @@ import io.harness.logstreaming.LogStreamingServiceRestClient;
 import io.harness.logstreaming.NGLogStreamingClientFactory;
 import io.harness.service.impl.AccountDataProviderImpl;
 import io.harness.service.impl.DMSAssignDelegateServiceImpl;
-import io.harness.service.impl.DMSTaskServiceClassicImpl;
+import io.harness.service.impl.DMSTaskServiceImpl;
 import io.harness.service.impl.DelegateRingServiceImpl;
 import io.harness.service.intfc.AccountDataProvider;
 import io.harness.service.intfc.DMSAssignDelegateService;
-import io.harness.service.intfc.DMSTaskServiceClassic;
+import io.harness.service.intfc.DMSTaskService;
 import io.harness.service.intfc.DelegateRingService;
 
 import software.wings.service.impl.DMSMongoDataStoreServiceImpl;
@@ -44,7 +44,7 @@ public class DmsModule extends AbstractModule {
   protected void configure() {
     bind(DelegateRingService.class).to(DelegateRingServiceImpl.class);
     bind(AccountDataProvider.class).to(AccountDataProviderImpl.class);
-    bind(DMSTaskServiceClassic.class).to(DMSTaskServiceClassicImpl.class);
+    bind(DMSTaskService.class).to(DMSTaskServiceImpl.class);
     bind(DMSAssignDelegateService.class).to(DMSAssignDelegateServiceImpl.class);
     bind(DelegateSelectionLogsService.class).to(DelegateSelectionLogsServiceImpl.class);
     bind(Clock.class).toInstance(Clock.systemUTC());

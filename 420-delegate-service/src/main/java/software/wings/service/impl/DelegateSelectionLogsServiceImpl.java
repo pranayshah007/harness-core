@@ -29,7 +29,7 @@ import io.harness.persistence.store.Store;
 import io.harness.selection.log.DelegateMetaData;
 import io.harness.selection.log.DelegateSelectionLog;
 import io.harness.selection.log.DelegateSelectionLog.DelegateSelectionLogKeys;
-import io.harness.service.intfc.DMSTaskServiceClassic;
+import io.harness.service.intfc.DMSTaskService;
 import io.harness.service.intfc.DelegateCache;
 
 import software.wings.service.intfc.DMSDataStoreService;
@@ -61,7 +61,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(DEL)
 public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsService {
   @Inject private HPersistence persistence;
-  @Inject private DMSTaskServiceClassic dmsTaskServiceClassic;
+  @Inject private DMSTaskService dmsTaskService;
 
   @Inject private DelegateCache delegateCache;
   @Inject private DMSDataStoreService dmsDataStoreService;
@@ -354,8 +354,7 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
       return EMPTY;
     }
     List<String> taskSelectors = new ArrayList<>();
-    List<SelectorCapability> selectorCapabilities =
-        dmsTaskServiceClassic.fetchTaskSelectorCapabilities(executionCapabilities);
+    List<SelectorCapability> selectorCapabilities = dmsTaskService.fetchTaskSelectorCapabilities(executionCapabilities);
     if (isEmpty(selectorCapabilities)) {
       return EMPTY;
     }

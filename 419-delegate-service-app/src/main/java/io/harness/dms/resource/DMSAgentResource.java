@@ -12,7 +12,7 @@ import io.harness.delegate.task.tasklogging.TaskLogContext;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.security.annotations.DelegateAuth;
-import io.harness.service.intfc.DMSTaskServiceClassic;
+import io.harness.service.intfc.DMSTaskService;
 
 import software.wings.security.annotations.Scope;
 
@@ -35,11 +35,11 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Slf4j
 @OwnedBy(DEL)
 public class DMSAgentResource {
-  private DMSTaskServiceClassic dmsTaskServiceClassic;
+  private DMSTaskService dmsTaskService;
 
   @Inject
-  public DMSAgentResource(DMSTaskServiceClassic dmsTaskServiceClassic) {
-    this.dmsTaskServiceClassic = dmsTaskServiceClassic;
+  public DMSAgentResource(DMSTaskService dmsTaskService) {
+    this.dmsTaskService = dmsTaskService;
   }
 
   @DelegateAuth
@@ -54,7 +54,7 @@ public class DMSAgentResource {
     try (AutoLogContext ignore1 = new TaskLogContext(taskId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore3 = new DelegateLogContext(accountId, delegateId, delegateInstanceId, OVERRIDE_ERROR)) {
-      return dmsTaskServiceClassic.acquireDelegateTask(accountId, delegateId, taskId, delegateInstanceId);
+      return dmsTaskService.acquireDelegateTask(accountId, delegateId, taskId, delegateInstanceId);
     }
   }
 }

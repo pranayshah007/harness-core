@@ -268,14 +268,14 @@ import io.harness.service.EventHelper;
 import io.harness.service.EventService;
 import io.harness.service.EventServiceImpl;
 import io.harness.service.impl.DMSAssignDelegateServiceImpl;
-import io.harness.service.impl.DMSTaskServiceClassicImpl;
+import io.harness.service.impl.DMSTaskServiceImpl;
 import io.harness.service.impl.DelegateNgTokenServiceImpl;
 import io.harness.service.impl.DelegateRingServiceImpl;
 import io.harness.service.impl.DelegateTokenServiceImpl;
 import io.harness.service.impl.stackdriver.DelegateStackdriverLogServiceImpl;
 import io.harness.service.intfc.AccountDataProvider;
 import io.harness.service.intfc.DMSAssignDelegateService;
-import io.harness.service.intfc.DMSTaskServiceClassic;
+import io.harness.service.intfc.DMSTaskService;
 import io.harness.service.intfc.DelegateRingService;
 import io.harness.service.intfc.DelegateStackdriverLogService;
 import io.harness.service.intfc.DelegateTokenService;
@@ -1239,7 +1239,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(CeAccountExpirationChecker.class).to(CeAccountExpirationCheckerImpl.class);
     bind(AccessRequestService.class).to(AccessRequestServiceImpl.class);
     bind(DelegateTaskServiceClassic.class).to(DelegateTaskServiceClassicImpl.class);
-    bind(DMSTaskServiceClassic.class).to(DMSTaskServiceClassicImpl.class);
+    bind(DMSTaskService.class).to(DMSTaskServiceImpl.class);
     bind(DMSAssignDelegateService.class).to(DMSAssignDelegateServiceImpl.class);
     bind(DelegateNgTokenService.class).to(DelegateNgTokenServiceImpl.class);
 

@@ -6,7 +6,7 @@ import io.harness.delegate.beans.executioncapability.SelectorCapability;
 
 import java.util.List;
 
-public interface DMSTaskServiceClassic {
+public interface DMSTaskService {
   DelegateTaskPackage acquireDelegateTask(
       String accountId, String delegateId, String taskId, String delegateInstanceId);
 

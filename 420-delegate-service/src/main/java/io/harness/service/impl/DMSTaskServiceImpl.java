@@ -39,7 +39,7 @@ import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.network.SafeHttpCall;
 import io.harness.persistence.HPersistence;
 import io.harness.service.intfc.DMSAssignDelegateService;
-import io.harness.service.intfc.DMSTaskServiceClassic;
+import io.harness.service.intfc.DMSTaskService;
 import io.harness.service.intfc.DelegateCache;
 
 import software.wings.TaskTypeToRequestResponseMapper;
@@ -71,7 +71,7 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @ValidateOnExecution
 @Slf4j
-public class DMSTaskServiceClassicImpl implements DMSTaskServiceClassic {
+public class DMSTaskServiceImpl implements DMSTaskService {
   @Inject private DelegateCache delegateCache;
 
   @Inject private HPersistence persistence;
