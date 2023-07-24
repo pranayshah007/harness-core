@@ -6,7 +6,6 @@
  */
 
 package io.harness.resources;
-
 import static io.harness.NGCommonEntityConstants.ACCOUNT_KEY;
 import static io.harness.NGCommonEntityConstants.CONNECTOR_IDENTIFIER_KEY;
 import static io.harness.NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY;
@@ -26,8 +25,11 @@ import static dev.morphia.mapping.Mapper.ID_KEY;
 import io.harness.ChangeDataCaptureBulkMigrationHelper;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.ExposeInternalException;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ccm.commons.entities.billing.CECloudAccount.CECloudAccountKeys;
 import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
 import io.harness.connector.entities.Connector.ConnectorKeys;
@@ -83,6 +85,7 @@ import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.conversions.Bson;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @Api("sync")
 @Path("/sync")
 @Consumes(MediaType.APPLICATION_JSON)

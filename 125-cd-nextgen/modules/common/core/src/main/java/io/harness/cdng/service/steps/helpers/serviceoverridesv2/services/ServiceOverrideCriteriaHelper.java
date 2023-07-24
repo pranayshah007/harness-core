@@ -6,7 +6,9 @@
  */
 
 package io.harness.cdng.service.steps.helpers.serviceoverridesv2.services;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 
@@ -14,6 +16,8 @@ import javax.validation.constraints.NotNull;
 import lombok.experimental.UtilityClass;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @UtilityClass
 public class ServiceOverrideCriteriaHelper {
   private final String ACCOUNT_ID = "accountId";

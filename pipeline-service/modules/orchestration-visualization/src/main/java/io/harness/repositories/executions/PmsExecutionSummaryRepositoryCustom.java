@@ -6,10 +6,12 @@
  */
 
 package io.harness.repositories.executions;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 
 import com.mongodb.client.result.UpdateResult;
@@ -22,6 +24,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.CloseableIterator;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 public interface PmsExecutionSummaryRepositoryCustom {
   PipelineExecutionSummaryEntity update(Query query, Update update);

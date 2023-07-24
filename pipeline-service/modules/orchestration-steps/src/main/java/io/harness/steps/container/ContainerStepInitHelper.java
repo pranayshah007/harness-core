@@ -6,7 +6,6 @@
  */
 
 package io.harness.steps.container;
-
 import static io.harness.beans.sweepingoutputs.ContainerPortDetails.PORT_DETAILS;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.HARNESS_SERVICE_LOG_KEY_VARIABLE;
@@ -27,8 +26,11 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.environment.ConnectorConversionInfo;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
@@ -110,6 +112,9 @@ import okhttp3.ResponseBody;
 import org.apache.commons.lang3.tuple.Pair;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_PIPELINE,
+        HarnessModuleComponent.CDS_COMMON_STEPS})
 @Singleton
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)

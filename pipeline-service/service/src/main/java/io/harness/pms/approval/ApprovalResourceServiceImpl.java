@@ -6,12 +6,14 @@
  */
 
 package io.harness.pms.approval;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
 import static io.harness.security.dto.PrincipalType.USER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.IdentifierRef;
 import io.harness.data.structure.EmptyPredicate;
@@ -61,6 +63,7 @@ import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @Slf4j
 public class ApprovalResourceServiceImpl implements ApprovalResourceService {

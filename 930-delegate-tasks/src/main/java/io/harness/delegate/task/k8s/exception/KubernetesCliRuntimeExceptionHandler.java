@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.k8s.exception;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -14,7 +13,10 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.FailureType;
 import io.harness.exception.KubernetesCliTaskRuntimeException;
@@ -38,6 +40,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.zeroturnaround.exec.ProcessResult;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(CDP)
 public class KubernetesCliRuntimeExceptionHandler implements ExceptionHandler {
   private static final String CLIENT_TOOLS_DIRECTORY_NAME = "client-tools";

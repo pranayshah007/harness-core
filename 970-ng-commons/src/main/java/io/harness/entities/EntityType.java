@@ -6,9 +6,11 @@
  */
 
 package io.harness;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EntityReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.InputSetReference;
@@ -26,6 +28,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(HarnessTeam.DX)
 // todo(abhinav): refactor/adapt this according to needs later depending on how service registration comes in
 // one more enum might come in here for product types.

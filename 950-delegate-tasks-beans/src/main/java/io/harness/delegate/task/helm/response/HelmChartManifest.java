@@ -6,9 +6,11 @@
  */
 
 package io.harness.delegate.task.helm.response;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.helm.HelmChartYaml;
 
 import java.util.Map;
@@ -16,6 +18,7 @@ import javax.annotation.Nullable;
 import lombok.Builder;
 import lombok.Data;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Data
 @Builder
 @OwnedBy(HarnessTeam.CDP)

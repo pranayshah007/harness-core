@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.helm;
-
 import static io.harness.data.structure.UUIDGenerator.convertBase64UuidToCanonicalForm;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
@@ -16,6 +15,9 @@ import static io.harness.logging.CommandExecutionStatus.FAILURE;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
@@ -58,6 +60,7 @@ import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 public class HelmCommandTaskNG extends AbstractDelegateRunnableTask {
   @Inject private HelmDeployServiceNG helmDeployServiceNG;

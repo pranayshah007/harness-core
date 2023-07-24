@@ -6,11 +6,13 @@
  */
 
 package io.harness.cdng.aws.sam;
-
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_STEP_ID;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.steps.nodes.GitCloneStepNode;
 import io.harness.beans.steps.stepinfo.GitCloneStepInfo;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
@@ -37,6 +39,7 @@ import com.google.inject.Inject;
 import java.util.List;
 import java.util.Optional;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 public class DownloadManifestsCommonHelper {
   @Inject private OutcomeService outcomeService;
 

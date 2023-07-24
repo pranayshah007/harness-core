@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl;
-
 import static io.harness.annotations.dev.HarnessModule._950_NG_AUTHENTICATION_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
@@ -69,7 +68,10 @@ import static org.springframework.security.crypto.bcrypt.BCrypt.checkpw;
 import static org.springframework.security.crypto.bcrypt.BCrypt.hashpw;
 
 import io.harness.ModuleType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.authenticationservice.beans.LogoutResponse;
 import io.harness.beans.FeatureName;
@@ -328,6 +330,9 @@ import org.springframework.security.crypto.bcrypt.BCrypt;
 /**
  * Created by anubhaw on 3/9/16.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_AMI_ASG, HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(PL)
 @ValidateOnExecution
 @Singleton

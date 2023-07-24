@@ -6,13 +6,15 @@
  */
 
 package io.harness.delegate.task.git;
-
 import static io.harness.git.model.GitRepositoryType.YAML;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitDecryptionHelper;
@@ -32,6 +34,7 @@ import java.io.IOException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class GitFetchTaskHelper {

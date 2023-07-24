@@ -6,11 +6,13 @@
  */
 
 package io.harness.expression;
-
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.algorithm.IdentifierName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.EngineExpressionEvaluationException;
@@ -53,6 +55,11 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.logging.impl.NoOpLog;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ARTIFACTS, HarnessModuleComponent.CDS_FIRST_GEN,
+        HarnessModuleComponent.CDS_TEMPLATE_LIBRARY, HarnessModuleComponent.CDS_DASHBOARD,
+        HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_AMI_ASG,
+        HarnessModuleComponent.CDS_EXPRESSION_ENGINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public class EngineExpressionEvaluator {

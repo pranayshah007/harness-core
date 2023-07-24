@@ -6,7 +6,6 @@
  */
 
 package io.harness.ng.core.event;
-
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
@@ -46,7 +45,10 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_S
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.VARIABLE_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.YAML_CHANGE_SET;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
@@ -67,6 +69,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(PL)
 @Slf4j
 @Singleton

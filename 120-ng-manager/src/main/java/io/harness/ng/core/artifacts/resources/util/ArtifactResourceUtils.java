@@ -6,7 +6,6 @@
  */
 
 package io.harness.ng.core.artifacts.resources.util;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
@@ -18,8 +17,11 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.audit.ResourceTypeConstants;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.InputSetValidatorType;
@@ -128,6 +130,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ARTIFACTS, HarnessModuleComponent.CDS_APPROVALS,
+        HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class ArtifactResourceUtils {

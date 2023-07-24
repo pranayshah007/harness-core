@@ -6,14 +6,16 @@
  */
 
 package io.harness.cdng.provision.terraformcloud.steps;
-
 import static io.harness.cdng.provision.terraformcloud.outcome.TerraformCloudRunOutcome.OUTCOME_NAME;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudTaskType.ROLLBACK;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.provision.terraformcloud.TerraformCloudConstants;
@@ -64,6 +66,7 @@ import java.util.HashMap;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class TerraformCloudRollbackStep extends CdTaskExecutable<TerraformCloudRollbackTaskResponse> {

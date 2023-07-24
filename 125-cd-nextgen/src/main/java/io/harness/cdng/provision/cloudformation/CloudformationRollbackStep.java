@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.provision.cloudformation;
-
 import static io.harness.cdng.provision.cloudformation.CloudformationStepHelper.DEFAULT_TIMEOUT;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -15,8 +14,11 @@ import static io.harness.pms.execution.utils.AmbianceUtils.getAccountId;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.expressions.CDExpressionResolver;
@@ -67,6 +69,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class CloudformationRollbackStep extends CdTaskExecutable<CloudformationTaskNGResponse> {

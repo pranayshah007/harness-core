@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.customDeployment;
-
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import static software.wings.beans.TaskType.FETCH_INSTANCE_SCRIPT_TASK_NG;
@@ -15,8 +14,11 @@ import static software.wings.sm.states.customdeploymentng.InstanceMapperUtils.ge
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
@@ -85,6 +87,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class FetchInstanceScriptStep extends CdTaskExecutable<FetchInstanceScriptTaskNGResponse> {

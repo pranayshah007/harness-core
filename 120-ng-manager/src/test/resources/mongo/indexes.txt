@@ -30,6 +30,7 @@ connectors {"name": "nextTokenLookupIteration", "background": true} {"nextTokenL
 connectors {"name": "nextTokenRenewIteration", "background": true} {"nextTokenRenewIteration": 1}
 connectors {"name": "type_nextTokenLookupIteration", "background": true} {"type": 1, "nextTokenLookupIteration": 1}
 connectors {"name": "type_nextTokenRenewIteration", "background": true} {"type": 1, "nextTokenRenewIteration": 1}
+credits {"name": "creditStatus_creditsSendToSegmentIteration", "background": true} {"creditStatus": 1, "creditsSendToSegmentIteration": 1}
 delayQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
 delayQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
 deploymentAccounts {"name": "instanceStatsMetricsPublisherIteration_1", "background": true} {"instanceStatsMetricsPublisherIteration": 1}

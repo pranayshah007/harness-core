@@ -6,12 +6,14 @@
  */
 
 package io.harness.template.utils;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.Scope;
 import io.harness.context.GlobalContext;
@@ -42,6 +44,7 @@ import java.util.EnumSet;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @UtilityClass
 public class TemplateUtils {
   public static final String TEMPLATE_FIELD_NAME = "template";

@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngmigration.service.entity;
-
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -20,8 +19,11 @@ import static software.wings.ngmigration.NGMigrationEntityType.WORKFLOW;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
@@ -128,6 +130,7 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class PipelineMigrationService extends NgMigrationService {

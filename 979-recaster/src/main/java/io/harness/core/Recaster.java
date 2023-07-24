@@ -6,12 +6,14 @@
  */
 
 package io.harness.core;
-
 import static java.lang.String.format;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.CastedClass;
 import io.harness.beans.CastedField;
 import io.harness.beans.RecasterMap;
@@ -28,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Getter
 @Slf4j
@@ -108,6 +111,14 @@ public class Recaster {
 
     T entity;
     entity = objectFactory.createInstance(entityClazz, recasterMap);
+
+    // Add handling to try for class instance of recasterMap.getEncodedValue as class __recaster gave an exception
+    // This will work out for cases like primitives and String arrays instance creation and encodedValue is different.
+    // [a, b, c] -> even though its String[] but in encoded value its coming as ArrayList, due to
+    // JsonUtils.asMap(json);
+    if (entity == null) {
+      entity = (T) objectFactory.createGivenInstance(recasterMap);
+    }
 
     if (!entityClazz.isAssignableFrom(entity.getClass())) {
       throw new RecasterException(format("%s class cannot be mapped to %s", classIdentifier, entityClazz.getName()));
@@ -233,6 +244,10 @@ public class Recaster {
       return writeCollectionInternal(recasterMap, entity);
     }
 
+    if (entity.getClass().isArray()) {
+      return writeArrayInternal(recasterMap, entity);
+    }
+
     for (final CastedField cf : cc.getPersistenceFields()) {
       try {
         writeCastedField(entity, cf, recasterMap);
@@ -261,6 +276,15 @@ public class Recaster {
 
   private Map<String, Object> writeCollectionInternal(RecasterMap recasterMap, Object entity) {
     Collection<Object> encoded = (Collection<Object>) transformer.getTransformer(entity.getClass()).encode(entity);
+    if (encoded == null) {
+      return recasterMap;
+    }
+    recasterMap.setEncodedValue(encoded);
+    return recasterMap;
+  }
+
+  private Map<String, Object> writeArrayInternal(RecasterMap recasterMap, Object entity) {
+    Object encoded = transformer.getTransformer(entity.getClass()).encode(entity);
     if (encoded == null) {
       return recasterMap;
     }

@@ -6,15 +6,17 @@
  */
 
 package io.harness.pms.pipeline.service.yamlschema;
-
 import static java.lang.String.format;
 
 import io.harness.EntityType;
 import io.harness.ModuleType;
 import io.harness.PipelineServiceConfiguration;
 import io.harness.SchemaCacheKey;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.encryption.Scope;
 import io.harness.logging.ResponseTimeRecorder;
 import io.harness.pms.pipeline.service.yamlschema.cache.PartialSchemaDTOWrapperValue;
@@ -41,6 +43,8 @@ import javax.cache.Cache;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Nullable;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 @Singleton

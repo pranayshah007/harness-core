@@ -6,7 +6,6 @@
  */
 
 package io.harness;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.authorization.AuthorizationServiceHeader.BEARER;
 import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
@@ -18,7 +17,10 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJEC
 import static io.harness.lock.DistributedLockImplementation.MONGO;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.audit.ResourceTypeConstants;
 import io.harness.audit.client.remote.AuditClientModule;
@@ -264,6 +266,9 @@ import org.jooq.ExecuteListener;
 import org.redisson.api.RedissonClient;
 import org.springframework.core.convert.converter.Converter;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_TRIGGERS, HarnessModuleComponent.CDS_PIPELINE,
+        HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @OwnedBy(PIPELINE)
 @Slf4j
 public class PipelineServiceModule extends AbstractModule {

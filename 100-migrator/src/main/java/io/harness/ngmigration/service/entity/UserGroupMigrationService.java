@@ -6,11 +6,13 @@
  */
 
 package io.harness.ngmigration.service.entity;
-
 import static software.wings.ngmigration.NGMigrationEntityType.USER_GROUP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
@@ -55,6 +57,7 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class UserGroupMigrationService extends NgMigrationService {

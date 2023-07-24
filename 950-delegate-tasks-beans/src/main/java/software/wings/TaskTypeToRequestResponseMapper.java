@@ -6,7 +6,9 @@
  */
 
 package software.wings;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmCleanupTaskParams;
@@ -20,6 +22,8 @@ import software.wings.beans.TaskType;
 import java.util.Optional;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @UtilityClass
 public class TaskTypeToRequestResponseMapper {
   public static Optional<Class<? extends TaskParameters>> getTaskRequestClass(TaskType taskType) {

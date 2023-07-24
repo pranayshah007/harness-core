@@ -6,9 +6,11 @@
  */
 
 package io.harness.pms.pipeline.governance.service;
-
 import static io.harness.pms.contracts.governance.ExpansionPlacementStrategy.APPEND;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.GovernanceService;
@@ -45,6 +47,8 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j
 public class PipelineGovernanceServiceImpl implements PipelineGovernanceService {

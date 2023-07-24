@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngtriggers.helpers;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogItem;
 import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogType;
@@ -21,6 +23,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import javax.ejb.Singleton;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @Singleton
 public class TriggerCatalogHelper {
   @Inject TriggerCatalogFilter enumFilter;

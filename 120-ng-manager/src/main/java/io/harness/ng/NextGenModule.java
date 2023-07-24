@@ -6,7 +6,6 @@
  */
 
 package io.harness.ng;
-
 import static io.harness.audit.ResourceTypeConstants.API_KEY;
 import static io.harness.audit.ResourceTypeConstants.CONNECTOR;
 import static io.harness.audit.ResourceTypeConstants.DELEGATE_CONFIGURATION;
@@ -66,8 +65,11 @@ import io.harness.accesscontrol.AccessControlAdminClientModule;
 import io.harness.account.AbstractAccountModule;
 import io.harness.account.AccountClientModule;
 import io.harness.account.AccountConfig;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.audit.ResourceTypeConstants;
 import io.harness.audit.client.remote.AuditClientModule;
@@ -391,6 +393,8 @@ import org.jooq.ExecuteListener;
 import org.springframework.core.convert.converter.Converter;
 import ru.vyarus.guice.validator.ValidationModule;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_TRIGGERS, HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @OwnedBy(HarnessTeam.PL)
 public class NextGenModule extends AbstractModule {

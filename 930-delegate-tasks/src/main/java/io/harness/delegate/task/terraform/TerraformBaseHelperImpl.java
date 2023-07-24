@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.terraform;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -55,7 +54,10 @@ import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifactory.ArtifactoryNgService;
 import io.harness.aws.beans.AwsInternalConfig;
@@ -154,6 +156,8 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Slf4j
 @OwnedBy(CDP)
 public class TerraformBaseHelperImpl implements TerraformBaseHelper {

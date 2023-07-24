@@ -6,11 +6,14 @@
  */
 
 package io.harness.ngtriggers;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @OwnedBy(PIPELINE)
 public interface Constants {
   int COMMIT_SHA_STRING_LENGTH = 7;

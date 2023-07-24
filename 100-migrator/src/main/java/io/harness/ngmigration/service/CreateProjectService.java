@@ -6,9 +6,11 @@
  */
 
 package io.harness.ngmigration.service;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.dto.ProjectRequest;
@@ -37,6 +39,7 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class CreateProjectService {

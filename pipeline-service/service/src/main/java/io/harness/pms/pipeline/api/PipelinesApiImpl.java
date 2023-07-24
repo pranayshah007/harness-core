@@ -6,7 +6,6 @@
  */
 
 package io.harness.pms.pipeline.api;
-
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 
 import io.harness.accesscontrol.AccountIdentifier;
@@ -14,8 +13,11 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.governance.PolicyEvaluationFailureException;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
@@ -79,6 +81,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @PipelineServiceAuth

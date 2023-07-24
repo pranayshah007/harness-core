@@ -6,9 +6,11 @@
  */
 
 package io.harness.cdng.tas;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.FileData;
 import io.harness.cdng.CDStepHelper;
@@ -64,6 +66,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac implements TasStepExecutor {

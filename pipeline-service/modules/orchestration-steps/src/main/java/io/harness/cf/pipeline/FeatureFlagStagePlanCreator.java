@@ -6,12 +6,14 @@
  */
 
 package io.harness.cf.pipeline;
-
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGES;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.plancreator.strategy.StrategyUtils;
@@ -48,6 +50,8 @@ import java.util.Set;
 
 // TODO we should implement GenericStagePlanCreator however we need to understand how
 // the getSpecParameters method should behave for CF.
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.CF)
 public class FeatureFlagStagePlanCreator extends ChildrenPlanCreator<StageElementConfig> {
   @Inject private KryoSerializer kryoSerializer;

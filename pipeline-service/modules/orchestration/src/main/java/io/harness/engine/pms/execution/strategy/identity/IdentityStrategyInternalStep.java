@@ -6,11 +6,13 @@
  */
 
 package io.harness.engine.pms.execution.strategy.identity;
-
 import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildResponse;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanService;
@@ -55,6 +57,8 @@ import org.springframework.data.util.CloseableIterator;
  * the provided planNode. And return the identityNode ids as child/children. And if status was negative, then simply
  * return the planNode id as child/children ids.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class IdentityStrategyInternalStep
     implements ChildExecutable<IdentityStepParameters>, ChildrenExecutable<IdentityStepParameters> {

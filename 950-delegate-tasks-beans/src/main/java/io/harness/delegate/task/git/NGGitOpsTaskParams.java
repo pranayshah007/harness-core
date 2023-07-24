@@ -6,10 +6,12 @@
  */
 
 package io.harness.delegate.task.git;
-
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.scm.GitCapabilityHelper;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
@@ -27,6 +29,7 @@ import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 @OwnedBy(GITOPS)
 @Data
 @Builder

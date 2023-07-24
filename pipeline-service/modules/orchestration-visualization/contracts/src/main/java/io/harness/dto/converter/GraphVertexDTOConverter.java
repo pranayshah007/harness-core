@@ -6,9 +6,11 @@
  */
 
 package io.harness.dto.converter;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.GraphVertex;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.dto.GraphVertexDTO;
@@ -19,6 +21,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import java.util.function.Function;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
 public class GraphVertexDTOConverter {

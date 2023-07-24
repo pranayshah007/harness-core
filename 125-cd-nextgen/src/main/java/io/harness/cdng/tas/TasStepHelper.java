@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.tas;
-
 import static io.harness.cdng.manifest.ManifestType.TAS_AUTOSCALER;
 import static io.harness.cdng.manifest.ManifestType.TAS_MANIFEST;
 import static io.harness.cdng.manifest.ManifestType.TAS_VARS;
@@ -64,6 +63,9 @@ import static org.apache.commons.lang3.StringUtils.defaultIfEmpty;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.FileReference;
 import io.harness.beans.Scope;
@@ -224,6 +226,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_GITX, HarnessModuleComponent.CDS_FIRST_GEN,
+        HarnessModuleComponent.CDS_SERVERLESS, HarnessModuleComponent.CDS_PCF, HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 public class TasStepHelper {
   @Inject protected OutcomeService outcomeService;

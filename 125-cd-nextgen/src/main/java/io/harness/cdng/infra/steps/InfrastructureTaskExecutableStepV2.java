@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.infra.steps;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.ELASTIGROUP_CONFIGURATION_OUTPUT;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_OUTPUT;
@@ -21,7 +20,10 @@ import static software.wings.beans.LogHelper.color;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
@@ -122,6 +124,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @OwnedBy(CDP)
 public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTaskExecutableStep

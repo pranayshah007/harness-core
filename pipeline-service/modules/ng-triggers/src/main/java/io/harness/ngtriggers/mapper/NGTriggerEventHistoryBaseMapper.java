@@ -6,10 +6,12 @@
  */
 
 package io.harness.ngtriggers.mapper;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ngtriggers.beans.dto.NGTriggerEventHistoryBaseDTO;
 import io.harness.ngtriggers.beans.entity.TriggerEventHistory;
 import io.harness.ngtriggers.beans.response.TriggerEventResponse;
@@ -19,6 +21,7 @@ import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.EnumUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @OwnedBy(PIPELINE)
 @UtilityClass
 @Slf4j

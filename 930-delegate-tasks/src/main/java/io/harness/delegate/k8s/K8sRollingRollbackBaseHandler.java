@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.k8s;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -35,7 +34,10 @@ import static java.time.Duration.ofMinutes;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.k8s.beans.K8sRollingRollbackHandlerConfig;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
@@ -89,6 +91,7 @@ import org.jetbrains.annotations.NotNull;
 import org.zeroturnaround.exec.ProcessResult;
 import org.zeroturnaround.exec.stream.LogOutputStream;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(CDP)
 @Singleton
 @Slf4j

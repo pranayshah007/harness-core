@@ -6,7 +6,11 @@
  */
 
 package io.harness.exceptions;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 public class RecasterException extends RuntimeException {
   private static final long serialVersionUID = 1L;
   // fieldPath is to store the path of the field for which classCastException was caught and messageWithoutFieldPath

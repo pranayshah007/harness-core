@@ -6,7 +6,6 @@
  */
 
 package io.harness.secrets;
-
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.USER;
@@ -15,7 +14,10 @@ import static software.wings.security.EnvFilter.FilterType.NON_PROD;
 import static software.wings.security.EnvFilter.FilterType.PROD;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_SECRETS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.FeatureName;
 import io.harness.beans.SecretManagerConfig;
@@ -48,6 +50,7 @@ import java.util.Set;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Slf4j
 @Singleton
 @ValidateOnExecution

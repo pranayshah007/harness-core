@@ -6,13 +6,17 @@
  */
 
 package io.harness;
-
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_GITX, HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(PL)
 @UtilityClass
 public class NGCommonEntityConstants {
@@ -76,6 +80,8 @@ public class NGCommonEntityConstants {
   public static final String GA_CLIENT_ID = "ga_client_id";
   public static final String ENTITY_TYPE = "entityType";
   public static final String SEARCH_TERM = "searchTerm";
+  public static final String REPO_NAME_SEARCH_TERM = "repoNameSearchTerm";
+  public static final String USER_NAME_SEARCH_TERM = "userNameSearchTerm";
   public static final String USER_ID = "userId";
   public static final String PAGE = "page";
   public static final String PAGE_SIZE = "page_size";

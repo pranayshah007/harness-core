@@ -6,10 +6,12 @@
  */
 
 package io.harness.pms.notification.orchestration.helpers;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.AbortedBy;
 import io.harness.engine.interrupts.InterruptService;
 import io.harness.interrupts.Interrupt;
@@ -18,6 +20,7 @@ import io.harness.pms.contracts.interrupts.ManualIssuer;
 import com.google.inject.Inject;
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 public class AbortInfoHelper {
   @Inject private InterruptService interruptService;
   private static final String SYSTEM_USER = "systemUser";

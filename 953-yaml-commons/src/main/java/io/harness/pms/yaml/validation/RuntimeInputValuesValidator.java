@@ -6,12 +6,14 @@
  */
 
 package io.harness.pms.yaml.validation;
-
 import static io.harness.beans.InputSetValidatorType.ALLOWED_VALUES;
 import static io.harness.beans.InputSetValidatorType.REGEX;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
@@ -30,6 +32,7 @@ import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.CDC)
 @UtilityClass
 @Slf4j

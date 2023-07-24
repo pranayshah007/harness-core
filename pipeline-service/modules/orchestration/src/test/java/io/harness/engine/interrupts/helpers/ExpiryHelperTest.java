@@ -198,20 +198,21 @@ public class ExpiryHelperTest extends OrchestrationTestBase {
     List<UnitProgress> unitProgressList = InterruptHelper.evaluateUnitProgresses(nodeExecution, EXPIRED);
     expiryHelper.expireDiscontinuedInstance(nodeExecution, interruptConfig, interruptId, MARK_EXPIRED);
 
-    verify(engine).processStepResponse(nodeExecution.getAmbiance(),
-        StepResponseProto.newBuilder()
-            .setStatus(Status.EXPIRED)
-            .setFailureInfo(FailureInfo.newBuilder()
-                                .setErrorMessage(EXPIRE_ERROR_MESSAGE)
-                                .addFailureTypes(FailureType.TIMEOUT_FAILURE)
-                                .addFailureData(FailureData.newBuilder()
-                                                    .addFailureTypes(FailureType.TIMEOUT_FAILURE)
-                                                    .setLevel(Level.ERROR.name())
-                                                    .setCode(TIMEOUT_ENGINE_EXCEPTION.name())
-                                                    .setMessage(EXPIRE_ERROR_MESSAGE)
-                                                    .build())
-                                .build())
-            .addAllUnitProgress(unitProgressList)
-            .build());
+    verify(engine, times(1))
+        .processStepResponse(nodeExecution.getAmbiance(),
+            StepResponseProto.newBuilder()
+                .setStatus(Status.EXPIRED)
+                .setFailureInfo(FailureInfo.newBuilder()
+                                    .setErrorMessage(EXPIRE_ERROR_MESSAGE)
+                                    .addFailureTypes(FailureType.TIMEOUT_FAILURE)
+                                    .addFailureData(FailureData.newBuilder()
+                                                        .addFailureTypes(FailureType.TIMEOUT_FAILURE)
+                                                        .setLevel(Level.ERROR.name())
+                                                        .setCode(TIMEOUT_ENGINE_EXCEPTION.name())
+                                                        .setMessage(EXPIRE_ERROR_MESSAGE)
+                                                        .build())
+                                    .build())
+                .addAllUnitProgress(unitProgressList)
+                .build());
   }
 }

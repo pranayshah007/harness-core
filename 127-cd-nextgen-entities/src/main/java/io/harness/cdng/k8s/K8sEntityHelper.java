@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.k8s;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.CDS_K8S_SOCKET_CAPABILITY_CHECK_NG;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
@@ -27,7 +26,10 @@ import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
 import io.harness.account.AccountClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -75,6 +77,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @OwnedBy(CDP)
 @Singleton

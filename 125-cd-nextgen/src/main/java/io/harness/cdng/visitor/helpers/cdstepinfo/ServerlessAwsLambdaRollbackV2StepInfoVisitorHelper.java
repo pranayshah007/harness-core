@@ -6,13 +6,16 @@
  */
 
 package io.harness.cdng.visitor.helpers.cdstepinfo;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaRollbackV2StepInfo;
 import io.harness.walktree.visitor.validation.ConfigValidator;
 import io.harness.walktree.visitor.validation.ValidationVisitor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @OwnedBy(HarnessTeam.CDP)
 public class ServerlessAwsLambdaRollbackV2StepInfoVisitorHelper implements ConfigValidator {
   @Override

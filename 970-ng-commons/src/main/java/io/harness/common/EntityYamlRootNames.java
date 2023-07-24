@@ -6,10 +6,12 @@
  */
 
 package io.harness.common;
-
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import lombok.experimental.UtilityClass;
 
@@ -20,6 +22,9 @@ import lombok.experimental.UtilityClass;
  * </p>
  * In this the top element is <b>connector</b>
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @UtilityClass
 @OwnedBy(PL)
 public class EntityYamlRootNames {

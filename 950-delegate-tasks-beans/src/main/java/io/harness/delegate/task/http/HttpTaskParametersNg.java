@@ -6,10 +6,12 @@
  */
 
 package io.harness.delegate.task.http;
-
 import static io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator.HttpCapabilityDetailsLevel.QUERY;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.HttpCertificateNG;
 import io.harness.beans.KeyValuePair;
 import io.harness.data.structure.EmptyPredicate;
@@ -28,6 +30,8 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Value
 @Builder
 public class HttpTaskParametersNg implements TaskParameters, ExecutionCapabilityDemander {

@@ -619,9 +619,9 @@ func GetUserRepos(ctx context.Context, request *pb.GetUserReposRequest, log *zap
 		var response *scm.Response
 
 		if isGithubApp {
-			repoList, response, err = client.Repositories.(*github.RepositoryService).ListByInstallation(ctx, scm.ListOptions{Page: int(request.GetPagination().GetPage())})
+			repoList, response, err = client.Repositories.(*github.RepositoryService).ListByInstallation(ctx, scm.ListOptions{Page: int(request.GetPagination().GetPage()), Size: int(request.GetPagination().GetSize())})
 		} else {
-			repoList, response, err = client.Repositories.List(ctx, scm.ListOptions{Page: int(request.GetPagination().GetPage())})
+			repoList, response, err = client.Repositories.List(ctx, scm.ListOptions{Page: int(request.GetPagination().GetPage()), Size: int(request.GetPagination().GetSize())})
 		}
 		if err != nil {
 			log.Errorw("GetUserRepos failure", "provider", gitclient.GetProvider(*request.GetProvider()), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))

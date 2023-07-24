@@ -6,11 +6,13 @@
  */
 
 package io.harness.steps.container;
-
 import static io.harness.beans.outcomes.LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EnvironmentType;
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.delegate.TaskSelector;
@@ -57,6 +59,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ContainerStep implements TaskChainExecutableWithRbac<StepElementParameters> {

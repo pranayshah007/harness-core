@@ -6,13 +6,15 @@
  */
 
 package software.wings.helpers.ext.k8s.request;
-
 import static io.harness.annotations.dev.HarnessModule._950_DELEGATE_TASKS_BEANS;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
@@ -28,6 +30,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Data
 @EqualsAndHashCode(callSuper = true)
 @TargetModule(_950_DELEGATE_TASKS_BEANS)

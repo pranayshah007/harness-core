@@ -6,7 +6,6 @@
  */
 
 package io.harness.pms.plan.execution;
-
 import static io.harness.beans.FeatureName.PIE_GET_FILE_CONTENT_ONLY;
 import static io.harness.pms.rbac.PipelineRbacPermissions.PIPELINE_EXECUTE;
 import static io.harness.pms.utils.PmsConstants.PIPELINE;
@@ -21,8 +20,11 @@ import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.retry.RetryHistoryResponseDto;
 import io.harness.engine.executions.retry.RetryInfo;
@@ -75,6 +77,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @OwnedBy(HarnessTeam.PIPELINE)
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @PipelineServiceAuth

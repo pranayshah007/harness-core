@@ -6,7 +6,6 @@
  */
 
 package io.harness.k8s.model;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.govern.Switch.noop;
@@ -18,7 +17,10 @@ import static io.harness.validation.Validator.notNullCheck;
 import static java.lang.String.format;
 import static java.util.Objects.nonNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.KubernetesYamlException;
 import io.harness.k8s.model.harnesscrds.CustomDeploymentStrategyParams;
@@ -78,6 +80,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.yaml.snakeyaml.constructor.ConstructorException;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Data
 @Builder
 @NoArgsConstructor

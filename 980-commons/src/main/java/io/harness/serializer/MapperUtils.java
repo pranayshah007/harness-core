@@ -6,6 +6,9 @@
  */
 
 package io.harness.serializer;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
@@ -21,6 +24,7 @@ import org.modelmapper.MappingException;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Slf4j
 public class MapperUtils {
   static final String TEMPLATE_VARIABLE_ENTRY = "templateVariables";

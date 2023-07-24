@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -25,7 +24,10 @@ import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
@@ -90,6 +92,7 @@ import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @Singleton
 @ValidateOnExecution

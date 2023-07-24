@@ -6,7 +6,6 @@
  */
 
 package software.wings.beans;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static software.wings.service.impl.WorkflowExecutionServiceHelper.calculateCdPageCandidate;
@@ -17,8 +16,11 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.BreakDependencyOn;
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ApiKeyInfo;
 import io.harness.beans.CreatedByType;
@@ -82,6 +84,8 @@ import lombok.experimental.UtilityClass;
 /**
  * The Class WorkflowExecution.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @TargetModule(HarnessModule._957_CG_BEANS)
 @OwnedBy(CDC)
 @BreakDependencyOn("software.wings.service.impl.WorkflowExecutionServiceHelper")

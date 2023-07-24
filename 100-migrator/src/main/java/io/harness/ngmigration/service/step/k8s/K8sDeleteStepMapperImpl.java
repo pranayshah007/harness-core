@@ -6,9 +6,11 @@
  */
 
 package io.harness.ngmigration.service.step.k8s;
-
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.cdng.k8s.DeleteManifestPathSpec;
 import io.harness.cdng.k8s.DeleteResourceNameSpec;
@@ -35,6 +37,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class K8sDeleteStepMapperImpl extends StepMapper {
   @Override
   public SupportStatus stepSupportStatus(GraphNode graphNode) {

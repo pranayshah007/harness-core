@@ -6,9 +6,11 @@
  */
 
 package io.harness.engine.expressions;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExpressionMode;
@@ -20,6 +22,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
 public class EngineExpressionServiceImpl implements EngineExpressionService {

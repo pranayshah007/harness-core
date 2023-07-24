@@ -6,9 +6,11 @@
  */
 
 package io.harness.notification.channelDetails;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.SwaggerConstants;
 import io.harness.notification.Team;
 import io.harness.notification.channeldetails.NotificationChannel;
@@ -25,6 +27,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Data
 @Builder

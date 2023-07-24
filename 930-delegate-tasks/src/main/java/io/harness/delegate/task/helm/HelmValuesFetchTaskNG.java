@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.helm;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
@@ -14,7 +13,10 @@ import static io.harness.logging.LogLevel.INFO;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
@@ -42,6 +44,7 @@ import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 import org.zeroturnaround.exec.ProcessExecutor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @OwnedBy(CDP)
 public class HelmValuesFetchTaskNG extends AbstractDelegateRunnableTask {

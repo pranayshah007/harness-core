@@ -6,9 +6,11 @@
  */
 
 package io.harness.engine.pms.execution.strategy.identity;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.engine.executions.node.NodeExecutionService;
@@ -39,6 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.util.CloseableIterator;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public class IdentityNodeExecutionStrategyHelper {

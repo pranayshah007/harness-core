@@ -6,12 +6,14 @@
  */
 
 package io.harness.pms.triggers.build.eventmapper;
-
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.NO_MATCHING_TRIGGER_FOR_FOR_EVENT_SIGNATURES;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.POLLING_EVENT_WITH_NO_VERSIONS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.ngtriggers.beans.dto.eventmapping.UnMatchedTriggerInfo;
 import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventMappingResponse;
@@ -37,6 +39,7 @@ import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.PIPELINE)

@@ -6,7 +6,6 @@
  */
 
 package io.harness.steps.approval.step;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
@@ -14,7 +13,10 @@ import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionService;
@@ -76,6 +78,7 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @Slf4j
 public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {

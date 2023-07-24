@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.shell.ssh;
-
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.ARTIFACT_CONFIGURATION_NOT_FOUND;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.ARTIFACT_CONFIGURATION_NOT_FOUND_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.ARTIFACT_CONFIGURATION_NOT_FOUND_HINT;
@@ -37,8 +36,11 @@ import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.UNDEC
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.azureartifacts.beans.AzureArtifactsProtocolType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
@@ -77,6 +79,8 @@ import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_AMI_ASG, HarnessModuleComponent.CDS_TRADITIONAL})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 @Singleton

@@ -6,9 +6,11 @@
  */
 
 package io.harness.connector.validator;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.validator.scmValidators.AbstractKubernetesConnectorValidator;
@@ -23,6 +25,7 @@ import software.wings.beans.TaskType;
 
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(HarnessTeam.CDP)
 public class RancherConnectionValidator extends AbstractKubernetesConnectorValidator {
   @Override

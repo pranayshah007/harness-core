@@ -6,7 +6,6 @@
  */
 
 package io.harness.ng.webhook.polling;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -33,8 +32,11 @@ import static io.harness.polling.contracts.Type.S3_HELM;
 import static java.lang.Boolean.parseBoolean;
 
 import io.harness.NgAutoLogContext;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.GcsStoreConfig;
@@ -104,6 +106,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class PollingResponseHandler {

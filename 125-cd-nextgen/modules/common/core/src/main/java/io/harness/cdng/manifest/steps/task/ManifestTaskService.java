@@ -6,9 +6,11 @@
  */
 
 package io.harness.cdng.manifest.steps.task;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.delegate.beans.TaskData;
 import io.harness.tasks.ResponseData;
@@ -16,6 +18,7 @@ import io.harness.tasks.ResponseData;
 import java.util.Map;
 import java.util.Optional;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(HarnessTeam.CDP)
 public interface ManifestTaskService {
   boolean isSupported(FetchManifestTaskContext context);

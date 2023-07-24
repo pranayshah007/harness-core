@@ -6,10 +6,12 @@
  */
 
 package io.harness.pms.execution;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.contracts.execution.Status;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -22,6 +24,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @Schema(name = "ExecutionStatus", description = "This is the Execution Status of the entity")
 public enum ExecutionStatus {

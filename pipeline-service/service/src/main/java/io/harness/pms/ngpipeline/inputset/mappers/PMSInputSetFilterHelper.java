@@ -6,14 +6,16 @@
  */
 
 package io.harness.pms.ngpipeline.inputset.mappers;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.NGResourceFilterConstants;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
@@ -27,6 +29,8 @@ import lombok.experimental.UtilityClass;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_GITX, HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class PMSInputSetFilterHelper {

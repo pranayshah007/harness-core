@@ -6,16 +6,21 @@
  */
 
 package io.harness.delegate.beans.executioncapability;
-
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 
 // ALWAYS_TRUE should not be a capability type. In this case, task validation should not even happen.
 // But Validation needs to happen at delegate as its part of Handshake between Delegate and manager,
 // in order for delegate to acquire a task.
 // May be changed later
+
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @TargetModule(HarnessModule._955_DELEGATE_BEANS)
 @OwnedBy(HarnessTeam.DEL)
 public enum CapabilityType {

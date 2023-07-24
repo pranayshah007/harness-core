@@ -6,9 +6,11 @@
  */
 
 package io.harness.pms.yaml.validation;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.pms.expression.EngineExpressionResolver;
@@ -17,6 +19,7 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
 public class InputSetValidatorFactory {

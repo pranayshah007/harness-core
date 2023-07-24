@@ -6,10 +6,12 @@
  */
 
 package io.harness.migrations;
-
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.migrations.accountpermission.AddManageTagsPermission;
 import io.harness.migrations.accountpermission.AlertNotificationAccountPermissionMigration;
 import io.harness.migrations.accountpermission.CreateCustomDashboardPermissionMigration;
@@ -205,6 +207,7 @@ import java.util.List;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(PL)
 @UtilityClass
 public class MigrationList {

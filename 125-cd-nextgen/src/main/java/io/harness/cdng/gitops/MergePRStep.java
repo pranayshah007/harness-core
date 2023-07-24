@@ -6,13 +6,15 @@
  */
 
 package io.harness.cdng.gitops;
-
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.exception.WingsException.USER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
@@ -71,6 +73,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 @OwnedBy(HarnessTeam.GITOPS)
 @Slf4j
 public class MergePRStep extends CdTaskExecutable<NGGitOpsResponse> {

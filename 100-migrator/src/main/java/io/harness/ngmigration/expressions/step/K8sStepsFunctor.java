@@ -6,11 +6,14 @@
  */
 
 package io.harness.ngmigration.expressions.step;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ngmigration.beans.StepOutput;
 
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class K8sStepsFunctor extends StepExpressionFunctor {
   private StepOutput stepOutput;
 

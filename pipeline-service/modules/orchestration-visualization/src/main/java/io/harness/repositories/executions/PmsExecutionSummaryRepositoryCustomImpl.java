@@ -6,14 +6,16 @@
  */
 
 package io.harness.repositories.executions;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import static org.springframework.data.domain.Sort.by;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
@@ -42,6 +44,7 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.repository.support.PageableExecutionUtils;
 import org.springframework.data.util.CloseableIterator;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))
 @Slf4j
 @OwnedBy(PIPELINE)

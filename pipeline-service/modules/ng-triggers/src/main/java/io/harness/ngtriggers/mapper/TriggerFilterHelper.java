@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngtriggers.mapper;
-
 import static io.harness.NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -14,7 +13,10 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static java.util.Collections.emptyList;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity.NGTriggerEntityKeys;
@@ -28,6 +30,7 @@ import lombok.experimental.UtilityClass;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @UtilityClass
 @OwnedBy(PIPELINE)
 public class TriggerFilterHelper {

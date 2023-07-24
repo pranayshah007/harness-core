@@ -6,9 +6,11 @@
  */
 
 package io.harness.gitsync.common.dtos;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.gitsync.common.beans.GitXSettingsParams;
@@ -18,6 +20,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PL)
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)

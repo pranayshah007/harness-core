@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.aws.lambda;
-
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -15,6 +14,9 @@ import static io.harness.exception.WingsException.USER;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.aws.v2.lambda.AwsLambdaCommandUnitConstants;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
@@ -108,6 +110,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 public class AwsLambdaHelper extends CDStepHelper {
   @Inject private CDExpressionResolver cdExpressionResolver;

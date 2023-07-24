@@ -6,15 +6,17 @@
  */
 
 package io.harness;
-
 import static io.harness.OrchestrationPublisherName.PERSISTENCE_LAYER;
 import static io.harness.OrchestrationPublisherName.PUBLISHER_NAME;
 
 import static java.util.Arrays.asList;
 
 import io.harness.account.AccountClientModule;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cache.HarnessCacheManager;
 import io.harness.delay.AbstractOrchestrationDelayModule;
 import io.harness.engine.GovernanceService;
@@ -109,6 +111,7 @@ import javax.cache.configuration.MutableConfiguration;
 import javax.cache.expiry.AccessedExpiryPolicy;
 import javax.cache.expiry.Duration;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class OrchestrationModule extends AbstractModule implements ServersModule {
   private static OrchestrationModule instance;

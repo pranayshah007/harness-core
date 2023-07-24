@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngtriggers.beans.dto.eventmapping;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus;
 
@@ -15,6 +17,7 @@ import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.FieldDefaults;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Value
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)

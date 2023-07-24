@@ -6,7 +6,6 @@
  */
 
 package software.wings.resources;
-
 import static io.harness.agent.AgentGatewayConstants.HEADER_AGENT_MTLS_AUTHORITY;
 import static io.harness.agent.AgentGatewayUtils.isAgentConnectedUsingMtls;
 import static io.harness.annotations.dev.HarnessTeam.DEL;
@@ -19,8 +18,11 @@ import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.BreakDependencyOn;
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.artifact.ArtifactCollectionResponseHandler;
 import io.harness.beans.DelegateHeartbeatResponse;
@@ -109,6 +111,7 @@ import okhttp3.RequestBody;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Api("/agent/delegates")
 @Path("/agent/delegates")
 @Produces("application/json")

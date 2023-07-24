@@ -6,12 +6,15 @@
  */
 
 package io.harness.pms.plan.execution.service;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.plan.execution.beans.dto.ExpressionEvaluationDetailDTO;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 public interface ExpressionEvaluatorService {
   ExpressionEvaluationDetailDTO evaluateExpression(String planExecutionId, String yaml);

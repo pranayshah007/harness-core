@@ -6,14 +6,16 @@
  */
 
 package io.harness.delegate.task.shell.winrm;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.shell.winrm.WinRmCommandConstants.SESSION_TIMEOUT;
 
 import static software.wings.common.Constants.WINDOWS_HOME_DIR;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.task.shell.WinrmTaskParameters;
 import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
@@ -30,6 +32,8 @@ import java.util.Collections;
 import java.util.List;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @OwnedBy(CDP)
 @UtilityClass
 public class WinRmUtils {

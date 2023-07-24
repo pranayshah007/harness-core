@@ -6,15 +6,17 @@
  */
 
 package io.harness.cdng.environment.helper;
-
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
@@ -76,6 +78,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 @Singleton

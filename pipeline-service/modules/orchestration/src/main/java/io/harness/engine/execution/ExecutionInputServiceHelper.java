@@ -6,11 +6,13 @@
  */
 
 package io.harness.engine.execution;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.common.NGExpressionUtils;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.pms.merger.YamlConfig;
@@ -29,6 +31,8 @@ import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @Singleton
 @Slf4j
 @OwnedBy(PIPELINE)

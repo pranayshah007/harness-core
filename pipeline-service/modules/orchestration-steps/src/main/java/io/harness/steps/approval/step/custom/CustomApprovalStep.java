@@ -6,13 +6,15 @@
  */
 
 package io.harness.steps.approval.step.custom;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.eraro.ErrorCode.APPROVAL_STEP_NG_ERROR;
 
 import static java.util.Collections.emptyList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.task.shell.ShellScriptTaskNG;
 import io.harness.delegate.task.shell.WinRmShellScriptTaskNG;
@@ -52,6 +54,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(CDC)
 @Slf4j
 public class CustomApprovalStep extends PipelineAsyncExecutable {

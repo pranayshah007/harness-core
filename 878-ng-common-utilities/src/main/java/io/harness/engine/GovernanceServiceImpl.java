@@ -6,11 +6,13 @@
  */
 
 package io.harness.engine;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
 import io.harness.governance.GovernanceMetadata;
@@ -31,6 +33,8 @@ import java.io.IOException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @OwnedBy(HarnessTeam.PIPELINE)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j

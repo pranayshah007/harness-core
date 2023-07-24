@@ -6,14 +6,16 @@
  */
 
 package io.harness.beans;
-
 import static io.harness.annotations.dev.HarnessTeam.CV;
 import static io.harness.annotations.dev.HarnessTeam.GTM;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.annotations.dev.HarnessTeam.SPG;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureFlag.Scope;
 
 import lombok.Getter;
@@ -21,6 +23,14 @@ import lombok.Getter;
  * Add your feature name here. When the feature is fully launched and no longer needs to be flagged,
  * delete the feature name.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVERLESS, HarnessModuleComponent.CDS_AMI_ASG,
+        HarnessModuleComponent.CDS_INFRA_PROVISIONERS, HarnessModuleComponent.CDS_TEMPLATE_LIBRARY,
+        HarnessModuleComponent.CDS_K8S, HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_COMMON_STEPS,
+        HarnessModuleComponent.CDS_APPROVALS, HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_TRIGGERS,
+        HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT, HarnessModuleComponent.CDS_GITOPS,
+        HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(HarnessTeam.PL)
 public enum FeatureName {
   // Sorted using https://github.com/google/keep-sorted/blob/main/README.md
@@ -242,8 +252,7 @@ public enum FeatureName {
   CHAOS_IMAGE_REGISTRY_DEV("Enable image registry configuration in CHAOS", HarnessTeam.CHAOS),
   CHAOS_LINUX_ENABLED("Enable linux experiment and infrastructure integration in CHAOS", HarnessTeam.CHAOS),
   CHAOS_PROBE_ENABLED("Enable new probe ui and flow in CHAOS", HarnessTeam.CHAOS),
-  CHAOS_SECURITY_GOVERNANCE(
-      "Enables security governance routes, validation and navigation in CHAOS", HarnessTeam.CHAOS),
+  CHAOS_SECURITY_GOVERNANCE("Enable security governance routes, validation and navigation in CHAOS", HarnessTeam.CHAOS),
   CIE_ENABLED_RBAC("Enable rbac validationa at CI level", HarnessTeam.CI),
   CIE_HOSTED_VMS(
       "Enables hosted VMs in favor of hosted K8s for CIE. This flag will be deprecated once all the feature work has been checked in",

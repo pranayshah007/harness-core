@@ -6,12 +6,14 @@
  */
 
 package io.harness.ngmigration.service.step;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
 import static io.harness.ngmigration.utils.NGMigrationConstants.SERVICE_COMMAND_TEMPLATE_SEPARATOR;
 import static io.harness.ngmigration.utils.NGMigrationConstants.UNKNOWN_SERVICE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -42,6 +44,7 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 public class CommandStepMapperImpl extends StepMapper {
   @Override

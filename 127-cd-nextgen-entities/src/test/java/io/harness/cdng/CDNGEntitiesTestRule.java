@@ -13,7 +13,6 @@
  */
 
 package io.harness.cdng;
-
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 
@@ -24,8 +23,11 @@ import static org.mockito.Mockito.mock;
 
 import io.harness.account.AccountClient;
 import io.harness.account.services.AccountService;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.gitops.ClusterServiceImpl;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.connector.services.ConnectorService;
@@ -106,6 +108,8 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class CDNGEntitiesTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMixin {

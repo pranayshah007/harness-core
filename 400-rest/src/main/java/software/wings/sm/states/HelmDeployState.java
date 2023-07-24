@@ -6,7 +6,6 @@
  */
 
 package software.wings.sm.states;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.EnvironmentType.ALL;
 import static io.harness.beans.FeatureName.CDP_SKIP_DEFAULT_VALUES_YAML_CG;
@@ -47,8 +46,11 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.BreakDependencyOn;
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
@@ -209,6 +211,8 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * Created by anubhaw on 3/25/18.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Slf4j
 @FieldNameConstants(innerTypeName = "HelmDeployStateKeys")
 @OwnedBy(CDP)

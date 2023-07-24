@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.cf;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.artifacts.azureartifacts.beans.AzureArtifactsExceptionConstants.DOWNLOAD_FROM_AZURE_ARTIFACTS_EXPLANATION;
 import static io.harness.artifacts.azureartifacts.beans.AzureArtifactsExceptionConstants.DOWNLOAD_FROM_AZURE_ARTIFACTS_FAILED;
@@ -41,7 +40,10 @@ import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifactory.ArtifactoryNgService;
@@ -149,6 +151,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
 import org.cloudfoundry.operations.applications.ApplicationSummary;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDP)
 @Singleton
 @Slf4j

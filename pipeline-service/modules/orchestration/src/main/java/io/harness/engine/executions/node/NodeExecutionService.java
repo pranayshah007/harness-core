@@ -6,10 +6,12 @@
  */
 
 package io.harness.engine.executions.node;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.executions.retry.RetryStageInfo;
 import io.harness.execution.NodeExecution;
 import io.harness.plan.Node;
@@ -29,6 +31,7 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.CloseableIterator;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 public interface NodeExecutionService {
   /**

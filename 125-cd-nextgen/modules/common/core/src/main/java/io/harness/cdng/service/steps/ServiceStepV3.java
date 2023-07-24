@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.service.steps;
-
 import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_ENV_OUTCOME;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.ENV_GROUP_REF;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.ENV_REF;
@@ -25,8 +24,11 @@ import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.EN
 import static java.lang.String.format;
 
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
@@ -148,6 +150,8 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT, HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters> {

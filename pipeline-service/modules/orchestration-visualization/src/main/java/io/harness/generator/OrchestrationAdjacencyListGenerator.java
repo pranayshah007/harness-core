@@ -6,7 +6,6 @@
  */
 
 package io.harness.generator;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.execution.ExecutionModeUtils.isChainMode;
 
@@ -16,8 +15,11 @@ import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.GraphVertex;
 import io.harness.beans.converter.GraphVertexConverter;
 import io.harness.beans.internal.EdgeListInternal;
@@ -45,6 +47,7 @@ import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 @Singleton

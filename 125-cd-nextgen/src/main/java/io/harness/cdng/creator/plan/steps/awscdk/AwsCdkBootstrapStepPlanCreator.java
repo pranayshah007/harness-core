@@ -6,9 +6,11 @@
  */
 
 package io.harness.cdng.creator.plan.steps.awscdk;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
 import io.harness.cdng.provision.awscdk.AwsCdkBootstrapStepNode;
 import io.harness.cdng.provision.awscdk.AwsCdkBootstrapStepParameters;
@@ -21,6 +23,8 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import com.google.common.collect.Sets;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(HarnessTeam.CDP)
 public class AwsCdkBootstrapStepPlanCreator extends CDPMSStepPlanCreatorV2<AwsCdkBootstrapStepNode> {
   @Override

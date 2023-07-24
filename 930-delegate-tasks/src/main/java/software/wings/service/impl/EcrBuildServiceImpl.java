@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.exception.WingsException.SRE;
 import static io.harness.exception.WingsException.USER;
@@ -15,7 +14,10 @@ import static io.harness.validation.Validator.equalCheck;
 import static software.wings.beans.artifact.ArtifactStreamType.ECR;
 import static software.wings.helpers.ext.ecr.EcrService.MAX_NO_OF_IMAGES;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -42,6 +44,8 @@ import java.util.stream.Collectors;
 /**
  * Created by brett on 7/16/17.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDC)
 @Singleton
 public class EcrBuildServiceImpl implements EcrBuildService {

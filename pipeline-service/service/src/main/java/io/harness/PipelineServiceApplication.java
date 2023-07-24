@@ -6,7 +6,6 @@
  */
 
 package io.harness;
-
 import static io.harness.NGConstants.X_API_KEY;
 import static io.harness.PipelineServiceConfiguration.HARNESS_RESOURCE_CLASSES;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
@@ -22,7 +21,10 @@ import static io.harness.waiter.PmsNotifyEventListener.PMS_ORCHESTRATION;
 import static com.google.common.collect.ImmutableMap.of;
 
 import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.CacheModule;
 import io.harness.cf.AbstractCfModule;
@@ -257,6 +259,7 @@ import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Slf4j
 @OwnedBy(PIPELINE)
 public class PipelineServiceApplication extends Application<PipelineServiceConfiguration> {

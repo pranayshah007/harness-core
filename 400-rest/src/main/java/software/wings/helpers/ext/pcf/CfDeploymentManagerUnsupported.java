@@ -6,10 +6,12 @@
  */
 
 package software.wings.helpers.ext.pcf;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.logging.LogCallback;
 import io.harness.pcf.CfDeploymentManager;
 import io.harness.pcf.PivotalClientApiException;
@@ -25,6 +27,7 @@ import java.util.List;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
 import org.cloudfoundry.operations.applications.ApplicationSummary;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Singleton
 @OwnedBy(CDP)
 public class CfDeploymentManagerUnsupported implements CfDeploymentManager {

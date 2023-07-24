@@ -6,11 +6,13 @@
  */
 
 package io.harness.plancreator.steps;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.yaml.ParameterField;
@@ -33,6 +35,8 @@ import java.util.List;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @UtilityClass
 @OwnedBy(PIPELINE)
 public class FailureStrategiesUtils {

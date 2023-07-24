@@ -6,11 +6,13 @@
  */
 
 package io.harness.connector.helper;
-
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.services.NGConnectorSecretManagerService;
 import io.harness.data.algorithm.HashGenerator;
@@ -46,6 +48,7 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 public class CustomSecretManagerHelper {
   private static final String EXPRESSION_FUNCTOR_TOKEN = "expressionFunctorToken";

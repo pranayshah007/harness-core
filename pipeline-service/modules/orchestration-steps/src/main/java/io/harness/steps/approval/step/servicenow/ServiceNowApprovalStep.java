@@ -6,9 +6,11 @@
  */
 
 package io.harness.steps.approval.step.servicenow;
-
 import static io.harness.eraro.ErrorCode.APPROVAL_STEP_NG_ERROR;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.task.shell.ShellScriptTaskNG;
 import io.harness.engine.executions.step.StepExecutionEntityService;
@@ -43,6 +45,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @Slf4j
 public class ServiceNowApprovalStep extends PipelineAsyncExecutable {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.SERVICE_NOW_APPROVAL_STEP_TYPE;

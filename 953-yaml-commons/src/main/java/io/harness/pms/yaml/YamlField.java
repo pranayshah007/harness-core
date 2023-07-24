@@ -6,7 +6,9 @@
  */
 
 package io.harness.pms.yaml;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.contracts.plan.YamlFieldBlob;
 import io.harness.serializer.JsonUtils;
@@ -20,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import javax.validation.constraints.NotNull;
 import lombok.Value;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Value
 public class YamlField {
   private static final Charset CHARSET = Charset.forName(StandardCharsets.UTF_8.name());

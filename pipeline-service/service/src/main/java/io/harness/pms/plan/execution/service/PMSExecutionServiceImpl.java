@@ -6,7 +6,6 @@
  */
 
 package io.harness.pms.plan.execution.service;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.contracts.plan.TriggerType.MANUAL;
 import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSetIntoPipelineForGivenStages;
@@ -18,7 +17,10 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.ModuleType;
 import io.harness.NGResourceFilterConstants;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.dto.OrchestrationGraphDTO;
 import io.harness.engine.OrchestrationService;
@@ -98,6 +100,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @Slf4j
 @OwnedBy(PIPELINE)

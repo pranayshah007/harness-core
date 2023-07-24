@@ -6,10 +6,12 @@
  */
 
 package io.harness.pms.pipeline.mappers;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DelegateInfo;
 import io.harness.beans.EdgeList;
 import io.harness.beans.ExecutionGraph;
@@ -31,6 +33,7 @@ import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @UtilityClass
 @Slf4j
 @OwnedBy(PIPELINE)

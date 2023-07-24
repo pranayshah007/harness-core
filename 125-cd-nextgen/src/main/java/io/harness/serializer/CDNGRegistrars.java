@@ -6,11 +6,13 @@
  */
 
 package io.harness.serializer;
-
 import io.harness.EntityType;
 import io.harness.ModuleType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.aws.asg.AsgBlueGreenDeployStepNode;
 import io.harness.cdng.aws.asg.AsgBlueGreenRollbackStepNode;
 import io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceStepNode;
@@ -125,6 +127,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_GITOPS,
+        HarnessModuleComponent.CDS_INFRA_PROVISIONERS, HarnessModuleComponent.CDS_SERVERLESS})
 @OwnedBy(HarnessTeam.CDP)
 @UtilityClass
 public class CDNGRegistrars {

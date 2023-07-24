@@ -6,10 +6,12 @@
  */
 
 package io.harness.pms.plan.execution.service;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.dto.OrchestrationGraphDTO;
 import io.harness.pms.contracts.interrupts.InterruptConfig;
 import io.harness.pms.execution.ExecutionStatus;
@@ -30,6 +32,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 public interface PMSExecutionService {
   InputSetYamlWithTemplateDTO getInputSetYamlWithTemplate(String accountId, String orgId, String projectId,

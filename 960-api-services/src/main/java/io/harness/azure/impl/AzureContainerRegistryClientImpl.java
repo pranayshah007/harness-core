@@ -6,7 +6,6 @@
  */
 
 package io.harness.azure.impl;
-
 import static io.harness.azure.model.AzureConstants.ACR_REGISTRY_NAME_BLANK_VALIDATION_MSG;
 import static io.harness.azure.model.AzureConstants.REGISTRY_HOST_BLANK_VALIDATION_MSG;
 import static io.harness.azure.model.AzureConstants.REPOSITORY_NAME_BLANK_VALIDATION_MSG;
@@ -16,6 +15,9 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
 import io.harness.azure.AzureClient;
 import io.harness.azure.client.AzureContainerRegistryClient;
@@ -50,6 +52,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Singleton
 @Slf4j
 public class AzureContainerRegistryClientImpl extends AzureClient implements AzureContainerRegistryClient {
