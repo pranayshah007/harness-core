@@ -9,6 +9,8 @@ package io.harness.platform.notification;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.authorization.AuthorizationServiceHeader.NOTIFICATION_SERVICE;
+import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_ENTITY;
 import static io.harness.notification.NotificationServiceConstants.MAILSERVICE;
 import static io.harness.notification.NotificationServiceConstants.MSTEAMSSERVICE;
 import static io.harness.notification.NotificationServiceConstants.PAGERDUTYSERVICE;
@@ -28,15 +30,18 @@ import io.harness.govern.ProviderModule;
 import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.manage.ManagedScheduledExecutorService;
+import io.harness.metrics.modules.MetricsModule;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.mongo.queue.NGMongoQueueConsumer;
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.ng.core.event.MessageListener;
 import io.harness.notification.SmtpConfig;
 import io.harness.notification.entities.MongoNotificationRequest;
 import io.harness.notification.eventbackbone.MessageConsumer;
 import io.harness.notification.eventbackbone.MongoMessageConsumer;
+import io.harness.notification.eventframework.NotificationAccountEntityCrudStreamListener;
 import io.harness.notification.modules.SmtpConfigClientModule;
 import io.harness.notification.service.ChannelServiceImpl;
 import io.harness.notification.service.MSTeamsServiceImpl;
@@ -56,6 +61,7 @@ import io.harness.notification.service.api.SeedDataPopulaterService;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
+import io.harness.platform.EventsFrameworkModule;
 import io.harness.platform.PlatformConfiguration;
 import io.harness.queue.QueueConsumer;
 import io.harness.queue.QueueController;
@@ -222,8 +228,16 @@ public class NotificationServiceModule extends AbstractModule {
     bind(NotificationService.class).to(NotificationServiceImpl.class);
     bind(NotificationTemplateService.class).to(NotificationTemplateServiceImpl.class);
     bindMessageConsumer();
+    install(new MetricsModule());
     install(new TokenClientModule(this.appConfig.getRbacServiceConfig(),
         this.appConfig.getPlatformSecrets().getNgManagerServiceSecret(), NOTIFICATION_SERVICE.getServiceId()));
+    install(new EventsFrameworkModule(this.appConfig.getEventsFrameworkConfiguration()));
+    registerEventListeners();
+  }
+  private void registerEventListeners() {
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(ACCOUNT_ENTITY + ENTITY_CRUD))
+        .to(NotificationAccountEntityCrudStreamListener.class);
   }
 
   @Provides

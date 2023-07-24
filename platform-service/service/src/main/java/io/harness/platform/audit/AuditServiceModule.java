@@ -42,6 +42,7 @@ import io.harness.outbox.TransactionOutboxModule;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
+import io.harness.platform.EventsFrameworkModule;
 import io.harness.platform.PlatformConfiguration;
 import io.harness.queue.QueueController;
 import io.harness.remote.client.ClientMode;
