@@ -250,4 +250,5 @@ enum EntityTypeProtoEnum {
   BUILD_AND_PUSH_GAR = 237;
   ANCHORE = 238;
   OVERRIDES = 239;
+  IDP_STAGE = 240;
 }
