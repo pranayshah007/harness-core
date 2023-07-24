@@ -4462,7 +4462,12 @@ public class DelegateServiceImpl implements DelegateService {
               .orgIdentifier(delegateSetupDetails != null ? delegateSetupDetails.getOrgIdentifier() : null)
               .projectIdentifier(delegateSetupDetails != null ? delegateSetupDetails.getProjectIdentifier() : null)
               .delegateGroupIdentifier(delegateGroup.getIdentifier())
-              .delegateSetupDetails(delegateSetupDetails)
+              .delegateSetupDetails(DelegateSetupDetails.builder()
+                                        .identifier(delegateSetupDetails.getIdentifier())
+                                        .delegateType(delegateSetupDetails.getDelegateType())
+                                        .tokenName(delegateSetupDetails.getTokenName())
+                                        .tags(delegateSetupDetails.getTags())
+                                        .build())
               .build());
     } else {
       if (delegateGroup != null) {

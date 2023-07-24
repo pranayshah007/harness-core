@@ -34,6 +34,7 @@ import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxEventHandler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import io.serializer.HObjectMapper;
 import java.io.IOException;
@@ -138,7 +139,8 @@ public class DelegateOutboxEventHandler implements OutboxEventHandler {
     return auditClientService.publishAudit(auditEntry, globalContext);
   }
 
-  private boolean handleDelegateRegisterEvent(OutboxEvent outboxEvent) throws IOException {
+  @VisibleForTesting
+  protected boolean handleDelegateRegisterEvent(OutboxEvent outboxEvent) throws IOException {
     GlobalContext globalContext = outboxEvent.getGlobalContext();
     DelegateRegisterEvent delegateRegisterEvent =
         objectMapper.readValue(outboxEvent.getEventData(), DelegateRegisterEvent.class);
