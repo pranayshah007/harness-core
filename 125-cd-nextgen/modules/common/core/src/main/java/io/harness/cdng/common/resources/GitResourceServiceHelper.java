@@ -112,7 +112,7 @@ public class GitResourceServiceHelper {
       GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDTO.getConnectorConfig();
       gitStoreDelegateConfigBuilder.gitConfigDTO(githubConnectorDTO);
       gitStoreDelegateConfigBuilder.encryptedDataDetails(
-          gitConfigAuthenticationInfoHelper.getGithubAppEncryptedDataDetail(githubConnectorDTO, basicNGAccessObject));
+          gitConfigAuthenticationInfoHelper.getGithubAppEncryptedDataDetail(githubConnectorDTO, ngAccess));
       gitStoreDelegateConfigBuilder.isGithubAppAuthentication(true);
     }
 
