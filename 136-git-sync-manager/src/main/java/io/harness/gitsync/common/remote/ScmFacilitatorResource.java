@@ -32,6 +32,7 @@ import io.harness.gitsync.common.dtos.GetFileResponseDTO;
 import io.harness.gitsync.common.dtos.GitBranchesResponseDTO;
 import io.harness.gitsync.common.dtos.GitFileContent;
 import io.harness.gitsync.common.dtos.GitRepositoryResponseDTO;
+import io.harness.gitsync.common.dtos.RepoFilterParamsDTO;
 import io.harness.gitsync.common.dtos.RepoValidationResponse;
 import io.harness.gitsync.common.dtos.SaasGitDTO;
 import io.harness.gitsync.common.dtos.ScmBatchGetFileRequestDTO;
@@ -81,6 +82,7 @@ import java.util.Map;
 import javax.validation.Valid;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -350,14 +352,13 @@ public class ScmFacilitatorResource {
       @Parameter(description = SIZE_PARAM_MESSAGE + "(max 100)"
               + "Default Value: 50") @QueryParam(NGCommonEntityConstants.SIZE) @DefaultValue("50") @Max(100)
       int pageSize,
-      @Parameter(description = GitSyncApiConstants.REPO_NAME_SEARCH_TERM_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.REPO_NAME_SEARCH_TERM) @DefaultValue("") String repoNameSearchTerm,
+      @BeanParam RepoFilterParamsDTO repoFilterParamsDTO,
       @Parameter(description = GitSyncApiConstants.APPLY_GITX_REPO_ALLOW_LIST_FILTER_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.APPLY_GITX_REPO_ALLOW_LIST_FILTER) @DefaultValue("false")
       boolean applyGitXRepoAllowListFilter) {
     return ResponseDTO.newResponse(scmFacilitatorService.listReposByRefConnector(accountIdentifier, orgIdentifier,
         projectIdentifier, connectorRef, PageRequest.builder().pageIndex(pageNum).pageSize(pageSize).build(),
-        repoNameSearchTerm, applyGitXRepoAllowListFilter));
+        repoFilterParamsDTO, applyGitXRepoAllowListFilter));
   }
 
   @GET

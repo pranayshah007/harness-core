@@ -8,6 +8,7 @@
 package io.harness.impl.scm;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.encryption.FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -131,6 +132,9 @@ public class ScmGitProviderHelper {
 
   public String getRepoOwner(ScmConnector scmConnector) {
     String slug = getSlug(scmConnector);
+    if (isEmpty(slug)) {
+      return "";
+    }
     return slug.split("/")[0];
   }
 }

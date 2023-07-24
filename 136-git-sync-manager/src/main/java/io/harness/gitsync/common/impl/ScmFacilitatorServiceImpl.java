@@ -177,16 +177,16 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
 
   @Override
   public List<GitRepositoryResponseDTO> listReposByRefConnector(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String connectorRef, PageRequest pageRequest, String repoNameSearchTerm,
-      boolean applyGitXRepoAllowListFilter) {
+      String projectIdentifier, String connectorRef, PageRequest pageRequest,
+      io.harness.gitsync.common.dtos.RepoFilterParamsDTO repoFilterParamsDTO, boolean applyGitXRepoAllowListFilter) {
     ScmConnector scmConnector =
         gitSyncConnectorHelper.getScmConnector(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef);
-
+    RepoFilterParamsDTO repoFilterParams = buildRepoFilterParamsDTO(repoFilterParamsDTO);
     GetUserReposResponse response = scmOrchestratorService.processScmRequestUsingConnectorSettings(
         scmClientFacilitatorService
         -> scmClientFacilitatorService.listUserRepos(accountIdentifier, orgIdentifier, projectIdentifier, scmConnector,
             PageRequestDTO.builder().pageIndex(pageRequest.getPageIndex()).pageSize(pageRequest.getPageSize()).build(),
-            RepoFilterParamsDTO.builder().repoName(repoNameSearchTerm).build()),
+            repoFilterParams),
         scmConnector);
     if (ScmApiErrorHandlingHelper.isFailureResponse(response.getStatus(), scmConnector.getConnectorType())) {
       ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.LIST_REPOSITORIES, scmConnector.getConnectorType(),
@@ -1260,5 +1260,16 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
       gitRepoAllowlistHelper.validateRepo(
           scmGetFileByBranchRequestDTO.getScope(), scmConnector, scmGetFileByBranchRequestDTO.getRepoName());
     }
+  }
+
+  private RepoFilterParamsDTO buildRepoFilterParamsDTO(
+      io.harness.gitsync.common.dtos.RepoFilterParamsDTO repoFilterParamsDTO) {
+    if (repoFilterParamsDTO == null) {
+      return RepoFilterParamsDTO.builder().build();
+    }
+    return RepoFilterParamsDTO.builder()
+        .repoName(repoFilterParamsDTO.getRepoName())
+        .userName(repoFilterParamsDTO.getUserName())
+        .build();
   }
 }

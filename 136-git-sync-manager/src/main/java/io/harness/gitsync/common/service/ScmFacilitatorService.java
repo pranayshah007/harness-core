@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.gitsync.common.dtos.GitBranchesResponseDTO;
 import io.harness.gitsync.common.dtos.GitRepositoryResponseDTO;
+import io.harness.gitsync.common.dtos.RepoFilterParamsDTO;
 import io.harness.gitsync.common.dtos.ScmCommitFileResponseDTO;
 import io.harness.gitsync.common.dtos.ScmCreateFileRequestDTO;
 import io.harness.gitsync.common.dtos.ScmCreatePRRequestDTO;
@@ -41,7 +42,7 @@ public interface ScmFacilitatorService {
       String connectorIdentifierRef, String repoURL, PageRequest pageRequest, String searchTerm);
 
   List<GitRepositoryResponseDTO> listReposByRefConnector(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String connectorRef, PageRequest pageRequest, String repoNameSearchTerm,
+      String projectIdentifier, String connectorRef, PageRequest pageRequest, RepoFilterParamsDTO repoFilterParamsDTO,
       boolean applyGitXRepoAllowListFilter);
 
   ScmCommitFileResponseDTO createFile(ScmCreateFileRequestDTO scmCommitRequestDTO);

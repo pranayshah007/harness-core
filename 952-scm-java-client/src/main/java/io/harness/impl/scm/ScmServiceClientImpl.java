@@ -878,12 +878,12 @@ public class ScmServiceClientImpl implements ScmServiceClient {
 
   @Override
   public GetUserReposResponse getUserRepos(
-      ScmConnector scmConnector, io.harness.beans.PageRequestDTO pageRequest, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+      ScmConnector scmConnector, PageRequestDTO pageRequest, SCMGrpc.SCMBlockingStub scmBlockingStub) {
     GetUserReposRequest getUserReposRequest = buildGetUserReposRequest(scmConnector, pageRequest, null);
     return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getUserRepos, getUserReposRequest);
   }
   @Override
-  public GetUserReposResponse getUserRepos(ScmConnector scmConnector, io.harness.beans.PageRequestDTO pageRequest,
+  public GetUserReposResponse getUserRepos(ScmConnector scmConnector, PageRequestDTO pageRequest,
       SCMGrpc.SCMBlockingStub scmBlockingStub, RepoFilterParamsDTO repoFilterParamsDTO) {
     GetUserReposRequest getUserReposRequest = buildGetUserReposRequest(scmConnector, pageRequest, repoFilterParamsDTO);
     return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getUserRepos, getUserReposRequest);
@@ -1208,7 +1208,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   }
 
   private GetUserReposRequest buildGetUserReposRequest(
-      ScmConnector scmConnector, io.harness.beans.PageRequestDTO pageRequest, RepoFilterParamsDTO repoFilterParamsDTO) {
+      ScmConnector scmConnector, PageRequestDTO pageRequest, RepoFilterParamsDTO repoFilterParamsDTO) {
     Provider gitProvider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
     GetUserReposRequest getUserReposRequest = GetUserReposRequest.newBuilder()
                                                   .setPagination(PageRequest.newBuilder()
