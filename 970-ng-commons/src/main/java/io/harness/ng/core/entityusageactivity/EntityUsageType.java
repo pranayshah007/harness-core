@@ -7,4 +7,6 @@
 
 package io.harness.ng.core.entityusageactivity;
 
-public enum EntityUsageType { TEST_CONNECTION; }
+public enum EntityUsageType {
+  TEST_CONNECTION;
+}

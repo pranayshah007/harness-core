@@ -42,7 +42,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(IDPStageSpecTypeConstants.IDP_STAGE)
 @TypeAlias("IDPStageNode")
 @OwnedBy(IDP)
-@RecasterAlias("io.harness.beans.stages.IDPStageNode")
+@RecasterAlias("io.harness.idp.pipeline.stages.node.IDPStageNode")
 public class IDPStageNode extends AbstractStageNode {
   @JsonProperty("type") @NotNull StepType type = StepType.IDPStage;
 
