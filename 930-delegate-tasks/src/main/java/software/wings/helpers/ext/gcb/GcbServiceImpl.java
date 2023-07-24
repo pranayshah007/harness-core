@@ -192,7 +192,8 @@ public class GcbServiceImpl implements GcbService {
   private Retry buildRetryAndRegisterListeners() {
     final Retry exponentialRetry = RetryHelper.getExponentialRetry(this.getClass().getSimpleName(),
         new Class[] {ConnectException.class, TimeoutException.class, ConnectionShutdownException.class,
-            StreamResetException.class, SocketTimeoutException.class, GcbClientException.class, SocketException.class});
+            StreamResetException.class, SocketTimeoutException.class, GcbClientException.class, SocketException.class,
+            IOException.class});
     RetryHelper.registerEventListeners(exponentialRetry);
     return exponentialRetry;
   }
