@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AzureUtils {
   private final String AZURE_LOGS_BASE_URL = "https://api.loganalytics.io/";
-  private final String AZURE_METRICS_BASE_URL = "https://management.azure.com/";
+  private final String AZURE_METRICS_BASE_URL = "https://management.azure.com";
   public static final String AZURE_TOKEN_URL_FORMAT = "https://login.microsoftonline.com/%s/oauth2/token";
 
   public String getBaseUrl(VerificationType type) {

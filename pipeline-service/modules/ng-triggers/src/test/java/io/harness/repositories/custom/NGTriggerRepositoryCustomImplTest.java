@@ -8,21 +8,26 @@
 package io.harness.repositories.custom;
 
 import static io.harness.rule.OwnerRule.MEET;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
+import io.harness.ngtriggers.beans.entity.NGTriggerEntity.NGTriggerEntityKeys;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookRegistrationStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.PollingSubscriptionStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.StatusResult;
 import io.harness.ngtriggers.beans.entity.metadata.status.TriggerStatus;
+import io.harness.ngtriggers.beans.entity.metadata.status.TriggerStatus.TriggerStatusKeys;
 import io.harness.ngtriggers.beans.entity.metadata.status.ValidationStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.WebhookAutoRegistrationStatus;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
@@ -31,8 +36,10 @@ import io.harness.rule.Owner;
 
 import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.UpdateResult;
 import java.util.Collections;
 import java.util.List;
+import org.bson.BsonBoolean;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -46,6 +53,7 @@ import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.mongodb.core.query.UpdateDefinition;
 
 public class NGTriggerRepositoryCustomImplTest extends CategoryTest {
@@ -333,5 +341,122 @@ public class NGTriggerRepositoryCustomImplTest extends CategoryTest {
     when(bulkWriteResult.getModifiedCount()).thenThrow(new InvalidRequestException("message"));
     assertThatThrownBy(() -> ngTriggerRepositoryCustom.updateTriggerYaml(Collections.singletonList(ngTriggerEntity)))
         .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testUpdateManyTriggerPollingSubscriptionStatusBySignatures() {
+    Update update = new Update();
+    PollingSubscriptionStatus pollingSubscriptionStatusUpdate = PollingSubscriptionStatus.builder()
+                                                                    .statusResult(StatusResult.SUCCESS)
+                                                                    .detailedMessage("")
+                                                                    .lastPolled(List.of("1.0"))
+                                                                    .lastPollingUpdate(123L)
+                                                                    .build();
+    update.set(NGTriggerEntityKeys.triggerStatus + "." + TriggerStatusKeys.pollingSubscriptionStatus,
+        pollingSubscriptionStatusUpdate);
+    when(mongoTemplate.updateMulti(any(Query.class), any(Update.class), eq(NGTriggerEntity.class)))
+        .thenReturn(UpdateResult.acknowledged(1, 1L, new BsonBoolean(true)));
+    boolean result = ngTriggerRepositoryCustom.updateManyTriggerPollingSubscriptionStatusBySignatures(
+        "account", List.of("sig"), true, "", List.of("1.0"), 123L);
+    assertThat(result).isTrue();
+    verify(mongoTemplate, times(1)).updateMulti(any(Query.class), eq(update), eq(NGTriggerEntity.class));
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testUpdateTriggerStatusSuccess() {
+    List<String> versions = List.of("1.0", "1.1");
+    Long timestamp = 123L;
+    NGTriggerEntity ngTriggerEntity =
+        NGTriggerEntity.builder()
+            .name(name)
+            .type(NGTriggerType.ARTIFACT)
+            .accountId(accountId)
+            .identifier(identifier)
+            .projectIdentifier(projectId)
+            .orgIdentifier(orgId)
+            .targetIdentifier(pipelineId)
+            .triggerStatus(TriggerStatus.builder()
+                               .webhookAutoRegistrationStatus(WebhookAutoRegistrationStatus.builder()
+                                                                  .registrationResult(WebhookRegistrationStatus.SUCCESS)
+                                                                  .build())
+                               .validationStatus(ValidationStatus.builder().statusResult(StatusResult.SUCCESS).build())
+                               .pollingSubscriptionStatus(PollingSubscriptionStatus.builder()
+                                                              .statusResult(StatusResult.SUCCESS)
+                                                              .lastPolled(versions)
+                                                              .lastPollingUpdate(timestamp)
+                                                              .build())
+                               .status(StatusResult.SUCCESS)
+                               .build())
+            .build();
+    NGTriggerRepositoryCustomImpl.updateTriggerStatus(List.of(ngTriggerEntity));
+    assertThat(ngTriggerEntity.getTriggerStatus().getStatus()).isEqualTo(StatusResult.SUCCESS);
+    assertThat(ngTriggerEntity.getTriggerStatus().getLastPolled()).isEqualTo(versions);
+    assertThat(ngTriggerEntity.getTriggerStatus().getLastPollingUpdate()).isEqualTo(timestamp);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testUpdateTriggerStatusPollingSubscriptionFailure() {
+    Long timestamp = 123L;
+    NGTriggerEntity ngTriggerEntity =
+        NGTriggerEntity.builder()
+            .name(name)
+            .type(NGTriggerType.ARTIFACT)
+            .accountId(accountId)
+            .identifier(identifier)
+            .projectIdentifier(projectId)
+            .orgIdentifier(orgId)
+            .targetIdentifier(pipelineId)
+            .triggerStatus(TriggerStatus.builder()
+                               .webhookAutoRegistrationStatus(WebhookAutoRegistrationStatus.builder()
+                                                                  .registrationResult(WebhookRegistrationStatus.SUCCESS)
+                                                                  .build())
+                               .validationStatus(ValidationStatus.builder().statusResult(StatusResult.SUCCESS).build())
+                               .pollingSubscriptionStatus(PollingSubscriptionStatus.builder()
+                                                              .statusResult(StatusResult.FAILED)
+                                                              .lastPollingUpdate(timestamp)
+                                                              .build())
+                               .status(StatusResult.SUCCESS)
+                               .build())
+            .build();
+    NGTriggerRepositoryCustomImpl.updateTriggerStatus(List.of(ngTriggerEntity));
+    assertThat(ngTriggerEntity.getTriggerStatus().getStatus()).isEqualTo(StatusResult.FAILED);
+    assertThat(ngTriggerEntity.getTriggerStatus().getLastPollingUpdate()).isEqualTo(timestamp);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testUpdateTriggerStatusPollingSubscriptionPending() {
+    Long timestamp = 123L;
+    NGTriggerEntity ngTriggerEntity =
+        NGTriggerEntity.builder()
+            .name(name)
+            .type(NGTriggerType.ARTIFACT)
+            .accountId(accountId)
+            .identifier(identifier)
+            .projectIdentifier(projectId)
+            .orgIdentifier(orgId)
+            .targetIdentifier(pipelineId)
+            .triggerStatus(TriggerStatus.builder()
+                               .webhookAutoRegistrationStatus(WebhookAutoRegistrationStatus.builder()
+                                                                  .registrationResult(WebhookRegistrationStatus.SUCCESS)
+                                                                  .build())
+                               .validationStatus(ValidationStatus.builder().statusResult(StatusResult.SUCCESS).build())
+                               .pollingSubscriptionStatus(PollingSubscriptionStatus.builder()
+                                                              .statusResult(StatusResult.PENDING)
+                                                              .lastPollingUpdate(timestamp)
+                                                              .build())
+                               .status(StatusResult.SUCCESS)
+                               .build())
+            .build();
+    NGTriggerRepositoryCustomImpl.updateTriggerStatus(List.of(ngTriggerEntity));
+    // TODO: (Vinicius) Change this to PENDING when ng-manager changes are deployed.
+    assertThat(ngTriggerEntity.getTriggerStatus().getStatus()).isEqualTo(StatusResult.SUCCESS);
   }
 }

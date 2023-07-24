@@ -7,11 +7,14 @@
 
 package io.harness.delegate.task.localstore;
 
+import io.harness.annotation.RecasterAlias;
+
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
+@RecasterAlias("io.harness.delegate.task.localstore.ManifestFiles")
 public class ManifestFiles {
   private String filePath;
   private String fileContent;

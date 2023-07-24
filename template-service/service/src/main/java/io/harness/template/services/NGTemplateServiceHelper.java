@@ -22,7 +22,6 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
@@ -162,17 +161,20 @@ public class NGTemplateServiceHelper {
     } catch (NGTemplateException e) {
       throw new NGTemplateException(e.getMessage(), e);
     } catch (Exception e) {
-      log.error(String.format("Error while retrieving template with identifier [%s] and versionLabel [%s]",
+      log.error(String.format("Unable to retrieve template with identifier [%s] and versionLabel [%s]",
                     templateIdentifier, versionLabel),
           e);
       ScmException exception = TemplateUtils.getScmException(e);
       if (null != exception) {
-        throw new InvalidRequestException("Error while retrieving template with identifier " + templateIdentifier
-            + " and versionLabel " + versionLabel + " due to " + ExceptionUtils.getMessage(e));
+        throw new InvalidRequestException(
+            String.format("Unable to retrieve template with identifier [%s] and versionLabel [%s]:", templateIdentifier,
+                versionLabel),
+            e);
       } else {
         throw new InvalidRequestException(
-            String.format("Error while retrieving template with identifier [%s] and versionLabel [%s]: %s",
-                templateIdentifier, versionLabel, e.getMessage()));
+            String.format("Unable to retrieve template with identifier [%s] and versionLabel [%s]:", templateIdentifier,
+                versionLabel),
+            e);
       }
     }
   }

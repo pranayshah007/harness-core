@@ -22,8 +22,11 @@ go_library(
     importpath = "github.com/harness/harness-core/product/log-service/handler",
     visibility = ["//visibility:public"],
     deps = [
+        "//product/log-service/cache",
         "//product/log-service/config",
+        "//product/log-service/entity",
         "//product/log-service/logger",
+        "//product/log-service/queue",
         "//product/log-service/store",
         "//product/log-service/store/bolt",
         "//product/log-service/stream",
@@ -44,7 +47,9 @@ go_test(
     srcs = ["middleware_test.go"],
     embed = [":handler"],
     deps = [
+        "//product/log-service/cache/memory",
         "//product/log-service/config",
+        "//product/log-service/entity",
         "//product/platform/client",
         "@com_github_dchest_authcookie//:authcookie",
         "@com_github_stretchr_testify//assert",

@@ -13,7 +13,6 @@ import io.harness.dto.PollingInfoForTriggers;
 import io.harness.dto.PollingResponseDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 
-import javax.ws.rs.QueryParam;
 import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
@@ -33,7 +32,7 @@ public interface PollingResourceClient {
   @POST(POLLING_API + "/subscribe") Call<ResponseDTO<PollingResponseDTO>> subscribe(@Body RequestBody pollingItem);
   @GET(POLLING_API + "/polling-info-for-triggers")
   Call<ResponseDTO<PollingInfoForTriggers>> getPollingInfoForTriggers(
-      @Query("accountId") String accountId, @QueryParam("pollingDocId") String pollingDocId);
+      @Query(value = "accountId") String accountId, @Query(value = "pollingDocId") String pollingDocId);
 
   @POST(POLLING_API + "/unsubscribe") Call<Boolean> unsubscribe(@Body RequestBody pollingItem);
 }

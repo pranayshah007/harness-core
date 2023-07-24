@@ -66,6 +66,7 @@ public class NGCommonEntityConstants {
   public static final String REPO_NAME = "repoName";
   public static final String PLAN_KEY = "planExecutionId";
   public static final String STAGE_KEY = "stageExecutionId";
+  public static final String STEP_KEY = "stepExecutionId";
   public static final String TYPE_KEY = "type";
   public static final String TOKEN_KEY = "tokenId";
   public static final String REFERRED_ENTITY_TYPE = "referredEntityType";

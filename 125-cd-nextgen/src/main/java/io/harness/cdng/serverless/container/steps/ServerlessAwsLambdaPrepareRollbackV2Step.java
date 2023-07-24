@@ -102,12 +102,16 @@ public class ServerlessAwsLambdaPrepareRollbackV2Step extends AbstractContainerS
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     // If any of the responses are in serialized format, deserialize them
     containerStepExecutionResponseHelper.deserializeResponse(responseDataMap);
+    log.info("Serverless Aws Lambda Prepare Rollback V2:  Response deserialized");
 
     StepStatusTaskResponseData stepStatusTaskResponseData =
         containerStepExecutionResponseHelper.filterK8StepResponse(responseDataMap);
 
     if (stepStatusTaskResponseData == null) {
       log.info("Serverless Aws Lambda Prepare Rollback V2:  Received stepStatusTaskResponseData as null");
+    } else if (stepStatusTaskResponseData.getStepStatus() == null) {
+      log.info(
+          "Serverless Aws Lambda Prepare Rollback V2:  Received stepStatusTaskResponseData.stepExecutionStatus as null");
     } else {
       log.info(String.format(
           "Serverless Aws Lambda Prepare Rollback V2:  Received stepStatusTaskResponseData with status %s",
@@ -116,23 +120,21 @@ public class ServerlessAwsLambdaPrepareRollbackV2Step extends AbstractContainerS
 
     String stackDetailsString = null;
 
-    for (Map.Entry<String, ResponseData> entry : responseDataMap.entrySet()) {
-      ResponseData responseData = entry.getValue();
-      if (responseData instanceof StepStatusTaskResponseData) {
-        stepStatusTaskResponseData = (StepStatusTaskResponseData) responseData;
-      }
-    }
-
     StepResponse.StepOutcome stepOutcome = null;
 
-    if (stepStatusTaskResponseData != null
-        && stepStatusTaskResponseData.getStepStatus().getStepExecutionStatus() == StepExecutionStatus.SUCCESS) {
+    if (stepStatusTaskResponseData != null && stepStatusTaskResponseData.getStepStatus() != null
+        && StepExecutionStatus.SUCCESS == stepStatusTaskResponseData.getStepStatus().getStepExecutionStatus()) {
       StepOutput stepOutput = stepStatusTaskResponseData.getStepStatus().getOutput();
+
+      ServerlessAwsLambdaPrepareRollbackDataOutcome serverlessAwsLambdaPrepareRollbackDataOutcome = null;
 
       if (stepOutput instanceof StepMapOutput) {
         StepMapOutput stepMapOutput = (StepMapOutput) stepOutput;
-        String stackDetailsByte64 = stepMapOutput.getMap().get("stackDetails");
-        stackDetailsString = serverlessStepCommonHelper.convertByte64ToString(stackDetailsByte64);
+        if (stepMapOutput.getMap() != null && stepMapOutput.getMap().containsKey("stackDetails")) {
+          log.info("Serverless Aws Lambda Prepare Rollback V2:  Stack Details Received");
+          String stackDetailsByte64 = stepMapOutput.getMap().get("stackDetails");
+          stackDetailsString = serverlessStepCommonHelper.convertByte64ToString(stackDetailsByte64);
+        }
       }
 
       StackDetails stackDetails = null;
@@ -142,10 +144,16 @@ public class ServerlessAwsLambdaPrepareRollbackV2Step extends AbstractContainerS
         log.error("Error while parsing Stack Details", e);
       }
 
-      ServerlessAwsLambdaPrepareRollbackDataOutcome serverlessAwsLambdaPrepareRollbackDataOutcome = null;
       if (stackDetails != null) {
         serverlessAwsLambdaPrepareRollbackDataOutcome =
             ServerlessAwsLambdaPrepareRollbackDataOutcome.builder().stackDetails(stackDetails).build();
+        executionSweepingOutputService.consume(ambiance,
+            OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_DATA_OUTCOME_V2,
+            serverlessAwsLambdaPrepareRollbackDataOutcome, StepOutcomeGroup.STEP.name());
+      } else {
+        log.info("No stack details was received in Serverless Aws Lambda Prepare Rollback V2 Response");
+        serverlessAwsLambdaPrepareRollbackDataOutcome =
+            ServerlessAwsLambdaPrepareRollbackDataOutcome.builder().firstDeployment(true).build();
         executionSweepingOutputService.consume(ambiance,
             OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_DATA_OUTCOME_V2,
             serverlessAwsLambdaPrepareRollbackDataOutcome, StepOutcomeGroup.STEP.name());

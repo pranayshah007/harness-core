@@ -150,7 +150,8 @@ public class K8sNodeRecommendationTasklet implements Tasklet {
     log.info("The monthly stat is: {}", stats);
 
     final String clusterName = clusterHelper.fetchClusterName(nodePoolId.getClusterid());
-    recommendationCrudService.upsertNodeRecommendation(mongoEntityId, jobConstants, nodePoolId, clusterName, stats);
+    recommendationCrudService.upsertNodeRecommendation(
+        mongoEntityId, jobConstants, nodePoolId, clusterName, stats, serviceProvider.getCloudProvider().name());
     ignoreListService.updateNodeRecommendationState(
         mongoEntityId, jobConstants.getAccountId(), clusterName, nodePoolId.getNodepoolname());
   }

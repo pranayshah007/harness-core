@@ -80,6 +80,9 @@ public enum PredefinedTemplate {
       "cvng_notification_templates/cvng_monitoredservice_slack.txt", "cvng_monitoredservice_slack"),
   CVNG_MONITOREDSERVICE_ET_SLACK(
       "cvng_notification_templates/cvng_monitoredservice_et_slack.txt", "cvng_monitoredservice_et_slack"),
+
+  CVNG_MONITOREDSERVICE_REPORT_SLACK(
+      "cvng_notification_templates/cvng_monitoredservice_report_slack.txt", "cvng_monitoredservice_report_slack"),
   CVNG_MONITOREDSERVICE_EMAIL(
       "cvng_notification_templates/cvng_monitoredservice_email.txt", "cvng_monitoredservice_email"),
   CVNG_MONITOREDSERVICE_ET_EMAIL(

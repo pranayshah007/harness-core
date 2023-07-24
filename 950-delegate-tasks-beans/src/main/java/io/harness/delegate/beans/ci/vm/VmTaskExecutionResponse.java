@@ -29,6 +29,7 @@ public class VmTaskExecutionResponse implements CITaskExecutionResponse {
   @JsonProperty("command_execution_status") private CommandExecutionStatus commandExecutionStatus;
   @JsonProperty("service_statuses") private List<VmServiceStatus> serviceStatuses;
   @JsonProperty("artifact") private byte[] artifact;
+  @JsonProperty("pool_driver_used") private String poolDriverUsed;
 
   @Builder.Default private static final CITaskExecutionResponse.Type type = Type.VM;
 

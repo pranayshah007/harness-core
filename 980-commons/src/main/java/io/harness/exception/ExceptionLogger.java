@@ -74,8 +74,8 @@ public class ExceptionLogger {
       if (list.stream().noneMatch(msg -> StringUtils.equals(responseMessage.getMessage(), msg.getMessage()))) {
         list.add(responseMessage);
       }
-      if (exception.getResponseMessages() != null) {
-        list.addAll(exception.getResponseMessages());
+      if (exception instanceof HasResponseMessages) {
+        list.addAll(((HasResponseMessages) exception).getResponseMessages());
       }
     }
     return list;

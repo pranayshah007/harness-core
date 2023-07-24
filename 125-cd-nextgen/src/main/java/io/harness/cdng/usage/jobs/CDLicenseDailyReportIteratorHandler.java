@@ -51,7 +51,7 @@ public class CDLicenseDailyReportIteratorHandler implements MongoPersistenceIter
   private static final Duration ACCEPTABLE_EXECUTION_TIME = ofSeconds(
       13 * 30); // It needs to be up to (12 + 1) * 30s due to 12 months' report plus report for the current month
   private static final int DEFAULT_THREAD_POOL_SIZE = 5;
-  private static final long DEFAULT_TARGET_INTERVAL_IN_SECONDS = 24 * 60 * 60; // 24 hours
+  private static final long DEFAULT_TARGET_INTERVAL_IN_SECONDS = 12L * 60 * 60; // 12 hours
   public static int QUERY_ON_NUMBER_OF_DAYS = 30;
   public static int BULK_INSERT_LIMIT = 100;
   private static final CDLicenseDailyReportIteratorConfig DEFAULT_ITERATOR_CONFIG =
@@ -104,7 +104,7 @@ public class CDLicenseDailyReportIteratorHandler implements MongoPersistenceIter
     BULK_INSERT_LIMIT = cdLicenseDailyReportIteratorConfig.getBulkInsertLimit();
 
     log.info(
-        "Created {} iterator, pool size: {}, target interval: {}, bulk insert limit: {}, query on days number: {} ",
+        "Created {} iterator, pool size: {}, target interval: {}s, bulk insert limit: {}, query on days number: {} ",
         this.getClass().getName(), ngIteratorConfig.getThreadPoolSize(), ngIteratorConfig.getTargetIntervalInSeconds(),
         cdLicenseDailyReportIteratorConfig.getBulkInsertLimit(),
         cdLicenseDailyReportIteratorConfig.getQueryOnDaysNumber());
@@ -142,7 +142,7 @@ public class CDLicenseDailyReportIteratorHandler implements MongoPersistenceIter
       log.info("Running CD License daily report iterator for account: {}, licenseType: {}", accountId, licenseType);
       Stopwatch sw = Stopwatch.createStarted();
       createLicenseDailyReport(accountId, licenseType);
-      log.info("Successfully created CD license daily report, time taken : {}, accountId: {}, licenseType: {}",
+      log.info("Successfully created CD license daily report, time taken : {}ms, accountId: {}, licenseType: {}",
           sw.elapsed(TimeUnit.MILLISECONDS), accountId, licenseType);
     } catch (Exception ex) {
       log.warn("Failed to create CD license daily report, accountId: {}", accountId, ex);

@@ -33,6 +33,7 @@ import lombok.experimental.SuperBuilder;
 @ApiModel("NGTriggerEventHistoryResponse")
 @OwnedBy(PIPELINE)
 public class NGTriggerEventHistoryBaseDTO {
+  String triggerIdentifier;
   String accountId;
   String eventCorrelationId;
   String payload;

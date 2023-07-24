@@ -50,6 +50,7 @@ def sonarqube_test(
         modules = {},
         sq_properties_template = None,
         tags = [],
+        sonarqube_srcs = [],
         visibility = []):
     if language == "go":
         srcs = native.glob(exclude_tests_from_srcs(["*.go"]))
@@ -73,13 +74,14 @@ def sonarqube_test(
         tags = ["manual", "no-ide", "sonarqube"]
     if visibility == []:
         visibility = ["//visibility:public"]
-
+    if sonarqube_srcs == []:
+        sonarqube_srcs = srcs
     sq_project(
         language = language,
         name = name,
         project_key = project_key,
         project_name = project_name,
-        srcs = srcs,
+        srcs = sonarqube_srcs,
         targets = targets,
         test_srcs = test_srcs,
         test_targets = test_targets,
@@ -97,12 +99,12 @@ def run_analysis_per_module(
         test_only = False,
         run_duplicated = True,
         **kwargs):
-    run_analysis(checkstyle_srcs = checkstyle_srcs, pmd_srcs = pmd_srcs, sonarqube_srcs = sonarqube_srcs, run_pmd = not test_only, run_sonar = not test_only, run_duplicated = not test_only and run_duplicated)
+    run_analysis(checkstyle_srcs = checkstyle_srcs, pmd_srcs = pmd_srcs, run_pmd = not test_only, run_sonar = False, run_duplicated = not test_only and run_duplicated, run_checkstyle = False)
 
 def run_analysis(
-        checkstyle_srcs = ["src/**/*"],
-        pmd_srcs = ["src/main/**/*"],
-        sonarqube_srcs = ["src/main/java/**/*.java"],
+        checkstyle_srcs = [],
+        pmd_srcs = [],
+        sonarqube_srcs = [],
         run_checkstyle = True,
         run_pmd = True,
         run_sonar = True,
@@ -120,7 +122,7 @@ def run_analysis(
             pmd(pmd_srcs)
 
         if run_sonar:
-            sonarqube_test(language, targets, test_targets)
+            sonarqube_test(language, targets, test_targets, sonarqube_srcs = sonarqube_srcs)
 
         if run_duplicated:
             report_duplicated()
@@ -128,7 +130,7 @@ def run_analysis(
         language = kwargs.get("language")
         targets = kwargs.get("targets")
         test_targets = kwargs.get("test_targets")
-        sonarqube_test(language, targets, test_targets)
+        sonarqube_test(language, targets, test_targets, sonarqube_srcs = sonarqube_srcs)
 
 def maven_test_artifact(artifact):
     entities = artifact.split(":")

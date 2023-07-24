@@ -116,6 +116,7 @@ public final class EventsFrameworkConstants {
 
   public static final String PMS_ORCHESTRATION_NOTIFY_EVENT = "pms_orchestration_notify_event";
   public static final String CI_ORCHESTRATION_NOTIFY_EVENT = "ci_orchestration_notify_event";
+  public static final String STO_ORCHESTRATION_NOTIFY_EVENT = "sto_orchestration_notify_event";
   public static final int PMS_ORCHESTRATION_NOTIFY_EVENT_BATCH_SIZE = 20;
   public static final int PMS_ORCHESTRATION_NOTIFY_EVENT_MAX_TOPIC_SIZE = 5000;
 

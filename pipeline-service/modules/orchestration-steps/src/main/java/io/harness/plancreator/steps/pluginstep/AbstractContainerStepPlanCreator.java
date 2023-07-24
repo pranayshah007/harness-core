@@ -13,6 +13,7 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.advisers.rollback.RollbackStrategy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.steps.GenericPlanCreatorUtils;
 import io.harness.plancreator.steps.InitContainerStepPlanCreater;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -23,6 +24,7 @@ import io.harness.plancreator.steps.internal.PmsStepPlanCreatorUtils;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
+import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -49,13 +51,17 @@ import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
 import io.harness.utils.PlanCreatorUtilsCommon;
 import io.harness.utils.TimeoutUtils;
 import io.harness.when.utils.RunInfoUtils;
+import io.harness.yaml.core.failurestrategy.FailureStrategyActionConfig;
+import io.harness.yaml.core.failurestrategy.NGFailureActionType;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -90,9 +96,7 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
     }
     PlanNode initPlanNode = InitContainerStepPlanCreater.createPlanForField(
         initStepNodeId, stepParameters, advisorParametersInitStep, StepSpecTypeConstants.INIT_CONTAINER_STEP);
-    PlanNode stepPlanNode = createPlanForStep(stepNodeId, stepParameters,
-        PmsStepPlanCreatorUtils.getAdviserObtainmentForFailureStrategy(
-            kryoSerializer, ctx.getCurrentField(), isStepInsideRollback(ctx.getCurrentField()), false));
+    PlanNode stepPlanNode = createPlanForStep(stepNodeId, stepParameters, getAdviserObtainmentsForStepNode(ctx));
 
     planCreationResponseMap.put(initPlanNode.getUuid(), PlanCreationResponse.builder().planNode(initPlanNode).build());
     planCreationResponseMap.put(stepPlanNode.getUuid(), PlanCreationResponse.builder().planNode(stepPlanNode).build());
@@ -101,6 +105,30 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
         kryoSerializer, ctx, config.getUuid(), config.getName(), config.getIdentifier(), planCreationResponseMap);
 
     return planCreationResponseMap;
+  }
+
+  private List<AdviserObtainment> getAdviserObtainmentsForStepNode(PlanCreationContext ctx) {
+    final YamlField currentField = ctx.getCurrentField();
+    final boolean isStepInsideRollback = isStepInsideRollback(currentField);
+    final List<AdviserObtainment> adviserObtainments = new ArrayList<>();
+    Map<FailureStrategyActionConfig, Collection<FailureType>> actionMap =
+        PmsStepPlanCreatorUtils.getPriorityMergedFailureStrategies(currentField, isStepInsideRollback);
+    for (Map.Entry<FailureStrategyActionConfig, Collection<FailureType>> entry : actionMap.entrySet()) {
+      FailureStrategyActionConfig action = entry.getKey();
+      Set<FailureType> failureTypes = new HashSet<>(entry.getValue());
+      NGFailureActionType actionType = action.getType();
+
+      if (isStepInsideRollback) {
+        if (actionType == NGFailureActionType.STAGE_ROLLBACK || actionType == NGFailureActionType.STEP_GROUP_ROLLBACK) {
+          throw new InvalidRequestException("Step inside rollback section cannot have Rollback as failure strategy.");
+        }
+      }
+
+      AdviserObtainment.Builder adviserObtainmentBuilder = AdviserObtainment.newBuilder();
+      PmsStepPlanCreatorUtils.adviserForActionTypeWithNoNextNode(
+          kryoSerializer, currentField, adviserObtainments, action, failureTypes, actionType, adviserObtainmentBuilder);
+    }
+    return adviserObtainments;
   }
 
   @Override

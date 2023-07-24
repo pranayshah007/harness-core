@@ -81,6 +81,8 @@ public class MetricPackServiceImpl implements MetricPackService {
       Lists.newArrayList("/sumologic/metric-packs/default-custom-pack.yaml");
   static final List<String> SIGNALFX_METRICS_METRICPACK_FILES =
       Lists.newArrayList("/signalfx/metric-packs/default-custom-pack.yaml");
+  static final List<String> AZURE_METRICS_METRICPACK_FILES =
+      Lists.newArrayList("/azure/metric-packs/default-custom-pack.yaml");
   private static final URL APPDYNAMICS_PERFORMANCE_PACK_DSL_PATH =
       MetricPackServiceImpl.class.getResource("/appdynamics/dsl/performance-pack.datacollection");
   public static final String APPDYNAMICS_PERFORMANCE_PACK_DSL;
@@ -151,7 +153,13 @@ public class MetricPackServiceImpl implements MetricPackService {
 
   private static final URL AZURE_LOGS_SAMPLE_DATA_DSL_PATH =
       MetricPackServiceImpl.class.getResource("/azure/dsl/azure-logs-sample-data.datacollection");
+  private static final URL AZURE_METRICS_SAMPLE_DSL_PATH =
+      MetricPackServiceImpl.class.getResource("/azure/dsl/azure-metrics-sample-data.datacollection");
+  private static final URL AZURE_SERVICE_INSTANCE_FIELD_DSL_PATH =
+      MetricPackServiceImpl.class.getResource("/azure/dsl/azure-service-instance-field-data.datacollection");
   public static final String AZURE_LOGS_SAMPLE_DATA_DSL;
+  public static final String AZURE_METRICS_SAMPLE_DATA_DSL;
+  public static final String AZURE_SERVICE_INSTANCE_FIELD_DSL;
   static {
     String appDPeformancePackDsl = null;
     String appDqualityPackDsl = null;
@@ -174,6 +182,8 @@ public class MetricPackServiceImpl implements MetricPackService {
     String signalFXDsl = null;
     String grafanaLokiLogSampleDataDsl = null;
     String azureLogsSampleDataDsl = null;
+    String azureMetricsSampleDataDsl = null;
+    String azureServiceInstanceFieldDataDsl = null;
     try {
       appDPeformancePackDsl = Resources.toString(APPDYNAMICS_PERFORMANCE_PACK_DSL_PATH, Charsets.UTF_8);
       appDqualityPackDsl = Resources.toString(APPDYNAMICS_QUALITY_PACK_DSL_PATH, Charsets.UTF_8);
@@ -196,6 +206,8 @@ public class MetricPackServiceImpl implements MetricPackService {
       signalFXDsl = Resources.toString(SIGNALFX_METRIC_DSL_PATH, Charsets.UTF_8);
       grafanaLokiLogSampleDataDsl = Resources.toString(GRAFANA_LOKI_LOG_SAMPLE_DATA_DSL_PATH, Charsets.UTF_8);
       azureLogsSampleDataDsl = Resources.toString(AZURE_LOGS_SAMPLE_DATA_DSL_PATH, Charsets.UTF_8);
+      azureMetricsSampleDataDsl = Resources.toString(AZURE_METRICS_SAMPLE_DSL_PATH, Charsets.UTF_8);
+      azureServiceInstanceFieldDataDsl = Resources.toString(AZURE_SERVICE_INSTANCE_FIELD_DSL_PATH, Charsets.UTF_8);
     } catch (Exception e) {
       // TODO: this should throw an exception but we risk delegate not starting up. We can remove this log term and
       // throw and exception once things stabilize
@@ -222,6 +234,8 @@ public class MetricPackServiceImpl implements MetricPackService {
     SIGNALFX_METRIC_SAMPLE_DSL = signalfxMetricSampleDsl;
     GRAFANA_LOKI_LOG_SAMPLE_DATA_DSL = grafanaLokiLogSampleDataDsl;
     AZURE_LOGS_SAMPLE_DATA_DSL = azureLogsSampleDataDsl;
+    AZURE_METRICS_SAMPLE_DATA_DSL = azureMetricsSampleDataDsl;
+    AZURE_SERVICE_INSTANCE_FIELD_DSL = azureServiceInstanceFieldDataDsl;
   }
 
   @Inject private HPersistence hPersistence;
@@ -316,6 +330,7 @@ public class MetricPackServiceImpl implements MetricPackService {
         yamlFileNames.addAll(STACKDRIVER_METRICPACK_FILES);
         break;
       case PROMETHEUS:
+      case AWS_PROMETHEUS:
         yamlFileNames.addAll(PROMETHEUS_METRICPACK_FILES);
         break;
       case DATADOG_METRICS:
@@ -336,14 +351,14 @@ public class MetricPackServiceImpl implements MetricPackService {
       case CLOUDWATCH_METRICS:
         yamlFileNames.addAll(CLOUDWATCH_METRICS_METRICPACK_FILES);
         break;
-      case AWS_PROMETHEUS:
-        yamlFileNames.addAll(PROMETHEUS_METRICPACK_FILES);
-        break;
       case SUMOLOGIC_METRICS:
         yamlFileNames.addAll(SUMOLOGIC_METRICS_METRICPACK_FILES);
         break;
       case SPLUNK_SIGNALFX_METRICS:
         yamlFileNames.addAll(SIGNALFX_METRICS_METRICPACK_FILES);
+        break;
+      case AZURE_METRICS:
+        yamlFileNames.addAll(AZURE_METRICS_METRICPACK_FILES);
         break;
       case KUBERNETES:
         break;

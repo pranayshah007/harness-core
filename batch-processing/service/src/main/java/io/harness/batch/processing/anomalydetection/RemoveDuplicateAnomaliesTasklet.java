@@ -89,6 +89,7 @@ public class RemoveDuplicateAnomaliesTasklet implements Tasklet {
         && checkStrings(parent.getGcpSKUId(), child.getGcpSKUId())
         && checkStrings(parent.getAwsAccount(), child.getAwsAccount())
         && checkStrings(parent.getAwsService(), child.getAwsService())
+        && checkStrings(parent.getAwsUsageType(), child.getAwsUsageType())
         && checkStrings(parent.getAzureSubscription(), child.getAzureSubscription())
         && checkStrings(parent.getAzureResourceGroup(), child.getAzureResourceGroup())
         && checkStrings(parent.getAzureMeterCategory(), child.getAzureMeterCategory());
@@ -108,7 +109,7 @@ public class RemoveDuplicateAnomaliesTasklet implements Tasklet {
   private int getDepth(AnomalyEntity anomaly) {
     List<String> list = new ArrayList<>(Arrays.asList(anomaly.getClusterId(), anomaly.getNamespace(),
         anomaly.getWorkloadName(), anomaly.getGcpProject(), anomaly.getGcpProduct(), anomaly.getGcpSKUId(),
-        anomaly.getAwsAccount(), anomaly.getAwsService(), anomaly.getAzureSubscription(),
+        anomaly.getAwsAccount(), anomaly.getAwsService(), anomaly.getAwsUsageType(), anomaly.getAzureSubscription(),
         anomaly.getAzureResourceGroup(), anomaly.getAzureMeterCategory()));
     Iterables.removeIf(list, Objects::isNull);
     return list.size();
@@ -117,7 +118,7 @@ public class RemoveDuplicateAnomaliesTasklet implements Tasklet {
   private String getConcatString(AnomalyEntity anomaly) {
     return Joiner.on(" ").skipNulls().join(anomaly.getClusterId(), anomaly.getNamespace(), anomaly.getWorkloadName(),
         anomaly.getGcpProject(), anomaly.getGcpProduct(), anomaly.getGcpSKUId(), anomaly.getAwsAccount(),
-        anomaly.getAwsService(), anomaly.getAzureSubscription(), anomaly.getAzureResourceGroup(),
-        anomaly.getAzureMeterCategory());
+        anomaly.getAwsService(), anomaly.getAwsUsageType(), anomaly.getAzureSubscription(),
+        anomaly.getAzureResourceGroup(), anomaly.getAzureMeterCategory());
   }
 }

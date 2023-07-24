@@ -10,6 +10,7 @@ from google.cloud import bigquery
 from google.cloud import pubsub_v1
 from google.cloud import storage
 import datetime
+from util import http_trigger_cf_v2_async
 
 """
 DataTransfer Job Event
@@ -50,6 +51,7 @@ client_bq = bigquery.Client(PROJECTID)
 client_gcs = storage.Client(PROJECTID)
 AWSCFTOPIC = os.environ.get('AWSCFTOPIC', 'ce-aws-billing-cf')
 TOPIC_PATH = publisher.topic_path(PROJECTID, AWSCFTOPIC)
+AWSBILLINGBQCFNAME = f"projects/{PROJECTID}/locations/us-central1/functions/ce-aws-billing-bq-terraform"
 
 def main(event, context):
     """Triggered when gcs data transfer job completes for AWS
@@ -67,7 +69,7 @@ def main(event, context):
 
     folders_to_ingest = get_csv_paths(jsonData)
     if len(folders_to_ingest) > 0:
-        send_event_for_processing(folders_to_ingest, jsonData)
+        trigger_bq_cf_for_processing(folders_to_ingest, jsonData)
     print("Completed")
 
 def get_csv_paths(jsonData):
@@ -149,7 +151,7 @@ def is_valid_month_folder(folderstr):
         return False
     return True
 
-def send_event_for_processing(folders_to_ingest, jsonData):
+def trigger_bq_cf_for_processing(folders_to_ingest, jsonData):
     active_months_in_gcs_bucket = {}
     for path in folders_to_ingest:
         ps = path.split("/")
@@ -177,20 +179,5 @@ def send_event_for_processing(folders_to_ingest, jsonData):
         if event_data["accountId"] not in processed_accounts:
             event_data["triggerHistoricalCostUpdateInPreferredCurrency"] = True
             event_data["disableHistoricalUpdateForMonths"] = active_months_in_gcs_bucket[event_data["accountId"]]
-        send_event(event_data)
+        http_trigger_cf_v2_async(AWSBILLINGBQCFNAME, event_data)
         processed_accounts.add(event_data["accountId"])
-
-
-def send_event(event_data):
-    message_json = json.dumps({
-        'data': {'message': event_data},
-    })
-    message_bytes = message_json.encode('utf-8')
-    # Publishes a message
-    try:
-        publish_future = publisher.publish(TOPIC_PATH, data=message_bytes)
-        publish_future.result()  # Verify the publish succeeded
-        print('Message published: %s.' % event_data)
-    except Exception as e:
-        print(e)
-        print("Error while sending event :%s" % event_data)

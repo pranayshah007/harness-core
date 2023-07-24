@@ -35,7 +35,7 @@ public interface AssignDelegateService {
 
   void saveConnectionResults(List<DelegateConnectionResult> results);
 
-  String getActiveDelegateAssignmentErrorMessage(TaskFailureReason reason, DelegateTask delegateTask);
+  String getDelegateTaskAssignmentFailureMessage(DelegateTask delegateTask, TaskFailureReason taskFailureReason);
 
   List<Delegate> getAccountDelegates(String accountId);
 

@@ -7,8 +7,11 @@
 
 package io.harness.delegate.task.helm;
 
+import io.harness.k8s.model.K8sPod;
 import io.harness.logging.CommandExecutionStatus;
 
+import java.util.Collections;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -17,4 +20,12 @@ import lombok.Data;
 public class HelmCommandResponseNG {
   private CommandExecutionStatus commandExecutionStatus;
   private String output;
+
+  public List<K8sPod> getPreviousK8sPodList() {
+    return Collections.emptyList();
+  }
+
+  public List<K8sPod> getTotalK8sPodList() {
+    return Collections.emptyList();
+  }
 }

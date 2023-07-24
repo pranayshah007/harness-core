@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.plancreator.strategy.StrategyConfig;
+import io.harness.pms.contracts.plan.YamlProperties;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationContext;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationResponse;
 import io.harness.pms.yaml.YamlField;
@@ -24,6 +25,8 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.MockitoAnnotations;
@@ -51,7 +54,14 @@ public class StrategyVariableCreatorTest extends CategoryTest {
     StrategyVariableCreator variableCreator = new StrategyVariableCreator();
     VariableCreationResponse variableCreationResponse =
         variableCreator.createVariablesForFieldV2(VariableCreationContext.builder().build(), strategyFieldModified);
-    assertThat(variableCreationResponse.getYamlProperties().size()).isEqualTo(4);
+    assertThat(variableCreationResponse.getYamlProperties().size()).isEqualTo(5);
+    Set<String> variables = variableCreationResponse.getYamlProperties()
+                                .values()
+                                .stream()
+                                .map(YamlProperties::getFqn)
+                                .collect(Collectors.toSet());
+    assertThat(variables).isEqualTo(
+        Set.of("strategy.iteration", "strategy.iterations", "matrix.a", "matrix.b", "matrix.c"));
   }
 
   @Test

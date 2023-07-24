@@ -133,6 +133,61 @@ public class ServerlessAwsLambdaDeployStepV2Test extends CategoryTest {
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
+  public void testGetAnyOutComeForStepWhenNoInstancesReceived() {
+    String accountId = "accountId";
+    Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", accountId).build();
+    ServerlessAwsLambdaDeployV2StepParameters stepParameters =
+        ServerlessAwsLambdaDeployV2StepParameters.infoBuilder()
+            .image(ParameterField.<String>builder().value("sdaf").build())
+            .build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
+
+    Map<String, ResponseData> responseDataMap = new HashMap<>();
+    Map<String, String> resultMap = new HashMap<>();
+    String instancesContentBase64 = "content64";
+    String instanceContent = "content";
+
+    List<ServerlessAwsLambdaFunction> serverlessAwsLambdaFunctions = Collections.emptyList();
+    ServerlessAwsLambdaFunctionsWithServiceName serverlessAwsLambdaFunctionsWithServiceName =
+        ServerlessAwsLambdaFunctionsWithServiceName.builder()
+            .serviceName("service")
+            .serverlessAwsLambdaFunctions(serverlessAwsLambdaFunctions)
+            .build();
+    resultMap.put("serverlessInstances", null);
+    StepMapOutput stepMapOutput = StepMapOutput.builder().map(resultMap).build();
+    StepStatusTaskResponseData stepStatusTaskResponseData =
+        StepStatusTaskResponseData.builder()
+            .stepStatus(
+                StepStatus.builder().stepExecutionStatus(StepExecutionStatus.SUCCESS).output(stepMapOutput).build())
+            .build();
+    doReturn(stepStatusTaskResponseData).when(containerStepExecutionResponseHelper).filterK8StepResponse(any());
+    responseDataMap.put("key", stepStatusTaskResponseData);
+    when(serverlessStepCommonHelper.convertByte64ToString(instancesContentBase64)).thenReturn(instanceContent);
+    when(serverlessStepCommonHelper.getServerlessAwsLambdaFunctionsWithServiceName(instanceContent))
+        .thenReturn(serverlessAwsLambdaFunctionsWithServiceName);
+
+    ServerlessAwsLambdaInfrastructureOutcome serverlessAwsLambdaInfrastructureOutcome =
+        ServerlessAwsLambdaInfrastructureOutcome.builder()
+            .stage("stage")
+            .region("regjion")
+            .infrastructureKey("infraKey")
+            .build();
+    when(serverlessStepCommonHelper.getInfrastructureOutcome(ambiance))
+        .thenReturn(serverlessAwsLambdaInfrastructureOutcome);
+
+    List<ServerInstanceInfo> serverInstanceInfoList = Collections.emptyList();
+    when(serverlessStepCommonHelper.getServerlessDeployFunctionInstanceInfo(any(), any(), any(), any(), any()))
+        .thenReturn(serverInstanceInfoList);
+    StepOutcome stepOutcome = mock(StepOutcome.class);
+    when(instanceInfoService.saveServerInstancesIntoSweepingOutput(any(), any())).thenReturn(stepOutcome);
+    assertThat(serverlessAwsLambdaDeployV2Step.getAnyOutComeForStep(ambiance, stepElementParameters, responseDataMap))
+        .isNull();
+  }
+
+  @SneakyThrows
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
   public void testGetSerialisedStep() {
     String accountId = "accountId";
     int port = 1;

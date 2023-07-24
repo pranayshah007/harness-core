@@ -27,6 +27,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.dto.PollingTriggerStatusUpdateDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
@@ -180,6 +181,13 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
     Optional<NGTriggerEntity> ngTriggerEntity = ngTriggerService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
     return ResponseDTO.newResponse(ngTriggerService.updateTriggerStatus(ngTriggerEntity.get(), status));
+  }
+
+  @Override
+  @InternalApi
+  public ResponseDTO<Boolean> updateTriggerPollingStatus(
+      @NotNull @AccountIdentifier String accountIdentifier, @NotNull PollingTriggerStatusUpdateDTO statusUpdate) {
+    return ResponseDTO.newResponse(ngTriggerService.updateTriggerPollingStatus(accountIdentifier, statusUpdate));
   }
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)

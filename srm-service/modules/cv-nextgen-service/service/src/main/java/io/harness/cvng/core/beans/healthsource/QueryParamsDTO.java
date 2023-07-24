@@ -8,6 +8,7 @@
 package io.harness.cvng.core.beans.healthsource;
 
 import io.harness.cvng.core.entities.QueryParams;
+import io.harness.cvng.utils.AggregationType;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Builder;
@@ -23,6 +24,9 @@ public class QueryParamsDTO {
   String timeStampIdentifier;
   String timeStampFormat;
   String messageIdentifier;
+  String healthSourceMetricName;
+  String healthSourceMetricNamespace;
+  AggregationType aggregationType;
 
   @JsonIgnore
   public static QueryParamsDTO getQueryParamsDTO(QueryParams queryParams) {
@@ -35,6 +39,9 @@ public class QueryParamsDTO {
         .messageIdentifier(queryParams.getMessageIdentifier())
         .timeStampIdentifier(queryParams.getTimeStampIdentifier())
         .timeStampFormat(queryParams.getTimeStampFormat())
+        .healthSourceMetricName(queryParams.getHealthSourceMetricName())
+        .healthSourceMetricNamespace(queryParams.getHealthSourceMetricNamespace())
+        .aggregationType(queryParams.getAggregationType())
         .build();
   }
 
@@ -46,6 +53,9 @@ public class QueryParamsDTO {
         .timeStampFormat(timeStampFormat)
         .timeStampIdentifier(timeStampIdentifier)
         .index(index)
+        .healthSourceMetricName(healthSourceMetricName)
+        .healthSourceMetricNamespace(healthSourceMetricNamespace)
+        .aggregationType(aggregationType)
         .build();
   }
 }

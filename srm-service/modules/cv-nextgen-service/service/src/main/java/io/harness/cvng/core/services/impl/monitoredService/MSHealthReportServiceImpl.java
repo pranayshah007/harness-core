@@ -7,26 +7,21 @@
 
 package io.harness.cvng.core.services.impl.monitoredService;
 
-import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_IDENTIFIER;
-import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_NAME;
-import static io.harness.cvng.notification.utils.NotificationRuleConstants.MS_HEALTH_REPORT;
-import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_IDENTIFIER;
-
-import io.harness.cvng.beans.MSHealthReport;
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeSourceType;
-import io.harness.cvng.beans.change.ChangeSummaryDTO;
+import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
+import io.harness.cvng.core.beans.change.MSHealthReport;
+import io.harness.cvng.core.beans.monitoredService.RiskData;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.TimeRangeParams;
-import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.ChangeEventService;
 import io.harness.cvng.core.services.api.monitoredService.MSHealthReportService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleType;
-import io.harness.cvng.notification.entities.FireHydrantReportNotificationCondition;
 import io.harness.cvng.notification.entities.NotificationRule;
+import io.harness.cvng.notification.entities.NotificationRuleConditionEntity;
 import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
@@ -38,7 +33,6 @@ import io.harness.notification.notificationclient.NotificationResult;
 
 import com.google.inject.Inject;
 import java.time.Clock;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -61,12 +55,13 @@ public class MSHealthReportServiceImpl implements MSHealthReportService {
       notificationRuleConditionTypeTemplateDataGeneratorMap;
 
   @Override
-  public MSHealthReport getMSHealthReport(ProjectParams projectParams, String monitoredServiceIdentifier) {
+  public MSHealthReport getMSHealthReport(
+      ProjectParams projectParams, String monitoredServiceIdentifier, Instant startTime) {
     Instant currentTime = clock.instant();
 
-    ChangeSummaryDTO changeSummary = changeEventService.getChangeSummary(projectParams, monitoredServiceIdentifier,
-        null, false, Arrays.asList(ChangeCategory.values()), Arrays.asList(ChangeSourceType.values()),
-        currentTime.minus(Duration.ofHours(1)), currentTime);
+    ChangeSummaryDTO changeSummary =
+        changeEventService.getChangeSummary(projectParams, monitoredServiceIdentifier, null, false,
+            Arrays.asList(ChangeCategory.values()), Arrays.asList(ChangeSourceType.values()), startTime, currentTime);
 
     List<SimpleServiceLevelObjective> serviceLevelObjectives =
         serviceLevelObjectiveService.getByMonitoredServiceIdentifiers(
@@ -74,21 +69,11 @@ public class MSHealthReportServiceImpl implements MSHealthReportService {
     List<MSHealthReport.AssociatedSLOsDetails> associatedSLOsDetails =
         serviceLevelObjectives.stream()
             .map(serviceLevelObjective -> {
-              SLODashboardWidget.SLOGraphData sloGraphData =
-                  sloHealthIndicatorService.getGraphData(projectParams, serviceLevelObjective,
-                      TimeRangeParams.builder()
-                          .startTime(clock.instant().minus(Duration.ofHours(1)))
-                          .endTime(clock.instant())
-                          .build());
-              double errorBudgetBurnRate = 0;
+              SLODashboardWidget.SLOGraphData sloGraphData = sloHealthIndicatorService.getGraphData(projectParams,
+                  serviceLevelObjective, TimeRangeParams.builder().startTime(startTime).endTime(currentTime).build());
+              double errorBudgetBurned = sloGraphData.getErrorBudgetBurned();
               double currentSLOPerformance = 0;
               double pastSLOPerformance = 0;
-              if (sloGraphData.getErrorBudgetBurndown().size() > 1) {
-                errorBudgetBurnRate = sloGraphData.getErrorBudgetBurndown().get(0).getValue()
-                    - sloGraphData.getErrorBudgetBurndown()
-                          .get(sloGraphData.getErrorBudgetBurndown().size() - 1)
-                          .getValue();
-              }
               if (sloGraphData.getSloPerformanceTrend().size() > 0) {
                 currentSLOPerformance = sloGraphData.getSloPerformanceTrend()
                                             .get(sloGraphData.getSloPerformanceTrend().size() - 1)
@@ -105,51 +90,42 @@ public class MSHealthReportServiceImpl implements MSHealthReportService {
                   .sloTarget(serviceLevelObjective.getSloTargetPercentage())
                   .currentSLOPerformance(currentSLOPerformance)
                   .pastSLOPerformance(pastSLOPerformance)
-                  .errorBudgetBurnRate(errorBudgetBurnRate)
+                  .errorBudgetBurned(errorBudgetBurned)
+                  .errorBudgetRemaining(sloGraphData.getErrorBudgetRemainingPercentage())
                   .build();
             })
             .collect(Collectors.toList());
 
-    Integer currentHealthScore =
+    RiskData currentHealthScore =
         monitoredServiceService
             .getCurrentAndDependentServicesScore(MonitoredServiceParams.builderWithProjectParams(projectParams)
                                                      .monitoredServiceIdentifier(monitoredServiceIdentifier)
                                                      .build())
-            .getCurrentHealthScore()
-            .getHealthScore();
+            .getCurrentHealthScore();
 
     return MSHealthReport.builder()
         .changeSummary(changeSummary)
         .associatedSLOsDetails(associatedSLOsDetails)
-        .currentHealthScore(currentHealthScore != null ? currentHealthScore : 0)
+        .currentHealthScore(currentHealthScore)
         .build();
   }
 
   @Override
-  public void handleNotification(ProjectParams projectParams, MSHealthReport msHealthReport, String webhookUrl,
-      String monitoredServiceIdentifier) {
-    MonitoredService monitoredService =
-        monitoredServiceService.getMonitoredService(MonitoredServiceParams.builderWithProjectParams(projectParams)
-                                                        .monitoredServiceIdentifier(monitoredServiceIdentifier)
-                                                        .build());
+  public void sendReportNotification(ProjectParams projectParams, Map<String, Object> entityDetails,
+      NotificationRuleType type, NotificationRuleConditionEntity condition,
+      NotificationRule.CVNGNotificationChannel notificationChannel, String monitoredServiceIdentifier) {
     final NotificationRuleTemplateDataGenerator notificationRuleTemplateDataGenerator =
-        notificationRuleConditionTypeTemplateDataGeneratorMap.get(NotificationRuleConditionType.FIRE_HYDRANT_REPORT);
-    Map<String, Object> entityDetails =
-        Map.of(ENTITY_IDENTIFIER, monitoredServiceIdentifier, ENTITY_NAME, monitoredService.getName(),
-            SERVICE_IDENTIFIER, monitoredService.getServiceIdentifier(), MS_HEALTH_REPORT, msHealthReport);
-    Map<String, String> templateDataMap = notificationRuleTemplateDataGenerator.getTemplateData(
-        projectParams, entityDetails, FireHydrantReportNotificationCondition.builder().build(), new HashMap<>());
-    NotificationRule.CVNGNotificationChannel notificationChannel =
-        new NotificationRule.CVNGSlackChannel(null, webhookUrl);
-    String templateId = notificationRuleTemplateDataGenerator.getTemplateId(
-        NotificationRuleType.FIRE_HYDRANT, notificationChannel.getType());
+        notificationRuleConditionTypeTemplateDataGeneratorMap.get(condition.getType());
+    Map<String, String> templateDataMap =
+        notificationRuleTemplateDataGenerator.getTemplateData(projectParams, entityDetails, condition, new HashMap<>());
+    String templateId = notificationRuleTemplateDataGenerator.getTemplateId(type, notificationChannel.getType());
     try {
       NotificationResult notificationResult = notificationClient.sendNotificationAsync(
           notificationChannel.toNotificationChannel(projectParams.getAccountIdentifier(),
               projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), templateId, templateDataMap));
-      log.info("Notification with notification id {} for Fire Hydrant sent", notificationResult.getNotificationId());
+      log.info("Report Notification with notification id {} for {} sent", notificationResult.getNotificationId(), type);
     } catch (Exception ex) {
-      log.error("Unable to send notification because of following exception", ex);
+      log.error("Unable to send notification because of following exception.", ex);
     }
   }
 }

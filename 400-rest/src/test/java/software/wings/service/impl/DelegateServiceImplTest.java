@@ -283,6 +283,8 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   public void shouldSaveDelegateTaskWithPreAssignedDelegateId_Sync() {
     DelegateTask delegateTask = getDelegateTaskV2();
     delegateTask.getData().setAsync(false);
+    when(assignDelegateService.getDelegateTaskAssignmentFailureMessage(any(), any()))
+        .thenReturn("No eligible delegate(s) in account to execute task. ");
     thrown.expect(NoEligibleDelegatesInAccountException.class);
     delegateTaskServiceClassic.processDelegateTaskV2(delegateTask, DelegateTask.Status.QUEUED);
     assertThat(delegateTask.getBroadcastCount()).isZero();

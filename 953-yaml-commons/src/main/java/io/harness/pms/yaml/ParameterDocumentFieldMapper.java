@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.CastedField;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ParameterFieldCastException;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterDocumentField.ParameterDocumentFieldKeys;
 import io.harness.utils.RecastReflectionUtils;
@@ -94,12 +95,16 @@ public class ParameterDocumentFieldMapper {
          We need to check if enum class has any field with the given value. No error should be thrown in that case.
          Apart from this case, the code will continue behaving as it was.
        */
-      try {
-        cls.getField((String) parameterFieldValueWrapper.getValue());
-      } catch (Exception e) {
-        log.error(String.format("Expected value of type: %s, got: %s", cls.getSimpleName(),
-            parameterFieldValueWrapper.getValue().getClass().getSimpleName()));
+      if (cls.isEnum() && parameterFieldValueWrapper.getValue().getClass().isAssignableFrom(String.class)) {
+        for (Object object : cls.getEnumConstants()) {
+          if (((Enum) object).name().equalsIgnoreCase((String) parameterFieldValueWrapper.getValue())) {
+            return;
+          }
+        }
       }
+      throw new ParameterFieldCastException(
+          String.format("The field should be of type [%s] but got: [%s] with value [%s]", cls.getSimpleName(),
+              parameterFieldValueWrapper.getValue().getClass().getSimpleName(), parameterFieldValueWrapper.getValue()));
     }
   }
 

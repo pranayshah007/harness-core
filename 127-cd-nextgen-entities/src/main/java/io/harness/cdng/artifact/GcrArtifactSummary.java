@@ -9,6 +9,7 @@ package io.harness.cdng.artifact;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.artifacts.ArtifactSourceConstants;
 
@@ -20,6 +21,7 @@ import lombok.Data;
 @Data
 @Builder
 @JsonTypeName(ArtifactSourceConstants.GCR_NAME)
+@RecasterAlias("io.harness.cdng.artifact.GcrArtifactSummary")
 public class GcrArtifactSummary implements ArtifactSummary {
   String imagePath;
   String tag;

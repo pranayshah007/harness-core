@@ -10,6 +10,10 @@ package io.harness.cvng.cdng.services.impl.resources;
 import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
@@ -21,22 +25,30 @@ import io.harness.cvng.beans.change.SRMAnalysisStatus;
 import io.harness.cvng.cdng.resources.SRMAnalysisStepResource;
 import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
+import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.ResourceTestRule;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import java.io.IOException;
 import java.time.Duration;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
+import retrofit2.Call;
 
 public class SRMAnalysisStepResourceTest extends CvNextGenTestBase {
   @Inject private Injector injector;
@@ -44,6 +56,8 @@ public class SRMAnalysisStepResourceTest extends CvNextGenTestBase {
   @Inject SRMAnalysisStepService srmAnalysisStepService;
 
   @Inject ActivityService activityService;
+
+  @Mock PipelineServiceClient pipelineServiceClient;
   private BuilderFactory builderFactory;
 
   private String monitoredServiceIdentifier;
@@ -60,7 +74,7 @@ public class SRMAnalysisStepResourceTest extends CvNextGenTestBase {
       ResourceTestRule.builder().addResource(srmAnalysisStepResource).build();
 
   @Before
-  public void setup() {
+  public void setup() throws IOException, IllegalAccessException {
     injector.injectMembers(srmAnalysisStepResource);
     builderFactory = BuilderFactory.getDefault();
     monitoredServiceIdentifier = "service1_env1";
@@ -68,6 +82,15 @@ public class SRMAnalysisStepResourceTest extends CvNextGenTestBase {
                                    .serviceIdentifier("service1")
                                    .environmentIdentifier("env1")
                                    .build();
+    Call<ResponseDTO<Object>> pipelineSummaryCall = mock(Call.class);
+    doReturn(pipelineSummaryCall).when(pipelineServiceClient).getExecutionDetailV2(any(), any(), any(), any());
+    ObjectMapper objectMapper = new ObjectMapper();
+    ObjectNode pipelineExecutionSummary = objectMapper.createObjectNode();
+    pipelineExecutionSummary.put("name", "Mocked Pipeline");
+    ObjectNode mockResponse = objectMapper.createObjectNode();
+    mockResponse.set("pipelineExecutionSummary", pipelineExecutionSummary);
+    when(pipelineSummaryCall.execute()).thenReturn(retrofit2.Response.success(ResponseDTO.newResponse(mockResponse)));
+    FieldUtils.writeField(srmAnalysisStepService, "pipelineServiceClient", pipelineServiceClient, true);
     analysisExecutionDetailsId = srmAnalysisStepService.createSRMAnalysisStepExecution(
         builderFactory.getAmbiance(builderFactory.getProjectParams()), monitoredServiceIdentifier,
         serviceEnvironmentParams, Duration.ofDays(1));

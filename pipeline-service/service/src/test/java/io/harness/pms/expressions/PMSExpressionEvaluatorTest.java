@@ -10,6 +10,7 @@ package io.harness.pms.expressions;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.SHALINI;
 
 import static java.util.Arrays.asList;
 import static junit.framework.TestCase.assertEquals;
@@ -41,6 +42,7 @@ import io.harness.execution.PlanExecution;
 import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.EngineJexlContext;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.expression.field.dummy.DummyOrchestrationField;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -305,6 +307,73 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
         engineExpressionEvaluator.evaluateExpression("<+" + OrchestrationConstants.STAGE_SUCCESS + ">");
     assertThat(stageSuccess).isInstanceOf(Boolean.class);
     assertThat((Boolean) stageSuccess).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testRetryCountExpressionWithoutRetryIds() {
+    String uuid = generateUuid();
+    PlanNode planNode = preparePlanNode(false, "step", "stepValue", "STEP");
+    NodeExecution nodeExecution =
+        NodeExecution.builder()
+            .ambiance(Ambiance.newBuilder().addLevels(PmsLevelUtils.buildLevelFromNode(uuid, planNode)).build())
+            .uuid(uuid)
+            .build();
+    Ambiance newAmbiance = Ambiance.newBuilder()
+                               .setPlanExecutionId(planExecutionId)
+                               .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution.getUuid(), planNode))
+                               .build();
+    when(nodeExecutionService.getWithFieldsIncluded(
+             nodeExecution.getUuid(), NodeProjectionUtils.fieldsForExpressionEngine))
+        .thenReturn(nodeExecution);
+    List<NodeExecution> nodeExecutionsList = Collections.singletonList(nodeExecution);
+    CloseableIterator<NodeExecution> iterator =
+        PipelineServiceTestHelper.createCloseableIterator(nodeExecutionsList.iterator());
+    when(nodeExecutionService.fetchChildrenNodeExecutionsIterator(
+             planExecutionId, uuid, NodeProjectionUtils.fieldsForExpressionEngine))
+        .thenReturn(iterator);
+    PmsSdkInstance pmsSdkInstance =
+        PmsSdkInstance.builder().staticAliases(new PipelineServiceApplication().getStaticAliases()).build();
+    doReturn(ImmutableMap.of("cd", pmsSdkInstance)).when(pmsSdkInstanceService).getSdkInstanceCacheValue();
+    EngineExpressionEvaluator engineExpressionEvaluator = prepareEngineExpressionEvaluator(newAmbiance);
+    Object retryCount =
+        engineExpressionEvaluator.evaluateExpression("<+step.retryCount>", ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
+    assertThat((Integer) retryCount).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testRetryCountExpressionWithRetryIds() {
+    String uuid = generateUuid();
+    PlanNode planNode = preparePlanNode(false, "step", "stepValue", "STEP");
+    NodeExecution nodeExecution =
+        NodeExecution.builder()
+            .ambiance(Ambiance.newBuilder().addLevels(PmsLevelUtils.buildLevelFromNode(uuid, planNode)).build())
+            .uuid(uuid)
+            .retryIds(List.of("id1", "id2", "id3"))
+            .build();
+    Ambiance newAmbiance = Ambiance.newBuilder()
+                               .setPlanExecutionId(planExecutionId)
+                               .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution.getUuid(), planNode))
+                               .build();
+    when(nodeExecutionService.getWithFieldsIncluded(
+             nodeExecution.getUuid(), NodeProjectionUtils.fieldsForExpressionEngine))
+        .thenReturn(nodeExecution);
+    List<NodeExecution> nodeExecutionsList = Collections.singletonList(nodeExecution);
+    CloseableIterator<NodeExecution> iterator =
+        PipelineServiceTestHelper.createCloseableIterator(nodeExecutionsList.iterator());
+    when(nodeExecutionService.fetchChildrenNodeExecutionsIterator(
+             planExecutionId, uuid, NodeProjectionUtils.fieldsForExpressionEngine))
+        .thenReturn(iterator);
+    PmsSdkInstance pmsSdkInstance =
+        PmsSdkInstance.builder().staticAliases(new PipelineServiceApplication().getStaticAliases()).build();
+    doReturn(ImmutableMap.of("cd", pmsSdkInstance)).when(pmsSdkInstanceService).getSdkInstanceCacheValue();
+    EngineExpressionEvaluator engineExpressionEvaluator = prepareEngineExpressionEvaluator(newAmbiance);
+    Object retryCount =
+        engineExpressionEvaluator.evaluateExpression("<+step.retryCount>", ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
+    assertThat((Integer) retryCount).isEqualTo(3);
   }
 
   @Test

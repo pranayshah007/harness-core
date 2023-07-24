@@ -106,15 +106,15 @@ public class VmStepSerializer {
     }
   }
 
-  public Set<String> preProcessStep(
-      Ambiance ambiance, CIStepInfo stepInfo, StageInfraDetails stageInfraDetails, String identifier) {
+  public Set<String> preProcessStep(Ambiance ambiance, CIStepInfo stepInfo, StageInfraDetails stageInfraDetails,
+      String identifier, boolean isBareMetalUsed) {
     switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
       case DOCKER:
       case ECR:
       case GCR:
       case ACR:
         return vmPluginCompatibleStepSerializer.preProcessStep(
-            ambiance, (PluginCompatibleStep) stepInfo, stageInfraDetails, identifier);
+            ambiance, (PluginCompatibleStep) stepInfo, stageInfraDetails, identifier, isBareMetalUsed);
       default:
         return new HashSet<>();
     }

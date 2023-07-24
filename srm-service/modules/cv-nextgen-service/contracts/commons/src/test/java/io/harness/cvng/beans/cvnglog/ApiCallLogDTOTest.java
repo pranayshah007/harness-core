@@ -102,6 +102,25 @@ public class ApiCallLogDTOTest extends CategoryTest {
   @Test
   @Owner(developers = ANSUMAN)
   @Category(UnitTests.class)
+  public void testAddFieldToRequest_WithJSONBodyWithEscapeCharacters() {
+    ApiCallLogDTO apiCallLogDTO = ApiCallLogDTO.builder().accountId(accountId).build();
+    ApiCallLogDTOField field = ApiCallLogDTOField.builder().name(name).value(value).build();
+    apiCallLogDTO.addFieldToRequest(field);
+    MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+    RequestBody body = RequestBody.create(JSON, "{\"jsonExample\":\"\"valu\\e\"\"}");
+    Request request = new Request.Builder().url("https://www.example.com/").post(body).build();
+    apiCallLogDTO.addCallDetailsBodyFieldToRequest(request);
+    assertThat(apiCallLogDTO.getRequests()).hasSize(2);
+    assertThat(apiCallLogDTO.getRequests().get(0).getName()).isEqualTo(name);
+    assertThat(apiCallLogDTO.getRequests().get(0).getValue()).isEqualTo(value);
+    assertThat(apiCallLogDTO.getRequests().get(1).getName()).isEqualTo("Request Body");
+    assertThat(apiCallLogDTO.getRequests().get(1).getValue()).isEqualTo("{\"jsonExample\":\"\"valu\\e\"\"}");
+    assertThat(apiCallLogDTO.getRequests().get(1).getType()).isEqualTo(ApiCallLogDTO.FieldType.JSON);
+  }
+
+  @Test
+  @Owner(developers = ANSUMAN)
+  @Category(UnitTests.class)
   public void testAddFieldToRequest_WithURLFormEncoded() {
     ApiCallLogDTO apiCallLogDTO = ApiCallLogDTO.builder().accountId(accountId).build();
     ApiCallLogDTOField field = ApiCallLogDTOField.builder().name(name).value(value).build();

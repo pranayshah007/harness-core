@@ -77,6 +77,7 @@ shared_dependencies = [
     "//965-api-key-filter:module",
     "//clients/access-control/admin-client:module",
     "//clients/chaos:module",
+    "//clients/pipeline-service/pms-client:module",
     "//clients/servicediscovery:module",
     "//clients/ngsettings:module",
     "//product/ci/scm/proto:ciscm_java_proto",

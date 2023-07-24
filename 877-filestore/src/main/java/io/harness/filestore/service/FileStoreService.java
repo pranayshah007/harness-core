@@ -145,10 +145,11 @@ public interface FileStoreService {
    * @param orgIdentifier the organization identifier
    * @param projectIdentifier the project identifier
    * @param identifier the file identifier
+   * @param forceDelete
    * @return whether the file is successfully deleted
    */
-  boolean delete(
-      @NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier, @NotNull String identifier);
+  boolean delete(@NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      @NotNull String identifier, boolean forceDelete);
 
   /**
    * Get the list of folder nodes.

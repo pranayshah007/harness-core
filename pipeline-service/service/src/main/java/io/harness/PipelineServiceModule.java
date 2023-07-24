@@ -48,6 +48,7 @@ import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.grpc.server.PipelineServiceGrpcModule;
 import io.harness.hsqs.client.HsqsServiceClientModule;
+import io.harness.hsqs.client.beans.HsqsDequeueConfig;
 import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
@@ -757,6 +758,13 @@ public class PipelineServiceModule extends AbstractModule {
 
   @Provides
   @Singleton
+  @Named("webhookEventHsqsDequeueConfig")
+  public HsqsDequeueConfig getWebhookEventHsqsDequeueConfig() {
+    return configuration.getWebhookEventHsqsDequeueConfig();
+  }
+
+  @Provides
+  @Singleton
   @Named("YamlSchemaExecutorService")
   public ExecutorService yamlSchemaExecutorService() {
     return ThreadPool.create(configuration.getYamlSchemaExecutorServiceConfig().getCorePoolSize(),
@@ -840,16 +848,6 @@ public class PipelineServiceModule extends AbstractModule {
       HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
     return harnessCacheManager.getCache("schemaDetailsCache", SchemaCacheKey.class, YamlSchemaDetailsWrapperValue.class,
         CreatedExpiryPolicy.factoryOf(new Duration(TimeUnit.HOURS, 7)),
-        versionInfoManager.getVersionInfo().getBuildNo());
-  }
-
-  @Provides
-  @Singleton
-  @Named("staticSchemaCache")
-  public Cache<SchemaCacheKey, String> staticSchemaCache(
-      HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
-    return harnessCacheManager.getCache("staticSchemaCache", SchemaCacheKey.class, String.class,
-        CreatedExpiryPolicy.factoryOf(new Duration(TimeUnit.DAYS, 7)),
         versionInfoManager.getVersionInfo().getBuildNo());
   }
 

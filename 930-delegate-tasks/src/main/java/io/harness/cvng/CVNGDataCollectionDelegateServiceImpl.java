@@ -84,7 +84,7 @@ public class CVNGDataCollectionDelegateServiceImpl implements CVNGDataCollection
       } catch (Exception exception) {
         String errorMessage = parseDSLExceptionMessage(exception.getMessage());
         log.error(errorMessage);
-        throw new DataCollectionException(errorMessage);
+        throw new DataCollectionException(errorMessage, exception);
       }
     }
   }

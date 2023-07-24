@@ -26,19 +26,19 @@ import io.harness.idp.gitintegration.processor.base.ConnectorProcessor;
 import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory;
 import io.harness.idp.gitintegration.repositories.CatalogConnectorRepository;
 import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
-import io.harness.idp.proxy.envvariable.ProxyEnvVariableUtils;
+import io.harness.idp.proxy.envvariable.ProxyEnvVariableServiceWrapper;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 import io.harness.spec.server.idp.v1.model.ConnectorDetails;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.json.JSONObject;
 
 @AllArgsConstructor(onConstructor = @__({ @com.google.inject.Inject }))
 @Slf4j
@@ -49,7 +49,7 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
   CatalogConnectorRepository catalogConnectorRepository;
   ConfigManagerService configManagerService;
   DelegateSelectorsCache delegateSelectorsCache;
-  ProxyEnvVariableUtils proxyEnvVariableUtils;
+  ProxyEnvVariableServiceWrapper proxyEnvVariableServiceWrapper;
 
   @Override
   public void createConnectorSecretsEnvVariable(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO) {
@@ -85,12 +85,10 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
 
   @Override
   public void createOrUpdateConnectorInBackstage(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO,
-      CatalogInfraConnectorType catalogConnectorEntityType, String connectorIdentifier) throws Exception {
+      CatalogInfraConnectorType catalogConnectorEntityType, String host, Set<String> delegateSelectors) {
     createConnectorSecretsEnvVariable(accountIdentifier, connectorInfoDTO);
-    String host = GitIntegrationUtils.getHostForConnector(connectorInfoDTO);
-    Map<String, Boolean> hostProxyMap = new HashMap<>();
-    hostProxyMap.put(host, catalogConnectorEntityType == CatalogInfraConnectorType.PROXY);
-    proxyEnvVariableUtils.createOrUpdateHostProxyEnvVariable(accountIdentifier, hostProxyMap);
+    updateHostProxyAndDelegateSelectorsCache(accountIdentifier, connectorInfoDTO.getConnectorType().toString(),
+        catalogConnectorEntityType, host, delegateSelectors);
   }
 
   @Override
@@ -105,8 +103,7 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
   }
 
   @Override
-  public CatalogConnectorEntity saveConnectorDetails(String accountIdentifier, ConnectorDetails connectorDetails)
-      throws Exception {
+  public CatalogConnectorEntity saveConnectorDetails(String accountIdentifier, ConnectorDetails connectorDetails) {
     connectorDetails.setIdentifier(
         GitIntegrationUtils.replaceAccountScopeFromConnectorId(connectorDetails.getIdentifier()));
     ConnectorProcessor connectorProcessor = connectorProcessorFactory.getConnectorProcessor(
@@ -130,29 +127,53 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
   }
 
   private CatalogConnectorEntity saveOrUpdateConnector(
-      ConnectorInfoDTO connectorInfoDTO, String accountIdentifier, String catalogInfraConnectorType) throws Exception {
+      ConnectorInfoDTO connectorInfoDTO, String accountIdentifier, String catalogInfraConnectorType) {
     Set<String> delegateSelectors = DelegateSelectorsUtils.extractDelegateSelectors(connectorInfoDTO);
     String host = GitIntegrationUtils.getHostForConnector(connectorInfoDTO);
     CatalogConnectorEntity catalogConnectorEntity =
         ConnectorDetailsMapper.fromDTO(connectorInfoDTO.getIdentifier(), accountIdentifier,
             connectorInfoDTO.getConnectorType().toString(), delegateSelectors, host, catalogInfraConnectorType);
 
-    Optional<CatalogConnectorEntity> existingCatalogConnectorOpt =
-        catalogConnectorRepository.findByAccountIdentifierAndConnectorProviderType(
-            accountIdentifier, connectorInfoDTO.getConnectorType().toString());
-    if (existingCatalogConnectorOpt.isPresent()) {
-      Set<String> hostsToBeRemoved = Collections.singleton(existingCatalogConnectorOpt.get().getHost());
-      delegateSelectorsCache.remove(accountIdentifier, hostsToBeRemoved);
-      proxyEnvVariableUtils.removeFromHostProxyEnvVariable(accountIdentifier, hostsToBeRemoved);
-    }
+    createOrUpdateConnectorInBackstage(
+        accountIdentifier, connectorInfoDTO, catalogConnectorEntity.getType(), host, delegateSelectors);
+    return catalogConnectorRepository.saveOrUpdate(catalogConnectorEntity);
+  }
 
-    CatalogConnectorEntity savedCatalogConnectorEntity =
-        catalogConnectorRepository.saveOrUpdate(catalogConnectorEntity);
-    if (!delegateSelectors.isEmpty()) {
-      delegateSelectorsCache.put(accountIdentifier, host, delegateSelectors);
+  private void updateHostProxyAndDelegateSelectorsCache(String accountIdentifier, String connectorType,
+      CatalogInfraConnectorType catalogInfraConnectorType, String newHost, Set<String> newDelegateSelectors) {
+    boolean isProxyNew = CatalogInfraConnectorType.PROXY.equals(catalogInfraConnectorType);
+    JSONObject hostProxyMap = proxyEnvVariableServiceWrapper.getHostProxyMap(accountIdentifier);
+    JSONObject originalHostProxyMap = new JSONObject(hostProxyMap.toString());
+    Optional<CatalogConnectorEntity> existingCatalogConnectorOpt =
+        catalogConnectorRepository.findByAccountIdentifierAndConnectorProviderType(accountIdentifier, connectorType);
+
+    if (existingCatalogConnectorOpt.isPresent()) {
+      String currentHost = existingCatalogConnectorOpt.get().getHost();
+      Set<String> currentDelegateSelectors = existingCatalogConnectorOpt.get().getDelegateSelectors();
+      boolean isProxyOld = CatalogInfraConnectorType.PROXY.equals(existingCatalogConnectorOpt.get().getType());
+      Set<String> hostsToBeRemoved = Collections.singleton(currentHost);
+
+      if (!currentHost.equals(newHost)) {
+        hostProxyMap.remove(currentHost);
+        hostProxyMap.put(newHost, isProxyNew);
+        delegateSelectorsCache.remove(accountIdentifier, hostsToBeRemoved);
+        delegateSelectorsCache.put(accountIdentifier, newHost, newDelegateSelectors);
+      } else {
+        if (isProxyOld != isProxyNew) {
+          hostProxyMap.put(currentHost, isProxyNew);
+        }
+        if (!currentDelegateSelectors.equals(newDelegateSelectors)) {
+          delegateSelectorsCache.put(accountIdentifier, currentHost, newDelegateSelectors);
+        }
+      }
+    } else {
+      hostProxyMap.put(newHost, isProxyNew);
+      if (!newDelegateSelectors.isEmpty()) {
+        delegateSelectorsCache.put(accountIdentifier, newHost, newDelegateSelectors);
+      }
     }
-    createOrUpdateConnectorInBackstage(accountIdentifier, connectorInfoDTO, catalogConnectorEntity.getType(),
-        catalogConnectorEntity.getConnectorIdentifier());
-    return savedCatalogConnectorEntity;
+    if (!originalHostProxyMap.similar(hostProxyMap)) {
+      proxyEnvVariableServiceWrapper.setHostProxyMap(accountIdentifier, hostProxyMap);
+    }
   }
 }

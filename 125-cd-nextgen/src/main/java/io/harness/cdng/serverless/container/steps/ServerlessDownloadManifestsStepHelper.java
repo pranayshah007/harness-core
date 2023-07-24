@@ -38,6 +38,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.plugin.ContainerPluginParseException;
+import io.harness.pms.sdk.core.plugin.ContainerStepExecutionResponseHelper;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -69,6 +70,8 @@ public class ServerlessDownloadManifestsStepHelper {
   @Inject private EngineExpressionService engineExpressionService;
 
   @Inject private ServerlessV2PluginInfoProviderHelper serverlessV2PluginInfoProviderHelper;
+
+  @Inject private ContainerStepExecutionResponseHelper containerStepExecutionResponseHelper;
 
   @Inject DownloadManifestsCommonHelper downloadManifestsCommonHelper;
 
@@ -172,6 +175,8 @@ public class ServerlessDownloadManifestsStepHelper {
     if (valuesManifestOutcome != null) {
       ServerlessV2ValuesYamlDataOutcomeBuilder serverlessValuesYamlDataOutcomeBuilder =
           ServerlessV2ValuesYamlDataOutcome.builder();
+
+      containerStepExecutionResponseHelper.deserializeResponse(responseDataMap);
 
       for (Map.Entry<String, ResponseData> entry : responseDataMap.entrySet()) {
         ResponseData responseData = entry.getValue();

@@ -18,6 +18,7 @@ import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data
@@ -26,6 +27,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @OwnedBy(CDP)
 @JsonTypeName("CustomApproval")
+@FieldNameConstants(innerTypeName = "CustomApprovalStepExecutionDetailsKeys")
 @TypeAlias("CustomApprovalStepExecutionDetails")
 public class CustomApprovalStepExecutionDetails implements StepExecutionDetails {
   Map<String, String> outputVariables;

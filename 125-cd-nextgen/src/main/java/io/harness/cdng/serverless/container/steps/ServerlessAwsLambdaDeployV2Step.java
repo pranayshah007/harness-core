@@ -14,6 +14,7 @@ import io.harness.cdng.aws.sam.AwsSamStepHelper;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.serverless.ServerlessStepCommonHelper;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaFunction;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaFunctionsWithServiceName;
@@ -115,13 +116,17 @@ public class ServerlessAwsLambdaDeployV2Step extends AbstractContainerStepV2<Ste
           stepStatusTaskResponseData.getStepStatus().getStepExecutionStatus()));
     }
 
-    if (stepStatusTaskResponseData != null
-        && stepStatusTaskResponseData.getStepStatus().getStepExecutionStatus() == StepExecutionStatus.SUCCESS) {
+    if (stepStatusTaskResponseData != null && stepStatusTaskResponseData.getStepStatus() != null
+        && StepExecutionStatus.SUCCESS == stepStatusTaskResponseData.getStepStatus().getStepExecutionStatus()) {
       StepOutput stepOutput = stepStatusTaskResponseData.getStepStatus().getOutput();
 
       if (stepOutput instanceof StepMapOutput) {
         StepMapOutput stepMapOutput = (StepMapOutput) stepOutput;
         String instancesByte64 = stepMapOutput.getMap().get("serverlessInstances");
+        if (EmptyPredicate.isEmpty(instancesByte64)) {
+          log.info("No instances were received in Serverless Aws Lambda Deploy V2 Response");
+          return stepOutcome;
+        }
         log.info(String.format("Serverless Aws Lambda Deploy V2 instances byte64 %s", instancesByte64));
         instances = serverlessStepCommonHelper.convertByte64ToString(instancesByte64);
         log.info(String.format("Serverless Aws Lambda Deploy V2 instances %s", instances));

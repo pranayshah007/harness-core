@@ -14,9 +14,12 @@ import static io.harness.idp.app.IdpConfiguration.HARNESS_RESOURCE_CLASSES;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 
 import io.harness.Microservice;
+import io.harness.ModuleType;
+import io.harness.PipelineServiceUtilityModule;
 import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.authorization.AuthorizationServiceHeader;
+import io.harness.cache.CacheModule;
 import io.harness.health.HealthMonitor;
 import io.harness.health.HealthService;
 import io.harness.idp.annotations.IdpServiceAuth;
@@ -27,6 +30,10 @@ import io.harness.idp.events.consumers.EntityCrudStreamConsumer;
 import io.harness.idp.events.consumers.IdpEventConsumerController;
 import io.harness.idp.migration.IdpMigrationProvider;
 import io.harness.idp.namespace.jobs.DefaultAccountIdToNamespaceMappingForPrEnv;
+import io.harness.idp.pipeline.filter.IdpFilterCreationResponseMerger;
+import io.harness.idp.pipeline.provider.IdpModuleInfoProvider;
+import io.harness.idp.pipeline.provider.IdpPipelineServiceInfoProvider;
+import io.harness.idp.pipeline.registrar.IdpStepRegistrar;
 import io.harness.idp.user.jobs.UserSyncJob;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.service.api.MetricService;
@@ -40,11 +47,25 @@ import io.harness.ng.core.exceptionmappers.NotAllowedExceptionMapper;
 import io.harness.ng.core.exceptionmappers.NotFoundExceptionMapper;
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
 import io.harness.persistence.HPersistence;
+import io.harness.pms.events.base.PipelineEventConsumerController;
+import io.harness.pms.sdk.PmsSdkConfiguration;
+import io.harness.pms.sdk.PmsSdkInitHelper;
+import io.harness.pms.sdk.PmsSdkModule;
+import io.harness.pms.sdk.core.SdkDeployMode;
+import io.harness.pms.sdk.execution.events.facilitators.FacilitatorEventRedisConsumer;
+import io.harness.pms.sdk.execution.events.interrupts.InterruptEventRedisConsumer;
+import io.harness.pms.sdk.execution.events.node.advise.NodeAdviseEventRedisConsumer;
+import io.harness.pms.sdk.execution.events.node.resume.NodeResumeEventRedisConsumer;
+import io.harness.pms.sdk.execution.events.node.start.NodeStartEventRedisConsumer;
+import io.harness.pms.sdk.execution.events.orchestrationevent.OrchestrationEventRedisConsumer;
+import io.harness.pms.sdk.execution.events.plan.CreatePartialPlanRedisConsumer;
+import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
 import io.harness.request.RequestLoggingFilter;
 import io.harness.security.InternalApiAuthFilter;
 import io.harness.security.NextGenAuthenticationFilter;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.serializer.PipelineServiceUtilAdviserRegistrar;
 import io.harness.service.impl.DelegateAsyncServiceImpl;
 import io.harness.service.impl.DelegateProgressServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
@@ -138,13 +159,20 @@ public class IdpApplication extends Application<IdpConfiguration> {
 
     List<Module> modules = new ArrayList<>();
     modules.add(new IdpModule(configuration));
+    modules.add(new CacheModule(configuration.getCacheConfig()));
+    PmsSdkConfiguration idpPmsSdkConfiguration = getPmsSdkConfiguration(configuration);
+    modules.add(PmsSdkModule.getInstance(idpPmsSdkConfiguration));
+    modules.add(PipelineServiceUtilityModule.getInstance());
     modules.add(NGMigrationSdkModule.getInstance());
+
     Injector injector = Guice.createInjector(modules);
+    registerPMSSDK(configuration, injector);
     registerResources(environment, injector);
     registerHealthChecksManager(environment, injector);
     registerQueueListeners(injector);
     registerAuthFilters(configuration, environment, injector);
     registerManagedJobs(environment, injector);
+    registerPmsSdkEvents(injector);
     registerExceptionMappers(environment.jersey());
     registerMigrations(injector);
     registerHealthCheck(environment, injector);
@@ -161,6 +189,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
     environment.lifecycle().manage(injector.getInstance(UserSyncJob.class));
     environment.lifecycle().manage(injector.getInstance(ConfigPurgeJob.class));
     environment.lifecycle().manage(injector.getInstance(DefaultAccountIdToNamespaceMappingForPrEnv.class));
+    environment.lifecycle().manage(injector.getInstance(PipelineEventConsumerController.class));
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
         .scheduleWithFixedDelay(injector.getInstance(DelegateSyncServiceImpl.class), 0L, 2L, TimeUnit.SECONDS);
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
@@ -256,6 +285,48 @@ public class IdpApplication extends Application<IdpConfiguration> {
           { add(IdpMigrationProvider.class); }
         })
         .build();
+  }
+
+  private PmsSdkConfiguration getPmsSdkConfiguration(IdpConfiguration configuration) {
+    boolean remote = configuration.getShouldConfigureWithPMS() != null && configuration.getShouldConfigureWithPMS();
+
+    return PmsSdkConfiguration.builder()
+        .deploymentMode(remote ? SdkDeployMode.REMOTE : SdkDeployMode.LOCAL)
+        .moduleType(ModuleType.IDP)
+        .grpcServerConfig(configuration.getPmsSdkGrpcServerConfig())
+        .pmsGrpcClientConfig(configuration.getPmsGrpcClientConfig())
+        .pipelineServiceInfoProviderClass(IdpPipelineServiceInfoProvider.class)
+        .filterCreationResponseMerger(new IdpFilterCreationResponseMerger())
+        .engineSteps(IdpStepRegistrar.getEngineSteps())
+        .engineAdvisers(PipelineServiceUtilAdviserRegistrar.getEngineAdvisers())
+        .executionSummaryModuleInfoProviderClass(IdpModuleInfoProvider.class)
+        .eventsFrameworkConfiguration(configuration.getEventsFrameworkConfiguration())
+        .build();
+  }
+
+  private void registerPMSSDK(IdpConfiguration configuration, Injector injector) {
+    PmsSdkConfiguration idpSDKConfig = getPmsSdkConfiguration(configuration);
+    if (idpSDKConfig.getDeploymentMode().equals(SdkDeployMode.REMOTE)) {
+      try {
+        PmsSdkInitHelper.initializeSDKInstance(injector, idpSDKConfig);
+      } catch (Exception e) {
+        log.error("PMS SDK registration failed", e);
+      }
+    }
+  }
+
+  private void registerPmsSdkEvents(Injector injector) {
+    log.info("Initializing pms sdk redis abstract consumers...");
+    PipelineEventConsumerController pipelineEventConsumerController =
+        injector.getInstance(PipelineEventConsumerController.class);
+    pipelineEventConsumerController.register(injector.getInstance(InterruptEventRedisConsumer.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(OrchestrationEventRedisConsumer.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(FacilitatorEventRedisConsumer.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeStartEventRedisConsumer.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(ProgressEventRedisConsumer.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeAdviseEventRedisConsumer.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventRedisConsumer.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(CreatePartialPlanRedisConsumer.class), 1);
   }
 
   private void registerHealthCheck(Environment environment, Injector injector) {

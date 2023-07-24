@@ -42,6 +42,7 @@ import io.harness.cdng.elastigroup.beans.ElastigroupStepExecutorParams;
 import io.harness.cdng.elastigroup.config.StartupScriptOutcome;
 import io.harness.cdng.elastigroup.output.ElastigroupConfigurationOutput;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -95,10 +96,12 @@ import io.harness.tasks.ResponseData;
 import software.wings.beans.TaskType;
 
 import com.google.gson.Gson;
+import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import org.joor.Reflect;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -114,6 +117,7 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
   public static final int DEFAULT_CURRENT_RUNNING_INSTANCE_COUNT = 2;
 
   @Mock private EngineExpressionService engineExpressionService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
   @Mock private ElastigroupEntityHelper elastigroupEntityHelper;
   @Mock private KryoSerializer kryoSerializer;
   @Mock private StepHelper stepHelper;
@@ -132,6 +136,8 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
   @Before
   public void setUp() throws Exception {
     when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(logStreamingStepClient);
+    Reflect.on(cdExpressionResolver).set("engineExpressionService", engineExpressionService);
+    Reflect.on(elastigroupStepCommonHelper).set("cdExpressionResolver", cdExpressionResolver);
   }
 
   @Test

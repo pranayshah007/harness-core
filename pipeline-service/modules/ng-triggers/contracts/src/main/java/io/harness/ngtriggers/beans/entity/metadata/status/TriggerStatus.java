@@ -16,9 +16,11 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.FieldNameConstants;
 
 @Data
 @Builder
+@FieldNameConstants(innerTypeName = "TriggerStatusKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(PIPELINE)
 public class TriggerStatus {
@@ -28,4 +30,6 @@ public class TriggerStatus {
   WebhookInfo webhookInfo;
   StatusResult status;
   List<String> detailMessages;
+  Long lastPollingUpdate;
+  List<String> lastPolled; // A list of the last successfully polled tags/versions/ids.
 }

@@ -6,12 +6,14 @@
  */
 
 package io.harness.cdng.artifact.steps;
-
 import static io.harness.beans.FeatureName.CDS_ARTIFACTS_PRIMARY_IDENTIFIER;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
@@ -104,6 +106,8 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Fetch all artifacts ( primary + sidecars using async strategy and produce artifact outcome )
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Slf4j
 public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParameters> {
   private static final long DEFAULT_TIMEOUT = TimeUnit.MINUTES.toMillis(3);

@@ -700,6 +700,7 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldScheduleSyncTaskThrowNoEligibleDelegatesException() {
     when(assignDelegateService.retrieveActiveDelegates(anyString(), any())).thenReturn(emptyList());
+    when(assignDelegateService.getDelegateTaskAssignmentFailureMessage(any(), any())).thenReturn("task failure");
     thrown.expect(NoEligibleDelegatesInAccountException.class);
     DelegateTask task = DelegateTask.builder()
                             .accountId(ACCOUNT_ID)
@@ -834,6 +835,7 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldNotsaveDelegateTaskV2WhenNoEligibleDelegate_sync() {
     DelegateTask delegateTask = getDelegateTaskV2();
+    when(assignDelegateService.getDelegateTaskAssignmentFailureMessage(any(), any())).thenReturn("task failure");
     thrown.expect(NoEligibleDelegatesInAccountException.class);
     delegateTaskServiceClassic.scheduleSyncTaskV2(delegateTask);
     assertThat(persistence.get(DelegateTask.class, delegateTask.getUuid())).isNull();
@@ -1168,6 +1170,8 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testRecordMetrics_noEligibleDelegates() {
     final DelegateTask task = createTaskV2(false, emptySet());
+    when(assignDelegateService.getDelegateTaskAssignmentFailureMessage(any(), any()))
+        .thenReturn("No eligible delegate(s) in account to execute task. ");
     try {
       delegateTaskServiceClassic.processDelegateTaskV2(task, QUEUED);
     } catch (NoEligibleDelegatesInAccountException e) {

@@ -27,8 +27,11 @@ import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.retry.RetryHistoryResponseDto;
 import io.harness.engine.executions.retry.RetryInfo;
 import io.harness.engine.executions.retry.RetryLatestExecutionResponseDto;
+import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
+import io.harness.exception.ngexception.NGTemplateException;
+import io.harness.exception.ngexception.PipelineException;
 import io.harness.execution.PlanExecution;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitx.USER_FLOW;
@@ -98,13 +101,18 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
       @NotNull @ProjectIdentifier String projectIdentifier, String moduleType,
       @ResourceIdentifier @NotEmpty String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo,
       boolean useFQNIfErrorResponse, boolean notifyOnlyUser, String notes, String inputSetPipelineYaml) {
-    if (pmsFeatureFlagService.isEnabled(accountId, PIE_GET_FILE_CONTENT_ONLY)) {
-      ThreadOperationContextHelper.setUserFlow(USER_FLOW.EXECUTION);
+    try {
+      if (pmsFeatureFlagService.isEnabled(accountId, PIE_GET_FILE_CONTENT_ONLY)) {
+        ThreadOperationContextHelper.setUserFlow(USER_FLOW.EXECUTION);
+      }
+      PlanExecutionResponseDto planExecutionResponseDto =
+          pipelineExecutor.runPipelineWithInputSetPipelineYaml(accountId, orgIdentifier, projectIdentifier,
+              pipelineIdentifier, moduleType, inputSetPipelineYaml, false, notifyOnlyUser, notes);
+      return ResponseDTO.newResponse(planExecutionResponseDto);
+    } catch (NGTemplateException ex) {
+      throw new PipelineException(
+          PipelineException.PIPELINE_Execution_MESSAGE, ex, ErrorCode.NG_PIPELINE_EXECUTION_EXCEPTION);
     }
-    PlanExecutionResponseDto planExecutionResponseDto =
-        pipelineExecutor.runPipelineWithInputSetPipelineYaml(accountId, orgIdentifier, projectIdentifier,
-            pipelineIdentifier, moduleType, inputSetPipelineYaml, false, notifyOnlyUser, notes);
-    return ResponseDTO.newResponse(planExecutionResponseDto);
   }
 
   @Override

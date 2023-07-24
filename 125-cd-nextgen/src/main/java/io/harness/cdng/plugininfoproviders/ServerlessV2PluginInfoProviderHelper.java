@@ -22,7 +22,6 @@ import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
-import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
@@ -57,13 +56,11 @@ import io.harness.delegate.task.serverless.ServerlessInfraConfig;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
@@ -87,7 +84,6 @@ public class ServerlessV2PluginInfoProviderHelper {
   @Inject private OutcomeService outcomeService;
 
   @Inject private ServerlessEntityHelper serverlessEntityHelper;
-  @Inject private EngineExpressionService engineExpressionService;
 
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
 
@@ -299,8 +295,7 @@ public class ServerlessV2PluginInfoProviderHelper {
               stageName, stepType));
     }
     ManifestsOutcome outcome = (ManifestsOutcome) manifestsOutcome.getOutcome();
-    ExpressionEvaluatorUtils.updateExpressions(
-        outcome, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+    cdExpressionResolver.updateExpressions(ambiance, outcome);
     return outcome;
   }
 

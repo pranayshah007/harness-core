@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BadRequestException;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -106,7 +107,7 @@ public class DatadogMetricHealthSourceSpec extends MetricHealthSourceSpec {
         metricDefinitions.stream().collect(Collectors.toMap(DatadogMetricHealthDefinition::getMetric,
             datadogMetricHealthDefinition -> DatadogQueryUtils.isValidQuery(datadogMetricHealthDefinition.getQuery())));
     if (validQueriesMap.containsValue(false)) {
-      throw new RuntimeException("Invalid Query : " + validQueriesMap);
+      throw new BadRequestException("Invalid Query : " + validQueriesMap);
     }
   }
 

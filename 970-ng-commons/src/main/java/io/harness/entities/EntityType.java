@@ -623,7 +623,13 @@ public enum EntityType {
       IdentifierRef.class, EntityYamlRootNames.SERVERLESS_AWS_LAMBDA_PACKAGE_V2),
   @JsonProperty(EntityTypeConstants.GITOPS_REVERT_PR)
   GITOPS_REVERT_PR(
-      ModuleType.CD, EntityTypeConstants.GITOPS_REVERT_PR, IdentifierRef.class, EntityYamlRootNames.GITOPS_REVERT_PR);
+      ModuleType.CD, EntityTypeConstants.GITOPS_REVERT_PR, IdentifierRef.class, EntityYamlRootNames.GITOPS_REVERT_PR),
+  @JsonProperty(EntityTypeConstants.AWS_CDK_BOOTSTRAP)
+  AWS_CDK_BOOTSTRAP(
+      ModuleType.CD, EntityTypeConstants.AWS_CDK_BOOTSTRAP, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_BOOTSTRAP),
+  @JsonProperty(EntityTypeConstants.AWS_CDK_SYNTH)
+  AWS_CDK_SYNTH(
+      ModuleType.CD, EntityTypeConstants.AWS_CDK_SYNTH, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_SYNTH);
 
   private final ModuleType moduleType;
   String yamlName;

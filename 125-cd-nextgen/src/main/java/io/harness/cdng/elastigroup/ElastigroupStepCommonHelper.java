@@ -40,7 +40,7 @@ import io.harness.cdng.elastigroup.output.ElastigroupConfigurationOutput;
 import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.execution.spot.elastigroup.ElastigroupStageExecutionDetails.ElastigroupStageExecutionDetailsKeys;
-import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -68,7 +68,6 @@ import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.elastigroup.ElastigroupCommandUnitConstants;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
-import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.UnitProgress;
@@ -129,6 +128,7 @@ import org.jetbrains.annotations.NotNull;
 public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
   private static final String STAGE_EXECUTION_INFO_KEY_FORMAT = "%s.%s";
   @Inject private EngineExpressionService engineExpressionService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private ElastigroupEntityHelper elastigroupEntityHelper;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private StepHelper stepHelper;
@@ -434,8 +434,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
     String image = null;
     if (artifactOutcome.isPresent()) {
       AMIArtifactOutcome amiArtifactOutcome = (AMIArtifactOutcome) artifactOutcome.get();
-      ExpressionEvaluatorUtils.updateExpressions(
-          amiArtifactOutcome, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+      cdExpressionResolver.updateExpressions(ambiance, amiArtifactOutcome);
       image = amiArtifactOutcome.getAmiId();
     }
     if (isEmpty(image)) {

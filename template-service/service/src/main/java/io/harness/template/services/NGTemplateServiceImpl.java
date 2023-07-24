@@ -16,6 +16,7 @@ import static io.harness.gitaware.helper.TemplateMoveConfigOperationType.INLINE_
 import static io.harness.gitaware.helper.TemplateMoveConfigOperationType.getMoveConfigType;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 import static io.harness.springdata.SpringDataMongoUtils.populateInFilter;
+import static io.harness.template.resources.beans.NGTemplateConstants.IDENTIFIER;
 import static io.harness.template.resources.beans.NGTemplateConstants.STABLE_VERSION;
 import static io.harness.template.resources.beans.PermissionTypes.TEMPLATE_VIEW_PERMISSION;
 
@@ -1649,9 +1650,14 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       if (isEmpty(templateEntityList)) {
         return Page.empty();
       }
+
+      if (criteria.getCriteriaObject().containsKey(IDENTIFIER)) {
+        criteria = templateServiceHelper.formCriteria(accountIdentifier, orgIdentifier, projectIdentifier,
+            filterParamsDTO.getFilterIdentifier(), false, null, filterParamsDTO.getSearchTerm(),
+            filterParamsDTO.isIncludeAllTemplatesAccessibleAtScope());
+      }
       populateInFilter(criteria, TemplateEntityKeys.identifier,
           templateEntityList.stream().map(TemplateEntity::getIdentifier).collect(toList()));
-
       templateEntities = templateServiceHelper.listTemplate(accountIdentifier, orgIdentifier, projectIdentifier,
           criteria, Pageable.unpaged(), filterParamsDTO.isGetDistinctFromBranches());
     }

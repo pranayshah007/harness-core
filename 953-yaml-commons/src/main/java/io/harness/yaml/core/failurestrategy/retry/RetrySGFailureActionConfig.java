@@ -28,5 +28,5 @@ import lombok.Value;
 public class RetrySGFailureActionConfig implements FailureStrategyActionConfig {
   @ApiModelProperty(allowableValues = RETRY_STEP_GROUP) NGFailureActionType type = NGFailureActionType.RETRY_STEP_GROUP;
 
-  @NotNull @JsonProperty("spec") RetryFailureSpecConfig specConfig;
+  @NotNull @JsonProperty("spec") RetryStepGroupFailureSpecConfig specConfig;
 }

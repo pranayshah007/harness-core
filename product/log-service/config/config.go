@@ -6,13 +6,16 @@
 package config
 
 import (
+	"time"
+
 	"github.com/kelseyhightower/envconfig"
 )
 
 // Config provides the system configuration.
 type Config struct {
-	Debug bool `envconfig:"LOG_SERVICE_DEBUG_MODE"`
-	Trace bool `envconfig:"LOG_SERVICE_TRACE"`
+	Debug    bool          `envconfig:"LOG_SERVICE_DEBUG_MODE"`
+	Trace    bool          `envconfig:"LOG_SERVICE_TRACE"`
+	CacheTTL time.Duration `envconfig:"LOG_SERVICE_CACHE_TTL" default:"168h"`
 
 	Auth struct {
 		DisableAuth bool   `envconfig:"LOG_SERVICE_DISABLE_AUTH"`
@@ -58,6 +61,12 @@ type Config struct {
 		SentinelAddrs        []string `envconfig:"LOG_SERVICE_REDIS_SENTINEL_ADDRS"`
 	}
 
+	ConsumerWorker struct {
+		WorkerPool    int    `envconfig:"LOG_SERVICE_WORKER_POOL" default:"1"`
+		StreamName    string `envconfig:"LOG_SERVICE_STREAM_NAME" default:"zip-download-stream"`
+		ConsumerGroup string `envconfig:"LOG_SERVICE_CONSUMER_GROUP" default:"group-one"`
+	}
+
 	// Whether to use secret env variables as they are, or talk to GCP secret
 	// manager to resolve them.
 	SecretResolution struct {
@@ -74,6 +83,10 @@ type Config struct {
 		MaxOutputTokens   int    `envconfig:"LOG_SERVICE_GENAI_MAX_OUTPUT_TOKENS" default:"2048"`
 		Debug             bool   `envconfig:"LOG_SERVICE_GENAI_DEBUG_MODE"`
 		UseJSONResponse   bool   `envconfig:"LOG_SERVICE_GENAI_USE_JSON_RESPONSE" default:"false"`
+	}
+
+	Zip struct {
+		LIMIT_FILES int `envconfig:"LOG_SERVICE_LIMIT_FILES" default:"100"`
 	}
 }
 

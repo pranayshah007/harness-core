@@ -21,6 +21,6 @@ import retrofit2.http.QueryMap;
 public interface RancherRestClient {
   @GET("/v3/clusters") Call<RancherListClustersResponse> listClusters(@QueryMap Map<String, String> pageRequestParams);
 
-  @POST("/v3/clusters/{clusterName}?action=generateKubeconfig")
-  Call<RancherGenerateKubeconfigResponse> generateKubeconfig(@Path(value = "clusterName") String clusterName);
+  @POST("/v3/clusters/{clusterId}?action=generateKubeconfig")
+  Call<RancherGenerateKubeconfigResponse> generateKubeconfig(@Path(value = "clusterId") String clusterId);
 }

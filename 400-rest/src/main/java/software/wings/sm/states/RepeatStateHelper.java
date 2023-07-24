@@ -16,6 +16,7 @@ import io.harness.context.ContextElementType;
 import io.harness.exception.InvalidRequestException;
 
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.persistence.artifact.Artifact;
 import software.wings.service.intfc.ServiceResourceService;
 import software.wings.service.intfc.WorkflowExecutionService;
@@ -38,8 +39,8 @@ public class RepeatStateHelper {
 
   public List<ContextElement> filterElementsWithArtifactFromLastDeployment(
       ExecutionContextImpl context, List<ContextElement> repeatElements) {
-    WorkflowExecution workflowExecution =
-        workflowExecutionService.getWorkflowExecution(context.getAppId(), context.getWorkflowExecutionId());
+    WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(
+        context.getAppId(), context.getWorkflowExecutionId(), WorkflowExecutionKeys.artifacts);
     if (workflowExecution == null) {
       throw new InvalidRequestException("Execution No longer Exists : " + context.getWorkflowExecutionId());
     }

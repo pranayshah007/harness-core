@@ -65,6 +65,7 @@ public class NodeExecutionMap extends LateBindingMap {
   transient NodeExecution nodeExecution;
   transient Set<NodeExecutionEntityType> entityTypes;
   transient Map<String, Object> children;
+  public static final String RETRY_COUNT = "retryCount";
 
   @Builder
   NodeExecutionMap(NodeExecutionsCache nodeExecutionsCache, PmsOutcomeService pmsOutcomeService,
@@ -188,6 +189,8 @@ public class NodeExecutionMap extends LateBindingMap {
       return Optional.ofNullable(nodeExecution.getStartTs());
     } else if (NodeExecutionKeys.endTs.equals(key)) {
       return Optional.ofNullable(nodeExecution.getEndTs());
+    } else if (RETRY_COUNT.equals(key)) {
+      return Optional.ofNullable(nodeExecution.getRetryIds() != null ? nodeExecution.getRetryIds().size() : 0);
     } else {
       return Optional.empty();
     }

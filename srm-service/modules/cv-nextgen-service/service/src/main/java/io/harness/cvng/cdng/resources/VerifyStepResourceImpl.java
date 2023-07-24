@@ -58,6 +58,7 @@ import io.harness.cvng.resources.VerifyStepResource;
 import io.harness.cvng.verificationjob.beans.AdditionalInfo;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
+import io.harness.cvng.verificationjob.utils.VerificationJobInstanceServiceInstanceUtils;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.security.SecurityContextBuilder;
@@ -83,6 +84,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -160,8 +162,8 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
         .verificationStartTimestamp(deploymentVerificationJobInstanceSummary.getActivityStartTime())
         .verificationProgressPercentage(deploymentVerificationJobInstanceSummary.getProgressPercentage())
         .verificationStatus(deploymentVerificationJobInstanceSummary.getStatus())
-        .controlNodes(getControlNodesOverview(additionalInfo))
-        .testNodes(getTestNodesOverview(additionalInfo))
+        .controlNodes(getControlNodesOverview(verificationJobInstance, additionalInfo))
+        .testNodes(getTestNodesOverview(verificationJobInstance, additionalInfo))
         .metricsAnalysis(deploymentTimeSeriesAnalysisService.getMetricsAnalysisOverview(
             verifyStepPathParams.getVerifyStepExecutionId()))
         .logClusters(deploymentLogAnalysisService.getLogsAnalysisOverview(
@@ -268,24 +270,27 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
         .build();
   }
 
-  private AnalysedNodeOverview getControlNodesOverview(AdditionalInfo additionalInfo) {
+  private AnalysedNodeOverview getControlNodesOverview(
+      VerificationJobInstance verificationJobInstance, AdditionalInfo additionalInfo) {
     AnalysedNodeOverview analysedNodeOverview;
     switch (additionalInfo.getType()) {
       case CANARY:
         CanaryBlueGreenAdditionalInfo canaryAdditionalInfo = (CanaryBlueGreenAdditionalInfo) additionalInfo;
-        analysedNodeOverview = AnalysedNodeOverview.builder()
-                                   .nodeType(AnalysedNodeType.PRIMARY)
-                                   .nodes(getControlNodesForCanaryOrRollingAnalysisType(canaryAdditionalInfo))
-                                   .build();
+        analysedNodeOverview =
+            AnalysedNodeOverview.builder()
+                .nodeType(AnalysedNodeType.PRIMARY)
+                .nodes(getControlNodesForCanaryOrRollingAnalysisType(verificationJobInstance, canaryAdditionalInfo))
+                .build();
         break;
       case BLUE_GREEN:
       case AUTO:
       case ROLLING:
         CanaryBlueGreenAdditionalInfo blueGreenAdditionalInfo = (CanaryBlueGreenAdditionalInfo) additionalInfo;
-        analysedNodeOverview = AnalysedNodeOverview.builder()
-                                   .nodeType(AnalysedNodeType.PRE_DEPLOYMENT)
-                                   .nodes(getControlNodesForCanaryOrRollingAnalysisType(blueGreenAdditionalInfo))
-                                   .build();
+        analysedNodeOverview =
+            AnalysedNodeOverview.builder()
+                .nodeType(AnalysedNodeType.PRE_DEPLOYMENT)
+                .nodes(getControlNodesForCanaryOrRollingAnalysisType(verificationJobInstance, blueGreenAdditionalInfo))
+                .build();
         break;
       case TEST:
         LoadTestAdditionalInfo loadTestAdditionalInfo = (LoadTestAdditionalInfo) additionalInfo;
@@ -304,7 +309,13 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
   }
 
   private static List<AbstractAnalysedNode> getControlNodesForCanaryOrRollingAnalysisType(
-      CanaryBlueGreenAdditionalInfo canaryBlueGreenAdditionalInfo) {
+      VerificationJobInstance verificationJobInstance, CanaryBlueGreenAdditionalInfo canaryBlueGreenAdditionalInfo) {
+    if (VerificationJobInstanceServiceInstanceUtils.canUseNodesFromCD(verificationJobInstance)) {
+      return VerificationJobInstanceServiceInstanceUtils.getControlNodes(verificationJobInstance)
+          .stream()
+          .map(hostName -> AnalysedDeploymentNode.builder().nodeIdentifier(hostName).build())
+          .collect(Collectors.toList());
+    }
     Set<HostSummaryInfo> hostSummaryInfos = canaryBlueGreenAdditionalInfo.getPrimary();
     return hostSummaryInfos.stream()
         .map(hostSummaryInfo -> AnalysedDeploymentNode.builder().nodeIdentifier(hostSummaryInfo.getHostName()).build())
@@ -318,24 +329,27 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
         > CVConstants.MAX_DATA_RETENTION_DURATION.toDays();
   }
 
-  private AnalysedNodeOverview getTestNodesOverview(AdditionalInfo additionalInfo) {
+  private AnalysedNodeOverview getTestNodesOverview(
+      VerificationJobInstance verificationJobInstance, AdditionalInfo additionalInfo) {
     AnalysedNodeOverview analysedNodeOverview;
     switch (additionalInfo.getType()) {
       case CANARY:
         CanaryBlueGreenAdditionalInfo canaryAdditionalInfo = (CanaryBlueGreenAdditionalInfo) additionalInfo;
-        analysedNodeOverview = AnalysedNodeOverview.builder()
-                                   .nodeType(AnalysedNodeType.CANARY)
-                                   .nodes(getTestNodesForCanaryOrRollingAnalysisType(canaryAdditionalInfo))
-                                   .build();
+        analysedNodeOverview =
+            AnalysedNodeOverview.builder()
+                .nodeType(AnalysedNodeType.CANARY)
+                .nodes(getTestNodesForCanaryOrRollingAnalysisType(verificationJobInstance, canaryAdditionalInfo))
+                .build();
         break;
       case BLUE_GREEN:
       case AUTO:
       case ROLLING:
         CanaryBlueGreenAdditionalInfo blueGreenAdditionalInfo = (CanaryBlueGreenAdditionalInfo) additionalInfo;
-        analysedNodeOverview = AnalysedNodeOverview.builder()
-                                   .nodeType(AnalysedNodeType.POST_DEPLOYMENT)
-                                   .nodes(getTestNodesForCanaryOrRollingAnalysisType(blueGreenAdditionalInfo))
-                                   .build();
+        analysedNodeOverview =
+            AnalysedNodeOverview.builder()
+                .nodeType(AnalysedNodeType.POST_DEPLOYMENT)
+                .nodes(getTestNodesForCanaryOrRollingAnalysisType(verificationJobInstance, blueGreenAdditionalInfo))
+                .build();
         break;
       case TEST:
         LoadTestAdditionalInfo loadTestAdditionalInfo = (LoadTestAdditionalInfo) additionalInfo;
@@ -354,17 +368,34 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
   }
 
   private static List<AbstractAnalysedNode> getTestNodesForCanaryOrRollingAnalysisType(
-      CanaryBlueGreenAdditionalInfo canaryBlueGreenAdditionalInfo) {
+      VerificationJobInstance verificationJobInstance, CanaryBlueGreenAdditionalInfo canaryBlueGreenAdditionalInfo) {
     Set<HostSummaryInfo> hostSummaryInfos = canaryBlueGreenAdditionalInfo.getCanary();
-    return hostSummaryInfos.stream()
-        .map(hostSummaryInfo
-            -> AnalysedDeploymentNode.builder()
-                   .nodeIdentifier(hostSummaryInfo.getHostName())
-                   .failedMetrics(hostSummaryInfo.getAnomalousMetricsCount())
-                   .failedLogClusters(hostSummaryInfo.getAnomalousLogClustersCount())
-                   .verificationResult(VerificationResult.fromRisk(hostSummaryInfo.getRisk()))
-                   .build())
-        .collect(Collectors.toList());
+    Set<String> analysedHostNames =
+        hostSummaryInfos.stream().map(hostSummaryInfo -> hostSummaryInfo.getHostName()).collect(Collectors.toSet());
+    Stream<AbstractAnalysedNode> analysedNodesStream = hostSummaryInfos.stream().map(hostSummaryInfo
+        -> AnalysedDeploymentNode.builder()
+               .nodeIdentifier(hostSummaryInfo.getHostName())
+               .failedMetrics(hostSummaryInfo.getAnomalousMetricsCount())
+               .failedLogClusters(hostSummaryInfo.getAnomalousLogClustersCount())
+               .verificationResult(VerificationResult.fromRisk(hostSummaryInfo.getRisk()))
+               .build());
+    if (VerificationJobInstanceServiceInstanceUtils.canUseNodesFromCD(verificationJobInstance)) {
+      // Add not analysed testNodes from CD to overview tab
+      return Stream
+          .concat(analysedNodesStream,
+              VerificationJobInstanceServiceInstanceUtils.getTestNodes(verificationJobInstance)
+                  .stream()
+                  .filter(hostName -> !analysedHostNames.contains(hostName))
+                  .map(hostName
+                      -> AnalysedDeploymentNode.builder()
+                             .nodeIdentifier(hostName)
+                             .failedMetrics(0L)
+                             .failedLogClusters(0L)
+                             .verificationResult(VerificationResult.NO_ANALYSIS)
+                             .build()))
+          .collect(Collectors.toList());
+    }
+    return analysedNodesStream.collect(Collectors.toList());
   }
 
   private static List<AbstractAnalysedNode> getTestNodesForLoadTestAnalysisType(

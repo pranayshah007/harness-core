@@ -30,6 +30,9 @@ import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.fqn.FQNNode;
+import io.harness.pms.yaml.YamlNode;
+import io.harness.pms.yaml.YamlNodeUtils;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.preflight.PreFlightCheckMetadata;
 import io.harness.template.TemplateReferenceProtoUtils;
 import io.harness.template.async.beans.SetupUsageParams;
@@ -44,6 +47,7 @@ import io.harness.utils.IdentifierRefProtoUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -209,7 +213,7 @@ public class TemplateReferenceHelper {
               templateIdentifierRef, versionLabelNode == null ? STABLE_VERSION : versionLabel, fqn));
           // add runtime entities referred by linked template as references
           referredEntities.addAll(getEntitiesReferredByTemplate(accountId, orgId, projectId, templateIdentifierRef,
-              versionLabel, fqnStringToValueMap, fqn, shouldModifyFqn));
+              versionLabel, fqnStringToValueMap, fqn, shouldModifyFqn, yaml));
         }
       }
     });
@@ -218,7 +222,7 @@ public class TemplateReferenceHelper {
 
   private List<EntityDetailProtoDTO> getEntitiesReferredByTemplate(String accountId, String orgId, String projectId,
       IdentifierRef templateIdentifierRef, String versionLabel, Map<String, Object> fqnStringToValueMap,
-      String linkedTemplateFqnExpression, boolean shouldModifyFqn) {
+      String linkedTemplateFqnExpression, boolean shouldModifyFqn, String yaml) {
     List<EntityDetailProtoDTO> referredEntitiesInTemplate = new ArrayList<>();
     List<EntitySetupUsageDTO> referredUsagesInTemplate = templateSetupUsageHelper.getReferencesOfTemplate(
         templateIdentifierRef.getAccountIdentifier(), templateIdentifierRef.getOrgIdentifier(),
@@ -237,12 +241,45 @@ public class TemplateReferenceHelper {
         if (isReferredEntityForRuntimeInput(identifierRefOfReferredEntity)) {
           String fqn = identifierRefOfReferredEntity.getMetadata().get(PreFlightCheckMetadata.FQN);
           String completeFqnForReferredEntity = linkedTemplateFqnExpression + FQN_SEPARATOR + fqn;
-          JsonNode value = (JsonNode) fqnStringToValueMap.get(completeFqnForReferredEntity);
 
-          if (value != null && isNotEmpty(value.asText())) {
-            referredEntitiesInTemplate.add(
-                convertToEntityDetailProtoDTO(accountId, orgId, projectId, completeFqnForReferredEntity, value.asText(),
-                    referredEntity.getReferredEntity().getType(), shouldModifyFqn));
+          /*
+          This YAML_TYPE field is added in metadata by the entity visitor helper classes only in case of multi entities.
+          Thus, this helps in checking whether the template contains multi service/environment or not. The fqn passed
+          from entity visitor helper classes for multi-entity case will not contain the entityRef & type at end. We are
+          adding it manually here by getting the value of entity Ref(s) & YAML_TYPE field.
+           */
+          String yamlType = identifierRefOfReferredEntity.getMetadata().get(PreFlightCheckMetadata.YAML_TYPE_REF_NAME);
+          boolean isReferredEntityAnArray = false;
+          if (isNotEmpty(yamlType)) {
+            YamlNode yamlNode;
+            try {
+              yamlNode = YamlUtils.readTree(yaml).getNode();
+            } catch (IOException e) {
+              throw new RuntimeException(
+                  "Failed to parse the pipeline yaml while updating references for it's entities.", e);
+            }
+            YamlNode childYamlNode = YamlNodeUtils.goToPathUsingFqn(yamlNode, completeFqnForReferredEntity);
+            if (childYamlNode != null && childYamlNode.isArray()) {
+              isReferredEntityAnArray = true;
+              for (YamlNode element : childYamlNode.asArray()) {
+                JsonNode entityRef = element.getCurrJsonNode().get(yamlType);
+                if (entityRef != null) {
+                  completeFqnForReferredEntity =
+                      completeFqnForReferredEntity + FQN_SEPARATOR + entityRef.asText() + FQN_SEPARATOR + yamlType;
+                  referredEntitiesInTemplate.add(
+                      convertToEntityDetailProtoDTO(accountId, orgId, projectId, completeFqnForReferredEntity,
+                          entityRef.asText(), referredEntity.getReferredEntity().getType(), shouldModifyFqn));
+                }
+              }
+            }
+          }
+          if (!isReferredEntityAnArray) {
+            JsonNode value = (JsonNode) fqnStringToValueMap.get(completeFqnForReferredEntity);
+            if (value != null && isNotEmpty(value.asText())) {
+              referredEntitiesInTemplate.add(
+                  convertToEntityDetailProtoDTO(accountId, orgId, projectId, completeFqnForReferredEntity,
+                      value.asText(), referredEntity.getReferredEntity().getType(), shouldModifyFqn));
+            }
           }
         }
       }

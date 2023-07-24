@@ -12,6 +12,7 @@ import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BadRequestException;
 import lombok.Data;
 
 @Data
@@ -28,7 +29,7 @@ public class HealthSourceRecordsRequest {
 
   public void validate() {
     if (providerType == null && healthSourceType == null) {
-      throw new RuntimeException("datasourceType cannot be inferred from request.");
+      throw new BadRequestException("datasourceType cannot be inferred from request:" + healthSourceType);
     }
   }
 }
