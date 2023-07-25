@@ -49,8 +49,8 @@ public class CCMServiceNowHelperImpl implements CCMServiceNowHelper {
 
   @Override
   public ServiceNowTicketNG createIssue(
-      String accountId, String serviceNowConnectorRef, String ticketType, Map<String, String> fields) {
-    IdentifierRef connectorRef = getIdentifierRef(serviceNowConnectorRef, accountId, "default", null);
+      String accountId, String servicenowConnectorRef, String ticketType, Map<String, String> fields) {
+    IdentifierRef connectorRef = getIdentifierRef(servicenowConnectorRef, accountId, "default", null);
     ServiceNowConnectorDTO serviceNowConnectorDTO = getConnector(connectorRef);
     ServiceNowTaskNGParameters parameters = ServiceNowTaskNGParameters.builder()
                                                 .serviceNowConnectorDTO(serviceNowConnectorDTO)
@@ -58,6 +58,19 @@ public class CCMServiceNowHelperImpl implements CCMServiceNowHelper {
                                                 .fields(fields)
                                                 .build();
     return serviceNowUtils.createTicket(parameters);
+  }
+
+  @Override
+  public ServiceNowTicketNG getIssue(
+      String accountId, String servicenowConnectorRef, String ticketType, String ticketNumber) {
+    IdentifierRef connectorRef = getIdentifierRef(servicenowConnectorRef, accountId, "default", null);
+    ServiceNowConnectorDTO serviceNowConnectorDTO = getConnector(connectorRef);
+    ServiceNowTaskNGParameters parameters = ServiceNowTaskNGParameters.builder()
+                                                .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                .ticketType(ticketType)
+                                                .ticketNumber(ticketNumber)
+                                                .build();
+    return serviceNowUtils.getTicket(parameters);
   }
 
   private ServiceNowConnectorDTO getConnector(IdentifierRef serviceNowConnectorRef) {
