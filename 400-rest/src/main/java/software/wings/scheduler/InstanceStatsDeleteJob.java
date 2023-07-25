@@ -26,7 +26,11 @@ import software.wings.service.intfc.AccountService;
 
 import com.google.inject.Inject;
 import java.security.SecureRandom;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.Duration;
 import java.util.Calendar;
 import java.util.Date;
@@ -50,18 +54,18 @@ public class InstanceStatsDeleteJob implements Job {
   public static final long ONE_DAY_IN_MILLIS = 86400000L;
   public static final String ACCOUNT_ID_KEY = "accountId";
 
-  // 10 minutes
-  private static final int SYNC_INTERVAL = 10;
+  // 15 days
+  private static final int SYNC_INTERVAL = 360;
   static final int MAX_RETRY = 3;
 
   public static final String DELETE_INSTANCE_DATA_POINTS =
       "DELETE FROM INSTANCE_STATS WHERE ACCOUNTID = ? AND REPORTEDAT>= ? AND REPORTEDAT< ?";
   public static final String GET_FIRST_REPORTEDAT_INSTANCE_STAT_DATE =
-      "SELECT * FROM INSTANCE_STATS WHERE ACCOUNTID = ? ORDER BY REPORTEDAT LIMIT 1";
+      "SELECT * FROM INSTANCE_STATS WHERE ACCOUNTID = ? ORDER BY REPORTEDAT ASC LIMIT 1";
   long intervalEndTimestamp;
   Timestamp oldestInstanceStats;
   // instance data migration cron
-  private static final long DATA_DELETION_CRON_LOCK_EXPIRY_IN_SECONDS = 1800; // 60 * 30
+  private static final long DATA_DELETION_CRON_LOCK_EXPIRY_IN_SECONDS = 300; // 60 * 30
   private static final String DATA_DELETION_CRON_LOCK_PREFIX = "INSTANCE_DATA_DELETION_CRON:";
   @Inject private TimeScaleDBService timeScaleDBService;
 
@@ -75,7 +79,7 @@ public class InstanceStatsDeleteJob implements Job {
     return TriggerBuilder.newTrigger()
         .withIdentity(accountId, GROUP)
         .withSchedule(SimpleScheduleBuilder.simpleSchedule()
-                          .withIntervalInMinutes(SYNC_INTERVAL)
+                          .withIntervalInHours(SYNC_INTERVAL)
                           .repeatForever()
                           .withMisfireHandlingInstructionNowWithExistingCount());
   }
@@ -123,8 +127,7 @@ public class InstanceStatsDeleteJob implements Job {
     Account account = accountService.get(accountId);
 
     if (!shouldDeleteInstanceStatsData(account.getLicenseInfo())) {
-      log.info(
-          "Skipping instance stats deletion since the account is not active / not found, accountId: {}", accountId);
+      log.info("Skipping instance stats deletion since the account is not expired, accountId: {}", accountId);
       return;
     }
 
@@ -162,14 +165,13 @@ public class InstanceStatsDeleteJob implements Job {
              dbConnection.prepareStatement(InstanceStatsDeleteJob.GET_FIRST_REPORTEDAT_INSTANCE_STAT_DATE)) {
       fetchOldestInstanceStatsRecordStatement.setString(1, accountId);
       ResultSet resultSet = fetchOldestInstanceStatsRecordStatement.executeQuery();
-      if (resultSet.getFetchSize() == 0) {
-        log.info("No instance stats available for account : {}", accountId);
-        return;
+      if (resultSet.next()) {
+        oldestInstanceStats = resultSet.getTimestamp(EventProcessor.REPORTEDAT);
       }
-      oldestInstanceStats = resultSet.getTimestamp(EventProcessor.REPORTEDAT);
     }
 
     if (oldestInstanceStats == null) {
+      log.info("No instance stats available for account : {}", accountId);
       return;
     }
 
@@ -177,14 +179,17 @@ public class InstanceStatsDeleteJob implements Job {
     Timestamp currentBatchTime = oldestInstanceStats;
     Timestamp nextBatchTime = generateNextBatchTime(currentBatchTime);
 
+    if (currentBatchTime.after(currentTime)) {
+      currentTime = new Timestamp(System.currentTimeMillis());
+    }
+
     while (currentBatchTime.before(currentTime)) {
       try (Connection dbConnection = timeScaleDBService.getDBConnection()) {
         PreparedStatement deleteStatement = dbConnection.prepareStatement(DELETE_INSTANCE_DATA_POINTS);
         deleteStatement.setString(1, accountId);
         deleteStatement.setTimestamp(2, currentBatchTime);
         deleteStatement.setTimestamp(3, nextBatchTime);
-        ResultSet resultSet = deleteStatement.executeQuery();
-        int fetch = resultSet.getFetchSize();
+        deleteStatement.execute();
         currentBatchTime = nextBatchTime;
         nextBatchTime = generateNextBatchTime(currentBatchTime);
         retryCount = 0;

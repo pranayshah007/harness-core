@@ -1495,7 +1495,7 @@ public class AccountServiceImpl implements AccountService {
       log.info("InstanceStatsCollectorJob is added successfully for account {}", targetAccountId);
     }
 
-    if (jobTypes.contains(AccountJobType.INSTANCE_DELETE)) {
+    if (jobTypes.contains(AccountJobType.DELETE_INST_STAT)) {
       log.info("Start Adding InstanceStatsDeleteJob for account {}  ", targetAccountId);
       InstanceStatsDeleteJob.delete(jobScheduler, targetAccountId);
       InstanceStatsDeleteJob.add(jobScheduler, targetAccountId);

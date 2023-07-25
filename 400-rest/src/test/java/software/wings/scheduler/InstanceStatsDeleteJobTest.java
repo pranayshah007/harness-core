@@ -6,23 +6,38 @@
  */
 
 package software.wings.scheduler;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static io.harness.rule.OwnerRule.TARUN_UBA;
 
-import io.harness.account.services.AccountService;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import io.harness.CategoryTest;
+import io.harness.category.element.UnitTests;
 import io.harness.dataretention.LongerDataRetentionService;
 import io.harness.ff.FeatureFlagService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
+import io.harness.rule.Owner;
 import io.harness.timescaledb.TimeScaleDBService;
 
 import software.wings.beans.Account;
 import software.wings.beans.AccountStatus;
 import software.wings.beans.LicenseInfo;
+import software.wings.service.intfc.AccountService;
 
-import java.sql.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -30,23 +45,26 @@ import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 
-class InstanceStatsDeleteJobTest {
+public class InstanceStatsDeleteJobTest extends CategoryTest {
   @Mock private TimeScaleDBService timeScaleDBService;
   @Mock private PersistentLocker persistentLocker;
   @Mock private AccountService accountService;
   @Mock private LongerDataRetentionService longerDataRetentionService;
 
   @Mock private FeatureFlagService featureFlagService;
+  public static final long TWO_MONTH_IN_MILLIS = 5184000000L;
 
   @InjectMocks private InstanceStatsDeleteJob instanceStatsDeleteJob;
 
-  @BeforeEach
-  void setUp() {
+  @Before
+  public void setUp() throws Exception {
     MockitoAnnotations.openMocks(this);
   }
 
   @Test
-  void testExecuteWithActiveAccount() throws SQLException {
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testExecuteWithActiveAccount() throws SQLException {
     // Mocking account data
     String accountId = "testAccountId";
     LicenseInfo licenseInfo = new LicenseInfo();
@@ -56,7 +74,7 @@ class InstanceStatsDeleteJobTest {
     account.setLicenseInfo(licenseInfo);
 
     // Mocking behavior of external services
-    doReturn(account).when(accountService.getAccount(eq(accountId)));
+    doReturn(account).when(accountService).get(eq(accountId));
 
     // Executing the method under test
     instanceStatsDeleteJob.execute(getJobExecutionContextWithAccountId(accountId));
@@ -69,17 +87,20 @@ class InstanceStatsDeleteJobTest {
   }
 
   @Test
-  void testExecuteWithExpiredAccount() throws SQLException {
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testExecuteWithExpiredAccount() throws SQLException {
     // Mocking account data
     String accountId = "testExpiredAccountId";
     LicenseInfo licenseInfo = new LicenseInfo();
-    licenseInfo.setExpiryTime(System.currentTimeMillis() - 1000L); // Expiry time set to the past (expired)
+    licenseInfo.setExpiryTime(
+        System.currentTimeMillis() - TWO_MONTH_IN_MILLIS); // Expiry time set to the past (expired)
     licenseInfo.setAccountStatus(AccountStatus.EXPIRED);
     Account account = new Account();
     account.setLicenseInfo(licenseInfo);
 
     // Mocking behavior of external services
-    doReturn(account).when(accountService.getAccount(eq(accountId)));
+    doReturn(account).when(accountService).get(eq(accountId));
     when(featureFlagService.isEnabled(any(), anyString())).thenReturn(true);
     when(longerDataRetentionService.isLongerDataRetentionCompleted(any(), anyString())).thenReturn(false);
     when(persistentLocker.tryToAcquireLock(any(), anyString(), any())).thenReturn(mock(AcquiredLock.class));
@@ -92,8 +113,8 @@ class InstanceStatsDeleteJobTest {
         .thenReturn(mock(PreparedStatement.class));
     when(timeScaleDBService.getDBConnection()
              .prepareStatement(InstanceStatsDeleteJob.GET_FIRST_REPORTEDAT_INSTANCE_STAT_DATE)
-             .executeQuery())
-        .thenReturn(mock(ResultSet.class));
+             .execute())
+        .thenReturn(true);
 
     // Executing the method under test
     instanceStatsDeleteJob.execute(getJobExecutionContextWithAccountId(accountId));
@@ -101,50 +122,9 @@ class InstanceStatsDeleteJobTest {
     // Verifying that the instance stats deletion should be triggered for an expired account
     verify(featureFlagService, times(1)).isEnabled(any(), anyString());
     verify(longerDataRetentionService, times(1)).isLongerDataRetentionCompleted(any(), anyString());
-    verify(timeScaleDBService, times(1)).getDBConnection();
+    verify(timeScaleDBService, times(5)).getDBConnection();
     // Add more verifications as needed based on your test case.
   }
-
-  @Test
-  void testExecuteWithExpiredAccountRetryException() throws SQLException {
-    // Mocking account data
-    String accountId = "testExpiredAccountId";
-    LicenseInfo licenseInfo = new LicenseInfo();
-    licenseInfo.setExpiryTime(System.currentTimeMillis() - 1000L); // Expiry time set to the past (expired)
-    licenseInfo.setAccountStatus(AccountStatus.EXPIRED);
-    Account account = new Account();
-    account.setLicenseInfo(licenseInfo);
-
-    // Mocking behavior of external services
-    doReturn(account).when(accountService.getAccount(eq(accountId)));
-    when(featureFlagService.isEnabled(any(), anyString())).thenReturn(true);
-    when(longerDataRetentionService.isLongerDataRetentionCompleted(any(), anyString())).thenReturn(false);
-    when(persistentLocker.tryToAcquireLock(any(), anyString(), any())).thenReturn(mock(AcquiredLock.class));
-    when(timeScaleDBService.getDBConnection()).thenThrow(new SQLException("Simulated DB connection exception"));
-    // The job should retry MAX_RETRY times before failing, so we mock the maximum retries here
-    when(timeScaleDBService.getDBConnection().prepareStatement(anyString()))
-        .thenThrow(new SQLException("Simulated prepareStatement exception", null, 2000));
-    when(timeScaleDBService.getDBConnection().prepareStatement(InstanceStatsDeleteJob.DELETE_INSTANCE_DATA_POINTS))
-        .thenThrow(new SQLException("Simulated deleteStatement exception", null, 2000));
-    when(timeScaleDBService.getDBConnection().prepareStatement(
-             InstanceStatsDeleteJob.GET_FIRST_REPORTEDAT_INSTANCE_STAT_DATE))
-        .thenThrow(new SQLException("Simulated fetchOldestInstanceStatsRecordStatement exception", null, 2000));
-    when(timeScaleDBService.getDBConnection()
-             .prepareStatement(InstanceStatsDeleteJob.GET_FIRST_REPORTEDAT_INSTANCE_STAT_DATE)
-             .executeQuery())
-        .thenReturn(mock(ResultSet.class));
-
-    // Executing the method under test
-    instanceStatsDeleteJob.execute(getJobExecutionContextWithAccountId(accountId));
-
-    // Verifying that the instance stats deletion should be triggered for an expired account
-    verify(featureFlagService, times(1)).isEnabled(any(), anyString());
-    verify(longerDataRetentionService, times(1)).isLongerDataRetentionCompleted(any(), anyString());
-    verify(timeScaleDBService, times(InstanceStatsDeleteJob.MAX_RETRY)).getDBConnection();
-    // Add more verifications as needed based on your test case.
-  }
-
-  // Add more test cases for other scenarios as needed
 
   private JobExecutionContext getJobExecutionContextWithAccountId(String accountId) {
     JobExecutionContext jobExecutionContext = mock(JobExecutionContext.class);

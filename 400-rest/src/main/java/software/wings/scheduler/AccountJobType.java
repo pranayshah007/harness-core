@@ -15,5 +15,5 @@ public enum AccountJobType {
   ALERT,
   INSTANCE,
   LIMIT_VICINITY,
-  INSTANCE_DELETE;
+  DELETE_INST_STAT;
 }
