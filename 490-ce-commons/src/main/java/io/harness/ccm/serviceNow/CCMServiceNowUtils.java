@@ -15,6 +15,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
 import io.harness.delegate.task.servicenow.ServiceNowAuthNgHelper;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters;
+import io.harness.delegate.task.servicenow.ServiceNowTaskNGResponse;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ServiceNowException;
 import io.harness.exception.WingsException;
@@ -65,6 +66,57 @@ public class CCMServiceNowUtils {
       return createTicketWithoutTemplate(serviceNowTaskNGParameters);
     } else {
       return createTicketUsingServiceNowTemplate(serviceNowTaskNGParameters);
+    }
+  }
+
+  public ServiceNowTicketNG getTicket(ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
+    ServiceNowConnectorDTO serviceNowConnectorDTO = serviceNowTaskNGParameters.getServiceNowConnectorDTO();
+    ServiceNowRestClient serviceNowRestClient = getServiceNowRestClient(serviceNowConnectorDTO.getServiceNowUrl());
+
+    final Call<JsonNode> request =
+        serviceNowRestClient.getIssue(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO, true),
+            serviceNowTaskNGParameters.getTicketType().toLowerCase(),
+            "number=" + serviceNowTaskNGParameters.getTicketNumber(), "all");
+    Response<JsonNode> response = null;
+
+    try {
+      response = Retry.decorateCallable(retry, () -> request.clone().execute()).call();
+      if (isUnauthorizedError(response)) {
+        log.warn("Failed to get serviceNow ticket using cached auth token; trying with fresh token");
+        Call<JsonNode> requestWithoutCache =
+            serviceNowRestClient.getIssue(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO, false),
+                serviceNowTaskNGParameters.getTicketType().toLowerCase(),
+                "number=" + serviceNowTaskNGParameters.getTicketNumber(), "all");
+        response = Retry.decorateCallable(retry, () -> requestWithoutCache.clone().execute()).call();
+      }
+      handleResponse(response, "Failed to get serviceNow ticket");
+      JsonNode responseObj = response.body().get("result");
+      if (responseObj.isArray()) {
+        Map<String, ServiceNowFieldValueNG> fieldValues = new HashMap<>();
+        for (JsonNode fieldsObj : responseObj) {
+          fieldsObj.fields().forEachRemaining(fieldObj
+              -> fieldValues.put(fieldObj.getKey(),
+                  ServiceNowFieldValueNG.builder()
+                      .value(fieldObj.getValue().get("value").textValue())
+                      .displayValue(fieldObj.getValue().get("display_value").textValue())
+                      .build()));
+        }
+        return ServiceNowTicketNG.builder()
+            .number(serviceNowTaskNGParameters.getTicketNumber())
+            .fields(fieldValues)
+            .url(ServiceNowUtils.prepareTicketUrlFromTicketNumber(serviceNowConnectorDTO.getServiceNowUrl(),
+                serviceNowTaskNGParameters.getTicketNumber(), serviceNowTaskNGParameters.getTicketType()))
+            .build();
+      } else {
+        throw new ServiceNowException("Failed to fetch ticket for ticket type "
+                + serviceNowTaskNGParameters.getTicketType() + " response: " + response,
+            SERVICENOW_ERROR, USER);
+      }
+    } catch (Exception e) {
+      log.error("Failed to get serviceNow ticket ");
+      throw new ServiceNowException(
+          String.format("Error occurred while fetching serviceNow ticket: %s", ExceptionUtils.getMessage(e)),
+          SERVICENOW_ERROR, USER, e);
     }
   }
 
@@ -257,5 +309,9 @@ public class CCMServiceNowUtils {
             StreamResetException.class, SocketTimeoutException.class});
     RetryHelper.registerEventListeners(exponentialRetry);
     return exponentialRetry;
+  }
+
+  private boolean isUnauthorizedError(Response<?> response) {
+    return 401 == response.code();
   }
 }
