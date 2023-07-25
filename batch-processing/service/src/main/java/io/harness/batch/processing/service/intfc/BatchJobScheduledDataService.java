@@ -27,5 +27,5 @@ public interface BatchJobScheduledDataService {
 
   void invalidateJobs(String accountId, List<String> batchJobTypes, Instant instant);
 
-  boolean deleteJobRuns(String accountId, List<String> batchJobTypes, Instant instant);
+  void deleteJobRuns(String accountId, List<String> batchJobTypes, Instant instant);
 }

@@ -19,6 +19,8 @@ import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.util.Date;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -82,14 +84,19 @@ public class BatchJobScheduledDataDaoImpl implements BatchJobScheduledDataDao {
   }
 
   @Override
-  public boolean deleteJobRuns(String accountId, List<String> batchJobTypes, Instant instant) {
+  public void deleteJobRuns(String accountId, List<String> batchJobTypes, Instant instant) {
     Query<BatchJobScheduledData> query = hPersistence.createQuery(BatchJobScheduledData.class)
-        .filter(BatchJobScheduledDataKeys.accountId, accountId)
-        .field(BatchJobScheduledDataKeys.batchJobType)
-        .in(batchJobTypes)
-        .field(BatchJobScheduledDataKeys.startAt)
-        .greaterThanOrEq(instant);
+                                             .filter(BatchJobScheduledDataKeys.accountId, accountId)
+                                             .field(BatchJobScheduledDataKeys.batchJobType)
+                                             .in(batchJobTypes)
+                                             .field(BatchJobScheduledDataKeys.startAt)
+                                             .greaterThanOrEq(instant);
 
-    return hPersistence.delete(query);
+    UpdateOperations<BatchJobScheduledData> updateOperations =
+        hPersistence.createUpdateOperations(BatchJobScheduledData.class);
+    updateOperations.set(BatchJobScheduledDataKeys.validRun, false);
+    updateOperations.set(
+        BatchJobScheduledDataKeys.validUntil, Date.from(OffsetDateTime.now().plusHours(1).toInstant()));
+    hPersistence.update(query, updateOperations);
   }
 }

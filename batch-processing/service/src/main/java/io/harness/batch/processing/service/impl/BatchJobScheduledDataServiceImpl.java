@@ -201,7 +201,7 @@ public class BatchJobScheduledDataServiceImpl implements BatchJobScheduledDataSe
   }
 
   @Override
-  public boolean deleteJobRuns(String accountId, List<String> batchJobTypes, Instant instant) {
-    return batchJobScheduledDataDao.deleteJobRuns(accountId, batchJobTypes, instant);
+  public void deleteJobRuns(String accountId, List<String> batchJobTypes, Instant instant) {
+    batchJobScheduledDataDao.deleteJobRuns(accountId, batchJobTypes, instant);
   }
 }
