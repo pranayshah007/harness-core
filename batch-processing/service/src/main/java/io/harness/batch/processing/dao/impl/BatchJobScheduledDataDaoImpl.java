@@ -89,11 +89,13 @@ public class BatchJobScheduledDataDaoImpl implements BatchJobScheduledDataDao {
                                              .filter(BatchJobScheduledDataKeys.accountId, accountId)
                                              .field(BatchJobScheduledDataKeys.batchJobType)
                                              .in(batchJobTypes)
+                                             .filter(BatchJobScheduledDataKeys.validRun, true)
                                              .field(BatchJobScheduledDataKeys.startAt)
                                              .greaterThanOrEq(instant);
 
     UpdateOperations<BatchJobScheduledData> updateOperations =
         hPersistence.createUpdateOperations(BatchJobScheduledData.class);
+    // Invalidate batchJob and set ttl to 1 day, so it will be deleted the next day
     updateOperations.set(BatchJobScheduledDataKeys.validRun, false);
     updateOperations.set(BatchJobScheduledDataKeys.validUntil, Date.from(OffsetDateTime.now().plusDays(1).toInstant()));
     hPersistence.update(query, updateOperations);
