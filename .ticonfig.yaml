@@ -32,3 +32,4 @@ config:
     - "**/build.properties"
     - "332-ci-manager/config/ci-manager-config.yml"
     - "332-ci-manager/build/container/scripts/replace_configs.sh"
+    - ".github/**"
