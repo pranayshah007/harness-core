@@ -66,7 +66,6 @@ public class CostCategoryBigQueryTasklet implements Tasklet {
   public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
     final JobConstants jobConstants = CCMJobConstants.fromContext(chunkContext);
     String accountId = jobConstants.getAccountId();
-    Instant startTime = Instant.ofEpochMilli(jobConstants.getJobStartTime());
     Instant endTime = Instant.ofEpochMilli(jobConstants.getJobEndTime());
 
     if (!checkEnterpriseLicense(accountId)) {
@@ -78,17 +77,15 @@ public class CostCategoryBigQueryTasklet implements Tasklet {
     YearMonth currentMonth = getYearMonth(endTime);
     Instant monthStartTime = getInstant(currentMonth, DayOfMonth.FIRST);
     Instant monthEndTime = getInstant(currentMonth, DayOfMonth.LAST);
-    Instant queryStartTime = max(startTime, monthStartTime);
-    Instant queryEndTime = min(endTime, monthEndTime);
 
-    log.info("Processing cost categories update from time: {} to: {}", queryStartTime, queryEndTime);
+    log.info("Processing cost categories update from time: {} to: {}", monthStartTime, monthEndTime);
 
     List<BusinessMapping> businessMappings = businessMappingService.getAll(accountId);
     if (businessMappings == null || businessMappings.isEmpty()) {
       log.info("No cost categories found for account: {}", accountId);
       return null;
     }
-    insertCostCategoriesToBigQuery(accountId, tableName, queryStartTime, queryEndTime, businessMappings);
+    insertCostCategoriesToBigQuery(accountId, tableName, monthStartTime, monthEndTime, businessMappings);
     return null;
   }
 
