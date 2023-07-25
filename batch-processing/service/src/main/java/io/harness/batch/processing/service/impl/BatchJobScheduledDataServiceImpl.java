@@ -46,6 +46,7 @@ public class BatchJobScheduledDataServiceImpl implements BatchJobScheduledDataSe
       return Instant.now().minus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS);
     }
     Instant instant = fetchLastDependentBatchJobScheduledTime(accountId, batchJobType);
+    log.info("fetchLastDependentBatchJobScheduledTime: {}, {}, {}", instant, accountId, batchJobType);
     if (null == instant) {
       if (batchJobType.equals(BatchJobType.MSP_MARKUP_AMOUNT)) {
         return Instant.now().minus(5, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS);
@@ -161,6 +162,7 @@ public class BatchJobScheduledDataServiceImpl implements BatchJobScheduledDataSe
       Instant startInstant = Instant.now().minus(7, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS);
       instant = startInstant.isAfter(instant) ? startInstant : instant;
     }
+    log.info("returning instant: {}, {}, {}", instant, accountId, batchJobType);
     return instant;
   }
 
