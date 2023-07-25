@@ -33,13 +33,12 @@ public class OrchestrationGraphDTOConverter {
 
   public OrchestrationGraphDTO convertFrom(OrchestrationGraph orchestrationGraph) {
     return OrchestrationGraphDTO.builder()
-            .startTs(orchestrationGraph.getStartTs())
-            .endTs(orchestrationGraph.getEndTs())
-            .status(orchestrationGraph.getStatus())
-            .rootNodeIds(orchestrationGraph.getRootNodeIds())
-            .planExecutionId(orchestrationGraph.getPlanExecutionId())
-            .adjacencyList(
-                    OrchestrationAdjacencyListDTOConverter.convertFrom(orchestrationGraph.getAdjacencyList()))
-            .build();
+        .startTs(orchestrationGraph.getStartTs())
+        .endTs(orchestrationGraph.getEndTs())
+        .status(orchestrationGraph.getStatus())
+        .rootNodeIds(orchestrationGraph.getRootNodeIds())
+        .planExecutionId(orchestrationGraph.getPlanExecutionId())
+        .adjacencyList(OrchestrationAdjacencyListDTOConverter.convertFrom(orchestrationGraph.getAdjacencyList()))
+        .build();
   }
 }
