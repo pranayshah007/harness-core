@@ -140,6 +140,8 @@ public abstract class AbstractDelegateRunnableTask implements DelegateRunnableTa
             taskResponse.responseCode(ResponseCode.RETRY_ON_OTHER_DELEGATE);
           }
         }
+        metricRegistry.registerCounterMetric(
+                TASK_FAILED, new String[] {DELEGATE_NAME_METRICS, taskType}, "Total number of task failed");
         taskResponse.response(result);
       } else {
         String errorMessage = "No response from delegate task " + taskId;
@@ -148,8 +150,7 @@ public abstract class AbstractDelegateRunnableTask implements DelegateRunnableTa
                                   .errorMessage(errorMessage)
                                   .build());
         taskResponse.responseCode(ResponseCode.FAILED);
-        metricRegistry.registerCounterMetric(
-            TASK_FAILED, new String[] {DELEGATE_NAME_METRICS, taskType}, "Total number of task failed");
+
       }
       log.debug("Completed executing task {}", taskId);
     } catch (DelegateRetryableException exception) {
