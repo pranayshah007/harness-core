@@ -151,15 +151,13 @@ public interface NodeExecutionService {
       String planExecutionId, String parentId, Direction sortOrderOfCreatedAt, Set<String> fieldsToBeIncluded);
 
   /**
-   * Returns iterator for children nodeExecution for given parentId(direct children only) without projection sort by
-   * CreatedAt (Desc) Uses - planExecutionId_parentId_createdAt_idx
-   * TODO(archit): Check if planExecutionId and sort is required or not
+   * Returns iterator for all children nodeExecution for given parentId without projection sort by
+   * CreatedAt (Desc) Uses - planExecutionId_createdAt_idx
    * @param planExecutionId
-   * @param parentId
    * @return
    */
-  CloseableIterator<NodeExecution> fetchChildrenNodeExecutionsIterator(
-      String planExecutionId, String parentId, Direction sortOrderOfCreatedAt);
+  CloseableIterator<NodeExecution> fetchAllChildrenNodeExecutionsIterator(
+      String planExecutionId, Direction sortOrderOfCreatedAt);
 
   /**
    * Returns iterator for children nodeExecution for given parentId(direct children only) with projection (No Sort, thus

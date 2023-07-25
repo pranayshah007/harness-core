@@ -294,9 +294,9 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
-  public CloseableIterator<NodeExecution> fetchChildrenNodeExecutionsIterator(
-      String planExecutionId, String parentId, Direction sortOrderOfCreatedAt) {
-    // Uses planExecutionId_parentId_createdAt_idx
+  public CloseableIterator<NodeExecution> fetchAllChildrenNodeExecutionsIterator(
+      String planExecutionId, Direction sortOrderOfCreatedAt) {
+    // Uses planExecutionId_createdAt_idx
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
                       .with(Sort.by(sortOrderOfCreatedAt, NodeExecutionKeys.createdAt));
     return nodeExecutionReadHelper.fetchNodeExecutionsIteratorWithoutProjections(query);

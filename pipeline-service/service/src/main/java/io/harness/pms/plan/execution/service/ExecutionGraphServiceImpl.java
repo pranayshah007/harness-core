@@ -44,8 +44,8 @@ public class ExecutionGraphServiceImpl implements ExecutionGraphService {
       String nodeExecutionId, String planExecutionId, PipelineExecutionSummaryEntity executionSummaryEntity) {
     List<NodeExecution> nodeExecutions = new LinkedList<>();
     List<NodeExecution> allNodeExecutions = new LinkedList<>();
-    try (CloseableIterator<NodeExecution> iterator = nodeExecutionService.fetchChildrenNodeExecutionsIterator(
-             planExecutionId, nodeExecutionId, Sort.Direction.ASC)) {
+    try (CloseableIterator<NodeExecution> iterator =
+             nodeExecutionService.fetchAllChildrenNodeExecutionsIterator(planExecutionId, Sort.Direction.ASC)) {
       while (iterator.hasNext()) {
         allNodeExecutions.add(iterator.next());
       }
