@@ -42,7 +42,8 @@ public class BatchJobScheduledDataServiceImpl implements BatchJobScheduledDataSe
   @Override
   public Instant fetchLastBatchJobScheduledTime(String accountId, BatchJobType batchJobType) {
     if (batchJobType.equals(BatchJobType.DELEGATE_HEALTH_CHECK)
-        || batchJobType.equals(BatchJobType.RECOMMENDATION_JIRA_STATUS)) {
+        || batchJobType.equals(BatchJobType.RECOMMENDATION_JIRA_STATUS)
+        || batchJobType.equals(BatchJobType.RECOMMENDATION_SERVICENOW_STATUS)) {
       return Instant.now().minus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS);
     }
     Instant instant = fetchLastDependentBatchJobScheduledTime(accountId, batchJobType);
