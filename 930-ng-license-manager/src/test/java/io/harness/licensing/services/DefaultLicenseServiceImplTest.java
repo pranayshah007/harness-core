@@ -7,7 +7,17 @@
 
 package io.harness.licensing.services;
 
-import static io.harness.ModuleType.*;
+import static io.harness.ModuleType.CD;
+import static io.harness.ModuleType.CE;
+import static io.harness.ModuleType.CET;
+import static io.harness.ModuleType.CF;
+import static io.harness.ModuleType.CHAOS;
+import static io.harness.ModuleType.CI;
+import static io.harness.ModuleType.CV;
+import static io.harness.ModuleType.IACM;
+import static io.harness.ModuleType.IDP;
+import static io.harness.ModuleType.SRM;
+import static io.harness.ModuleType.STO;
 import static io.harness.licensing.LicenseConstant.UNLIMITED;
 import static io.harness.licensing.LicenseTestConstant.ACCOUNT_IDENTIFIER;
 import static io.harness.licensing.LicenseTestConstant.DEFAULT_CI_MODULE_LICENSE;
