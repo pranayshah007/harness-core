@@ -1,8 +1,8 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
- * Use of this source code is governed by the PolyForm Shield 1.0.0 license
+ * Copyright 2023 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
- * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
 /*
@@ -15,8 +15,8 @@ import io.harness.timescaledb.tables.CeRecommendations;
 import java.time.OffsetDateTime;
 import org.jooq.Field;
 import org.jooq.Record1;
-import org.jooq.Record17;
-import org.jooq.Row17;
+import org.jooq.Record20;
+import org.jooq.Row20;
 import org.jooq.impl.UpdatableRecordImpl;
 
 /**
@@ -24,8 +24,8 @@ import org.jooq.impl.UpdatableRecordImpl;
  */
 @SuppressWarnings({"all", "unchecked", "rawtypes"})
 public class CeRecommendationsRecord extends UpdatableRecordImpl<CeRecommendationsRecord>
-    implements Record17<String, String, String, Double, Double, String, String, String, Boolean, OffsetDateTime,
-        OffsetDateTime, String, String, String, String, String, String> {
+    implements Record20<String, String, String, Double, Double, String, String, String, Boolean, OffsetDateTime,
+        OffsetDateTime, String, String, String, String, String, String, String, String, String> {
   private static final long serialVersionUID = 1L;
 
   /**
@@ -283,6 +283,51 @@ public class CeRecommendationsRecord extends UpdatableRecordImpl<CeRecommendatio
     return (String) get(16);
   }
 
+  /**
+   * Setter for <code>public.ce_recommendations.servicenowconnectorref</code>.
+   */
+  public CeRecommendationsRecord setServicenowconnectorref(String value) {
+    set(17, value);
+    return this;
+  }
+
+  /**
+   * Getter for <code>public.ce_recommendations.servicenowconnectorref</code>.
+   */
+  public String getServicenowconnectorref() {
+    return (String) get(17);
+  }
+
+  /**
+   * Setter for <code>public.ce_recommendations.servicenowissuekey</code>.
+   */
+  public CeRecommendationsRecord setServicenowissuekey(String value) {
+    set(18, value);
+    return this;
+  }
+
+  /**
+   * Getter for <code>public.ce_recommendations.servicenowissuekey</code>.
+   */
+  public String getServicenowissuekey() {
+    return (String) get(18);
+  }
+
+  /**
+   * Setter for <code>public.ce_recommendations.servicenowstatus</code>.
+   */
+  public CeRecommendationsRecord setServicenowstatus(String value) {
+    set(19, value);
+    return this;
+  }
+
+  /**
+   * Getter for <code>public.ce_recommendations.servicenowstatus</code>.
+   */
+  public String getServicenowstatus() {
+    return (String) get(19);
+  }
+
   // -------------------------------------------------------------------------
   // Primary key information
   // -------------------------------------------------------------------------
@@ -293,21 +338,21 @@ public class CeRecommendationsRecord extends UpdatableRecordImpl<CeRecommendatio
   }
 
   // -------------------------------------------------------------------------
-  // Record11 type implementation
+  // Record20 type implementation
   // -------------------------------------------------------------------------
 
   @Override
-  public Row17<String, String, String, Double, Double, String, String, String, Boolean, OffsetDateTime, OffsetDateTime,
-      String, String, String, String, String, String>
+  public Row20<String, String, String, Double, Double, String, String, String, Boolean, OffsetDateTime, OffsetDateTime,
+      String, String, String, String, String, String, String, String, String>
   fieldsRow() {
-    return (Row17) super.fieldsRow();
+    return (Row20) super.fieldsRow();
   }
 
   @Override
-  public Row17<String, String, String, Double, Double, String, String, String, Boolean, OffsetDateTime, OffsetDateTime,
-      String, String, String, String, String, String>
+  public Row20<String, String, String, Double, Double, String, String, String, Boolean, OffsetDateTime, OffsetDateTime,
+      String, String, String, String, String, String, String, String, String>
   valuesRow() {
-    return (Row17) super.valuesRow();
+    return (Row20) super.valuesRow();
   }
 
   @Override
@@ -396,6 +441,21 @@ public class CeRecommendationsRecord extends UpdatableRecordImpl<CeRecommendatio
   }
 
   @Override
+  public Field<String> field18() {
+    return CeRecommendations.CE_RECOMMENDATIONS.SERVICENOWCONNECTORREF;
+  }
+
+  @Override
+  public Field<String> field19() {
+    return CeRecommendations.CE_RECOMMENDATIONS.SERVICENOWISSUEKEY;
+  }
+
+  @Override
+  public Field<String> field20() {
+    return CeRecommendations.CE_RECOMMENDATIONS.SERVICENOWSTATUS;
+  }
+
+  @Override
   public String component1() {
     return getId();
   }
@@ -481,6 +541,21 @@ public class CeRecommendationsRecord extends UpdatableRecordImpl<CeRecommendatio
   }
 
   @Override
+  public String component18() {
+    return getServicenowconnectorref();
+  }
+
+  @Override
+  public String component19() {
+    return getServicenowissuekey();
+  }
+
+  @Override
+  public String component20() {
+    return getServicenowstatus();
+  }
+
+  @Override
   public String value1() {
     return getId();
   }
@@ -563,6 +638,21 @@ public class CeRecommendationsRecord extends UpdatableRecordImpl<CeRecommendatio
   @Override
   public String value17() {
     return getCloudprovider();
+  }
+
+  @Override
+  public String value18() {
+    return getServicenowconnectorref();
+  }
+
+  @Override
+  public String value19() {
+    return getServicenowissuekey();
+  }
+
+  @Override
+  public String value20() {
+    return getServicenowstatus();
   }
 
   @Override
@@ -668,9 +758,28 @@ public class CeRecommendationsRecord extends UpdatableRecordImpl<CeRecommendatio
   }
 
   @Override
+  public CeRecommendationsRecord value18(String value) {
+    setServicenowconnectorref(value);
+    return this;
+  }
+
+  @Override
+  public CeRecommendationsRecord value19(String value) {
+    setServicenowissuekey(value);
+    return this;
+  }
+
+  @Override
+  public CeRecommendationsRecord value20(String value) {
+    setServicenowstatus(value);
+    return this;
+  }
+
+  @Override
   public CeRecommendationsRecord values(String value1, String value2, String value3, Double value4, Double value5,
       String value6, String value7, String value8, Boolean value9, OffsetDateTime value10, OffsetDateTime value11,
-      String value12, String value13, String value14, String value15, String value16, String value17) {
+      String value12, String value13, String value14, String value15, String value16, String value17, String value18,
+      String value19, String value20) {
     value1(value1);
     value2(value2);
     value3(value3);
@@ -688,6 +797,9 @@ public class CeRecommendationsRecord extends UpdatableRecordImpl<CeRecommendatio
     value15(value15);
     value16(value16);
     value17(value17);
+    value18(value18);
+    value19(value19);
+    value20(value20);
     return this;
   }
 
@@ -708,7 +820,8 @@ public class CeRecommendationsRecord extends UpdatableRecordImpl<CeRecommendatio
   public CeRecommendationsRecord(String id, String name, String namespace, Double monthlycost, Double monthlysaving,
       String clustername, String resourcetype, String accountid, Boolean isvalid, OffsetDateTime lastprocessedat,
       OffsetDateTime updatedat, String jiraconnectorref, String jiraissuekey, String jirastatus,
-      String recommendationstate, String governanceruleid, String cloudprovider) {
+      String recommendationstate, String governanceruleid, String cloudprovider, String servicenowconnectorref,
+      String servicenowissuekey, String servicenowstatus) {
     super(CeRecommendations.CE_RECOMMENDATIONS);
 
     setId(id);
@@ -728,5 +841,8 @@ public class CeRecommendationsRecord extends UpdatableRecordImpl<CeRecommendatio
     setRecommendationstate(recommendationstate);
     setGovernanceruleid(governanceruleid);
     setCloudprovider(cloudprovider);
+    setServicenowconnectorref(servicenowconnectorref);
+    setServicenowissuekey(servicenowissuekey);
+    setServicenowstatus(servicenowstatus);
   }
 }
