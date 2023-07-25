@@ -61,11 +61,26 @@ spec:
             type: KubernetesDirect
             spec:
               namespace: "default"
+              harnessImageConnectorRef: account.harnessImage
     rollbackSteps:
-      - step:
-          identifier: Serverless_Aws_Lambda_Rollback
-          type: ServerlessAwsLambdaRollbackV2
-          name: Serverless Aws Lambda Rollback
-          timeout: 10m
-          spec:
-            delegateSelectors: []
+      - stepGroup:
+          identifier: serverless_rollback_step_group
+          name: Serverless Rollback Step Group
+          steps:
+            - step:
+                identifier: Serverless_Aws_Lambda_Rollback
+                type: ServerlessAwsLambdaRollbackV2
+                name: Serverless Aws Lambda Rollback
+                timeout: 10m
+                spec:
+                  connectorRef: account.harnessImage
+                  image: harnessdev/serverless-rollback:1.82.0-latest
+                  imagePullPolicy: Always
+                  resources:
+                    limits:
+                      memory: 1G
+          stepGroupInfra:
+            type: KubernetesDirect
+            spec:
+              namespace: "default"
+              harnessImageConnectorRef: account.harnessImage
