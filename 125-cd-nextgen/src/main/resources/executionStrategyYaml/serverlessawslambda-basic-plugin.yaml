@@ -22,7 +22,7 @@ spec:
                 timeout: 10m
                 spec:
                   connectorRef: account.harnessImage
-                  image: harnessdev/serverless-prepareRollback:1.82.0-latest
+                  image: harnessdev/serverless-preparerollback:1.82.0-latest
                   imagePullPolicy: Always
             - step:
                 identifier: Serverless_Aws_Lambda_Package
