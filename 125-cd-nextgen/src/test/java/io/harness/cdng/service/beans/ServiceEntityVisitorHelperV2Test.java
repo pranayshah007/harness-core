@@ -7,7 +7,9 @@
 
 package io.harness.cdng.service.beans;
 
+import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.rule.OwnerRule.vivekveman;
+import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.PARENT_PATH_KEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -35,8 +37,10 @@ import com.google.protobuf.StringValue;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -160,5 +164,46 @@ public class ServiceEntityVisitorHelperV2Test extends CategoryTest {
     } catch (IOException e) {
       throw new InvalidRequestException("Could not read resource file: " + filename);
     }
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testaddReferenceMultiServiceCase() throws IOException {
+    Map<String, Object> contextMap = new HashMap<>();
+    LinkedList<String> linkedList = new LinkedList<>();
+    linkedList.add("pipeline");
+    linkedList.add("stages");
+    linkedList.add("s1");
+    linkedList.add("spec");
+    linkedList.add("services");
+    linkedList.add("values");
+    contextMap.put(PARENT_PATH_KEY, linkedList);
+    Map<String, Object> serviceInputs = new LinkedHashMap<>();
+    ServiceYamlV2 serviceYamlV2 =
+        ServiceYamlV2.builder()
+            .serviceRef(ParameterField.createExpressionField(true, "<+input>", null, true))
+            .serviceInputs(ParameterField.<Map<String, Object>>builder().value(serviceInputs).build())
+            .build();
+
+    EntityDetailProtoDTO entityDetailProtoDTO =
+        EntityDetailProtoDTO.newBuilder()
+            .setType(EntityTypeProtoEnum.SERVICE)
+            .setIdentifierRef(IdentifierRefProtoDTO.newBuilder()
+                                  .setScope(ScopeProtoEnum.UNKNOWN)
+                                  .setAccountIdentifier(StringValue.of(ACCOUNT_ID))
+                                  .setOrgIdentifier(StringValue.of(ORG_IDENTIFIER))
+                                  .setProjectIdentifier(StringValue.of(PROJECT_IDENTIFIER))
+                                  .setIdentifier(StringValue.of("<+input>"))
+                                  .putMetadata("fqn", "pipeline.stages.s1.spec.services.values")
+                                  .putMetadata("yamlTypeRefName", "serviceRef")
+                                  .putMetadata("expression", "<+input>")
+                                  .build())
+            .build();
+
+    Set<EntityDetailProtoDTO> entityDetailProtoDTOS = serviceEntityVisitorHelperV2.addReference(
+        serviceYamlV2, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, contextMap);
+
+    assertThat(entityDetailProtoDTOS).contains(entityDetailProtoDTO);
   }
 }

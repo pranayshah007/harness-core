@@ -391,9 +391,10 @@ public class GithubServiceImpl implements GithubService {
 
   private static RSAPrivateKey getPrivateKeyFromString(String key) throws GeneralSecurityException {
     String privateKeyPEM = key;
-    privateKeyPEM = privateKeyPEM.replace("-----BEGIN PRIVATE KEY-----\n", "");
+    privateKeyPEM = privateKeyPEM.replace("-----BEGIN PRIVATE KEY-----", "");
     privateKeyPEM = privateKeyPEM.replace("-----END PRIVATE KEY-----", "");
-    privateKeyPEM = privateKeyPEM.replaceAll("\n", "");
+    // These are line breaks which are supported by different os
+    privateKeyPEM = privateKeyPEM.replaceAll("\\r\\n|\\r|\\n", "");
     byte[] encoded = Base64.decodeBase64(privateKeyPEM);
     KeyFactory kf = KeyFactory.getInstance("RSA");
     PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(encoded);

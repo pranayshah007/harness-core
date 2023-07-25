@@ -14,6 +14,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.ngtriggers.Constants.COMMIT_SHA_STRING_LENGTH;
+import static io.harness.ngtriggers.Constants.EMAIL;
 import static io.harness.ngtriggers.Constants.EVENT_CORRELATION_ID;
 import static io.harness.ngtriggers.Constants.GIT_USER;
 import static io.harness.ngtriggers.Constants.PR;
@@ -38,12 +39,14 @@ import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.retry.RetryExecutionParameters;
+import io.harness.exception.CriticalExpressionEvaluationException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.exception.TriggerException;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.expression.common.ExpressionConstants;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
@@ -108,10 +111,14 @@ import io.harness.product.ci.scm.proto.User;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.SourcePrincipalContextBuilder;
+import io.harness.security.dto.Principal;
+import io.harness.security.dto.ServiceAccountPrincipal;
 import io.harness.security.dto.ServicePrincipal;
+import io.harness.security.dto.UserPrincipal;
 import io.harness.serializer.ProtoUtils;
 import io.harness.utils.PmsFeatureFlagHelper;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -165,7 +172,7 @@ public class TriggerExecutionHelper {
       TriggerPayload triggerPayload, TriggerWebhookEvent triggerWebhookEvent, String payload, String runTimeInputYaml) {
     String executionTagForGitEvent = generateExecutionTagForEvent(triggerDetails, triggerPayload);
     TriggeredBy embeddedUser = generateTriggerdBy(
-        executionTagForGitEvent, triggerDetails.getNgTriggerEntity(), triggerPayload, triggerWebhookEvent.getUuid());
+        executionTagForGitEvent, triggerDetails.getNgTriggerEntity(), triggerPayload, triggerWebhookEvent);
 
     TriggerType triggerType = findTriggerType(triggerPayload);
     ExecutionTriggerInfo triggerInfo =
@@ -181,9 +188,10 @@ public class TriggerExecutionHelper {
   }
 
   // Todo: Check if we can merge some logic with ExecutionHelper
-  private PlanExecution createPlanExecution(TriggerDetails triggerDetails, TriggerPayload triggerPayload,
-      String payload, String executionTagForGitEvent, ExecutionTriggerInfo triggerInfo,
-      TriggerWebhookEvent triggerWebhookEvent, String runtimeInputYaml) {
+  @VisibleForTesting
+  PlanExecution createPlanExecution(TriggerDetails triggerDetails, TriggerPayload triggerPayload, String payload,
+      String executionTagForGitEvent, ExecutionTriggerInfo triggerInfo, TriggerWebhookEvent triggerWebhookEvent,
+      String runtimeInputYaml) {
     try {
       SecurityContextBuilder.setContext(
           new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
@@ -289,15 +297,17 @@ public class TriggerExecutionHelper {
           PlanExecutionMetadata.builder().planExecutionId(executionId).triggerJsonPayload(payload);
 
       String pipelineYaml;
+      JsonNode runtimeInputJsonNode = null;
       if (isBlank(runtimeInputYaml)) {
         pipelineYaml = pipelineEntity.getYaml();
       } else {
+        runtimeInputJsonNode = YamlUtils.readAsJsonNode(runtimeInputYaml);
         String pipelineYamlBeforeMerge = pipelineEntity.getYaml();
         switch (pipelineEntity.getHarnessVersion()) {
           case PipelineVersion.V1:
             planExecutionMetadataBuilder.inputSetYaml(runtimeInputYaml);
-            pipelineYaml =
-                InputSetMergeHelperV1.mergeInputSetIntoPipelineYaml(runtimeInputYaml, pipelineYamlBeforeMerge);
+            pipelineYaml = InputSetMergeHelperV1.mergeInputSetIntoPipelineYaml(
+                runtimeInputJsonNode, YamlUtils.readAsJsonNode(pipelineYamlBeforeMerge));
             break;
           default:
             String sanitizedRuntimeInputYaml =
@@ -333,9 +343,7 @@ public class TriggerExecutionHelper {
         }
 
         StagesExecutionInfo stagesExecutionInfo = null;
-        if (featureFlagService.isEnabled(
-                pipelineEntity.getAccountId(), FeatureName.CDS_NG_TRIGGER_SELECTIVE_STAGE_EXECUTION)
-            && triggerDetails.getNgTriggerConfigV2() != null
+        if (triggerDetails.getNgTriggerConfigV2() != null
             && EmptyPredicate.isNotEmpty(triggerDetails.getNgTriggerConfigV2().getStagesToExecute())) {
           boolean allowedStageExecution = false;
           if (PipelineVersion.V0.equals(pipelineEntity.getHarnessVersion())) {
@@ -395,8 +403,8 @@ public class TriggerExecutionHelper {
         SecurityContextBuilder.setContext(new ServicePrincipal(PIPELINE_SERVICE.getServiceId()));
         switch (pipelineEntity.getHarnessVersion()) {
           case PipelineVersion.V0:
-            String yamlForValidatingSchema =
-                executionHelper.getPipelineYamlWithUnResolvedTemplates(runtimeInputYaml, pipelineEntity);
+            JsonNode yamlForValidatingSchema =
+                executionHelper.getPipelineYamlWithUnResolvedTemplates(runtimeInputJsonNode, pipelineEntity);
             pmsYamlSchemaService.validateYamlSchema(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
                 pipelineEntity.getProjectIdentifier(), yamlForValidatingSchema);
             break;
@@ -430,18 +438,12 @@ public class TriggerExecutionHelper {
     // when removing the Feature Flag CDS_NG_TRIGGER_EXECUTION_REFACTOR.
     GitAwareContextHelper.initDefaultScmGitMetaDataAndRequestParams();
     try {
-      SecurityContextBuilder.setContext(
-          new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
-      SourcePrincipalContextBuilder.setSourcePrincipal(
-          new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
-
+      setPrincipal(triggerWebhookEvent);
       PipelineEntity pipelineEntity = getPipelineEntityToExecute(triggerDetails, triggerWebhookEvent);
       RetryExecutionParameters retryExecutionParameters = RetryExecutionParameters.builder().isRetry(false).build();
       List<String> stagesToExecute = Collections.emptyList();
 
-      if (featureFlagService.isEnabled(
-              pipelineEntity.getAccountId(), FeatureName.CDS_NG_TRIGGER_SELECTIVE_STAGE_EXECUTION)
-          && triggerDetails.getNgTriggerConfigV2() != null
+      if (triggerDetails.getNgTriggerConfigV2() != null
           && EmptyPredicate.isNotEmpty(triggerDetails.getNgTriggerConfigV2().getStagesToExecute())) {
         stagesToExecute = triggerDetails.getNgTriggerConfigV2().getStagesToExecute();
       }
@@ -539,12 +541,30 @@ public class TriggerExecutionHelper {
   }
 
   @VisibleForTesting
-  TriggeredBy generateTriggerdBy(
-      String executionTagForGitEvent, NGTriggerEntity ngTriggerEntity, TriggerPayload triggerPayload, String eventId) {
+  TriggeredBy generateTriggerdBy(String executionTagForGitEvent, NGTriggerEntity ngTriggerEntity,
+      TriggerPayload triggerPayload, TriggerWebhookEvent triggerWebhookEvent) {
+    String eventId = triggerWebhookEvent != null ? triggerWebhookEvent.getUuid() : null;
     TriggeredBy.Builder builder = TriggeredBy.newBuilder()
                                       .setIdentifier(ngTriggerEntity.getIdentifier())
                                       .setTriggerIdentifier(ngTriggerEntity.getIdentifier())
                                       .setUuid("systemUser");
+    if (triggerWebhookEvent != null && triggerWebhookEvent.getPrincipal() != null) {
+      /* If principal is available in `triggerWebhookEvent`, we set some information in `TriggeredBy` based on it,
+      because during creation of plan execution, `PipelineStagePlanCreator.setSourcePrincipal` actually uses information
+      from `TriggeredBy` in order to re-set the Principal in `SourcePrincipalContextBuilder` and
+      `SecurityContextBuilder`.
+      */
+      Principal principal = triggerWebhookEvent.getPrincipal();
+      if (principal instanceof UserPrincipal) {
+        UserPrincipal userPrincipal = (UserPrincipal) principal;
+        builder.setIdentifier(userPrincipal.getUsername());
+        builder.putExtraInfo(EMAIL, userPrincipal.getEmail());
+      } else if (principal instanceof ServiceAccountPrincipal) {
+        ServiceAccountPrincipal serviceAccountPrincipal = (ServiceAccountPrincipal) principal;
+        builder.setIdentifier(serviceAccountPrincipal.getUsername());
+        builder.putExtraInfo(EMAIL, serviceAccountPrincipal.getEmail());
+      }
+    }
     if (isNotBlank(executionTagForGitEvent)) {
       builder.putExtraInfo(PlanExecution.EXEC_TAG_SET_BY_TRIGGER, executionTagForGitEvent);
       builder.putExtraInfo(TRIGGER_REF, generateTriggerRef(ngTriggerEntity));
@@ -581,7 +601,7 @@ public class TriggerExecutionHelper {
         if (sender != null) {
           builder.putExtraInfo(GIT_USER, sender.getLogin());
           if (isNotEmpty(sender.getEmail())) {
-            builder.putExtraInfo("email", sender.getEmail());
+            builder.putExtraInfo(EMAIL, sender.getEmail());
           }
           if (isNotEmpty(sender.getLogin())) {
             builder.setIdentifier(sender.getLogin());
@@ -781,14 +801,21 @@ public class TriggerExecutionHelper {
     }
 
     TriggerExpressionEvaluator triggerExpressionEvaluator;
-    if (!triggerWebhookEvent.getSourceRepoType().equals("CUSTOM")) {
-      WebhookPayloadData webhookPayloadData = webhookEventPayloadParser.parseEvent(triggerWebhookEvent);
-      triggerExpressionEvaluator = WebhookTriggerFilterUtils.generatorPMSExpressionEvaluator(webhookPayloadData);
-      return (String) triggerExpressionEvaluator.evaluateExpression(expression);
-    } else {
-      triggerExpressionEvaluator = WebhookTriggerFilterUtils.generatorPMSExpressionEvaluator(
-          null, triggerWebhookEvent.getHeaders(), triggerWebhookEvent.getPayload());
-      return (String) triggerExpressionEvaluator.evaluateExpression(TRIGGER_PAYLOAD_BRANCH);
+    try {
+      if (!triggerWebhookEvent.getSourceRepoType().equals("CUSTOM")) {
+        WebhookPayloadData webhookPayloadData = webhookEventPayloadParser.parseEvent(triggerWebhookEvent);
+        triggerExpressionEvaluator = WebhookTriggerFilterUtils.generatorPMSExpressionEvaluator(webhookPayloadData);
+        return (String) triggerExpressionEvaluator.evaluateExpressionWithExpressionMode(
+            expression, ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
+      } else {
+        triggerExpressionEvaluator = WebhookTriggerFilterUtils.generatorPMSExpressionEvaluator(
+            null, triggerWebhookEvent.getHeaders(), triggerWebhookEvent.getPayload());
+        return (String) triggerExpressionEvaluator.evaluateExpressionWithExpressionMode(
+            TRIGGER_PAYLOAD_BRANCH, ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
+      }
+    } catch (CriticalExpressionEvaluationException e) {
+      throw new TriggerException(
+          String.format("Please ensure the expression %s has the right branch information", expression), USER);
     }
   }
 
@@ -829,5 +856,21 @@ public class TriggerExecutionHelper {
       return "";
     }
     return runtimeInputYaml;
+  }
+
+  @VisibleForTesting
+  void setPrincipal(TriggerWebhookEvent triggerWebhookEvent) {
+    /* If user or svc-account principal is available in triggerWebhookEvent, we used it.
+    This means that all API calls will inherit the underlying user or svc-account's permissions.
+    Otherwise, we just set a Service Principal, which always has full privileges. */
+    if (triggerWebhookEvent != null && triggerWebhookEvent.getPrincipal() != null) {
+      SecurityContextBuilder.setContext(triggerWebhookEvent.getPrincipal());
+      SourcePrincipalContextBuilder.setSourcePrincipal(triggerWebhookEvent.getPrincipal());
+    } else {
+      SecurityContextBuilder.setContext(
+          new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
+      SourcePrincipalContextBuilder.setSourcePrincipal(
+          new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
+    }
   }
 }

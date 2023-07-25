@@ -175,6 +175,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
   private static final String REPO_LIST_SIZE_EXCEPTION = "The size of unique repository list is greater than [%d]";
 
+  public static final String CREATING_TEMPLATE = "creating new template";
+
   @Override
   public TemplateEntity create(
       TemplateEntity templateEntity, boolean setStableTemplate, String comments, boolean isNewTemplate) {
@@ -286,6 +288,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         templateReferenceHelper.publishTemplateReferences(
             SetupUsageParams.builder().templateEntity(templateEntity).build(), referredEntities);
       }
+
+      templateServiceHelper.sendTemplatesSaveTelemetryEvent(template, CREATING_TEMPLATE);
 
       return template;
 
@@ -502,8 +506,9 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       log.error(String.format("Error while saving template [%s] of versionLabel [%s]", templateEntity.getIdentifier(),
                     templateEntity.getVersionLabel()),
           e);
-      throw new InvalidRequestException(String.format("Error while saving template [%s] of versionLabel [%s]",
-                                            templateEntity.getIdentifier(), templateEntity.getVersionLabel()),
+      throw new InvalidRequestException(
+          String.format("Error while saving template [%s] of versionLabel [%s] : [%s]", templateEntity.getIdentifier(),
+              templateEntity.getVersionLabel(), e.getMessage()),
           e);
     }
   }
@@ -537,7 +542,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     } catch (Exception e) {
       String errorMessage = getErrorMessage(templateIdentifier, versionLabel);
       log.error(errorMessage, e);
-      throw new InvalidRequestException(String.format("[%s]: %s", errorMessage, ExceptionUtils.getMessage(e)));
+      throw new InvalidRequestException(String.format("[%s]: %s", errorMessage, e.getMessage()));
     }
   }
 
@@ -1656,9 +1661,10 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   @VisibleForTesting
   void applyGitXSettingsIfApplicable(String accountIdentifier, String orgIdentifier, String projIdentifier) {
     gitXSettingsHelper.enforceGitExperienceIfApplicable(accountIdentifier, orgIdentifier, projIdentifier);
-    gitXSettingsHelper.setConnectorRefForRemoteEntity(accountIdentifier, orgIdentifier, projIdentifier);
     gitXSettingsHelper.setDefaultStoreTypeForEntities(
         accountIdentifier, orgIdentifier, projIdentifier, EntityType.TEMPLATE);
+    gitXSettingsHelper.setConnectorRefForRemoteEntity(accountIdentifier, orgIdentifier, projIdentifier);
+    gitXSettingsHelper.setDefaultRepoForRemoteEntity(accountIdentifier, orgIdentifier, projIdentifier);
   }
 
   @Override

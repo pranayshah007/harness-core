@@ -207,11 +207,19 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
     UnitStep unitStep = serialiseStepWrapper(ciStepInfo, parkedTaskId, logKey, stepIdentifier,
         getPort(ambiance, stepIdentifier), accountId, stepParametersName, stringTimeout, os, ambiance, stageDetails);
     unitStep = injectOutputVarsAsEnvVars(unitStep, accountId, ambiance.getStageExecutionId());
+    LiteEnginePodDetailsOutcome liteEnginePodDetailsOutcome = (LiteEnginePodDetailsOutcome) outcomeService.resolve(
+        ambiance, RefObjectUtils.getOutcomeRefObject(LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME));
+    String ip = "";
+    if (liteEnginePodDetailsOutcome == null) {
+      log.info("Failed to get pod local ipAddress details");
+    } else {
+      ip = liteEnginePodDetailsOutcome.getIpAddress();
+    }
     String liteEngineTaskId =
-        queueK8DelegateTask(ambiance, timeoutInMillis, accountId, ciDelegateTaskExecutor, unitStep, runtimeId);
+        queueK8DelegateTask(ambiance, timeoutInMillis, accountId, ciDelegateTaskExecutor, unitStep, runtimeId, ip);
 
-    log.info(
-        "Created parked task {} and lite engine task {} for  step {}", parkedTaskId, liteEngineTaskId, stepIdentifier);
+    log.info("Created parked task {} and lite engine task {} for  step {} with ip {}", parkedTaskId, liteEngineTaskId,
+        stepIdentifier, ip);
 
     return AsyncExecutableResponse.newBuilder()
         .addCallbackIds(parkedTaskId)
@@ -499,11 +507,7 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
   }
 
   public String queueK8DelegateTask(Ambiance ambiance, long timeout, String accountId, CIDelegateTaskExecutor executor,
-      UnitStep unitStep, String executionId) {
-    LiteEnginePodDetailsOutcome liteEnginePodDetailsOutcome = (LiteEnginePodDetailsOutcome) outcomeService.resolve(
-        ambiance, RefObjectUtils.getOutcomeRefObject(LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME));
-    String ip = liteEnginePodDetailsOutcome.getIpAddress();
-
+      UnitStep unitStep, String executionId, String ip) {
     ExecuteStepRequest executeStepRequest =
         ExecuteStepRequest.newBuilder().setExecutionId(executionId).setStep(unitStep).setTmpFilePath(TMP_PATH).build();
     CIK8ExecuteStepTaskParams params = CIK8ExecuteStepTaskParams.builder()

@@ -30,8 +30,7 @@ public class DelegateLogContextHelper {
       return new TaskLogContext(taskId, delegateTask.getTaskDataV2().getTaskType(),
           TaskType.valueOf(delegateTask.getTaskDataV2().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR);
     } else {
-      return new ExecutionLogContext(
-          taskId, delegateTask.getRequestUri(), delegateTask.getRequestMethod(), OVERRIDE_ERROR);
+      return new ExecutionLogContext(taskId, delegateTask.getEventType(), OVERRIDE_ERROR);
     }
   }
 }

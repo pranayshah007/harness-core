@@ -17,21 +17,23 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.TriggerException;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
+import io.harness.ngtriggers.beans.dto.eventmapping.UnMatchedTriggerInfo;
 import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventMappingResponse;
 import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventMappingResponse.WebhookEventMappingResponseBuilder;
+import io.harness.ngtriggers.beans.response.TriggerEventResponse;
 import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
 import io.harness.ngtriggers.beans.source.NGTriggerSpecV2;
 import io.harness.ngtriggers.beans.source.artifact.ArtifactTriggerConfig;
 import io.harness.ngtriggers.beans.source.artifact.ManifestTriggerConfig;
+import io.harness.ngtriggers.beans.source.artifact.MultiRegionArtifactTriggerConfig;
 import io.harness.ngtriggers.eventmapper.filters.TriggerFilter;
 import io.harness.ngtriggers.eventmapper.filters.dto.FilterRequestData;
 import io.harness.ngtriggers.expressions.TriggerExpressionEvaluator;
 import io.harness.ngtriggers.helpers.TriggerEventResponseHelper;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.pms.contracts.triggers.ArtifactData;
+import io.harness.yaml.utils.JsonPipelineUtils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
@@ -53,6 +55,7 @@ public class ArtifactJexlConditionsTriggerFilter implements TriggerFilter {
   public WebhookEventMappingResponse applyFilter(FilterRequestData filterRequestData) {
     WebhookEventMappingResponseBuilder mappingResponseBuilder = initWebhookEventMappingResponse(filterRequestData);
     List<TriggerDetails> matchedTriggers = new ArrayList<>();
+    List<UnMatchedTriggerInfo> unMatchedTriggersInfoList = new ArrayList<>();
 
     for (TriggerDetails trigger : filterRequestData.getDetails()) {
       try {
@@ -67,12 +70,22 @@ public class ArtifactJexlConditionsTriggerFilter implements TriggerFilter {
                                             .build();
         if (checkTriggerEligibility(filterRequestData, triggerDetails)) {
           matchedTriggers.add(triggerDetails);
+        } else {
+          UnMatchedTriggerInfo unMatchedTriggerInfo =
+              UnMatchedTriggerInfo.builder()
+                  .unMatchedTriggers(triggerDetails)
+                  .finalStatus(TriggerEventResponse.FinalStatus.TRIGGER_DID_NOT_MATCH_ARTIFACT_JEXL_CONDITION)
+                  .message(triggerDetails.getNgTriggerEntity().getIdentifier()
+                      + " didn't match condition for artifact jexl condition")
+                  .build();
+          unMatchedTriggersInfoList.add(unMatchedTriggerInfo);
         }
       } catch (Exception e) {
         log.error(getTriggerSkipMessage(trigger.getNgTriggerEntity()), e);
       }
     }
 
+    mappingResponseBuilder.unMatchedTriggerInfoList(unMatchedTriggersInfoList);
     if (isEmpty(matchedTriggers)) {
       log.info("No trigger matched polling event after condition evaluation:");
       mappingResponseBuilder.failedToFindTrigger(true)
@@ -97,6 +110,9 @@ public class ArtifactJexlConditionsTriggerFilter implements TriggerFilter {
     } else if (ArtifactTriggerConfig.class.isAssignableFrom(spec.getClass())) {
       ArtifactTriggerConfig artifactTriggerConfig = (ArtifactTriggerConfig) spec;
       triggerJexlCondition = artifactTriggerConfig.getSpec().fetchJexlArtifactConditions();
+    } else if (MultiRegionArtifactTriggerConfig.class.isAssignableFrom(spec.getClass())) {
+      MultiRegionArtifactTriggerConfig multiRegionArtifactTriggerConfig = (MultiRegionArtifactTriggerConfig) spec;
+      triggerJexlCondition = multiRegionArtifactTriggerConfig.getJexlCondition();
     }
 
     if (isEmpty(triggerJexlCondition)) {
@@ -110,11 +126,7 @@ public class ArtifactJexlConditionsTriggerFilter implements TriggerFilter {
     String build = filterRequestData.getPollingResponse().getBuildInfo().getVersions(0);
     ArtifactData artifactData = ArtifactData.newBuilder().putAllMetadata(metadata).setBuild(build).build();
     String jsonMetadata = "";
-    try {
-      jsonMetadata = new ObjectMapper().writeValueAsString(metadata);
-    } catch (JsonProcessingException e) {
-      log.error("Unable to convert metadata to json", e);
-    }
+    jsonMetadata = JsonPipelineUtils.getJsonString(metadata);
     return checkIfJexlConditionsMatch(artifactData, jsonMetadata, triggerJexlCondition);
   }
 

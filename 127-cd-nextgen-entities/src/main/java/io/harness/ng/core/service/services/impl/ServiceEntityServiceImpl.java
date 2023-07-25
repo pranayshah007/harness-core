@@ -618,8 +618,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   @Override
   public boolean isServiceField(String fieldName, JsonNode serviceValue) {
     return YamlTypes.SERVICE_ENTITY.equals(fieldName) && serviceValue.isObject()
-        && (serviceValue.get(YamlTypes.SERVICE_REF) != null
-            || serviceValue.get(YamlTypes.SERVICE_USE_FROM_STAGE) != null);
+        && (serviceValue.get(YamlTypes.SERVICE_REF) != null || serviceValue.get(YamlTypes.USE_FROM_STAGE) != null);
   }
 
   @Override

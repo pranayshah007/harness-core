@@ -61,6 +61,7 @@ import io.harness.cvng.beans.cvnglog.CVNGLogType;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
 import io.harness.cvng.beans.cvnglog.TraceableType;
+import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
 import io.harness.cvng.client.FakeNotificationClient;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.client.NextGenServiceImpl;
@@ -222,6 +223,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Mock ChangeSourceService changeSourceServiceMock;
   @Mock FakeNotificationClient notificationClient;
   @Mock private PersistentLocker mockedPersistentLocker;
+
+  @Mock SRMAnalysisStepService srmAnalysisStepService;
   @Mock private EnforcementClientService enforcementClientService;
   @Mock private FeatureFlagService featureFlagService;
 
@@ -300,6 +303,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     FieldUtils.writeField(monitoredServiceService, "notificationClient", notificationClient, true);
     FieldUtils.writeField(monitoredServiceService, "featureFlagService", featureFlagService, true);
     FieldUtils.writeField(monitoredServiceService, "ngLicenseHttpClient", ngLicenseHttpClient, true);
+    FieldUtils.writeField(monitoredServiceService, "srmAnalysisStepService", srmAnalysisStepService, true);
   }
 
   @Test
@@ -1239,6 +1243,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
                    builderFactory.getContext().getMonitoredServiceParams(), Arrays.asList(changeSourceIdentifier)))
         .isEmpty();
     assertThat(cvConfigs.size()).isEqualTo(0);
+    verify(srmAnalysisStepService).abortRunningStepsForMonitoredService(projectParams, monitoredServiceIdentifier);
   }
 
   @Test

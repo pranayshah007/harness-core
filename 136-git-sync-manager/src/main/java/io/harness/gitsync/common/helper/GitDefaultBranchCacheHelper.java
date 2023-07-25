@@ -27,7 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PIPELINE)
 public class GitDefaultBranchCacheHelper {
   @Inject GitDefaultBranchCacheService gitDefaultBranchCacheService;
-  @Inject GitRepoUrlHelper gitRepoUrlHelper;
+  @Inject GitRepoHelper gitRepoHelper;
   @Inject NGFeatureFlagHelperService ngFeatureFlagHelperService;
   public static final String GIT_DEFAULT_BRANCH_CACHE = "GIT_DEFAULT_BRANCH_CACHE";
 
@@ -84,7 +84,18 @@ public class GitDefaultBranchCacheHelper {
 
   private GitDefaultBranchCacheKey buildGitDefaultBranchCacheKey(
       String accountIdentifier, String repoName, ScmConnector scmConnector) {
-    String repoUrl = gitRepoUrlHelper.getRepoUrl(scmConnector, repoName);
+    String repoUrl = gitRepoHelper.getRepoUrl(scmConnector, repoName);
     return new GitDefaultBranchCacheKey(accountIdentifier, repoUrl, repoName);
+  }
+
+  public boolean isGitDefaultBranch(String accountIdentifier, ScmConnector scmConnector, String repoName,
+      String requestBranch, String responseBranch) {
+    if (isEmpty(requestBranch)) {
+      return true;
+    }
+    if (isEmpty(responseBranch)) {
+      return false;
+    }
+    return responseBranch.equals(getDefaultBranchFromCache(accountIdentifier, repoName, scmConnector));
   }
 }

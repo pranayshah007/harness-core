@@ -18,6 +18,7 @@ import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.idp.onboarding.config.OnboardingModuleConfig;
 import io.harness.idp.provision.ProvisionModuleConfig;
+import io.harness.idp.proxy.config.ProxyAllowListConfig;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.logstreaming.LogStreamingServiceConfiguration;
 import io.harness.mongo.MongoConfig;
@@ -83,11 +84,13 @@ public class IdpConfiguration extends Configuration {
   @JsonProperty("backstageAppBaseUrl") private String backstageAppBaseUrl;
   @JsonProperty("backstagePostgresHost") private String backstagePostgresHost;
   @JsonProperty("delegateSelectorsCacheMode") private String delegateSelectorsCacheMode;
+  @JsonProperty("idpEncryptionSecret") private String idpEncryptionSecret;
+  @JsonProperty("proxyAllowList") private ProxyAllowListConfig proxyAllowList;
   private String managerTarget;
   private String managerAuthority;
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
   public static final String IDP_SPEC_PACKAGE = "io.harness.spec.server.idp.v1";
-  public static final String NG_MANAGER_PROXY_PACKAGE = "io.harness.idp.proxy.ngmanager";
+  public static final String SERVICES_PROXY_PACKAGE = "io.harness.idp.proxy.services";
   public static final String DELEGATE_PROXY_PACKAGE = "io.harness.idp.proxy.delegate";
   public static final String IDP_HEALTH_PACKAGE = "io.harness.idp.health";
 
@@ -150,7 +153,7 @@ public class IdpConfiguration extends Configuration {
         .getTypesAnnotatedWith(Path.class)
         .stream()
         .filter(klazz
-            -> StringUtils.startsWithAny(klazz.getPackage().getName(), IDP_SPEC_PACKAGE, NG_MANAGER_PROXY_PACKAGE,
+            -> StringUtils.startsWithAny(klazz.getPackage().getName(), IDP_SPEC_PACKAGE, SERVICES_PROXY_PACKAGE,
                 DELEGATE_PROXY_PACKAGE, IDP_HEALTH_PACKAGE))
         .collect(Collectors.toSet());
   }

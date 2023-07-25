@@ -190,7 +190,7 @@ public class AnomalyUtils {
 
   public static String getCloudProvider(Anomalies anomaly) {
     if (anomaly.getClustername() != null) {
-      return AnomalyFieldConstants.CLUSTER.toUpperCase();
+      return AnomalyFieldConstants.CLUSTER;
     } else if (anomaly.getAwsaccount() != null) {
       return AnomalyFieldConstants.AWS;
     } else if (anomaly.getGcpproject() != null) {

@@ -260,9 +260,8 @@ features:
         restrictionType: AVAILABILITY
         enabled: false
       FREE:
-        restrictionType: STATIC_LIMIT
-        limit: 100
-        clientName: ngmanager
+        restrictionType: AVAILABILITY
+        enabled: false
       TEAM:
         restrictionType: AVAILABILITY
         enabled: false
@@ -277,9 +276,8 @@ features:
         restrictionType: AVAILABILITY
         enabled: false
       FREE:
-        restrictionType: STATIC_LIMIT
-        limit: 100
-        clientName: ngmanager
+        restrictionType: AVAILABILITY
+        enabled: false
       TEAM:
         restrictionType: AVAILABILITY
         enabled: false

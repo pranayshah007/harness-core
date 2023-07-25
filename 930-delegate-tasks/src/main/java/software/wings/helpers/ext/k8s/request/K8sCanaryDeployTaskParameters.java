@@ -85,6 +85,7 @@ public class K8sCanaryDeployTaskParameters extends K8sTaskParameters implements 
     if (isNotEmpty(delegateSelectors)) {
       capabilities.add(SelectorCapability.builder().selectors(delegateSelectors).build());
     }
+    capabilities.addAll(getSecretManagerExecutionCapabilities(maskingEvaluator, k8sDelegateManifestConfig));
     return capabilities;
   }
 }

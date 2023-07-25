@@ -8,18 +8,22 @@
 package io.harness.cdng.tas;
 
 import static io.harness.cdng.tas.TasStepHelperTest.AUTOSCALAR_YML;
+import static io.harness.cdng.tas.TasStepHelperTest.MANIFEST_WITH_ROUTES_ARRAY_YML;
 import static io.harness.cdng.tas.TasStepHelperTest.MANIFEST_YML;
 import static io.harness.cdng.tas.TasStepHelperTest.MANIFEST_YML_WITH_ROUTES;
+import static io.harness.cdng.tas.TasStepHelperTest.VARS_WITH_INVALID_ROUTES_YML;
 import static io.harness.cdng.tas.TasStepHelperTest.VARS_YML_1;
 import static io.harness.rule.OwnerRule.RISHABH;
 
 import static software.wings.beans.TaskType.TAS_BG_SETUP;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
@@ -63,6 +67,7 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
@@ -87,6 +92,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
@@ -94,7 +100,7 @@ public class TasBGAppSetupStepTest extends CDNGTestBase {
   @Mock private CDStepHelper cdStepHelper;
   @Mock private StepHelper stepHelper;
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
-  @Mock private TasStepHelper tasStepHelper;
+  @Spy @InjectMocks private TasStepHelper tasStepHelper;
   @Mock private TasInfraConfig tasInfraConfig;
   @Mock private TasArtifactConfig tasArtifactConfig;
   @Mock private ArtifactOutcome artifactOutcome;
@@ -107,7 +113,7 @@ public class TasBGAppSetupStepTest extends CDNGTestBase {
           .organization("dev-org")
           .space("dev-space")
           .build();
-  private TasBGAppSetupStepParametersBuilder parameters =
+  private final TasBGAppSetupStepParametersBuilder parameters =
       TasBGAppSetupStepParameters.infoBuilder()
           .delegateSelectors(ParameterField.createValueField(List.of(new TaskSelectorYaml("selector-1"))))
           .existingVersionToKeep(ParameterField.createValueField("3"))
@@ -152,10 +158,10 @@ public class TasBGAppSetupStepTest extends CDNGTestBase {
     when(cdStepHelper.getInfrastructureOutcome(ambiance)).thenReturn(infrastructureOutcome);
     when(cdStepHelper.resolveArtifactsOutcome(ambiance)).thenReturn(Optional.of(artifactOutcome));
     when(cdStepHelper.getTasInfraConfig(infrastructureOutcome, ambiance)).thenReturn(tasInfraConfig);
-    when(tasStepHelper.getPrimaryArtifactConfig(ambiance, artifactOutcome)).thenReturn(tasArtifactConfig);
-    when(tasStepHelper.cfCliVersionNGMapper(any())).thenCallRealMethod();
-    when(tasStepHelper.getRouteMaps(any(), any())).thenReturn(finalRouteMap);
-    when(tasStepHelper.finalizeSubstitution(any(), any())).thenCallRealMethod();
+    doReturn(tasArtifactConfig).when(tasStepHelper).getPrimaryArtifactConfig(ambiance, artifactOutcome);
+    doCallRealMethod().when(tasStepHelper).cfCliVersionNGMapper(any());
+    doReturn(finalRouteMap).when(tasStepHelper).getRouteMaps(any(), any());
+    doCallRealMethod().when(tasStepHelper).finalizeSubstitution(any(), any());
   }
 
   @Test
@@ -210,7 +216,7 @@ public class TasBGAppSetupStepTest extends CDNGTestBase {
     when(executionSweepingOutputService.consume(any(), eq(OutcomeExpressionConstants.TAS_APP_SETUP_OUTCOME),
              executionSweepingOutputArgumentCaptor.capture(), eq(StepCategory.STEP.name())))
         .thenReturn(null);
-    when(tasStepHelper.fetchMaxCountFromManifest(any())).thenReturn(2);
+    doReturn(2).when(tasStepHelper).fetchMaxCountFromManifest(any());
     List<UnitProgress> unitProgresses =
         List.of(UnitProgress.newBuilder().setUnitName("Setup Application").setStatus(UnitStatus.SUCCESS).build());
     TasManifestsPackage tasManifestsPackage =
@@ -230,7 +236,7 @@ public class TasBGAppSetupStepTest extends CDNGTestBase {
                 .build(),
             () -> cfBlueGreenSetupResponseNG);
     ExecutionSweepingOutput executionSweepingOutput = executionSweepingOutputArgumentCaptor.getValue();
-    assertThat(executionSweepingOutput instanceof TasSetupDataOutcome).isTrue();
+    assertThat(executionSweepingOutput).isInstanceOf(TasSetupDataOutcome.class);
     TasSetupDataOutcome tasSetupDataOutcome = (TasSetupDataOutcome) executionSweepingOutput;
     TasSetupDataOutcome tasSetupDataOutcomeReq = TasSetupDataOutcome.builder()
                                                      .routeMaps(finalRouteMap)
@@ -281,7 +287,7 @@ public class TasBGAppSetupStepTest extends CDNGTestBase {
     when(executionSweepingOutputService.consume(any(), eq(OutcomeExpressionConstants.TAS_APP_SETUP_OUTCOME),
              executionSweepingOutputArgumentCaptor.capture(), eq(StepCategory.STEP.name())))
         .thenReturn(null);
-    when(tasStepHelper.fetchMaxCountFromManifest(any())).thenReturn(2);
+    doReturn(2).when(tasStepHelper).fetchMaxCountFromManifest(any());
     List<UnitProgress> unitProgresses =
         List.of(UnitProgress.newBuilder().setUnitName("Setup Application").setStatus(UnitStatus.SUCCESS).build());
     TasManifestsPackage tasManifestsPackage =
@@ -302,7 +308,7 @@ public class TasBGAppSetupStepTest extends CDNGTestBase {
                 .build(),
             () -> cfBlueGreenSetupResponseNG);
     ExecutionSweepingOutput executionSweepingOutput = executionSweepingOutputArgumentCaptor.getValue();
-    assertThat(executionSweepingOutput instanceof TasSetupDataOutcome).isTrue();
+    assertThat(executionSweepingOutput).isInstanceOf(TasSetupDataOutcome.class);
     TasSetupDataOutcome tasSetupDataOutcome = (TasSetupDataOutcome) executionSweepingOutput;
     TasSetupDataOutcome tasSetupDataOutcomeReq = TasSetupDataOutcome.builder()
                                                      .routeMaps(finalRouteMap)
@@ -354,7 +360,7 @@ public class TasBGAppSetupStepTest extends CDNGTestBase {
     when(executionSweepingOutputService.consume(any(), eq(OutcomeExpressionConstants.TAS_APP_SETUP_OUTCOME),
              executionSweepingOutputArgumentCaptor.capture(), eq(StepCategory.STEP.name())))
         .thenReturn(null);
-    when(tasStepHelper.fetchMaxCountFromManifest(any())).thenReturn(2);
+    doReturn(2).when(tasStepHelper).fetchMaxCountFromManifest(any());
     List<UnitProgress> unitProgresses =
         List.of(UnitProgress.newBuilder().setUnitName("Setup Application").setStatus(UnitStatus.SUCCESS).build());
     TasManifestsPackage tasManifestsPackage =
@@ -374,7 +380,7 @@ public class TasBGAppSetupStepTest extends CDNGTestBase {
                 .build(),
             () -> cfBlueGreenSetupResponseNG);
     ExecutionSweepingOutput executionSweepingOutput = executionSweepingOutputArgumentCaptor.getValue();
-    assertThat(executionSweepingOutput instanceof TasSetupDataOutcome).isTrue();
+    assertThat(executionSweepingOutput).isInstanceOf(TasSetupDataOutcome.class);
     TasSetupDataOutcome tasSetupDataOutcome = (TasSetupDataOutcome) executionSweepingOutput;
     TasSetupDataOutcome tasSetupDataOutcomeReq = TasSetupDataOutcome.builder()
                                                      .routeMaps(finalRouteMap)
@@ -419,13 +425,75 @@ public class TasBGAppSetupStepTest extends CDNGTestBase {
   @Test
   @Owner(developers = RISHABH)
   @Category(UnitTests.class)
+  public void testFinalizeExecutionWithSecurityContextInvalidRoutes() throws Exception {
+    ArgumentCaptor<ExecutionSweepingOutput> executionSweepingOutputArgumentCaptor =
+        ArgumentCaptor.forClass(ExecutionSweepingOutput.class);
+    when(executionSweepingOutputService.consume(any(), eq(OutcomeExpressionConstants.TAS_APP_SETUP_OUTCOME),
+             executionSweepingOutputArgumentCaptor.capture(), eq(StepCategory.STEP.name())))
+        .thenReturn(null);
+    doReturn(2).when(tasStepHelper).fetchMaxCountFromManifest(any());
+    doCallRealMethod().when(tasStepHelper).getRouteMaps(any(), any());
+    List<UnitProgress> unitProgresses =
+        List.of(UnitProgress.newBuilder().setUnitName("Setup Application").setStatus(UnitStatus.SUCCESS).build());
+    TasManifestsPackage tasManifestsPackage = TasManifestsPackage.builder()
+                                                  .manifestYml(MANIFEST_WITH_ROUTES_ARRAY_YML)
+                                                  .variableYmls(List.of(VARS_WITH_INVALID_ROUTES_YML))
+                                                  .build();
+    UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
+    CfBlueGreenSetupResponseNG cfBlueGreenSetupResponseNG = CfBlueGreenSetupResponseNG.builder()
+                                                                .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                                                .newApplicationInfo(newApplicationInfo)
+                                                                .unitProgressData(unitProgressData)
+                                                                .build();
+    StepResponse stepResponse =
+        tasBGAppSetupStep.finalizeExecutionWithSecurityContext(ambiance, stepElementParametersMatchRunningInstances,
+            TasExecutionPassThroughData.builder()
+                .cfCliVersion(CfCliVersionNG.V7)
+                .applicationName(activeApplicationName)
+                .tasManifestsPackage(tasManifestsPackage)
+                .build(),
+            () -> cfBlueGreenSetupResponseNG);
+    ExecutionSweepingOutput executionSweepingOutput = executionSweepingOutputArgumentCaptor.getValue();
+    assertThat(executionSweepingOutput).isInstanceOf(TasSetupDataOutcome.class);
+    TasSetupDataOutcome tasSetupDataOutcome = (TasSetupDataOutcome) executionSweepingOutput;
+    TasSetupDataOutcome tasSetupDataOutcomeReq = TasSetupDataOutcome.builder()
+                                                     .tempRouteMap(tempRouteMap)
+                                                     .cfCliVersion(CfCliVersion.V7)
+                                                     .timeoutIntervalInMinutes(10)
+                                                     .resizeStrategy(TasResizeStrategyType.UPSCALE_NEW_FIRST)
+                                                     .maxCount(0)
+                                                     .useAppAutoScalar(false)
+                                                     .desiredActualFinalCount(0)
+                                                     .newReleaseName(newApplicationName)
+                                                     .activeApplicationDetails(null)
+                                                     .newApplicationDetails(newApplicationInfo)
+                                                     .manifestsPackage(tasManifestsPackage)
+                                                     .cfAppNamePrefix(activeApplicationName)
+                                                     .isBlueGreen(true)
+                                                     .instanceCountType(TasInstanceCountType.MATCH_RUNNING_INSTANCES)
+                                                     .build();
+    assertThat(tasSetupDataOutcome).isEqualTo(tasSetupDataOutcomeReq);
+    assertThat(stepResponse.getStepOutcomes()).isEqualTo(emptyList());
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
+    assertThat(stepResponse.getUnitProgressList()).isEqualTo(unitProgresses);
+    assertThat(stepResponse.getFailureInfo())
+        .isEqualTo(
+            FailureInfo.newBuilder()
+                .setErrorMessage(
+                    "Invalid Route Format In Manifest: class java.lang.String cannot be cast to class java.util.Map (java.lang.String and java.util.Map are in module java.base of loader 'bootstrap')")
+                .build());
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
   public void testFinalizeExecutionWithSecurityContextMatchRunning() throws Exception {
     ArgumentCaptor<ExecutionSweepingOutput> executionSweepingOutputArgumentCaptor =
         ArgumentCaptor.forClass(ExecutionSweepingOutput.class);
     when(executionSweepingOutputService.consume(any(), eq(OutcomeExpressionConstants.TAS_APP_SETUP_OUTCOME),
              executionSweepingOutputArgumentCaptor.capture(), eq(StepCategory.STEP.name())))
         .thenReturn(null);
-    when(tasStepHelper.fetchMaxCountFromManifest(any())).thenReturn(2);
+    doReturn(2).when(tasStepHelper).fetchMaxCountFromManifest(any());
     List<UnitProgress> unitProgresses =
         List.of(UnitProgress.newBuilder().setUnitName("Setup Application").setStatus(UnitStatus.SUCCESS).build());
     TasManifestsPackage tasManifestsPackage =
@@ -446,7 +514,7 @@ public class TasBGAppSetupStepTest extends CDNGTestBase {
                 .build(),
             () -> cfBlueGreenSetupResponseNG);
     ExecutionSweepingOutput executionSweepingOutput = executionSweepingOutputArgumentCaptor.getValue();
-    assertThat(executionSweepingOutput instanceof TasSetupDataOutcome).isTrue();
+    assertThat(executionSweepingOutput).isInstanceOf(TasSetupDataOutcome.class);
     TasSetupDataOutcome tasSetupDataOutcome = (TasSetupDataOutcome) executionSweepingOutput;
     TasSetupDataOutcome tasSetupDataOutcomeReq = TasSetupDataOutcome.builder()
                                                      .routeMaps(finalRouteMap)

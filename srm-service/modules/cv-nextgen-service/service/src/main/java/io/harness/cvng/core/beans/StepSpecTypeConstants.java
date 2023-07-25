@@ -14,4 +14,5 @@ import io.harness.annotations.dev.OwnedBy;
 @OwnedBy(CV)
 public interface StepSpecTypeConstants {
   String VERIFY = "Verify";
+  String ANALYZE_DEPLOYMENT_IMPACT = "AnalyzeDeploymentImpact";
 }

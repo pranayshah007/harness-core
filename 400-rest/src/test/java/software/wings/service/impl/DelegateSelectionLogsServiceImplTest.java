@@ -10,6 +10,7 @@ package software.wings.service.impl;
 import static io.harness.beans.EnvironmentType.PROD;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.JENNY;
+import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.threading.Morpheus.sleep;
 
 import static software.wings.service.impl.DelegateSelectionLogsServiceImpl.BROADCASTING_DELEGATES;
@@ -40,6 +41,7 @@ import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateSelectionLogParams;
 import io.harness.delegate.beans.executioncapability.CapabilityType;
 import io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapability;
@@ -49,6 +51,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 import io.harness.selection.log.DelegateSelectionLog;
 import io.harness.selection.log.DelegateSelectionLog.DelegateSelectionLogKeys;
+import io.harness.service.intfc.DelegateCache;
 import io.harness.threading.Concurrent;
 
 import software.wings.WingsBaseTest;
@@ -87,6 +90,7 @@ public class DelegateSelectionLogsServiceImplTest extends WingsBaseTest {
   private static final String SELECTED = "Selected";
   private static final String NON_SELECTED = "Not Selected";
   private static final String BROADCAST = "Broadcast";
+  private static final String ASSIGNED = "Assigned";
 
   private static final String MISSING_SELECTOR_MESSAGE = "missing selector";
 
@@ -94,6 +98,7 @@ public class DelegateSelectionLogsServiceImplTest extends WingsBaseTest {
   @Mock protected FeatureFlagService featureFlagService;
   @InjectMocks @Inject DelegateSelectionLogsServiceImpl delegateSelectionLogsService;
   @Inject private HPersistence persistence;
+  @Mock private DelegateCache delegateCache;
 
   @Test
   @Owner(developers = JENNY)
@@ -345,6 +350,34 @@ public class DelegateSelectionLogsServiceImplTest extends WingsBaseTest {
     assertThat(delegateSelectionLogParams.get(0).getConclusion()).isEqualTo(REJECTED);
     assertThat(delegateSelectionLogParams.get(0).getMessage()).isEqualTo(NO_ELIGIBLE_DELEGATES);
     assertThat(delegateSelectionLogParams.get(0).getEventTimestamp()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testLogTaskAssigned_selectionLogsTrackingEnabled() {
+    String delegateId = generateUuid();
+    String taskId = generateUuid();
+    String delegateName = "delegateName";
+    String hotsName = "hotsName";
+    String accountId = generateUuid();
+    Delegate delegate =
+        Delegate.builder().accountId(accountId).uuid(delegateId).delegateName(delegateName).hostName(hotsName).build();
+    DelegateTask task =
+        DelegateTask.builder().uuid(taskId).accountId(accountId).selectionLogsTrackingEnabled(true).build();
+    when(delegateCache.get(accountId, delegateId)).thenReturn(delegate);
+
+    delegateSelectionLogsService.logTaskAssigned(delegateId, task);
+    List<DelegateSelectionLogParams> delegateSelectionLogParams = fetchSelectionLogs(accountId, taskId);
+    assertThat(delegateSelectionLogParams).isNotEmpty();
+    assertThat(delegateSelectionLogParams.size()).isEqualTo(1);
+    assertThat(delegateSelectionLogParams.get(0).getConclusion()).isEqualTo(ASSIGNED);
+    assertThat(delegateSelectionLogParams.get(0).getMessage())
+        .isEqualTo("Delegate assigned for task execution : [hotsName]");
+    assertThat(delegateSelectionLogParams.get(0).getEventTimestamp()).isNotNull();
+    assertThat(delegateSelectionLogParams.get(0).getDelegateHostName()).isEqualTo(hotsName);
+    assertThat(delegateSelectionLogParams.get(0).getDelegateId()).isEqualTo(delegateId);
+    assertThat(delegateSelectionLogParams.get(0).getDelegateName()).isEqualTo(delegateName);
   }
 
   private Map<String, String> obtainTaskSetupAbstractions() {

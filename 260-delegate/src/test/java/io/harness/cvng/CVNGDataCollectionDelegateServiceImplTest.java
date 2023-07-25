@@ -24,10 +24,13 @@ import io.harness.datacollection.DataCollectionDSLService;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectorDTO;
 import io.harness.encryption.SecretRefData;
+import io.harness.eraro.ErrorCode;
+import io.harness.eraro.Level;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 
+import software.wings.delegatetasks.cv.DataCollectionException;
 import software.wings.service.intfc.cvng.CVNGDataCollectionDelegateService;
 
 import java.time.Clock;
@@ -103,13 +106,15 @@ public class CVNGDataCollectionDelegateServiceImplTest extends CategoryTest {
         .thenThrow(new RuntimeException(
             "io.harness.datacollection.exception.DataCollectionException: Response code: 404, Message: Not Found"));
     try {
-      String result = cvngDataCollectionDelegateService.getDataCollectionResult(accountId,
+      cvngDataCollectionDelegateService.getDataCollectionResult(accountId,
           SplunkSavedSearchRequest.builder()
               .connectorInfoDTO(ConnectorInfoDTO.builder().connectorConfig(connectorConfigDTO).build())
               .build(),
           new ArrayList<>(details));
-    } catch (Exception e) {
-      assertThat(e.getMessage().startsWith("Response"));
+    } catch (DataCollectionException e) {
+      assertThat(e.getMessage().startsWith("Response code: 404")).isTrue();
+      assertThat(e.getCode()).isEqualTo(ErrorCode.DATA_COLLECTION_ERROR);
+      assertThat(e.getLevel()).isEqualTo(Level.ERROR);
     }
   }
   // TODO Add proper tests here , assert we save the call logs

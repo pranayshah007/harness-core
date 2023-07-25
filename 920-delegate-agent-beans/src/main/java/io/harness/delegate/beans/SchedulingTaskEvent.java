@@ -15,19 +15,13 @@ import lombok.Value;
 import lombok.extern.jackson.Jacksonized;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "eventType", include = As.PROPERTY)
-@JsonTypeName("DelegateRequestEvent")
+@JsonTypeName("SchedulingTaskEvent")
 @Jacksonized
 @Value
 @Builder
 public class SchedulingTaskEvent {
-  public enum Method { POST, GET, DELETE, OTHER }
+  public enum EventType { SETUP, EXECUTE, CLEANUP }
   private String accountId;
   private String taskId;
-
-  /**
-   * Uri: Identifies the resource of the recipient delegate
-   */
-  private String uri;
-  // method of string to avoid serialization/deserialization compatibility complexity of using enum
-  private String method;
+  private String runnerType;
 }

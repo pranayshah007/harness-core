@@ -337,4 +337,40 @@ public class K8sSwapServiceSelectorsBaseHandlerTest extends CategoryTest {
     assertThat(k8sLegacyRelease.getBgEnvironment()).isEqualTo(HarnessLabelValues.bgPrimaryEnv);
     assertThat(k8sLegacyReleasePrimary.getBgEnvironment()).isEqualTo(HarnessLabelValues.bgStageEnv);
   }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void shouldThrowExceptionIfPrimaryNotFoundFork8sSwapServiceSelectorsHandler() {
+    V1Service service1 = createService("service1", ImmutableMap.of(HarnessLabels.color, HarnessLabelValues.colorBlue));
+    V1Service service2 = createService("service2", ImmutableMap.of(HarnessLabels.color, HarnessLabelValues.colorGreen));
+    final K8sSwapServiceSelectorsRequest k8sSwapServiceSelectorsRequest =
+        K8sSwapServiceSelectorsRequest.builder()
+            .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
+            .manifestDelegateConfig(KustomizeManifestDelegateConfig.builder().build())
+            .releaseName("releaseName")
+            .useDeclarativeRollback(true)
+            .service1(service1.getMetadata().getName())
+            .service2(service2.getMetadata().getName())
+            .build();
+
+    when(kubernetesContainerService.getService(any(), eq(service1.getMetadata().getName()))).thenReturn(null);
+
+    assertThatThrownBy(()
+                           -> k8sSwapServiceSelectorsHandler.executeTaskInternal(k8sSwapServiceSelectorsRequest,
+                               k8sDelegateTaskParams, logStreamingTaskClient, commandUnitsProgress))
+        .matches(throwable -> {
+          HintException hint = ExceptionUtils.cause(HintException.class, throwable);
+          ExplanationException explanation = ExceptionUtils.cause(ExplanationException.class, throwable);
+          KubernetesTaskException taskException = ExceptionUtils.cause(KubernetesTaskException.class, throwable);
+          assertThat(hint).hasMessageContaining(KubernetesExceptionHints.BG_SWAP_SERVICES_SERVICE_NOT_FOUND);
+          assertThat(explanation)
+              .hasMessageContaining(
+                  format(KubernetesExceptionExplanation.BG_SWAP_SERVICES_SERVICE_NOT_FOUND, "service1"));
+          assertThat(taskException)
+              .hasMessageContaining(
+                  format(KubernetesExceptionMessages.BG_SWAP_SERVICES_FAILED, "service1", "service2"));
+          return true;
+        });
+  }
 }

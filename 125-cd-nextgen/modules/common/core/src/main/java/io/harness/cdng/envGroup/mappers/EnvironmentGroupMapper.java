@@ -58,6 +58,7 @@ public class EnvironmentGroupMapper {
         .envIdentifiers(envGroup.getEnvIdentifiers())
         .gitDetails(EntityGitDetailsMapper.mapEntityGitDetails(envGroup))
         .envResponse(CollectionUtils.emptyIfNull(envResponseList))
+        .yaml(envGroup.getYaml())
         .build();
   }
 

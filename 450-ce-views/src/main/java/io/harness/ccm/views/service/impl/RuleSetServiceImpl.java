@@ -10,8 +10,11 @@ package io.harness.ccm.views.service.impl;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.views.dao.RuleDAO;
 import io.harness.ccm.views.dao.RuleSetDAO;
+import io.harness.ccm.views.entities.Rule;
 import io.harness.ccm.views.entities.RuleSet;
+import io.harness.ccm.views.helper.RuleCloudProviderType;
 import io.harness.ccm.views.helper.RuleSetFilter;
 import io.harness.ccm.views.helper.RuleSetList;
 import io.harness.ccm.views.service.RuleSetService;
@@ -20,6 +23,7 @@ import io.harness.exception.InvalidRequestException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -27,6 +31,9 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CE)
 public class RuleSetServiceImpl implements RuleSetService {
   @Inject private RuleSetDAO ruleSetDAO;
+  @Inject private RuleDAO ruleDAO;
+  public static final String INVALID_CLOUD_PROVIDER_EXCEPTION =
+      "Rules with different cloud provider provided in the Request.";
 
   @Override
 
@@ -81,5 +88,16 @@ public class RuleSetServiceImpl implements RuleSetService {
   @Override
   public List<RuleSet> listPacks(String accountId, List<String> ruleSetIDs) {
     return ruleSetDAO.listPacks(accountId, ruleSetIDs);
+  }
+
+  @Override
+  public void validateCloudProvider(
+      String accountId, Set<String> rulesIdentifier, RuleCloudProviderType ruleCloudProviderType) {
+    if (rulesIdentifier.size() > 1) {
+      List<Rule> rules = ruleDAO.validateCloudProvider(accountId, rulesIdentifier, ruleCloudProviderType);
+      if (rules.size() != rulesIdentifier.size()) {
+        throw new InvalidRequestException(INVALID_CLOUD_PROVIDER_EXCEPTION);
+      }
+    }
   }
 }

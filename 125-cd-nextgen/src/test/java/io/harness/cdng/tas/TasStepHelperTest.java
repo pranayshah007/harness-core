@@ -82,6 +82,7 @@ import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.execution.tas.TasStageExecutionDetails;
 import io.harness.cdng.execution.tas.TasStageExecutionDetails.TasStageExecutionDetailsKeys;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
@@ -184,6 +185,7 @@ import io.harness.delegate.task.pcf.artifact.TasArtifactType;
 import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig;
 import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig;
 import io.harness.delegate.task.pcf.request.TasManifestsPackage;
+import io.harness.delegate.task.pcf.request.TasManifestsPackage.TasManifestsPackageBuilder;
 import io.harness.delegate.task.pcf.response.CfBasicSetupResponseNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.encryption.SecretRefData;
@@ -217,7 +219,6 @@ import io.harness.pms.contracts.refobjects.RefType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.data.OrchestrationRefType;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.execution.invokers.StrategyHelper;
@@ -265,7 +266,7 @@ import org.mockito.junit.MockitoRule;
 public class TasStepHelperTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock private StepHelper stepHelper;
-  @Mock private EngineExpressionService engineExpressionService;
+  @Mock private CDExpressionResolver cdExpressionResolver;
   @Mock private TasStepExecutor tasStepExecutor;
   @Mock private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
   @Mock private PipelineRbacHelper pipelineRbacHelper;
@@ -323,6 +324,11 @@ public class TasStepHelperTest extends CategoryTest {
       + "- name: test-tas\n"
       + "  memory: ((PCF_APP_MEMORY))\n"
       + "  instances: ((INSTANCES))\n";
+  public static String MANIFEST_WITH_ROUTES_ARRAY_YML = "applications:\n"
+      + "- name: test-tas\n"
+      + "  memory: ((PCF_APP_MEMORY))\n"
+      + "  instances: ((INSTANCES))\n"
+      + "  routes: ((ROUTES))\n";
   public static String MANIFEST_YML_WITH_WEB_PROCESS = "applications:\n"
       + "- name: test-tas\n"
       + "  memory: ((PCF_APP_MEMORY))\n"
@@ -403,6 +409,20 @@ public class TasStepHelperTest extends CategoryTest {
       + "INSTANCES: 3\n"
       + "WEB_INSTANCES: 1\n"
       + "ROUTE: route1";
+  public static String VARS_WITH_ROUTES_YML = "MY: order\n"
+      + "PCF_APP_NAME: test-tas\n"
+      + "INSTANCES: 3\n"
+      + "WEB_INSTANCES: 1\n"
+      + "ROUTES:\n"
+      + "  - route: route1\n"
+      + "  - route: route2";
+  public static String VARS_WITH_INVALID_ROUTES_YML = "MY: order\n"
+      + "PCF_APP_NAME: test-tas\n"
+      + "INSTANCES: 3\n"
+      + "WEB_INSTANCES: 1\n"
+      + "ROUTES:\n"
+      + "  - route\n"
+      + "  - route";
   public static String VARS_YML_2 = "env: prod\n"
       + "test: yes";
   public static String AUTOSCALAR_YML = "---\n"
@@ -446,8 +466,9 @@ public class TasStepHelperTest extends CategoryTest {
     doReturn(infrastructureOutcome).when(cdStepHelper).getInfrastructureOutcome(ambiance);
     doReturn(tasInfraConfig).when(cdStepHelper).getTasInfraConfig(infrastructureOutcome, ambiance);
     doAnswer(invocation -> invocation.getArgument(1, String.class))
-        .when(engineExpressionService)
+        .when(cdExpressionResolver)
         .renderExpression(eq(ambiance), anyString());
+    doAnswer(invocation -> invocation.getArgument(1)).when(cdExpressionResolver).updateExpressions(eq(ambiance), any());
     Reflect.on(tasStepHelper).set("cdStepHelper", cdStepHelper);
     when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
         .thenReturn(ServiceStepOutcome.builder().identifier("serviceID").type(ServiceSpecType.TAS).build());
@@ -833,19 +854,48 @@ public class TasStepHelperTest extends CategoryTest {
   @Owner(developers = RISHABH)
   @Category(UnitTests.class)
   public void testGetRouteMaps() {
-    assertThat(tasStepHelper.getRouteMaps(NO_ROUTE_TRUE_MANIFEST_YML, new ArrayList<>())).isEqualTo(emptyList());
-    assertThat(tasStepHelper.getRouteMaps(NO_ROUTE_TRUE_MANIFEST_YML, asList("temp-route1", "temp-route2")))
+    TasManifestsPackageBuilder tasManifestsPackage = TasManifestsPackage.builder();
+    assertThat(tasStepHelper.getRouteMaps(
+                   tasManifestsPackage.manifestYml(NO_ROUTE_TRUE_MANIFEST_YML).build(), new ArrayList<>()))
         .isEqualTo(emptyList());
-    assertThat(tasStepHelper.getRouteMaps(NO_ROUTE_FALSE_MANIFEST_YML, asList("temp-route1", "temp-route2")))
+    assertThat(tasStepHelper.getRouteMaps(tasManifestsPackage.manifestYml(NO_ROUTE_TRUE_MANIFEST_YML).build(),
+                   asList("temp-route1", "temp-route2")))
+        .isEqualTo(emptyList());
+    assertThat(tasStepHelper.getRouteMaps(tasManifestsPackage.manifestYml(NO_ROUTE_FALSE_MANIFEST_YML).build(),
+                   asList("temp-route1", "temp-route2")))
         .isEqualTo(asList("temp-route1", "temp-route2"));
-    assertThat(tasStepHelper.getRouteMaps(NO_ROUTE_FALSE_MANIFEST_YML, new ArrayList<>())).isEqualTo(emptyList());
-    assertThat(tasStepHelper.getRouteMaps(MANIFEST_YML, asList("temp-route1", "temp-route2")))
+    assertThat(tasStepHelper.getRouteMaps(
+                   tasManifestsPackage.manifestYml(NO_ROUTE_FALSE_MANIFEST_YML).build(), new ArrayList<>()))
+        .isEqualTo(emptyList());
+    assertThat(tasStepHelper.getRouteMaps(
+                   tasManifestsPackage.manifestYml(MANIFEST_YML).build(), asList("temp-route1", "temp-route2")))
         .isEqualTo(asList("temp-route1", "temp-route2"));
-    assertThat(tasStepHelper.getRouteMaps(MANIFEST_YML, new ArrayList<>())).isEqualTo(emptyList());
-    assertThat(tasStepHelper.getRouteMaps(MANIFEST_YML_WITH_ROUTES, asList("temp-route1", "temp-route2")))
+    assertThat(tasStepHelper.getRouteMaps(tasManifestsPackage.manifestYml(MANIFEST_YML).build(), new ArrayList<>()))
+        .isEqualTo(emptyList());
+    assertThat(tasStepHelper.getRouteMaps(tasManifestsPackage.manifestYml(MANIFEST_YML_WITH_ROUTES).build(),
+                   asList("temp-route1", "temp-route2")))
         .isEqualTo(asList("route1", "route2", "temp-route1", "temp-route2"));
-    assertThat(tasStepHelper.getRouteMaps(MANIFEST_YML_WITH_ROUTES, new ArrayList<>()))
+    assertThat(tasStepHelper.getRouteMaps(
+                   tasManifestsPackage.manifestYml(MANIFEST_YML_WITH_ROUTES).build(), new ArrayList<>()))
         .isEqualTo(asList("route1", "route2"));
+    assertThatThrownBy(
+        ()
+            -> tasStepHelper.getRouteMaps(
+                tasManifestsPackage.manifestYml(MANIFEST_WITH_ROUTES_ARRAY_YML).build(), new ArrayList<>()))
+        .hasMessage(
+            "Invalid Route Format In Manifest: No Valid Variable file Found, please verify var file is present and has valid structure");
+    assertThat(tasStepHelper.getRouteMaps(tasManifestsPackage.manifestYml(MANIFEST_WITH_ROUTES_ARRAY_YML)
+                                              .variableYmls(singletonList(VARS_WITH_ROUTES_YML))
+                                              .build(),
+                   new ArrayList<>()))
+        .isEqualTo(asList("route1", "route2"));
+    assertThatThrownBy(()
+                           -> tasStepHelper.getRouteMaps(tasManifestsPackage.manifestYml(MANIFEST_WITH_ROUTES_ARRAY_YML)
+                                                             .variableYmls(singletonList(VARS_WITH_INVALID_ROUTES_YML))
+                                                             .build(),
+                               new ArrayList<>()))
+        .hasMessage(
+            "Invalid Route Format In Manifest: class java.lang.String cannot be cast to class java.util.Map (java.lang.String and java.util.Map are in module java.base of loader 'bootstrap')");
   }
 
   @Test

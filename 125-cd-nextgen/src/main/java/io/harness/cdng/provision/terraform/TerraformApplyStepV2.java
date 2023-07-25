@@ -9,6 +9,9 @@ package io.harness.cdng.provision.terraform;
 
 import static io.harness.beans.FeatureName.CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
+import static io.harness.cdng.provision.terraform.TerraformStepHelper.TF_BACKEND_CONFIG_FILE;
+import static io.harness.cdng.provision.terraform.TerraformStepHelper.TF_CONFIG_FILES;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
@@ -61,6 +64,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
@@ -165,7 +169,7 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
   }
 
   @Override
-  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance,
+  public TaskChainResponse executeNextLinkWithSecurityContextAndNodeInfo(Ambiance ambiance,
       StepElementParameters stepElementParameters, StepInputPackage inputPackage, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
     TerraformApplyStepParameters stepParameters = (TerraformApplyStepParameters) stepElementParameters.getSpec();
@@ -175,7 +179,7 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
   }
 
   @Override
-  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance,
+  public StepResponse finalizeExecutionWithSecurityContextAndNodeInfo(Ambiance ambiance,
       StepElementParameters stepElementParameters, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
     log.info("Handling Task Result With Security Context for the Apply Step");
@@ -215,6 +219,7 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
     TerraformTaskNGParametersBuilder builder =
         getTerraformTaskNGParametersBuilderInline(ambiance, stepParameters, stepElementParameters);
     terraformPassThroughData.setTerraformTaskNGParametersBuilder(builder);
+    terraformPassThroughData.setOriginalStepVarFiles(spec.getVarFiles());
 
     if (hasGitVarFiles || hasS3VarFiles) {
       return helper.fetchRemoteVarFiles(terraformPassThroughData, varFilesInfo, ambiance, stepElementParameters,
@@ -317,7 +322,7 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
                 ? helper.prepareTerraformConfigFileInfo(inheritOutput.getFileStorageConfigDTO(), ambiance)
                 : helper.getFileStoreFetchFilesConfig(
                     inheritOutput.getFileStoreConfig(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
-        .varFileInfos(helper.prepareTerraformVarFileInfo(inheritOutput.getVarFileConfigs(), ambiance))
+        .varFileInfos(helper.prepareTerraformVarFileInfo(inheritOutput.getVarFileConfigs(), ambiance, true))
         .backendConfig(inheritOutput.getBackendConfig())
         .backendConfigFileInfo(
             helper.prepareTerraformBackendConfigFileInfo(inheritOutput.getBackendConfigurationFileConfig(), ambiance))
@@ -353,6 +358,10 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
               ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance),
           terraformTaskNGResponse.getStateFileId());
     }
+
+    Map<String, String> outputKeys = helper.getRevisionsMap(terraformPassThroughData, terraformTaskNGResponse);
+    helper.addTerraformRevisionOutcomeIfRequired(stepResponseBuilder, outputKeys);
+
     return stepResponseBuilder.build();
   }
 
@@ -372,6 +381,14 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
               ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance),
           terraformTaskNGResponse.getStateFileId());
     }
+
+    Map<String, String> outputKeys = new HashMap<>();
+    if (isNotEmpty(terraformTaskNGResponse.getCommitIdForConfigFilesMap())) {
+      outputKeys.put(TF_CONFIG_FILES, terraformTaskNGResponse.getCommitIdForConfigFilesMap().get(TF_CONFIG_FILES));
+      outputKeys.put(
+          TF_BACKEND_CONFIG_FILE, terraformTaskNGResponse.getCommitIdForConfigFilesMap().get(TF_BACKEND_CONFIG_FILE));
+    }
+    helper.addTerraformRevisionOutcomeIfRequired(stepResponseBuilder, outputKeys);
 
     return stepResponseBuilder.build();
   }

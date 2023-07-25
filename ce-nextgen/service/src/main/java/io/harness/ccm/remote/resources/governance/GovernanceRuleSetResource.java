@@ -174,8 +174,16 @@ public class GovernanceRuleSetResource {
     } else {
       throw new InvalidRequestException("Not authorised to create OOTB rule set. Make a custom rule set instead");
     }
+    if (ruleSet.getRulesIdentifier() == null || ruleSet.getRulesIdentifier().size() < 1) {
+      throw new InvalidRequestException("rulesIdentifier is a required field.");
+    }
     Set<String> uniqueRuleIds = new HashSet<>();
     uniqueRuleIds.addAll(ruleSet.getRulesIdentifier());
+    if (ruleSet.getCloudProvider() == null) {
+      ruleSet.setCloudProvider(
+          ruleService.fetchById(accountId, uniqueRuleIds.iterator().next(), false).getCloudProvider());
+    }
+    ruleSetService.validateCloudProvider(accountId, uniqueRuleIds, ruleSet.getCloudProvider());
     Set<String> rulesPermitted =
         rbacHelper.checkRuleIdsGivenPermission(accountId, null, null, uniqueRuleIds, RULE_EXECUTE);
     if (rulesPermitted.size() != uniqueRuleIds.size()) {
@@ -231,8 +239,12 @@ public class GovernanceRuleSetResource {
     if (ruleSet.getRulesIdentifier().size() > governanceConfig.getPoliciesInPack()) {
       throw new InvalidRequestException("Limit of Rules in a set is exceeded ");
     }
+    if (ruleSet.getRulesIdentifier() == null || ruleSet.getRulesIdentifier().size() < 1) {
+      throw new InvalidRequestException("rulesIdentifier is a required field.");
+    }
     Set<String> uniqueRuleIds = new HashSet<>();
     uniqueRuleIds.addAll(ruleSet.getRulesIdentifier());
+    ruleSetService.validateCloudProvider(accountId, uniqueRuleIds, oldRuleSet.getCloudProvider());
     Set<String> rulesPermitted =
         rbacHelper.checkRuleIdsGivenPermission(accountId, null, null, uniqueRuleIds, RULE_EXECUTE);
     if (rulesPermitted.size() != uniqueRuleIds.size()) {

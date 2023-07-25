@@ -74,13 +74,12 @@ import io.harness.idp.provision.ProvisionModuleConfig;
 import io.harness.idp.provision.resource.ProvisionApiImpl;
 import io.harness.idp.provision.service.ProvisionService;
 import io.harness.idp.provision.service.ProvisionServiceImpl;
+import io.harness.idp.proxy.config.ProxyAllowListConfig;
 import io.harness.idp.proxy.delegate.DelegateProxyApi;
 import io.harness.idp.proxy.delegate.DelegateProxyApiImpl;
 import io.harness.idp.proxy.layout.LayoutProxyApiImpl;
-import io.harness.idp.proxy.ngmanager.ManagerProxyApi;
-import io.harness.idp.proxy.ngmanager.ManagerProxyApiImpl;
-import io.harness.idp.proxy.ngmanager.NgManagerProxyApi;
-import io.harness.idp.proxy.ngmanager.NgManagerProxyApiImpl;
+import io.harness.idp.proxy.services.ProxyApi;
+import io.harness.idp.proxy.services.ProxyApiImpl;
 import io.harness.idp.serializer.IdpServiceRegistrars;
 import io.harness.idp.settings.resources.BackstagePermissionsApiImpl;
 import io.harness.idp.settings.service.BackstagePermissionsService;
@@ -308,8 +307,7 @@ public class IdpModule extends AbstractModule {
     bind(OnboardingService.class).to(OnboardingServiceImpl.class);
     bind(GitClientV2.class).to(GitClientV2Impl.class);
     bind(LayoutProxyApi.class).to(LayoutProxyApiImpl.class);
-    bind(NgManagerProxyApi.class).to(NgManagerProxyApiImpl.class);
-    bind(ManagerProxyApi.class).to(ManagerProxyApiImpl.class);
+    bind(ProxyApi.class).to(ProxyApiImpl.class);
     bind(PluginInfoApi.class).to(PluginInfoApiImpl.class);
     bind(DelegateProxyApi.class).to(DelegateProxyApiImpl.class);
     bind(PluginInfoService.class).to(PluginInfoServiceImpl.class);
@@ -485,6 +483,13 @@ public class IdpModule extends AbstractModule {
     return this.appConfig.getBackstagePostgresHost();
   }
 
+  @Provides
+  @Singleton
+  @Named("idpEncryptionSecret")
+  public String idpEncryptionSecret() {
+    return this.appConfig.getIdpEncryptionSecret();
+  }
+
   private DelegateCallbackToken getDelegateCallbackToken(DelegateServiceGrpcClient delegateServiceClient) {
     log.info("Generating Delegate callback token");
     final DelegateCallbackToken delegateCallbackToken = delegateServiceClient.registerCallback(
@@ -503,5 +508,12 @@ public class IdpModule extends AbstractModule {
   @Named("backstageHttpClientConfig")
   public ServiceHttpClientConfig backstageHttpClientConfig() {
     return this.appConfig.getBackstageHttpClientConfig();
+  }
+
+  @Provides
+  @Singleton
+  @Named("proxyAllowList")
+  public ProxyAllowListConfig proxyAllowList() {
+    return this.appConfig.getProxyAllowList();
   }
 }

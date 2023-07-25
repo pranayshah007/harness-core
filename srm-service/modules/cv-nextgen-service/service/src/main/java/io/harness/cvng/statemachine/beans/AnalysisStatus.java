@@ -40,12 +40,12 @@ public enum AnalysisStatus {
   }
 
   public static List<AnalysisStatus> getFinalStates() {
-    return Arrays.asList(COMPLETED, FAILED, TIMEOUT, IGNORED, TERMINATED);
+    return Arrays.asList(COMPLETED, FAILED, TIMEOUT, IGNORED, TERMINATED, SUCCESS);
   }
   public static List<AnalysisStatus> getFailedStatuses() {
     return Arrays.asList(FAILED, TIMEOUT, TERMINATED);
   }
   public static List<AnalysisStatus> getCountMetricsNonFinalStatuses() {
-    return Arrays.asList(CREATED, RUNNING, TRANSITION);
+    return Arrays.asList(CREATED, RUNNING, TRANSITION, RETRY);
   }
 }

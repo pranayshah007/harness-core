@@ -175,6 +175,32 @@
                 }
               ]
             },
+            "cacheFrom": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheTo": {
+              "type": "string"
+            },
+            "caching": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "connectorRef": {
               "type": "string"
             },
@@ -1348,6 +1374,9 @@
                   "type": "string"
                 }
               ]
+            },
+            "sbom": {
+              "$ref": "#/definitions/STOYamlSBOM"
             },
             "settings": {
               "oneOf": [
@@ -4727,16 +4756,6 @@
         {
           "type": "object",
           "properties": {
-            "env": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/ParameterFieldMapStringString"
-                },
-                {
-                  "type": "string"
-                }
-              ]
-            },
             "image": {
               "type": "string"
             }
@@ -4769,16 +4788,6 @@
           "properties": {
             "command": {
               "type": "string"
-            },
-            "env": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/ParameterFieldMapStringString"
-                },
-                {
-                  "type": "string"
-                }
-              ]
             },
             "image": {
               "type": "string"
@@ -9422,6 +9431,40 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "STOYamlSBOM": {
+      "type": "object",
+      "properties": {
+        "format": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "spdx-json",
+                "cyclonedx-json"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "(<\\+.+>.*)",
+              "minLength": 1
+            }
+          ]
+        },
+        "generate": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "(<\\+.+>.*)",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "STOYamlSonarqubeToolData": {
       "type": "object",
       "properties": {
@@ -10730,6 +10773,9 @@
             "policy": {
               "$ref": "#/definitions/EnforcementPolicy"
             },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
             "source": {
               "$ref": "#/definitions/SbomSource"
             },
@@ -10756,6 +10802,9 @@
           "properties": {
             "attestation": {
               "$ref": "#/definitions/Attestation"
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
             },
             "source": {
               "$ref": "#/definitions/SbomSource"

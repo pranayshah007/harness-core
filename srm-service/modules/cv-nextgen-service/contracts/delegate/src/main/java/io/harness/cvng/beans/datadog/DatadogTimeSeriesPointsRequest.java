@@ -10,9 +10,9 @@ package io.harness.cvng.beans.datadog;
 import static io.harness.annotations.dev.HarnessTeam.CV;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cvng.beans.DataCollectionRequest;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.List;
 import java.util.Map;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -28,12 +28,13 @@ import lombok.experimental.SuperBuilder;
 @FieldNameConstants(innerTypeName = "DatadogTimeSeriesPointsRequestKeys")
 @EqualsAndHashCode(callSuper = true)
 public class DatadogTimeSeriesPointsRequest extends DatadogRequest {
-  private static final String DSL =
-      DataCollectionRequest.readDSL("datadog-time-series-points.datacollection", DatadogTimeSeriesPointsRequest.class);
+  private String DSL;
 
   private Long from;
   private Long to;
   private String query;
+  private String formula;
+  private List<String> formulaQueriesList;
 
   @Override
   public String getDSL() {
@@ -46,6 +47,8 @@ public class DatadogTimeSeriesPointsRequest extends DatadogRequest {
     commonVariables.put(DatadogTimeSeriesPointsRequestKeys.from, from);
     commonVariables.put(DatadogTimeSeriesPointsRequestKeys.to, to);
     commonVariables.put(DatadogTimeSeriesPointsRequestKeys.query, query);
+    commonVariables.put(DatadogTimeSeriesPointsRequestKeys.formula, formula);
+    commonVariables.put(DatadogTimeSeriesPointsRequestKeys.formulaQueriesList, formulaQueriesList);
     return commonVariables;
   }
 }

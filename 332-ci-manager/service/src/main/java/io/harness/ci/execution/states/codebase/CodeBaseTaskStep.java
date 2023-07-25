@@ -163,7 +163,8 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
         "repoName", STEP_TYPE.getType(), ambiance.getStageExecutionId(), stepParameters.getRepoName(), false);
     if (executionSource.getType() == MANUAL) {
       NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-      ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorRef, true);
+      ConnectorDetails connectorDetails =
+          connectorUtils.getConnectorDetailsWithToken(ngAccess, connectorRef, true, ambiance, repoName);
       ManualExecutionSource manualExecutionSource = (ManualExecutionSource) executionSource;
       // fetch scm details via manager
       if (connectorUtils.hasApiAccess(connectorDetails)) {
@@ -323,6 +324,7 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
       String commitSha = prWebhookEvent.getBaseAttributes().getAfter();
       String shortCommitSha = WebhookTriggerProcessorUtils.getShortCommitSha(commitSha);
       String mergeCommitSha = prWebhookEvent.getBaseAttributes().getMergeSha();
+      String commitRef = prWebhookEvent.getBaseAttributes().getRef();
 
       return CodebaseSweepingOutput.builder()
           .commits(codeBaseCommits)
@@ -344,6 +346,7 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
           .gitUserAvatar(prWebhookEvent.getBaseAttributes().getAuthorAvatar())
           .gitUserId(prWebhookEvent.getBaseAttributes().getAuthorLogin())
           .commitMessage(getCommitMessage(codeBaseCommits))
+          .commitRef(commitRef)
           .build();
     } else if (webhookExecutionSource.getWebhookEvent().getType() == WebhookEvent.Type.BRANCH) {
       BranchWebhookEvent branchWebhookEvent = (BranchWebhookEvent) webhookExecutionSource.getWebhookEvent();

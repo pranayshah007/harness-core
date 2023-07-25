@@ -35,6 +35,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -56,7 +57,6 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
@@ -84,13 +84,12 @@ import org.mockito.Mockito;
 @Slf4j
 public class FetchInstanceScriptStepTest extends CDNGTestBase {
   @Mock private CDStepHelper cdStepHelper;
+  @Mock private CDExpressionResolver cdExpressionResolver;
   @Mock private StepHelper stepHelper;
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Captor private ArgumentCaptor<List<ServerInstanceInfo>> serverInstanceInfoListCaptor;
   @Mock private InstanceInfoService instanceInfoService;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
-
-  @Mock private EngineExpressionService engineExpressionService;
   @InjectMocks private FetchInstanceScriptStep fetchInstanceScriptStep;
 
   private FetchInstanceScriptStepParameters parameters =
@@ -117,6 +116,9 @@ public class FetchInstanceScriptStepTest extends CDNGTestBase {
     logStreamingStepClient = mock(ILogStreamingStepClient.class);
     when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(logStreamingStepClient);
     doReturn(infrastructure).when(cdStepHelper).getInfrastructureOutcome(ambiance);
+    doReturn(infrastructure.getInstanceFetchScript())
+        .when(cdExpressionResolver)
+        .updateExpressions(ambiance, infrastructure.getInstanceFetchScript());
     CustomDeploymentInfrastructureOutcome customDeploymentInfrastructureOutcome =
         CustomDeploymentInfrastructureOutcome.builder()
             .infrastructureKey("1234")

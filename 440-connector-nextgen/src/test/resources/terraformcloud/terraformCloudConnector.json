@@ -3,6 +3,7 @@
     "name": "name",
     "identifier": "identifier",
     "description": "description",
+    "accountIdentifier": "accountIdentifier",
     "orgIdentifier": "orgIdentifier",
     "projectIdentifier": "projectIdentifier",
     "tags": {
@@ -11,7 +12,7 @@
     },
     "type": "TerraformCloud",
     "spec": {
-      "terraformCloudUrl" : "https://some.io",
+      "terraformCloudUrl": "https://some.io",
       "credential": {
         "type": "ApiToken",
         "spec": {

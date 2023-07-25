@@ -12,6 +12,7 @@ import io.harness.ccm.commons.entities.CCMSortOrder;
 import io.harness.ccm.views.entities.Rule;
 import io.harness.ccm.views.entities.Rule.RuleId;
 import io.harness.ccm.views.helper.GovernanceRuleFilter;
+import io.harness.ccm.views.helper.RuleCloudProviderType;
 import io.harness.ccm.views.helper.RuleList;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
@@ -25,6 +26,7 @@ import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -45,14 +47,16 @@ public class RuleDAO {
     log.info("deleted rule: {}", uuid);
     return hPersistence.delete(query);
   }
-  public List<Rule> forRecommendation() {
+  public List<Rule> forRecommendation(RuleCloudProviderType ruleCloudProviderType) {
     log.info("creating a query");
     Query<Rule> rules = hPersistence.createQuery(Rule.class)
                             .field(RuleId.accountId)
                             .equal(GLOBAL_ACCOUNT_ID)
                             .field(RuleId.forRecommendation)
-                            .equal(true);
-    log.info("Rule List forRecommendation: {}", rules.asList());
+                            .equal(true)
+                            .field(RuleId.cloudProvider)
+                            .equal(ruleCloudProviderType);
+    log.info("Rule List for cloud provider {} forRecommendation: {}", ruleCloudProviderType.name(), rules.asList());
     return rules.asList();
   }
   public RuleList list(GovernanceRuleFilter governancePolicyFilter) {
@@ -182,6 +186,19 @@ public class RuleDAO {
         .in(Arrays.asList(accountId, GLOBAL_ACCOUNT_ID))
         .field(RuleId.uuid)
         .in(rulesIdentifier)
+        .asList();
+  }
+
+  public List<Rule> validateCloudProvider(
+      String accountId, Set<String> rulesIdentifier, RuleCloudProviderType ruleCloudProviderType) {
+    return hPersistence.createQuery(Rule.class)
+        .project(RuleId.uuid, true)
+        .field(RuleId.accountId)
+        .in(Arrays.asList(accountId, GLOBAL_ACCOUNT_ID))
+        .field(RuleId.uuid)
+        .in(rulesIdentifier)
+        .field(RuleId.cloudProvider)
+        .equal(ruleCloudProviderType)
         .asList();
   }
 }

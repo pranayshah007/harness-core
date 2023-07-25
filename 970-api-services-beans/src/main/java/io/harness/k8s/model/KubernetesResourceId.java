@@ -37,7 +37,7 @@ public class KubernetesResourceId {
     if (isNotEmpty(kindNameRefs)) {
       return kindNameRefs.stream()
           .map(KubernetesResourceId::createKubernetesResourceIdFromNamespaceKindName)
-          .filter(k8sResourceId -> SCALABLE_WORKLOAD_KINDS.contains(Kind.fromString(k8sResourceId.getKind())))
+          .filter(k8sResourceId -> SCALABLE_WORKLOAD_KINDS.contains(k8sResourceId.getKind()))
           .collect(Collectors.toList());
     }
     return Collections.emptyList();

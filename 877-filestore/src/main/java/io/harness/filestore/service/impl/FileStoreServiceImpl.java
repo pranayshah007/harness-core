@@ -234,9 +234,8 @@ public class FileStoreServiceImpl implements FileStoreService {
 
   @Override
   public String getFileContentAsString(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String scopedFileIdentifier, long allowedBytesFileSize) {
-    FileReference fileReference =
-        FileReference.of(scopedFileIdentifier, accountIdentifier, orgIdentifier, projectIdentifier);
+      String scopedFilePath, long allowedBytesFileSize) {
+    FileReference fileReference = FileReference.of(scopedFilePath, accountIdentifier, orgIdentifier, projectIdentifier);
 
     Optional<FileStoreNodeDTO> file = getWithChildrenByPath(fileReference.getAccountIdentifier(),
         fileReference.getOrgIdentifier(), fileReference.getProjectIdentifier(), fileReference.getPath(), true);
@@ -255,7 +254,7 @@ public class FileStoreServiceImpl implements FileStoreService {
 
     String content = ((FileNodeDTO) fileStoreNodeDTO).getContent();
     if (content.getBytes(StandardCharsets.UTF_8).length > allowedBytesFileSize) {
-      throw new InvalidRequestException(format("Too large file, scopedFileIdentifier: %s", scopedFileIdentifier));
+      throw new InvalidRequestException(format("Too large file, scopedFilePath: %s", scopedFilePath));
     }
 
     return content;
@@ -283,8 +282,8 @@ public class FileStoreServiceImpl implements FileStoreService {
   }
 
   @Override
-  public boolean delete(
-      @NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier, @NotNull String identifier) {
+  public boolean delete(@NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      @NotNull String identifier, boolean forceDelete) {
     if (isEmpty(identifier)) {
       throw new InvalidArgumentsException("File identifier cannot be empty");
     }
@@ -296,9 +295,12 @@ public class FileStoreServiceImpl implements FileStoreService {
     }
 
     NGFile file = findOrThrow(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
-    fileReferenceService.validateReferenceByAndThrow(file);
 
-    return deleteFileOrFolder(file);
+    if (!forceDelete) {
+      fileReferenceService.validateReferenceByAndThrow(file);
+    }
+
+    return deleteFileOrFolder(file, forceDelete);
   }
 
   @Override
@@ -429,10 +431,10 @@ public class FileStoreServiceImpl implements FileStoreService {
     identifiers.forEach(identifier -> {
       NGFile ngFile = findOrThrow(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
       if (ngFile.isFile()) {
-        deleteFile(ngFile);
+        deleteFile(ngFile, false);
       } else {
         // folder
-        fileFailsafeService.deleteAndPublish(ngFile);
+        fileFailsafeService.deleteAndPublish(ngFile, false);
       }
     });
   }
@@ -576,21 +578,23 @@ public class FileStoreServiceImpl implements FileStoreService {
     return FileStoreNodeDTOMapper.getFolderNodeDTO(ngFile);
   }
 
-  private boolean deleteFileOrFolder(NGFile fileOrFolder) {
+  private boolean deleteFileOrFolder(NGFile fileOrFolder, boolean forceDelete) {
     if (NGFileType.FOLDER.equals(fileOrFolder.getType())) {
-      return deleteFolder(fileOrFolder);
+      return deleteFolder(fileOrFolder, forceDelete);
     } else {
-      return deleteFile(fileOrFolder);
+      return deleteFile(fileOrFolder, forceDelete);
     }
   }
 
-  private boolean deleteFolder(NGFile folder) {
+  private boolean deleteFolder(NGFile folder, boolean forceDelete) {
     List<NGFile> childrenFiles = listFilesByParent(folder);
     if (!isEmpty(childrenFiles)) {
-      childrenFiles.stream().filter(Objects::nonNull).forEach(this::deleteFileOrFolder);
+      childrenFiles.stream()
+          .filter(Objects::nonNull)
+          .forEach(fileOrFolder -> deleteFileOrFolder(fileOrFolder, forceDelete));
     }
 
-    return fileFailsafeService.deleteAndPublish(folder);
+    return fileFailsafeService.deleteAndPublish(folder, forceDelete);
   }
 
   private List<NGFile> listFilesByParent(NGFile parent) {
@@ -599,7 +603,7 @@ public class FileStoreServiceImpl implements FileStoreService {
         parent.getIdentifier());
   }
 
-  private boolean deleteFile(NGFile file) {
+  private boolean deleteFile(NGFile file, boolean forceDelete) {
     try {
       fileService.deleteFile(file.getFileUuid(), FILE_STORE);
     } catch (Exception e) {
@@ -611,7 +615,7 @@ public class FileStoreServiceImpl implements FileStoreService {
           "Failed to delete file store chunks id: %s, file identifier: %s", file.getFileUuid(), file.getIdentifier()));
     }
 
-    return fileFailsafeService.deleteAndPublish(file);
+    return fileFailsafeService.deleteAndPublish(file, forceDelete);
   }
 
   private void validateCreationFileDto(FileDTO fileDto) {

@@ -14,7 +14,7 @@ import io.harness.cvng.cdng.beans.AutoVerificationJobSpec;
 import io.harness.cvng.cdng.beans.CVNGStepInfo;
 import io.harness.cvng.cdng.beans.DefaultMonitoredServiceSpec;
 import io.harness.cvng.cdng.beans.MonitoredServiceNode;
-import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
+import io.harness.cvng.cdng.beans.MonitoredServiceSpecType;
 import io.harness.cvng.cdng.beans.TemplateMonitoredServiceSpec;
 import io.harness.cvng.core.beans.CVVerifyStepNode;
 import io.harness.cvng.core.beans.StepSpecTypeConstants;

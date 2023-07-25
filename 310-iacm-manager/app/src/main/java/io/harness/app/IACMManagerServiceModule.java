@@ -201,7 +201,7 @@ public class IACMManagerServiceModule extends AbstractModule {
   @Named("lock")
   @Singleton
   RedisConfig redisConfig() {
-    return iacmManagerConfiguration.getEventsFrameworkConfiguration().getRedisConfig();
+    return iacmManagerConfiguration.getRedisLockConfig();
   }
 
   @Override

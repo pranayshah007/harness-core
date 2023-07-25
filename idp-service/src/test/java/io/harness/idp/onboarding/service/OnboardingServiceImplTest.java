@@ -33,7 +33,6 @@ import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.idp.common.CommonUtils;
 import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCache;
 import io.harness.idp.events.producers.IdpEntityCrudStreamProducer;
-import io.harness.idp.events.producers.SetupUsageProducer;
 import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory;
 import io.harness.idp.gitintegration.processor.impl.GithubConnectorProcessor;
 import io.harness.idp.gitintegration.repositories.CatalogConnectorRepository;
@@ -129,7 +128,6 @@ public class OnboardingServiceImplTest extends CategoryTest {
   @Mock StatusInfoService statusInfoService;
   @Mock TransactionHelper transactionHelper;
   @Mock IdpEntityCrudStreamProducer idpEntityCrudStreamProducer;
-  @Mock SetupUsageProducer setupUsageProducer;
   @Mock DelegateSelectorsCache delegateSelectorsCache;
   @Mock BackstageResourceClient backstageResourceClient;
   Call<Object> call;
@@ -321,7 +319,6 @@ public class OnboardingServiceImplTest extends CategoryTest {
                                       .path("idp")));
     assertNotNull(importEntitiesResponse);
     assertEquals("SUCCESS", importEntitiesResponse.getStatus());
-    verify(setupUsageProducer).publishConnectorSetupUsage(eq(ACCOUNT_IDENTIFIER), any(), any());
     verify(delegateSelectorsCache).put(eq(ACCOUNT_IDENTIFIER), any(), any());
   }
 
@@ -364,7 +361,6 @@ public class OnboardingServiceImplTest extends CategoryTest {
             .catalogConnectorInfo(getCatalogConnectorInfo()));
     assertNotNull(importEntitiesResponse);
     assertEquals("SUCCESS", importEntitiesResponse.getStatus());
-    verify(setupUsageProducer).publishConnectorSetupUsage(eq(ACCOUNT_IDENTIFIER), any(), any());
   }
 
   @Test
@@ -398,7 +394,6 @@ public class OnboardingServiceImplTest extends CategoryTest {
         new AllEntitiesImport().type(ImportEntitiesBase.TypeEnum.ALL).catalogConnectorInfo(getCatalogConnectorInfo()));
     assertNotNull(importEntitiesResponse);
     assertEquals("SUCCESS", importEntitiesResponse.getStatus());
-    verify(setupUsageProducer).publishConnectorSetupUsage(eq(ACCOUNT_IDENTIFIER), any(), any());
   }
 
   @Test

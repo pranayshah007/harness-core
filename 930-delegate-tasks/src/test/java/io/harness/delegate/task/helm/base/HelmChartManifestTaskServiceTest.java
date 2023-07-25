@@ -397,7 +397,13 @@ public class HelmChartManifestTaskServiceTest extends CategoryTest {
 
     doAnswer(invocation -> {
       HelmChartManifestDelegateConfig manifestConfig = invocation.getArgument(0);
-      String destinationDirectory = invocation.getArgument(3);
+      String destinationDirectory;
+      if (isNotEmpty(manifestConfig.getChartName())) {
+        destinationDirectory = Paths.get(invocation.getArgument(3), manifestConfig.getChartName()).toString();
+      } else {
+        destinationDirectory = invocation.getArgument(3);
+      }
+
       if (isNotEmpty(manifestConfig.getSubChartPath())) {
         saveChartYamlFileContentToFile(RES_CHART_YAML_PARENT, destinationDirectory, "");
       }

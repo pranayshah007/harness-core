@@ -110,7 +110,7 @@ public interface YamlTypes {
   String SERVICE_SECTION = "serviceSection";
   String SERVICE_ENTITY = "service";
   String SERVICE_REF = "serviceRef";
-  String SERVICE_USE_FROM_STAGE = "useFromStage";
+  String USE_FROM_STAGE = "useFromStage";
   String SERVICE_DEFINITION = "serviceDefinition";
   String SERVICE_SPEC = "spec";
   String SERVICE_OVERRIDE = "serviceOverrides";
@@ -230,4 +230,5 @@ public interface YamlTypes {
   String SERVERLESS_AWS_LAMBDA_ROLLBACK_V2 = StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2;
   String SERVERLESS_AWS_LAMBDA_DEPLOY_V2 = StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2;
   String SERVERLESS_AWS_LAMBDA_PACKAGE_V2 = StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PACKAGE_V2;
+  String AWS_CDK_BOOTSTRAP = StepSpecTypeConstants.AWS_CDK_BOOTSTRAP;
 }

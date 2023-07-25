@@ -9,6 +9,7 @@ package io.harness.metrics.impl;
 
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.IMMUTABLE_DELEGATES;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.MUTABLE_DELEGATES;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_ASSIGNMENT_DELAY;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASKS;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASKS_ASSIGNED;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASKS_INVALID;
@@ -16,6 +17,8 @@ import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASKS
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASKS_PAUSED;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASKS_UNASSIGNED;
 import static io.harness.persistence.HQuery.excludeAuthority;
+
+import static java.time.Duration.ofMinutes;
 
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
@@ -123,12 +126,21 @@ public class DelegateMetricsPublisher implements MetricsPublisher {
                                            .filter(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_INVALID)
                                            .count();
 
+      long maxDelay = System.currentTimeMillis() + ofMinutes(10).toMillis();
+      long assignmentDelayCount =
+          persistence.createQuery(PerpetualTaskRecord.class, excludeAuthority)
+              .filter(PerpetualTaskRecordKeys.perpetualTaskType, PerpetualTaskState.TASK_UNASSIGNED)
+              .field(PerpetualTaskRecordKeys.lastUpdatedAt)
+              .greaterThan(maxDelay)
+              .count();
+
       metricService.recordMetric(PERPETUAL_TASKS, perpetualTaskCount);
       metricService.recordMetric(PERPETUAL_TASKS_ASSIGNED, assignedPerpetualTaskCount);
       metricService.recordMetric(PERPETUAL_TASKS_UNASSIGNED, unAssignedPerpetualTaskCount);
       metricService.recordMetric(PERPETUAL_TASKS_NON_ASSIGNABLE, nonAssignablePerpetualTaskCount);
       metricService.recordMetric(PERPETUAL_TASKS_INVALID, invalidPerpetualTaskCount);
       metricService.recordMetric(PERPETUAL_TASKS_PAUSED, pausedPerpetualTaskCount);
+      metricService.recordMetric(PERPETUAL_ASSIGNMENT_DELAY, assignmentDelayCount);
 
       if (log.isDebugEnabled()) {
         log.debug("PT metrics, all PTs {}, assigned {}, unassigned {}, non-assignable {}, invalid {}, paused {}",

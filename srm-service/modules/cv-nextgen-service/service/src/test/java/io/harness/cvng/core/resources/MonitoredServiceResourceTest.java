@@ -27,6 +27,7 @@ import io.harness.cvng.beans.MonitoredServiceType;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.PrometheusMetricDefinition;
+import io.harness.cvng.core.beans.monitoredService.DurationDTO;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
 import io.harness.cvng.core.beans.monitoredService.MetricDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
@@ -92,8 +93,10 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
   private MonitoredServiceDTO monitoredServiceDTO;
 
   @ClassRule
-  public static final ResourceTestRule RESOURCES =
-      ResourceTestRule.builder().addResource(monitoredServiceResource).build();
+  public static final ResourceTestRule RESOURCES = ResourceTestRule.builder()
+                                                       .addResource(monitoredServiceResource)
+
+                                                       .build();
   @Before
   public void setup() {
     injector.injectMembers(monitoredServiceResource);
@@ -1341,6 +1344,75 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
                               .post(Entity.json(convertToJson(monitoredServiceYaml)));
       assertThat(response.getStatus()).isEqualTo(200);
     }
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetOverallHealthScore_withNoDurationAndStartTime() {
+    WebTarget webTarget = RESOURCES.client()
+                              .target("http://localhost:9998/monitored-service/" + monitoredServiceDTO.getIdentifier()
+                                  + "/overall-health-score")
+                              .queryParam("accountId", builderFactory.getContext().getAccountId())
+                              .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                              .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                              .queryParam("endTime", 14300000000L);
+    Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).get();
+    assertThat(response.getStatus()).isEqualTo(500);
+    assertThat(response.readEntity(String.class)).contains("One of duration or start time should be present.");
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetOverallHealthScore_withBothDurationAndStartTimeInvalid() {
+    WebTarget webTarget = RESOURCES.client()
+                              .target("http://localhost:9998/monitored-service/" + monitoredServiceDTO.getIdentifier()
+                                  + "/overall-health-score")
+                              .queryParam("accountId", builderFactory.getContext().getAccountId())
+                              .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                              .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                              .queryParam("duration", DurationDTO.FOUR_HOURS)
+                              .queryParam("endTime", 14300000000L)
+                              .queryParam("startTime", 14285500000L);
+    Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).get();
+    assertThat(response.getStatus()).isEqualTo(500);
+    assertThat(response.readEntity(String.class))
+        .contains(
+            "Duration field value and duration from the start time and endTime is different. Make sure you pass either one of them or the duration is same from both.");
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetOverallHealthScore_withBothLessThanFiveMinuteDifference() {
+    WebTarget webTarget = RESOURCES.client()
+                              .target("http://localhost:9998/monitored-service/" + monitoredServiceDTO.getIdentifier()
+                                  + "/overall-health-score")
+                              .queryParam("accountId", builderFactory.getContext().getAccountId())
+                              .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                              .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                              .queryParam("endTime", 14300000000L)
+                              .queryParam("startTime", 14299800000L);
+    Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).get();
+    assertThat(response.getStatus()).isEqualTo(500);
+    assertThat(response.readEntity(String.class))
+        .contains("Start time and endTime should have at least 5 minutes difference");
+  }
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetOverallHealthScore_withBothDurationAndStartTimeValid() {
+    WebTarget webTarget = RESOURCES.client()
+                              .target("http://localhost:9998/monitored-service/" + monitoredServiceDTO.getIdentifier()
+                                  + "/overall-health-score")
+                              .queryParam("accountId", builderFactory.getContext().getAccountId())
+                              .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                              .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                              .queryParam("duration", DurationDTO.FOUR_HOURS)
+                              .queryParam("endTime", 14300000000L);
+    Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).get();
+    assertThat(response.getStatus()).isEqualTo(200);
   }
 
   private static String convertToYaml(String jsonString) throws JsonProcessingException {

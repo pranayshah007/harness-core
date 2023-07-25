@@ -72,6 +72,8 @@ public interface AdminAccountService {
 
   boolean cleanUpNextGen(String accountId);
 
+  boolean disableIpAllowList(String accountId);
+
   boolean updateIsProductLed(String accountId, boolean enabled);
 
   boolean updateRingName(String accountId, String ringName);

@@ -13,6 +13,8 @@ proto_library(
         "entity_detail.proto",
         "entity_scope_info.proto",
         "entity_type.proto",
+        "entity_usage_data.proto",
+        "entity_usage_detail.proto",
         "identifier_ref.proto",
         "infra_definition_ref.proto",
         "input_set_ref.proto",

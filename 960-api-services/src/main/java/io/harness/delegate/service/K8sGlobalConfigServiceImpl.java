@@ -20,7 +20,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.clienttools.ChartmuseumVersion;
 import io.harness.delegate.clienttools.ClientTool;
 import io.harness.delegate.clienttools.ClientToolVersion;
-import io.harness.delegate.clienttools.GoTemplateVersion;
 import io.harness.delegate.clienttools.InstallUtils;
 import io.harness.delegate.clienttools.KubectlVersion;
 import io.harness.delegate.clienttools.KustomizeVersion;
@@ -47,11 +46,7 @@ public class K8sGlobalConfigServiceImpl implements K8sGlobalConfigService {
 
   @Override
   public String getGoTemplateClientPath() {
-    try {
-      return getToolPath(GO_TEMPLATE, GoTemplateVersion.V0_4_2);
-    } catch (IllegalArgumentException e) {
-      return getToolPath(GO_TEMPLATE, GoTemplateVersion.V0_4);
-    }
+    return getToolPath(GO_TEMPLATE, GO_TEMPLATE.getLatestVersion());
   }
 
   /*
@@ -67,7 +62,12 @@ public class K8sGlobalConfigServiceImpl implements K8sGlobalConfigService {
       case V2:
         return getToolPath(HELM, io.harness.delegate.clienttools.HelmVersion.V2);
       case V3:
-        return getToolPath(HELM, io.harness.delegate.clienttools.HelmVersion.V3);
+        try {
+          return InstallUtils.getPath(ClientTool.HELM, io.harness.delegate.clienttools.HelmVersion.V3);
+        } catch (IllegalArgumentException e) {
+          log.warn("Helm 3.1.2 not installed Version 3.8.0 will be used");
+          return InstallUtils.getPath(ClientTool.HELM, io.harness.delegate.clienttools.HelmVersion.V3_8);
+        }
       case V380:
         return getToolPath(HELM, io.harness.delegate.clienttools.HelmVersion.V3_8);
       default:

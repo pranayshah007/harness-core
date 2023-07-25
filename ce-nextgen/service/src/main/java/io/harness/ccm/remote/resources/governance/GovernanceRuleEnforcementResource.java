@@ -198,6 +198,14 @@ public class GovernanceRuleEnforcementResource {
         rules.addAll(ruleSet.getRulesIdentifier());
       }
     }
+    if (rules.size() < 1) {
+      throw new InvalidRequestException("At least one rule should be added in ruleIds/ruleSetIDs");
+    }
+    if (ruleEnforcement.getCloudProvider() == null) {
+      ruleEnforcement.setCloudProvider(
+          governanceRuleService.fetchById(accountId, rules.iterator().next(), false).getCloudProvider());
+    }
+    ruleSetService.validateCloudProvider(accountId, rules, ruleEnforcement.getCloudProvider());
     Set<String> rulesPermitted = rbacHelper.checkRuleIdsGivenPermission(accountId, null, null, rules, RULE_EXECUTE);
     if (rulesPermitted.size() != rules.size()) {
       throw new NGAccessDeniedException(
@@ -205,11 +213,12 @@ public class GovernanceRuleEnforcementResource {
           WingsException.USER, null);
     }
     Set<ConnectorInfoDTO> nextGenConnectorResponses = governanceRuleService.getConnectorResponse(
-        accountId, ruleEnforcement.getTargetAccounts().stream().collect(Collectors.toSet()));
+        accountId, new HashSet<>(ruleEnforcement.getTargetAccounts()), ruleEnforcement.getCloudProvider());
     Set<String> allowedAccountIds = null;
     if (nextGenConnectorResponses != null) {
       allowedAccountIds = rbacHelper.checkAccountIdsGivenPermission(accountId, null, null,
-          nextGenConnectorResponses.stream().map(e -> e.getIdentifier()).collect(Collectors.toSet()), RULE_EXECUTE);
+          nextGenConnectorResponses.stream().map(ConnectorInfoDTO::getIdentifier).collect(Collectors.toSet()),
+          RULE_EXECUTE);
     }
     if (allowedAccountIds == null || allowedAccountIds.size() != nextGenConnectorResponses.size()) {
       throw new NGAccessDeniedException(
@@ -380,6 +389,10 @@ public class GovernanceRuleEnforcementResource {
         rules.addAll(ruleSet.getRulesIdentifier());
       }
     }
+    if (rules.size() < 1) {
+      throw new InvalidRequestException("At least one rule should be added in ruleIds/ruleSetIDs");
+    }
+    ruleSetService.validateCloudProvider(accountId, rules, ruleEnforcementFromMongo.getCloudProvider());
     if (ruleEnforcement.getRuleIds() != null) {
       Set<String> rulesPermitted = rbacHelper.checkRuleIdsGivenPermission(accountId, null, null, rules, RULE_EXECUTE);
       if (rulesPermitted.size() != rules.size()) {
@@ -390,11 +403,12 @@ public class GovernanceRuleEnforcementResource {
     }
     if (ruleEnforcement.getTargetAccounts() != null) {
       Set<ConnectorInfoDTO> nextGenConnectorResponses = governanceRuleService.getConnectorResponse(
-          accountId, ruleEnforcement.getTargetAccounts().stream().collect(Collectors.toSet()));
+          accountId, new HashSet<>(ruleEnforcement.getTargetAccounts()), ruleEnforcement.getCloudProvider());
       Set<String> allowedAccountIds = null;
       if (nextGenConnectorResponses != null) {
         allowedAccountIds = rbacHelper.checkAccountIdsGivenPermission(accountId, null, null,
-            nextGenConnectorResponses.stream().map(e -> e.getIdentifier()).collect(Collectors.toSet()), RULE_EXECUTE);
+            nextGenConnectorResponses.stream().map(ConnectorInfoDTO::getIdentifier).collect(Collectors.toSet()),
+            RULE_EXECUTE);
       }
       if (allowedAccountIds == null || allowedAccountIds.size() != nextGenConnectorResponses.size()) {
         throw new NGAccessDeniedException(

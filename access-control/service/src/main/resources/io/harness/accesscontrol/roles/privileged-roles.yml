@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: supportRolesConfiguration
-version: 21
+version: 23
 roles:
   - identifier: _super_account_viewer
     name: Super Account Viewer
@@ -70,3 +70,4 @@ roles:
       - core_file_view
       - code_repo_view
       - servicediscovery_networkmap_view
+      - chaos_chaossecuritygovernance_view

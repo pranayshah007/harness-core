@@ -79,6 +79,8 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.TaskRequestsUtils;
 
+import software.wings.beans.GcpKmsConfig;
+
 import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -238,6 +240,8 @@ public class TerraformPlanStepV2Test extends CategoryTest {
     doReturn(false).when(terraformStepHelper).hasGitVarFiles(any());
     doReturn(false).when(terraformStepHelper).hasS3VarFiles(any());
     doReturn(EnvironmentType.NON_PROD).when(stepHelper).getEnvironmentType(any());
+    doReturn(GcpKmsConfig.builder().build()).when(terraformStepHelper).getEncryptionConfig(any(), any());
+    doReturn(true).when(terraformStepHelper).tfPlanEncryptionOnManager(any(), any());
     doReturn("back-content").when(terraformStepHelper).getBackendConfig(any());
     doReturn(ImmutableMap.of("KEY", ParameterField.createValueField("VAL")))
         .when(terraformStepHelper)
@@ -284,6 +288,8 @@ public class TerraformPlanStepV2Test extends CategoryTest {
     assertThat(terraformPassThroughData.hasS3Files).isFalse();
     assertThat(terraformPassThroughData.getUnitProgresses()).isEmpty();
     verify(terraformStepHelper, times(0)).fetchRemoteVarFiles(any(), any(), any(), any(), any(), any());
+    verify(terraformStepHelper, times(1)).getEncryptionConfig(any(), any());
+    assertThat(taskParameters.isEncryptDecryptPlanForHarnessSMOnManager()).isTrue();
   }
 
   @Test
@@ -557,6 +563,8 @@ public class TerraformPlanStepV2Test extends CategoryTest {
     doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
     doReturn(varFileInfo).when(terraformStepHelper).toTerraformVarFileInfoWithIdentifierAndManifest(any(), any());
     doReturn(EnvironmentType.NON_PROD).when(stepHelper).getEnvironmentType(any());
+    doReturn(GcpKmsConfig.builder().build()).when(terraformStepHelper).getEncryptionConfig(any(), any());
+    doReturn(true).when(terraformStepHelper).tfPlanEncryptionOnManager(any(), any());
     doReturn("back-content").when(terraformStepHelper).getBackendConfig(any());
     doReturn(ImmutableMap.of("KEY", ParameterField.createValueField("VAL")))
         .when(terraformStepHelper)
@@ -606,6 +614,8 @@ public class TerraformPlanStepV2Test extends CategoryTest {
     assertThat(terraformPassThroughData.hasS3Files).isFalse();
     assertThat(terraformPassThroughData.getUnitProgresses()).isEmpty();
     verify(terraformStepHelper, times(0)).fetchRemoteVarFiles(any(), any(), any(), any(), any(), any());
+    verify(terraformStepHelper, times(0)).getEncryptionConfig(any(), any());
+    assertThat(taskParameters.isEncryptDecryptPlanForHarnessSMOnManager()).isFalse();
   }
 
   @Test
@@ -754,6 +764,8 @@ public class TerraformPlanStepV2Test extends CategoryTest {
     verify(terraformStepHelper, times(1)).updateParentEntityIdAndVersion(any(), any());
     verify(terraformStepHelper)
         .saveTerraformPlanExecutionDetails(eq(ambiance), eq(terraformTaskNGResponse), eq("id"), any());
+    verify(terraformStepHelper, times(1)).getRevisionsMap(any(TerraformPassThroughData.class), any());
+    verify(terraformStepHelper).addTerraformRevisionOutcomeIfRequired(any(), any());
   }
 
   @Test
@@ -859,6 +871,8 @@ public class TerraformPlanStepV2Test extends CategoryTest {
     verify(terraformStepHelper, times(1)).updateParentEntityIdAndVersion(any(), any());
     verify(terraformStepHelper)
         .saveTerraformPlanExecutionDetails(eq(ambiance), eq(terraformTaskNGResponse), eq("id"), any());
+    verify(terraformStepHelper, times(1)).getRevisionsMap(any(TerraformPassThroughData.class), any());
+    verify(terraformStepHelper).addTerraformRevisionOutcomeIfRequired(any(), any());
   }
 
   @Test
@@ -956,7 +970,8 @@ public class TerraformPlanStepV2Test extends CategoryTest {
     verify(terraformStepHelper).saveTerraformPlanJsonOutput(ambiance, ngResponse, "provisioner1");
     verify(terraformStepHelper)
         .saveTerraformPlanExecutionDetails(eq(ambiance), eq(ngResponse), eq("provisioner1"), any());
-
+    verify(terraformStepHelper, times(1)).getRevisionsMap(any(TerraformPassThroughData.class), any());
+    verify(terraformStepHelper).addTerraformRevisionOutcomeIfRequired(any(), any());
     assertThat(stepResponse.getStepOutcomes()).hasSize(1);
     StepResponse.StepOutcome planOutcome = stepResponse.getStepOutcomes().iterator().next();
     assertThat(planOutcome.getName()).isEqualTo(TerraformPlanOutcome.OUTCOME_NAME);

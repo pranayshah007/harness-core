@@ -16,6 +16,8 @@ java_library(
         "//260-delegate/src/main/java/io/harness/delegate/service/core/k8s:module",
         "//260-delegate/src/main/java/io/harness/delegate/service/core/runner:module",
         "//260-delegate/src/main/java/io/harness/delegate/service/core/util:module",
+        "//260-delegate/src/main/java/io/harness/delegate/service/handlermapping/context:module",
+        "//260-delegate/src/main/java/io/harness/delegate/service/runners/itfc:module",
         "//931-delegate-decryption-service/src/java/io/harness/decryption/delegate/module",
         "//931-secret-providers/src/java/software/wings/beans:module",
         "//955-delegate-beans/src/main/proto/io/harness/delegate/core/beans:955_delegate_core_task_java_proto",

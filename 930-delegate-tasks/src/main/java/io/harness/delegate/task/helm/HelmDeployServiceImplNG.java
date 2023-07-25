@@ -98,6 +98,7 @@ import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.k8s.model.K8sDelegateTaskParams;
+import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
@@ -188,6 +189,11 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
     String initWorkingDir = commandRequest.getWorkingDir();
     ReleaseHistory releaseHistory = null;
     try {
+      kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+          commandRequest.getK8sInfraDelegateConfig(), commandRequest.getWorkingDir(), logCallback);
+
+      List<K8sPod> existingPodList = k8sTaskHelperBase.getHelmPodList(
+          commandRequest.getTimeoutInMillis(), kubernetesConfig, commandRequest.getReleaseName(), logCallback);
       HelmInstallCmdResponseNG commandResponse;
       logCallback.saveExecutionLog(
           "List all existing deployed releases for release name: " + commandRequest.getReleaseName());
@@ -216,8 +222,6 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       serviceHookHandler.addToContext(MANIFEST_FILES_DIRECTORY.getContextName(), manifestFilesDirectory);
       serviceHookHandler.execute(
           ServiceHookType.PRE_HOOK, ServiceHookAction.FETCH_FILES, serviceHookDTO.getWorkingDirectory(), logCallback);
-      kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-          commandRequest.getK8sInfraDelegateConfig(), commandRequest.getWorkingDir(), logCallback);
 
       prepareRepoAndCharts(commandRequest, commandRequest.getTimeoutInMillis(), logCallback);
       serviceHookHandler.execute(
@@ -308,7 +312,12 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       serviceHookHandler.execute(ServiceHookType.POST_HOOK, ServiceHookAction.STEADY_STATE_CHECK,
           serviceHookDTO.getWorkingDirectory(), logCallback);
       logCallback = markDoneAndStartNew(commandRequest, logCallback, WrapUp);
-
+      List<K8sPod> newPodList =
+          helmTaskHelperBase.markNewPods(k8sTaskHelperBase.getHelmPodList(commandRequest.getTimeoutInMillis(),
+                                             kubernetesConfig, commandRequest.getReleaseName(), logCallback),
+              existingPodList);
+      commandResponse.setPreviousK8sPodList(existingPodList);
+      commandResponse.setK8sPodList(newPodList);
       return commandResponse;
 
     } catch (InterruptedException ex) {

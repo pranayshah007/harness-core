@@ -27,7 +27,7 @@ import lombok.Value;
     description = "Lists down request params for template update git details request")
 @OwnedBy(PIPELINE)
 public class TemplateUpdateGitMetadataRequest {
-  @Schema(description = "filepath to be updated") String filepath;
+  @Schema(description = "filepath to be updated") String filePath;
   @Schema(description = "repo name to be updated") String repoName;
-  @Schema(description = "connector ref to be udpated") String connectorRef;
+  @Schema(description = "connector ref to be updated") String connectorRef;
 }

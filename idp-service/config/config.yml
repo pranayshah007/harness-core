@@ -101,6 +101,7 @@ backstageServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiw
 idpServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 jwtAuthSecret: dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq
 jwtIdentityServiceSecret: HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU
+idpEncryptionSecret: q7YdsdUoXTit5nqdBR1LdKQXE3beIGE6yiseIPM1WKg_iFE5C4oRxi1_Ao6XcKZvhCbtgZQliOkUO1cu
 
 managerTarget: localhost:9880
 managerAuthority: localhost
@@ -141,3 +142,26 @@ backstageAppBaseUrl: https://localhost:3000
 backstagePostgresHost: ""
 
 delegateSelectorsCacheMode: redis # in-memory or redis
+
+proxyAllowList:
+  services:
+    manager:
+      proxyPath: v1/idp-proxy-service/manager
+      clientConfig:
+        baseUrl: http://localhost:3457/api/
+        connectTimeOutSeconds: 15
+        readTimeOutSeconds: 15
+      secret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+      allowList:
+        - /users/validate-support-user
+    ng-manager:
+      proxyPath: v1/idp-proxy-service/ng-manager
+      clientConfig:
+        baseUrl: http://localhost:7457/
+        connectTimeOutSeconds: 15
+        readTimeOutSeconds: 15
+      secret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+      allowList:
+        - /user/aggregate
+        - /aggregate/acl/usergroups
+        - /token/validate

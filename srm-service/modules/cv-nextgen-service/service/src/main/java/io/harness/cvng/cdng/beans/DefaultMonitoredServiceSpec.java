@@ -11,18 +11,18 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 
 @Data
+@Builder
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName("Default")
 @OwnedBy(HarnessTeam.CV)
-@SuperBuilder
-public class DefaultMonitoredServiceSpec extends MonitoredServiceSpec {
+public class DefaultMonitoredServiceSpec extends DefaultAndConfiguredMonitoredServiceSpec {
   @Override
   public String getType() {
     return MonitoredServiceSpecType.DEFAULT.name();

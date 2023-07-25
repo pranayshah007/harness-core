@@ -43,6 +43,7 @@ import io.harness.exception.FunctorException;
 import io.harness.exception.GcpServerException;
 import io.harness.exception.GeneralException;
 import io.harness.exception.GitOperationException;
+import io.harness.exception.HarnessRemoteServiceException;
 import io.harness.exception.HintException;
 import io.harness.exception.HttpResponseException;
 import io.harness.exception.IllegalArgumentException;
@@ -209,5 +210,6 @@ public class CommonsKryoRegistrar implements KryoRegistrar {
     kryo.register(TerragruntCommandExecutionException.class, 10000262);
     kryo.register(TerraformCloudException.class, 10000305);
     kryo.register(ServiceNowOIDCException.class, 10000122);
+    kryo.register(HarnessRemoteServiceException.class, 10000124);
   }
 }

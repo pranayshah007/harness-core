@@ -6,10 +6,12 @@
  */
 
 package io.harness.artifacts.gcr;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
 
 import retrofit2.Call;
@@ -21,6 +23,8 @@ import retrofit2.http.Path;
 /**
  * Created by brett on 8/2/17
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDC)
 public interface GcrRestClient {
   @GET("/v2/{imageName}/tags/list")

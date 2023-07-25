@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.setupusage;
 
+import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,6 +36,7 @@ import com.google.protobuf.StringValue;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -162,5 +164,48 @@ public class SetupUsageHelperTest extends CDNGEntitiesTestBase {
             EventsFrameworkMetadataConstants.ACTION);
     assertThat(message.getMetadataMap().values())
         .containsExactlyInAnyOrder("accountId", "CONNECTORS", EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION);
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testPublishServiceEntitySetupUsage() throws InvalidProtocolBufferException {
+    final SetupUsageOwnerEntity setupUsageOwnerEntity = SetupUsageOwnerEntity.builder()
+                                                            .name("someService")
+                                                            .accountId("accountId")
+                                                            .identifier("svcId")
+                                                            .orgIdentifier("orgId")
+                                                            .projectIdentifier("projId")
+                                                            .type(EntityTypeProtoEnum.SERVICE)
+                                                            .build();
+
+    EntityDetailProtoDTO entityDetailProtoDTO1 =
+        EntityDetailProtoDTO.newBuilder().setType(EntityTypeProtoEnum.CONNECTORS).setName("someConnector").build();
+
+    Set<EntityDetailProtoDTO> referredEntities = new HashSet<>();
+    referredEntities.add(entityDetailProtoDTO1);
+
+    setupUsageHelper.publishServiceEntitySetupUsage(setupUsageOwnerEntity, referredEntities);
+
+    ArgumentCaptor<Message> captor = ArgumentCaptor.forClass(Message.class);
+    verify(producer, times(4)).send(captor.capture());
+    List<Message> messages = captor.getAllValues();
+
+    EntitySetupUsageCreateV2DTO entitySetupUsageCreateV2DTO =
+        EntitySetupUsageCreateV2DTO.parseFrom(messages.get(0).getData());
+    assertThat(entitySetupUsageCreateV2DTO.getAccountIdentifier()).isEqualTo("accountId");
+    assertThat(entitySetupUsageCreateV2DTO.getReferredByEntity().getIdentifierRef()).isNotNull();
+    assertThat(messages.get(0).getMetadataMap().keySet())
+        .containsExactlyInAnyOrder("accountId", EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE,
+            EventsFrameworkMetadataConstants.ACTION);
+    assertThat(messages.get(0).getMetadataMap().values())
+        .containsExactlyInAnyOrder("accountId", "CONNECTORS", EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION);
+
+    assertThat(
+        messages.subList(1, messages.size())
+            .stream()
+            .map(msg -> String.valueOf(msg.getMetadataMap().get(EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE)))
+            .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder("TEMPLATE", "FILES", "SECRETS");
   }
 }

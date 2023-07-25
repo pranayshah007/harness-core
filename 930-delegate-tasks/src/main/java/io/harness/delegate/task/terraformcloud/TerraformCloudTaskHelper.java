@@ -30,6 +30,10 @@ import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionCon
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.COULD_NOT_OVERRIDE_POLICY;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.COULD_NOT_UPLOAD_FILE;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.ERROR_PLAN;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.POLICY_CHECK_FAILURE_MESSAGE;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.POLICY_CHECK_FAILURE_SUMMARY;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.POLICY_CHECK_HARD_FAILURE_HINT;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.POLICY_CHECK_ISSUE_WITH_POLICIES;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.RELATIONSHIP_DATA_EMPTY;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Hints.PLEASE_CHECK_PLAN;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Hints.PLEASE_CHECK_PLAN_STATUS;
@@ -413,6 +417,8 @@ public class TerraformCloudTaskHelper {
     logCallback.saveExecutionLog("Policy checks...", INFO, CommandExecutionStatus.RUNNING);
     Set<String> completedPolicies = new HashSet<>();
     List<PolicyCheckData> policyCheckData = getPolicyCheckData(url, token, runId);
+    List<String> hardFailedPolicies = new ArrayList<>();
+
     while (true) {
       for (PolicyCheckData policyCheck : policyCheckData) {
         if (policyCheck.getLinks() != null && policyCheck.getLinks().hasNonNull("output")
@@ -426,7 +432,7 @@ public class TerraformCloudTaskHelper {
           }
           Arrays.stream(policyCheckOutput.split("\n"))
               .forEach(raw -> logCallback.saveExecutionLog(raw, INFO, CommandExecutionStatus.RUNNING));
-          printPolicyChecksSummary(policyCheck, logCallback);
+          printPolicyChecksSummary(policyCheck, logCallback, hardFailedPolicies);
           completedPolicies.add(policyCheck.getId());
         }
       }
@@ -437,7 +443,16 @@ public class TerraformCloudTaskHelper {
         policyCheckData = getPolicyCheckData(url, token, runId);
       }
     }
-    logCallback.saveExecutionLog("Policy check finished", INFO, CommandExecutionStatus.SUCCESS);
+
+    if (hardFailedPolicies.isEmpty()) {
+      logCallback.saveExecutionLog("Policy check finished", INFO, CommandExecutionStatus.SUCCESS);
+    } else {
+      logCallback.saveExecutionLog("Policy check finished", ERROR, CommandExecutionStatus.FAILURE);
+      throw NestedExceptionUtils.hintWithExplanationException(POLICY_CHECK_HARD_FAILURE_HINT,
+          format(POLICY_CHECK_ISSUE_WITH_POLICIES, hardFailedPolicies),
+          new TerraformCloudException(
+              POLICY_CHECK_FAILURE_MESSAGE, new RuntimeException(POLICY_CHECK_FAILURE_SUMMARY)));
+    }
   }
 
   public List<PolicyCheckData> getPolicyCheckData(String url, String token, String runId) {
@@ -486,7 +501,8 @@ public class TerraformCloudTaskHelper {
     }
   }
 
-  private void printPolicyChecksSummary(PolicyCheckData policyCheckData, LogCallback logCallback) {
+  private void printPolicyChecksSummary(
+      PolicyCheckData policyCheckData, LogCallback logCallback, List<String> failedPolicies) {
     try {
       PolicyCheckData.Attributes attributes = policyCheckData.getAttributes();
       if (attributes != null) {
@@ -505,15 +521,19 @@ public class TerraformCloudTaskHelper {
               if (sentinel != null) {
                 Map<String, PolicyCheckData.Attributes.Result.Sentinel.PolicyData> data = sentinel.getData();
                 if (isNotEmpty(data) && isNotEmpty(data.values())) {
-                  data.values().forEach(policyData
-                      -> policyData.getPolicies().forEach(policySummary
-                          -> logCallback.saveExecutionLog(
-                              format("%s : %s",
-                                  policySummary.isResult() ? color("passed", LogColor.Green, LogWeight.Bold)
-                                                           : color("failed", LogColor.Red, LogWeight.Bold),
-                                  policySummary.getPolicy() != null ? policySummary.getPolicy().getName()
-                                                                    : "unknown name"),
-                              INFO, CommandExecutionStatus.RUNNING)));
+                  data.values().forEach(policyData -> policyData.getPolicies().forEach(policySummary -> {
+                    String policyName =
+                        policySummary.getPolicy() != null ? policySummary.getPolicy().getName() : "unknown name";
+                    logCallback.saveExecutionLog(
+                        format("%s : %s",
+                            policySummary.isResult() ? color("passed", LogColor.Green, LogWeight.Bold)
+                                                     : color("failed", LogColor.Red, LogWeight.Bold),
+                            policyName),
+                        INFO, CommandExecutionStatus.RUNNING);
+                    if (!policySummary.isResult() && HARD_FAILED.equals(status)) {
+                      failedPolicies.add(policyName);
+                    }
+                  }));
                 }
               }
             } catch (IllegalArgumentException iax) {

@@ -58,6 +58,8 @@ import io.harness.gitsync.persistance.testing.GitSyncablePersistenceTestModule;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
+import io.harness.licensing.services.DefaultLicenseServiceImpl;
+import io.harness.licensing.services.LicenseService;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.mongo.MongoConfig;
@@ -307,6 +309,8 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
         bind(OrganizationService.class).toInstance(mock(OrganizationService.class));
         bind(ProjectService.class).toInstance(mock(ProjectService.class));
         bind(FeatureFlagService.class).toInstance(mock(FeatureFlagServiceImpl.class));
+        bind(CDStepHelper.class).toProvider(() -> mock(CDStepHelper.class)).asEagerSingleton();
+        bind(LicenseService.class).toInstance(mock(DefaultLicenseServiceImpl.class));
       }
     });
 

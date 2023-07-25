@@ -7,11 +7,14 @@
 
 package io.harness.freeze.beans;
 
+import io.harness.annotation.RecasterAlias;
+
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
+@RecasterAlias("io.harness.freeze.beans.CurrentOrUpcomingWindow")
 public class CurrentOrUpcomingWindow {
   Long startTime;
   Long endTime;

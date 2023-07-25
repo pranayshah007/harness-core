@@ -15,8 +15,10 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.ngtriggers.Constants.MANDATE_CUSTOM_WEBHOOK_AUTHORIZATION;
 import static io.harness.ngtriggers.Constants.MANDATE_CUSTOM_WEBHOOK_TRUE_VALUE;
+import static io.harness.ngtriggers.Constants.MAX_MULTI_ARTIFACT_TRIGGER_SOURCES;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
+import static io.harness.ngtriggers.beans.source.NGTriggerType.MULTI_REGION_ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.WEBHOOK;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITHUB;
 import static io.harness.ngtriggers.beans.source.YamlFields.PIPELINE_BRANCH_NAME;
@@ -49,6 +51,7 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.logging.AutoLogContext;
 import io.harness.logging.NgTriggerAutoLogContext;
 import io.harness.network.SafeHttpCall;
+import io.harness.ng.core.dto.PollingTriggerStatusUpdateDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
@@ -119,7 +122,6 @@ import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.model.time.ExecutionTime;
 import com.cronutils.parser.CronParser;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.annotations.VisibleForTesting;
@@ -130,6 +132,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -141,6 +144,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
@@ -203,6 +207,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
               ngTriggerEntity.getAccountId(), FeatureName.SPG_DISABLE_CUSTOM_WEBHOOK_V3_URL)) {
         populateCustomWebhookTokenForCustomWebhookTriggers(ngTriggerEntity);
       }
+
+      checkForAccessForHarnessScm(ngTriggerEntity);
       NGTriggerEntity savedNgTriggerEntity = ngTriggerRepository.save(ngTriggerEntity);
       performPostUpsertFlow(savedNgTriggerEntity, false);
       outboxService.save(new TriggerCreateEvent(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
@@ -220,6 +226,25 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     } catch (DuplicateKeyException e) {
       throw new DuplicateFieldException(
           String.format(DUP_KEY_EXP_FORMAT_STRING, ngTriggerEntity.getIdentifier()), USER_SRE, e);
+    }
+  }
+
+  @VisibleForTesting
+  void checkForAccessForHarnessScm(NGTriggerEntity ngTriggerEntity) {
+    if (ngTriggerEntity.getMetadata().getWebhook() != null
+        && ngTriggerEntity.getMetadata().getWebhook().getGit() != null
+        && Boolean.TRUE.equals(ngTriggerEntity.getMetadata().getWebhook().getGit().getIsHarnessScm())) {
+      // todo(abhinav): check what reponame is used
+      String repoName = ngTriggerEntity.getMetadata().getWebhook().getGit().getRepoName();
+      String repositoryAccessControlResourceName = "REPOSITORY";
+      String repositoryAccessControlPerms = "code_repo_edit";
+      accessControlClient.checkForAccessOrThrow(ResourceScope.builder()
+                                                    .accountIdentifier(ngTriggerEntity.getAccountId())
+                                                    .orgIdentifier(ngTriggerEntity.getOrgIdentifier())
+                                                    .projectIdentifier(ngTriggerEntity.getProjectIdentifier())
+                                                    .build(),
+          Resource.builder().resourceType(repositoryAccessControlResourceName).resourceIdentifier(repoName).build(),
+          repositoryAccessControlPerms);
     }
   }
 
@@ -245,7 +270,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     }
 
     // Polling not required for other trigger types
-    if (ngTriggerEntity.getType() != ARTIFACT && ngTriggerEntity.getType() != MANIFEST) {
+    if (ngTriggerEntity.getType() != ARTIFACT && ngTriggerEntity.getType() != MULTI_REGION_ARTIFACT
+        && ngTriggerEntity.getType() != MANIFEST) {
       return;
     }
 
@@ -253,9 +279,18 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   }
 
   public void subscribePolling(NGTriggerEntity ngTriggerEntity, boolean isUpdate) {
-    PollingItem pollingItem = pollingSubscriptionHelper.generatePollingItem(ngTriggerEntity);
+    if (ngTriggerEntity.getType() == MULTI_REGION_ARTIFACT) {
+      executePollingSubscriptionChanges(ngTriggerEntity, isUpdate);
+      return;
+    }
+
+    List<PollingItem> pollingItems = pollingSubscriptionHelper.generatePollingItems(ngTriggerEntity);
 
     try {
+      if (isEmpty(pollingItems)) {
+        throw new InvalidRequestException("Cannot subscribe polling for empty pollingItems");
+      }
+      PollingItem pollingItem = pollingItems.get(0);
       byte[] pollingItemBytes = kryoSerializer.asBytes(pollingItem);
 
       if (!ngTriggerEntity.getEnabled()
@@ -281,7 +316,9 @@ public class NGTriggerServiceImpl implements NGTriggerService {
                 ngTriggerEntity.getAccountId(), AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
           log.info("Polling Subscription successful for Trigger {} with pollingDocumentId {}",
               ngTriggerEntity.getIdentifier(), pollingDocument.getPollingDocId());
-          updatePollingRegistrationStatus(ngTriggerEntity, pollingDocument, StatusResult.SUCCESS);
+          // TODO: (Vinicius) Set the status to PENDING here when ng-manager changes are deployed.
+          updatePollingRegistrationStatus(
+              ngTriggerEntity, Collections.singletonList(pollingDocument), StatusResult.SUCCESS);
         }
       }
     } catch (Exception exception) {
@@ -291,6 +328,81 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       updatePollingRegistrationStatus(ngTriggerEntity, null, StatusResult.FAILED);
       throw new InvalidRequestException(exception.getMessage());
     }
+  }
+
+  public void executePollingSubscriptionChanges(NGTriggerEntity ngTriggerEntity, boolean isUpdate) {
+    // This method is a generalization of `subscribePolling` that we created for handling MultiRegionArtifact Triggers.
+    // We intend to replace `subscribePolling` by this method once we are confident it will introduce no issues.
+    List<PollingItem> pollingItems = pollingSubscriptionHelper.generatePollingItems(ngTriggerEntity);
+
+    try {
+      if (isEmpty(pollingItems)) {
+        throw new InvalidRequestException("Cannot make polling subscription changes for empty pollingItems");
+      }
+      boolean shouldSubscribe = checkIfShouldSubscribePolling(ngTriggerEntity);
+      boolean shouldUnsubscribe = checkIfShouldUnsubscribePolling(ngTriggerEntity, isUpdate);
+      boolean unsubscribeSuccess = true;
+
+      if (shouldUnsubscribe) {
+        List<PollingItem> pollingItemsToUnsubscribe = getPollingItemsToUnsubscribe(ngTriggerEntity, pollingItems);
+        unsubscribeSuccess = unsubscribePolling(ngTriggerEntity, pollingItemsToUnsubscribe);
+      }
+
+      if (shouldSubscribe) {
+        List<PollingDocument> pollingDocuments = subscribePollingV2(ngTriggerEntity, pollingItems);
+        // TODO: (Vinicius) Set the status to PENDING here when ng-manager changes are deployed.
+        updatePollingRegistrationStatus(ngTriggerEntity, pollingDocuments, StatusResult.SUCCESS);
+      } else if (unsubscribeSuccess) {
+        // no subscription done, check if unsubscription worked.
+        updatePollingRegistrationStatus(ngTriggerEntity, null, StatusResult.SUCCESS);
+      } else {
+        // unsubscription failed for at least one of the polling items.
+        updatePollingRegistrationStatus(ngTriggerEntity, null, StatusResult.FAILED);
+      }
+
+    } catch (Exception exception) {
+      log.error(String.format("Polling Subscription Request failed for Trigger: %s with error",
+                    TriggerHelper.getTriggerRef(ngTriggerEntity)),
+          exception);
+      updatePollingRegistrationStatus(ngTriggerEntity, null, StatusResult.FAILED);
+      throw new InvalidRequestException(exception.getMessage());
+    }
+  }
+
+  private List<PollingDocument> subscribePollingV2(NGTriggerEntity ngTriggerEntity, List<PollingItem> pollingItems) {
+    List<PollingDocument> pollingDocuments = new ArrayList<>();
+    if (isEmpty(pollingItems)) {
+      return pollingDocuments;
+    }
+    for (PollingItem pollingItem : pollingItems) {
+      byte[] pollingItemBytes = kryoSerializer.asBytes(pollingItem);
+      ResponseDTO<PollingResponseDTO> responseDTO = executePollingSubscription(ngTriggerEntity, pollingItemBytes);
+      PollingDocument pollingDocument =
+          (PollingDocument) kryoSerializer.asObject(responseDTO.getData().getPollingResponse());
+      pollingDocuments.add(pollingDocument);
+      try (AutoLogContext ignore0 = new NgTriggerAutoLogContext("pollingDocumentId", pollingDocument.getPollingDocId(),
+               ngTriggerEntity.getIdentifier(), ngTriggerEntity.getTargetIdentifier(),
+               ngTriggerEntity.getProjectIdentifier(), ngTriggerEntity.getOrgIdentifier(),
+               ngTriggerEntity.getAccountId(), AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
+        log.info("Polling Subscription successful for Trigger {} with pollingDocumentId {}",
+            ngTriggerEntity.getIdentifier(), pollingDocument.getPollingDocId());
+      }
+    }
+    return pollingDocuments;
+  }
+
+  private boolean unsubscribePolling(NGTriggerEntity ngTriggerEntity, List<PollingItem> pollingItems) {
+    if (isEmpty(pollingItems)) {
+      // nothing to do here.
+      return true;
+    }
+    boolean unsubscribeSuccess = true;
+    for (PollingItem pollingItem : pollingItems) {
+      byte[] pollingItemBytes = kryoSerializer.asBytes(pollingItem);
+      unsubscribeSuccess =
+          unsubscribeSuccess && executePollingUnSubscription(ngTriggerEntity, pollingItemBytes).equals(Boolean.TRUE);
+    }
+    return unsubscribeSuccess;
   }
 
   private ResponseDTO<PollingResponseDTO> executePollingSubscription(
@@ -328,10 +440,10 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   }
 
   private void updatePollingRegistrationStatus(
-      NGTriggerEntity ngTriggerEntity, PollingDocument pollingDocument, StatusResult statusResult) {
+      NGTriggerEntity ngTriggerEntity, List<PollingDocument> pollingDocuments, StatusResult statusResult) {
     Criteria criteria = getTriggerEqualityCriteriaWithoutDbVersion(ngTriggerEntity, false);
 
-    stampPollingStatusInfo(ngTriggerEntity, pollingDocument, statusResult);
+    stampPollingStatusInfo(ngTriggerEntity, pollingDocuments, statusResult);
     NGTriggerEntity updatedEntity = ngTriggerRepository.updateValidationStatusAndMetadata(criteria, ngTriggerEntity);
 
     if (updatedEntity == null) {
@@ -341,12 +453,16 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   }
 
   private void stampPollingStatusInfo(
-      NGTriggerEntity ngTriggerEntity, PollingDocument pollingDocument, StatusResult statusResult) {
+      NGTriggerEntity ngTriggerEntity, List<PollingDocument> pollingDocuments, StatusResult statusResult) {
     // change pollingDocId only if request was successful. Else, we dont know what happened.
     // In next trigger upsert, we will try again
     if (statusResult == StatusResult.SUCCESS) {
-      String pollingDocId = null == pollingDocument ? null : pollingDocument.getPollingDocId();
-      ngTriggerEntity.getMetadata().getBuildMetadata().getPollingConfig().setPollingDocId(pollingDocId);
+      if (ngTriggerEntity.getType() == MULTI_REGION_ARTIFACT) {
+        stampPollingInfoForMultiArtifactTrigger(ngTriggerEntity, pollingDocuments);
+      } else {
+        String pollingDocId = isEmpty(pollingDocuments) ? null : pollingDocuments.get(0).getPollingDocId();
+        ngTriggerEntity.getMetadata().getBuildMetadata().getPollingConfig().setPollingDocId(pollingDocId);
+      }
     }
 
     if (ngTriggerEntity.getTriggerStatus() == null) {
@@ -356,6 +472,27 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       ngTriggerEntity.getTriggerStatus().setPollingSubscriptionStatus(PollingSubscriptionStatus.builder().build());
     }
     ngTriggerEntity.getTriggerStatus().getPollingSubscriptionStatus().setStatusResult(statusResult);
+  }
+
+  public void stampPollingInfoForMultiArtifactTrigger(
+      NGTriggerEntity ngTriggerEntity, List<PollingDocument> pollingDocuments) {
+    if (pollingDocuments == null) {
+      ngTriggerEntity.getMetadata().setMultiBuildMetadata(Collections.emptyList());
+      ngTriggerEntity.getMetadata().setSignatures(Collections.emptyList());
+    } else {
+      // Copy each pollingDocId to the corresponding BuildMetadata in Triggers metadata.
+      IntStream.range(0, pollingDocuments.size())
+          .forEach(index
+              -> ngTriggerEntity.getMetadata().getMultiBuildMetadata().get(index).getPollingConfig().setPollingDocId(
+                  pollingDocuments.get(index).getPollingDocId()));
+      // Copy the new trigger's signatures to `ngTriggerEntity.metadata.signatures` list.
+      ngTriggerEntity.getMetadata().setSignatures(
+          ngTriggerEntity.getMetadata()
+              .getMultiBuildMetadata()
+              .stream()
+              .map(buildMetadata -> buildMetadata.getPollingConfig().getSignature())
+              .collect(Collectors.toList()));
+    }
   }
 
   private void registerWebhookAsync(NGTriggerEntity ngTriggerEntity) {
@@ -368,6 +505,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       });
     }
   }
+
   private void checkAndEnableWebhookPolling(NGTriggerEntity ngTriggerEntity) {
     if (pmsFeatureFlagService.isEnabled(ngTriggerEntity.getAccountId(), FeatureName.CD_GIT_WEBHOOK_POLLING)
         && GITHUB.getEntityMetadataName().equalsIgnoreCase(ngTriggerEntity.getMetadata().getWebhook().getType())) {
@@ -401,6 +539,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
           ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getIdentifier());
     }
     Criteria criteria = getTriggerEqualityCriteria(ngTriggerEntity, false);
+    checkForAccessForHarnessScm(ngTriggerEntity);
     NGTriggerEntity updatedTriggerEntity = updateTriggerEntity(ngTriggerEntity, criteria);
     outboxService.save(new TriggerUpdateEvent(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
         ngTriggerEntity.getProjectIdentifier(), oldNgTriggerEntity, updatedTriggerEntity));
@@ -442,6 +581,16 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   }
 
   @Override
+  public boolean updateTriggerPollingStatus(String accountId, PollingTriggerStatusUpdateDTO statusUpdate) {
+    if (isEmpty(statusUpdate.getSignatures())) {
+      throw new InvalidRequestException("Empty signatures list provided for trigger polling status update");
+    }
+    return ngTriggerRepository.updateManyTriggerPollingSubscriptionStatusBySignatures(accountId,
+        statusUpdate.getSignatures(), statusUpdate.isSuccess(), statusUpdate.getErrorMessage(),
+        statusUpdate.getLastCollectedVersions(), statusUpdate.getLastCollectedTime());
+  }
+
+  @Override
   public Page<NGTriggerEntity> list(Criteria criteria, Pageable pageable) {
     return ngTriggerRepository.findAll(criteria, pageable);
   }
@@ -468,7 +617,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
 
       boolean isWebhookGitPollingEnabled = isWebhookGitPollingEnabled(foundTriggerEntity);
       if (foundTriggerEntity.getType() == MANIFEST || foundTriggerEntity.getType() == ARTIFACT
-          || isWebhookGitPollingEnabled) {
+          || foundTriggerEntity.getType() == MULTI_REGION_ARTIFACT || isWebhookGitPollingEnabled) {
         log.info("Submitting unsubscribe request after delete for Trigger :"
             + TriggerHelper.getTriggerRef(foundTriggerEntity));
         submitUnsubscribeAsync(foundTriggerEntity);
@@ -503,9 +652,11 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     if (ngTriggerEntity != null) {
       executorService.submit(() -> {
         try {
-          PollingItem pollingItem = pollingSubscriptionHelper.generatePollingItem(ngTriggerEntity);
-          if (!executePollingUnSubscription(ngTriggerEntity, kryoSerializer.asBytes(pollingItem))) {
-            log.warn(String.format("Trigger %s failed to unsubsribe from Polling", ngTriggerEntity.getIdentifier()));
+          List<PollingItem> pollingItems = pollingSubscriptionHelper.generatePollingItems(ngTriggerEntity);
+          for (PollingItem pollingItem : pollingItems) {
+            if (!executePollingUnSubscription(ngTriggerEntity, kryoSerializer.asBytes(pollingItem))) {
+              log.warn(String.format("Trigger %s failed to unsubscribe from Polling", ngTriggerEntity.getIdentifier()));
+            }
           }
         } catch (Exception exception) {
           log.error(exception.getMessage());
@@ -845,9 +996,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       if (innerMap == null) {
         throw new InvalidRequestException("Invalid Trigger Yaml.");
       }
-      ObjectMapper objectMapper = ngTriggerElementMapper.getObjectMapper();
       innerMap.set(INPUT_YAML, new TextNode(pipelineComponent));
-      return objectMapper.writeValueAsString(node);
+      return YamlUtils.writeYamlString(node);
     } catch (IOException e) {
       throw new InvalidYamlException("Invalid Trigger Yaml", e);
     }
@@ -951,6 +1101,12 @@ public class NGTriggerServiceImpl implements NGTriggerService {
           validationFailed = true;
           break;
         }
+      }
+      if (triggerConfig.getSources().size() > MAX_MULTI_ARTIFACT_TRIGGER_SOURCES) {
+        msg.append("The maximum number of sources for Multi-Artifact trigger is ")
+            .append(MAX_MULTI_ARTIFACT_TRIGGER_SOURCES)
+            .append(".\n");
+        validationFailed = true;
       }
     }
     if (validationFailed) {
@@ -1233,5 +1389,55 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       log.info("No non-deleted Trigger found to update pipelineBranchName");
       return TriggerUpdateCount.builder().successCount(0).failureCount(0).build();
     }
+  }
+
+  public boolean checkIfShouldSubscribePolling(NGTriggerEntity ngTriggerEntity) {
+    switch (ngTriggerEntity.getType()) {
+      case MANIFEST:
+      case ARTIFACT:
+      case MULTI_REGION_ARTIFACT:
+        return ngTriggerEntity.getEnabled();
+      case WEBHOOK:
+        if (!ngTriggerEntity.getEnabled()) {
+          return false;
+        }
+        if (isWebhookGitPollingEnabled(ngTriggerEntity)
+            && NGTimeConversionHelper.convertTimeStringToMinutesZeroAllowed(ngTriggerEntity.getPollInterval())
+                == WEBHOOK_POLLING_UNSUBSCRIBE) {
+          return false;
+        }
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  public boolean checkIfShouldUnsubscribePolling(NGTriggerEntity ngTriggerEntity, boolean isUpdate) {
+    switch (ngTriggerEntity.getType()) {
+      case MANIFEST:
+      case ARTIFACT:
+      case MULTI_REGION_ARTIFACT:
+        return !ngTriggerEntity.getEnabled() || isUpdate;
+      case WEBHOOK:
+        if (!ngTriggerEntity.getEnabled() || isUpdate) {
+          return true;
+        }
+        return isWebhookGitPollingEnabled(ngTriggerEntity)
+            && NGTimeConversionHelper.convertTimeStringToMinutesZeroAllowed(ngTriggerEntity.getPollInterval())
+            == WEBHOOK_POLLING_UNSUBSCRIBE;
+      default:
+        return false;
+    }
+  }
+
+  public List<PollingItem> getPollingItemsToUnsubscribe(
+      NGTriggerEntity ngTriggerEntity, List<PollingItem> pollingItems) {
+    if (ngTriggerEntity.getType() == MULTI_REGION_ARTIFACT) {
+      /* MultiRegionArtifact triggers need different handling. Because the number of artifacts we are listening to
+      could have changed during an update, we generate pollingItems to unsubscribe
+      from the `ngTriggerEntity.metadata.signatures` list. */
+      return pollingSubscriptionHelper.generateMultiArtifactPollingItemsToUnsubscribe(ngTriggerEntity);
+    }
+    return pollingItems;
   }
 }

@@ -19,10 +19,19 @@ import lombok.Data;
 public class K8sBGDeployResponse implements K8sNGTaskResponse {
   Integer releaseNumber;
   List<K8sPod> k8sPodList;
+  List<K8sPod> previousK8sPodList;
   String primaryServiceName;
   String stageServiceName;
   String stageColor;
   String primaryColor;
   List<KubernetesResourceId> prunedResourceIds;
   Boolean stageDeploymentSkipped;
+
+  public List<K8sPod> getPreviousK8sPodList() {
+    return previousK8sPodList;
+  }
+
+  public List<K8sPod> getTotalK8sPodList() {
+    return k8sPodList;
+  }
 }

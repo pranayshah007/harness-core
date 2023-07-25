@@ -26,6 +26,7 @@ public class ScmGetFileResponseDTO {
   String blobId;
   String branchName;
   ScmCacheDetails cacheDetails;
+  boolean isGitDefaultBranch;
 
   public ScmGetFileResponseV2DTO toScmGetFileResponseV2DTO() {
     return ScmGetFileResponseV2DTO.builder()
@@ -34,6 +35,7 @@ public class ScmGetFileResponseDTO {
         .cacheDetails(cacheDetails)
         .branchName(branchName)
         .blobId(blobId)
+        .isGitDefaultBranch(isGitDefaultBranch)
         .build();
   }
 }

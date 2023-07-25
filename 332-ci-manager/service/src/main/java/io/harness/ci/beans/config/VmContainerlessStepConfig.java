@@ -27,4 +27,5 @@ public class VmContainerlessStepConfig {
   ContainerlessPluginConfig dockerBuildxConfig;
   ContainerlessPluginConfig dockerBuildxEcrConfig;
   ContainerlessPluginConfig dockerBuildxGcrConfig;
+  ContainerlessPluginConfig dockerBuildxAcrConfig;
 }

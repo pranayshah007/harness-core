@@ -123,8 +123,8 @@ public class HelmDeployStepTest extends AbstractHelmStepExecutorTestBase {
                                   .build();
     doReturn(stepOutcome).when(instanceInfoService).saveServerInstancesIntoSweepingOutput(any(), any());
 
-    StepResponse response = helmDeployStep.finalizeExecutionWithSecurityContext(ambiance, stepElementParameters,
-        NativeHelmExecutionPassThroughData.builder().build(), () -> helmCmdExecResponseNG);
+    StepResponse response = helmDeployStep.finalizeExecutionWithSecurityContextAndNodeInfo(ambiance,
+        stepElementParameters, NativeHelmExecutionPassThroughData.builder().build(), () -> helmCmdExecResponseNG);
     assertThat(response.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(response.getStepOutcomes()).hasSize(2);
 
@@ -158,7 +158,7 @@ public class HelmDeployStepTest extends AbstractHelmStepExecutorTestBase {
         .when(nativeHelmStepHelper)
         .handleTaskException(ambiance, executionPassThroughData, thrownException);
 
-    StepResponse response = helmDeployStep.finalizeExecutionWithSecurityContext(
+    StepResponse response = helmDeployStep.finalizeExecutionWithSecurityContextAndNodeInfo(
         ambiance, stepElementParameters, executionPassThroughData, () -> { throw thrownException; });
 
     assertThat(response).isEqualTo(stepResponse);
@@ -211,14 +211,14 @@ public class HelmDeployStepTest extends AbstractHelmStepExecutorTestBase {
                                                .build();
     doReturn(stepOutcome).when(instanceInfoService).saveServerInstancesIntoSweepingOutput(any(), any());
     when(cdStepHelper.handleGitTaskFailure(any())).thenReturn(StepResponse.builder().status(Status.SUCCEEDED).build());
-    StepResponse response = helmDeployStep.finalizeExecutionWithSecurityContext(ambiance, stepElementParameters,
-        GitFetchResponsePassThroughData.builder().build(), () -> helmCmdExecResponseNG);
+    StepResponse response = helmDeployStep.finalizeExecutionWithSecurityContextAndNodeInfo(ambiance,
+        stepElementParameters, GitFetchResponsePassThroughData.builder().build(), () -> helmCmdExecResponseNG);
     assertThat(response.getStatus()).isEqualTo(Status.SUCCEEDED);
 
     when(nativeHelmStepHelper.handleHelmValuesFetchFailure(any()))
         .thenReturn(StepResponse.builder().status(Status.SUCCEEDED).build());
     assertThat(helmDeployStep
-                   .finalizeExecutionWithSecurityContext(ambiance, stepElementParameters,
+                   .finalizeExecutionWithSecurityContextAndNodeInfo(ambiance, stepElementParameters,
                        HelmValuesFetchResponsePassThroughData.builder().build(), () -> helmCmdExecResponseNG)
                    .getStatus())
         .isEqualTo(Status.SUCCEEDED);
@@ -226,7 +226,7 @@ public class HelmDeployStepTest extends AbstractHelmStepExecutorTestBase {
     when(cdStepHelper.handleStepExceptionFailure(any()))
         .thenReturn(StepResponse.builder().status(Status.SUCCEEDED).build());
     assertThat(helmDeployStep
-                   .finalizeExecutionWithSecurityContext(ambiance, stepElementParameters,
+                   .finalizeExecutionWithSecurityContextAndNodeInfo(ambiance, stepElementParameters,
                        StepExceptionPassThroughData.builder().build(), () -> helmCmdExecResponseNG)
                    .getStatus())
         .isEqualTo(Status.SUCCEEDED);
@@ -241,7 +241,7 @@ public class HelmDeployStepTest extends AbstractHelmStepExecutorTestBase {
             .commandExecutionStatus(FAILURE)
             .build();
     assertThat(helmDeployStep
-                   .finalizeExecutionWithSecurityContext(ambiance, stepElementParameters,
+                   .finalizeExecutionWithSecurityContextAndNodeInfo(ambiance, stepElementParameters,
                        NativeHelmExecutionPassThroughData.builder().build(), () -> helmCmdExecResponseNGFail)
                    .getStatus())
         .isEqualTo(Status.FAILED);

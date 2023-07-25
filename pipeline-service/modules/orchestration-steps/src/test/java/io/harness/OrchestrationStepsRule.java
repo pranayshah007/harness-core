@@ -13,6 +13,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static org.mockito.Mockito.mock;
 
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheConfig;
@@ -24,6 +25,7 @@ import io.harness.delegate.DelegateServiceGrpc;
 import io.harness.engine.expressions.AmbianceExpressionEvaluatorProvider;
 import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
+import io.harness.ff.FeatureFlagService;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
@@ -87,12 +89,14 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
+import org.mockito.Mockito;
 import org.springframework.core.convert.converter.Converter;
 
 @Slf4j
@@ -149,6 +153,13 @@ public class OrchestrationStepsRule implements MethodRule, InjectorRuleMixin, Mo
         return ImmutableList.<Class<? extends Converter<?, ?>>>builder()
             .addAll(OrchestrationStepsModuleRegistrars.springConverters)
             .build();
+      }
+
+      @Provides
+      @Singleton
+      @Named("logStreamingClientThreadPool")
+      public ThreadPoolExecutor logStreamingClientThreadPool() {
+        return Mockito.mock(ThreadPoolExecutor.class);
       }
 
       @Provides
@@ -211,6 +222,8 @@ public class OrchestrationStepsRule implements MethodRule, InjectorRuleMixin, Mo
         bind(DelegateAsyncService.class).toInstance(mock(DelegateAsyncService.class));
         bind(UserClient.class).toInstance(mock(UserClient.class));
         bind(OpaServiceClient.class).toInstance(mock(OpaServiceClient.class));
+        bind(AccountClient.class).toInstance(mock(AccountClient.class));
+        bind(FeatureFlagService.class).toInstance(mock(FeatureFlagService.class));
         bind(new TypeLiteral<DelegateServiceGrpc.DelegateServiceBlockingStub>() {
         }).toInstance(DelegateServiceGrpc.newBlockingStub(InProcessChannelBuilder.forName(generateUuid()).build()));
       }

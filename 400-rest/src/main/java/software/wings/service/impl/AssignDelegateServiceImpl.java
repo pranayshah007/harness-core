@@ -14,6 +14,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.NgSetupFields.NG;
 import static io.harness.delegate.task.TaskFailureReason.EXPIRED;
+import static io.harness.delegate.utils.DelegateServiceConstants.HEARTBEAT_EXPIRY_TIME;
 import static io.harness.persistence.HPersistence.upsertReturnNewOptions;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
@@ -124,9 +125,6 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 public class AssignDelegateServiceImpl implements AssignDelegateService, DelegateTaskRetryObserver {
   public static final String SCOPE_WILDCARD = "*";
   private static final SecureRandom random = new SecureRandom();
-  public static final long MAX_DELEGATE_LAST_HEARTBEAT = (5 * 60 * 1000L) + (15 * 1000L); // 5 minutes 15 seconds
-  public static final long MAX_DELEGATE_LONG_LAST_HEARTBEAT = TimeUnit.MINUTES.toMillis(8);
-
   public static final String ERROR_MESSAGE =
       "Delegate selection log: Delegate id: %s, Name: %s, Host name: %s, Profile name: %s, %s with note: %s at: %s";
 
@@ -150,6 +148,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   @Inject private FeatureFlagService featureFlagService;
   @Inject private InfrastructureMappingService infrastructureMappingService;
   @Inject private DelegateCache delegateCache;
+  @Inject private DelegateDao delegateDao;
   @Inject private DelegateTaskServiceClassic delegateTaskServiceClassic;
 
   @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
@@ -172,7 +171,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   private LoadingCache<String, List<Delegate>> accountDelegatesCache =
       CacheBuilder.newBuilder()
           .maximumSize(1000)
-          .expireAfterWrite(MAX_DELEGATE_LAST_HEARTBEAT / 3, TimeUnit.MILLISECONDS)
+          .expireAfterWrite(HEARTBEAT_EXPIRY_TIME.toMillis() / 3, TimeUnit.MILLISECONDS)
           .build(new CacheLoader<String, List<Delegate>>() {
             @Override
             public List<Delegate> load(String accountId) {
@@ -193,7 +192,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
 
   @Override
   public boolean canAssign(String delegateId, DelegateTask task) {
-    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId, false);
+    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId);
     if (delegate == null) {
       return false;
     }
@@ -619,7 +618,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
           if (!result.isPresent() || result.get().getLastUpdatedAt() < currentTimeMillis() - WHITELIST_TTL
               || !result.get().isValidated()) {
             matching = false;
-            Delegate delegate = delegateCache.get(task.getAccountId(), delegateId, false);
+            Delegate delegate = delegateCache.get(task.getAccountId(), delegateId);
             if (delegate == null) {
               break;
             }
@@ -644,7 +643,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
       return false;
     }
 
-    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId, false);
+    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId);
     if (delegate == null) {
       return false;
     }
@@ -840,7 +839,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
       } else if (whitelistedDelegates.isEmpty()) {
         StringBuilder msg = new StringBuilder();
         for (String delegateId : activeDelegates) {
-          Delegate delegate = delegateCache.get(delegateTask.getAccountId(), delegateId, false);
+          Delegate delegate = delegateCache.get(delegateTask.getAccountId(), delegateId);
           if (delegate != null) {
             msg.append(" ===> ").append(delegate.getHostName()).append(": ");
             boolean canAssignScope = canAssignDelegateScopes(delegate, delegateTask);
@@ -875,7 +874,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
         errorMessage =
             "None of the active delegates were eligible to complete the task." + taskTagsMsg + "\n\n" + msg.toString();
       } else if (delegateTask.getDelegateId() != null) {
-        Delegate delegate = delegateCache.get(delegateTask.getAccountId(), delegateTask.getDelegateId(), false);
+        Delegate delegate = delegateCache.get(delegateTask.getAccountId(), delegateTask.getDelegateId());
         errorMessage = "Delegate task timed out. Delegate: "
             + (delegate != null ? delegate.getHostName() : "not found: " + delegateTask.getDelegateId());
       } else {
@@ -1051,7 +1050,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   }
 
   private boolean canAssignDelegateBySelectors(String delegateId, DelegateTask task) {
-    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId, false);
+    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId);
     if (delegate == null) {
       return false;
     }
@@ -1076,7 +1075,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
 
   @Override
   public boolean canAssignTask(String delegateId, DelegateTask task) {
-    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId, false);
+    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId);
     if (delegate == null) {
       return false;
     }
@@ -1125,7 +1124,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
 
   @Override
   public boolean canAssignTaskV2(String delegateId, DelegateTask task) {
-    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId, false);
+    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId);
     if (delegate == null) {
       return false;
     }
@@ -1184,11 +1183,9 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   @Override
   public List<Delegate> fetchActiveDelegates(DelegateTask delegateTask) {
     List<Delegate> accountDelegates = getAccountDelegates(delegateTask.getAccountId());
-    long oldestAcceptableHeartBeat = currentTimeMillis() - MAX_DELEGATE_LONG_LAST_HEARTBEAT;
-    List<Delegate> nonConnectedDelegates =
-        accountDelegates.stream()
-            .filter(delegate -> delegate.getLastHeartBeat() < oldestAcceptableHeartBeat)
-            .collect(Collectors.toList());
+    List<Delegate> nonConnectedDelegates = accountDelegates.stream()
+                                               .filter(delegate -> !delegateDao.isDelegateHeartBeatUpToDate(delegate))
+                                               .collect(Collectors.toList());
     List<String> nonConnectedDelegatesIds =
         nonConnectedDelegates.stream().map(Delegate::getHostName).collect(Collectors.toList());
     if (isNotEmpty(nonConnectedDelegatesIds)) {
@@ -1198,7 +1195,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     return accountDelegates.stream()
         .filter(delegate
             -> delegate.getStatus() == DelegateInstanceStatus.ENABLED
-                && delegate.getLastHeartBeat() > oldestAcceptableHeartBeat)
+                && delegateDao.isDelegateHeartBeatUpToDate(delegate))
         .collect(toList());
   }
 
@@ -1315,12 +1312,10 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   }
 
   private List<String> identifyActiveDelegateIds(List<Delegate> accountDelegates, String accountId) {
-    long oldestAcceptableHeartBeat = currentTimeMillis() - MAX_DELEGATE_LAST_HEARTBEAT;
-
     Map<DelegateActivity, List<Delegate>> delegatesMap =
         accountDelegates.stream().collect(Collectors.groupingBy(delegate -> {
           if (DelegateInstanceStatus.ENABLED == delegate.getStatus()) {
-            if (delegate.getLastHeartBeat() > oldestAcceptableHeartBeat) {
+            if (delegateDao.isDelegateHeartBeatUpToDate(delegate)) {
               return DelegateActivity.ACTIVE;
             } else {
               return DelegateActivity.DISCONNECTED;

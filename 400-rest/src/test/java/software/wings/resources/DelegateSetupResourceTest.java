@@ -297,14 +297,13 @@ public class DelegateSetupResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldGet() {
     Delegate delegate = Delegate.builder().uuid(ID_KEY).build();
-
-    when(delegateCache.get(ACCOUNT_ID, ID_KEY, true)).thenReturn(delegate);
+    when(delegateCache.get(ACCOUNT_ID, ID_KEY)).thenReturn(delegate);
     RestResponse<Delegate> restResponse = RESOURCES.client()
                                               .target("/setup/delegates/" + ID_KEY + "?accountId=" + ACCOUNT_ID)
                                               .request()
                                               .get(new GenericType<RestResponse<Delegate>>() {});
 
-    verify(delegateCache, atLeastOnce()).get(ACCOUNT_ID, ID_KEY, true);
+    verify(delegateCache, atLeastOnce()).get(ACCOUNT_ID, ID_KEY);
     assertThat(restResponse.getResource()).isEqualTo(delegate);
   }
 

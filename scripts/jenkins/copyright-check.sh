@@ -22,12 +22,18 @@ done
 len=${#FILES_WITHOUT_STMTS[@]}
 
 if [ $len -eq 0 ]; then
-  echo -e "\e[1;34mINFO:\e[0m All files have a copyright statement..."
+  echo -e "\e[1;32mINFO:\e[0m All files have a copyright statement..."
 else
-  echo -e "\e[1;31mERROR:\e[0m Following ${len} files do not have the Copyright statements. Please update and re-trigger the execution..."
+  echo -e "\e[1;31mERROR:\e[0m Following ${len} files do not have the Copyright statements. Please update and re-trigger the execution using \"trigger copyrightcheck\" comment..."
   for file in ${FILES_WITHOUT_STMTS[@]}
   do
     echo "-> $file"
   done
   exit 1
 fi
+
+
+
+
+
+

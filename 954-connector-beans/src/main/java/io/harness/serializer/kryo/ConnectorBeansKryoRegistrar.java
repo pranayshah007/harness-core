@@ -206,6 +206,7 @@ import io.harness.delegate.beans.connector.scm.genericgitconnector.GitSSHAuthent
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
+import io.harness.delegate.beans.connector.scm.github.GithubAppDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAppSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
@@ -250,6 +251,7 @@ import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowRefreshTokenDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.signalfxconnector.SignalFXConnectorDTO;
+import io.harness.delegate.beans.connector.splunkconnector.SplunkAuthType;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO;
@@ -379,6 +381,7 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(BitbucketOAuthDTO.class, 19555);
     kryo.register(LocalConnectorDTO.class, 543237);
     kryo.register(GcpKmsConnectorDTO.class, 543238);
+    kryo.register(GithubAppDTO.class, 20001000);
 
     kryo.register(AwsKmsConnectorDTO.class, 543286);
     kryo.register(AwsKmsConnectorCredentialDTO.class, 543288);
@@ -503,6 +506,7 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(CustomSecretManagerConnectorDTO.class, 19875);
     kryo.register(TemplateLinkConfigForCustomSecretManager.class, 19877);
     kryo.register(GcpSecretManagerConnectorDTO.class, 19878);
+    kryo.register(SplunkAuthType.class, 19880);
     kryo.register(ELKConnectorDTO.class, 10000001);
     kryo.register(ELKAuthType.class, 10000002);
 

@@ -394,11 +394,12 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
   @Override
   public List<BudgetSummary> listAllEntities(
       String accountId, BudgetGroupSortType budgetGroupSortType, CCMSortOrder ccmSortOrder) {
-    HashMap<String, List<BudgetSummary>> flattenedChildList = getFlattenedList(accountId);
+    HashMap<String, List<BudgetSummary>> flattenedChildList =
+        getFlattenedList(accountId, budgetGroupSortType, ccmSortOrder);
     List<BudgetSummary> summaryList = new ArrayList<>();
     List<BudgetGroup> budgetGroups = list(accountId, budgetGroupSortType, ccmSortOrder);
-    List<Budget> budgets =
-        budgetDao.list(accountId, Integer.MAX_VALUE - 1, 0, budgetGroupSortType.getBudgetSortType(), ccmSortOrder);
+    List<Budget> budgets = budgetDao.list(accountId, Integer.MAX_VALUE - 1, 0,
+        budgetGroupSortType == null ? null : budgetGroupSortType.getBudgetSortType(), ccmSortOrder);
 
     budgets.forEach(budget -> summaryList.add(BudgetUtils.buildBudgetSummary(budget)));
     budgetGroups.forEach(budgetGroup
@@ -418,8 +419,8 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
     final Map<String, BudgetGroup> budgetGroupIdMapping =
         budgetGroups.stream().collect(Collectors.toMap(BudgetGroup::getUuid, budgetGroup -> budgetGroup));
 
-    List<Budget> budgets =
-        budgetDao.list(accountId, Integer.MAX_VALUE - 1, 0, budgetGroupSortType.getBudgetSortType(), ccmSortOrder);
+    List<Budget> budgets = budgetDao.list(accountId, Integer.MAX_VALUE - 1, 0,
+        budgetGroupSortType == null ? null : budgetGroupSortType.getBudgetSortType(), ccmSortOrder);
     budgets = budgets.stream().filter(BudgetUtils::isPerspectiveBudget).collect(Collectors.toList());
     unsetInvalidParents(budgetGroups, budgets);
     List<Budget> budgetsPartOfBudgetGroups =
@@ -893,12 +894,14 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
     return rootBudgetGroup;
   }
 
-  private HashMap<String, List<BudgetSummary>> getFlattenedList(String accountId) {
-    List<BudgetSummary> nestedSummaryList = listBudgetsAndBudgetGroupsSummary(accountId, null, null, null);
+  private HashMap<String, List<BudgetSummary>> getFlattenedList(
+      String accountId, BudgetGroupSortType budgetGroupSortType, CCMSortOrder ccmSortOrder) {
+    List<BudgetSummary> nestedSummaryList =
+        listBudgetsAndBudgetGroupsSummary(accountId, null, budgetGroupSortType, ccmSortOrder);
     nestedSummaryList =
         nestedSummaryList.stream().filter(budgetSummary -> budgetSummary.isBudgetGroup()).collect(Collectors.toList());
 
-    HashMap<String, List<BudgetSummary>> flattenedChildList = new HashMap<>();
+    LinkedHashMap<String, List<BudgetSummary>> flattenedChildList = new LinkedHashMap<>();
     Queue<BudgetSummary> budgetSummaryStore = new LinkedList<>();
     nestedSummaryList.forEach(summary -> budgetSummaryStore.add(summary));
 

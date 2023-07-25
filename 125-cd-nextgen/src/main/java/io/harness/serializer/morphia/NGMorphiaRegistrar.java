@@ -14,6 +14,7 @@ import io.harness.cdng.artifact.bean.artifactsource.DockerArtifactSource;
 import io.harness.cdng.artifact.steps.beans.ArtifactStepParameters;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.execution.StageExecutionInfo;
+import io.harness.cdng.execution.StageExecutionInstanceInfo;
 import io.harness.cdng.infra.InfraUseFromStage;
 import io.harness.cdng.infra.steps.InfraStepParameters;
 import io.harness.cdng.instance.InstanceDeploymentInfo;
@@ -27,6 +28,7 @@ import io.harness.cdng.provision.terraform.executions.TerraformPlanExecutionDeta
 import io.harness.cdng.provision.terraformcloud.dal.TerraformCloudConfig;
 import io.harness.cdng.provision.terragrunt.TerragruntConfig;
 import io.harness.cdng.service.steps.ServiceStepParameters;
+import io.harness.cdng.usage.task.CDLicenseReportAccounts;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
 import io.harness.polling.bean.PollingDocument;
@@ -54,6 +56,8 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
     set.add(TerraformCloudConfig.class);
     set.add(TerraformCloudPlanExecutionDetails.class);
     set.add(TerraformApplyExecutionDetails.class);
+    set.add(StageExecutionInstanceInfo.class);
+    set.add(CDLicenseReportAccounts.class);
   }
 
   @Override

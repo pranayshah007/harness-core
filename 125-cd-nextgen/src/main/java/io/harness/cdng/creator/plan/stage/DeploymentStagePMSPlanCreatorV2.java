@@ -248,7 +248,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         } else {
           List<AdviserObtainment> adviserObtainments = addResourceConstraintDependencyWithWhenCondition(
               planCreationResponseMap, specField, ctx, isProjectScopedResourceConstraintQueue);
-          String infraNodeId = addInfrastructureNode(planCreationResponseMap, stageNode, adviserObtainments);
+          String infraNodeId = addInfrastructureNode(planCreationResponseMap, stageNode, adviserObtainments, specField);
           Optional<String> provisionerIdOptional =
               addProvisionerNodeIfNeeded(specField, planCreationResponseMap, stageNode, infraNodeId);
           String serviceNextNodeId = provisionerIdOptional.orElse(infraNodeId);
@@ -572,7 +572,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     return serviceNodeId;
   }
   private String addInfrastructureNode(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
-      DeploymentStageNode stageNode, List<AdviserObtainment> adviserObtainments) throws IOException {
+      DeploymentStageNode stageNode, List<AdviserObtainment> adviserObtainments, YamlField specField)
+      throws IOException {
     EnvironmentYamlV2 environment;
     if (stageNode.getDeploymentStageConfig().getEnvironments() != null
         || stageNode.getDeploymentStageConfig().getEnvironmentGroup() != null) {
@@ -580,8 +581,13 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     } else {
       environment = stageNode.getDeploymentStageConfig().getEnvironment();
     }
-    PlanNode node = InfrastructurePmsPlanCreator.getInfraTaskExecutableStepV2PlanNode(environment, adviserObtainments,
-        stageNode.getDeploymentStageConfig().getDeploymentType(), stageNode.skipInstances);
+
+    final EnvironmentYamlV2 finalEnvironmentYamlV2 = ServiceAllInOnePlanCreatorUtils.useFromStage(environment)
+        ? ServiceAllInOnePlanCreatorUtils.useEnvironmentYamlFromStage(environment.getUseFromStage(), specField)
+        : environment;
+
+    PlanNode node = InfrastructurePmsPlanCreator.getInfraTaskExecutableStepV2PlanNode(finalEnvironmentYamlV2,
+        adviserObtainments, stageNode.getDeploymentStageConfig().getDeploymentType(), stageNode.skipInstances);
     planCreationResponseMap.put(node.getUuid(), PlanCreationResponse.builder().planNode(node).build());
     return node.getUuid();
   }

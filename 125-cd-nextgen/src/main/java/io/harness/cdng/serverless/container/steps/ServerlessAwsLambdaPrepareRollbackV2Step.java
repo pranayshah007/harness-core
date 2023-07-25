@@ -14,6 +14,7 @@ import io.harness.callback.DelegateCallbackToken;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.serverless.ServerlessStepCommonHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.serverless.StackDetails;
 import io.harness.delegate.task.stepstatus.StepExecutionStatus;
 import io.harness.delegate.task.stepstatus.StepMapOutput;
@@ -26,6 +27,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.plugin.AbstractContainerStepV2;
+import io.harness.pms.sdk.core.plugin.ContainerStepExecutionResponseHelper;
 import io.harness.pms.sdk.core.plugin.ContainerUnitStepUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -48,6 +50,7 @@ public class ServerlessAwsLambdaPrepareRollbackV2Step extends AbstractContainerS
   @Inject ServerlessStepCommonHelper serverlessStepCommonHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
+  @Inject private ContainerStepExecutionResponseHelper containerStepExecutionResponseHelper;
   @Inject private InstanceInfoService instanceInfoService;
 
   public static final StepType STEP_TYPE =
@@ -69,7 +72,6 @@ public class ServerlessAwsLambdaPrepareRollbackV2Step extends AbstractContainerS
   @Override
   public UnitStep getSerialisedStep(Ambiance ambiance, StepElementParameters stepElementParameters, String accountId,
       String logKey, long timeout, String parkedTaskId) {
-    // Todo: Add entrypoint
     ServerlessAwsLambdaPrepareRollbackV2StepParameters serverlessAwsLambdaPrepareRollbackV2StepParameters =
         (ServerlessAwsLambdaPrepareRollbackV2StepParameters) stepElementParameters.getSpec();
 
@@ -82,25 +84,38 @@ public class ServerlessAwsLambdaPrepareRollbackV2Step extends AbstractContainerS
         ambiance, serverlessAwsLambdaPrepareRollbackV2StepParameters, envVarMap);
 
     return getUnitStep(ambiance, stepElementParameters, accountId, logKey, parkedTaskId,
-        serverlessAwsLambdaPrepareRollbackV2StepParameters);
+        serverlessAwsLambdaPrepareRollbackV2StepParameters, envVarMap);
   }
 
   public UnitStep getUnitStep(Ambiance ambiance, StepElementParameters stepElementParameters, String accountId,
       String logKey, String parkedTaskId,
-      ServerlessAwsLambdaPrepareRollbackV2StepParameters serverlessAwsLambdaPrepareRollbackV2StepParameters) {
+      ServerlessAwsLambdaPrepareRollbackV2StepParameters serverlessAwsLambdaPrepareRollbackV2StepParameters,
+      Map envVarMap) {
     return ContainerUnitStepUtils.serializeStepWithStepParameters(
         getPort(ambiance, stepElementParameters.getIdentifier()), parkedTaskId, logKey,
         stepElementParameters.getIdentifier(), getTimeout(ambiance, stepElementParameters), accountId,
-        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, new HashMap<>(),
+        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, envVarMap,
         serverlessAwsLambdaPrepareRollbackV2StepParameters.getImage().getValue(), Collections.EMPTY_LIST);
   }
 
   @Override
   public StepResponse.StepOutcome getAnyOutComeForStep(
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
-    String stackDetailsString = null;
+    // If any of the responses are in serialized format, deserialize them
+    containerStepExecutionResponseHelper.deserializeResponse(responseDataMap);
 
-    StepStatusTaskResponseData stepStatusTaskResponseData = null;
+    StepStatusTaskResponseData stepStatusTaskResponseData =
+        containerStepExecutionResponseHelper.filterK8StepResponse(responseDataMap);
+
+    if (stepStatusTaskResponseData == null) {
+      log.info("Serverless Aws Lambda Prepare Rollback V2:  Received stepStatusTaskResponseData as null");
+    } else {
+      log.info(String.format(
+          "Serverless Aws Lambda Prepare Rollback V2:  Received stepStatusTaskResponseData with status %s",
+          stepStatusTaskResponseData.getStepStatus().getStepExecutionStatus()));
+    }
+
+    String stackDetailsString = null;
 
     for (Map.Entry<String, ResponseData> entry : responseDataMap.entrySet()) {
       ResponseData responseData = entry.getValue();
@@ -115,9 +130,20 @@ public class ServerlessAwsLambdaPrepareRollbackV2Step extends AbstractContainerS
         && stepStatusTaskResponseData.getStepStatus().getStepExecutionStatus() == StepExecutionStatus.SUCCESS) {
       StepOutput stepOutput = stepStatusTaskResponseData.getStepStatus().getOutput();
 
+      ServerlessAwsLambdaPrepareRollbackDataOutcome serverlessAwsLambdaPrepareRollbackDataOutcome = null;
+
       if (stepOutput instanceof StepMapOutput) {
         StepMapOutput stepMapOutput = (StepMapOutput) stepOutput;
         String stackDetailsByte64 = stepMapOutput.getMap().get("stackDetails");
+        if (EmptyPredicate.isEmpty(stackDetailsByte64)) {
+          log.info("No stack details was received in Serverless Aws Lambda Prepare Rollback V2 Response");
+          serverlessAwsLambdaPrepareRollbackDataOutcome =
+              ServerlessAwsLambdaPrepareRollbackDataOutcome.builder().firstDeployment(true).stackDetails(null).build();
+          executionSweepingOutputService.consume(ambiance,
+              OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_DATA_OUTCOME_V2,
+              serverlessAwsLambdaPrepareRollbackDataOutcome, StepOutcomeGroup.STEP.name());
+          return stepOutcome;
+        }
         stackDetailsString = serverlessStepCommonHelper.convertByte64ToString(stackDetailsByte64);
       }
 
@@ -128,7 +154,6 @@ public class ServerlessAwsLambdaPrepareRollbackV2Step extends AbstractContainerS
         log.error("Error while parsing Stack Details", e);
       }
 
-      ServerlessAwsLambdaPrepareRollbackDataOutcome serverlessAwsLambdaPrepareRollbackDataOutcome = null;
       if (stackDetails != null) {
         serverlessAwsLambdaPrepareRollbackDataOutcome =
             ServerlessAwsLambdaPrepareRollbackDataOutcome.builder().stackDetails(stackDetails).build();

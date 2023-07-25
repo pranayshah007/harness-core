@@ -96,10 +96,14 @@ public class CustomApprovalCallback extends AbstractApprovalCallback implements 
     ShellScriptTaskResponseNG scriptTaskResponse;
     try {
       ResponseData responseData = response.values().iterator().next();
-      BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
-      responseData = (ResponseData) (binaryResponseData.isUsingKryoWithoutReference()
-              ? referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData())
-              : kryoSerializer.asInflatedObject(binaryResponseData.getData()));
+
+      // fallback : if inflated response is obtained, use it directly
+      if (responseData instanceof BinaryResponseData) {
+        BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
+        responseData = (ResponseData) (binaryResponseData.isUsingKryoWithoutReference()
+                ? referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData())
+                : kryoSerializer.asInflatedObject(binaryResponseData.getData()));
+      }
       if (responseData instanceof ErrorNotifyResponseData) {
         log.warn("Failed to run Custom Approval script");
         logCallback.saveExecutionLog("Failed to run custom approval script: " + responseData, LogLevel.WARN);

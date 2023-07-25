@@ -10,9 +10,7 @@ package io.harness.servicenow;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.jackson.JsonNodeUtils;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -32,18 +30,5 @@ public class ServiceNowFieldSchemaNG {
   @NotNull String typeStr;
   @NotNull ServiceNowFieldTypeNG type;
   String customType;
-
-  public ServiceNowFieldSchemaNG(JsonNode node) {
-    this.typeStr = JsonNodeUtils.getString(node, "type", "string");
-    if (typeStr.equals("array")) {
-      this.array = true;
-      this.typeStr = JsonNodeUtils.getString(node, "items", "string");
-    } else {
-      this.array = false;
-    }
-
-    this.type = ServiceNowFieldTypeNG.fromTypeString(typeStr);
-
-    this.customType = JsonNodeUtils.getString(node, "custom", null);
-  }
+  boolean isMultilineText;
 }

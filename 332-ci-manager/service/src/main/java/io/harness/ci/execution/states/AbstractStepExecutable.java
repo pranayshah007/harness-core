@@ -91,6 +91,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.validation.InputSetValidatorFactory;
 import io.harness.product.ci.engine.proto.UnitStep;
 import io.harness.steps.StepUtils;
 import io.harness.tasks.ResponseData;
@@ -131,6 +132,7 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
   @Inject private VmExecuteStepUtils vmExecuteStepUtils;
   @Inject private HostedVmSecretResolver hostedVmSecretResolver;
   @Inject private SerializedResponseDataHelper serializedResponseDataHelper;
+  @Inject private InputSetValidatorFactory inputSetValidatorFactory;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -310,6 +312,7 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
                                         .codeBaseConnectorRef(codeBaseConnectorRef)
                                         .fetchConnector(false)
                                         .build())
+            .inputSetValidatorFactory(inputSetValidatorFactory)
             .build();
     githubApiTokenEvaluator.resolve(
         ciStepInfo, AmbianceUtils.getNgAccess(ambiance), ambiance.getExpressionFunctorToken());
@@ -430,6 +433,8 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
       case GIT_CLONE:
       case SSCA_ORCHESTRATION:
       case SSCA_ENFORCEMENT:
+      case IACM_TERRAFORM_PLUGIN:
+      case IACM_APPROVAL:
         return pluginCompatibleStepSerializer.serializeStepWithStepParameters((PluginCompatibleStep) ciStepInfo, port,
             taskId, logKey, stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId,
             stepName, os, ambiance);

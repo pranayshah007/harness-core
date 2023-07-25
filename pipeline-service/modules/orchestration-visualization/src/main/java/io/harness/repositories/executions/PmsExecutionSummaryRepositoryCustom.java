@@ -28,6 +28,9 @@ public interface PmsExecutionSummaryRepositoryCustom {
   UpdateResult deleteAllExecutionsWhenPipelineDeleted(Query query, Update update);
   Page<PipelineExecutionSummaryEntity> findAll(Criteria criteria, Pageable pageable);
 
+  Page<PipelineExecutionSummaryEntity> findAllWithProjection(
+      Criteria criteria, Pageable pageable, List<String> projections);
+
   CloseableIterator<PipelineExecutionSummaryEntity> findAllWithRequiredProjectionUsingAnalyticsNode(
       Criteria criteria, Pageable pageable, List<String> projections);
 

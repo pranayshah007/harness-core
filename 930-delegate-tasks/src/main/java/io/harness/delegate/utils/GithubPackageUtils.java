@@ -37,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(CDP)
 public class GithubPackageUtils {
-  private static final String MAVEN_PACKAGE_TYPE = "maven";
+  public static final String MAVEN_PACKAGE_TYPE = "maven";
   private static final String NUGET_PACKAGE_TYPE = "nuget";
   private static final String METADATA_URL = "url";
 

@@ -14,21 +14,31 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 @OwnedBy(HarnessTeam.CV)
 public enum CVNGStepType {
-  CVNG_VERIFY("Continuous Verification", "Verify");
+  CVNG_VERIFY("Continuous Verification", "Verify", "Verify"),
+
+  CVNG_ANALYZE_DEPLOYMENT("Service Reliability", "Analyze Deployment Impact", "AnalyzeDeploymentImpact");
   private final String displayName;
   private final String folderPath;
+
+  private final String type;
 
   @JsonValue
   public String getDisplayName() {
     return displayName;
   }
 
-  CVNGStepType(String folderPath, String displayName) {
+  CVNGStepType(String folderPath, String displayName, String type) {
     this.folderPath = folderPath;
     this.displayName = displayName;
+    this.type = type;
   }
   @JsonValue
   public String getFolderPath() {
     return this.folderPath;
+  }
+
+  @JsonValue
+  public String getType() {
+    return this.type;
   }
 }

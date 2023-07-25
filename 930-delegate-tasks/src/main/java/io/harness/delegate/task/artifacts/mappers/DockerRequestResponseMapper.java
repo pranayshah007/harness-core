@@ -6,7 +6,9 @@
  */
 
 package io.harness.delegate.task.artifacts.mappers;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.docker.beans.DockerInternalConfig;
 import io.harness.beans.ArtifactMetaInfo;
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @UtilityClass
 public class DockerRequestResponseMapper {
   public DockerInternalConfig toDockerInternalConfig(DockerArtifactDelegateRequest request) {

@@ -168,6 +168,8 @@ public class BambooServiceTest extends WingsBaseTest {
     assertThat(bamboo_plan_key).isNotEmpty();
     assertThat(bamboo_plan_key.get(0)).extracting(BuildDetails::getNumber).isEqualTo("4");
     assertThat(bamboo_plan_key.get(0).getArtifactFileMetadataList()).isEmpty();
+    assertThat(bamboo_plan_key.get(0).getMetadata().get("planName")).isEqualTo("plan-1");
+    assertThat(bamboo_plan_key.get(0).getMetadata().get("id")).isEqualTo("5013835");
   }
 
   @Test

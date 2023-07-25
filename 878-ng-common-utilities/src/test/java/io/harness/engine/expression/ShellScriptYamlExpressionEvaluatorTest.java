@@ -24,6 +24,7 @@ import io.harness.rule.Owner;
 
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+
 @OwnedBy(PL)
 public class ShellScriptYamlExpressionEvaluatorTest extends CategoryTest {
   /*
@@ -62,7 +63,6 @@ public class ShellScriptYamlExpressionEvaluatorTest extends CategoryTest {
       + "    - name: o1\n"
       + "      value: v1\n"
       + "      type: String\n";
-
   StringBuilder scriptStringBuilder = new StringBuilder("        script: ");
 
   public String getYaml(String script) {
@@ -75,7 +75,7 @@ public class ShellScriptYamlExpressionEvaluatorTest extends CategoryTest {
   public void testResolveSingleValue() throws Exception {
     String yaml = getYaml("AnyScript");
     ShellScriptYamlExpressionEvaluator shellScriptYamlExpressionEvaluator =
-        new ShellScriptYamlExpressionEvaluator(yaml, 7);
+        new ShellScriptYamlExpressionEvaluator(yaml, 7, null);
     ShellScriptBaseDTO shellScriptBaseDTO = YamlUtils.read(yaml, ShellScriptYamlDTO.class).getShellScriptBaseDTO();
     shellScriptBaseDTO = (ShellScriptBaseDTO) shellScriptYamlExpressionEvaluator.resolve(shellScriptBaseDTO, false);
     // Tests for single value resolution
@@ -92,7 +92,7 @@ public class ShellScriptYamlExpressionEvaluatorTest extends CategoryTest {
         "echo 1 echo <+spec.source.spec.type> and <+spec.environmentVariables.e1> and <+secretManager.source.spec.type>";
     String yaml = getYaml(script);
     ShellScriptYamlExpressionEvaluator shellScriptYamlExpressionEvaluator =
-        new ShellScriptYamlExpressionEvaluator(yaml, 7);
+        new ShellScriptYamlExpressionEvaluator(yaml, 7, null);
     ShellScriptBaseDTO shellScriptBaseDTO = YamlUtils.read(yaml, ShellScriptYamlDTO.class).getShellScriptBaseDTO();
     shellScriptBaseDTO = (ShellScriptBaseDTO) shellScriptYamlExpressionEvaluator.resolve(shellScriptBaseDTO, false);
     assertThat(shellScriptBaseDTO.getShellScriptSpec().getSource().getSpec().getScript().getValue())
@@ -107,7 +107,7 @@ public class ShellScriptYamlExpressionEvaluatorTest extends CategoryTest {
     String script = "echo <+secrets.getValue(\"Token\")>";
     String yaml = getYaml(script);
     ShellScriptYamlExpressionEvaluator shellScriptYamlExpressionEvaluator =
-        new ShellScriptYamlExpressionEvaluator(yaml, 7);
+        new ShellScriptYamlExpressionEvaluator(yaml, 7, null);
     ShellScriptBaseDTO shellScriptBaseDTO = YamlUtils.read(yaml, ShellScriptYamlDTO.class).getShellScriptBaseDTO();
     shellScriptBaseDTO = (ShellScriptBaseDTO) shellScriptYamlExpressionEvaluator.resolve(shellScriptBaseDTO, false);
 

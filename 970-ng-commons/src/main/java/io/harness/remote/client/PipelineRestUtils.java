@@ -7,7 +7,7 @@
 
 package io.harness.remote.client;
 
-import io.harness.exception.InvalidRequestException;
+import io.harness.exception.HarnessRemoteServiceException;
 import io.harness.exception.UnexpectedException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -60,9 +60,9 @@ public class PipelineRestUtils {
     try {
       ErrorDTO restResponse = JsonUtils.asObject(response.errorBody().string(), new TypeReference<ErrorDTO>() {});
       errorMessage = restResponse.getMessage();
-      throw new InvalidRequestException(StringUtils.isEmpty(errorMessage) ? defaultErrorMessage : errorMessage,
+      throw new HarnessRemoteServiceException(StringUtils.isEmpty(errorMessage) ? defaultErrorMessage : errorMessage,
           restResponse.getMetadata(), restResponse.getResponseMessages());
-    } catch (InvalidRequestException e) {
+    } catch (HarnessRemoteServiceException e) {
       throw e;
     } catch (IOException e) {
       throw new RuntimeException(e);

@@ -16,12 +16,15 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
+import io.harness.ngtriggers.beans.dto.eventmapping.UnMatchedTriggerInfo;
 import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventMappingResponse;
 import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventMappingResponse.WebhookEventMappingResponseBuilder;
+import io.harness.ngtriggers.beans.response.TriggerEventResponse;
 import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
 import io.harness.ngtriggers.beans.source.NGTriggerSpecV2;
 import io.harness.ngtriggers.beans.source.artifact.ArtifactTriggerConfig;
 import io.harness.ngtriggers.beans.source.artifact.ManifestTriggerConfig;
+import io.harness.ngtriggers.beans.source.artifact.MultiRegionArtifactTriggerConfig;
 import io.harness.ngtriggers.beans.source.webhook.v2.TriggerEventDataCondition;
 import io.harness.ngtriggers.conditionchecker.ConditionEvaluator;
 import io.harness.ngtriggers.eventmapper.filters.TriggerFilter;
@@ -30,9 +33,8 @@ import io.harness.ngtriggers.expressions.TriggerExpressionEvaluator;
 import io.harness.ngtriggers.helpers.TriggerEventResponseHelper;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.pms.contracts.triggers.ArtifactData;
+import io.harness.yaml.utils.JsonPipelineUtils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
@@ -54,6 +56,7 @@ public class MetadataConditionsTriggerFilter implements TriggerFilter {
   public WebhookEventMappingResponse applyFilter(FilterRequestData filterRequestData) {
     WebhookEventMappingResponseBuilder mappingResponseBuilder = initWebhookEventMappingResponse(filterRequestData);
     List<TriggerDetails> matchedTriggers = new ArrayList<>();
+    List<UnMatchedTriggerInfo> unMatchedTriggersInfoList = new ArrayList<>();
 
     for (TriggerDetails trigger : filterRequestData.getDetails()) {
       try {
@@ -68,12 +71,21 @@ public class MetadataConditionsTriggerFilter implements TriggerFilter {
                                             .build();
         if (checkTriggerEligibility(filterRequestData, triggerDetails)) {
           matchedTriggers.add(triggerDetails);
+        } else {
+          UnMatchedTriggerInfo unMatchedTriggerInfo =
+              UnMatchedTriggerInfo.builder()
+                  .unMatchedTriggers(trigger)
+                  .finalStatus(TriggerEventResponse.FinalStatus.TRIGGER_DID_NOT_MATCH_METADATA_CONDITION)
+                  .message(trigger.getNgTriggerEntity().getIdentifier() + " didn't match conditions for metadata")
+                  .build();
+          unMatchedTriggersInfoList.add(unMatchedTriggerInfo);
         }
       } catch (Exception e) {
         log.error(getTriggerSkipMessage(trigger.getNgTriggerEntity()), e);
       }
     }
 
+    mappingResponseBuilder.unMatchedTriggerInfoList(unMatchedTriggersInfoList);
     if (isEmpty(matchedTriggers)) {
       log.info("No trigger matched polling event after condition evaluation:");
       mappingResponseBuilder.failedToFindTrigger(true)
@@ -98,6 +110,9 @@ public class MetadataConditionsTriggerFilter implements TriggerFilter {
     } else if (ArtifactTriggerConfig.class.isAssignableFrom(spec.getClass())) {
       ArtifactTriggerConfig artifactTriggerConfig = (ArtifactTriggerConfig) spec;
       triggerMetadataConditions = artifactTriggerConfig.getSpec().fetchMetaDataConditions();
+    } else if (MultiRegionArtifactTriggerConfig.class.isAssignableFrom(spec.getClass())) {
+      MultiRegionArtifactTriggerConfig multiRegionArtifactTriggerConfig = (MultiRegionArtifactTriggerConfig) spec;
+      triggerMetadataConditions = multiRegionArtifactTriggerConfig.getMetaDataConditions();
     }
 
     if (isEmpty(triggerMetadataConditions)) {
@@ -116,11 +131,7 @@ public class MetadataConditionsTriggerFilter implements TriggerFilter {
     String operator;
     ArtifactData artifactData = ArtifactData.newBuilder().putAllMetadata(metadata).setBuild(build).build();
     String jsonMetadata = "";
-    try {
-      jsonMetadata = new ObjectMapper().writeValueAsString(metadata);
-    } catch (JsonProcessingException e) {
-      log.error("Unable to convert metadata to json", e);
-    }
+    jsonMetadata = JsonPipelineUtils.getJsonString(metadata);
     TriggerExpressionEvaluator expressionEvaluator =
         new TriggerExpressionEvaluator(null, artifactData, Collections.emptyList(), jsonMetadata);
     for (TriggerEventDataCondition condition : triggerMetadataConditions) {

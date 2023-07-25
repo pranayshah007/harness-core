@@ -19,6 +19,7 @@ import io.harness.cvng.beans.cvnglog.ApiCallLogDTO;
 import io.harness.cvng.beans.cvnglog.ApiCallLogDTO.ApiCallLogDTOField;
 import io.harness.cvng.beans.cvnglog.TraceableType;
 import io.harness.datacollection.entity.CallDetails;
+import io.harness.datacollection.utils.DataCollectionUtils;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.delegatetasks.DelegateLogService;
@@ -94,8 +95,8 @@ public class ThirdPartyCallHandler implements Consumer<CallDetails> {
           callDetails.getResponse().code(), callDetails.getResponse().body(), ApiCallLogDTO.FieldType.JSON);
     } else if (callDetails.getResponse() != null && callDetails.getResponse().errorBody() != null) {
       try {
-        cvngLogDTO.addFieldToResponse(callDetails.getResponse().code(), callDetails.getResponse().errorBody().string(),
-            ApiCallLogDTO.FieldType.JSON);
+        cvngLogDTO.addFieldToResponse(callDetails.getResponse().code(),
+            DataCollectionUtils.getErrorBodyString(callDetails.getResponse()), ApiCallLogDTO.FieldType.JSON);
       } catch (IOException ignored) {
       }
     }

@@ -15,7 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.CastedClass;
 import io.harness.beans.CastedField;
 import io.harness.beans.RecasterMap;
-import io.harness.exceptions.CastedFieldException;
+import io.harness.exception.CastedFieldException;
 import io.harness.exceptions.RecasterException;
 import io.harness.fieldrecaster.ComplexFieldRecaster;
 import io.harness.fieldrecaster.FieldRecaster;
@@ -131,14 +131,29 @@ public class Recaster {
         try {
           readCastedField(recasterMap, cf, entity);
         } catch (final Exception e) {
-          throw new CastedFieldException(format("Cannot map [%s] to [%s] class for field [%s]",
-                                             recasterMap.getIdentifier(), entity.getClass(), cf.getField().getName()),
-              e);
+          throwErrorBasedOnException(
+              e, (String) recasterMap.getIdentifier(), entity.getClass().getSimpleName(), cf.getField().getName());
         }
       }
     }
 
     return entity;
+  }
+
+  private void throwErrorBasedOnException(
+      Exception e, String actualClassType, String expectedClassType, String fieldName) {
+    if (e instanceof RecasterException || e instanceof CastedFieldException) {
+      String fieldPath = e instanceof RecasterException ? ((RecasterException) e).getFieldPath()
+                                                        : ((CastedFieldException) e).getFieldPath();
+      String messageWithoutFieldPath = e instanceof RecasterException
+          ? ((RecasterException) e).getMessageWithoutFieldPath()
+          : ((CastedFieldException) e).getMessageWithoutFieldPath();
+      throw new CastedFieldException(e.getMessage(), e, fieldPath, messageWithoutFieldPath);
+    } else {
+      throw new CastedFieldException(
+          String.format("Cannot map [%s] to [%s] class for field [%s]", actualClassType, expectedClassType, fieldName),
+          e);
+    }
   }
 
   @SuppressWarnings("unchecked")

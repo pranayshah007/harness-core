@@ -58,6 +58,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -140,6 +141,12 @@ public class AdminAccountResource {
   @Path("{accountId}/nextgen-cleanup")
   public RestResponse<Boolean> cleanupNextgenUser(@PathParam("accountId") String accountId) {
     return new RestResponse<>(adminAccountService.cleanUpNextGen(accountId));
+  }
+
+  @POST
+  @Path("{accountId}/disable-ip-allowlist")
+  public Response disableIpAllowList(@PathParam("accountId") String accountId) {
+    return Response.status(Response.Status.OK).entity(adminAccountService.disableIpAllowList(accountId)).build();
   }
 
   @PUT

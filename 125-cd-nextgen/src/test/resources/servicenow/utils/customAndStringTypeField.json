@@ -1,0 +1,19 @@
+{
+  "filterable": true,
+  "canmatch": true,
+  "cangroup": true,
+  "label": "testNametestName",
+  "type": "string",
+  "max_unit": "days",
+  "mandatory": false,
+  "default": "",
+  "base_type": "string",
+  "read_only": false,
+  "hint": "",
+  "name": "u_string_1",
+  "attributes": "edge_encryption_enabled=true",
+  "column_type": "element",
+  "internal_type": "string",
+  "cansort": true,
+  "max_length": 40
+}

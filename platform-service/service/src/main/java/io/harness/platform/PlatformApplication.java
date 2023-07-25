@@ -22,6 +22,7 @@ import static java.util.stream.Collectors.toSet;
 
 import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.audit.eventframework.PlatformEventConsumerService;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.govern.ProviderModule;
 import io.harness.health.HealthService;
@@ -176,6 +177,7 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
     registerAuthFilters(appConfig, environment, godInjector);
     registerRequestContextFilter(environment);
     registerOasResource(appConfig, environment, godInjector.get(PLATFORM_SERVICE));
+    createConsumerThreadsToListenToEvents(environment, godInjector.get(AUDIT_SERVICE));
 
     new NotificationServiceSetup().setup(
         appConfig.getNotificationServiceConfig(), environment, godInjector.get(NOTIFICATION_SERVICE));
@@ -194,6 +196,10 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
     }
 
     MaintenanceController.forceMaintenance(false);
+  }
+
+  private void createConsumerThreadsToListenToEvents(Environment environment, Injector injector) {
+    environment.lifecycle().manage(injector.getInstance(PlatformEventConsumerService.class));
   }
 
   private void registerOasResource(PlatformConfiguration appConfig, Environment environment, Injector injector) {

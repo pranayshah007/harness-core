@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
+import io.harness.cdng.gitops.revertpr.RevertPROutcome;
 import io.harness.cdng.gitops.steps.GitOpsStepHelper;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
@@ -101,8 +102,9 @@ public class MergePRStep extends CdTaskExecutable<NGGitOpsResponse> {
     if (TaskStatus.SUCCESS.equals(ngGitOpsResponse.getTaskStatus())) {
       MergePROutcome mergePROutcome = MergePROutcome.builder().commitId(ngGitOpsResponse.getCommitId()).build();
 
-      executionSweepingOutputService.consume(
-          ambiance, OutcomeExpressionConstants.MERGE_PR_OUTCOME, mergePROutcome, StepOutcomeGroup.STAGE.name());
+      String outcomeName = ngGitOpsResponse.isRevertPR() ? OutcomeExpressionConstants.MERGE_REVERT_PR_OUTCOME
+                                                         : OutcomeExpressionConstants.MERGE_PR_OUTCOME;
+      executionSweepingOutputService.consume(ambiance, outcomeName, mergePROutcome, StepOutcomeGroup.STAGE.name());
 
       return StepResponse.builder()
           .unitProgressList(ngGitOpsResponse.getUnitProgressData().getUnitProgresses())
@@ -130,12 +132,22 @@ public class MergePRStep extends CdTaskExecutable<NGGitOpsResponse> {
 
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.UPDATE_RELEASE_REPO_OUTCOME));
+    OptionalSweepingOutput optionalSweepingOutputRevertPR = executionSweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.REVERT_PR_OUTCOME));
 
     int prNumber;
     String prLink;
     String sha;
     String ref;
-    if (optionalSweepingOutput != null && optionalSweepingOutput.isFound()) {
+    boolean isRevertPR = false;
+    if (optionalSweepingOutputRevertPR != null && optionalSweepingOutputRevertPR.isFound()) {
+      RevertPROutcome revertPROutcome = (RevertPROutcome) optionalSweepingOutputRevertPR.getOutput();
+      prNumber = revertPROutcome.getPrNumber();
+      prLink = revertPROutcome.getPrlink();
+      sha = revertPROutcome.getCommitId();
+      ref = revertPROutcome.getRef();
+      isRevertPR = true;
+    } else if (optionalSweepingOutput != null && optionalSweepingOutput.isFound()) {
       UpdateReleaseRepoOutcome updateReleaseRepoOutcome = (UpdateReleaseRepoOutcome) optionalSweepingOutput.getOutput();
       prNumber = updateReleaseRepoOutcome.getPrNumber();
       prLink = updateReleaseRepoOutcome.getPrlink();
@@ -225,6 +237,7 @@ public class MergePRStep extends CdTaskExecutable<NGGitOpsResponse> {
                                                 .connectorInfoDTO(connectorInfoDTO)
                                                 .gitApiTaskParams(gitApiTaskParams)
                                                 .prLink(prLink)
+                                                .isRevertPR(isRevertPR)
                                                 .build();
 
     final TaskData taskData = TaskData.builder()

@@ -41,4 +41,17 @@ public class ImageSecretFunctor implements ExpressionFunctor {
     }
     return create(registryUrl, userName, evaluatedPassword);
   }
+
+  // This variation will be used in case of nested secrets, which has not been evaluated yet.
+  public String create(String registryUrl, Future userName, Future password) {
+    String evaluatedPassword;
+    String evaluatedUsername;
+    try {
+      evaluatedPassword = String.valueOf(password.get());
+      evaluatedUsername = String.valueOf(userName.get());
+    } catch (Exception e) {
+      throw new InvalidRequestException("Unable to interpret Future ", e);
+    }
+    return create(registryUrl, evaluatedUsername, evaluatedPassword);
+  }
 }

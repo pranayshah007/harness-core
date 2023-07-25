@@ -8,10 +8,10 @@
 package io.harness.executionInfra;
 
 import io.harness.beans.DelegateTask;
-import io.harness.delegate.core.beans.ExecutionInfrastructureLocation;
+import io.harness.delegate.core.beans.ExecutionInfraInfo;
 
 public interface ExecutionInfrastructureService {
-  String addExecutionInfrastructure(DelegateTask task, String delegateId, ExecutionInfrastructureLocation location);
+  String addExecutionInfrastructure(DelegateTask task, String delegateId, ExecutionInfraInfo location);
   ExecutionInfraLocation getExecutionInfrastructure(String id);
   void deleteExecutionInfrastructure(String executionInfraUuid);
 }

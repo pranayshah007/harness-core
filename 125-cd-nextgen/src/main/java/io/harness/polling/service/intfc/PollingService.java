@@ -25,6 +25,10 @@ public interface PollingService {
 
   PollingDocument get(String accountId, String pollingDocId);
 
+  List<PollingDocument> getMany(String accountId, List<String> pollingDocId);
+
+  List<String> getUuidsBySignatures(String accountId, List<String> signatures);
+
   List<PollingDocument> getByConnectorRef(String accountId, String connectorRef);
 
   void delete(PollingDocument pollingDocument);
@@ -44,4 +48,7 @@ public interface PollingService {
   void resetPerpetualTasksForConnector(String accountId, String connectorRef);
 
   PollingInfoForTriggers getPollingInfoForTriggers(String accountId, String pollingDocId);
+
+  boolean updateTriggerPollingStatus(String accountId, List<String> signatures, boolean status, String errorMessage,
+      List<String> lastCollectedVersions);
 }

@@ -49,6 +49,7 @@ if [ ! -e $ACCOUNT_SECRET ]; then
 else
   echo "delegateToken: $DELEGATE_TOKEN" >> config.yml
 fi
+echo "delegateName: $DELEGATE_NAME" >> config.yml
 echo "managerUrl: $MANAGER_HOST_AND_PORT/api/" >> config.yml
 echo "verificationServiceUrl: $MANAGER_HOST_AND_PORT/verification/" >> config.yml
 echo "cvNextGenUrl: $MANAGER_HOST_AND_PORT/cv/api/" >> config.yml
@@ -73,6 +74,9 @@ append_config "grpcAuthorityModificationDisabled" ${GRPC_AUTHORITY_MODIFICATION_
 # Intended for debugging, has to be set explicitly as its never set in generated yaml.
 append_config "trustAllCertificates" ${TRUST_ALL_CERTIFICATES:-false}
 
-# 3. Start the delegate
+# 3. check connectivity
+source ./connectivity_check.sh
+
+# 4. Start the delegate
 JAVA_OPTS=${JAVA_OPTS//UseCGroupMemoryLimitForHeap/UseContainerSupport}
-exec java $JAVA_OPTS $PROXY_SYS_PROPS -XX:MaxRAMPercentage=70.0 -XX:MinRAMPercentage=40.0 -XX:+IgnoreUnrecognizedVMOptions -XX:+HeapDumpOnOutOfMemoryError -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true -DLANG=en_US.UTF-8 -jar delegate.jar server config.yml
+exec java $PROXY_SYS_PROPS -XX:MaxRAMPercentage=70.0 -XX:MinRAMPercentage=40.0 -XX:+IgnoreUnrecognizedVMOptions -XX:+HeapDumpOnOutOfMemoryError -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true -DLANG=en_US.UTF-8 $JAVA_OPTS -jar delegate.jar server config.yml

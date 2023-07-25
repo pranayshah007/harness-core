@@ -76,6 +76,8 @@ public interface AccountService {
 
   Boolean cleanUpNextGen(String accountId);
 
+  Boolean disableIpAllowList(String accountId);
+
   Boolean updateIsProductLed(String accountId, boolean isProductLed);
 
   AccountDetails getAccountDetails(String accountId);

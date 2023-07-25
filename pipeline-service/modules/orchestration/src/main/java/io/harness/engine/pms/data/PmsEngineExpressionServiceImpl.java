@@ -7,13 +7,15 @@
 
 package io.harness.engine.pms.data;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.expressions.ExpressionEvaluatorProvider;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 
 import com.google.inject.Inject;
@@ -65,7 +67,7 @@ public class PmsEngineExpressionServiceImpl implements PmsEngineExpressionServic
   @Override
   public Object resolve(Ambiance ambiance, Object o, ExpressionMode expressionMode, List<String> enabledFeatureFlags) {
     Map<String, String> contxtMap = new HashMap<>();
-    if (EmptyPredicate.isNotEmpty(enabledFeatureFlags)) {
+    if (isNotEmpty(enabledFeatureFlags)) {
       contxtMap.put(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY, String.join(",", enabledFeatureFlags));
     }
     EngineExpressionEvaluator evaluator = prepareExpressionEvaluator(ambiance, contxtMap);
@@ -90,6 +92,19 @@ public class PmsEngineExpressionServiceImpl implements PmsEngineExpressionServic
     return prepareExpressionEvaluator(ambiance, null);
   }
   public EngineExpressionEvaluator prepareExpressionEvaluator(Ambiance ambiance, Map<String, String> contextMap) {
+    List<String> enabledFeatureFlags = AmbianceUtils.getEnabledFeatureFlags(ambiance);
+    if (contextMap != null) {
+      String enabledFFsString = contextMap.get(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY);
+      if (isNotEmpty(enabledFFsString)) {
+        enabledFeatureFlags.addAll(List.of(enabledFFsString.split(",")));
+      }
+    }
+    if (isNotEmpty(enabledFeatureFlags)) {
+      if (contextMap == null) {
+        contextMap = new HashMap<>();
+      }
+      contextMap.put(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY, String.join(",", enabledFeatureFlags));
+    }
     EngineExpressionEvaluator engineExpressionEvaluator =
         expressionEvaluatorProvider.get(null, ambiance, null, false, contextMap);
     injector.injectMembers(engineExpressionEvaluator);

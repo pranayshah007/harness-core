@@ -168,6 +168,32 @@ public class JWTTokenServiceUtils {
     }
   }
 
+  public String generateJWTToken(Map<String, String> claims, Map<String, String[]> arrayClaims,
+      Long validityDurationInMillis, String jwtPasswordSecret) {
+    if (jwtPasswordSecret == null) {
+      throw new InvalidRequestException("Could not find verification secret token");
+    }
+    try {
+      Algorithm algorithm = Algorithm.HMAC256(jwtPasswordSecret);
+      JWTCreator.Builder jwtBuilder = JWT.create().withIssuer(ISSUER).withIssuedAt(new Date());
+
+      if (validityDurationInMillis != null) {
+        jwtBuilder.withExpiresAt(new Date(System.currentTimeMillis() + validityDurationInMillis));
+      } else {
+        jwtBuilder.withExpiresAt(new Date(System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1)));
+      }
+      if (!isEmpty(claims)) {
+        claims.forEach(jwtBuilder::withClaim);
+      }
+      if (!isEmpty(arrayClaims)) {
+        arrayClaims.forEach(jwtBuilder::withArrayClaim);
+      }
+      return jwtBuilder.sign(algorithm);
+    } catch (UnsupportedEncodingException | JWTCreationException exception) {
+      throw new JWTCreationException("JWTToken could not be generated", exception);
+    }
+  }
+
   public static String generateJWTToken(
       Map<String, String> jwtClaims, Map<String, Object> jwtHeader, Long validityDurationInMillis, RSAKey privateKey) {
     if (isNull(privateKey)) {

@@ -18,6 +18,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -45,6 +46,7 @@ import io.harness.product.ci.scm.proto.CreateWebhookResponse;
 import io.harness.product.ci.scm.proto.WebhookResponse;
 import io.harness.repositories.ng.webhook.spring.WebhookEventRepository;
 import io.harness.rule.Owner;
+import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import java.net.MalformedURLException;
 import java.util.Optional;
@@ -57,12 +59,15 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
 public class WebhookServiceImplTest extends CategoryTest {
-  @InjectMocks @Spy WebhookServiceImpl webhookService;
+  @InjectMocks @Spy DefaultWebhookServiceImpl webhookService;
   @Mock AccountOrgProjectHelper accountOrgProjectHelper;
   @Mock WebhookEventRepository webhookEventRepository;
   @Mock ConnectorService connectorService;
   @Mock ScmClientFacilitatorService scmClientFacilitatorService;
   @Mock ScmOrchestratorService scmOrchestratorService;
+  @Mock NGFeatureFlagHelperService ngFeatureFlagHelperService;
+
+  @InjectMocks WebhookServiceImpl webhookServiceImpl;
   private String accountId = "accountId";
   private String orgId = "orgId";
   private String projectId = "projectId";
@@ -70,6 +75,7 @@ public class WebhookServiceImplTest extends CategoryTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
+    doReturn(false).when(ngFeatureFlagHelperService).isEnabled("acc", FeatureName.CDS_QUEUE_SERVICE_FOR_TRIGGERS);
   }
 
   @Test
@@ -90,12 +96,12 @@ public class WebhookServiceImplTest extends CategoryTest {
   @Owner(developers = MEET)
   @Category(UnitTests.class)
   public void testAddEventToQueue() {
-    WebhookEvent webhookEvent = WebhookEvent.builder().build();
+    WebhookEvent webhookEvent = WebhookEvent.builder().accountId("acc").build();
     when(webhookEventRepository.save(webhookEvent)).thenReturn(webhookEvent);
-    assertThat(webhookService.addEventToQueue(webhookEvent)).isEqualTo(webhookEvent);
+    assertThat(webhookServiceImpl.addEventToQueue(webhookEvent)).isEqualTo(webhookEvent);
 
     when(webhookEventRepository.save(webhookEvent)).thenThrow(new InvalidRequestException("message"));
-    assertThatThrownBy(() -> webhookService.addEventToQueue(webhookEvent))
+    assertThatThrownBy(() -> webhookServiceImpl.addEventToQueue(webhookEvent))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Webhook event could not be saved for processing");
   }

@@ -20,4 +20,5 @@ public interface AuditSettingsService {
   AuditSettings create(String accountIdentifier, int months);
   AuditSettings update(String accountIdentifier, int months);
   List<AuditSettings> fetchAll();
+  void deleteByAccountIdentifier(String accountIdentifier);
 }

@@ -2651,7 +2651,6 @@ db46bee78809147678c3191373a3216c644e4533:125-freeze/src/test/resources/FreezeWit
 926856c2011c9e41e66dd85ca686d324efa9e960:idp-service/config/config.yml:generic-api-key:79
 926856c2011c9e41e66dd85ca686d324efa9e960:idp-service/config/config.yml:generic-api-key:80
 926856c2011c9e41e66dd85ca686d324efa9e960:idp-service/config/config.yml:generic-api-key:100
-
 5dd4eb59c0a902b2d654fc9567016132913b286e:idp-service/config/config.yml:generic-api-key:81
 5dd4eb59c0a902b2d654fc9567016132913b286e:idp-service/config/config.yml:generic-api-key:82
 5dd4eb59c0a902b2d654fc9567016132913b286e:idp-service/config/config.yml:generic-api-key:83
@@ -2659,6 +2658,8 @@ db46bee78809147678c3191373a3216c644e4533:125-freeze/src/test/resources/FreezeWit
 5dd4eb59c0a902b2d654fc9567016132913b286e:idp-service/config/config.yml:generic-api-key:85
 5dd4eb59c0a902b2d654fc9567016132913b286e:idp-service/config/config.yml:generic-api-key:86
 5dd4eb59c0a902b2d654fc9567016132913b286e:idp-service/config/config.yml:generic-api-key:106
+df1b9d270e4a392fe925c7c7c29b3ef1f7b2e6b5:idp-service/config/config.yml:generic-api-key:104
+
 daf24bdbfc1200f44090838ee6c040fb3d8885cd:310-iacm-manager/config/iacm-manager-config.yml:generic-api-key:83
 
 
@@ -2736,3 +2737,9 @@ a713baa1078b711fa78817ef316247e41e47804a:332-ci-manager/chart/templates/config.y
 a713baa1078b711fa78817ef316247e41e47804a:batch-processing/chart/templates/config.yaml:generic-api-key:41
 a713baa1078b711fa78817ef316247e41e47804a:batch-processing/chart/templates/config.yaml:generic-api-key:42
 cb04e6dfddaf18a45690bdc194f5b93fa562a6e4:120-ng-manager/config.yml:generic-api-key:59
+fdc9b219d20135e79d5754237912ac7f0d7911e9:platform-service/config/config.yml:generic-api-key:173
+fdc9b219d20135e79d5754237912ac7f0d7911e9:platform-service/service/src/test/resources/test-config.yml:generic-api-key:155
+463b1add0d690ce82c21566f262a5102b780652a:332-ci-manager/config/ci-manager-config.yml:generic-api-key:395
+ff1924b912d74eaaf0bd983caa24e90bc2462461:idp-service/config/config.yml:generic-api-key:154
+ff1924b912d74eaaf0bd983caa24e90bc2462461:idp-service/config/config.yml:generic-api-key:163
+ff1924b912d74eaaf0bd983caa24e90bc2462461:idp-service/config/config.yml:generic-api-key:175

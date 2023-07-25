@@ -129,6 +129,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   public static final String ERROR_CONNECTING_TO_SYSTEMS_UPSTREAM = "Error connecting to systems upstream";
   public static final String EVENTS_FRAMEWORK_IS_DOWN_FOR_PIPELINE_SERVICE =
       "Events framework is down for Pipeline Service.";
+  public static String TEMPLATE_REF_PIPELINE = "template_ref_by_pipeline";
   public static final String INVALID_YAML_IN_NODE = "Invalid yaml in node [%s]";
   @Inject private final PMSPipelineRepository pmsPipelineRepository;
   @Inject private final PmsSdkInstanceService pmsSdkInstanceService;
@@ -218,6 +219,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         createdEntity = pmsPipelineRepository.save(pipelineEntity);
       }
       pmsPipelineServiceHelper.sendPipelineSaveTelemetryEvent(createdEntity, CREATING_PIPELINE);
+      pmsPipelineServiceHelper.sendTemplatesUsedInPipelinesTelemetryEvent(createdEntity, TEMPLATE_REF_PIPELINE);
       GovernanceMetadata governanceMetadata = GovernanceMetadata.newBuilder().setDeny(false).build();
       return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(createdEntity).build();
     } catch (DuplicateKeyException ex) {
@@ -318,8 +320,9 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       pipelineEntity = getAndValidatePipeline(
           accountId, orgIdentifier, projectIdentifier, pipelineId, false, loadFromFallbackBranch, loadFromCache);
     }
-    if (pipelineEntity.isPresent() && StoreType.REMOTE.equals(pipelineEntity.get().getStoreType())) {
-      pmsPipelineServiceHelper.computePipelineReferences(pipelineEntity.get(), loadFromCache);
+    if (pipelineEntity.isPresent()
+        && PipelineGitXHelper.shouldPublishSetupUsages(loadFromCache, pipelineEntity.get().getStoreType())) {
+      pmsPipelineServiceHelper.computePipelineReferences(pipelineEntity.get());
     }
     return PipelineGetResult.builder().pipelineEntity(pipelineEntity).asyncValidationUUID(validationUUID).build();
   }
@@ -579,6 +582,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       }
 
       pmsPipelineServiceHelper.sendPipelineSaveTelemetryEvent(updatedResult, UPDATING_PIPELINE);
+      pmsPipelineServiceHelper.sendTemplatesUsedInPipelinesTelemetryEvent(updatedResult, TEMPLATE_REF_PIPELINE);
       return updatedResult;
     } catch (EventsFrameworkDownException ex) {
       log.error(EVENTS_FRAMEWORK_IS_DOWN_FOR_PIPELINE_SERVICE, ex);
@@ -734,7 +738,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     String repoUrl = pmsPipelineServiceHelper.getRepoUrlAndCheckForFileUniqueness(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, isForceImport);
     String importedPipelineYAML =
-        pmsPipelineServiceHelper.importPipelineFromRemote(accountId, orgIdentifier, projectIdentifier);
+        pmsPipelineServiceHelper.importPipelineFromRemote(accountId, orgIdentifier, projectIdentifier, true);
     String pipelineVersion = pipelineVersion(accountId, importedPipelineYAML);
     PMSPipelineServiceHelper.checkAndThrowMismatchInImportedPipelineMetadata(orgIdentifier, projectIdentifier,
         pipelineIdentifier, pipelineImportRequest, importedPipelineYAML, pipelineVersion);
@@ -748,6 +752,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       PipelineEntity savedPipelineEntity =
           pmsPipelineRepository.savePipelineEntityForImportedYAML(entityWithUpdatedInfo);
       pmsPipelineServiceHelper.sendPipelineSaveTelemetryEvent(savedPipelineEntity, CREATING_PIPELINE);
+      pmsPipelineServiceHelper.sendTemplatesUsedInPipelinesTelemetryEvent(savedPipelineEntity, TEMPLATE_REF_PIPELINE);
       return savedPipelineEntity;
     } catch (DuplicateKeyException ex) {
       log.error(format(DUP_KEY_EXP_FORMAT_STRING, pipelineEntity.getIdentifier(), pipelineEntity.getProjectIdentifier(),
@@ -957,17 +962,16 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
 
   private void setupGitContext(MoveConfigOperationDTO moveConfigDTO) {
-    GitAwareContextHelper.populateGitDetails(
-        GitEntityInfo.builder()
-            .branch(moveConfigDTO.getBranch())
-            .filePath(moveConfigDTO.getFilePath())
-            .commitMsg(moveConfigDTO.getCommitMessage())
-            .isNewBranch(isNotEmpty(moveConfigDTO.getBranch()) && isNotEmpty(moveConfigDTO.getBaseBranch()))
-            .baseBranch(moveConfigDTO.getBaseBranch())
-            .connectorRef(moveConfigDTO.getConnectorRef())
-            .storeType(StoreType.REMOTE)
-            .repoName(moveConfigDTO.getRepoName())
-            .build());
+    GitAwareContextHelper.populateGitDetails(GitEntityInfo.builder()
+                                                 .branch(moveConfigDTO.getBranch())
+                                                 .filePath(moveConfigDTO.getFilePath())
+                                                 .commitMsg(moveConfigDTO.getCommitMessage())
+                                                 .isNewBranch(moveConfigDTO.isNewBranch())
+                                                 .baseBranch(moveConfigDTO.getBaseBranch())
+                                                 .connectorRef(moveConfigDTO.getConnectorRef())
+                                                 .storeType(StoreType.REMOTE)
+                                                 .repoName(moveConfigDTO.getRepoName())
+                                                 .build());
   }
 
   private void checkProjectExists(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
@@ -990,8 +994,9 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @VisibleForTesting
   void applyGitXSettingsIfApplicable(String accountIdentifier, String orgIdentifier, String projIdentifier) {
     gitXSettingsHelper.enforceGitExperienceIfApplicable(accountIdentifier, orgIdentifier, projIdentifier);
-    gitXSettingsHelper.setConnectorRefForRemoteEntity(accountIdentifier, orgIdentifier, projIdentifier);
     gitXSettingsHelper.setDefaultStoreTypeForEntities(
         accountIdentifier, orgIdentifier, projIdentifier, EntityType.PIPELINES);
+    gitXSettingsHelper.setConnectorRefForRemoteEntity(accountIdentifier, orgIdentifier, projIdentifier);
+    gitXSettingsHelper.setDefaultRepoForRemoteEntity(accountIdentifier, orgIdentifier, projIdentifier);
   }
 }

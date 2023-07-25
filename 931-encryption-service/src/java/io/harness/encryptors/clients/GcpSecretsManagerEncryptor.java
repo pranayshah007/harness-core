@@ -16,12 +16,16 @@ import static io.harness.eraro.ErrorCode.GCP_SECRET_OPERATION_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_SRE;
 
+import static com.google.datastore.v1.client.DatastoreHelper.getProjectIdFromComputeEngine;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SecretText;
 import io.harness.encryptors.VaultEncryptor;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.SecretManagementException;
 import io.harness.exception.WingsException;
+import io.harness.gcp.helpers.GcpHttpTransportHelperService;
+import io.harness.network.Http;
 import io.harness.secretmanagerclient.exception.SecretManagementClientException;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
@@ -29,6 +33,7 @@ import io.harness.security.encryption.EncryptionConfig;
 
 import software.wings.beans.GcpSecretsManagerConfig;
 
+import com.google.api.client.googleapis.auth.oauth2.OAuth2Utils;
 import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
@@ -56,6 +61,7 @@ import java.util.List;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.threeten.bp.Duration;
 
@@ -66,6 +72,7 @@ import org.threeten.bp.Duration;
 public class GcpSecretsManagerEncryptor implements VaultEncryptor {
   public static final int MAX_RETRY_ATTEMPTS = 3;
   public static final int TOTAL_TIMEOUT_IN_SECONDS = 30;
+  public static final String GCP_PROJECT = "GCP_PROJECT";
   private final TimeLimiter timeLimiter;
 
   @Inject
@@ -322,7 +329,7 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
   public GoogleCredentials getGoogleCredentials(GcpSecretsManagerConfig gcpSecretsManagerConfig) {
     try {
       if (BooleanUtils.isTrue(gcpSecretsManagerConfig.getAssumeCredentialsOnDelegate())) {
-        return GoogleCredentials.getApplicationDefault();
+        return getApplicationDefaultCredentials();
       }
       if (gcpSecretsManagerConfig.getCredentials() == null) {
         throw new SecretManagementException(GCP_SECRET_OPERATION_ERROR,
@@ -338,17 +345,43 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
     }
   }
 
+  public static GoogleCredentials getApplicationDefaultCredentials() throws IOException {
+    // support in case noProxy does not include metadata .google.internal
+    return StringUtils.isNotEmpty(Http.getProxyHostName())
+            && !Http.shouldUseNonProxy(OAuth2Utils.getMetadataServerUrl())
+        ? GoogleCredentials.getApplicationDefault(GcpHttpTransportHelperService.getHttpTransportFactory())
+        : GoogleCredentials.getApplicationDefault();
+  }
+
   public String getProjectId(GoogleCredentials credentials) {
     if (credentials instanceof ServiceAccountCredentials) {
       return ((ServiceAccountCredentials) credentials).getProjectId();
     } else if (credentials instanceof UserCredentials) {
       return ((UserCredentials) credentials).getQuotaProjectId();
     } else {
+      return getProjectIdFromComputeEngineOrEnvironment();
+    }
+  }
+
+  private static String getProjectIdFromComputeEngineOrEnvironment() {
+    // try to get project id from Compute Engine metadata
+    String projectId = getProjectIdFromComputeEngine();
+    if (isEmpty(projectId)) {
+      // try to get Project ID from ENV variable GCP_PROJECT
+      projectId = getProjectIdFromEnvironment();
+    }
+
+    if (isEmpty(projectId)) {
       throw new SecretManagementException(GCP_SECRET_OPERATION_ERROR,
           "Not able to extract Project Id from provided "
-              + "credentials",
+              + "credentials or Compute Engine or Env variable" + GCP_PROJECT,
           USER_SRE);
     }
+    return projectId;
+  }
+
+  private static String getProjectIdFromEnvironment() {
+    return System.getenv(GCP_PROJECT);
   }
 
   @Override

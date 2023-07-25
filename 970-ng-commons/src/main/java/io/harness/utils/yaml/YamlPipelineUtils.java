@@ -7,6 +7,8 @@
 
 package io.harness.utils;
 
+import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.USE_NATIVE_TYPE_ID;
+
 import io.harness.exception.InvalidRequestException;
 import io.harness.serializer.AnnotationAwareJsonSubtypeResolver;
 import io.harness.serializer.JsonSubtypeResolver;
@@ -45,7 +47,8 @@ public class YamlPipelineUtils {
                                   .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
                                   .enable(YAMLGenerator.Feature.INDENT_ARRAYS_WITH_INDICATOR)
                                   .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
-                                  .enable(YAMLGenerator.Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS));
+                                  .enable(YAMLGenerator.Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS)
+                                  .disable(USE_NATIVE_TYPE_ID));
     mapper.registerModule(new EdgeCaseRegexModule());
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     mapper.configure(DeserializationFeature.FAIL_ON_MISSING_EXTERNAL_TYPE_ID_PROPERTY, false);

@@ -111,7 +111,12 @@ public class HelmValuesFetchTaskNG extends AbstractDelegateRunnableTask {
     }
     switch (helmVersion) {
       case V3:
-        helmPath = InstallUtils.getPath(ClientTool.HELM, io.harness.delegate.clienttools.HelmVersion.V3);
+        try {
+          helmPath = InstallUtils.getPath(ClientTool.HELM, io.harness.delegate.clienttools.HelmVersion.V3);
+        } catch (IllegalArgumentException e) {
+          log.warn("Helm 3.1.2 not installed Version 3.8.0 will be used");
+          helmPath = InstallUtils.getPath(ClientTool.HELM, io.harness.delegate.clienttools.HelmVersion.V3_8);
+        }
         break;
       case V380:
         helmPath = InstallUtils.getPath(ClientTool.HELM, io.harness.delegate.clienttools.HelmVersion.V3_8);
