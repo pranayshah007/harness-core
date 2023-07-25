@@ -85,6 +85,10 @@ public class BatchJobScheduledDataServiceImpl implements BatchJobScheduledDataSe
       }
     }
 
+    if (null != instant && batchJobType == BatchJobType.COST_CATEGORY_BIGQUERY) {
+      return instant;
+    }
+
     if (null != instant && batchJobType == BatchJobType.DELEGATE_HEALTH_CHECK) {
       Instant startInstant = Instant.now().minus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS);
       instant = startInstant.isAfter(instant) ? startInstant : instant;
