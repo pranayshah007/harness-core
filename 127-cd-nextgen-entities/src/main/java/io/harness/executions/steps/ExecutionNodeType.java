@@ -6,11 +6,16 @@
  */
 
 package io.harness.executions.steps;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.visitor.YamlTypes;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_GITOPS,
+        HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(HarnessTeam.CDP)
 public enum ExecutionNodeType {
   GITOPS_MERGE_PR("GITOPS_MERGE_PR", StepSpecTypeConstants.GITOPS_MERGE_PR),

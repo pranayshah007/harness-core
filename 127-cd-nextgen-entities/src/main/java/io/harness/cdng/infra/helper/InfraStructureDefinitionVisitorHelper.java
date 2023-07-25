@@ -6,14 +6,16 @@
  */
 
 package io.harness.cdng.infra.helper;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.PATH_CONNECTOR;
 
 import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.environment.helper.EnvironmentYamlV2VisitorHelper;
 import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
@@ -50,6 +52,7 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(CDC)
 @Slf4j
 public class InfraStructureDefinitionVisitorHelper implements ConfigValidator, EntityReferenceExtractor {

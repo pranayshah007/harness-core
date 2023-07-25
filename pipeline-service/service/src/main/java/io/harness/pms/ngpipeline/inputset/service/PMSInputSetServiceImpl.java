@@ -6,7 +6,6 @@
  */
 
 package io.harness.pms.ngpipeline.inputset.service;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.HintException.HINT_INPUT_SET_ACCOUNT_SETTING;
@@ -17,7 +16,10 @@ import static io.harness.pms.pipeline.MoveConfigOperationType.REMOTE_TO_INLINE;
 import static java.lang.String.format;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.common.EntityYamlRootNames;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
@@ -89,6 +91,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_GITX})
 @Singleton
 @Slf4j
 @OwnedBy(PIPELINE)

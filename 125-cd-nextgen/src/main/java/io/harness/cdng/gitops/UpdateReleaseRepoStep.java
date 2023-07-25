@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.gitops;
-
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SWEEPING_OUTPUT;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
@@ -17,7 +16,10 @@ import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.trim;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.expressions.CDExpressionResolver;
@@ -75,6 +77,7 @@ import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(GITOPS)
 @Slf4j
 public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {

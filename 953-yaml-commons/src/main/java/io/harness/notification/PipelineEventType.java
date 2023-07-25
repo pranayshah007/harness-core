@@ -6,14 +6,17 @@
  */
 
 package io.harness.notification;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Arrays;
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 public enum PipelineEventType {
   @JsonProperty(PipelineEventTypeConstants.ALL_EVENTS) ALL_EVENTS("Pipeline", PipelineEventTypeConstants.ALL_EVENTS),

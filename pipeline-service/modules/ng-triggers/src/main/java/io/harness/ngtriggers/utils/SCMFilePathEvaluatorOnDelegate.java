@@ -6,15 +6,17 @@
  */
 
 package io.harness.ngtriggers.utils;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.NgSetupFields.NG;
 import static io.harness.delegate.beans.NgSetupFields.OWNER;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.DelegateTaskRequest.DelegateTaskRequestBuilder;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
@@ -39,6 +41,7 @@ import com.google.inject.name.Named;
 import java.time.Duration;
 import lombok.AllArgsConstructor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Singleton
 @OwnedBy(HarnessTeam.CI)

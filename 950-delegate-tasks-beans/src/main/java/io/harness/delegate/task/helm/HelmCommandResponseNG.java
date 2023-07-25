@@ -6,7 +6,9 @@
  */
 
 package io.harness.delegate.task.helm;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.k8s.model.K8sPod;
 import io.harness.logging.CommandExecutionStatus;
 
@@ -15,6 +17,7 @@ import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Data
 @AllArgsConstructor
 public class HelmCommandResponseNG {

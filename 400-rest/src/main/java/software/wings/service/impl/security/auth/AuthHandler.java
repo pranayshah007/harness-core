@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl.security.auth;
-
 import static io.harness.annotations.dev.HarnessModule._950_NG_AUTHENTICATION_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
@@ -65,7 +64,10 @@ import static software.wings.security.UserRequestContext.EntityInfo;
 import static java.util.Arrays.asList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EnvironmentType;
 import io.harness.beans.FeatureName;
@@ -168,6 +170,8 @@ import org.apache.commons.lang3.tuple.Pair;
 /**
  * @author rktummala on 3/7/18
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(PL)
 @TargetModule(_950_NG_AUTHENTICATION_SERVICE)
 @Singleton

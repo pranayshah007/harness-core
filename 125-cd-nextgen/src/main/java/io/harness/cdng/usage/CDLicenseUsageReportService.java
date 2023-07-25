@@ -6,9 +6,11 @@
  */
 
 package io.harness.cdng.usage;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cd.CDLicenseType;
 import io.harness.cdng.usage.pojos.LicenseDailyUsage;
 
@@ -16,6 +18,9 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PLG_LICENSING})
 @OwnedBy(HarnessTeam.CDP)
 public interface CDLicenseUsageReportService {
   Optional<CDLicenseType> getCDLicenseTypePerAccount(String accountId);

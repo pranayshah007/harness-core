@@ -6,7 +6,6 @@
  */
 
 package io.harness.ng.core.customDeployment.helper;
-
 import static io.harness.cdng.customDeployment.constants.CustomDeploymentConstants.VARIABLES;
 import static io.harness.common.EntityYamlRootNames.INFRASTRUCTURE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -18,8 +17,11 @@ import static io.harness.ng.core.template.TemplateEntityConstants.CUSTOM_DEPLOYM
 import static java.lang.String.format;
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.customDeployment.constants.CustomDeploymentConstants;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
@@ -67,6 +69,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 @Singleton

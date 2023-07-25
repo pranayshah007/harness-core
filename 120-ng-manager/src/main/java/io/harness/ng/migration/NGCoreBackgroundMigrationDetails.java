@@ -6,7 +6,9 @@
  */
 
 package io.harness.ng.migration;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.migration.MigrationDetails;
 import io.harness.migration.NGMigration;
 import io.harness.migration.beans.MigrationType;
@@ -28,6 +30,7 @@ import com.google.common.collect.ImmutableList;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 public class NGCoreBackgroundMigrationDetails implements MigrationDetails {
   @Override
   public MigrationType getMigrationTypeName() {

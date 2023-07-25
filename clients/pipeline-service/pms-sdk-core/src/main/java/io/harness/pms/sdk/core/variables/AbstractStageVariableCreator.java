@@ -6,7 +6,9 @@
  */
 
 package io.harness.pms.sdk.core.variables;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.pms.contracts.plan.YamlExtraProperties;
@@ -26,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 public abstract class AbstractStageVariableCreator<T extends AbstractStageNode> extends ChildrenVariableCreator<T> {
   @Override
   public VariableCreationResponse createVariablesForParentNode(VariableCreationContext ctx, YamlField config) {

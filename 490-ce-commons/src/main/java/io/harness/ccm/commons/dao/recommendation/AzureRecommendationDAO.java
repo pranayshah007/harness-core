@@ -18,6 +18,7 @@ import static io.harness.timescaledb.Tables.CE_RECOMMENDATIONS;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.retry.RetryOnException;
 import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
+import io.harness.ccm.commons.beans.recommendation.CCMServiceNowDetails;
 import io.harness.ccm.commons.beans.recommendation.RecommendationState;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
 import io.harness.ccm.commons.constants.CloudProvider;
@@ -154,6 +155,16 @@ public class AzureRecommendationDAO {
                             .filter(AzureRecommendationKeys.uuid, new ObjectId(id)),
         hPersistence.createUpdateOperations(AzureRecommendation.class)
             .set(AzureRecommendationKeys.jiraDetails, jiraDetails));
+  }
+
+  @NonNull
+  public void updateServicenowDetailsInAzureRecommendation(
+      @NonNull String accountId, @NonNull String id, CCMServiceNowDetails serviceNowDetails) {
+    hPersistence.upsert(hPersistence.createQuery(AzureRecommendation.class)
+                            .filter(AzureRecommendationKeys.accountId, accountId)
+                            .filter(AzureRecommendationKeys.uuid, new ObjectId(id)),
+        hPersistence.createUpdateOperations(AzureRecommendation.class)
+            .set(AzureRecommendationKeys.serviceNowDetails, serviceNowDetails));
   }
 
   @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)

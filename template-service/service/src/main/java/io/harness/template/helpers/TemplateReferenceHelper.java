@@ -6,7 +6,6 @@
  */
 
 package io.harness.template.helpers;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.template.resources.beans.NGTemplateConstants.CUSTOM_DEPLOYMENT_TEMPLATE;
@@ -17,8 +16,11 @@ import static io.harness.template.resources.beans.NGTemplateConstants.TEMPLATE_R
 import static io.harness.template.resources.beans.NGTemplateConstants.TEMPLATE_VERSION_LABEL;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.common.NGExpressionUtils;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
@@ -59,6 +61,8 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.CDC)
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Singleton

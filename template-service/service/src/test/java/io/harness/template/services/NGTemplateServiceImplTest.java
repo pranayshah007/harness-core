@@ -1985,6 +1985,49 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   }
 
   @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testIfTemplateIsAlreadyRemoteType() {
+    NGTemplateServiceImpl ngTemplateService = spy(templateService);
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(ACCOUNT_ID)
+                                        .orgIdentifier(ORG_IDENTIFIER)
+                                        .projectIdentifier(PROJ_IDENTIFIER)
+                                        .identifier("template-movetogit")
+                                        .name("templatemovetogit")
+                                        .versionLabel(TEMPLATE_VERSION_LABEL)
+                                        .templateScope(Scope.PROJECT)
+                                        .templateEntityType(TemplateEntityType.MONITORED_SERVICE_TEMPLATE)
+                                        .storeType(StoreType.REMOTE)
+                                        .yaml(yaml)
+                                        .filePath("FILE_PATH")
+                                        .rootFolder("ROOT")
+                                        .objectIdOfYaml("YAML_ID_TEMPLATE")
+                                        .repo("git")
+                                        .branch("master")
+                                        .build();
+    ngTemplateService.create(templateEntity, true, "", false);
+    doReturn(templateEntity)
+        .when(ngTemplateService)
+        .moveTemplateEntity(any(), any(), any(), any(), any(), any(TemplateMoveConfigOperationDTO.class), any());
+    doReturn(Optional.of(templateEntity))
+        .when(ngTemplateService)
+        .get(any(), any(), any(), any(), any(), anyBoolean(), anyBoolean());
+    TemplateMoveConfigRequestDTO moveConfigOperationDTO =
+        TemplateMoveConfigRequestDTO.builder()
+            .isNewBranch(false)
+            .moveConfigOperationType(TemplateMoveConfigOperationType.INLINE_TO_REMOTE)
+            .versionLabel(TEMPLATE_VERSION_LABEL)
+            .build();
+    assertThatThrownBy(()
+                           -> ngTemplateService.moveTemplateStoreTypeConfig(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               "template-movetogit", moveConfigOperationDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "Template with the given Identifier: template-movetogit and versionLabel version1 cannot be moved to Git as it is already Remote Type");
+  }
+
+  @Test
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
   public void testUpdateGitDetails() {

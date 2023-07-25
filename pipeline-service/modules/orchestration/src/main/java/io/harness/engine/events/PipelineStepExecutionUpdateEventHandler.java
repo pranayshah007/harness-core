@@ -6,11 +6,13 @@
  */
 
 package io.harness.engine.events;
-
 import static io.harness.pms.contracts.execution.events.OrchestrationEventType.NODE_EXECUTION_START;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.engine.executions.step.StepExecutionEntityService;
@@ -32,6 +34,7 @@ import java.util.Objects;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class PipelineStepExecutionUpdateEventHandler implements OrchestrationEventHandler {

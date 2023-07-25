@@ -6,8 +6,10 @@
  */
 
 package io.harness.entities;
-
 import io.harness.ChangeHandler;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.changehandlers.HarnessApprovalStepExecutionHandler;
 import io.harness.changehandlers.JiraStepExecutionHandler;
 import io.harness.changehandlers.StepExecutionHandler;
@@ -15,6 +17,7 @@ import io.harness.execution.step.StepExecutionEntity;
 
 import com.google.inject.Inject;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 public class StepExecutionCDCEntity implements CDCEntity<StepExecutionEntity> {
   @Inject private StepExecutionHandler stepExecutionHandler;
   @Inject private HarnessApprovalStepExecutionHandler harnessApprovalStepExecutionHandler;

@@ -6,10 +6,12 @@
  */
 
 package io.harness.utils;
-
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.RecasterMap;
 import io.harness.core.AliasRegistry;
 import io.harness.core.Recaster;
@@ -36,6 +38,8 @@ import java.util.UUID;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public class RecastReflectionUtils {

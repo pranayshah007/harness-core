@@ -28,6 +28,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.GetBatchFileRequestIdentifier;
 import io.harness.beans.PageRequestDTO;
+import io.harness.beans.RepoFilterParamsDTO;
 import io.harness.beans.Scope;
 import io.harness.beans.gitsync.GitFilePathDetails;
 import io.harness.beans.gitsync.GitPRCreateRequest;
@@ -230,7 +231,24 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
         .thenReturn(
             ScmGitRefTaskResponseData.builder().getUserReposResponse(getUserReposResponse.toByteArray()).build());
     getUserReposResponse = scmDelegateFacilitatorService.listUserRepos(accountIdentifier, orgIdentifier,
-        projectIdentifier, (ScmConnector) connectorInfo.getConnectorConfig(), PageRequestDTO.builder().build());
+        projectIdentifier, (ScmConnector) connectorInfo.getConnectorConfig(), PageRequestDTO.builder().build(),
+        RepoFilterParamsDTO.builder().build());
+    assertThat(getUserReposResponse.getReposCount()).isEqualTo(1);
+    assertThat(getUserReposResponse.getRepos(0).getName()).isEqualTo(repoName);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void getListUserReposWithSearchTerm() {
+    GetUserReposResponse getUserReposResponse =
+        GetUserReposResponse.newBuilder().addRepos(Repository.newBuilder().setName(repoName).build()).build();
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(
+            ScmGitRefTaskResponseData.builder().getUserReposResponse(getUserReposResponse.toByteArray()).build());
+    getUserReposResponse = scmDelegateFacilitatorService.listUserRepos(accountIdentifier, orgIdentifier,
+        projectIdentifier, (ScmConnector) connectorInfo.getConnectorConfig(), PageRequestDTO.builder().build(),
+        RepoFilterParamsDTO.builder().repoName("repo").build());
     assertThat(getUserReposResponse.getReposCount()).isEqualTo(1);
     assertThat(getUserReposResponse.getRepos(0).getName()).isEqualTo(repoName);
   }

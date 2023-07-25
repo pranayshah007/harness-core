@@ -6,11 +6,13 @@
  */
 
 package io.harness.cdng.service.beans;
-
 import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.yaml.YamlSchemaTypes;
@@ -21,6 +23,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Data
 @Builder
 @RecasterAlias("io.harness.cdng.service.beans.ServicesMetadata")

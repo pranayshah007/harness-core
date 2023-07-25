@@ -6,9 +6,11 @@
  */
 
 package io.harness.changehandlers;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.changestreamsframework.ChangeEvent;
 import io.harness.cvng.verificationjob.entities.VerificationJob.RuntimeParameter.RuntimeParameterKeys;
 import io.harness.cvng.verificationjob.entities.VerificationJob.VerificationJobKeys;
@@ -26,6 +28,7 @@ import java.util.Objects;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.text.StrBuilder;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(HarnessTeam.CV)
 public class VerifyStepExecutionHandler extends AbstractChangeDataHandler {
   private static final String EMPTY_ARRAY = "{}";

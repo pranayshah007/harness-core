@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.winrm;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.task.winrm.WinRmExecutorHelper.constructPSScriptWithCommands;
 import static io.harness.delegate.task.winrm.WinRmExecutorHelper.executablePSFilePath;
@@ -28,8 +27,11 @@ import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.ResponseMessage;
@@ -59,6 +61,7 @@ import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @Slf4j
 @OwnedBy(CDP)
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)

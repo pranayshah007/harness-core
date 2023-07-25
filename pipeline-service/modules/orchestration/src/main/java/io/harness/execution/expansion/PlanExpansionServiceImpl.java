@@ -5,8 +5,10 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 package io.harness.execution.expansion;
-
 import io.harness.OrchestrationModuleConfig;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.execution.PlanExecutionExpansion;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -34,6 +36,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @Slf4j
 public class PlanExpansionServiceImpl implements PlanExpansionService {

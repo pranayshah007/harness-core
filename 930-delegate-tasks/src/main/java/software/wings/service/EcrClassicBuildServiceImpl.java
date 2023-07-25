@@ -6,14 +6,16 @@
  */
 
 package software.wings.service;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.network.Http.connectableHttpUrl;
 import static io.harness.validation.Validator.equalCheck;
 
 import static software.wings.beans.artifact.ArtifactStreamType.ECR;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -37,6 +39,9 @@ import java.util.stream.Collectors;
 /**
  * Created by brett on 7/16/17.
  */
+
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(CDC)
 @Singleton
 public class EcrClassicBuildServiceImpl implements EcrClassicBuildService {

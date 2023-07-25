@@ -6,7 +6,6 @@
  */
 
 package io.harness.steps.http;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.constants.JsonConstants.RESOLVE_OBJECTS_VIA_JSON_SELECT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -15,7 +14,10 @@ import static io.harness.exception.WingsException.USER;
 
 import static java.util.Collections.emptyList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.HttpCertificateNG;
 import io.harness.common.NGTimeConversionHelper;
@@ -79,6 +81,8 @@ import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(CDC)
 @Slf4j
 public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {

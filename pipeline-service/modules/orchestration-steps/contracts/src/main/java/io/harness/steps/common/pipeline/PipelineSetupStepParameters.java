@@ -6,11 +6,13 @@
  */
 
 package io.harness.steps.common.pipeline;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.plancreator.flowcontrol.FlowControlConfig;
 import io.harness.plancreator.pipeline.PipelineInfoConfig;
@@ -33,6 +35,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Data
 @NoArgsConstructor
 @TypeAlias("pipelineSetupStepParameters")

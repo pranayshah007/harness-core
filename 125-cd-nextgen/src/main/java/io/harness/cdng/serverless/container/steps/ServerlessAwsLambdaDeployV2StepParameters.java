@@ -6,10 +6,12 @@
  */
 
 package io.harness.cdng.serverless.container.steps;
-
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.cdng.serverless.ServerlessSpecParameters;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -25,6 +27,8 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_SERVERLESS})
 @OwnedBy(HarnessTeam.CDP)
 @Data
 @NoArgsConstructor

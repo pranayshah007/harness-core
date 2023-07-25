@@ -6,12 +6,14 @@
  */
 
 package io.harness.expression;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.InvalidRequestException.USER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.functors.ExpressionFunctor;
@@ -38,6 +40,8 @@ import org.apache.commons.text.StrSubstitutor;
 /**
  * The Class ExpressionEvaluator.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @OwnedBy(CDC)
 @Data
 public class ExpressionEvaluator {
@@ -83,12 +87,6 @@ public class ExpressionEvaluator {
   public Object evaluate(String expression, JexlContext context) {
     if (expression == null) {
       return null;
-    }
-
-    // Ref: https://stackoverflow.com/q/66498157
-    // Line break in JEXL String
-    if (expression.contains("\n")) {
-      expression = expression.replaceAll("\n", "\\\\u000a");
     }
 
     JexlExpression jexlExpression = engine.createExpression(expression);

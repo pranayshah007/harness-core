@@ -6,12 +6,14 @@
  */
 
 package io.harness.k8s.model;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.k8s.model.Kind.SCALABLE_WORKLOAD_KINDS;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.WingsException;
 
 import java.util.ArrayList;
@@ -23,6 +25,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Data
 @Builder
 @NoArgsConstructor

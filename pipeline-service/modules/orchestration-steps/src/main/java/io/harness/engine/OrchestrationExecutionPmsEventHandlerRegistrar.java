@@ -6,13 +6,15 @@
  */
 
 package io.harness.engine;
-
 import static io.harness.pms.contracts.execution.events.OrchestrationEventType.NODE_EXECUTION_START;
 import static io.harness.pms.contracts.execution.events.OrchestrationEventType.NODE_EXECUTION_STATUS_UPDATE;
 import static io.harness.pms.contracts.execution.events.OrchestrationEventType.ORCHESTRATION_END;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.events.PipelineStageExecutionUpdateEventHandler;
 import io.harness.engine.events.PipelineStepExecutionUpdateEventHandler;
 import io.harness.engine.expressions.usages.ExpressionUsagesEventHandler;
@@ -24,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class OrchestrationExecutionPmsEventHandlerRegistrar {
   public static Map<OrchestrationEventType, Set<Class<? extends OrchestrationEventHandler>>> getEngineEventHandlers() {

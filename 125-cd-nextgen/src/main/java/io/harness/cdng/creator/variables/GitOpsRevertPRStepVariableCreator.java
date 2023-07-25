@@ -6,7 +6,9 @@
  */
 
 package io.harness.cdng.creator.variables;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.gitops.revertpr.RevertPRStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.pms.sdk.core.pipeline.variables.GenericStepVariableCreator;
@@ -14,6 +16,7 @@ import io.harness.pms.sdk.core.pipeline.variables.GenericStepVariableCreator;
 import java.util.Collections;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 public class GitOpsRevertPRStepVariableCreator extends GenericStepVariableCreator<RevertPRStepNode> {
   @Override
   public Set<String> getSupportedStepTypes() {

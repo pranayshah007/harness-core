@@ -33,6 +33,7 @@ import io.harness.ccm.commons.beans.InstanceType;
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.beans.billing.InstanceCategory;
 import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
+import io.harness.ccm.commons.beans.recommendation.CCMServiceNowDetails;
 import io.harness.ccm.commons.beans.recommendation.K8sServiceProvider;
 import io.harness.ccm.commons.beans.recommendation.NodePoolId;
 import io.harness.ccm.commons.beans.recommendation.NodePoolId.NodePoolIdKeys;
@@ -128,6 +129,16 @@ public class K8sRecommendationDAO {
                             .filter(K8sWorkloadRecommendationKeys.uuid, id),
         hPersistence.createUpdateOperations(K8sWorkloadRecommendation.class)
             .set(K8sWorkloadRecommendationKeys.jiraDetails, jiraDetails));
+  }
+
+  @NonNull
+  public void updateServicenowDetailsInWorkloadRecommendation(
+      @NonNull String accountId, @NonNull String id, CCMServiceNowDetails serviceNowDetails) {
+    hPersistence.upsert(hPersistence.createQuery(K8sWorkloadRecommendation.class)
+                            .filter(K8sWorkloadRecommendationKeys.accountId, accountId)
+                            .filter(K8sWorkloadRecommendationKeys.uuid, id),
+        hPersistence.createUpdateOperations(K8sWorkloadRecommendation.class)
+            .set(K8sWorkloadRecommendationKeys.serviceNowDetails, serviceNowDetails));
   }
 
   public List<PartialRecommendationHistogram> fetchPartialRecommendationHistograms(
@@ -617,6 +628,16 @@ public class K8sRecommendationDAO {
                             .filter(K8sNodeRecommendationKeys.uuid, new ObjectId(id)),
         hPersistence.createUpdateOperations(K8sNodeRecommendation.class)
             .set(K8sNodeRecommendationKeys.jiraDetails, jiraDetails));
+  }
+
+  @NonNull
+  public void updateServicenowDetailsInNodeRecommendation(
+      @NonNull String accountId, @NonNull String id, CCMServiceNowDetails serviceNowDetails) {
+    hPersistence.upsert(hPersistence.createQuery(K8sNodeRecommendation.class)
+                            .filter(K8sNodeRecommendationKeys.accountId, accountId)
+                            .filter(K8sNodeRecommendationKeys.uuid, new ObjectId(id)),
+        hPersistence.createUpdateOperations(K8sNodeRecommendation.class)
+            .set(K8sNodeRecommendationKeys.serviceNowDetails, serviceNowDetails));
   }
 
   public int fetchRecommendationsCount(@NonNull String accountId, Condition condition) {

@@ -6,7 +6,6 @@
  */
 
 package io.harness.template.helpers;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
@@ -23,8 +22,11 @@ import static io.harness.template.utils.TemplateUtils.validateAndGetYamlNode;
 
 import io.harness.EntityType;
 import io.harness.NgAutoLogContextForMethod;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.Scope;
 import io.harness.common.EntityReferenceHelper;
@@ -79,6 +81,9 @@ import javax.ws.rs.InternalServerErrorException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY, HarnessModuleComponent.CDS_PIPELINE,
+        HarnessModuleComponent.CDS_GITX})
 @OwnedBy(HarnessTeam.CDC)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j

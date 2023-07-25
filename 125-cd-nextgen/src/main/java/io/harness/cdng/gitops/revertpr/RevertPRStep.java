@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.gitops.revertpr;
-
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
@@ -14,7 +13,10 @@ import static io.harness.data.structure.ListUtils.trimStrings;
 
 import static org.apache.commons.lang3.StringUtils.trim;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.gitops.steps.GitOpsStepHelper;
@@ -61,6 +63,7 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 @OwnedBy(GITOPS)
 @Slf4j
 public class RevertPRStep extends CdTaskExecutable<NGGitOpsResponse> {

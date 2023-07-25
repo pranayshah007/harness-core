@@ -6,8 +6,17 @@
  */
 
 package io.harness.ngmigration.utils;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
-@OwnedBy(HarnessTeam.CDC) public enum CaseFormat { CAMEL_CASE, LOWER_CASE, SNAKE_CASE, HARNESS_UI_FORMAT }
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
+@OwnedBy(HarnessTeam.CDC)
+public enum CaseFormat {
+  CAMEL_CASE,
+  LOWER_CASE,
+  SNAKE_CASE,
+  HARNESS_UI_FORMAT
+}

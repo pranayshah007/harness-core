@@ -6,15 +6,17 @@
  */
 
 package io.harness.delegate.task.k8s.rancher;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.sanitizer.ExceptionMessageSanitizer.sanitizeException;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ngexception.RancherClientRuntimeException;
 import io.harness.k8s.model.KubernetesConfig;
@@ -28,6 +30,7 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Singleton
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j

@@ -14,12 +14,16 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.credit.utils.CreditStatus;
 import io.harness.data.validator.Trimmed;
+import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.NGAccountAccess;
 import io.harness.persistence.PersistentEntity;
 
+import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
+import java.util.List;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
@@ -47,4 +51,14 @@ public abstract class Credit implements PersistentEntity, NGAccountAccess {
 
   protected Long creditExpiryCheckIteration;
   protected Long creditsSendToSegmentIteration;
+
+  public static List<MongoIndex> mongoIndexes() {
+    return ImmutableList.<MongoIndex>builder()
+        .add(SortCompoundMongoIndex.builder()
+                 .name("creditStatus_creditsSendToSegmentIteration")
+                 .field(CreditsKeys.creditStatus)
+                 .ascSortField(CreditsKeys.creditsSendToSegmentIteration)
+                 .build())
+        .build();
+  }
 }

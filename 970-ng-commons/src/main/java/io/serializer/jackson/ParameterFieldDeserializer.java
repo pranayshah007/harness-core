@@ -6,7 +6,9 @@
  */
 
 package io.serializer.jackson;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.InputSetValidatorType;
 import io.harness.common.NGExpressionUtils;
 import io.harness.expression.EngineExpressionEvaluator;
@@ -35,6 +37,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 public class ParameterFieldDeserializer extends StdDeserializer<ParameterField<?>> implements ContextualDeserializer {
   private static final long serialVersionUID = 1L;
   protected final JavaType fullType;

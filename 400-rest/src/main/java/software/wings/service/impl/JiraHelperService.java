@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
 import static io.harness.exception.WingsException.USER;
@@ -17,8 +16,11 @@ import static io.harness.validation.Validator.notNullCheck;
 import static software.wings.service.ApprovalUtils.checkApproval;
 import static software.wings.service.impl.AssignDelegateServiceImpl.SCOPE_WILDCARD;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
@@ -60,6 +62,8 @@ import net.sf.json.JSONArray;
 /**
  * All Jira apis should be accessed via this object.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Singleton
 @OwnedBy(CDC)
 @Slf4j

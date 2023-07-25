@@ -6,13 +6,15 @@
  */
 
 package io.harness.ng.moduleversioninfo.runnable;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import static org.springframework.data.mongodb.core.query.Update.update;
 
 import io.harness.ModuleType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.moduleversioninfo.entity.ModuleVersionInfo;
 import io.harness.cdng.moduleversioninfo.entity.ModuleVersionInfo.ModuleVersionInfoKeys;
 import io.harness.exception.UnexpectedException;
@@ -43,6 +45,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(CDP)
 @ValidateOnExecution
 @Singleton

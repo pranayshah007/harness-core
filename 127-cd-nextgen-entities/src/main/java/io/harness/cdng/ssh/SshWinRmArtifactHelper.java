@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.ssh;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -16,7 +15,10 @@ import static io.harness.exception.WingsException.USER;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
@@ -84,6 +86,8 @@ import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @Singleton
 @OwnedBy(CDP)
 public class SshWinRmArtifactHelper {

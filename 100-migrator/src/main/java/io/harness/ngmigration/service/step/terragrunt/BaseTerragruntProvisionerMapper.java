@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngmigration.service.step.terragrunt;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static software.wings.beans.ServiceVariableType.ENCRYPTED_TEXT;
@@ -14,8 +13,11 @@ import static software.wings.ngmigration.NGMigrationEntityType.INFRA_PROVISIONER
 import static software.wings.ngmigration.NGMigrationEntityType.SECRET;
 import static software.wings.ngmigration.NGMigrationEntityType.SECRET_MANAGER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.GitStore.GitStoreBuilder;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
@@ -80,6 +82,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDP)
 public abstract class BaseTerragruntProvisionerMapper extends StepMapper {
   private static final String SECRET_FORMAT = "<+secrets.getValue(\"%s\")>";

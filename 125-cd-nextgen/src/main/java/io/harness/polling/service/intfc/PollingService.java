@@ -6,9 +6,11 @@
  */
 
 package io.harness.polling.service.intfc;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
 import io.harness.dto.PollingInfoForTriggers;
 import io.harness.exception.InvalidRequestException;
@@ -19,6 +21,7 @@ import io.harness.polling.contracts.PollingItem;
 import java.util.List;
 import javax.validation.Valid;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @OwnedBy(HarnessTeam.CDC)
 public interface PollingService {
   String save(@Valid PollingDocument pollingDocument);

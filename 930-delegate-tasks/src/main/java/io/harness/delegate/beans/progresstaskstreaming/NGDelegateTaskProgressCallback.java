@@ -6,9 +6,11 @@
  */
 
 package io.harness.delegate.beans.progresstaskstreaming;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.DelegateProgressData;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.taskprogress.ITaskProgressClient;
@@ -17,6 +19,7 @@ import io.harness.delegate.beans.taskprogress.TaskProgressCallback;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class NGDelegateTaskProgressCallback implements TaskProgressCallback {

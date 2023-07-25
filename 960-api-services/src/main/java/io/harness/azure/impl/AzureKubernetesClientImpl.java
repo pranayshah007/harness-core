@@ -6,12 +6,14 @@
  */
 
 package io.harness.azure.impl;
-
 import static io.harness.azure.model.AzureConstants.SUBSCRIPTION_ID_NULL_VALIDATION_MSG;
 
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.azure.AzureClient;
 import io.harness.azure.client.AzureKubernetesClient;
 import io.harness.azure.model.AzureConfig;
@@ -30,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 import retrofit2.Call;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Singleton
 @Slf4j
 public class AzureKubernetesClientImpl extends AzureClient implements AzureKubernetesClient {

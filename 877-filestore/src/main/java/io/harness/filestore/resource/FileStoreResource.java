@@ -6,7 +6,6 @@
  */
 
 package io.harness.filestore.resource;
-
 import static io.harness.NGCommonEntityConstants.ACCOUNT_KEY;
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.APPLICATION_YAML_MEDIA_TYPE;
@@ -52,7 +51,10 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.SearchPageParams;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.eraro.ErrorCode;
@@ -116,6 +118,7 @@ import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.hibernate.validator.constraints.NotBlank;
 import org.springframework.data.domain.Page;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @OwnedBy(CDP)
 @Path("/file-store")
 @Api("/file-store")

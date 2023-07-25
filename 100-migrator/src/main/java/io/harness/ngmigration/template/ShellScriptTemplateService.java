@@ -6,9 +6,11 @@
  */
 
 package io.harness.ngmigration.template;
-
 import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
@@ -30,6 +32,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class ShellScriptTemplateService implements NgTemplateService {
   @Override
   public boolean isMigrationSupported() {

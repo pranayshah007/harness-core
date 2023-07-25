@@ -6,7 +6,6 @@
  */
 
 package io.harness.app;
-
 import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME;
 import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_READ_BATCH_SIZE;
@@ -17,8 +16,11 @@ import static io.harness.pms.listener.NgOrchestrationNotifyEventListenerNonVersi
 
 import io.harness.AccessControlClientModule;
 import io.harness.account.AccountClientModule;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.app.impl.CIYamlSchemaServiceImpl;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.aws.AwsClient;
@@ -142,6 +144,8 @@ import javax.cache.expiry.Duration;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RedissonClient;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_COMMON_STEPS, HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class CIManagerServiceModule extends AbstractModule {

@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.provision.terragrunt;
-
 import static io.harness.cdng.provision.terragrunt.TerragruntStepHelper.DEFAULT_TIMEOUT;
 import static io.harness.provision.TerragruntConstants.APPLY;
 import static io.harness.provision.TerragruntConstants.DESTROY;
@@ -18,8 +17,11 @@ import static software.wings.beans.TaskType.TERRAGRUNT_DESTROY_TASK_NG;
 import static java.lang.String.format;
 
 import io.harness.account.services.AccountService;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -65,6 +67,7 @@ import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class TerragruntRollbackStep extends CdTaskExecutable<AbstractTerragruntTaskResponse> {

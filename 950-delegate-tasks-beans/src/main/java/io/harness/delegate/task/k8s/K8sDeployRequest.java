@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.k8s;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.connector.ConnectorCapabilityBaseHelper.populateDelegateSelectorCapability;
@@ -14,7 +13,10 @@ import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.GIT;
 import static io.harness.delegate.task.k8s.ManifestType.HELM_CHART;
 import static io.harness.delegate.task.k8s.ManifestType.KUSTOMIZE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
 import io.harness.delegate.beans.connector.azureconnector.AzureCapabilityHelper;
 import io.harness.delegate.beans.connector.gcp.GcpCapabilityHelper;
@@ -45,6 +47,8 @@ import software.wings.beans.ServiceHookDelegateConfig;
 import java.util.ArrayList;
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_K8S, HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(CDP)
 public interface K8sDeployRequest extends TaskParameters, ExecutionCapabilityDemander {
   K8sTaskType getTaskType();

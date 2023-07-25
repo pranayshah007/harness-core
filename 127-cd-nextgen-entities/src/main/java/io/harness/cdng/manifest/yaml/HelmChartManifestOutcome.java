@@ -6,12 +6,14 @@
  */
 
 package io.harness.cdng.manifest.yaml;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.outcome.HelmChartOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
@@ -26,6 +28,7 @@ import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Value
 @Builder(toBuilder = true)
 @OwnedBy(CDP)

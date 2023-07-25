@@ -6,7 +6,6 @@
  */
 
 package io.harness.pms.pipeline;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import static java.lang.Long.parseLong;
@@ -17,7 +16,10 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.ExecutionNode;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.governance.PolicyEvaluationFailureException;
@@ -87,6 +89,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @PipelineServiceAuth
@@ -425,16 +428,6 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   // do not delete this.
   public ResponseDTO<TemplateStageNode> getTemplateStageNode() {
     return ResponseDTO.newResponse(new TemplateStageNode());
-  }
-
-  @Hidden
-  public ResponseDTO<Boolean> refreshFFCache(@NotNull @AccountIdentifier String accountId) {
-    try {
-      return ResponseDTO.newResponse(pmsFeatureFlagHelper.refreshCacheForGivenAccountId(accountId));
-    } catch (InvalidRequestException e) {
-      log.error("Execution exception occurred while updating cache: " + e.getMessage());
-    }
-    return ResponseDTO.newResponse(false);
   }
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)

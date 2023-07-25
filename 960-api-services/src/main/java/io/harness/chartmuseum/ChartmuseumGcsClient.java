@@ -6,13 +6,15 @@
  */
 
 package io.harness.chartmuseum;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.chartmuseum.ChartMuseumConstants.GCS_COMMAND_TEMPLATE;
 import static io.harness.chartmuseum.ChartMuseumConstants.GCS_COMMAND_TEMPLATE_DEBUG;
 import static io.harness.chartmuseum.ChartMuseumConstants.GOOGLE_APPLICATION_CREDENTIALS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.version.Version;
 import io.harness.filesystem.FileIo;
 
@@ -23,6 +25,7 @@ import java.util.Map;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @OwnedBy(CDP)
 public class ChartmuseumGcsClient extends AbstractChartmuseumClient {

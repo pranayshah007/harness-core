@@ -6,9 +6,11 @@
  */
 
 package io.harness.delegate.task.citasks;
-
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
@@ -31,6 +33,9 @@ import org.apache.commons.lang3.NotImplementedException;
  * Delegate task to setup CI build environment. It calls CIK8BuildTaskHandler class to setup the build environment on
  * K8.
  */
+
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Slf4j
 public class CIInitializeTask extends AbstractDelegateRunnableTask {
   @Inject @Named(CITaskConstants.INIT_VM) private CIInitializeTaskHandler ciVmInitializeTaskHandler;

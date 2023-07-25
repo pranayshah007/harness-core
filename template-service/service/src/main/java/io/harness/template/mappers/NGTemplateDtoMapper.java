@@ -6,7 +6,6 @@
  */
 
 package io.harness.template.mappers;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -14,7 +13,10 @@ import static io.harness.ng.core.utils.NGUtils.validate;
 
 import static java.lang.Double.compare;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.NGTemplateReference;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
@@ -50,6 +52,8 @@ import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY, HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(CDC)
 @UtilityClass
 @Slf4j

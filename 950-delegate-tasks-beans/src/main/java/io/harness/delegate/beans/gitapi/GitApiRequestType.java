@@ -6,5 +6,13 @@
  */
 
 package io.harness.delegate.beans.gitapi;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
-public enum GitApiRequestType { FIND_PULL_REQUEST_DETAILS, MERGE_PR, REVERT_PR }
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
+public enum GitApiRequestType {
+  FIND_PULL_REQUEST_DETAILS,
+  MERGE_PR,
+  REVERT_PR
+}

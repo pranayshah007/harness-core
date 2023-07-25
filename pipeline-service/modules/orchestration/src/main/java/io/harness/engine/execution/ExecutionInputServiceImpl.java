@@ -6,7 +6,6 @@
  */
 
 package io.harness.engine.execution;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.NAME;
@@ -16,7 +15,10 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.VARIABLES;
 import static io.harness.pms.yaml.validation.RuntimeInputValuesValidator.validateStaticValues;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.OrchestrationEngine;
@@ -55,6 +57,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @Slf4j
 @OwnedBy(PIPELINE)

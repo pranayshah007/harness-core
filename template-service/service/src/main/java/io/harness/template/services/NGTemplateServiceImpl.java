@@ -6,7 +6,6 @@
  */
 
 package io.harness.template.services;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -30,7 +29,10 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.AccountClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.data.structure.EmptyPredicate;
@@ -135,6 +137,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY, HarnessModuleComponent.CDS_GITX,
+        HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @Slf4j
 @OwnedBy(CDC)
@@ -1484,6 +1489,12 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       if (!templateEntityOptional.get().getTemplateEntityType().isGitEntity()) {
         throw new InvalidRequestException(String.format(
             "Template with the given Identifier: %s and versionLabel %s cannot be moved to Git as it is not a Git Supported Template Type",
+            templateIdentifier, versionLabel));
+      }
+
+      if (templateEntityOptional.get().getStoreType().equals(StoreType.REMOTE)) {
+        throw new InvalidRequestException(String.format(
+            "Template with the given Identifier: %s and versionLabel %s cannot be moved to Git as it is already Remote Type",
             templateIdentifier, versionLabel));
       }
 

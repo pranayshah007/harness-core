@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.usage.jobs;
-
 import static io.harness.NGDateUtils.getCurrentMonthFirstDay;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 
@@ -14,8 +13,11 @@ import static java.time.Duration.ofSeconds;
 
 import io.harness.CDLicenseDailyReportIteratorConfig;
 import io.harness.NgIteratorConfig;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cd.CDLicenseType;
 import io.harness.cdng.usage.CDLicenseUsageReportService;
 import io.harness.cdng.usage.pojos.LicenseDailyUsage;
@@ -42,6 +44,8 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PLG_LICENSING})
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)

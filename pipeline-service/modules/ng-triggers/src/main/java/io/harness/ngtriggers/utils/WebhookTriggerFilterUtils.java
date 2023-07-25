@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngtriggers.utils;
-
 import static io.harness.beans.WebhookEvent.Type.PUSH;
 import static io.harness.constants.Constants.BITBUCKET_CLOUD_HEADER_KEY;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -27,8 +26,11 @@ import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.HeaderConfig;
 import io.harness.exception.TriggerException;
 import io.harness.ngtriggers.beans.scm.WebhookPayloadData;
@@ -50,6 +52,7 @@ import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @OwnedBy(HarnessTeam.PIPELINE)
 @UtilityClass
 @Slf4j

@@ -6,9 +6,11 @@
  */
 
 package io.harness.cdng.serverless.container.steps;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.cdng.aws.sam.AwsSamStepHelper;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -33,6 +35,9 @@ import java.util.Map;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_SERVERLESS,
+        HarnessModuleComponent.CDS_GITX})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class ServerlessAwsLambdaPackageV2Step extends AbstractContainerStepV2<StepElementParameters> {

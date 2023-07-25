@@ -12,16 +12,11 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
-import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.remote.client.CGRestUtils;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.concurrent.TimeUnit;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -35,24 +30,12 @@ public class PmsFeatureFlagHelper implements PmsFeatureFlagService {
   @Inject FeatureFlagService featureFlagService;
   @Inject AccountClient accountClient;
 
-  private static final int CACHE_EVICTION_TIME_MINUTES = 5;
   private static final String DEPLOY_MODE = System.getenv("DEPLOY_MODE");
   private static final String DEPLOY_VERSION = System.getenv("DEPLOY_VERSION");
 
-  private final LoadingCache<FeatureNameAndAccountId, Boolean> featureFlagCache =
-      CacheBuilder.newBuilder()
-          .expireAfterWrite(CACHE_EVICTION_TIME_MINUTES, TimeUnit.MINUTES)
-          .build(new CacheLoader<FeatureNameAndAccountId, Boolean>() {
-            @Override
-            public Boolean load(
-                @org.jetbrains.annotations.NotNull final FeatureNameAndAccountId featureNameAndAccountId) {
-              return isFlagEnabledForAccountId(featureNameAndAccountId);
-            }
-          });
-
   public boolean isEnabled(String accountId, @NotNull FeatureName featureName) {
     try {
-      return featureFlagCache.get(
+      return isFlagEnabledForAccountId(
           FeatureNameAndAccountId.builder().accountId(accountId).featureName(featureName).build());
     } catch (Exception e) {
       log.error("Error getting feature flags for given account: " + accountId);
@@ -62,16 +45,12 @@ public class PmsFeatureFlagHelper implements PmsFeatureFlagService {
 
   public boolean isEnabled(String accountId, @NotNull String featureName) {
     try {
-      return featureFlagCache.get(
+      return isFlagEnabledForAccountId(
           FeatureNameAndAccountId.builder().accountId(accountId).featureName(FeatureName.valueOf(featureName)).build());
     } catch (Exception e) {
       log.error("Error getting feature flags for given account: " + accountId);
       return false;
     }
-  }
-
-  public boolean refreshCacheForGivenAccountId(String accountId) throws InvalidRequestException {
-    throw new InvalidRequestException("Cache will be automatically refreshed within 5 mins");
   }
 
   private boolean isFlagEnabledForAccountId(FeatureNameAndAccountId featureNameAndAccountId) {

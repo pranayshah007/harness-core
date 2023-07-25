@@ -6,9 +6,11 @@
  */
 
 package io.harness.pms.expressions;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.pms.expressions.functors.YamlEvaluatorFunctor;
 
@@ -21,6 +23,7 @@ import org.hibernate.validator.constraints.NotEmpty;
  *
  */
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class YamlExpressionEvaluator extends EngineExpressionEvaluator {
   // inputs in json format.

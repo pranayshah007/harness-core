@@ -6,9 +6,11 @@
  */
 
 package io.harness.steps.matrix;
-
 import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildResponse;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.enforcement.beans.metadata.RestrictionMetadataDTO;
 import io.harness.enforcement.beans.metadata.StaticLimitRestrictionMetadataDTO;
 import io.harness.enforcement.client.services.EnforcementClientService;
@@ -41,6 +43,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 public class StrategyStep extends ChildrenExecutableWithRollbackAndRbac<StrategyStepParameters> {
   public static final StepType STEP_TYPE = StepType.newBuilder()

@@ -6,8 +6,11 @@
  */
 
 package io.harness.shell;
-
 import static io.harness.filesystem.FileIo.deleteFileIfExists;
+
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -19,6 +22,8 @@ import org.zeroturnaround.exec.ProcessExecutor;
 import org.zeroturnaround.exec.ProcessResult;
 import org.zeroturnaround.exec.stop.ProcessStopper;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Slf4j
 public class ChildProcessStopper implements ProcessStopper {
   String fileName;

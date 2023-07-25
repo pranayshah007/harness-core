@@ -6,7 +6,6 @@
  */
 
 package software.wings.delegatetasks;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
@@ -25,8 +24,11 @@ import static software.wings.delegatetasks.TerragruntProvisionTaskHelper.getExec
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.cli.CliResponse;
 import io.harness.delegate.task.terraform.handlers.HarnessSMEncryptionDecryptionHandler;
@@ -53,6 +55,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(CDP)
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @Slf4j

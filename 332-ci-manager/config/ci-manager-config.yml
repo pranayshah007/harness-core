@@ -314,13 +314,13 @@ ciExecutionServiceConfig:
       entrypoint:
         - /kaniko/kaniko-acr
     gcsUploadConfig:
-      image: plugins/gcs:1.4.0
+      image: plugins/gcs:1.4.1
       entrypoint:
         - /bin/drone-gcs
       windowsEntrypoint:
         - "C:\\drone-gcs.exe"
     s3UploadConfig:
-      image: plugins/s3:1.2.3
+      image: plugins/s3:1.2.4
       entrypoint:
         - /bin/drone-s3
       windowsEntrypoint:
@@ -332,7 +332,7 @@ ciExecutionServiceConfig:
         - -c
         - python3 ${DOCKER_ENTRYPOINT}
     artifactoryUploadConfig:
-      image: plugins/artifactory:1.4.4
+      image: plugins/artifactory:1.4.5
       entrypoint:
         - /bin/plugin
       windowsEntrypoint:
@@ -364,10 +364,10 @@ ciExecutionServiceConfig:
       buildAndPushACR: plugins/acr:20.14.3
       buildAndPushECR: plugins/ecr:20.14.3
       buildAndPushGCR: plugins/gcr:20.14.3
-      gcsUpload: plugins/gcs:1.4.0
-      s3Upload: plugins/s3:1.2.3
+      gcsUpload: plugins/gcs:1.4.1
+      s3Upload: plugins/s3:1.2.4
       security: harness/sto-plugin:dev
-      artifactoryUpload: plugins/artifactory:1.4.4
+      artifactoryUpload: plugins/artifactory:1.4.5
       cacheGCS: plugins/cache:1.5.12
       cacheS3: plugins/cache:1.5.12
       sscaOrchestration: harness/ssca-plugin:0.3.0

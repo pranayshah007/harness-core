@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl.instance;
-
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.SKIPPED;
@@ -47,7 +46,10 @@ import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.EnvironmentType;
 import io.harness.beans.ExecutionStatus;
@@ -168,6 +170,8 @@ import org.apache.commons.lang3.ObjectUtils;
 /**
  * @author rktummala on 8/13/17
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Singleton
 @Slf4j
 @OwnedBy(DX)

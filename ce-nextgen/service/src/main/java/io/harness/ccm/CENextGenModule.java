@@ -116,6 +116,8 @@ import io.harness.ccm.serviceAccount.GcpResourceManagerService;
 import io.harness.ccm.serviceAccount.GcpResourceManagerServiceImpl;
 import io.harness.ccm.serviceAccount.GcpServiceAccountService;
 import io.harness.ccm.serviceAccount.GcpServiceAccountServiceImpl;
+import io.harness.ccm.serviceNow.CCMServiceNowHelper;
+import io.harness.ccm.serviceNow.CCMServiceNowHelperImpl;
 import io.harness.ccm.utils.AccountIdentifierLogInterceptor;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.businessmapping.service.impl.BusinessMappingHistoryServiceImpl;
@@ -437,6 +439,7 @@ public class CENextGenModule extends AbstractModule {
     bind(MarginDetailsBqService.class).to(MarginDetailsBqServiceImpl.class);
     bind(MspValidationService.class).to(MspValidationServiceImpl.class);
     bind(LabelFlattenedService.class).to(LabelFlattenedServiceImpl.class);
+    bind(CCMServiceNowHelper.class).to(CCMServiceNowHelperImpl.class);
 
     if (configuration.isClickHouseEnabled()) {
       bind(ViewsBillingService.class).to(ClickHouseViewsBillingServiceImpl.class);

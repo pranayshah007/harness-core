@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.googlefunctions;
-
 import static io.harness.cdng.manifest.ManifestType.GOOGLE_FUNCTIONS_GEN_ONE_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.cdng.manifest.ManifestType.GOOGLE_FUNCTIONS_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
@@ -19,6 +18,9 @@ import static io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import static com.google.common.collect.Lists.newArrayList;
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
@@ -107,6 +109,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 public class GoogleFunctionsHelper extends CDStepHelper {
   @Inject private CDExpressionResolver cdExpressionResolver;

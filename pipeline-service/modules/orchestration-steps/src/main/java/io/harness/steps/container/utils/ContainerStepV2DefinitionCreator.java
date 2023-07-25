@@ -6,14 +6,16 @@
  */
 
 package io.harness.steps.container.utils;
-
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_PREFIX;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_REQUEST_MEMORY_MIB;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_REQUEST_MILLI_CPU;
 import static io.harness.pms.sdk.core.plugin.ContainerUnitStepUtils.getKubernetesStandardPodName;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.environment.pod.container.ContainerImageDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
@@ -40,6 +42,7 @@ import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @UtilityClass
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)

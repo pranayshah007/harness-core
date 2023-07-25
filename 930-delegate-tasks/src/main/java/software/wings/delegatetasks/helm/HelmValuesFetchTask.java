@@ -6,7 +6,6 @@
  */
 
 package software.wings.delegatetasks.helm;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.k8s.K8sCommandUnitConstants.FetchFiles;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
@@ -21,8 +20,11 @@ import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateTaskPackage;
@@ -55,6 +57,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 import org.zeroturnaround.exec.ProcessExecutor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
