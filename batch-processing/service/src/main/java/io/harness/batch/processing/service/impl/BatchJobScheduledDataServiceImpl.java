@@ -134,7 +134,7 @@ public class BatchJobScheduledDataServiceImpl implements BatchJobScheduledDataSe
                .of(BatchJobType.RERUN_JOB, BatchJobType.AWS_ECS_CLUSTER_SYNC,
                    BatchJobType.AWS_EC2_SERVICE_RECOMMENDATION, BatchJobType.AZURE_VM_RECOMMENDATION)
                .contains(batchJobType)) {
-      Instant startInstant = Instant.now().minus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS);
+      Instant startInstant = Instant.now().minus(1, ChronoUnit.DAYS);
       instant = startInstant.isAfter(instant) ? startInstant : instant;
     }
 
