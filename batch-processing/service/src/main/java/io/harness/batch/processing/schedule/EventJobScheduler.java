@@ -474,7 +474,6 @@ public class EventJobScheduler {
            AutoLogContext ignore1 = new BatchJobBucketLogContext(batchJobBucket.name(), OVERRIDE_ERROR);
            AutoLogContext ignore2 = new BatchJobTypeLogContext(batchJobType.name(), OVERRIDE_ERROR);
            AutoLogContext ignore3 = new BatchJobRunningModeContext(runningMode, OVERRIDE_ERROR)) {
-        log.info("calling runJob: {}, batchJob: {}", accountId, batchJobType);
         batchJobRunner.runJob(accountId, job, runningMode);
       }
     } catch (Exception ex) {
