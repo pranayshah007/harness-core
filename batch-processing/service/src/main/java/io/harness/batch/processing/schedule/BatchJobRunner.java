@@ -118,7 +118,8 @@ public class BatchJobRunner {
     log.info("starting while loop while (batchJobScheduleTimeProvider.hasNext()) {} {}", accountId, batchJobType);
     while (batchJobScheduleTimeProvider.hasNext()) {
       Instant endInstant = batchJobScheduleTimeProvider.next();
-      log.info("batchJobScheduleTimeProvider hasNext endInstant: {}, startInstant: {}, {}, {}", endInstant, startInstant, accountId, batchJobType);
+      log.info("batchJobScheduleTimeProvider hasNext endInstant: {}, startInstant: {}, {}, {}", endInstant,
+          startInstant, accountId, batchJobType);
       if (batchJobType == BatchJobType.INSTANCE_BILLING_HOURLY) {
         Instant currentTime = Instant.now();
         if (clusterDataHourlyCounter < TOTAL_INSTANCE_BILLING_HOURLY_JOBS_PER_MINUTE

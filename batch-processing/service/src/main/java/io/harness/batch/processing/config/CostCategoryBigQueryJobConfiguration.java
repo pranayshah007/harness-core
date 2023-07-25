@@ -10,6 +10,7 @@ package io.harness.batch.processing.config;
 import io.harness.batch.processing.ccm.BatchJobType;
 import io.harness.batch.processing.svcmetrics.BatchJobExecutionListener;
 import io.harness.batch.processing.tasklet.CostCategoryBigQueryTasklet;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -45,8 +46,6 @@ public class CostCategoryBigQueryJobConfiguration {
 
   @Bean
   public Step costCategoryBigQueryStep(StepBuilderFactory stepBuilderFactory) {
-    return stepBuilderFactory.get("costCategoryBigQueryStep")
-        .tasklet(costCategoryBigQueryTasklet())
-        .build();
+    return stepBuilderFactory.get("costCategoryBigQueryStep").tasklet(costCategoryBigQueryTasklet()).build();
   }
 }
