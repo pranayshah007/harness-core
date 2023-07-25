@@ -430,16 +430,6 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
     return ResponseDTO.newResponse(new TemplateStageNode());
   }
 
-  @Hidden
-  public ResponseDTO<Boolean> refreshFFCache(@NotNull @AccountIdentifier String accountId) {
-    try {
-      return ResponseDTO.newResponse(pmsFeatureFlagHelper.refreshCacheForGivenAccountId(accountId));
-    } catch (InvalidRequestException e) {
-      log.error("Execution exception occurred while updating cache: " + e.getMessage());
-    }
-    return ResponseDTO.newResponse(false);
-  }
-
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   public ResponseDTO<String> validatePipelineByYAML(@NotNull @AccountIdentifier String accountId,
       @NotNull @OrgIdentifier String orgId, @NotNull @ProjectIdentifier String projectId, @NotNull String yaml) {

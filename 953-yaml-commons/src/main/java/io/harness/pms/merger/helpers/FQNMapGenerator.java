@@ -66,7 +66,11 @@ public class FQNMapGenerator {
     if (!mapData.containsKey(fqnList.get(index))) {
       mapData.put(fqnList.get(index), new HashMap<>());
     }
-    traverseMap((Map<String, Object>) mapData.get(fqnList.get(index)), fqnList, index + 1, value);
+    if (mapData.get(fqnList.get(index)) instanceof Map) {
+      traverseMap((Map<String, Object>) mapData.get(fqnList.get(index)), fqnList, index + 1, value);
+    } else {
+      log.warn("Value {} not instance of map ", mapData.get(fqnList.get(index)));
+    }
   }
 
   public Map<FQN, Object> generateFQNMap(JsonNode yamlMap, boolean keepUuidFields) {

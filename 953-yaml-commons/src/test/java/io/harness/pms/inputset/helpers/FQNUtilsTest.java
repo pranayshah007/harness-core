@@ -8,6 +8,7 @@
 package io.harness.pms.inputset.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
@@ -33,6 +34,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -77,6 +79,31 @@ public class FQNUtilsTest extends CategoryTest {
             "topKey.stagesAndOtherThings.stage[identifier:f3].identifier.",
             "topKey.stagesAndOtherThings.PARALLEL.stage[identifier:f5].identifier.",
             "topKey.stagesAndOtherThings.PARALLEL.stage[identifier:f6].identifier.");
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void testYamlMap() {
+    String yaml = "pipeline:\n"
+        + "   name: \"parent pipeline\"\n"
+        + "   identifier: \"rc-" + generateUuid() + "\"\n"
+        + "   timeout: \"1w\"\n"
+        + "   type: \"Pipeline\"\n"
+        + "   spec:\n"
+        + "     pipeline: \"childPipeline\"\n"
+        + "     org: \"org\"\n"
+        + "     project: \"project\"\n"
+        + "     outputs:\n"
+        + "       - name: var1\n"
+        + "         __uuid: uuid1\n"
+        + "         value: value1\n"
+        + "       - name: var2\n"
+        + "         __uuid: uuid1\n"
+        + "         value: value2\n";
+    Map<String, Object> dataMap = FQNMapGenerator.generateYamlMapWithFqnExpression(yaml);
+    assertThat(dataMap).isNotNull();
+    assertThat(dataMap.get("pipeline")).isNotNull();
   }
 
   @Test

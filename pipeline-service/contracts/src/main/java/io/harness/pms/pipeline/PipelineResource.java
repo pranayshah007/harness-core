@@ -511,20 +511,6 @@ public interface PipelineResource {
   // do not delete this.
   ResponseDTO<TemplateStageNode> getTemplateStageNode();
 
-  @GET
-  @Path("/ffCache/refresh")
-  @ApiOperation(value = "Refresh the feature flag cache", nickname = "refreshFFCache")
-  @Operation(operationId = "refreshFFCache", summary = "Refresh the feature flag cache",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Refresh the feature flag cache")
-      })
-  @Hidden
-  ResponseDTO<Boolean>
-  refreshFFCache(@NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE,
-      required = true) @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId);
-
   @POST
   @Path("/validate-yaml-with-schema")
   @ApiOperation(value = "Validate a Pipeline YAML", nickname = "validatePipelineByYAML")

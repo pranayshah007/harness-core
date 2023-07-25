@@ -342,7 +342,6 @@ public class ServiceOverridesResource {
 
   @POST
   @Path("/migrate")
-  @Hidden
   @ApiOperation(value = "Migrate ServiceOverride to V2", nickname = "migrateServiceOverride")
   @Operation(operationId = "migrateServiceOverride", summary = "Migrate ServiceOverride to V2",
       responses =
@@ -364,7 +363,6 @@ public class ServiceOverridesResource {
 
   @POST
   @Path("/migrateScope")
-  @Hidden
   @ApiOperation(value = "Migrate ServiceOverride to V2 at one scope", nickname = "migrateServiceOverrideScoped")
   @Operation(operationId = "migrateServiceOverrideScoped", summary = "Migrate ServiceOverride to V2 at one scope",
       responses =

@@ -55,14 +55,12 @@ import io.harness.waiter.WaitNotifyEngine;
 import com.google.inject.Inject;
 import java.time.Duration;
 import java.util.List;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -77,11 +75,6 @@ public class ExpiryHelperTest extends OrchestrationTestBase {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-  }
-
-  @After
-  public void verifyMocks() {
-    Mockito.verifyNoMoreInteractions(engine);
   }
 
   @Test

@@ -28,6 +28,7 @@ import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.EdgeLayoutListDTO;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
+import io.harness.pms.plan.execution.beans.dto.PipelineExecutionIdentifierSummaryDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionSummaryDTO;
 import io.harness.rule.Owner;
 
@@ -116,6 +117,30 @@ public class PipelineExecutionSummaryDtoMapperTest extends CategoryTest {
     assertThat(executionSummaryDTO.getGitDetails().getRootFolder()).isEqualTo(rootFolder);
     assertThat(executionSummaryDTO.getStoreType()).isNull();
     assertThat(executionSummaryDTO.getConnectorRef()).isNull();
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void toExecutionIdentifierDto() {
+    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = PipelineExecutionSummaryEntity.builder()
+                                                                        .runSequence(32)
+                                                                        .projectIdentifier(projId)
+                                                                        .orgIdentifier(orgId)
+                                                                        .pipelineIdentifier(pipelineId)
+                                                                        .planExecutionId(planId)
+                                                                        .status(ExecutionStatus.ABORTED)
+                                                                        .build();
+    PipelineExecutionIdentifierSummaryDTO pipelineExecutionIdentifierSummaryDTO =
+        PipelineExecutionSummaryDtoMapper.toExecutionIdentifierDto(pipelineExecutionSummaryEntity);
+
+    assertThat(pipelineExecutionIdentifierSummaryDTO).isNotNull();
+    assertThat(pipelineExecutionIdentifierSummaryDTO.getPipelineIdentifier()).isEqualTo(pipelineId);
+    assertThat(pipelineExecutionIdentifierSummaryDTO.getPlanExecutionId()).isEqualTo(planId);
+    assertThat(pipelineExecutionIdentifierSummaryDTO.getOrgIdentifier()).isEqualTo(orgId);
+    assertThat(pipelineExecutionIdentifierSummaryDTO.getProjectIdentifier()).isEqualTo(projId);
+    assertThat(pipelineExecutionIdentifierSummaryDTO.getRunSequence()).isEqualTo(32);
+    assertThat(pipelineExecutionIdentifierSummaryDTO.getStatus()).isEqualTo(ExecutionStatus.ABORTED);
   }
 
   @Test

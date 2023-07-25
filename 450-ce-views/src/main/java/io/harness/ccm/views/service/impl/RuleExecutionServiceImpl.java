@@ -62,6 +62,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
+import org.springframework.data.mongodb.core.aggregation.AggregationOptions;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.aggregation.GroupOperation;
 import org.springframework.data.mongodb.core.aggregation.MatchOperation;
@@ -281,7 +282,9 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
     ProjectionOperation projectionStage =
         project().and(MONGODB_ID).as(ResourceTypeCountkey.resourceName).andInclude(ResourceTypeCountkey.count);
     Map<String, Integer> result = new HashMap<>();
-    aggregate(newAggregation(matchStage, sortStage, group, projectionStage), ResourceTypeCount.class)
+    AggregationOptions options = Aggregation.newAggregationOptions().allowDiskUse(true).build();
+    aggregate(
+        newAggregation(matchStage, sortStage, group, projectionStage).withOptions(options), ResourceTypeCount.class)
         .getMappedResults()
         .forEach(resource -> result.put(resource.getResourceName(), resource.getCount()));
     log.info("result: {}", result);
