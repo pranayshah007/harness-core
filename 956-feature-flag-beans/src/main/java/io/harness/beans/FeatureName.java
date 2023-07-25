@@ -566,6 +566,7 @@ public enum FeatureName {
       "This is to regenerate acls for default account viewer roles", HarnessTeam.PL),
   PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS("Enable removal of user level viewer role assignments", HarnessTeam.PL),
   PL_SUPPORT_JWT_TOKEN_SCIM_API("Enable support for external OAuth JWT token for SCIM API calls", HarnessTeam.PL),
+  PL_UPDATE_CONNECTOR_HEARTBEAT_PPT("To update the perpetualTask", HarnessTeam.PL),
   PL_USER_ACCOUNT_LEVEL_DATA_FLOW(
       "Enables the new flow for all User CRUD where User's Account level Data is also considered.", HarnessTeam.PL),
   PL_USER_ACCOUNT_LEVEL_DATA_MIGRATION(
