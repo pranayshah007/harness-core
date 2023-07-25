@@ -19,6 +19,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ServiceNowException;
 import io.harness.exception.WingsException;
 import io.harness.jackson.JsonNodeUtils;
+import io.harness.jira.JiraIssueNG;
 import io.harness.network.Http;
 import io.harness.retry.RetryHelper;
 import io.harness.servicenow.ServiceNowFieldValueNG;
@@ -55,6 +56,7 @@ public class CCMServiceNowUtils {
   private static final long TIME_OUT = 120;
   private static final String INVALID_SERVICE_NOW_CREDENTIALS = "Invalid ServiceNow credentials";
   private static final String NOT_FOUND = "404 Not found";
+  private static final String SERVICENOW_TICKET_STATE_KEY = "state";
   private final Retry retry = buildRetryAndRegisterListeners();
 
   public ServiceNowTicketNG createTicket(ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
@@ -64,6 +66,10 @@ public class CCMServiceNowUtils {
     } else {
       return createTicketUsingServiceNowTemplate(serviceNowTaskNGParameters);
     }
+  }
+
+  public String getStatus(ServiceNowTicketNG serviceNowTicketNG) {
+    return serviceNowTicketNG.getFields().get(SERVICENOW_TICKET_STATE_KEY).getDisplayValue();
   }
 
   private ServiceNowTicketNG createTicketWithoutTemplate(ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
