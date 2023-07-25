@@ -95,8 +95,7 @@ public class BatchJobScheduledDataDaoImpl implements BatchJobScheduledDataDao {
     UpdateOperations<BatchJobScheduledData> updateOperations =
         hPersistence.createUpdateOperations(BatchJobScheduledData.class);
     updateOperations.set(BatchJobScheduledDataKeys.validRun, false);
-    updateOperations.set(
-        BatchJobScheduledDataKeys.validUntil, Date.from(OffsetDateTime.now().plusDays(1).toInstant()));
+    updateOperations.set(BatchJobScheduledDataKeys.validUntil, Date.from(OffsetDateTime.now().plusDays(1).toInstant()));
     hPersistence.update(query, updateOperations);
   }
 }
